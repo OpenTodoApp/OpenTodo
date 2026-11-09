@@ -7284,5 +7284,16 @@
   "Other changes": "其他更改",
   "Outline": "大纲",
   "Show the proposal as": "建议的显示方式",
-  "The title is too long.": "标题过长。"
+  "The title is too long.": "标题过长。",
+  "Show connections": "显示关联",
+  "Show connections of {title}": "显示 {title} 的关联",
+  "Connections of {title}": "{title} 的关联",
+  "Show as": "显示为",
+  "Graph": "图",
+  "Links": "链接到",
+  "Linked from": "链接自",
+  "Centre on {title}": "以 {title} 为中心",
+  "+{n}": "+{n}",
+  "{n} more": "另外 {n} 个",
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}"
 }

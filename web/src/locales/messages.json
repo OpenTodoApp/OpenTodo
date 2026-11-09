@@ -79,6 +79,9 @@
     "web/src/app/YearView.tsx",
     "web/src/app/calendar/MonthWeek.tsx"
   ],
+  "+{n}": [
+    "web/src/app/connections/ConnectionsGraph.tsx"
+  ],
   "+{n} min": [
     "web/src/app/focus/FocusParts.tsx"
   ],
@@ -2818,6 +2821,9 @@
   "Caught, not yet decided.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Centre on {title}": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
+  ],
   "Change": [
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/DigestCard.tsx",
@@ -3757,6 +3763,9 @@
   ],
   "Connections": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Connections of {title}": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
   ],
   "Contains": [
     "web/src/app/RestoreSection.tsx"
@@ -7056,6 +7065,9 @@
   "Got it|list": [
     "web/src/app/task-list/ListGroups.tsx"
   ],
+  "Graph": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
+  ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
   ],
@@ -8735,6 +8747,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Linked from": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
+  ],
   "Linked references": [
     "web/src/app/LinkedReferences.tsx"
   ],
@@ -8744,12 +8759,16 @@
   "Linking {provider} needs a recent sign-in. Confirm your password or a code, then link it again.": [
     "web/src/app/sso.ts"
   ],
+  "Links": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
+  ],
   "Links start with http:// or https://.": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/attachments.ts"
   ],
   "List": [
     "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/connections/ConnectionsDialog.tsx",
     "web/src/app/menus/listMenu.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
@@ -15134,6 +15153,9 @@
   "Show archived projects": [
     "web/src/app/ProjectsSettings.tsx"
   ],
+  "Show as": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
+  ],
   "Show as table": [
     "web/src/app/review/charts.tsx"
   ],
@@ -15146,6 +15168,16 @@
   "Show completed tasks": [
     "web/src/app/ProjectHeader.tsx",
     "web/src/app/calendar/CalendarCompletedToggle.tsx"
+  ],
+  "Show connections": [
+    "web/src/app/LinkedReferences.tsx",
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Show connections of {title}": [
+    "web/src/app/palette/registry.ts"
   ],
   "Show details": [
     "web/src/app/TaskRow.tsx",
@@ -24081,6 +24113,9 @@
   "{n} min before": [
     "web/src/lib/nlp/reminders.ts"
   ],
+  "{n} more": [
+    "web/src/app/connections/ConnectionsGraph.tsx"
+  ],
   "{n} more tasks in {title}": [
     "web/src/app/calendar/SlotBlock.tsx"
   ],
@@ -24352,6 +24387,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": [
+    "web/src/app/connections/ConnectionsGraph.tsx"
   ],
   "{token} asks to read this with {tool}:": [
     "web/src/app/RelayConfirm.tsx"

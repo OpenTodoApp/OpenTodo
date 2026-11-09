@@ -11,7 +11,9 @@ export interface DialogProps {
   onClose: () => void
   children: ReactNode
   /** Width of the card from 640 px up. */
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'graph' | 'xl'
+  /** Controls in the header between the title and Close (the Connections dialog's Graph / List switch). */
+  actions?: ReactNode
   /** A tap outside closes (default). Off for destructive confirmations. */
   dismissable?: boolean
   role?: 'dialog' | 'alertdialog'
@@ -47,7 +49,7 @@ export interface DialogProps {
   motion?: 'dialog' | 'fade'
 }
 
-const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', xl: 'sm:max-w-5xl' }
+const WIDTH = { sm: 'sm:max-w-sm', md: 'sm:max-w-md', lg: 'sm:max-w-lg', graph: 'sm:max-w-[48rem]', xl: 'sm:max-w-5xl' }
 const HEADER = 'sticky top-0 z-10 flex items-center gap-2 border-b border-default bg-inherit pl-4 pr-1 pt-[var(--safe-top)] sm:-top-4 sm:rounded-t-card'
 // The sheet sits at the bottom, below the notch: no top inset, its own curved corners.
 const HEADER_SHEET = 'sticky top-0 z-10 flex items-center gap-2 rounded-t-card border-b border-default bg-inherit pl-4 pr-1 sm:-top-4'
@@ -68,7 +70,7 @@ const CARD = {
  * and the close button stays pinned. Mount it while open. `placement="sheet"` keeps
  * the page visible above a bottom sheet on phones instead (see the prop).
  */
-export function Dialog({ title, onClose, children, size = 'sm', dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center', onEscape, motion = 'dialog' }: DialogProps) {
+export function Dialog({ title, onClose, children, size = 'sm', actions, dismissable = true, role = 'dialog', label, className = '', testId, placement = 'center', onEscape, motion = 'dialog' }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -87,6 +89,7 @@ export function Dialog({ title, onClose, children, size = 'sm', dismissable = tr
         data-placement={placement === 'center' ? undefined : placement} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${placement === 'palette' || placement === 'bottom' ? '' : WIDTH[size]}`}>
         <div className={placement === 'sheet' || placement === 'bottom' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER}>
           <h2 id={titleId} className={`min-w-0 flex-1 py-2 text-body font-semibold ${placement === 'palette' ? 'sm:sr-only' : ''}`}>{title}</h2>
+          {actions}
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>
         </div>
         <div className={`${placement === 'palette' ? 'pb-[var(--safe-bottom)]' : 'p-4 pb-[max(1rem,var(--safe-bottom))]'} ${className}`}>{children}</div>

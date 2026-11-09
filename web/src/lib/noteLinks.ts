@@ -411,6 +411,55 @@ export class LinkIndex {
     }
     return out.sort((a, b) => b.updated - a.updated || (a.id < b.id ? -1 : 1))
   }
+
+  /**
+   * What `kind:id` links to that the device can read, as rows of Linked references
+   * with the line around each link in the item's own text, most recently changed
+   * first (notes-graph D5: the List view's Links).
+   */
+  links(kind: LinkKind, id: string): Reference[] {
+    const s = this.sources.get(`${kind}:${id}`)
+    const w = this.built
+    if (!s || !w) return []
+    const out: Reference[] = []
+    for (const tk of s.targets) {
+      if (tk === s.key) continue
+      const at = tk.indexOf(':')
+      const k = tk.slice(0, at) as LinkKind
+      const tid = tk.slice(at + 1)
+      const target = resolveIn(w, k, tid)
+      if (!target) continue
+      out.push({
+        kind: k, id: tid, title: target.title, projectId: k === 'project' ? null : target.projectId,
+        updated: changedAt(rowIn(w, k, tid)), snippet: snippetAround(s.text, k, tid, target.title),
+      })
+    }
+    return out.sort((a, b) => b.updated - a.updated || (a.id < b.id ? -1 : 1))
+  }
+
+  /** An item as the index reads it now, with when it last changed; null when unreachable (D4). */
+  target(kind: LinkKind, id: string): (Target & { updated: number }) | null {
+    const w = this.built
+    const target = w ? resolveIn(w, kind, id) : null
+    return target && w ? { ...target, updated: changedAt(rowIn(w, kind, id)) } : null
+  }
+
+  /** Whether `kind:id` links to, or is linked from, an item the device can read (notes-graph D3). */
+  connected(kind: LinkKind, id: string): boolean {
+    return this.references(kind, id).length > 0 || this.links(kind, id).length > 0
+  }
+}
+
+/** The row of an item, for its last change. */
+function rowIn(w: World, kind: LinkKind, id: string): Task | Project | Note | undefined {
+  return kind === 'task' ? w.taskById.get(id) : kind === 'project' ? w.projectById.get(id) : w.noteById.get(id)
+}
+
+/** When any field of a row last changed (its creation when the clock is empty). */
+export function changedAt(row: { _clock?: Record<string, { ts: number }>; created_at?: number } | undefined): number {
+  let best = 0
+  for (const c of Object.values(row?._clock ?? {})) best = Math.max(best, c.ts)
+  return best || row?.created_at || 0
 }
 
 const SNIPPET_BEFORE = 60
@@ -469,6 +518,23 @@ export function useReferences(kind: LinkKind, id: string): Reference[] | null {
   useEffect(() => { sharedIndex() })
   if (!idx?.ready) return null
   return idx.references(kind, id)
+}
+
+/**
+ * The shared index once built, live (notes-graph D6): null while it is being
+ * built; the version changes whenever a link or a row it reads changes.
+ */
+export function useLinkIndex(): { index: LinkIndex; version: number } | null {
+  const v = useLinkVersion()
+  const idx = sharedIndex()
+  useEffect(() => { sharedIndex() })
+  return idx?.ready ? { index: idx, version: v } : null
+}
+
+/** Whether an item has a link either way now (false while the index is being built, which it starts). */
+export function connectedNow(kind: LinkKind, id: string): boolean {
+  const idx = sharedIndex()
+  return !!idx?.ready && idx.connected(kind, id)
 }
 
 const noSubscribe = () => () => {}

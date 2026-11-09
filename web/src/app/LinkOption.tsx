@@ -7,6 +7,8 @@ import { t } from '../lib/i18n'
 import { Icon, type IconName } from '../ui'
 
 export const LINK_ICON: Record<LinkKind, IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
+/** Show connections (notes-graph D3), wherever it is offered. */
+export const CONNECTIONS_ICON: IconName = 'waypoints'
 
 export function linkGroupLabel(kind: LinkKind): string {
   return kind === 'note' ? t('Notes') : kind === 'task' ? t('Tasks') : t('Projects')
