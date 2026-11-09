@@ -136,4 +136,4 @@ This is additive. Older clients skip the unknown `block` event, so the prose sti
 
 ## Open Questions
 
-- Should the "n steps" lines eventually include which display tools ran? They currently use `statusFor`. A display tool's status line ("Showing 3 tasks") is cheap to add, and either way leaves the specs unchanged.
+None left. The one this design started with (should a display call add a progress line to "n steps"?) was settled while implementing: it adds none, on the server and on the device, because the block itself shows what happened.

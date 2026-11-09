@@ -43,7 +43,7 @@
 ## 6. Docs and final checks
 
 - [x] 6.1 Docs: the assistant page in `docs/` (blocks, shapes, editing, actions) and the API doc's stream events (`block`). Verify that the docs build and links pass in `make check`.
-- [ ] 6.2 Full verification. Verify that `go test ./...`, `cd web && npm test && npm run build`, `make bundle-budget`, `make openspec-validate` and `make check` all pass, and that a manual smoke run (`./bin/opentodo`, ask "plan my Thursday") shows a calendar block, task links and a calendar-shaped proposal.
+- [x] 6.2 Full verification. Verify that `go test ./...`, `cd web && npm test && npm run build`, `make bundle-budget`, `make openspec-validate` and `make check` all pass, and that a manual smoke run (`./bin/opentodo`, ask "plan my Thursday") shows a calendar block, task links and a calendar-shaped proposal.
 
 ## Workflow follow-up
 

@@ -81,6 +81,10 @@ describe('blocks in the conversation (3.1, 3.2)', () => {
     expect(order.indexOf('Here is what is overdue:')).toBeLessThan(order.indexOf('block'))
     expect(order.indexOf('block')).toBeLessThan(order.indexOf('Start with it.'))
     expect(block(document, 'tasks')!.getAttribute('aria-label')).toBe('1 task')
+    // The live region names the block once, by its label, between the sentences around it.
+    const live = document.querySelector('[data-assistant-live]')!.textContent!
+    expect(live.match(/1 task\./g)).toHaveLength(1)
+    expect(live).not.toContain('Pay taxes')
     expect(block(document, 'tasks')!.getAttribute('role')).toBe('group')
   })
 
