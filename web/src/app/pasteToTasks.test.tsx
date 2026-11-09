@@ -91,6 +91,17 @@ describe('a pasted list in a list page', () => {
     expect(bulkToast()!.label).toBe('3 tasks added, 2 not in the Inbox')
     await r.unmount()
   })
+
+  it('Inbox: a line that sets a project counts as not in the Inbox too', async () => {
+    await createProject({ name: 'Work' })
+    const r = await render(<TaskListView route={{ view: 'inbox' }} />)
+    await waitFor(() => !!r.container.querySelector('form textarea'))
+    await paste(r.container.querySelector<HTMLTextAreaElement>('form textarea')!, 'Milk\nSend invoice #Work\nPay rent friday')
+    await confirm()
+    await waitFor(() => !!bulkToast(), 'the toast')
+    expect(bulkToast()!.label).toBe('3 tasks added, 2 not in the Inbox')
+    await r.unmount()
+  })
 })
 
 describe('a pasted list in a section', () => {
