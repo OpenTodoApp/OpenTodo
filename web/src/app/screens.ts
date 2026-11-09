@@ -62,6 +62,7 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   forgot: null,
   verify: null,
   public: null,
+  'routine-email': null,
   share: null,
   help: null,
 }

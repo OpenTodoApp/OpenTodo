@@ -55,8 +55,11 @@ var carriesContent = map[Kind]bool{KindDigest: true, KindRoutine: true}
 
 // RoutineVars are a routine email's values (KindRoutine only): the routine's
 // name and the step's subject and text, as the user's routine produced them.
+// Stop is the member's stop link of an Email project members message
+// (routines-shared-email); it selects the routine_members variant.
 type RoutineVars struct {
 	Name, Subject, Text string
+	Stop                string
 }
 
 // Languages are the supported message languages, English first.
@@ -111,7 +114,7 @@ type templateData struct {
 }
 
 // routineKnown are the variables only routine templates may use.
-var routineKnown = map[string]bool{"Routine": true, "Subject": true, "Text": true}
+var routineKnown = map[string]bool{"Routine": true, "Subject": true, "Text": true, "Stop": true}
 
 // placeholder matches `{{.Field}}`, with optional spaces inside the braces.
 var placeholder = regexp.MustCompile(`\{\{\s*\.(\w+)\s*\}\}`)
@@ -131,7 +134,7 @@ var templates = func() map[string]string {
 		raw, _ := templateFS.ReadFile("templates/" + e.Name())
 		name := strings.TrimSuffix(e.Name(), ".txt")
 		isDigest := strings.HasPrefix(name, string(KindDigest)+".")
-		isRoutine := strings.HasPrefix(name, string(KindRoutine)+".")
+		isRoutine := strings.HasPrefix(name, string(KindRoutine)+".") || strings.HasPrefix(name, "routine_members.")
 		text := placeholder.ReplaceAllStringFunc(string(raw), func(m string) string {
 			field := placeholder.FindStringSubmatch(m)[1]
 			if !known[field] && !(isDigest && digestKnown[field]) && !(isRoutine && routineKnown[field]) {
@@ -281,6 +284,9 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	if m.Kind == KindVerifySignup && m.Vars.Existing {
 		name = "verify_signup_existing"
 	}
+	if m.Kind == KindRoutine && m.Vars.Routine != nil && m.Vars.Routine.Stop != "" {
+		name = "routine_members"
+	}
 	t, ok := templates[name+"."+lang]
 	if !ok {
 		return "", "", fmt.Errorf("mail: no template for %s", name)
@@ -301,7 +307,7 @@ func Render(m Message, origin string) (subject, body string, err error) {
 	if m.Kind == KindRoutine && m.Vars.Routine != nil {
 		// The subject is a header: one line, whatever the routine wrote.
 		subject := strings.Join(strings.Fields(m.Vars.Routine.Subject), " ")
-		data.digest = map[string]string{"Routine": m.Vars.Routine.Name, "Subject": subject, "Text": m.Vars.Routine.Text}
+		data.digest = map[string]string{"Routine": m.Vars.Routine.Name, "Subject": subject, "Text": m.Vars.Routine.Text, "Stop": m.Vars.Routine.Stop}
 	}
 	subject, body, _ = strings.Cut(data.execute(t), "\n")
 	return strings.TrimSpace(subject), strings.TrimLeft(body, "\n"), nil

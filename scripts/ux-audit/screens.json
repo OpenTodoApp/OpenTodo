@@ -1035,6 +1035,20 @@
   "anon": true
  },
  {
+  "id": "routine-email",
+  "route": "routine-email",
+  "kind": "signed-out",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "story": "Screens/Signed out",
+  "layoutCheck": null,
+  "layoutCheckReason": "needs a stop link minted by a routine email; the tour opens an unknown one, which shows the invalid-link state",
+  "path": "/routine-emails/ots_expired",
+  "ready": "h1, [role=\"alert\"]",
+  "anon": true
+ },
+ {
   "id": "reset",
   "route": "reset",
   "kind": "signed-out",

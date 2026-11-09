@@ -87,6 +87,8 @@ var publicRouteClasses = map[string]publicClass{
 	"GET /api/v1/password-resets/{token}":                       pubSecret,
 	"POST /api/v1/password-resets/{token}":                      pubSecret,
 	"GET /feeds/{secret}/tasks.ics":                             pubSecret,
+	"GET /api/v1/routine-emails/{token}":                        pubSecret,
+	"POST /api/v1/routine-emails/{token}/stop":                  pubSecret,
 	"GET /api/v1/pages/{secret}":                                pubSecret,
 	"POST /api/v1/pages/{secret}/replies":                       pubSecret,
 	"POST /api/v1/pages/{secret}/tick":                          pubSecret,

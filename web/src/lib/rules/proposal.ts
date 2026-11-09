@@ -57,7 +57,7 @@ export function describeItem(it: RoutineProposalItem, n: ProposalNames): Describ
   if (it.side) {
     const s = it.side
     if (it.kind === 'notify') return { ...base, text: s.notice ? t('Notify me: {text}', { text: s.notice.text }) : t('Notify me about the task {task}', { task: n.title(str(s.fired?.taskId)) || t('a task') }) }
-    if (it.kind === 'email') return { ...base, text: t('Email me: {subject}', { subject: s.mail?.Subject ?? '' }) }
+    if (it.kind === 'email') return { ...base, text: s.members?.length ? t('Email project members: {subject}', { subject: s.mail?.Subject ?? '' }) : t('Email me: {subject}', { subject: s.mail?.Subject ?? '' }) }
     return { ...base, text: t('Send the webhook') }
   }
   if (it.entity === 'task' && it.kind === 'create') {

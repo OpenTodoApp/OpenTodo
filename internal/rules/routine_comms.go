@@ -95,6 +95,10 @@ type sideSpec struct {
 	Delivery *RoutineDelivery      `json:"delivery,omitempty"`
 	Mail     *RoutineMail          `json:"mail,omitempty"`
 	Day      string                `json:"day,omitempty"`
+	// Project and Members make an email an Email project members step's:
+	// the project and the members planned to receive it (routines-shared-email).
+	Project string   `json:"project,omitempty"`
+	Members []string `json:"members,omitempty"`
 }
 
 // side builds the side effect a spec describes, for the run's user.
@@ -135,6 +139,9 @@ func (st *runState) side(sp sideSpec) sideEffect {
 			if e.Mail == nil {
 				return nil
 			}
+			if sp.Project != "" {
+				return e.sendMembers(ctx, uid, sp)
+			}
 			ok, err := e.Store.TakeEmail(ctx, m.RuleID, uid, sp.Day)
 			if err != nil || !ok {
 				e.Mail.RefuseRoutine(ctx, uid, m, "rate_limited")
@@ -164,10 +171,14 @@ type RoutineMail struct {
 }
 
 // RoutineMailer sends a routine's email to the account's own verified address
-// (internal/mail kind routine), and records one a limit refused.
+// (internal/mail kind routine), and records one a limit refused. An Email
+// project members message goes to one member, with a stop link of its own,
+// as sent by the run-as person (routines-shared-email).
 type RoutineMailer interface {
 	SendRoutine(ctx context.Context, userID string, m RoutineMail) error
 	RefuseRoutine(ctx context.Context, userID string, m RoutineMail, reason string)
+	SendRoutineMember(ctx context.Context, runAs, memberID string, m RoutineMail) error
+	RefuseRoutineMember(ctx context.Context, runAs, memberID string, m RoutineMail, reason string)
 }
 
 // webhookStep queues one rule.fired delivery with the routine object after the
@@ -190,25 +201,10 @@ func (st *runState) webhookStep(s *ruleval.Step, in map[string]ruleval.Value) (r
 // 20 per account a UTC day; past them the step fails with rate_limited and the
 // refusal is recorded as email.failed.
 func (st *runState) emailStep(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
-	subject, _ := st.textIn(s, in, "subject")
-	text, _ := st.textIn(s, in, "text")
-	if r := []rune(subject); len(r) > ruleval.MaxSubject {
-		subject = string(r[:ruleval.MaxSubject])
-	}
-	if r := []rune(text); len(r) > ruleval.MaxEmailText {
-		text = string(r[:ruleval.MaxEmailText])
-	}
-	m := RoutineMail{RuleID: st.r.ID, RuleName: st.r.Name, RunID: st.runID, Subject: subject, Text: text}
+	m := st.routineMail(s, in)
 	day := time.UnixMilli(st.nowMs).UTC().Format("2006-01-02")
-	mine, all, err := st.e.Store.emailCounts(st.ctx, st.r.ID, st.w.uid, day)
-	if err != nil {
+	if err := st.takeEmails(1, m, day); err != nil {
 		return none(), "", err
-	}
-	if st.emails++; mine+st.emails > EmailsPerRoutine || all+st.emails > EmailsPerAccount {
-		if !st.test && st.e.Mail != nil {
-			st.e.Mail.RefuseRoutine(st.ctx, st.w.uid, m, "rate_limited")
-		}
-		return none(), "", failf("rate_limited", "at most %d emails per routine and %d per account a day", EmailsPerRoutine, EmailsPerAccount)
 	}
 	st.sides = append(st.sides, st.side(sideSpec{Kind: "email", Mail: &m, Day: day}))
 	return none(), "", nil

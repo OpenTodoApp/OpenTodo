@@ -57,6 +57,8 @@ export type Route =
   | { view: 'forgot' }
   | { view: 'verify'; token: string }
   | { view: 'public'; token: string }
+  // A routine email's stop link (routines-shared-email): no sign-in, no sync.
+  | { view: 'routine-email'; token: string }
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
@@ -91,7 +93,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
-  'confirm-email': false, forgot: false, verify: false, public: false, share: false,
+  'confirm-email': false, forgot: false, verify: false, public: false, 'routine-email': false, share: false,
   trash: false, feed: false, ask: false, display: false, stats: false,
 }
 
@@ -252,6 +254,8 @@ export function parseRoute(pathname: string): Route {
     case 'public':
       // A public link to a project's list (public-links): no sign-in, no sync.
       return parts[1] ? { view: 'public', token: safeDecode(parts[1]) } : { view: 'inbox' }
+    case 'routine-emails':
+      return parts[1] ? { view: 'routine-email', token: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'label':
       return parts[1] ? { view: 'label', id: parts[1] } : { view: 'labels' }
     case 'display':
@@ -331,6 +335,8 @@ export function routePath(r: Route): string {
       return `/verify/${encodeURIComponent(r.token)}`
     case 'public':
       return `/public/${encodeURIComponent(r.token)}`
+    case 'routine-email':
+      return `/routine-emails/${encodeURIComponent(r.token)}`
     case 'day':
     case 'week':
     case 'month':

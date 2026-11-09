@@ -7238,5 +7238,9 @@
   "All except these": "除这些以外的全部",
   "Find a workspace or project…": "查找工作区或项目…",
   "All except {names}": "除 {names} 以外的全部",
-  "Lists of {name}": "{name} 的列表"
+  "Lists of {name}": "{name} 的列表",
+  "Stop emails": "停止邮件",
+  "Stop emails from “{routine}”?": "停止来自“{routine}”的邮件？",
+  "You will get no more emails from “{routine}”.": "你将不再收到来自“{routine}”的邮件。",
+  "Email project members: {subject}": "给项目成员发邮件：{subject}"
 }

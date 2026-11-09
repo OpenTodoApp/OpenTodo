@@ -182,6 +182,8 @@ var demoRules = []demoRule{
 	// The speech service is the operator's outbound target (settings-refresh D7): every method.
 	{"Speech to text", false, prefix("/api/v1/settings/stt")},
 	{"Speech to text", false, prefix("/api/v1/voice")},
+	// A routine email's stop link (routines-shared-email): a demo never sends email.
+	{"Routine emails", false, prefix("/api/v1/routine-emails")},
 	// The weekly digest sends mail (stats-and-review): changing it is refused.
 	{"Email digest", true, exact("/api/v1/me/email-digest")},
 	// Public links publish data to anyone (public-links D9): every method.

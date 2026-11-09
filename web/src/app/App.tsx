@@ -42,6 +42,8 @@ import { rememberWipeKey, REVOKED_NOTICE, wipeIfRevoked } from '../lib/revocatio
 
 export { DemoBanner }
 
+// A routine email's stop page (routines-shared-email): its own chunk.
+const RoutineEmailStopScreen = lazy(() => import('./RoutineEmailStopScreen').then((m) => ({ default: m.RoutineEmailStopScreen })))
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
@@ -146,7 +148,7 @@ export function App() {
   // Sync runs while signed in, except on the screens that work without it. The
   // effect depends on that one boolean, so moving between lists does not start
   // a new exchange (client-sync-robustness).
-  const syncWanted = phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify' && route.view !== 'public'
+  const syncWanted = phase.kind === 'ready' && route.view !== 'invite' && route.view !== 'reset' && route.view !== 'verify' && route.view !== 'public' && route.view !== 'routine-email'
   useEffect(() => {
     if (syncWanted) startSync()
     else stopSync()
@@ -186,6 +188,7 @@ export function App() {
     // A public link (public-links) needs no account and never syncs: it renders
     // before the sign-in state is even known.
     if (route.view === 'public') return <PublicListScreen token={route.token} />
+    if (route.view === 'routine-email') return <Suspense fallback={null}><RoutineEmailStopScreen token={route.token} /></Suspense>
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
       return <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>

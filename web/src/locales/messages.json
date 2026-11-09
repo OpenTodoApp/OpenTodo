@@ -5382,6 +5382,9 @@
   "Email project members": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Email project members: {subject}": [
+    "web/src/lib/rules/proposal.ts"
+  ],
   "Email sent": [
     "web/src/app/auditFormat.ts"
   ],
@@ -10605,7 +10608,8 @@
     "web/src/lib/rules/catalogue.ts"
   ],
   "Not available offline.": [
-    "web/src/app/RestoreSection.tsx"
+    "web/src/app/RestoreSection.tsx",
+    "web/src/app/RoutineEmailStopScreen.tsx"
   ],
   "Not available with end-to-end encryption: calendar apps cannot read encrypted titles.": [
     "web/src/lib/settingsCopy.ts"
@@ -11401,6 +11405,7 @@
     "web/src/app/InviteScreen.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/ResetScreen.tsx",
+    "web/src/app/RoutineEmailStopScreen.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx"
   ],
   "One next step|method": [
@@ -15904,6 +15909,12 @@
   "Stop dictation": [
     "web/src/app/quickadd/VoiceParts.tsx"
   ],
+  "Stop emails": [
+    "web/src/app/RoutineEmailStopScreen.tsx"
+  ],
+  "Stop emails from “{routine}”?": [
+    "web/src/app/RoutineEmailStopScreen.tsx"
+  ],
   "Stop encrypting future backups": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -17946,6 +17957,7 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "This link is no longer valid.": [
+    "web/src/app/RoutineEmailStopScreen.tsx",
     "web/src/lib/i18n/errors.ts"
   ],
   "This link is not valid any more. Ask for a new one.": [
@@ -18686,7 +18698,8 @@
     "web/src/app/EmailScreens.tsx"
   ],
   "Too many requests from this network. Wait a minute, then reload the page.": [
-    "web/src/app/PublicListScreen.tsx"
+    "web/src/app/PublicListScreen.tsx",
+    "web/src/app/RoutineEmailStopScreen.tsx"
   ],
   "Too many tests in a short time. Try again in a few minutes.": [
     "web/src/app/NotificationsSettings.tsx"
@@ -20351,6 +20364,9 @@
   ],
   "You sign in with it. A new address is confirmed by a link sent to it.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "You will get no more emails from “{routine}”.": [
+    "web/src/app/RoutineEmailStopScreen.tsx"
   ],
   "You will no longer be able to sign in with {provider} using this account. Your password and passkeys keep working.": [
     "web/src/app/SsoPanel.tsx"
