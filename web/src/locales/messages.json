@@ -1960,11 +1960,11 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Ascending": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Ascending (p4 first)": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Ask": [
@@ -3382,7 +3382,7 @@
   "Colour by": [
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/task-list/listExtras.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Colour {name}": [
     "web/src/app/NewWorkspaceDialog.tsx",
@@ -3594,7 +3594,7 @@
     "web/src/app/method/LoopHome.tsx"
   ],
   "Completed tasks": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Completed tasks per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
@@ -4180,7 +4180,7 @@
   ],
   "Custom fields": [
     "web/src/app/FieldsDialog.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Custom limit": [
     "web/src/app/ClosedListSettings.tsx"
@@ -4733,11 +4733,11 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Descending": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Descending (p1 first)": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Describe a routine": [
@@ -4838,7 +4838,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Direction": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Disable": [
@@ -7046,7 +7046,7 @@
   ],
   "Group by": [
     "web/src/app/shortcuts/Spotlight.tsx",
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Group by day part": [
@@ -7228,7 +7228,7 @@
     "web/src/app/FirstDay.tsx",
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/Sections.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Hide briefing": [
     "web/src/app/TaskListView.tsx"
@@ -8504,7 +8504,7 @@
   ],
   "Layout": [
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Learn Open Loops": [
     "web/src/app/help/HelpView.tsx"
@@ -8673,8 +8673,14 @@
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Link to": [
+    "web/src/app/EditorChrome.tsx"
+  ],
   "Link to share": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Link to…": [
+    "web/src/app/editorCommands.ts"
   ],
   "Link your {name} account to sign in with it.": [
     "web/src/app/SsoPanel.tsx"
@@ -8685,6 +8691,9 @@
   "Linked accounts": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Linked references": [
+    "web/src/app/LinkedReferences.tsx"
   ],
   "Linked. You can now sign in with the provider.": [
     "web/src/app/SsoPanel.tsx"
@@ -9382,7 +9391,7 @@
   "More options": [
     "web/src/app/IssueEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "More properties": [
     "web/src/app/task-detail/TaskFacts.tsx"
@@ -9762,7 +9771,7 @@
     "web/src/app/VoiceSettings.tsx"
   ],
   "Nest subtasks": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Never": [
     "web/src/app/PublicLinksSection.tsx",
@@ -9845,6 +9854,9 @@
   "New note": [
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/registry.ts"
+  ],
+  "New note \"{title}\"": [
+    "web/src/app/EditorChrome.tsx"
   ],
   "New notes": [
     "web/src/app/NewsDot.tsx"
@@ -10781,6 +10793,7 @@
   "Notes": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/ImportScreen.tsx",
+    "web/src/app/LinkOption.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/notes/NoteEditor.tsx",
@@ -10800,7 +10813,7 @@
     "web/src/app/task-detail/HistoryTab.tsx"
   ],
   "Notes on cards": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Notes you write, and the notes of your tasks and projects, are listed here.": [
     "web/src/app/notes/NotesPage.tsx"
@@ -11856,7 +11869,7 @@
   ],
   "Order by": [
     "web/src/app/shortcuts/Spotlight.tsx",
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "Order by creation date": [
@@ -12852,6 +12865,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Projects": [
+    "web/src/app/LinkOption.tsx",
     "web/src/app/ProjectsTable.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/Sidebar.tsx",
@@ -13689,7 +13703,7 @@
   ],
   "Reset": [
     "web/src/app/focus/FocusSettings.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Reset link created for {name}.": [
     "web/src/app/UsersPanel.tsx"
@@ -14034,7 +14048,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Rows": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Rows with errors": [
     "web/src/app/ImportScreen.tsx"
@@ -15006,7 +15020,7 @@
     "web/src/app/Sections.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/announceAdded.ts",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Show Today’s tasks before Tomorrow": [
     "web/src/app/TaskListView.tsx"
@@ -15089,7 +15103,7 @@
     "web/src/app/task-list/listExtras.tsx"
   ],
   "Show on rows": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Show only the tasks a query matches": [
     "web/src/app/calendar/useCalendarChrome.tsx",
@@ -15640,7 +15654,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Sort direction": [
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Sort first": [
     "web/src/app/routines/StepCard.tsx"
@@ -16322,6 +16336,7 @@
     "web/src/app/task-detail/TaskPageView.tsx"
   ],
   "Tasks": [
+    "web/src/app/LinkOption.tsx",
     "web/src/app/PublicListScreen.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
@@ -19055,7 +19070,7 @@
     "web/src/lib/facets.ts"
   ],
   "Unavailable custom field": [
-    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/app/views/useDisplayKeys.ts"
   ],
   "Unavailable offline": [
@@ -19318,9 +19333,12 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Untitled note": [
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/lib/localData.ts",
+    "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
     "web/src/lib/trash.ts"
   ],

@@ -5,9 +5,15 @@
 // (scripts/perf/notes-seed.mjs runs it), and writes one JSON line per save:
 //   {"note": n, "save": k, "doc": "ydoc:v1:…", "text": "…"}
 // cmd/perfseed -notes <file> writes them through the op log.
+//
+// Links (note-links D5): the second block of each standalone note (even n) links to
+// the next two standalone notes and to the task of the next task note; the first
+// 200 task notes (odd n) link to the standalone note before them. Ids are the ones
+// cmd/perfseed gives (internal/perfseed gen.id, the same name-based id as ids.ts).
 import { appendFileSync, writeFileSync } from 'node:fs'
 import { it } from 'vitest'
 import * as Y from 'yjs'
+import { nameId } from './ids'
 import { activeBody, encodeDoc, newDoc, projectDoc, updateBody } from './richtext'
 import { parseMarkdown } from './richtextMarkdown'
 
@@ -28,6 +34,24 @@ function rng(seed: number) {
   }
 }
 
+/** internal/perfseed: BigOpen open tasks in the big project come first; a task note n belongs to task BigOpen+n. */
+const BIG_OPEN = 2000
+const LINKED_TASK_NOTES = 200
+const SEED = Number(process.env.PERFSEED_SEED ?? 10_000)
+const pid = (kind: string, n: number) => nameId('perfseed', `${SEED}/${kind}/${n}`)
+
+/** The links block of note n (null for a task note past the first LINKED_TASK_NOTES). */
+function linksLine(n: number): string | null {
+  const even = (k: number) => (k % NOTES) - ((k % NOTES) % 2)
+  if (n % 2 === 0) {
+    const a = even(n + 2)
+    const b = even(n + 4)
+    const t = (n + 1) % NOTES
+    return `Related: [Note ${a + 1}](?note=${pid('note', a)}), [Note ${b + 1}](?note=${pid('note', b)}) and [the task](?task=${pid('task', BIG_OPEN + t)}).`
+  }
+  return (n - 1) / 2 < LINKED_TASK_NOTES ? `See [Note ${n}](?note=${pid('note', n - 1)}).` : null
+}
+
 const WORDS = 'plan review draft call email order fix update check write send book pay renew clean prepare share sort archive measure paint repair buy return schedule test ship kitchen garden budget invoice report slides garage server backup laptop printer passport meeting client project release roadmap ticket feature library migration window door shelf'.split(' ')
 
 it.runIf(!!out)('writes the notes fixture', () => {
@@ -41,6 +65,10 @@ it.runIf(!!out)('writes the notes fixture', () => {
   for (let n = 0; n < NOTES; n++) {
     const doc = newDoc(1 + n)
     const lines: string[] = [`# Note ${n + 1}`]
+    const links = linksLine(n)
+    if (links) lines.push(links)
+    // Edits leave the heading and the links block alone.
+    const kept = lines.length
     let buf = ''
     for (let k = 0; k < SAVES; k++) {
       // Each save adds a little (the note grows to about CHARS) and now and then edits a line.
@@ -49,7 +77,7 @@ it.runIf(!!out)('writes the notes fixture', () => {
         if (r() < 0.2) lines.push(`- ${sentence()}`)
         else lines.push(`${sentence()} ${sentence()}`)
       }
-      if (lines.length > 3 && r() < 0.3) lines[1 + Math.floor(r() * (lines.length - 1))] = sentence()
+      if (lines.length > kept + 2 && r() < 0.3) lines[kept + Math.floor(r() * (lines.length - kept))] = sentence()
       const text = lines.join('\n\n')
       doc.transact(() => updateBody(activeBody(doc), parseMarkdown(text)))
       const value = encodeDoc(doc)

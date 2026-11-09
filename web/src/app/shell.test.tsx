@@ -93,6 +93,19 @@ describe('every view opens a task as its page', () => {
     await r.unmount()
   })
 
+  it('opens the note or project named in a ?note= or ?project= address and drops the parameter (note-links D7)', async () => {
+    history.replaceState(null, '', '/upcoming?note=n-1&x=1')
+    let r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => location.pathname === '/notes/n-1')
+    expect(location.search).toBe('')
+    await r.unmount()
+    history.replaceState(null, '', '/?project=p-1')
+    r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => location.pathname === '/project/p-1')
+    expect(location.search).toBe('')
+    await r.unmount()
+  })
+
   it('loads the calendar, settings and import screens on first visit and renders them', async () => {
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     navigate({ view: 'week' })

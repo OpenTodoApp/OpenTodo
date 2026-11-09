@@ -28,4 +28,6 @@ A deleted note goes to the [Trash](trash-and-history.md) with tasks and projects
 
 `ot notes` lists, searches, shows, adds, edits, appends to and removes notes, and `ot task note` reads and writes a task's note as Markdown (see [the command line](cli.md)). AI assistants connected over [MCP](mcp.md) can read and search notes and, when you allow it, create and change them. Text added this way is appended at the end of the note without replacing what you wrote, even while you edit the same note on another device. A replacement of the whole text is refused when the note changed since the script or assistant read it.
 
+Links between notes are Markdown: `[Trip](?note=<id>)`, `[Call the plumber](?task=<id>)` or `[Renovation](?project=<id>)`, so a script or an assistant links by writing that text. `ot notes links <ref>` lists what a note links to and the notes that link to it, worked out on your machine (it needs `ot encryption unlock` on an encrypted account). On an account without end-to-end encryption, the assistant tools `get_note` and `get_task` return the same as `links` and `linked_from`; on an encrypted account they return neither, because the server cannot read the notes.
+
 Notes are not sent to calendar apps over CalDAV, to webhooks, to the activity feed, to automations or to the Markdown vault.

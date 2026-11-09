@@ -54,8 +54,10 @@ func cmdNotes(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		return notesRm(a, ctx, g, rest)
 	case "to-task":
 		return notesToTask(a, ctx, g, rest)
+	case "links":
+		return notesLinks(a, ctx, g, rest)
 	}
-	return usageErr("unknown notes command %q (expected list, search, show, add, edit, append, rm or to-task)", sub)
+	return usageErr("unknown notes command %q (expected list, search, show, links, add, edit, append, rm or to-task)", sub)
 }
 
 // cmdTask is the `task` group; `note` is its first command (the top-level
@@ -434,6 +436,12 @@ func (s *noteSession) standaloneNotes(ctx context.Context) ([]noteRow, error) {
 // loadNotes reads the sources src names (note, task, project or all) and
 // returns their rows (newest first) with the projects.
 func (s *noteSession) loadNotes(ctx context.Context, src string) ([]noteRow, []project, error) {
+	return s.loadRows(ctx, src, false)
+}
+
+// loadRows is loadNotes; with keepEmpty, tasks and projects without a note are
+// rows too (ot notes links: something can link to a task that has no note).
+func (s *noteSession) loadRows(ctx context.Context, src string, keepEmpty bool) ([]noteRow, []project, error) {
 	projects, err := s.projects(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -463,7 +471,7 @@ func (s *noteSession) loadNotes(ctx context.Context, src string) ([]noteRow, []p
 			if err != nil {
 				return nil, nil, err
 			}
-			if strings.TrimSpace(r.text()) != "" {
+			if keepEmpty || strings.TrimSpace(r.text()) != "" {
 				rows = append(rows, r)
 			}
 		}
@@ -478,7 +486,7 @@ func (s *noteSession) loadNotes(ctx context.Context, src string) ([]noteRow, []p
 				return nil, nil, err
 			}
 			r.title, r.titleLocked = p.Name, p.Name == encryptedText
-			if strings.TrimSpace(r.text()) != "" {
+			if keepEmpty || strings.TrimSpace(r.text()) != "" {
 				rows = append(rows, r)
 			}
 		}

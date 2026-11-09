@@ -9,7 +9,7 @@ import { Icon, Tooltip } from '../ui'
 /** What the app resolves on the device: embedded attachments and links to tasks. */
 export interface MarkdownEmbeds {
   Image: ComponentType<{ id: string; alt: string; taskId: string | null }>
-  TaskLink: ComponentType<{ id: string; children: ReactNode }>
+  RefLink: ComponentType<{ kind: 'task' | 'note' | 'project'; id: string; children: ReactNode }>
 }
 
 export interface MarkdownProps {
@@ -114,8 +114,8 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
         )
       }
       return <Tooltip key={i} label={ctx.mentions?.get(n.v) ?? `@${n.v}`}><span className="mention-chip" data-mention-token={n.v}>@{n.v}</span></Tooltip>
-    case 'task':
-      return ctx.embeds ? <ctx.embeds.TaskLink key={i} id={n.id}>{inl(n.c)}</ctx.embeds.TaskLink> : <Fragment key={i}>{inl(n.c)}</Fragment>
+    case 'ref':
+      return ctx.embeds ? <ctx.embeds.RefLink key={i} kind={n.kind} id={n.id}>{inl(n.c)}</ctx.embeds.RefLink> : <Fragment key={i}>{inl(n.c)}</Fragment>
     case 'link': {
       const origin = originFromUrl(n.href)
       if (origin?.kind === 'issue' && origin.id) {

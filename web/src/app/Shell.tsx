@@ -27,7 +27,7 @@ import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { usePhoneChrome } from './useScrollDirection'
@@ -135,6 +135,24 @@ function CommandBar({ palette, user, showShortcuts }: { palette: ReturnType<type
   )
 }
 
+/**
+ * `?task=`, `?note=` and `?project=<id>` in the address (a notification, a link in a
+ * note, note-links D7): the item opens and the parameter goes. True when one did.
+ */
+function openAddressItem(): boolean {
+  const params = new URLSearchParams(location.search)
+  for (const kind of ['task', 'note', 'project'] as const) {
+    const id = params.get(kind)
+    if (!id) continue
+    params.delete(kind)
+    history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : ''))
+    if (kind === 'task') openTaskPage(id)
+    else navigate(kind === 'note' ? { view: 'notes', id } : { view: 'project', id }, { replace: true })
+    return true
+  }
+  return false
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -157,15 +175,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // settings ids) are replaced in place.
     const canonical = canonicalPath(location.pathname)
     if (canonical && canonical !== location.pathname) history.replaceState(null, '', `${canonical}${location.search}`)
-    const taskParam = taskIdFromAddress()
-    if (taskParam) {
-      const params = new URLSearchParams(location.search)
-      params.delete('task')
-      const q = params.toString()
-      history.replaceState(null, '', `${location.pathname}${q ? `?${q}` : ''}`)
-      openTaskPage(taskParam)
-      return
-    }
+    if (openAddressItem()) return
     if (location.pathname !== '/') return
     let cancelled = false
     void resolveStartView().then((start) => {
