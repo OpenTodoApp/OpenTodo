@@ -1273,8 +1273,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
    no row padding adds to its 44 px minimum; the slots before it sit on the title's first
    line, also when a second line (the Inbox's source) follows. The time column shows
-   only where a row has a time, and the counts stay off the line. */
-@media (width < 48rem) {
+   only where a row has a time, and the counts stay off the line. Screens only: a printed
+   page is narrower than 768 px too, and keeps the column (print-lists). */
+@media screen and (width < 48rem) {
   .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
   .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
   .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }
@@ -1308,7 +1309,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    it wins at every width. On the phone row the cell at the end stays on the title's
    first line rather than in the middle of a tall title. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
-@media (width < 48rem) {
+@media screen and (width < 48rem) {
   @container row (width < 40rem) {
     :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
   }
@@ -1321,7 +1322,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @container row (width >= 40rem) {
   [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
 }
-@media (width < 48rem) {
+@media screen and (width < 48rem) {
   @container row (width < 40rem) {
     [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
   }
@@ -1576,3 +1577,56 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
    inherited. It changes when a row comes or goes, and as an inherited property it restyled every
    element of the block's rows (about 800, 55 ms in the phone profile). */
 @property --block-rows { syntax: '<number>'; inherits: false; initial-value: 25; }
+
+/* Printing a list (OpenSpec change print-lists): the browser's Print gives the page's title,
+   its groups and every row as on screen, black on white in any theme, nothing else. The
+   colour tokens are overridden (important, so they win over a custom theme and high
+   contrast); the app's scroll container grows so the rows flow over the pages. */
+@media print {
+  :root, [data-theme], [data-accent] {
+    --ot-canvas: oklch(1 0 0) !important; --ot-surface: oklch(1 0 0) !important; --ot-raised: oklch(1 0 0) !important;
+    --ot-sunken: oklch(1 0 0) !important; --ot-pop: oklch(1 0 0) !important; --ot-hover: oklch(1 0 0) !important;
+    --ot-selected: oklch(1 0 0) !important; --ot-selected-row: oklch(1 0 0) !important; --ot-sidebar: oklch(1 0 0) !important;
+    --ot-text-strong: oklch(0 0 0) !important; --ot-text: oklch(0 0 0) !important;
+    --ot-muted: oklch(0.32 0 0) !important; --ot-faint: oklch(0.4 0 0) !important;
+    --ot-border: oklch(0.8 0 0) !important; --ot-border-soft: oklch(0.85 0 0) !important;
+    --ot-border-input: oklch(0.45 0 0) !important; --ot-line-strong: oklch(0.7 0 0) !important;
+    --ot-accent: oklch(0 0 0) !important; --ot-accent-text: oklch(0 0 0) !important; --ot-accent-soft: oklch(1 0 0) !important;
+    --ot-accent-soft-text: oklch(0 0 0) !important; --ot-on-accent: oklch(1 0 0) !important;
+    --ot-p1: oklch(0.5771 0.2152 27.33) !important; --ot-p2: oklch(0.6461 0.1943 41.12) !important;
+    --ot-p3: oklch(0.5461 0.2152 262.88) !important; --ot-p4: oklch(0.45 0 0) !important;
+    --ot-p1-soft: oklch(1 0 0) !important; --ot-p2-soft: oklch(1 0 0) !important; --ot-p3-soft: oklch(1 0 0) !important; --ot-p4-soft: oklch(1 0 0) !important;
+    --ot-success: oklch(0 0 0) !important; --ot-warning: oklch(0 0 0) !important; --ot-danger: oklch(0 0 0) !important; --ot-info: oklch(0 0 0) !important;
+    --ot-success-soft: oklch(1 0 0) !important; --ot-warning-soft: oklch(1 0 0) !important; --ot-danger-soft: oklch(1 0 0) !important; --ot-info-soft: oklch(1 0 0) !important;
+    --ot-success-soft-text: oklch(0 0 0) !important; --ot-warning-soft-text: oklch(0 0 0) !important; --ot-danger-soft-text: oklch(0 0 0) !important; --ot-info-soft-text: oklch(0 0 0) !important;
+    --ot-highlight: oklch(1 0 0) !important; --ot-highlight-text: oklch(0 0 0) !important;
+    --ot-hue-red-soft: oklch(1 0 0) !important; --ot-hue-orange-soft: oklch(1 0 0) !important; --ot-hue-yellow-soft: oklch(1 0 0) !important;
+    --ot-hue-lime-soft: oklch(1 0 0) !important; --ot-hue-green-soft: oklch(1 0 0) !important; --ot-hue-teal-soft: oklch(1 0 0) !important;
+    --ot-hue-cyan-soft: oklch(1 0 0) !important; --ot-hue-blue-soft: oklch(1 0 0) !important; --ot-hue-indigo-soft: oklch(1 0 0) !important;
+    --ot-hue-violet-soft: oklch(1 0 0) !important; --ot-hue-pink-soft: oklch(1 0 0) !important; --ot-hue-slate-soft: oklch(1 0 0) !important;
+    --ot-hue-red-text: oklch(0 0 0) !important; --ot-hue-orange-text: oklch(0 0 0) !important; --ot-hue-yellow-text: oklch(0 0 0) !important;
+    --ot-hue-lime-text: oklch(0 0 0) !important; --ot-hue-green-text: oklch(0 0 0) !important; --ot-hue-teal-text: oklch(0 0 0) !important;
+    --ot-hue-cyan-text: oklch(0 0 0) !important; --ot-hue-blue-text: oklch(0 0 0) !important; --ot-hue-indigo-text: oklch(0 0 0) !important;
+    --ot-hue-violet-text: oklch(0 0 0) !important; --ot-hue-pink-text: oklch(0 0 0) !important; --ot-hue-slate-text: oklch(0 0 0) !important;
+    color-scheme: light !important;
+  }
+}
+@layer components {
+@media print {
+  /* 14 px type: a row on an A4 or Letter page is 48 rem wide, so it keeps its date, project and labels. */
+  html { font-size: 87.5%; }
+  html, body, #root, :has(> [data-app-frame]), [data-app-frame], #content { display: block !important; height: auto !important; overflow: visible !important; }
+  [data-app-frame] { margin: 0 !important; border: 0 !important; padding: 0 !important; }
+  /* Only the page: no sidebar, bars, panels, toasts, assistant, overlay or control. */
+  body > :not(#root), :has(> [data-app-frame]) > :not([data-app-frame]), [data-app-frame] > :not(#content, [data-phone-bar]),
+  [data-phone-bar] > :not(:has([data-phone-title])), [data-page-actions], [data-page-back], [data-quick-add-row], [data-row-actions],
+  [data-row-grip], [data-row-expand], [data-group-actions], [data-add-line], [data-add-section], [data-close-day] { display: none !important; }
+  [data-page-header] { position: static !important; }
+  * { box-shadow: none !important; outline: none !important; }
+  .row-offscreen, .row-block { content-visibility: visible !important; }
+  /* Paper has no tooltip: a long title is printed whole. */
+  [data-row-title] { -webkit-line-clamp: none !important; line-clamp: none !important; }
+  [data-task-id] { break-inside: avoid; }
+  [data-group-header] { break-after: avoid; }
+}
+}

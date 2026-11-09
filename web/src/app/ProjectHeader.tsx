@@ -43,6 +43,7 @@ import { useProjectPrefsRow, useProjectViewMode, useShowCompletedPref } from '..
 import { saveShowCompleted } from '../lib/sections'
 import { isReusable } from '../lib/reusable'
 import { listModeItem } from './menus/listMenu'
+import { printItems } from './menus/printItem'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -175,8 +176,10 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
 const ACTIVITY_PANEL = 'project-activity'
 const HISTORY_PANEL = 'project-history'
 
-export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead, secondary }: {
+export function ProjectHeader({ project, userId, actions, layout, subtitle, phone, extraGroups, lead, secondary, print }: {
   project: Project
+  /** The list layout offers Print… (print-lists). */
+  print?: boolean
   userId?: string
   /** Items the layout adds to the project menu (a board's Colour by, calendar-clarity D3). */
   extraGroups?: ActionGroup[]
@@ -265,6 +268,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     { kind: 'action', id: 'routines', label: t('Routines'), icon: 'zap', onSelect: () => navigate({ view: 'rules', project: project.id }) },
     // Display mode (display-mode D6): the project in large type, without the shell.
     { kind: 'action', id: 'display', label: t('Display mode'), icon: 'monitor', onSelect: () => navigate({ view: 'display', target: { kind: 'project', id: project.id }, options: { ...DEFAULT_DISPLAY_OPTIONS } }) },
+    ...(print ? printItems() : []),
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
   const groups: ActionGroup[] = [
