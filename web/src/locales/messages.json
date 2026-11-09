@@ -15574,7 +15574,7 @@
   "Sort {list} by {by}": [
     "web/src/lib/rules/sentence.ts"
   ],
-  "Sorted by date (or their own rule): no drag or Alt moves there": [
+  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": [
     "web/src/lib/shortcuts.ts"
   ],
   "Sound": [
