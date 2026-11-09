@@ -1,17 +1,21 @@
 // The chrome of a non-task occupant of the shell's panel slot (OpenSpec change
 // ux-overhaul, app-shell "The panel slot has an address"): project activity and
-// history, the calendar's planning list. Same column as the task panel from
-// 1024 px, a sheet over the content below that; Escape or Close empties the slot.
+// history, the calendar's planning list, the Notes page's note. Same column as the
+// task panel from 1024 px, a sheet over the content below that; Escape or Close
+// empties the slot. `edge` sits on its left edge from 1024 px: the note's resize
+// handle (note-pane-width D1).
 import type { ReactNode } from 'react'
 import { IconButton } from '../ui'
 import { closePanel } from './panel'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 
-export function PanelFrame({ title, children, actions, testId, onEscape, onClose = closePanel }: {
+export function PanelFrame({ title, children, actions, edge, testId, onEscape, onClose = closePanel }: {
   title: string
   children: ReactNode
   actions?: ReactNode
+  /** On the frame's left edge, positioned against it (a resize handle). */
+  edge?: ReactNode
   testId?: string
   /** Runs before Escape closes the slot; true when it handled the key (the planning list cancels a placement first). */
   onEscape?: () => boolean
@@ -28,7 +32,8 @@ export function PanelFrame({ title, children, actions, testId, onEscape, onClose
   })
   return (
     <aside data-panel-frame={testId ?? title} aria-label={title}
-      className="fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-safe max-lg:pr-safe shadow-3 lg:static lg:w-(--panel-w) lg:max-w-none lg:shadow-none">
+      className={`fixed inset-y-0 right-0 z-30 flex w-full max-w-md flex-col border-l border-default bg-surface pb-safe max-lg:pr-safe shadow-3 ${edge ? 'lg:relative' : 'lg:static'} lg:w-(--panel-w) lg:max-w-none lg:shadow-none`}>
+      {edge}
       <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2 pt-[max(0.5rem,var(--safe-top))]">
         <h2 className="min-w-0 flex-1 truncate text-h3 font-semibold text-strong">{title}</h2>
         {actions}

@@ -157,6 +157,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
 | [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
 | [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
+| [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
 
 The three changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
 
