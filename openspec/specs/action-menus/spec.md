@@ -100,7 +100,7 @@ A right-click on a task row (a list row, a board card, or a row of the filter, s
 
 #### Scenario: A touch long press never doubles up
 - **WHEN** Chrome on Android raises `contextmenu` during a long press on a row
-- **THEN** the browser menu is suppressed, no app menu opens, and the row's long press keeps its own meaning (it ticks the row)
+- **THEN** the browser menu is suppressed, no app menu opens from that event, and the long press's own owner decides what happens — the row's actions menu through the hold, never a browser menu
 
 #### Scenario: A lifted drag wins
 - **WHEN** the user long-presses a row to drag it and the context gesture fires before release
@@ -111,10 +111,10 @@ A right-click on a task row (a list row, a board card, or a row of the filter, s
 - **THEN** the menu closes, focus returns to the row's open button, and the next right-click opens it again at the new pointer position
 
 ### Requirement: Open a task's action menu with a touch hold
-On a fine-pointer touch device, holding a task row still for the hold interval (350 ms) SHALL arm the gesture — the row shows held feedback while the hold counts — and releasing without moving SHALL open the same actions menu at the finger: the same items, pickers, review step and Undo, and the same ticked-selection rule as the right-click, without changing the current selection. Moving before the hold completes SHALL be a scroll and SHALL NOT open anything; moving after it SHALL end the hold as a scroll on a row without a drag, with no menu. On a coarse pointer (a phone or a tablet used as one) the hold SHALL never open the menu: the long press keeps its existing meaning from bulk-actions — it ticks the row, or simply scrolls a row that cannot be ticked — so one gesture means one thing on every list of a device. The gesture SHALL work on every row that answers a right-click, a press shorter than the hold SHALL keep the row's ordinary tap behaviour, and the browser's own context menu SHALL NOT appear over the row.
+Holding a task row still for the hold interval (350 ms) SHALL arm the gesture — the row shows held feedback while the hold counts — and releasing without moving SHALL open the same actions menu at the finger: the same items, pickers, review step and Undo, and the same ticked-selection rule as the right-click, without changing the current selection. This SHALL hold for every pointer, a coarse one (a phone or a tablet used as one) included: since selection moved to the row's grip (bulk-actions), the row body's long press is the menu's gesture and nothing else, so one press means one thing on every list of every device. Moving before the hold completes SHALL be a scroll and SHALL NOT open anything; moving after it SHALL end the hold as the drag itself, with no menu. The gesture SHALL work on every row that answers a right-click, a press shorter than the hold SHALL keep the row's ordinary tap behaviour, and the browser's own context menu SHALL NOT appear over the row.
 
 #### Scenario: Hold still and lift — the menu opens at the finger
-- **WHEN** the user presses a row in a list on a touch screen with a fine pointer, holds still past the hold interval and lifts without moving
+- **WHEN** the user presses a row in a list on a touch screen, holds still past the hold interval and lifts without moving
 - **THEN** the row's actions menu opens anchored where the finger was, acting on the ticked selection when the row is ticked and on the row's task otherwise, and the row's held feedback is cleared
 
 #### Scenario: Hold and then move drags instead
@@ -130,8 +130,12 @@ On a fine-pointer touch device, holding a task row still for the hold interval (
 - **THEN** the row behaves exactly as it does today (the tap opens or selects it), with no menu
 
 #### Scenario: On a phone the long press ticks, never opens a menu
+- **WHEN** a user on a phone holds a row's grip still past the hold interval and lifts
+- **THEN** no menu opens — the long press's owner ticks the row (bulk-actions), and it is the grip, not the row body, that selects
+
+#### Scenario: On a phone the row's hold opens the menu, not a tick
 - **WHEN** a user on a phone holds a row of a saved view still past the hold interval and lifts
-- **THEN** no menu opens; the press keeps whatever the list's long press means there (a tick where the list offers one, otherwise nothing), and the row's own menu button remains the touch path to the menu
+- **THEN** the row's actions menu opens at the finger (as the bottom sheet every other menu uses there), the row is not ticked, and the row's grip — not the row body — is what selects
 
 ### Requirement: Long lists of choices fold into a submenu
 An action menu MAY show related choices as one submenu item labelled with an ellipsis. Activating it SHALL replace the menu's items with the choices in the same panel, still a menu with the same keyboard model, with focus on the first choice. Its first item, Escape or a tap outside SHALL go back, with focus on the submenu item; a choice SHALL act and close the menu. The task Actions menu SHALL show Priority and Date as submenus; the command palette SHALL still list each choice.
@@ -149,7 +153,7 @@ An action menu MAY show related choices as one submenu item labelled with an ell
 - **THEN** the whole Actions menu is visible at once, without scrolling
 
 ### Requirement: Start focus from a task's menu
-When the task Actions menu targets exactly one open task the user can edit, it SHALL offer "Start focus", in the same group as Start tracking. This applies however the menu is opened: `.`, the row's More button, a right-click, a touch hold on a fine pointer, or the selection bar with one task ticked. The item starts focus as `focus-mode` "Visible ways into Focus" describes. It SHALL NOT be offered for several tasks, a completed or trashed task, or a viewer's task. The command palette SHALL list it for the selected task.
+When the task Actions menu targets exactly one open task the user can edit, it SHALL offer "Start focus", in the same group as Start tracking. This applies however the menu is opened: `.`, the row's More button, a right-click, a touch hold, or the selection bar with one task ticked. The item starts focus as `focus-mode` "Visible ways into Focus" describes. It SHALL NOT be offered for several tasks, a completed or trashed task, or a viewer's task. The command palette SHALL list it for the selected task.
 
 #### Scenario: From the keyboard
 - **WHEN** the cursor is on "Write the report" and the user presses `.` and chooses "Start focus"
@@ -162,3 +166,21 @@ When the task Actions menu targets exactly one open task the user can edit, it S
 #### Scenario: From the palette
 - **WHEN** a task is selected and the user types "focus" in Search and commands
 - **THEN** "Start focus" is listed for that task and choosing it does the same as the menu item
+
+#### Scenario: From a touch hold
+- **WHEN** a user on a phone holds a row still past the hold interval and chooses "Start focus" in the menu that opens
+- **THEN** the Focus screen opens on that task with a session running
+
+### Requirement: A task's menu opens complete
+A task's actions menu (right-click, touch hold, a row's More button, the keyboard and the Selection bar) SHALL first be shown with every item it holds for its tasks, so it is placed once: no item SHALL appear after the first paint because a read the items depend on was still running, and the panel SHALL NOT move after it is shown unless its anchor or the viewport changes.
+
+#### Scenario: Right-click shows the whole menu at once
+- **WHEN** the user right-clicks an open task in the Inbox on a 1280 px screen
+- **THEN** the menu's first paint already holds Add to focus, Start tracking and Start focus above Complete, and it stays where it first appeared
+
+### Requirement: A menu step outlives the menu that opened it
+When an item of a task's Actions menu leads to a further step after the menu closes (the review of a move or an assignment, the date of "Pick a date…"), that step SHALL appear however the menu was opened: a right-click, a touch hold, the row's More button, `.` or the selection bar. Closing the menu SHALL NOT discard the step, and applying it SHALL write the change as from any other way in.
+
+#### Scenario: Move a task to another project from the right-click menu
+- **WHEN** the user right-clicks a task in "Project 4", chooses "Move to project", picks "Project8" and applies the review
+- **THEN** the menu closes, the review of the move appears, and after Apply the task is in "Project8" and leaves the "Project 4" list

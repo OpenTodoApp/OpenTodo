@@ -3,7 +3,7 @@ title: Arrange Today, Upcoming and the Inbox
 summary: Group Today by project, priority or label, order Upcoming's days or the Inbox your way, nest subtasks under their parent, and Reset back to the default.
 audience: user
 section: Guides
-specs: [list-display-options]
+specs: [builtin-view-options, list-display-options]
 order: 22
 ---
 # Arrange Today, Upcoming and the Inbox
