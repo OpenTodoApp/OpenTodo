@@ -295,6 +295,14 @@
           "(type)": "ref:note_text"
         }
       },
+      "notes links": {
+        "args": {
+          "ref": "required"
+        },
+        "output": {
+          "(type)": "ref:note_links"
+        }
+      },
       "notes list": {
         "flags": {
           "label": "string",
@@ -1157,6 +1165,21 @@
         "body_version": "string",
         "entity": "any",
         "entity_id": "string"
+      },
+      "note_links": {
+        "(type)": "object",
+        "id": "string",
+        "kind": "any",
+        "linked_from": "array",
+        "linked_from[].id": "string",
+        "linked_from[].kind": "any",
+        "linked_from[].title": "string",
+        "links": "array",
+        "links[].available": "boolean",
+        "links[].id": "string",
+        "links[].kind": "any",
+        "links[].title": "string",
+        "title": "string"
       },
       "note_result": {
         "(type)": "any"
