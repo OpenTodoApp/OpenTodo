@@ -1,0 +1,47 @@
+{
+  "name": "reschedule-changeset",
+  "title": "Moving overdue tasks is a change set of exactly those tasks",
+  "fake": true,
+  "seed": {
+    "tasks": [
+      {
+        "key": "o1",
+        "title": "Pay the electricity bill",
+        "due": -3
+      },
+      {
+        "key": "o2",
+        "title": "Call the plumber",
+        "due": -1
+      },
+      {
+        "key": "f",
+        "title": "Renew the passport",
+        "due": 9
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Move everything overdue to Friday.",
+      "expect": {
+        "changeset": true,
+        "changes": [
+          {
+            "entity": "task",
+            "ids": [
+              "o1",
+              "o2"
+            ],
+            "fields": [
+              "due"
+            ]
+          }
+        ],
+        "never_ids": [
+          "f"
+        ]
+      }
+    }
+  ]
+}

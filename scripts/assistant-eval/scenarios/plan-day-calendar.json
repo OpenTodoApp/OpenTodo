@@ -1,0 +1,52 @@
+{
+  "name": "plan-day-calendar",
+  "title": "Planning the day ends with the day's calendar",
+  "fake": true,
+  "seed": {
+    "tasks": [
+      {
+        "key": "pay",
+        "title": "Pay the electricity bill",
+        "due": -2
+      },
+      {
+        "key": "call",
+        "title": "Call the plumber",
+        "due": -1
+      },
+      {
+        "key": "report",
+        "title": "Finish the quarterly report",
+        "due": 0,
+        "time": "10:00",
+        "estimate_minutes": 90
+      },
+      {
+        "key": "gym",
+        "title": "Gym",
+        "due": 0,
+        "time": "18:00",
+        "estimate_minutes": 60
+      },
+      {
+        "key": "later",
+        "title": "Renew the passport",
+        "due": 9
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Plan my day",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "calendar",
+            "date": 0
+          }
+        ],
+        "no_map_claim": true
+      }
+    }
+  ]
+}

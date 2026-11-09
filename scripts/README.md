@@ -126,6 +126,17 @@ ONLY=inbox,today WIDTHS=1280 LANGS=en node scripts/ux-audit/tour.mjs   # a quick
 
 Environment: `OUT_DIR` (`ux-audit-report`), `ONLY`, `WIDTHS` (`360,768,1280`), `THEMES` (`light,dark`), `LANGS` (`en,de`), `CONCURRENCY` (2), `CHROMIUM_PATH`, `OPENTODO_BIN` (`bin/opentodo`), `UX_AUDIT_STRICT=1`.
 
+## `assistant-eval/`
+
+The assistant eval (OpenSpec change `assistant-eval`, [docs/assistant-eval.md](../docs/assistant-eval.md)): scenarios in `scenarios/*.json` (a seed and the user's turns, each with expectations about blocks, change sets and text) run against a real model provider through `POST /api/v1/assistant/turn`, each on a throwaway `bin/opentodo`. Three runs per scenario, a majority passes. Writes `eval-report/report.md` and `report.json`; exits 1 when a scenario fails. It costs tokens and never runs in CI.
+
+```bash
+ASSISTANT_EVAL_PROVIDER=anthropic ASSISTANT_EVAL_KEY=sk-ant-… make assistant-eval
+ASSISTANT_EVAL_FAKE=1 node scripts/assistant-eval/run.mjs     # the "fake" scenarios on scripts/fake-llm.mjs, no key
+node scripts/assistant-eval/run.mjs --check                   # validate the scenario files
+node --test scripts/assistant-eval/*.test.mjs                 # the checks on recorded events (fixtures/)
+```
+
 ## `caldav-clients/`
 
 The CalDAV verification scenario against real clients (OpenSpec change `caldav-interop`, task 5.2); its results are the rows of the verification table in [Calendar apps](../docs/caldav.md#limits). `run.sh` starts a fresh server on port 18080 with CalDAV on, a recording proxy on 18081 (every request and answer in `$WORK/traffic.jsonl`, the source of the fixtures in `internal/caldav/testdata/<client>/`), then drives the client and prints one `PASS`/`FAIL` line per check: served due forms, deadlines, date shapes, estimates, alarms, completing a repeating task, moves, deletion and incremental sync. Server state is read back through the REST API.

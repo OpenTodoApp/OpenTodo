@@ -186,6 +186,7 @@ The full list of environment variables is in the [configuration reference](self-
 | [Sync protocol](sync.md) | Operations, schema, winner rule, exchange, sharing scopes, live updates, purge |
 | [Shared contracts](contracts.md) | The logic in both Go and TypeScript, its shared fixtures and the tests that read them |
 | [Performance budgets](performance.md) | How fast OpenTodo is held to be with 10,000 tasks on a computer, a phone and a small server, and how it is checked |
+| [Assistant eval](assistant-eval.md) | Recorded scenarios that check how a real model uses the assistant's tools: running them by hand, the report, cost |
 | [Translating OpenTodo](translating.md) | How app text is written for translation, catalogs, checks, adding a language, glossary |
 
 ## Project

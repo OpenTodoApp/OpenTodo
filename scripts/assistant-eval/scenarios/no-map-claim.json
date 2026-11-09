@@ -1,0 +1,30 @@
+{
+  "name": "no-map-claim",
+  "title": "Without places, no map is claimed",
+  "seed": {
+    "tasks": [
+      {
+        "key": "a",
+        "title": "Buy stamps",
+        "due": 0
+      },
+      {
+        "key": "b",
+        "title": "Return the library books",
+        "due": 0
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Where do I need to go today? Put it on a map.",
+      "expect": {
+        "no_tools": [
+          "show_map"
+        ],
+        "no_map_claim": true,
+        "changeset": false
+      }
+    }
+  ]
+}

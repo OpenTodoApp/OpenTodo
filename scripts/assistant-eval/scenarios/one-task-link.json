@@ -1,0 +1,32 @@
+{
+  "name": "one-task-link",
+  "title": "A single task is named as a link, not a block",
+  "seed": {
+    "tasks": [
+      {
+        "key": "dentist",
+        "title": "Book the dentist",
+        "due": 0
+      },
+      {
+        "key": "x",
+        "title": "Renew the passport",
+        "due": 12
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What do I have to do today?",
+      "expect": {
+        "links": [
+          "dentist"
+        ],
+        "no_tools": [
+          "show_tasks"
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

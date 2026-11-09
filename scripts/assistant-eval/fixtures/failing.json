@@ -1,0 +1,379 @@
+{
+ "scenarios": [
+  {
+   "name": "overdue-show-tasks",
+   "ids": {
+    "pay": "t-pay",
+    "call": "t-call",
+    "report": "t-report",
+    "gym": "t-gym",
+    "later": "t-later",
+    "milk": "t-milk",
+    "parcel": "t-parcel",
+    "keys": "t-keys",
+    "email": "t-email",
+    "errand": "l-errand"
+   },
+   "today": "2026-11-09",
+   "runs": [
+    [
+     [
+      {
+       "name": "text",
+       "data": {
+        "text": "You have two overdue tasks:\n\n- Pay the electricity bill\n- Call the plumber"
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "name": "block",
+       "data": {
+        "kind": "tasks",
+        "ids": [
+         "t-pay",
+         "t-call"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Two are overdue; I've proposed moving them."
+       }
+      },
+      {
+       "name": "changeset",
+       "data": {
+        "items": [
+         {
+          "entity": "task",
+          "entityId": "t-pay",
+          "patch": {
+           "due": {
+            "date": "2026-11-13"
+           }
+          }
+         }
+        ],
+        "limit": 50
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "name": "status",
+       "data": {
+        "text": "Looking at Today…"
+       }
+      },
+      {
+       "name": "status",
+       "data": {
+        "text": "Preparing changes…"
+       }
+      },
+      {
+       "name": "block",
+       "data": {
+        "kind": "tasks",
+        "ids": [
+         "t-call",
+         "t-pay"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Two tasks are overdue."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ]
+   ]
+  },
+  {
+   "name": "complaint-no-repeat",
+   "ids": {
+    "pay": "t-pay",
+    "call": "t-call",
+    "report": "t-report",
+    "gym": "t-gym",
+    "later": "t-later",
+    "milk": "t-milk",
+    "parcel": "t-parcel",
+    "keys": "t-keys",
+    "email": "t-email",
+    "errand": "l-errand"
+   },
+   "today": "2026-11-09",
+   "runs": [
+    [
+     [
+      {
+       "name": "block",
+       "data": {
+        "kind": "map",
+        "task_ids": [
+         "t-milk",
+         "t-parcel",
+         "t-keys"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Three errands, all in the centre."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ],
+     [
+      {
+       "name": "block",
+       "data": {
+        "kind": "map",
+        "task_ids": [
+         "t-milk",
+         "t-parcel",
+         "t-keys"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Here it is again: I've drawn the map below with all three stops."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "name": "block",
+       "data": {
+        "kind": "map",
+        "task_ids": [
+         "t-milk",
+         "t-parcel",
+         "t-keys"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Three errands, all in the centre."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ],
+     [
+      {
+       "name": "text",
+       "data": {
+        "text": "Sorry! The map above now shows all three stops."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ],
+    [
+     [
+      {
+       "name": "block",
+       "data": {
+        "kind": "map",
+        "task_ids": [
+         "t-milk",
+         "t-parcel",
+         "t-keys"
+        ]
+       }
+      },
+      {
+       "name": "text",
+       "data": {
+        "text": "Three errands, all in the centre."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ],
+     [
+      {
+       "name": "text",
+       "data": {
+        "text": "Sorry about that. The three errands are Buy milk, Pick up the parcel and Copy the house keys."
+       }
+      },
+      {
+       "name": "usage",
+       "data": {
+        "input": 2000,
+        "cached": 18000,
+        "cache_write": 0,
+        "output": 300,
+        "month_total": 4100,
+        "cap": 0,
+        "own_key": false
+       }
+      },
+      {
+       "name": "done",
+       "data": {
+        "stop_reason": "end_turn"
+       }
+      }
+     ]
+    ]
+   ]
+  }
+ ]
+}

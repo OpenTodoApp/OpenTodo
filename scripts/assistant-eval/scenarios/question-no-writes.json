@@ -1,0 +1,47 @@
+{
+  "name": "question-no-writes",
+  "title": "A question changes nothing",
+  "fake": true,
+  "seed": {
+    "tasks": [
+      {
+        "key": "pay",
+        "title": "Pay the electricity bill",
+        "due": -2
+      },
+      {
+        "key": "call",
+        "title": "Call the plumber",
+        "due": -1
+      },
+      {
+        "key": "report",
+        "title": "Finish the quarterly report",
+        "due": 0,
+        "time": "10:00",
+        "estimate_minutes": 90
+      },
+      {
+        "key": "gym",
+        "title": "Gym",
+        "due": 0,
+        "time": "18:00",
+        "estimate_minutes": 60
+      },
+      {
+        "key": "later",
+        "title": "Renew the passport",
+        "due": 9
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What is due today?",
+      "expect": {
+        "changeset": false,
+        "no_map_claim": true
+      }
+    }
+  ]
+}
