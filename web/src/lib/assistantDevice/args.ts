@@ -85,6 +85,24 @@ export function zone(a: Args, name = 'timezone'): string {
   return v
 }
 
+/** A string argument trimmed, as the server reads one (args.str). */
+export const trimmed = (a: Args, name: string): string => str(a, name).trim()
+
+/** A YYYY-MM-DD argument read like the server's args.date (trimmed). */
+export function day(a: Args, name: string): string {
+  const v = trimmed(a, name)
+  if (v && !calendarDate(v)) throw new ArgError(`${name}: must be a date in YYYY-MM-DD form`)
+  return v
+}
+
+/** A paging limit read like the server's: at least 1, larger ones cut to max. */
+export function pageLimit(a: Args, def: number, max: number): number {
+  const n = int(a, 'limit')
+  if (n === null) return def
+  if (n < 1) throw new ArgError('limit: must be at least 1')
+  return Math.min(n, max)
+}
+
 export function limit(a: Args, max: number): number {
   const n = int(a, 'limit')
   if (n === null) return max

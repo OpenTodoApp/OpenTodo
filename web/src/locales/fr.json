@@ -7308,5 +7308,6 @@
   "Centre on {title}": "Centrer sur {title}",
   "+{n}": "+{n}",
   "{n} more": "{n} de plus",
-  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {note} task {tâche} other {projet}}, {ring, select, centre {au centre} direct {lien direct} other {à deux pas}}"
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {note} task {tâche} other {projet}}, {ring, select, centre {au centre} direct {lien direct} other {à deux pas}}",
+  "calendar frames and slots": "cadres et lots du calendrier"
 }

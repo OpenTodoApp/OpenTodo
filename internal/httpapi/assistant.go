@@ -244,14 +244,18 @@ var consentFields = []string{
 
 // deviceConsentFields is consentFields for the on-device assistant of an
 // encrypted account (assistant-on-device): its read tools return tasks,
-// comments and projects only (web/src/lib/assistantDevice/read.ts), and a
+// comments, projects, notes, calendar frames and slots and tracked time
+// (web/src/lib/assistantDevice/read*.ts, assistant-device-reads), and a
 // Describe it draft on the device adds the same names as the server's.
 var deviceConsentFields = []string{
 	"task titles and descriptions",
 	"due dates, repeats, priorities, estimates and completion",
 	"comments",
+	"notes",
 	"project, section and label names, and project descriptions",
 	"saved view names and the hosts of your webhooks, when you describe a routine",
+	"calendar frames and slots",
+	"tracked time and its notes",
 	"your display name, today's date and your time zone",
 	"the messages you type",
 	"photos you add",
