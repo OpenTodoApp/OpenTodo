@@ -7,7 +7,7 @@ import { reviewChangeSet, type Review } from '../lib/assistant'
 import type { ProposedChange } from '../lib/assistantTypes'
 import { resetSkills } from '../lib/assistantSkills'
 import { openAssistantWith, resetAssistantStatus, setAssistantStatus, type AssistantStatus } from '../lib/assistantStatus'
-import { db } from '../lib/db'
+import { db, setMeta } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { AssistantPanel } from './assistant/AssistantPanel'
@@ -93,6 +93,16 @@ describe('proposal shapes (5.2)', () => {
     expect(nested('t1').contains(nested('t3'))).toBe(true)
     expect(nested('s2').contains(nested('t2'))).toBe(true)
     expect(r.container.querySelectorAll('[data-proposal-outline] input[type="checkbox"]')).toHaveLength(6)
+  })
+
+  it('a proposal that sets places shows as a map with one checkbox per item, while maps are on', async () => {
+    await setMeta('mapsAvailable', true)
+    const ids = await Promise.all(['Pick up parcel', 'Buy ink'].map((title) => createTask({ title })))
+    const places = [{ name: 'Post office', lat: 52.5, lon: 13.4 }, { name: 'Stationer', lat: 52.51, lon: 13.41 }]
+    const { r } = await card(ids.map((id, i) => ({ entity: 'task', entityId: id, patch: { location: places[i] }, base: { location: null } })))
+    await waitFor(() => !!r.container.querySelector('[data-proposal-map]'), 'the map shape')
+    expect(r.container.querySelectorAll('[data-proposal-map] input[type="checkbox"]')).toHaveLength(2)
+    expect(r.container.querySelector('[data-proposal-map]')!.textContent).toContain('Stationer')
   })
 
   it('bulk actions keep the list whatever the changes', async () => {
