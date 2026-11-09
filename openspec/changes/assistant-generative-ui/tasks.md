@@ -19,14 +19,14 @@
 
 ## 3. Blocks in the web app
 
-- [ ] 3.1 Stream parsing and storage (D3): the `block` `TurnEvent`, and `AssistantMessage.blocks: {at, block}[]` set during streaming and stored with the thread. Verify with `web/src/lib/assistant.test.ts` (parsing) and `assistantStore.test.ts` (stored, cleared with the thread and at sign-out).
-- [ ] 3.2 `BlockFrame` and the split renderer: the answer's Markdown split at `at` offsets (clamped), a labelled group per block, the "Removed" state, an error boundary, and one live-region announcement per block. Verify with happy-dom tests for placement, the "Removed" state after trashing, and the announcement label.
-- [ ] 3.3 `tasks` block on `TaskRow`: ticking completes through `completeTask` with toast and Undo, and the title opens the task. Verify with a test that ticking writes one op from this device, works offline (fake-indexeddb, no network), and offers Undo.
-- [ ] 3.4 `calendar` block from `DayColumn` and `CapacityLine`, occupied hours only, no `data-scroll-y`, read-only. Verify with a test for a day with two timed tasks and its total. `budget.test.tsx` still passes.
-- [ ] 3.5 `choice` block: option buttons, "Something else" focuses the composer, choosing sends the option through `send`, and only the latest answer's block is active and disabled offline. Verify with tests for choose, older-block-disabled and offline-disabled.
-- [ ] 3.6 `map` block reusing `LocationMap` while maps are on, otherwise a list. Verify with tests that maps off renders the list and makes no map request (fetch spy), and maps on renders markers matching the list.
-- [ ] 3.7 `note` and `project` blocks (12-line clamp, Open note; sections with open counts, Open project). Verify with tests for each, including live update after an edit through `mutate()`.
-- [ ] 3.8 Stories for each block in `web/src/app/assistant/` (light and dark). Verify with `make ui-check` and `make ui-lint` (no raw colours, icons through `<Icon>`).
+- [x] 3.1 Stream parsing and storage (D3): the `block` `TurnEvent`, and `AssistantMessage.blocks: {at, block}[]` set during streaming and stored with the thread. Verify with `web/src/lib/assistant.test.ts` (parsing) and `assistantStore.test.ts` (stored, cleared with the thread and at sign-out).
+- [x] 3.2 `BlockFrame` and the split renderer: the answer's Markdown split at `at` offsets (clamped), a labelled group per block, the "Removed" state, an error boundary, and one live-region announcement per block. Verify with happy-dom tests for placement, the "Removed" state after trashing, and the announcement label.
+- [x] 3.3 `tasks` block on `TaskRow`: ticking completes through `completeTask` with toast and Undo, and the title opens the task. Verify with a test that ticking writes one op from this device, works offline (fake-indexeddb, no network), and offers Undo.
+- [x] 3.4 `calendar` block from `DayColumn` and `CapacityLine`, occupied hours only, no `data-scroll-y`, read-only. Verify with a test for a day with two timed tasks and its total. `budget.test.tsx` still passes.
+- [x] 3.5 `choice` block: option buttons, "Something else" focuses the composer, choosing sends the option through `send`, and only the latest answer's block is active and disabled offline. Verify with tests for choose, older-block-disabled and offline-disabled.
+- [x] 3.6 `map` block reusing `LocationMap` while maps are on, otherwise a list. Verify with tests that maps off renders the list and makes no map request (fetch spy), and maps on renders markers matching the list.
+- [x] 3.7 `note` and `project` blocks (12-line clamp, Open note; sections with open counts, Open project). Verify with tests for each, including live update after an edit through `mutate()`.
+- [x] 3.8 Stories for each block in `web/src/app/assistant/` (light and dark). Verify with `make ui-check` and `make ui-lint` (no raw colours, icons through `<Icon>`).
 
 ## 4. Display tools in the on-device loop
 

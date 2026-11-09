@@ -1728,6 +1728,7 @@
   ],
   "Any time": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/assistant/blocks/CalendarBlock.tsx",
     "web/src/lib/dayParts.ts"
   ],
   "Any.do (JSON from a data request)": [
@@ -2655,6 +2656,9 @@
   "Calendar sync is not enabled on this server.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Calendar, {date}": [
+    "web/src/lib/assistantBlocks.ts"
+  ],
   "Calendars": [
     "web/src/app/calendar/CalendarsToggle.tsx"
   ],
@@ -3005,6 +3009,9 @@
   ],
   "Choice": [
     "web/src/lib/fields.ts"
+  ],
+  "Choice: {question}": [
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Choose": [
     "web/src/app/palette/BarParts.tsx"
@@ -10444,6 +10451,7 @@
     "web/src/app/task-list/ListGroups.tsx",
     "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
+    "web/src/lib/assistantBlockData.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts"
@@ -10792,7 +10800,8 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
-    "web/src/app/task-detail/TimeTab.tsx"
+    "web/src/app/task-detail/TimeTab.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Note (optional)": [
     "web/src/app/review/CloseDay.tsx"
@@ -10953,6 +10962,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Nothing planned": [
+    "web/src/app/assistant/blocks/CalendarBlock.tsx",
     "web/src/app/display/DisplayScreen.tsx"
   ],
   "Nothing planned.": [
@@ -11642,6 +11652,9 @@
   "Open menu": [
     "web/src/app/Shell.tsx"
   ],
+  "Open note": [
+    "web/src/app/assistant/blocks/NoteBlock.tsx"
+  ],
   "Open on GitHub": [
     "web/src/app/FeedbackDialog.tsx"
   ],
@@ -11657,6 +11670,9 @@
   "Open parent task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TaskHead.tsx"
+  ],
+  "Open project": [
+    "web/src/app/assistant/blocks/ProjectBlock.tsx"
   ],
   "Open recurring task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -12814,6 +12830,9 @@
   "Project notes": [
     "web/src/app/notes/NoteFilters.tsx"
   ],
+  "Project outline": [
+    "web/src/lib/assistantBlocks.ts"
+  ],
   "Project shared with a group": [
     "web/src/app/auditFormat.ts"
   ],
@@ -13491,6 +13510,12 @@
   ],
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
+  ],
+  "Removed": [
+    "web/src/app/assistant/blocks/MapBlock.tsx",
+    "web/src/app/assistant/blocks/NoteBlock.tsx",
+    "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Removed from a group": [
     "web/src/app/auditFormat.ts"
@@ -15639,6 +15664,9 @@
   "Someone without an account, whose provider confirms their email, gets a member account on first sign-in. Off: only existing accounts (matched by verified email) and open sign-up.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Something else": [
+    "web/src/app/assistant/blocks/ChoiceBlock.tsx"
+  ],
   "Something isn't working": [
     "web/src/app/AboutSection.tsx",
     "web/src/app/FeedbackDialog.tsx",
@@ -16354,6 +16382,7 @@
   "Tasks": [
     "web/src/app/LinkOption.tsx",
     "web/src/app/PublicListScreen.tsx",
+    "web/src/app/assistant/blocks/TasksBlock.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/StatsView.tsx",
@@ -18089,6 +18118,9 @@
   "This page was opened under a domain name and the server has no {variable} yet, so it asks for the one-time code it printed in its log. Run {command} on the server, or open the server by its IP address, or set {variable} to this address and restart it.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "This part of the answer could not be shown.": [
+    "web/src/app/assistant/blocks/AnswerContent.tsx"
+  ],
   "This part of the app could not be shown.": [
     "web/src/app/PanelBoundary.tsx"
   ],
@@ -19350,9 +19382,11 @@
   ],
   "Untitled note": [
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
     "web/src/lib/refTarget.ts",
@@ -19838,7 +19872,8 @@
     "web/src/app/CalendarView.tsx"
   ],
   "Week of {date}": [
-    "web/src/app/review/StatsView.tsx"
+    "web/src/app/review/StatsView.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Week starts on": [
     "web/src/lib/settingsCopy.ts"
@@ -22028,6 +22063,9 @@
   "projected": [
     "web/src/app/calendar/PlanRow.tsx"
   ],
+  "proposed": [
+    "web/src/app/assistant/blocks/CalendarBlock.tsx"
+  ],
   "proposed changes": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -23329,6 +23367,9 @@
     "web/src/app/locations/PlacesView.tsx",
     "web/src/ui/patterns/ListGroupHeader.tsx"
   ],
+  "{n, plural, one {# open} other {# open}}": [
+    "web/src/app/assistant/blocks/ProjectBlock.tsx"
+  ],
   "{n, plural, one {# pair below AA} other {# pairs below AA}}": [
     "web/src/app/themes/ContrastPanel.tsx"
   ],
@@ -23492,6 +23533,9 @@
   "{n, plural, one {# task moves} other {# tasks move}}": [
     "web/src/app/calendar/ReplanPreview.tsx"
   ],
+  "{n, plural, one {# task removed} other {# tasks removed}}": [
+    "web/src/app/assistant/blocks/TasksBlock.tsx"
+  ],
   "{n, plural, one {# task reopened} other {# tasks reopened}}": [
     "web/src/lib/bulk.ts"
   ],
@@ -23515,6 +23559,7 @@
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/EarlierActions.tsx",
     "web/src/app/templates/TemplateLibrary.tsx",
+    "web/src/lib/assistantBlocks.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# task} other {# tasks}} without estimate": [
@@ -23621,6 +23666,10 @@
   ],
   "{n, plural, one {Label removed from # task} other {Label removed from # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {Map, # place} other {Map, # places}}": [
+    "web/src/app/assistant/blocks/MapBlock.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Facets.tsx"

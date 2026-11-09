@@ -8,7 +8,7 @@ import { resetSkills } from '../lib/assistantSkills'
 import { openAssistantWith, resetAssistantStatus, setAssistantStatus, type AssistantStatus } from '../lib/assistantStatus'
 import { db } from '../lib/db'
 import { createTask, mutate, resetDeviceId } from '../lib/ops'
-import { click, flush, key, render, type, waitFor } from '../ui/test-utils'
+import { click, key, render, type, waitFor } from '../ui/test-utils'
 import { AssistantPanel, AssistantPanelBody, type PanelViewProps } from './assistant/AssistantPanel'
 
 const noop = () => {}
@@ -110,13 +110,13 @@ describe('following the stream (D8)', () => {
     Object.defineProperty(scroller, 'scrollHeight', { configurable: true, get: () => 2000 })
     Object.defineProperty(scroller, 'clientHeight', { configurable: true, get: () => 500 })
     expect(document.querySelector('[data-assistant-jump]')).toBeNull()
-    const scrollTo = async (y: number) => {
+    // The hook records where a scroll left off at once, and decides the direction from the next one.
+    const scrollTo = (y: number) => {
       scroller.scrollTop = y
       scroller.dispatchEvent(new Event('scroll'))
-      await flush(10)
     }
-    await scrollTo(1499)
-    await scrollTo(300)
+    scrollTo(1499)
+    scrollTo(300)
     await waitFor(() => !!document.querySelector('[data-assistant-jump]'), 'Jump to latest')
     await click(document.querySelector('[data-assistant-jump] button')!)
     await waitFor(() => !document.querySelector('[data-assistant-jump]'), 'back at the end')

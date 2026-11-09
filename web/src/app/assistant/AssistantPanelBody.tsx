@@ -7,10 +7,12 @@ import { usageLine, type AssistantMessage, type AssistantThread } from '../../li
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import { t } from '../../lib/i18n'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { Markdown } from '../Markdown'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
 import { AnswerActions, QuestionActions } from './MessageActions'
+import { AnswerContent } from './blocks/AnswerContent'
+import type { ChoiceState } from './blocks/ChoiceBlock'
+import { answerMarkdown } from '../../lib/assistantBlocks'
 import { DeviceLocked, DeviceSetupForm } from './AssistantDevice'
 import type { DeviceMode } from './useDeviceAssistant'
 
@@ -24,7 +26,7 @@ export interface PanelViewProps {
   status: AssistantStatus | null
   connected: boolean
   messages: AssistantMessage[]
-  streaming: { text: string; status: string[] } | null
+  streaming: { text: string; status: string[]; blocks?: AssistantMessage['blocks'] } | null
   /** Polite live regions: completed sentences of the answer, and status lines. */
   announce: string
   statusAnnounce: string
@@ -56,6 +58,8 @@ export interface PanelViewProps {
   onRegenerate?: () => void
   onEditLast?: () => void
   canRedo?: boolean
+  /** A choice block's option, sent as the next message (assistant-generative-ui D4). */
+  onChoose?: (option: string) => void
   /** The page's empty state holds the composer; the sheet keeps it at its foot. */
   composer?: ReactNode
   layout?: 'page' | 'sheet'
@@ -120,7 +124,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
               {p.streaming && (
                 <AnswerItem busy>
                   {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
-                  {p.streaming.text ? <Markdown source={p.streaming.text} /> : <p className="text-muted">{t('Thinking…')}</p>}
+                  {p.streaming.text || p.streaming.blocks?.length ? <AnswerContent text={p.streaming.text} blocks={p.streaming.blocks} /> : <p className="text-muted">{t('Thinking…')}</p>}
                 </AnswerItem>
               )}
             </ol>
@@ -161,7 +165,7 @@ function AnswerSteps({ lines }: { lines: string[] }) {
   )
 }
 
-interface ItemActions { enabled: boolean; regenerate?: () => void; edit?: () => void }
+interface ItemActions { enabled: boolean; regenerate?: () => void; edit?: () => void; choice: ChoiceState }
 
 /** Which actions a message offers: Copy on every answer, Regenerate and Edit on the latest ones only. */
 function actionsFor(p: PanelViewProps, i: number): ItemActions {
@@ -171,6 +175,8 @@ function actionsFor(p: PanelViewProps, i: number): ItemActions {
   const redo = !!p.canRedo
   return {
     enabled,
+    // Only the latest answer's choice is active, and only while nothing follows it.
+    choice: { active: enabled && i === msgs.length - 1, chosen: msgs[i]?.chosen, onChoose: p.onChoose },
     regenerate: redo && latest('assistant') && i === msgs.length - 1 && !p.streaming ? p.onRegenerate : undefined,
     edit: redo && latest('user') && !p.streaming ? p.onEditLast : undefined,
   }
@@ -193,12 +199,12 @@ function MessageItem({ m, actions }: { m: AssistantMessage; actions: ItemActions
     <AnswerItem>
       <span className="sr-only">{t('Assistant:')}{' '}</span>
       {m.status && m.status.length > 0 && <AnswerSteps lines={m.status} />}
-      {m.text && <Markdown source={m.text} />}
+      <AnswerContent text={m.text} blocks={m.blocks} choice={actions.choice} />
       {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">{t('Cut off: the answer reached its length limit.')}</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-meta text-muted">{m.note}</p>}
       {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
-      {m.text && <AnswerActions text={() => m.text} onRegenerate={actions.regenerate} enabled={actions.enabled} />}
+      {(m.text || m.blocks?.length) && <AnswerActions text={() => answerMarkdown(m)} onRegenerate={actions.regenerate} enabled={actions.enabled} />}
     </AnswerItem>
   )
 }

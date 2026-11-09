@@ -7256,5 +7256,17 @@
   "Edit question": "Modifier la question",
   "Jump to latest": "Aller au plus récent",
   "Regenerate": "Régénérer",
-  "{n, plural, one {# step} other {# steps}}": "{n, plural, one {# étape} other {# étapes}}"
+  "{n, plural, one {# step} other {# steps}}": "{n, plural, one {# étape} other {# étapes}}",
+  "Calendar, {date}": "Calendrier, {date}",
+  "Choice: {question}": "Choix : {question}",
+  "Open note": "Ouvrir la note",
+  "Open project": "Ouvrir le projet",
+  "Project outline": "Plan du projet",
+  "Removed": "Supprimé",
+  "Something else": "Autre chose",
+  "This part of the answer could not be shown.": "Cette partie de la réponse n’a pas pu être affichée.",
+  "proposed": "proposé",
+  "{n, plural, one {# open} other {# open}}": "{n, plural, one {# ouverte} other {# ouvertes}}",
+  "{n, plural, one {# task removed} other {# tasks removed}}": "{n, plural, one {# tâche supprimée} other {# tâches supprimées}}",
+  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, one {Carte, # lieu} other {Carte, # lieux}}"
 }
