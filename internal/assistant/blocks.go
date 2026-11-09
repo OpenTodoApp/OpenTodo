@@ -31,6 +31,13 @@ const (
 	maxChoiceOptions = 4
 )
 
+// The display tools' fixed results, the same on the device (its manifest).
+var (
+	BlockLimitMessage  = fmt.Sprintf("this answer already shows %d blocks, the most one answer can show; nothing more was shown. Go on in words.", MaxBlocks)
+	NotFoundMessage    = "none of the ids was found; nothing was shown. Use only ids from tool results."
+	ChoiceAskedMessage = "Asked; the user's answer arrives as their next message. End this answer now."
+)
+
 // Block kinds, as the stream and the device name them.
 const (
 	BlockTasks    = "tasks"
@@ -279,7 +286,7 @@ func (d *displayTurn) check(ctx context.Context, b Block) (Block, int, int, erro
 // run handles one display call: the checks, the limit, the block, the result.
 func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, error) {
 	if d.shown >= MaxBlocks {
-		return marshal(map[string]any{"error": "block_limit", "message": fmt.Sprintf("this answer already shows %d blocks, the most one answer can show; nothing more was shown. Go on in words.", MaxBlocks)}), true, nil
+		return marshal(map[string]any{"error": "block_limit", "message": BlockLimitMessage}), true, nil
 	}
 	b, err := parseBlock(call.Name, call.Args)
 	if err != nil {
@@ -290,7 +297,7 @@ func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, err
 		return "", true, err
 	}
 	if found == 0 {
-		return marshal(map[string]any{"error": "not_found", "message": "none of the ids was found; nothing was shown. Use only ids from tool results."}), true, nil
+		return marshal(map[string]any{"error": "not_found", "message": NotFoundMessage}), true, nil
 	}
 	d.shown++
 	if d.emit != nil {
@@ -301,7 +308,7 @@ func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, err
 		out["not_found"] = asked - found
 	}
 	if b.Kind == BlockChoice {
-		out["message"] = "Asked; the user's answer arrives as their next message. End this answer now."
+		out["message"] = ChoiceAskedMessage
 	}
 	return marshal(out), false, nil
 }

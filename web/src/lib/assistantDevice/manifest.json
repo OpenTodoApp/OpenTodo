@@ -19,11 +19,16 @@
     "week": "the Week calendar"
   },
   "messages": {
+    "block_limit": "this answer already shows 4 blocks, the most one answer can show; nothing more was shown. Go on in words.",
+    "choice_asked": "Asked; the user's answer arrives as their next message. End this answer now.",
     "cut_off": "The answer was cut off because it reached the length limit. No changes were proposed from it.",
+    "not_found": "none of the ids was found; nothing was shown. Use only ids from tool results.",
     "refusal": "The model declined this request.",
     "round_limit": "The assistant needed too many steps for this request and stopped. No changes were proposed; try a smaller request."
   },
   "limits": {
+    "max_block_ids": 20,
+    "max_blocks": 4,
     "max_entities": 50,
     "max_image_bytes": 3932160,
     "max_images": 4,
@@ -1647,6 +1652,377 @@
         ],
         "type": "object"
       }
+    },
+    {
+      "name": "show_tasks",
+      "kind": "display",
+      "description": "Show tasks in your answer as the app's task rows (checkbox, title, dates), in the order given, at this point of the answer. Use it for the tasks you talk about instead of listing them in prose. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Task ids from tool results, at most 20.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "description": "A short heading for the list, at most 80 characters.",
+            "maxLength": 80,
+            "type": "string"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Task ids from tool results, at most 20. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "description": "A short heading for the list, at most 80 characters. (maxLength 80)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Task ids from tool results, at most 20. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "title": {
+            "description": "A short heading for the list, at most 80 characters. (maxLength 80)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "show_calendar",
+      "kind": "display",
+      "description": "Show the user's calendar for one day, or the week starting on that day, with their dated tasks at their times and the planned total. Use it after planning a day or week, or when asked what a day looks like. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "description": "The day (YYYY-MM-DD), or the first day of the week.",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "type": "string"
+          },
+          "span": {
+            "enum": [
+              "day",
+              "week"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "span"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "description": "The day (YYYY-MM-DD), or the first day of the week. (pattern ^\\d{4}-\\d{2}-\\d{2}$)",
+            "type": "string"
+          },
+          "span": {
+            "enum": [
+              "day",
+              "week"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "span"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "description": "The day (YYYY-MM-DD), or the first day of the week. (pattern ^\\d{4}-\\d{2}-\\d{2}$)",
+            "type": "string"
+          },
+          "span": {
+            "enum": [
+              "day",
+              "week"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "span"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "ask_choice",
+      "kind": "display",
+      "description": "Ask the user a question with 2 to 4 answers shown as buttons. Their choice arrives as their next message, so end your answer after calling it. Use it when you need one decision before you can go on. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "description": "2 to 4 short answers, at most 60 characters each.",
+            "items": {
+              "maxLength": 60,
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 2,
+            "type": "array"
+          },
+          "question": {
+            "description": "The question, at most 200 characters.",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "options"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "description": "2 to 4 short answers, at most 60 characters each. (maxItems 4, minItems 2)",
+            "items": {
+              "description": "(maxLength 60)",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "question": {
+            "description": "The question, at most 200 characters. (maxLength 200)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "options"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "description": "2 to 4 short answers, at most 60 characters each. (maxItems 4, minItems 2)",
+            "items": {
+              "description": "(maxLength 60)",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "question": {
+            "description": "The question, at most 200 characters. (maxLength 200)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "options"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "show_map",
+      "kind": "display",
+      "description": "Show tasks' places and saved places on a map with a list, at this point of the answer. Use it when where things happen matters, for example errands. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "place_ids": {
+            "description": "Ids of saved places.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "type": "array"
+          },
+          "task_ids": {
+            "description": "Ids of tasks with a location.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "type": "array"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "place_ids": {
+            "description": "Ids of saved places. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "task_ids": {
+            "description": "Ids of tasks with a location. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "place_ids": {
+            "description": "Ids of saved places. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "task_ids": {
+            "description": "Ids of tasks with a location. (maxItems 20)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [],
+        "type": "object"
+      }
+    },
+    {
+      "name": "show_note",
+      "kind": "display",
+      "description": "Show a note (its title and the start of its text) with a way to open it. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A note id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A note id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A note id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "show_project",
+      "kind": "display",
+      "description": "Show a project's outline: its sections and how many open tasks each has, with a way to open it. Changes nothing.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A project id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A project id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "A project id from tool results.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      }
     }
   ],
   "skills": [
@@ -1662,7 +2038,9 @@
         "list_projects",
         "create_project",
         "create_tasks",
-        "create_label"
+        "create_label",
+        "show_project",
+        "ask_choice"
       ]
     },
     {
@@ -1677,7 +2055,9 @@
         "search_tasks",
         "get_task",
         "schedule_tasks",
-        "update_tasks"
+        "update_tasks",
+        "show_calendar",
+        "ask_choice"
       ]
     },
     {
@@ -1716,7 +2096,9 @@
         "update_tasks",
         "move_tasks",
         "schedule_tasks",
-        "create_label"
+        "create_label",
+        "show_tasks",
+        "ask_choice"
       ]
     },
     {
@@ -1752,7 +2134,8 @@
         "move_tasks",
         "complete_tasks",
         "create_project",
-        "create_label"
+        "create_label",
+        "ask_choice"
       ]
     }
   ],

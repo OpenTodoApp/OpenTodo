@@ -13,6 +13,7 @@ import { PLANNERS } from './plan'
 import { systemPrompt } from './prompt'
 import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
 import { getTask, listProjects, listTasks, searchTasks, todaySummary } from './read'
+import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
 import type { DeviceSetup } from './settings'
 
 export interface DeviceTurnOptions {
@@ -33,7 +34,7 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */
-export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS)]
+export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS]
 
 const clip = (s: string) => [...s.slice(0, 64)].filter((ch) => ch >= ' ' && ch !== '\u007f').join('')
 
@@ -111,6 +112,23 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
+/** A display call offered in this turn (runDisplay on the server). */
+async function displayCall(call: ToolCall, turn: DisplayTurn, emit: Parameters<typeof runDisplay>[3]): Promise<{ content: string; isError: boolean }> {
+  let args: Record<string, unknown>
+  try {
+    const parsed = call.args ? JSON.parse(call.args) : {}
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error()
+    args = parsed as Record<string, unknown>
+  } catch {
+    return { content: JSON.stringify({ error: 'invalid_arguments', message: 'the arguments are not a JSON object of the tool\'s schema' }), isError: true }
+  }
+  try {
+    return await runDisplay(call.name, args, turn, emit)
+  } catch {
+    return { content: JSON.stringify({ error: 'internal', message: 'the tool failed on this device' }), isError: true }
+  }
+}
+
 /** One change per entity: later values win, the first base of each field is kept (finalise). */
 export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) => boolean): ProposedChange[] {
   const out: ProposedChange[] = []
@@ -149,6 +167,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
   let draft: ProposedChange[] = []
+  const display: DisplayTurn = { shown: 0 }
   let input = 0
   let output = 0
   let paused = false
@@ -195,6 +214,17 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
         if (!r.toolCalls.length) return failed('provider_error', 'the provider asked for a tool without naming one')
         const results = []
         for (const call of r.toolCalls) {
+          const def = tools.find((t) => t.name === call.name)
+          if (!def && DISPLAY_TOOLS.includes(call.name)) {
+            results.push({ id: call.id, content: JSON.stringify({ error: 'unavailable', message: `the tool ${clip(call.name)} is not available in this turn; use only the tools listed` }), isError: true })
+            continue
+          }
+          if (def?.kind === 'display') {
+            // A block shows itself, with no progress line, and carries ids only (assistant-generative-ui D2, D3).
+            const res = await displayCall(call, display, (block) => onEvent({ type: 'block', ...block }))
+            results.push({ id: call.id, content: res.content, isError: res.isError })
+            continue
+          }
           onEvent({ type: 'status', text: statusFor(call.name, call.args) })
           const res = await runTool(call, tools, draft, now())
           draft = res.draft

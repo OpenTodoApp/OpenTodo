@@ -30,9 +30,9 @@
 
 ## 4. Display tools in the on-device loop
 
-- [ ] 4.1 Manifest `kind: "display"` and `lib/assistantDevice/blocks.ts` checking against Dexie with the same rules and limit (D2). Verify with `go test ./internal/assistant -run Device` (manifest current) and vitest `blocks.test.ts`.
-- [ ] 4.2 Shared `blocks.vectors.json` (arguments plus local data in, checked block and tool result out), run by a Go test and a vitest test. Verify that both suites pass on the same file.
-- [ ] 4.3 The device loop emits `block` events into the same conversation path. Verify with `loop.test.ts`: a recorded on-device turn shows a tasks block and the provider request contains no block content.
+- [x] 4.1 Manifest `kind: "display"` and `lib/assistantDevice/blocks.ts` checking against Dexie with the same rules and limit (D2). Verify with `go test ./internal/assistant -run Device` (manifest current) and vitest `blocks.test.ts`.
+- [x] 4.2 Shared `blocks.vectors.json` (arguments plus local data in, checked block and tool result out), run by a Go test and a vitest test. Verify that both suites pass on the same file.
+- [x] 4.3 The device loop emits `block` events into the same conversation path. Verify with `loop.test.ts`: a recorded on-device turn shows a tasks block and the provider request contains no block content.
 
 ## 5. Proposal shapes and edits
 

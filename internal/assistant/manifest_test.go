@@ -50,8 +50,8 @@ func checkFile(t *testing.T, name string, v any) {
 func TestDeviceManifest(t *testing.T) {
 	f := newFixture(t)
 	m := DeviceManifest(f.loop.Tools)
-	if len(m.Tools) != len(deviceTools) {
-		t.Fatalf("manifest has %d tools, want %d", len(m.Tools), len(deviceTools))
+	if len(m.Tools) != len(deviceTools)+len(DisplayTools) {
+		t.Fatalf("manifest has %d tools, want %d", len(m.Tools), len(deviceTools)+len(DisplayTools))
 	}
 	for _, tool := range m.Tools {
 		if notInApp[tool.Name] {
