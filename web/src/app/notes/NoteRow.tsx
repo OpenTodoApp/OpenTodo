@@ -90,7 +90,7 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
           {/* Line 1: the title, then (right-aligned, faint) the project, labels and when it changed; line 2: the text. */}
           <span className="flex min-w-0 items-baseline gap-3">
             <span className={`user-text min-w-0 flex-1 truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
-            <span className="flex min-w-0 max-w-[55%] shrink items-center justify-end gap-x-2 overflow-hidden text-meta whitespace-nowrap text-faint" data-note-meta>
+            <span className="flex min-w-0 max-w-[45%] shrink items-center justify-end gap-x-2 overflow-hidden text-meta whitespace-nowrap text-faint" data-note-meta>
               {project && entry.source !== 'project' && (
                 <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="truncate">{project.name}</span></span>
               )}
@@ -107,7 +107,8 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
         </span>
       </button>
       {/* Revealed on hover or focus with a mouse, always shown on touch (.hover-reveal). */}
-      {menu && <div className="hover-reveal shrink-0 self-center pr-1">{menu}</div>}
+      {/* The slot is kept on rows without a menu too, so every row's time lines up. */}
+      {menu ? <div className="hover-reveal flex w-11 shrink-0 justify-end self-center pr-1">{menu}</div> : <div aria-hidden className="w-11 shrink-0" />}
     </li>
   )
 }
