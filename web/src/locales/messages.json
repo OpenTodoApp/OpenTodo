@@ -1537,6 +1537,7 @@
   ],
   "Already first": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/FavouritesGroup.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -1555,6 +1556,7 @@
   ],
   "Already last": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/FavouritesGroup.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -4953,12 +4955,12 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DashboardView.tsx",
     "web/src/app/FirstDay.tsx",
-    "web/src/app/Markdown.tsx",
     "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/RefChip.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
@@ -9217,6 +9219,9 @@
   "Menu for location {name}": [
     "web/src/app/locations/PlacesView.tsx"
   ],
+  "Menu for note {name}": [
+    "web/src/app/FavouritesGroup.tsx"
+  ],
   "Menu for project {name}": [
     "web/src/app/ProjectRowMenu.tsx"
   ],
@@ -9420,6 +9425,7 @@
   ],
   "Move down": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/FavouritesGroup.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -9550,6 +9556,7 @@
   ],
   "Move up": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/FavouritesGroup.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/Sections.tsx",
@@ -9856,7 +9863,8 @@
     "web/src/app/palette/registry.ts"
   ],
   "New note \"{title}\"": [
-    "web/src/app/EditorChrome.tsx"
+    "web/src/app/EditorChrome.tsx",
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "New notes": [
     "web/src/app/NewsDot.tsx"
@@ -10293,9 +10301,6 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "No note matches these filters.": [
-    "web/src/app/notes/NotesPage.tsx"
-  ],
-  "No note matches your search.": [
     "web/src/app/notes/NotesPage.tsx"
   ],
   "No notes": [
@@ -10789,6 +10794,9 @@
   ],
   "Note contains {text}": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "Note created": [
+    "web/src/lib/noteOps.ts"
   ],
   "Notes": [
     "web/src/app/AppearanceSection.tsx",
@@ -11343,6 +11351,9 @@
     "web/src/lib/push.ts"
   ],
   "On the Notes page: focus the search field, which finds notes by every word": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Notes page: pin or unpin the focused note": [
     "web/src/lib/shortcuts.ts"
   ],
   "On the Notes page: start a new note": [
@@ -12364,7 +12375,11 @@
   ],
   "Pin": [
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Pin note": [
+    "web/src/app/palette/registry.ts"
   ],
   "Pin to sidebar": [
     "web/src/app/menus/pinItem.ts"
@@ -12383,6 +12398,9 @@
   ],
   "Pink": [
     "web/src/app/focus/FocusSettings.tsx"
+  ],
+  "Pinned": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
@@ -13203,6 +13221,7 @@
     "web/src/app/NotificationChannelEditor.tsx"
   ],
   "Recent": [
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/ui/Combobox/useCombobox.ts"
   ],
@@ -19191,6 +19210,9 @@
   "Unlink {email}?": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Unlinked": [
+    "web/src/app/notes/NoteFilters.tsx"
+  ],
   "Unlock": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -19245,7 +19267,11 @@
   ],
   "Unpin": [
     "web/src/app/SavedViewView.tsx",
-    "web/src/app/ViewsView.tsx"
+    "web/src/app/ViewsView.tsx",
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Unpin note": [
+    "web/src/app/palette/registry.ts"
   ],
   "Unpin {name}": [
     "web/src/app/ViewsView.tsx"
@@ -19333,13 +19359,14 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Untitled note": [
+    "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/notesSection.tsx",
-    "web/src/lib/localData.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
+    "web/src/lib/refTarget.ts",
     "web/src/lib/trash.ts"
   ],
   "Untitled project": [
@@ -21326,6 +21353,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "focused label": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "focused note": [
     "web/src/lib/shortcuts.ts"
   ],
   "focused step": [

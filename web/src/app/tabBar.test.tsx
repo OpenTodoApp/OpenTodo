@@ -208,4 +208,14 @@ describe('the tab bar while the list scrolls', () => {
     expect(document.querySelector('[data-add-button]')).toBeNull()
     await r.unmount()
   })
+
+  it('on the Notes page the add button starts a note (notes-home: the one add of that phone screen)', async () => {
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await act(async () => { navigate({ view: 'notes' }) })
+    const add = () => document.querySelector<HTMLElement>('[data-add-button]')
+    await waitFor(() => add()?.getAttribute('aria-label') === 'New note', 'the New note button')
+    await act(async () => { add()!.click() })
+    await waitFor(() => location.pathname === '/notes' && location.search === '?new=1' || location.pathname.startsWith('/notes/'), 'a new note started')
+    await r.unmount()
+  })
 })

@@ -2,19 +2,21 @@
 // Source as a compact menu, Project and Label as compact pickers on the Combobox.
 // On a phone the three sit behind one Filters button that opens a sheet.
 import { useMemo, useRef, useState } from 'react'
-import { NO_NOTE_FILTERS, type NoteFilters as Filters, type NoteSource } from '../../lib/noteList'
+import { NO_NOTE_FILTERS, type NoteFilters as Filters } from '../../lib/noteList'
 import { itemKeywords, NONE_KEY, projectSource, type PickerItem } from '../../lib/pickerSources'
 import type { Label, Project } from '../../lib/types'
 import { ComboboxPanel, Dialog, Icon, Menu, MenuItem, Popover } from '../../ui'
 import { t } from '../../lib/i18n'
 
-export const SOURCE_LABELS: Record<'all' | NoteSource, () => string> = {
+export const SOURCE_LABELS: Record<Filters['source'], () => string> = {
   all: () => t('All notes'),
   task: () => t('Task notes'),
   project: () => t('Project notes'),
   note: () => t('Standalone only'),
+  // Standalone notes nothing links to (notes-home D5).
+  unlinked: () => t('Unlinked'),
 }
-const SOURCES = ['all', 'task', 'project', 'note'] as const
+const SOURCES = ['all', 'task', 'project', 'note', 'unlinked'] as const
 
 const TRIGGER = 'ui-btn ui-btn--ghost ui-btn--sm touch-target max-w-56 gap-1.5 px-2'
 

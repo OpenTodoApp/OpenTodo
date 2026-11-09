@@ -127,13 +127,47 @@ func TestSetFavourite(t *testing.T) {
 	if got := str(f.entity("u1", "user_prefs", "me"), "favourites"); got != "view:v2" {
 		t.Fatalf("later device write = %q", got)
 	}
-	for _, bad := range []map[string]any{{"kind": "label", "id": "garden", "favourite": true}, {"kind": "project", "id": "garden"}} {
+	for _, bad := range []map[string]any{{"kind": "label", "id": "garden", "favourite": true}, {"kind": "view", "id": "v1", "favourite": true}, {"kind": "project", "id": "garden"}} {
 		if _, err := f.call(c, "set_favourite", bad); !isArgErr(err) {
 			t.Fatalf("%v: %v", bad, err)
 		}
 	}
 	if _, err := f.call(c, "set_favourite", map[string]any{"kind": "project", "id": "nope", "favourite": true}); toolCode(err) != "not_found" {
 		t.Fatalf("unknown project: %v", err)
+	}
+}
+
+// TestSetFavouriteNote (notes-home 1.4): a readable standalone note is pinned
+// at the end and unpinned keeping the order; an unknown, trashed or unreadable
+// note is not_found and changes nothing; it works on an encrypted account.
+func TestSetFavouriteNote(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	f.put("u1", "project", "garden", map[string]any{"name": "Garden", "color": "#64748b", "archived": false})
+	f.put("u1", "user_prefs", "me", map[string]any{"favourites": "project:garden,label:l1"})
+	f.note("u1", "wifi", "Wi-Fi", "home-5G", nil)
+	f.note("u1", "old", "Old", "", map[string]any{"deleted_at": f.ts})
+	f.note("u2", "theirs", "Theirs", "", nil)
+	out := f.mustCall(c, "set_favourite", map[string]any{"kind": "note", "id": "wifi", "favourite": true})
+	if out["changed"] != 1 {
+		t.Fatalf("pin = %v", out)
+	}
+	if got := str(f.entity("u1", "user_prefs", "me"), "favourites"); got != "project:garden,label:l1,note:wifi" {
+		t.Fatalf("favourites = %q", got)
+	}
+	for _, id := range []string{"nope", "old", "theirs", "garden"} {
+		if _, err := f.call(c, "set_favourite", map[string]any{"kind": "note", "id": id, "favourite": true}); toolCode(err) != "not_found" {
+			t.Fatalf("%s: %v", id, err)
+		}
+	}
+	if got := str(f.entity("u1", "user_prefs", "me"), "favourites"); got != "project:garden,label:l1,note:wifi" {
+		t.Fatalf("after refusals = %q", got)
+	}
+	enc := agent("u1")
+	enc.Encrypted = true
+	f.mustCall(enc, "set_favourite", map[string]any{"kind": "note", "id": "wifi", "favourite": false})
+	if got := str(f.entity("u1", "user_prefs", "me"), "favourites"); got != "project:garden,label:l1" {
+		t.Fatalf("after unpin = %q", got)
 	}
 }
 

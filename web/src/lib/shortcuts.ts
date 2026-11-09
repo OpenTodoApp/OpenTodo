@@ -376,6 +376,8 @@ export const SHORTCUTS: Shortcut[] = [
   // ---- Notes (notes-overview D7): `q` overrides the global quick add as the calendar's does; `/` focuses the search as in Settings.
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
+  // notes-home: pin or unpin the focused note, handled by the list itself.
+  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
   // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
   { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
   { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
