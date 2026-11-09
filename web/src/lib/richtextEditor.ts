@@ -11,7 +11,7 @@
 // step over the changed range, so ProseMirror maps the selection through it and
 // the caret stays on its character.
 import { chainCommands, exitCode, newlineInCode, setBlockType, toggleMark, baseKeymap } from 'prosemirror-commands'
-import { history, redo, undo, undoDepth } from 'prosemirror-history'
+import { closeHistory, history, redo, undo, undoDepth } from 'prosemirror-history'
 import { InputRule, inputRules, textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules'
 import { keymap } from 'prosemirror-keymap'
 import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment } from 'prosemirror-model'
@@ -503,6 +503,40 @@ export function deleteRef(dir: -1 | 1): Command {
   }
 }
 
+/** Meta of the transaction that inserted a link and the space after it: the space's position. */
+export const linkSpaceKey = new PluginKey<number | null>('link-space')
+const LINK_PUNCT = new Set(['.', ',', ';', ':', '!', '?', ')'])
+
+/**
+ * Punctuation typed right after the space a link was inserted with takes that
+ * space's place ("Renovation." not "Renovation ."), note-links D3. Only that space,
+ * only with the caret directly after it, and only until the next change; one Undo
+ * brings the space back.
+ */
+export function linkSpacePlugin(): Plugin<number | null> {
+  return new Plugin<number | null>({
+    key: linkSpaceKey,
+    state: {
+      init: () => null,
+      apply: (tr, prev) => {
+        const meta = tr.getMeta(linkSpaceKey) as number | undefined
+        if (meta !== undefined) return meta
+        return tr.docChanged ? null : prev
+      },
+    },
+    props: {
+      handleTextInput(view, from, to, text) {
+        const at = linkSpaceKey.getState(view.state)
+        if (at === null || at === undefined || from !== to || from !== at + 1 || !LINK_PUNCT.has(text)) return false
+        const $at = view.state.doc.resolve(at)
+        if (view.state.doc.textBetween(at, at + 1) !== ' ' || $at.nodeBefore?.type !== schema.nodes.ref) return false
+        view.dispatch(closeHistory(view.state.tr).insertText(text, at, at + 1))
+        return true
+      },
+    },
+  })
+}
+
 /** "```" (and a language) then Enter on its own line starts a code block. */
 export const fenceOnEnter: Command = (state, dispatch) => {
   const { $from, empty } = state.selection
@@ -549,6 +583,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     placeholder(hooks.placeholder ?? ''),
     sizeLimit(hooks.size),
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
+    linkSpacePlugin(),
     rules(),
     ...tablePlugins(),
     trailingParagraph(),

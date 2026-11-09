@@ -14,7 +14,7 @@ import { encryptionSnapshot } from '../lib/e2ee'
 import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNotes'
 import { foldNote, mutate, mutateMany, planTask, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, insertBlocks, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { pushPendingNotes } from '../lib/sync'
 import { useMe } from '../lib/timeEntries'
 import type { Suggest } from '../lib/editorSuggest'
@@ -107,7 +107,8 @@ function makeSubtaskCommand(o: { enabled: boolean; taskId: string; projectId: ()
 /** A link node in place of the typed `[[text`, then a space (note-links D3). */
 function insertLink(view: EditorView, s: Suggest, kind: LinkCandidate['kind'], id: string, title: string) {
   const node = schema.nodes.ref.create({ href: hrefOf(kind, id), label: title })
-  return view.state.tr.replaceWith(s.from, s.to, [node, schema.text(' ')]).scrollIntoView()
+  // The space after the link: punctuation typed next takes its place (linkSpacePlugin).
+  return view.state.tr.replaceWith(s.from, s.to, [node, schema.text(' ')]).setMeta(linkSpaceKey, s.from + node.nodeSize).scrollIntoView()
 }
 
 /**

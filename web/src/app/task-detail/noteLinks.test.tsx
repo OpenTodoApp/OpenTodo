@@ -83,6 +83,31 @@ describe('the [[ picker', () => {
     await t.unmount()
   })
 
+  it('punctuation typed right after a link takes the place of its space; Undo brings the space back', async () => {
+    const target = await createProject({ name: 'Renovation' })
+    const id = await createTask({ title: 'Plan' })
+    const { container, unmount } = await open(id)
+    const v = await editorOf(container)
+    await typeText(v, 'See [[renov')
+    await waitFor(() => options()[0] === 'Renovation', 'the picker')
+    await press(v, 'Enter')
+    await typeText(v, '.')
+    expect(md(v)).toBe(`See [Renovation](?project=${target}).`)
+    await press(v, 'z', { ctrlKey: true })
+    // The space is back (the projection drops a trailing space; the text keeps it).
+    expect(v.state.doc.textContent).toBe('See Renovation ')
+    // Any other character keeps the space, and later punctuation is ordinary text.
+    await typeText(v, 'next.')
+    expect(md(v)).toBe(`See [Renovation](?project=${target}) next.`)
+    // Only right after the link's own space: a second link, then a word, then punctuation.
+    await typeText(v, ' and [[renov')
+    await waitFor(() => options()[0] === 'Renovation', 'the picker again')
+    await press(v, 'Enter')
+    await typeText(v, 'x)')
+    expect(md(v)).toBe(`See [Renovation](?project=${target}) next. and [Renovation](?project=${target}) x)`)
+    await unmount()
+  })
+
   it('groups notes, tasks and projects, and Escape keeps the typed text', async () => {
     await createProject({ name: 'Garden' })
     await createTask({ title: 'Garden hose' })

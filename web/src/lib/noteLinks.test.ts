@@ -86,6 +86,10 @@ describe('link index', () => {
     expect(keys(idx, 'note', 'n')).toEqual(['task:t'])
   })
 
+  it('a snippet keeps punctuation right after the link without a space', () => {
+    expect(snippetAround('and the project [Renovation](?project=p).', 'project', 'p', 'Renovation')).toEqual({ before: 'and the project ', link: 'Renovation', after: '.' })
+  })
+
   it('a snippet keeps one line and highlights the link', () => {
     const text = 'Intro\n- [ ] book **ferry** for [Trip](?note=n) on Friday\nlast'
     expect(snippetAround(text, 'note', 'n', 'Holiday')).toEqual({ before: 'book ferry for ', link: 'Holiday', after: ' on Friday' })
