@@ -29,6 +29,10 @@ There are no folders: projects and labels organise notes. A note in a shared pro
 
 Mentions, images and **Make subtask** are not offered in standalone notes: they need a task.
 
+## Linking notes, tasks and projects
+
+Type `[[` in a note to link to another note, a task or a project; what links to a note shows at its end. See [Link notes, tasks and projects](note-links.md).
+
 ## Searching
 
 The search field finds notes whose title or text contains every word you type, ignoring letter case and accents, so `cafe muller` finds "Café Müller". Put words in quotes to find them as a phrase: `"oat milk"`. Formatting does not get in the way: `**oat** milk` is found as "oat milk". Each result shows the text around the first match with the words highlighted, title matches first. Search runs on your device over your own copy, so it works offline and with [end-to-end encryption](e2ee.md); nothing you type is sent to the server.

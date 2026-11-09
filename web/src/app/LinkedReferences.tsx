@@ -31,7 +31,7 @@ function Row({ r }: { r: Reference }) {
         }}>
         <span className="flex min-w-0 items-center gap-2">
           <Icon name={LINK_ICON[r.kind]} size="sm" className="shrink-0 text-muted" />
-          <span className="user-text min-w-0 truncate font-medium text-strong">{r.title}</span>
+          <span className="user-text min-w-0 truncate text-body font-medium text-strong">{r.title}</span>
           {project && <span className="user-text min-w-0 shrink truncate text-meta text-faint">{project}</span>}
         </span>
         {(r.snippet.before || r.snippet.after) && (

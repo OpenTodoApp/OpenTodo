@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import vectors from '../../../internal/notelinks/testdata/links.vectors.json'
-import { LinkIndex, linksIn, refOf, resolveIn, snippetAround, worldOf, type World } from './noteLinks'
-import { noteChanges } from './taskDelta'
+import { changedRows, LinkIndex, linksIn, refOf, resolveIn, snippetAround, worldOf, type World } from './noteLinks'
 import type { Note, Project, Task } from './types'
 
 describe('link grammar (shared links.vectors.json with internal/notelinks)', () => {
@@ -109,7 +108,8 @@ describe('link index', () => {
       }
       return parts.join(' ')
     }
-    let tasks: Task[] = ids.map((id) => task(id, text()))
+    // Sorted by id, as the shared task snapshot is.
+    let tasks: Task[] = ids.map((id) => task(id, text())).sort((a, b) => (a.id < b.id ? -1 : 1))
     let projects = [project('p0', text())]
     let notes = noteIds.map((id) => note(id, text()))
     let w = worldOf(tasks, projects, notes)
@@ -120,7 +120,6 @@ describe('link index', () => {
       if (r < 3 && (tasks.length === 0 || rand(6) === 0)) {
         const added = task(`new${step}`, text())
         const next = [...tasks, added].sort((a, b) => (a.id < b.id ? -1 : 1))
-        noteChanges(tasks, next, [{ id: added.id, before: undefined, after: added }])
         tasks = next
       } else if (r < 3) {
         const at = rand(tasks.length)
@@ -129,7 +128,6 @@ describe('link index', () => {
         const next = tasks.slice()
         if (after) next[at] = after
         else next.splice(at, 1)
-        noteChanges(tasks, next, [{ id: before.id, before, after }])
         tasks = next
       } else if (r === 3) {
         notes = notes.map((n) => (rand(3) === 0 ? note(n.id, text(), { deleted_at: rand(4) === 0 ? 1 : null }) : n))
@@ -144,12 +142,19 @@ describe('link index', () => {
     }
   })
 
+  it('finds the changed rows of two id-sorted lists by reference', () => {
+    const a = task('a'), b = task('b'), c = task('c'), b2 = task('b', 'x')
+    expect(changedRows([a, b], [a, b2, c])).toEqual([{ id: 'b', before: b, after: b2 }, { id: 'c', after: c }])
+    expect(changedRows([a, b, c], [a, c])).toEqual([{ id: 'b', before: b }])
+    expect(changedRows([b, a], [a])).toBeNull()
+  })
+
   it('rebuilds when the task changes cannot be followed', () => {
     const w1: World = worldOf([task('a', '[x](?note=n)')], [], [note('n')])
     const idx = new LinkIndex()
     idx.buildNow(w1)
-    // A list read again (not noted as made from the last one): the index builds again.
-    const w2 = worldOf([task('a', 'no link'), task('b', '[y](?note=n)')], [], w1.notes, w1)
+    // A list out of id order: the index builds again.
+    const w2 = worldOf([task('b', '[y](?note=n)'), task('a', 'no link')], [], w1.notes, w1)
     idx.follow(w2)
     const full = new LinkIndex()
     full.buildNow(w2)

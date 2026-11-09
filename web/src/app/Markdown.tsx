@@ -3,13 +3,10 @@
 // attachments, and links to tasks, notes and projects that read as the item's
 // current title (a done task struck through), or as muted text when the item is
 // missing, in the Trash or out of reach.
-import type { MouseEvent, ReactNode } from 'react'
+import { lazy, Suspense, type ReactNode } from 'react'
 import { useEmbeddedImage } from '../lib/embeds'
-import { useRefTarget } from '../lib/localData'
 import { t } from '../lib/i18n'
-import { Icon, type IconName } from '../ui'
 import { ImagePlaceholder, MarkdownView, type MarkdownEmbeds, type MarkdownProps } from './MarkdownView'
-import { openRef, type RefKind } from './notes/openNote'
 
 export type { MarkdownProps }
 
@@ -17,26 +14,17 @@ export function Markdown(props: MarkdownProps) {
   return <MarkdownView {...props} embeds={EMBEDS} />
 }
 
-const REF_ICON: Record<RefKind, IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
-
-/**
- * An internal link as it reads everywhere (note-links D2): the item's icon and
- * title; muted, not a link, when `title` is null (D4). `onOpen` opens it in place.
- */
-export function RefChip({ kind, id, title, label, done, onOpen }: { kind: RefKind; id: string; title: string | null; label: ReactNode; done?: boolean; onOpen?: (e: MouseEvent) => void }) {
-  if (title === null) return <span className="note-ref" data-ref={kind} data-ref-state="muted"><Icon name={REF_ICON[kind]} size="xs" />{label}</span>
-  return (
-    <a href={`?${kind}=${id}`} className="note-ref" data-ref={kind} data-ref-state={done ? 'done' : 'live'}
-      onClick={onOpen ?? ((e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); openRef(kind, id) })}>
-      <Icon name={REF_ICON[kind]} size="xs" label={done ? t('Done') : undefined} />{title}
-    </a>
-  )
+// Internal links load with a small chunk of their own (note-links D2): the stored text shows until then.
+const RefLinkLazy = lazy(() => import('./RefChip'))
+function RefLink(props: { kind: 'task' | 'note' | 'project'; id: string; children: ReactNode }) {
+  return <Suspense fallback={props.children}><RefLinkLazy {...props} /></Suspense>
 }
 
-/** A link to a task, note or project, read from the device's rows. */
-function RefLink({ kind, id, children }: { kind: RefKind; id: string; children: ReactNode }) {
-  const live = useRefTarget(kind, id)
-  return <RefChip kind={kind} id={id} title={live?.title ?? null} done={live?.done} label={children} />
+// Linked references (note-links D5) below a task's notes, at the end of a note and in a
+// project's note area: the section and the link index are a chunk of their own.
+const LinkedReferences = lazy(() => import('./LinkedReferences'))
+export function LinkedRefs(props: { kind: 'task' | 'note' | 'project'; id: string; folded?: boolean }) {
+  return <Suspense fallback={null}><LinkedReferences {...props} /></Suspense>
 }
 
 /** An attachment of the task shown in place, or a placeholder naming its state. */

@@ -867,7 +867,7 @@ select.ui-input:not([multiple]) {
 }
 .notes-editor li.task-item[data-checked="true"] > p { @apply text-faint line-through; }
 .notes-editor code { @apply rounded-chip bg-sunken px-1 font-mono text-meta; }
-.notes-editor a { @apply text-accent underline; }
+.notes-editor a:not(.note-ref) { @apply text-accent underline; }
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
 /* editor-everywhere: quotes, code blocks, tables (scrolling in their own box), images, mentions. */
@@ -891,6 +891,7 @@ select.ui-input:not([multiple]) {
 .note-ref { @apply inline-flex max-w-full items-baseline gap-0.5 rounded-chip px-0.5 text-accent no-underline transition-colors duration-(--duration-ui) ease-calm; }
 .note-ref svg { @apply shrink-0 self-center; }
 a.note-ref:hover { @apply bg-accent-soft underline; }
+a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .note-ref[data-ref-state="done"] { @apply text-muted line-through; }
 .note-ref[data-ref-state="muted"] { @apply cursor-default text-muted; }
 .notes-editor .note-ref { @apply align-baseline; }

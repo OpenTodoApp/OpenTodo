@@ -281,18 +281,6 @@ export function useTask(id: string | null | undefined): Task | null | undefined 
   return id && read?.id === id ? read.task : undefined
 }
 
-/**
- * What a link to a task, note or project reads as (note-links D2, D4): its title
- * and whether it is done, or null when it is missing, deleted or in a project in the Trash.
- */
-export function useRefTarget(kind: 'task' | 'note' | 'project', id: string): { title: string; done: boolean } | null | undefined {
-  return useLiveQuery(async () => {
-    const row = await (kind === 'task' ? db.tasks : kind === 'note' ? db.notes : db.projects).get(id) as { deleted_at?: number | null; project_id?: string | null; title?: string; name?: string; completed_at?: number | null; archived?: boolean } | undefined
-    if (!row || row.deleted_at || (kind !== 'project' && row.project_id && (await db.projects.get(row.project_id))?.deleted_at)) return null
-    return { title: kind === 'project' ? row.name ?? '' : kind === 'note' ? row.title?.trim() || t('Untitled note') : row.title ?? '', done: !!(row.completed_at || row.archived) }
-  }, [kind, id])
-}
-
 /** The live (not deleted) subtasks of a task, in position order. */
 export function useSubtasks(parentId: string): Task[] {
   return useLiveQuery(() => db.tasks.where('parent_id').equals(parentId).filter((tk) => !tk.deleted_at).sortBy('position'), [parentId], NO_TASK_ROWS)

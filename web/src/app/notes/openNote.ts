@@ -25,15 +25,6 @@ export function openNote(ref: NoteRef): void {
   } else navigate({ view: 'notes', id: ref.id })
 }
 
-export type RefKind = 'task' | 'note' | 'project'
-
-/** Opens the target of an internal link in place (note-links D7): a task's panel or page, a project, a note. */
-export function openRef(kind: RefKind, id: string): void {
-  if (kind === 'task') openTaskPanel(id)
-  else if (kind === 'project') navigate({ view: 'project', id })
-  else navigate({ view: 'notes', id })
-}
-
 /** Starts a new note: the Notes page creates it and opens it (/notes?new=1). */
 export function newNote(): void {
   navigate({ view: 'notes', create: true })

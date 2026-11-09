@@ -14,7 +14,7 @@ import { createNote } from '../../lib/noteOps'
 import { createProject, createTask, mutate } from '../../lib/ops'
 import { renderMarkdown } from '../../lib/richtext'
 import { pmToModel } from '../../lib/richtextEditor'
-import { click, flush } from '../../ui/test-utils'
+import { flush } from '../../ui/test-utils'
 import { noteViewOf } from '../NotesEditor'
 import { membership, ME, open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 

@@ -16,7 +16,6 @@ import { Markdown } from './Markdown'
 import { useShortcutScope } from './shortcuts'
 import { Kbd } from './shortcuts/Kbd'
 import { t } from '../lib/i18n'
-import { LinkedRefs } from './linkedRefsLazy'
 
 const NotesEditor = lazy(() => import('./NotesEditor'))
 
@@ -33,17 +32,7 @@ export function requestProjectNote(projectId: string): void {
 /** Folded height: about eight lines of body text. */
 const FOLD_PX = 8 * 22
 
-/** The note, then one folded line of what links to the project (note-links D5). */
-export function ProjectNote(props: { project: Project; phone?: boolean }) {
-  return (
-    <>
-      <ProjectNoteBody {...props} />
-      <LinkedRefs kind="project" id={props.project.id} folded />
-    </>
-  )
-}
-
-function ProjectNoteBody({ project, phone = false }: { project: Project; phone?: boolean }) {
+export function ProjectNote({ project, phone = false }: { project: Project; phone?: boolean }) {
   // null: a personal project; undefined: still loading (render nothing rather than flash "Add a note" to a viewer).
   const membership = useMembership(project.id)
   const editable = canEditProjectNote(roleOf(project.id, new Map(membership ? [[project.id, membership]] : [])))

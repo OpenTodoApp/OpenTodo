@@ -5,17 +5,17 @@
 // it in place; in a read-only note a plain click does. Never writes. Lazy chunk only.
 import { createRoot, type Root } from 'react-dom/client'
 import type { Node as PMNode } from 'prosemirror-model'
+import { TextSelection } from 'prosemirror-state'
 import type { EditorView, NodeView } from 'prosemirror-view'
 import { refOf, resolve, watchLinks } from '../lib/noteLinks'
-import { RefChip } from './Markdown'
-import { openRef } from './notes/openNote'
+import { openRef, RefChip } from './RefChip'
 
 class RefView implements NodeView {
   dom: HTMLElement
   private root: Root
   private unwatch: () => void
 
-  constructor(private node: PMNode, private view: EditorView) {
+  constructor(private node: PMNode, private view: EditorView, private getPos: () => number | undefined) {
     this.dom = document.createElement('span')
     this.dom.className = 'note-ref-host'
     this.dom.contentEditable = 'false'
@@ -35,14 +35,24 @@ class RefView implements NodeView {
     }
     const target = resolve(ref.kind, ref.id)
     this.root.render(
-      <RefChip kind={ref.kind} id={ref.id} title={target?.title ?? null} label={label} done={target?.done}
+      <RefChip kind={ref.kind} id={ref.id} title={target?.title ?? null} label={label} done={target?.done} tabIndex={this.view.editable ? -1 : undefined}
         onOpen={(e) => {
           e.preventDefault()
           // Keep the editor's own Ctrl-click (a web link in a new tab) away from it.
           e.stopPropagation()
-          if (!this.view.editable || e.metaKey || e.ctrlKey) openRef(ref.kind, ref.id)
+          if (!this.view.editable || e.metaKey || e.ctrlKey) return openRef(ref.kind, ref.id)
+          // A plain click while writing puts the caret after the link.
+          this.caretAfter()
         }} />,
     )
+  }
+
+  private caretAfter() {
+    const pos = this.getPos()
+    if (pos === undefined) return
+    const v = this.view
+    v.dispatch(v.state.tr.setSelection(TextSelection.create(v.state.doc, pos + this.node.nodeSize)))
+    v.focus()
   }
 
   update(node: PMNode): boolean {
@@ -69,5 +79,5 @@ class RefView implements NodeView {
 }
 
 export const refViews = {
-  ref: (node: PMNode, view: EditorView) => new RefView(node, view),
+  ref: (node: PMNode, view: EditorView, getPos: () => number | undefined) => new RefView(node, view, getPos),
 }

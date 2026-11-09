@@ -7,9 +7,8 @@ import { updateTask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
-import { Markdown } from '../Markdown'
+import { LinkedRefs, Markdown } from '../Markdown'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { LinkedRefs } from '../linkedRefsLazy'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 

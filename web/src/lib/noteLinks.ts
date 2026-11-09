@@ -8,19 +8,19 @@
 // documents): for every source (a task note, a project note or a standalone note,
 // keyed `<kind>:<id>`, pending appends included) its targets, and the reverse map.
 // It is built in 8 ms slices on first use, follows the task rows a write changed
-// (taskDelta) and the project and note rows whose text changed, rebuilds in
-// slices when it cannot follow, and is dropped when the account locks.
+// (the shared snapshot keeps every other row object, so walking the two id-sorted
+// lists compares references only) and the project and note rows whose text
+// changed, rebuilds in slices when it cannot follow, and is dropped when the
+// account locks.
 import { useEffect, useSyncExternalStore } from 'react'
 import { db } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { t } from './i18n'
-import { keepRows } from './localData'
 import { liveSnapshot } from './liveSnapshot'
 import { everyTask, taskIndexOf } from './liveTasks'
 import { linksIn, type LinkKind, type NoteLink } from './noteLinkGrammar'
 import { noteText, updatedOf } from './noteList'
 import { stripMarkdown } from './noteSearch'
-import { changesBetween } from './taskDelta'
 import type { Note, Project, Task } from './types'
 
 export { linksIn, type LinkKind, type NoteLink }
@@ -51,8 +51,8 @@ export const noteTitle = (title: string | undefined): string => title?.trim() ||
 
 // ---- the rows (every workspace the device holds) ----
 
-const projectRows = liveSnapshot('link projects', keepRows(() => db.projects.toArray()))
-const noteRows = liveSnapshot('link notes', keepRows(() => db.notes.toArray()))
+const projectRows = liveSnapshot('link projects', () => db.projects.toArray())
+const noteRows = liveSnapshot('link notes', () => db.notes.toArray())
 
 export interface World {
   tasks: readonly Task[]
@@ -192,6 +192,31 @@ const STANDALONE_FIELDS = ['title', 'notes_doc', 'description', 'labels', 'proje
 /** One slice of building the index (ms), as the Notes search warms. */
 export const SLICE_MS = 8
 
+/** A change cut too long to follow row by row: build again instead. */
+const MAX_CHANGES = 1_000
+
+/**
+ * The rows that differ between two lists sorted by id (the shared task snapshot's
+ * order): each id once, with its version before and after; null when the lists are
+ * not in that order or more than MAX_CHANGES rows changed.
+ */
+export function changedRows(prev: readonly Task[], next: readonly Task[]): { id: string; before?: Task; after?: Task }[] | null {
+  const out: { id: string; before?: Task; after?: Task }[] = []
+  let i = 0
+  let j = 0
+  while (i < prev.length || j < next.length) {
+    const a = prev[i]
+    const b = next[j]
+    if (a === b) { i++; j++; continue }
+    if ((i > 0 && a && prev[i - 1].id >= a.id) || (j > 0 && b && next[j - 1].id >= b.id)) return null
+    if (a && b && a.id === b.id) { out.push({ id: a.id, before: a, after: b }); i++; j++ }
+    else if (b && (!a || b.id < a.id)) { out.push({ id: b.id, after: b }); j++ }
+    else { out.push({ id: a.id, before: a }); i++ }
+    if (out.length > MAX_CHANGES) return null
+  }
+  return out
+}
+
 /** Whether a task's note is the same in two versions of its row. */
 const sameNote = (a: Task, b: Task) => a.description === b.description && a.appends === b.appends
 
@@ -313,7 +338,7 @@ export class LinkIndex {
     // A build in progress catches up with the newest rows when it ends.
     if (this.building || !last || last === w) return
     if (last.tasks !== w.tasks) {
-      const changes = changesBetween(last.tasks, w.tasks)
+      const changes = changedRows(last.tasks, w.tasks)
       if (!changes) {
         this.build(w)
         return

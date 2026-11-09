@@ -7246,5 +7246,9 @@
   "Email project members: {subject}": "Invia un’email ai membri del progetto: {subject}",
   "Time of day": "Momento della giornata",
   "Nest subtasks": "Annida le sottoattività",
-  "Group by time of day (on Today)": "Raggruppa per momento della giornata (in Oggi)"
+  "Group by time of day (on Today)": "Raggruppa per momento della giornata (in Oggi)",
+  "Link to": "Collega a",
+  "Link to…": "Collega a…",
+  "Linked references": "Riferimenti collegati",
+  "New note \"{title}\"": "Nuova nota «{title}»"
 }

@@ -141,15 +141,16 @@ function CommandBar({ palette, user, showShortcuts }: { palette: ReturnType<type
  */
 function openAddressItem(): boolean {
   const params = new URLSearchParams(location.search)
-  const kind = (['task', 'note', 'project'] as const).find((k) => params.get(k))
-  if (!kind) return false
-  const id = params.get(kind) as string
-  params.delete(kind)
-  const q = params.toString()
-  history.replaceState(null, '', `${location.pathname}${q ? `?${q}` : ''}`)
-  if (kind === 'task') openTaskPage(id)
-  else navigate(kind === 'note' ? { view: 'notes', id } : { view: 'project', id }, { replace: true })
-  return true
+  for (const kind of ['task', 'note', 'project'] as const) {
+    const id = params.get(kind)
+    if (!id) continue
+    params.delete(kind)
+    history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : ''))
+    if (kind === 'task') openTaskPage(id)
+    else navigate(kind === 'note' ? { view: 'notes', id } : { view: 'project', id }, { replace: true })
+    return true
+  }
+  return false
 }
 
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
