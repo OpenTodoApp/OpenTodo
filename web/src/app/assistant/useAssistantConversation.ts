@@ -81,7 +81,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
           break
         }
         case 'usage':
-          answer.usage = { input: ev.input, output: ev.output, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
+          answer.usage = { input: ev.input, output: ev.output, cached: ev.cached, cache_write: ev.cache_write, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
           break
         case 'changeset':
           proposal = ev.items

@@ -98,6 +98,26 @@ func (c *chatConv) body() ([]byte, error) {
 	return json.Marshal(b)
 }
 
+// chatUsage is the usage of a Chat Completions stream's final chunk.
+type chatUsage struct {
+	PromptTokens        int64 `json:"prompt_tokens"`
+	CompletionTokens    int64 `json:"completion_tokens"`
+	PromptTokensDetails *struct {
+		CachedTokens int64 `json:"cached_tokens"`
+	} `json:"prompt_tokens_details"`
+}
+
+// tokens splits prompt_tokens, which includes the cached part (OpenAI, and
+// Gemini through its OpenAI-compatible endpoint), into fresh and cached input.
+func (u *chatUsage) tokens() Tokens {
+	t := Tokens{Input: u.PromptTokens, Output: u.CompletionTokens}
+	if d := u.PromptTokensDetails; d != nil && d.CachedTokens > 0 {
+		t.CachedRead = min(d.CachedTokens, t.Input)
+		t.Input -= t.CachedRead
+	}
+	return t
+}
+
 // maxStreamLine bounds one SSE line (a tool call's arguments arrive in pieces).
 const maxStreamLine = 1 << 20
 
@@ -147,10 +167,7 @@ func (c *chatConv) Next(ctx context.Context, onText func(string)) (Round, error)
 				} `json:"delta"`
 				FinishReason *string `json:"finish_reason"`
 			} `json:"choices"`
-			Usage *struct {
-				PromptTokens     int64 `json:"prompt_tokens"`
-				CompletionTokens int64 `json:"completion_tokens"`
-			} `json:"usage"`
+			Usage *chatUsage `json:"usage"`
 			Error *struct {
 				Type string `json:"type"`
 			} `json:"error"`
@@ -162,7 +179,7 @@ func (c *chatConv) Next(ctx context.Context, onText func(string)) (Round, error)
 			return Round{}, &ProviderError{Code: CodeProviderError, Type: chunk.Error.Type, Msg: "the provider reported an error while answering"}
 		}
 		if chunk.Usage != nil {
-			r.Input, r.Output = chunk.Usage.PromptTokens, chunk.Usage.CompletionTokens
+			r.Tokens = chunk.Usage.tokens()
 		}
 		for _, ch := range chunk.Choices {
 			if ch.Delta.Content != nil && *ch.Delta.Content != "" {

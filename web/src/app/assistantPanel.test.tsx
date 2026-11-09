@@ -76,9 +76,13 @@ describe('AssistantPanelBody', () => {
       { role: 'assistant', text: '**Two** tasks', usage: { input: 1000, output: 240, month_total: 90000, cap: 500000 }, at: 2 },
       { role: 'assistant', text: 'partial', stop: 'max_tokens', at: 3 },
       { role: 'assistant', text: '', stop: 'refusal', error: 'The model declined this request.', at: 4 },
+      { role: 'assistant', text: 'Nothing is overdue.', usage: { input: 2000, cached: 18000, output: 300, month_total: 15000, cap: 500000 }, at: 5 },
+      { role: 'assistant', text: 'On this device.', usage: { input: 2000, cached: 18000, output: 300, month_total: 0, cap: 0, own_key: true }, at: 6 },
     ] })
     expect(html).toContain('<strong>Two</strong>')
     expect(html).toContain('1,240 tokens · this month 18% of your limit')
+    expect(html).toContain('20,300 tokens, 18,000 from cache · this month 3% of your limit')
+    expect(html).toContain('20,300 tokens, 18,000 from cache · your key')
     expect(html).toContain('Cut off')
     expect(html).toContain('The model declined this request.')
   })

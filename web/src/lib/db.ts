@@ -34,7 +34,8 @@ export interface AssistantMessage {
   /** The answer ended with this stop reason (refusal and max_tokens are shown). */
   stop?: string
   error?: string
-  usage?: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }
+  /** input is fresh input; cached and cache_write the input read from and written to the provider's cache. */
+  usage?: { input: number; output: number; cached?: number; cache_write?: number; month_total?: number; cap?: number; own_key?: boolean }
   /** The skill this question ran (assistant-skills), by name. */
   skill?: string
   /** Lines of pasted material sent with this question. */

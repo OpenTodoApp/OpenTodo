@@ -132,7 +132,7 @@ func (c *scriptedConv) Next(_ context.Context, onText func(string)) (Round, erro
 		r = r.next(last)
 	}
 	if r.err != nil {
-		return Round{Input: r.in}, r.err
+		return Round{Tokens: Tokens{Input: r.in}}, r.err
 	}
 	if r.text != "" {
 		onText(r.text)
@@ -141,7 +141,7 @@ func (c *scriptedConv) Next(_ context.Context, onText func(string)) (Round, erro
 	if stop == "" {
 		stop = StopEndTurn
 	}
-	return Round{Stop: stop, RawStop: r.raw, ToolCalls: r.calls, Input: r.in + 10, Output: r.out + 5}, nil
+	return Round{Stop: stop, RawStop: r.raw, ToolCalls: r.calls, Tokens: Tokens{Input: r.in + 10, Output: r.out + 5}}, nil
 }
 
 func (c *scriptedConv) AddToolResults(results []ToolResult) {
