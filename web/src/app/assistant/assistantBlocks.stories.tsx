@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { reviewChangeSet, type Review } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
 import type { AssistantMessage } from '../../lib/db'
@@ -28,8 +28,36 @@ const base: PanelViewProps = {
   onSend: noop, onStop: noop, onAccept: noop, onPickThread: noop, onChoose: noop, onRegenerate: noop, onEditLast: noop, canRedo: true,
 }
 
+/** Whether every block and proposal shape under `root` has loaded: no skeleton, no empty frame. */
+function settled(root: HTMLElement): boolean {
+  if (root.querySelector('[data-skeleton]')) return false
+  const blocks = [...root.querySelectorAll('[data-assistant-block]')]
+  const shapes = [...root.querySelectorAll('[data-proposal-calendar]')]
+  return [...blocks, ...shapes].every((el) => el.childElementCount > 0)
+}
+
+/**
+ * The page around a story. data-story-pending: the visual check waits until the
+ * lazily loaded blocks have rendered from the seeded rows, so it never captures skeletons.
+ */
+function Page({ children, min = 'min-h-[48rem]' }: { children: ReactNode; min?: string }) {
+  const root = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      if ((root.current && settled(root.current)) || ++tries > 200) {
+        clearInterval(timer)
+        requestAnimationFrame(() => setPending(false))
+      }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  return <div ref={root} className={`-m-4 ${min} bg-surface px-4 py-6`} data-story-pending={pending || undefined}><div className="mx-auto w-full max-w-[46rem]">{children}</div></div>
+}
+
 function Conversation({ messages }: { messages: () => AssistantMessage[] }) {
-  return <div className="-m-4 min-h-[48rem] bg-surface px-4 py-6"><div className="mx-auto w-full max-w-[46rem]"><AssistantPanelBody {...base} layout="page" messages={messages()} /></div></div>
+  return <Page><AssistantPanelBody {...base} layout="page" messages={messages()} /></Page>
 }
 
 /** Planning a day: the tasks it talks about, the day as planned, and a choice for what does not fit. */
@@ -93,10 +121,10 @@ function WeekProposal() {
   }, [])
   if (!review) return null
   return (
-    <div className="-m-4 min-h-[40rem] bg-surface px-4 py-6"><div className="mx-auto w-full max-w-[46rem]">
+    <Page min="min-h-[40rem]">
       <AssistantPanelBody {...base} layout="page" review={review} onEdit={noop}
         messages={[{ role: 'user', text: 'Today is too full, spread it over the next days.', at: 1 }, { role: 'assistant', text: 'I moved four tasks to the next three days; review it below.', at: 2 }]} />
-    </div></div>
+    </Page>
   )
 }
 
