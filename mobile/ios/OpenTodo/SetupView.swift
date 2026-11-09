@@ -51,7 +51,11 @@ struct SetupView: View {
                         Label(message, systemImage: "exclamationmark.triangle")
                             .fixedSize(horizontal: false, vertical: true)
                         if let suggestion {
-                            Button("Use \(suggestion)") { address = suggestion; self.suggestion = nil }
+                            // A text style, so the label follows Dynamic Type (the audit in FirstRunTests).
+                            Button { address = suggestion; self.suggestion = nil } label: {
+                                Text("Use \(suggestion)").font(.body)
+                            }
+                            .buttonStyle(.bordered)
                         }
                     }
                 }
