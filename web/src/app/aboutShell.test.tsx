@@ -15,6 +15,12 @@ describe('the shell app in Settings → About', () => {
     expect(html).not.toContain('older than this server expects')
   })
 
+  it('shows the exact server address the app opened (ios-setup-address)', () => {
+    const html = renderToStaticMarkup(<ShellAppRow app={{ platform: 'ios', version: '1.4.0', outdated: false, server: 'https://todo.example.com' }} />)
+    expect(html).toContain('OpenTodo for iOS')
+    expect(html).toContain('https://todo.example.com')
+  })
+
   it('says when the app is older than this server expects', () => {
     const html = renderToStaticMarkup(<ShellAppRow app={{ platform: 'android', version: '0.9.2', outdated: true }} />)
     expect(html).toContain('This app is older than this server expects.')

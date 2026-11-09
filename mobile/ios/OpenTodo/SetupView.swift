@@ -9,16 +9,27 @@ struct SetupView: View {
     @State private var message: String?
     @State private var suggestion: String?
     @State private var checking = false
+    @FocusState private var editing: Bool
+
+    /// The address as typed so far; Connect is active only while it is well-formed (ios-setup-address).
+    private var parsed: ServerAddress { ServerAddress.parse(address) }
+
+    private var insecure: Bool {
+        if case .ok(_, true) = parsed { return true }
+        return false
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("todo.example.com", text: $address)
+                    TextField("https://todo.example.com", text: $address)
                         .textContentType(.URL)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .focused($editing)
+                        .onChange(of: editing) { focused in if !focused { showScheme() } }
                         .onSubmit { Task { await connect() } }
                 } header: {
                     // The system's grey header and footer are small text below 4.5:1 (the
@@ -26,8 +37,13 @@ struct SetupView: View {
                     Text("Server address")
                         .foregroundStyle(.primary)
                 } footer: {
-                    Text("OpenTodo runs on your own server. Enter the address you use in the browser.")
-                        .foregroundStyle(.primary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        if insecure {
+                            Label("This connection is not encrypted.", systemImage: "lock.open")
+                        }
+                        Text("OpenTodo runs on your own server. Enter the address you use in the browser.")
+                    }
+                    .foregroundStyle(.primary)
                 }
 
                 if let message {
@@ -41,15 +57,20 @@ struct SetupView: View {
                 }
 
                 Section {
+                    // A filled button: the accent as text (a dark teal) read as greyed out even
+                    // while Connect could be tapped, worst in dark mode (#1137).
                     Button {
                         Task { await connect() }
                     } label: {
-                        HStack {
-                            Text("Connect")
-                            if checking { Spacer(); ProgressView() }
-                        }
+                        Text("Connect")
+                            .frame(maxWidth: .infinity)
+                            .overlay(alignment: .trailing) { if checking { ProgressView() } }
                     }
-                    .disabled(checking || address.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(checking || parsed == .invalid)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
                 }
             }
             .navigationTitle("OpenTodo")
@@ -57,16 +78,24 @@ struct SetupView: View {
         }
     }
 
+    /// The field shows the address the app will use: an address typed without a scheme gets
+    /// its `https://`, visibly, never silently (#1136).
+    private func showScheme() {
+        if case let .ok(origin, _) = parsed, origin != address { address = origin }
+    }
+
     private func connect() async {
         message = nil
         suggestion = nil
-        switch ServerAddress.parse(address) {
+        let result = parsed
+        switch result {
         case .invalid:
             message = String(localized: "That is not a usable address.")
         case let .needsHttps(https):
             message = String(localized: "This server must be reached over https.")
             suggestion = https
         case let .ok(origin, insecure):
+            address = origin
             checking = true
             let answer = await HealthCheck.check(origin: origin)
             checking = false

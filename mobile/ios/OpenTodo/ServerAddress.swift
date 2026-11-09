@@ -13,8 +13,9 @@ enum ServerAddress: Equatable {
     static func parse(_ input: String) -> ServerAddress {
         var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.isEmpty || text.contains(where: { $0.isWhitespace }) { return .invalid }
+        // No scheme typed: the address is reached over https (the first-run screen shows it).
         if !text.contains("://") { text = "https://" + text }
-        guard let url = URL(string: text),
+        guard let ascii = asciiHost(text), let url = URL(string: ascii),
               let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http",
               let rawHost = url.host, !rawHost.isEmpty,
               url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
@@ -50,6 +51,73 @@ enum ServerAddress: Equatable {
                 || host.hasPrefix("fe9") || host.hasPrefix("fea") || host.hasPrefix("feb")
         }
         return false
+    }
+
+    /// The address with a host typed in Unicode (`bücher.example`) in the ASCII form the network
+    /// uses (`xn--bcher-kva.example`), whatever this iOS version's own URL parsing does with it;
+    /// `nil` when a label cannot be encoded. Anything else is left for `URL` to judge.
+    static func asciiHost(_ text: String) -> String? {
+        guard let schemeEnd = text.range(of: "://") else { return text }
+        let rest = text[schemeEnd.upperBound...]
+        let end = rest.firstIndex(where: { "/?#".contains($0) }) ?? rest.endIndex
+        let authority = rest[..<end]
+        if authority.allSatisfy(\.isASCII) || authority.contains("@") || authority.contains("[") { return text }
+        var host = authority, port: Substring = ""
+        if let colon = authority.lastIndex(of: ":") { host = authority[..<colon]; port = authority[colon...] }
+        var labels: [String] = []
+        for label in host.split(separator: ".", omittingEmptySubsequences: false) {
+            let folded = String(label).precomposedStringWithCanonicalMapping.lowercased()
+            if folded.allSatisfy(\.isASCII) { labels.append(folded); continue }
+            guard let encoded = punycode(folded), encoded.count <= 59 else { return nil }
+            labels.append("xn--" + encoded)
+        }
+        let scheme = String(text[..<schemeEnd.upperBound])
+        let tail = String(port) + String(rest[end...])
+        return scheme + labels.joined(separator: ".") + tail
+    }
+
+    /// RFC 3492 Punycode of one label, without the `xn--` prefix.
+    static func punycode(_ label: String) -> String? {
+        let base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700
+        let input = label.unicodeScalars.map { Int($0.value) }
+        if input.isEmpty || input.count > 63 { return nil }
+        var output = label.unicodeScalars.filter(\.isASCII).map { Character($0) }
+        let basic = output.count
+        if basic > 0 { output.append("-") }
+        func digit(_ d: Int) -> Character { Character(UnicodeScalar(UInt8(d < 26 ? d + 97 : d + 22))) }
+        func adapt(_ delta: Int, _ points: Int, _ first: Bool) -> Int {
+            var d = first ? delta / damp : delta / 2
+            d += d / points
+            var k = 0
+            while d > ((base - tMin) * tMax) / 2 { d /= base - tMin; k += base }
+            return k + (base - tMin + 1) * d / (d + skew)
+        }
+        var n = 0x80, delta = 0, bias = 72, handled = basic
+        while handled < input.count {
+            guard let next = input.filter({ $0 >= n }).min() else { return nil }
+            delta += (next - n) * (handled + 1)
+            n = next
+            for c in input {
+                if c < n { delta += 1 }
+                if c == n {
+                    var q = delta, k = base
+                    while true {
+                        let t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias)
+                        if q < t { break }
+                        output.append(digit(t + (q - t) % (base - t)))
+                        q = (q - t) / (base - t)
+                        k += base
+                    }
+                    output.append(digit(q))
+                    bias = adapt(delta, handled + 1, handled == basic)
+                    delta = 0
+                    handled += 1
+                }
+            }
+            delta += 1
+            n += 1
+        }
+        return String(output)
     }
 
     /// Lowercase, no trailing dot, no IPv6 brackets.
