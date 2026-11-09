@@ -8,14 +8,18 @@ import type { MapViewProps } from './MapView'
 
 const MapView = lazy(() => import('./MapView'))
 
-/** Whether this browser can draw a map (WebGL); a map block says so when it cannot (assistant-map-lookup). */
+let webglCache: boolean | undefined
+
+/** Whether this browser can draw a map (WebGL), asked once: each check creates a context (assistant-map-lookup). */
 export function hasWebGL(): boolean {
+  if (webglCache !== undefined) return webglCache
   try {
     const c = document.createElement('canvas')
-    return !!(c.getContext('webgl2') || c.getContext('webgl'))
+    webglCache = !!(c.getContext('webgl2') || c.getContext('webgl'))
   } catch {
-    return false
+    webglCache = false
   }
+  return webglCache
 }
 
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {

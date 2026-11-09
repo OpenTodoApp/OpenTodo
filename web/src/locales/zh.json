@@ -7291,5 +7291,7 @@
   "The map could not load.": "地图无法加载。",
   "This browser cannot draw maps.": "此浏览器无法显示地图。",
   "found by address": "按地址找到",
-  "not on the map": "不在地图上"
+  "not on the map": "不在地图上",
+  "Finding these places on the map needs a connection.": "在地图上查找这些地点需要网络连接。",
+  "These places could not be looked up right now. Try again in a minute.": "暂时无法查找这些地点，请一分钟后再试。"
 }

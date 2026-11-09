@@ -7291,5 +7291,7 @@
   "The map could not load.": "No se pudo cargar el mapa.",
   "This browser cannot draw maps.": "Este navegador no puede mostrar mapas.",
   "found by address": "encontrado por dirección",
-  "not on the map": "no está en el mapa"
+  "not on the map": "no está en el mapa",
+  "Finding these places on the map needs a connection.": "Para encontrar estos lugares en el mapa se necesita conexión.",
+  "These places could not be looked up right now. Try again in a minute.": "No se pudieron buscar estos lugares ahora. Inténtalo de nuevo en un minuto."
 }

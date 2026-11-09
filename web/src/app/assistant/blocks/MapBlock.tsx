@@ -14,9 +14,11 @@ import { openTaskPanel } from '../../panel'
 import { navigate } from '../../router'
 
 /** Why the block draws no map, or null when it does (assistant-map-lookup D2). */
-function reasonOf(o: { mapsOn: boolean; pending: boolean; points: number; unavailable: boolean }): string | null {
+function reasonOf(o: { mapsOn: boolean; pending: boolean; offline: boolean; failed: boolean; points: number; unavailable: boolean }): string | null {
   if (!o.mapsOn) return t('Maps are off, so these places are listed without a map.')
   if (o.pending) return t('Finding these places on the map…')
+  if (o.points === 0 && o.offline) return t('Finding these places on the map needs a connection.')
+  if (o.points === 0 && o.failed) return t('These places could not be looked up right now. Try again in a minute.')
   if (o.points === 0) return t('None of these places could be found on the map. Add an address or coordinates to show them.')
   if (!hasWebGL()) return t('This browser cannot draw maps.')
   if (o.unavailable) return t('The map could not load.')
@@ -25,12 +27,12 @@ function reasonOf(o: { mapsOn: boolean; pending: boolean; points: number; unavai
 
 export default function MapBlock({ block }: { block: Extract<AssistantBlock, { kind: 'map' }> }) {
   const mapsOn = useMapsOn()
-  const { items, pending } = useMapLookup(useMapItems(block), mapsOn)
+  const { items, pending, offline, failed } = useMapLookup(useMapItems(block), mapsOn)
   const [unavailable, setUnavailable] = useState(false)
   if (!items) return null
   if (!items.length) return <p className="p-3 text-meta text-muted">{t('Removed')}</p>
   const points = items.flatMap((it, i) => (it.lat !== undefined && it.lon !== undefined ? [{ lat: it.lat, lon: it.lon, label: `${i + 1}. ${it.title}` }] : []))
-  const reason = reasonOf({ mapsOn, pending, points: points.length, unavailable })
+  const reason = reasonOf({ mapsOn, pending, offline, failed, points: points.length, unavailable })
   return (
     <div data-assistant-map>
       {reason ? <p className="border-b border-default px-3 py-2 text-meta text-muted" data-map-reason>{reason}</p> : (
@@ -43,11 +45,10 @@ export default function MapBlock({ block }: { block: Extract<AssistantBlock, { k
             <button type="button" className="flex min-h-9 w-full items-baseline gap-2 px-3 py-1.5 text-left text-body hover:bg-hover" onClick={() => (it.kind === 'task' ? openTaskPanel(it.id) : navigate({ view: 'place', id: it.id }))} data-map-item={it.id}>
               <span className="w-5 shrink-0 text-meta tabular-nums text-muted">{i + 1}.</span>
               <span className="min-w-0 flex-1 user-text">{it.title}</span>
-              <span className="min-w-0 truncate text-right text-meta text-muted user-text">
-                {it.where && it.where !== it.title ? it.where : ''}
-                {it.approximate && <span className="ml-1.5 text-faint" data-approximate>{t('found by address')}</span>}
-                {mapsOn && it.lat === undefined && !pending && <span className="ml-1.5 text-faint" data-not-found>{t('not on the map')}</span>}
-              </span>
+              {it.where && it.where !== it.title && <span className="min-w-0 truncate text-right text-meta text-muted user-text">{it.where}</span>}
+              {/* The marks stay outside the cut address, so a long one never hides them. */}
+              {it.approximate && <span className="shrink-0 text-meta text-faint" data-approximate>{t('found by address')}</span>}
+              {mapsOn && it.lat === undefined && !pending && !offline && <span className="shrink-0 text-meta text-faint" data-not-found>{t('not on the map')}</span>}
             </button>
           </li>
         ))}

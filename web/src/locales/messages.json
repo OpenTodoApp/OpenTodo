@@ -6382,6 +6382,9 @@
   "Find the tasks of the view {view}": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Finding these places on the map needs a connection.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
+  ],
   "Finding these places on the map…": [
     "web/src/app/assistant/blocks/MapBlock.tsx"
   ],
@@ -17720,6 +17723,9 @@
   ],
   "These notes are in English.": [
     "web/src/app/WhatsNew.tsx"
+  ],
+  "These places could not be looked up right now. Try again in a minute.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
   ],
   "These tasks already have {label}": [
     "web/src/lib/undoActions.ts"

@@ -45,6 +45,7 @@ const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
   if (path === '/api/v1/assistant/skills') return new Response(JSON.stringify({ skills: [] }), { status: 200 })
   if (path.startsWith('/api/v1/maps/search')) {
     const q = new URL(path, 'http://x').searchParams.get('q') ?? ''
+    if (q === 'Busy Street 1') return new Response('{"error":{"code":"rate_limited","message":"slow down"}}', { status: 429 })
     const hit = geocoder[q]
     return new Response(JSON.stringify({ results: hit ? [{ name: q, address: q, ...hit }] : [] }), { status: 200 })
   }
@@ -192,6 +193,37 @@ describe('map block (3.6)', () => {
     await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
     await waitFor(() => document.querySelectorAll('[data-approximate]').length === 2, 'the second block')
     expect(asked()).toBe(1)
+  })
+
+  it('searches a location by its address, not its name, and never by the task title', async () => {
+    await setMeta('mapsAvailable', true)
+    geocoder = { 'Via Roma 1, Milano': { lat: 45.46, lon: 9.19 } }
+    const id = await createTask({ title: 'Private appointment', location: { name: 'Dentist', address: 'Via Roma 1, Milano' } })
+    const r = await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+    await waitFor(() => !!r.container.querySelector('[data-approximate]'), 'found by address')
+    const queries = fetchMock.mock.calls.map(([p]) => String(p)).filter((p) => p.startsWith('/api/v1/maps/search')).map((p) => new URL(p, 'http://x').searchParams.get('q'))
+    expect(queries).toEqual(['Via Roma 1, Milano'])
+  })
+
+  it('a failed search says so instead of "not found"', async () => {
+    await setMeta('mapsAvailable', true)
+    const id = await createTask({ title: 'Errand', location: { address: 'Busy Street 1' } })
+    const r = await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+    await waitFor(() => r.container.querySelector('[data-map-reason]')?.textContent?.startsWith('These places could not be looked up right now') === true, 'the failure reason')
+  })
+
+  it('offline, it says a connection is needed and searches nothing', async () => {
+    await setMeta('mapsAvailable', true)
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    try {
+      const id = await createTask({ title: 'Errand', location: { address: 'Somewhere 5' } })
+      const r = await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+      await waitFor(() => r.container.querySelector('[data-map-reason]')?.textContent?.includes('needs a connection') === true, 'the offline reason')
+      expect(fetchMock.mock.calls.some(([p]) => String(p).startsWith('/api/v1/maps/search'))).toBe(false)
+      expect(r.container.querySelector('[data-not-found]')).toBeNull()
+    } finally {
+      onLine.mockRestore()
+    }
   })
 
   it('says why there is no map when nothing can be found', async () => {
