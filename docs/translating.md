@@ -115,11 +115,11 @@ Use these terms consistently; they match the quick-add vocabulary and the server
 
 | English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | taak |
-| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | subtaak |
-| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | project |
-| Section | Abschnitt | section | sección | sezione | seção | 分组 | sectie |
-| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | label |
+| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | Taak |
+| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | Subtaak |
+| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project |
+| Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie |
+| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label |
 | Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox |
 | Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag |
 | Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort |
@@ -129,11 +129,11 @@ Use these terms consistently; they match the quick-add vocabulary and the server
 | Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid |
 | Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak |
 | Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | vervaldatum |
-| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | deadline |
-| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | melding |
-| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | snelle invoer |
+| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline |
+| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering |
+| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen |
 | Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen |
-| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | eigenaar, beheerder, bewerker, lezer |
-| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | passkey |
-| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | tweestapsverificatie |
-| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | wekelijkse terugblik |
+| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer |
+| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey |
+| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie |
+| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik |
