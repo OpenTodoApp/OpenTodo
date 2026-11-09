@@ -18,7 +18,7 @@ import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
-import { Markdown } from '../Markdown'
+import { LinkedRefs, Markdown } from '../Markdown'
 import { PanelFrame } from '../PanelFrame'
 import { ProjectPickerField } from '../ProjectPickerField'
 import { navigate } from '../router'
@@ -113,6 +113,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
         <span className="pt-2 text-meta text-muted">{t('Labels')}</span>
         <LabelsField note={note} readOnly={readOnly} labels={labels} />
       </div>
+      <LinkedRefs kind="note" id={note.id} />
     </div>
   )
 }

@@ -235,12 +235,6 @@ export function panelHandlers(): PanelHandlers {
   return handlers
 }
 
-/** The task id in the address on launch, if any. */
-export function taskIdFromAddress(): string | null {
-  if (typeof location === 'undefined') return null
-  return new URLSearchParams(location.search).get(QUERY)
-}
-
 function subscribe(fn: () => void): () => void {
   listeners.add(fn)
   return () => listeners.delete(fn)

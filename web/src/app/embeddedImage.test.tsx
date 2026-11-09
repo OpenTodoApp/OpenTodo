@@ -92,13 +92,26 @@ describe('task links', () => {
     await mutate('task', other, { title: 'Book the hotel by Friday' })
     await waitFor(() => v.container.textContent?.includes('Book the hotel by Friday') ?? false)
     await mutate('task', other, { completed_at: 5 })
-    await waitFor(() => !!v.container.querySelector('.task-ref.line-through'))
+    await waitFor(() => !!v.container.querySelector('.note-ref[data-ref-state="done"]'))
   })
 
-  it('an unknown task shows the stored text', async () => {
+  it('an unknown task shows the stored text, muted and not a link (note-links D4)', async () => {
     // A known task beside it: once its live title shows, the unknown one has been looked up too.
     const v = await mount(`[Book hotel](?task=nope) [x](?task=${other})`)
-    await waitFor(() => v.container.querySelectorAll('.task-ref')[1]?.textContent === 'Other', 'the lookups')
-    expect(v.container.querySelector('.task-ref')!.textContent).toBe('Book hotel')
+    await waitFor(() => v.container.querySelectorAll('.note-ref')[1]?.textContent === 'Other', 'the lookups')
+    await waitFor(() => v.container.querySelector('.note-ref')?.getAttribute('data-ref-state') === 'muted', 'the muted link')
+    expect(v.container.querySelector('.note-ref')!.textContent).toBe('Book hotel')
+    expect(v.container.querySelector('.note-ref')!.tagName).toBe('SPAN')
+  })
+
+  it('links to notes and projects read as their current names (note-links D2)', async () => {
+    await applyOps([
+      { id: 'n-title', entity: 'note', entityId: 'n1', field: 'title', value: 'Trip', ts: 50, device: 'other' },
+      { id: 'n-created', entity: 'note', entityId: 'n1', field: 'created_at', value: 50, ts: 50, device: 'other' },
+      { id: 'p-name', entity: 'project', entityId: 'p1', field: 'name', value: 'Renovation', ts: 50, device: 'other' },
+    ])
+    const v = await mount('[old](?note=n1) and [older](?project=p1)')
+    await waitFor(() => v.container.textContent === 'Trip and Renovation', 'the current names')
+    expect([...v.container.querySelectorAll('a.note-ref')].map((a) => a.getAttribute('href'))).toEqual(['?note=n1', '?project=p1'])
   })
 })

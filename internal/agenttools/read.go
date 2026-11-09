@@ -82,12 +82,12 @@ func init() {
 	})
 	register(tool{
 		def: readDef("get_task", "Get a task",
-			"Get one task with its description, project, section, labels, subtasks and comments.",
+			"Get one task with its description, project, section, labels, subtasks and comments."+linkDescription,
 			object([]string{"id"}, map[string]any{
 				"id":       map[string]any{"type": "string", "description": "Task id."},
 				"timezone": timezoneProp,
 			})),
-		read: (*Registry).getTask,
+		readC: (*Registry).getTask,
 	})
 	register(tool{
 		def: readDef("search_tasks", "Search tasks",
@@ -600,7 +600,7 @@ func (r *Registry) taskDetail(ctx context.Context, userID, id string, loc *time.
 	return map[string]any{"task": out, "subtasks": subtasks, "comments": comments, "attachments": attachments, "reminders": reminders, "timezone": loc.String(), "today": today, "server_time": r.serverTime()}, nil
 }
 
-func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[string]any, error) {
+func (r *Registry) getTask(ctx context.Context, c Caller, a args) (map[string]any, error) {
 	id, err := a.str("id")
 	if err != nil {
 		return nil, err
@@ -612,7 +612,11 @@ func (r *Registry) getTask(ctx context.Context, userID string, a args) (map[stri
 	if err != nil {
 		return nil, err
 	}
-	return r.taskDetail(ctx, userID, id, loc)
+	out, err := r.taskDetail(ctx, c.UserID, id, loc)
+	if err != nil {
+		return nil, err
+	}
+	return r.withLinks(ctx, c, "task", id, out)
 }
 
 // ---- today_summary ----

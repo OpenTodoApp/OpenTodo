@@ -11,6 +11,8 @@ import { checkLineAt } from '../lib/editorNotes'
 import { insertTable, isInTable, TABLE_COMMANDS } from '../lib/editorTables'
 import { linkCommand, schema, wrapInCheckList } from '../lib/richtextEditor'
 import { logicalToday } from '../lib/dates'
+import type { Suggest } from '../lib/editorSuggest'
+import type { LinkCandidate } from '../lib/linkPicker'
 import { t } from '../lib/i18n'
 import type { IconName } from '../ui'
 
@@ -25,6 +27,17 @@ export interface CommandEnv {
   pickImage?: () => void
   makeSubtask?: Command
   notify: (message: string) => void
+  /** The `[[` picker and Link to… (notes only, never read-only; note-links D3). */
+  linkTo?: LinkPickerEnv
+}
+
+/** What the link picker reads and does (the notes editor supplies it). */
+export interface LinkPickerEnv {
+  candidates: (query: string) => LinkCandidate[]
+  /** Replace the typed `[[text` with a link to the item. */
+  insert: (view: EditorView, s: Suggest, item: LinkCandidate) => void
+  /** Create a note titled `title` and link it, in one batch with one Undo. */
+  create: (view: EditorView, s: Suggest, title: string) => void
 }
 
 export interface EditorCommand {
@@ -99,6 +112,13 @@ export function editorCommands(): EditorCommand[] {
     { id: 'quote', label: t('Quote'), icon: 'text-quote', keywords: 'blockquote', run: exec(wrapIn(nodes.blockquote)) },
     { id: 'code', label: t('Code block'), icon: 'code', keywords: 'pre fence', run: exec(setBlockType(nodes.code_block)) },
     { id: 'link', label: t('Link'), icon: 'link', keywords: 'url address', run: link },
+    {
+      id: 'linkto', label: t('Link to…'), icon: 'link', keywords: 'note task project reference wiki', available: (_v, env) => !!env.linkTo,
+      run: (view) => {
+        view.dispatch(view.state.tr.insertText('[['))
+        view.focus()
+      },
+    },
     { id: 'image', label: t('Image'), icon: 'image', keywords: 'picture photo screenshot', available: (_v, env) => !!env.pickImage, run: (_v, env) => env.pickImage?.() },
     { id: 'date', label: t('Date'), icon: 'calendar-days', keywords: 'today', run: insertDate },
     {

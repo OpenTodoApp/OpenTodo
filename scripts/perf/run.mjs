@@ -362,6 +362,9 @@ async function notesSession(browser, profileName) {
       if (at !== null) keys.push(at - input)
     }
     out['notes-search'] = p95(keys)
+    // note-links D5: a note other notes link to, opened before anything built the link index, to its Linked references painted.
+    const t1 = await go(page, `/notes/${summary.notes.linkedNote}`)
+    out['note-references'] = (await markAfter(page, 'ot:note-references', t1, 30_000)) - t1
     await cdp.send('HeapProfiler.collectGarbage')
     out['notes-js-heap'] = (await cdp.send('Runtime.getHeapUsage')).usedSize / 2 ** 20
     return out
@@ -385,7 +388,7 @@ const REPORTED = {
 const reported = (samples) => Object.entries(REPORTED).filter(([id]) => samples[id]?.length).map(([id, m]) => ({ id, ...m, runs: samples[id], median: Math.round(median(samples[id]) * 10) / 10 }))
 
 const budgets = loadBudgets()
-const isNotes = (id) => id.startsWith('notes-')
+const isNotes = (id) => id.startsWith('notes-') || id === 'note-references'
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
 const reports = []
 let failed = false
