@@ -151,7 +151,11 @@ No dependency. The server binary changes by thirteen schema entries. The web cod
 
 None. The fields are absent until written, and absent reads as today's behaviour. Rolling back the web app leaves the fields stored and ignored.
 
-## Open questions for the owner
+## Owner decisions (2026-11-09)
+
+The owner took the recommendation on each open question below: Earlier stays first; no context rows for parents outside the view (breadcrumb instead); no Show on rows in this change; Upcoming's Today part follows Today's display options.
+
+### The questions as asked
 
 1. **Does Earlier stay its own group when Today is grouped another way?** Recommendation: yes. Earlier stays first with Move all to today and Reschedule…, and the chosen grouping lays out only today's own tasks. Folding late tasks into, say, their project group hides that they are late and leaves Earlier's actions without a home.
 2. **Should parents outside the view be shown dimmed for context (#1089 item 5)?** Recommendation: not in this change. Nest only when the parent is in the same group, and keep the breadcrumb otherwise. A context row is a new kind of row (cursor, completion, counts, slots, bulk selection, screen reader). Ship nesting first, and design context rows separately if people still ask once they have nesting.
