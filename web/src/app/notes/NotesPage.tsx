@@ -318,7 +318,8 @@ export function NotesPage({ id }: { id?: string }) {
     <PageBody width="list" data-page="notes">
       <PageHeader title={t('Notes')} help="notes" barActions
         meta={t('{n, plural, one {# note} other {# notes}}', { n: entries.length })}
-        actions={<Button size="sm" variant={desktop ? 'ghost' : 'primary'} onClick={newNote} data-note-new><Icon name="plus" />{t('New note')}</Button>}>
+        // On a phone the floating + starts a note (the one add of the screen); the header keeps the title, count and Help.
+        actions={desktop ? <Button size="sm" variant="ghost" onClick={newNote} data-note-new><Icon name="plus" />{t('New note')}</Button> : undefined}>
         {searchField}
         {desktop ? <NoteFilterControls {...filterProps} /> : <NoteFiltersSheet {...filterProps} />}
       </PageHeader>

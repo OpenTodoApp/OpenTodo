@@ -228,13 +228,15 @@ describe('opening notes', () => {
 })
 
 describe('phones', () => {
-  it('Phone filters: the Filters button opens a sheet with Source, Project and Label; rows are at least 48 px', async () => {
+  it('Phone filters: the Filters button opens a sheet with Source, Project and Label; rows are at least 48 px; no New note in the header', async () => {
     width = 390
     await createNote({ title: 'One' })
     const { container } = await page()
     await waitFor(() => rows(container).length === 1, 'one row')
     expect(container.querySelector('[data-note-filter]')).toBeNull()
     expect(rows(container)[0].className).toContain('min-h-12')
+    // One add on a phone: the floating + (notes-home); the header has no New note.
+    expect(container.querySelector('[data-note-new]')).toBeNull()
     await click(container.querySelector('[data-note-filters-button]')!)
     await waitFor(() => !!document.querySelector('[data-note-filters-sheet]'), 'the sheet')
     const sheet = document.querySelector('[data-note-filters-sheet]')!
@@ -442,5 +444,16 @@ describe('Unlinked', () => {
     await waitFor(() => titles(container).length === 1, 'the unlinked note')
     expect(titles(container)).toEqual(['Ideas'])
     expect(JSON.parse(localStorage.getItem(NOTE_FILTERS_KEY)!).source).toBe('unlinked')
+  })
+})
+
+describe('the row (notes-home review)', () => {
+  it('has two lines: the title with its time at the end, then the text', async () => {
+    await createNote({ title: 'Wi-Fi', description: 'home-5G' })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 1, 'one row')
+    const title = container.querySelector('[data-note-title]')!
+    expect(title.parentElement!.querySelector('[data-note-meta] time')).not.toBeNull()
+    expect(container.querySelector('[data-note-preview]')!.textContent).toBe('home-5G')
   })
 })

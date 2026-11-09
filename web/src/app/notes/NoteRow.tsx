@@ -1,9 +1,9 @@
 // One row of the Notes page (OpenSpec change notes-overview, design D7): the
-// source icon, the title, a one-line preview (or, while searching, the snippet
-// with its matched words highlighted, as text), then the project, the labels and
-// the relative time of the last change. At least 48 px tall on phones; a
-// standalone note's menu holds Pin, Turn into task and Delete (no swipe actions),
-// and a long press opens it.
+// source icon; on the first line the title with the project, the labels and the
+// relative time of the last change at its end; on the second a one-line preview
+// (or, while searching, the snippet with its matched words highlighted, as text).
+// At least 48 px tall on phones; a standalone note's menu holds Pin, Turn into
+// task and Delete (no swipe actions), and a long press opens it.
 import type { ReactNode } from 'react'
 import { stripMarkdown, type SnippetSegment } from '../../lib/noteSearch'
 import type { NoteEntry } from '../../lib/noteList'
@@ -87,23 +87,27 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
         className="flex min-w-0 flex-1 items-start gap-3 rounded-control px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus">
         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>
         <span className="min-w-0 flex-1">
-          <span className={`user-text block truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
+          {/* Line 1: the title, then (right-aligned, faint) the project, labels and when it changed; line 2: the text. */}
+          <span className="flex min-w-0 items-baseline gap-3">
+            <span className={`user-text min-w-0 flex-1 truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
+            <span className="flex min-w-0 max-w-[55%] shrink items-center justify-end gap-x-2 overflow-hidden text-meta whitespace-nowrap text-faint" data-note-meta>
+              {project && entry.source !== 'project' && (
+                <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="truncate">{project.name}</span></span>
+              )}
+              {labels.map((l) => (
+                <span key={l.id} className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: l.color }} /><span className="truncate">{l.name}</span></span>
+              ))}
+              {entry.marker && <span className="shrink-0" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
+              <time className="shrink-0 tabular-nums" dateTime={entry.updated ? new Date(entry.updated).toISOString() : undefined}>{updated}</time>
+            </span>
+          </span>
           {(snippet?.length || preview) && (
             <span className="user-text block truncate text-meta text-muted" data-note-preview>{snippet?.length ? <Snippet segments={snippet} /> : preview}</span>
           )}
-          <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-meta text-faint" data-note-meta>
-            {project && entry.source !== 'project' && (
-              <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="truncate">{project.name}</span></span>
-            )}
-            {labels.map((l) => (
-              <span key={l.id} className="inline-flex items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />{l.name}</span>
-            ))}
-            {entry.marker && <span data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
-            <time dateTime={entry.updated ? new Date(entry.updated).toISOString() : undefined}>{updated}</time>
-          </span>
         </span>
       </button>
-      {menu && <div className="shrink-0 self-center pr-1">{menu}</div>}
+      {/* Revealed on hover or focus with a mouse, always shown on touch (.hover-reveal). */}
+      {menu && <div className="hover-reveal shrink-0 self-center pr-1">{menu}</div>}
     </li>
   )
 }
