@@ -1479,7 +1479,6 @@
   "Edit frame": "Editar faixa",
   "Edit in place": "Editar no lugar",
   "Edit issue connection": "Editar conexão de issues",
-  "Edit its title in place, or open its details beside the list. This device only.": "Editar o título no lugar ou abrir os detalhes ao lado da lista. Só neste dispositivo.",
   "Edit label {name}": "Editar a etiqueta {name}",
   "Edit labels": "Editar etiquetas",
   "Edit link": "Editar link",
@@ -7309,5 +7308,7 @@
   "+{n}": "+{n}",
   "{n} more": "mais {n}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {tarefa} other {projeto}}, {ring, select, centre {ao centro} direct {ligação direta} other {a dois passos}}",
-  "calendar frames and slots": "faixas e lotes do calendário"
+  "calendar frames and slots": "faixas e lotes do calendário",
+  "Expand the row": "Expandir a linha",
+  "Edit the title, open the details or expand the row. This device only.": "Editar o título, abrir os detalhes ou expandir a linha. Só neste dispositivo."
 }

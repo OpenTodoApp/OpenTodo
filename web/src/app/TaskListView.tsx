@@ -39,7 +39,7 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
-import { usePanelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
+import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { useRowClick } from './rowClick'
@@ -218,8 +218,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
   // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
-  const openId = usePanelTaskId()
-  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
+  // The list reads only whether a task is open: the docked id is read where it is needed, so a panel that
+  // follows the cursor does not draw the list again on every move (row-click-modes D4).
+  const panelOpen = usePanelHasTask()
+  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLTextAreaElement>(null)
   const quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
@@ -230,10 +232,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
   const clickPref = useRowClick()
   // A press on empty space clears the selection and closes the panel (inline-task-editing D4), never the side panel (task-side-panel D4).
-  useClickAway(listRoot, !!selectedId || !!openId || !!inline, () => {
+  useClickAway(listRoot, !!selectedId || panelOpen || !!inline, () => {
     setInline(null)
     setSelectedId(null)
-    if (openId && !sidePanelDocks()) setOpenId(null)
+    if (panelTaskId() && !sidePanelDocks()) setOpenId(null)
   })
   // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
   // the "Edit in place" preference, no panel open and no Inbox split (inbox-split D1), a task the user may edit; otherwise the task opens.
@@ -241,11 +243,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const task = taskMap.get(id)
     const fine = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
     const wide = typeof window !== 'undefined' && window.innerWidth >= 768
-    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || openId || taskSplitDocks() || isReadOnly(task)) return false
+    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || panelTaskId() || taskSplitDocks() || isReadOnly(task)) return false
     setSelectedId(id)
     setInline({ id, caret: caretFromClick(e) })
     return true
-  }, [taskMap, board, clickPref, openId, isReadOnly])
+  }, [taskMap, board, clickPref, isReadOnly])
   const renderInline = useCallback((task: Task) => (
     <InlineEditor key={task.id} task={task} caret={inline?.id === task.id ? inline.caret : undefined} projects={m.projects} labelMap={m.labelMap}
       onFollow={(id) => setSelectedId(id)}
@@ -331,7 +333,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     act(toggleComplete(parent.id, true))
   }, [ui.prompt, setPrompt, toggleComplete])
 
-  const shared = { route, rows, columns: dataColumns, board, manual, moveInView: ownOrder?.step, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
+  const shared = { route, rows, columns: dataColumns, board, manual, moveInView: ownOrder?.step, selectedId, setSelectedId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
   useListShortcuts({
     ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, nested: m.nested, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode, foldColumn: toggleSection,

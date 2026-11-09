@@ -1479,7 +1479,6 @@
   "Edit frame": "Rahmen bearbeiten",
   "Edit in place": "Direkt bearbeiten",
   "Edit issue connection": "Issue-Verbindung bearbeiten",
-  "Edit its title in place, or open its details beside the list. This device only.": "Den Titel direkt bearbeiten oder die Details neben der Liste öffnen. Nur dieses Gerät.",
   "Edit label {name}": "Label {name} bearbeiten",
   "Edit labels": "Labels bearbeiten",
   "Edit link": "Link bearbeiten",
@@ -7309,5 +7308,7 @@
   "+{n}": "+{n}",
   "{n} more": "{n} weitere",
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {Notiz} task {Aufgabe} other {Projekt}}, {ring, select, centre {in der Mitte} direct {direkt verlinkt} other {zwei Schritte entfernt}}",
-  "calendar frames and slots": "Kalenderrahmen und Slots"
+  "calendar frames and slots": "Kalenderrahmen und Slots",
+  "Expand the row": "Zeile aufklappen",
+  "Edit the title, open the details or expand the row. This device only.": "Den Titel bearbeiten, die Details öffnen oder die Zeile aufklappen. Nur dieses Gerät."
 }

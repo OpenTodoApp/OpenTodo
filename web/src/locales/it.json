@@ -1479,7 +1479,6 @@
   "Edit frame": "Modifica cornice",
   "Edit in place": "Modifica sul posto",
   "Edit issue connection": "Modifica la connessione alle issue",
-  "Edit its title in place, or open its details beside the list. This device only.": "Modifica il titolo sul posto, oppure apri i dettagli accanto all’elenco. Solo questo dispositivo.",
   "Edit label {name}": "Modifica l’etichetta {name}",
   "Edit labels": "Modifica etichette",
   "Edit link": "Modifica link",
@@ -7309,5 +7308,7 @@
   "+{n}": "+{n}",
   "{n} more": "altri {n}",
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {attività} other {progetto}}, {ring, select, centre {al centro} direct {collegamento diretto} other {a due passi}}",
-  "calendar frames and slots": "cornici e slot del calendario"
+  "calendar frames and slots": "cornici e slot del calendario",
+  "Expand the row": "Espandi la riga",
+  "Edit the title, open the details or expand the row. This device only.": "Modifica il titolo, apri i dettagli o espandi la riga. Solo questo dispositivo."
 }

@@ -8,7 +8,7 @@ import type { ListColumn, ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
 import { act } from '../actionError'
 import { registerListState } from '../listActions'
-import { panelTaskId, registerPanelHandlers, setPanelTaskId as setOpenId, taskSplitDocks } from '../panel'
+import { panelTaskId, registerPanelHandlers, setPanelTaskId as setOpenId, taskSplitDocks, watchPanelTaskId } from '../panel'
 import { openTaskPage } from '../taskTrail'
 import type { useSelection } from '../selection'
 import { openTask, selectTask } from '../signals'
@@ -69,7 +69,6 @@ export interface BindingContext {
   moveInView?: (id: string, step: -1 | 1) => Promise<boolean>
   selectedId: string | null
   setSelectedId: (id: string | null) => void
-  openId: string | null
   isReadOnly: (task: Task | undefined) => boolean
   taskMap: Map<string, Task>
   ticked: string[]
@@ -95,7 +94,7 @@ export interface BindingContext {
 }
 
 export function useListBindings(c: BindingContext): RowActions {
-  const { route, selectedId, setSelectedId, openId, ui, quickAddRef, insertAfter } = c
+  const { route, selectedId, setSelectedId, ui, quickAddRef, insertAfter } = c
   useEffect(() => {
     // A pending "open this task" request (reminder toast, notification click) survives the route change.
     const want = openTask.take()
@@ -141,15 +140,18 @@ export function useListBindings(c: BindingContext): RowActions {
   // Complete / reopen from the panel goes through this list, so the "complete parent too?" prompt and the archive offer follow.
   useEffect(() => registerPanelHandlers({ toggleComplete: (task) => act(live.current.toggleComplete(task.id, !task.completed_at)) }), [])
   // Opening another task from the panel (a subtask, the parent) selects it here when it is listed.
+  // Watched, not subscribed: the list draws for the cursor, not again for the panel following it (row-click-modes D4).
   useEffect(() => {
-    if (openId && live.current.rows.some((r) => r.task.id === openId)) setSelectedId(openId)
-  }, [openId, setSelectedId])
+    const select = (id: string | null) => { if (id && id !== live.current.selectedId && live.current.rows.some((r) => r.task.id === id)) setSelectedId(id) }
+    select(panelTaskId())
+    return watchPanelTaskId(select)
+  }, [setSelectedId])
   useEffect(() => registerListState({
     rows: () => live.current.rows.map((r) => r.task),
     columns: () => (live.current.board ? live.current.columns.map((col) => col.cards) : null),
     selected: () => live.current.selectedId,
     select: setSelectedId,
-    openId: () => live.current.openId,
+    openId: panelTaskId,
     open: setOpenId,
     readOnly: (task) => live.current.isReadOnly(task),
     manual: () => live.current.manual,
@@ -210,6 +212,7 @@ export function useListBindings(c: BindingContext): RowActions {
       setSelectedId(id)
       setOpenId(id)
     },
+    openPage: (id) => openTaskPage(id),
     tick: (id, range) => {
       const sel = live.current.selection
       if (range) sel.extendTo(id)

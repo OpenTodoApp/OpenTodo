@@ -254,6 +254,27 @@ export function usePanelTaskId(): string | null {
   return useSyncExternalStore(subscribe, panelTaskId, () => null)
 }
 
+const hasTask = () => panelTaskId() !== null
+/**
+ * Whether the slot shows a task. A list reads this, not the id, so a side panel that follows
+ * the cursor does not draw the whole list again on every move (row-click-modes D4).
+ */
+export function usePanelHasTask(): boolean {
+  return useSyncExternalStore(subscribe, hasTask, () => false)
+}
+
+/** Calls `fn` with the docked task's id and the one before it whenever it changes, without a render (row-click-modes D4). */
+export function watchPanelTaskId(fn: (id: string | null, was: string | null) => void): () => void {
+  let last = panelTaskId()
+  return subscribe(() => {
+    const id = panelTaskId()
+    if (id === last) return
+    const was = last
+    last = id
+    fn(id, was)
+  })
+}
+
 /** The projected date the task `id` was opened from, if it was opened from a projection. */
 export function usePanelProjection(id: string | undefined): string | null {
   return useSyncExternalStore(subscribe, () => (id && projection?.id === id ? projection.date : null), () => null)
