@@ -14,6 +14,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/calsync"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // remoteError answers a failed discovery with a code the form explains.
@@ -134,6 +135,8 @@ type calendarPatch struct {
 	IncludeDateOnly *bool     `json:"include_date_only"`
 	Enabled         *bool     `json:"enabled"`
 	Password        *string   `json:"password"`
+	// Scope is the part of the account written to the calendar (sync-scope).
+	Scope *syncscope.Scope `json:"scope"`
 }
 
 // patchOf checks a patch against the connection's calendars; it returns the
@@ -179,6 +182,14 @@ func patchOf(c *calsync.Connection, in calendarPatch) (calsync.Patch, []string, 
 	}
 	if in.Enabled != nil {
 		changed = append(changed, "enabled")
+	}
+	if in.Scope != nil {
+		scope, err := syncscope.Normalize(*in.Scope)
+		if err != nil {
+			return p, nil, "scope", fmt.Sprintf("choose all, only or except with at most %d workspaces, projects and Inboxes", syncscope.MaxItems)
+		}
+		p.Scope = &scope
+		changed = append(changed, "scope")
 	}
 	return p, changed, "", ""
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Store keeps connections, links and pending Google sign-ins in SQLite.
@@ -25,19 +26,21 @@ func (s *Store) SetClock(now func() time.Time) { s.now = now }
 
 const connColumns = `id, user_id, provider, name, server_url, username, principal_url, home_url, calendars, target_url, read_urls,
 	include_date_only, sync_token, ctag, enabled, next_sync_at, backoff_seconds, last_sync_at, last_success_at, last_error,
-	last_error_at, COALESCE(stopped_reason,''), last_run, created_at, updated_at`
+	last_error_at, COALESCE(stopped_reason,''), last_run, created_at, updated_at,
+	COALESCE((SELECT scope FROM calsync_scopes WHERE connection_id = calsync_connections.id), '')`
 
 func scanConn(row interface{ Scan(...any) error }) (*Connection, error) {
 	var c Connection
-	var cals, reads, run string
+	var cals, reads, run, scope string
 	var dateOnly, enabled int
 	var lastSync, lastSuccess, lastErrAt sql.NullInt64
 	if err := row.Scan(&c.ID, &c.UserID, &c.Provider, &c.Name, &c.ServerURL, &c.Username, &c.PrincipalURL, &c.HomeURL, &cals, &c.TargetURL, &reads,
 		&dateOnly, &c.SyncToken, &c.CTag, &enabled, &c.NextSyncAt, &c.BackoffSeconds, &lastSync, &lastSuccess, &c.LastError,
-		&lastErrAt, &c.StoppedReason, &run, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		&lastErrAt, &c.StoppedReason, &run, &c.CreatedAt, &c.UpdatedAt, &scope); err != nil {
 		return nil, err
 	}
 	c.IncludeDateOnly, c.Enabled = dateOnly == 1, enabled == 1
+	c.Scope = syncscope.Parse(scope)
 	c.LastSyncAt, c.LastSuccessAt, c.LastErrorAt = nullInt(lastSync), nullInt(lastSuccess), nullInt(lastErrAt)
 	_ = json.Unmarshal([]byte(cals), &c.Calendars)
 	_ = json.Unmarshal([]byte(reads), &c.ReadURLs)
@@ -191,9 +194,11 @@ type Patch struct {
 	ReadURLs        *[]string
 	IncludeDateOnly *bool
 	Enabled         *bool
+	// Scope is a normalized scope (syncscope.Normalize).
+	Scope *syncscope.Scope
 }
 
-// Update applies a patch. A new target forgets the old calendar's links, sync
+// Update applies a patch. A new scope makes the connection due now; a new target forgets the old calendar's links, sync
 // token and CTag and clears a calendar_missing stop; any calendar choice makes
 // the connection due now; enabling clears a stop that is not about
 // credentials.
@@ -236,6 +241,13 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 		set, args = append(set, "include_date_only = ?"), append(args, *p.IncludeDateOnly)
 		due = true
 	}
+	if p.Scope != nil {
+		// The next cycle removes the events of tasks that left the scope.
+		if err := saveScope(ctx, tx, id, *p.Scope); err != nil {
+			return nil, err
+		}
+		due = true
+	}
 	if p.Enabled != nil {
 		set, args = append(set, "enabled = ?"), append(args, *p.Enabled)
 		if *p.Enabled && !cur.Enabled {
@@ -258,6 +270,17 @@ func (s *Store) Update(ctx context.Context, userID, id string, p Patch) (*Connec
 		return nil, err
 	}
 	return s.Get(ctx, userID, id)
+}
+
+// saveScope stores a connection's scope; the whole account is no row.
+func saveScope(ctx context.Context, tx *sql.Tx, id string, scope syncscope.Scope) error {
+	if scope.IsAll() {
+		_, err := tx.ExecContext(ctx, `DELETE FROM calsync_scopes WHERE connection_id = ?`, id)
+		return err
+	}
+	_, err := tx.ExecContext(ctx, `INSERT INTO calsync_scopes(connection_id, scope) VALUES(?,?)
+		ON CONFLICT(connection_id) DO UPDATE SET scope = excluded.scope`, id, scope.Text())
+	return err
 }
 
 // Resume clears a stop and the backoff and makes the connection due now (a new

@@ -18,6 +18,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // InboxCalendar is the path segment of the Inbox calendar (tasks without a project).
@@ -84,7 +85,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		s.davRedirect(w, r, "/dav/")
 		return
 	}
-	u, apID, ok := s.davAuth(w, r)
+	u, ap, ok := s.davAuth(w, r)
 	if !ok {
 		return
 	}
@@ -106,7 +107,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + apID, path: p}
+	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, path: p, scope: ap.Scope}
 	switch r.Method {
 	case http.MethodOptions:
 		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR")
@@ -176,6 +177,10 @@ type davRequest struct {
 	device string
 	path   davPath
 	view   *davView
+	// scope is the app password's part of the account (sync-scope): calendars
+	// outside it are not listed and answer 404, so nothing in them is read or
+	// written.
+	scope syncscope.Scope
 }
 
 func (d *davRequest) ctx() context.Context { return d.r.Context() }
@@ -200,6 +205,7 @@ func (d *davRequest) multistatus(m *caldav.Multistatus) {
 // davView is the user's data as CalDAV sees it, loaded once per request.
 type davView struct {
 	uid      string
+	scope    syncscope.Scope
 	projects map[string]opsync.Entity // live (not deleted) projects
 	roles    map[string]string        // shared project id -> role
 	tasks    []opsync.Entity          // live tasks
@@ -236,7 +242,7 @@ func (d *davRequest) load() (*davView, error) {
 		return d.view, nil
 	}
 	ctx, uid := d.ctx(), d.user.ID
-	v := &davView{uid: uid, projects: map[string]opsync.Entity{}, roles: map[string]string{}, byID: map[string]opsync.Entity{},
+	v := &davView{uid: uid, scope: d.scope, projects: map[string]opsync.Entity{}, roles: map[string]string{}, byID: map[string]opsync.Entity{},
 		labels: map[string]string{}, byName: map[string]string{}, names: map[string]string{}, uids: map[string]string{},
 		today: localToday(d.s.now())}
 	var err error
@@ -338,19 +344,37 @@ func (v *davView) index() {
 }
 
 // calendarVisible reports whether cal names a calendar of this user: the Inbox
-// or a live, non-archived project.
+// or a live, non-archived project, in the request's scope.
 func (v *davView) calendarVisible(cal string) bool {
 	if isInboxID(cal) {
-		_, ok := v.ws.inboxWorkspace(cal)
-		return ok
+		ws, ok := v.ws.inboxWorkspace(cal)
+		return ok && v.scope.Includes(syncscope.Place{Workspace: ws})
 	}
 	p, ok := v.projects[cal]
-	return ok && string(p["archived"]) != "true"
+	return ok && string(p["archived"]) != "true" && v.inScope(cal)
+}
+
+// inScope reports whether the request's scope covers a project's calendar.
+func (v *davView) inScope(project string) bool {
+	if v.scope.IsAll() {
+		return true
+	}
+	place := syncscope.Place{Workspace: v.ws.part.Project(project)}
+	for id, i := project, 0; id != "" && i < 64; i++ {
+		place.Projects = append(place.Projects, id)
+		id = idOf(v.projects[id]["parent_id"])
+	}
+	return v.scope.Includes(place)
 }
 
 // calendarIDs lists the visible calendars, Inbox first, projects by position.
 func (v *davView) calendarIDs() []string {
-	out := v.ws.inboxes()
+	var out []string
+	for _, cal := range v.ws.inboxes() {
+		if v.calendarVisible(cal) {
+			out = append(out, cal)
+		}
+	}
 	var ps []opsync.Entity
 	for id := range v.projects {
 		if v.calendarVisible(id) {
@@ -384,7 +408,10 @@ func (v *davView) role(cal string) string {
 func (v *davView) calendarOf(t opsync.Entity) string {
 	pid := idOf(t["project_id"])
 	if pid == "" {
-		return v.ws.inboxOf(v.ws.part.Task(idOf(t["id"])))
+		if cal := v.ws.inboxOf(v.ws.part.Task(idOf(t["id"]))); v.calendarVisible(cal) {
+			return cal
+		}
+		return ""
 	}
 	if v.calendarVisible(pid) {
 		return pid
@@ -411,8 +438,27 @@ func (v *davView) uidOf(id string) string {
 // find returns the live task stored under name in calendar cal, or nil.
 func (v *davView) find(cal, name string) opsync.Entity { return v.byRes[cal+"\x00"+name] }
 
-// taskByUID returns the live task with the given UID anywhere, or nil.
+// taskByUID returns the live task with the given UID anywhere in the
+// request's scope, or nil: a task outside it is never moved, made a parent or
+// a blocker by a client that cannot see it.
 func (v *davView) taskByUID(uid string) opsync.Entity {
+	if t := v.anyByUID(uid); t != nil && v.inView(t) {
+		return t
+	}
+	return nil
+}
+
+// inView reports whether a live task is in the request's scope (in a listed
+// calendar, or in an archived project the scope covers).
+func (v *davView) inView(t opsync.Entity) bool {
+	if v.scope.IsAll() || v.calendarOf(t) != "" {
+		return true
+	}
+	pid := idOf(t["project_id"])
+	return pid != "" && v.inScope(pid)
+}
+
+func (v *davView) anyByUID(uid string) opsync.Entity {
 	if id, ok := v.uidToID[uid]; ok {
 		return v.byID[id]
 	}
@@ -457,7 +503,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 		}
 	}
 	if pid := idOf(t["parent_id"]); pid != "" {
-		if _, ok := v.byID[pid]; ok {
+		if p, ok := v.byID[pid]; ok && v.inView(p) {
 			ct.ParentUID = v.uidOf(pid)
 		}
 	}
@@ -465,7 +511,7 @@ func (v *davView) encode(t opsync.Entity) ([]byte, string) {
 	var blockers []string
 	_ = json.Unmarshal(t["blocked_by"], &blockers)
 	for _, b := range blockers {
-		if _, ok := v.byID[b]; ok {
+		if bt, ok := v.byID[b]; ok && v.inView(bt) {
 			ct.DependsOn = append(ct.DependsOn, v.uidOf(b))
 		}
 	}
@@ -920,7 +966,7 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 			continue
 		}
 		f := delta.Fields["task"][id]
-		if delta.Purged["task"][id] || f["deleted_at"] || f["project_id"] {
+		if delta.Purged["task"][id] || f["deleted_at"] || f["project_id"] || f["workspace_id"] || f["parent_id"] {
 			name := id + ".ics"
 			if n, err := d.storedName(id); err == nil && n != "" {
 				name = n

@@ -29,6 +29,12 @@ Calendar apps sign in with **your account email and an app password**, never you
 
 In **Settings → Integrations → Calendar apps** choose **New app password**, enter a name (for example "iPhone") and choose **Create app password**. The password (`otap_…`) is shown **once** in the same dialog; use **Copy** and paste it into the calendar app. Create one per device so you can revoke a lost phone without touching the others. The list shows when each was created and last used. To revoke one, open its **⋯** menu and choose **Revoke**, then confirm. Revoking takes effect on the next request. Deactivating an account revokes its app passwords; deleting it removes them.
 
+### Choose which lists an app password syncs
+
+An app password syncs every list by default. To keep work lists off a personal phone (or the other way round), choose **Lists** in the new app password dialog, or **Lists** in an existing password's **⋯** menu, and pick **Only these** or **All except these**, then the workspaces, projects and Inboxes. A workspace stands for all its projects and its Inbox; a project for itself and its sub-projects; an Inbox for the tasks without a project in that workspace.
+
+The calendar app sees only the lists in the choice: the others are not listed, and asking for them answers as for a list that does not exist, so nothing in them is read or changed. After a change, the calendar app drops the lists that left the choice and picks up the new ones on its next sync. A list the calendar app creates goes into the first chosen workspace; with only projects chosen, creating a list is refused. A task moved to a list outside the choice disappears from the calendar app at its next sync.
+
 Accounts with two-factor authentication or in SSO-only mode use app passwords like everyone else: creating one requires a recent sign-in (the same step-up check as API tokens). Failed sign-ins are limited to 10 a minute per address; after that the endpoint answers 429 for a minute.
 
 ## Client setup

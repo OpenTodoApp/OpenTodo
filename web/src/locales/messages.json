@@ -1381,6 +1381,7 @@
   ],
   "All": [
     "web/src/app/Sidebar.tsx",
+    "web/src/app/SyncScopeField.tsx",
     "web/src/lib/rules/sentence.ts",
     "web/src/ui/Combobox/useCombobox.ts"
   ],
@@ -1401,6 +1402,12 @@
   ],
   "All events": [
     "web/src/app/AuditPanel.tsx"
+  ],
+  "All except these": [
+    "web/src/app/SyncScopeField.tsx"
+  ],
+  "All except {names}": [
+    "web/src/app/SyncScopeField.tsx"
   ],
   "All its tasks together, as one step": [
     "web/src/app/menus/flowMenu.ts"
@@ -6285,6 +6292,9 @@
   "Find a webhook…": [
     "web/src/app/routines/words.tsx"
   ],
+  "Find a workspace or project…": [
+    "web/src/app/SyncScopeField.tsx"
+  ],
   "Find a workspace…": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -7795,6 +7805,7 @@
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/SampleNotice.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/SyncScopeField.tsx",
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
@@ -8711,10 +8722,14 @@
     "web/src/app/assistant/ComposerCapture.tsx"
   ],
   "Lists": [
+    "web/src/app/CaldavPanel.tsx",
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Lists and logic": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Lists of {name}": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "Lists sorted by date or priority keep their order.": [
     "web/src/lib/settingsCopy.ts"
@@ -11475,6 +11490,9 @@
   "Only the server owner can change the AI assistants settings of this server.": [
     "web/src/lib/assistants.ts"
   ],
+  "Only these": [
+    "web/src/app/SyncScopeField.tsx"
+  ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
   ],
@@ -14152,6 +14170,7 @@
   "Save": [
     "web/src/app/AttachmentSettingsPanel.tsx",
     "web/src/app/BrandingPanel.tsx",
+    "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
     "web/src/app/DefaultRemindersSettings.tsx",
@@ -16293,6 +16312,9 @@
   ],
   "Tasks for today’s focus": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Tasks from": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Tasks go to {calendar} · {n, plural, one {# calendar shown} other {# calendars shown}}": [
     "web/src/app/CalendarSyncPanel.tsx"

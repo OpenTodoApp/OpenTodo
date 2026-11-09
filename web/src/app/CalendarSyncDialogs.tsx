@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Button, Combobox, Dialog, Field, hueFor, Input, LabelChip, LearnMore, Notice, Switch } from '../ui'
 import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting, MicrosoftClientSetting, SyncCalendar } from '../lib/types'
 import { ago } from '../lib/dates'
+import { allScope, SyncScopeField } from './SyncScopeField'
 import { t } from '../lib/i18n'
 
 export interface CalDAVDraft {
@@ -77,6 +78,7 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
   const [target, setTarget] = useState(connection.target || writable[0]?.url || '')
   const [read, setRead] = useState<string[]>(connection.read)
   const [dateOnly, setDateOnly] = useState(connection.include_date_only)
+  const [scope, setScope] = useState(connection.scope ?? allScope())
   const byUrl = new Map(connection.calendars.map((c) => [c.url, c]))
   const others = connection.calendars.filter((c) => c.url !== target)
   const toggle = (url: string) => setRead((cur) => (cur.includes(url) ? cur.filter((u) => u !== url) : [...cur, url]))
@@ -84,7 +86,7 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
   return (
     <Dialog title={t('Calendars of {name}', { name: connection.name })} onClose={p.onClose} size="md">
       <form className="space-y-4" data-testid="calendar-choice"
-        onSubmit={(e) => { e.preventDefault(); onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly }) }}>
+        onSubmit={(e) => { e.preventDefault(); onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly, scope }) }}>
         <fieldset className="space-y-2">
           <legend className="text-body font-medium text-default">{t('Write tasks into')}</legend>
           <p className="text-meta text-muted">{t('Dated tasks become events in this calendar. Choose one you use only for tasks, or your main one.')}</p>
@@ -107,6 +109,7 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
             getLabel={(c: SyncCalendar) => c.name} multiple selected={read} emptyText={t('No other calendars.')} renderLeading={dot}
             onPick={(c: SyncCalendar) => toggle(c.url)} />
         </fieldset>
+        <SyncScopeField label={t('Tasks from')} value={scope} onChange={setScope} />
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-body font-medium text-default">{t('Include tasks without a time')}</p>

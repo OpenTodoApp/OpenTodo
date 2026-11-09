@@ -125,12 +125,12 @@ var (
 // davAuth resolves HTTP Basic credentials (email and app password). Failures,
 // including revoked passwords, count toward a per-address limit of 10 a minute;
 // while an address is over it every attempt is refused with 429.
-func (s *Server) davAuth(w http.ResponseWriter, r *http.Request) (*auth.User, string, bool) {
+func (s *Server) davAuth(w http.ResponseWriter, r *http.Request) (*auth.User, *auth.AppPassword, bool) {
 	ip := s.ClientIP(r)
 	if s.AuthBlocked(ip) {
 		w.Header().Set("Retry-After", "60")
 		http.Error(w, "too many failed attempts", http.StatusTooManyRequests)
-		return nil, "", false
+		return nil, nil, false
 	}
 	challenge := func() {
 		w.Header().Set("WWW-Authenticate", `Basic realm="`+davRealm+`", charset="UTF-8"`)
@@ -139,20 +139,20 @@ func (s *Server) davAuth(w http.ResponseWriter, r *http.Request) (*auth.User, st
 	email, secret, ok := basicAuth(r)
 	if !ok {
 		challenge()
-		return nil, "", false
+		return nil, nil, false
 	}
-	u, id, err := s.auth.UserByAppPassword(r.Context(), email, secret)
+	u, ap, err := s.auth.AppPasswordUser(r.Context(), email, secret)
 	if errors.Is(err, auth.ErrNotFound) {
 		s.AuthFailed(ip)
 		challenge()
-		return nil, "", false
+		return nil, nil, false
 	}
 	if err != nil {
 		s.log.Error("caldav auth lookup failed", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
-		return nil, "", false
+		return nil, nil, false
 	}
-	return u, id, true
+	return u, ap, true
 }
 
 func basicAuth(r *http.Request) (user, pass string, ok bool) {

@@ -79,10 +79,13 @@ func (r *cycle) loadLinks(ctx context.Context) error {
 	return nil
 }
 
-// loadTasks reads the push set: the task feed's selection within the window,
-// date-only tasks only with the option on (design D5), spans always.
+// loadTasks reads the push set: the task feed's selection in the connection's
+// scope (sync-scope) within the window, date-only tasks only with the option
+// on (design D5), spans always. A linked task outside the set has its event
+// removed by push and its event's changes ignored by pull, so leaving the
+// scope removes only events the connection wrote.
 func (r *cycle) loadTasks(ctx context.Context) error {
-	list, err := r.w.Tasks(ctx, r.c.UserID)
+	list, err := r.w.Tasks(ctx, r.c.UserID, r.c.Scope)
 	if err != nil {
 		return err
 	}
