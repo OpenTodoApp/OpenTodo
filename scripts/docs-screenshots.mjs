@@ -357,6 +357,25 @@ const shots = [
     await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
     await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
   } },
+  // Connections (notes-graph): a note linked with three others, one of them linked onward, its graph open; the notes are removed after.
+  { name: 'note-connections', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const add = (title, description) => p.evaluate(async ([t, d]) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: t, description: d }) })).json()).id, [title, description])
+    const times = await add('Ferry times', 'Every 20 minutes from Cais do Sodré')
+    const food = await add('Places to eat', 'Cafés near the river')
+    const trip = await add('Trip to Lisbon', `Ferry: [Ferry times](?note=${times}). Food: [Places to eat](?note=${food}).`)
+    const packing = await add('Packing list', `For the [Trip to Lisbon](?note=${trip}): light jacket, sandals.`)
+    const tram = await add('Tram 28', `Starts near [Places to eat](?note=${food}).`)
+    p.connections = [times, food, trip, packing, tram]
+    // Open the note from its row once it has synced, then the graph button of its Linked references (Packing list links to it).
+    const row = p.locator(`[data-note-key="note:${trip}"]`); await row.waitFor(); await row.click()
+    await p.locator('[data-connections-open]').waitFor(); await settle(p, 300)
+    await p.locator('[data-connections-open]').click()
+    await p.locator('[data-connections-graph]').waitFor(); await p.mouse.move(10, 700); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape')
+    for (const id of p.connections ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
+  } },
   // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
   { name: 'focus', server: D, async run(p) {
     await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())

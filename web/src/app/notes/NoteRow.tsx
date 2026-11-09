@@ -129,8 +129,10 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
  * personal, so a viewer of a shared project has it too), then Turn into task and
  * Delete for a note the user may change.
  */
-export function NoteMenu({ pinned, onPin, onTurnIntoTask, onDelete, pinKey, label = t('Note actions') }: {
+export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, pinKey, label = t('Note actions') }: {
   pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
+  /** Show connections (notes-graph D3): passed while the note links with something. */
+  onConnections?: () => void
   /** The list row's key for Pin (`p` on a focused row); the panel's menu has none. */
   pinKey?: string
   label?: string
@@ -139,6 +141,7 @@ export function NoteMenu({ pinned, onPin, onTurnIntoTask, onDelete, pinKey, labe
     <Menu kind="menu" label={label} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-56"
       triggerProps={{ 'data-note-menu': '' }}>
       <MenuItem label={pinned ? t('Unpin') : t('Pin')} icon={pinned ? 'pin-off' : 'pin'} shortcut={pinKey} onSelect={onPin} data-note-pin={pinned ? 'unpin' : 'pin'} />
+      {onConnections && <MenuItem label={t('Show connections')} icon="waypoints" onSelect={onConnections} data-show-connections />}
       {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
       {onDelete && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={onDelete} data-note-delete />}
     </Menu>

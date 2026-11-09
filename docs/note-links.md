@@ -21,6 +21,8 @@ In a note of a shared project, the list offers only that project's notes and tas
 
 At the end of a note, below a task's notes and as one folded line in a project's note area, **Linked references** lists every note that links there, newest change first, with the line around the link. When nothing links there, the section is not shown. Linked references are worked out on your device from your own copy, so they work offline and with [end-to-end encryption](e2ee.md), and the server never learns which notes link where.
 
+The graph button at the end of the heading shows the item's connections two steps out: [See an item's connections](note-connections.md).
+
 ## Links in Markdown
 
 A link is stored as Markdown: `[Trip](?note=<id>)`, `[Call the plumber](?task=<id>)` or `[Renovation](?project=<id>)`, with the title it had when the note was last edited. The API, exports, calendar apps and the command line see that text, and a script or an assistant that writes it makes a link ([Notes, tasks and scripts](notes-to-tasks.md)). Older versions of the app show a link as its text and keep it when they edit the note. An address ending in `?note=<id>` or `?project=<id>` opens that note or project, as `?task=<id>` opens a task.

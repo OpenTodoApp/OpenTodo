@@ -46,6 +46,7 @@ import { openFeedback } from '../lib/feedbackRequest'
 import { Spotlight } from './shortcuts/Spotlight'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
+import { closeConnections, useConnectionsRequest } from './signals'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
 import { handleShellUrl } from '../lib/shellActions'
@@ -261,6 +262,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
+  const connections = useConnectionsRequest()
   // Page changes are announced (assistive-tech-semantics): the tab title names the
   // page and a navigation moves focus to its heading; the skip link jumps there too.
   const frame = useRef<HTMLElement>(null)
@@ -378,6 +380,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
+      {/* The Connections dialog (notes-graph D6), its chunk loaded by openConnections. */}
+      {connections && <PanelBoundary><connections.Dialog key={`${connections.kind}:${connections.id}`} kind={connections.kind} id={connections.id} onClose={closeConnections} /></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       <CommandBar palette={palette} user={user} showShortcuts={() => setShowHelp(true)} />
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
