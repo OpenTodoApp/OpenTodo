@@ -66,7 +66,7 @@ export const CATALOGUE: readonly CatalogueTheme[] = [
       "hues": [
         "#0ea253",
         "#2f92da",
-        "#9b72ff",
+        "#9c74ff",
         "#e76535"
       ]
     }
@@ -306,7 +306,7 @@ export const CATALOGUE: readonly CatalogueTheme[] = [
       "hues": [
         "#98c379",
         "#61afef",
-        "#c678dd",
+        "#c779de",
         "#d19a66"
       ]
     }

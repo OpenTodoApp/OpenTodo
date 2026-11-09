@@ -13,7 +13,7 @@ import { labToRgb, lchToLab, toHex } from '../colourMath'
 import { deriveTheme, parseColour, type ResolvedTheme } from './derive'
 import { validateTheme, type ThemeDocument } from './format'
 import { HUES } from './tokens'
-import { generateTheme } from './catalogue/generate'
+import { checkRoundedChipContrast, generateTheme } from './catalogue/generate'
 import { PALETTES, type Palette } from './catalogue/palettes'
 import { CATALOGUE, type CatalogueTheme } from './builtin/index'
 
@@ -129,6 +129,11 @@ describe('the built-in catalogue', () => {
     expect(docs.map((d) => d.id).sort()).toEqual(ids)
     expect(CATALOGUE.map((c) => c.id).sort()).toEqual(ids)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('keeps label chip contrast after the browser rounds colours to 8-bit sRGB', () => {
+    const failures = docs.flatMap((doc) => checkRoundedChipContrast(deriveTheme(doc)))
+    expect(failures).toEqual([])
   })
 
   it('lists Nord and Dracula on the dark side only, and every other family on both', () => {
