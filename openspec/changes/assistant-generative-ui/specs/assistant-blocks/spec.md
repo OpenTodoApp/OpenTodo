@@ -86,7 +86,7 @@ A `show_tasks` block SHALL show its title, when given, and the tasks in the orde
 - **THEN** after both sync, the task is done and carries the other device's title on both devices
 
 ### Requirement: Calendar block
-A `show_calendar` block SHALL show the given day, or the week starting on it, with the user's dated tasks and their planned times. It uses the same placement and day totals as the app's calendar, but only the hours that hold an item, so the block has no scroll region of its own. Activating a day SHALL open that day in the calendar, and activating an item SHALL open its task. The block is read-only: a change to the plan is always a proposal.
+A `show_calendar` block SHALL show the given day, or the week starting on it, as a compact agenda: each day's heading with its planned total against the working day as the calendar counts it, then the day's dated tasks in time order (untimed first) with their estimates. It SHALL draw no time grid and have no scroll region of its own. Activating a day SHALL open that day in the calendar, and activating an item SHALL open its task. The block is read-only: a change to the plan is always a proposal.
 
 #### Scenario: A day
 - **WHEN** the model calls `show_calendar` for Thursday with span `day`
@@ -104,7 +104,7 @@ An `ask_choice` block SHALL show the question and one button per option, plus "S
 - **THEN** its buttons are disabled
 
 ### Requirement: Map block
-While maps are on for the server, a `show_map` block SHALL show the given tasks' places and the given saved places as numbered markers, with a list of the same items under the map. Tiles and search go only through the server's map proxy. While maps are off, the block SHALL show only the list (names and addresses) and contact no map provider. Activating a list item SHALL open its task or place.
+While maps are on for the server, a `show_map` block SHALL show the given tasks' places and the given saved places as markers, with the same items as a numbered list under the map; each marker carries its item's number and name. Tiles and search go only through the server's map proxy. While maps are off, the block SHALL show only the list (names and addresses) and contact no map provider. Activating a list item SHALL open its task or place.
 
 #### Scenario: Maps on
 - **WHEN** the model calls `show_map` with two tasks that have places and maps are on
@@ -165,7 +165,7 @@ While an answer streams, the transcript SHALL keep its newest line in view. When
 - **THEN** the transcript stays where the user scrolled and "Jump to latest" appears
 
 ### Requirement: Blocks are accessible
-Every block SHALL be a labelled group naming its kind and size ("3 tasks", "Thursday, 4 items", "Map, 2 places", "Choice: Move Clean garage?"), and SHALL be reachable and usable by keyboard with the app's normal list and button keys. No block SHALL add a shortcut. The live region SHALL announce a block once, by that label, at the point where it arrives in the answer, never its content row by row. Blocks SHALL use the design tokens and the shared building blocks, and show icons through `<Icon>`.
+Every block SHALL be a labelled group named from its parameters (for example "3 tasks" or "Map, 2 places"), and SHALL be reachable and usable by keyboard with the app's normal list and button keys. No block SHALL add a shortcut. The live region SHALL announce a block once, by that label, at the point where it arrives in the answer, never its content row by row. Blocks SHALL use the design tokens and the shared building blocks, and show icons through `<Icon>`.
 
 #### Scenario: Screen reader
 - **WHEN** an answer with a task list block streams with a screen reader on

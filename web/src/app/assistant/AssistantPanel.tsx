@@ -12,6 +12,7 @@ import { AssistantSheet } from './AssistantSheet'
 import { stopActiveRamble } from './useRamble'
 import { useAssistantConversation, type ConversationOptions } from './useAssistantConversation'
 import { JumpToLatest, useFollowStream } from './useFollowStream'
+import { focusComposer } from './focusComposer'
 
 export { AssistantSheet } from './AssistantSheet'
 export { AssistantPanelBody, ENCRYPTED_MESSAGE, EncryptionOffHint, OFFLINE_MESSAGE, type PanelViewProps } from './AssistantPanelBody'
@@ -69,10 +70,7 @@ export function captureProps(c: Conversation, ready: boolean) {
   return { voice: ready, listenRequest: c.composer.listenRequest, photos: c.composer.photos, onPhotos: c.composer.setPhotos, photoProvider: ready && s?.images ? provider : null }
 }
 
-/** Picking a starter puts its skill in the composer and the cursor in the field. */
-export function focusComposer() {
-  requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-assistant-composer]')?.focus())
-}
+export { focusComposer } from './focusComposer'
 
 export interface AssistantPanelProps extends ConversationOptions {
   onClose: () => void
@@ -127,7 +125,7 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
         onToggle={rv.toggle} onApply={() => void rv.apply()} onDiscard={() => void rv.discard()} onUndo={() => void rv.undo()} onDraft={composer.setDraft} onSend={() => void c.send()}
         onStop={c.stop} onAccept={(k) => void c.consent.accept(k)} onPickThread={c.pickThread}
         name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} layout="sheet" device={c.device} onStatus={c.consent.update} followRef={follow.contentRef}
-        onRegenerate={c.regenerate} onEditLast={() => { c.editLast(); focusComposer() }} canRedo={c.canRedo} />
+        onRegenerate={c.regenerate} onEditLast={() => { c.editLast(); focusComposer() }} canRedo={c.canRedo} onChoose={(o) => void c.choose(o)} />
     </AssistantSheet>
   )
 }

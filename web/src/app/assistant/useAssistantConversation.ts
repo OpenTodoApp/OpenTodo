@@ -11,6 +11,7 @@ import {
 import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
+import { blockLabel, blockOf, type AssistantBlock } from '../../lib/assistantBlocks'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
 import type { ReviewResult } from './ChangeSetReview'
@@ -25,7 +26,7 @@ export interface ConversationOptions {
   userName?: string
 }
 
-type Streaming = { text: string; status: string[] }
+type Streaming = { text: string; status: string[]; blocks?: AssistantMessage['blocks'] }
 
 /** The assistant's message of one turn, the change set it proposed, and the error that ended it early, if any. */
 interface StreamedAnswer {
@@ -43,9 +44,17 @@ interface StreamedAnswer {
  */
 type TurnRunner = (req: TurnRequest, onEvent: (e: TurnEvent) => void, signal?: AbortSignal) => Promise<void>
 
-async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (delta: string, all: string, status: string[]) => void; status: (line: string, all: string, lines: string[]) => void }, run: TurnRunner = streamTurn): Promise<StreamedAnswer> {
+interface StreamCallbacks {
+  text: (delta: string, all: string, status: string[]) => void
+  status: (line: string, all: string, lines: string[]) => void
+  /** A block arrived (assistant-generative-ui D3): every block so far. */
+  block?: (block: AssistantBlock, blocks: NonNullable<AssistantMessage['blocks']>) => void
+}
+
+async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCallbacks, run: TurnRunner = streamTurn): Promise<StreamedAnswer> {
   let text = ''
   const statusLines: string[] = []
+  const blocks: NonNullable<AssistantMessage['blocks']> = []
   let proposal: ProposedChange[] | null = null
   let failure: StreamedAnswer['failure']
   let errorCode: string | undefined
@@ -61,6 +70,15 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
           statusLines.push(ev.text)
           on.status(ev.text, text, [...statusLines])
           break
+        case 'block': {
+          // Where the model called it: the length of the text so far (D3); an unknown block is skipped.
+          const block = blockOf(ev)
+          if (block) {
+            blocks.push({ at: text.length, block })
+            on.block?.(block, [...blocks])
+          }
+          break
+        }
         case 'usage':
           answer.usage = { input: ev.input, output: ev.output, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
           break
@@ -84,6 +102,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
   answer.text = text
   // The steps stay on the answer (assistant-generative-ui D8).
   if (statusLines.length) answer.status = [...statusLines]
+  if (blocks.length) answer.blocks = blocks
   return { answer, proposal, failure, errorCode }
 }
 
@@ -210,7 +229,7 @@ function useReview(thread: AssistantThread | null, note: (x: AssistantThread, te
 }
 
 /** A question asked again: where it cuts the thread, its text and its skill. */
-interface Redo { cut: number; question: string; skill: AssistantSkill | null }
+interface Redo { cut: number; question: string; skill: AssistantSkill | null; base?: AssistantThread }
 
 /**
  * The latest question of a thread, when it can be asked again (assistant-generative-ui
@@ -305,7 +324,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     const cut = redo ? redo.cut : editCut.current
     editCut.current = null
     // The latest thread may still be loading from the device: start a new one then.
-    const loaded = thread ?? newThread(status?.provider ?? '')
+    const loaded = redo?.base ?? thread ?? newThread(status?.provider ?? '')
     const current = cut === null ? loaded : { ...loaded, messages: loaded.messages.slice(0, cut) }
     if (!redo) {
       composer.reviewNext.current = false
@@ -343,8 +362,10 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
         ? await import('../../lib/assistantDevice/loop').then(({ runDeviceTurn }) => (r: TurnRequest, on: (e: TurnEvent) => void, sig?: AbortSignal) => runDeviceTurn(r, on, sig, { setup, userName }))
         : undefined
       streamed = await streamAnswer(req, ctl.signal, {
-        text: (delta, text, lines) => { live.push(delta); setStreaming({ text, status: lines }) },
-        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming({ text, status: lines }) },
+        text: (delta, text, lines) => { live.push(delta); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
+        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
+        // A block is announced once, by its label, where it arrives (D4).
+        block: (block, all) => { live.push(` ${blockLabel(block)}. `); setStreaming((cur) => ({ text: cur?.text ?? '', status: cur?.status ?? [], blocks: all })) },
       }, run)
     } catch (err) {
       streamed = { answer: { role: 'assistant', text: '', at: Date.now() }, proposal: null, failure: { err } }
@@ -399,6 +420,17 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     if (target && !streaming) void send(target)
   }
 
+  /** A choice block's option, sent as the next message (assistant-generative-ui D4); the answer keeps what was chosen. */
+  const choose = async (option: string) => {
+    const msgs = [...(thread?.messages ?? [])]
+    const last = msgs[msgs.length - 1]
+    if (!thread || streaming || last?.role !== 'assistant' || last.chosen) return
+    msgs[msgs.length - 1] = { ...last, chosen: option }
+    const base = { ...thread, messages: msgs }
+    await persist(base)
+    await send({ cut: msgs.length, question: option, skill: null, base })
+  }
+
   const startNew = () => {
     editCut.current = null
     abort.current?.abort()
@@ -422,7 +454,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
 
   return {
     status, device, thread, threads, toggleThreads, clearAll, composer, streaming, error, statusAnnounce, live, abort, consent, review: rv,
-    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate,
+    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate, choose,
     /** Whether the latest question can be asked again: its material (pasted text, photos) is not kept. */
     canRedo: !!redoTarget(thread, composer.skills),
   }

@@ -7256,5 +7256,17 @@
   "Edit question": "编辑问题",
   "Jump to latest": "跳到最新",
   "Regenerate": "重新生成",
-  "{n, plural, one {# step} other {# steps}}": "{n, plural, other {# 个步骤}}"
+  "{n, plural, one {# step} other {# steps}}": "{n, plural, other {# 个步骤}}",
+  "Calendar, {date}": "日历，{date}",
+  "Choice: {question}": "选择：{question}",
+  "Open note": "打开笔记",
+  "Open project": "打开项目",
+  "Project outline": "项目概览",
+  "Removed": "已移除",
+  "Something else": "其他",
+  "This part of the answer could not be shown.": "无法显示回答的这一部分。",
+  "proposed": "建议",
+  "{n, plural, one {# open} other {# open}}": "{n, plural, other {# 项未完成}}",
+  "{n, plural, one {# task removed} other {# tasks removed}}": "{n, plural, other {已移除 # 项任务}}",
+  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, other {地图，# 个地点}}"
 }

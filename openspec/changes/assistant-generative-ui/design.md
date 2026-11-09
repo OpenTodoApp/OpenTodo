@@ -60,12 +60,12 @@ The `title` of `show_tasks` and the `question` and `options` of `ask_choice` are
 
 `web/src/app/assistant/blocks/` holds one component per kind, behind `React.lazy`. `BlockFrame` provides the labelled group, the "Removed" state and the error boundary.
 - **`tasks`:** `TaskRow` in a non-scrolling list. Completion uses the existing `completeTask` path, so it gets an op, the toast and Undo.
-- **`calendar`:** a compact rendering built from `DayColumn` and `CapacityLine`, restricted to the occupied hours (no `data-scroll-y`).
+- **`calendar`:** a compact agenda per day (`AgendaDays`): the day's heading with `CapacityLine` over the calendar's own `dayLoad`, then its dated tasks in time order. `DayColumn` was considered and rejected: it is tied to the grid's drag, add and resize gestures, and a read-only block needs none of them. The agenda has no grid and no `data-scroll-y`.
 - **`map`:** reuses `LocationMap` when `maps` are on (MapLibre is already lazy, so it loads only with the first map block), and a list otherwise.
 - **`note`:** renders through `Markdown` with a 12-line clamp.
 - **`project`:** reads sections and open counts from Dexie.
 
-All of them read with `useLiveQuery`, which makes them live (spec "Blocks in the conversation").
+All of them read through named hooks in `lib/assistantBlockData.ts` (screens never touch Dexie), built on `useLiveQuery`, which makes them live (spec "Blocks render live from local data").
 
 ### D5. Proposal shapes are chosen by the client
 
