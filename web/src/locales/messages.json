@@ -11691,6 +11691,9 @@
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
   ],
+  "Open Statistics": [
+    "web/src/app/assistant/blocks/TimeBlock.tsx"
+  ],
   "Open Today": [
     "web/src/app/FirstDay.tsx",
     "web/src/app/task-list/ListChrome.tsx"
@@ -24146,9 +24149,6 @@
   ],
   "{name}: {n, plural, one {# item written} other {# items written}}": [
     "web/src/app/palette/routineCommand.ts"
-  ],
-  "{name}: {time}. Open Statistics": [
-    "web/src/app/assistant/blocks/TimeBlock.tsx"
   ],
   "{n} applied, {m, plural, one {# skipped because it changed} other {# skipped because they changed}}": [
     "web/src/lib/rules/proposal.ts"
