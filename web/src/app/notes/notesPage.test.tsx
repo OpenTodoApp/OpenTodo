@@ -456,4 +456,16 @@ describe('the row (notes-home review)', () => {
     expect(title.parentElement!.querySelector('[data-note-meta] time')).not.toBeNull()
     expect(container.querySelector('[data-note-preview]')!.textContent).toBe('home-5G')
   })
+
+  it('below 640 px the project and labels lead the second line, beside the text', async () => {
+    const p = await createProject({ name: 'Renovation' })
+    await createNote({ title: 'Meeting with the architect', description: 'skylight', project_id: p })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 1, 'one row')
+    const chip = container.querySelector('[data-note-facts]')!
+    expect(chip.textContent).toBe('Renovation')
+    expect(chip.className).toContain('sm:hidden')
+    expect(chip.parentElement!.querySelector('[data-note-preview]')!.textContent).toBe('skylight')
+    expect(container.querySelector('[data-note-meta] .sm\\:inline-flex')!.textContent).toBe('Renovation')
+  })
 })

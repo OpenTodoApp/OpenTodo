@@ -73,6 +73,18 @@ export interface NoteRowProps {
 export function NoteRow({ entry, snippet, project, labels, updated, current, cursor, onOpen, menu }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
   const preview = snippet?.length ? '' : previewOfEntry(entry)
+  // The project, the labels and the Completed or Archived mark: at the end of line 1 on a computer,
+  // leading line 2 below 640 px, so on a phone the title has line 1 beside the time.
+  const shown = project && entry.source !== 'project'
+  const facts = shown || labels.length || entry.marker ? (
+    <>
+      {shown && <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="max-w-40 truncate">{project.name}</span></span>}
+      {labels.map((l) => (
+        <span key={l.id} className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: l.color }} /><span className="truncate">{l.name}</span></span>
+      ))}
+      {entry.marker && <span className="shrink-0" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
+    </>
+  ) : null
   return (
     <li className={`group relative flex min-h-12 items-start gap-1 rounded-control md:min-h-(--size-row) ${current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
       data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined}
@@ -91,18 +103,17 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
           <span className="flex min-w-0 items-baseline gap-3">
             <span className={`user-text min-w-[40%] flex-1 truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
             <span className="flex min-w-0 shrink items-center justify-end gap-x-2 text-meta whitespace-nowrap text-faint" data-note-meta>
-              {project && entry.source !== 'project' && (
-                <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="max-w-40 truncate">{project.name}</span></span>
-              )}
-              {labels.map((l) => (
-                <span key={l.id} className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: l.color }} /><span className="truncate">{l.name}</span></span>
-              ))}
-              {entry.marker && <span className="shrink-0" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
+              {facts && <span className="hidden min-w-0 items-center gap-x-2 sm:inline-flex">{facts}</span>}
               <time className="shrink-0 tabular-nums" dateTime={entry.updated ? new Date(entry.updated).toISOString() : undefined}>{updated}</time>
             </span>
           </span>
-          {(snippet?.length || preview) && (
-            <span className="user-text block truncate text-meta text-muted" data-note-preview>{snippet?.length ? <Snippet segments={snippet} /> : preview}</span>
+          {(facts || snippet?.length || preview) && (
+            <span className="flex min-w-0 items-center gap-2 text-meta">
+              {facts && <span className="inline-flex max-w-[60%] min-w-0 shrink-0 items-center gap-x-2 overflow-hidden whitespace-nowrap text-faint sm:hidden" data-note-facts>{facts}</span>}
+              {(snippet?.length || preview) && (
+                <span className="user-text min-w-0 flex-1 truncate text-muted" data-note-preview>{snippet?.length ? <Snippet segments={snippet} /> : preview}</span>
+              )}
+            </span>
           )}
         </span>
       </button>
