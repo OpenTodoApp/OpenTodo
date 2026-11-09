@@ -11691,9 +11691,6 @@
   "Open Settings: {section}": [
     "web/src/app/palette/registry.ts"
   ],
-  "Open Statistics": [
-    "web/src/app/assistant/blocks/TimeBlock.tsx"
-  ],
   "Open Today": [
     "web/src/app/FirstDay.tsx",
     "web/src/app/task-list/ListChrome.tsx"

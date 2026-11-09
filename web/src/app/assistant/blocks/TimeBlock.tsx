@@ -19,7 +19,7 @@ export default function TimeBlock({ block }: { block: Extract<AssistantBlock, { 
         {time.groups.map((g) => (
           <li key={g.key} data-time-group={g.key}>
             <button type="button" className="grid min-h-9 w-full grid-cols-[minmax(0,8rem)_1fr] items-center gap-3 rounded-control px-1.5 text-left hover:bg-hover"
-              title={t('Open Statistics')} onClick={() => navigate({ view: 'stats' })}>
+              onClick={() => navigate({ view: 'stats' })}>
               <span className={`truncate text-body ${block.group_by === 'project' && g.key ? 'user-text' : ''}`}>{g.label}</span>
               <span className="flex min-w-0 items-center gap-2">
                 <span className="min-w-0 flex-1" aria-hidden="true">
