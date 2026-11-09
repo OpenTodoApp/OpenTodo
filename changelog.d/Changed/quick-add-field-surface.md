@@ -1,1 +1,0 @@
-- **The "Add a task" field looks like a field.** On Today, the Inbox, projects and labels it now sits on a filled, rounded surface with a focus ring, in light, dark and high contrast.

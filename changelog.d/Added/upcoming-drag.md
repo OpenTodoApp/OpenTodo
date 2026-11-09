@@ -1,1 +1,0 @@
-- **Drag a task to another day in Upcoming.** Drop it under that day's heading: its date moves there, its time stays, and the toast offers Undo. On a touch screen, press and hold the task first ([#892](https://github.com/OpenTodoApp/OpenTodo/issues/892)).
