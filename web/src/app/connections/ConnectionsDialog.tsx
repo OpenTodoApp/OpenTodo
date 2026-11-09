@@ -47,7 +47,7 @@ function neighboursIn(index: LinkIndex) {
 
 // The graph's box before it is measured: the card's body on a computer, the screen below the header on a phone.
 function guessBox(phone: boolean): Box {
-  if (!phone || typeof window === 'undefined') return { width: 608, height: 384 }
+  if (!phone || typeof window === 'undefined') return { width: 736, height: 480 }
   return { width: Math.max(280, window.innerWidth - 32), height: Math.max(320, window.innerHeight - 96) }
 }
 

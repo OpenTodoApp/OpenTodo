@@ -37,7 +37,6 @@ export function ConnectionsGraph({ layout: l, label, moved, focusKey, onFocused,
   const [focused, setFocused] = useState<string | null>(null)
   const hot = hover ?? focused
   const centre = l.nodes[0]
-  const at = new Map(l.nodes.map((p) => [p.item.key, p]))
 
   useLayoutEffect(() => {
     const el = focusKey ? refs.current.get(focusKey) : null
@@ -65,13 +64,10 @@ export function ConnectionsGraph({ layout: l, label, moved, focusKey, onFocused,
     <div role="group" aria-label={label} className={`connections-graph ${moved ? 'connections-graph--moved' : ''}`} style={{ width: l.width, height: l.height }}
       data-connections-graph={centre.item.key} data-fits={l.fits || undefined}>
       <svg key={centre.item.key} aria-hidden="true" className="connections-graph__edges" width={l.width} height={l.height} viewBox={`0 0 ${l.width} ${l.height}`}>
-        {l.edges.map(([a, b]) => {
-          const p = at.get(a)
-          const q = at.get(b)
-          if (!p || !q) return null
-          const lit = hot === a || hot === b
-          return <line key={`${a}|${b}`} x1={p.x} y1={p.y} x2={q.x} y2={q.y} className="connections-graph__edge" data-hot={lit || undefined} data-edge={`${a}|${b}`} />
-        })}
+        {l.edges.map((e) => (
+          <line key={`${e.a}|${e.b}`} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} className="connections-graph__edge"
+            data-hot={hot === e.a || hot === e.b || undefined} data-edge={`${e.a}|${e.b}`} />
+        ))}
       </svg>
       {l.nodes.map((p) => {
         const isCentre = p.ring === 0

@@ -17,6 +17,9 @@ const item = (key: string, title: string, updated = 0, done = false): GraphItem 
   return { key, kind, id, title, updated, done }
 }
 
+const ref = (kind: GraphKind, id: string, title: string, before: string, link: string, after: string): Reference => ({ kind, id, title, projectId: null, updated: 0, snippet: { before, link, after } })
+const refsOf = (items: GraphItem[]): Reference[] => items.map((i) => ref(i.kind, i.id, i.title, '', i.title, ''))
+
 function Scene({ items, pairs, centre }: { items: GraphItem[]; pairs: [string, string][]; centre: string }) {
   const byKey = new Map(items.map((i) => [i.key, i]))
   const neighbours = (k: string) => pairs.filter((p) => p.includes(k)).map(([a, b]) => byKey.get(a === k ? b : a)!)
@@ -24,14 +27,21 @@ function Scene({ items, pairs, centre }: { items: GraphItem[]; pairs: [string, s
   const area = useRef<HTMLDivElement>(null)
   const phone = useMediaQuery(`(max-width: ${NARROW - 0.02}px)`)
   const box = useAreaBox(area, phone)
-  const [view, setView] = useState<View>('graph')
+  const picture = layout(n, box, phone)
+  // As the dialog: the List first when the picture does not fit.
+  const [chosen, setView] = useState<View | null>(null)
+  const view = chosen ?? (picture.fits ? 'graph' : 'list')
   const title = n.centre.title
   const label = t('Connections of {title}', { title })
   return (
     <ConnectionsFrame kind={n.centre.kind} title={title} label={label} view={view} onView={setView} onClose={() => {}}>
-      <div ref={area} className="connections-area">
-        <ConnectionsGraph layout={layout(n, box, phone)} label={label} moved={false} focusKey={null} onFocused={() => {}} onCentre={() => {}} onOpen={() => {}} />
-      </div>
+      {view === 'graph'
+        ? (
+          <div ref={area} className="connections-area">
+            <ConnectionsGraph layout={picture} label={label} moved={false} focusKey={null} onFocused={() => {}} onCentre={() => {}} onOpen={() => {}} />
+          </div>
+        )
+        : <ConnectionsList focus={false} onFocused={() => {}} onCentre={() => {}} onClose={() => {}} links={refsOf(n.ring1.slice(0, Math.ceil(n.ring1.length / 2)))} from={refsOf(n.ring1.slice(Math.ceil(n.ring1.length / 2)))} />}
     </ConnectionsFrame>
   )
 }
@@ -77,7 +87,7 @@ export const Many: StoryObj = {
   render: () => <Scene items={HUB} pairs={HUB_LINKS} centre="note:index" />,
 }
 
-const ref = (kind: GraphKind, id: string, title: string, before: string, link: string, after: string): Reference => ({ kind, id, title, projectId: null, updated: 0, snippet: { before, link, after } })
+
 
 /** The List view: Links and Linked from, each row opening the item, with Centre on at its end. */
 function ListScene() {

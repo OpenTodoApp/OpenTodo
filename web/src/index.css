@@ -912,13 +912,13 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
    nodes small pills (the centre larger, in the accent); the node with focus or the pointer
    and its edges take the accent. Nothing moves at rest: nodes glide only when the centre
    changes and the edges fade in after them; reduced motion makes both immediate. */
-.connections-area { @apply relative h-[calc(100dvh-6.5rem)] w-full sm:h-96; }
+.connections-area { @apply relative h-[calc(100dvh-6.5rem)] w-full sm:h-[30rem]; }
 .connections-graph { @apply relative mx-auto; }
 .connections-graph__edges { @apply pointer-events-none absolute inset-0 overflow-visible; }
 .connections-graph__edge { stroke: var(--ot-line-strong); stroke-width: 1; transition: stroke var(--duration-ui) var(--ease-calm); }
 .connections-graph__edge[data-hot] { stroke: var(--ot-accent); stroke-width: 1.5; }
 .connections-graph--moved .connections-graph__edges { animation: row-fade-in var(--duration-ui) var(--ease-calm) var(--duration-emphasis) both; }
-.connections-node { @apply absolute top-0 left-0 inline-flex items-center justify-center gap-1.5 rounded-full border border-default bg-surface px-2.5 text-meta text-default outline-none transition-[transform,border-color,color] duration-(--duration-emphasis) ease-calm hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus; }
+.connections-node { @apply absolute top-0 left-0 inline-flex items-center justify-center gap-1.5 rounded-full border border-default bg-surface px-2.5 text-meta text-default transition-[transform,border-color,color] duration-(--duration-emphasis) ease-calm hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus; }
 .connections-node > svg { @apply text-muted; }
 .connections-node[data-hot] { @apply z-10 border-accent text-strong; }
 .connections-node--centre { @apply border-accent bg-accent-soft px-3 text-body font-semibold text-strong; }

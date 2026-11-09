@@ -1,6 +1,6 @@
 // The Connections graph's model and layout (OpenSpec change notes-graph, D1, D2, D4).
 import { describe, expect, it } from 'vitest'
-import { cut, layout, neighbourhood, overlaps, RING1_CAP, RING2_CAP, stepFrom, type GraphItem, type GraphKind } from './graphLayout'
+import { crosses, cut, layout, neighbourhood, overlaps, RING1_CAP, RING2_CAP, stepFrom, type GraphItem, type GraphKind, type GraphLayout } from './graphLayout'
 
 const item = (key: string, title = key, updated = 0): GraphItem => {
   const [kind, id] = key.split(':') as [GraphKind, string]
@@ -22,6 +22,21 @@ function graph(pairs: [string, string][], items: GraphItem[] = []) {
 }
 
 const keys = (list: readonly GraphItem[]) => list.map((i) => i.key)
+
+/** The lines that pass behind a node other than their two ends. */
+const blocked = (l: GraphLayout) => l.edges.flatMap((e) =>
+  [...l.nodes.filter((p) => p.item.key !== e.a && p.item.key !== e.b), ...l.markers].filter((r) => crosses(e, r)).map(() => `${e.a}|${e.b}`))
+
+/** The Lisbon example of the screenshots: a note, five links of three kinds, two second steps. */
+const LISBON = [
+  item('note:trip', 'Trip to Lisbon'), item('task:ferry', 'Book the ferry to Cacilhas'), item('note:packing', 'Packing list'),
+  item('note:times', 'Ferry times'), item('project:holidays', 'Holidays'), item('task:tickets', 'Buy museum tickets'),
+  item('note:food', 'Places to eat'), item('task:pastel', 'Try a pastel de nata in Belém'),
+]
+const LISBON_LINKS: [string, string][] = [
+  ['note:trip', 'task:ferry'], ['note:packing', 'note:trip'], ['task:ferry', 'note:times'], ['note:times', 'note:packing'], ['project:holidays', 'note:trip'],
+  ['note:trip', 'task:tickets'], ['note:food', 'note:trip'], ['note:food', 'task:pastel'],
+]
 
 describe('neighbourhood', () => {
   it('Two steps: direct links on the inner ring, their links on the outer', () => {
@@ -124,22 +139,68 @@ describe('layout', () => {
     expect(l.nodes[0].item.title).toBe(long)
   })
 
-  it('at 360 px nothing overlaps, the outer ring as icons', () => {
+  it('on a phone every node keeps a label, nothing overlaps and no line passes behind a node', () => {
+    const h = graph([['note:trip', 'note:times'], ['note:packing', 'note:trip'], ['note:tram', 'note:times']],
+      [item('note:trip', 'Trip to Lisbon'), item('note:times', 'Ferry times'), item('note:food', 'Places to eat'), item('note:packing', 'Packing list'), item('note:tram', 'Tram 28')])
+    const l = layout(neighbourhood(h.get('note:trip'), h.of), { width: 358, height: 700 }, true)
+    expect(l.fits).toBe(true)
+    expect(overlaps([...l.nodes, ...l.markers], { width: 358, height: 700 })).toBe(false)
+    expect(l.nodes.every((p) => !p.compact && p.label !== '')).toBe(true)
+    expect(blocked(l)).toEqual([])
+  })
+
+  it('on a phone a picture whose labels do not fit says so (the List opens first)', () => {
+    const h = graph(LISBON_LINKS, LISBON)
+    expect(layout(neighbourhood(h.get('note:trip'), h.of), { width: 358, height: 700 }, true).fits).toBe(false)
+    expect(layout(neighbourhood(h.get('note:trip'), h.of), { width: 736, height: 480 }).fits).toBe(true)
+  })
+
+  it('on a phone a picture that needs icon-only nodes does not fit (the List opens first)', () => {
     const pairs: [string, string][] = []
-    const items: GraphItem[] = [item('note:c', 'Weekend in Lisbon')]
-    for (let i = 0; i < 6; i++) {
-      items.push(item(`note:a${i}`, `Inner note number ${i}`))
+    for (let i = 0; i < 8; i++) {
       pairs.push(['note:c', `note:a${i}`])
-      for (let j = 0; j < 2; j++) {
-        items.push(item(`task:b${i}${j}`, `Outer task ${i}.${j} with a long title`))
-        pairs.push([`note:a${i}`, `task:b${i}${j}`])
+      for (let j = 0; j < 3; j++) pairs.push([`note:a${i}`, `task:b${i}x${j}`])
+    }
+    const h = graph(pairs)
+    const l = layout(neighbourhood(h.get('note:c'), h.of), { width: 358, height: 700 }, true)
+    expect(l.fits).toBe(false)
+  })
+
+  it('no line passes behind a node other than its two ends, and lines end at the pills', () => {
+    const cycle = graph([['note:a', 'note:b'], ['note:b', 'note:c'], ['note:c', 'note:a'], ['note:c', 'task:d'], ['task:d', 'note:b']],
+      [item('note:a', 'Reading list'), item('note:b', 'Book notes: Deep Work'), item('note:c', 'Focus rituals'), item('task:d', 'Block mornings for writing')])
+    const hubPairs: [string, string][] = []
+    for (let i = 0; i < 40; i++) hubPairs.push([`note:n${i}`, 'note:index'])
+    for (let i = 0; i < 10; i++) hubPairs.push([`note:n${39 - i}`, `task:t${i}`])
+    const hub = graph(hubPairs)
+    const lisbon = graph(LISBON_LINKS, LISBON)
+    for (const [g, centre] of [[cycle, 'note:a'], [hub, 'note:index'], [lisbon, 'note:trip']] as const) {
+      for (const [box, narrow] of [[{ width: 736, height: 480 }, false], [{ width: 358, height: 700 }, true]] as const) {
+        const l = layout(neighbourhood(g.get(centre), g.of), box, narrow)
+        // A phone picture that does not fit opens on the List; the desktop ones must fit.
+        if (narrow && !l.fits) continue
+        expect(l.fits, `${centre} in ${box.width}`).toBe(true)
+        expect(blocked(l), `${centre} in ${box.width}`).toEqual([])
+        const at = new Map(l.nodes.map((p) => [p.item.key, p]))
+        for (const e of l.edges) {
+          // Each end on (or just outside) its own pill's border, never inside it.
+          for (const [k, x, y] of [[e.a, e.x1, e.y1], [e.b, e.x2, e.y2]] as const) {
+            const p = at.get(k)!
+            const inside = p.compact ? Math.hypot(x - p.x, y - p.y) < p.w / 2 - 1 : Math.abs(x - p.x) < p.w / 2 - 1 && Math.abs(y - p.y) < p.h / 2 - 1
+            expect(inside, `${k} end ${x},${y} of ${p.x},${p.y} ${p.w}x${p.h} in ${box.width}`).toBe(false)
+          }
+        }
       }
     }
-    const h = graph(pairs, items)
-    const l = layout(neighbourhood(h.get('note:c'), h.of), { width: 360, height: 560 }, true)
-    expect(l.fits).toBe(true)
-    expect(overlaps([...l.nodes, ...l.markers], { width: 360, height: 560 })).toBe(false)
-    expect(l.nodes.filter((p) => p.ring === 2).every((p) => p.compact)).toBe(true)
+  })
+
+  it('a cross-link between two outer nodes is left out when its line would cross the centre', () => {
+    const h = graph([['note:c', 'note:l'], ['note:c', 'note:r'], ['note:l', 'task:x'], ['note:r', 'task:y'], ['task:x', 'task:y']],
+      [item('note:c', 'Centre'), item('note:l', 'Left'), item('note:r', 'Right'), item('task:x', 'Far left'), item('task:y', 'Far right')])
+    const n = neighbourhood(h.get('note:c'), h.of)
+    const l = layout(n, { width: 736, height: 480 })
+    expect(n.edges.map((e) => e.join('|'))).toContain('task:x|task:y')
+    expect(l.edges.some((e) => e.a === 'task:x' && e.b === 'task:y')).toBe(false)
   })
 
   it('a hub at full caps on a phone does not fit and says so', () => {

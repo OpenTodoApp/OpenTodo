@@ -25,7 +25,7 @@ order: 16
 
 The item sits in the middle. On the inner ring is every item it links with, in either direction: notes first, then tasks, then projects, each by title. On the outer ring are the items those link with that are not already shown. A line joins every pair that links; which way a link points is in the List. A ring shows at most 24 items on the inside and 48 on the outside, the most recently changed, with a marker such as **+16** for the rest.
 
-The same items always draw the same picture, and nothing moves on its own. On a phone the outer ring shows icons; focus or touch one to read its title.
+The same items always draw the same picture, and nothing moves on its own. Lines start and end at the items and never pass behind one; a link between two outer items that would cross the middle is left to the List. On a phone, when the titles do not fit around the item, the dialog opens on the List, with the graph one tap away.
 
 Click or tap an item to move it to the middle; click the item in the middle to open it.
 

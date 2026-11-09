@@ -120,20 +120,35 @@ export interface PlacedMarker {
   h: number
 }
 
+/** One line of the picture: the pair it joins and its ends on the two pills' borders. */
+export interface PlacedEdge {
+  a: string
+  b: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
 export interface GraphLayout {
   width: number
   height: number
   nodes: PlacedNode[]
   markers: PlacedMarker[]
-  edges: [string, string][]
-  /** No two nodes overlap; false when even the most compact picture does not fit (the List is offered first). */
+  /**
+   * The lines drawn: the centre to the inner ring and each outer node to its inner
+   * node always, any other linked pair only when its line passes no other node (the
+   * List keeps every link).
+   */
+  edges: PlacedEdge[]
+  /** No two nodes overlap and no drawn line passes behind a node; false when no level manages it (the List comes first). */
   fits: boolean
 }
 
 export const NODE_H = 28
 export const CENTRE_H = 32
 export const COMPACT = 28
-/** On a screen narrower than this the outer ring shows icons only, its titles on focus (D2). */
+/** On a screen narrower than this a picture that needs icon-only nodes opens on the List (D2). */
 export const NARROW = 640
 // Estimated widths of the labels (the renderer caps each pill at its width, so text never runs past it).
 const CHAR_W = 6.8
@@ -141,7 +156,8 @@ const CENTRE_CHAR_W = 7.6
 const PILL_PAD = 46
 const CENTRE_PAD = 52
 const MARKER_W = 40
-const MARGIN = 8
+/** Room between the outermost pills and the canvas's edges. */
+const MARGIN = 20
 const GAP = 6
 
 /** The first `n` characters of a title, with an ellipsis when cut. */
@@ -153,35 +169,41 @@ export function cut(title: string, n: number): string {
 const pillWidth = (label: string) => Math.ceil(PILL_PAD + CHAR_W * [...label].length)
 
 // From the most readable picture to the most compact: ring-1 and ring-2 label lengths (0: icons only).
-const LEVELS: readonly (readonly [number, number])[] = [[24, 24], [24, 16], [24, 12], [20, 12], [24, 0], [20, 0], [16, 0], [12, 0], [10, 0], [0, 0]]
-// The inner ring's size against the outer one, tried in turn at each level.
-const RATIOS = [0.5, 0.62, 0.74]
+const LEVELS: readonly (readonly [number, number])[] = [
+  [24, 24], [24, 16], [20, 16], [20, 12], [16, 12], [16, 10], [12, 10], [12, 8], [10, 8],
+  [24, 0], [16, 0], [10, 0], [0, 0],
+]
+// Where the inner ring sits between the centre and the outer ring (0: close to the centre).
+const SPREADS = [0.35, 0.1, 0.6, 0.85]
 
 /**
  * The radial layout of a neighbourhood in a box (D2): the most readable level where
- * nothing overlaps. `narrow`: a phone's screen, where the outer ring shows icons only.
+ * no two nodes overlap and no line passes behind a node. `narrow`, a phone's screen:
+ * every node keeps a label; when none fits, the result says so and the List opens first.
  */
 export function layout(n: Neighbourhood, box: Box, narrow = false): GraphLayout {
-  const levels = LEVELS.filter(([, l2]) => !(narrow && l2 > 0) || n.ring2.length === 0)
+  const outer = n.ring2.length > 0 || n.more2 > 0
+  const levels = LEVELS.filter(([l1, l2]) => !narrow || (l1 > 0 && (l2 > 0 || !outer)))
   let last: GraphLayout | null = null
   for (const [l1, l2] of levels) {
-    for (const ratio of n.ring2.length || n.more2 ? RATIOS : [1]) {
-      for (const aligned of [true, false]) {
-        last = place(n, box, l1, l2, ratio, aligned)
-        if (last.fits) return last
-      }
+    if (!outer && l2 !== LEVELS[0][1] && l2 !== 0) continue
+    for (const spread of outer ? SPREADS : [0]) {
+      last = place(n, box, l1, l2, spread)
+      if (last.fits) return last
     }
   }
+  // Nothing fits: the most compact picture this screen allows, flagged.
   return last!
 }
 
-function place(n: Neighbourhood, box: Box, l1: number, l2: number, ratio: number, aligned: boolean): GraphLayout {
+function place(n: Neighbourhood, box: Box, l1: number, l2: number, spread: number): GraphLayout {
   const { width, height } = box
   const cx = width / 2
   const cy = height / 2
   const ax = width / 2 - MARGIN
   const ay = height / 2 - MARGIN
-  const centreLabel = cut(n.centre.title, LABEL_MAX)
+  // The centre's title is cut no shorter than the inner ring's (and at 24 at most).
+  const centreLabel = cut(n.centre.title, Math.max(12, Math.min(LABEL_MAX, l1 + 4)))
   const nodes: PlacedNode[] = [{
     item: n.centre, ring: 0, x: cx, y: cy, h: CENTRE_H, label: centreLabel, truncated: centreLabel !== n.centre.title, compact: false,
     w: Math.min(Math.ceil(CENTRE_PAD + CENTRE_CHAR_W * [...centreLabel].length), width - 2 * MARGIN),
@@ -195,63 +217,150 @@ function place(n: Neighbourhood, box: Box, l1: number, l2: number, ratio: number
   const r1 = n.ring1.map((i) => sized(i, 1, l1))
   const r2 = n.ring2.map((i) => ({ ...sized(i, 2, l2), parent: n.parent.get(i.key) }))
   const slots1 = r1.length + (n.more1 > 0 ? 1 : 0)
-  const slots2 = r2.length + (n.more2 > 0 ? 1 : 0)
+  const outer = r2.length > 0 || n.more2 > 0
+  // Each node's inner edge sits on its ring (an ellipse with radii rx, ry), so a wide
+  // pill reaches outward, never back toward the centre.
   const half = (list: PlacedNode[], marker: boolean) => Math.max(marker ? MARKER_W / 2 : 0, ...list.map((p) => p.w / 2))
   const tall = (list: PlacedNode[]) => Math.max(NODE_H, ...list.map((p) => p.h)) / 2
+  const cw = nodes[0].w / 2 + 2 * GAP
+  const ch = CENTRE_H / 2 + 2 * GAP
+  const w1 = half(r1, n.more1 > 0)
+  const h1 = tall(r1)
   let rx1: number, ry1: number
   let rx2 = 0, ry2 = 0
-  if (slots2 > 0) {
-    rx2 = Math.max(0, ax - half(r2, n.more2 > 0))
-    ry2 = Math.max(0, ay - tall(r2))
-    rx1 = rx2 * ratio
-    ry1 = ry2 * ratio
+  if (outer) {
+    // Wide pills at the sides are kept in the canvas by the clamp below, so the outer
+    // ring keeps at least half the canvas's width.
+    rx2 = Math.max(ax - 2 * half(r2, n.more2 > 0), ax * 0.55)
+    ry2 = ay - 2 * tall(r2)
+    // The inner ring between the centre and the outer ring, `spread` of the way out.
+    rx1 = cw + spread * Math.max(0, rx2 - 2 * w1 - 3 * GAP - cw)
+    ry1 = ch + spread * Math.max(0, ry2 - 2 * h1 - 3 * GAP - ch)
   } else {
-    rx1 = Math.max(0, ax - half(r1, n.more1 > 0))
-    ry1 = Math.max(0, ay - tall(r1))
+    // A few items stay near the centre; a busy ring takes the whole canvas.
+    const room = slots1 > 8 ? Infinity : 1
+    rx1 = Math.max(cw, Math.min(ax - 2 * w1, cw + 150 * room))
+    ry1 = Math.max(ch, Math.min(ay - 2 * h1, ch + 100 * room))
   }
+  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+  const at = (a: number, rx: number, ry: number, size: { w: number; h: number }) => ({
+    x: clamp(cx + Math.cos(a) * (rx + size.w / 2), MARGIN + size.w / 2, width - MARGIN - size.w / 2),
+    y: clamp(cy + Math.sin(a) * (ry + size.h / 2), MARGIN + size.h / 2, height - MARGIN - size.h / 2),
+  })
+  const markerSize = { w: MARKER_W, h: NODE_H }
   // Ring 1 evenly spaced from the top, clockwise; the marker takes the last slot.
-  const angle1 = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / slots1
-  r1.forEach((p, i) => { p.x = cx + rx1 * Math.cos(angle1(i)); p.y = cy + ry1 * Math.sin(angle1(i)) })
-  if (n.more1 > 0) markers.push({ ring: 1, count: n.more1, x: cx + rx1 * Math.cos(angle1(r1.length)), y: cy + ry1 * Math.sin(angle1(r1.length)), w: MARKER_W, h: NODE_H })
-  // Ring 2, aligned: each node within its parent's share of the circle, centred on the
-  // parent (one child sits straight behind it); the marker in the gap before the top.
-  if (slots2 > 0 && aligned) {
-    const sector = (2 * Math.PI) / slots1
-    const groups = new Map<string, number[]>()
-    n.ring2.forEach((i, at) => {
-      const k = n.parent.get(i.key) ?? ''
-      groups.set(k, [...(groups.get(k) ?? []), at])
-    })
+  // Equal steps along the ellipse (not equal angles), so a flat ring is not crowded at its ends.
+  const angle1 = arcAngles(rx1 + w1, ry1 + h1, slots1)
+  r1.forEach((p, i) => Object.assign(p, at(angle1(i), rx1, ry1, p)))
+  if (n.more1 > 0) markers.push({ ring: 1, count: n.more1, ...at(angle1(r1.length), rx1, ry1, markerSize), ...markerSize })
+  // Ring 2: each parent's children spread across its share of the circle, around its
+  // angle but never on it, so no child sits behind its parent and no line runs under it.
+  if (outer) {
+    const sector = (2 * Math.PI) / Math.max(slots1, 2)
     n.ring1.forEach((parent, pi) => {
-      const kids = groups.get(parent.key) ?? []
-      kids.forEach((at, j) => {
-        const a = angle1(pi) + ((j + 0.5) / kids.length - 0.5) * sector * 0.9
-        r2[at].x = cx + rx2 * Math.cos(a)
-        r2[at].y = cy + ry2 * Math.sin(a)
+      const kids = r2.filter((p) => p.parent === parent.key)
+      const step = (sector * 0.8) / Math.max(kids.length, 2)
+      kids.forEach((p, j) => {
+        // Odd counts shift half a step clockwise, so the middle child is off the parent's ray.
+        const offset = (j - (kids.length - 1) / 2 + (kids.length % 2 ? 0.5 : 0)) * step
+        Object.assign(p, at(angle1(pi) + offset, rx2, ry2, p))
       })
     })
-    const gap = angle1(slots1 - 0.5)
-    if (n.more2 > 0) markers.push({ ring: 2, count: n.more2, x: cx + rx2 * Math.cos(gap), y: cy + ry2 * Math.sin(gap), w: MARKER_W, h: NODE_H })
-  }
-  // Ring 2, by count: one slot per node, grouped by parent, so each parent's sector is
-  // sized by its children; the first parent's group is centred on its angle.
-  if (slots2 > 0 && !aligned) {
-    const step = (2 * Math.PI) / slots2
-    const first = n.ring2.length ? n.parent.get(n.ring2[0].key) : undefined
-    const firstCount = n.ring2.filter((i) => n.parent.get(i.key) === first).length
-    const firstAt = Math.max(0, n.ring1.findIndex((i) => i.key === first))
-    const start = angle1(firstAt) - ((firstCount - 1) / 2) * step
-    const angle2 = (i: number) => start + i * step
-    r2.forEach((p, i) => { p.x = cx + rx2 * Math.cos(angle2(i)); p.y = cy + ry2 * Math.sin(angle2(i)) })
-    if (n.more2 > 0) markers.push({ ring: 2, count: n.more2, x: cx + rx2 * Math.cos(angle2(r2.length)), y: cy + ry2 * Math.sin(angle2(r2.length)), w: MARKER_W, h: NODE_H })
+    if (n.more2 > 0) markers.push({ ring: 2, count: n.more2, ...at((angle1(slots1 - 1) + (angle1(0) + 2 * Math.PI)) / 2, rx2, ry2, markerSize), ...markerSize })
   }
   nodes.push(...r1, ...r2)
   for (const p of nodes) { p.x = round(p.x); p.y = round(p.y) }
   for (const m of markers) { m.x = round(m.x); m.y = round(m.y) }
-  return { width, height, nodes, markers, edges: n.edges, fits: !overlaps([...nodes, ...markers], box) }
+  const { edges, clear } = lines(n, nodes, markers)
+  return { width, height, nodes, markers, edges, fits: clear && !overlaps([...nodes, ...markers], box) }
+}
+
+/** The pairs drawn, clipped to the pills' borders; `clear` is false when a structural line passes behind a node. */
+function lines(n: Neighbourhood, nodes: PlacedNode[], markers: PlacedMarker[]): { edges: PlacedEdge[]; clear: boolean } {
+  const byKey = new Map(nodes.map((p) => [p.item.key, p]))
+  const centre = n.centre.key
+  const solid = (a: PlacedNode, b: PlacedNode) =>
+    (a.item.key === centre && b.ring === 1) || (b.item.key === centre && a.ring === 1) || a.parent === b.item.key || b.parent === a.item.key
+  const edges: PlacedEdge[] = []
+  let clear = true
+  for (const [ka, kb] of n.edges) {
+    const a = byKey.get(ka)
+    const b = byKey.get(kb)
+    if (!a || !b) continue
+    const e = clip(a, b)
+    const blocked = [...nodes, ...markers].some((o) => o !== a && o !== b && crosses(e, o))
+    if (!blocked) edges.push(e)
+    else if (solid(a, b)) {
+      clear = false
+      edges.push(e)
+    }
+  }
+  return { edges, clear }
+}
+
+/** The segment between two nodes' centres, cut where it leaves each pill (a circle for a compact node). */
+function clip(a: PlacedNode, b: PlacedNode): PlacedEdge {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const exit = (p: PlacedNode) => {
+    if (p.compact) return p.w / 2 / Math.hypot(dx, dy || 1e-9)
+    const tx = dx ? p.w / 2 / Math.abs(dx) : Infinity
+    const ty = dy ? p.h / 2 / Math.abs(dy) : Infinity
+    return Math.min(tx, ty)
+  }
+  // Pills that touch leave no line (they never do in a picture that fits).
+  const ta = Math.min(1, exit(a))
+  const tb = Math.min(1 - ta, exit(b))
+  return { a: a.item.key, b: b.item.key, x1: round(a.x + dx * ta), y1: round(a.y + dy * ta), x2: round(b.x - dx * tb), y2: round(b.y - dy * tb) }
+}
+
+/** Whether a segment passes through a rectangle (centre and size), with a hair of room (Liang–Barsky). */
+export function crosses(e: Pick<PlacedEdge, 'x1' | 'y1' | 'x2' | 'y2'>, r: Rect): boolean {
+  const pad = 2
+  const [minX, maxX, minY, maxY] = [r.x - r.w / 2 - pad, r.x + r.w / 2 + pad, r.y - r.h / 2 - pad, r.y + r.h / 2 + pad]
+  const dx = e.x2 - e.x1
+  const dy = e.y2 - e.y1
+  let t0 = 0
+  let t1 = 1
+  for (const [p, q] of [[-dx, e.x1 - minX], [dx, maxX - e.x1], [-dy, e.y1 - minY], [dy, maxY - e.y1]]) {
+    if (p === 0) {
+      if (q < 0) return false
+      continue
+    }
+    const t = q / p
+    if (p < 0) t0 = Math.max(t0, t)
+    else t1 = Math.min(t1, t)
+    if (t0 > t1) return false
+  }
+  return true
 }
 
 const round = (v: number) => Math.round(v * 10) / 10
+
+/**
+ * The angles of `count` points spread evenly by length along an ellipse, the first at
+ * the top, clockwise: `(i) => angle` (any real i, wrapping, for points between slots).
+ */
+function arcAngles(rx: number, ry: number, count: number): (i: number) => number {
+  const STEPS = 720
+  const lengths = [0]
+  let prev = { x: 0, y: -ry }
+  for (let k = 1; k <= STEPS; k++) {
+    const t = -Math.PI / 2 + (k / STEPS) * 2 * Math.PI
+    const p = { x: rx * Math.cos(t), y: ry * Math.sin(t) }
+    lengths.push(lengths[k - 1] + Math.hypot(p.x - prev.x, p.y - prev.y))
+    prev = p
+  }
+  const total = lengths[STEPS] || 1
+  return (i: number) => {
+    const turns = Math.floor(i / Math.max(count, 1))
+    const want = ((i / Math.max(count, 1)) - turns) * total
+    let k = 1
+    while (k < STEPS && lengths[k] < want) k++
+    const f = (want - lengths[k - 1]) / ((lengths[k] - lengths[k - 1]) || 1)
+    return -Math.PI / 2 + ((k - 1 + f) / STEPS) * 2 * Math.PI + turns * 2 * Math.PI
+  }
+}
 
 type Rect = { x: number; y: number; w: number; h: number }
 
