@@ -1,0 +1,1 @@
+- **A paste into the Inbox counts every task that went elsewhere.** The note after pasting a list counted only the lines that set a date, not those that set a project.
