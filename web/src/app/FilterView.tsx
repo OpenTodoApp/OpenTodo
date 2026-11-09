@@ -27,6 +27,7 @@ import { useShortcutScope } from './shortcuts'
 import { useAssigneeDirectory, useToday, useViewerZone } from './useViews'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
+import { openTaskPage } from './taskTrail'
 import { TaskRow } from './TaskRow'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { useTrackedTotals } from '../lib/timeEntries'
@@ -338,7 +339,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
-            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
+            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
             {...bulk.rowProps(tk)}

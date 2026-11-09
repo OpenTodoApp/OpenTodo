@@ -145,7 +145,7 @@ export function KeyboardSection() {
 export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, singleKeys = true, onSingleKeys = () => {}, click = 'edit', onClick = () => {} }: {
   vim: boolean; onVim: (on: boolean) => void; hints?: boolean; onHints?: (on: boolean) => void
   singleKeys?: boolean; onSingleKeys?: (on: boolean) => void
-  /** "Click a task to" (inline-task-editing D6), this device only. */
+  /** "Click a task to" (inline-task-editing D6, row-click-modes D1), this device only. */
   click?: RowClick; onClick?: (v: RowClick) => void
 }) {
   return (
@@ -155,6 +155,7 @@ export function KeyboardView({ vim, onVim, hints = false, onHints = () => {}, si
           <Select id="row-click-select" className="sm:w-56" value={click} onChange={(e) => onClick(e.target.value as RowClick)} aria-label={t('Click a task to')} data-row-click>
             <option value="edit">{t('Edit in place')}</option>
             <option value="open">{t('Open details')}</option>
+            <option value="expand">{t('Expand the row')}</option>
           </Select>
         )} />
       <SettingRow {...rowCopy('keyboard', 'hints')} id="shortcut-hints"

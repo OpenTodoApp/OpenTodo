@@ -17,6 +17,7 @@ import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
 import { openFromRow } from '../sidePanel'
+import { openTaskPage } from '../taskTrail'
 import { keysOf } from '../../lib/shortcuts'
 import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
@@ -98,6 +99,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                         onOpen={(e) => { setSelected(key); openFromRow(task.id, e) }}
+                        onOpenPage={() => openTaskPage(task.id)}
                         {...bulk.rowProps(task)} />
                     )
                   })}

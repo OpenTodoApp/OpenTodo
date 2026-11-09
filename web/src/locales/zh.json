@@ -1492,7 +1492,6 @@
   "Edit frame": "编辑时间段",
   "Edit in place": "就地编辑",
   "Edit issue connection": "编辑议题连接",
-  "Edit its title in place, or open its details beside the list. This device only.": "就地编辑标题，或在列表旁打开其详情。仅限此设备。",
   "Edit label {name}": "编辑标签 {name}",
   "Edit labels": "编辑标签",
   "Edit link": "编辑链接",
@@ -7309,5 +7308,7 @@
   "+{n}": "+{n}",
   "{n} more": "另外 {n} 个",
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}",
-  "calendar frames and slots": "日历时间框和时段"
+  "calendar frames and slots": "日历时间框和时段",
+  "Expand the row": "展开该行",
+  "Edit the title, open the details or expand the row. This device only.": "编辑标题、打开详情或展开该行。仅限此设备。"
 }

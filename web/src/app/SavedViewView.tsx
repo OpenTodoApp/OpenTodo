@@ -20,6 +20,7 @@ import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
+import { openTaskPage } from './taskTrail'
 import { TaskRow } from './TaskRow'
 import { ViewMark, ViewMenu } from './ViewsView'
 import { useListKeys, type KeyRow } from './useListKeys'
@@ -287,6 +288,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                 onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
+                onOpenPage={() => openTaskPage(tk.id)}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
                 {...bulk.rowProps(tk)}
                 onPointerDown={(e) => drag.startDrag(e, key, tk)}

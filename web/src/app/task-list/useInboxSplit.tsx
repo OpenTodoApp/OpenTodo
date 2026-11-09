@@ -9,10 +9,10 @@ import { useEffect, useMemo, useRef } from 'react'
 import { t } from '../../lib/i18n'
 import type { ListRow } from '../../lib/listGroups'
 import { InboxEmptyPane } from '../InboxEmptyPane'
-import { panelTaskId, setPanelTaskId, setTaskSplit, taskSplitDocks } from '../panel'
+import { panelTaskId, setPanelTaskId, setTaskSplit, taskSplitDocks, watchPanelTaskId } from '../panel'
 import { useSidePanel, useSidePanelChosen } from '../sidePanel'
 
-export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, openId, ticking }: {
+export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, ticking }: {
   /** The page is the Inbox. */
   inbox: boolean
   /** The Inbox keeps its own split (the page preference). */
@@ -21,7 +21,6 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
   rows: readonly ListRow[]
   selectedId: string | null
   setSelectedId: (id: string | null) => void
-  openId: string | null
   /** Rows are ticked: a bulk selection opens nothing (bulk-edit), so the pane stays empty meanwhile. */
   ticking: boolean
 }): { meta: string | undefined; count: number } {
@@ -50,12 +49,16 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
   }, [on, selectedId, ticking, listed])
 
   // Closing the docked task (its Close, Esc inside it) clears the cursor too, so the pane and the list agree.
-  const lastOpen = useRef<string | null>(null)
+  // Watched, not subscribed, so the list does not draw again for the pane following the cursor (row-click-modes D4).
+  const live = useRef({ selectedId, setSelectedId, ticking })
+  live.current = { selectedId, setSelectedId, ticking }
   useEffect(() => {
-    const was = lastOpen.current
-    lastOpen.current = openId
-    if (on && !ticking && was && !openId && taskSplitDocks() && selectedId === was) setSelectedId(null)
-  }, [on, openId, selectedId, setSelectedId, ticking])
+    if (!on) return
+    return watchPanelTaskId((id, was) => {
+      const l = live.current
+      if (!l.ticking && was && !id && taskSplitDocks() && l.selectedId === was) l.setSelectedId(null)
+    })
+  }, [on])
 
   // The header says how much is left to sort (D3).
   return { meta: inbox && count > 0 ? t('{n} to sort', { n: count }) : undefined, count }
@@ -65,17 +68,16 @@ export function useInboxSplit({ inbox, on, rows, selectedId, setSelectedId, open
  * A task list's split (task-side-panel D2, D7): with the side panel preference every list,
  * the Inbox included, keeps the side panel; otherwise the Inbox keeps its own split.
  */
-export function useListSplit({ inbox, rows, ownRows, selectedId, setSelectedId, openId, ticking }: {
+export function useListSplit({ inbox, rows, ownRows, selectedId, setSelectedId, ticking }: {
   inbox: boolean
   rows: readonly ListRow[]
   ownRows: readonly ListRow[]
   selectedId: string | null
   setSelectedId: (id: string | null) => void
-  openId: string | null
   ticking: boolean
 }): { meta: string | undefined } {
   const side = useSidePanelChosen()
-  const split = useInboxSplit({ inbox, on: inbox && !side, rows: ownRows, selectedId, setSelectedId, openId, ticking })
+  const split = useInboxSplit({ inbox, on: inbox && !side, rows: ownRows, selectedId, setSelectedId, ticking })
   // The panel follows the cursor only while its row is in the list: a bulk action that took
   // every ticked row out leaves the cursor on a task no longer listed, which must not open (issue 841).
   const listed = useMemo(() => (selectedId && rows.some((r) => r.task.id === selectedId) ? selectedId : null), [rows, selectedId])
