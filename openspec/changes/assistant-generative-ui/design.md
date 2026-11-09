@@ -73,12 +73,18 @@ All of them read through named hooks in `lib/assistantBlockData.ts` (screens nev
 
 ### D6. Editing proposed items
 
-`Review` items gain `edits?: Record<string, unknown>`. Opening Edit on a row shows the app's own inputs:
-- the title field;
-- the When and Deadline popovers through `usePartEditor`;
-- the priority menu.
+The list rows of the review gain Edit (a pencil) when the item's proposal sets an editable field:
+- the title of a created task or project;
+- a do-on date, a start date or a deadline;
+- a priority.
 
-Only for fields already in the item's `patch`. Apply merges `edits` over `patch` before `mutateMany()`. The Undo record stores the previous values exactly as today, so Undo needs no change. Checks reuse the field checks the task panel uses (title length, date format).
+Edit opens an inline editor under the row, built from the design system's `Field`, `Input` (text and date) and `Select`. Its checks are `checkEdit` in `lib/assistantShape.ts`: a non-empty title of at most 500 characters, a real calendar date, a priority from 1 to 4. The facet popovers of the task panel (`usePartEditor`) were considered and rejected: they edit a stored task in place, while here the value is a proposal that does not exist yet.
+
+Inside the editor, Enter and Esc belong to the editor (they stop at it), so they never apply or discard the whole card. Done sends every changed field as one edit (`editReviewItem(review, index, edits)`), which replaces the values in the item's `change.patch`, describes the item again within the whole set (so a new project's name still reads in its tasks' titles) and marks it `edited`. `refreshReview` keeps the mark.
+
+Apply sends the edited patch through `mutateMany()` like any other item, and the Undo record stores the previous values as before, so Undo needs no change. The calendar, outline and map shapes show the checkboxes only; editing is in the list.
+
+Bulk actions reuse the card without `shapes` and without `onEdit`, so they keep the plain list.
 
 ### D7. Task links
 

@@ -12,6 +12,7 @@ import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
 import { blockLabel, blockOf, type AssistantBlock } from '../../lib/assistantBlocks'
+import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
 import type { ReviewResult } from './ChangeSetReview'
@@ -225,7 +226,13 @@ function useReview(thread: AssistantThread | null, note: (x: AssistantThread, te
     }
   }
   const toggle = (i: number, c: boolean) => setReview((r) => r && { ...r, items: r.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) })
-  return { review, setReview, result, setResult, reviewBusy, reviewRef, apply, discard, undo, toggle }
+  // An edit before applying (assistant-generative-ui D6): the edited value is what applies.
+  const edit = async (i: number, edits: ItemEdits) => {
+    if (!review) return
+    const next = await editReviewItem(review, i, edits)
+    setReview((cur) => (cur === review ? next : cur))
+  }
+  return { review, setReview, result, setResult, reviewBusy, reviewRef, apply, discard, undo, toggle, edit }
 }
 
 /** A question asked again: where it cuts the thread, its text and its skill. */

@@ -36,9 +36,9 @@
 
 ## 5. Proposal shapes and edits
 
-- [ ] 5.1 `lib/assistantShape.ts` `shapeOf(review)` (D5: outline, calendar within 7 days, map with maps on, otherwise list). Verify with unit tests for each rule and the 8-day case that falls back to the list.
-- [ ] 5.2 `ChangeSetReview` draws the chosen shape with the existing checkbox, counts, Enter, Esc and "changed since proposed", plus the List switch in the head. Verify with tests for the week-plan and new-project scenarios of the delta spec, toggling to the list keeping the same checked items, and the keyboard-only apply path.
-- [ ] 5.3 Editing proposed items (D6): title of created items, do-on, start, deadline and priority, only for fields in the patch, using the app's inputs and checks, marked "edited", merged at apply. Undo is unchanged. Verify with tests for the edit-before-applying scenario (created with edited values, Undo trashes it) and the offline edit converging through `mutateMany` with fake-indexeddb.
+- [x] 5.1 `lib/assistantShape.ts` `shapeOf(review)` (D5: outline, calendar within 7 days, map with maps on, otherwise list). Verify with unit tests for each rule and the 8-day case that falls back to the list.
+- [x] 5.2 `ChangeSetReview` draws the chosen shape with the existing checkbox, counts, Enter, Esc and "changed since proposed", plus the List switch in the head. Verify with tests for the week-plan and new-project scenarios of the delta spec, toggling to the list keeping the same checked items, and the keyboard-only apply path.
+- [x] 5.3 Editing proposed items (D6): title of created items, do-on, start, deadline and priority, only for fields in the patch, using the app's inputs and checks, marked "edited", merged at apply. Undo is unchanged. Verify with tests for the edit-before-applying scenario (created with edited values, Undo trashes it) and the offline edit converging through `mutateMany` with fake-indexeddb.
 
 ## 6. Docs and final checks
 

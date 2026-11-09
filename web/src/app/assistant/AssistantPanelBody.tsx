@@ -9,6 +9,7 @@ import { t } from '../../lib/i18n'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { AssistantConsent } from './AssistantConsent'
 import { ChangeSetReview, type ReviewResult } from './ChangeSetReview'
+import type { ItemEdits } from '../../lib/assistantShape'
 import { AnswerActions, QuestionActions } from './MessageActions'
 import { AnswerContent } from './blocks/AnswerContent'
 import type { ChoiceState } from './blocks/ChoiceBlock'
@@ -40,6 +41,8 @@ export interface PanelViewProps {
   threads: AssistantThread[] | null
   reviewRef?: React.RefObject<HTMLDivElement | null>
   onToggle: (i: number, c: boolean) => void
+  /** Edits a proposed value before applying (assistant-generative-ui D6). */
+  onEdit?: (i: number, edits: ItemEdits) => void
   onApply: () => void
   onDiscard: () => void
   onUndo: () => void
@@ -131,7 +134,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
           )}
           {(p.review || p.result) && (
             <div className="sm:pl-9">
-              <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
+              <ChangeSetReview review={p.review} result={p.result} busy={p.reviewBusy} onToggle={p.onToggle} onEdit={p.onEdit} shapes onApply={p.onApply} onDiscard={p.onDiscard} onUndo={p.onUndo} regionRef={p.reviewRef} />
             </div>
           )}
         </>

@@ -7268,5 +7268,14 @@
   "proposed": "建议",
   "{n, plural, one {# open} other {# open}}": "{n, plural, other {# 项未完成}}",
   "{n, plural, one {# task removed} other {# tasks removed}}": "{n, plural, other {已移除 # 项任务}}",
-  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, other {地图，# 个地点}}"
+  "{n, plural, one {Map, # place} other {Map, # places}}": "{n, plural, other {地图，# 个地点}}",
+  "(edited)": "（已编辑）",
+  "Choose a priority.": "请选择优先级。",
+  "Edit {title}": "编辑{title}",
+  "Enter a title.": "请输入标题。",
+  "Map": "地图",
+  "Other changes": "其他更改",
+  "Outline": "大纲",
+  "Show the proposal as": "建议的显示方式",
+  "The title is too long.": "标题过长。"
 }
