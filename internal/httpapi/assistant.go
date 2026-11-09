@@ -891,6 +891,7 @@ func (s *Server) turnError(err error, own bool) (code, msg string) {
 	code, msg = "provider_error", "the provider could not answer"
 	if pe, ok := assistant.AsProviderError(err); ok {
 		code, msg = pe.Code, pe.Msg
+		s.log.Warn("assistant turn refused by the provider", "code", pe.Code, "status", pe.Status, "type", pe.Type)
 		if own && pe.Code == assistant.CodeProviderAuth {
 			msg = assistant.OwnKeyRejected()
 		}

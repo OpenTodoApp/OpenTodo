@@ -120,8 +120,9 @@ func anthropicFor(srv *httptest.Server) *AnthropicProvider {
 	return &AnthropicProvider{Key: testKey, Model: "claude-opus-5-5", BaseURL: srv.URL, HTTP: srv.Client(), MaxRetries: 2}
 }
 
-// TestAnthropicRequestShape: the Messages request is streamed with strict
-// tools from the registry, tool_choice auto, adaptive thinking (never
+// TestAnthropicRequestShape: the Messages request is streamed with the
+// registry's tools (not strict: the in-app set is past Anthropic's strict
+// limits, issue #1102), tool_choice auto, adaptive thinking (never
 // disabled) and an explicit effort; parallel tool results go back in one user
 // message; thinking blocks are passed back unchanged.
 func TestAnthropicRequestShape(t *testing.T) {
@@ -167,13 +168,13 @@ func TestAnthropicRequestShape(t *testing.T) {
 		t.Fatalf("output_config %v", oc)
 	}
 	tools := b["tools"].([]any)
-	if len(tools) < 10 {
+	if len(tools) <= anthropicMaxStrictTools {
 		t.Fatalf("%d tools", len(tools))
 	}
 	for _, tl := range tools {
 		m := tl.(map[string]any)
 		s := m["input_schema"].(map[string]any)
-		if m["strict"] != true || s["additionalProperties"] != false || s["type"] != "object" {
+		if m["strict"] != false || s["additionalProperties"] != false || s["type"] != "object" {
 			t.Fatalf("tool %v", m)
 		}
 	}
