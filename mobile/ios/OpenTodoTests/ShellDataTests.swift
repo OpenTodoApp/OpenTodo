@@ -290,8 +290,11 @@ final class BackgroundRefreshTests: XCTestCase {
 }
 
 final class AppBoundDomainsTests: XCTestCase {
-    func testThePlaceholderIsNotADomain() throws {
-        XCTAssertFalse(AppBoundDomains.configured.contains { $0.hasSuffix("invalid") })
+    /// ios-bridge-portable: the portable build carries no `WKAppBoundDomains` key, not
+    /// even a placeholder, since the key alone denies the bridge on every other server.
+    func testThePortableBuildDeclaresNoAppBoundDomains() throws {
+        XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: "WKAppBoundDomains"))
+        XCTAssertEqual(AppBoundDomains.configured, [])
         XCTAssertFalse(AppBoundDomains.limitsNavigation(to: try XCTUnwrap(URL(string: "https://todo.example.com"))))
     }
 }
