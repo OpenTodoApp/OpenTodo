@@ -305,6 +305,7 @@ test('the image, stable tag and release are published only after every gate', ()
   assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
   assert.deepEqual(needsOf(jobs['obsidian-plugin']), ['release'], 'the Obsidian plugin is published only after the release')
   assert.deepEqual(needsOf(jobs['ios-testflight']), ['release'], 'the TestFlight upload runs only after the release')
+  assert.match(jobs['ios-testflight'], /^ {4}secrets: inherit$/m, 'the called TestFlight workflow gets the release secrets')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
