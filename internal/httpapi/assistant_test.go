@@ -677,6 +677,46 @@ func TestTurnStreamsEvents(t *testing.T) {
 	}
 }
 
+// TestTurnStreamsBlock (assistant-generative-ui 2.3): a display call streams a
+// block event between the text before and after it, with ids and no content.
+func TestTurnStreamsBlock(t *testing.T) {
+	e, llm, _ := assistantEnv(t)
+	e.enableAssistant(nil)
+	e.consentAssistant("anthropic")
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Pay taxes"})
+	e.mustStatus(resp, 201, out)
+	task := out["id"].(string)
+	before := countOps(t, e)
+	llm.set(
+		reply([]fakeBlock{{text: "Here is what is overdue: "}, {tool: "show_tasks", input: `{"ids":["` + task + `","unknown"]}`}}, "tool_use"),
+		reply([]fakeBlock{{text: "Start with the first."}}, "end_turn"),
+	)
+	code, _, events := e.turn(ask("show me what's overdue"))
+	if code != 200 {
+		t.Fatalf("%d", code)
+	}
+	var order []string
+	for _, ev := range events {
+		if (ev.name == "text" || ev.name == "block") && (len(order) == 0 || order[len(order)-1] != ev.name) {
+			order = append(order, ev.name)
+		}
+	}
+	if strings.Join(order, ",") != "text,block,text" {
+		t.Fatalf("event order %v", order)
+	}
+	b := named(events, "block")[0].data
+	if b["kind"] != "tasks" || len(b["ids"].([]any)) != 1 || b["ids"].([]any)[0] != task {
+		t.Fatalf("block %v", b)
+	}
+	raw, _ := json.Marshal(b)
+	if strings.Contains(string(raw), "Pay taxes") {
+		t.Fatalf("the block carries content: %s", raw)
+	}
+	if countOps(t, e) != before {
+		t.Fatal("a display call wrote")
+	}
+}
+
 func TestTurnProviderErrorsAndRefusal(t *testing.T) {
 	e, llm, _ := assistantEnv(t)
 	e.enableAssistant(nil)

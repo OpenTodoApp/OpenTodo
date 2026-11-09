@@ -10,12 +10,12 @@
 
 ## 2. Display tools on the server
 
-- [ ] 2.1 `internal/assistant/blocks.go`: the six display `ToolDef`s with strict schemas and caps (D1), offered by the loop after the registry tools and filtered by a skill's tool list. Verify with `go test ./internal/assistant`: `TestDisplayToolsOffered` checks they are in-app only and filtered by skill.
-- [ ] 2.2 Checking and the limit (D2): schema check, then for each id: exists, not deleted, visible to the user, not excluded. The same "not found" for unknown and excluded ids, a limit of 4 per turn, and a short JSON tool result. Verify with table tests for unknown, excluded and deleted ids, an all-failed call, the fifth block, and wrong-kind ids.
+- [x] 2.1 `internal/assistant/blocks.go`: the six display `ToolDef`s with strict schemas and caps (D1), offered by the loop after the registry tools and filtered by a skill's tool list. Verify with `go test ./internal/assistant`: `TestDisplayToolsOffered` checks they are in-app only and filtered by skill.
+- [x] 2.2 Checking and the limit (D2): schema check, then for each id: exists, not deleted, visible to the user, not excluded. The same "not found" for unknown and excluded ids, a limit of 4 per turn, and a short JSON tool result. Verify with table tests for unknown, excluded and deleted ids, an all-failed call, the fifth block, and wrong-kind ids.
 - [ ] 2.3 The `block` stream event in `internal/httpapi/assistant.go` (`assistant.Events.Block`), carrying only kind and parameters. Verify with `TestTurnStreamsBlock` in `internal/httpapi/assistant_test.go`: the block event sits between text events and contains no task title. The existing 401, 403 `session_required` and 413 scenarios still pass.
-- [ ] 2.4 MCP never lists display tools. Verify with a test in `internal/mcp` that lists tools with an `agent` token and finds none of the six.
-- [ ] 2.5 Skill tool lists gain their display tools (D1: plan-week, triage-inbox, idea-to-project, capture). Verify with the skills tests in `internal/assistant/skills_test.go`.
-- [ ] 2.6 Block guidance in `SystemRules` ("show a block when it saves reading; don't repeat it in prose; at most 4"). Verify with the regenerated manifest and `go test ./internal/assistant`.
+- [x] 2.4 MCP never lists display tools. Verify with a test in `internal/mcp` that lists tools with an `agent` token and finds none of the six.
+- [x] 2.5 Skill tool lists gain their display tools (D1: plan-week, triage-inbox, idea-to-project, capture). Verify with the skills tests in `internal/assistant/skills_test.go`.
+- [x] 2.6 Block guidance in `SystemRules` ("show a block when it saves reading; don't repeat it in prose; at most 4"). Verify with the regenerated manifest and `go test ./internal/assistant`.
 
 ## 3. Blocks in the web app
 
