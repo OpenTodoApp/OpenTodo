@@ -128,7 +128,7 @@ Use these terms consistently; they match the quick-add vocabulary and the server
 | This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond |
 | Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid |
 | Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak |
-| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | vervaldatum |
+| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum |
 | Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline |
 | Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering |
 | Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen |
