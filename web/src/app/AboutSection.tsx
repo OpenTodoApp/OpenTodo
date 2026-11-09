@@ -33,12 +33,17 @@ function ExternalLink({ href, label, testId }: { href: string; label: string; te
 
 const PLATFORM_NAME: Record<OpenTodoShell['platform'], string> = { android: 'Android', ios: 'iOS', desktop: 'desktop' }
 
-/** The native shell this page runs in (native-shells): its name and version, and a notice when it is older than this server expects. */
-export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform']; version: string; outdated: boolean } | null }) {
+/**
+ * The native shell this page runs in (native-shells): its name and version, the exact server
+ * address it opened (ios-setup-address: the shell loads only that origin, so it is this page's),
+ * and a notice when it is older than this server expects.
+ */
+export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform']; version: string; outdated: boolean; server?: string } | null }) {
   if (!app) return null
   return (
     <>
       <SettingRow id="about-shell" label={t('OpenTodo for {platform}', { platform: PLATFORM_NAME[app.platform] ?? app.platform })}
+        description={app.server && <span className="break-all" data-about-shell-server>{app.server}</span>}
         status={<Badge hue="slate">{app.version}</Badge>} />
       {app.outdated && <Notice tone="warning">{t('This app is older than this server expects. Update OpenTodo from your app store to keep everything working.')}</Notice>}
     </>
@@ -48,7 +53,7 @@ export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform'
 export function AboutSection({ user }: { user: User }) {
   const version = useServerVersion()
   const s = shell()
-  const app = s ? { platform: s.platform, version: s.app, outdated: shellOutdated() } : null
+  const app = s ? { platform: s.platform, version: s.app, outdated: shellOutdated(), server: window.location.origin } : null
   const [note, setNote] = useState(false)
   return (
     <>
