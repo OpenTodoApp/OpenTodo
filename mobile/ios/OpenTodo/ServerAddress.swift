@@ -71,7 +71,9 @@ enum ServerAddress: Equatable {
             guard let encoded = punycode(folded), encoded.count <= 59 else { return nil }
             labels.append("xn--" + encoded)
         }
-        return String(text[..<schemeEnd.upperBound]) + labels.joined(separator: ".") + port + rest[end...]
+        let scheme = String(text[..<schemeEnd.upperBound])
+        let tail = String(port) + String(rest[end...])
+        return scheme + labels.joined(separator: ".") + tail
     }
 
     /// RFC 3492 Punycode of one label, without the `xn--` prefix.
