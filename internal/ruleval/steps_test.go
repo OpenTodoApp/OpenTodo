@@ -303,8 +303,11 @@ func TestAvailability(t *testing.T) {
 		{"encrypted", "email_me", with(func(e *Env) { e.Encrypted = true }), ReasonEncrypted},
 		{"demo email", "email_me", with(func(e *Env) { e.Demo = true }), ReasonDemo},
 		{"members outside a shared project", "email_members", ok, ReasonNotShared},
-		// routines-shared D8: Email project members comes with routines-shared-email.
-		{"members in a shared project", "email_members", with(func(e *Env) { e.Shared = true }), ReasonNotYet},
+		// routines-shared-email: Email project members in a shared routine.
+		{"members in a shared project", "email_members", with(func(e *Env) { e.Shared = true }), ""},
+		{"members without SMTP", "email_members", with(func(e *Env) { e.Shared, e.EmailConfigured = true, false }), ReasonEmailNotConfigured},
+		{"members, unverified run-as", "email_members", with(func(e *Env) { e.Shared, e.EmailVerified = true, false }), ReasonEmailNotVerified},
+		{"members on a demo", "email_members", with(func(e *Env) { e.Shared, e.Demo = true, true }), ReasonDemo},
 		// routines-shared D3: steps that act on personal things.
 		{"focus in a shared routine", "set_focus", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},
 		{"email me in a shared routine", "email_me", with(func(e *Env) { e.Shared = true }), ReasonNotInShared},

@@ -146,6 +146,8 @@ describe('Reviewing a proposal', () => {
   it('describes created tasks, comments and side effects', () => {
     expect(describeItem({ key: 'e:task:n', kind: 'create', entity: 'task', id: 'n', fields: { title: 'Book the room' }, ai: true }, names).text).toBe('Create the task “Book the room”')
     expect(describeItem({ key: 's:0', kind: 'notify', ai: false, side: { kind: 'notify', notice: { text: 'Done' } } }, names).text).toBe('Notify me: Done')
+    expect(describeItem({ key: 's:1', kind: 'email', ai: false, side: { kind: 'email', mail: { Subject: 'This week', Text: 'x' } } }, names).text).toBe('Email me: This week')
+    expect(describeItem({ key: 's:2', kind: 'email', ai: false, side: { kind: 'email', mail: { Subject: 'This week', Text: 'x' }, members: ['a', 'b'] } }, names).text).toBe('Email project members: This week')
   })
 })
 

@@ -148,6 +148,8 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.aiStep(s, in, at)
 	case "email_me":
 		return st.emailStep(s, in)
+	case "email_members":
+		return st.emailMembersStep(s, in)
 	}
 	return none(), "", failf(ErrCodeInvalid, "%s is not available on this server yet", s.Kind)
 }

@@ -4940,6 +4940,7 @@
         "proposals[].list[].side.mail.RunID": "string",
         "proposals[].list[].side.mail.Subject": "string",
         "proposals[].list[].side.mail.Text": "string",
+        "proposals[].list[].side.members": "array",
         "proposals[].list[].side.notice": "object|null",
         "proposals[].list[].side.notice.at": "number",
         "proposals[].list[].side.notice.ruleId": "string",
@@ -4948,6 +4949,7 @@
         "proposals[].list[].side.notice.stepId": "string",
         "proposals[].list[].side.notice.taskId": "string",
         "proposals[].list[].side.notice.text": "string",
+        "proposals[].list[].side.project": "string",
         "proposals[].rule_id": "string",
         "proposals[].run_id": "string",
         "proposals[].skipped": "number",
@@ -4998,6 +5000,7 @@
         "list[].side.mail.RunID": "string",
         "list[].side.mail.Subject": "string",
         "list[].side.mail.Text": "string",
+        "list[].side.members": "array",
         "list[].side.notice": "object|null",
         "list[].side.notice.at": "number",
         "list[].side.notice.ruleId": "string",
@@ -5006,6 +5009,7 @@
         "list[].side.notice.stepId": "string",
         "list[].side.notice.taskId": "string",
         "list[].side.notice.text": "string",
+        "list[].side.project": "string",
         "rule_id": "string",
         "run_id": "string",
         "skipped": "number",
@@ -5072,6 +5076,7 @@
         "runs[].proposal.list[].side.mail.RunID": "string",
         "runs[].proposal.list[].side.mail.Subject": "string",
         "runs[].proposal.list[].side.mail.Text": "string",
+        "runs[].proposal.list[].side.members": "array",
         "runs[].proposal.list[].side.notice": "object|null",
         "runs[].proposal.list[].side.notice.at": "number",
         "runs[].proposal.list[].side.notice.ruleId": "string",
@@ -5080,6 +5085,7 @@
         "runs[].proposal.list[].side.notice.stepId": "string",
         "runs[].proposal.list[].side.notice.taskId": "string",
         "runs[].proposal.list[].side.notice.text": "string",
+        "runs[].proposal.list[].side.project": "string",
         "runs[].proposal.rule_id": "string",
         "runs[].proposal.run_id": "string",
         "runs[].proposal.skipped": "number",
@@ -5619,6 +5625,16 @@
         "task_id": "id"
       }
     },
+    "GET /api/v1/routine-emails/{token}": {
+      "policy": "public",
+      "response": {
+        "routine": "string",
+        "stopped": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/rules": {
       "policy": "signed-in",
       "statuses": [
@@ -5705,6 +5721,7 @@
         "runs[].proposal.list[].side.mail.RunID": "string",
         "runs[].proposal.list[].side.mail.Subject": "string",
         "runs[].proposal.list[].side.mail.Text": "string",
+        "runs[].proposal.list[].side.members": "array",
         "runs[].proposal.list[].side.notice": "object|null",
         "runs[].proposal.list[].side.notice.at": "number",
         "runs[].proposal.list[].side.notice.ruleId": "string",
@@ -5713,6 +5730,7 @@
         "runs[].proposal.list[].side.notice.stepId": "string",
         "runs[].proposal.list[].side.notice.taskId": "string",
         "runs[].proposal.list[].side.notice.text": "string",
+        "runs[].proposal.list[].side.project": "string",
         "runs[].proposal.rule_id": "string",
         "runs[].proposal.run_id": "string",
         "runs[].proposal.skipped": "number",
@@ -5797,6 +5815,7 @@
         "proposal.list[].side.mail.RunID": "string",
         "proposal.list[].side.mail.Subject": "string",
         "proposal.list[].side.mail.Text": "string",
+        "proposal.list[].side.members": "array",
         "proposal.list[].side.notice": "object|null",
         "proposal.list[].side.notice.at": "number",
         "proposal.list[].side.notice.ruleId": "string",
@@ -5805,6 +5824,7 @@
         "proposal.list[].side.notice.stepId": "string",
         "proposal.list[].side.notice.taskId": "string",
         "proposal.list[].side.notice.text": "string",
+        "proposal.list[].side.project": "string",
         "proposal.rule_id": "string",
         "proposal.run_id": "string",
         "proposal.skipped": "number",
@@ -8774,6 +8794,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -8782,6 +8803,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -8911,6 +8933,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -8919,6 +8942,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -9503,6 +9527,16 @@
         "task_id": "id"
       }
     },
+    "POST /api/v1/routine-emails/{token}/stop": {
+      "policy": "public",
+      "response": {
+        "routine": "string",
+        "stopped": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "POST /api/v1/rules": {
       "policy": "signed-in",
       "response": {
@@ -9586,6 +9620,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -9594,6 +9629,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -9724,6 +9760,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -9732,6 +9769,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",

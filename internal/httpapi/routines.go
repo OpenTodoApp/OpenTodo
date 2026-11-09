@@ -70,6 +70,32 @@ func (m routineMailer) RefuseRoutine(ctx context.Context, uid string, rm rules.R
 	}
 }
 
+// SendRoutineMember sends an Email project members message to one member in
+// their language, with a stop link of its own (routines-shared-email D3, D4).
+func (m routineMailer) SendRoutineMember(ctx context.Context, runAs, member string, rm rules.RoutineMail) error {
+	msg, ok := m.message(ctx, member, rm)
+	if !ok {
+		return errors.New("routine email: no verified address")
+	}
+	if m.s.rules == nil {
+		return errors.New("routine email: routines are off")
+	}
+	secret, err := m.s.rules.Store.MintStopLink(ctx, rm.RuleID, member, m.s.now())
+	if err != nil {
+		return err
+	}
+	msg.ActorID = runAs
+	msg.Vars.Routine.Stop = msg.Origin + "/routine-emails/" + secret
+	return m.s.mail.Send(ctx, msg)
+}
+
+func (m routineMailer) RefuseRoutineMember(ctx context.Context, runAs, member string, rm rules.RoutineMail, reason string) {
+	if msg, ok := m.message(ctx, member, rm); ok {
+		msg.ActorID = runAs
+		m.s.mail.RecordFailure(ctx, msg, reason)
+	}
+}
+
 func (s *Server) registerRoutineRoutes(mux *routes) {
 	user := signedIn.DemoDenied()
 	mux.handle("POST /api/v1/rules/test", user, s.handleRoutineDraftTest)

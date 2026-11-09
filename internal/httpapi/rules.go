@@ -70,6 +70,7 @@ func (s *Server) registerRuleRoutes(mux *routes) {
 	mux.handle("PUT /api/v1/me/rules/paused", user, s.handleRulesPaused)
 	s.wireRoutines()
 	s.registerRoutineRoutes(mux)
+	s.registerRoutineEmailRoutes(mux)
 	s.switchRoutes(mux, "/api/v1/settings/automations", switchRoute{sw: s.ruleSwitch,
 		get: ownerOnly("see the automations setting").DemoDenied(), put: ownerOnly("manage the automations setting").DemoDenied(),
 		more: s.automationsLock, putMore: s.automationsLock})

@@ -30,14 +30,18 @@ export function routineProjects(memberships: Map<string, Membership>): string[] 
   return [...memberships.values()].filter((m) => canEditProjectNote(m.role)).map((m) => m.projectId)
 }
 
-/** The catalogue as a shared routine sees it: personal steps not available (D3), Email project members later (D8). */
+/**
+ * The catalogue as a shared routine sees it: personal steps not available (D3),
+ * and Email project members available when the only reason against it was
+ * that a personal routine is not shared (routines-shared-email).
+ */
 export function sharedCatalogue(cat: Catalogue | null): Catalogue | null {
   if (!cat) return cat
   const out: Catalogue = {}
   for (const [kind, e] of Object.entries(cat)) {
-    if (!e.available) out[kind] = e
+    if (kind === 'email_members' && !e.available && e.reason === 'not_shared') out[kind] = { kind, group: e.group, available: true }
+    else if (!e.available) out[kind] = e
     else if (NOT_IN_SHARED.has(kind)) out[kind] = { ...e, available: false, reason: 'not_in_shared' }
-    else if (kind === 'email_members') out[kind] = { ...e, available: false, reason: 'not_yet' }
     else out[kind] = e
   }
   for (const kind of NOT_IN_SHARED) if (!out[kind]) out[kind] = { kind, group: '', available: false, reason: 'not_in_shared' }

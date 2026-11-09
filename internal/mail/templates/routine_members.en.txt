@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+This message was sent by the routine "{{.Routine}}" of a project you are a member of on OpenTodo at {{.Origin}}.
+
+See this run:
+
+{{.Link}}
+
+You get this message because the routine has an Email project members step and you are a member with the verified address {{.Email}}. To get no more emails from this routine, open:
+
+{{.Stop}}

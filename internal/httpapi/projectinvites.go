@@ -12,6 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/mail"
+	"github.com/OpenTodoApp/opentodo/internal/rules"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -321,8 +322,8 @@ func (s *Server) registerWithProjectInvite(w http.ResponseWriter, r *http.Reques
 }
 
 // redactPath keeps link secrets out of the request log: a path segment that
-// carries an invitation, project invite, sign-up verification or reset secret
-// is replaced, and so is a task page's secret, which is the segment after /t/ or
+// carries an invitation, project invite, sign-up verification, reset or
+// routine email stop secret is replaced, and so is a task page's secret, which is the segment after /t/ or
 // /api/v1/pages/ (task-pages).
 func redactPath(p string) string {
 	for _, prefix := range []string{"/t/", "/api/v1/pages/"} {
@@ -342,7 +343,7 @@ func redactPath(p string) string {
 	}
 	parts := strings.Split(p, "/")
 	for i, part := range parts {
-		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, auth.WorkspaceInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, "otv_") || strings.HasPrefix(part, "otr_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) {
+		if strings.HasPrefix(part, auth.ProjectInviteSecretPrefix) || strings.HasPrefix(part, auth.WorkspaceInviteSecretPrefix) || strings.HasPrefix(part, "oti_") || strings.HasPrefix(part, "otv_") || strings.HasPrefix(part, "otr_") || strings.HasPrefix(part, auth.PublicLinkSecretPrefix) || strings.HasPrefix(part, rules.StopLinkPrefix) {
 			parts[i] = "[redacted]"
 		}
 	}

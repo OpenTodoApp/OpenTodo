@@ -70,6 +70,12 @@ describe('shared routines on this device', () => {
     expect(cat.set_focus).toMatchObject({ available: false, reason: 'not_in_shared' })
     expect(cat.count.available).toBe(true)
     expect(cat.webhook).toMatchObject({ available: false, reason: 'not_in_shared' })
+    // routines-shared-email: Email project members in a shared routine, unless something else is missing.
+    const members = (reason: string) => sharedCatalogue({ email_members: { kind: 'email_members', group: 'communication', available: false, reason } })!.email_members
+    expect(members('not_shared')).toMatchObject({ available: true })
+    expect(members('not_shared').reason).toBeUndefined()
+    expect(members('email_not_configured')).toMatchObject({ available: false, reason: 'email_not_configured' })
+    expect(members('demo')).toMatchObject({ available: false, reason: 'demo' })
   })
 
   it('"Project menu": /routines?project=<id> lists only that project\'s routines, with a filter to remove', async () => {
