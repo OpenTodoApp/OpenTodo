@@ -1,1 +1,0 @@
-- The in-app assistant works with Anthropic again: every chat turn failed with "the provider refused the request" because the request marked more tools strict than Anthropic allows. Tools are now strict only when the whole set fits Anthropic's limits, and a refused turn is logged with the provider's status and error type (#1102).
