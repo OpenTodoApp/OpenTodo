@@ -86,7 +86,11 @@ No dependency. Editor chunk (lazy) grows by about 4 KB gzip (node, picker, index
 
 Additive. Ship behind nothing: older builds read links as text. Rollback leaves links in notes as ordinary link formatting.
 
-## Open questions for the owner
+## Owner decisions (2026-11-09)
+
+The owner took the recommendation on each open question below.
+
+### The questions as asked
 
 1. **The picker inside a shared project's note.** Recommendation: offer only items of that project, so a member never meets a muted link to something private and an author does not leak a private title by accident; other links can still be pasted. The alternative is the whole workspace with the muted-link fallback.
 2. **Links in comments.** Recommendation: not in this change. Comments are a conversation, not a reference, and counting them would make Linked references noisy and double the index sources; revisit if people ask for it.

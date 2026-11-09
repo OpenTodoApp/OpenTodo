@@ -71,7 +71,11 @@ No dependency. One lazy chunk of about 4 KB gzip; first load unchanged. Memory: 
 
 Additive, client-only. Rollback removes the dialog; nothing is stored.
 
-## Open questions for the owner
+## Owner decisions (2026-11-09)
+
+The owner took the recommendation on each open question below.
+
+### The questions as asked
 
 1. **Whole-account graph.** Recommendation: not in v1. Ship the local graph, see whether people centre and walk through it, and only then consider a whole-graph view (with `d3-force`, lazily) as its own change.
 2. **Depth.** Recommendation: two steps, fixed, no control. One step is what Linked references already show; three steps on a well-linked account is most of the account.

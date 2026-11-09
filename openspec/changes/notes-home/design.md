@@ -73,7 +73,11 @@ No dependency. Under 1 KB gzip in the lazy Notes chunk; the sidebar's favourite 
 
 Additive; no data to move. Rollback: `note:` favourites stay in the preference, ignored by older builds.
 
-## Open questions for the owner
+## Owner decisions (2026-11-09)
+
+The owner took the recommendation on each open question below.
+
+### The questions as asked
 
 1. **Daily note.** Recommendation: out of this change. A daily note is a journal, a second purpose next to Today and the weekly review, and it invites templates and a calendar of notes; if people ask, a small later change can add "Today's note" (one standalone note per date, created on first open) without touching this design.
 2. **Pinned notes in the sidebar's Favourites.** Recommendation: yes, one pin concept for projects, labels, views and notes; the alternative is pins that only order the Notes page, which needs a second preference.
