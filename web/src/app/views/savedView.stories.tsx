@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { createView } from '../../lib/views'
 import { SavedViewRoute } from '../SavedViewView'
 import { seedInbox, withSeed } from '../stories/fixtures'
-import { DisplayOptionsBody } from './DisplayPanel'
+import { DisplayOptionsBody } from './DisplayOptionsBody'
 import { SaveViewCard } from './SaveViewCard'
 
 // A saved view with its toolbar, filter panel and display options (OpenSpec change

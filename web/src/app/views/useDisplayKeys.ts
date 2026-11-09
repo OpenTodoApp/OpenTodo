@@ -34,7 +34,7 @@ export interface DisplayKeysTarget<G extends ListGroupBy = ListGroupBy> {
 /** Registry id → the grouping it sets. */
 export const GROUP_KEYS: Record<string, ListGroupBy> = {
   'arrange.group-section': 'section', 'arrange.group-project': 'project', 'arrange.group-none': 'none',
-  'arrange.group-due': 'due', 'arrange.group-priority': 'priority', 'arrange.group-label': 'label',
+  'arrange.group-due': 'due', 'arrange.group-priority': 'priority', 'arrange.group-label': 'label', 'arrange.group-time': 'day',
 }
 
 /** Registry id → the order it sets. */

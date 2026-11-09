@@ -1,24 +1,30 @@
-// Display options of a project's list and a label's page (OpenSpec change
-// list-display-options): the header's display button (D2) and the switch back to
-// manual order a drag or keyboard move makes while another order is shown (D4), and
-// the `r` sequences that change the same options from the keyboard (display-keys).
+// Display options of a project's list, a label's page and the built-in Today, Upcoming
+// and Inbox (OpenSpec changes list-display-options, builtin-view-options): the header's
+// display button (D2) and the switch back to manual order a drag or keyboard move makes
+// while another order is shown (D4), the `r` sequences that change the same options
+// from the keyboard (display-keys), and the built-in views' Reset (builtin-view-options D7).
 import { useCallback, type ReactNode } from 'react'
-import { LABEL_GROUP_OPTIONS, LIST_SORT_OPTIONS, PROJECT_GROUP_OPTIONS, setListDisplay, type DisplayScope, type ListDisplay } from '../../lib/listDisplay'
+import { DISPLAY_KINDS, isBuiltinScope, isDefaultDisplay, resetListDisplay, setListDisplay, type DisplayScope, type ListDisplay } from '../../lib/listDisplay'
+import type { RowLayout } from '../../lib/rowLayout'
 import type { FieldDef } from '../../lib/types'
 import { act } from '../actionError'
 import { DisplayPanel } from '../views/DisplayPanel'
 import { useDisplayKeys } from '../views/useDisplayKeys'
 
-export function useListDisplay(display: ListDisplay | undefined, scope: DisplayScope | null, shown: boolean, sortFields: readonly FieldDef[]): { control: ReactNode; onReorder: () => void } {
-  const otherOrder = !!display && !(display.sortBy === 'position' && display.sortDir === 'asc')
+export function useListDisplay(display: ListDisplay | undefined, scope: DisplayScope | null, shown: boolean, sortFields: readonly FieldDef[], account: RowLayout): { control: ReactNode; onReorder: () => void } {
+  const kind = scope ? DISPLAY_KINDS[scope.kind] : null
+  // Only a page with a manual order switches back to it (Today and Upcoming have none).
+  const otherOrder = !!display && !!kind?.sorts.includes('position') && !(display.sortBy === 'position' && display.sortDir === 'asc')
   const onReorder = useCallback(() => {
     if (otherOrder && scope) act(setListDisplay(scope, { sortBy: 'position', sortDir: 'asc' }))
   }, [otherOrder, scope])
-  const groupOptions = scope?.kind === 'project' ? PROJECT_GROUP_OPTIONS : LABEL_GROUP_OPTIONS
-  useDisplayKeys(display && scope && shown ? { value: display, groupOptions, sortOptions: LIST_SORT_OPTIONS, sortFields, set: (patch) => setListDisplay(scope, patch) } : null)
-  const control = display && scope && shown ? (
+  const on = display && scope && kind && shown
+  const fields = kind?.fields ? sortFields : []
+  useDisplayKeys(on ? { value: display, groupOptions: kind.groups, sortOptions: kind.sorts, sortFields: fields, set: (patch) => setListDisplay(scope, patch) } : null)
+  const control = on ? (
     <DisplayPanel<ListDisplay> value={display} onChange={(patch) => act(setListDisplay(scope, patch))}
-      groupOptions={groupOptions} sortOptions={LIST_SORT_OPTIONS} sortFields={sortFields} />
+      groupOptions={kind.groups} sortOptions={kind.sorts} sortFields={fields}
+      onReset={isBuiltinScope(scope) && !isDefaultDisplay(scope.kind, display, account) ? () => act(resetListDisplay(scope)) : undefined} />
   ) : null
   return { control, onReorder }
 }

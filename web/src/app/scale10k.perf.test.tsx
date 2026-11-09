@@ -20,6 +20,7 @@ import CommandPalette from './palette/CommandPalette'
 import { syncNow } from '../lib/sync'
 import { markLongPull, withDeferredActivity } from '../lib/activity'
 import { logicalToday } from '../lib/dates'
+import { setListDisplay } from '../lib/listDisplay'
 
 // TaskRow computes its field badges once per render: counting the calls counts row renders.
 const rowRenders = vi.hoisted(() => ({ n: 0 }))
@@ -188,6 +189,26 @@ describe(`${TASKS} tasks`, () => {
     // vary with the timing of the window, a few hundred rows; the whole table is 10,000.
     expect(reads.tasks ?? 0).toBeLessThan(TASKS / 4)
     await r.unmount()
+  }, 180_000)
+
+  it('Today grouped by project and ordered by title: one read to open, a completion re-renders at most 3 rows (builtin-view-options)', async () => {
+    await seed()
+    await setListDisplay({ kind: 'today' }, { groupBy: 'project', sortBy: 'title', subtasks: true })
+    let r: Awaited<ReturnType<typeof render>> | null = null
+    const reads = await readsDuring(async () => {
+      r = await render(<TaskListView route={{ view: 'today' }} />)
+      await waitFor(() => !!r!.container.querySelector('li[data-task-id="t00100"]'), 'Today listed by project', 60_000)
+      await flush(300)
+    })
+    expect(reads.tasks ?? 0).toBeLessThanOrEqual(TASKS + 20)
+    rowRenders.n = 0
+    const button = r!.container.querySelector('li[data-task-id="t00100"] button[aria-label^="Complete"]') as HTMLButtonElement
+    act(() => button.click())
+    await waitFor(async () => !!(await db.tasks.get('t00100'))?.completed_at, 'the completion stored', 30_000)
+    await flush(500)
+    console.info(`[performance-10k] Today by project: rows read to open ${JSON.stringify(reads)}, row renders to complete one task ${rowRenders.n}`)
+    expect(rowRenders.n).toBeLessThanOrEqual(3)
+    await r!.unmount()
   }, 180_000)
 
   it('each pulled page is applied in one local transaction', async () => {
