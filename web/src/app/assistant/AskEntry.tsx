@@ -11,7 +11,7 @@ import { keysOf } from '../../lib/shortcuts'
 import type { AskRequest } from '../../ui'
 import { Notice } from '../../ui'
 import { navigate } from '../router'
-import { EncryptionOffHint } from './AssistantPanelBody'
+import { EncryptionOffHint } from './assistantHints'
 import { t, msg } from '../../lib/i18n'
 
 export type AskMode = 'composer' | 'owner-hint' | 'encrypted' | 'none'

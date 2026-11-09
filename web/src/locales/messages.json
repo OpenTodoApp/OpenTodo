@@ -3786,7 +3786,8 @@
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
-    "web/src/app/UsersPanel.tsx"
+    "web/src/app/UsersPanel.tsx",
+    "web/src/app/assistant/MessageActions.tsx"
   ],
   "Copied.": [
     "web/src/app/AppCodeRow.tsx",
@@ -3812,6 +3813,9 @@
   ],
   "Copy address": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "Copy answer": [
+    "web/src/app/assistant/MessageActions.tsx"
   ],
   "Copy bookmarklet": [
     "web/src/app/CaptureSettings.tsx"
@@ -3890,6 +3894,9 @@
   ],
   "Could not connect to the mail server": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "Could not copy": [
+    "web/src/app/assistant/MessageActions.tsx"
   ],
   "Could not refresh. Replying and ticking are off until the connection is back.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -4953,12 +4960,12 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/DashboardView.tsx",
     "web/src/app/FirstDay.tsx",
-    "web/src/app/Markdown.tsx",
     "web/src/app/MarkdownView.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/RefChip.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
@@ -5268,6 +5275,9 @@
   ],
   "Edit link": [
     "web/src/app/LinkDialog.tsx"
+  ],
+  "Edit question": [
+    "web/src/app/assistant/MessageActions.tsx"
   ],
   "Edit scope": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -8142,6 +8152,9 @@
   ],
   "Joining…": [
     "web/src/app/ProjectInviteScreen.tsx"
+  ],
+  "Jump to latest": [
+    "web/src/app/assistant/useFollowStream.tsx"
   ],
   "Just me": [
     "web/src/app/routines/RoutinesView.tsx"
@@ -13278,6 +13291,9 @@
   "Refused": [
     "web/src/app/RelaySettings.tsx"
   ],
+  "Regenerate": [
+    "web/src/app/assistant/MessageActions.tsx"
+  ],
   "Region": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -16651,7 +16667,7 @@
   ],
   "The assistant can’t read end-to-end encrypted tasks. Your tasks never leave your devices unencrypted.": [
     "web/src/app/assistant/AskEntry.tsx",
-    "web/src/app/assistant/AssistantPanelBody.tsx",
+    "web/src/app/assistant/assistantHints.tsx",
     "web/src/lib/assistant.ts"
   ],
   "The assistant did not draft a routine. Try saying what should happen, and when.": [
@@ -16680,7 +16696,7 @@
     "web/src/app/routines/DescribeIt.tsx"
   ],
   "The assistant needs a connection.": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
+    "web/src/app/assistant/assistantHints.tsx"
   ],
   "The assistant on the person’s own device, with their own key.": [
     "web/src/lib/settingsCopy.ts"
@@ -18549,7 +18565,7 @@
     "web/src/app/LabelsView.tsx"
   ],
   "To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.": [
-    "web/src/app/assistant/AssistantPanelBody.tsx"
+    "web/src/app/assistant/assistantHints.tsx"
   ],
   "Today": [
     "web/src/app/AppearanceSection.tsx",
@@ -19337,9 +19353,9 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/notesSection.tsx",
-    "web/src/lib/localData.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
+    "web/src/lib/refTarget.ts",
     "web/src/lib/trash.ts"
   ],
   "Untitled project": [
@@ -23414,6 +23430,9 @@
   ],
   "{n, plural, one {# step not available} other {# steps not available}}": [
     "web/src/app/routines/RoutinesView.tsx"
+  ],
+  "{n, plural, one {# step} other {# steps}}": [
+    "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
   "{n, plural, one {# subtask added} other {# subtasks added}}": [
     "web/src/lib/pasteTasks.ts"
