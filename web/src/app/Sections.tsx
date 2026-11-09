@@ -253,7 +253,7 @@ export function AddSection({ projectId, layout }: { projectId: string; layout: '
       </button>
     )
     return (
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted" onClick={() => setOpen(true)}>
+      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm text-meta text-muted" data-add-section onClick={() => setOpen(true)}>
         {t('+ Add section')}
       </button>
     )

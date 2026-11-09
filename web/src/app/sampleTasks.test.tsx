@@ -61,8 +61,11 @@ describe('sample tasks in the Inbox', () => {
     expect(q('[data-bulk-toast] [role="status"]')!.textContent).toBe('3 sample tasks removed')
     const live = async () => (await db.tasks.toArray()).filter((t) => !t.deleted_at)
     expect((await live()).map((t) => t.title)).toEqual(['Real task'])
-    // The menu leaves with the last sample.
-    await waitFor(() => !q('[data-inbox-menu]'))
+    // The item leaves with the last sample; the menu stays for Print… (print-lists).
+    await click(q('[data-inbox-menu]')!)
+    await waitFor(() => !!q('[role="menu"] [data-print]'))
+    expect(q('[role="menu"] [data-remove-samples]')).toBeNull()
+    await click(q('[data-inbox-menu]')!)
     const undo = [...document.querySelectorAll<HTMLButtonElement>('[data-bulk-toast] button')].find((b) => b.textContent === 'Undo')!
     await act(async () => { undo.click() })
     await waitFor(() => !document.querySelector('[data-bulk-toast] [data-toast-undo]'))

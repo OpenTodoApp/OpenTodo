@@ -19,6 +19,7 @@ import { openRoutineDraft } from './routines/routineNav'
 import { useLabels, useProjects } from '../lib/localData'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { pinItem } from './menus/pinItem'
+import { printItems } from './menus/printItem'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
 
@@ -102,7 +103,7 @@ function iconStep(view: View, pick: (name: string | null) => unknown): ActionIte
  * The view menu shared by every call site; "Rename" opens a NamePrompt owned by the menu.
  * Opened from the Favourites group (`within`), Move up and Move down reorder the favourites.
  */
-export function ViewMenu({ view, align = 'end', className = '', within }: { view: View; align?: 'start' | 'end'; className?: string; within?: 'favourites' }) {
+export function ViewMenu({ view, align = 'end', className = '', within, print }: { view: View; align?: 'start' | 'end'; className?: string; within?: 'favourites'; /** The view's own page offers Print… (print-lists). */ print?: boolean }) {
   const start = useStartView()
   const views = useViews()
   const favourites = useFavourites()
@@ -123,7 +124,7 @@ export function ViewMenu({ view, align = 'end', className = '', within }: { view
   }, inFavourites ? favouriteEdges(favourites, 'view', view.id) : undefined)
   return (
     <>
-      <ActionMenu label={t('Menu for view {name}', { name: view.name })} title={view.name} groups={groups} align={align}
+      <ActionMenu label={t('Menu for view {name}', { name: view.name })} title={view.name} groups={print ? [...groups, { items: printItems() }] : groups} align={align}
         triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       {renaming && (
         <NamePrompt title={t('Rename view')} label={t('View name')} initial={view.name} onCancel={() => setRenaming(false)}

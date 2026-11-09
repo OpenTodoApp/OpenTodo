@@ -226,7 +226,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
             actions={<IconButton icon={view.pinned ? 'pin-off' : 'pin'} size="sm" label={view.pinned ? t('Unpin') : t('Pin')} onClick={() => act(setFavourite('view', view.id, !view.pinned))} />}
-            menu={<ViewMenu view={view} />} />
+            menu={<ViewMenu view={view} print={display.layout !== 'board'} />} />
 
           <ViewToolbar sortFields={ctx.fields} query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
             onDisplay={(patch) => act(updateView(view.id, displayPatch(patch)))}

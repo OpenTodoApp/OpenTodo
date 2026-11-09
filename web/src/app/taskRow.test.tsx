@@ -697,7 +697,7 @@ describe('a narrow row keeps its title (issue 844)', () => {
     render(<ul><TaskRow task={task({ title, ...over })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onExpand={() => {}} {...extra} /></ul>)
   /** The rules of the phone's one-line row: under 48 rem of screen and 40 rem of row. */
   const phoneRules = () => {
-    const start = css.indexOf('@media (width < 48rem) {\n  .row-pad')
+    const start = css.indexOf('@media screen and (width < 48rem) {\n  .row-pad')
     const block = css.slice(start, css.indexOf('\n}\n', start))
     return block.slice(block.indexOf('@container row (width < 40rem)'))
   }
