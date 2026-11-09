@@ -198,3 +198,30 @@ describe('foldUntrusted and finalise', () => {
     ])
   })
 })
+
+describe('display tools on the device (assistant-generative-ui 4.3)', () => {
+  it('a display call streams a block of ids, adds no progress line, and the provider gets no content back', async () => {
+    const { events, seen } = await run([
+      { stop: 'tool_use', text: 'Here they are:', toolCalls: [{ id: 'c1', name: 'show_tasks', args: '{"ids":["a","b","zzz"]}' }] },
+      { stop: 'end_turn', text: 'Start with the rent.' },
+    ], { messages: [{ role: 'user', text: 'what is overdue?' }] })
+    expect(seen.req!.tools.map((t) => t.name)).toEqual(expect.arrayContaining(['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project']))
+    expect(events.map((e) => e.type)).toEqual(['text', 'block', 'text', 'usage', 'done'])
+    expect(events[1]).toEqual({ type: 'block', kind: 'tasks', ids: ['a', 'b'] })
+    const result = seen.results[0][0]
+    expect(JSON.parse(result.content)).toEqual({ shown: 'tasks', count: 2, not_found: 1 })
+    expect(result.content).not.toContain('Pay rent')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('a skill offers only its display tools and refuses the others', async () => {
+    const { seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'show_map', args: '{"task_ids":["a"]}' }] },
+      { stop: 'end_turn', text: 'ok' },
+    ], { skill: 'plan-week' })
+    const names = seen.req!.tools.map((t) => t.name)
+    expect(names).toEqual(expect.arrayContaining(['show_calendar', 'ask_choice']))
+    expect(names).not.toContain('show_map')
+    expect(JSON.parse(seen.results[0][0].content).error).toBe('unavailable')
+  })
+})

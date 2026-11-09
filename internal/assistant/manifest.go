@@ -119,10 +119,11 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 	}
 	m := Manifest{
 		Version: ManifestVersion, Rules: SystemRules, DeviceNote: DeviceNote, Notice: agenttools.Notice, UntrustedNote: UntrustedNote, ImagesNote: ImagesNote,
-		Views:    views,
-		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage},
+		Views: views,
+		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage,
+			"block_limit": BlockLimitMessage, "not_found": NotFoundMessage, "choice_asked": ChoiceAskedMessage},
 		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
-			"max_images": MaxImages, "max_image_bytes": MaxImageBytes},
+			"max_images": MaxImages, "max_image_bytes": MaxImageBytes, "max_blocks": MaxBlocks, "max_block_ids": MaxBlockIDs},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
 		RoutineDraft: draftManifest(),
@@ -144,6 +145,11 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: string(d.Kind), Description: d.Description, InputSchema: schema,
 			Strict: strictSchema(schema, false), StrictNullable: strictSchema(schema, true)})
 	}
+	// The display tools (assistant-generative-ui D1): the same definitions as the server's.
+	for _, d := range DisplayTools {
+		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: "display", Description: d.Description, InputSchema: d.Schema,
+			Strict: strictSchema(d.Schema, false), StrictNullable: strictSchema(d.Schema, true)})
+	}
 	for _, sk := range agenttools.Skills {
 		ms := ManifestSkill{Skill: sk, Instructions: sk.Instructions, Tools: []string{}}
 		for _, name := range sk.Tools {
@@ -151,6 +157,7 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 				ms.Tools = append(ms.Tools, name)
 			}
 		}
+		ms.Tools = append(ms.Tools, SkillDisplayTools(sk.ID)...)
 		m.Skills = append(m.Skills, ms)
 	}
 	return m
