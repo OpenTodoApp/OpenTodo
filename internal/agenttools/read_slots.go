@@ -83,6 +83,15 @@ func (r *Registry) slotsOut(ctx context.Context, userID, from, to string) ([]slo
 	if err != nil {
 		return nil, err
 	}
+	// A task of a project kept away from assistants is left out like a deleted one.
+	projects, err := r.list(ctx, userID, "project", false)
+	if err != nil {
+		return nil, err
+	}
+	keptAway, err := r.keptAway(ctx, projects)
+	if err != nil {
+		return nil, err
+	}
 	out := []slotOut{}
 	for _, e := range rows {
 		date := rawStr(e, "date")
@@ -99,7 +108,7 @@ func (r *Registry) slotsOut(ctx context.Context, userID, from, to string) ([]slo
 			if err != nil {
 				return nil, err
 			}
-			if t == nil || t.Deleted() {
+			if t == nil || t.Deleted() || keptAway[rawStr(t, "project_id")] {
 				continue
 			}
 			var due struct {

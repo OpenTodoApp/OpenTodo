@@ -141,7 +141,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | --- | --- | --- |
 | `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | In progress (4 of 5) |
 | `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | In progress (4 of 4) |
-| `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | Planned |
+| `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | In progress (4 of 4) |
 | `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | Planned |
 | `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | Planned |
 | `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | Planned |

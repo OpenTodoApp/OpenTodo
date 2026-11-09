@@ -7308,5 +7308,6 @@
   "Centre on {title}": "{title} in die Mitte stellen",
   "+{n}": "+{n}",
   "{n} more": "{n} weitere",
-  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {Notiz} task {Aufgabe} other {Projekt}}, {ring, select, centre {in der Mitte} direct {direkt verlinkt} other {zwei Schritte entfernt}}"
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {Notiz} task {Aufgabe} other {Projekt}}, {ring, select, centre {in der Mitte} direct {direkt verlinkt} other {zwei Schritte entfernt}}",
+  "calendar frames and slots": "Kalenderrahmen und Slots"
 }

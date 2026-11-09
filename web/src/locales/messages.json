@@ -21091,6 +21091,9 @@
   "calendar feeds": [
     "web/src/app/settingsSections.ts"
   ],
+  "calendar frames and slots": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "calendar sync": [
     "web/src/app/settingsSections.ts",
     "web/src/lib/history.ts"

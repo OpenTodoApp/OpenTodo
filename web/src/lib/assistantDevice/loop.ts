@@ -13,6 +13,8 @@ import { PLANNERS } from './plan'
 import { systemPrompt } from './prompt'
 import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
 import { getTask, listProjects, listTasks, searchTasks, todaySummary } from './read'
+import { getNote, listNotes, searchNotes } from './readNotes'
+import { listFrames, listSlots, listTimeEntries } from './readTime'
 import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
 import type { DeviceSetup } from './settings'
 
@@ -31,6 +33,12 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
   get_task: getTask,
   search_tasks: searchTasks,
   today_summary: todaySummary,
+  list_time_entries: listTimeEntries,
+  list_frames: listFrames,
+  list_slots: listSlots,
+  list_notes: listNotes,
+  search_notes: searchNotes,
+  get_note: getNote,
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */

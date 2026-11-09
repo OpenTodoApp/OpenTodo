@@ -7308,5 +7308,6 @@
   "Centre on {title}": "以 {title} 为中心",
   "+{n}": "+{n}",
   "{n} more": "另外 {n} 个",
-  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}"
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}",
+  "calendar frames and slots": "日历时间框和时段"
 }

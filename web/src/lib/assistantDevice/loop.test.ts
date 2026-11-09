@@ -63,6 +63,24 @@ describe('prompt vectors', () => {
 })
 
 describe('device loop', () => {
+  it('searches notes and reads time on the device (assistant-device-reads)', async () => {
+    await db.notes.put({ id: 'n1', title: 'Moving', description: 'Book the van for the move', project_id: null, labels: [], created_at: 1, deleted_at: null, _clock: {} } as never)
+    await db.timeEntries.put({ id: 'e1', task_id: 'a', user_id: 'u1', started_at: NOW - 3_600_000, ended_at: NOW - 1_800_000, note: '', created_at: 1, deleted_at: null, _clock: {} } as never)
+    const { events, seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'search_notes', args: '{"query":"van"}' }, { id: 'c2', name: 'list_time_entries', args: '{"from":"2026-10-12"}' }] },
+      { stop: 'end_turn', text: 'Your note says to book the van; you tracked 30 minutes today.' },
+    ])
+    const [notes, time] = seen.results[0].map((r) => JSON.parse(r.content))
+    expect(notes._notice).toBe(manifest.notice)
+    expect(notes.notes[0]).toMatchObject({ kind: 'note', id: 'n1', untrusted_text: { title: 'Moving' } })
+    expect(time).toMatchObject({ total_minutes: 30, time_entries: [{ id: 'e1', task_id: 'a', untrusted_text: { task: 'Pay rent' } }] })
+    expect(events.map((e) => e.type)).not.toContain('changeset')
+    // The device's description no longer says note search is unavailable.
+    expect(seen.req!.tools.find((t) => t.name === 'search_notes')!.description).not.toContain('Not available')
+    // A skill that reads time offers the tool on the device too.
+    expect(manifestSkill('weekly-review')!.tools).toContain('list_time_entries')
+  })
+
   it('reads, plans a change set and never writes', async () => {
     const { events, seen } = await run([
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'list_tasks', args: '{"view":"today","timezone":"UTC"}' }] },

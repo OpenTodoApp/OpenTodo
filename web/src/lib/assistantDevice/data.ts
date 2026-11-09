@@ -97,6 +97,17 @@ export function applyOverlay(snap: Snapshot, overlay: ProposedChange[]): void {
   snap.byId = new Map(snap.tasks.map((t) => [str(t, 'id'), t]))
 }
 
+/** The live rows of a table only some read tools need, read when they run (assistant-device-reads D1). */
+export async function liveRows(table: 'notes' | 'timeEntries' | 'frames' | 'slots'): Promise<Row[]> {
+  return ((await db[table].toArray()) as unknown as Row[]).filter((r) => !isDeleted(r))
+}
+
+/** A Unix millisecond time as the server's tools write it (RFC 3339 in seconds), null for 0. */
+export const isoTime = (ms: number): string | null => (ms > 0 ? new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z') : null)
+
+/** Whether a task belongs in cross-project results, archived projects included (snapshot.visible). */
+export const visibleTask = (snap: Snapshot, t: Row): boolean => !str(t, 'project_id') || snap.projects.has(str(t, 'project_id'))
+
 /** The caller's role for project pid ("owner" for personal tasks). */
 export function roleIn(snap: Snapshot, pid: string): string {
   return (pid && snap.memberships.get(pid)?.role) || 'owner'

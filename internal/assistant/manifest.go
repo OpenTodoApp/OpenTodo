@@ -1,6 +1,8 @@
 package assistant
 
 import (
+	"strings"
+
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
@@ -19,11 +21,14 @@ const DeviceNote = "This assistant runs on the user's device and reads the tasks
 
 // deviceTool names a registry tool the device offers and the arguments it
 // keeps: top-level ones, and for item lists the list's name and its items' ones.
+// drop is a sentence of the registry's description that does not hold on the
+// device (a test checks the description still has it).
 type deviceTool struct {
 	name     string
 	keep     []string
 	itemList string
 	itemKeep []string
+	drop     string
 }
 
 // deviceTools is the device subset in the registry's order (design D8).
@@ -33,6 +38,14 @@ var deviceTools = []deviceTool{
 	{name: "get_task", keep: []string{"id", "timezone"}},
 	{name: "search_tasks", keep: []string{"query", "include_completed", "limit", "timezone"}},
 	{name: "today_summary", keep: []string{"timezone"}},
+	// The reads of OpenSpec change assistant-device-reads, pinned by read.vectors.json.
+	{name: "list_frames", keep: []string{"from", "to", "timezone"}},
+	{name: "list_notes", keep: []string{"source", "project_id", "label_id", "limit"}},
+	// The device holds the decrypted notes, so it searches them itself.
+	{name: "search_notes", keep: []string{"query", "source", "project_id", "label_id", "limit"}, drop: " Not available on an end-to-end encrypted account."},
+	{name: "get_note", keep: []string{"id", "kind"}},
+	{name: "list_slots", keep: []string{"from", "to", "timezone"}},
+	{name: "list_time_entries", keep: []string{"task_id", "from", "to", "running", "timezone", "limit"}},
 	{name: "create_tasks", keep: []string{"items"}, itemList: "items", itemKeep: []string{"id", "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "deadline", "start", "evening", "span", "blocked_by"}},
 	{name: "update_tasks", keep: []string{"updates"}, itemList: "updates", itemKeep: []string{"id", "title", "description", "priority", "labels", "estimate_minutes", "deadline", "start", "evening", "span", "blocked_by"}},
 	{name: "complete_tasks", keep: []string{"ids", "timezone"}},
@@ -142,7 +155,7 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 			list["items"] = prune(list["items"].(map[string]any), t.itemKeep)
 			props[t.itemList] = list
 		}
-		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: string(d.Kind), Description: d.Description, InputSchema: schema,
+		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: string(d.Kind), Description: strings.Replace(d.Description, t.drop, "", 1), InputSchema: schema,
 			Strict: strictSchema(schema, false), StrictNullable: strictSchema(schema, true)})
 	}
 	// The display tools (assistant-generative-ui D1): the same definitions as the server's.

@@ -7308,5 +7308,6 @@
   "Centre on {title}": "Metti al centro {title}",
   "+{n}": "+{n}",
   "{n} more": "altri {n}",
-  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {attività} other {progetto}}, {ring, select, centre {al centro} direct {collegamento diretto} other {a due passi}}"
+  "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {attività} other {progetto}}, {ring, select, centre {al centro} direct {collegamento diretto} other {a due passi}}",
+  "calendar frames and slots": "cornici e slot del calendario"
 }
