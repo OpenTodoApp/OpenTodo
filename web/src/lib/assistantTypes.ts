@@ -144,6 +144,8 @@ export type TurnEvent =
   | { type: 'usage'; input: number; output: number; month_total: number; cap: number; own_key?: boolean }
   | { type: 'done'; stop_reason: string; message?: string; server_time?: string }
   | { type: 'error'; code: string; message: string }
+  /** assistant-generative-ui D3: a block's kind and parameters, read with `blockOf`. */
+  | ({ type: 'block' } & Record<string, unknown>)
 
 export function isOwnerSettings(s: AssistantOwnerSettings | AssistantMemberSettings | null): s is AssistantOwnerSettings {
   return !!s && 'providers' in s

@@ -9,7 +9,7 @@ order: 75
 ---
 # What AI assistants can and can't do
 
-<picture><source srcset="images/assistant-review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-review-light.webp" alt="The assistant's Proposed changes box: three tasks with their old and new due dates, each with a checkbox, and the buttons Apply all and Discard."></picture>
+<picture><source srcset="images/assistant-review-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-review-light.webp" alt="The assistant's Proposed changes box as a calendar: three tasks moved to one Friday, marked proposed, each with a checkbox, and the buttons Apply 3 changes and Discard."></picture>
 
 Whichever of the [three ways to use AI](ai-and-agents.md) you pick, the same rules apply.
 

@@ -41,8 +41,24 @@ export interface AssistantMessage {
   pastedLines?: number
   /** Photos sent with this question (voice-ramble D3): a count, never the images. */
   photos?: number
+  /** Blocks the answer shows (assistant-generative-ui D3): where in the text, and the block's checked parameters. */
+  blocks?: { at: number; block: AssistantBlock }[]
+  /** The option chosen in this answer's choice block. */
+  chosen?: string
   at: number
 }
+
+/**
+ * A block an answer shows (assistant-generative-ui D3): its kind and checked
+ * parameters, never the content of what it names; the device renders that from its rows.
+ */
+export type AssistantBlock =
+  | { kind: 'tasks'; ids: string[]; title?: string }
+  | { kind: 'calendar'; date: string; span: 'day' | 'week' }
+  | { kind: 'choice'; question: string; options: string[] }
+  | { kind: 'map'; task_ids?: string[]; place_ids?: string[] }
+  | { kind: 'note'; id: string }
+  | { kind: 'project'; id: string }
 
 /** The inverse of one applied change set (in-app-assistant D2): kept for the last 20. */
 export interface AssistantUndo {
