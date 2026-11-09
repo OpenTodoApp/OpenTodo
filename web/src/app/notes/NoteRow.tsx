@@ -89,10 +89,10 @@ export function NoteRow({ entry, snippet, project, labels, updated, current, cur
         <span className="min-w-0 flex-1">
           {/* Line 1: the title, then (right-aligned, faint) the project, labels and when it changed; line 2: the text. */}
           <span className="flex min-w-0 items-baseline gap-3">
-            <span className={`user-text min-w-0 flex-1 truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
-            <span className="flex min-w-0 max-w-[45%] shrink items-center justify-end gap-x-2 overflow-hidden text-meta whitespace-nowrap text-faint" data-note-meta>
+            <span className={`user-text min-w-[40%] flex-1 truncate text-body ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
+            <span className="flex min-w-0 shrink items-center justify-end gap-x-2 text-meta whitespace-nowrap text-faint" data-note-meta>
               {project && entry.source !== 'project' && (
-                <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="truncate">{project.name}</span></span>
+                <span className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} /><span className="max-w-40 truncate">{project.name}</span></span>
               )}
               {labels.map((l) => (
                 <span key={l.id} className="inline-flex min-w-0 items-center gap-1"><span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: l.color }} /><span className="truncate">{l.name}</span></span>
