@@ -16,7 +16,6 @@ export const OUTSIDE_SHELL: readonly string[] = [
   'src/app/ProjectInviteScreen.tsx',
   'src/app/PublicListScreen.tsx',
   'src/app/ResetScreen.tsx',
-  'src/app/RoutineEmailStopScreen.tsx',
   'src/app/ShareCapture.tsx',
   'src/app/TwoFactorPanel.tsx',
   'src/app/UnlockScreen.tsx',

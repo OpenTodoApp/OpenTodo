@@ -11,7 +11,7 @@
 ## 2. Web
 
 - [x] 2.1 `sharedCatalogue` offers the step when the only reason is `not_shared`; verify `shared.test.ts`
-- [x] 2.2 The lazily loaded stop page behind `/routine-emails/<secret>` and its strings in every catalogue; verify its test, `make i18n-check` and `make bundle-budget`
+- [x] 2.2 The stop page behind `/routine-emails/<secret>`, in the task page document (`t.html`) and its strings in every catalogue; verify its test, `make i18n-check` and `make bundle-budget`
 
 ## 3. Documentation and release
 

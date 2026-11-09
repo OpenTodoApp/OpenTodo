@@ -1036,7 +1036,7 @@
  },
  {
   "id": "routine-email",
-  "route": "routine-email",
+  "route": "public",
   "kind": "signed-out",
   "seed": "layout-check",
   "frequency": "rare",

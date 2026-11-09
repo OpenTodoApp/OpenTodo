@@ -33,6 +33,6 @@ Not **BREAKING**: no op field, no new value format (the step kind and its inputs
 ## Impact
 
 - **Server:** `internal/ruleval/available.go` (no `not_yet`), `internal/rules` (the step, recipients, stop links and stops in `routine_store.go`), `internal/mail` (the `routine_members` template in seven languages, a `Stop` placeholder), `internal/httpapi` (the mailer, two public routes, the demo deny list, the route matrix), migration `0064_routine_email_stops.sql`.
-- **Web:** `web/src/lib/rules/shared.ts` (the shared catalogue offers the step), a lazily loaded stop page behind `/routine-emails/<secret>`. First load: a route entry and a lazy import, a few bytes.
+- **Web:** `web/src/lib/rules/shared.ts` (the shared catalogue offers the step), the stop page behind `/routine-emails/<secret>` in the task page's own document (`t.html`), served by `GET /routine-emails/`. First load: unchanged.
 - **Docs:** `docs/routines.md`, `docs/api.md`.
 - No dependency.

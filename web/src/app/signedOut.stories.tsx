@@ -6,7 +6,7 @@ import { ConfirmEmailScreen, ForgotScreen, VerifyScreen } from './EmailScreens'
 import { InviteScreen } from './InviteScreen'
 import { ProjectInviteScreen } from './ProjectInviteScreen'
 import { ResetScreen } from './ResetScreen'
-import { RoutineEmailStopView } from './RoutineEmailStopScreen'
+import { RoutineEmailStopView } from '../page/RoutineEmailStopScreen'
 import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
 import { answerRequests, storyUser, withClock } from './stories/fixtures'
 

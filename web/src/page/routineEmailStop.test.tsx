@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 // The stop page of a routine email (OpenSpec change routines-shared-email):
-// the route, the routine's name, only the button stops, an invalid link.
+// the routine's name, only the button stops, an invalid link.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { click, render, waitFor } from '../ui/test-utils'
 import { RoutineEmailStopScreen } from './RoutineEmailStopScreen'
-import { parseRoute, routePath } from './router'
 
 let calls: string[] = []
 let stopped = false
@@ -28,11 +27,6 @@ afterEach(() => {
 })
 
 describe('routine email stop page', () => {
-  it('parses /routine-emails/<secret> and builds it back', () => {
-    expect(parseRoute('/routine-emails/ots_abc')).toEqual({ view: 'routine-email', token: 'ots_abc' })
-    expect(routePath({ view: 'routine-email', token: 'ots_abc' })).toBe('/routine-emails/ots_abc')
-  })
-
   it('names the routine and stops only on the button', async () => {
     await render(<RoutineEmailStopScreen token="ots_abc" />)
     await waitFor(() => !!document.querySelector('[data-stop-button]'), 'the button')

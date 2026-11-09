@@ -45,7 +45,7 @@ Kind `routine` (the audit's `email_kind` and the sending limits are those of Ema
 
 ## D5. Web
 
-`sharedCatalogue` offers Email project members in a shared routine when the server's catalogue reports it unavailable only because the routine is not shared (`not_shared`); every other reason (email not configured, address not verified, demo) is kept. The stop page `/routine-emails/<secret>` is a small lazily loaded screen that renders before the sign-in state, like a public list: the instance mark, "Stop emails from “Weekly chores”?", **Stop emails**; then "You will get no more emails from “Weekly chores”."; an invalid link says so. No new chrome in the app; within the interface budget (one screen without a list).
+`sharedCatalogue` offers Email project members in a shared routine when the server's catalogue reports it unavailable only because the routine is not shared (`not_shared`); every other reason (email not configured, address not verified, demo) is kept. The stop page `/routine-emails/<secret>` is served by the server from the task page's own small document (`t.html`, `task-pages` D8: no app shell, no local database, no service worker, the language of the browser), whose entry renders the stop screen for that path; nothing is added to the app's first load. It shows "Stop emails from “Weekly chores”?" and **Stop emails**, then "You will get no more emails from “Weekly chores”."; an invalid link says so. The server route `GET /routine-emails/` is `public("…")` like `GET /t/` (no account data: the page reads the stop link API). No new chrome in the app; within the interface budget (one screen without a list).
 
 ## D6. Compatibility
 

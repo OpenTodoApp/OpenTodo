@@ -5,7 +5,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Card, Notice } from '../ui'
 import { t } from '../lib/i18n'
-import { InstanceMark, InstanceWordmark } from './InstanceBrand'
 
 export type StopState =
   | { kind: 'loading' }
@@ -49,10 +48,6 @@ export function RoutineEmailStopView({ state, onStop }: { state: StopState; onSt
   return (
     <main className="flex min-h-full items-center justify-center bg-canvas p-4" data-screen="routine-email-stop">
       <Card className="w-full max-w-sm space-y-3">
-        <div className="flex items-center gap-3">
-          <InstanceMark size={32} />
-          <span className="text-h3 font-semibold"><InstanceWordmark /></span>
-        </div>
         {state.kind === 'loading' && <p className="text-body text-muted">{t('One moment.')}</p>}
         {state.kind === 'invalid' && <h1 className="text-body font-medium" data-stop-invalid>{t('This link is no longer valid.')}</h1>}
         {state.kind === 'rate-limited' && <Notice tone="warning">{t('Too many requests from this network. Wait a minute, then reload the page.')}</Notice>}
