@@ -212,6 +212,27 @@ function alternate(msgs: Message[]): Message[] {
 
 const hasImages = (msgs: Message[]) => msgs.some((m) => m.images?.length)
 
+// Anthropic refuses strict tools past 20 tools or 24 optional parameters in
+// all; a larger set goes without strict mode, as on the server (issue #1102).
+type Schema = Record<string, unknown>
+function optionalParams(s: Schema): number {
+  let n = 0
+  const props = s.properties as Record<string, Schema> | undefined
+  if (props && typeof props === 'object') {
+    const req = new Set(Array.isArray(s.required) ? (s.required as string[]) : [])
+    for (const [k, v] of Object.entries(props)) {
+      if (!req.has(k)) n++
+      if (v && typeof v === 'object') n += optionalParams(v)
+    }
+  }
+  if (s.items && typeof s.items === 'object') n += optionalParams(s.items as Schema)
+  return n
+}
+
+export function fitsAnthropicStrict(schemas: Schema[]): boolean {
+  return schemas.length <= 20 && schemas.reduce((n, s) => n + optionalParams(s), 0) <= 24
+}
+
 export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
   return {
     start(req) {
@@ -219,7 +240,8 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
       const messages: { role: string; content: unknown }[] = alternate(req.messages).map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text },
         ...(m.role === 'user' ? (m.images ?? []).map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.media_type, data: i.data } })) : [])] }))
       const images = hasImages(req.messages)
-      const tools = req.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict: true }))
+      const strict = fitsAnthropicStrict(req.tools.map((t) => t.strict_schema))
+      const tools = req.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict }))
       return {
         async next(onText, signal) {
           const body: Record<string, unknown> = {
