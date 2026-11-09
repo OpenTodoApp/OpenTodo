@@ -397,8 +397,10 @@ export function GroupedList(p: GroupedListProps) {
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
   const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
-  const body = [...p.groups.map((g) => (g.section !== undefined && p.project
-    ? <SectionGroup key={g.key} g={g} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
+  // A section's own Later is drawn inside its section (later-in-section D1).
+  const laterOf = new Map(p.project ? p.groups.flatMap((g) => (g.laterOf !== undefined ? [[g.laterOf, g] as const] : [])) : [])
+  const body = [...p.groups.map((g) => (g.laterOf !== undefined && p.project ? null : g.section !== undefined && p.project
+    ? <SectionGroup key={g.key} g={g} later={laterOf.get(g.section?.id ?? '')} first={!g.section || g.key === sectionKeys[0]} last={!g.section || g.key === sectionKeys[sectionKeys.length - 1]} rowList={rowList} {...p} project={p.project} />
     : <HeadedGroup key={g.key} g={g} rowList={rowList} {...p} />)),
   p.completed && p.completed.tasks.length > 0 && <CompletedGroup key="completed" c={p.completed} rowList={rowList} renderRow={p.renderRow} fieldColumns={p.fieldColumns} />]
   const aria = p.siblingPos ? <SiblingAria key="aria" positions={p.siblingPos} drawn={Math.min(limit, total)} /> : null
@@ -561,7 +563,7 @@ function RowList({ children, extra }: { children: ReactNode[]; extra?: Record<st
 }
 
 /** Project list grouped by section (board-view). */
-function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListProps & { g: ListGroup; first: boolean; last: boolean; rowList: RowList; project: Project }) {
+function SectionGroup({ g, later, first, last, rowList, project, ...p }: GroupedListProps & { g: ListGroup; later?: ListGroup; first: boolean; last: boolean; rowList: RowList; project: Project }) {
   const key = g.section?.id ?? ''
   return (
     <section role={p.fieldColumns ? 'rowgroup' : undefined} className="mb-3 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent" data-drop-target={sectionTarget(key)}>
@@ -588,7 +590,21 @@ function SectionGroup({ g, first, last, rowList, project, ...p }: GroupedListPro
         (p.doneBySection.get(key) ?? []).map((task) => p.renderRow(flatRow(task))),
         { 'data-revealed-completed': '' },
       )}
+      {later && <SectionLater g={later} rowList={rowList} renderRow={p.renderRow} onToggle={() => p.toggleCollapsed(later.openKey!)} />}
     </section>
+  )
+}
+
+/**
+ * A section's deferred and parked tasks after its active ones (later-in-section D1): a quiet
+ * folded heading with their count, the section's bar staying the only bar; open, their rows.
+ */
+function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowList: RowList; renderRow: (r: Row) => ReactNode; onToggle: () => void }) {
+  return (
+    <div data-group={g.key} data-section-later>
+      <ListGroupHeader title={g.heading ?? ''} count={g.count} collapsed={g.folded} onToggle={onToggle} bar={false} level={3} />
+      {!g.folded && rowList(g.rows.map((r) => renderRow(r)), g.heading ? { 'aria-label': g.heading } : undefined)}
+    </div>
   )
 }
 

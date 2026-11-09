@@ -92,6 +92,8 @@ export interface ListGroup {
   soon?: WaitingSoon[]
   /** Words after a folded heading's count, inside its toggle ("next: Send the form, 4:00 PM"). */
   detail?: string
+  /** A section's own Later group (later-in-section): the section key ('' = "No section") it belongs to, drawn inside that section. */
+  laterOf?: string
   /** Upcoming's projected occurrences of the day, after its rows and outside its count (series-occurrences D4). */
   projected?: Projection[]
   /** On the last day with projections: "Repeating tasks shown up to <date>". */
@@ -356,8 +358,16 @@ export interface GroupInput {
   view: ListScope['view']
   /** The view's tasks after filters; for tree views without the Later ones. */
   tasks: Task[]
-  /** Project views: deferred and parked top-level tasks with their subtasks (splitLater), shown as a tree in a Later group at the end (Inbox tasks are never deferred or parked). */
+  /**
+   * Project views: deferred and parked top-level tasks with their subtasks (splitLater), shown as a tree
+   * in a folded Later group inside each section of a list grouped by section (later-in-section), else
+   * in one Later group at the end (Inbox tasks are never deferred or parked).
+   */
   laterTasks: Task[]
+  /** The project of a project list: names the per-device open state of its sections' Later groups. */
+  projectId?: string | null
+  /** A project's timeline: deferred tasks keep the one Later group at the end (later-in-section D4). */
+  timeline?: boolean
   tree: Tree<Task> | null
   today: string
   resolved: ResolvedDateTime
@@ -428,9 +438,9 @@ export function listGroups(p: GroupInput): ListGroup[] {
   })
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Later keeps each subtree together under its top-level task (subtasks-follow-later).
-  const later: ListGroup[] = p.laterTasks.length
+  const later = (): ListGroup[] => (p.laterTasks.length
     ? [{ key: 'later', heading: t('Later'), rows: flattenTree(buildTaskTree(p.laterTasks).roots, isCollapsed).map(toRow) }]
-    : []
+    : [])
   // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
   const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
@@ -443,24 +453,59 @@ export function listGroups(p: GroupInput): ListGroup[] {
     return [...groups.map((g): ListGroup => ({
       key: g.key, heading: g.heading, rows: flattenTree(g.tasks.map((task) => byId.get(task.id)!), isCollapsed).map(toRow),
       ...(groupByKey === 'label' && g.key !== 'none' ? { named: true as const } : {}),
-    })), ...later]
+    })), ...later()]
   }
   if (p.buckets && p.sectionCount > 0 && groupByKey !== 'none') {
     // Project list with sections: "No section" first, then each section by position.
+    // Deferred and parked tasks stay in their own section, under its folded Later (later-in-section D1);
+    // the timeline keeps them in one Later group at the end (D4).
     const folded = new Set(p.collapsedSections)
-    const bySection: ListGroup[] = p.buckets.filter((g) => g.section || g.roots.length > 0).map((g) => ({
-      key: `section:${g.key}`,
-      heading: g.section ? g.section.name : t('No section'),
-      section: g.section,
-      sectionCollapsed: folded.has(g.key),
-      count: flattenTree(g.roots).length,
-      rows: folded.has(g.key) ? [] : flattenTree(sortedRoots(g.roots, order), isCollapsed).map(toRow),
-    }))
-    return [...bySection, ...later]
+    const laterOf = p.timeline ? null : laterBySection(p.laterTasks, p.buckets)
+    const out: ListGroup[] = []
+    for (const g of p.buckets) {
+      const laterRoots = laterOf?.get(g.key)
+      if (!g.section && !g.roots.length && !laterRoots) continue
+      out.push({
+        key: `section:${g.key}`,
+        heading: g.section ? g.section.name : t('No section'),
+        section: g.section,
+        sectionCollapsed: folded.has(g.key),
+        count: flattenTree(g.roots).length,
+        rows: folded.has(g.key) ? [] : flattenTree(sortedRoots(g.roots, order), isCollapsed).map(toRow),
+      })
+      // A collapsed section hides its Later too; open, the Later starts folded until opened on this device (D2).
+      if (!laterRoots || folded.has(g.key)) continue
+      const openKey = laterOpenKey(p.projectId ?? '', g.key)
+      const closed = !p.collapsed.has(openKey)
+      out.push({
+        key: `later:${g.key}`, heading: t('Later'), laterOf: g.key, count: flattenTree(laterRoots).length, folded: closed, openKey,
+        rows: closed ? [] : flattenTree(sortedRoots(laterRoots, order), isCollapsed).map(toRow),
+      })
+    }
+    return laterOf ? out : [...out, ...later()]
   }
   // Project and Inbox: one depth-first pass over the built tree (linear in task count).
-  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow) }, ...later]
+  if (p.tree) return [{ key: 'all', heading: null, rows: flattenTree(sortedRoots(p.tree.roots, order), isCollapsed).map(toRow) }, ...later()]
   return flatGroups(p)
+}
+
+/** In the per-device collapse set when a section's Later group is open; folded by default (later-in-section D2). */
+export const laterOpenKey = (projectId: string, sectionKey: string) => `project:${projectId}:later:${sectionKey}:open`
+
+/**
+ * The Later tasks' top-level nodes by the section of their top-level task ('' = "No section"),
+ * each with its subtasks (subtasks-follow-later), in position order; one pass over the
+ * Later tree. A section that is not one of the list's buckets (deleted, another project's) is "No section".
+ */
+export function laterBySection(laterTasks: readonly Task[], buckets: readonly SectionBucket[]): Map<string, TreeNode<Task>[]> | null {
+  if (!laterTasks.length) return null
+  const keys = new Set(buckets.map((b) => b.key))
+  const out = new Map<string, TreeNode<Task>[]>()
+  for (const root of buildTaskTree(laterTasks as Task[]).roots) {
+    const id = root.item.section_id ?? ''
+    appendTo(out, keys.has(id) ? id : '', root)
+  }
+  return out
 }
 
 /** Cross-project and date views: flat, each matching task once, with its parent named. */
@@ -637,7 +682,10 @@ export function siblingPositions(groups: readonly ListGroup[]): Map<string, { po
 export function sectionOfRows(board: boolean, columns: readonly ListColumn[], groups: readonly ListGroup[]): Map<string, string> {
   const m = new Map<string, string>()
   if (board) for (const c of columns) for (const task of c.cards) m.set(task.id, c.key)
-  else for (const g of groups) if (g.section !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, g.section?.id ?? '')
+  else for (const g of groups) {
+    const key = g.section !== undefined ? g.section?.id ?? '' : g.laterOf
+    if (key !== undefined) for (const r of g.rows) if (r.parent === null) m.set(r.task.id, key)
+  }
   return m
 }
 
