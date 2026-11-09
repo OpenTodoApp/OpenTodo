@@ -4419,7 +4419,7 @@
   "Sort direction": "Sortierrichtung",
   "Sort first": "Zuerst sortieren",
   "Sort {list} by {by}": "{list} nach {by} sortieren",
-  "Sorted by date (or their own rule): no drag or Alt moves there": "Nach Datum sortiert (oder nach eigener Regel): dort kein Ziehen und keine Alt-Verschiebungen",
+  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Nach Datum sortiert (oder nach eigener Regel): dort keine Alt-Verschiebungen; in Demnächst eine Aufgabe auf einen anderen Tag ziehen, um sie zu verschieben",
   "Sound": "Ton",
   "Sound at the end of a session": "Ton am Ende einer Sitzung",
   "Source": "Quelle",

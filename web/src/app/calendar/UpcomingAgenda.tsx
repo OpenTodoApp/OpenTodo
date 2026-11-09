@@ -61,7 +61,8 @@ export function groupsWithEventDays(groups: readonly ListGroup[], eventDates: re
   const extra: ListGroup[] = []
   for (const date of eventDates) {
     if (!DATE_KEY.test(date) || date <= today || have.has(date)) continue
-    extra.push({ key: date, heading: formatDateHeading(date, today, resolved), rows: [] })
+    // A day with only events takes a dropped task too (upcoming-drag).
+    extra.push({ key: date, heading: formatDateHeading(date, today, resolved), rows: [], dropDay: date })
   }
   if (extra.length === 0) return groups as ListGroup[]
   const lead: ListGroup[] = []

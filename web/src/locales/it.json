@@ -4419,7 +4419,7 @@
   "Sort direction": "Direzione dell’ordinamento",
   "Sort first": "Ordina prima",
   "Sort {list} by {by}": "Ordina {list} per {by}",
-  "Sorted by date (or their own rule): no drag or Alt moves there": "Ordinate per data (o con una regola propria): lì niente trascinamento né spostamenti con Alt",
+  "Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it": "Ordinate per data (o con una regola propria): lì niente spostamenti con Alt; nella vista In programma, trascina un'attività su un altro giorno per spostarla",
   "Sound": "Suono",
   "Sound at the end of a session": "Suono alla fine di una sessione",
   "Source": "Origine",
