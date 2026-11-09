@@ -25,6 +25,7 @@ COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json
 COPY internal/notesearch/testdata/vectors.json /src/internal/notesearch/testdata/vectors.json
+COPY internal/notelinks/testdata/links.vectors.json /src/internal/notelinks/testdata/links.vectors.json
 # The signed web app (signed-web-app): the official keys built into the service worker,
 # and the page policy the worker writes (equal to the server's cspBase).
 COPY internal/websign/release-keys.json /src/internal/websign/release-keys.json
