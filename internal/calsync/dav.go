@@ -154,7 +154,7 @@ func transportReason(err error) string {
 func statusError(status int) error {
 	switch status {
 	case http.StatusUnauthorized, http.StatusForbidden:
-		return &Error{Reason: ReasonUnauthorized}
+		return &Error{Reason: ReasonUnauthorized, Status: status}
 	}
 	return &Error{Reason: fmt.Sprintf("http_%d", status)}
 }

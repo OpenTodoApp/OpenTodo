@@ -70,6 +70,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   calendar_sync_disabled: msg('Calendar sync is not enabled on this server.'),
   calendar_unreachable: msg('The calendar server could not be used: {detail}'),
   google_not_configured: msg('The server owner has not set up a Google client for calendar sync.'),
+  base_url_mismatch: msg('Google would send you back to another address than the one this page is open at. The server owner must set OPENTODO_BASE_URL to the address people open OpenTodo at.'),
   microsoft_not_configured: msg('The server owner has not set up a Microsoft client for calendar sync.'),
   managed_by_environment: msg('This is set by environment variables on the server.'),
   no_calendars: msg('This account has no calendar that holds events.'),

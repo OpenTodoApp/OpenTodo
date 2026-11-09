@@ -7226,5 +7226,11 @@
   "Open on GitHub": "Ouvrir sur GitHub",
   "The text is too long for a link. It is copied: paste it into the message.": "Le texte est trop long pour un lien. Il est copié : collez-le dans le message.",
   "The text is too long for a link. It is selected: copy it and paste it into the message.": "Le texte est trop long pour un lien. Il est sélectionné : copiez-le et collez-le dans le message.",
-  "Write it here. It opens as a GitHub issue or an email.": "Écrivez-le ici. Il s'ouvre comme un ticket GitHub ou un e-mail."
+  "Write it here. It opens as a GitHub issue or an email.": "Écrivez-le ici. Il s'ouvre comme un ticket GitHub ou un e-mail.",
+  "Google Calendar was not connected: Google did not complete the sign-in. Try again.": "Google Agenda n’a pas été connecté : Google n’a pas terminé la connexion. Réessayez.",
+  "Google Calendar was not connected: Google refused the redirect address. The server owner must register it in the Google client.": "Google Agenda n’a pas été connecté : Google a refusé l’adresse de redirection. Le propriétaire du serveur doit l’enregistrer dans le client Google.",
+  "Google Calendar was not connected: Google refused the server’s client ID or secret. The server owner must check them.": "Google Agenda n’a pas été connecté : Google a refusé l’ID client ou le secret du serveur. Le propriétaire du serveur doit les vérifier.",
+  "Google Calendar was not connected: the calendar permission was not allowed. Connect again and leave it ticked.": "Google Agenda n’a pas été connecté : l’accès à l’agenda n’a pas été autorisé. Reconnectez-vous et laissez-le coché.",
+  "Google Calendar was not connected: the CalDAV API is not enabled in the server owner’s Google project.": "Google Agenda n’a pas été connecté : l’API CalDAV n’est pas activée dans le projet Google du propriétaire du serveur.",
+  "Google would send you back to another address than the one this page is open at. The server owner must set OPENTODO_BASE_URL to the address people open OpenTodo at.": "Google vous renverrait vers une autre adresse que celle où cette page est ouverte. Le propriétaire du serveur doit définir OPENTODO_BASE_URL sur l’adresse à laquelle on ouvre OpenTodo."
 }

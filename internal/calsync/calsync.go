@@ -83,6 +83,10 @@ type Error struct {
 	Reason string
 	// Until is set for a server's rate limit (Retry-After).
 	Until time.Time
+	// Status is the refusing answer's HTTP status (401 or 403) for
+	// ReasonUnauthorized, so a Google sign-in can tell a disabled CalDAV API
+	// from a refused grant (google-sync-guide).
+	Status int
 }
 
 func (e *Error) Error() string { return "calendar sync: " + e.Reason }
