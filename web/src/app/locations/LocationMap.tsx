@@ -4,17 +4,24 @@
 // nothing here; the location stays readable with "Open in maps".
 import { Component, lazy, Suspense, useState, type ReactNode } from 'react'
 import { useMapsOn } from '../../lib/locations'
+import { resettable } from '../../lib/moduleState'
 import type { MapViewProps } from './MapView'
 
 const MapView = lazy(() => import('./MapView'))
 
-function webgl(): boolean {
+let webglCache: boolean | undefined
+resettable('LocationMap', () => { webglCache = undefined })
+
+/** Whether this browser can draw a map (WebGL), asked once: each check creates a context (assistant-map-lookup). */
+export function hasWebGL(): boolean {
+  if (webglCache !== undefined) return webglCache
   try {
     const c = document.createElement('canvas')
-    return !!(c.getContext('webgl2') || c.getContext('webgl'))
+    webglCache = !!(c.getContext('webgl2') || c.getContext('webgl'))
   } catch {
-    return false
+    webglCache = false
   }
+  return webglCache
 }
 
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -30,11 +37,11 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
 export function LocationMap(props: MapViewProps) {
   const on = useMapsOn()
   const [unavailable, setUnavailable] = useState(false)
-  if (!on || unavailable || (props.points.length === 0 && !props.onPick) || !webgl()) return null
+  if (!on || unavailable || (props.points.length === 0 && !props.onPick) || !hasWebGL()) return null
   return (
     <Boundary>
       <Suspense fallback={<div className={props.className} aria-hidden="true" />}>
-        <MapView {...props} onUnavailable={() => setUnavailable(true)} />
+        <MapView {...props} onUnavailable={() => { setUnavailable(true); props.onUnavailable?.() }} />
       </Suspense>
     </Boundary>
   )

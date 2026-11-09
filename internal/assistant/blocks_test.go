@@ -55,7 +55,8 @@ func TestDisplayToolsOffered(t *testing.T) {
 	f.loop.Run(context.Background(), p, TurnInput{UserID: "u1", Zone: time.UTC, Messages: []Message{{Role: "user", Text: "hi"}}}, Events{Text: func(string) {}})
 	got := offered(p)
 	// 2.6: the fixed instructions say when to show a block and when not to.
-	for _, w := range []string{"show_tasks", "do not repeat its content in prose", "At most 4 per answer", "After ask_choice, end your answer"} {
+	for _, w := range []string{"two or more specific tasks go in show_tasks", "Do not repeat a block's content in prose", "At most 4 per answer", "After ask_choice, end your answer",
+		"never describe it or claim that a map or view appeared", "do not call the same tool again"} {
 		if !strings.Contains(p.req.System, w) {
 			t.Errorf("system prompt lacks %q", w)
 		}
