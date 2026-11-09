@@ -7284,5 +7284,12 @@
   "Other changes": "Altre modifiche",
   "Outline": "Schema",
   "Show the proposal as": "Mostra la proposta come",
-  "The title is too long.": "Il titolo è troppo lungo."
+  "The title is too long.": "Il titolo è troppo lungo.",
+  "Finding these places on the map…": "Ricerca di questi luoghi sulla mappa…",
+  "Maps are off, so these places are listed without a map.": "Le mappe sono disattivate, quindi questi luoghi sono elencati senza mappa.",
+  "None of these places could be found on the map. Add an address or coordinates to show them.": "Nessuno di questi luoghi è stato trovato sulla mappa. Aggiungi un indirizzo o delle coordinate per mostrarli.",
+  "The map could not load.": "Impossibile caricare la mappa.",
+  "This browser cannot draw maps.": "Questo browser non può mostrare mappe.",
+  "found by address": "trovato tramite indirizzo",
+  "not on the map": "non sulla mappa"
 }

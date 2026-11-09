@@ -7284,5 +7284,12 @@
   "Other changes": "其他更改",
   "Outline": "大纲",
   "Show the proposal as": "建议的显示方式",
-  "The title is too long.": "标题过长。"
+  "The title is too long.": "标题过长。",
+  "Finding these places on the map…": "正在地图上查找这些地点…",
+  "Maps are off, so these places are listed without a map.": "地图已关闭，因此这些地点仅以列表显示。",
+  "None of these places could be found on the map. Add an address or coordinates to show them.": "在地图上找不到这些地点。添加地址或坐标即可显示。",
+  "The map could not load.": "地图无法加载。",
+  "This browser cannot draw maps.": "此浏览器无法显示地图。",
+  "found by address": "按地址找到",
+  "not on the map": "不在地图上"
 }

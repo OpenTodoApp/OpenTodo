@@ -8,6 +8,7 @@ import { resetSkills } from '../lib/assistantSkills'
 import { openAssistantWith, resetAssistantStatus, setAssistantStatus, type AssistantStatus } from '../lib/assistantStatus'
 import { db, setMeta, type AssistantMessage } from '../lib/db'
 import { createPlace, setMapsPref } from '../lib/locations'
+import { resetMapLookup } from '../lib/assistantBlockData'
 import { createNote } from '../lib/noteOps'
 import { createProject, createTask, mutate, resetDeviceId } from '../lib/ops'
 import { createSection } from '../lib/sections'
@@ -19,7 +20,7 @@ import { bulkToast, hideBulkToast } from './bulk/toastStore'
 const mapPoints: unknown[][] = []
 vi.mock('./locations/LocationMap', async (load) => {
   const real = await load<typeof import('./locations/LocationMap')>()
-  return { ...real, LocationMap: (p: Parameters<typeof real.LocationMap>[0]) => { mapPoints.push(p.points); return real.LocationMap(p) } }
+  return { ...real, hasWebGL: () => true, LocationMap: (p: Parameters<typeof real.LocationMap>[0]) => { mapPoints.push(p.points); return real.LocationMap(p) } }
 })
 
 const noop = () => {}
@@ -36,10 +37,17 @@ const answer = (text: string, blocks: AssistantMessage['blocks'], extra: Partial
 const sse = (...events: [string, unknown][]) => events.map(([name, data]) => `event: ${name}\ndata: ${JSON.stringify(data)}\n\n`).join('')
 
 let reply = () => sse(['text', { text: 'Done.' }], ['done', { stop_reason: 'end_turn' }])
+// The map proxy's address search (assistant-map-lookup): query → first result, or none.
+let geocoder: Record<string, { lat: number; lon: number } | undefined> = {}
 let turns: { messages: { role: string; text: string }[] }[] = []
 const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
   if (path === '/api/v1/me/assistant') return new Response(JSON.stringify(status), { status: 200 })
   if (path === '/api/v1/assistant/skills') return new Response(JSON.stringify({ skills: [] }), { status: 200 })
+  if (path.startsWith('/api/v1/maps/search')) {
+    const q = new URL(path, 'http://x').searchParams.get('q') ?? ''
+    const hit = geocoder[q]
+    return new Response(JSON.stringify({ results: hit ? [{ name: q, address: q, ...hit }] : [] }), { status: 200 })
+  }
   if (path === '/api/v1/assistant/turn') {
     turns.push(JSON.parse(String(init?.body)))
     return new Response(reply(), { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
@@ -56,6 +64,8 @@ beforeEach(async () => {
   setAssistantStatus(status)
   turns = []
   mapPoints.length = 0
+  geocoder = {}
+  resetMapLookup()
   fetchMock.mockClear()
   reply = () => sse(['text', { text: 'Done.' }], ['done', { stop_reason: 'end_turn' }])
   vi.stubGlobal('fetch', fetchMock)
@@ -167,6 +177,31 @@ describe('choice block (3.5)', () => {
 })
 
 describe('map block (3.6)', () => {
+  it('looks up a place stored as an address, pins it as found by address and writes nothing', async () => {
+    await setMeta('mapsAvailable', true)
+    geocoder = { 'Landsberger Str. 100, München': { lat: 48.14, lon: 11.53 } }
+    const id = await createTask({ title: 'Car wheels change', location: { address: 'Landsberger Str. 100, München' } })
+    const r = await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+    await waitFor(() => !!r.container.querySelector('[data-approximate]'), 'found by address')
+    expect(mapPoints.at(-1)).toEqual([{ lat: 48.14, lon: 11.53, label: '1. Car wheels change' }])
+    expect(r.container.querySelector('[data-map-reason]')).toBeNull()
+    expect((await db.tasks.get(id))!.location).toEqual({ address: 'Landsberger Str. 100, München' })
+    // Asked once: a second block of the same place uses the session's answer.
+    const asked = () => fetchMock.mock.calls.filter(([p]) => String(p).startsWith('/api/v1/maps/search')).length
+    expect(asked()).toBe(1)
+    await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+    await waitFor(() => document.querySelectorAll('[data-approximate]').length === 2, 'the second block')
+    expect(asked()).toBe(1)
+  })
+
+  it('says why there is no map when nothing can be found', async () => {
+    await setMeta('mapsAvailable', true)
+    const id = await createTask({ title: 'Do the service', location: { name: 'Kfz-Service Richard' } })
+    const r = await render(<AssistantPanelBody {...props({ messages: [answer('', [{ at: 0, block: { kind: 'map', task_ids: [id] } }])] })} />)
+    await waitFor(() => r.container.querySelector('[data-map-reason]')?.textContent?.startsWith('None of these places could be found') === true, 'the reason')
+    expect(r.container.querySelector('[data-not-found]')).not.toBeNull()
+  })
+
   it('with maps off shows the list only and makes no map request', async () => {
     await setMapsPref(false)
     const id = await createTask({ title: 'Pick up parcel', location: { name: 'Post office', lat: 52.5, lon: 13.4 } })
@@ -175,6 +210,7 @@ describe('map block (3.6)', () => {
     expect(r.container.querySelector('[data-map-item]')!.textContent).toContain('Post office')
     expect(fetchMock.mock.calls.some(([path]) => String(path).includes('/maps'))).toBe(false)
     expect(r.container.querySelector('canvas, .maplibregl-map')).toBeNull()
+    expect(r.container.querySelector('[data-map-reason]')!.textContent).toContain('Maps are off')
   })
 
   it('hands the map one marker per listed item with coordinates, numbered like the list', async () => {

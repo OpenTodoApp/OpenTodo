@@ -2,13 +2,14 @@
 // assistant-generative-ui D4): live, so a block shows edits made since the answer,
 // and imported only by the lazily loaded block renderers.
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useEffect, useState } from 'react'
 import type { AssistantBlock } from './assistantBlocks'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs } from './calendar'
 import { db, getMeta } from './db'
 import { localDueOf } from './dates'
 import { t } from './i18n'
-import { geoOf, locationLabel, placeEncrypted, shownLocation } from './locations'
-import type { Note, Place, Project, Task } from './types'
+import { geoOf, locationLabel, placeEncrypted, searchAddress, shownLocation } from './locations'
+import type { Geo, Note, Place, Project, Task } from './types'
 
 /** The block's tasks in order: a row, or null for one that is gone (deleted, or not on this device). */
 export function useBlockTasks(ids: readonly string[]): (Task | null)[] | undefined {
@@ -30,8 +31,8 @@ export function useDatedTasks(days: readonly string[]): Task[] | undefined {
   }, [key])
 }
 
-/** One place on a map block: a task's place or a saved place. */
-export interface MapItem { kind: 'task' | 'place'; id: string; title: string; where: string; lat?: number; lon?: number }
+/** One place on a map block: a task's place or a saved place; `approximate` when its point was found by address. */
+export interface MapItem { kind: 'task' | 'place'; id: string; title: string; where: string; lat?: number; lon?: number; approximate?: boolean }
 
 /** A map block's items in order, tasks first; gone and unreadable ones are left out. */
 export function useMapItems(block: Extract<AssistantBlock, { kind: 'map' }>): MapItem[] | undefined {
@@ -79,4 +80,46 @@ export function useProjectOutline(id: string): { project: Project | null; sectio
     if (loose) out.unshift({ id: null, name: t('No section'), open: loose })
     return { project, sections: out }
   }, [id])
+}
+
+// Points found by address this session (assistant-map-lookup D1): a miss is kept too,
+// so a block asks at most once per address. Nothing found is ever written.
+const found = new Map<string, Geo | null>()
+
+/** Tests: forget the points found this session. */
+export function resetMapLookup(): void { found.clear() }
+
+const queryOf = (it: MapItem) => (it.where || it.title).trim()
+
+/**
+ * The map block's items with a point for each that has none, looked up by its address
+ * through the server's map proxy while maps are on and the device is online, and
+ * marked `approximate`; `pending` while lookups are open.
+ */
+export function useMapLookup(items: MapItem[] | undefined, mapsOn: boolean): { items: MapItem[] | undefined; pending: boolean } {
+  const [, setVersion] = useState(0)
+  const missing = (items ?? []).filter((it) => it.lat === undefined && queryOf(it)).map(queryOf)
+  const ask = mapsOn && !(typeof navigator !== 'undefined' && navigator.onLine === false) ? [...new Set(missing)].filter((q) => !found.has(q)) : []
+  const key = ask.join('\u0000')
+  useEffect(() => {
+    if (!key) return
+    let live = true
+    void Promise.all(key.split('\u0000').map(async (q) => {
+      try {
+        const [first] = await searchAddress(q)
+        found.set(q, first ? { lat: first.lat, lon: first.lon } : null)
+      } catch {
+        // Unreachable: read as not found until the app reloads, so the block never waits forever.
+        found.set(q, null)
+      }
+    })).then(() => { if (live) setVersion((v) => v + 1) })
+    return () => { live = false }
+  }, [key])
+  if (!items) return { items, pending: false }
+  const out = items.map((it) => {
+    if (it.lat !== undefined || !mapsOn) return it
+    const geo = found.get(queryOf(it))
+    return geo ? { ...it, lat: geo.lat, lon: geo.lon, approximate: true } : it
+  })
+  return { items: out, pending: ask.length > 0 }
 }

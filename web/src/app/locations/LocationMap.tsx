@@ -8,7 +8,8 @@ import type { MapViewProps } from './MapView'
 
 const MapView = lazy(() => import('./MapView'))
 
-function webgl(): boolean {
+/** Whether this browser can draw a map (WebGL); a map block says so when it cannot (assistant-map-lookup). */
+export function hasWebGL(): boolean {
   try {
     const c = document.createElement('canvas')
     return !!(c.getContext('webgl2') || c.getContext('webgl'))
@@ -30,11 +31,11 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
 export function LocationMap(props: MapViewProps) {
   const on = useMapsOn()
   const [unavailable, setUnavailable] = useState(false)
-  if (!on || unavailable || (props.points.length === 0 && !props.onPick) || !webgl()) return null
+  if (!on || unavailable || (props.points.length === 0 && !props.onPick) || !hasWebGL()) return null
   return (
     <Boundary>
       <Suspense fallback={<div className={props.className} aria-hidden="true" />}>
-        <MapView {...props} onUnavailable={() => setUnavailable(true)} />
+        <MapView {...props} onUnavailable={() => { setUnavailable(true); props.onUnavailable?.() }} />
       </Suspense>
     </Boundary>
   )

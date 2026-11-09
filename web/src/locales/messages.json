@@ -6382,6 +6382,9 @@
   "Find the tasks of the view {view}": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Finding these places on the map…": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
+  ],
   "Fingerprint or face did not unlock. Enter your passphrase; you can turn biometric unlock on again below.": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -9164,6 +9167,9 @@
   "Maps and address search on your devices": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Maps are off, so these places are listed without a map.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
+  ],
   "Maps are turned off on this server.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -10618,6 +10624,9 @@
   ],
   "None (plain)": [
     "web/src/app/OutgoingEmailPanel.tsx"
+  ],
+  "None of these places could be found on the map. Add an address or coordinates to show them.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
   ],
   "None yet.": [
     "web/src/app/ViewsView.tsx",
@@ -17074,6 +17083,9 @@
   "The mail server refused the message": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
+  "The map could not load.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
+  ],
   "The map provider did not answer. Try again later.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -17808,6 +17820,9 @@
   ],
   "This browser can receive push notifications.": [
     "web/src/lib/push.ts"
+  ],
+  "This browser cannot draw maps.": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
   ],
   "This browser cannot keep files on the device (private browsing?), so they cannot be attached here.": [
     "web/src/lib/attachments.ts"
@@ -21473,6 +21488,9 @@
   "for {email}": [
     "web/src/app/auditFormat.ts"
   ],
+  "found by address": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
+  ],
   "friend@example.com": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx"
@@ -21888,6 +21906,9 @@
   ],
   "not on or off": [
     "web/src/app/task-detail/FieldsGroup.tsx"
+  ],
+  "not on the map": [
+    "web/src/app/assistant/blocks/MapBlock.tsx"
   ],
   "not opened yet": [
     "web/src/app/PublicLinksSection.tsx"
