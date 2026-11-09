@@ -112,7 +112,8 @@ These need no new route, because both reuse `POST /api/v1/assistant/turn` or the
 **Server:** no Go dependency. The image size is unchanged. Runtime memory gains one counter per turn.
 
 **Web:**
-- `use-stick-to-bottom` adds a few KB gzip to the assistant chunk. It is measured and reported in the PR, and the first-load budget is unchanged.
+- `use-stick-to-bottom` and the transcript's new parts grew the assistant panel chunk from 10.6 to 12.6 KB gzip (measured after group 1). The first-load budget is unchanged.
+- `AssistantPanelBody` was part of the first load: the Ask entry in the shell imported `EncryptionOffHint` from it, and the composer imported `OFFLINE_MESSAGE`. Those notices moved to `assistantHints.tsx`, so the transcript, and everything this change adds to it, now loads with the assistant chunk.
 - Each block renderer is its own lazy chunk. The map adds nothing new, because it reuses the MapLibre chunk.
 
 **Interface budget:**
