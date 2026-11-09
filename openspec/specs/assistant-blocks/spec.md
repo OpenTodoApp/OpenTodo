@@ -104,7 +104,7 @@ An `ask_choice` block SHALL show the question and one button per option, plus "S
 - **THEN** its buttons are disabled
 
 ### Requirement: Map block
-While maps are on for the server, a `show_map` block SHALL show the given tasks' places and the given saved places as markers, with the same items as a numbered list under the map; each marker carries its item's number and name. Tiles and search go only through the server's map proxy. While maps are off, the block SHALL show only the list (names and addresses) and contact no map provider. Activating a list item SHALL open its task or place.
+While maps are on, a `show_map` block SHALL show the given tasks' places and saved places as markers, with the same items as a numbered list under the map; each marker carries its item's number and name. An item with a name or address but no coordinates SHALL be looked up through the server's map proxy, pinned at the first match and marked "found by address"; nothing found is written. While maps are off the block SHALL show the list only and contact no map provider. Activating a list item SHALL open its task or place.
 
 #### Scenario: Maps on
 - **WHEN** the model calls `show_map` with two tasks that have places and maps are on
@@ -114,6 +114,10 @@ While maps are on for the server, a `show_map` block SHALL show the given tasks'
 - **WHEN** the owner has turned maps off and the model calls `show_map`
 - **THEN** the block shows the list only and the device makes no map request
 
+#### Scenario: Address without coordinates
+- **WHEN** maps are on and the model shows a task whose location is only the address "Landsberger Str. 100, München"
+- **THEN** the block looks the address up through the map proxy, pins the first match, marks the item "found by address", and the task's stored location is unchanged
+
 ### Requirement: Note and project blocks
 A `show_note` block SHALL show the note's title and the start of its body, rendered as Markdown and cut to at most 12 lines, with "Open note". A `show_project` block SHALL show the project's name, its sections and the number of open tasks in each, with "Open project". Both are read-only.
 
@@ -122,7 +126,7 @@ A `show_note` block SHALL show the note's title and the start of its body, rende
 - **THEN** the block shows the project name, both sections with their counts, and "Open project"
 
 ### Requirement: Task links in answers
-The fixed instructions of the in-app assistant, on the server and on the device, SHALL tell the model to write every task it names in prose as a link of the form `[title](?task=<id>)`. Such a link SHALL render as the app's task link: the task's current title and done state, opening the task when activated, when the task is on this device; otherwise the link text, muted and not a link. Link text is the model's output and SHALL render as text, never as markup.
+The fixed instructions of the in-app assistant, on the server and on the device, SHALL tell the model to write every task it names in prose as a link of the form `[title](?task=<id>)`. Such a link SHALL render as the app's task link: the task's current title and done state, opening the task when activated, when the task is on this device; otherwise the link text, muted and not a link.
 
 #### Scenario: Linked task
 - **WHEN** the answer says "Start with [Pay taxes](?task=t1)" and the user has since renamed t1 to "Pay taxes 2026"
@@ -170,3 +174,17 @@ Every block SHALL be a labelled group named from its parameters (for example "3 
 #### Scenario: Screen reader
 - **WHEN** an answer with a task list block streams with a screen reader on
 - **THEN** the live region announces the text at sentence boundaries and "3 tasks" once where the block arrives
+
+### Requirement: Map block explains a missing map
+When a `show_map` block cannot draw its map, it SHALL say why above its list: maps are off, no item has coordinates and none could be found by address, this browser cannot draw maps, or the map could not load. While addresses are being looked up it SHALL say so.
+
+#### Scenario: Nothing found
+- **WHEN** maps are on and the only item is a task located "Kfz-Service Richard" which the address search cannot find
+- **THEN** the block shows the list with the line that none of these places could be found on the map
+
+### Requirement: Instructions on showing blocks
+The fixed instructions, on the server and on the device, SHALL tell the model to: show two or more specific tasks with `show_tasks` rather than a list; not restate what a block shows; never claim how a block looks or that a map or view appeared; and, when the user says a block did not show, not call the same display tool again but say what may be missing.
+
+#### Scenario: A block reported missing
+- **WHEN** the user replies "this is a list, not a map" after a `show_map` block
+- **THEN** the fixed instructions sent with the turn tell the model not to call `show_map` again and to say what may be missing, such as coordinates or maps being off

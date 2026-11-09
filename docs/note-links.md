@@ -3,7 +3,7 @@ title: Link notes, tasks and projects
 summary: Type [[ in a note to link to a note, task or project, see what links to an item under Linked references, and how links look to scripts and older apps.
 audience: user
 section: Guides
-specs: [rich-text-editing, standalone-notes]
+specs: [note-links, rich-text-editing, standalone-notes]
 screens: []
 order: 16
 ---
