@@ -29,6 +29,7 @@ import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { useFavourites, useIsFavourite } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
 import { pinItem } from './menus/pinItem'
+import { printItems } from './menus/printItem'
 import { messageOf } from '../lib/errorText'
 
 
@@ -379,7 +380,7 @@ export function LabelMenu({ label, within, className = '', extra = [] }: { label
           triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
       ) : (
         // The page header's menu (app-shell "Page template"), styled like the project header's.
-        <ActionMenu label={t('Label menu')} title={label.name} groups={[...extra, ...groups]} trigger={<Icon name="ellipsis" size="md" />}
+        <ActionMenu label={t('Label menu')} title={label.name} groups={[...extra, ...groups, { items: printItems() }]} trigger={<Icon name="ellipsis" size="md" />}
           triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" />
       )}
       {renaming && (

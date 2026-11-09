@@ -70,6 +70,7 @@ import { markPendingDone } from '../lib/pendingDone'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
+import { canPrint, PrintMenuItem } from './menus/printItem'
 import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
 import { UpcomingEventsNote, useUpcomingList } from './calendar/UpcomingAgenda'
 import { RoutinesInboxSlot } from './routines/InboxSlot'
@@ -387,7 +388,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined} extraGroups={boardGroups}
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined} extraGroups={boardGroups} print={!board && !timeline}
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
@@ -529,9 +530,11 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
       onSelect={() => act(setUpcomingEventsShown(!upcomingEvents))} />
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
+  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : null
+  // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
+      overflow={menu || (!own && !canPrint()) ? undefined : <>{own}{own && canPrint() && <MenuSeparator />}<PrintMenuItem /></>}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />
