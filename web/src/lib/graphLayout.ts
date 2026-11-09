@@ -25,7 +25,7 @@ export type NeighboursOf = (key: string) => readonly GraphItem[]
 export const RING1_CAP = 24
 export const RING2_CAP = 48
 /** Labels are cut to this many characters; the full title is the node's name. */
-export const LABEL_MAX = 24
+export const LABEL_MAX = 22
 
 export interface Neighbourhood {
   centre: GraphItem
@@ -169,9 +169,11 @@ export function cut(title: string, n: number): string {
 const pillWidth = (label: string) => Math.ceil(PILL_PAD + CHAR_W * [...label].length)
 
 // From the most readable picture to the most compact: ring-1 and ring-2 label lengths (0: icons only).
+// The labelled levels go from the longest shortest label down (most titles whole first).
 const LEVELS: readonly (readonly [number, number])[] = [
-  [24, 24], [24, 16], [20, 16], [20, 12], [16, 12], [16, 10], [12, 10], [12, 8], [10, 8],
-  [24, 0], [16, 0], [10, 0], [0, 0],
+  ...[22, 18, 16, 14, 12, 10].flatMap((l1) => [22, 18, 16, 14, 12, 10, 8].map((l2) => [l1, l2] as const))
+    .sort((a, b) => Math.min(b[0], b[1]) - Math.min(a[0], a[1]) || b[0] - a[0] || b[1] - a[1]),
+  [22, 0], [16, 0], [10, 0], [0, 0],
 ]
 // Where the inner ring sits between the centre and the outer ring (0: close to the centre).
 const SPREADS = [0.35, 0.1, 0.6, 0.85]
@@ -183,20 +185,44 @@ const SPREADS = [0.35, 0.1, 0.6, 0.85]
  */
 export function layout(n: Neighbourhood, box: Box, narrow = false): GraphLayout {
   const outer = n.ring2.length > 0 || n.more2 > 0
+  // Without an outer ring only the inner ring's label length matters: one level per length.
+  const seen = new Set<number>()
   const levels = LEVELS.filter(([l1, l2]) => !narrow || (l1 > 0 && (l2 > 0 || !outer)))
+    .filter(([l1]) => outer || (!seen.has(l1) && !!seen.add(l1)))
   let last: GraphLayout | null = null
   for (const [l1, l2] of levels) {
-    if (!outer && l2 !== LEVELS[0][1] && l2 !== 0) continue
     for (const spread of outer ? SPREADS : [0]) {
       last = place(n, box, l1, l2, spread)
-      if (last.fits) return last
+      if (last.fits) return lengthen(n, box, l1, l2, spread, last)
     }
   }
   // Nothing fits: the most compact picture this screen allows, flagged.
   return last!
 }
 
-function place(n: Neighbourhood, box: Box, l1: number, l2: number, spread: number): GraphLayout {
+/**
+ * Gives each cut label, shortest title first, as much of its title as still fits (up to
+ * LABEL_MAX), so one long title does not shorten every other.
+ */
+function lengthen(n: Neighbourhood, box: Box, l1: number, l2: number, spread: number, fitted: GraphLayout): GraphLayout {
+  const own = new Map<string, number>()
+  let best = fitted
+  // Shortest titles first: the most of them shown whole.
+  const shortened = fitted.nodes.filter((p) => p.ring !== 0 && !p.compact && p.truncated)
+    .sort((a, b) => [...a.item.title].length - [...b.item.title].length || (a.item.key < b.item.key ? -1 : 1))
+  for (const p of shortened) {
+    const full = Math.min(LABEL_MAX, [...p.item.title].length)
+    for (let chars = full; chars > [...p.label].length; chars -= 3) {
+      own.set(p.item.key, chars)
+      const next = place(n, box, l1, l2, spread, own)
+      if (next.fits) { best = next; break }
+      own.delete(p.item.key)
+    }
+  }
+  return best
+}
+
+function place(n: Neighbourhood, box: Box, l1: number, l2: number, spread: number, own?: ReadonlyMap<string, number>): GraphLayout {
   const { width, height } = box
   const cx = width / 2
   const cy = height / 2
@@ -209,7 +235,8 @@ function place(n: Neighbourhood, box: Box, l1: number, l2: number, spread: numbe
     w: Math.min(Math.ceil(CENTRE_PAD + CENTRE_CHAR_W * [...centreLabel].length), width - 2 * MARGIN),
   }]
   const markers: PlacedMarker[] = []
-  const sized = (item: GraphItem, ring: 1 | 2, chars: number): PlacedNode => {
+  const sized = (item: GraphItem, ring: 1 | 2, level: number): PlacedNode => {
+    const chars = level === 0 ? 0 : own?.get(item.key) ?? level
     if (chars === 0) return { item, ring, x: 0, y: 0, w: COMPACT, h: COMPACT, label: '', truncated: true, compact: true }
     const label = cut(item.title, chars)
     return { item, ring, x: 0, y: 0, w: pillWidth(label), h: NODE_H, label, truncated: label !== item.title, compact: false }
@@ -269,6 +296,15 @@ function place(n: Neighbourhood, box: Box, l1: number, l2: number, spread: numbe
     if (n.more2 > 0) markers.push({ ring: 2, count: n.more2, ...at((angle1(slots1 - 1) + (angle1(0) + 2 * Math.PI)) / 2, rx2, ry2, markerSize), ...markerSize })
   }
   nodes.push(...r1, ...r2)
+  // Centre the drawing, not the item: the nodes' bounding box sits in the middle both ways.
+  const all = [...nodes, ...markers]
+  const left = Math.min(...all.map((p) => p.x - p.w / 2))
+  const right = Math.max(...all.map((p) => p.x + p.w / 2))
+  const top = Math.min(...all.map((p) => p.y - p.h / 2))
+  const bottom = Math.max(...all.map((p) => p.y + p.h / 2))
+  const dx = width / 2 - (left + right) / 2
+  const dy = height / 2 - (top + bottom) / 2
+  for (const p of all) { p.x += dx; p.y += dy }
   for (const p of nodes) { p.x = round(p.x); p.y = round(p.y) }
   for (const m of markers) { m.x = round(m.x); m.y = round(m.y) }
   const { edges, clear } = lines(n, nodes, markers)

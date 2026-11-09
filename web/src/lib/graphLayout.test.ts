@@ -123,18 +123,22 @@ describe('layout', () => {
     const b = layout(neighbourhood(g.get('note:trip'), g.of), { width: 640, height: 400 })
     expect(b).toEqual(a)
     expect(a.fits).toBe(true)
-    // The centre in the middle, the first inner node straight above it.
-    expect(a.nodes[0]).toMatchObject({ ring: 0, x: 320, y: 200 })
-    expect(a.nodes[1].x).toBe(320)
-    expect(a.nodes[1].y).toBeLessThan(200)
+    // The first inner node straight above the centre, and the drawing centred in the canvas both ways.
+    expect(a.nodes[0].ring).toBe(0)
+    expect(a.nodes[1].x).toBe(a.nodes[0].x)
+    expect(a.nodes[1].y).toBeLessThan(a.nodes[0].y)
+    const all = [...a.nodes, ...a.markers]
+    const mid = (lo: number, hi: number) => (lo + hi) / 2
+    expect(Math.abs(mid(Math.min(...all.map((p) => p.x - p.w / 2)), Math.max(...all.map((p) => p.x + p.w / 2))) - 320)).toBeLessThan(1)
+    expect(Math.abs(mid(Math.min(...all.map((p) => p.y - p.h / 2)), Math.max(...all.map((p) => p.y + p.h / 2))) - 200)).toBeLessThan(1)
   })
 
-  it('cuts labels to 24 characters, keeping the whole title on the item', () => {
+  it('cuts labels to 22 characters, keeping the whole title on the item', () => {
     const long = 'A very long note title that goes on and on'
     const h = graph([['note:a', 'note:b']], [item('note:a', long), item('note:b', 'B')])
     const l = layout(neighbourhood(h.get('note:a'), h.of), { width: 640, height: 400 })
-    expect(l.nodes[0].label).toBe(cut(long, 24))
-    expect([...l.nodes[0].label].length).toBeLessThanOrEqual(24)
+    expect(l.nodes[0].label).toBe(cut(long, 22))
+    expect([...l.nodes[0].label].length).toBeLessThanOrEqual(22)
     expect(l.nodes[0].truncated).toBe(true)
     expect(l.nodes[0].item.title).toBe(long)
   })
@@ -147,6 +151,15 @@ describe('layout', () => {
     expect(overlaps([...l.nodes, ...l.markers], { width: 358, height: 700 })).toBe(false)
     expect(l.nodes.every((p) => !p.compact && p.label !== '')).toBe(true)
     expect(blocked(l)).toEqual([])
+  })
+
+  it('a long title does not shorten the others: short titles stay whole', () => {
+    const h = graph(LISBON_LINKS, LISBON)
+    const l = layout(neighbourhood(h.get('note:trip'), h.of), { width: 736, height: 480 })
+    const label = (k: string) => l.nodes.find((p) => p.item.key === k)!.label
+    expect(label('note:times')).toBe('Ferry times')
+    expect(label('task:tickets')).toBe('Buy museum tickets')
+    expect(label('note:packing')).toBe('Packing list')
   })
 
   it('on a phone a picture whose labels do not fit says so (the List opens first)', () => {
