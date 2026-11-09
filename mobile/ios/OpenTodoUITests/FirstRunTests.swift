@@ -108,11 +108,11 @@ final class FirstRunTests: XCTestCase {
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         // With a well-formed address typed and submitted with Return, as the screen is used: Connect
         // is active (on the empty screen it is inactive, and an inactive control's text is exempt
-        // from the contrast minimum, WCAG 1.4.3), the error line and the https offer show, and the
-        // keyboard is down (with it up the audit ran out of time in CI).
+        // from the contrast minimum, WCAG 1.4.3), the error line shows, and the keyboard is down (with
+        // it up the audit ran out of time in CI). `.invalid` never resolves, so no server is needed.
         field.tap()
-        field.typeText("http://todo.example.com\n")
-        XCTAssertTrue(app.staticTexts["This server must be reached over https."].waitForExistence(timeout: 5))
+        field.typeText("todo.example.invalid\n")
+        XCTAssertTrue(app.staticTexts["No answer from that address. Check the address and your connection."].waitForExistence(timeout: 30))
         XCTAssertTrue(app.buttons["Connect"].isEnabled)
         attach("first-run-accessibility-audit")
         // Every issue is collected and printed with its element, so one CI run lists them all
