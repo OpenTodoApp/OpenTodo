@@ -8,7 +8,7 @@ import WebKit
 @MainActor
 final class ShellController: NSObject, ObservableObject {
     struct Failure: Equatable {
-        enum Kind { case offline, cancelled, untrusted, other }
+        enum Kind { case offline, cancelled, untrusted, signIn, other }
         let kind: Kind
         let detail: String
     }
@@ -17,12 +17,19 @@ final class ShellController: NSObject, ObservableObject {
     let webView: WKWebView
     @Published var failure: Failure?
     @Published private(set) var loaded = false
+    /// The host of the page of another origin showing (a sign-in page), for the site bar.
+    @Published private(set) var foreignHost: String?
+    /// Which navigations off the server stay in the web view (a login wall, single sign-on).
+    let flow: SignInFlow
+    /// A main-frame navigation started and not yet committed: a policy decision now is its redirect.
+    private var provisional = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
     private var barsObserver: NSObjectProtocol?
 
     init(origin: URL) {
         self.origin = origin
+        self.flow = SignInFlow(server: origin)
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
         config.limitsNavigationsToAppBoundDomains = AppBoundDomains.limitsNavigation(to: origin)
@@ -70,6 +77,7 @@ final class ShellController: NSObject, ObservableObject {
     }
 
     func load() {
+        flow.started(origin)
         var request = URLRequest(url: origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
@@ -87,6 +95,29 @@ final class ShellController: NSObject, ObservableObject {
         let scheme = (url.scheme ?? "").lowercased()
         if scheme == "about" || scheme == "" { return true }
         return Origin.same(url, origin)
+    }
+
+    /// Leaves a sign-in page (the site bar's close button): the flow ends and the server opens again.
+    func leaveSignIn() {
+        flow.end()
+        foreignHost = nil
+        failure = nil
+        load()
+    }
+
+    /// A back or forward step to a page of another origin outside a flow is a sign-in page
+    /// left in the history: the step goes on to the nearest page of the server before it.
+    private func skipSignInPage(to url: URL) {
+        let back = webView.backForwardList.backList // oldest first
+        // A forward step to a sign-in page just stays where it is.
+        guard let at = back.lastIndex(where: { $0.url == url }) else { return }
+        if let server = back[..<at].last(where: { allowed($0.url) }) { webView.go(to: server) } else { load() }
+    }
+
+    /// The page that committed: the site bar names a host of another origin.
+    private func showSite(_ url: URL?) {
+        guard let url, SignInFlow.originOf(url) != nil else { return }
+        foreignHost = allowed(url) ? nil : SignInFlow.hostOf(url)
     }
 
     private func record(_ error: Error) {
@@ -126,22 +157,78 @@ final class ShellController: NSObject, ObservableObject {
     }
 }
 
+extension ShellController {
+    enum Route: Equatable { case allow, browser, refused, skipBack, leave }
+
+    /// Where a navigation of the web view goes (native-shells "Sign-in flows stay in the
+    /// shell"). `mainFrame` is nil for a new window; `provisional`: a main-frame navigation
+    /// is under way, so this decision is its HTTP redirect (WebKit names no redirect, and
+    /// keeps the type of the tap that started it). The redirect of the server's single
+    /// sign-on start route to the provider stays, and so does the rest of the sign-in.
+    /// `onSignInPage`: a page of another origin shows, so back leaves the sign-in.
+    static func route(_ url: URL, mainFrame: Bool?, type: WKNavigationType, provisional: Bool,
+                      onSignInPage: Bool = false, flow: SignInFlow, server: URL) -> Route {
+        let scheme = (url.scheme ?? "").lowercased()
+        if scheme == "about" || scheme == "data" || scheme == "blob" || scheme == "" { return .allow }
+        guard let mainFrame else { return .browser }
+        let onServer = Origin.same(url, server)
+        // A frame of the page: the server's own, or one a sign-in page embeds (a captcha).
+        if !mainFrame { return onServer || flow.inSignIn ? .allow : .browser }
+        if type == .backForward {
+            // Back on a sign-in page returns to the server; a sign-in page left in the history
+            // once the flow reached the server is stepped over.
+            if onSignInPage { return .leave }
+            if !onServer { return .skipBack }
+        }
+        switch flow.decide(url, isRedirect: provisional, hasGesture: !provisional && type == .linkActivated) {
+        case .stay: return .allow
+        case .browser: return provisional && SignInFlow.originOf(url) != nil ? .refused : .browser
+        }
+    }
+}
+
 extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { return decisionHandler(.cancel) }
-        let scheme = (url.scheme ?? "").lowercased()
-        if scheme == "about" || scheme == "data" || scheme == "blob" { return decisionHandler(.allow) }
-        // A new window (target="_blank") and any other origin belong in the system browser,
-        // with the same schemes the bridge allows — the page shows other people's content.
-        if action.targetFrame == nil || !allowed(url) {
+        let mainFrame = action.targetFrame.map { $0.isMainFrame }
+        switch Self.route(url, mainFrame: mainFrame, type: action.navigationType, provisional: provisional && mainFrame == true,
+                          onSignInPage: foreignHost != nil, flow: flow, server: origin) {
+        case .allow:
+            decisionHandler(.allow)
+        case .browser:
+            // A new window (target="_blank") and any other origin outside a sign-in flow belong in
+            // the system browser, with the same schemes the bridge allows.
             if Bridge.safeExternal(url.absoluteString) { UIApplication.shared.open(url) }
-            return decisionHandler(.cancel)
+            decisionHandler(.cancel)
+        case .refused:
+            // A redirect the flow does not follow (a sign-in that timed out): never the browser,
+            // never an empty screen, but a way to start again from the server.
+            decisionHandler(.cancel)
+            failure = Failure(kind: .signIn, detail: "")
+            loaded = false
+        case .skipBack:
+            decisionHandler(.cancel)
+            skipSignInPage(to: url)
+        case .leave:
+            decisionHandler(.cancel)
+            leaveSignIn()
         }
-        decisionHandler(.allow)
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        provisional = true
+        if let url = webView.url { flow.started(url) }
+    }
+
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        provisional = false
+        showSite(webView.url)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        provisional = false
+        showSite(webView.url)
         loaded = true
         failure = nil
         refresher.endRefreshing()
@@ -151,8 +238,14 @@ extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { record(error) }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        loaded = false
+        provisional = false
         refresher.endRefreshing()
+        // A step the policy cancelled ("frame load interrupted": a link handed to the browser, a
+        // refused redirect with its own message) leaves the page that shows in place. Before
+        // issue #1188 the provider's redirect ended here, as "The app could not be loaded".
+        let nsError = error as NSError
+        if nsError.domain == "WebKitErrorDomain" && nsError.code == 102 { return }
+        loaded = false
         record(error)
     }
 
@@ -176,17 +269,21 @@ struct ShellView: View {
     }
 
     var body: some View {
-        WebViewContainer(webView: shell.webView)
-            .ignoresSafeArea()
-            .overlay {
-                if let failure = shell.failure, !shell.loaded { FailureView(failure: failure) { shell.load() } }
-            }
-            .onAppear { if shell.webView.url == nil { shell.load() } }
-            .onChange(of: model.pendingPath) { path in
-                guard let path else { return }
-                shell.open(path: path)
-                model.pendingPath = nil
-            }
+        VStack(spacing: 0) {
+            // The web view has no address bar: a page of another origin (a sign-in page) is named.
+            if let host = shell.foreignHost { SiteBar(host: host) { shell.leaveSignIn() } }
+            WebViewContainer(webView: shell.webView)
+                .ignoresSafeArea(edges: shell.foreignHost == nil ? .all : .bottom)
+        }
+        .overlay {
+            if let failure = shell.failure, !shell.loaded { FailureView(failure: failure) { shell.load() } }
+        }
+        .onAppear { if shell.webView.url == nil { shell.load() } }
+        .onChange(of: model.pendingPath) { path in
+            guard let path else { return }
+            shell.open(path: path)
+            model.pendingPath = nil
+        }
     }
 }
 
@@ -198,6 +295,7 @@ struct FailureView: View {
         switch failure.kind {
         case .offline: return ("No connection to your server.", "Check the address and your network, then try again.")
         case .untrusted: return ("That server's certificate is not trusted.", "Install your server's certificate on this device, or use an address with a trusted certificate.")
+        case .signIn: return ("Signing in didn't continue in the app.", "Start again from your server's address.")
         case .cancelled, .other: return ("The app could not be loaded.", failure.detail)
         }
     }
@@ -206,11 +304,32 @@ struct FailureView: View {
         VStack(spacing: 12) {
             Text(message.title).font(.headline)
             Text(message.body).font(.subheadline).multilineTextAlignment(.center)
-            Button("Try again", action: retry).buttonStyle(.borderedProminent).padding(.top, 4)
+            Button(failure.kind == .signIn ? "Sign in here" : "Try again", action: retry).buttonStyle(.borderedProminent).padding(.top, 4)
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
+    }
+}
+
+/// The host of the sign-in page showing and the way back to the server.
+struct SiteBar: View {
+    let host: String
+    let close: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock").font(.footnote).foregroundStyle(.secondary).accessibilityHidden(true)
+            Text("Signing in on \(host)").font(.footnote).lineLimit(1).truncationMode(.middle)
+            Spacer(minLength: 8)
+            Button(action: close) { Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 44, height: 44) }
+                .accessibilityLabel("Back to OpenTodo")
+                .accessibilityIdentifier("site-bar-close")
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 4)
+        .background(.bar)
+        .accessibilityElement(children: .contain)
     }
 }
 
