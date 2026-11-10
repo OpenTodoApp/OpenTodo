@@ -49,6 +49,20 @@ export function blockOf(ev: Record<string, unknown>): AssistantBlock | null {
     }
     case 'deadlines':
       return days(ev) ? { kind: 'deadlines', from: ev.from as string, to: ev.to as string } : null
+    // The project view blocks (assistant-project-blocks).
+    case 'board': {
+      if (typeof ev.id !== 'string' || !ID_RE.test(ev.id)) return null
+      const section = typeof ev.section_id === 'string' && ID_RE.test(ev.section_id) ? ev.section_id : ''
+      return { kind: 'board', id: ev.id, ...(section ? { section_id: section } : {}) }
+    }
+    case 'timeline':
+    case 'task':
+    case 'habit':
+      return typeof ev.id === 'string' && ID_RE.test(ev.id) ? { kind: ev.kind, id: ev.id } : null
+    case 'activity':
+      return typeof ev.id === 'string' && ID_RE.test(ev.id) && (ev.of === 'project' || ev.of === 'task') ? { kind: 'activity', of: ev.of, id: ev.id } : null
+    case 'stats':
+      return days(ev) ? { kind: 'stats', from: ev.from as string, to: ev.to as string } : null
   }
   return null
 }
@@ -91,6 +105,18 @@ export function blockLabel(b: AssistantBlock): string {
       return b.span === 'day' ? t('Free time, {date}', { date: formatDate(b.date, 'long') }) : t('Free time, week of {date}', { date: formatDate(b.date, 'long') })
     case 'deadlines':
       return t('Deadlines, {date} – {date2}', { date: formatDate(b.from, 'long'), date2: formatDate(b.to, 'long') })
+    case 'board':
+      return t('Board')
+    case 'timeline':
+      return t('Timeline')
+    case 'activity':
+      return t('Activity')
+    case 'stats':
+      return t('Statistics, {date} – {date2}', { date: formatDate(b.from, 'long'), date2: formatDate(b.to, 'long') })
+    case 'task':
+      return t('Task')
+    case 'habit':
+      return t('Habit')
   }
 }
 
@@ -106,7 +132,19 @@ export async function blockText(b: AssistantBlock): Promise<string> {
     case 'calendar':
     case 'time':
     case 'free_time':
+    case 'activity':
+    case 'stats':
       return blockLabel(b)
+    case 'board':
+    case 'timeline': {
+      const p = await db.projects.get(b.id)
+      return live(p) ? `${blockLabel(b)}: ${p.name}` : t('Removed')
+    }
+    case 'task':
+    case 'habit': {
+      const r = await db.tasks.get(b.id)
+      return live(r) ? `- [${r.completed_at ? 'x' : ' '}] ${r.title}` : t('Removed')
+    }
     case 'deadlines': {
       const rows = await db.tasks.filter((r) => !r.deleted_at && !r.completed_at && !!r.deadline && r.deadline >= b.from && r.deadline <= b.to).toArray()
       rows.sort((x, y) => (x.deadline! < y.deadline! ? -1 : x.deadline! > y.deadline! ? 1 : x.title.localeCompare(y.title)))

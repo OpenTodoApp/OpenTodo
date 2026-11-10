@@ -17,6 +17,7 @@ beforeEach(async () => {
   await setCurrentUserId(vectors.user)
   const rows = vectors.rows as Record<string, Record<string, unknown>[]>
   await db.projects.bulkPut(rows.project.map((r) => ({ ...r, _clock: {} })) as never)
+  await db.sections.bulkPut(rows.section.map((r) => ({ ...r, _clock: {} })) as never)
   await db.tasks.bulkPut(rows.task.map((r) => ({ ...r, _clock: {} })) as never)
   await db.notes.bulkPut(rows.note.map((r) => ({ ...r, _clock: {} })) as never)
   await db.places.bulkPut(rows.place.map((r) => ({ ...r, _clock: {} })) as never)

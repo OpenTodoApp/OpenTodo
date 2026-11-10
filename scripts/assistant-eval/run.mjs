@@ -135,10 +135,15 @@ async function seed(api, s, today) {
     ids[p.key] = (await api('POST', '/api/v1/projects', { name: p.name, ...(p.parent ? { parent_id: ids[p.parent] } : {}) })).id
     if (p.kept_away) await api('PUT', `/api/v1/projects/${ids[p.key]}/agent-access`, { kept_away: true })
   }
+  for (const sec of sd.sections ?? []) ids[sec.key] = (await api('POST', '/api/v1/sections', { project_id: ids[sec.project], name: sec.name })).id
   for (const t of sd.tasks ?? []) {
     const body = { title: t.title }
     if (t.description) body.description = t.description
     if (t.project) body.project_id = ids[t.project]
+    if (t.section) body.section_id = ids[t.section]
+    if (t.start !== undefined) body.start = dayFrom(today, t.start)
+    if (t.recurrence) body.recurrence = t.recurrence
+    if (t.habit) body.habit = true
     if (t.due !== undefined) body.due = { date: dayFrom(today, t.due), ...(t.time ? { time: t.time } : {}) }
     if (t.deadline !== undefined) body.deadline = dayFrom(today, t.deadline)
     if (t.labels) body.labels = t.labels.map((k) => ids[k])

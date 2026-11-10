@@ -1,0 +1,62 @@
+{
+  "name": "board-column",
+  "title": "What is in a stage of a project is shown as that board column",
+  "view": "project",
+  "seed": {
+    "projects": [
+      {
+        "key": "web",
+        "name": "Website launch"
+      }
+    ],
+    "sections": [
+      {
+        "key": "todo",
+        "name": "To do",
+        "project": "web"
+      },
+      {
+        "key": "doing",
+        "name": "In progress",
+        "project": "web"
+      }
+    ],
+    "tasks": [
+      {
+        "key": "copy",
+        "title": "Landing page copy",
+        "project": "web",
+        "section": "doing"
+      },
+      {
+        "key": "price",
+        "title": "Pricing table",
+        "project": "web",
+        "section": "doing"
+      },
+      {
+        "key": "kit",
+        "title": "Press kit",
+        "project": "web",
+        "section": "todo"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What's in progress on the website launch?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "board",
+            "ids": [
+              "web"
+            ],
+            "section": "doing"
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}
