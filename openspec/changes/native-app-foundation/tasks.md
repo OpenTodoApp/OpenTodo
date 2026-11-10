@@ -2,7 +2,7 @@
 
 ## 1. Platform port (web unchanged)
 
-- [x] 1.1 Add `web/src/lib/platform.ts` (D3) with the web implementation, and route `sync.ts`, `http.ts`, `dates.ts` and `trash.ts` through it (`http.ts` and `ops.ts` needed no change). Verify: `cd web && npm test -- --run`, `npm run build`, and `make bundle-budget`, with the entry chunk +150 B at most and the number reported (entry 146,497 B gzip before and after: +0 B; first load 700,169 B → 700,494 B: +325 B, within its budget).
+- [x] 1.1 Add `web/src/lib/platform.ts` (D3) with the web implementation, and route `sync.ts`, `http.ts`, `dates.ts` and `trash.ts` through it (`http.ts` and `ops.ts` needed no change). Verify: `cd web && npm test -- --run`, `npm run build`, and `make bundle-budget`, with the entry chunk +150 B at most and the number reported (entry gzip 146,786 B → 146,776 B: −10 B; first load 701,946 B → 702,171 B: +225 B, within its budget).
 - [x] 1.2 Add the boundary check (`scripts/shared-boundary.mjs`): it lists browser globals per module of `shared-modules.json` and fails on a new one. Until 4.1, `mobile/app/shared-modules.json` is seeded by hand with the modules of 1.1. Verify: `node --test scripts/repo-checks.test.mjs`, with a case that adds `document.hidden` to a listed module.
 
 ## 2. Storage spike (D4)
