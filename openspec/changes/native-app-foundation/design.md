@@ -190,14 +190,15 @@ The app uses Expo's continuous native generation: `npx expo prebuild` writes `io
 | Job | Runner | Runs when | Time target |
 |---|---|---|---|
 | `app-check`: type-check, lint, unit tests (Jest with the shared vectors), the boundary check | Linux | `app` | ≤ 3 min |
-| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly; release | ≤ 25 min |
-| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly; release | ≤ 15 min |
+| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly | ≤ 25 min |
+| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly | ≤ 15 min |
 | `app-perf`: the `perfseed` account on the simulator, D4's three numbers | macOS | nightly | n/a |
 | TestFlight preview | macOS | `workflow_dispatch` and release tags | n/a |
 
 Further rules:
 - A web-only pull request, one that touches no shared module the app imports, runs no app job. A change to a shared module runs only `app-check`, never a Mac build.
 - `app-check` has its own `node_modules` cache keyed on `mobile/app/package-lock.json`. The web jobs never install the app's dependencies, and `make check` does not run the app. `make app` does, and `make check APP=1` adds it.
+- Release tags do not run `app-ios` or `app-android` while no release ships the app: a web release is never blocked by an app build. They join the release gates when the app ships in releases (`native-app-handover`). As built, both are in `.github/workflows/app-native.yml`, which `ci.yml` and `nightly.yml` call.
 - Dependabot groups the app's updates weekly in one pull request, so its lockfile does not churn the queue.
 - The boundary and `DEPENDENCIES.md` checks run in the existing repo-check job. They are text checks, about a second, and need no install.
 

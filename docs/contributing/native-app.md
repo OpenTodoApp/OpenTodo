@@ -44,7 +44,7 @@ Every package is pinned exactly and has a line in `mobile/app/DEPENDENCIES.md` s
 | Job | Runs when | What |
 | --- | --- | --- |
 | `app-check` (Linux) | `mobile/app/`, a module in `shared-modules.json`, `web/src/generated/opSchema.ts`, `web/src/locales/`, the `Makefile` or the workflow changes | `make app` |
-| `App builds / App on iOS` (macOS) | a change under `mobile/app/`, release tags, nightly | `expo prebuild`, a Release simulator build without signing |
+| `App builds / App on iOS` (macOS) | a pull request that changes `mobile/app/`, nightly | `expo prebuild`, a Release simulator build without signing |
 | `App builds / App on Android` (Linux) | the same | `expo prebuild`, a debug build, the unit tests |
 
-A web-only pull request runs none of them, and a change to a shared module runs only `app-check`. The cases are in the path filter's test, `scripts/repo-checks.test.mjs`.
+A web-only pull request runs none of them, and a change to a shared module runs only `app-check`. Release tags do not wait for the app's builds: no release ships the app yet. The cases are in the path filter's test, `scripts/repo-checks.test.mjs`.

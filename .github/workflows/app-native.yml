@@ -3,7 +3,8 @@ name: App builds
 # The native app's iOS and Android builds (OpenSpec change native-app-foundation D8, D9):
 # the native projects are generated from mobile/app/app.config.ts (`expo prebuild`), never
 # committed, and built here with no signing. ci.yml calls this for a pull request that
-# changes mobile/app/ and for release tags; nightly.yml calls it every night. A change to
+# changes mobile/app/; nightly.yml calls it every night. Release tags join when a release
+# ships the app (native-app-handover). A change to
 # a shared module runs only the Linux app-check job in ci.yml, never these. Actions → App
 # builds → Run workflow builds any branch by hand.
 on:
