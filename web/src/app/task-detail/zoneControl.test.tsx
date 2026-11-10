@@ -95,4 +95,25 @@ describe('ZoneControl', () => {
     expect((await db.tasks.get(t.id))!.due).toEqual({ date: '2026-11-02', time: '09:00' })
     await view.unmount()
   })
+
+  // OpenSpec change when-picker, D3: the end of the Do on time line.
+  it('inline: quiet "Floating" or the city that opens the choices; z still toggles; a reader sees text', async () => {
+    const t = await task({ date: '2026-11-02', time: '09:00' })
+    const view = await render(<ZoneControl task={t} viewerZone={BERLIN} variant="inline" />)
+    const button = () => view.container.querySelector<HTMLButtonElement>('[data-zone-inline]')!
+    expect(button().textContent).toBe('Floating')
+    expect(button().className).not.toContain('ui-btn')
+    await key(document.body, 'z')
+    await waitFor(async () => !!(await db.tasks.get(t.id))!.due?.tz, 'the zone stored')
+    await view.rerender(<ZoneControl task={(await db.tasks.get(t.id))!} viewerZone={BERLIN} variant="inline" />)
+    expect(button().textContent).toBe('Berlin')
+    expect(button().getAttribute('aria-label')).toBe('Time zone: Berlin')
+    await click(button())
+    await waitFor(() => !!panel(), 'the zone choices')
+    expect(panel().textContent).toContain('Make floating')
+    await view.rerender(<ZoneControl task={(await db.tasks.get(t.id))!} viewerZone={BERLIN} variant="inline" readOnly />)
+    expect(view.container.querySelector('button[data-zone-inline]')).toBeNull()
+    expect(view.container.querySelector('[data-zone-inline]')!.textContent).toBe('Berlin')
+    await view.unmount()
+  })
 })

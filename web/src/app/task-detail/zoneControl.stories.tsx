@@ -23,3 +23,17 @@ export const States: StoryObj = {
     </div>
   ),
 }
+
+/** At the end of the Do on time line (when-picker D3): quiet text, "Floating" or the city. */
+export const Inline: StoryObj = {
+  render: () => (
+    <div className="w-80 max-w-full space-y-2">
+      {[{ date: '2026-11-02', time: '15:00' }, { date: '2026-11-02', time: '15:00', tz: 'America/New_York' }].map((due) => (
+        <div key={due.tz ?? 'floating'} className="flex items-center gap-2">
+          <span className="text-body tabular-nums text-default">15:00</span>
+          <span className="ml-auto"><ZoneControl task={task(due)} viewerZone={VIEWER} variant="inline" /></span>
+        </div>
+      ))}
+    </div>
+  ),
+}

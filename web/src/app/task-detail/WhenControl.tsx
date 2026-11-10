@@ -1,40 +1,39 @@
 // The When control of the task panel (OpenSpec change ux-overhaul, web-app "Task
 // panel layout", design D4): one editor composing the due date and time, Start
-// (Anytime, a date, Someday), Deadline, Evening, Repeat and Reminders as segments
-// under a shared header and footer. Every segment is the editor it replaces and
-// writes exactly the fields it wrote before.
+// (Anytime, a date, Someday), Deadline, Repeat and Reminders as segments under a
+// shared header and footer; the part of the day is Do on's time of day row
+// (when-picker). Every segment is the editor it replaces and writes exactly the
+// fields it wrote before.
 import { type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
 import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { parseRule } from '../../lib/recurrence'
 import type { WhenSegmentId } from '../../lib/facets'
 import type { Task } from '../../lib/types'
-import { Button, Icon, type IconName, Switch } from '../../ui'
+import { Button, Icon, type IconName, SegmentedControl, Switch } from '../../ui'
 import { DatePicker } from '../datetime/DatePicker'
 import { TimeField } from '../datetime/TimeField'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
-import { parkWithUndo, setDueWithUndo } from '../undoable'
+import { doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
 import { ZoneControl } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
+import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart, type DoOnChoice } from '../../lib/dayParts'
 import { useUserPrefsRow } from '../../lib/localData'
-import { dayPartUndoable } from '../../lib/undoActions'
-import { showUndoToast } from '../bulk/toastStore'
 import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
 import { useTimeSectors } from '../../lib/sectorPrefs'
 import { SectorChoice } from './SectorChoice'
 
-export type WhenSegment = 'due' | 'start' | 'sector' | 'deadline' | 'evening' | 'repeat' | 'reminders'
+export type WhenSegment = 'due' | 'start' | 'sector' | 'deadline' | 'repeat' | 'reminders'
 
 const FOCUSABLE = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 function Segment({ id, icon, label, bare = false, children }: { id: WhenSegment; icon: IconName; label: string; bare?: boolean; children: ReactNode }) {
-  // In the popover the segment's name is the selected tab above it; the Evening switch names itself.
+  // In the popover the segment's name is the selected tab above it.
   return (
     <div data-when-segment={id} role="group" aria-label={label} className="space-y-1.5">
       {!bare && <p className="flex items-center gap-1.5 text-meta font-medium text-muted"><Icon name={icon} size="xs" className="text-faint" />{label}</p>}
@@ -43,7 +42,7 @@ function Segment({ id, icon, label, bare = false, children }: { id: WhenSegment;
   )
 }
 
-/** The segments of the When popover, in order (task-panel-facets D3); Evening lives in Do on. */
+/** The segments of the When popover, in order (task-panel-facets D3); the part of the day lives in Do on. */
 export const WHEN_SEGMENTS: { id: WhenSegmentId; icon: IconName; label: () => string }[] = [
   { id: 'due', icon: 'calendar-days', label: () => t('Do on') },
   { id: 'start', icon: 'calendar-range', label: () => t('Start') },
@@ -84,34 +83,72 @@ export function WhenSegmentPicker({ value, onChange, sector = false }: { value: 
   )
 }
 
-/**
- * The Evening switch, or with day parts on the four-way part control (day-parts D4):
- * Any time, Morning, Afternoon, Evening, each writing both fields with Undo. A
- * reader sees the part as text.
- */
-function EveningSwitch({ task, readOnly }: { task: Task; readOnly: boolean }) {
-  const parts = dayPartsOn(useUserPrefsRow())
-  if (parts) return <DayPartControl task={task} readOnly={readOnly} />
-  return (
-    <Switch label={t('This Evening')} description={t('Listed in the evening group of Today')} checked={!!task.evening} disabled={readOnly}
-      onChange={(on) => act(updateTask(task.id, dayPartFields(on ? 'evening' : null)))} />
-  )
-}
+/** A choice of the time of day row: Any time, a part, or Time (when-picker D1). */
+type RowChoice = 'none' | DayPart | 'time'
 
-function DayPartControl({ task, readOnly }: { task: Task; readOnly: boolean }) {
-  const current = dayPartOf(task)
-  if (readOnly) return <p className="text-body text-default" data-day-part-text>{dayPartName(current)}</p>
-  const set = async (part: DayPart | null) => {
-    const r = await dayPartUndoable([task.id], part)
-    if (r.entry) showUndoToast(r.label, r.entry.id)
+/** Suggested times while Time is chosen and none is set yet (task-panel-polish D3). */
+const TIME_SUGGESTIONS = ['09:00', '13:00', '18:00']
+/** The keys that move through the row's choices. */
+const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'])
+
+/**
+ * The time of day row of the Do on segment (when-picker D1–D3): one answer to "when
+ * on that day", Any time | Morning | Afternoon | Evening | Time (without Morning and
+ * Afternoon while day parts are off). It selects Time with a due time, else the
+ * part, else Any time; a task holding both shows its part and the time line. A part
+ * and a time are exclusive here: each choice is one batch with Undo (`doOnPatch`).
+ * Under it, only while Time is chosen, the time with suggested times and, at the
+ * line's end, the zone. Disabled until the task has a do date (with nothing chosen,
+ * so the row reads as waiting), and for a reader.
+ */
+function TimeOfDay({ task, readOnly, zone }: { task: Task; readOnly: boolean; zone: string }) {
+  const dt = useDateTimeFormat()
+  const parts = dayPartsOn(useUserPrefsRow())
+  const view = localDueOf(task.due, zone)
+  const time = view?.time ?? null
+  const [picking, setPicking] = useState(false)
+  useResetOnChange([task.id], () => setPicking(false))
+  const line = useRef<HTMLDivElement>(null)
+  const arrowed = useRef(false)
+  const focusTime = useRef(false)
+  useEffect(() => {
+    if (!picking || !focusTime.current) return
+    focusTime.current = false
+    line.current?.querySelector<HTMLInputElement>('input')?.focus()
+  }, [picking])
+
+  const offered: RowChoice[] = parts ? ['none', ...DAY_PARTS, 'time'] : ['none', 'evening', 'time']
+  const part = dayPartOf(task)
+  const shownPart = part && offered.includes(part) ? part : null
+  const selected: RowChoice = picking && !time ? 'time' : shownPart ?? (time ? 'time' : 'none')
+  const write = (choice: DoOnChoice) => act(doOnWithUndo(task.id, choice, zone))
+  const choose = (choice: RowChoice) => {
+    if (choice !== 'time') { setPicking(false); write({ part: choice === 'none' ? null : choice }); return }
+    // Time with a time already set keeps it and clears the part; without one it opens the line.
+    if (time) { if (part) write({ time }); return }
+    // A click (or Enter, Space) moves on to the time; arrows only move through the row.
+    focusTime.current = !arrowed.current
+    setPicking(true)
   }
+  const label = (c: RowChoice) => (c === 'time' ? t('Time') : dayPartName(c === 'none' ? null : c))
   return (
-    <div role="radiogroup" aria-label={t('Part of the day')} className="flex flex-wrap gap-1" data-day-part-control>
-      {([null, ...DAY_PARTS] as (DayPart | null)[]).map((part) => (
-        <button key={part ?? 'none'} type="button" role="radio" aria-checked={current === part} data-day-part={part ?? 'none'}
-          className={`min-h-8 rounded-control border px-2 py-1 text-meta ${current === part ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
-          onClick={() => act(set(part))}>{dayPartName(part)}</button>
-      ))}
+    <div className="space-y-1.5" onClickCapture={() => { arrowed.current = false }} onKeyDownCapture={(e) => { arrowed.current = ARROWS.has(e.key) }}>
+      <SegmentedControl<RowChoice> fill label={view ? t('Time of day') : t('Time of day (choose a date first)')} disabled={!view || readOnly}
+        value={view ? selected : ('' as RowChoice)} onChange={choose}
+        options={offered.map((c) => ({ id: c, label: label(c) }))} data-time-of-day />
+      {view && (picking || !!time) && (
+        <div ref={line} className="flex min-h-9 items-center gap-1" data-due-time>
+          {/* Emptying the time keeps the part the row shows (or Any time), as choosing it would. */}
+          <TimeField label={t('Due time')} hideLabel value={time} inputClassName="w-24" disabled={readOnly}
+            onChange={(tm) => { if (!tm) setPicking(false); write(tm ? { time: tm } : { part: shownPart }) }} />
+          {!time && !readOnly && TIME_SUGGESTIONS.map((tm) => (
+            <button key={tm} type="button" data-time-suggestion={tm}
+              className="touch-target inline-flex min-h-7 items-center rounded-control px-2 text-meta tabular-nums text-muted transition duration-(--duration-ui) hover:bg-sunken hover:text-default dark:hover:bg-raised"
+              onClick={() => write({ time: tm })}>{dt.formatTime(tm)}</button>
+          ))}
+          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={zone} variant="inline" /></span>}
+        </div>
+      )}
     </div>
   )
 }
@@ -139,44 +176,21 @@ function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolea
   )
 }
 
-/** Suggested times for a due (task-panel-polish D3). */
-const TIME_SUGGESTIONS = ['09:00', '13:00', '18:00']
-
 /**
- * The Do on segment (task-panel-polish D3): quick choices, the date in words, the
- * calendar, then Add time with suggestions, the Evening switch and, only with a time,
- * one quiet line about the time zone. Clear is the popover's footer.
+ * The Do on segment (when-picker D1–D5): the date field, whose placeholder is an
+ * example and which takes a date with a time ("tomorrow 3pm"), the quick choices on
+ * one line, the calendar, then the time of day row and, only with a time, the time
+ * line with its zone. Clear is the popover's footer.
  */
-function DoOn({ task, readOnly, withEvening }: { task: Task; readOnly: boolean; withEvening: boolean }) {
+function DoOn({ task, readOnly }: { task: Task; readOnly: boolean }) {
   const zone = useViewerZone()
-  const dt = useDateTimeFormat()
   const view = localDueOf(task.due, zone)
-  const [addingTime, setAddingTime] = useState(false)
-  useResetOnChange([task.id], () => setAddingTime(false))
-  const setView = (next: { date: string; time?: string } | null) => act(setDueWithUndo(task.id, dueFromView(task.due, next, zone)))
-  const showTime = !!view && (!!view.time || addingTime)
+  const setDate = (date: string | null) => act(setDueWithUndo(task.id, dueFromView(task.due, date ? { date, ...(view?.time ? { time: view.time } : {}) } : null, zone)))
   return (
     <div className="space-y-3">
-      <DatePicker label={t('Due date')} value={view?.date ?? null} choices={quickChoices('due')} emptyText={t('Not scheduled')}
-        onChange={(date) => setView(date ? { date, ...(view?.time ? { time: view.time } : {}) } : null)} />
-      {view && (showTime ? (
-        <div className="space-y-1.5" data-due-time>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <TimeField label={t('Due time')} hideLabel value={view.time ?? null} disabled={readOnly}
-              onChange={(time) => setView(time ? { date: view.date, time } : { date: view.date })} />
-            {TIME_SUGGESTIONS.map((tm) => (
-              <button key={tm} type="button" aria-pressed={view.time === tm} data-time-suggestion={tm}
-                className={`min-h-8 rounded-control border px-2 py-1 text-meta tabular-nums ${view.time === tm ? 'border-accent bg-accent-soft text-on-accent-soft' : 'border-default text-muted hover:bg-sunken dark:hover:bg-raised'}`}
-                onClick={() => setView({ date: view.date, time: tm })}>{dt.formatTime(tm)}</button>
-            ))}
-          </div>
-          <button type="button" className="text-meta text-muted hover:text-default hover:underline" onClick={() => { setAddingTime(false); setView({ date: view.date }) }}>{t('Remove time')}</button>
-        </div>
-      ) : (
-        <Button variant="ghost" size="sm" icon="clock" className="-ml-2" onClick={() => setAddingTime(true)} data-add-time>{t('Add time')}</Button>
-      ))}
-      {withEvening && <EveningSwitch task={task} readOnly={readOnly} />}
-      {task.due?.time && <ZoneControl task={task} readOnly={readOnly} viewerZone={zone} variant="line" />}
+      <DatePicker compact label={t('Due date')} value={view?.date ?? null} choices={quickChoices('due')} emptyText={t('tomorrow 3pm, next fri')}
+        onChange={setDate} onChangeTimed={(date, time) => act(doOnWithUndo(task.id, { date, time }, zone))} />
+      <TimeOfDay task={task} readOnly={readOnly} zone={zone} />
     </div>
   )
 }
@@ -256,15 +270,14 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
     ;(seg?.querySelector<HTMLElement>('input:not([disabled])') ?? seg?.querySelector<HTMLElement>(FOCUSABLE))?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- on mount and when the shown segment changes
   }, [segment])
-  const shows = (id: WhenSegment) => !segment || id === segment || (segment === 'due' && id === 'evening')
-  const parts = dayPartsOn(useUserPrefsRow())
+  const shows = (id: WhenSegment) => !segment || id === segment
   const sectorShown = useSectorSegment(task)
 
   return (
     <div ref={root} data-when-control data-when-shown={segment} className="space-y-3">
       {shows('due') && (
         <Segment id="due" icon="calendar-days" label={t('Do on')} bare={!!segment}>
-          <DoOn task={task} readOnly={readOnly} withEvening={!!segment} />
+          <DoOn task={task} readOnly={readOnly} />
         </Segment>
       )}
 
@@ -285,10 +298,6 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
       {shows('deadline') && <Segment id="deadline" icon="hourglass" label={t('Deadline')} bare={!!segment}>
         <DatePicker label={t('Deadline')} value={task.deadline ?? null} choices={quickChoices('deadline')} emptyText={t('No deadline')}
           onChange={(deadline) => act(updateTask(task.id, { deadline }))} />
-      </Segment>}
-
-      {shows('evening') && !segment && <Segment id="evening" icon="moon" label={parts ? t('Part of the day') : t('Evening')}>
-        <EveningSwitch task={task} readOnly={readOnly} />
       </Segment>}
 
       {shows('repeat') && <Segment id="repeat" icon="repeat" label={t('Repeat')} bare={!!segment}>

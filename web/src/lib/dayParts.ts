@@ -5,7 +5,7 @@
 // `dayPartFields`, both fields in one batch, so per-field last-writer-wins
 // converges on one part (D2). The Go side is internal/daypart.
 import { db } from './db'
-import { localDueOf } from './dates'
+import { dueFromView, localDueOf } from './dates'
 import { t } from './i18n'
 import { mutate } from './ops'
 import type { Task, UserPrefs } from './types'
@@ -24,6 +24,28 @@ export function dayPartOf(task: Pick<Task, 'evening' | 'day_part'>): DayPart | n
 /** The fields that set `part` (null = Any time): never `evening: true` with a day_part. */
 export function dayPartFields(part: DayPart | null): { day_part: 'morning' | 'afternoon' | null; evening: boolean } {
   return part === 'evening' ? { day_part: null, evening: true } : { day_part: part, evening: false }
+}
+
+/** A choice of the Do on segment's time of day row (when-picker D2): a part (null is Any time), or a time with an optional new date. */
+export type DoOnChoice = { part: DayPart | null } | { time: string; date?: string }
+
+/**
+ * The one batch a Do on choice writes (when-picker D2): in that row a part and a
+ * time are exclusive. A part writes its pairing and the do date without a time or
+ * zone; a time writes the time (a fixed zone keeps fixing it) with the Any time
+ * pairing. Both pairing fields are always written. Null without a do date. Every
+ * other writer (Shift+E, the Day part… menu, a drop on a heading) keeps writing
+ * `dayPartFields` alone and leaves the time as it is.
+ */
+export function doOnPatch(task: Pick<Task, 'due'>, choice: DoOnChoice, zone?: string): Partial<Task> | null {
+  const view = localDueOf(task.due, zone)
+  if ('time' in choice) {
+    const date = choice.date ?? view?.date
+    return date ? { due: dueFromView(task.due, { date, time: choice.time }, zone), ...dayPartFields(null) } : null
+  }
+  if (!view) return null
+  const timed = !!task.due?.time || !!task.due?.tz
+  return timed ? { due: { date: view.date }, ...dayPartFields(choice.part) } : dayPartFields(choice.part)
 }
 
 /** The part of a wall-clock time "HH:MM": before 12:00 Morning, 12:00–17:59 Afternoon, from 18:00 Evening (fixed, D3). */
