@@ -388,7 +388,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode, tip?: string) => {
     // Day, Week, Month and Plan are one Calendar destination (ux-overhaul, planner-view).
     const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year'
-    const active = calendar(r.view) ? calendar(route.view) : JSON.stringify(r) === JSON.stringify(route)
+    // A Loop home address with a move open (/loop/<move>) is still the Loop home.
+    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
     const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : {})} />

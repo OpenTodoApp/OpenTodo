@@ -1239,7 +1239,7 @@
   "Add to focus": [
     "web/src/app/focus/FocusPicker.tsx",
     "web/src/app/focus/focusRequest.tsx",
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/DoMove.tsx",
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Add to {app}": [
@@ -1815,6 +1815,7 @@
   ],
   "Appearance": [
     "web/src/app/LabelsView.tsx",
+    "web/src/app/SidebarAppearance.tsx",
     "web/src/app/settingsSections.ts",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -2261,7 +2262,8 @@
     "web/src/app/themes/EditorSections.tsx"
   ],
   "Automatic": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/menus/projectAppearance.tsx"
   ],
   "Automatic archiving": [
     "web/src/app/settingsIndex.ts"
@@ -2817,14 +2819,17 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Catch into the Inbox": [
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/CatchMove.tsx",
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "Catch something": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Catch|method": [
     "web/src/lib/method/vocabulary.json"
   ],
   "Caught, decided": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "Caught, not yet decided.": [
     "web/src/lib/method/vocabulary.json"
@@ -3309,6 +3314,7 @@
     "web/src/app/assistant/AssistantSheet.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/help/HelpPanel.tsx",
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/routines/AddStep.tsx",
     "web/src/app/routines/DescribeIt.tsx",
@@ -3327,7 +3333,7 @@
   ],
   "Close the day": [
     "web/src/app/CloseDayRow.tsx",
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/ReviewMove.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/lib/shortcuts.ts"
@@ -3422,10 +3428,11 @@
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/LabelsView.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
+    "web/src/app/SidebarAppearance.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/app/menus/stylePickers.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
@@ -3436,8 +3443,8 @@
   ],
   "Colour {name}": [
     "web/src/app/NewWorkspaceDialog.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/lib/assistant.ts"
   ],
@@ -3643,10 +3650,10 @@
     "web/src/app/task-detail/TaskHead.tsx"
   ],
   "Completed per day": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "Completed per day, last {n} days": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "Completed tasks": [
     "web/src/app/views/DisplayOptionsBody.tsx"
@@ -4442,7 +4449,7 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Day: closed {time}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/ReviewMove.tsx"
   ],
   "Days": [
     "web/src/app/TimelineView.tsx",
@@ -5060,7 +5067,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Done this week": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "Done today": [
     "web/src/app/display/DisplayScreen.tsx",
@@ -7534,10 +7541,10 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Icon": [
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/ViewsView.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
+    "web/src/app/menus/projectAppearance.tsx",
     "web/src/app/menus/stylePickers.tsx",
     "web/src/lib/rules/sentence.ts",
     "web/src/ui/IconPicker.tsx"
@@ -7938,6 +7945,9 @@
   ],
   "Inbox and Today": [
     "web/src/app/AppearanceSection.tsx"
+  ],
+  "Inbox empty": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Inbox menu": [
     "web/src/app/SampleNotice.tsx"
@@ -8615,6 +8625,9 @@
   "Later…": [
     "web/src/app/task-detail/SectorChoice.tsx"
   ],
+  "Latest captures": [
+    "web/src/app/method/loop/CatchMove.tsx"
+  ],
   "Layout": [
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/views/DisplayOptionsBody.tsx"
@@ -9095,7 +9108,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Loop pulse · last {n} days": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "Lost both keys": [
     "web/src/app/EncryptionPanel.tsx"
@@ -10097,6 +10110,7 @@
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Next action for {name}": [
+    "web/src/app/method/loop/PlaceMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "Next actions": [
@@ -10125,6 +10139,7 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Next step|method": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/lib/method/vocabulary.json"
   ],
   "Next task": [
@@ -10321,7 +10336,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "No focus chosen today.": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/DoMove.tsx"
   ],
   "No focus sessions today.": [
     "web/src/app/focus/FocusSessions.tsx"
@@ -11430,7 +11445,7 @@
     "web/src/app/FeedView.tsx"
   ],
   "Oldest in Inbox": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "OmniFocus (CSV)": [
     "web/src/app/ImportScreen.tsx"
@@ -11735,7 +11750,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Open Next": [
-    "web/src/app/method/MethodListView.tsx"
+    "web/src/app/method/MethodListView.tsx",
+    "web/src/app/method/loop/DoMove.tsx"
   ],
   "Open Settings": [
     "web/src/app/EmailScreens.tsx"
@@ -11845,7 +11861,7 @@
     "web/src/app/SubProjects.tsx"
   ],
   "Open the Inbox": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/CatchMove.tsx"
   ],
   "Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes": [
     "web/src/lib/shortcuts.ts"
@@ -11899,9 +11915,6 @@
   ],
   "Open the tracked task": [
     "web/src/app/TrackingIndicator.tsx"
-  ],
-  "Open the weekly review": [
-    "web/src/app/method/LoopHome.tsx"
   ],
   "Open until {date}": [
     "web/src/app/MemberInvitations.tsx"
@@ -12519,7 +12532,7 @@
     "web/src/app/themes/previewData.ts"
   ],
   "Pick up to three in the Daily check": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/DoMove.tsx"
   ],
   "Pick which More destinations sit next to Inbox, Today, Upcoming and Calendar.": [
     "web/src/lib/settingsCopy.ts"
@@ -12867,7 +12880,6 @@
   ],
   "Process the Inbox": [
     "web/src/app/TriageView.tsx",
-    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/DailyCheck.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/lib/shortcuts.ts"
@@ -12975,6 +12987,7 @@
   ],
   "Project name": [
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/Sidebar.tsx",
@@ -13703,7 +13716,8 @@
     "web/src/app/Sections.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ViewsView.tsx",
-    "web/src/app/WorkspaceGroups.tsx"
+    "web/src/app/WorkspaceGroups.tsx",
+    "web/src/app/menus/projectAppearance.tsx"
   ],
   "Rename label": [
     "web/src/app/LabelsView.tsx",
@@ -13713,6 +13727,7 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Rename project": [
+    "web/src/app/ProjectRowMenu.tsx",
     "web/src/app/palette/registry.ts"
   ],
   "Rename section": [
@@ -15932,6 +15947,7 @@
     "web/src/app/themes/EditorSections.tsx"
   ],
   "Stalled": [
+    "web/src/app/method/loop/PlaceMove.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -16032,6 +16048,9 @@
   "Start the timer on {task}": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Start the weekly review": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Start tracking": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
@@ -16100,7 +16119,7 @@
   ],
   "Statistics": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/PulseDetails.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -18878,7 +18897,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Today’s focus": [
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/DoMove.tsx",
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Today’s focus holds {n} tasks. Take one out first.": [
@@ -20069,7 +20088,8 @@
   ],
   "Walk your projects": [
     "web/src/app/method/LoopHome.tsx",
-    "web/src/app/method/MethodListView.tsx"
+    "web/src/app/method/MethodListView.tsx",
+    "web/src/app/method/loop/PlaceMove.tsx"
   ],
   "Warning": [
     "web/src/app/themes/tokenNames.ts"
@@ -20191,6 +20211,7 @@
     "web/src/app/review/CarryOver.tsx"
   ],
   "What is the next step?": [
+    "web/src/app/method/loop/PlaceMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "What is {method}?": [
@@ -20239,7 +20260,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Whatever is on your mind…": [
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/CatchMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "When": [
@@ -20722,6 +20743,12 @@
   "Your API key for {provider}": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
+  "Your Daily check is due.": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
+  "Your Monthly look is due.": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
   ],
@@ -20826,7 +20853,7 @@
   "Your key is stored only in this browser. Like any page that calls a provider itself, this app’s page can read it.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
-  "Your loops are closed. Work from Next, and catch things as they come.": [
+  "Your loops are closed.": [
     "web/src/app/method/LoopHome.tsx"
   ],
   "Your loops, your server|method": [
@@ -20937,6 +20964,9 @@
   ],
   "Your weekly email digest was turned off, because it would contain your task titles.": [
     "web/src/app/EncryptionPanel.tsx"
+  ],
+  "Your weekly review is due.": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "Your workspaces": [
     "web/src/lib/settingsCopy.ts"
@@ -21535,7 +21565,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "empty": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "empty, erase, note, reset": [
     "web/src/lib/rules/sentence.ts"
@@ -21756,9 +21786,6 @@
   ],
   "in a table": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "in the Inbox": [
-    "web/src/app/method/LoopHome.tsx"
   ],
   "in the Trash": [
     "web/src/lib/rules/proposal.ts"
@@ -22149,7 +22176,7 @@
     "web/src/lib/rules/summary.ts"
   ],
   "nothing waiting": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "notification, alert, ping, message, remind": [
     "web/src/lib/rules/sentence.ts"
@@ -22173,13 +22200,13 @@
     "web/src/app/TaskRow.tsx"
   ],
   "of {n}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "off": [
     "web/src/lib/history.ts"
   ],
   "older than a week": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "on": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -22871,16 +22898,13 @@
   "title or notes contain the text": [
     "web/src/app/FilterView.tsx"
   ],
-  "to decide": [
-    "web/src/app/method/LoopHome.tsx"
-  ],
   "to {to}": [
     "web/src/app/OutgoingEmailPanel.tsx"
   ],
   "today": [
     "web/src/app/TokensSection.tsx",
     "web/src/app/filter/conditionText.ts",
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/PulseDetails.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/lib/review.ts"
   ],
@@ -23107,7 +23131,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "within the week": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "without {labels}": [
     "web/src/lib/rules/summary.ts"
@@ -23248,7 +23272,7 @@
     "web/src/app/DatabaseStoragePanel.tsx"
   ],
   "{date}: {n, plural, one {# task} other {# tasks}}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{date}: {n} completed": [
     "web/src/app/review/StatsView.tsx"
@@ -23265,6 +23289,9 @@
   "{day} {hour}: {n} completed": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "{decided} of {caught} decided": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "{done} completed and {created} created in this period; most completed: {name}, {n}.": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -23275,7 +23302,7 @@
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "{done} of {total} done": [
-    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/DoMove.tsx",
     "web/src/lib/slots.ts"
   ],
   "{done} of {total} subtasks completed": [
@@ -23453,7 +23480,8 @@
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "{n, plural, =0 {Every project has a next action} one {# project without a next action} other {# projects without a next action}}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/LoopHome.tsx",
+    "web/src/app/method/loop/PlaceMove.tsx"
   ],
   "{n, plural, =0 {No next action} one {# next action} other {# next actions}}": [
     "web/src/app/method/LoopHome.tsx"
@@ -23667,6 +23695,9 @@
   "{n, plural, one {# new section} other {# new sections}}": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "{n, plural, one {# next action is ready.} other {# next actions are ready.}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "{n, plural, one {# not due yet, {paused} of them paused} other {# not due yet, {paused} of them paused}}": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -23726,6 +23757,9 @@
   ],
   "{n, plural, one {# possible duplicate} other {# possible duplicates}}": [
     "web/src/app/ImportScreen.tsx"
+  ],
+  "{n, plural, one {# project has no next action.} other {# projects have no next action.}}": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "{n, plural, one {# project still has no next action: {names}.} other {# projects still have no next action: {names}.}}": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -23787,9 +23821,6 @@
   ],
   "{n, plural, one {# shortcut} other {# shortcuts}}": [
     "web/src/app/ShortcutHelp.tsx"
-  ],
-  "{n, plural, one {# stalled} other {# stalled}}": [
-    "web/src/app/method/LoopHome.tsx"
   ],
   "{n, plural, one {# starter} other {# starters}}": [
     "web/src/app/routines/Starters.tsx"
@@ -23887,6 +23918,9 @@
   ],
   "{n, plural, one {# template} other {# templates}}": [
     "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "{n, plural, one {# thing in the Inbox is waiting.} other {# things in the Inbox are waiting.}}": [
+    "web/src/app/method/LoopHome.tsx"
   ],
   "{n, plural, one {# token · this month {pct}% of your limit} other {# tokens · this month {pct}% of your limit}}": [
     "web/src/lib/assistant.ts"
@@ -24088,7 +24122,7 @@
     "web/src/app/quickadd/PasteOffer.tsx"
   ],
   "{n, plural, one {day} other {days}}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{n, plural, one {deadline in # day} other {deadline in # days}}": [
     "web/src/lib/rules/summary.ts"
@@ -24108,23 +24142,20 @@
   "{n, plural, one {label} other {labels}} {labels}": [
     "web/src/app/IssuesPanel.tsx"
   ],
-  "{n, plural, one {next action} other {next actions}}": [
-    "web/src/app/method/LoopHome.tsx"
-  ],
   "{n, plural, one {not changed for # day} other {not changed for # days}}": [
     "web/src/lib/rules/summary.ts"
   ],
   "{n, plural, one {of # task with a due date} other {of # tasks with a due date}}": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "{n, plural, one {oldest in Inbox # day} other {oldest in Inbox # days}}": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "{n, plural, one {pasted text, # line} other {pasted text, # lines}}": [
     "web/src/app/assistant/AssistantPanelBody.tsx"
   ],
-  "{n, plural, one {project without a next action} other {projects without a next action}}": [
-    "web/src/app/method/LoopHome.tsx"
-  ],
   "{n, plural, one {task} other {tasks}}": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{n, plural, one {{days} is already full} other {{days} are already full}}": [
     "web/src/app/Briefing.tsx"
@@ -24319,6 +24350,9 @@
   "{n} done": [
     "web/src/app/review/DoneForToday.tsx"
   ],
+  "{n} done this week": [
+    "web/src/app/method/LoopHome.tsx"
+  ],
   "{n} failed ({error})": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -24332,6 +24366,7 @@
     "web/src/app/ProjectsTable.tsx"
   ],
   "{n} left": [
+    "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/ReviewProgress.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -24418,7 +24453,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "{n} this week": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{n} to create": [
     "web/src/app/ImportScreen.tsx"
@@ -24430,11 +24465,10 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "{n} vs last week": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{n} waiting": [
-    "web/src/app/calendar/SectorGroups.tsx",
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/calendar/SectorGroups.tsx"
   ],
   "{n} with deadlines": [
     "web/src/app/ImportScreen.tsx"
@@ -24461,7 +24495,7 @@
     "web/src/app/pageFocus.tsx"
   ],
   "{pct}% left the Inbox": [
-    "web/src/app/method/LoopHome.tsx"
+    "web/src/app/method/loop/PulseDetails.tsx"
   ],
   "{pct}% of your {cap, number}-token limit, resets {date}": [
     "web/src/app/assistant/AssistantSettings.tsx"

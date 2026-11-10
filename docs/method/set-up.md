@@ -14,7 +14,7 @@ In **Settings → Account → Profile → How you work** (or in the start guide 
 
 - **Simple lists**: just your tasks and lists, nothing else.
 - **Lists with method hints**: your sidebar stays as it is, and each screen gets a short hint on its purpose in the method, with a link to this guide.
-- **Full Open Loops method**: the **Loop home**, a page that shows what needs your attention today, opens first; the sidebar shows Loop home, Inbox, Today, Next, Waiting and Review; and the app offers a Daily check each day.
+- **Full Open Loops method**: the **Loop home**, a page that names your next step and why and lets you work through the five moves in place, opens first; the sidebar shows Loop home, Inbox, Today, Next, Waiting and Review; and the app offers a Daily check each day.
 
 The start guide says what Open Loops is before you choose, and **What is Open Loops?** opens this guide's overview. The choice syncs to all your devices and changes no task. You can switch any time. Choosing the full method also offers to open on the Loop home on this device.
 

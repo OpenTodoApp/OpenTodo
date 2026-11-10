@@ -91,11 +91,20 @@ describe('sample tasks (moments-and-onboarding D3)', () => {
 })
 
 describe('nextMove', () => {
-  it('follows method order', () => {
-    expect(nextMove({ inbox: 3, withoutNext: 2, rhythmDue: true, nextCount: 4 })).toBe('clarify')
-    expect(nextMove({ inbox: 0, withoutNext: 2, rhythmDue: true, nextCount: 4 })).toBe('place')
-    expect(nextMove({ inbox: 0, withoutNext: 0, rhythmDue: true, nextCount: 4 })).toBe('review')
-    expect(nextMove({ inbox: 0, withoutNext: 0, rhythmDue: false, nextCount: 4 })).toBe('do')
-    expect(nextMove({ inbox: 0, withoutNext: 0, rhythmDue: false, nextCount: 0 })).toBe('catch')
+  it('Clarify first, with the Inbox count', () => {
+    expect(nextMove({ inbox: 3, withoutNext: 2, rhythm: 'weekly', nextCount: 4 })).toEqual({ move: 'clarify', count: 3, rhythm: null })
+  })
+  it('Place next, with the projects without a next action', () => {
+    expect(nextMove({ inbox: 0, withoutNext: 2, rhythm: 'weekly', nextCount: 4 })).toEqual({ move: 'place', count: 2, rhythm: null })
+  })
+  it('Review before Do when a rhythm is due, naming the rhythm', () => {
+    expect(nextMove({ inbox: 0, withoutNext: 0, rhythm: 'weekly', nextCount: 4 })).toEqual({ move: 'review', count: 0, rhythm: 'weekly' })
+    expect(nextMove({ inbox: 0, withoutNext: 0, rhythm: 'daily', nextCount: 4 })).toEqual({ move: 'review', count: 0, rhythm: 'daily' })
+  })
+  it('Do when a next action exists and nothing is due', () => {
+    expect(nextMove({ inbox: 0, withoutNext: 0, rhythm: null, nextCount: 4 })).toEqual({ move: 'do', count: 4, rhythm: null })
+  })
+  it('Catch when every loop is closed', () => {
+    expect(nextMove({ inbox: 0, withoutNext: 0, rhythm: null, nextCount: 0 })).toEqual({ move: 'catch', count: 0, rhythm: null })
   })
 })
