@@ -384,7 +384,7 @@ const shots = [
       await p.getByRole('option').first().click()
       await p.locator('[data-focus-timer]').waitFor()
     }
-    await p.locator('[data-focus-toggle]').click(); await settle(p, 1200)
+    await p.locator('[data-focus-toggle]').click(); await p.mouse.move(0, 0); await settle(p, 1200)
   } },
   // stats-and-review: the weekly review on its first unfinished step, and Statistics.
   { name: 'review', server: D, async run(p) { await go(p, demoBase, '/review', () => p.locator('#review-step-title').waitFor()); await settle(p, 300) } },

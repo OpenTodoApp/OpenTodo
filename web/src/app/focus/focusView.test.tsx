@@ -14,7 +14,11 @@ import { resetPanel } from '../panel'
 import { navigate, parseRoute, routePath } from '../router'
 import { Shell } from '../Shell'
 import { setDateTime } from '../../lib/dates'
-import { FocusTask } from './FocusParts'
+import { FocusDetails, setFocusDetailsOpen } from './FocusParts'
+import { writeFocus } from '../../lib/focus/state'
+import { FOCUS_DEFAULTS } from '../../lib/focus/prefs'
+import { idleState, start } from '../../lib/focus/timer'
+import { setShortcutHints } from '../shortcuts/hints'
 
 const user = { id: 'u1', email: 'a@example.com', name: 'Ada', role: 'owner', created_at: 0 } as unknown as User
 const T0 = new Date(2026, 9, 14, 9, 0).getTime()
@@ -70,7 +74,7 @@ describe('the route', () => {
 })
 
 describe('task selection', () => {
-  it('Open from a task: "Focus on this task" opens /focus/<id> with the notes and subtasks and a session running (focus-everywhere D2)', async () => {
+  it('Open from a task: "Focus on this task" opens /focus/<id> with the next subtask on the stage, the notes behind "Notes and subtasks" and a session running (focus-everywhere D2)', async () => {
     const id = await createTask({ title: 'Write the report', description: 'Outline first' })
     await createTask({ title: 'Collect the numbers', parent_id: id })
     const r = await shell({ view: 'task', id })
@@ -80,8 +84,12 @@ describe('task selection', () => {
     await click(q('[data-menu-label="Focus on this task"]')!)
     await waitFor(() => shownTask() === 'Write the report', 'focus screen')
     expect(location.pathname).toBe(`/focus/${id}`)
-    expect(q('[data-focus-notes]')?.textContent).toContain('Outline first')
-    await waitFor(() => !!q('[data-focus-subtasks]')?.textContent?.includes('Collect the numbers'), 'subtasks')
+    await waitFor(() => q('[data-focus-next-subtask]')?.textContent === 'Collect the numbers', 'next subtask')
+    expect(q('[data-focus-details]')?.dataset.focusDetails).toBe('closed')
+    expect(q('[data-focus-notes]')).toBeNull()
+    await click(q('[data-focus-details-toggle]')!)
+    await waitFor(() => !!q('[data-focus-notes]')?.textContent?.includes('Outline first'), 'notes')
+    expect(q('[data-focus-subtasks]')?.textContent).toContain('Collect the numbers')
     await waitFor(() => q('[data-focus-timer]')?.dataset.focusTimer === 'work', 'session running')
     expect(clock()).toBe('25:00')
     expect((await readFocus())?.taskId).toBe(id)
@@ -201,6 +209,8 @@ describe('a running session', () => {
     await focusList('A')
     const r = await shell()
     await waitFor(() => shownTask() === 'A')
+    await click(q('[data-focus-details-toggle]')!)
+    await waitFor(() => !!q('[data-add-subtask] input'), 'the subtask field')
     const input = q<HTMLInputElement>('[data-add-subtask] input')!
     input.focus()
     await key(input, ' ')
@@ -227,6 +237,7 @@ describe('a running session', () => {
   it('Notes edited elsewhere: the notes change without a reload and the timer keeps running', async () => {
     const [a] = await focusList('A')
     await mutate('task', a, { description: 'Old notes' })
+    setFocusDetailsOpen(true)
     const r = await shell()
     await waitFor(() => !!q('[data-focus-notes]')?.textContent?.includes('Old notes'))
     await key(document.body, ' ')
@@ -237,14 +248,14 @@ describe('a running session', () => {
     await r.unmount()
   })
 
-  it('Menu: the three modes with the current one checked, Change task, Remove from focus (phone-touch-focus), the noise toggle, Settings and Help; modes disabled while running', async () => {
+  it('Menu: the three modes with the current one checked, Change task, Remove from focus (phone-touch-focus), the noise toggle, Today’s sessions, Settings and Help; modes disabled while running', async () => {
     await focusList('A')
     const r = await shell()
     await waitFor(() => shownTask() === 'A')
     await click(q('button[aria-label="More actions"]')!)
     await waitFor(() => !!q('[data-menu-label="Pomodoro"]'))
     const labels = [...document.querySelectorAll('[role="menu"] [data-menu-label]')].map((x) => x.getAttribute('data-menu-label'))
-    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Remove from focus', 'Noise on', 'Settings', 'Help'])
+    expect(labels).toEqual(['Pomodoro', 'Flowtime', 'Countdown', 'Change task', 'Remove from focus', 'Noise on', 'Today’s sessions', 'Settings', 'Help'])
     expect(q('[data-menu-label="Pomodoro"]')?.getAttribute('aria-checked')).toBe('true')
     await key(document.body, 'Escape')
     await click(q('[data-focus-toggle]')!)
@@ -267,12 +278,12 @@ describe('accessibility', () => {
     await key(document.body, ' ')
     await waitFor(() => live() === '25 minutes left')
     note()
+    expect(q('[data-focus-clock]')?.closest('[aria-hidden="true"]')).toBeTruthy()
     for (let m = 1; m <= 26; m++) {
       await advance(MIN)
       note()
     }
     expect(said).toEqual(['25 minutes left', '20 minutes left', '15 minutes left', '10 minutes left', '5 minutes left', '1 minute left', 'Session done'])
-    expect(q('[data-focus-clock]')?.getAttribute('aria-hidden')).toBe('true')
     await r.unmount()
   })
 
@@ -291,14 +302,136 @@ describe('accessibility', () => {
   })
 })
 
+// The stage (OpenSpec change focus-redesign, tasks 1.1-1.4 and 2.1).
+describe('the stage (focus-redesign)', () => {
+  afterEach(() => setShortcutHints(false))
+  const primary = () => [...document.querySelectorAll<HTMLButtonElement>('[data-focus] .ui-btn--primary')]
+
+  it('One title: the header reads "Focus" alone, and the state line reads "Pomodoro · Work · 2 of 4"', async () => {
+    const [a] = await focusList('A')
+    await writeFocus(start(idleState(a, 'pomodoro', T0, { cycle: 2, lengthMinutes: 25 }), T0, FOCUS_DEFAULTS))
+    const r = await shell()
+    await waitFor(() => q('[data-focus-phase]')?.textContent === 'Pomodoro · Work · 2 of 4', 'state line')
+    expect(q('[data-page-meta]')).toBeNull()
+    expect(q('[data-page-header] [data-focus-toggle]')).toBeNull()
+    expect(q('[data-focus-toggle]')?.textContent).toBe('Pause')
+    expect(primary().map((b) => b.textContent)).toEqual(['Pause'])
+    // No card around the timer and no printed key line by default (interface rule 5).
+    expect(q('[data-focus-timer]')?.closest('.rounded-card')).toBeNull()
+    expect(q('[data-focus-hints]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('A break is the same stage: the title dims, the timer counts the break, "End the break" is the one primary button, and no dialog opens', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await advance(25 * MIN)
+    await waitFor(() => !!q('[data-focus-done="work"]') || q('[data-done-action="break"]') !== null, 'done')
+    await click(q('[data-done-action="break"]')!)
+    await waitFor(() => q('[data-focus-timer]')?.dataset.focusTimer === 'break', 'break')
+    expect(q('[data-focus-phase]')?.textContent).toBe('Short break')
+    expect(clock()).toBe('5:00')
+    expect(shownTask()).toBe('A')
+    expect(q('[data-focus-title]')?.hasAttribute('data-resting')).toBe(true)
+    expect(q('[data-focus]')?.hasAttribute('data-resting')).toBe(true)
+    expect(primary().map((b) => b.textContent)).toEqual(['End the break'])
+    expect(q('[role="dialog"]')).toBeNull()
+    await key(document.body, 'b')
+    await waitFor(() => !q('[data-focus]')?.hasAttribute('data-resting'), 'the break ended')
+    await r.unmount()
+  })
+
+  it('Done state content: the session is done with 25:00 worked, "Start the break" is the one primary button, the other steps and +5 and +15 min are quiet', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await advance(25 * MIN)
+    await waitFor(() => !!q('[data-focus-done]') || !!q('#focus-done-heading'), 'done')
+    expect(q('#focus-done-heading')?.textContent).toBe('Session done')
+    expect(q('[data-focus-worked]')?.textContent).toBe('25:00 worked')
+    expect(primary().map((b) => b.textContent)).toEqual(['Start the break'])
+    const quiet = [...document.querySelectorAll<HTMLButtonElement>('[data-focus-controls] .ui-btn--ghost')].map((b) => b.textContent)
+    expect(quiet).toEqual(['Complete the task', 'Next task', '+5 min', '+15 min'])
+    await r.unmount()
+  })
+
+  it('Tick the next subtask: it completes with Undo, the following open subtask takes its place, and the timer keeps running', async () => {
+    const [a] = await focusList('A')
+    const first = await createTask({ title: 'Collect the merged PRs', parent_id: a })
+    await createTask({ title: 'Write the summary', parent_id: a })
+    const r = await shell()
+    await waitFor(() => q('[data-focus-next-subtask]')?.textContent === 'Collect the merged PRs', 'next subtask')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await click(q('[data-focus-next-subtask] button')!)
+    await waitFor(async () => !!(await db.tasks.get(first))?.completed_at, 'completed')
+    await waitFor(() => q('[data-focus-next-subtask]')?.textContent === 'Write the summary', 'the following subtask')
+    expect(q('[data-running]')).toBeTruthy()
+    expect(document.body.textContent).toContain('Undo')
+    await r.unmount()
+  })
+
+  it('Disclosure remembered: opened on one task, it is open on the next task on this device', async () => {
+    const [, b] = await focusList('A', 'B')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    expect(q('[data-focus-details-toggle]')?.getAttribute('aria-expanded')).toBe('false')
+    await click(q('[data-focus-details-toggle]')!)
+    await waitFor(() => q('[data-focus-details]')?.dataset.focusDetails === 'open', 'open')
+    navigate({ view: 'inbox' })
+    await waitFor(() => !q('[data-focus]'), 'left')
+    navigate({ view: 'focus', id: b })
+    await waitFor(() => shownTask() === 'B', 'B')
+    expect(q('[data-focus-details]')?.dataset.focusDetails).toBe('open')
+    expect(q('[data-focus-details-toggle]')?.getAttribute('aria-expanded')).toBe('true')
+    await r.unmount()
+  })
+
+  it('Keys in tooltips: Next task and Take a break are icon buttons with their keys; the key line prints only with "Show shortcut hints" on', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    expect(q('[data-focus-next]')?.getAttribute('aria-label')).toBe('Next task')
+    expect(q('[data-focus-break]')?.getAttribute('aria-label')).toBe('Take a break')
+    expect(q('[data-focus-break]')?.getAttribute('aria-keyshortcuts')).toBe('b')
+    setShortcutHints(true)
+    await waitFor(() => !!q('[data-focus-hints]'), 'hints')
+    await r.unmount()
+  })
+
+  it('Today’s sessions: the menu entry opens the sheet, which lists the session just run', async () => {
+    await focusList('A')
+    const r = await shell()
+    await waitFor(() => shownTask() === 'A')
+    await key(document.body, ' ')
+    await waitFor(() => !!q('[data-running]'))
+    await advance(10 * MIN)
+    await click(q('button[aria-label="More actions"]')!)
+    await waitFor(() => !!q('[data-menu-label="Today’s sessions"]'))
+    await click(q('[data-menu-label="Today’s sessions"]')!)
+    await waitFor(() => !!q('[data-focus-sessions-summary]'), 'the sheet')
+    expect(q('[data-focus-sessions-summary]')?.textContent).toBe('1 session · 10m')
+    expect(q('[data-focus-sessions]')?.textContent).toContain('A')
+    await r.unmount()
+  })
+})
+
 describe('the task\'s due (ux-feedback-2)', () => {
   afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
 
   it('follows the 12-hour format instead of showing 15:00', async () => {
     setDateTime({ date_format: 'day-month', time_format: '12h', week_start: 'mon' }, { order: 'DM', hour12: false, weekStart: 1 })
     const id = await createTask({ title: 'Call the bank', due: { date: TODAY, time: '15:00' } })
-    const r = await render(<FocusTask task={(await db.tasks.get(id))!} />)
-    const text = r.container.querySelector('[data-focus-task] p')?.textContent ?? ''
+    setFocusDetailsOpen(true)
+    const r = await render(<FocusDetails task={(await db.tasks.get(id))!} subtasks={[]} />)
+    const text = r.container.querySelector('[data-focus-due]')?.textContent ?? ''
     expect(text).toMatch(/3:00\sPM/)
     expect(text).not.toContain('15:00')
     await r.unmount()

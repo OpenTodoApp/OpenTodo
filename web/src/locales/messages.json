@@ -83,7 +83,7 @@
     "web/src/app/connections/ConnectionsGraph.tsx"
   ],
   "+{n} min": [
-    "web/src/app/focus/FocusParts.tsx"
+    "web/src/app/focus/FocusView.tsx"
   ],
   ", {n} repeating": [
     "web/src/app/TemplateDialogs.tsx"
@@ -2494,7 +2494,6 @@
     "web/src/app/task-detail/useTaskDetail.ts"
   ],
   "Break over": [
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/lib/focus/timer.ts"
@@ -5579,7 +5578,7 @@
     "web/src/lib/dates.ts"
   ],
   "End the break": [
-    "web/src/app/focus/FocusParts.tsx"
+    "web/src/app/focus/FocusView.tsx"
   ],
   "End the run here": [
     "web/src/lib/rules/sentence.ts"
@@ -10117,7 +10116,6 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Next task": [
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/task-detail/TaskPageView.tsx"
   ],
@@ -10314,6 +10312,9 @@
   ],
   "No focus chosen today.": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "No focus sessions today.": [
+    "web/src/app/focus/FocusSessions.tsx"
   ],
   "No free time": [
     "web/src/app/assistant/blocks/FreeTimeBlock.tsx"
@@ -10954,6 +10955,9 @@
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Notes and subtasks": [
+    "web/src/app/focus/FocusParts.tsx"
   ],
   "Notes and text": [
     "web/src/lib/rules/sentence.ts"
@@ -13362,6 +13366,7 @@
   ],
   "Ready": [
     "web/src/app/RelaySettings.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
   "Ready to start": [
@@ -13369,9 +13374,6 @@
   ],
   "Ready-made routines to start from. Choose one, make its choices, then edit it like any routine.": [
     "web/src/app/routines/Starters.tsx"
-  ],
-  "Ready: {mode}": [
-    "web/src/app/focus/FocusParts.tsx"
   ],
   "Reason": [
     "web/src/lib/rules/sentence.ts"
@@ -14948,7 +14950,6 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Session done": [
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/lib/focus/timer.ts"
@@ -16193,7 +16194,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop the timer": [
-    "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/focus/FocusView.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Stop tracking": [
@@ -16267,6 +16268,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Subtasks": [
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
@@ -16438,7 +16440,6 @@
   ],
   "Take a break": [
     "web/src/app/focus/BreakReminder.tsx",
-    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusView.tsx"
   ],
   "Take a break now, or end the break": [
@@ -18732,9 +18733,6 @@
   "Timeline: show the previous week (or four with the week zoom)": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Timer": [
-    "web/src/app/focus/FocusParts.tsx"
-  ],
   "Timer mode": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -18878,6 +18876,10 @@
   ],
   "Today’s focus: <n-focus>{done} of {total}</n-focus> done.": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Today’s sessions": [
+    "web/src/app/focus/FocusSessions.tsx",
+    "web/src/app/focus/FocusView.tsx"
   ],
   "Todoist backup (ZIP)": [
     "web/src/app/ImportScreen.tsx"
@@ -19571,6 +19573,7 @@
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/focus/FocusSessions.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
     "web/src/app/notes/NoteRow.tsx",
@@ -20347,6 +20350,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Work": [
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/lib/templateLibrary.ts"
   ],
@@ -20363,17 +20367,11 @@
   "Work session": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Work session {n} of {total}": [
-    "web/src/app/focus/FocusParts.tsx"
-  ],
   "Work sessions before a long break": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Working hours and day length for Day and Week, on this device.": [
     "web/src/lib/settingsCopy.ts"
-  ],
-  "Working, counting up": [
-    "web/src/app/focus/FocusParts.tsx"
   ],
   "Working…": [
     "web/src/app/ImportScreen.tsx"
@@ -23231,6 +23229,7 @@
   ],
   "{done} of {total}": [
     "web/src/app/assistant/blocks/StatsBlock.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
@@ -23745,7 +23744,8 @@
     "web/src/app/assistant/AssistantPanel.tsx"
   ],
   "{n, plural, one {# session} other {# sessions}}": [
-    "web/src/app/auditFormat.ts"
+    "web/src/app/auditFormat.ts",
+    "web/src/app/focus/FocusSessions.tsx"
   ],
   "{n, plural, one {# shortcut} other {# shortcuts}}": [
     "web/src/app/ShortcutHelp.tsx"
@@ -24345,6 +24345,7 @@
   ],
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",
+    "web/src/app/focus/FocusParts.tsx",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
