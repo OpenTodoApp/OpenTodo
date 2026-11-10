@@ -35,9 +35,14 @@ export function WorkspaceMark({ workspace, size = 20 }: { workspace: Pick<Worksp
   return (
     <span aria-hidden="true" data-hue={hue} data-workspace-mark={icon ? 'icon' : 'initial'}
       className={`inline-flex shrink-0 select-none items-center justify-center rounded-control font-semibold leading-none ${size === 24 ? 'size-6 text-meta' : 'size-5 text-hint'} ${hue ? 'bg-hue-soft text-hue' : 'border border-default bg-sunken text-muted dark:bg-raised'}`}>
-      {icon ? <CatalogueIcon name={icon} size="xs" fallback={initial} /> : initial}
+      {/* The initial is drawn by CSS, not a text node: it is a picture, never part of the control's visible name (label-content-name-mismatch). */}
+      {icon ? <CatalogueIcon name={icon} size="xs" fallback={<Initial c={initial} />} /> : <Initial c={initial} />}
     </span>
   )
+}
+
+function Initial({ c }: { c: string }) {
+  return <span data-initial={c} className="before:content-[attr(data-initial)]" />
 }
 
 type Counts = Map<string, { inbox: number; today: number; unread: number }>
