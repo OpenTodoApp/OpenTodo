@@ -1,1 +1,0 @@
-- **A note beside the Notes list can be resized, and has room to write.** Drag its left edge, click it (widest, then back) or focus it and press ← or →, as for the task side panel; each device keeps its own width. The note opens wider, and its text stands in a readable, centred column with margins on both sides. Phones are unchanged.

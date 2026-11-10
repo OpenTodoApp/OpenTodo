@@ -1,1 +1,0 @@
-- **Comments tab read correctly on a narrow panel.** Shown as its icon, its word and a count, the tab's visible text is now part of its spoken name.

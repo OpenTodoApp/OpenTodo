@@ -1,1 +1,0 @@
-- **Tinted label chips.** The label name sits on a soft background in its colour, so labels are easier to tell apart in task lists.
