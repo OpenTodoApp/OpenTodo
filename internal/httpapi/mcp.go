@@ -79,7 +79,8 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method != http.MethodPost {
-		// No server-initiated SSE stream (GET) and no sessions to end (DELETE).
+		// No server-initiated SSE stream (GET) and no sessions to end (DELETE):
+		// an Apps session id holds no state (mcp-blocks D6).
 		w.Header().Set("Allow", http.MethodPost)
 		writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "the MCP endpoint accepts POST only")
 		return
@@ -138,7 +139,15 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	out, malformed := s.mcp.HandleVersion(r.Context(), caller, r.Header.Get("MCP-Protocol-Version"), body)
+	// What the client announced (mcp-blocks D6) and whether it is the
+	// decrypting bridge (D4): hints that choose the tools offered, never a
+	// credential; the bearer token above authorizes the request.
+	client := mcp.Client{ProtocolVersion: r.Header.Get("MCP-Protocol-Version"),
+		Apps: mcp.AppsSession(r.Header.Get(mcp.SessionHeader)), Decrypting: r.Header.Get(mcp.BridgeHeader) == "decrypt"}
+	out, malformed, announced := s.mcp.HandleClient(r.Context(), caller, client, body)
+	if announced {
+		w.Header().Set(mcp.SessionHeader, mcp.NewAppsSession())
+	}
 	if out == nil {
 		w.WriteHeader(http.StatusAccepted)
 		return

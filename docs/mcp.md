@@ -3,7 +3,7 @@ title: AI assistants (MCP)
 summary: Give an AI assistant access to your tasks over the Model Context Protocol, read-only or, when you allow it, with changes you can undo.
 audience: developer
 section: Integrations
-specs: [mcp-server, local-mcp-decryption, agent-project-exclusion]
+specs: [mcp-server, local-mcp-decryption, agent-project-exclusion, assistant-blocks]
 screens: []
 order: 40
 ---
@@ -385,13 +385,34 @@ call '{"name":"trash_tasks","arguments":{"ids":["<id>"]}}'
 | `opentodo://notes` | the 50 newest standalone notes, as `list_notes` with `source: note` |
 | `opentodo://notes/{id}` | same as `get_note` |
 | `opentodo://time-entries/running` | `{entry, server_time}`: your own running time entry as in `list_time_entries` (task title under `untrusted_text`, `focus` with the [Focus](focus.md) session's mode, session number and planned end), or `null` when nothing runs, on a break, while a session is paused, or when its task is in a project kept away from assistants |
+| `ui://opentodo/blocks/tasks`, `…/calendar`, `…/deadlines` | the [block](#blocks-in-the-assistants-answer-mcp-apps) pages (`text/html;profile=mcp-app`), the same for everyone and without your content; listed only to clients that announce MCP Apps |
 | `opentodo://integrations/issues` | your [issue connections](issue-import.md) with their state, last poll and counts and `token_set`, never a token; `{"enabled": false, "connections": []}` while the owner has not enabled them. Read from the stored state: the server contacts no provider |
 
-Contents are `application/json`. Views use UTC; append `?tz=Europe/Rome` to the URI for another zone. A resource holds at most 200 tasks and says `"truncated": true` when there were more (use `list_tasks` to page). Reading a deleted or foreign project or task is a `-32002` "resource not found" error, the same for both.
+Contents are `application/json`, except the block pages. Views use UTC; append `?tz=Europe/Rome` to the URI for another zone. A resource holds at most 200 tasks and says `"truncated": true` when there were more (use `list_tasks` to page). Reading a deleted or foreign project or task is a `-32002` "resource not found" error, the same for both.
 
 **Projects kept away.** The owner or an admin of a project can keep it away from AI assistants (share dialog → **AI assistants**, or [the API](api.md#keeping-a-project-away-from-assistants)). Every tool, resource and prompt then acts as if it and its sub-projects did not exist, whatever the token's scope: nothing of them is listed, searched or counted, and a write naming them is `not_found`.
 
 Resources are read-only and use the same `untrusted_text` shapes and `_notice` as the read tools.
+
+## Blocks in the assistant's answer (MCP Apps)
+
+Some assistants can show part of an app inside their answer through the [MCP Apps](https://github.com/modelcontextprotocol/ext-apps) extension: Claude (web, desktop and iOS), ChatGPT, VS Code, Goose and Postman. When such an assistant connects, OpenTodo offers it three more tools, the same ones the [in-app assistant](assistant.md) uses. The assistant can then show your tasks the way OpenTodo draws them, instead of listing them in prose:
+
+| Tool | Shows |
+| --- | --- |
+| `show_tasks` | the tasks named by `ids` (at most 20, in that order), with an optional `title`: checkbox, title, due date |
+| `show_calendar` | a `date` and `span` (`day` or `week`): each day's dated tasks at their times, with the planned total of their estimates |
+| `show_deadlines` | the open tasks with a deadline on `from`..`to` (at most 31 days), soonest first, with the days left |
+
+**What the assistant reads.** The answer the assistant reads says only which block it showed and how many items it holds. The titles and dates go to the block, the same text the read tools already return to that token. Projects kept away from assistants are never shown, and an unknown id is left out like one that is kept away.
+
+**Ticking a task.** With an `agent` token, and with the owner's **Assistants may make changes** and your own **Changes to my tasks** both on ([Letting an assistant make changes](#letting-an-assistant-make-changes)), a block's tasks have a checkbox. Ticking one calls `complete_tasks` through the assistant's app, and unticking calls `reopen_tasks`. Your assistant may ask you first. The change is recorded and undoable like any other assistant change. Otherwise the block is read-only.
+
+**Privacy and safety of the block.** The block's page is fixed: it is the same for everyone and holds none of your content. The assistant's app draws it in a sandboxed frame and hands it your tasks. The page makes no network request: it has its own Content-Security-Policy, which allows only its one script and one style and no connections. It shows every title as text, never as markup. Its colours are OpenTodo's light and dark themes, matching the assistant's own theme.
+
+**Encrypted accounts.** The server can't read your text, so it offers no block to an assistant that connects to it directly. Run the assistant through [`ot mcp --decrypt`](#encrypted-accounts-on-your-computer): the bridge decrypts the block's tasks on your computer, and the assistant's app draws them with the same page.
+
+**Assistants without MCP Apps** see none of these tools. Nothing changes for them.
 
 ## Prompts
 
@@ -404,7 +425,7 @@ The server holds no key. For an account with [end-to-end encryption](e2ee.md), e
 ## Protocol details
 
 - JSON-RPC 2.0 over `POST /mcp` (streamable HTTP, stateless). Supported protocol versions: `2025-11-25`, `2025-06-18` and `2025-03-26`; `initialize` echoes the client's version when supported and answers the newest otherwise. Capabilities: `tools`, `resources` and `prompts`; no sampling, subscriptions or list-change notifications.
-- Every request gets one `application/json` response; notifications get `202 Accepted` with no body. The server opens no event streams: `GET /mcp` is 405, and an `Accept` header that admits only `text/event-stream` is 406. No `Mcp-Session-Id` is issued. An `MCP-Protocol-Version` header naming an unsupported version is 400. Batches (JSON arrays) are accepted.
+- Every request gets one `application/json` response; notifications get `202 Accepted` with no body. The server opens no event streams: `GET /mcp` is 405, and an `Accept` header that admits only `text/event-stream` is 406. No `Mcp-Session-Id` is issued, except when an `initialize` announces MCP Apps (`capabilities.extensions["io.modelcontextprotocol/ui"]` with the MIME type `text/html;profile=mcp-app`). That client gets an `Mcp-Session-Id` starting with `apps.`, which it sends back on later requests so the server keeps offering it the [blocks](#blocks-in-the-assistants-answer-mcp-apps). The id holds no state and is no credential, and `DELETE /mcp` stays 405. An `MCP-Protocol-Version` header naming an unsupported version is 400. Batches (JSON arrays) are accepted.
 - Methods: `initialize`, `ping`, `tools/list`, `tools/call`, `resources/list`, `resources/templates/list`, `resources/read`. Anything else is `-32601`; malformed JSON is `-32700` (HTTP 400).
 
 ## Limits and security

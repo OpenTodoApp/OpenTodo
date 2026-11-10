@@ -140,6 +140,34 @@ func (s *Server) Handle(ctx context.Context, c agenttools.Caller, body []byte) (
 // HandleVersion is Handle for a request that declared protocolVersion in its
 // MCP-Protocol-Version header ("" when absent, which means 2025-03-26).
 func (s *Server) HandleVersion(ctx context.Context, c agenttools.Caller, protocolVersion string, body []byte) (out []byte, malformed bool) {
+	out, malformed, _ = s.HandleClient(ctx, c, Client{ProtocolVersion: protocolVersion}, body)
+	return out, malformed
+}
+
+// HandleClient is HandleVersion for a client the transport knows more about
+// (mcp-blocks). announced is true when the body was an initialize that
+// announced MCP Apps: the transport then marks the client's session (D6).
+func (s *Server) HandleClient(ctx context.Context, c agenttools.Caller, cl Client, body []byte) (out []byte, malformed, announced bool) {
+	out, malformed = s.handle(ctx, c, &request{client: cl}, body)
+	return out, malformed, s.lastAnnounced(body)
+}
+
+// request is the state of one transport request: what is known of its client.
+type request struct {
+	client Client
+}
+
+// lastAnnounced reports whether body is a single initialize announcing MCP Apps.
+func (s *Server) lastAnnounced(body []byte) bool {
+	var msg struct {
+		Method string          `json:"method"`
+		Params json.RawMessage `json:"params"`
+	}
+	return json.Unmarshal(bytes.TrimSpace(body), &msg) == nil && msg.Method == "initialize" && AnnouncesApps(msg.Params)
+}
+
+func (s *Server) handle(ctx context.Context, c agenttools.Caller, req *request, body []byte) (out []byte, malformed bool) {
+	protocolVersion := req.client.ProtocolVersion
 	body = bytes.TrimSpace(body)
 	if len(body) > 0 && body[0] == '[' {
 		if protocolVersion != "" && protocolVersion != batchVersion {
@@ -162,7 +190,7 @@ func (s *Server) HandleVersion(ctx context.Context, c agenttools.Caller, protoco
 			if size >= maxBatchResponseBytes {
 				r = overBudget(msg)
 			} else {
-				r = s.handleOne(ctx, c, msg)
+				r = s.handleOne(ctx, c, req, msg)
 			}
 			if r != nil {
 				b := encode(r)
@@ -179,7 +207,7 @@ func (s *Server) HandleVersion(ctx context.Context, c agenttools.Caller, protoco
 	if err := json.Unmarshal(body, &probe); err != nil {
 		return encode(response{JSONRPC: "2.0", ID: nullID, Error: &rpcError{Code: CodeParseError, Message: "parse error: invalid JSON"}}), true
 	}
-	r := s.handleOne(ctx, c, body)
+	r := s.handleOne(ctx, c, req, body)
 	if r == nil {
 		return nil, false
 	}
@@ -209,7 +237,7 @@ func overBudget(raw json.RawMessage) *response {
 
 // handleOne answers one message, or returns nil for notifications and for
 // responses (this server never sends requests, so there is nothing to match).
-func (s *Server) handleOne(ctx context.Context, c agenttools.Caller, raw json.RawMessage) *response {
+func (s *Server) handleOne(ctx context.Context, c agenttools.Caller, req *request, raw json.RawMessage) *response {
 	var msg map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		if _, ok := err.(*json.SyntaxError); ok {
@@ -248,7 +276,7 @@ func (s *Server) handleOne(ctx context.Context, c agenttools.Caller, raw json.Ra
 		}
 	}
 	start := time.Now()
-	result, rerr := s.dispatch(ctx, c, method, params, !hasID)
+	result, rerr := s.dispatch(ctx, c, req.client, method, params, !hasID)
 	// Method and duration only: arguments and results never reach the log (spec
 	// "Limits and no outbound calls").
 	s.log.Debug("mcp", "method", method, "ms", time.Since(start).Milliseconds())
@@ -286,7 +314,7 @@ func validID(id json.RawMessage) bool {
 	return false
 }
 
-func (s *Server) dispatch(ctx context.Context, c agenttools.Caller, method string, params json.RawMessage, notification bool) (any, error) {
+func (s *Server) dispatch(ctx context.Context, c agenttools.Caller, cl Client, method string, params json.RawMessage, notification bool) (any, error) {
 	if notification {
 		// notifications/initialized, notifications/cancelled and any other
 		// notification are accepted and ignored: there is no session state.
@@ -300,10 +328,14 @@ func (s *Server) dispatch(ctx context.Context, c agenttools.Caller, method strin
 	case "tools/list":
 		// Computed per request: write tools appear only while the owner's
 		// switch, the user's switch and an agent token all allow them.
-		return map[string]any{"tools": s.tools.Definitions(c)}, nil
+		// The display tools are offered to an Apps client only (mcp-blocks).
+		return map[string]any{"tools": s.toolList(c, cl)}, nil
 	case "tools/call":
-		return s.callTool(ctx, c, params)
+		return s.callTool(ctx, c, cl, params)
 	case "resources/list":
+		if cl.Apps {
+			return map[string]any{"resources": append(anyList(resourceList()), anyList(blockResources())...)}, nil
+		}
 		return map[string]any{"resources": resourceList()}, nil
 	case "resources/templates/list":
 		return map[string]any{"resourceTemplates": resourceTemplates()}, nil
@@ -374,13 +406,16 @@ type toolResult struct {
 	IsError           bool      `json:"isError,omitempty"`
 }
 
-func (s *Server) callTool(ctx context.Context, c agenttools.Caller, params json.RawMessage) (any, error) {
+func (s *Server) callTool(ctx context.Context, c agenttools.Caller, cl Client, params json.RawMessage) (any, error) {
 	var p struct {
 		Name      string          `json:"name"`
 		Arguments json.RawMessage `json:"arguments"`
 	}
 	if len(params) == 0 || json.Unmarshal(params, &p) != nil || p.Name == "" {
 		return nil, invalidParams("name: the tool name is required")
+	}
+	if isDisplay(p.Name) && cl.Apps {
+		return s.callDisplay(ctx, c, cl, p.Name, p.Arguments)
 	}
 	out, err := s.tools.Call(ctx, c, p.Name, p.Arguments)
 	var te *agenttools.ToolError
@@ -402,4 +437,12 @@ func (s *Server) callTool(ctx context.Context, c agenttools.Caller, params json.
 		return nil, err
 	}
 	return toolResult{Content: []content{{Type: "text", Text: string(text)}}, StructuredContent: out}, nil
+}
+
+func anyList[T any](list []T) []any {
+	out := make([]any, len(list))
+	for i, v := range list {
+		out[i] = v
+	}
+	return out
 }

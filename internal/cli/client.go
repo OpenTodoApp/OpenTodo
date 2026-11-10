@@ -119,6 +119,10 @@ type client struct {
 	// gate is shared by every client of one run: read-only mode, dry run and
 	// the token scope (gate.go). nil for the login client.
 	gate *writeGate
+	// mcpSession is the MCP session id the server answered (`ot mcp`), and
+	// mcpDecrypt marks the decrypting bridge's requests (mcp-blocks D4, D6).
+	mcpSession string
+	mcpDecrypt bool
 }
 
 func newClient(base, token string) *client {
