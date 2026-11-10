@@ -43,7 +43,7 @@ describe('shapeOf (5.1)', () => {
 
 describe('edits before applying (5.3)', () => {
   it('offers only the fields the proposal sets, with the app\'s checks', () => {
-    expect(editableFields(item({ entity: 'task', entityId: 'n', create: true, patch: { title: 'Call landlord', due: { date: '2026-11-13' } } }))).toEqual(['title', 'due'])
+    expect(editableFields(item({ entity: 'task', entityId: 'n', create: true, patch: { title: 'Call landlord', due: { date: '2026-11-13' } } }))).toEqual(['title', 'due', 'time'])
     expect(editableFields(item({ entity: 'task', entityId: 'e', patch: { priority: 1, labels: ['x'] } }))).toEqual(['priority'])
     // An existing task's title is not editable here: the proposal is not about it.
     expect(editableFields(item({ entity: 'task', entityId: 'e', patch: { title: 'Renamed' } }))).toEqual([])

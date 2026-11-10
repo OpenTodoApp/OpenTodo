@@ -146,7 +146,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | In progress (4 of 5) |
 | `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | In progress (3 of 4) |
 | `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | In progress (2 of 3) |
-| `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | Planned |
+| `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | In progress (4 of 4) |
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Planned |
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | Planned |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Planned |

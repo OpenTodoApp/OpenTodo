@@ -1,6 +1,6 @@
 ---
 title: Answers that show your tasks
-summary: The assistant's answers show your tasks, days, time, projects, places, notes and choices as part of the app, and proposals as a calendar, an outline or a map you can edit before applying.
+summary: The assistant's answers show your tasks, days, time, projects, places, notes and choices as part of the app, and proposals in their own shape.
 audience: user
 section: Guides
 specs: [assistant-blocks]
@@ -39,8 +39,6 @@ The latest answer may end with up to three next steps, such as **Move them to Fr
 
 Under each answer, **Copy answer** copies it as Markdown, with the tasks, day, places or choice it showed written out. The latest answer has **Regenerate** to ask again, and your latest question has **Edit question** to change it and send it again; both replace what came after, and an applied proposal stays applied. Neither is offered for a question with pasted text or photos, which are not kept.
 
-## Proposals in their own shape
+## Proposals
 
-A proposal that moves tasks within one week shows as a **calendar**: the days, the tasks already on them and the proposed ones marked. One that creates a project shows as an **outline**, and one that sets places as a **map**. **List** switches to the lines, with the same checkboxes. <kbd>Enter</kbd> applies and <kbd>Esc</kbd> discards in every shape.
-
-In the list, the pencil next to an item edits its proposed title, dates or priority before you apply. The item is marked **edited**, and what you entered is what applies; **Undo** works as for any proposal.
+A proposal shows as a calendar, an outline or a map, and you can change it before you apply it: see [Shape a proposal](assistant-proposals.md).

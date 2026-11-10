@@ -14,6 +14,8 @@ import { createComment } from '../../lib/comments'
 import { occurrenceId } from '../../lib/ids'
 import { HEX, seeded, seedBase, seedProjectWithSections, storyUser, TODAY, TOMORROW, withSeed } from '../stories/fixtures'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
+import { amendReview } from '../../lib/assistantAmend'
+import { BeforeAfter } from './blocks/BeforeAfter'
 
 // Blocks in the assistant's answers (OpenSpec change assistant-generative-ui): the
 // app's own view of what an answer talks about, read from the seeded device. Maps
@@ -36,7 +38,7 @@ const base: PanelViewProps = {
 function settled(root: HTMLElement): boolean {
   if (root.querySelector('[data-skeleton]')) return false
   const blocks = [...root.querySelectorAll('[data-assistant-block]')]
-  const shapes = [...root.querySelectorAll('[data-proposal-calendar]')]
+  const shapes = [...root.querySelectorAll('[data-proposal-calendar], [data-story-wait]')]
   return [...blocks, ...shapes].every((el) => el.childElementCount > 0)
 }
 
@@ -275,4 +277,63 @@ export const FollowUps: StoryObj = {
       },
     ]} />
   ),
+}
+
+/** A proposal amended by the next turn (assistant-proposal-editing): one task added, one moved again, one dropped. */
+function AmendedProposalView() {
+  const [review, setReview] = useState<Review | null>(null)
+  useEffect(() => {
+    const move = (id: string, days: number) => ({ entity: 'task' as const, entityId: id, patch: { due: { date: addDaysISO(TODAY, days) } }, base: { due: { date: TODAY } } })
+    void (async () => {
+      const prior = await reviewChangeSet([move(seeded.a, 1), move(seeded.b, 1), move(seeded.c, 2), move(seeded.d, 3)])
+      const plumber = { entity: 'task' as const, entityId: 'story-plumber', create: true, patch: { title: 'Call the plumber', project_id: null, priority: 4, labels: [], due: { date: addDaysISO(TODAY, 2), time: '09:00' }, estimate_minutes: 15 } }
+      const next = await reviewChangeSet([move(seeded.a, 1), move(seeded.b, 2), move(seeded.c, 2), plumber])
+      setReview(amendReview(prior, next))
+    })()
+  }, [])
+  if (!review) return null
+  return (
+    <Page min="min-h-[44rem]">
+      <AssistantPanelBody {...base} layout="page" review={review} onEdit={noop}
+        messages={[{ role: 'user', text: 'Today is too full, spread it over the next days.', at: 1 }, { role: 'assistant', text: 'I moved four tasks to the next three days; review it below.', at: 2 },
+          { role: 'user', text: 'Keep the venue for today, move the agency reply to Wednesday and add calling the plumber.', at: 3 }, { role: 'assistant', text: 'Done: the proposal below has your changes.', at: 4 }]} />
+    </Page>
+  )
+}
+
+export const AmendedProposal: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    seeded.a = await createTask({ title: 'Draft the roadmap', due: { date: TODAY }, estimate_minutes: 90 })
+    seeded.b = await createTask({ title: 'Reply to the agency', due: { date: TODAY }, estimate_minutes: 20 })
+    seeded.c = await createTask({ title: 'Review the budget', due: { date: TODAY }, estimate_minutes: 60 })
+    seeded.d = await createTask({ title: 'Book the venue', due: { date: TODAY } })
+  }),
+  render: () => <AmendedProposalView />,
+}
+
+/** A proposal before and after (assistant-proposal-editing): the values now and the proposed ones, side by side. */
+function BeforeAndAfterView() {
+  const [review, setReview] = useState<Review | null>(null)
+  useEffect(() => {
+    void reviewChangeSet([
+      { entity: 'task', entityId: seeded.a, patch: { due: { date: addDaysISO(TODAY, 1), time: '09:00' }, priority: 1 }, base: { due: { date: TODAY }, priority: 3 } },
+      { entity: 'task', entityId: seeded.b, patch: { project_id: seeded.work, labels: [seeded.errand] }, base: { project_id: null, labels: [] } },
+      { entity: 'task', entityId: 'story-new', create: true, patch: { title: 'Book the venue', project_id: seeded.work, priority: 2, due: { date: addDaysISO(TODAY, 2) } } },
+    ]).then(setReview)
+  }, [])
+  return (
+    <Page min="min-h-[30rem]">
+      <div className="overflow-hidden rounded-card border border-default bg-surface" data-story-wait>{review && <BeforeAfter review={review} />}</div>
+    </Page>
+  )
+}
+
+export const BeforeAndAfter: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    seeded.a = await createTask({ title: 'Draft the roadmap', due: { date: TODAY }, priority: 3 })
+    seeded.b = await createTask({ title: 'Reply to the agency' })
+  }),
+  render: () => <BeforeAndAfterView />,
 }

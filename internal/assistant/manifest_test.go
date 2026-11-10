@@ -78,7 +78,9 @@ type promptVector struct {
 	Selected []string `json:"selected,omitempty"`
 	Skill    string   `json:"skill,omitempty"`
 	Workday  *Workday `json:"workday,omitempty"`
-	Want     string   `json:"want"`
+	// Open is a checked open proposal (assistant-proposal-editing D3).
+	Open []Proposed `json:"open,omitempty"`
+	Want string     `json:"want"`
 }
 
 func TestDevicePromptVectors(t *testing.T) {
@@ -91,6 +93,10 @@ func TestDevicePromptVectors(t *testing.T) {
 		{Name: "plan week own day", User: "Ada", Zone: "UTC", Now: now, Skill: "plan-week", Workday: &Workday{StartHour: 8, EndHour: 17, DayLength: 300}},
 		{Name: "break down", User: "Ada", Zone: "UTC", Now: now, Skill: "break-down", View: "project", Selected: []string{"t1"}},
 		{Name: "capture", User: "Ada", Zone: "UTC", Now: now, Skill: "capture"},
+		{Name: "open proposal", User: "Ada", Zone: "UTC", Now: now, Open: []Proposed{
+			{Entity: "task", EntityID: "t1", Patch: map[string]json.RawMessage{"due": json.RawMessage(`{"date":"2026-10-14","time":"09:00"}`), "priority": json.RawMessage(`2`)}, Base: map[string]json.RawMessage{"due": json.RawMessage(`null`)}},
+			{Entity: "task", EntityID: "n1", Create: true, Patch: map[string]json.RawMessage{"title": json.RawMessage(`"Call <the> plumber & co"`), "project_id": json.RawMessage(`null`), "labels": json.RawMessage(`[]`)}},
+		}},
 	}
 	for i := range vs {
 		v := &vs[i]
@@ -98,7 +104,7 @@ func TestDevicePromptVectors(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		in := TurnInput{UserName: v.User, Zone: loc, View: v.View, Selected: v.Selected, Workday: v.Workday}
+		in := TurnInput{UserName: v.User, Zone: loc, View: v.View, Selected: v.Selected, Workday: v.Workday, Open: v.Open}
 		if v.Skill != "" {
 			sk, _ := agenttools.SkillByID(v.Skill)
 			in.Skill = &sk

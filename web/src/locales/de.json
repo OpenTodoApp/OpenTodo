@@ -7354,5 +7354,17 @@
   "seen": "gesehen",
   "{n, plural, one {Day closed · # task carried over} other {Day closed · # tasks carried over}}": "{n, plural, one {Tag abgeschlossen · # Aufgabe weitergetragen} other {Tag abgeschlossen · # Aufgaben weitergetragen}}",
   "What got done": "Was erledigt ist",
-  "Suggested next steps": "Vorgeschlagene nächste Schritte"
+  "Suggested next steps": "Vorgeschlagene nächste Schritte",
+  "(added this turn)": "(in dieser Runde hinzugefügt)",
+  "(changed this turn)": "(in dieser Runde geändert)",
+  "After": "Nachher",
+  "Before": "Vorher",
+  "Before and after": "Vorher und nachher",
+  "Enter a time.": "Gib eine Uhrzeit ein.",
+  "In a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same": "Im Kalender eines Vorschlags: den fokussierten Eintrag einen Tag früher / später legen (auch Alt+← und Alt+→); Ziehen auf einen Tag tut dasselbe",
+  "Moved “{title}” to {date}.": "„{title}“ auf {date} verschoben.",
+  "Removed this turn: {title}": "In dieser Runde entfernt: {title}",
+  "added": "hinzugefügt",
+  "changed": "geändert",
+  "proposed item in a calendar": "vorgeschlagener Eintrag in einem Kalender"
 }

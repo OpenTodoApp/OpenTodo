@@ -1,6 +1,8 @@
 // The system text of an on-device turn: internal/assistant SystemPrompt line for
 // line (pinned by prompt.vectors.json), with the fixed rules from the manifest.
+import type { ProposedChange } from '../assistantTypes'
 import { manifest, type ManifestSkill } from './manifest'
+import { openSection } from './open'
 
 export interface PromptInput {
   userName: string
@@ -9,6 +11,8 @@ export interface PromptInput {
   selected?: string[]
   skill?: ManifestSkill | null
   workday?: { startHour: number; endHour: number; dayLength: number } | null
+  /** The checked open proposal (assistant-proposal-editing D3). */
+  open?: readonly ProposedChange[]
 }
 
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/
@@ -40,5 +44,6 @@ export function systemPrompt(p: PromptInput, now: number): string {
       b += workdayNote(w.startHour, w.endHour, w.dayLength) + '\n'
     }
   }
+  b += openSection(p.open ?? [])
   return b
 }

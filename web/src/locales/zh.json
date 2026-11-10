@@ -7354,5 +7354,17 @@
   "seen": "已查看",
   "{n, plural, one {Day closed · # task carried over} other {Day closed · # tasks carried over}}": "{n, plural, other {今日已收尾 · 已顺延 # 项任务}}",
   "What got done": "完成了什么",
-  "Suggested next steps": "建议的下一步"
+  "Suggested next steps": "建议的下一步",
+  "(added this turn)": "（本轮添加）",
+  "(changed this turn)": "（本轮更改）",
+  "After": "之后",
+  "Before": "之前",
+  "Before and after": "前后对比",
+  "Enter a time.": "请输入时间。",
+  "In a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same": "在提案的日历中：将聚焦的项目提前 / 推后一天（也可用 Alt+← 和 Alt+→）；拖到某一天效果相同",
+  "Moved “{title}” to {date}.": "已将“{title}”移到 {date}。",
+  "Removed this turn: {title}": "本轮移除：{title}",
+  "added": "已添加",
+  "changed": "已更改",
+  "proposed item in a calendar": "日历中的提议项目"
 }
