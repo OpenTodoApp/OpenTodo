@@ -79,8 +79,12 @@ function reply(body, { text, tool }) {
   if (toolMsgs.length === 0 || last.role !== 'tool') {
     return reschedule ? tool('list_tasks', { view: 'today', timezone: zone }) : tool('today_summary', { timezone: zone })
   }
-  if (lastCall === 'list_tasks') {
-    const tasks = result?.tasks ?? []
+  // Write tools on request (assistant-lean-tools): ask for them first when only propose_changes is offered.
+  const offered = new Set((body.tools ?? []).map((t) => t.function?.name))
+  if (lastCall === 'list_tasks' && offered.has('propose_changes') && !offered.has('schedule_tasks')) return tool('propose_changes', {})
+  if (lastCall === 'list_tasks' || lastCall === 'propose_changes') {
+    const listed = lastCall === 'list_tasks' ? result : safeJSON(toolMsgs[0]?.content)
+    const tasks = listed?.tasks ?? []
     let ids = tasks.filter((t) => t.overdue).map((t) => t.id)
     if (ids.length === 0) ids = tasks.map((t) => t.id)
     if (ids.length === 0) return text('Nothing is overdue or due today, so there is nothing to move.')

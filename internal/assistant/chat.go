@@ -54,8 +54,13 @@ func (p *ChatProvider) Start(req Request) Conversation {
 		}
 		msgs = append(msgs, map[string]any{"role": role, "content": m.Text})
 	}
+	return &chatConv{p: p, messages: msgs, tools: p.tools(req.Tools), maxTokens: req.MaxTokens, images: hasImages(req.Messages)}
+}
+
+// tools are the function declarations of a request.
+func (p *ChatProvider) tools(defs []ToolDef) []map[string]any {
 	var tools []map[string]any
-	for _, t := range req.Tools {
+	for _, t := range defs {
 		schema := t.Schema
 		if p.Name == Gemini {
 			// Gemini's function declarations take an OpenAPI subset without type lists.
@@ -65,8 +70,11 @@ func (p *ChatProvider) Start(req Request) Conversation {
 			"name": t.Name, "description": t.Description, "parameters": schema,
 		}})
 	}
-	return &chatConv{p: p, messages: msgs, tools: tools, maxTokens: req.MaxTokens, images: hasImages(req.Messages)}
+	return tools
 }
+
+// SetTools implements Conversation (assistant-lean-tools D1).
+func (c *chatConv) SetTools(tools []ToolDef) { c.tools = c.p.tools(tools) }
 
 type chatConv struct {
 	p         *ChatProvider

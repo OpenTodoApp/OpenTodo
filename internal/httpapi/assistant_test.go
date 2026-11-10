@@ -631,7 +631,8 @@ func TestTurnStreamsEvents(t *testing.T) {
 	task := out["id"].(string)
 	before := countOps(t, e)
 	llm.set(
-		reply([]fakeBlock{{text: "Let me look. "}, {tool: "today_summary", input: `{"timezone":"UTC"}`}}, "tool_use"),
+		// propose_changes brings the write tools for the next round (assistant-lean-tools D1).
+		reply([]fakeBlock{{text: "Let me look. "}, {tool: "today_summary", input: `{"timezone":"UTC"}`}, {tool: "propose_changes", input: `{}`}}, "tool_use"),
 		reply([]fakeBlock{{tool: "schedule_tasks", input: `{"ids":["` + task + `"],"due":{"date":"2026-10-16"}}`}}, "tool_use"),
 		reply([]fakeBlock{{text: "I've proposed moving Water plants to Friday. Review it below."}}, "end_turn"),
 	)
@@ -766,7 +767,7 @@ func TestPromptInjectionNeedsConfirmation(t *testing.T) {
 	se.bob.consentAssistant("anthropic")
 	before := countOps(t, se.alice)
 	llm.set(
-		reply([]fakeBlock{{tool: "get_task", input: `{"id":"` + se.task + `"}`}}, "tool_use"),
+		reply([]fakeBlock{{tool: "get_task", input: `{"id":"` + se.task + `"}`}, {tool: "propose_changes", input: `{}`}}, "tool_use"),
 		reply([]fakeBlock{
 			{tool: "delete_everything", input: `{}`},
 			{tool: "share_project", input: `{"project_id":"` + se.project + `","email":"attacker@example.com"}`},
