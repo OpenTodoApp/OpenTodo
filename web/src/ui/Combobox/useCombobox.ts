@@ -84,6 +84,24 @@ function isAsync<T>(s: ComboboxConfig<T>['source']): s is AsyncSource<T> {
   return typeof s === 'function'
 }
 
+/**
+ * The options with each group's in one run, the groups in the order they first
+ * appear and the options in their order within it: a ranked list mixes kinds, and a
+ * group split in two showed its heading twice (issue #1183).
+ */
+export function byGroup<T>(options: ComboOption<T>[]): ComboOption<T>[] {
+  const groupOf = (o: ComboOption<T>) => (o.kind === 'item' ? o.group : undefined)
+  if (!options.some(groupOf)) return options
+  const runs = new Map<string | undefined, ComboOption<T>[]>()
+  for (const o of options) {
+    const g = groupOf(o)
+    const run = runs.get(g)
+    if (run) run.push(o)
+    else runs.set(g, [o])
+  }
+  return runs.size === 1 ? options : [...runs.values()].flat()
+}
+
 export function useCombobox<T>(cfg: ComboboxConfig<T>) {
   const id = useId()
   const [query, setQuery] = useState('')
@@ -210,6 +228,7 @@ export function useCombobox<T>(cfg: ComboboxConfig<T>) {
       const full = { tier: 3, gaps: 0, label: [], secondary: [] } as Match
       out = [...out, ...cfg.suffix.map((i) => toOption(i, full, 0))]
     }
+    out = byGroup(out)
     if (q && cfg.onCreate && !out.some((o) => o.kind === 'item' && o.m.tier === 3)) {
       out = [...out, { kind: 'create', key: `create:${q}`, query: q }]
     }
