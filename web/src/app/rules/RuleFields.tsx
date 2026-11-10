@@ -1,8 +1,10 @@
 // The parts of the rule editor (OpenSpec change automation-rules, design D11):
 // the trigger, the condition and the actions. Each part edits one whole value;
 // the dialog saves them through createRule/updateRule.
+import { useState, type ReactNode } from 'react'
 import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
 import { t, msg, translatedMap } from '../../lib/i18n'
+import { listOf } from '../../lib/rules/match'
 import { Field, Input, Switch } from '../../ui'
 import { Choice, LabelsField } from '../RuleEditor'
 import { ProjectPickerField } from '../ProjectPickerField'
@@ -154,6 +156,53 @@ function DatePredicate({ label, value, overdue, onChange }: { label: string; val
 const conditionGrid = 'grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-center gap-x-3 gap-y-2'
 const cellLabel = 'min-w-0 text-body text-default'
 
+/** A list test's mode: any, one of (in), none of (not_in) or nothing set (none). */
+type ListMode = '' | 'in' | 'not_in' | 'none'
+type ListValue<T> = 'none' | { in: T[] } | { not_in: T[] } | undefined
+const LIST_MODE_LABEL = translatedMap<string>({ '': msg('Any'), in: msg('Is'), not_in: msg('Is not') })
+
+function modeOf<T>(v: ListValue<T>): ListMode {
+  if (v === undefined) return ''
+  if (v === 'none') return 'none'
+  return listOf(v).not ? 'not_in' : 'in'
+}
+
+/**
+ * One list test of the condition (routine-conditions D2, D3): a test (Any,
+ * Is, Is not and, where the field can be empty, its "no …" word) beside the
+ * chooser of what it names. Is and Is not keep the chosen ids when switched;
+ * before anything is chosen the test waits on this device and writes nothing.
+ */
+function ListPredicate<T>({ label, value, noneLabel, extra, onChange, children }: {
+  label: string; value: ListValue<T>; noneLabel?: string; extra?: Record<string, unknown>
+  onChange: (v: ListValue<T>) => void; children: (ids: T[], set: (ids: T[]) => void) => ReactNode
+}) {
+  const [pending, setPending] = useState<ListMode>('')
+  const stored = modeOf(value)
+  const mode = stored === '' ? pending : stored
+  const ids = value && value !== 'none' ? listOf(value).ids : []
+  const write = (m: ListMode, list: T[]) => {
+    if (m === '' || m === 'none') { setPending(''); onChange(m === 'none' ? 'none' : undefined); return }
+    if (!list.length) { setPending(m); onChange(undefined); return }
+    onChange({ [m]: list, ...extra } as ListValue<T>)
+  }
+  const chooser = mode === 'in' || mode === 'not_in'
+  const modes: ListMode[] = noneLabel ? ['', 'in', 'not_in', 'none'] : ['', 'in', 'not_in']
+  return (
+    <>
+      <span className={cellLabel} aria-hidden="true">{label}</span>
+      <span className="flex min-w-0 flex-wrap items-center gap-2">
+        <select className={`ui-input ${chooser ? 'w-28 shrink-0' : 'w-full'}`} aria-label={t('{field} test', { field: label })} value={mode} onChange={(e) => write(e.target.value as ListMode, ids)}>
+          {modes.map((m) => <option key={m} value={m}>{m === 'none' ? noneLabel : LIST_MODE_LABEL[m]}</option>)}
+        </select>
+        {chooser && <span className="flex min-w-[8rem] flex-1">{children(ids, (list) => write(mode, list))}</span>}
+      </span>
+    </>
+  )
+}
+
+const PRIORITY_CHOICES = ['1', '2', '3', '4', '1,2'] as const
+
 /** Sets or clears one predicate of a condition. */
 function withPredicate<K extends keyof RuleCondition>(c: RuleCondition, key: K, value: RuleCondition[K] | undefined): RuleCondition {
   const next = { ...c }
@@ -162,32 +211,51 @@ function withPredicate<K extends keyof RuleCondition>(c: RuleCondition, key: K, 
   return next
 }
 
+/** The sections a section test offers: the condition's project's, else every one named with its project. */
+function sectionChoices(names: Names, project: string): { id: string; label: string }[] {
+  const live = names.sections.filter((s) => !s.deleted_at).sort((a, b) => a.position - b.position)
+  if (project) return live.filter((s) => s.project_id === project).map((s) => ({ id: s.id, label: s.name || t('Untitled section') }))
+  const byId = new Map(names.projects.map((p) => [p.id, p.name]))
+  return live.filter((s) => byId.has(s.project_id)).map((s) => ({ id: s.id, label: `${byId.get(s.project_id)} › ${s.name || t('Untitled section')}` }))
+}
+
 /** The condition: every predicate set must hold. */
 export function ConditionFields({ value, onChange, names }: { value: RuleCondition; onChange: (v: RuleCondition) => void; names: Names }) {
   const set = <K extends keyof RuleCondition>(key: K, v: RuleCondition[K] | undefined) => onChange(withPredicate(value, key, v))
-  const project = value.project && value.project !== 'none' ? value.project : null
+  const project = value.project && value.project !== 'none' && !listOf(value.project).not ? listOf(value.project).ids[0] ?? '' : ''
   const pick = (v: string, map: Record<string, RuleCondition[keyof RuleCondition] | undefined>) => map[v]
   return (
     <fieldset className="min-w-0" data-rule-condition>
       <legend className="mb-2 text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
       <div className={conditionGrid}>
-        <span className={cellLabel} aria-hidden="true">{t('Project')}</span>
-        <ProjectPickerField label={t('Project')} projects={names.projects} value={project?.in[0] ?? null} inbox={false} noneLabel={t('Any')} rankContext="rule.project"
-          className="w-full" onChange={(id) => set('project', id ? { in: [id], descendants: true } : undefined)} />
+        <ListPredicate label={t('Project')} value={value.project} noneLabel={t('No project')} extra={{ descendants: true }} onChange={(v) => set('project', v)}>
+          {(ids, pick) => (
+            <ProjectPickerField label={t('Project')} projects={names.projects} value={ids[0] ?? null} inbox={false} noneLabel={t('Choose a project')} rankContext="rule.project"
+              className="w-full" onChange={(id) => pick(id ? [id] : [])} />
+          )}
+        </ListPredicate>
+        <ListPredicate label={t('Section')} value={value.section} noneLabel={t('No section')} onChange={(v) => set('section', v)}>
+          {(ids, pick) => (
+            <select className="ui-input w-full" aria-label={t('Section')} value={ids[0] ?? ''} onChange={(e) => pick(e.target.value ? [e.target.value] : [])}>
+              <option value="" disabled>{t('Choose a section')}</option>
+              {sectionChoices(names, project).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+          )}
+        </ListPredicate>
         <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have every label')}</span>
         <LabelsField title={t('Have every label')} titleHidden ids={value.labels?.all ?? []} labels={names.labels}
           onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
         <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have none of the labels')}</span>
         <LabelsField title={t('Have none of the labels')} titleHidden ids={value.labels?.none ?? []} labels={names.labels}
           onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
-        <label className="contents">
-          <span className={cellLabel}>{t('Priority')}</span>
-          <select className="ui-input" value={value.priority?.in.join(',') ?? ''} onChange={(e) => set('priority', e.target.value ? { in: e.target.value.split(',').map(Number) } : undefined)}>
-            <option value="">{t('Any')}</option>
-            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
-            <option value="1,2">{t('Priority 1 or 2')}</option>
-          </select>
-        </label>
+        <ListPredicate label={t('Priority')} value={value.priority} onChange={(v) => set('priority', v as RuleCondition['priority'])}>
+          {(ids, pick) => (
+            <select className="ui-input w-full" aria-label={t('Priority')} value={ids.join(',')} onChange={(e) => pick(e.target.value ? e.target.value.split(',').map(Number) : [])}>
+              <option value="" disabled>{t('Choose a priority')}</option>
+              {PRIORITY_CHOICES.map((p) => <option key={p} value={p}>{p === '1,2' ? t('Priority 1 or 2') : t('Priority {p}', { p })}</option>)}
+            </select>
+          )}
+        </ListPredicate>
         <DatePredicate label={t('Date')} value={value.due} overdue onChange={(v) => set('due', v)} />
         <DatePredicate label={t('Deadline')} value={value.deadline} overdue={false} onChange={(v) => set('deadline', v as RuleCondition['deadline'])} />
         <label className="contents">

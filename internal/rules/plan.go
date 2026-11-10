@@ -31,6 +31,9 @@ type PlanContext struct {
 	ProjectShared func(id string) bool
 	// ProjectLive reports a live project of the author.
 	ProjectLive func(id string) bool
+	// ProjectElsewhere reports a project of another workspace than the
+	// routine's; a project action into it is skipped (routine-conditions D1).
+	ProjectElsewhere func(id string) bool
 }
 
 // Planned is the field changes a rule's actions make on one task, in the order
@@ -227,6 +230,9 @@ func planDue(a ruleval.Actions, cur map[string]json.RawMessage, ctx PlanContext,
 }
 
 func planSection(s *ruleval.SectionAction, cur map[string]json.RawMessage, ctx PlanContext, set func(string, json.RawMessage)) []string {
+	if ctx.ProjectElsewhere != nil && ctx.ProjectElsewhere(s.ProjectID) {
+		return []string{SkipOtherWorkspace}
+	}
 	if ctx.ProjectLive != nil && !ctx.ProjectLive(s.ProjectID) {
 		return []string{"project gone"}
 	}
@@ -244,6 +250,9 @@ func planSection(s *ruleval.SectionAction, cur map[string]json.RawMessage, ctx P
 	set("section_id", section)
 	return nil
 }
+
+// SkipOtherWorkspace is the skipped reason of a move into another workspace's project.
+const SkipOtherWorkspace = "other workspace"
 
 // sameJSON compares two values as JSON (key order and spacing ignored).
 func sameJSON(a, b json.RawMessage) bool {

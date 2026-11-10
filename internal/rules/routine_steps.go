@@ -488,6 +488,10 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 			item["project_id"] = st.w.project
 			delete(item, "labels")
 		}
+		if _, hasProject := item["project_id"]; st.w.workspace != "" && !hasProject && item["parent_id"] == nil {
+			// A routine of one workspace creates in its Inbox (routine-conditions D1).
+			item["workspace_id"] = st.w.workspace
+		}
 		if strings.TrimSpace(fmt.Sprint(item["title"])) == "" {
 			continue
 		}
@@ -534,6 +538,9 @@ func (st *runState) changeTasks(s *ruleval.Step, in map[string]ruleval.Value, _ 
 	}
 	pc := st.w.planContext(st.nowMs)
 	pc.ProjectLive = func(id string) bool { _, ok := st.liveProject(id); return ok }
+	if set.Section != nil && st.w.elsewhere[set.Section.ProjectID] {
+		return none(), "", failf(ErrCodeOtherWorkspace, "this routine works only in the workspace %s; that project is in another workspace", st.w.workspaceName)
+	}
 	if set.Section != nil {
 		if _, ok := st.liveProject(set.Section.ProjectID); !ok {
 			return none(), "", failf(ErrCodeNotFound, "project %s not found", set.Section.ProjectID)
@@ -634,6 +641,8 @@ func (st *runState) projectStep(s *ruleval.Step, in map[string]ruleval.Value, at
 		args := map[string]any{"name": name, "client_request_id": st.clientID(at)}
 		if parent, ok := st.entityIn(s, in, "parent"); ok {
 			args["parent_id"] = parent.ID
+		} else if st.w.workspace != "" {
+			args["workspace_id"] = st.w.workspace
 		}
 		for _, f := range []string{"color", "icon"} {
 			if v, ok := lit[string](s, f); ok {

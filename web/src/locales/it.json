@@ -7329,5 +7329,20 @@
   "Expand the row": "Espandi la riga",
   "Edit the title, open the details or expand the row. This device only.": "Modifica il titolo, apri i dettagli o espandi la riga. Solo questo dispositivo.",
   "tomorrow 3pm, next fri": "domani alle 15, venerdì prossimo",
-  "Time of day (choose a date first)": "Momento della giornata (scegli prima una data)"
+  "Time of day (choose a date first)": "Momento della giornata (scegli prima una data)",
+  "Choose a priority": "Scegli una priorità",
+  "Choose a section": "Scegli una sezione",
+  "Every workspace": "Tutti gli spazi di lavoro",
+  "every workspace": "tutti gli spazi di lavoro",
+  "Is": "È",
+  "Is not": "Non è",
+  "This routine works only in its workspace. Nothing was written.": "Questa routine agisce solo nel suo spazio di lavoro. Non è stato scritto nulla.",
+  "This routine’s workspace is gone. Choose another one in the routine.": "Lo spazio di lavoro di questa routine non c’è più. Scegline un altro nella routine.",
+  "a removed workspace": "uno spazio di lavoro eliminato",
+  "in|workspace": "in",
+  "not in section {sections}": "non nella sezione {sections}",
+  "not in {projects}": "non in {projects}",
+  "not priority {p}": "non priorità {p}",
+  "{field} test": "Condizione su {field}",
+  "{name} ({workspace})": "{name} ({workspace})"
 }

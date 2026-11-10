@@ -223,6 +223,8 @@ function createTasks(s: ToolSnapshot, a: Args): ToolPlan {
     if (it.labels !== undefined && it.labels !== null) patch.labels = labelIds(s, p, it.labels)
     if (typeof it.recurrence === 'string') patch.recurrence = it.recurrence
     planningPatch(p, it, patch)
+    // The routine's workspace (null for the default), as the server's tool writes it.
+    if ('workspace_id' in it) patch.workspace_id = it.workspace_id ?? null
     changes.push({ entity: 'task', entityId: id, create: true, patch })
   })
   return { changes }
@@ -250,6 +252,7 @@ function createProject(s: ToolSnapshot, a: Args): ToolPlan {
     if (!liveProject(s, parent)) throw notFound('project')
     patch.parent_id = parent
   }
+  if ('workspace_id' in a) patch.workspace_id = a.workspace_id ?? null
   return { changes: [{ entity: 'project', entityId: id, create: true, patch }] }
 }
 

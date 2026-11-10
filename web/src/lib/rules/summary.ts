@@ -5,7 +5,7 @@ import { weekday } from '../dates'
 import { formatList, t } from '../i18n'
 import type { OnDropRule, Rule, RuleActions, RuleCondition, RuleTrigger } from '../types'
 import { ruleParts, type RuleNames } from '.'
-import { addDays } from './match'
+import { addDays, listOf } from './match'
 
 // 2026-10-19 is a Monday: weekday n (1 Monday … 7 Sunday) in the date locale.
 const dayName = (n: number): string => weekday(addDays('2026-10-19', n - 1))
@@ -68,13 +68,24 @@ export function conditionParts(c: RuleCondition | null | undefined, names: RuleN
   const parts: string[] = []
   const labels = (ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(names.labels, id)).join(', ')
   if (c.project === 'none') parts.push(t('no project'))
-  else if (c.project) parts.push(t('in {projects}', { projects: c.project.in.map((id) => nameOf(names.projects, id)).join(', ') }))
+  else if (c.project) {
+    const { ids, not } = listOf(c.project)
+    const projects = ids.map((id) => nameOf(names.projects, id)).join(', ')
+    parts.push(not ? t('not in {projects}', { projects }) : t('in {projects}', { projects }))
+  }
   if (c.section === 'none') parts.push(t('no section'))
-  else if (c.section) parts.push(t('section {sections}', { sections: c.section.in.map((id) => nameOf(names.sections, id)).join(', ') }))
+  else if (c.section) {
+    const { ids, not } = listOf(c.section)
+    const sections = ids.map((id) => nameOf(names.sections, id)).join(', ')
+    parts.push(not ? t('not in section {sections}', { sections }) : t('section {sections}', { sections }))
+  }
   if (c.labels?.any?.length) parts.push(t('any of {labels}', { labels: labels(c.labels.any) }))
   if (c.labels?.all?.length) parts.push(t('label {labels}', { labels: labels(c.labels.all) }))
   if (c.labels?.none?.length) parts.push(t('without {labels}', { labels: labels(c.labels.none) }))
-  if (c.priority) parts.push(t('priority {p}', { p: c.priority.in.join(', ') }))
+  if (c.priority) {
+    const { ids, not } = listOf(c.priority)
+    parts.push(not ? t('not priority {p}', { p: ids.join(', ') }) : t('priority {p}', { p: ids.join(', ') }))
+  }
   if (c.due !== undefined) parts.push(dueText(c.due))
   if (c.deadline !== undefined) parts.push(deadlineText(c.deadline))
   if (c.start === 'someday') parts.push(t('someday'))

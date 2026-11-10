@@ -196,7 +196,7 @@ func (s *Server) handleApplyProposal(w http.ResponseWriter, r *http.Request) {
 	if in.Changes != nil || in.Sides != nil {
 		res, err := s.rules.ApplyEncryptedProposal(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"), in.EncryptedApply)
 		if err != nil {
-			if errors.Is(err, rules.ErrBadCommit) || errors.Is(err, rules.ErrPlaintext) {
+			if errors.Is(err, rules.ErrBadCommit) || errors.Is(err, rules.ErrPlaintext) || errors.Is(err, rules.ErrOutsideWorkspace) {
 				s.deviceRunError(w, err)
 				return
 			}

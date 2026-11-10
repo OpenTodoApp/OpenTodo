@@ -132,7 +132,7 @@ func (r *Registry) listRoutines(ctx context.Context, userID string, _ args) (map
 		_ = json.Unmarshal(row["trigger"], &tr)
 		item := map[string]any{"id": id, "untrusted_text": nameText{Name: e2ee.Display(str(row, "name"))}, "trigger_kind": tr.Kind,
 			"enabled": string(row["enabled"]) == "true", "paused_reason": nil, "steps": stepsCount(row["steps"]), "last_run": nil,
-			"project_id": nullable(str(row, "project_id")), "run_as": nil}
+			"project_id": nullable(str(row, "project_id")), "workspace_id": nullable(str(row, "workspace_id")), "run_as": nil}
 		if p := runAs[id]; p != nil {
 			item["run_as"] = p
 		}
@@ -158,7 +158,7 @@ func (r *Registry) routineDetail(ctx context.Context, userID string, row opsync.
 	out := map[string]any{"id": str(row, "id"), "enabled": string(row["enabled"]) == "true", "trigger": null(row["trigger"]), "condition": null(row["condition"]),
 		"actions":        displayValue(null(row["actions"])),
 		"untrusted_text": map[string]any{"name": e2ee.Display(str(row, "name")), "steps": displayValue(null(row["steps"]))}, "unavailable": []ruleval.StepWarning{},
-		"project_id": nullable(str(row, "project_id")), "run_as": nil}
+		"project_id": nullable(str(row, "project_id")), "workspace_id": nullable(str(row, "workspace_id")), "run_as": nil}
 	if r.routines != nil {
 		if p := r.routines.RunAs(ctx, userID, sharedIDs([]opsync.Entity{row}))[str(row, "id")]; p != nil {
 			out["run_as"] = p
@@ -413,11 +413,14 @@ func (r *Registry) planCreateRoutine(ctx context.Context, c Caller, a args, _ Ch
 	if err := refuseAIApply(a); err != nil {
 		return Plan{}, err
 	}
-	if err := a.only("", "name", "trigger", "condition", "steps", "actions", "enabled", "project"); err != nil {
+	if err := a.only("", "name", "trigger", "condition", "steps", "actions", "enabled", "project", "workspace"); err != nil {
 		return Plan{}, err
 	}
 	body, err := r.routineBody(c, a)
 	if err != nil {
+		return Plan{}, err
+	}
+	if err := r.routineWorkspace(ctx, c.UserID, a, body); err != nil {
 		return Plan{}, err
 	}
 	if ref, _ := a.str("project"); ref != "" {
@@ -458,7 +461,7 @@ func (r *Registry) planUpdateRoutine(ctx context.Context, c Caller, a args, _ Ch
 	if err := refuseAIApply(a); err != nil {
 		return Plan{}, err
 	}
-	if err := a.only("", "routine", "name", "trigger", "condition", "steps", "actions"); err != nil {
+	if err := a.only("", "routine", "name", "trigger", "condition", "steps", "actions", "workspace"); err != nil {
 		return Plan{}, err
 	}
 	ref, _ := a.str("routine")
@@ -470,8 +473,11 @@ func (r *Registry) planUpdateRoutine(ctx context.Context, c Caller, a args, _ Ch
 	if err != nil {
 		return Plan{}, err
 	}
+	if err := r.routineWorkspace(ctx, c.UserID, a, body); err != nil {
+		return Plan{}, err
+	}
 	if len(body) == 0 {
-		return Plan{}, argErr("nothing to change: give name, trigger, condition, steps or actions")
+		return Plan{}, argErr("nothing to change: give name, trigger, condition, steps, actions or workspace")
 	}
 	// Judged as the routine would be after the change: one that would still
 	// send stays the person's to change, whichever part the assistant gives;
@@ -596,6 +602,34 @@ func sharedIDs(rows []opsync.Entity) []string {
 
 // projectRef resolves a project id or exact name (ignoring case) among the
 // user's live projects (a routine of a project, routines-shared D11).
+// routineWorkspace reads the `workspace` argument of create_routine and
+// update_routine into rule.workspace_id (routine-conditions D1): a
+// workspace's id or exact name, or null for every workspace.
+func (r *Registry) routineWorkspace(ctx context.Context, userID string, a args, body map[string]json.RawMessage) error {
+	v, ok := a["workspace"]
+	if !ok {
+		return nil
+	}
+	if string(v) == "null" {
+		body["workspace_id"] = nullRaw
+		return nil
+	}
+	ref, err := a.str("workspace")
+	if err != nil || strings.TrimSpace(ref) == "" {
+		return argErr("workspace: must be a workspace id or name, or null for every workspace")
+	}
+	snap := &snapshot{}
+	if err := r.loadWorkspaces(ctx, userID, snap); err != nil {
+		return err
+	}
+	id, err := snap.resolveWorkspace("workspace", strings.TrimSpace(ref))
+	if err != nil {
+		return err
+	}
+	body["workspace_id"] = raw(id)
+	return nil
+}
+
 func (r *Registry) projectRef(ctx context.Context, userID, ref string) (string, error) {
 	rows, err := r.list(ctx, userID, "project", false)
 	if err != nil {

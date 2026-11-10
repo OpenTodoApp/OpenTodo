@@ -19,7 +19,7 @@ import { walkSteps } from '../../lib/rules/steps'
 import { deleteRule, duplicateRule, isKnownRule, reorderRule, setRuleEnabled, useRules } from '../../lib/rules/store'
 import { summarizeRule, triggerText } from '../../lib/rules/summary'
 import type { Rule, RulesStatus } from '../../lib/types'
-import { useMembershipMap, useProjects } from '../../lib/localData'
+import { useMembershipMap, useProjects, useWorkspaceState } from '../../lib/localData'
 import { canEditRoutine, routineProjects, sharedCatalogue, sharedProjectOf } from '../../lib/rules/shared'
 import { Button, EmptyState, Icon, NeutralChip, Notice, PageBody, PageHeader, Switch, Tabs } from '../../ui'
 import { act } from '../actionError'
@@ -106,7 +106,12 @@ function RoutineRow({ rule, index, total, status, catalogue, names, onEdit, onHi
       } },
     ] : [] },
   ]
+  // A routine of another workspace than the current one names it (routine-conditions D3).
+  const ws = useWorkspaceState()
+  const otherWorkspace = !project && rule.workspace_id && ws.list.length > 1 && rule.workspace_id !== ws.current
+    ? ws.list.find((w) => w.id === rule.workspace_id)?.name ?? t('a removed workspace') : ''
   const meta = [
+    otherWorkspace,
     info?.last_run ? t('last ran {when}', { when: formatInstant(info.last_run, 'datetime') }) : status ? t('not run yet') : t('Needs a connection'),
     info?.runs_7d ? t('{n, plural, one {# run this week} other {# runs this week}}', { n: info.runs_7d }) : '',
   ].filter(Boolean).join(' · ')

@@ -249,7 +249,7 @@ type Condition struct {
 	Project  *ProjectPred
 	Section  *SectionPred
 	Labels   *LabelsPred
-	Priority []int
+	Priority *PriorityPred
 	Due      *DatePred
 	Deadline *DatePred
 	Start    string
@@ -264,17 +264,26 @@ type Condition struct {
 	Unchanged *int
 }
 
-// ProjectPred is `project`: one of the ids (and their sub-projects), or none.
+// ProjectPred is `project`: one of the ids (and their sub-projects), none of
+// them (Not, routine-conditions D2), or no project.
 type ProjectPred struct {
 	None        bool
 	In          []string
+	Not         bool
 	Descendants bool
 }
 
-// SectionPred is `section`: one of the ids, or none.
+// SectionPred is `section`: one of the ids, none of them (Not), or no section.
 type SectionPred struct {
 	None bool
 	In   []string
+	Not  bool
+}
+
+// PriorityPred is `priority`: one of the priorities, or none of them (Not).
+type PriorityPred struct {
+	In  []int
+	Not bool
 }
 
 // LabelsPred is `labels`.
@@ -391,49 +400,73 @@ func (c *Condition) parsePredicate(k string, v json.RawMessage) error {
 	return err
 }
 
+// inOrNotIn reads the one list of an `in` or `not_in` predicate
+// (routine-conditions D2): exactly one of them, with at least one id.
+func inOrNotIn(in, notIn []string, hasIn, hasNot bool, what, noun string) ([]string, bool, error) {
+	if hasIn == hasNot {
+		return nil, false, fmt.Errorf(`condition.%s must be "none", {in: [ids]} or {not_in: [ids]}`, what)
+	}
+	list, key := in, "in"
+	if hasNot {
+		list, key = notIn, "not_in"
+	}
+	if len(list) == 0 {
+		return nil, false, fmt.Errorf("condition.%s.%s must name at least one %s", what, key, noun)
+	}
+	if err := checkIDs(list, "condition."+what+"."+key); err != nil {
+		return nil, false, err
+	}
+	return list, hasNot, nil
+}
+
 func parseProjectPred(v json.RawMessage) (*ProjectPred, error) {
 	if s, ok := word(v); ok {
 		if s != "none" {
-			return nil, errors.New(`condition.project must be "none" or {in: [ids], descendants?}`)
+			return nil, errors.New(`condition.project must be "none", {in: [ids], descendants?} or {not_in: [ids], descendants?}`)
 		}
 		return &ProjectPred{None: true}, nil
 	}
 	var p struct {
-		In          []string `json:"in"`
-		Descendants bool     `json:"descendants"`
+		In          *[]string `json:"in"`
+		NotIn       *[]string `json:"not_in"`
+		Descendants bool      `json:"descendants"`
 	}
 	if err := strict(v, &p, "condition.project"); err != nil {
 		return nil, err
 	}
-	if len(p.In) == 0 {
-		return nil, errors.New("condition.project.in must name at least one project")
-	}
-	if err := checkIDs(p.In, "condition.project.in"); err != nil {
+	list, not, err := inOrNotIn(listIn(p.In), listIn(p.NotIn), p.In != nil, p.NotIn != nil, "project", "project")
+	if err != nil {
 		return nil, err
 	}
-	return &ProjectPred{In: p.In, Descendants: p.Descendants}, nil
+	return &ProjectPred{In: list, Not: not, Descendants: p.Descendants}, nil
+}
+
+func listIn[T any](p *[]T) []T {
+	if p == nil {
+		return nil
+	}
+	return *p
 }
 
 func parseSectionPred(v json.RawMessage) (*SectionPred, error) {
 	if s, ok := word(v); ok {
 		if s != "none" {
-			return nil, errors.New(`condition.section must be "none" or {in: [ids]}`)
+			return nil, errors.New(`condition.section must be "none", {in: [ids]} or {not_in: [ids]}`)
 		}
 		return &SectionPred{None: true}, nil
 	}
 	var p struct {
-		In []string `json:"in"`
+		In    *[]string `json:"in"`
+		NotIn *[]string `json:"not_in"`
 	}
 	if err := strict(v, &p, "condition.section"); err != nil {
 		return nil, err
 	}
-	if len(p.In) == 0 {
-		return nil, errors.New("condition.section.in must name at least one section")
-	}
-	if err := checkIDs(p.In, "condition.section.in"); err != nil {
+	list, not, err := inOrNotIn(listIn(p.In), listIn(p.NotIn), p.In != nil, p.NotIn != nil, "section", "section")
+	if err != nil {
 		return nil, err
 	}
-	return &SectionPred{In: p.In}, nil
+	return &SectionPred{In: list, Not: not}, nil
 }
 
 func parseLabelsPred(v json.RawMessage) (*LabelsPred, error) {
@@ -452,22 +485,30 @@ func parseLabelsPred(v json.RawMessage) (*LabelsPred, error) {
 	return &p, nil
 }
 
-func parsePriorityPred(v json.RawMessage) ([]int, error) {
+func parsePriorityPred(v json.RawMessage) (*PriorityPred, error) {
 	var p struct {
-		In []int `json:"in"`
+		In    *[]int `json:"in"`
+		NotIn *[]int `json:"not_in"`
 	}
 	if err := strict(v, &p, "condition.priority"); err != nil {
 		return nil, err
 	}
-	if len(p.In) == 0 || len(p.In) > 4 {
-		return nil, errors.New("condition.priority.in must list 1 to 4 priorities")
+	if (p.In == nil) == (p.NotIn == nil) {
+		return nil, errors.New("condition.priority must be {in: [priorities]} or {not_in: [priorities]}")
 	}
-	for _, x := range p.In {
+	list, key := listIn(p.In), "in"
+	if p.NotIn != nil {
+		list, key = listIn(p.NotIn), "not_in"
+	}
+	if len(list) == 0 || len(list) > 4 {
+		return nil, fmt.Errorf("condition.priority.%s must list 1 to 4 priorities", key)
+	}
+	for _, x := range list {
 		if x < 1 || x > 4 {
-			return nil, errors.New("condition.priority.in holds priorities from 1 to 4")
+			return nil, fmt.Errorf("condition.priority.%s holds priorities from 1 to 4", key)
 		}
 	}
-	return p.In, nil
+	return &PriorityPred{In: list, Not: p.NotIn != nil}, nil
 }
 
 func parseDatePred(v json.RawMessage, what string, words ...string) (*DatePred, error) {
