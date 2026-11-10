@@ -111,6 +111,7 @@ var publicRouteClasses = map[string]publicClass{
 	"/mcp":                    pubHandlerAuth,
 	"POST " + mcpRegisterPath: pubHandlerAuth,
 	"POST " + mcpTokenPath:    pubHandlerAuth,
+	"POST " + appTokenPath:    pubHandlerAuth,
 	"POST " + mcpRevokePath:   pubHandlerAuth,
 	"/dav/":                   pubHandlerAuth,
 	"/dav":                    pubHandlerAuth,

@@ -8,6 +8,8 @@ import { Button, Dialog } from '../ui'
 import { api } from '../lib/api'
 import type { McpConsentInfo } from '../lib/assistants'
 import { t } from '../lib/i18n'
+import { APP_CLIENT_ID } from '../lib/appSessions'
+import { AppSignIn } from './AppSignIn'
 
 export interface OAuthConsentViewProps {
   info: McpConsentInfo
@@ -42,8 +44,18 @@ export function OAuthConsentView({ info, busy, onAllow, onDeny }: OAuthConsentVi
   )
 }
 
-/** Loads the request `query` describes and sends the browser on with the person's answer. */
+/**
+ * The consent for the request `query` describes: the OpenTodo app's built-in
+ * client gets its sign-in confirmation (native-app-foundation D5), every other
+ * client the MCP consent.
+ */
 export function OAuthConsent({ query, onDone }: { query: string; onDone: () => void }) {
+  if (new URLSearchParams(query).get('client_id') === APP_CLIENT_ID) return <AppSignIn query={query} onDone={onDone} />
+  return <McpConsent query={query} onDone={onDone} />
+}
+
+/** Loads the request `query` describes and sends the browser on with the person's answer. */
+function McpConsent({ query, onDone }: { query: string; onDone: () => void }) {
   const [info, setInfo] = useState<McpConsentInfo | null>(null)
   const [failed, setFailed] = useState(false)
   const [busy, setBusy] = useState(false)

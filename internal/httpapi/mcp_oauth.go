@@ -247,7 +247,8 @@ func (s *Server) oauthAuthorizeRequest(w http.ResponseWriter, r *http.Request, q
 	}
 	redirect := q.Get("redirect_uri")
 	c, err := s.mcpOAuth.Client(r.Context(), q.Get("client_id"))
-	if err != nil {
+	if err != nil || c.BuiltIn() {
+		// The app's built-in client signs in at /app/sign-in only.
 		oauthError(w, http.StatusBadRequest, "invalid_client", "unknown client_id")
 		return oauthRequest{}, false
 	}

@@ -7415,5 +7415,14 @@
   "Urgency {score}, show why": "Urgenza {score}, mostra perché",
   "Why here?": "Perché qui?",
   "Most urgent first": "Più urgenti prima",
-  "Least urgent first": "Meno urgenti prima"
+  "Least urgent first": "Meno urgenti prima",
+  "Sign in to the OpenTodo app on {device}?": "Accedere all’app OpenTodo su {device}?",
+  "Sign in to the OpenTodo app on this device?": "Accedere all’app OpenTodo su questo dispositivo?",
+  "Only confirm if you started signing in from the app just now.": "Conferma solo se hai appena avviato l’accesso dall’app.",
+  "This sign-in request can’t be used": "Questa richiesta di accesso non può essere usata",
+  "Start signing in again from the app.": "Avvia di nuovo l’accesso dall’app.",
+  "OpenTodo app · {device}": "App OpenTodo · {device}",
+  "OpenTodo app": "App OpenTodo",
+  "Used {relativeTime}": "Usata {relativeTime}",
+  "Sign in again from the app.": "Accedi di nuovo dall’app."
 }

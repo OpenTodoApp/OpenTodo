@@ -3,6 +3,7 @@ package httpapi
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
@@ -66,11 +67,30 @@ func (rt *routes) handler(pattern string, p routePolicy, h http.Handler) {
 		rt.mux.Handle(pattern, h)
 		return
 	}
-	rt.mux.Handle(pattern, rt.s.requireAuth(func(w http.ResponseWriter, r *http.Request) {
+	authed := rt.s.requireAuth(func(w http.ResponseWriter, r *http.Request) {
 		if rt.s.admits(w, r, p) {
 			h.ServeHTTP(w, r)
 		}
-	}))
+	})
+	if p.SignIn {
+		authed = rt.s.signInFirst(authed)
+	}
+	rt.mux.Handle(pattern, authed)
+}
+
+// signInFirst sends a browser without a session in this browser to the sign-in
+// page, carrying the address to return to (the web app follows it after
+// sign-in, web/src/app/oauthReturn.ts), and hands every other request to next.
+func (s *Server) signInFirst(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, sess, viaCookie, err := s.authenticateSession(r)
+		if err == nil && (u == nil || sess == nil || !viaCookie) && r.Header.Get("Authorization") == "" {
+			w.Header().Set("Cache-Control", "no-store")
+			http.Redirect(w, r, "/?oauth="+url.QueryEscape(s.publicOrigin(r)+r.URL.RequestURI()), http.StatusFound)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // admits applies the role, token and freshness rules of p to an authenticated

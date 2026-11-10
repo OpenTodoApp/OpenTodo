@@ -148,6 +148,9 @@ func describe(p routePolicy) string {
 	if p.Demo {
 		parts = append(parts, "demo")
 	}
+	if p.SignIn {
+		parts = append(parts, "sign-in-first")
+	}
 	return strings.Join(parts, " ")
 }
 
@@ -167,6 +170,14 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"GET /api/v1/invitations/{token}":      "public",
 		"/dav/":                                "public demo",
 		"/mcp":                                 "public demo",
+		// App sign-in (native-app-foundation D5): the code exchange is anonymous;
+		// the browser steps need a session, and a token cannot mint a code.
+		"POST /api/v1/app/token":      "public demo",
+		"GET /app/sign-in":            "auth session-only demo sign-in-first",
+		"POST /api/v1/me/app-sign-in": "auth session-only demo",
+		"GET /api/v1/me/apps":         "auth",
+		"DELETE /api/v1/me/apps/{id}": "auth demo",
+		"POST /api/v1/app/sign-out":   "auth demo",
 		// API tokens and app passwords: minting needs a fresh session or an admin token.
 		"GET /api/v1/tokens":                  "auth",
 		"POST /api/v1/tokens":                 "auth admin-token fresh demo",
