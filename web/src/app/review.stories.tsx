@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { createProject, createTask, mutate, REVIEW_DEFAULTS, setTaskCompleted, updateProject } from '../lib/ops'
 import { db } from '../lib/db'
+import { addDaysISO } from '../lib/dates'
 import type { EmailDigest, Task, TimeEntry } from '../lib/types'
 import { DigestView, type DigestState } from './DigestCard'
 import { CloseDay } from './review/CloseDay'
@@ -209,6 +210,7 @@ async function seedCloseDay() {
   await createTask({ title: 'Send the invoice to Northwind', project_id: seeded.work, due: { date: '2026-10-12' }, priority: 1 })
   await createTask({ title: 'Call the plumber about the leak', project_id: seeded.garage, due: { date: TODAY, time: '14:00' } })
   await createTask({ title: 'Reply to Mara about the workshop', due: { date: TODAY } })
+  await createTask({ title: 'Prepare the quarterly numbers', project_id: seeded.work, due: { date: addDaysISO(TODAY, 1) } })
   const done = [
     await createTask({ title: 'Book the dentist', due: { date: TODAY } }),
     await createTask({ title: 'Renew passport', due: { date: TODAY } }),
@@ -218,25 +220,25 @@ async function seedCloseDay() {
   await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', focus_date: TODAY, focus: done.slice(0, 2).join(','), _clock: {} })
 }
 
-/** Close the day's first step (close-the-day-v2 D5): the day's figures as one sentence, Back and Next inside the card. */
+/** Close the day's first step (close-the-day-redesign D2): what got done as a quiet list, the figures in the lead. */
 export const CloseTheDaySummary: StoryObj = {
   name: 'Close the day · how it went',
   ...withSeed(seedCloseDay),
   render: () => <CloseDay />,
 }
 
-/** Close the day on Carry over (close-the-day-v2 D2): one task on the card with its five decisions, the decisions so far below. */
+/** Close the day on What moves (close-the-day-redesign D3): one list, Tomorrow / Later / Someday per row, All to tomorrow. */
 export const CloseTheDay: StoryObj = {
   name: 'Close the day',
   ...withSeed(seedCloseDay),
-  render: () => <CloseDay initialStep="carry" />,
+  render: () => <CloseDay initialStep="moves" />,
 }
 
-/** Close the day's last step: the note for tomorrow morning with its preview, and the primary "Close the day". */
+/** Close the day's last step (close-the-day-redesign D4): tomorrow's tasks as a single choice, the line for tomorrow, the primary "Close the day". */
 export const CloseTheDayNote: StoryObj = {
   name: 'Close the day · note',
   ...withSeed(seedCloseDay),
-  render: () => <CloseDay initialStep="note" />,
+  render: () => <CloseDay initialStep="first" />,
 }
 
 /** Done for today (moments-and-onboarding D6): the calm final state after the close. */
@@ -245,7 +247,7 @@ export const CloseTheDayDone: StoryObj = {
   render: () => (
     <PageBody width="list">
       <PageHeader title="Close the day" icon="moon" meta="Day closed, 18:42" />
-      <DoneForToday figures={{ time: '18:42', planned: 9, done: 5, carried: { tomorrow: 3, day: 0, someday: 0, keep: 0, done: 0 }, kept: 1, note: 'Start with the invoice' }}
+      <DoneForToday figures={{ time: '18:42', planned: 9, done: 5, carried: { tomorrow: 3, day: 0, someday: 0, keep: 0, done: 0 }, kept: 1, note: 'Start with the invoice', first: 'Send the invoice to Northwind' }}
         onBack={() => {}} onReopen={() => {}} />
     </PageBody>
   ),

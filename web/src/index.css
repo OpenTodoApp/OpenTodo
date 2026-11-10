@@ -1531,7 +1531,21 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @layer components {
 /* Focus (OpenSpec change focus-mode, design D6): the timer's digits, from the type
    tokens, with tabular figures so they do not jump each second; fit at 360 px. */
-.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * 2.357), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.focus-clock { @apply font-medium text-strong; font-size: clamp(calc(var(--text-display) * 2.286), 16vw, calc(var(--text-display) * 3.429)); line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+/* The stage (focus-redesign D1): one centred column without a card, vertically centred
+   from 768 px and top-aligned with 24 px of room on a phone. A break dims the title and
+   the page takes the sunken tone, over the moment duration (instant without motion). */
+.focus-page { @apply flex min-h-full flex-col; }
+/* The whole content column, its reserved bottom room included, so the tone has no seam. */
+#content:has(.focus-page) { @apply transition-colors duration-(--duration-moment) ease-calm; }
+#content:has(.focus-page[data-resting]) { @apply bg-sunken; }
+/* The header's own background is a utility, so the break's tone is marked important there. */
+.focus-page[data-resting] > [data-page-header] { @apply bg-sunken!; }
+.focus-page > [data-page-header] { @apply transition-colors duration-(--duration-moment) ease-calm; }
+.focus-stage { @apply flex w-full flex-1 flex-col items-center pt-6 pb-8 text-center md:justify-center md:py-12; }
+.focus-title { @apply mt-1 max-w-[32rem] text-display text-strong transition-opacity duration-(--duration-moment) ease-calm; text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.focus-title[data-resting] { @apply text-muted; }
+.focus-clock-line { @apply text-meta text-muted; }
 /* Display mode (OpenSpec change display-mode, design D4): one view at a large type
    scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
    --display-scale (set per size on the display's root), so they follow the
