@@ -23,7 +23,7 @@
 // The row is its own size container (`@container/row`), so every host gets the layout
 // its width allows; the rules are in index.css, "The property column".
 import { isSample } from '../lib/sampleTasks'
-import { hueFor, Icon, LabelChips, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
+import { hueFor, Icon, LabelChips, ProgressRing, ReadAs, ToneText, Tooltip, TruncatedText, useOverflowing, type HueName, type IconName, type Tone } from '../ui'
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, use, useLayoutEffect, useRef } from 'react'
 import { RowBlockContext } from './task-list/rowBlockContext'
@@ -94,6 +94,8 @@ export interface RowCount {
   icon?: IconName
   /** The visible text; none for an icon-only marker (notes). */
   text?: string
+  /** The share done, drawn as a 12 px ring in place of an icon (task-progress D2). */
+  share?: number
   /** The spoken phrase. */
   label: string
 }
@@ -101,7 +103,7 @@ export interface RowCount {
 /** A row's counts in display order: the trailing group of a row, the end of a card's line. A new count is one more entry. */
 export function rowCounts(c: { progress?: Progress; notes: boolean; comments: number; attachments: number }): RowCount[] {
   const out: RowCount[] = []
-  if (c.progress && c.progress.total > 0) out.push({ key: 'progress', text: `${c.progress.done}/${c.progress.total}`, label: t('{done} of {total} subtasks completed', { done: c.progress.done, total: c.progress.total }) })
+  if (c.progress && c.progress.total > 0) out.push({ key: 'progress', text: `${c.progress.done}/${c.progress.total}`, share: c.progress.done / c.progress.total, label: t('{done} of {total} subtasks completed', { done: c.progress.done, total: c.progress.total }) })
   if (c.notes) out.push({ key: 'notes', icon: 'list', label: t('Has notes') })
   if (c.comments > 0) out.push({ key: 'comments', icon: 'message-circle', text: String(c.comments), label: t('{n, plural, one {# comment} other {# comments}}', { n: c.comments }) })
   if (c.attachments > 0) out.push({ key: 'attachments', icon: 'paperclip', text: String(c.attachments), label: t('{n, plural, one {# attachment} other {# attachments}}', { n: c.attachments }) })
@@ -119,6 +121,8 @@ export function RowCounts({ counts }: { counts: RowCount[] }) {
       {counts.map((c) => (
         <span key={c.key} className="inline-flex items-center gap-1" {...{ [`data-${c.key}`]: '' }}>
           {c.icon && <Icon name={c.icon} size="xs" />}
+          {/* In the counts' own colour, faint then muted: a quiet mark, never the accent. */}
+          {c.share !== undefined && <ProgressRing value={c.share} size={12} className="" />}
           <ReadAs label={c.label}>{c.text}</ReadAs>
         </span>
       ))}
@@ -248,7 +252,7 @@ function CardMeta({ m }: { m: MetaValues }) {
     <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1" data-row-meta="card">
       {m.date && <DateText m={m} />}
       {m.estimate && <ToneText icon="clock" data-estimate="" data-tracked={m.estimate.tracked ? '' : undefined} label={m.estimate.label}>{m.estimate.text}</ToneText>}
-      {m.progress && <ToneText icon="circle-check-big" data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
+      {m.progress && <ToneText leading={m.progress.share !== undefined && <ProgressRing value={m.progress.share} size={12} className="" />} data-progress="" label={m.progress.label}>{m.progress.text}</ToneText>}
       {m.energy && <EnergyWord energy={m.energy} />}
       {m.sample && <ToneText data-sample="">{t('Sample')}</ToneText>}
       {m.breadcrumb && <ToneText icon="corner-down-right" label={t('In {breadcrumb}', { breadcrumb: m.breadcrumb })} data-breadcrumb="">{m.breadcrumb}</ToneText>}

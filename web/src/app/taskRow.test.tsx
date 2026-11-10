@@ -223,6 +223,12 @@ describe('one row language (rows-v2)', () => {
     expect(counts.querySelector('button, [tabindex]')).toBeNull()
     expect(visibleText(counts.querySelector('[data-progress]')!)).toBe('2/3')
     expect(spokenText(counts.querySelector('[data-progress]')!)).toBe('2 of 3 subtasks completed')
+    // A 12 px ring before the count, in the counts' own colour, decorative (task-progress D2).
+    const ring = counts.querySelector('[data-progress] svg[data-progress-ring]')!
+    expect(ring.getAttribute('width')).toBe('12')
+    expect(ring.getAttribute('aria-hidden')).toBe('true')
+    expect(ring.getAttribute('class')).not.toContain('text-accent')
+    expect(ring.querySelectorAll('circle')).toHaveLength(2)
     expect(spokenText(counts.querySelector('[data-notes]')!)).toBe('Has notes')
     await r.unmount()
     const only = await row({ description: 'n' }, { progress: undefined })
@@ -334,7 +340,7 @@ describe('one row language (rows-v2)', () => {
     await r.unmount()
   }))
 
-  it('the card property row (precision-boards-timeline D3): date, estimate and progress lead with icons, the assignee ends it', () => atNoon(async () => {
+  it('the card property row (precision-boards-timeline D3): date, estimate and progress lead with icons (the progress with its ring, task-progress D2), the assignee ends it', () => atNoon(async () => {
     const r = await row({ due: { date: '2026-10-16' }, estimate_minutes: 45, assignee_id: 'u2' },
       { shape: 'card', progress: { done: 2, total: 5 }, assignee: 'Mia' })
     const meta = r.container.querySelector('[data-row-meta="card"]')!
@@ -345,6 +351,7 @@ describe('one row language (rows-v2)', () => {
     expect(items[1].querySelector('[data-icon="clock"]')).not.toBeNull()
     expect(items[2].hasAttribute('data-progress')).toBe(true)
     expect(visibleText(items[2])).toBe('2/5')
+    expect(items[2].querySelector('svg[data-progress-ring][width="12"]')).not.toBeNull()
     expect(meta.lastElementChild!.hasAttribute('data-row-assignee')).toBe(true)
     // The progress is not repeated among the counts, and the title may wrap to two lines.
     expect(r.container.querySelector('[data-row-counts] [data-progress]')).toBeNull()

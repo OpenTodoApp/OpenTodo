@@ -16,6 +16,7 @@ import { openCountsByProject, openTasksOf, taskIndexOf } from './liveTasks'
 import { currentDateTime, currentDayStart, logicalDay } from './dates'
 import { labelCounts, patchLabelCounts, patchSidebarCounts, sidebarCounts } from './sidebarCounts'
 import { buildTaskTree, liveProgress, progressMap } from './subtasks'
+import { progressPart, projectProgressOf } from './progress'
 import { Derived, keysBetween, patchOrdered, type TaskChange } from './taskDelta'
 import { deriveSets, patchSets } from './taskSnapshot'
 import { flowView, nextFlowView } from './useFlow'
@@ -218,6 +219,16 @@ function run(seed: number, steps: number) {
     const ownOpen = new Map<string, number>()
     for (const t of all) if (!t.completed_at && t.project_id) ownOpen.set(t.project_id, (ownOpen.get(t.project_id) ?? 0) + 1)
     expect(entries(openCountsByProject(all)), at).toEqual(entries(ownOpen))
+
+    // A project's progress beside its title (task-progress D4).
+    const projectProgress = new Map<string, { done: number; total: number }>()
+    for (const t of all) {
+      const part = progressPart(t)
+      if (!t.project_id || !part) continue
+      const v = projectProgress.get(t.project_id) ?? { done: 0, total: 0 }
+      projectProgress.set(t.project_id, { done: v.done + (part === 'done' ? 1 : 0), total: v.total + 1 })
+    }
+    expect(entries(projectProgressOf(all)), at).toEqual(entries(projectProgress))
 
     const progressBefore = liveProgress(before.here)
     const progress = liveProgress(all)
