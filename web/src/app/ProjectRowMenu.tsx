@@ -3,6 +3,7 @@
 // user's own preference (never a project op); the moves reorder the favourites when
 // the menu is opened from the Favourites group, else the project among its siblings,
 // which only its owner or an admin may do.
+import { useState } from 'react'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { moveProjectBy } from '../lib/move'
 import type { Project } from '../lib/types'
@@ -15,6 +16,8 @@ import { maintenanceItem } from './menus/reviewMenu'
 import { useMethodMode } from '../lib/method/mode'
 import { useMembership } from '../lib/localData'
 import { canEditProject } from '../lib/sharing'
+import { NamePrompt } from './NamePrompt'
+import { projectColourItem, projectIconItem, projectRenameItem, renameProject } from './menus/projectAppearance'
 
 export function projectRowMenuGroups(a: { pinned: boolean; pin: () => unknown; move?: (d: -1 | 1) => unknown; first: boolean; last: boolean }): ActionGroup[] {
   return [
@@ -26,13 +29,17 @@ export function projectRowMenuGroups(a: { pinned: boolean; pin: () => unknown; m
   ]
 }
 
-export function ProjectRowMenu({ project, within, edges, movable = false, className = '' }: {
+export function ProjectRowMenu({ project, within, edges, movable = false, appearance = false, onRename, className = '' }: {
   project: Project
   within?: 'favourites'
   /** Its place among its siblings (outside the Favourites group). */
   edges?: { first: boolean; last: boolean }
   /** Whether this user may reorder the project (project-sharing roles). */
   movable?: boolean
+  /** The sidebar also offers project metadata editing. */
+  appearance?: boolean
+  /** The Projects tree edits the row directly. Favourites opens the name dialog. */
+  onRename?: () => void
   className?: string
 }) {
   const favourites = useFavourites()
@@ -42,15 +49,22 @@ export function ProjectRowMenu({ project, within, edges, movable = false, classN
   const move = inFavourites ? (d: -1 | 1) => moveFavourite('project', project.id, d) : movable ? (d: -1 | 1) => moveProjectBy(project.id, d) : undefined
   // "Flow…" (project-flow-modes D7) for the owner and admins; under Simple lists only once a flow is set.
   const membership = useMembership(project.id)
+  const [renaming, setRenaming] = useState(false)
   const mode = useMethodMode()
   const canEdit = membership !== undefined && canEditProject(membership?.role ?? 'owner')
   const flow = projectFlowItem(project, { mode, canEdit })
   // "Put in maintenance" / "End maintenance" (project-review-cadence D6), under the same rule.
   const maintenance = maintenanceItem(project, { mode, canEdit })
   const extra = [flow, maintenance].filter((i) => i !== null)
-  const groups = [...projectRowMenuGroups({ pinned, pin: () => setFavourite('project', project.id, !pinned), move, ...place }), ...(extra.length ? [{ items: extra }] : [])]
+  const edits = appearance && canEdit ? [{ items: [projectRenameItem(onRename ?? (() => setRenaming(true))), projectIconItem(project), projectColourItem(project)] }] : []
+  const groups = [...edits, ...projectRowMenuGroups({ pinned, pin: () => setFavourite('project', project.id, !pinned), move, ...place }), ...(extra.length ? [{ items: extra }] : [])]
   return (
-    <ActionMenu label={t('Menu for project {name}', { name: project.name })} title={project.name} groups={groups}
-      triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
+    <>
+      <ActionMenu label={t('Menu for project {name}', { name: project.name })} title={project.name} groups={groups}
+        triggerClassName={`touch-target rounded-control px-1.5 py-0.5 text-faint hover:bg-sunken dark:hover:bg-raised ${className}`} />
+      {renaming && appearance && canEdit &&
+        <NamePrompt title={t('Rename project')} label={t('Project name')} initial={project.name}
+          onSubmit={async (name) => { await renameProject(project, name); setRenaming(false) }} onCancel={() => setRenaming(false)} />}
+    </>
   )
 }

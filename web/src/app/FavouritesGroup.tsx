@@ -93,7 +93,7 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
         if (f.kind === 'project') {
           item = <SidebarItem {...common} label={f.item.name} title={pathOf(f.item)} leading={<ProjectMark project={f.item} />}
             count={projectCounts.get(f.id)} countMode={countsAll ? 'swap' : projectCountMode} countLabel={openTasksLabel(projectCounts.get(f.id))} />
-          menu = <ProjectRowMenu project={f.item} within="favourites" className={menuClass} />
+          menu = <ProjectRowMenu project={f.item} within="favourites" appearance className={menuClass} />
         } else if (f.kind === 'label') {
           const n = labelCounts.get(f.id)
           item = <SidebarItem {...common} label={f.item.name} count={n} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(n)}

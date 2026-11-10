@@ -1,5 +1,5 @@
 import { useWorkspaceFilter } from './useWorkspaceFilter'
-import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -7,7 +7,7 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -28,6 +28,8 @@ import { LabelRow, NewLabelForm, useLabelData, useLabelDrag } from './LabelsView
 import { ViewMark, ViewMenu } from './ViewsView'
 import { FavouritesGroup } from './FavouritesGroup'
 import { ProjectRowMenu } from './ProjectRowMenu'
+import { SidebarAppearance } from './sidebarAppearanceLazy'
+import { renameProject } from './menus/projectAppearance'
 import { useFavourites } from './useFavourites'
 import { useAssigneeDirectory, useToday, useViewerZone, useViews } from './useViews'
 import { MAX_INDENT } from './TaskRow'
@@ -162,6 +164,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   const drawer = !useMediaQuery('(min-width: 48rem)')
   const projectCountMode = useMediaQuery('(pointer: coarse)') ? 'always' : 'hover'
   const scroller = useRef<HTMLDivElement>(null)
+  const [renamingProject, setRenamingProject] = useState<string | null>(null)
   useScrollEdges(scroller)
   // Promoted destinations (appearance preferences, synced): read with the rest of the row.
   const prefsRow = useUserPrefsRow()
@@ -473,10 +476,11 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
             const isCollapsed = collapsed_.has(n.id)
             const count = counts.byProject.get(n.id)
             const drop = dropAt?.id === n.id ? dropAt.zone : null
+            const editing = renamingProject === n.id && !collapsed && movable(n.id)
             return (
               <li data-drag-id="sidebar-project" key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
                 data-project-row={n.id} data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
-                onPointerDown={movable(n.id) ? (e) => startDrag(e, n) : undefined}
+                onPointerDown={!editing && movable(n.id) ? (e) => startDrag(e, n) : undefined}
                 className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
                 <GuideLines levels={levels} />
                 {(drop === 'before' || drop === 'after') && (
@@ -497,7 +501,12 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
                     )}
                   </span>
                 )}
-                <SidebarItem
+                {editing ? (
+                  <ProjectNameEditor project={p} drawer={drawer} onDone={(restoreFocus) => {
+                    setRenamingProject((id) => id === n.id ? null : id)
+                    if (restoreFocus) requestAnimationFrame(() => focusRow(n.id))
+                  }} />
+                ) : <SidebarItem
                   data-project-id={n.id}
                   data-find-active={isActiveMatch('project', n.id) || undefined}
                   className={isActiveMatch('project', n.id) ? 'ring-2 ring-focus' : found && !found.matched.has(n.id) ? 'text-faint' : undefined}
@@ -515,8 +524,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
                   </>}
                   count={count} countMode={countsAll ? 'swap' : projectCountMode} countLabel={openTasksLabel(count)}
                   aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
-                />
-                {!collapsed && <ProjectRowMenu project={p} movable={movable(n.id)} edges={siblingEdges(tree, n)} className={countsAll ? 'ui-swap-menu' : 'hover-reveal'} />}
+                />}
+                {!collapsed && <ProjectRowMenu project={p} movable={movable(n.id)} edges={siblingEdges(tree, n)} appearance
+                  onRename={() => setRenamingProject(n.id)} className={countsAll && !editing ? 'ui-swap-menu' : 'hover-reveal'} />}
               </li>
             )
           })}
@@ -530,7 +540,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           <SidebarGroupAction onClick={() => { setGroupOpen('labels', true); setAddingLabel(true) }} aria-label={t('New label')}><Icon name="plus" size="xs" /></SidebarGroupAction>
         </>}>
         {!collapsed && shownLabels.map((l) => <LabelRow key={l.id} quiet={!countsAll} swap={countsAll} label={l} labels={labels} count={labelCounts.get(l.id)} duplicate={duplicates.has(l.id)} route={route} drop={labelDrag.drop} onDragStart={labelDrag.start} findActive={isActiveMatch('label', l.id)} />)}
-        {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} className="px-1 pt-1" />}
+        {addingLabel && !collapsed && <NewLabelForm onDone={() => setAddingLabel(false)} appearance className="px-1 pt-1" />}
       </SidebarGroup>}
       {groupsReady && filtersShown && <SidebarGroup title={t('Views')} collapsible open={isOpen('filters')} onToggle={() => toggleGroup('filters')} count={views.length} collapsed={collapsed}
         actions={<SidebarGroupAction active={route.view === 'views'} onClick={() => navigate({ view: 'views' })} aria-label={t('All views')}>{t('All')}</SidebarGroupAction>}>
@@ -557,6 +567,40 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   )
 }
 
+/** Replaces the project link while its name is being edited. */
+function ProjectNameEditor({ project, drawer, onDone }: { project: Project; drawer: boolean; onDone: (restoreFocus: boolean) => void }) {
+  const [name, setName] = useState(project.name)
+  const initial = useRef(project.name)
+  const field = useRef<HTMLInputElement>(null)
+  const done = useRef(false)
+  const finish = useCallback((restoreFocus: boolean) => {
+    if (done.current) return false
+    done.current = true
+    onDone(restoreFocus)
+    return true
+  }, [onDone])
+  useEffect(() => {
+    field.current?.focus({ preventScroll: true })
+    field.current?.select()
+  }, [])
+  // The drawer intercepts Escape at window capture. Cancel the edit before closing the drawer.
+  useEffect(() => {
+    if (drawer) return pushOverlay(() => finish(true)).pop
+  }, [drawer, finish])
+  function save(restoreFocus: boolean) {
+    if (finish(restoreFocus) && name.trim() !== initial.current) act(renameProject(project, name))
+  }
+  return <input ref={field} data-project-rename className="ui-input min-h-9 min-w-0 flex-1 py-0.5 pointer-fine:min-h-8 max-md:min-h-12"
+    aria-label={t('Project name')} value={name} onChange={(e) => setName(e.target.value)} onBlur={() => save(false)}
+    onKeyDown={(e) => {
+      if (e.nativeEvent.isComposing || (e.key !== 'Enter' && e.key !== 'Escape')) return
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.key === 'Escape') finish(true)
+      else save(true)
+    }} />
+}
+
 /** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
 /**
  * The sidebar's inline New project form, under the last project. It opens from the
@@ -568,6 +612,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
  */
 function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Project[]; parentId: string; onParent: (id: string) => void; onDone: () => void }) {
   const [name, setName] = useState('')
+  const [color, setColor] = useState<string>()
+  const [icon, setIcon] = useState<string | null>(null)
   const form = useRef<HTMLFormElement>(null)
   const field = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -577,15 +623,18 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    const id = await createProject({ name, parent_id: parentId || null })
+    const id = await createProject({ name, parent_id: parentId || null, color, icon })
     if (parentId) await toggleCollapsedProject(parentId, false)
     onDone()
     navigate({ view: 'project', id })
   }
   return (
     <form ref={form} onSubmit={(e) => void submit(e)} className="space-y-1 scroll-mb-4 px-1 pt-1" data-new-project-form>
-      <input ref={field} className="ui-input" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => e.key === 'Escape' && onDone()} />
+      <div className="flex items-center gap-1">
+        <SidebarAppearance color={color} onColor={setColor} icon={icon} onIcon={setIcon} />
+        <input ref={field} className="ui-input min-w-0 flex-1" placeholder={t('Project name')} value={name} onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Escape' && onDone()} />
+      </div>
       <ProjectPickerField label={t('Parent project')} projects={projects} value={parentId || null} onChange={(id) => onParent(id ?? '')}
         rankContext="project.parent" inbox={false} noneLabel={t('Top level')} className="py-1 text-meta" />
       <div className="flex gap-1">

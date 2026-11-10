@@ -28,6 +28,7 @@ import { taskDrop } from './taskDrop'
 import { favouriteEdges, moveFavourite, setFavourite } from '../lib/favourites'
 import { useFavourites, useIsFavourite } from './useFavourites'
 import { NamePrompt } from './NamePrompt'
+import { SidebarAppearance } from './sidebarAppearanceLazy'
 import { pinItem } from './menus/pinItem'
 import { printItems } from './menus/printItem'
 import { messageOf } from '../lib/errorText'
@@ -48,14 +49,16 @@ export function useLabelData() {
 }
 
 /** Inline "new label" form shared by the sidebar and the overview. */
-export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; className?: string }) {
+export function NewLabelForm({ onDone, appearance = false, className = '' }: { onDone: () => void; appearance?: boolean; className?: string }) {
   const [name, setName] = useState('')
+  const [color, setColor] = useState<string>()
+  const [choosingColor, setChoosingColor] = useState(false)
   const [error, setError] = useState<{ message: string; id?: string } | null>(null)
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) return onDone()
     try {
-      const id = await createLabel({ name })
+      const id = await createLabel({ name, color })
       setName('')
       onDone()
       navigate({ view: 'label', id })
@@ -65,9 +68,12 @@ export function NewLabelForm({ onDone, className = '' }: { onDone: () => void; c
   }
   return (
     <form onSubmit={(e) => void submit(e)} className={className}>
-      <input className="ui-input" autoFocus placeholder={t('Label name')} aria-label={t('New label name')} value={name}
-        onChange={(e) => { setName(e.target.value); setError(null) }}
-        onKeyDown={(e) => e.key === 'Escape' && onDone()} onBlur={() => !name && onDone()} />
+      <div className={appearance ? 'flex items-center gap-1' : undefined} onKeyDown={(e) => e.key === 'Escape' && !e.defaultPrevented && onDone()}>
+        {appearance && <SidebarAppearance color={color} onColor={setColor} onOpenChange={setChoosingColor} />}
+        <input className="ui-input min-w-0 flex-1" autoFocus placeholder={t('Label name')} aria-label={t('New label name')} value={name}
+          onChange={(e) => { setName(e.target.value); setError(null) }}
+          onBlur={(e) => { if (!name && !choosingColor && !e.currentTarget.form?.contains(e.relatedTarget)) onDone() }} />
+      </div>
       {error && (
         <p className="mt-1 text-meta text-danger">
           {error.message}{error.id && <>. <button type="button" className="underline" onMouseDown={(e) => e.preventDefault()} onClick={() => navigate({ view: 'label', id: error.id! })}>{t('Open it')}</button></>}

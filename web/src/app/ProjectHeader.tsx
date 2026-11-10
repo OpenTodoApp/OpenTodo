@@ -1,4 +1,4 @@
-import { Button, Icon, IconPicker, PageHeader, Tooltip } from '../ui'
+import { Button, Icon, PageHeader, Tooltip } from '../ui'
 import { openConnections, useConnected } from './signals'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
@@ -8,7 +8,7 @@ import { showUndoToast } from './bulk/toastStore'
 import { useOtherWorkspaces } from './workspaceNav'
 import { useDemo } from '../lib/demo'
 import { useOnline } from '../lib/online'
-import { archiveProject, deleteProject, moveProject, updateProject } from '../lib/ops'
+import { archiveProject, deleteProject, moveProject } from '../lib/ops'
 import { buildProjectTree, descendantIds } from '../lib/projects'
 import { canDeleteProject, canEditProject, canEditTasks, canManageMembers } from '../lib/sharing'
 import { flattenTree } from '../lib/tree'
@@ -21,16 +21,14 @@ import { FieldsDialog } from './FieldsDialog'
 import { HistoryPanel } from './HistoryPanel'
 import { ProjectActivity } from './ProjectActivity'
 import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
-import { iconPickerSpec } from './menus/stylePickers'
+import { ColourSwatches, projectIconItem, projectRenameItem, renameProject, setProjectColour } from './menus/projectAppearance'
 import { closePanel, openPanel, usePanelOccupantKey } from './panel'
 import { PanelFrame } from './PanelFrame'
 import { ProjectMark } from './Sidebar'
 import { useShortcutScope } from './shortcuts'
 import { keysOf } from '../lib/shortcuts'
-import { HUES, hueFor } from '../ui'
 import { t } from '../lib/i18n'
 import { roleName } from '../lib/roleNames'
-import { hueName } from '../lib/colourNames'
 import { act } from './actionError'
 import { setFavourite } from '../lib/favourites'
 import { useIsFavourite } from './useFavourites'
@@ -71,23 +69,6 @@ export function moveTargets(project: Project, projects: Project[]): MoveTarget[]
     .filter((n) => n.id !== project.id && !excluded.has(n.id))
     .map((n) => ({ id: n.id, name: n.item.name, path: pathOf(n.item) }))
   return [{ id: '', name: 'Top level', path: [] }, ...rest]
-}
-
-/** Colour swatches with radio semantics, inside the menu (they keep the menu open). */
-function ColourSwatches({ project }: { project: Project }) {
-  // A swatch is not a MenuItem, so picking one keeps the menu open to compare colours.
-  const current = hueFor(project.color)
-  return (
-    <div role="group" aria-label={t('Colour')} className="flex flex-wrap gap-1 px-1.5 py-1.5">
-      {HUES.map((h) => (
-        <button key={h.name} type="button" role="menuitemradio" aria-checked={h.name === current} aria-label={t('Colour {name}', { name: hueName(h.name) })} data-menu-label={`Colour ${h.name}`}
-          className="touch-target inline-flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          onClick={() => act(updateProject(project.id, { color: h.hex }))}>
-          <span data-hue={h.name} className={`block h-5 w-5 rounded-full bg-hue-solid ${h.name === current ? 'ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`} />
-        </button>
-      ))}
-    </div>
-  )
 }
 
 /**
@@ -142,17 +123,8 @@ export function projectMenuGroups(project: Project, o: { role: ProjectRole; shar
         source: o.workspaces, getKey: (w: { id: string }) => w.id, getLabel: (w: { name: string }) => w.name, rankContext: 'project-move-workspace',
         onPick: (w: { id: string; name: string }) => { void moveProjectToWorkspaceUndoable(project.id, w.id, w.name).then((r) => { if (r.entry) showUndoToast(r.label, r.entry.id) }) },
       } }] : []),
-      { kind: 'action', id: 'rename', label: t('Rename'), icon: 'pencil', onSelect: a.rename },
-      // The searchable icon picker (icons-and-section-style), inside the same overlay.
-      { kind: 'step', id: 'icon', label: t('Icon'), icon: 'image', step: {
-        title: t('Icon'),
-        render: (done, back) => (
-          <IconPicker value={project.icon} color={project.color} onClose={back}
-            noneMark={<span className="block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: project.color }} />}
-            onPick={(icon) => { act(updateProject(project.id, { icon })); done() }} />
-        ),
-        palette: iconPickerSpec(project.icon, (icon) => act(updateProject(project.id, { icon }))),
-      } },
+      projectRenameItem(a.rename),
+      projectIconItem(project),
       ...(flow ? [flow] : []),
       ...(maintenance ? [maintenance] : []),
       { kind: 'confirm', id: 'archive', label: subCount ? t('Archive with sub-projects') : t('Archive'), icon: 'archive', confirm: {
@@ -251,7 +223,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   async function save() {
     setNameEdit(null)
     const name = currentNameEdit?.value ?? project.name
-    if (name.trim() && name.trim() !== project.name) await updateProject(project.id, { name: name.trim() })
+    await renameProject(project, name)
   }
 
   const startEditing = () => setNameEdit({ projectId: project.id, value: project.name })
@@ -347,7 +319,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
           </Tooltip>
           {actions}
         </>}
-        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={phone ? [...phone.groups, { items: [shareItem] }, ...groups] : groups} header={editable ? <ColourSwatches project={project} /> : undefined}
+        menu={<ActionMenu label={t('Project menu')} title={project.name} groups={phone ? [...phone.groups, { items: [shareItem] }, ...groups] : groups}
+          header={editable ? <ColourSwatches color={project.color} onPick={(color) => setProjectColour(project, color)} menu /> : undefined}
           trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-72"
           open={menuOpen} onOpenChange={(v) => { setMenuOpen(v); if (!v) setStartPicker(null) }} startPicker={startPicker} />}>
         {secondary}
