@@ -13,6 +13,7 @@ Thanks for helping build a task manager people can own. This page is the rules; 
 | [Add a language](docs/contributing/add-a-language.md) | Every file a new interface language touches |
 | [Add an importer](docs/contributing/add-an-importer.md) | Profile, signature, sanitiser, fixtures and goldens, switch guide, matrix row |
 | [Add a shared contract](docs/contributing/add-a-shared-contract.md) | Logic that must match in Go and TypeScript |
+| [Work on the native app](docs/contributing/native-app.md) | `mobile/app` without a Mac, `make app`, the shared library, its CI lanes |
 
 Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the same ground in the dense form AI agents read.
 

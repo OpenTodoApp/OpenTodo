@@ -3,8 +3,9 @@ name: Nightly
 # Checks too slow for every pull request (OpenSpec ci-release-gates): the Go tests
 # under the race detector, which watches the background schedulers (backups,
 # reminders, digests, email polling, webhooks) and the sync hub, the fuzz
-# targets (scripts/fuzz.sh), the performance budgets (perf.yml) and the
-# accessibility gate's full matrix (accessibility-aa). Also runs on demand.
+# targets (scripts/fuzz.sh), the performance budgets (perf.yml), the
+# accessibility gate's full matrix (accessibility-aa) and the native app's iOS and
+# Android builds (app-native.yml, native-app-foundation D9). Also runs on demand.
 # A failed night opens (or comments on) one issue labelled ci-nightly; the next
 # green night closes it, so a red nightly never goes unnoticed.
 on:
@@ -120,11 +121,17 @@ jobs:
           name: a11y-report-${{ matrix.shard }}
           path: a11y-report
 
+  # The native app's iOS and Android builds on main (native-app-foundation D9): pull
+  # requests build them only when mobile/app/ changes, so a shared-module change that
+  # breaks a native build shows up here.
+  app-native:
+    uses: ./.github/workflows/app-native.yml
+
   # Opens or updates the ci-nightly issue when a nightly job fails, and closes it
   # when every job passes again. Only GITHUB_TOKEN, only on the default branch.
   alert:
     name: Report the nightly result
-    needs: [race, fuzz, perf, a11y]
+    needs: [race, fuzz, perf, a11y, app-native]
     if: ${{ always() && github.ref_name == github.event.repository.default_branch }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
