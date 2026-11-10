@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { publishEncryption } from '../../lib/e2ee'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, updateProject } from '../../lib/ops'
 import { createRule } from '../../lib/rules/store'
-import { seeded, withSeed } from '../stories/fixtures'
+import { seeded, TODAY, withSeed } from '../stories/fixtures'
 import { AddStepPanel } from './AddStep'
 import { RoutineEditor } from './RoutineEditor'
 import { RoutinePage } from './RoutinePage'
@@ -14,7 +14,7 @@ import { InboxCardView } from './RoutinesInboxCard'
 import { ChoicePopover, InlineText } from './pickers'
 import { WordButton } from '../../ui'
 import type { InboxLine } from '../../lib/rules/inbox'
-import type { Label, Project, RuleCondition } from '../../lib/types'
+import type { Label, Project, RoutineInboxRun, RuleCondition } from '../../lib/types'
 import { ConditionFields } from '../rules/RuleFields'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
@@ -220,4 +220,38 @@ export const InboxCard: StoryObj = {
   name: 'Inbox card',
   render: () => <div className="max-w-xl"><InboxCardView lines={inboxLines} more={0} hide={false} online onOpen={() => undefined} onDismiss={() => undefined}
     onSeen={() => undefined} onHide={() => undefined} onAll={() => undefined} /></div>,
+}
+
+/** data-story-pending until the lazily loaded blocks rendered from the seeded rows (the visual check waits). */
+function BlocksSettled({ children }: { children: ReactNode }) {
+  const root = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      const blocks = [...(root.current?.querySelectorAll('[data-assistant-block]') ?? [])]
+      if ((blocks.length > 0 && blocks.every((b) => b.childElementCount > 0)) || ++tries > 200) {
+        clearInterval(timer)
+        requestAnimationFrame(() => setPending(false))
+      }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  return <div ref={root} className="max-w-xl" data-story-pending={pending || undefined}>{children}</div>
+}
+
+/** "Morning briefing" (assistant-routine-blocks): the run's day and the tasks to start with, under its line. */
+export const InboxCardBlocks: StoryObj = {
+  name: 'Inbox card, morning briefing',
+  ...withSeed(async () => {
+    seeded.a = await createTask({ title: 'Send the slides', due: { date: TODAY, time: '09:30' }, estimate_minutes: 30, priority: 1 })
+    seeded.b = await createTask({ title: 'Call the bank', due: { date: TODAY, time: '14:00' }, estimate_minutes: 15 })
+    seeded.c = await createTask({ title: 'Book the meeting room', due: { date: TODAY } })
+  }),
+  render: () => {
+    const run = { run_id: 'm1', rule_id: 'm', at: 4, kind: 'success', blocks: [{ kind: 'calendar', date: TODAY, span: 'day' }, { kind: 'tasks', ids: [seeded.a, seeded.b, seeded.c] }] } as RoutineInboxRun
+    const lines: InboxLine[] = [{ ruleId: 'm', name: 'Morning briefing', kind: 'success', text: 'Morning briefing · Notified you · 07:00', runs: [run], at: 4 }]
+    return <BlocksSettled><InboxCardView lines={lines} more={0} hide={false} online onOpen={() => undefined} onDismiss={() => undefined}
+      onSeen={() => undefined} onHide={() => undefined} onAll={() => undefined} /></BlocksSettled>
+  },
 }

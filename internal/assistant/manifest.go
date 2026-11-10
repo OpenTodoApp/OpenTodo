@@ -106,6 +106,20 @@ type Manifest struct {
 	// Memory is the memory items' note in the instructions, their limits and
 	// remember (assistant-memory D2, D3).
 	Memory MemoryManifest `json:"memory"`
+	// Routine is a routine's AI step on the device (routines-ai-step D7,
+	// assistant-routine-blocks D1).
+	Routine RoutineManifest `json:"routine"`
+}
+
+// RoutineManifest is what a device needs to run an AI step like the server:
+// the fixed instructions, the note and tools of a step that may show blocks,
+// its rounds and the run's most blocks.
+type RoutineManifest struct {
+	System    string   `json:"system"`
+	ShowNote  string   `json:"show_note"`
+	Tools     []string `json:"tools"`
+	MaxRounds int      `json:"max_rounds"`
+	MaxBlocks int      `json:"max_blocks"`
 }
 
 // MemoryManifest is what a device needs to send memory and run remember.
@@ -169,6 +183,7 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
 		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
+		Routine: RoutineManifest{System: RoutineSystem, ShowNote: RoutineShowNote, Tools: append([]string{}, RoutineShowTools...), MaxRounds: MaxRoutineRounds, MaxBlocks: MaxBlocks},
 		OpenProposal: OpenManifest{Note: OpenProposalNote, MaxItems: MaxOpenProposal, Tool: ManifestTool{Name: DropTool.Name, Kind: "proposal", Description: DropTool.Description,
 			InputSchema: DropTool.Schema, Strict: strictSchema(DropTool.Schema, false), StrictNullable: strictSchema(DropTool.Schema, true)}},
 		Memory: MemoryManifest{Note: MemoryNote, MaxItems: MaxMemoryItems, MaxText: MaxMemoryText,
