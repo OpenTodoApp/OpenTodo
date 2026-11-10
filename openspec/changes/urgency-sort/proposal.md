@@ -8,9 +8,9 @@ Issue #404 asks for the neighbouring need, ordering by a number the user compute
 
 ## What Changes
 
-- A new order, **Urgency**, in **Display options → Order by** on project lists, label pages, saved views and the New view page, after the built-in orders and before the custom fields of `custom-field-sort`. It orders highest urgency first; the direction under **More options** still works (ascending puts the least urgent first).
+- A new order, **Urgency**, in **Display options → Order by** on project lists, label pages, the Inbox, saved views and the New view page, after the built-in orders and before the custom fields of `custom-field-sort`. It orders the most urgent first; the direction under **More options** reads **Most urgent first** (stored `asc`, so a client without the order shows the default order, not its reverse) and **Least urgent first**.
 - The score is derived, never stored: a fixed sum of seven components (due, deadline, priority, blocks others, age, running timer, and the negative blocked, deferred and Someday terms), computed on the device from local data with the viewer's logical today. The weights are fixed in this version and documented.
-- While a list is ordered by urgency, each row shows its score as a small faint number in the row's trailing group; hovering or focusing it shows the breakdown ("Due today +8.80 · Priority 1 +6.00 · Blocks 2 tasks +8.00 · Age 30 d +0.16 = 22.96"). On a phone the row's touch menu has "Why here?" with the same breakdown in a sheet. No other list shows the number.
+- While a list is ordered by urgency, each row shows its score as a small faint number in the row's trailing group; hovering or focusing it shows the breakdown ("Due today +8.80 · Priority 1 +6.00 · Blocks 2 tasks +8.00 · Age 30 d +0.16 = 22.96"). The row's menu has "Why here?" with the same breakdown (in a sheet on a phone, where rows have no score). No other list shows the number.
 - The same score in Go (`internal/urgency`) and TypeScript (`web/src/lib/urgency.ts`), pinned by shared vectors, so the MCP `list_tasks` tool (`sort: "urgency"`) and the CLI (`ot list --sort urgency`) order the same way as the web app.
 - The stored value is one more additive `sort_by` string, `urgency`, on views (`view.sort_by`), project preferences (`project_prefs.sort_by`) and labels; `/api/v1/views` accepts it.
 

@@ -49,7 +49,7 @@ describe('Display options on a project page', () => {
     // The project's panel: grouping and order, no layout or row properties of a view.
     expect(panel.querySelector('[data-display-layout]')).toBeNull()
     expect([...panel.querySelectorAll('select[aria-label="Group by"] option')].map((o) => o.textContent)).toEqual(['Section', 'None', 'Due date', 'Priority', 'Label'])
-    expect([...panel.querySelectorAll('select[aria-label="Order by"] option')].map((o) => o.textContent)).toEqual(['Manual order', 'Priority', 'Due date', 'Created', 'Deadline', 'Title'])
+    expect([...panel.querySelectorAll('select[aria-label="Order by"] option')].map((o) => o.textContent)).toEqual(['Manual order', 'Priority', 'Due date', 'Created', 'Deadline', 'Title', 'Urgency'])
     await choose('Group by', 'priority')
     await choose('Order by', 'title')
     await waitFor(() => headings().join() === 'Priority 1,Priority 2', 'priority groups')

@@ -1406,6 +1406,9 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
+  "Age {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "All": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
@@ -2453,6 +2456,7 @@
   ],
   "Blocked": [
     "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/listGroups.ts"
@@ -2477,6 +2481,9 @@
   ],
   "Blocks can be nested at most 3 deep": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "Blocks {n, plural, one {# task} other {# tasks}}": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Blue": [
     "web/src/lib/colourNames.ts"
@@ -4520,11 +4527,20 @@
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Deadline in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
+  "Deadline passed": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
     "web/src/lib/assistant.ts"
+  ],
+  "Deadline today": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
@@ -5229,12 +5245,16 @@
   "Due earlier": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "Due in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CarryOver.tsx"
   ],
@@ -5261,6 +5281,9 @@
   ],
   "Due {from} → {to}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Due {n} d ago": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Duplicate": [
     "web/src/app/TemplateDialogs.tsx",
@@ -8709,6 +8732,10 @@
   "Learning|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
+  "Least urgent first": [
+    "web/src/app/views/DisplayOptionsBody.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceGeneral.tsx"
@@ -9645,6 +9672,10 @@
   ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Most urgent first": [
+    "web/src/app/views/DisplayOptionsBody.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Move": [
     "web/src/app/TriageView.tsx",
@@ -12960,6 +12991,7 @@
   "Priority {p}": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/TaskRow.tsx",
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -15944,6 +15976,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CarryOver.tsx",
@@ -16221,6 +16254,9 @@
   ],
   "Starts": [
     "web/src/app/calendar/FramesDialog.tsx"
+  ],
+  "Starts in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Starts later": [
     "web/src/app/filter/conditionText.ts",
@@ -18899,6 +18935,9 @@
   "Timer mode": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Timer running": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
@@ -19910,6 +19949,13 @@
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": [
     "web/src/app/UnlockScreen.tsx"
   ],
+  "Urgency": [
+    "web/src/app/UrgencyChip.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "Urgency {score}, show why": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Urgent and important": [
     "web/src/lib/boardTemplates.ts"
   ],
@@ -20498,6 +20544,10 @@
   ],
   "Who you are on this server, and how much of the method the app shows.": [
     "web/src/app/SettingsView.tsx"
+  ],
+  "Why here?": [
+    "web/src/app/UrgencyChip.tsx",
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Windows PC": [
     "web/src/app/SecurityPanel.tsx"

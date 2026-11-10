@@ -7401,5 +7401,19 @@
   "Rewrite this": "Reescrever",
   "Rewrite “{title}”": "Reescrever “{title}”",
   "What’s next in “{name}”?": "O que vem a seguir em “{name}”?",
-  "What’s next?": "O que vem a seguir?"
+  "What’s next?": "O que vem a seguir?",
+  "Age {n} d": "Idade {n} d",
+  "Blocks {n, plural, one {# task} other {# tasks}}": "Bloqueia {n, plural, one {# tarefa} other {# tarefas}}",
+  "Deadline in {n} d": "Prazo em {n} d",
+  "Deadline passed": "Prazo vencido",
+  "Deadline today": "Prazo hoje",
+  "Due in {n} d": "Vence em {n} d",
+  "Due {n} d ago": "Venceu há {n} d",
+  "Starts in {n} d": "Começa em {n} d",
+  "Timer running": "Cronômetro a correr",
+  "Urgency": "Urgência",
+  "Urgency {score}, show why": "Urgência {score}, mostrar porquê",
+  "Why here?": "Porquê aqui?",
+  "Most urgent first": "Mais urgentes primeiro",
+  "Least urgent first": "Menos urgentes primeiro"
 }

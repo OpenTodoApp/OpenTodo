@@ -46,6 +46,7 @@ export const ORDER_KEYS: Record<string, SortBy> = {
 /** The direction as the panel words it. */
 function directionText(sortBy: SortBy, dir: SortDir): string {
   if (sortBy === 'priority') return dir === 'desc' ? t('Descending (p1 first)') : t('Ascending (p4 first)')
+  if (sortBy === 'urgency') return dir === 'desc' ? t('Least urgent first') : t('Most urgent first')
   return dir === 'desc' ? t('Descending') : t('Ascending')
 }
 

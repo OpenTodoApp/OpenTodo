@@ -26,7 +26,7 @@ const maxPanels = 6
 var (
 	viewKinds   = []string{"list", "dashboard"}
 	viewGroupBy = []string{"project", "due", "priority", "label", "none"}
-	viewSortBy  = []string{"due", "priority", "position", "created", "title", "deadline"}
+	viewSortBy  = []string{"due", "priority", "position", "created", "title", "deadline", "urgency"}
 	viewSortDir = []string{"asc", "desc"}
 	viewLayouts = []string{"list", "board"}
 	// viewRowLayouts: one line or detailed rows; "" follows the account's choice (row-layouts D1).

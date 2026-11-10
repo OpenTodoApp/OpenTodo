@@ -51,8 +51,9 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
   }
   // Hidden actions take no clicks: the trailing group's origin link stays under the pointer.
   // A focused part of the row's facts (a cut project name takes focus to show it whole) is never
-  // covered by the actions that its focus would reveal over the row's end (WCAG 2.4.11, large text).
-  const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-has-[[data-project]_:focus-visible]:pointer-events-none! group-has-[[data-project]_:focus-visible]:opacity-0! group-has-[[data-row-meta]_:focus-visible]:pointer-events-none! group-has-[[data-row-meta]_:focus-visible]:opacity-0!'
+  // covered by the actions that its focus would reveal over the row's end (WCAG 2.4.11, large text),
+  // nor is the urgency score while it has the focus (urgency-sort D4).
+  const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-has-[[data-project]_:focus-visible]:pointer-events-none! group-has-[[data-project]_:focus-visible]:opacity-0! group-has-[[data-row-meta]_:focus-visible]:pointer-events-none! group-has-[[data-row-meta]_:focus-visible]:opacity-0! group-has-[[data-urgency-chip]:focus-visible]:pointer-events-none! group-has-[[data-urgency-chip]:focus-visible]:opacity-0!'
   return (
     <span data-row-actions="" onKeyDown={onKeyDown} onFocus={(e) => reveal(e.target as HTMLElement)}
       className={`absolute top-px right-1 z-10 hidden items-center gap-2 rounded-control border border-strong bg-pop px-0.5 shadow-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>

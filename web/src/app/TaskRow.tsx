@@ -508,6 +508,8 @@ export interface TaskRowProps {
   edge?: HueName
   /** A board card shows two lines of its notes as plain text (board-polish "Notes preview on cards"). */
   notes?: boolean
+  /** The urgency order's score chip (urgency-sort D4), leading the trailing group; list rows only. */
+  score?: ReactNode
 }
 
 const NO_HIDDEN: readonly RowProperty[] = []
@@ -738,7 +740,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -849,11 +851,11 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (originChip || !inline) && (
+    : (originChip || score || !inline) && (
     // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
     // Every list row has the slot, empty or not: from 40 rem it is one fixed width (index.css), so the property column ends at the same place on every row (GitHub issue 945).
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0') : ''}`}>
-      {originChip && <span className="flex shrink-0">{originChip}</span>}
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0 md:pointer-fine:group-has-[[data-urgency-chip]:focus-visible]:opacity-100!') : ''}`}>
+      {score}{originChip && <span className="flex shrink-0">{originChip}</span>}
     </span>
   )
 

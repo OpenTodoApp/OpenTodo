@@ -168,6 +168,43 @@ func TestViewsStoreCustomFieldSortIDWithoutName(t *testing.T) {
 		t.Fatalf("sync did not return the field-id sort operation: %v", out["ops"])
 	}
 }
+
+// urgency-sort: "urgency" is one more order, on create and patch, through a bearer
+// token like every option; a misspelling is refused and nothing is written.
+func TestViewsUrgencyOrder(t *testing.T) {
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/tokens", map[string]any{"name": "script"})
+	e.mustStatus(resp, 201, out)
+	auth := []string{"Authorization", "Bearer " + out["secret"].(string)}
+	c := newClientFor(e)
+	resp, out = c.do("POST", "/api/v1/views", map[string]any{"name": "Most urgent", "query": "@home", "sort_by": "urgency"}, auth...)
+	c.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	if out["sort_by"] != "urgency" {
+		t.Fatalf("created sort_by = %v", out["sort_by"])
+	}
+	resp, out = c.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "urgency", "sort_dir": "desc"}, auth...)
+	c.mustStatus(resp, 200, out)
+	if out["sort_by"] != "urgency" || out["sort_dir"] != "desc" {
+		t.Fatalf("patched view = %v", out)
+	}
+	resp, out = c.do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "urgent"}, auth...)
+	c.mustStatus(resp, 400, out)
+	if errCode(out) != "invalid_input" || !strings.Contains(errMessage(out), "sort_by") {
+		t.Fatalf("misspelled sort: %v", out)
+	}
+	resp, out = newClientFor(e).do("PATCH", "/api/v1/views/"+id, map[string]any{"sort_by": "urgency"})
+	c.mustStatus(resp, 401, out)
+	if errCode(out) != "unauthorized" {
+		t.Fatalf("without credentials: %v", out)
+	}
+	resp, out = c.do("GET", "/api/v1/views/"+id, nil, auth...)
+	c.mustStatus(resp, 200, out)
+	if out["sort_by"] != "urgency" || out["sort_dir"] != "desc" {
+		t.Fatalf("stored view = %v", out)
+	}
+}
+
 func TestViewsRejectInvalidOption(t *testing.T) {
 	e := registeredEnv(t)
 	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "List", "query": "p1"})

@@ -47,6 +47,7 @@ import { ROW_LAYOUTS, useAccountRowLayout, type RowLayout } from '../lib/rowLayo
 import { useWorkspaceState } from '../lib/localData'
 import { currentWorkspaceId } from '../lib/workspaces'
 import { ACTION_TOAST_MS, showBulkToast } from './bulk/toastStore'
+import { scoreOf, UrgencyChip, UrgencyContext, useUrgencyOf } from './useUrgency'
 import { GROUP_BY_OPTIONS, readSortBy, ROW_PROPERTIES, SORT_BY_OPTIONS, SORT_DIR_OPTIONS, VIEW_LAYOUTS, type GroupBy, type RowProperty, type SortBy, type SortDir, type ViewLayout } from '../lib/types'
 
 const DEBOUNCE_MS = 150
@@ -138,10 +139,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const habits = useMemo(() => habitStatsMap(allTasks, today), [allTasks, today])
 
   useEffect(() => { setCurrentFilter(good.ast ? good.src : null); return () => setCurrentFilter(null) }, [good])
-  // Custom field definitions and tracked minutes (time-tracking: `tracked > 1h` follows a running entry live).
-  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory()
-  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf }),
-    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws])
+  // Custom field definitions, tracked minutes (time-tracking: `tracked > 1h` follows a running entry live) and the urgency order's scores (urgency-sort).
+  const fieldDefs = useFieldDefs(), tracked = useTrackedTotals(), directory = useAssigneeDirectory(), scorer = useUrgencyOf(allTasks, today, zone), urgency = display.sortBy === 'urgency' ? scorer : null
+  const ctx = useMemo(() => ({ today, labels, projects, tasks: allTasks, sections: flow.sections, weekStart, fields: fieldDefs, ...tracked, ...directory, workspaces: ws.workspaces, workspaceOf: ws.workspaceOf, score: scoreOf(scorer) }),
+    [today, labels, projects, allTasks, flow.sections, weekStart, fieldDefs, tracked, directory, ws, scorer])
   const compiled = useMemo(() => {
     if (!good.ast) return null
     // "Completed tasks: Show" (views-and-display D4) reads the query as `(query) & (open | completed)`.
@@ -277,7 +278,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   }
 
   return (
-    <PageBody width="list">
+    <UrgencyContext.Provider value={urgency}><PageBody width="list">
       {saving ? <SaveViewCard onSave={save} onCancel={() => setSaving(false)} /> : (
         <PageHeader title={<ViewsCrumb name={t('New view')} />} meta={count ?? undefined} help="filter"
           actions={<Button variant="secondary" size="sm" disabled={!canSave} onClick={() => setSaving(true)}>{t('Save as view')}</Button>} />
@@ -342,7 +343,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
             onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
-            onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
+            onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}
             {...bulk.rowProps(tk)}
           />
         )} />
@@ -353,7 +354,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
           <p className="mt-2 px-1 text-hint text-faint">{t('Enter toggles or creates · Esc closes')}</p>
         </Dialog>
       )}
-    </PageBody>
+    </PageBody></UrgencyContext.Provider>
   )
 }
 

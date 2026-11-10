@@ -35,7 +35,7 @@ export type BuiltinDisplayKind = 'today' | 'upcoming' | 'inbox'
 export type DisplayScope = { kind: 'project' | 'label'; id: string } | { kind: BuiltinDisplayKind }
 
 /** Order by, as the panel lists them on a project or label page: manual first. */
-export const LIST_SORT_OPTIONS: readonly SortBy[] = ['position', 'priority', 'due', 'created', 'deadline', 'title']
+export const LIST_SORT_OPTIONS: readonly SortBy[] = ['position', 'priority', 'due', 'created', 'deadline', 'title', 'urgency']
 /** Today and Upcoming keep their own order rules: no manual order (builtin-view-options D2). */
 export const DAY_SORT_OPTIONS: readonly SortBy[] = ['due', 'priority', 'created', 'deadline', 'title']
 /** A project groups by its sections by default; projects make no sense inside one project. */

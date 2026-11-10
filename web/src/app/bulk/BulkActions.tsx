@@ -4,7 +4,7 @@
 // like every other object menu. Moves and assignments go through the review (D6).
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import type { Step } from '../../lib/move'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
@@ -31,6 +31,8 @@ import { withListTransition } from '../motion'
 import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-list/slotActions'
 import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
 import { useToday } from '../useViews'
+import { UrgencyContext } from '../useUrgency'
+import type { Urgency } from '../../lib/urgency'
 
 /** Confirm the trash of more than this many ticked tasks (the keyboard's big selection; a menu click stays immediate). */
 export const BULK_TRASH_CONFIRM_ABOVE = 20
@@ -225,7 +227,16 @@ export function addItems(id: string | undefined, r: ListReorder | null | undefin
 }
 
 /** The menu's groups for the given tasks (exported for the palette and tests). */
-export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null }, besideRow = false): ActionGroup[] {
+const Breakdown = lazy(() => import('../UrgencyChip').then((m) => ({ default: m.UrgencyBreakdown })))
+
+/** "Why here?" under the urgency order (urgency-sort D4): the task's score, component by component. */
+function whyItem(why: Urgency | null | undefined): ActionItem[] {
+  return why ? [{ kind: 'step', id: 'why', label: t('Why here?'), icon: 'trending-up', step: {
+    title: t('Why here?'), render: () => <Suspense fallback={null}><div className="p-3"><Breakdown urgency={why} /></div></Suspense>,
+  } }] : []
+}
+
+export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (title: string, plan: Promise<ReviewPlan>) => void; pickDate: () => void; schedule?: () => void; reorder?: ListReorder | null; why?: Urgency | null }, besideRow = false): ActionGroup[] {
   const n = d.tasks.length
   const reopen = allCompleted(d.tasks)
   const live = d.labels.filter((l) => !l.deleted_at)
@@ -240,7 +251,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
+    ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
@@ -361,12 +372,16 @@ export function BulkActionsMenu({ ids, open, onOpenChange, trigger, triggerClass
   const besideRow = !!anchor?.current
   const touch = !useFinePointer()
   const n = data.tasks.length || ids.length
+  // Under the urgency order one task's menu explains its place (urgency-sort D4).
+  const urgencyOf = useContext(UrgencyContext)
+  const why = urgencyOf && ids.length === 1 && data.tasks.length === 1 ? urgencyOf(data.tasks[0]) : null
   const groups = useMemo(() => bulkMenuGroups(ids, data, {
     review: (title, plan) => { void plan.then((p) => bulkDialog.set({ kind: 'review', title, plan: p })) },
     pickDate: () => bulkDialog.set({ kind: 'date', ids, n }),
     schedule: touch && ids.length === 1 ? () => openRowSchedule(ids[0]) : undefined,
     reorder,
-  }, besideRow), [ids, data, besideRow, touch, n, reorder])
+    why,
+  }, besideRow), [ids, data, besideRow, touch, n, reorder, why])
   return (
     <ActionMenu label={t('Actions for {tasks}', { tasks: tasksWord(n) })} title={tasksWord(n)} groups={groups} open={open} pending={!settled && !data.ready} onOpenChange={onOpenChange}
       trigger={trigger} triggerClassName={triggerClassName} triggerProps={triggerProps} startPicker={startPicker} width="sm:w-72" anchor={anchor} />

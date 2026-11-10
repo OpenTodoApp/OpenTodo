@@ -7401,5 +7401,19 @@
   "Rewrite this": "Umformulieren",
   "Rewrite “{title}”": "„{title}“ umformulieren",
   "What’s next in “{name}”?": "Was steht in „{name}“ als Nächstes an?",
-  "What’s next?": "Was kommt als Nächstes?"
+  "What’s next?": "Was kommt als Nächstes?",
+  "Age {n} d": "Alter {n} T.",
+  "Blocks {n, plural, one {# task} other {# tasks}}": "Blockiert {n, plural, one {# Aufgabe} other {# Aufgaben}}",
+  "Deadline in {n} d": "Frist in {n} T.",
+  "Deadline passed": "Frist abgelaufen",
+  "Deadline today": "Frist heute",
+  "Due in {n} d": "Fällig in {n} T.",
+  "Due {n} d ago": "Seit {n} T. fällig",
+  "Starts in {n} d": "Beginnt in {n} T.",
+  "Timer running": "Timer läuft",
+  "Urgency": "Dringlichkeit",
+  "Urgency {score}, show why": "Dringlichkeit {score}, Begründung zeigen",
+  "Why here?": "Warum hier?",
+  "Most urgent first": "Dringendste zuerst",
+  "Least urgent first": "Am wenigsten dringende zuerst"
 }

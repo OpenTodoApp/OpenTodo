@@ -677,6 +677,16 @@
       "args": [],
       "flags": [
         {
+          "name": "sort",
+          "type": "string",
+          "enum": [
+            "default",
+            "urgency"
+          ],
+          "default": "default",
+          "description": "order: default, or urgency for the most urgent first by the urgency score (a URG column; urgency in --json; replaces the Today limit's waiting heading)"
+        },
+        {
           "name": "limit",
           "type": "int",
           "description": "print at most n tasks"
@@ -803,6 +813,16 @@
           "name": "sector",
           "type": "string",
           "description": "only tasks with this time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, or carried for periods that have ended"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "enum": [
+            "default",
+            "urgency"
+          ],
+          "default": "default",
+          "description": "order: default, or urgency for the most urgent first by the urgency score (a URG column; urgency in --json; replaces the Today limit's waiting heading)"
         },
         {
           "name": "limit",
@@ -2503,6 +2523,16 @@
           "description": "with a Today limit: every task in one list, without the waiting heading"
         },
         {
+          "name": "sort",
+          "type": "string",
+          "enum": [
+            "default",
+            "urgency"
+          ],
+          "default": "default",
+          "description": "order: default, or urgency for the most urgent first by the urgency score (a URG column; urgency in --json; replaces the Today limit's waiting heading)"
+        },
+        {
           "name": "limit",
           "type": "int",
           "description": "print at most n tasks"
@@ -2607,6 +2637,16 @@
       "summary": "alias for `ot list --upcoming`",
       "args": [],
       "flags": [
+        {
+          "name": "sort",
+          "type": "string",
+          "enum": [
+            "default",
+            "urgency"
+          ],
+          "default": "default",
+          "description": "order: default, or urgency for the most urgent first by the urgency score (a URG column; urgency in --json; replaces the Today limit's waiting heading)"
+        },
         {
           "name": "limit",
           "type": "int",
@@ -4975,6 +5015,10 @@
         "waiting_for_slot": {
           "type": "boolean",
           "description": "ot today with a Today limit only: true when the limit keeps the task waiting for a slot"
+        },
+        "urgency": {
+          "type": "number",
+          "description": "ot list --sort urgency only: the urgency score with two decimals (absent for a completed task)"
         },
         "blocked_by": {
           "type": "array",

@@ -98,6 +98,15 @@
             "description": "Only tasks with this time sector: an absolute period (2026-W45, 2026-11 or 2026-Q4), or carried for tasks whose period has ended (evaluated in timezone with weeks from Monday). Relative words like next week are refused.",
             "type": "string"
           },
+          "sort": {
+            "default": "default",
+            "description": "default: by do-on date and priority. urgency: the most urgent first by the app's urgency score (due date, deadline, priority, the tasks it blocks, age and a running timer raise it; blocked, deferred and Someday lower it); each task then has urgency and urgency_parts.",
+            "enum": [
+              "default",
+              "urgency"
+            ],
+            "type": "string"
+          },
           "timezone": {
             "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
             "type": "string"

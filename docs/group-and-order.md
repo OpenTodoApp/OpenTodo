@@ -1,6 +1,6 @@
 ---
 title: Group and order a list
-summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline or title, kept for each project and label.
+summary: Group a project's or a label's tasks by section, date, priority or label and order them by priority, date, deadline, title or urgency, kept for each project and label.
 audience: user
 section: Guides
 specs: [list-display-options, custom-views, manual-ordering, task-list-presentation]
@@ -22,7 +22,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, later dates and *No date*. 
 
 ## Order by
 
-**Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline** or **Title**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
+**Manual order** (the default, the order you drag tasks into), **Priority**, **Due date**, **Created**, **Deadline**, **Title** or **[Urgency](urgency-order.md)**. **More options** holds the direction; for priority, *descending* puts priority 1 first. Tasks without a date or deadline come last either way.
 
 Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too.
 

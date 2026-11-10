@@ -57,6 +57,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | Weekly digest statistics | `internal/digest/stats.go` | `web/src/lib/stats.ts` | `internal/digest/testdata/stats_fixture.json` | `internal/digest/stats_test.go` | `web/src/lib/stats.test.ts` | hand |
 | Available tasks (project flows) | `internal/flow` | `web/src/lib/flow.ts` | `internal/flow/testdata/flow_fixture.json` | `internal/flow/flow_test.go` | `web/src/lib/flow.test.ts` | hand |
 | Calendar frame occurrences | `internal/frames` | `web/src/lib/frames.ts` | `web/src/lib/frames.vectors.json` | `internal/frames/frames_test.go` | `web/src/lib/frames.test.ts` | hand |
+| Urgency score (the urgency order) | `internal/urgency` | `web/src/lib/urgency.ts` | `web/src/lib/urgency.vectors.json` | `internal/urgency/urgency_test.go` | `web/src/lib/urgency.test.ts` | hand |
 | Today's closed list (slot fill) | `internal/closedlist` | `web/src/lib/closedList.ts` | `web/src/lib/closedList.vectors.json` | `internal/closedlist/closedlist_test.go` | `web/src/lib/closedList.test.ts` | hand |
 | Free time (the working day minus events, frames, slots and timed tasks) | `internal/freetime` | `web/src/lib/freeTime.ts` | `web/src/lib/freeTime.vectors.json` | `internal/freetime/freetime_test.go` | `web/src/lib/freeTime.test.ts` | `go test ./internal/freetime -update` |
 | Next action (method views) | `internal/digest` | `web/src/lib/method/rules.ts` | `internal/digest/testdata/next_action_fixture.json` | `internal/digest/nextaction_test.go` | `web/src/lib/method/rules.test.ts` | hand |

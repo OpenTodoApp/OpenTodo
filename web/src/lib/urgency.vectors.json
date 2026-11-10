@@ -1,0 +1,1241 @@
+{
+ "$comment": "Shared vectors of the urgency score (OpenSpec change urgency-sort, design D3): web/src/lib/urgency.test.ts and internal/urgency/urgency_test.go both run this file. Each case gives the instant now, the viewer zone and day start (minutes after midnight), the task, the other tasks known locally and the running time entry's task; expect is {score, parts} with the non-zero components in a fixed order, or null for a task that has no score. Change a weight only in both implementations and here together.",
+ "cases": [
+  {
+   "name": "the example: priority 1, due today, a month old, blocking two",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 1,
+    "due": {
+     "date": "2026-11-02"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1791028800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [
+    {
+     "id": "a",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": [
+      "t"
+     ]
+    },
+    {
+     "id": "b",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": [
+      "t"
+     ]
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 22.96,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.8
+     },
+     {
+      "key": "priority",
+      "value": 6.0
+     },
+     {
+      "key": "blocks",
+      "value": 8.0
+     },
+     {
+      "key": "age",
+      "value": 0.16
+     }
+    ]
+   }
+  },
+  {
+   "name": "nothing set: priority 4 created today",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "due ten days ago: the late clamp",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-10-23"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 12.0,
+    "parts": [
+     {
+      "key": "due",
+      "value": 12.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "due a week ago: the clamp exactly",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-10-26"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 12.0,
+    "parts": [
+     {
+      "key": "due",
+      "value": 12.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "due three days ago",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-10-30"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 10.17,
+    "parts": [
+     {
+      "key": "due",
+      "value": 10.17
+     }
+    ]
+   }
+  },
+  {
+   "name": "due tomorrow",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-03"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 8.34,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.34
+     }
+    ]
+   }
+  },
+  {
+   "name": "due in a week",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-09"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 5.6,
+    "parts": [
+     {
+      "key": "due",
+      "value": 5.6
+     }
+    ]
+   }
+  },
+  {
+   "name": "due in thirteen days",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-15"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 2.86,
+    "parts": [
+     {
+      "key": "due",
+      "value": 2.86
+     }
+    ]
+   }
+  },
+  {
+   "name": "due in two weeks: the early clamp",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-16"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 2.4,
+    "parts": [
+     {
+      "key": "due",
+      "value": 2.4
+     }
+    ]
+   }
+  },
+  {
+   "name": "due in thirty days",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-12-02"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 2.4,
+    "parts": [
+     {
+      "key": "due",
+      "value": 2.4
+     }
+    ]
+   }
+  },
+  {
+   "name": "due today with a time",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-02",
+     "time": "09:30"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 8.8,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.8
+     }
+    ]
+   }
+  },
+  {
+   "name": "deadline only, in five days",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": "2026-11-07",
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 4.34,
+    "parts": [
+     {
+      "key": "deadline",
+      "value": 4.34
+     }
+    ]
+   }
+  },
+  {
+   "name": "deadline today",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": "2026-11-02",
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 5.87,
+    "parts": [
+     {
+      "key": "deadline",
+      "value": 5.87
+     }
+    ]
+   }
+  },
+  {
+   "name": "deadline passed two days ago",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": "2026-10-31",
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 6.48,
+    "parts": [
+     {
+      "key": "deadline",
+      "value": 6.48
+     }
+    ]
+   }
+  },
+  {
+   "name": "priority 2",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 2,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 3.9,
+    "parts": [
+     {
+      "key": "priority",
+      "value": 3.9
+     }
+    ]
+   }
+  },
+  {
+   "name": "priority 3",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 3,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 1.8,
+    "parts": [
+     {
+      "key": "priority",
+      "value": 1.8
+     }
+    ]
+   }
+  },
+  {
+   "name": "parked in Someday and blocked",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": "someday",
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "x"
+    ]
+   },
+   "others": [
+    {
+     "id": "x",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": []
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": -11.0,
+    "parts": [
+     {
+      "key": "blocked",
+      "value": -5.0
+     },
+     {
+      "key": "someday",
+      "value": -6.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "blocked by a completed task",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "x"
+    ]
+   },
+   "others": [
+    {
+     "id": "x",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": 1793527200000,
+     "deleted_at": null,
+     "blocked_by": []
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "blocked by a deleted task",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "x"
+    ]
+   },
+   "others": [
+    {
+     "id": "x",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": 1793527200000,
+     "blocked_by": []
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "blocked by an unknown id",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "missing"
+    ]
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "blocking only a completed task",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [
+    {
+     "id": "y",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": 1793527200000,
+     "deleted_at": null,
+     "blocked_by": [
+      "t"
+     ]
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "blocking only a deleted task",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [
+    {
+     "id": "y",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": 1793527200000,
+     "blocked_by": [
+      "t"
+     ]
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "blocked and blocking at once",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "x"
+    ]
+   },
+   "others": [
+    {
+     "id": "x",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": []
+    },
+    {
+     "id": "y",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": [
+      "t"
+     ]
+    }
+   ],
+   "running_task_id": null,
+   "expect": {
+    "score": 3.0,
+    "parts": [
+     {
+      "key": "blocks",
+      "value": 8.0
+     },
+     {
+      "key": "blocked",
+      "value": -5.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "running timer",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": "t",
+   "expect": {
+    "score": 4.0,
+    "parts": [
+     {
+      "key": "timer",
+      "value": 4.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "timer on another task",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": "other",
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "starts in four days",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": "2026-11-06",
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": -3.0,
+    "parts": [
+     {
+      "key": "deferred",
+      "value": -3.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "starts today: not deferred",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": "2026-11-02",
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "started last week",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": "2026-10-26",
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "a hundred days old",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1784980800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.55,
+    "parts": [
+     {
+      "key": "age",
+      "value": 0.55
+     }
+    ]
+   }
+  },
+  {
+   "name": "two years old: the age clamp",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1730548800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 2.0,
+    "parts": [
+     {
+      "key": "age",
+      "value": 2.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "created in the future: no negative age",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793880000000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.0,
+    "parts": []
+   }
+  },
+  {
+   "name": "zoned due seen across midnight: tomorrow in Berlin",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "Europe/Berlin",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-02",
+     "time": "20:00",
+     "tz": "America/New_York"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 8.34,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.34
+     }
+    ]
+   }
+  },
+  {
+   "name": "zoned due seen across midnight: today in Los Angeles",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "America/Los_Angeles",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-03",
+     "time": "01:00",
+     "tz": "Europe/Berlin"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 8.8,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.8
+     }
+    ]
+   }
+  },
+  {
+   "name": "day start 04:00 at 01:30 on Thursday: Wednesday is today",
+   "now": "2026-11-05T01:30:00Z",
+   "zone": "UTC",
+   "day_start": 240,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-04"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793842200000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 8.8,
+    "parts": [
+     {
+      "key": "due",
+      "value": 8.8
+     }
+    ]
+   }
+  },
+  {
+   "name": "day start: created before it counts for the day before",
+   "now": "2026-11-05T05:00:00Z",
+   "zone": "UTC",
+   "day_start": 240,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": null,
+    "deadline": null,
+    "start": null,
+    "created_at": 1793761200000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": {
+    "score": 0.01,
+    "parts": [
+     {
+      "key": "age",
+      "value": 0.01
+     }
+    ]
+   }
+  },
+  {
+   "name": "everything at once",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 1,
+    "due": {
+     "date": "2026-10-30"
+    },
+    "deadline": "2026-11-04",
+    "start": "2026-11-10",
+    "created_at": 1788436800000,
+    "completed_at": null,
+    "deleted_at": null,
+    "blocked_by": [
+     "x"
+    ]
+   },
+   "others": [
+    {
+     "id": "x",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": []
+    },
+    {
+     "id": "y",
+     "priority": 4,
+     "due": null,
+     "deadline": null,
+     "start": null,
+     "created_at": 1793620800000,
+     "completed_at": null,
+     "deleted_at": null,
+     "blocked_by": [
+      "t"
+     ]
+    }
+   ],
+   "running_task_id": "t",
+   "expect": {
+    "score": 25.76,
+    "parts": [
+     {
+      "key": "due",
+      "value": 10.17
+     },
+     {
+      "key": "deadline",
+      "value": 5.26
+     },
+     {
+      "key": "priority",
+      "value": 6.0
+     },
+     {
+      "key": "blocks",
+      "value": 8.0
+     },
+     {
+      "key": "age",
+      "value": 0.33
+     },
+     {
+      "key": "timer",
+      "value": 4.0
+     },
+     {
+      "key": "blocked",
+      "value": -5.0
+     },
+     {
+      "key": "deferred",
+      "value": -3.0
+     }
+    ]
+   }
+  },
+  {
+   "name": "completed: no score",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-02"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": 1793606400000,
+    "deleted_at": null,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": null
+  },
+  {
+   "name": "deleted: no score",
+   "now": "2026-11-02T12:00:00Z",
+   "zone": "UTC",
+   "day_start": 0,
+   "task": {
+    "id": "t",
+    "priority": 4,
+    "due": {
+     "date": "2026-11-02"
+    },
+    "deadline": null,
+    "start": null,
+    "created_at": 1793620800000,
+    "completed_at": null,
+    "deleted_at": 1793606400000,
+    "blocked_by": []
+   },
+   "others": [],
+   "running_task_id": null,
+   "expect": null
+  }
+ ]
+}

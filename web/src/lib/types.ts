@@ -461,12 +461,12 @@ export interface Label extends LabelFields {
 export type ViewKind = 'list' | 'dashboard'
 export type GroupBy = 'project' | 'due' | 'priority' | 'label' | 'none'
 export type FieldSortBy = `field:${string}`
-export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title' | 'deadline' | FieldSortBy
+export type SortBy = 'due' | 'priority' | 'position' | 'created' | 'title' | 'deadline' | 'urgency' | FieldSortBy
 export type SortDir = 'asc' | 'desc'
 
 export const VIEW_KINDS: readonly ViewKind[] = ['list', 'dashboard']
 export const GROUP_BY_OPTIONS: readonly GroupBy[] = ['project', 'due', 'priority', 'label', 'none']
-export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title']
+export const SORT_BY_OPTIONS: readonly SortBy[] = ['due', 'priority', 'position', 'created', 'deadline', 'title', 'urgency']
 
 const FIELD_SORT_PREFIX = 'field:'
 const FIELD_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
