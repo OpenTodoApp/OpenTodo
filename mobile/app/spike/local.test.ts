@@ -11,6 +11,8 @@ import { installSql } from './sqlite'
 
 const ROWS = process.env.SPIKE_ROWS
 const run = ROWS ? it : it.skip
+// SPIKE_IMMEDIATE=micro: setImmediate as React Native shims it (queueMicrotask).
+if (process.env.SPIKE_IMMEDIATE === 'micro') (globalThis as { setImmediate: unknown }).setImmediate = (fn: () => void) => queueMicrotask(fn)
 ;(globalThis as { self?: unknown }).self ??= globalThis
 
 const hooks = {

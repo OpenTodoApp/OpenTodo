@@ -4,6 +4,7 @@
 // open, Today through the shared selectors, Inbox, and a 500-op pull page through the
 // shared applyOps. Times in milliseconds, from performance.now().
 import Dexie from 'dexie'
+import { IDBFactory, IDBKeyRange as FakeKeyRange } from 'fake-indexeddb'
 import { useDatabase as databaseNamed } from '@shared/db'
 import { todayList, withoutArchived } from '@shared/dayLists'
 import { logicalToday } from '@shared/dates'
@@ -135,5 +136,38 @@ export async function measure(candidate: Candidate, hooks: Hooks, startedAt: num
   const check = await db.tasks.get(ops[0].entityId)
   out.pullApplied = !!check && String(check.title).endsWith('(edited)')
   db.close()
+  return out
+}
+
+/** The runtime: whether a Dexie transaction keeps its zone across awaits here. */
+export async function diagnose(): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {
+    scheduler: (globalThis as { __spikeScheduler?: string }).__spikeScheduler,
+    asyncIsGlobalPromise: Object.getPrototypeOf((async () => undefined)()) === Promise.prototype,
+    digestIsGlobalPromise: Object.getPrototypeOf(globalThis.crypto.subtle.digest('SHA-256', new Uint8Array([0]))) === Promise.prototype,
+  }
+  const probe = new Dexie('zone-probe', { indexedDB: new IDBFactory() as unknown as IDBFactory, IDBKeyRange: FakeKeyRange as unknown as typeof IDBKeyRange })
+  probe.version(1).stores({ s: 'id' })
+  const t0 = performance.now()
+  try {
+    await probe.transaction('rw', probe.table('s'), async () => {
+      await probe.table('s').put({ id: 1 })
+      await probe.table('s').get(1)
+      await probe.table('s').put({ id: 2 })
+    })
+    out.transactionWithAwaits = 'ok'
+  } catch (e) {
+    out.transactionWithAwaits = e instanceof Error ? e.name : String(e)
+  }
+  out.transactionMs = ms(performance.now() - t0)
+  // The same scope as a promise chain, no await: tells the zone from the scheduling.
+  try {
+    const t = probe.table('s')
+    await probe.transaction('rw', t, () => t.put({ id: 3 }).then(() => t.get(3)).then(() => t.put({ id: 4 })))
+    out.transactionWithThen = 'ok'
+  } catch (e) {
+    out.transactionWithThen = e instanceof Error ? e.name : String(e)
+  }
+  probe.close()
   return out
 }

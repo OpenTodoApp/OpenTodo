@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import type { Task } from '@shared/types'
-import { measure, seed, type Candidate, type Rows } from './scenario'
+import { diagnose, measure, seed, type Candidate, type Rows } from './scenario'
 
 const HOST = 'http://127.0.0.1:8099'
 
@@ -56,7 +56,7 @@ export default function SpikeApp() {
           // The app with no database: what the process holds before either engine.
           await draw([])
           await new Promise((r) => setTimeout(r, 2000))
-          await post('/result', { phase: 'baseline', hermes: hermesStats() })
+          await post('/result', { phase: 'baseline', diagnosis: await diagnose(), hermes: hermesStats() })
         } else if (step.phase === 'seed') {
           setStatus(`Seeding ${step.candidate}`)
           const rows = await (await fetch(`${HOST}/rows.json`)).json() as Rows
@@ -69,7 +69,8 @@ export default function SpikeApp() {
         }
         setStatus('Done')
       } catch (e) {
-        const error = e instanceof Error ? `${e.name}: ${e.message}\n${e.stack}` : String(e)
+        const inner = (e as { inner?: Error }).inner
+        const error = e instanceof Error ? `${e.name}: ${e.message}${inner ? ` (inner ${inner.name}: ${inner.message})` : ""}\n${e.stack ?? new Error().stack}` : String(e)
         await post('/result', { candidate: step.candidate, phase: step.phase, error })
         setStatus(error)
       }
