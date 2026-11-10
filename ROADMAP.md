@@ -110,7 +110,7 @@ Longer horizons, and the household.
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
 | [`simplified-chinese`](openspec/changes/simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
-| [`telegram-channel`](openspec/changes/telegram-channel/) | Telegram as a notification channel |  |
+| [`telegram-channel`](openspec/changes/telegram-channel/) | **Postponed by the owner (2026-11-10).** Telegram as a notification channel |  |
 
 ### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)
 
