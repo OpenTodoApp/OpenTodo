@@ -60,6 +60,10 @@ export type AssistantBlock =
   | { kind: 'map'; task_ids?: string[]; place_ids?: string[] }
   | { kind: 'note'; id: string }
   | { kind: 'project'; id: string }
+  // The time blocks (assistant-time-blocks): days and a grouping, never the entries or tasks.
+  | { kind: 'time'; from: string; to: string; group_by: 'project' | 'day' }
+  | { kind: 'free_time'; date: string; span: 'day' | 'week'; min_minutes: number }
+  | { kind: 'deadlines'; from: string; to: string }
 
 /** The inverse of one applied change set (in-app-assistant D2): kept for the last 20. */
 export interface AssistantUndo {

@@ -69,8 +69,11 @@ const DefaultMonthlyCap = 500_000
 // AI step. Version 4 changes no data flow, so earlier consents still count
 // (MinDisclosureVersion stays 1): no spec asks for consent again when the
 // text grows, and asking would interrupt everyone for a correction. Raise
-// MinDisclosureVersion only when what is sent changes.
-const DisclosureVersion = 4
+// MinDisclosureVersion only when what is sent changes. Version 5
+// (assistant-time-blocks) names the free time find_free_time returns: free
+// stretches worked out from data the list already named or the calendar the
+// person sees (event times, never titles), so earlier consents still count.
+const DisclosureVersion = 5
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1

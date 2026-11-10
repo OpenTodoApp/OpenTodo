@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
@@ -29,6 +31,12 @@ const (
 	maxChoiceOption  = 60
 	minChoiceOptions = 2
 	maxChoiceOptions = 4
+	// MaxBlockDays is the widest range a time or deadlines block covers
+	// (assistant-time-blocks).
+	MaxBlockDays = 31
+	// Free time blocks name stretches of at least this many minutes (default 30).
+	defaultFreeMinutes = 30
+	maxFreeMinutes     = 12 * 60
 )
 
 // The display tools' fixed results, the same on the device (its manifest).
@@ -46,6 +54,10 @@ const (
 	BlockMap      = "map"
 	BlockNote     = "note"
 	BlockProject  = "project"
+	// The time blocks of OpenSpec change assistant-time-blocks.
+	BlockTime      = "time"
+	BlockFreeTime  = "free_time"
+	BlockDeadlines = "deadlines"
 )
 
 // Block is one shown block: its kind and its checked parameters.
@@ -60,10 +72,20 @@ type Block struct {
 	TaskIDs  []string `json:"task_ids,omitempty"`
 	PlaceIDs []string `json:"place_ids,omitempty"`
 	ID       string   `json:"id,omitempty"`
+	// From and To are a time or deadlines block's days, GroupBy how a time
+	// block groups ("project" or "day"), MinMinutes a free time block's shortest stretch.
+	From       string `json:"from,omitempty"`
+	To         string `json:"to,omitempty"`
+	GroupBy    string `json:"group_by,omitempty"`
+	MinMinutes int    `json:"min_minutes,omitempty"`
 }
 
 func idList(desc string) map[string]any {
 	return map[string]any{"type": "array", "minItems": 1, "maxItems": MaxBlockIDs, "description": desc, "items": map[string]any{"type": "string"}}
+}
+
+func dateProp(desc string) map[string]any {
+	return map[string]any{"type": "string", "pattern": `^\d{4}-\d{2}-\d{2}$`, "description": desc}
 }
 
 func displayObject(required []string, props map[string]any) map[string]any {
@@ -96,12 +118,30 @@ var DisplayTools = []ToolDef{
 		Schema: displayObject([]string{"id"}, map[string]any{"id": map[string]any{"type": "string", "description": "A note id from tool results."}})},
 	{Name: "show_project", Description: "Show a project's outline: its sections and how many open tasks each has, with a way to open it. Changes nothing.",
 		Schema: displayObject([]string{"id"}, map[string]any{"id": map[string]any{"type": "string", "description": "A project id from tool results."}})},
+	// The time blocks (assistant-time-blocks): parameters only, drawn from the device's rows.
+	{Name: "show_time", Description: "Show the user's own tracked time on the days from..to (at most 31 days) as bars per project or per day, with each total and the overall total. Use it for questions such as where their time went. Changes nothing.",
+		Schema: displayObject([]string{"from", "to", "group_by"}, map[string]any{
+			"from":     dateProp("First day (YYYY-MM-DD)."),
+			"to":       dateProp("Last day (YYYY-MM-DD), at most 30 days after from."),
+			"group_by": map[string]any{"type": "string", "enum": []string{"project", "day"}},
+		})},
+	{Name: "show_free_time", Description: "Show the user's free time on one day, or the week starting on it: the stretches of at least min_minutes within their working day between calendar events, frames, slots and timed tasks. Use it with find_free_time when asked when they are free. Changes nothing; placing a task is a proposal.",
+		Schema: displayObject([]string{"date", "span"}, map[string]any{
+			"date":        dateProp("The day (YYYY-MM-DD), or the first day of the week."),
+			"span":        map[string]any{"type": "string", "enum": []string{"day", "week"}},
+			"min_minutes": map[string]any{"type": "integer", "minimum": 1, "maximum": maxFreeMinutes, "description": "Shortest stretch to show, in minutes. Default: 30."},
+		})},
+	{Name: "show_deadlines", Description: "Show the user's open tasks with a deadline on the days from..to (at most 31 days) in date order, each with its countdown. Use it for questions about what is due by a date. Changes nothing.",
+		Schema: displayObject([]string{"from", "to"}, map[string]any{
+			"from": dateProp("First day (YYYY-MM-DD); today for what is coming, earlier to include missed deadlines."),
+			"to":   dateProp("Last day (YYYY-MM-DD), at most 30 days after from."),
+		})},
 }
 
 // skillDisplay lists the display tools each skill may use (design D1); the
 // skills' registry tools stay in agenttools, which MCP's prompts share.
 var skillDisplay = map[string][]string{
-	"plan-week":       {"show_calendar", "ask_choice"},
+	"plan-week":       {"show_calendar", "ask_choice", "show_free_time"},
 	"triage-inbox":    {"show_tasks", "ask_choice"},
 	"idea-to-project": {"show_project", "ask_choice"},
 	"capture":         {"ask_choice"},
@@ -163,6 +203,22 @@ func checkText(field, s string, max int, required bool) (string, error) {
 	return s, nil
 }
 
+// checkRange reads a block's days from..to: two dates in order, at most MaxBlockDays.
+func checkRange(from, to string) error {
+	f, err1 := time.Parse(time.DateOnly, from)
+	l, err2 := time.Parse(time.DateOnly, to)
+	if !datePattern.MatchString(from) || !datePattern.MatchString(to) || err1 != nil || err2 != nil {
+		return argError("from and to must be YYYY-MM-DD")
+	}
+	if l.Before(f) {
+		return argError("to must not be before from")
+	}
+	if l.After(f.AddDate(0, 0, MaxBlockDays-1)) {
+		return argError(fmt.Sprintf("a block covers at most %d days", MaxBlockDays))
+	}
+	return nil
+}
+
 func checkIDs(field string, ids []string, required bool) error {
 	if required && len(ids) == 0 {
 		return argError(field + " needs at least one id")
@@ -185,6 +241,10 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 		TaskIDs  []string `json:"task_ids"`
 		PlaceIDs []string `json:"place_ids"`
 		ID       string   `json:"id"`
+		From     string   `json:"from"`
+		To       string   `json:"to"`
+		GroupBy  string   `json:"group_by"`
+		Min      *float64 `json:"min_minutes"`
 	}
 	if len(raw) > 0 && string(raw) != "null" {
 		if err := json.Unmarshal(raw, &a); err != nil {
@@ -242,6 +302,34 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 			kind = BlockProject
 		}
 		return Block{Kind: kind, ID: a.ID}, nil
+	case "show_time":
+		if err := checkRange(a.From, a.To); err != nil {
+			return Block{}, err
+		}
+		if a.GroupBy != "project" && a.GroupBy != "day" {
+			return Block{}, argError(`group_by must be "project" or "day"`)
+		}
+		return Block{Kind: BlockTime, From: a.From, To: a.To, GroupBy: a.GroupBy}, nil
+	case "show_free_time":
+		if !datePattern.MatchString(a.Date) {
+			return Block{}, argError("date must be YYYY-MM-DD")
+		}
+		if a.Span != "day" && a.Span != "week" {
+			return Block{}, argError(`span must be "day" or "week"`)
+		}
+		least := defaultFreeMinutes
+		if a.Min != nil {
+			if *a.Min != math.Trunc(*a.Min) || *a.Min < 1 || *a.Min > maxFreeMinutes {
+				return Block{}, argError(fmt.Sprintf("min_minutes must be a whole number from 1 to %d", maxFreeMinutes))
+			}
+			least = int(*a.Min)
+		}
+		return Block{Kind: BlockFreeTime, Date: a.Date, Span: a.Span, MinMinutes: least}, nil
+	case "show_deadlines":
+		if err := checkRange(a.From, a.To); err != nil {
+			return Block{}, err
+		}
+		return Block{Kind: BlockDeadlines, From: a.From, To: a.To}, nil
 	}
 	return Block{}, argError("unknown display tool")
 }
@@ -275,7 +363,7 @@ func (d *displayTurn) check(ctx context.Context, b Block) (Block, int, int, erro
 		var ids []string
 		ids, err = keep(kind, []string{b.ID})
 		asked, found = 1, len(ids)
-	case BlockCalendar:
+	case BlockCalendar, BlockTime, BlockFreeTime, BlockDeadlines:
 		asked, found = 1, 1
 	case BlockChoice:
 		asked, found = len(b.Options), len(b.Options)

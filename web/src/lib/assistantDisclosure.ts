@@ -19,6 +19,7 @@ export const DISCLOSURE_FIELDS = [
   msg('saved view names and the hosts of your webhooks, when you describe a routine'),
   msg('your routines and calendar frames'),
   msg('calendar frames and slots'),
+  msg('your free time, worked out from your calendar events, frames, slots and timed tasks'),
   msg('tracked time and its notes'),
   msg('names of members and groups of shared projects and workspaces'),
   msg("your display name, today's date and your time zone"),

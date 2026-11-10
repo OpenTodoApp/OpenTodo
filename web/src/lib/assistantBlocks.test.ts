@@ -28,6 +28,25 @@ describe('blockOf', () => {
     expect(blockOf({ kind: 'project', id: '<script>' })).toBeNull()
     expect(blockOf({ kind: 'tasks', ids: [] })).toBeNull()
   })
+
+  it('reads the time blocks (assistant-time-blocks)', () => {
+    expect(blockOf({ kind: 'time', from: '2026-11-09', to: '2026-11-15', group_by: 'project' })).toEqual({ kind: 'time', from: '2026-11-09', to: '2026-11-15', group_by: 'project' })
+    expect(blockOf({ kind: 'time', from: '2026-11-15', to: '2026-11-09', group_by: 'day' })).toBeNull()
+    expect(blockOf({ kind: 'time', from: '2026-11-09', to: '2026-11-15', group_by: 'label' })).toBeNull()
+    expect(blockOf({ kind: 'free_time', date: '2026-11-12', span: 'day', min_minutes: 120 })).toEqual({ kind: 'free_time', date: '2026-11-12', span: 'day', min_minutes: 120 })
+    expect(blockOf({ kind: 'free_time', date: '2026-11-12', span: 'week' })).toEqual({ kind: 'free_time', date: '2026-11-12', span: 'week', min_minutes: 30 })
+    expect(blockOf({ kind: 'deadlines', from: '2026-11-09', to: '2026-11-13' })).toEqual({ kind: 'deadlines', from: '2026-11-09', to: '2026-11-13' })
+    expect(blockOf({ kind: 'deadlines', from: 'today', to: '2026-11-13' })).toBeNull()
+    expect(blockLabel({ kind: 'free_time', date: '2026-11-12', span: 'week', min_minutes: 30 })).toMatch(/^Free time, week of /)
+  })
+
+  it('copies a deadlines block as its open tasks in date order', async () => {
+    await createTask({ title: 'Ship', deadline: '2026-11-13' })
+    await createTask({ title: 'Invoice', deadline: '2026-11-11' })
+    await createTask({ title: 'Too late', deadline: '2026-11-20' })
+    const md = await answerMarkdown({ text: 'Due:', blocks: [{ at: 4, block: { kind: 'deadlines', from: '2026-11-09', to: '2026-11-13' } }] })
+    expect(md.split('\n').slice(3)).toEqual([expect.stringMatching(/^- Invoice \(/), expect.stringMatching(/^- Ship \(/)])
+  })
 })
 
 describe('splitAnswer', () => {

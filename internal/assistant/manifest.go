@@ -40,6 +40,8 @@ var deviceTools = []deviceTool{
 	{name: "today_summary", keep: []string{"timezone"}},
 	// The reads of OpenSpec change assistant-device-reads, pinned by read.vectors.json.
 	{name: "list_frames", keep: []string{"from", "to", "timezone"}},
+	// assistant-time-blocks: the same free stretches from the device's rows (readFreeTime.ts).
+	{name: "find_free_time", keep: []string{"from", "to", "min_minutes", "day_start_hour", "day_end_hour", "timezone"}},
 	{name: "list_notes", keep: []string{"source", "project_id", "label_id", "limit"}},
 	// The device holds the decrypted notes, so it searches them itself.
 	{name: "search_notes", keep: []string{"query", "source", "project_id", "label_id", "limit"}, drop: " Not available on an end-to-end encrypted account."},

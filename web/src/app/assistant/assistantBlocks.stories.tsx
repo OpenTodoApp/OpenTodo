@@ -2,13 +2,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { reviewChangeSet, type Review } from '../../lib/assistant'
 import type { AssistantStatus } from '../../lib/assistantStatus'
-import type { AssistantMessage } from '../../lib/db'
+import { db, setMeta, type AssistantMessage } from '../../lib/db'
 import { createPlace } from '../../lib/locations'
 import { createNote } from '../../lib/noteOps'
 import { createProject, createTask } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
+import { setCurrentUserId } from '../../lib/sharing'
+import { logTime } from '../../lib/timeEntries'
 import { addDaysISO } from '../../lib/dates'
-import { HEX, seeded, seedBase, TODAY, withSeed } from '../stories/fixtures'
+import { HEX, seeded, seedBase, storyUser, TODAY, TOMORROW, withSeed } from '../stories/fixtures'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
 
 // Blocks in the assistant's answers (OpenSpec change assistant-generative-ui): the
@@ -138,4 +140,45 @@ export const WeekPlanProposal: StoryObj = {
     seeded.d = await createTask({ title: 'Book the venue', due: { date: TODAY } })
   }),
   render: () => <WeekProposal />,
+}
+
+/** Where the week's time went, tomorrow's free time between meetings, and what is due by Friday (assistant-time-blocks). */
+export const TimeFreeTimeAndDeadlines: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    await setCurrentUserId(storyUser.id)
+    await setMeta('calendar.grid', { startHour: 8, endHour: 18, dayLength: 480 })
+    const at = (date: string, h: number, m = 0) => { const [y, mo, d] = date.split('-').map(Number); return new Date(y, mo - 1, d, h, m).getTime() }
+    const copy = await createTask({ title: 'Landing page copy', project_id: seeded.website })
+    const report = await createTask({ title: 'Q4 report', project_id: seeded.work })
+    const tap = await createTask({ title: 'Fix the kitchen tap', project_id: seeded.home })
+    const monday = addDaysISO(TODAY, -2)
+    await logTime(copy, at(monday, 9), at(monday, 12, 30))
+    await logTime(report, at(monday, 14), at(monday, 16))
+    await logTime(copy, at(addDaysISO(TODAY, -1), 9), at(addDaysISO(TODAY, -1), 11))
+    await logTime(tap, at(addDaysISO(TODAY, -1), 18), at(addDaysISO(TODAY, -1), 19, 15))
+    await logTime(report, at(TODAY, 8, 30), at(TODAY, 11))
+    await db.calendarEvents.bulkPut([
+      { id: 'standup', subscriptionId: 'work', uid: 'a', summary: 'Standup', location: '', start: { date: TOMORROW, time: '09:00' }, end: { date: TOMORROW, time: '09:30' }, allDay: false, free: false },
+      { id: 'review', subscriptionId: 'work', uid: 'b', summary: 'Design review', location: '', start: { date: TOMORROW, time: '13:00' }, end: { date: TOMORROW, time: '14:30' }, allDay: false, free: false },
+    ])
+    await createTask({ title: 'Call the plumber', due: { date: TOMORROW, time: '16:00' }, estimate_minutes: 30, project_id: seeded.home })
+    await createTask({ title: 'Send the Q4 report', deadline: addDaysISO(TODAY, 2), project_id: seeded.work })
+    await createTask({ title: 'Approve the launch copy', deadline: TOMORROW, project_id: seeded.website })
+    await createTask({ title: 'Renew the parking permit', deadline: TODAY })
+  }),
+  render: () => (
+    <Conversation messages={() => [
+      { role: 'user', text: 'Where did my time go this week, and when can I fit two hours of focus before Friday?', at: 1 },
+      {
+        role: 'assistant', at: 2, status: ['Looking for free time…'],
+        text: 'This week so far:\n\nTomorrow has room between meetings:\n\nAnd what is due by Friday:',
+        blocks: [
+          { at: 'This week so far:\n'.length, block: { kind: 'time', from: addDaysISO(TODAY, -2), to: addDaysISO(TODAY, 4), group_by: 'project' } },
+          { at: 'This week so far:\n\nTomorrow has room between meetings:\n'.length, block: { kind: 'free_time', date: TOMORROW, span: 'day', min_minutes: 60 } },
+          { at: 999, block: { kind: 'deadlines', from: TODAY, to: addDaysISO(TODAY, 2) } },
+        ],
+      },
+    ]} />
+  ),
 }

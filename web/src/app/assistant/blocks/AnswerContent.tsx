@@ -14,6 +14,9 @@ const CalendarBlock = lazy(() => import('./CalendarBlock'))
 const MapBlock = lazy(() => import('./MapBlock'))
 const NoteBlock = lazy(() => import('./NoteBlock'))
 const ProjectBlock = lazy(() => import('./ProjectBlock'))
+const TimeBlock = lazy(() => import('./TimeBlock'))
+const FreeTimeBlock = lazy(() => import('./FreeTimeBlock'))
+const DeadlinesBlock = lazy(() => import('./DeadlinesBlock'))
 
 /** A block that fails to render (or whose chunk is gone after an upgrade) says so; the answer stays. */
 class BlockBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -40,6 +43,12 @@ function BlockBody({ block, choice }: { block: AssistantBlock; choice?: ChoiceSt
       return <NoteBlock block={block} />
     case 'project':
       return <ProjectBlock block={block} />
+    case 'time':
+      return <TimeBlock block={block} />
+    case 'free_time':
+      return <FreeTimeBlock block={block} />
+    case 'deadlines':
+      return <DeadlinesBlock block={block} />
   }
 }
 

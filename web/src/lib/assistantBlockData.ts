@@ -7,11 +7,16 @@ import { useEffect, useState } from 'react'
 import { useOnline } from './online'
 import type { AssistantBlock } from './assistantBlocks'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs } from './calendar'
+import { ensureEventsFor } from './calendarFeeds'
 import { db, getMeta } from './db'
-import { localDueOf } from './dates'
+import { addDaysISO, daysBetweenISO, formatDate, instantToLocalDue, localDueOf, viewerZone } from './dates'
+import { freeTime, type FreeDay } from './freeTime'
 import { t } from './i18n'
 import { geoOf, locationLabel, placeEncrypted, searchAddress, shownLocation } from './locations'
+import { currentUserId } from './sharing'
+import { entryDay, minutesOf } from './time'
 import type { Geo, Note, Place, Project, Task } from './types'
+import { readDayStart } from './userPrefs'
 
 /** The block's tasks in order: a row, or null for one that is gone (deleted, or not on this device). */
 export function useBlockTasks(ids: readonly string[]): (Task | null)[] | undefined {
@@ -174,4 +179,92 @@ export function useMapLookup(items: MapItem[] | undefined, mapsOn: boolean): Map
     return f?.geo ? { ...it, lat: f.geo.lat, lon: f.geo.lon, approximate: true } : it
   })
   return { items: out, pending: ask.length > 0, offline: mapsOn && !online && missing.some((q) => !known(q, now)), failed }
+}
+
+// ---- the time blocks (OpenSpec change assistant-time-blocks, design D2) ----
+
+/** One bar of a time block: a project ('' for the Inbox) or a day, with its tracked minutes. */
+export interface TimeGroup { key: string; label: string; minutes: number }
+
+/**
+ * The user's own tracked time on the days from..to (each entry counted whole on the
+ * logical day it started, as Statistics counts it), per project, largest first, or per
+ * day in order. Entries on deleted tasks, or tasks in a deleted project, are left out.
+ */
+export function useTrackedTime(block: Extract<AssistantBlock, { kind: 'time' }>): { groups: TimeGroup[]; total: number } | undefined {
+  return useLiveQuery(async () => {
+    const [me, entries, tasks, projects, prefs] = await Promise.all([currentUserId(), db.timeEntries.toArray(), db.tasks.toArray(), db.projects.toArray(), db.userPrefs.get('me')])
+    const dayStart = readDayStart(prefs)
+    const gone = new Set(projects.filter((p) => p.deleted_at).map((p) => p.id))
+    const names = new Map(projects.map((p) => [p.id, p.name]))
+    const live = new Map(tasks.filter((tk) => !tk.deleted_at && !(tk.project_id && gone.has(tk.project_id))).map((tk) => [tk.id, tk]))
+    const now = Date.now()
+    const by = new Map<string, number>()
+    let total = 0
+    for (const e of entries) {
+      const task = live.get(e.task_id)
+      if (e.deleted_at || !task || e.user_id !== me) continue
+      const day = entryDay(e.started_at, undefined, dayStart)
+      if (day < block.from || day > block.to) continue
+      const m = minutesOf(e, now)
+      const key = block.group_by === 'day' ? day : task.project_id ?? ''
+      by.set(key, (by.get(key) ?? 0) + m)
+      total += m
+    }
+    if (block.group_by === 'day') {
+      // A short range shows every day; a longer one the days with time.
+      const all = daysBetweenISO(block.from, block.to) < 7
+      const keys = all ? Array.from({ length: daysBetweenISO(block.from, block.to) + 1 }, (_, i) => addDaysISO(block.from, i)) : [...by.keys()].sort()
+      return { groups: keys.map((d) => ({ key: d, label: formatDate(d, 'compact'), minutes: by.get(d) ?? 0 })), total }
+    }
+    const groups = [...by].map(([key, minutes]) => ({ key, label: key ? names.get(key) ?? t('Removed') : t('Inbox'), minutes }))
+      .sort((a, b) => b.minutes - a.minutes || a.label.localeCompare(b.label))
+    return { groups, total }
+  }, [block.from, block.to, block.group_by])
+}
+
+/** The date and minute now in a zone. */
+function zoneNow(zone: string, now: number): { date: string; minute: number } {
+  const at = instantToLocalDue(now, zone)
+  return { date: at.date, minute: Number(at.time.slice(0, 2)) * 60 + Number(at.time.slice(3, 5)) }
+}
+
+/** A free time block's days and working day: each day's free stretches (freeTime.ts, pinned to internal/freetime). */
+export interface FreeTimeView { days: FreeDay[]; dayStart: number; dayEnd: number }
+
+/**
+ * The free stretches of the block's days on this device: within the calendar's
+ * working hours, between the cached calendar events, frames, slots and open timed
+ * tasks. The events for the days are refreshed from the server when online.
+ */
+export function useFreeTime(block: Extract<AssistantBlock, { kind: 'free_time' }>): FreeTimeView | undefined {
+  const last = addDaysISO(block.date, block.span === 'day' ? 0 : 6)
+  const online = useOnline()
+  useEffect(() => {
+    if (online) void ensureEventsFor({ from: block.date, to: last }).catch(() => undefined)
+  }, [block.date, last, online])
+  return useLiveQuery(async () => {
+    const [events, frames, slots, tasks, grid] = await Promise.all([
+      db.calendarEvents.toArray(), db.frames.toArray(), db.slots.toArray(),
+      db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.due?.time).toArray(), getMeta<unknown>(GRID_PREFS_META_KEY, null),
+    ])
+    const prefs = normalizeGridPrefs(grid)
+    const zone = viewerZone()
+    const now = zoneNow(zone, Date.now())
+    const days = freeTime({
+      from: block.date, to: last, zone, day_start: prefs.startHour * 60, day_end: prefs.endHour * 60, min_minutes: block.min_minutes, today: now.date, now: now.minute,
+      events, frames: frames.filter((f) => !f.deleted_at), slots: slots.filter((s) => !s.deleted_at),
+      tasks: tasks.map((tk) => ({ due: tk.due, estimate_minutes: tk.estimate_minutes, done: false })),
+    })
+    return { days, dayStart: prefs.startHour * 60, dayEnd: prefs.endHour * 60 }
+  }, [block.date, last, block.min_minutes])
+}
+
+/** The open tasks with a deadline on the days from..to, by deadline then title. */
+export function useDeadlines(block: Extract<AssistantBlock, { kind: 'deadlines' }>): Task[] | undefined {
+  return useLiveQuery(async () => {
+    const gone = new Set((await db.projects.toArray()).filter((p) => p.deleted_at).map((p) => p.id))
+    const rows = await db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.deadline && tk.deadline >= block.from && tk.deadline <= block.to && !(tk.project_id && gone.has(tk.project_id))).toArray()
+    return rows.sort((a, b) => (a.deadline! < b.deadline! ? -1 : a.deadline! > b.deadline! ? 1 : a.title.localeCompare(b.title)))
+  }, [block.from, block.to])
 }

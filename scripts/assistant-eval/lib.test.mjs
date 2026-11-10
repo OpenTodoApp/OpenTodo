@@ -47,6 +47,14 @@ test('blocks match by kind and id set', () => {
   assert.match(checkTurn({ no_tools: ['show_calendar'] }, sum, ids)[0], /show_calendar must not be called/)
 })
 
+test('time blocks match by grouping and last day (assistant-time-blocks)', () => {
+  const sum = { blocks: [{ kind: 'time', from: '2026-11-09', to: '2026-11-15', group_by: 'project' }, { kind: 'deadlines', from: '2026-11-09', to: '2026-11-13' }], changes: [], text: '' }
+  assert.deepEqual(checkTurn({ blocks: [{ kind: 'time', group_by: 'project' }, { kind: 'deadlines', to: 4 }] }, sum, {}, '2026-11-09'), [])
+  assert.match(checkTurn({ blocks: [{ kind: 'time', group_by: 'day' }] }, sum, {}, '2026-11-09')[0], /by day/)
+  assert.match(checkTurn({ blocks: [{ kind: 'deadlines', to: 2 }] }, sum, {}, '2026-11-09')[0], /until 2026-11-11/)
+  assert.deepEqual(validateScenario({ name: 'x', title: 'X', turns: [{ say: 'hi', expect: { blocks: [{ kind: 'free_time', date: 1 }] } }] }), [])
+})
+
 test('change sets, links, forbidden text and ids', () => {
   const sum = summarize([ev('text', { text: 'Moved [Pay](?task=t1). Salary stays.' }), ev('changeset', { items: [{ entity: 'task', entityId: 't1', patch: { due: {} } }] })])
   const ids = { pay: 't1', secret: 't9' }

@@ -262,6 +262,56 @@
         "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": true,
+        "title": "Find free time"
+      },
+      "description": "Find the user's free time: for each day from..to, the stretches of at least min_minutes within the working day that no calendar event, calendar frame, slot or timed task takes (a timed task takes its estimate, else 30 minutes), as the user's calendar draws them. Times are wall times in timezone; today starts now. Default: today only; at most 14 days. Read-only: to place a task in a free stretch, propose a due date and time.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "day_end_hour": {
+            "description": "Hour the working day ends, after day_start_hour. Default: 22, or the user's own working day in the app.",
+            "maximum": 24,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "day_start_hour": {
+            "description": "Hour the working day starts. Default: 6, or the user's own working day in the app.",
+            "maximum": 23,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "from": {
+            "description": "First day (YYYY-MM-DD). Default: today in timezone.",
+            "format": "date",
+            "type": "string"
+          },
+          "min_minutes": {
+            "description": "Shortest stretch to list, in minutes. Default: 30.",
+            "maximum": 720,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Last day (YYYY-MM-DD), at most 13 days after from. Default: from.",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "find_free_time",
+      "title": "Find free time"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
         "title": "List icons"
       },
       "description": "List the icons a project or section can have, best matches first. query searches names, keywords and categories (e.g. \"plant\", \"money\", \"travel\"); without it the whole catalogue is returned in pages of limit. Pass a name to update_project, create_sections or update_sections.",

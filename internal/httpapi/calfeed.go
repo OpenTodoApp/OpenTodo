@@ -15,6 +15,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/freetime"
 	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
 	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
@@ -381,4 +382,36 @@ func (s *Server) handleTaskFeed(w http.ResponseWriter, r *http.Request) {
 // feedTasks lists the user's visible open tasks with a due date, like the CalDAV view.
 func (s *Server) feedTasks(r *http.Request, uid string) ([]calfeed.FeedTask, error) {
 	return s.dav.FeedTasks(r, uid)
+}
+
+// freeTimeEvents is find_free_time's view of the calendar (assistant-time-blocks
+// D1): the events the calendar view would show for the days, times only, with
+// the same switches as the events route.
+func (s *Server) freeTimeEvents(ctx context.Context, uid, from, to string) ([]freetime.Event, error) {
+	if s.calWorker == nil {
+		return nil, nil
+	}
+	feeds, managed := s.calFeedsOn.On(ctx), s.calsyncOn.On(ctx)
+	if !feeds && !managed {
+		return nil, nil
+	}
+	rows, err := s.calWorker.Store.EventsOf(ctx, uid, from, to, feeds, managed)
+	if err != nil {
+		return nil, err
+	}
+	when := func(w calfeed.When) freetime.When {
+		out := freetime.When{Date: w.Date}
+		if w.Time != nil {
+			out.Time = *w.Time
+		}
+		if w.TZ != nil {
+			out.TZ = *w.TZ
+		}
+		return out
+	}
+	out := make([]freetime.Event, 0, len(rows))
+	for _, e := range rows {
+		out = append(out, freetime.Event{Start: when(e.Start), End: when(e.End), AllDay: e.AllDay, Free: e.Free})
+	}
+	return out, nil
 }

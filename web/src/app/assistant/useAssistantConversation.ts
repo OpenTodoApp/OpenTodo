@@ -364,7 +364,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       delete ctx.projectId
       const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined, photos.length ? wireImages(photos) : undefined), timezone: zone, ...ctx,
         ...(selection ? { selected: selection } : {}),
-        ...(chosen ? { skill: chosen.id, workday: await workday() } : {}) }
+        // The working day goes with every turn: plan-week and find_free_time read it (assistant-time-blocks D2).
+        workday: await workday(), ...(chosen ? { skill: chosen.id } : {}) }
       // Device mode runs the loop here and calls the provider directly; the server sees nothing (assistant-on-device D7).
       const setup = device.setup
       const run = status?.mode === 'device' && setup

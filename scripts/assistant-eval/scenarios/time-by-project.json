@@ -1,0 +1,23 @@
+{
+  "name": "time-by-project",
+  "title": "Where the time went is shown as the time block by project",
+  "seed": {
+    "projects": [
+      { "key": "website", "name": "Website" },
+      { "key": "home", "name": "Home" }
+    ],
+    "tasks": [
+      { "key": "copy", "title": "Write the landing page copy", "project": "website" },
+      { "key": "tap", "title": "Fix the kitchen tap", "project": "home" }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Where did my time go this week, per project?",
+      "expect": {
+        "blocks": [{ "kind": "time", "group_by": "project" }],
+        "changeset": false
+      }
+    }
+  ]
+}

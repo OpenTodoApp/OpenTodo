@@ -112,7 +112,7 @@ func TestTurnRunsSkill(t *testing.T) {
 	}
 	slices.Sort(tools)
 	// Its registry tools and its display tools (assistant-generative-ui D1).
-	if strings.Join(tools, ",") != "ask_choice,get_task,list_tasks,schedule_tasks,search_tasks,show_calendar,update_tasks" {
+	if strings.Join(tools, ",") != "ask_choice,get_task,list_tasks,schedule_tasks,search_tasks,show_calendar,show_free_time,update_tasks" {
 		t.Fatalf("tools offered = %v", tools)
 	}
 	uses, err := (*svc).Store.SkillUses(t.Context(), userIDOf(t, e))
