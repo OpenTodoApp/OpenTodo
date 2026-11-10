@@ -270,7 +270,7 @@ const runs = new Map<string, Promise<boolean>>()
  */
 export const MIGRATION_ORDER: readonly Entity[] = [
   'project', 'label', 'section', 'view', 'field', 'task', 'comment', 'attachment', 'objective',
-  'note', 'time_entry', 'rule', 'frame', 'slot', 'place', 'review', 'memory',
+  'note', 'time_entry', 'rule', 'frame', 'slot', 'place', 'review', 'memory', 'user_prefs',
 ]
 /** The kinds the last complete run of the job on this device covered (catchUpEncryption). */
 const K_COVERED = 'e2ee.covered'

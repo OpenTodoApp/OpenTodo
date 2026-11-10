@@ -22,6 +22,7 @@ var ContentFields = map[string][]string{
 	"frame":      {"title"},
 	"slot":       {"title"},
 	"place":      {"name", "address", "geo"},
+	"user_prefs": {"priority_name_1", "priority_name_2", "priority_name_3", "priority_name_4"},
 	"objective":  {"title"},
 	"memory":     {"text"},
 	"review":     {"tomorrow_note"},

@@ -77,7 +77,7 @@ describe('a saved view', () => {
     const r = await render(<SavedViewRoute id={id} />)
     await waitFor(() => titles(r.container).length === 1, 'the open match')
     expect(r.container.querySelector('[data-views-crumb]')?.textContent).toBe('ViewsCalls')
-    expect([...r.container.querySelectorAll('[data-toolbar-chip]')].map((c) => c.textContent)).toEqual(['Priority is P1'])
+    expect([...r.container.querySelectorAll('[data-toolbar-chip]')].map((c) => c.textContent)).toEqual(['Priority is Priority 1'])
     // The filter panel is closed by default on a saved view.
     expect(r.container.querySelector('[data-filter-panel]')).toBeNull()
     expect(r.container.querySelector('[data-row-meta]')?.textContent).toContain('30m')

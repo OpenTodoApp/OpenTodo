@@ -18,7 +18,8 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 - **Start view and briefing**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a wall panel. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md). **Show the briefing**: the sentence under Today's title.
 - **Keyboard** (this device): **Click a task to**: edit the title in place, open the details or [expand the row](expand-a-row.md); a double-click opens the page. **Show shortcut hints** prints keys in the app; **Single-key shortcuts** off stops letters and symbols alone running commands (for speech input); **Vim keybindings**. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
-- **Focus timer**: the [Focus](focus.md) timer, its lengths, breaks, sound, presets and noise, on all your devices (the noise volume is per device).
+- **Focus timer**: the [Focus](focus.md) timer's lengths, breaks, sound, presets and noise (noise volume is per device).
+- **Priorities**: [your names](priorities.md) for each level.
 - **Maps**: maps and address search on your devices, if the owner allows. See [Locations and places](locations-and-places.md).
 
 ## Language and region

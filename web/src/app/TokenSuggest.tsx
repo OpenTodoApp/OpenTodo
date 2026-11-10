@@ -7,13 +7,17 @@
 // ARIA attributes and a key handler that runs before the field's own.
 import { type KeyboardEvent, type RefObject, useId, useMemo, useState } from 'react'
 import { createProject } from '../lib/ops'
-import { energySuggestions, hasExact, insertToken, labelSuggestions, labelToken, projectSuggestions, tokenAtCaret, type TokenAtCaret } from '../lib/nlp/suggest'
+import { energySuggestions, hasExact, insertToken, labelSuggestions, labelToken, PRIORITY_SUGGESTIONS, projectSuggestions, tokenAtCaret, type TokenAtCaret } from '../lib/nlp/suggest'
+import { priorityName } from '../lib/priority'
 import type { LabelRef, ProjectRef } from '../lib/nlp'
 import { t } from '../lib/i18n'
 import { energyName } from '../lib/energy'
 import { Icon } from '../ui'
 
-interface Item { key: string; label: string; secondary?: string; color?: string; create?: boolean; run: () => Promise<string> | string }
+interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
+
+/** The level's ring in the suggestion list, like the quick-add Priority row: the p1–p4 tokens. */
+const PRIORITY_RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'border-p3', 4: 'border-p4' }
 
 export interface TokenSuggestOptions {
   input: RefObject<HTMLInputElement | HTMLTextAreaElement | null>
@@ -42,6 +46,8 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
     const q = at.query
     // `~` offers the three levels and never a Create entry (task-energy D4).
     if (at.kind === 'energy') return energySuggestions(q).map((s) => ({ key: s.level, label: energyName(s.level), run: () => s.token }))
+    // `p` lists the levels as "p1 · Must" (priority-names D4); never a Create entry.
+    if (at.kind === 'priority') return PRIORITY_SUGGESTIONS.map((s) => ({ key: s.token, label: `${s.token} · ${priorityName(s.level)}`, level: s.level, run: () => s.token }))
     const list: Item[] = at.kind === 'project'
       ? projectSuggestions(q, projects).map((s) => ({ key: s.project.id, label: s.project.name, secondary: s.path.join(' › ') || undefined, run: () => s.token }))
       : labelSuggestions(q, labels).map((s) => ({ key: s.label.id, label: s.label.name, color: s.label.color, run: () => s.token }))
@@ -128,7 +134,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
   }
 
   const list = shown ? (
-    <ul id={listId} role="listbox" aria-label={at!.kind === 'project' ? t('Projects') : at!.kind === 'energy' ? t('Energy') : t('Labels')} data-token-suggestions={at!.kind}
+    <ul id={listId} role="listbox" aria-label={at!.kind === 'project' ? t('Projects') : at!.kind === 'energy' ? t('Energy') : at!.kind === 'priority' ? t('Priority') : t('Labels')} data-token-suggestions={at!.kind}
       className="surface-overlay absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-y-auto overscroll-contain p-1 sm:right-auto sm:w-72">
       {items.map((item, i) => (
         <li key={item.key} id={`${listId}-${i}`} role="option" aria-selected={i === Math.min(active, items.length - 1)}
@@ -141,6 +147,8 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
               ? <Icon name="folder" size="xs" className="text-faint" />
               : at!.kind === 'energy'
               ? <Icon name="zap" size="xs" className="text-faint" />
+              : at!.kind === 'priority'
+              ? <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-[1.5px] ${PRIORITY_RING[item.level ?? 4]}`} />
               : <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color ?? 'var(--ot-faint)' }} />}
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           {item.secondary && <span className="shrink-0 truncate text-meta text-faint">{item.secondary}</span>}

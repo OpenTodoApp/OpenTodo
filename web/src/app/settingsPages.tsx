@@ -43,6 +43,7 @@ import { CalendarSyncPanel } from './CalendarSyncPanel'
 import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
+import { PrioritiesSection } from './PrioritiesSettings'
 import { ClosedListSection } from './ClosedListSettings'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
@@ -90,6 +91,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'general/start': () => <><StartViewSection /><BriefingSection /><DayPartsSection /><ClosedListSection /></>,
   'general/keyboard': () => <KeyboardSection />,
   'general/focus': () => <FocusSection />,
+  'general/priorities': () => <PrioritiesSection />,
   'general/maps': () => <MapsUserSection />,
   'language/language': () => <LanguageSection />,
   'language/date-time': () => <DateTimeSection />,

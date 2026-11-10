@@ -8,6 +8,7 @@ import { findLabel, formatMinutes, type LabelRef, type ProjectRef } from '../../
 import type { Due } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { Icon } from '../../ui'
+import { priorityName } from '../../lib/priority'
 import { chipText } from '../ParseChips'
 import { FIELD_ICON, FIELD_TOKEN, type FieldKind, type FieldRow, projectColor } from './fields'
 
@@ -38,7 +39,7 @@ function FieldValue({ row, projects, labels, line }: { row: FieldRow; projects: 
     const l = findLabel(String(chip.value), labels)
     return l ? <>{chipText(chip, projects, labels, line).slice(1)}</> : <>{t('New label “{name}”', { name: String(chip.value) })}</>
   }
-  if (chip.kind === 'priority') return <><span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-[1.5px] ${RING[chip.value as number] ?? RING[4]}`} />{t('Priority {n}', { n: chip.value as number })}</>
+  if (chip.kind === 'priority') return <><span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-[1.5px] ${RING[chip.value as number] ?? RING[4]}`} /><span className="min-w-0 truncate">{priorityName(chip.value as number)}</span></>
   if (chip.kind === 'estimate') return <>{formatMinutes(chip.value as number)}</>
   return <>{chipText(chip, projects, labels, line)}</>
 }

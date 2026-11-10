@@ -35,7 +35,7 @@ describe('Filter view', () => {
     expect(r.container.querySelector('[data-filter-builder]')).not.toBeNull()
     const input = r.container.querySelector('input[aria-label="Filter query"]') as HTMLInputElement
     await type(input, 'p1')
-    await waitFor(() => r.container.textContent?.includes('Priority is P1') ?? false, 'the condition chip')
+    await waitFor(() => r.container.textContent?.includes('Priority is Priority 1') ?? false, 'the condition chip')
     await waitFor(() => r.container.querySelector('[data-filter-count]')?.textContent === '1 task matches', 'the count')
     await click(r.container.querySelector('[data-filter-toggle]') as HTMLButtonElement)
     expect(r.container.querySelector('[data-filter-builder]')).toBeNull()

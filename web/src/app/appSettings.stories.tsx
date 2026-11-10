@@ -8,6 +8,7 @@ import { EmailInboxView, type EmailInboxViewProps } from './EmailInboxPanel'
 import { NotificationsView, PushDelivery } from './NotificationsSettings'
 import { KeyboardView, LanguageView, StartViewView } from './PreferencesPanels'
 import { AutoArchiveView } from './ProjectsSettings'
+import { PrioritiesView } from './PrioritiesSettings'
 import { resolveDateTime } from '../lib/dates'
 import { QuickAddSettingsSection } from './QuickAddSettings'
 import { VoiceConsentDialog, VoiceSettingsSection } from './VoiceSettings'
@@ -49,6 +50,9 @@ const dayMonth = { date_format: 'day-month', time_format: '24h', week_start: 'su
 export const DateAndTime: StoryObj = {
   render: () => <DateTimeView prefs={dayMonth} resolved={resolveDateTime(dayMonth, { order: 'MD', hour12: true, weekStart: 0 })} onChange={noop} today="2026-10-14" />,
 }
+// Priorities (priority-names): the defaults, then two names and one at the 24-character stop (a phone stacks the fields).
+export const Priorities: StoryObj = { render: () => <PrioritiesView names={['', '', '', '']} onChange={noop} onReset={noop} /> }
+export const PrioritiesNamed: StoryObj = { render: () => <PrioritiesView names={['Must', 'Should', 'Could, when there’s time', '']} onChange={noop} onReset={noop} /> }
 export const NotificationsOn: StoryObj = { render: () => notif(push) }
 export const NotificationsBlocked: StoryObj = { render: () => notif({ ...push, enabled: false, permission: 'denied', subscription: null }) }
 export const NotificationsRenew: StoryObj = { render: () => notif({ ...push, needsRenewal: true, subscription: { ...push.subscription!, failures: 5, lastError: 'push service answered 410' } }, { kind: 'error', text: 'The push service refused the subscription.' }) }

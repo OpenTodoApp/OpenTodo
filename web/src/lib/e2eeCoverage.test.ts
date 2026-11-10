@@ -96,6 +96,8 @@ const SECRET: { entity: Entity; id: string; field: string; text: string; row: Re
   { entity: 'slot', id: 's1', field: 'title', text: 'Court hearing', row: { title: 'Court hearing', created_at: 1, deleted_at: null } },
   { entity: 'place', id: 'pl1', field: 'address', text: '12 Hidden Lane', row: { name: 'Safe house', address: '12 Hidden Lane', geo: { lat: 52.1, lon: 4.3 }, position: 1, created_at: 1, deleted_at: null } },
   { entity: 'review', id: 'me', field: 'tomorrow_note', text: 'Tell my boss', row: { tomorrow_note: 'Tell my boss', closed_at: 1 } },
+  // The names of the priority levels (priority-names D7).
+  { entity: 'user_prefs', id: 'me', field: 'priority_name_1', text: 'Hide from Dad', row: { priority_name_1: 'Hide from Dad' } },
   { entity: 'objective', id: 'ob1', field: 'title', text: 'Leave the job', row: { title: 'Leave the job', period: '2026-Q4', position: 1, done_at: 0, created_at: 1, deleted_at: null } },
 ]
 
@@ -184,6 +186,18 @@ describe('the re-write job covers every content kind', () => {
     await mutate('note', 'ns', { title: 'Team note, edited' })
     await syncNow()
     expect(current('note', 'ns', 'title')).toBe('Team note, edited')
+  })
+
+  it('encrypts a priority name written while encryption is on, never the task’s priority (priority-names D7)', async () => {
+    await on('A')
+    await seed()
+    await enableEncryption(PASS, FAST)
+    await mutate('user_prefs', 'me', { priority_name_1: 'Must' })
+    await mutate('task', 't1', { priority: 1 })
+    await syncNow()
+    expect(isEnvelope(current('user_prefs', 'me', 'priority_name_1'))).toBe(true)
+    expect(current('task', 't1', 'priority')).toBe(1)
+    expect((await db.userPrefs.get('me'))!.priority_name_1).toBe('Must')
   })
 })
 

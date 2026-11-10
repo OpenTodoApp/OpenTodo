@@ -132,3 +132,28 @@ func TestOwnExportRestoresFocusPrefs(t *testing.T) {
 		}
 	}
 }
+
+const priorityNamesOwnExport = `{"format":"opentodo-export","version":1,
+  "projects":[],"tasks":[],"labels":[],"sections":[],"reminders":[],"views":[],"comments":[],
+  "user_prefs":[{"id":"me","priority_name_1":"Must","priority_name_2":"Should","priority_name_3":"","priority_name_4":"Whenever"}],
+  "encryption":null}`
+
+// TestOwnExportRestoresPriorityNames (priority-names D1): the four level names are
+// ordinary user_prefs fields, so an own export carries them and an import into a
+// new account restores each one, the empty (default) one included.
+func TestOwnExportRestoresPriorityNames(t *testing.T) {
+	h := newHarness(t)
+	job := h.run(priorityNamesOwnExport, Options{})
+	if job.Status != StatusDone || job.Totals.Written != 1 {
+		t.Fatalf("job = %+v", job)
+	}
+	row, err := h.sync.Get(context.Background(), h.uid, "user_prefs", "me")
+	if err != nil || row == nil {
+		t.Fatalf("user_prefs: %v %v", row, err)
+	}
+	for field, want := range map[string]string{"priority_name_1": "Must", "priority_name_2": "Should", "priority_name_3": "", "priority_name_4": "Whenever"} {
+		if got := str(row, field); got != want {
+			t.Fatalf("%s = %q, want %q", field, got, want)
+		}
+	}
+}

@@ -20,6 +20,23 @@ A task's `priority` is a number from 1 (highest) to 4 (default, lowest). The cli
 
 **D7. Encryption.** The four fields are content. Turning encryption on encrypts them in the existing re-write job, and the history purge covers superseded values, because both walk the generated content field list. A locked device shows the default names until it is unlocked, the same degradation as label names.
 
+## Decisions made while implementing
+
+Where the decisions above left a choice, the quiet, simple reading won:
+
+- **I1. Two readings of a level, one helper file.** `lib/priority.ts` has `priorityName(n)` (the name, else "Priority 1": facts, menus with full words, group headings, board columns, bulk actions, filter chips, the assistant's new-task line), `priorityShort(n)` (the name, else "P1": where today's text is the short "P1", the row's detailed facts, the inline edit bar, the row's Priority button menu, quick-add chips, the task panel's priority buttons, history, the month cell, the assistant's before and after) and `priorityAccessibleName(n)`. So a person who never renames sees exactly today's text everywhere, and a renamed level reads its name in both. The filter builder chip follows the scenario ("Priority is Priority 2"), the one default text that changes, from "Priority is P2".
+- **I2. Accessible name.** A named level is read "Must, priority 1"; an unnamed one stays "Priority 1", not "Priority 1, priority 1".
+- **I3. Reactivity.** `DateTimePrefsProvider` reads the four fields with the date format and adds them to its key, so a rename bumps the resolved date-time version and every list, row and grouping that follows the date format re-renders; plain functions read the module snapshot (registered with `resettable`). No new hook or context.
+- **I4. Locked device.** The provider passes "encryption on and locked" to `readPriorityNames`, which then returns the defaults; a value this device could not decrypt (`_e2ee.raw`) also reads as the default. The settings card shows it as an empty field.
+- **I5. Quick add.** Only a lone `p` after a space opens the suggestions ("p1 · Must" … with the level's ring). A whole `p1` is already a chip, so <kbd>Enter</kbd> keeps saving the task instead of picking a suggestion; `p` at the start of a line (the start of a title) opens nothing.
+- **I6. Command bar.** The existing message is reused with the name in place of the number ("Set priority Must on “Pay rent”", unchanged while unnamed), and the commands keep `p1`/`priority 1` as search keywords so the number still finds them.
+- **I7. Shortcut sheet.** The descriptions of `list.priority`, `panel.priority` and `vim.priority` gain " — 1 Must, 2 Should, 3 Priority 3, 4 Priority 4" only once a level has a name; the short label is unchanged.
+- **I8. Rules and the assistant's editor** show names in their priority choices; "Priority 1 or 2" becomes "Must or Should" when either is named. The bulk toast reads "{name} set on 3 tasks" (still "Priority 1 set on 3 tasks" by default).
+- **I9. Kept as numbers or colours.** The theme editor's colour tokens ("Priority 1" names the colour token, not the level) and the theme preview stay as they are. A public list shows the reader's names, like activity (D5).
+- **I10. The card.** Each row's label is the default name with the level's ring ("Priority 1"), so an empty field needs no placeholder. Reset is always enabled, so keyboard focus moves through the four fields and then to Reset. The 24-character stop is the field's `maxLength` plus a status line "At most 24 characters" while the field is full. Text is kept as typed in the field (a space between words survives) and stored trimmed.
+- **I11. Encryption.** `user_prefs` joins the client's re-write order (`MIGRATION_ORDER`), so turning encryption on re-writes existing names and an account that enabled it earlier catches them up once.
+- **I12. Bundle.** The readers sit in a chunk of their own and the writers (`lib/priorityWrites.ts`) load with Settings only. The entry chunk changes by +19 bytes gzip and stays inside its budget (see Size).
+
 ## Progressive disclosure and interface budget
 
 The card sits in Settings → General after Focus timer, screen id `settings/priorities`, findable by Settings search ("priority", "rename"). Nothing changes on any list or screen for someone who never renames: the default names equal today's text. No chrome is added above lists, no task property is added (the priority property is the same, only its label changes), no sidebar destination, no shortcut. On a phone the four fields stack, each with its colour dot, inputs at least 44 px tall.

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
 import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
 import { defaultListDisplay, type ListDisplay } from './listDisplay'
+import { setPriorityNames } from './priority'
 import { buildTaskTree } from './subtasks'
 import type { Label, Project, Section, Task } from './types'
 
@@ -614,6 +615,14 @@ describe('built-in view options (builtin-view-options)', () => {
     expect(shape(g)).toEqual([['earlier', 'Earlier', ['Late']], ['day:home', 'HOME', ['Home today']], ['day:work', 'WORK', ['Work today']], ['2026-10-15', 'Tomorrow', ['Apple', 'Zebra']]])
     // The headings of another grouping take no drop.
     expect(g.filter((x) => x.key.startsWith('day:')).every((x) => !x.dropDay)).toBe(true)
+  })
+
+  it('Grouped by priority, renamed levels head their groups in the order 1 to 4 (priority-names)', () => {
+    setPriorityNames(['Must', 'Should', '', ''])
+    const tasks = [task({ title: 'D', priority: 4 }), task({ title: 'B', priority: 2 }), task({ title: 'C', priority: 3 }), task({ title: 'A', priority: 1 })]
+    const g = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { groupBy: 'priority' }) }))
+    expect(g.map((x) => [x.key, x.heading])).toEqual([['p1', 'Must'], ['p2', 'Should'], ['p3', 'Priority 3'], ['p4', 'Priority 4']])
+    expect(tasks.map((x) => x.priority)).toEqual([4, 2, 3, 1])
   })
 
   it('Inbox by priority: a subtask stays under its parent, indented, in its manual order (D6)', () => {

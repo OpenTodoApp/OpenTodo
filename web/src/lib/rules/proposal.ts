@@ -3,6 +3,7 @@
 // this device's names. The server holds the proposal while it waits; applying
 // it re-checks every item there. Pure: no reads, no writes.
 import { t } from '../i18n'
+import { priorityShort } from '../priority'
 import type { RoutineProposalItem } from '../types'
 
 /** The names an item is described with (from this device's data). */
@@ -26,7 +27,7 @@ const str = (v: unknown): string => (typeof v === 'string' ? v : '')
 function fieldValue(field: string, v: unknown, n: ProposalNames): string {
   if (v === null || v === undefined || v === '') return t('none')
   switch (field) {
-    case 'priority': return t('P{n}', { n: Number(v) })
+    case 'priority': return priorityShort(Number(v))
     case 'due':
     case 'deadline': {
       const d = v as { date?: string; time?: string }

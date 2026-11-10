@@ -944,6 +944,17 @@ var Schema = map[string]map[string]Field{
 		// The Inbox's row layout: "line" or "detailed"; empty or unknown follows
 		// the account's row_layout.
 		"inbox_row_layout": {Kind: kString, Default: `""`},
+		// The person's names for the four priority levels (OpenSpec change
+		// priority-names, design D1): one field per level so two devices
+		// renaming different levels offline both keep their edit. "" means the
+		// default ("Priority 1" … in the interface language); clients trim a
+		// name to one line of at most 24 characters and show a longer stored
+		// value truncated. Only the label changes: a task's priority stays the
+		// number. User-written text (e2ee.ContentFields).
+		"priority_name_1": {Kind: kString, Default: `""`, Content: true},
+		"priority_name_2": {Kind: kString, Default: `""`, Content: true},
+		"priority_name_3": {Kind: kString, Default: `""`, Content: true},
+		"priority_name_4": {Kind: kString, Default: `""`, Content: true},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the

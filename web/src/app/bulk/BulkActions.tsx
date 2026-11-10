@@ -27,6 +27,7 @@ import { navigate } from '../router'
 import { createStore } from '../../lib/store'
 import { startFocusOn } from '../focus/startFocus'
 import { t } from '../../lib/i18n'
+import { priorityName } from '../../lib/priority'
 import { withListTransition } from '../motion'
 import { slotAction, slotLabel, useSlotState, type SlotState } from '../task-list/slotActions'
 import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } from '../focus/focusRequest'
@@ -258,7 +259,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
     // beside a row its own Priority and Schedule buttons already offer them.
     { items: [
       ...(besideRow ? [] : [
-        { kind: 'submenu', id: 'priority', label: t('Priority'), icon: 'flag', items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: t('Priority {p}', { p }), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) },
+        { kind: 'submenu', id: 'priority', label: t('Priority'), icon: 'flag', items: ([1, 2, 3, 4] as Priority[]).map((p) => ({ kind: 'action' as const, id: `p${p}`, label: priorityName(p), icon: 'flag' as const, shortcut: String(p), onSelect: run({ kind: 'priority', priority: p }) })) },
         { kind: 'submenu', id: 'date', label: t('Date'), icon: 'calendar-days', items: [
           { kind: 'action', id: 'today', label: t('Today'), icon: 'calendar-check', onSelect: run({ kind: 'due', pick: 'today' }) },
           { kind: 'action', id: 'tomorrow', label: t('Tomorrow'), icon: 'calendar-days', onSelect: run({ kind: 'due', pick: 'tomorrow' }) },

@@ -479,6 +479,24 @@ const shots = [
     await p.locator('[data-display-panel] select[aria-label="Order by"]').selectOption('position').catch(() => {})
     await p.keyboard.press('Escape')
   } },
+  // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
+  // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  { name: 'priorities', server: D, async run(p) {
+    await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-name="1"]').waitFor())
+    for (const [n, name] of [[1, 'Must'], [2, 'Should'], [3, 'Could']]) await p.locator(`[data-priority-name="${n}"]`).fill(name)
+    await settle(p, 400)
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('priority')
+    await p.keyboard.press('Escape'); await p.locator('[data-group-label]', { hasText: 'Must' }).first().waitFor()
+    await p.mouse.move(700, 40); await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 500)
+  }, async after(p) {
+    await p.locator('main [data-display-trigger]').first().click().catch(() => {})
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
+    await p.keyboard.press('Escape')
+    await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-names-reset]').waitFor())
+    await p.locator('[data-priority-names-reset]').click(); await settle(p, 400)
+  } },
   // Detailed rows (row-layouts): the project's own choice in Display options; the choice syncs, so the scene puts it back.
   { name: 'row-layouts', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')

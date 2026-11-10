@@ -7,7 +7,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { FacetPart } from '../../lib/facets'
 import { t } from '../../lib/i18n'
-import { Icon, type IconName } from '../../ui'
+import { Icon, ReadAs, type IconName } from '../../ui'
 import { LabelChip } from '../LabelPicker'
 import { LocationPreview } from '../locations/LocationPreview'
 import { ProjectMark } from '../Sidebar'
@@ -18,6 +18,7 @@ import { energyLevelsOn } from '../../lib/energy'
 import { useTimeSectors } from '../../lib/sectorPrefs'
 import { useUserPrefsRow } from '../../lib/localData'
 import { RotationLine } from './RotationLine'
+import { priorityAccessibleName, priorityName } from '../../lib/priority'
 
 const TONE: Record<string, string> = {
   overdue: 'text-danger',
@@ -79,7 +80,7 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
   ]
   const details: Fact[] = [
     { id: 'priority', label: t('Priority'), icon: 'flag', empty: '',
-      value: <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className={`h-3 w-3 rounded-full border-2 ${RING[task.priority] ?? 'border-p4'}`} />{t('Priority {n}', { n: task.priority })}</span> },
+      value: <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className={`h-3 w-3 rounded-full border-2 ${RING[task.priority] ?? 'border-p4'}`} /><ReadAs label={priorityAccessibleName(task.priority)}>{priorityName(task.priority)}</ReadAs></span> },
     { id: 'estimate', label: t('Estimate'), icon: 'clock', value: text('estimate'), empty: t('Add an estimate') },
     { id: 'energy', label: t('Energy'), icon: 'zap', value: text('energy'), empty: t('Set energy'), onlySet: !energyOn },
     ...(userId ? [{ id: 'assignee', label: t('Assignee'), icon: 'user-check' as const, value: text('assignee'), empty: m.solo ? t('Assign to me') : t('Assign') }] : []),
