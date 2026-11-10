@@ -145,6 +145,7 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 | [`routines-shared`](openspec/changes/archive/2026-11-01-routines-shared/) | **Shipped.** Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
 | `routines-shared-email` | Email project members in shared routines, with a stop link per member | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| [`routine-conditions`](openspec/changes/routine-conditions/) | A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | [#1132](https://github.com/OpenTodoApp/OpenTodo/issues/1132), [#1134](https://github.com/OpenTodoApp/OpenTodo/issues/1134) |
 
 The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
 

@@ -10,7 +10,7 @@ import { isNull, parseStepActions, planActions, type PlanContext } from './actio
 import { PER_CALL } from './tools'
 import { aiStep } from './ai'
 import { clearNote, dateStep, emailStep, notifyStep, projectFromTemplate, projectOf, quickAddLine, ruleFiredNotice, setFocus, trackedTime, webhookStep } from './more'
-import { Ended, fail, none, num, str, tasksVal, type ExecResult, type Inputs, type RunState } from './state'
+import { Ended, fail, none, num, str, tasksVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
 import type { Change, Row } from './types'
 
 export const MAX_LIST_ITEMS = 500
@@ -180,6 +180,8 @@ function createTasks(st: RunState, s: RoutineStep, inputs: Inputs, at: number): 
     const item: Record<string, unknown> = { ...base }
     if (parse) quickAddLine(st, line, item)
     else item.title = line
+    // A routine of one workspace creates in its Inbox (routine-conditions D1).
+    if (!('project_id' in item) && item.parent_id === undefined) Object.assign(item, workspaceArg(st))
     if (!String(item.title ?? '').trim()) continue
     items.push(item)
   }
@@ -204,8 +206,12 @@ function changeTasks(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
     sectionProject: (id) => str(st.w.sections.find((x) => str(x, 'id') === id), 'project_id'),
     projectShared: shared,
     projectLive: (id) => !!st.liveProject(id),
+    projectElsewhere: (id) => !!st.w.elsewhere?.has(id),
   }
   const a = set.actions
+  if (a.section && st.w.elsewhere?.has(a.section.project_id)) {
+    throw fail('other_workspace', `this routine works only in the workspace ${st.w.workspaceName ?? ''}; that project is in another workspace`)
+  }
   if (a.section && !st.liveProject(a.section.project_id)) throw fail('not_found', `project ${a.section.project_id} not found`)
   if (a.comment !== undefined && st.w.encrypted) throw fail('encrypted', 'a comment cannot be written for an encrypted account')
   const changed: string[] = []
@@ -267,6 +273,7 @@ function projectStep(st: RunState, s: RoutineStep, inputs: Inputs, at: number): 
       const args: Record<string, unknown> = { name: st.textIn(s, inputs, 'name') ?? '', client_request_id: st.clientId(at) }
       const parent = st.entityIn(s, inputs, 'parent')
       if (parent) args.parent_id = parent.id
+      else Object.assign(args, workspaceArg(st))
       for (const f of ['color', 'icon']) { const v = st.litStr(s, f); if (v !== undefined) args[f] = v }
       const created = createdIds(st.tool('create_project', args), 'project')
       if (!created.length) throw fail('invalid_argument', 'no project was created')

@@ -21,6 +21,7 @@ type planCase struct {
 	LiveLabels []string                   `json:"live_labels"`
 	Projects   map[string]bool            `json:"projects"`
 	Sections   map[string]string          `json:"sections"`
+	Elsewhere  []string                   `json:"elsewhere"`
 	Expect     map[string]json.RawMessage `json:"expect"`
 	Skipped    []string                   `json:"skipped"`
 }
@@ -46,10 +47,11 @@ func TestPlanFixture(t *testing.T) {
 			ws = time.Sunday
 		}
 		ctx := PlanContext{Today: c.Today, NowMs: c.Now, UserID: c.Me, WeekStart: ws,
-			LabelLive:      func(id string) bool { return slices.Contains(c.LiveLabels, id) },
-			SectionProject: func(id string) string { return c.Sections[id] },
-			ProjectShared:  func(id string) bool { return c.Projects[id] },
-			ProjectLive:    func(id string) bool { _, ok := c.Projects[id]; return ok },
+			LabelLive:        func(id string) bool { return slices.Contains(c.LiveLabels, id) },
+			SectionProject:   func(id string) string { return c.Sections[id] },
+			ProjectShared:    func(id string) bool { return c.Projects[id] },
+			ProjectLive:      func(id string) bool { _, ok := c.Projects[id]; return ok },
+			ProjectElsewhere: func(id string) bool { return slices.Contains(c.Elsewhere, id) },
 		}
 		got := Plan(a, c.Task, ctx)
 		if len(got.Patch) != len(c.Expect) {

@@ -68,6 +68,8 @@ export interface NewRule {
   ai_budget?: number
   /** The project the routine belongs to (routines-shared D1); absent or null for a personal routine. */
   project_id?: string | null
+  /** The workspace a personal routine works in (routine-conditions D1); null or absent for every workspace. */
+  workspace_id?: string | null
 }
 
 function checkParts(name: string, actions: RuleActions | null | undefined, steps?: RoutineStep[] | null): void {
@@ -105,6 +107,7 @@ export async function createRule(input: NewRule): Promise<string> {
     ...(input.ai_apply ? { ai_apply: input.ai_apply } : {}),
     ...(input.ai_budget ? { ai_budget: input.ai_budget } : {}),
     ...(input.project_id ? { project_id: input.project_id } : {}),
+    ...(input.workspace_id && !input.project_id ? { workspace_id: input.workspace_id } : {}),
     position,
     created_at: now,
     deleted_at: null,
@@ -112,7 +115,7 @@ export async function createRule(input: NewRule): Promise<string> {
   return id
 }
 
-export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions' | 'steps' | 'ai_budget'>>
+export type RulePatch = Partial<Pick<Rule, 'name' | 'enabled' | 'trigger' | 'condition' | 'actions' | 'steps' | 'ai_budget' | 'workspace_id'>>
 
 /**
  * Turns Apply without asking on or off (routines-ai-step D4, D5): always one
@@ -154,8 +157,9 @@ export async function duplicateRule(id: string): Promise<string> {
     actions: rule.actions as RuleActions | null,
     steps: rule.steps ?? null,
     enabled: false,
-    // A copy stays in the routine's project (routines-shared).
+    // A copy stays in the routine's project (routines-shared) and workspace (routine-conditions).
     project_id: rule.project_id ?? null,
+    workspace_id: rule.workspace_id ?? null,
   })
   return copy
 }
