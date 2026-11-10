@@ -145,7 +145,9 @@ final class BridgeOnAServerTests: XCTestCase {
         window.isHidden = false
         defer { window.isHidden = true }
         shell.load()
-        let report = try await server.report(timeout: 30)
+        // 90 s, not 30: on a cold CI simulator the first web view launch can take longer than
+        // half a minute (two of six main runs on 2026-11-10 timed out with a healthy bridge).
+        let report = try await server.report(timeout: 90)
         XCTAssertEqual(report["origin"], origin.absoluteString)
         XCTAssertEqual(report["handler"], "object", "the message handler reaches the page: \(report)")
         XCTAssertEqual(report["shell"], "object", "window.opentodoShell exists: \(report)")
