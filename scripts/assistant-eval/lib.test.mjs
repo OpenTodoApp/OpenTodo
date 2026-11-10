@@ -66,6 +66,13 @@ test('project blocks match by column and subject (assistant-project-blocks)', ()
   assert.match(validateScenario({ name: 'x', title: 'X', seed, turns: [{ say: 'hi', expect: { blocks: [{ kind: 'board', section: 'a' }] } }] })[0], /not one of sections/)
 })
 
+test('follow-ups are a block kind, required or forbidden (assistant-followups)', () => {
+  const sum = summarize([ev('text', { text: 'Three are overdue.' }), ev('block', { kind: 'followups', suggestions: ['Move them to Friday'] })])
+  assert.deepEqual(checkTurn({ blocks: [{ kind: 'followups' }] }, sum), [])
+  assert.match(checkTurn({ no_tools: ['suggest_followups'] }, sum)[0], /suggest_followups must not be called, and it was/)
+  assert.deepEqual(validateScenario({ name: 'x', title: 'X', turns: [{ say: 'hi', expect: { no_tools: ['suggest_followups'] } }] }), [])
+})
+
 test('change sets, links, forbidden text and ids', () => {
   const sum = summarize([ev('text', { text: 'Moved [Pay](?task=t1). Salary stays.' }), ev('changeset', { items: [{ entity: 'task', entityId: 't1', patch: { due: {} } }] })])
   const ids = { pay: 't1', secret: 't9' }

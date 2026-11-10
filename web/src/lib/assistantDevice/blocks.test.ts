@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { AGENT_EXCLUSIONS_KEY } from '../agentAccess'
-import type { AssistantBlock } from '../assistantBlocks'
+import type { AssistantBlock, FollowupsBlock } from '../assistantBlocks'
 import { db, setMeta, useDatabase } from '../db'
 import { setCurrentUserId } from '../sharing'
 import { runDisplay, type DisplayTurn } from './blocks'
@@ -25,7 +25,7 @@ beforeEach(async () => {
 })
 
 /** A block as the server writes it: empty lists left out. */
-const canonical = (b: AssistantBlock) => Object.fromEntries(Object.entries(b).filter(([, v]) => !(Array.isArray(v) && v.length === 0)))
+const canonical = (b: AssistantBlock | FollowupsBlock) => Object.fromEntries(Object.entries(b).filter(([, v]) => !(Array.isArray(v) && v.length === 0)))
 
 describe('display vectors', () => {
   for (const c of vectors.cases as { name: string; calls: { name: string; args: Record<string, unknown> }[]; blocks: unknown[]; results: Record<string, unknown>[] }[]) {

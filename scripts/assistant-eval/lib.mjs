@@ -5,7 +5,9 @@
 
 // Display tools and the block kind each streams (internal/assistant/blocks.go).
 export const DISPLAY_TOOLS = { show_tasks: 'tasks', show_calendar: 'calendar', show_map: 'map', show_note: 'note', show_project: 'project', ask_choice: 'choice', show_time: 'time', show_free_time: 'free_time', show_deadlines: 'deadlines',
-  show_board: 'board', show_timeline: 'timeline', show_activity: 'activity', show_stats: 'stats', show_task: 'task', show_habit: 'habit' }
+  show_board: 'board', show_timeline: 'timeline', show_activity: 'activity', show_stats: 'stats', show_task: 'task', show_habit: 'habit',
+  // assistant-followups: the suggestions under an answer stream as a followups block.
+  suggest_followups: 'followups' }
 const KINDS = new Set(Object.values(DISPLAY_TOOLS))
 const EXPECT_KEYS = new Set(['blocks', 'no_tools', 'no_text', 'text', 'links', 'changeset', 'changes', 'never_ids', 'no_map_claim'])
 const BLOCK_KEYS = new Set(['kind', 'ids', 'ids_include', 'min_ids', 'date', 'span', 'min_options', 'to', 'group_by', 'section', 'of'])

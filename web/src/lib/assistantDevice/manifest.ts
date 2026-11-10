@@ -34,7 +34,8 @@ export interface Manifest {
   /** Introduces a message's photos (voice-ramble D8). */
   images_note: string
   views: Record<string, string>
-  messages: { refusal: string; cut_off: string; round_limit: string; block_limit: string; not_found: string; choice_asked: string }
+  messages: { refusal: string; cut_off: string; round_limit: string; block_limit: string; not_found: string; choice_asked: string
+    followups_shown: string; followups_once: string; followups_choice: string }
   limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number; max_blocks: number; max_block_ids: number }
   default_anthropic_model: string
   anthropic_models: string[]
@@ -43,6 +44,8 @@ export interface Manifest {
   skills: ManifestSkill[]
   /** The display tools each view suggests to a skill turn (assistant-project-blocks D2). */
   view_display: Record<string, string[]>
+  /** The display tools every turn offers, a skill's included (assistant-followups). */
+  always_display: string[]
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

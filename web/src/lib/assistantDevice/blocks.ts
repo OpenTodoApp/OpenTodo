@@ -3,7 +3,7 @@
 // same id checks against this device's rows (live, visible, not in a project kept
 // away from assistants), the same limit and the same results, pinned by
 // blocks.vectors.json. A display call changes nothing.
-import type { AssistantBlock } from '../assistantBlocks'
+import type { AssistantBlock, FollowupsBlock } from '../assistantBlocks'
 import { daysBetweenISO } from '../dates'
 import { db } from '../db'
 import { calendarDate } from './args'
@@ -11,7 +11,7 @@ import { isDeleted, loadSnapshot, str, type Row } from './data'
 import { manifest } from './manifest'
 
 export const DISPLAY_TOOLS = ['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project', 'show_time', 'show_free_time', 'show_deadlines',
-  'show_board', 'show_timeline', 'show_activity', 'show_stats', 'show_task', 'show_habit']
+  'show_board', 'show_timeline', 'show_activity', 'show_stats', 'show_task', 'show_habit', 'suggest_followups']
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_TITLE = 80
@@ -21,6 +21,9 @@ const MAX_OPTION = 60
 const MAX_DAYS = 31
 const DEFAULT_FREE = 30
 const MAX_FREE = 12 * 60
+// Follow-up suggestions (assistant-followups): 1 to 3, each at most 60 characters.
+const MAX_FOLLOWUPS = 3
+const MAX_FOLLOWUP_TEXT = 60
 
 class DisplayArgError extends Error {}
 
@@ -154,8 +157,8 @@ export async function shownSection(projectId: string, sectionId: string): Promis
   return !!s && str(s, 'project_id') === projectId
 }
 
-/** One turn's display state: the blocks shown so far. */
-export interface DisplayTurn { shown: number }
+/** One turn's display state: the blocks shown so far, and whether the answer asked a choice or showed its follow-ups. */
+export interface DisplayTurn { shown: number; choice?: boolean; followups?: boolean }
 
 /** Keeps a block's live ids: the block left, how many ids it named and how many are left. */
 async function check(b: AssistantBlock): Promise<{ block: AssistantBlock; asked: number; found: number }> {
@@ -195,8 +198,9 @@ async function check(b: AssistantBlock): Promise<{ block: AssistantBlock; asked:
 }
 
 /** A display call: the checks, the limit, the block (through `emit`) and the tool result. */
-export async function runDisplay(name: string, args: Record<string, unknown>, turn: DisplayTurn, emit: (b: AssistantBlock) => void): Promise<{ content: string; isError: boolean }> {
+export async function runDisplay(name: string, args: Record<string, unknown>, turn: DisplayTurn, emit: (b: AssistantBlock | FollowupsBlock) => void): Promise<{ content: string; isError: boolean }> {
   const fail = (payload: Record<string, unknown>) => ({ content: JSON.stringify(payload), isError: true })
+  if (name === 'suggest_followups') return followupsCall(args, turn, emit)
   if (turn.shown >= manifest.limits.max_blocks) return fail({ error: 'block_limit', message: manifest.messages.block_limit })
   let parsed: AssistantBlock
   try {
@@ -211,6 +215,28 @@ export async function runDisplay(name: string, args: Record<string, unknown>, tu
   emit(block)
   const out: Record<string, unknown> = { shown: block.kind, count: found }
   if (asked > found) out.not_found = asked - found
-  if (block.kind === 'choice') out.message = manifest.messages.choice_asked
+  if (block.kind === 'choice') {
+    turn.choice = true
+    out.message = manifest.messages.choice_asked
+  }
   return { content: JSON.stringify(out), isError: false }
+}
+
+/** suggest_followups (followupsCall): outside the block limit, at most once per answer, never with a choice. */
+function followupsCall(a: Record<string, unknown>, turn: DisplayTurn, emit: (b: FollowupsBlock) => void): { content: string; isError: boolean } {
+  const fail = (payload: Record<string, unknown>) => ({ content: JSON.stringify(payload), isError: true })
+  if (turn.choice) return fail({ error: 'choice_asked', message: manifest.messages.followups_choice })
+  if (turn.followups) return fail({ error: 'followups_shown', message: manifest.messages.followups_once })
+  const raw = Array.isArray(a.suggestions) ? a.suggestions : []
+  let suggestions: string[]
+  try {
+    if (raw.length < 1 || raw.length > MAX_FOLLOWUPS) throw new DisplayArgError(`suggestions holds 1 to ${MAX_FOLLOWUPS} steps`)
+    suggestions = raw.map((s) => text('each suggestion', s, MAX_FOLLOWUP_TEXT, true))
+  } catch (err) {
+    if (err instanceof DisplayArgError) return fail({ error: 'invalid_arguments', message: err.message })
+    throw err
+  }
+  turn.followups = true
+  emit({ kind: 'followups', suggestions })
+  return { content: JSON.stringify({ shown: 'followups', count: suggestions.length, message: manifest.messages.followups_shown }), isError: false }
 }

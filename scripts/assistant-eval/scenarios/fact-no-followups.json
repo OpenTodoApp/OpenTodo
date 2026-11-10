@@ -1,0 +1,19 @@
+{
+  "name": "fact-no-followups",
+  "title": "A plain fact question gets no follow-up suggestions",
+  "seed": {
+    "tasks": [
+      { "key": "passport", "title": "Renew the passport", "due": 9 },
+      { "key": "pay", "title": "Pay the electricity bill", "due": 1 }
+    ]
+  },
+  "turns": [
+    {
+      "say": "When is the passport renewal due?",
+      "expect": {
+        "no_tools": ["suggest_followups"],
+        "changeset": false
+      }
+    }
+  ]
+}
