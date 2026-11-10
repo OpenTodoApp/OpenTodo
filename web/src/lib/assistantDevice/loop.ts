@@ -124,9 +124,10 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
-/** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools and the display tools its view suggests. */
+/** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools, the display tools its view suggests and the follow-ups. */
 export function offeredTool(t: ManifestTool, skill: ManifestSkill | null, view: string | undefined): boolean {
   if (!skill) return true
+  if (t.kind === 'display' && manifest.always_display.includes(t.name)) return true
   return skill.tools.includes(t.name) || (t.kind === 'display' && !!view && (manifest.view_display[view] ?? []).includes(t.name))
 }
 

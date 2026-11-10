@@ -16328,6 +16328,9 @@
   "Suggested": [
     "web/src/app/routines/AddStep.tsx"
   ],
+  "Suggested next steps": [
+    "web/src/app/assistant/blocks/FollowupChips.tsx"
+  ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
   ],

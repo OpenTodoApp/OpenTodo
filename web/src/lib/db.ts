@@ -46,6 +46,8 @@ export interface AssistantMessage {
   blocks?: { at: number; block: AssistantBlock }[]
   /** The option chosen in this answer's choice block. */
   chosen?: string
+  /** Next steps offered as buttons under the answer (assistant-followups): 1 to 3 short texts. */
+  followups?: string[]
   at: number
 }
 

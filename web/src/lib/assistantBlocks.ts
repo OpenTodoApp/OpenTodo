@@ -8,6 +8,9 @@ import { t } from './i18n'
 
 export type { AssistantBlock }
 
+/** Follow-up suggestions (assistant-followups D1): streamed like a block, shown as buttons under the answer. */
+export interface FollowupsBlock { kind: 'followups'; suggestions: string[] }
+
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_IDS = 20
@@ -65,6 +68,19 @@ export function blockOf(ev: Record<string, unknown>): AssistantBlock | null {
       return days(ev) ? { kind: 'stats', from: ev.from as string, to: ev.to as string } : null
   }
   return null
+}
+
+/** The suggestions of a follow-ups event, or null when it is not one (1 to 3 texts of at most 60 characters). */
+export function followupsOf(ev: Record<string, unknown>): string[] | null {
+  if (ev.kind !== 'followups' || !Array.isArray(ev.suggestions)) return null
+  const list = ev.suggestions.map((s) => text(s, 60)).filter(Boolean).slice(0, 3)
+  return list.length ? list : null
+}
+
+/** The follow-ups an answer shows: none when it asked a choice (the choice already asks). */
+export function answerFollowups(m: Pick<AssistantMessage, 'followups' | 'blocks'>): string[] {
+  if (!m.followups?.length || m.blocks?.some((b) => b.block.kind === 'choice')) return []
+  return m.followups
 }
 
 /** The answer's text cut at its blocks: Markdown parts and blocks in reading order. */

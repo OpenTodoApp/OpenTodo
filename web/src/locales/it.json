@@ -7355,5 +7355,6 @@
   "not yet": "non ancora",
   "seen": "visto",
   "{n, plural, one {Day closed · # task carried over} other {Day closed · # tasks carried over}}": "{n, plural, one {Giornata chiusa · # attività riportata} other {Giornata chiusa · # attività riportate}}",
-  "What got done": "Cosa hai fatto"
+  "What got done": "Cosa hai fatto",
+  "Suggested next steps": "Prossimi passi suggeriti"
 }

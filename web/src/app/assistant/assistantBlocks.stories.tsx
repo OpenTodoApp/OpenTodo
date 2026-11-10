@@ -29,7 +29,7 @@ const status: AssistantStatus = {
 const base: PanelViewProps = {
   status, connected: true, messages: [], streaming: null, announce: '', statusAnnounce: '', review: null, result: null, reviewBusy: false, error: null,
   draft: '', consentBusy: false, consentError: null, threads: null, onToggle: noop, onApply: noop, onDiscard: noop, onUndo: noop, onDraft: noop,
-  onSend: noop, onStop: noop, onAccept: noop, onPickThread: noop, onChoose: noop, onRegenerate: noop, onEditLast: noop, canRedo: true,
+  onSend: noop, onStop: noop, onAccept: noop, onPickThread: noop, onChoose: noop, onFollowUp: noop, onRegenerate: noop, onEditLast: noop, canRedo: true,
 }
 
 /** Whether every block and proposal shape under `root` has loaded: no skeleton, no empty frame. */
@@ -249,6 +249,29 @@ export const StatsTaskAndHabit: StoryObj = {
           { at: 'This week so far:\n\nThe brief is half done:\n'.length, block: { kind: 'task', id: seeded.brief } },
           { at: 999, block: { kind: 'habit', id: seeded.run } },
         ],
+      },
+    ]} />
+  ),
+}
+
+/** Follow-up suggestions under the latest answer only (assistant-followups). */
+export const FollowUps: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    seeded.invoice = await createTask({ title: 'Send the invoice', due: { date: addDaysISO(TODAY, -3) }, priority: 2 })
+    seeded.dentist = await createTask({ title: 'Call the dentist', due: { date: addDaysISO(TODAY, -2) } })
+    seeded.expenses = await createTask({ title: 'File the expenses', due: { date: addDaysISO(TODAY, -1) }, project_id: seeded.work })
+  }),
+  render: () => (
+    <Conversation messages={() => [
+      { role: 'user', text: 'Anything with a deadline this week?', at: 1 },
+      { role: 'assistant', at: 2, text: 'Nothing has a deadline this week.', followups: ['Show next week'] },
+      { role: 'user', text: 'What is overdue?', at: 3 },
+      {
+        role: 'assistant', at: 4, status: ['Looking at Today…'],
+        text: 'Three tasks are overdue:\n\nThe invoice is the oldest, so I would start there.',
+        blocks: [{ at: 'Three tasks are overdue:\n'.length, block: { kind: 'tasks', ids: [seeded.invoice, seeded.dentist, seeded.expenses] } }],
+        followups: ['Move them to Friday', 'Break down Send the invoice', 'Plan tomorrow'],
       },
     ]} />
   ),

@@ -1,0 +1,25 @@
+{
+  "name": "followups-overdue",
+  "title": "After listing overdue tasks, the answer suggests next steps as follow-ups",
+  "seed": {
+    "tasks": [
+      { "key": "pay", "title": "Pay the electricity bill", "due": -3 },
+      { "key": "call", "title": "Call the plumber", "due": -2 },
+      { "key": "form", "title": "Send the school form", "due": -1 },
+      { "key": "later", "title": "Renew the passport", "due": 9 }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What's overdue?",
+      "expect": {
+        "blocks": [
+          { "kind": "tasks", "ids": ["pay", "call", "form"] },
+          { "kind": "followups" }
+        ],
+        "no_tools": ["ask_choice"],
+        "changeset": false
+      }
+    }
+  ]
+}

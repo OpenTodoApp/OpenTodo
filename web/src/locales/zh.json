@@ -7355,5 +7355,6 @@
   "not yet": "尚未",
   "seen": "已查看",
   "{n, plural, one {Day closed · # task carried over} other {Day closed · # tasks carried over}}": "{n, plural, other {今日已收尾 · 已顺延 # 项任务}}",
-  "What got done": "完成了什么"
+  "What got done": "完成了什么",
+  "Suggested next steps": "建议的下一步"
 }
