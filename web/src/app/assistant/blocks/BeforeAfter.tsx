@@ -7,6 +7,7 @@ import { formatDate, formatTime } from '../../../lib/dates'
 import { useProposalBefore, type ProposalNames as Names } from '../../../lib/assistantBlockData'
 import { formatMinutes } from '../../../lib/duration'
 import { t } from '../../../lib/i18n'
+import { priorityShort } from '../../../lib/priority'
 import { ItemMarks } from './ProposalShapes'
 
 type Row = Record<string, unknown>
@@ -37,7 +38,7 @@ function words(field: string, v: unknown, names: Names): string {
     case 'deadline':
       return formatDate(String(v), 'compact')
     case 'priority':
-      return `P${String(v)}`
+      return priorityShort(Number(v))
     case 'project_id':
       return names.projects.get(String(v)) ?? t('a project')
     case 'section_id':

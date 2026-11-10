@@ -13,6 +13,7 @@ import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, undoBatch, type UndoResult } from './undo'
 import { t } from './i18n'
+import { priorityName, priorityShort } from './priority'
 import { uuid } from './ids'
 export { UNDO_KEEP } from './undo'
 
@@ -276,7 +277,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
       case 'task': {
         const lines: string[] = []
         if (p.due) lines.push(t('Due {date}', { date: dueWords(p.due) }))
-        if (p.priority && p.priority !== 4) lines.push(t('Priority P{p}', { p: p.priority as number }))
+        if (p.priority && p.priority !== 4) lines.push(priorityName(p.priority as number))
         if (Array.isArray(p.labels) && p.labels.length) lines.push(t('Labels: {labels}', { labels: p.labels.map((id) => names.labels.get(String(id)) ?? t('a label')).join(', ') }))
         if (p.parent_id) lines.push(t('Subtask of “{task}”', { task: clip(names.tasks.get(String(p.parent_id)) ?? t('a task'), 50) }))
         if (p.deleted_at) lines.push(t('Moved to the Trash'))
@@ -302,7 +303,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
     switch (f) {
       case 'due': lines.push(t('Due {from} → {to}', { from: dueWords(old), to: dueWords(v) })); break
       case 'completed_at': lines.push(v ? t('Completed') : t('Reopened')); break
-      case 'priority': lines.push(t('Priority P{from} → P{to}', { from: String(old ?? 4), to: String(v) })); break
+      case 'priority': lines.push(t('Priority {from} → {to}', { from: priorityShort(Number(old ?? 4)), to: priorityShort(Number(v)) })); break
       case 'project_id': lines.push(t('Moved from {from} to {to}', { from: project(old), to: project(v) })); break
       case 'section_id': lines.push(v ? t('Section: {name}', { name: names.sections.get(String(v)) ?? t('a section') }) : t('No section')); break
       case 'labels': {

@@ -222,3 +222,48 @@ func TestFocusPrefsValidate(t *testing.T) {
 		t.Fatalf("focus_work_minutes = %s", got)
 	}
 }
+
+// TestPriorityNamesConvergePerLevel (priority-names D1): the four level names are
+// separate string fields of user_prefs, so two devices renaming different levels
+// offline both keep their edit, the same level converges on the greater (ts,
+// device), and another member of a shared project never sees them.
+func TestPriorityNamesConvergePerLevel(t *testing.T) {
+	op := Op{ID: "o", Entity: "user_prefs", EntityID: "me", Field: "priority_name_1", TS: 1, Device: "D", Value: []byte(`"Must"`)}
+	if err := Validate(op); err != nil {
+		t.Fatalf("priority_name_1 refused: %v", err)
+	}
+	op.Value = []byte(`1`)
+	if err := Validate(op); !errors.Is(err, ErrInvalidOp) {
+		t.Fatalf("priority_name_1 = 1 accepted (err %v)", err)
+	}
+
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	// Different levels, both offline: both survive.
+	f.apply("alice", "laptop", f.op("user_prefs", "me", "priority_name_1", `"Must"`))
+	f.apply("alice", "phone", f.op("user_prefs", "me", "priority_name_3", `"Could"`))
+	if got := f.field("alice", "user_prefs", "me", "priority_name_1"); got != `"Must"` {
+		t.Fatalf("priority_name_1 = %s", got)
+	}
+	if got := f.field("alice", "user_prefs", "me", "priority_name_3"); got != `"Could"` {
+		t.Fatalf("priority_name_3 = %s", got)
+	}
+	// The same level: the later timestamp wins wherever the ops land first.
+	early := f.op("user_prefs", "me", "priority_name_2", `"Should"`)
+	late := f.op("user_prefs", "me", "priority_name_2", `"Now"`)
+	f.apply("alice", "phone", late)
+	f.apply("alice", "laptop", early)
+	if got := f.field("alice", "user_prefs", "me", "priority_name_2"); got != `"Now"` {
+		t.Fatalf("priority_name_2 = %s, want the later \"Now\"", got)
+	}
+	// Personal: Bob shares a project with Alice and never sees her names.
+	if got := f.field("bob", "user_prefs", "me", "priority_name_1"); got != "<none>" && got != "" {
+		t.Fatalf("bob sees alice's priority name: %s", got)
+	}
+	ops, _ := f.pullAll("bob", "B2", 0)
+	for _, o := range ops {
+		if o.Entity == "user_prefs" {
+			t.Fatalf("bob's device pulled %+v", o)
+		}
+	}
+}

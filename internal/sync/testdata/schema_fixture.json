@@ -276,6 +276,10 @@
       "maps",
       "method_mode",
       "objectives",
+      "priority_name_1",
+      "priority_name_2",
+      "priority_name_3",
+      "priority_name_4",
       "reminder_default_dated",
       "reminder_default_timed",
       "routines_hide_successes",
@@ -412,6 +416,12 @@
     ],
     "time_entry": [
       "note"
+    ],
+    "user_prefs": [
+      "priority_name_1",
+      "priority_name_2",
+      "priority_name_3",
+      "priority_name_4"
     ],
     "view": [
       "name",

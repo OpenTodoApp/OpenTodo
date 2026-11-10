@@ -9,6 +9,7 @@
 import { lazy, Suspense, useRef, useState, type KeyboardEvent } from 'react'
 import { act } from '../actionError'
 import { updateTask } from '../../lib/ops'
+import { priorityShort } from '../../lib/priority'
 import { keysOf } from '../../lib/shortcuts'
 import type { Priority, Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
@@ -17,7 +18,6 @@ import { slotAction, slotLabel, useSlotState } from './slotActions'
 
 const RowSchedule = lazy(() => import('./RowSchedule'))
 
-const PRIORITY_TEXT: Record<Priority, string> = { 1: 'P1', 2: 'P2', 3: 'P3', 4: 'P4' }
 
 /** Keeps a focused action fully visible above the toast and the selection bar (WCAG 2.2 2.4.11). */
 function reveal(el: HTMLElement) {
@@ -69,12 +69,12 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
       {editable && <>
       <IconButton ref={schedule} icon="calendar-days" size="sm" label={t('Schedule')} aria-haspopup="dialog" aria-expanded={scheduling}
         data-row-action="schedule" onClick={() => setScheduling(true)} />
-      <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} tip={t('Priority')} tipShortcut={keysOf('list.priority')} align="end"
+      <Menu kind="menu" label={`${t('Priority')}: ${priorityShort(task.priority)}`} tip={t('Priority')} tipShortcut={keysOf('list.priority')} align="end"
         triggerProps={{ 'data-row-action': 'priority' }}
         trigger={<Icon name="flag" size="sm" />}
         triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
-          <MenuItem key={p} label={PRIORITY_TEXT[p]} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
+          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
         ))}
       </Menu>
       {onMore && <IconButton icon="ellipsis" size="sm" label={t('More actions')} shortcut={keysOf('list.actions')} data-row-action="more" onClick={(e) => onMore(e.currentTarget)} />}

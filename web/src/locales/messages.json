@@ -2192,7 +2192,8 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "At most {n} characters": [
-    "web/src/app/routines/DescribeIt.tsx"
+    "web/src/app/routines/DescribeIt.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "At most {n} characters.": [
     "web/src/lib/fields.ts"
@@ -12931,12 +12932,16 @@
     "web/src/app/menus/printItem.tsx"
   ],
   "Priorities": [
-    "web/src/app/themes/tokenNames.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
+    "web/src/app/themes/tokenNames.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Priority": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/TokenSuggest.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -12969,33 +12974,17 @@
   "Priority 4": [
     "web/src/app/themes/tokenNames.ts"
   ],
-  "Priority P{from} → P{to}": [
-    "web/src/lib/assistant.ts"
-  ],
-  "Priority P{p}": [
-    "web/src/lib/assistant.ts"
-  ],
-  "Priority is P{n}": [
+  "Priority is {name}": [
     "web/src/app/filter/conditionText.ts"
   ],
   "Priority must be p1, p2, p3 or p4 at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Priority {from} → {to}": [
+    "web/src/lib/assistant.ts"
+  ],
   "Priority {n}": [
-    "web/src/app/quickadd/FieldRows.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
-  ],
-  "Priority {priority}": [
-    "web/src/app/PublicListScreen.tsx"
-  ],
-  "Priority {p}": [
-    "web/src/app/RuleEditor.tsx",
-    "web/src/app/TaskRow.tsx",
-    "web/src/app/UrgencyChip.tsx",
-    "web/src/app/assistant/ItemEditor.tsx",
-    "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/rules/RuleFields.tsx",
-    "web/src/lib/views.ts"
+    "web/src/lib/priority.ts"
   ],
   "Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)": [
     "web/src/lib/shortcuts.ts"
@@ -13368,9 +13357,6 @@
   ],
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": [
     "web/src/app/RestoreSection.tsx"
-  ],
-  "P{n}": [
-    "web/src/lib/rules/proposal.ts"
   ],
   "QR code to scan with your authenticator app": [
     "web/src/app/QrCode.tsx"
@@ -14059,6 +14045,7 @@
     "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Reset": [
+    "web/src/app/PrioritiesSettings.tsx",
     "web/src/app/focus/FocusSettings.tsx",
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
@@ -16225,7 +16212,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "Start view, briefing, keyboard, focus timer and maps": [
+  "Start view, briefing, keyboard, focus timer, priorities and maps": [
     "web/src/app/settingsSections.ts"
   ],
   "Start with Today": [
@@ -21074,6 +21061,12 @@
   "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Your own names for priority 1 to 4": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "Your own names for the four levels. p1 to p4 still work when you type.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Your own provider ({provider_label}) is kept but unused: own keys are not allowed now.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -23590,6 +23583,9 @@
   "{field}: {from} → {to}": [
     "web/src/app/routines/ProposalReview.tsx"
   ],
+  "{first} or {second}": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "{from} to {to}": [
     "web/src/app/routines/words.tsx"
   ],
@@ -24271,9 +24267,6 @@
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": [
     "web/src/lib/undoActions.ts"
   ],
-  "{n, plural, one {Priority {p} set on # task} other {Priority {p} set on # tasks}}": [
-    "web/src/lib/bulk.ts"
-  ],
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -24369,6 +24362,9 @@
   ],
   "{n, plural, one {{days} is already full} other {{days} are already full}}": [
     "web/src/app/Briefing.tsx"
+  ],
+  "{n, plural, one {{p} set on # task} other {{p} set on # tasks}}": [
+    "web/src/lib/bulk.ts"
   ],
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"
@@ -24487,6 +24483,9 @@
   ],
   "{name}, new notes": [
     "web/src/app/SidebarBrandLine.tsx"
+  ],
+  "{name}, priority {n}": [
+    "web/src/lib/priority.ts"
   ],
   "{name}, revoked": [
     "web/src/app/CaldavPanel.tsx"

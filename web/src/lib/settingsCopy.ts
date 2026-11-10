@@ -587,6 +587,16 @@ export const SETTINGS_COPY = {
     description: msg('Off: no account’s rules run on this server. Rules stay and run again when turned back on.'),
     learnMore: 'rules',
   },
+  // Settings → General → Priorities (priority-names): the four level names, synced user_prefs.
+  priorities: {
+    title: msg('Priorities'),
+    icon: 'flag',
+    description: msg('Your own names for the four levels. p1 to p4 still work when you type.'),
+    learnMore: 'settings/priorities',
+    notices: {
+      tooLong: msg('At most {n} characters'),
+    },
+  },
   'maps-user': {
     title: msg('Maps'),
     icon: 'map',

@@ -10,6 +10,7 @@ import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
 import type { EditPlan } from '../../lib/nlp/edit'
 import { updateTask } from '../../lib/ops'
+import { priorityShort } from '../../lib/priority'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { Icon, IconButton, type IconName, Menu, MenuItem } from '../../ui'
 import { act } from '../actionError'
@@ -91,7 +92,6 @@ export function InlineEditor({ task, caret, projects, labelMap, onDone, onFollow
   )
 }
 
-const PRIORITY_TEXT: Record<Priority, string> = { 1: 'P1', 2: 'P2', 3: 'P3', 4: 'P4' }
 
 /** One compact control of the bar: an icon and the value, or a quiet placeholder. */
 function BarButton({ icon, text, empty, onClick, label, buttonRef, expanded }: {
@@ -121,11 +121,11 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
     <div className="mt-1 flex min-h-8 flex-wrap items-center gap-0.5" data-edit-bar role="group" aria-label={t('Task properties')}>
       <BarButton icon="calendar-days" label={t('Date')} text={due?.label ?? sector?.text ?? t('Date')} empty={!due && !sector} expanded={open === 'date'}
         buttonRef={(el) => { anchors.current.date = el }} onClick={() => setOpen(open === 'date' ? null : 'date')} />
-      <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} align="start"
-        trigger={<span className={`inline-flex items-center gap-1 text-meta ${task.priority === 4 ? 'text-faint' : 'text-muted'}`}><Icon name="flag" size="xs" />{PRIORITY_TEXT[task.priority]}</span>}
+      <Menu kind="menu" label={`${t('Priority')}: ${priorityShort(task.priority)}`} align="start"
+        trigger={<span className={`inline-flex items-center gap-1 text-meta ${task.priority === 4 ? 'text-faint' : 'text-muted'}`}><Icon name="flag" size="xs" />{priorityShort(task.priority)}</span>}
         triggerClassName="inline-flex min-h-7 items-center rounded-control px-1.5 hover:bg-sunken dark:hover:bg-raised">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
-          <MenuItem key={p} label={PRIORITY_TEXT[p]} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
+          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
         ))}
       </Menu>
       <BarButton icon="tag" label={t('Labels')} text={labels.length ? labels.map((l) => l.name).join(', ') : t('Labels')} empty={!labels.length} expanded={open === 'labels'}

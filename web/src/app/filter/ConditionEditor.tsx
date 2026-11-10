@@ -9,6 +9,7 @@ import { durationMinutes } from '../../lib/time'
 import { ancestors } from '../../lib/tree'
 import type { FieldDef, Label, Project } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
+import { priorityAccessibleName, priorityShort } from '../../lib/priority'
 import { KEYWORD_NAME } from './conditionText'
 import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
 import { SECTOR_WORDS } from '../../lib/sectors'
@@ -240,8 +241,8 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
         {draft.kind === 'priority' && (
           <div role="group" aria-label={t('Priority')} className="flex flex-wrap gap-2">
             {([1, 2, 3, 4] as Priority[]).map((p) => (
-              <Button key={p} variant={draft.priority === p ? 'primary' : 'secondary'} aria-pressed={draft.priority === p} onClick={() => set({ priority: p })}>
-                {`P${p}`}
+              <Button key={p} variant={draft.priority === p ? 'primary' : 'secondary'} aria-pressed={draft.priority === p} aria-label={priorityAccessibleName(p)} onClick={() => set({ priority: p })}>
+                {priorityShort(p)}
               </Button>
             ))}
           </div>

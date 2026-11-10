@@ -6,6 +6,7 @@ import { useState, type KeyboardEvent } from 'react'
 import type { ReviewItem } from '../../lib/assistant'
 import { checkEdit, editableFields, type EditableField, type ItemEdits } from '../../lib/assistantShape'
 import { t } from '../../lib/i18n'
+import { priorityName } from '../../lib/priority'
 import { Field, Input, Select } from '../../ui'
 
 export type OnEdit = (index: number, edits: ItemEdits) => void
@@ -63,7 +64,7 @@ export function ItemEditor({ item, index, onEdit, onClose, focus }: { item: Revi
           <Field key={f} label={FIELD_LABEL[f]()} error={errors[f] ? EDIT_ERROR[errors[f]!]() : undefined} className={f === 'title' ? 'sm:col-span-2' : ''}>
             {f === 'priority' ? (
               <Select value={draft[f]} onChange={(e) => setDraft({ ...draft, [f]: e.target.value })} data-edit-field={f}>
-                {['1', '2', '3', '4'].map((v) => <option key={v} value={v}>{t('Priority {p}', { p: v })}</option>)}
+                {['1', '2', '3', '4'].map((v) => <option key={v} value={v}>{priorityName(Number(v))}</option>)}
               </Select>
             ) : (
               <Input type={INPUT_TYPE[f] ?? 'date'} value={draft[f]} onChange={(e) => setDraft({ ...draft, [f]: e.target.value })} data-edit-field={f} autoFocus={f === first} />

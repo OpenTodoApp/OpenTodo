@@ -5,13 +5,18 @@
 // device or by sync, without a reload. It also publishes the day start
 // (day-boundary D3): `dayStart` in the context for useToday(), and the module
 // snapshot (setDayStart) that logicalToday() and logicalDay() read by default.
+// The names of the priority levels (priority-names D3) follow the same path: a
+// rename bumps the resolved value, so whatever re-renders for a date format
+// change re-renders for a new name.
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useUserPrefsRow } from '../lib/localData'
 import {
   currentDateTime, currentDayStart, formatDate, formatHour, formatInstant, formatTime, setDateTime, setDayStart, weekDays, weekStartOf,
   type DateStyle, type InstantStyle, type ResolvedDateTime,
 } from '../lib/dates'
+import { useEncryption } from '../lib/e2ee'
 import { useLanguageVersion } from '../lib/i18n'
+import { readPriorityNames, setPriorityNames } from '../lib/priority'
 import { rowTimeWidth } from '../lib/rowTime'
 import { readDayStart, readUserPrefs, type DateTimePrefs } from '../lib/userPrefs'
 
@@ -30,10 +35,14 @@ export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
   const dayStart = readDayStart(row)
   // The interface language decides what `system` means and the month names (app-localization D4).
   const lang = useLanguageVersion()
-  const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}|${lang}|${dayStart}`
+  // A locked device shows the default names until it is unlocked (priority-names D7).
+  const enc = useEncryption()
+  const names = readPriorityNames(row, enc.enabled && !enc.unlocked)
+  const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}|${lang}|${dayStart}|${names.join('\n')}`
   // The snapshot is updated during render, before any child formats a date.
   const value = useMemo<DateTimeContextValue>(() => {
     setDayStart(dayStart)
+    setPriorityNames(names)
     return { prefs, resolved: setDateTime(prefs), dayStart }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- prefs is a new object every render; key holds every field it is made of
   }, [key])

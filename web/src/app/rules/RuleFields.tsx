@@ -4,6 +4,7 @@
 import { useState, type ReactNode } from 'react'
 import { RULE_DUE, RULE_START, RULE_STATE, type Label, type Priority, type Project, type RuleActions, type RuleCondition, type RuleTrigger, type RuleTriggerKind, type Section, type Webhook } from '../../lib/types'
 import { t, msg, translatedMap } from '../../lib/i18n'
+import { customPriorityName, priorityName } from '../../lib/priority'
 import { listOf } from '../../lib/rules/match'
 import { Field, Input, Switch } from '../../ui'
 import { Choice, LabelsField } from '../RuleEditor'
@@ -252,7 +253,7 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
           {(ids, pick) => (
             <select className="ui-input w-full" aria-label={t('Priority')} value={ids.join(',')} onChange={(e) => pick(e.target.value ? e.target.value.split(',').map(Number) : [])}>
               <option value="" disabled>{t('Choose a priority')}</option>
-              {PRIORITY_CHOICES.map((p) => <option key={p} value={p}>{p === '1,2' ? t('Priority 1 or 2') : t('Priority {p}', { p })}</option>)}
+              {PRIORITY_CHOICES.map((p) => <option key={p} value={p}>{p === '1,2' ? (customPriorityName(1) || customPriorityName(2) ? t('{first} or {second}', { first: priorityName(1), second: priorityName(2) }) : t('Priority 1 or 2')) : priorityName(Number(p))}</option>)}
             </select>
           )}
         </ListPredicate>
@@ -309,7 +310,7 @@ export function ActionFields({ value, onChange, names, encrypted, webhooks, shar
         <span>{t('Priority')}</span>
         <select className="ui-input w-44" value={value.priority ?? ''} onChange={(e) => set('priority', e.target.value ? (Number(e.target.value) as Priority) : undefined)}>
           <option value="">{t('Keep')}</option>
-          {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
+          {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{priorityName(p)}</option>)}
         </select>
       </label>
       <Choice label={t('Date')} value={due} options={RULE_DUE} names={DUE_LABEL} onChange={(v) => set('due', v)} />
