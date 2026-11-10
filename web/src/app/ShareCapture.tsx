@@ -72,7 +72,7 @@ export function blobFromDataUrl(data: unknown, type: string): Blob | null {
 function leave(to: Route) {
   const inbox = pendingFiles.inbox
   setPendingShare(null)
-  if (inbox) void deleteInboxEntry(inbox).catch(() => undefined)
+  if (inbox) void deleteInboxEntry(indexedDB, inbox).catch(() => undefined)
   if (window.opener || history.length <= 1) window.close()
   // window.close() is ignored for windows a script did not open; then stay in the app.
   setTimeout(() => navigate(to, { replace: true }), 50)
@@ -90,7 +90,7 @@ export function ShareCapture() {
   const limits = useAttachmentLimits()
   useEffect(() => {
     if (!files.inbox) return
-    void getInboxEntry(files.inbox).then((entry) => {
+    void getInboxEntry(indexedDB, files.inbox).then((entry) => {
       if (entry) {
         const text = parseShare(new URLSearchParams({ title: entry.title, text: entry.text, url: entry.url }))
         setPayload((p) => (isEmptyShare(p) ? text : p))

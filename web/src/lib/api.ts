@@ -7,10 +7,10 @@ import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthCli
 import type { AssistantStatus } from './assistantStatus'
 import type { AssistantOwnerSettings, AssistantMemberSettings, AssistantSettingsInput, AssistantTestDraft, AssistantTestResult, MyAssistantTestDraft, AssistantUsage, MyAssistantInput } from './assistantTypes'
 import type { KeyRecord } from './crypto'
-import type { RelayDevice, RoutineRunRequest } from './relay'
+import type { RelayDevice, RoutineRunRequest } from './relayTypes'
 import type { DraftAnswer } from './rules/describe'
 import type { DeviceCommit, DeviceStepRecord } from './rules/deviceTypes'
-import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeys'
+import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeyTypes'
 import type {
   Profile,
   SpeechService,

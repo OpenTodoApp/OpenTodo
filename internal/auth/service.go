@@ -52,21 +52,32 @@ type Token struct {
 // passwords, user administration, single sign-on, encryption key records and
 // settings that hold secrets). It is stored like an agent token: a `read` row
 // plus a marker row in api_token_admin.
+//
+// An `app` token (OpenSpec change native-app-foundation, design D5) is an
+// access token of the OpenTodo app, minted only by the app sign-in exchange. It
+// is accepted wherever a `full` token is and refused like one on the
+// credential and administration routes. It is stored as a `full` row plus a
+// marker row in api_token_app, so a downgraded binary reads it as `full`.
 const (
 	ScopeFull  = "full"
 	ScopeRead  = "read"
 	ScopeAgent = "agent"
 	ScopeAdmin = "admin"
+	ScopeApp   = "app"
 )
 
-// ValidScope reports whether scope can be given to a new token.
+// ValidScope reports whether scope can be given to a new token by a person.
+// The `app` scope is not: only the app sign-in exchange mints it
+// (CreateAppToken).
 func ValidScope(scope string) bool {
 	return scope == ScopeFull || scope == ScopeRead || scope == ScopeAgent || scope == ScopeAdmin
 }
 
 // FullAccess reports whether a token scope may use every regular route that
-// writes: `full` and `admin`.
-func FullAccess(scope string) bool { return scope == ScopeFull || scope == ScopeAdmin }
+// writes: `full`, `admin` and `app`.
+func FullAccess(scope string) bool {
+	return scope == ScopeFull || scope == ScopeAdmin || scope == ScopeApp
+}
 
 // ErrInvalidScope is returned by CreateTokenScoped for an unknown scope.
 var ErrInvalidScope = errors.New("scope must be full, read, agent or admin")
@@ -79,13 +90,14 @@ type TokenInfo struct {
 }
 
 // scopeExpr reads a token's effective scope from api_tokens t, api_token_scopes
-// sc, api_token_agent ag and api_token_admin ad (joined by scopeJoins): a
-// missing scope row is full, a read row with the agent marker is agent and one
-// with the admin marker is admin.
-const scopeExpr = `CASE WHEN ad.token_id IS NOT NULL AND sc.scope = 'read' THEN 'admin' WHEN ag.token_id IS NOT NULL AND sc.scope = 'read' THEN 'agent' ELSE COALESCE(sc.scope,'full') END`
+// sc, api_token_agent ag, api_token_admin ad and api_token_app ap (joined by
+// scopeJoins): a missing scope row is full, a read row with the agent marker is
+// agent, one with the admin marker is admin, and a full row with the app marker
+// is app.
+const scopeExpr = `CASE WHEN ap.token_id IS NOT NULL AND sc.scope = 'full' THEN 'app' WHEN ad.token_id IS NOT NULL AND sc.scope = 'read' THEN 'admin' WHEN ag.token_id IS NOT NULL AND sc.scope = 'read' THEN 'agent' ELSE COALESCE(sc.scope,'full') END`
 
 // scopeJoins are the side tables scopeExpr reads.
-const scopeJoins = ` LEFT JOIN api_token_scopes sc ON sc.token_id = t.id LEFT JOIN api_token_agent ag ON ag.token_id = t.id LEFT JOIN api_token_admin ad ON ad.token_id = t.id `
+const scopeJoins = ` LEFT JOIN api_token_scopes sc ON sc.token_id = t.id LEFT JOIN api_token_agent ag ON ag.token_id = t.id LEFT JOIN api_token_admin ad ON ad.token_id = t.id LEFT JOIN api_token_app ap ON ap.token_id = t.id `
 
 var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -512,7 +524,7 @@ func (s *Service) createToken(ctx context.Context, userID, name, scope string, e
 	if scope == "" {
 		scope = ScopeFull
 	}
-	if !ValidScope(scope) {
+	if !ValidScope(scope) && (scope != ScopeApp || expiresAt.IsZero()) {
 		return nil, "", ErrInvalidScope
 	}
 	name = strings.TrimSpace(name)
@@ -534,6 +546,9 @@ func (s *Service) createToken(ctx context.Context, userID, name, scope string, e
 	if scope == ScopeAgent || scope == ScopeAdmin {
 		stored = ScopeRead // plus the marker below: read-only to older binaries
 	}
+	if scope == ScopeApp {
+		stored = ScopeFull // plus the marker below: full to older binaries
+	}
 	if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_scopes(token_id,scope) VALUES(?,?)", t.ID, stored); err != nil {
 		return nil, "", err
 	}
@@ -544,6 +559,11 @@ func (s *Service) createToken(ctx context.Context, userID, name, scope string, e
 	}
 	if scope == ScopeAdmin {
 		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_admin(token_id) VALUES(?)", t.ID); err != nil {
+			return nil, "", err
+		}
+	}
+	if scope == ScopeApp {
+		if _, err := tx.ExecContext(ctx, "INSERT INTO api_token_app(token_id) VALUES(?)", t.ID); err != nil {
 			return nil, "", err
 		}
 	}
@@ -632,11 +652,12 @@ func (s *Service) TokenName(ctx context.Context, userID, tokenID string) (string
 }
 
 // ListTokens returns a user's tokens with their scopes, leaving out the ones
-// that have expired.
+// that have expired and the app's access tokens, which the sessions list shows
+// as signed-in apps instead.
 func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.created_at,t.last_used_at,e.expires_at FROM api_tokens t`+scopeJoins+`
 		LEFT JOIN api_token_expiry e ON e.token_id = t.id
-		WHERE t.user_id = ? AND (e.expires_at IS NULL OR e.expires_at > ?) ORDER BY t.created_at DESC`, userID, s.clock().UnixMilli())
+		WHERE t.user_id = ? AND ap.token_id IS NULL AND (e.expires_at IS NULL OR e.expires_at > ?) ORDER BY t.created_at DESC`, userID, s.clock().UnixMilli())
 	if err != nil {
 		return nil, err
 	}

@@ -157,8 +157,12 @@ export async function shownSection(projectId: string, sectionId: string): Promis
   return !!s && str(s, 'project_id') === projectId
 }
 
-/** One turn's display state: the blocks shown so far, and whether the answer asked a choice or showed its follow-ups. */
-export interface DisplayTurn { shown: number; choice?: boolean; followups?: boolean }
+/**
+ * One turn's display state: the blocks shown so far, and whether the answer asked a choice or showed its follow-ups.
+ * `chat` marks a chat turn, not a routine's step (assistant-eval-gaps): one task is refused (it is a link), and
+ * follow-ups before any words (`wrote`) ask for them.
+ */
+export interface DisplayTurn { shown: number; choice?: boolean; followups?: boolean; chat?: boolean; wrote?: boolean }
 
 /** Keeps a block's live ids: the block left, how many ids it named and how many are left. */
 async function check(b: AssistantBlock): Promise<{ block: AssistantBlock; asked: number; found: number }> {
@@ -211,6 +215,7 @@ export async function runDisplay(name: string, args: Record<string, unknown>, tu
   }
   const { block, asked, found } = await check(parsed)
   if (!found) return fail({ error: 'not_found', message: manifest.messages.not_found })
+  if (turn.chat && block.kind === 'tasks' && found === 1) return fail({ error: 'one_task', id: block.ids[0], message: manifest.messages.one_task })
   turn.shown++
   emit(block)
   const out: Record<string, unknown> = { shown: block.kind, count: found }
@@ -238,5 +243,6 @@ function followupsCall(a: Record<string, unknown>, turn: DisplayTurn, emit: (b: 
   }
   turn.followups = true
   emit({ kind: 'followups', suggestions })
-  return { content: JSON.stringify({ shown: 'followups', count: suggestions.length, message: manifest.messages.followups_shown }), isError: false }
+  const message = turn.chat && !turn.wrote ? manifest.messages.followups_no_text : manifest.messages.followups_shown
+  return { content: JSON.stringify({ shown: 'followups', count: suggestions.length, message }), isError: false }
 }

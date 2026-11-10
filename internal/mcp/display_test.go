@@ -10,7 +10,8 @@ import (
 )
 
 // The in-app assistant's display tools (OpenSpec change assistant-generative-ui,
-// design D1) render nothing for an MCP client: no caller ever lists or calls them.
+// design D1) render nothing for an MCP client that does not announce MCP Apps
+// (mcp-blocks): no such caller ever lists or calls them.
 func TestDisplayToolsNotInMCP(t *testing.T) {
 	f := newFixture(t)
 	display := map[string]bool{}

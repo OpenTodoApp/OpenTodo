@@ -4,7 +4,7 @@
 // detail, step by step with the items it touched (titles from this device),
 // the error with a link to the setting, and Undo run. The server keeps ids and
 // counts only. Offline the last fetched page is shown with its age.
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { readJSON, writeJSON } from '../../lib/deviceStorage'
@@ -21,6 +21,9 @@ import { Badge, Button, Dialog, Notice, Skeleton } from '../../ui'
 import { useRoutineNames, valueNamer, type RoutineNames } from './data'
 import { ProposalReview } from './ProposalReview'
 import { sentenceText } from './StepCard'
+
+// What the run's Ask AI steps showed (assistant-routine-blocks D2), a lazy chunk.
+const RunBlocks = lazy(() => import('./RunBlocks'))
 
 const OUTCOME = translatedMap<string>({
   pending: msg('Running'), applied: msg('Done'), already_matched: msg('Nothing to change'), skipped: msg('Skipped'), stopped: msg('Stopped'),
@@ -231,6 +234,7 @@ export function RunDetailBody({ rule, ruleId: givenRule, runId, initial }: RunDe
           {reviewing && run.proposal && <ProposalReview proposalId={run.proposal.id} ruleName={rule?.name || t('A routine')} onClose={() => setReviewing(false)}
             onDone={() => api.routineRun(run.rule_id, run.run_id).then(setRun, () => undefined)} />}
           {run.reason && <p className="text-meta text-muted">{reasonText(run.reason) !== t('not available here') ? reasonText(run.reason) : run.reason}</p>}
+          {!!run.blocks?.length && <Suspense fallback={null}><RunBlocks blocks={run.blocks} /></Suspense>}
           <ol className="space-y-2" aria-label={t('Steps')}>
             {steps.map((s, i) => {
               const r: RoutineStepRecord | undefined = records.get(s.id)

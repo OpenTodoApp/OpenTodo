@@ -864,6 +864,7 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Actions for {browserName}": [
+    "web/src/app/AppSessions.tsx",
     "web/src/app/TwoFactorPanel.tsx"
   ],
   "Actions for {label}": [
@@ -2755,6 +2756,7 @@
     "web/src/lib/push.ts"
   ],
   "Cancel": [
+    "web/src/app/AppSignIn.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -3348,6 +3350,7 @@
     "web/src/app/SsoPanel.tsx"
   ],
   "Close": [
+    "web/src/app/AppSignIn.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/OAuthConsent.tsx",
     "web/src/app/PanelFrame.tsx",
@@ -11821,6 +11824,9 @@
   "Only an account with end-to-end encryption answers AI connectors from a device.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Only confirm if you started signing in from the app just now.": [
+    "web/src/app/AppSignIn.tsx"
+  ],
   "Only editors can change this.": [
     "web/src/app/menus/ListModeStep.tsx"
   ],
@@ -12109,6 +12115,12 @@
   "OpenTodo Light": [
     "web/src/app/BrandingThemes.tsx",
     "web/src/app/ThemeRow.tsx"
+  ],
+  "OpenTodo app": [
+    "web/src/app/AppSessions.tsx"
+  ],
+  "OpenTodo app · {device}": [
+    "web/src/app/AppSessions.tsx"
   ],
   "OpenTodo asks the browser to recognise speech on this device when it offers that choice.": [
     "web/src/app/VoiceSettings.tsx"
@@ -15644,9 +15656,13 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Sign in": [
+    "web/src/app/AppSignIn.tsx",
     "web/src/app/AuthScreen.tsx"
   ],
   "Sign in again before linking an account.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "Sign in again from the app.": [
     "web/src/lib/i18n/errors.ts"
   ],
   "Sign in once while online; after that the app works offline.": [
@@ -15677,6 +15693,12 @@
   "Sign in to join “{projectName}”. You come back to this link afterwards.": [
     "web/src/app/ProjectInviteScreen.tsx"
   ],
+  "Sign in to the OpenTodo app on this device?": [
+    "web/src/app/AppSignIn.tsx"
+  ],
+  "Sign in to the OpenTodo app on {device}?": [
+    "web/src/app/AppSignIn.tsx"
+  ],
   "Sign in with a passkey": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -15706,6 +15728,7 @@
   ],
   "Sign out": [
     "web/src/app/AccountSettings.tsx",
+    "web/src/app/AppSessions.tsx",
     "web/src/app/ProjectInviteScreen.tsx",
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/TwoFactorPanel.tsx",
@@ -16224,6 +16247,9 @@
   ],
   "Start or stop tracking time on the selected task": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Start signing in again from the app.": [
+    "web/src/app/AppSignIn.tsx"
   ],
   "Start the break": [
     "web/src/app/focus/FocusView.tsx"
@@ -18727,6 +18753,9 @@
   "This setting is managed by the server configuration.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This sign-in request can’t be used": [
+    "web/src/app/AppSignIn.tsx"
+  ],
   "This site may show notifications.": [
     "web/src/lib/push.ts"
   ],
@@ -20089,6 +20118,9 @@
   ],
   "Used to sign in on new devices.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Used {relativeTime}": [
+    "web/src/app/AppSessions.tsx"
   ],
   "Used {relativeTime} · until {instant}": [
     "web/src/app/TwoFactorPanel.tsx"

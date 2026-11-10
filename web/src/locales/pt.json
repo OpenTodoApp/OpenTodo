@@ -7426,5 +7426,14 @@
   "Urgency {score}, show why": "Urgência {score}, mostrar porquê",
   "Why here?": "Porquê aqui?",
   "Most urgent first": "Mais urgentes primeiro",
-  "Least urgent first": "Menos urgentes primeiro"
+  "Least urgent first": "Menos urgentes primeiro",
+  "Sign in to the OpenTodo app on {device}?": "Iniciar sessão na app OpenTodo em {device}?",
+  "Sign in to the OpenTodo app on this device?": "Iniciar sessão na app OpenTodo neste dispositivo?",
+  "Only confirm if you started signing in from the app just now.": "Confirme apenas se acabou de iniciar sessão a partir da app.",
+  "This sign-in request can’t be used": "Este pedido de início de sessão não pode ser usado",
+  "Start signing in again from the app.": "Inicie sessão novamente a partir da app.",
+  "OpenTodo app · {device}": "App OpenTodo · {device}",
+  "OpenTodo app": "App OpenTodo",
+  "Used {relativeTime}": "Usada {relativeTime}",
+  "Sign in again from the app.": "Inicie sessão novamente a partir da app."
 }

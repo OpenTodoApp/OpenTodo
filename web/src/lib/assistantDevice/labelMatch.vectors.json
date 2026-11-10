@@ -1,0 +1,23 @@
+{
+  "_comment": "Label matching of the assistant's read tools (assistant-eval-gaps): filter is list_tasks' label argument against a label name, search is search_tasks' rule for a task's label. Read by internal/agenttools/labelmatch_test.go and web/src/lib/assistantDevice/labelMatch.test.ts. Hand-written.",
+  "cases": [
+    { "name": "errand", "query": "errand", "filter": true, "search": true },
+    { "name": "errand", "query": "Errands", "filter": true, "search": true },
+    { "name": "Errand", "query": "errands", "filter": true, "search": true },
+    { "name": "errands", "query": "errand", "filter": false, "search": true },
+    { "name": "errand", "query": "#errands", "filter": true, "search": true },
+    { "name": "errand", "query": "@errand", "filter": true, "search": true },
+    { "name": "box", "query": "boxes", "filter": true, "search": true },
+    { "name": "errand", "query": "errandss", "filter": false, "search": false },
+    { "name": "home errand", "query": "errand", "filter": false, "search": true },
+    { "name": "homework", "query": "work", "filter": false, "search": true },
+    { "name": "work", "query": "homework", "filter": false, "search": false },
+    { "name": "s", "query": "s", "filter": true, "search": true },
+    { "name": "", "query": "s", "filter": false, "search": false },
+    { "name": "errand", "query": "  ", "filter": false, "search": false },
+    { "name": "commissione", "query": "commissioni", "filter": false, "search": false },
+    { "name": "Einkauf", "query": "Einkäufe", "filter": false, "search": false },
+    { "name": "café", "query": "CAFÉS", "filter": true, "search": true },
+    { "name": "enc:v1:errandAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "query": "errand", "filter": false, "search": false }
+  ]
+}

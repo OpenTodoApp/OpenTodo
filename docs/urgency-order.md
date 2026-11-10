@@ -3,7 +3,7 @@ title: Order by urgency
 summary: Put what needs you first at the top of a project, a label, the Inbox or a saved view, with one score per task you can read.
 audience: user
 section: Guides
-specs: [list-display-options, custom-views]
+specs: [list-display-options, custom-views, urgency-score]
 screens: []
 order: 19
 ---

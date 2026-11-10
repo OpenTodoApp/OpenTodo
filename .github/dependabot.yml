@@ -32,6 +32,26 @@ updates:
       web-minor-and-patch:
         update-types: [minor, patch]
 
+  # The native app (native-app-foundation D9): one weekly pull request for all of its
+  # packages, so its lockfile does not churn the queue. Majors are left to a pull
+  # request of their own, made by hand.
+  - package-ecosystem: npm
+    directory: /mobile/app
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+    open-pull-requests-limit: 1
+    # Major versions (Expo SDK, React Native, TypeScript, Node types) are upgraded by
+    # hand in a pull request of their own; a grouped major broke the app check (#1180).
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      app:
+        update-types: [minor, patch]
+
   # The Android app (native-shells): AndroidX, the Android Gradle plugin, Kotlin.
   - package-ecosystem: gradle
     directory: /mobile/android

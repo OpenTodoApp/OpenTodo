@@ -228,8 +228,10 @@ func TestRouteMatrix(t *testing.T) {
 			continue
 		}
 		status, code := m.call(m.anon, r.method, r.path)
-		if status != http.StatusUnauthorized {
-			t.Errorf("%s %s (%s) anonymously = %d %q, want 401", r.method, r.path, r.pattern, status, code)
+		// A browser page that signs in first sends a browser without a
+		// session to the sign-in page instead (native-app-foundation D5).
+		if want := anonymousStatus(r.p); status != want {
+			t.Errorf("%s %s (%s) anonymously = %d %q, want %d", r.method, r.path, r.pattern, status, code, want)
 		}
 		checked["anonymous"]++
 		for _, tok := range tokens {
@@ -336,3 +338,12 @@ func TestRouteMatrix(t *testing.T) {
 // viewerMayWrite are the writes a viewer of a shared project is allowed (with
 // the project or task id written as {project} or {task}).
 var viewerMayWrite = map[string]bool{}
+
+// anonymousStatus is what a request without credentials gets from a route
+// that needs them: 401, or a redirect to sign in for a browser page.
+func anonymousStatus(p routePolicy) int {
+	if p.SignIn {
+		return http.StatusFound
+	}
+	return http.StatusUnauthorized
+}

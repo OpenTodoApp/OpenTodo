@@ -53,7 +53,7 @@ var (
 
 // docRoots are the server's paths outside /api/v1; any other doc path is
 // relative to /api/v1.
-var docRoots = []string{"/api/", "/healthz", "/dav", "/.well-known/", "/feeds/", "/public/", "/t/", "/share", "/branding/", "/mcp", "/principals", "/oauth/"}
+var docRoots = []string{"/api/", "/healthz", "/dav", "/.well-known/", "/feeds/", "/public/", "/t/", "/share", "/branding/", "/mcp", "/principals", "/oauth/", "/app/"}
 
 // resolvePath expands a doc path into the routes it may name: "…/x/y"
 // continues prev at its segment "x", or else as a child or a sibling of its

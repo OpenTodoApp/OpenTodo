@@ -8,6 +8,7 @@ import { db } from '../db'
 import type { Due } from '../types'
 import { ArgError, ToolError, bool, date, int, limit, only, str, zone, type Args } from './args'
 import { isOpen, list, num, str as field, type Row, type Snapshot } from './data'
+import { labelFilterMatches, labelSearchMatches } from './labelMatch'
 
 /** Today's date in a zone. */
 export function todayIn(tz: string, now: number): string {
@@ -94,6 +95,13 @@ export function listProjects(snap: Snapshot, a: Args, maxItems: number) {
   const counts = new Map<string, number>()
   for (const t of snap.tasks) if (isOpen(t)) counts.set(field(t, 'project_id'), (counts.get(field(t, 'project_id')) ?? 0) + 1)
   const inInbox = inboxRule(snap)
+  // Each project's sections in board order (assistant-eval-gaps), as list_projects on the server.
+  const sections = new Map<string, Record<string, unknown>[]>()
+  for (const s of [...snap.sections.values()].sort((x, y) => num(x, 'position') - num(y, 'position') || num(x, 'created_at') - num(y, 'created_at') || (field(x, 'id') < field(y, 'id') ? -1 : 1))) {
+    const pid = field(s, 'project_id')
+    const flow = field(s, 'flow_mode')
+    sections.set(pid, [...(sections.get(pid) ?? []), { id: field(s, 'id'), flow_mode: flow === 'parallel' || flow === 'sequential' ? flow : '', untrusted_text: { name: field(s, 'name') } }])
+  }
   const projects = snap.projList
     .filter((p) => archived || p.archived !== true)
     .sort((x, y) => num(x, 'position') - num(y, 'position') || num(x, 'created_at') - num(y, 'created_at'))
@@ -105,6 +113,7 @@ export function listProjects(snap: Snapshot, a: Args, maxItems: number) {
         id, untrusted_text: { name: field(p, 'name'), description: field(p, 'description') }, encrypted: isCiphertext(p.name), color: field(p, 'color'),
         archived: p.archived === true, ...(field(p, 'parent_id') ? { parent_id: field(p, 'parent_id') } : {}),
         shared: !!shared, ...(shared ? { role: shared.role } : {}), open_count: counts.get(id) ?? 0,
+        ...(sections.has(id) ? { sections: sections.get(id) } : {}),
       }
     })
   return { projects, inbox_open_count: snap.tasks.filter(inInbox).length }
@@ -131,6 +140,8 @@ export function listTasks(snap: Snapshot, a: Args, now: number, maxItems: number
   let wanted: Set<string> | null = null
   if (label) {
     wanted = new Set(snap.labelList.filter((l) => l.id === label || field(l, 'name').toLowerCase() === label.toLowerCase()).map((l) => field(l, 'id')))
+    // A plural of a label's name finds it when no label has the name (assistant-eval-gaps).
+    if (wanted.size === 0) wanted = new Set(snap.labelList.filter((l) => labelFilterMatches(field(l, 'name'), label)).map((l) => field(l, 'id')))
     if (wanted.size === 0) throw new ArgError('label: no such label')
   }
   const inInbox = inboxRule(snap)
@@ -191,7 +202,9 @@ export function searchTasks(snap: Snapshot, a: Args, now: number, maxItems: numb
     const s: string = typeof v === 'string' ? v : ''
     return s.startsWith(CIPHERTEXT_PREFIX) ? '' : s.toLowerCase()
   }
-  const out = snap.tasks.filter((t) => visible(snap, t, false) && (completed || isOpen(t)) && (plain(t.title).includes(needle) || plain(t.description).includes(needle))).sort(byKey(tz))
+  const labels = new Set(snap.labelList.filter((l) => labelSearchMatches(field(l, 'name'), query)).map((l) => field(l, 'id')))
+  const out = snap.tasks.filter((t) => visible(snap, t, false) && (completed || isOpen(t))
+    && (plain(t.title).includes(needle) || plain(t.description).includes(needle) || list(t, 'labels').some((l) => labels.has(l)))).sort(byKey(tz))
   return { tasks: out.slice(0, max).map((t) => render(snap, t, tz, today, true)), ...(out.length > max ? { truncated: true } : {}), timezone: tz, today }
 }
 

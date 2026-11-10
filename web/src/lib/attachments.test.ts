@@ -22,7 +22,8 @@ vi.mock('./api', () => {
   }
 })
 
-import { AttachmentError, cleanName, commitFiles, openAttachment, planFiles, queueFiles, queueLink, removeAttachment, restoreAttachment, resumeFileMigration, runFileMigration, runUploader, stateOf } from './attachments'
+import { AttachmentError, cleanName, commitFiles, planFiles, queueFiles, queueLink, removeAttachment, restoreAttachment, resumeFileMigration, runFileMigration, runUploader, stateOf } from './attachments'
+import { openAttachment } from './attachmentOpen'
 import { decryptFile } from './crypto'
 import { currentKey, enableEncryption, encryptionSnapshot, forgetMemoryKeys, onEncryptionChange } from './e2ee'
 import { db, setMeta, useDatabase } from './db'

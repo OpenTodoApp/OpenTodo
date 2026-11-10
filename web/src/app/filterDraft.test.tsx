@@ -121,6 +121,16 @@ describe('New view keeps its draft', () => {
     await r.unmount()
   })
 
+  it('The workspace directory arriving after the page opened keeps what was typed', async () => {
+    const r = await render(<FilterView />)
+    await type(input(r.container), 'p1')
+    // The first sync fills the directory: the current workspace goes from '' to the default one.
+    await db.workspaces.put({ id: 'personal', name: 'Personal', icon: '', color: '', default: true, role: 'owner', ownerId: 'u1' })
+    await waitFor(async () => (await getFilterDraft('personal'))?.query === 'p1', 'the draft kept under the default workspace')
+    expect(input(r.container).value).toBe('p1')
+    await r.unmount()
+  })
+
   it('Address wins: ?q= replaces the draft query, and Up recalls the previous one', async () => {
     await saveFilterDraft('', { ...board('list'), query: '@errand' })
     const r = await render(<FilterView initialQuery="p1" />)

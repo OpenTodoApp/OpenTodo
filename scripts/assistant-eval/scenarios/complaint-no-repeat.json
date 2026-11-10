@@ -1,6 +1,7 @@
 {
   "name": "complaint-no-repeat",
   "title": "After a complaint about a missing map the assistant does not show it again",
+  "fake": true,
   "seed": {
     "labels": [
       {
@@ -61,7 +62,11 @@
   "turns": [
     {
       "say": "Show me my errands",
-      "expect": {}
+      "expect": {
+        "text": [
+          "\\w"
+        ]
+      }
     },
     {
       "say": "I don't see any map.",

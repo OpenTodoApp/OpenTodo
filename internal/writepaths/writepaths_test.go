@@ -53,6 +53,7 @@ var allowApply = map[string]string{
 var allowDynamicTable = map[string]string{
 	"internal/deliveryq/deliveryq.go:Prune":       "the webhook and notification channel delivery queues (webhook_deliveries, notification_deliveries)",
 	"internal/assistant/config.go:Store.AddUsage": "the assistant's monthly token usage (assistant_usage, assistant_usage_own_key)",
+	"internal/mcpoauth/mcpoauth.go:Store.rotate":  "a refresh token's rotation (mcp_oauth_grant and mcp_oauth_refresh_used, or app_sign_in_grant and app_sign_in_refresh_used)",
 }
 
 // allowSyncedTable lists the places outside internal/sync that write a

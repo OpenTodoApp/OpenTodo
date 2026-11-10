@@ -26,7 +26,8 @@ export interface TooltipProps {
 
 const GAP = 6
 
-function coarsePointer(): boolean {
+/** True on a touch-first device (a coarse pointer): a phone, where `geo:` also opens the maps app. */
+export function coarsePointer(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
 }
 

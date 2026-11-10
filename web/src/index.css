@@ -1178,10 +1178,12 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 /* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap. */
 :root { --add-room: 4.75rem; }
 /* While the selection bar floats over the bottom (no-layout-jump), the content keeps room
-   under its last row for it; adding room at the end never moves a row. */
-#content:has([data-selection-dock]) { padding-bottom: 5rem; }
+   under its last row for it; adding room at the end never moves a row. The bar marks the
+   root (`data-selection-docked`): a `:has()` on #content or the app frame made every change
+   in the 2,000-row list restyle the list (issue 1179), so no rule here reads the list. */
+:root[data-selection-docked] #content { padding-bottom: 5rem; }
 /* The phone's add button steps aside while the bar stands in its place: out of sight, out of the tab order and the accessibility tree. */
-[data-app-frame]:has([data-selection-dock]) ~ [data-add-button]:not([aria-expanded="true"]) { visibility: hidden; translate: 0 calc(100% + 6rem); }
+:root[data-selection-docked] [data-add-button]:not([aria-expanded="true"]) { visibility: hidden; translate: 0 calc(100% + 6rem); }
 /* Completion feedback (task-list-presentation; motion-v2 D3). The op is written at
    once; the list keeps the row as a departing row (`data-departing`) for the moment:
    0-250 ms the check mark pops, 60-260 ms the strike draws and the text fades to half,
@@ -1541,9 +1543,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    from 768 px and top-aligned with 24 px of room on a phone. A break dims the title and
    the page takes the sunken tone, over the moment duration (instant without motion). */
 .focus-page { @apply flex min-h-full flex-col; }
-/* The whole content column, its reserved bottom room included, so the tone has no seam. */
-#content:has(.focus-page) { @apply transition-colors duration-(--duration-moment) ease-calm; }
-#content:has(.focus-page[data-resting]) { @apply bg-sunken; }
+/* The whole content column, its reserved bottom room included, so the tone has no seam.
+   Focus marks the root (`data-focus-stage`), never a `:has()` on #content (issue 1179). */
+:root[data-focus-stage] #content { @apply transition-colors duration-(--duration-moment) ease-calm; }
+:root[data-focus-stage="resting"] #content { @apply bg-sunken; }
 /* The header's own background is a utility, so the break's tone is marked important there. */
 .focus-page[data-resting] > [data-page-header] { @apply bg-sunken!; }
 .focus-page > [data-page-header] { @apply transition-colors duration-(--duration-moment) ease-calm; }

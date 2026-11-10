@@ -109,6 +109,9 @@ type Run struct {
 	// ProjectID is a shared routine's project: every member sees the run
 	// (routines-shared D7).
 	ProjectID string `json:"project_id,omitempty"`
+	// Blocks are what the run's Ask AI steps showed under their answer, as
+	// kinds and parameters (assistant-routine-blocks D1).
+	Blocks []RunBlock `json:"blocks,omitempty"`
 }
 
 // State is a rule's server state: its watermark for time triggers, the
@@ -254,20 +257,21 @@ func (s *Store) Record(ctx context.Context, userID string, r Run) error {
 }
 
 // runColumns are the columns scanRuns reads.
-const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto, device_id, project_id`
+const runColumns = `id, rule_id, occurrence_key, task_id, at, outcome, reason, changes_json, depth, run_id, source, run_as, test, steps_count, writes, duration_ms, undone_at, failed_step, tokens, ai_auto, device_id, project_id, blocks_json`
 
 func scanRuns(rows *sql.Rows) ([]Run, error) {
 	defer rows.Close()
 	out := []Run{}
 	for rows.Next() {
 		var r Run
-		var changes string
+		var changes, blocks string
 		var undone sql.NullInt64
 		if err := rows.Scan(&r.ID, &r.RuleID, &r.OccurrenceKey, &r.TaskID, &r.At, &r.Outcome, &r.Reason, &changes, &r.Depth,
-			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto, &r.DeviceID, &r.ProjectID); err != nil {
+			&r.RunID, &r.Source, &r.RunAs, &r.Test, &r.StepsCount, &r.Writes, &r.DurationMs, &undone, &r.FailedStep, &r.Tokens, &r.AIAuto, &r.DeviceID, &r.ProjectID, &blocks); err != nil {
 			return nil, err
 		}
 		r.Changes = json.RawMessage(changes)
+		r.Blocks = blocksOf(blocks)
 		if undone.Valid {
 			r.UndoneAt = &undone.Int64
 		}

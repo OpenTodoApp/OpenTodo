@@ -7426,5 +7426,14 @@
   "Urgency {score}, show why": "Dringlichkeit {score}, Begründung zeigen",
   "Why here?": "Warum hier?",
   "Most urgent first": "Dringendste zuerst",
-  "Least urgent first": "Am wenigsten dringende zuerst"
+  "Least urgent first": "Am wenigsten dringende zuerst",
+  "Sign in to the OpenTodo app on {device}?": "In der OpenTodo-App auf {device} anmelden?",
+  "Sign in to the OpenTodo app on this device?": "Auf diesem Gerät in der OpenTodo-App anmelden?",
+  "Only confirm if you started signing in from the app just now.": "Bestätige nur, wenn du die Anmeldung gerade selbst in der App begonnen hast.",
+  "This sign-in request can’t be used": "Diese Anmeldeanfrage kann nicht verwendet werden",
+  "Start signing in again from the app.": "Beginne die Anmeldung erneut in der App.",
+  "OpenTodo app · {device}": "OpenTodo-App · {device}",
+  "OpenTodo app": "OpenTodo-App",
+  "Used {relativeTime}": "Verwendet {relativeTime}",
+  "Sign in again from the app.": "Melde dich erneut in der App an."
 }

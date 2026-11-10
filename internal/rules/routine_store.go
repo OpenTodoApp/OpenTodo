@@ -60,6 +60,8 @@ type routineFinish struct {
 	// without asking (routines-ai-step D4).
 	Tokens int64
 	AIAuto bool
+	// Blocks are the blocks the run's Ask AI steps showed (assistant-routine-blocks D1).
+	Blocks []RunBlock
 }
 
 // FinishRoutine records a claimed routine run's outcome, counts and step records.
@@ -74,7 +76,7 @@ func (s *Store) finishRoutine(ctx context.Context, id int64, runID string, f rou
 	}
 	batches, _ := json.Marshal(f.Written)
 	if _, err := tx.ExecContext(ctx, `UPDATE rule_runs SET outcome = ?, reason = ?, writes = ?, duration_ms = ?, steps_count = ?, failed_step = ?, batches_json = ?,
-		tokens = ?, ai_auto = ? WHERE id = ?`, f.Outcome, f.Reason, f.Writes, f.DurationMs, len(f.Steps), f.FailedStep, string(batches), f.Tokens, f.AIAuto, id); err != nil {
+		tokens = ?, ai_auto = ?, blocks_json = ? WHERE id = ?`, f.Outcome, f.Reason, f.Writes, f.DurationMs, len(f.Steps), f.FailedStep, string(batches), f.Tokens, f.AIAuto, blocksJSON(f.Blocks), id); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM rule_step_runs WHERE run_id = ?`, runID); err != nil {

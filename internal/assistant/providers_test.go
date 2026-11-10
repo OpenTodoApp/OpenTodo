@@ -141,7 +141,8 @@ func TestAnthropicRequestShape(t *testing.T) {
 	if res.Err != nil || res.Stop != StopEndTurn {
 		t.Fatalf("turn: %+v", res)
 	}
-	if text != "Looking. You have one task due on Wednesday." {
+	// A round's text after tool calls starts a new paragraph (assistant-eval-gaps).
+	if text != "Looking. \n\nYou have one task due on Wednesday." {
 		t.Fatalf("streamed text %q", text)
 	}
 	if res.Input != 250 || res.Output != 50 {
@@ -331,6 +332,7 @@ func TestCompatibleAdapterStreamsToolCalls(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "a", "Water plants", map[string]any{"due": map[string]any{"date": "2026-10-10"}})
 	srv, rec := fakeAnthropic(t,
+		sse(chatToolCalls(call("call_0", ProposeTool.Name, map[string]any{}))),
 		sse(chatToolCalls(call("call_1", "today_summary", map[string]any{"timezone": "UTC"}), call("call_2", "schedule_tasks", map[string]any{"ids": []string{"a"}, "due": map[string]any{"date": "2026-10-16"}}))),
 		sse(chatText("Moved Water plants to Friday.", "stop")),
 	)
@@ -338,8 +340,20 @@ func TestCompatibleAdapterStreamsToolCalls(t *testing.T) {
 	if res.Err != nil || res.Stop != StopEndTurn || len(res.Changes) != 1 || text != "Moved Water plants to Friday." {
 		t.Fatalf("%+v %q", res, text)
 	}
-	if res.Input != 70 || res.Output != 16 {
+	if res.Input != 100 || res.Output != 25 {
 		t.Fatalf("usage %d/%d", res.Input, res.Output)
+	}
+	// The write tools join the request after propose_changes (assistant-lean-tools D1).
+	offered := func(i int, name string) bool {
+		for _, tl := range rec.bodies[i]["tools"].([]any) {
+			if tl.(map[string]any)["function"].(map[string]any)["name"] == name {
+				return true
+			}
+		}
+		return false
+	}
+	if offered(0, "schedule_tasks") || !offered(0, ProposeTool.Name) || !offered(1, "schedule_tasks") {
+		t.Fatal("tools per round")
 	}
 	b := rec.bodies[0]
 	if rec.paths[0] != "/v1/chat/completions" || rec.headers[0].Get("Authorization") != "Bearer sk-TEST-KEY" {
@@ -352,7 +366,7 @@ func TestCompatibleAdapterStreamsToolCalls(t *testing.T) {
 	if msgs[0].(map[string]any)["role"] != "system" {
 		t.Fatal("no system message")
 	}
-	second := rec.bodies[1]["messages"].([]any)
+	second := rec.bodies[2]["messages"].([]any)
 	n := len(second)
 	asst, t1, t2 := second[n-3].(map[string]any), second[n-2].(map[string]any), second[n-1].(map[string]any)
 	if asst["role"] != "assistant" || len(asst["tool_calls"].([]any)) != 2 || t1["role"] != "tool" || t1["tool_call_id"] != "call_1" || t2["tool_call_id"] != "call_2" {

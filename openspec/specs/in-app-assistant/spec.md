@@ -72,7 +72,7 @@ The server SHALL contact only the hosts of providers the owner enabled and, whil
 ### Requirement: Per-user consent and own keys
 Before a user's first turn, the app SHALL show which provider will receive their task content (for a member's own provider, that it goes with their key) and which fields may be sent, and SHALL record consent for that provider only through `PUT /api/v1/me/assistant`. If the owner allows it, users MAY store their own key there. Consent is server state, not an op.
 
-The list of fields SHALL name everything the assistant may send for that user: for the server's assistant, task titles and descriptions; due dates, repeats, priorities, estimates and completion; custom fields, task locations and the links tasks came from; comments; the names, types and links of attachments (never the files); notes; workspace, project, section and label names and project descriptions; saved view names and webhook hosts when the user describes a routine; the user's routines and calendar frames; tracked time and its notes; names of members and groups of shared projects and workspaces; the user's display name, today's date and time zone; the messages typed; and photos added. For the on-device assistant (`mode: "device"`) it SHALL name only what the device sends: task titles and descriptions; due dates, repeats, priorities, estimates and completion; comments; project, section and label names and project descriptions; saved view names and webhook hosts when describing a routine; the display name, date and time zone; the messages; and photos. The paragraph on routines SHALL say that an Ask AI or Summarise step sends its instruction and what it reads, including a project's name, sections and open tasks. `GET /api/v1/me/assistant` SHALL return the list in English as `fields`, and the app SHALL show each entry in the reader's language. Every read tool the server's assistant can call SHALL be covered by an entry of the list. A disclosure that only describes data already sent SHALL raise `disclosure_version` without asking for consent again; a consent from version 1 on keeps counting.
+The list of fields SHALL name everything the assistant may send for that user: for the server's assistant, task titles and descriptions; due dates, repeats, priorities, estimates and completion; custom fields, task locations and the links tasks came from; comments; the names, types and links of attachments (never the files); notes; workspace, project, section and label names and project descriptions; saved view names and webhook hosts when the user describes a routine; the user's routines and calendar frames; tracked time and its notes; names of members and groups of shared projects and workspaces; the user's display name, today's date and time zone; the messages typed; and photos added. For the on-device assistant (`mode: "device"`) it SHALL name only what the device sends: task titles and descriptions; due dates, repeats, priorities, estimates and completion; comments; notes; project, section and label names and project descriptions; saved view names and webhook hosts when describing a routine; calendar frames and slots; tracked time and its notes; the display name, date and time zone; the messages; and photos. The paragraph on routines SHALL say that an Ask AI or Summarise step sends its instruction and what it reads, including a project's name, sections and open tasks. `GET /api/v1/me/assistant` SHALL return the list in English as `fields`, and the app SHALL show each entry in the reader's language. Every read tool the server's assistant can call SHALL be covered by an entry of the list. A disclosure that only describes data already sent SHALL raise `disclosure_version` without asking for consent again; a consent from version 1 on keeps counting.
 
 #### Scenario: Consent required
 - **WHEN** a user who has not consented sends `POST /api/v1/assistant/turn`
@@ -104,7 +104,7 @@ The list of fields SHALL name everything the assistant may send for that user: f
 
 #### Scenario: On-device list
 - **WHEN** an encrypted user in `mode: "device"` reads the disclosure
-- **THEN** the list names task, comment and project data, the Describe it names and the turn's own context, and does not name notes, tracked time, routines or frames, which the device does not send
+- **THEN** the list names task, comment, project and note data, calendar frames and slots, tracked time, the Describe it names and the turn's own context, and does not name custom fields, locations, attachments or routines, which the device does not send
 
 #### Scenario: Translated list
 - **WHEN** a user whose language is Italian opens the disclosure
@@ -917,3 +917,47 @@ When a device has turned on "Suggest after adding" and the assistant is availabl
 #### Scenario: Other ways to create tasks
 - **WHEN** a task is created by import, the API, CalDAV, email, a pasted list or another device's sync
 - **THEN** no question is sent
+
+### Requirement: On-device read tools match the server's
+The on-device assistant SHALL offer `list_time_entries`, `list_frames`, `list_slots`, `list_notes`, `search_notes` and `get_note` with the server's argument schemas, reading this device's decrypted rows. It SHALL leave out deleted rows and projects kept away from assistants, and mark people's text as untrusted, giving the same results as the server for the same rows. They read local data, so they work offline; they write nothing.
+
+#### Scenario: Time on an encrypted account
+- **WHEN** an encrypted account's on-device assistant calls `list_time_entries` for this week
+- **THEN** it gets the week's entries from this device's rows, with the same fields and totals the server returns for the same entries
+
+#### Scenario: Notes in a kept-away project
+- **WHEN** the device's `search_notes` matches a note in a project kept away from assistants
+- **THEN** that note is not in the result, as on the server
+
+### Requirement: Edit proposals in every shape
+In the calendar, outline and map shapes, every proposed item SHALL offer the same edits as in the list. In the calendar shape, a proposed item SHALL also move to another day or time by dragging or with the keyboard, changing its proposed date. An edited item is marked edited and its edited values apply. Edits work offline and apply as one batch that converges like any applied proposal.
+
+#### Scenario: Drag to another day
+- **WHEN** the user drags a proposed task from Tuesday to Wednesday in the calendar shape and applies
+- **THEN** the task is due Wednesday and the item was marked edited
+
+### Requirement: Proposals that grow over turns
+While a proposal is open and unapplied, a new turn SHALL send it with the request, and the assistant SHALL amend it: adding, changing or dropping items. The card SHALL show the amended proposal and mark what the latest turn changed. Applying applies the amended proposal as one batch.
+
+#### Scenario: Also add a task
+- **WHEN** a proposal moves 3 tasks and the user writes "also add a task to call the plumber"
+- **THEN** the card shows the 3 moves and the new task, the new task marked as added in this turn
+
+#### Scenario: Open proposal too large
+- **WHEN** the open proposal sent with a turn has more than 50 items
+- **THEN** the turn route answers 413 `too_large` and no provider request is made
+
+### Requirement: Cached input in usage
+Each turn SHALL record input read from the provider's prompt cache apart from fresh input, for every provider that reports it. Toward the monthly cap, cache reads SHALL count at one tenth and cache writes in full. The answer's usage line SHALL name the cached part, and `GET /api/v1/me/assistant/usage` SHALL report `cached_tokens` beside its totals. Turns recorded before this have no cached part and count as recorded.
+
+#### Scenario: A cached turn
+- **WHEN** a turn's provider reports 18,000 cache-read input tokens, 2,000 fresh input tokens and 300 output tokens
+- **THEN** 4,100 tokens count toward the cap, and the answer shows "20,300 tokens, 18,000 from cache"
+
+#### Scenario: Usage route reports cache
+- **WHEN** a signed-in user calls `GET /api/v1/me/assistant/usage` after that turn
+- **THEN** the response includes `cached_tokens: 18000` and the counted total of 4,100 for it
+
+#### Scenario: Unauthenticated usage request
+- **WHEN** a request without credentials calls `GET /api/v1/me/assistant/usage`
+- **THEN** the response is 401 `unauthorized`

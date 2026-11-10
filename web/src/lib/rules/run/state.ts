@@ -12,7 +12,7 @@ import { unavailableReason } from './available'
 import { exec } from './kinds'
 import { isNull } from './actions'
 import { ArgError, planTool, ToolError, type ToolSnapshot } from './tools'
-import type { Change, Row, RunOptions, RunRoutine, RunWorld, SideSpec, StepRecord } from './types'
+import type { Change, Row, RunBlock, RunOptions, RunRoutine, RunWorld, SideSpec, StepRecord } from './types'
 import { resolveDate } from '../stepData'
 
 export const MAX_WRITES = 500
@@ -73,6 +73,8 @@ export class RunState {
   callAI: boolean
   aiTokens = 0
   readonly aiTexts: string[] = []
+  /** What the Ask AI steps showed, at most four (assistant-routine-blocks D1). */
+  readonly blocks: RunBlock[] = []
   readonly test: boolean
   readonly start: number
   deadline: number

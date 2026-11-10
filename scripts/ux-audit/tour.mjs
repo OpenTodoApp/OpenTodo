@@ -235,8 +235,10 @@ async function capture(ctx, anonCtx, page, e, combo, ids) {
     await p.waitForTimeout(300)
     if (e.kind !== 'overlay') return null
     // The retry opens the overlay with the toasts out of the way (a reminder that fired meanwhile
-    // can cover the control the opener clicks), then shows them again for the measures.
-    const hide = hideToasts ? await p.addStyleTag({ content: '[data-toast-region]{visibility:hidden!important}' }) : null
+    // can cover the control the opener clicks), then shows them again for the measures. Not
+    // for a toast entry: its opener waits for the toast to show, which a hidden region never
+    // does (the undo toast's retry after an aborted navigation timed out, issue 1179).
+    const hide = hideToasts && !/toast/.test(e.layoutCheck ?? '') ? await p.addStyleTag({ content: '[data-toast-region]{visibility:hidden!important}' }) : null
     try { return await openOverlay(p, e, layoutWidth(combo.width)) } finally { await hide?.evaluate((el) => el.remove()).catch(() => {}) }
   }
   try {

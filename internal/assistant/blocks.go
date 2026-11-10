@@ -51,6 +51,10 @@ var (
 	FollowupsShownMessage  = "Shown as buttons under your answer; do not repeat them in words."
 	FollowupsOnceMessage   = "follow-ups are already shown under this answer; nothing more was shown."
 	FollowupsChoiceMessage = "this answer asks a choice, so no follow-ups were shown. End this answer now."
+	// A chat turn's answer is never only follow-ups, and one task is a link
+	// (assistant-eval-gaps).
+	FollowupsNoTextMessage = "Shown as buttons under your answer; do not repeat them in words. Your answer has no words yet: answer the user now in a sentence or two (when nothing was found, say so and what you looked for)."
+	OneTaskMessage         = "only one task, so nothing was shown: name it in your answer as a link, [its title](?task=<id>)."
 )
 
 // Block kinds, as the stream and the device name them.
@@ -273,6 +277,11 @@ type displayTurn struct {
 	choice    bool
 	followups bool
 	emit      func(Block)
+	// chat marks a chat turn, not a routine's AI step (assistant-eval-gaps):
+	// a tasks block of one task is refused (one task is a link), and
+	// follow-ups before any words ask for them. wrote is set once the answer
+	// has text.
+	chat, wrote bool
 }
 
 var datePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -537,6 +546,9 @@ func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, err
 	if found == 0 {
 		return marshal(map[string]any{"error": "not_found", "message": NotFoundMessage}), true, nil
 	}
+	if d.chat && b.Kind == BlockTasks && found == 1 {
+		return marshal(map[string]any{"error": "one_task", "id": b.IDs[0], "message": OneTaskMessage}), true, nil
+	}
 	d.shown++
 	if d.emit != nil {
 		d.emit(b)
@@ -569,5 +581,9 @@ func (d *displayTurn) followupsCall(call ToolCall) (string, bool, error) {
 	if d.emit != nil {
 		d.emit(b)
 	}
-	return marshal(map[string]any{"shown": b.Kind, "count": len(b.Suggestions), "message": FollowupsShownMessage}), false, nil
+	msg := FollowupsShownMessage
+	if d.chat && !d.wrote {
+		msg = FollowupsNoTextMessage
+	}
+	return marshal(map[string]any{"shown": b.Kind, "count": len(b.Suggestions), "message": msg}), false, nil
 }

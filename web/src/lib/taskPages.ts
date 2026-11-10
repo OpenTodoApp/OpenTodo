@@ -13,6 +13,7 @@ import { sharedProjectIds } from './feed'
 import { nameId, sha256 } from './ids'
 import { locationOf } from './locations'
 import { mutate } from './ops'
+import { platform } from './platform'
 import { currentUserId } from './sharing'
 import { decryptReply, encryptSnapshot, generateShareKey, shareKeyFragment, unwrapShareKey, wrapShareKey } from './taskPageCrypto'
 import { setKnownTaskPages } from './taskPageStore'
@@ -170,7 +171,7 @@ onTestTeardown(async () => {
 })
 
 async function maintain(): Promise<void> {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+  if (!platform.network.online()) return
   const { pages } = await api.myTaskPages()
   if (!Array.isArray(pages)) return
   // The panel's "Published" marker reads these (lib/taskPageStore).

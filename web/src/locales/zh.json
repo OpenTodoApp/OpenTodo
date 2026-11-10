@@ -7426,5 +7426,14 @@
   "Urgency {score}, show why": "紧迫度 {score}，查看原因",
   "Why here?": "为什么排在这里？",
   "Most urgent first": "最紧迫的在前",
-  "Least urgent first": "最不紧迫的在前"
+  "Least urgent first": "最不紧迫的在前",
+  "Sign in to the OpenTodo app on {device}?": "在 {device} 上登录 OpenTodo 应用？",
+  "Sign in to the OpenTodo app on this device?": "在此设备上登录 OpenTodo 应用？",
+  "Only confirm if you started signing in from the app just now.": "仅当你刚刚在应用中开始登录时才确认。",
+  "This sign-in request can’t be used": "此登录请求无法使用",
+  "Start signing in again from the app.": "请在应用中重新开始登录。",
+  "OpenTodo app · {device}": "OpenTodo 应用 · {device}",
+  "OpenTodo app": "OpenTodo 应用",
+  "Used {relativeTime}": "{relativeTime}使用过",
+  "Sign in again from the app.": "请在应用中重新登录。"
 }

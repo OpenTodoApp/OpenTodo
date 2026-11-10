@@ -433,7 +433,11 @@ The header of a subtask, on the task page and in the docked panel, SHALL show th
 - **THEN** the path is the first line of the panel, and `u` while focus is inside the panel opens the nearest parent
 
 ### Requirement: Task panel tabs
-The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
+The tabbed area SHALL offer Comments (with the comment count), Activity, History and Time (with the tracked total when there is one) as tabs reachable with the keyboard (arrow keys between tabs, Tab into the content). The tab row SHALL fit the width of the panel or the content column without scrolling:
+- When the labels with their counts do not fit, every tab SHALL show its icon followed by its count (the tracked total for Time), keeping the selected tab's word beside its icon when that still fits.
+- Each tab's full name and value SHALL stay in its accessible name and its tooltip.
+
+Comments SHALL be the default tab; the last chosen tab SHALL be remembered on the device only. The task's created and completed times SHALL be the first entries of Activity. The Time tab SHALL hold the task's time entries as the time-tracking capability defines them.
 
 #### Scenario: Remembered tab
 - **WHEN** the user opens the Activity tab, closes the panel and opens another task
@@ -444,8 +448,12 @@ The tabbed area SHALL offer Comments (with the comment count), Activity, History
 - **THEN** its created time and its completed time are the first entries
 
 #### Scenario: Time tab by keyboard
-- **WHEN** the panel is open on a task with 35 minutes tracked and the user moves to the tabs and presses the right arrow until "Time · 35m"
+- **WHEN** the panel is open on a task with 35 minutes tracked and the user moves to the tabs and presses the right arrow until the Time tab, named "Time · 35m"
 - **THEN** the Time tab shows the entries, Tab reaches Start tracking first, and Enter starts an entry whose row appears at the top with a ticking duration
+
+#### Scenario: A narrow panel
+- **WHEN** the docked panel is at its narrowest, 22 rem, on a task with 4 comments and 1 h 20 min tracked
+- **THEN** the four tabs fit on one row without scrolling, read as their icons with "4" and "1h 20m", the selected tab keeps its word, and a screen reader hears "Comments, 4" and "Time, 1 h 20 min"
 
 ### Requirement: Task panel comment composer
 The comment composer SHALL be pinned to the bottom of the task page's content column (of the panel when docked) while Comments is shown, resting as a single line that expands to the full composer (the rich-text editor, attach, the submit key hint and the round Send control of the shared composer frame, see `comments` "Composer behaviour") when focused, when it holds a draft or a reply target, or when `Shift+C` is pressed; `Shift+C` SHALL switch to Comments and focus the composer. The editor's own keys SHALL apply only while the composer has focus and SHALL never fire a page shortcut.
@@ -650,7 +658,7 @@ Activating a part SHALL open its editor as a popover anchored to the part from 6
 - **THEN** the labels editor opens as a bottom sheet with the facet's title and Close, and closing it returns to the panel scrolled where it was
 
 ### Requirement: When popover shows one segment
-The When popover SHALL offer the segments Do on, Start, Deadline, Repeat and Reminders in a segmented control and show one at a time, starting on the segment of the part that opened it (Do on when opened from the Add menu or a shortcut that names no part). The Do on segment SHALL hold the date, the time, the Evening toggle and the zone control.
+The When popover SHALL offer the segments Do on, Start, Deadline, Repeat and Reminders in a segmented control and show one at a time, starting on the segment of the part that opened it (Do on when opened from the Add menu or a shortcut that names no part). The Do on segment SHALL hold the date, the time of day row (a part of the day or a time) and, with a time, its zone.
 
 #### Scenario: Open on the clicked part
 - **WHEN** the user activates the "2 reminders" part
@@ -694,7 +702,19 @@ Activating the control that opened an anchored popover (a facet part, a picker t
 - **THEN** the popover closes and focus stays on the part
 
 ### Requirement: Do on segment
-The Do on segment of the When popover SHALL show, in order: quick choices (Today, Tomorrow, This weekend, Next week, No date), each with the date it means; one date field that shows the chosen date in words in the user's date format, accepts typed dates and relative words, and previews what it understood before it is committed; a month calendar that is visible without opening anything; an "Add time" control that reveals a time field with suggested times; the Evening switch; and, only when a time is set, one line naming the time zone behaviour ("Floating time" or "Fixed to <city>") with a Change control. The segment SHALL NOT contain a clear button of its own (Clear is in the popover's footer), and SHALL NOT show the zone as a button-styled value.
+The Do on segment of the When popover SHALL show, in order:
+1. One date field. Its placeholder SHALL be an example of what it accepts in the interface language (in English "tomorrow 3pm, next fri"). It SHALL show the chosen date in words in the user's date format, accept typed dates, relative words and a date with a time, and preview what it understood (the date and, when typed, the time) before it is committed.
+2. Quick choices on one line (Today, Tomorrow, This weekend, Next week), each naming the date it means in its accessible name and tooltip.
+3. A month calendar that is visible without opening anything.
+4. One time of day row: Any time, Morning, Afternoon, Evening and Time while day parts are on, and Any time, Evening and Time while they are off. The row is enabled only when the task has a do date.
+5. Only while Time is chosen, one line holding the time field with suggested times and, at the line's end, the zone behaviour as quiet text ("Floating", or the city of a fixed zone) that opens the zone choices.
+
+The row SHALL select Time when the task has a due time, else the task's part, else Any time. A task holding both a part and a time SHALL show the part selected and the time line. Within this row a part and a time SHALL be exclusive:
+- choosing a time SHALL write the time together with the Any time pairing;
+- choosing a part SHALL write that part's pairing together with the date without a time or zone;
+- choosing Any time SHALL write the Any time pairing and remove the time.
+
+Each choice SHALL be one batch of field operations with Undo, applied at once offline and converging by per-field last-writer-wins. The word for the part SHALL be "Evening", never "This Evening". The segment SHALL NOT contain a clear button of its own (Clear is in the popover's footer), a "No date" choice, an "Add time" or "Remove time" control, or a zone shown as a button-styled value or on a line of its own. Without a time it SHALL show nothing about time zones.
 
 #### Scenario: Pick tomorrow in one click
 - **WHEN** the user opens the Do on part of an undated task and chooses Tomorrow
@@ -704,17 +724,45 @@ The Do on segment of the When popover SHALL show, in order: quick choices (Today
 - **WHEN** the user types `fri` into the date field
 - **THEN** a line under the field reads the next Friday's date in words before Enter is pressed, and Enter sets it
 
+#### Scenario: Typed date and time
+- **WHEN** the user types `tomorrow 3pm` into the date field of an evening task and presses Enter
+- **THEN** the task is due tomorrow at 15:00, its part is Any time, the row shows Time selected with "15:00", and one Undo restores the earlier date and Evening
+
+#### Scenario: Placeholder teaches the field
+- **WHEN** the user opens the Do on segment of an undated task in English
+- **THEN** the date field's placeholder reads "tomorrow 3pm, next fri"
+
 #### Scenario: Dates in words
 - **WHEN** the user's date format is day-month and the task is due 2026-10-22
 - **THEN** the date field reads "Thu 22 Oct" and no field shows `10/22/2026`
 
+#### Scenario: Evening on a later day
+- **WHEN** a task is due next Tuesday and the user chooses Evening in the time of day row
+- **THEN** the row reads "Evening", the task's `evening` is true and its `day_part` null, and nothing in the segment reads "This Evening"
+
 #### Scenario: Adding a time
-- **WHEN** the user chooses "Add time" and then the suggestion 09:00
-- **THEN** the task is due at 09:00, the zone line "Floating time · Change" appears, and "Add time" is replaced by the time field and "Remove time"
+- **WHEN** the user chooses Time in the row of a Morning task and then the suggestion 09:00
+- **THEN** the task is due at 09:00, its part is Any time, and the line under the row reads "09:00" with "Floating" at its end
+
+#### Scenario: A part replaces the time
+- **WHEN** a task due tomorrow at 19:30 is open and the user chooses Afternoon
+- **THEN** the task is due tomorrow without a time, its part is Afternoon, the time line is gone, and Undo restores 19:30
 
 #### Scenario: No zone without a time
 - **WHEN** the task is due on a date with no time
-- **THEN** the segment shows no zone line and no hint about time zones
+- **THEN** the segment shows no zone and no hint about time zones
+
+#### Scenario: Both stored
+- **WHEN** a task synced from an older client is Evening and due at 08:00
+- **THEN** the row shows Evening selected and the time line with "08:00", and nothing is written until the user chooses
+
+#### Scenario: Day parts off
+- **WHEN** day parts are off and the user opens the Do on segment of a dated task
+- **THEN** the row offers Any time, Evening and Time
+
+#### Scenario: No date yet
+- **WHEN** the task has no do date
+- **THEN** the time of day row is shown disabled, and picking a date in the calendar enables it without moving the segment's content
 
 ### Requirement: Conversation tabs stay reachable
 The tab bar of Comments, Activity, History and Time SHALL stay pinned under the panel header once the user has scrolled down to it, so the tabs are reachable without scrolling back up. Switching tabs SHALL keep the tab bar at the same position on screen, show the new tab's content from its start under the bar, and SHALL NOT make the panel jump, even when the new tab is shorter than the old one. The panel SHALL remain one scroll region.
@@ -995,7 +1043,9 @@ The panel SHALL be either open or closed. Its state SHALL be kept on the device 
 
 While the panel is open:
 - A click on a task's row or title, Enter on a selected row whose task is not shown, and moving the cursor (`j`, `k`, the arrow keys, a click) SHALL show that task in the panel. While rows are ticked for a bulk action the panel SHALL keep its task.
-- A click on a title SHALL show the task rather than edit the title in place; `F2` still edits it in place.
+- A click on a title SHALL show the task rather than edit the title in place; `F2` still edits it in place. With "Click a task to" set to "Expand the row" (`task-list-presentation` "\"Click a task to\" and double-click") a click SHALL instead select the row and show or hide its details, and the panel SHALL show the selected task as for any cursor move.
+- Focus SHALL stay on the list when the panel follows the cursor, after a key and after a click on a row alike; the panel takes focus only when the user moves into it.
+- Following the cursor SHALL cost the list what moving the cursor costs without the panel: one render of the list and of the two rows whose selection changed per move, at any list size.
 - Enter on the row whose task is shown SHALL open the task page.
 - With no task shown the panel SHALL read "No task selected" and "Select a task to see its details here." (the Inbox keeps its own sentence, `inbox-triage` "Inbox list and detail"), with the same Close and resize handle. A list with no rows SHALL show no empty pane.
 
@@ -1003,7 +1053,7 @@ The panel SHALL never close by itself. Escape on the list and a click on the emp
 
 While the panel is closed:
 - Moving the cursor SHALL show nothing.
-- A click on a task's row or title, Enter on a selected row, Open details, a task chosen in the command palette, and a link to a task in a note SHALL open the panel again with that task.
+- A click on a task's row or title (under "Expand the row" a click only expands the row and the panel stays closed), Enter on a selected row, Open details, a task chosen in the command palette, and a link to a task in a note SHALL open the panel again with that task.
 
 Below 1024 px, and on the screens not listed (the calendar's Day, Week, Month and Plan, dashboards, the review screens, Close the day), a task SHALL open as its page whatever the preference. Expanding a row's details in place (`task-list-presentation` "Expanded rows") SHALL work as it does without the panel, and the rows SHALL lay out by their own width as the panel narrows the list. The panel SHALL read and edit the task through the same operations as the task page, so it works offline and converges like any edit.
 
@@ -1050,6 +1100,18 @@ Below 1024 px, and on the screens not listed (the calendar's Day, Week, Month an
 #### Scenario: A row still expands in place
 - **WHEN** the panel shows a task and the user presses → on another selected row of the same list
 - **THEN** that row's details open under it in the list, and the panel shows the selected row's task
+
+#### Scenario: Expand the row beside the panel
+- **WHEN** "Click a task to" is "Expand the row", the panel is open in Today and the user clicks the title of "Order the tiles"
+- **THEN** the row's details show under it, the panel shows "Order the tiles", and focus stays on its row
+
+#### Scenario: Expand the row with the panel closed
+- **WHEN** "Click a task to" is "Expand the row", the panel is closed and the user clicks a row
+- **THEN** the row's details show under it and the panel stays closed until Enter
+
+#### Scenario: Following a large list
+- **WHEN** the panel is open beside a project of 2,000 tasks and the user presses `j` three times
+- **THEN** each press shows the next task in the panel, draws the list once and re-renders two rows
 
 ### Requirement: The panel slot stays in place while it fills
 When the open panel shows "No task selected" and a task is chosen, the panel SHALL stay on screen at its width at every moment until the task shows, so the list beside it never widens and narrows again. Showing that task SHALL NOT replay the panel's slide-in, which belongs to opening from closed. This holds after going to another list, on a first selection, and while the task is still being read from the device. It changes no data, so it needs no network.
@@ -1140,3 +1202,54 @@ On a device with a coarse pointer, outside WebKit (Safari and the other iOS brow
 #### Scenario: A mouse keeps the browser's Back
 - **WHEN** a user with a mouse or trackpad opens a dialog and presses the browser's Back
 - **THEN** the browser navigates and the dialog is not what closed
+
+### Requirement: Task panel proportions
+In the docked task panel and on the task page:
+- The task's checkbox SHALL be centred on the first line of its title, whether the title takes one line or more, and SHALL share its left edge with the facet lines' icons below it.
+- The panel's title SHALL be set in the title step (16 px), smaller than the page's title.
+- Facet lines, section headings and subtask rows SHALL use the 32 px row step of the panel (44 px on a coarse pointer).
+- No element of the panel's head SHALL be wider than the panel's content column.
+
+This is presentation only and the same offline.
+
+#### Scenario: Two-line title
+- **WHEN** the docked panel shows a task whose title wraps to two lines
+- **THEN** the checkbox is centred on the first line, and its left edge lines up with the When line's icon
+
+#### Scenario: Touch
+- **WHEN** the task page is shown on a tablet without a fine pointer
+- **THEN** every facet line and subtask row is at least 44 px tall
+
+### Requirement: Quiet subtask checklist
+The Subtasks section of the task panel and the task page SHALL be a heading followed by a checklist:
+- The heading SHALL carry the section's weight: "Subtasks" at the label size in medium weight, the count "2 of 5" and the progress bar.
+- Each subtask SHALL be a quiet checklist row: a 16 px checkbox and the title in the default tone at the body size, with no border, no background and no icon of its own.
+- A completed subtask SHALL read in the faint tone with its strike.
+- The row's actions SHALL appear on hover or focus within it, always on a coarse pointer.
+- The add field SHALL be the last row, reading "Add a subtask" in the faint tone until focused.
+
+Ticking and editing write through the usual task operations, offline included, converging by per-field last-writer-wins.
+
+#### Scenario: Heading and items
+- **WHEN** a task has five subtasks, two done
+- **THEN** the section shows "Subtasks", "2 of 5" and the progress bar in its heading, then five checklist rows without borders, the two done ones in the faint tone with their strike
+
+#### Scenario: Tick offline
+- **WHEN** the device is offline and the user ticks a subtask in the panel
+- **THEN** the row is shown done at once, the heading reads "3 of 5", and the change syncs on reconnect
+
+### Requirement: Compact estimate editor
+The estimate editor SHALL be one field and one row of four presets:
+- The field accepts typed durations (`45`, `1h30`, `90m`), and ↑ and ↓ change the value by 15 minutes.
+- The presets are 15m, 30m, 1h and 2h, in the interface face as quiet segments, the chosen one selected.
+- Clear is in the editor's footer, as in the other facet editors.
+
+Choosing or typing a value SHALL write the estimate in minutes as one operation with Undo, offline included, converging by last-writer-wins. A value outside the estimate's range SHALL be refused with a message and leave the task unchanged.
+
+#### Scenario: Preset
+- **WHEN** the user opens the Estimate part and chooses 30m
+- **THEN** the How line reads "30 min" and the editor shows 30m selected
+
+#### Scenario: Arrow keys
+- **WHEN** the field holds `1h` and the user presses ↑ twice
+- **THEN** the field reads `1h 30m` and Enter writes 90 minutes

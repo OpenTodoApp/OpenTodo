@@ -61,6 +61,10 @@ type Policy struct {
 	// Demo: a demo instance refuses the route (the deny list in httpapi's
 	// demo.go is checked against this flag by TestDemoDenyListMatchesPolicy).
 	Demo bool
+	// SignIn: a browser page. A request without a session is sent to the
+	// sign-in page, which returns to the route afterwards, instead of being
+	// answered 401 (native-app-foundation D5).
+	SignIn bool
 	// Deprecation marks a deprecated v1 route (stability-contract D3): it keeps
 	// its behaviour and answers with the Deprecation and Sunset headers.
 	Deprecation *Deprecation
@@ -131,6 +135,10 @@ func (p Policy) FullTokens() Policy { p.Tokens = TokensFull; return p }
 
 // DemoDenied marks a route a demo instance refuses.
 func (p Policy) DemoDenied() Policy { p.Demo = true; return p }
+
+// SignInFirst marks a browser page that sends a request without a session to
+// sign in first and back afterwards.
+func (p Policy) SignInFirst() Policy { p.SignIn = true; return p }
 
 // Deprecated marks a route deprecated since a date, served at least until
 // sunset, and replaced by replacement (a path or a short description).

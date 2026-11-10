@@ -22,7 +22,8 @@ import type { StepValue } from '../stepData'
 export { autoCheck, mergeChanges, proposalItems } from './review'
 export { planActions, parseActions, parseStepActions } from './actions'
 export { AIError } from './types'
-export type { AIAnswer, AICall, Change, LibraryTemplate, MergedChange, ProposalItem, Row, RunEnv, RunOptions, RunPlan, RunRoutine, RunWorld, SideSpec, StepRecord } from './types'
+export { MAX_RUN_BLOCKS } from './types'
+export type { AIAnswer, AICall, RunBlock, Change, LibraryTemplate, MergedChange, ProposalItem, Row, RunEnv, RunOptions, RunPlan, RunRoutine, RunWorld, SideSpec, StepRecord } from './types'
 
 /** The trigger's output for an occurrence (internal/rules triggerValue). */
 export function triggerValue(st: RunState, taskId?: string): StepValue {
@@ -49,7 +50,7 @@ export async function planRoutine(world: RunWorld, rule: RunRoutine, opts: RunOp
   const changes = mergeChanges(st.overlay)
   const base: RunPlan = {
     outcome: 'applied', failedStep: -1, records: st.records, overlay: st.overlay, changes, completing: [...st.completing].sort(),
-    sides: st.sides, aiTexts: st.aiTexts, tokens: st.aiTokens, writesPlanned: st.writesPlanned(),
+    sides: st.sides, aiTexts: st.aiTexts, blocks: st.blocks, tokens: st.aiTokens, writesPlanned: st.writesPlanned(),
   }
   if (st.test) base.previews = st.previews
   if (err && !(err instanceof Ended)) {

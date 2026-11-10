@@ -12,6 +12,13 @@ import (
 )
 
 const maxMCPStdioMessage = 1 << 20
+
+// The MCP session and bridge headers (mcp.SessionHeader, mcp.BridgeHeader; kept
+// equal by a test).
+const (
+	mcpSessionHeader = "Mcp-Session-Id"
+	mcpBridgeHeader  = "OpenTodo-MCP-Bridge"
+)
 const maxMCPResponse = 64 << 20
 
 // cmdMCP bridges newline-delimited MCP stdio messages to the configured
@@ -70,6 +77,7 @@ func cmdMCP(a *App, ctx context.Context, g *globalFlags, args []string) error {
 			return authErr("the stored account key is out of date (the passphrase or key changed); run `ot encryption unlock` again")
 		}
 		dec = &decrypter{c: c, key: key, version: kf.KeyVersion}
+		c.mcpDecrypt = true
 		fmt.Fprintln(a.Stderr, PlaintextNotice)
 	}
 
@@ -150,12 +158,23 @@ func (c *client) mcp(ctx context.Context, message []byte) ([]byte, int, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "ot/"+Version)
 	req.Header.Set("Authorization", "Bearer "+c.token)
+	// The session id an initialize was answered with goes back on every later
+	// request (MCP Apps, mcp-blocks D6), and the decrypting bridge says so (D4).
+	if c.mcpSession != "" {
+		req.Header.Set(mcpSessionHeader, c.mcpSession)
+	}
+	if c.mcpDecrypt {
+		req.Header.Set(mcpBridgeHeader, "decrypt")
+	}
 
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, 0, c.unreachable(err)
 	}
 	defer resp.Body.Close()
+	if sid := resp.Header.Get(mcpSessionHeader); sid != "" {
+		c.mcpSession = sid
+	}
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxMCPResponse+1))
 	if err != nil {
 		return nil, resp.StatusCode, c.unreachable(err)

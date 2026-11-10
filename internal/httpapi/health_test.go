@@ -23,7 +23,7 @@ func TestHealthRouteAlias(t *testing.T) {
 		if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
 			t.Fatalf("%s: Content-Type %q", who, ct)
 		}
-		if len(out) != 2 || out["status"] != want["status"] || out["version"] != want["version"] {
+		if len(out) != 3 || out["status"] != want["status"] || out["version"] != want["version"] || out["app_sign_in"] != true {
 			t.Fatalf("%s: /api/v1/health = %v, want %v", who, out, want)
 		}
 	}

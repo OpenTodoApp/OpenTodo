@@ -54,25 +54,59 @@ The app lives in `mobile/app/` (rejected: a separate repo).
 `web/src/lib/platform.ts` exports one `Platform` object, installed once at start-up. Its members:
 
 ```ts
+interface KeyValue { get(k: string): string | null; set(k: string, v: string | null): boolean; remove(k: string): void }
+
 interface Platform {
   visibility: { visible(): boolean; onChange(fn: (visible: boolean) => void): () => void }
   network:    { online(): boolean;  onOnline(fn: () => void): () => void }
   leader:     { request<T>(name: string, fn: () => Promise<T>, signal?: AbortSignal): Promise<T> } | null // Web Locks, or null: lead at once
   broadcast:  (name: string) => { post(m: unknown): void; on(fn: (m: unknown) => void): () => void; close(): void } | null
-  prefs:      { get(k: string): string | null; set(k: string, v: string): void; remove(k: string): void }
+  prefs:      KeyValue & { onChange(fn: (key: string | null) => void): () => void }
+  session:    KeyValue
+  languages(): readonly string[]
+  showLanguage(code: string): void
+  indexedDB(): IDBFactory | undefined
+  persistStorage(): Promise<boolean>
+  shell(): OpenTodoShell | undefined
   timeZone:   { current(): string; onChange(fn: () => void): () => void }
 }
 ```
 
-- **On the web.** The web implementation is exactly today's code: `document.visibilityState`, `navigator.onLine`, `navigator.locks`, `BroadcastChannel`, `localStorage`, and the time-zone watcher in `dates.ts`.
+- **On the web.** The web implementation is exactly today's code: `document.visibilityState`, `navigator.onLine`, `navigator.locks`, `BroadcastChannel`, `localStorage`, the time-zone watcher in `dates.ts`, and the rest listed below.
 - **In the app.**
   - Visibility comes from `AppState`, and the network from `@react-native-community/netinfo`.
   - The leader is `null`, so the one process leads at once. Broadcast is `null`.
   - `prefs` is MMKV, and the time zone comes from `expo-localization`.
-- **What uses it.** `sync.ts`, `http.ts` and `dates.ts` use the port and no longer touch globals. A repo check lists every browser global in a module of `shared-modules.json` and fails on a new one, so the boundary cannot erode.
+- **Members added in task 1.3**, so that the whole import graph of `sync.ts` and `ops.ts` uses the port:
+  - `prefs.set` returns whether the storage took the value, and null removes the key, as `deviceStorage.writeString` always did. `prefs.onChange` is the `storage` event: `createStoredValue` with `crossTab` re-reads when another tab changes its key. The app has one instance, so it never fires there.
+  - `session` is `sessionStorage`, for the values `deviceStorage` keeps per tab. In the app it is a map in memory.
+  - `languages()` is `navigator.languages`, read by `i18n/locale`. The app reads `expo-localization`.
+  - `showLanguage(code)` sets the page's `lang` attribute when `i18n` applies a language. It stays a member, not a call in the web app's start-up, because the entry chunk is at its budget and the call must also follow every later change of language. The app does nothing with it.
+  - `persistStorage()` is `navigator.storage.persist()`, behind `db.requestPersistentStorage`. The app's SQLite file is not evicted, so it can answer true.
+  - `indexedDB()` is the page's IndexedDB. `startSync` sweeps abandoned shares from the service worker's hand-over store (`shareInbox`, attachments D9) and passes it in; every `shareInbox` call now takes the IndexedDB to use, so the worker and the page pass theirs. The app has no share inbox and can return `undefined`, which skips the sweep. Task 4.3 may hand the same member's factory to Dexie.
+  - `shell()` is the native shell's bridge (`window.opentodoShell`, native-shells). `lib/shell.ts` checks its shape as before. `db` and `e2ee` use the bridge, for sign-out and biometric unlock. One member is smaller than a hook for each. The app has no web view and returns `undefined`. It could later offer biometrics through the same interface.
+- **Moved out of the shared graph instead.** These are inherently web-only. Where they went also decided the bundle: Rolldown merges shared chunks into the entry when that creates no circular chunk import. A module that only `App` or `main.tsx` imports lands in the entry: moving the share sweep to `App` cost 285 B there, so it stays in `startSync` on the port. A new import path from `taskOrigin` to the port let Rolldown merge about 70 KB of the task panel into the entry, so the origin's opening moved out instead. Every move below was measured:
+  - `openAttachment` opens tabs and object URLs. It moved to `lib/attachmentOpen.ts`, which only the attachments row imports. The http(s) check of a link stays in `attachments.ts` (`linkHref`), so `share.ts` keeps its chunk.
+  - `isPhone` was a `(pointer: coarse)` query for the maps link. The location editor and preview now use `coarsePointer` from `ui/Tooltip`, which had the same query.
+  - `originLink` and `openOrigin` (tabs, link activation, the shell's Obsidian hand-over) moved from `taskOrigin.ts` to `lib/originOpen.ts`, which only the origin chip and the task panel import.
+  - `installShellLinks` takes the page's document from `main.tsx`.
+  - The wire types that `api.ts` named from `passkeys.ts` and `relay.ts` moved to `passkeyTypes.ts` and `relayTypes.ts`. The two modules re-export them.
+- **What uses it.** Every module on the import graph of `sync.ts` and `ops.ts` uses the port and no longer touches globals. That graph includes type-only imports, because the app type-checks them too. `node scripts/shared-graph.mjs` prints it, with the globals each module still names. A repo check lists every browser global in a module of `shared-modules.json` and fails on a new one, so the boundary cannot erode. A second check fails when the list misses a module of that graph. It needs web's TypeScript, so the Web job runs it after `npm ci`, and the Changed paths job, which installs nothing, skips it.
+- **Not on the port.** `EventSource` (the live channel in `sync.ts`) is used only after a `typeof` check. Without it there is no live channel and sync falls back to polling. React Native has no `EventSource`, so the app installs a polyfill or lives without push wake-ups; task 4.5 decides. `crypto.subtle`, `Blob`, `URL`, `XMLHttpRequest`, `performance` and `requestAnimationFrame` exist in React Native or come from `react-native-quick-crypto` (below).
 - **Cost on the web.** It moves code and adds no behaviour. The first-load gzip budget is near its limit, so the port must stay within it. The design target is under 150 bytes, which `make bundle-budget` reports.
 
 Cryptography stays `crypto.subtle`. In the app it is provided by `react-native-quick-crypto`, a native implementation of the Web Crypto subset `crypto.ts` uses (AES-GCM, PBKDF2, HKDF, random values). The shared envelope vectors (`e2eeEnvelope`) run on the iOS simulator every night, so the native implementation is checked against the browser's.
+
+Other web APIs the listed modules use directly (task 4.1, as built). The table is what React Native 0.88 with Expo SDK 58 is expected to provide; each row is confirmed on the simulator with sync in the app (task 4.5), and a gap gets a polyfill listed in `mobile/app/DEPENDENCIES.md`:
+
+| API | Used by | In the app |
+| --- | --- | --- |
+| `crypto.subtle`, `crypto.getRandomValues` | `crypto`, `e2ee`, `attachments`, `taskPageCrypto`, `ids` | `react-native-quick-crypto`, installed at start-up |
+| `EventSource` | `sync` (the live stream) | none: `sync.ts` checks `typeof EventSource` and polls instead. Task 4.5 decides between a native stream and polling while in the foreground |
+| `TextEncoder`, `atob`, `btoa` | `crypto`, `ids`, `taskOrigin`, `taskPages`, `rules/steps`, `richtext` | Hermes |
+| `TextDecoder`, `URL`, `URLSearchParams` | `crypto`, `api`, `share`, `shell`, `taskOrigin`, `attachments` | Expo's runtime (`expo/winter`); `URL` must be the standard one, not React Native's partial one |
+| `fetch`, `Response`, `Headers`, `AbortController`, `XMLHttpRequest`, `FormData`, `Blob` | `http`, `api`, `sync`, `attachments`, `shareInbox`, `db`, `crypto` | React Native. `File` (`attachments`, `shareInbox`) and `Blob`'s `arrayBuffer()` are partial there: attachments wait for `native-app-everyday` |
+| `performance`, `requestAnimationFrame` | `perfMarks` | React Native (`performance.mark` for the perf marks) |
 
 ### D4. Local storage: Dexie on SQLite, chosen by measurement
 
@@ -114,6 +148,15 @@ A demo instance denies `/api/v1/app/token` (`.demoDenied()`).
 
 A custom URL scheme can be claimed by another app. PKCE makes an intercepted code useless without the verifier, which never leaves the app (RFC 8252 §8.1). The `state` value prevents injection.
 
+As built (task 3):
+- **Codes and grants have tables of their own.** `mcp_oauth_grant` holds one grant per client and person, but the app needs one per device, and `mcp_oauth_code` has no column for the state or the device name. Adding columns to either would need a table rebuild. So migration 0065 adds `app_sign_in_code` and `app_sign_in_grant` (plus `app_sign_in_refresh_used` for reuse detection) next to them, and seeds the `opentodo-app` row in `mcp_oauth_client` that the codes reference. The PKCE check, the hashing and the rotation transaction are shared with MCP.
+- **The code is bound to the state too.** The exchange sends `code`, `code_verifier` and `state`, and a mismatch of either is `invalid_grant`. The first attempt uses the code up, right or wrong.
+- **Revoking deletes the grant.** A token of a deleted grant is unknown, which answers `invalid_grant` like a revoked one, and nothing has to be kept for it.
+- **The access token is an ordinary API token** of the `app` scope: a `full` scope row plus a marker in `api_token_app`, so a downgraded server reads it as `full`. It is left out of the API token list; the sessions list shows the grant instead.
+- **The token route speaks the `/api/v1` envelope** (`{error:{code,message}}`, a JSON body), not the OAuth form of `/oauth/token`, because only our own app calls it. A demo instance answers it with the usual 403 `demo_restricted`.
+- **Signing out in the app** is `POST /api/v1/app/sign-out` with the app's access token; the sessions list uses `GET /api/v1/me/apps` and `DELETE /api/v1/me/apps/{id}`.
+- **`signedIn` that signs in first.** A `signedIn` route answers 401 without a session, so the policy gained the modifier `.SignInFirst()`: a browser without a session is sent to the sign-in page, which returns to `/app/sign-in` afterwards. The route is also `.SessionOnly()`, so a token cannot reach the confirmation. The confirmation is a web app dialog: `/app/sign-in` hands the request to the MCP consent host (`?oauth_consent=` with `client_id=opentodo-app`), whose lazily loaded screen shows the app's confirmation for that client, so the first load carries nothing new but the return to `/app/sign-in` after sign-in.
+
 ### D6. Sync lifecycle on a phone
 
 The shared engine runs unchanged: outbox, pull pages, live stream, hybrid clock.
@@ -147,14 +190,15 @@ The app uses Expo's continuous native generation: `npx expo prebuild` writes `io
 | Job | Runner | Runs when | Time target |
 |---|---|---|---|
 | `app-check`: type-check, lint, unit tests (Jest with the shared vectors), the boundary check | Linux | `app` | ≤ 3 min |
-| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly; release | ≤ 25 min |
-| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly; release | ≤ 15 min |
+| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly | ≤ 25 min |
+| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly | ≤ 15 min |
 | `app-perf`: the `perfseed` account on the simulator, D4's three numbers | macOS | nightly | n/a |
 | TestFlight preview | macOS | `workflow_dispatch` and release tags | n/a |
 
 Further rules:
 - A web-only pull request, one that touches no shared module the app imports, runs no app job. A change to a shared module runs only `app-check`, never a Mac build.
 - `app-check` has its own `node_modules` cache keyed on `mobile/app/package-lock.json`. The web jobs never install the app's dependencies, and `make check` does not run the app. `make app` does, and `make check APP=1` adds it.
+- Release tags do not run `app-ios` or `app-android` while no release ships the app: a web release is never blocked by an app build. They join the release gates when the app ships in releases (`native-app-handover`). As built, both are in `.github/workflows/app-native.yml`, which `ci.yml` and `nightly.yml` call.
 - Dependabot groups the app's updates weekly in one pull request, so its lockfile does not churn the queue.
 - The boundary and `DEPENDENCIES.md` checks run in the existing repo-check job. They are text checks, about a second, and need no install.
 
@@ -169,15 +213,16 @@ The trial ships as a separate App Store Connect app, "OpenTodo Preview" (bundle 
 
 On the server screen, the app reads `GET /api/v1/version`.
 - A server without the app sign-in routes gets "This server needs OpenTodo 1.5 or later for the app" and a link to the update guide. No half-working fallback to a web view.
+- As built, the app detects the routes by a capability flag rather than by the version: `GET /api/v1/health` (public; `/api/v1/version` does not exist) answers `"app_sign_in": true`. The flag also holds for a development build, whose version string does not compare. The minimum version in the message is the first release that carries the flag.
 - The app's version follows the repo's version. Its minimum server version is a constant checked in its unit tests against `internal/version`.
 
 ## Data model
 
 - No new synced field and no op change.
 - **Server:**
-  - a migration adds the `app` scope to the grants' check;
+  - migration 0065 adds the app's code and grant tables and the `api_token_app` marker of the `app` scope (see D5, "As built");
   - the built-in client is a seeded row;
-  - app grants join the sessions query.
+  - app grants are listed with the sessions (`GET /api/v1/me/apps`).
 
 ## Size and memory
 

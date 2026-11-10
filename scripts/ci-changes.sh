@@ -15,6 +15,11 @@
 # one browser layout and end-to-end job, `a11y` the accessibility gate on real screens,
 # `extension`, `obsidian` and `skill` their packages;
 # every one of them is true when the workflow or this filter changes.
+# The native app (native-app-foundation D9): `app`, its Linux checks, for mobile/app/,
+# a shared module listed in mobile/app/shared-modules.json, the op schema, the
+# catalogs it loads and the Makefile (and the workflow or this filter); `app_native`,
+# its iOS and Android builds (app-native.yml), only for mobile/app/ itself and that
+# workflow, so a shared-module change never starts a Mac.
 # Cases: scripts/repo-checks.test.mjs.
 set -eu
 files=$(cat)
@@ -44,6 +49,12 @@ obsidian=$(match 'obsidian/|web/src/lib/nlp/|web/src/lib/e2eeEnvelope\.ts$|web/s
 skill=$(match 'skills/|Makefile$')
 # The TestFlight job's archive script is checked by the iOS job (ios-distribution D9).
 ios=$(match 'mobile/ios/|scripts/release/ios-testflight\.sh$')
+# The list's paths (one quoted path per line, so no JSON parser), as anchored patterns.
+list="$(cd "$(dirname "$0")/.." && pwd)/mobile/app/shared-modules.json"
+shared=$(sed -n 's/^ *"\(web\/[^"]*\)",\{0,1\}$/\1/p' "$list" | sed 's/[.]/\\./g; s/$/$/' | paste -sd '|' -)
+app=$(match "mobile/app/|\\.github/workflows/app-native\\.yml\$|scripts/shared-(graph|boundary)\\.mjs\$|web/src/generated/opSchema\\.ts\$|web/src/locales/|Makefile\$${shared:+|$shared}")
+app_native=false
+if printf '%s\n' "$files" | grep -qE '^(mobile/app/|\.github/workflows/app-native\.yml$)'; then app_native=true; fi
 echo "code=$code"
 echo "docs=$docs"
 echo "mobile=$mobile"
@@ -54,3 +65,5 @@ echo "extension=$extension"
 echo "obsidian=$obsidian"
 echo "skill=$skill"
 echo "ios=$ios"
+echo "app=$app"
+echo "app_native=$app_native"

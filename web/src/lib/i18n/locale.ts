@@ -3,12 +3,12 @@
 // with the browser's region where it matches, so de-CH stays de-CH), and the
 // language list for quick add and voice with the interface language first.
 import { isShipped, type LanguageCode } from '../../locales'
+import { platform } from '../platform'
 import { currentPreference } from './catalog'
 
-/** The browser's preferred languages, most preferred first. */
+/** The browser's (the device's) preferred languages, most preferred first. */
 export function browserLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') return ['en']
-  return navigator.languages?.length ? navigator.languages : [navigator.language || 'en']
+  return platform.languages()
 }
 
 const primary = (tag: string) => tag.toLowerCase().split(/[-_]/)[0]

@@ -106,6 +106,31 @@ type Manifest struct {
 	// Memory is the memory items' note in the instructions, their limits and
 	// remember (assistant-memory D2, D3).
 	Memory MemoryManifest `json:"memory"`
+	// Routine is a routine's AI step on the device (routines-ai-step D7,
+	// assistant-routine-blocks D1).
+	Routine RoutineManifest `json:"routine"`
+	// Lean is the write tools on request (assistant-lean-tools D1): the note in
+	// a turn's instructions and propose_changes' messages; the tool itself is in
+	// Tools with kind "meta".
+	Lean LeanManifest `json:"lean"`
+}
+
+// LeanManifest is what a device needs to offer the write tools on request.
+type LeanManifest struct {
+	Note       string `json:"note"`
+	Result     string `json:"result"`
+	NotOffered string `json:"not_offered"`
+}
+
+// RoutineManifest is what a device needs to run an AI step like the server:
+// the fixed instructions, the note and tools of a step that may show blocks,
+// its rounds and the run's most blocks.
+type RoutineManifest struct {
+	System    string   `json:"system"`
+	ShowNote  string   `json:"show_note"`
+	Tools     []string `json:"tools"`
+	MaxRounds int      `json:"max_rounds"`
+	MaxBlocks int      `json:"max_blocks"`
 }
 
 // MemoryManifest is what a device needs to send memory and run remember.
@@ -163,12 +188,15 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		Views: views,
 		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage,
 			"block_limit": BlockLimitMessage, "not_found": NotFoundMessage, "choice_asked": ChoiceAskedMessage,
-			"followups_shown": FollowupsShownMessage, "followups_once": FollowupsOnceMessage, "followups_choice": FollowupsChoiceMessage},
+			"followups_shown": FollowupsShownMessage, "followups_once": FollowupsOnceMessage, "followups_choice": FollowupsChoiceMessage,
+			"followups_no_text": FollowupsNoTextMessage, "one_task": OneTaskMessage},
 		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
 			"max_images": MaxImages, "max_image_bytes": MaxImageBytes, "max_blocks": MaxBlocks, "max_block_ids": MaxBlockIDs},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
 		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
+		Routine: RoutineManifest{System: RoutineSystem, ShowNote: RoutineShowNote, Tools: append([]string{}, RoutineShowTools...), MaxRounds: MaxRoutineRounds, MaxBlocks: MaxBlocks},
+		Lean:    LeanManifest{Note: LeanNote, Result: ProposeResult, NotOffered: NotOfferedMessage},
 		OpenProposal: OpenManifest{Note: OpenProposalNote, MaxItems: MaxOpenProposal, Tool: ManifestTool{Name: DropTool.Name, Kind: "proposal", Description: DropTool.Description,
 			InputSchema: DropTool.Schema, Strict: strictSchema(DropTool.Schema, false), StrictNullable: strictSchema(DropTool.Schema, true)}},
 		Memory: MemoryManifest{Note: MemoryNote, MaxItems: MaxMemoryItems, MaxText: MaxMemoryText,
@@ -198,6 +226,8 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: "display", Description: d.Description, InputSchema: d.Schema,
 			Strict: strictSchema(d.Schema, false), StrictNullable: strictSchema(d.Schema, true)})
 	}
+	m.Tools = append(m.Tools, ManifestTool{Name: ProposeTool.Name, Kind: "meta", Description: ProposeTool.Description, InputSchema: ProposeTool.Schema,
+		Strict: strictSchema(ProposeTool.Schema, false), StrictNullable: strictSchema(ProposeTool.Schema, true)})
 	for _, sk := range agenttools.Skills {
 		ms := ManifestSkill{Skill: sk, Instructions: sk.Instructions, Tools: []string{}}
 		for _, name := range sk.Tools {

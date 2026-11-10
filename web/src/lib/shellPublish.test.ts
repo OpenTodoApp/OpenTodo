@@ -88,7 +88,7 @@ describe('external links in a shell', () => {
   }
 
   it('a browser keeps its links: nothing is intercepted', () => {
-    const off = installShellLinks()
+    const off = installShellLinks(document)
     expect(click('https://maps.example/x', '_blank')).toBe(false)
     off()
   })
@@ -96,7 +96,7 @@ describe('external links in a shell', () => {
   it('a shell with links opens other origins and new-window links in the system browser', () => {
     const openExternal = vi.fn()
     window.opentodoShell = { bridge: 1, platform: 'android', app: '0.10.0', capabilities: ['links'], openExternal }
-    const off = installShellLinks()
+    const off = installShellLinks(document)
     expect(click('https://maps.example/x')).toBe(true)
     expect(openExternal).toHaveBeenCalledWith('https://maps.example/x')
     expect(click('/inbox')).toBe(false)
