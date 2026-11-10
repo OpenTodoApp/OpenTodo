@@ -12,9 +12,12 @@
     "shared-modules": "node scripts/shared-modules.mjs"
   },
   "dependencies": {
+    "@op-engineering/op-sqlite": "19.0.1",
     "@react-native-community/netinfo": "12.0.1",
     "expo": "58.0.19",
     "expo-localization": "58.0.5",
+    "fake-indexeddb": "6.2.6",
+    "indexeddbshim": "19.0.7",
     "react": "19.3.0",
     "react-native": "0.88.0",
     "react-native-mmkv": "4.3.2",
