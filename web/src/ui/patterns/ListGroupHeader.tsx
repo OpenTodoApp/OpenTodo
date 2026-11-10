@@ -35,9 +35,10 @@ export interface ListGroupHeaderProps {
   note?: ReactNode
   /**
    * Words after the count, part of the heading and its toggle's name, cut short before
-   * the label is (Today's folded Waiting for a slot: "next: Send the form, 4:00 PM").
+   * the label is (Today's folded Waiting for a slot: "next: Send the form, 4:00 PM";
+   * a summarised Upcoming day's first titles).
    */
-  detail?: string
+  detail?: ReactNode
   /** Heading level inside the page; h2 under a page title. */
   level?: 2 | 3
   /** Marks the header's element for tests and drop targets. */
@@ -68,7 +69,11 @@ export function ListGroupHeader({ title, count, countLabel, countTone = 'faint',
         {collapsible ? (
           // Named by its visible title and count (WCAG 2.5.3 Label in Name); aria-expanded says whether it is open.
           <button type="button" className="flex min-w-0 items-center gap-1.5 rounded-control py-1 pr-1 text-left hover:text-strong"
-            aria-expanded={!collapsed} onClick={onToggle} data-group-toggle>
+            aria-expanded={!collapsed} onClick={onToggle} data-group-toggle
+            // → opens a closed group and ← closes an open one, as on a tree (sidebar-brand-and-row-grid D8).
+            onKeyDown={(e) => {
+              if ((e.key === 'ArrowRight' && collapsed) || (e.key === 'ArrowLeft' && !collapsed)) { e.preventDefault(); e.stopPropagation(); onToggle() }
+            }}>
             <Icon name="chevron-right" size="xs" className={`shrink-0 text-faint transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             {text}
           </button>

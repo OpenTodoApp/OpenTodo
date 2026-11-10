@@ -8,6 +8,7 @@ import { formatDate, formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useReviewedAt, useUserPrefsRow } from '../../lib/localData'
 import { BENTO_SLOTS, orderedFocusIds, readBento, readFocusStyle } from '../../lib/bento'
 import { move, PLACES, RHYTHMS, termDescription, termName, type MoveId, type RhythmId } from '../../lib/method'
@@ -235,6 +236,7 @@ function Focus({ tasks, room, projectMap, labelMap }: { tasks: Task[]; room: boo
   const done = tasks.filter((x) => x.completed_at).length
   // The time column (rows-v2 D2): one fact of the focus list.
   const timeColumn = hasTimeColumn(tasks)
+  const slotsOff = listSlotsOff(tasks)
   const r = 7
   const c = 2 * Math.PI * r
   return (
@@ -263,7 +265,7 @@ function Focus({ tasks, room, projectMap, labelMap }: { tasks: Task[]; room: boo
           <ul>
             {tasks.map((task) => (
               <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-                showProject selected={false} timeColumn={timeColumn} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))} onOpen={() => setPanelTaskId(task.id)} />
+                showProject selected={false} timeColumn={timeColumn} slotsOff={slotsOff} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))} onOpen={() => setPanelTaskId(task.id)} />
             ))}
           </ul>
           {room && <Button size="sm" variant="ghost" icon="plus" className="mt-1 ml-1" data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>{t('Add to focus')}</Button>}

@@ -66,6 +66,8 @@ export interface RowContext {
   siblingPos: Map<string, { pos: number; size: number }>
   /** The list shows the time column (rows-v2 D2). */
   timeColumn: boolean
+  /** The property column's slots no row of the list uses (sidebar-brand-and-row-grid D2). */
+  slotsOff?: string
   /** A project's or label's own row layout (row-layouts); absent follows the account's. */
   rowLayout?: RowLayout
   actions: RowActions
@@ -173,6 +175,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           readOnly={ghost || c.isReadOnly(r.task)}
           shape={c.board ? 'card' : 'row'}
           timeColumn={c.timeColumn}
+          slotsOff={c.slotsOff}
           layout={c.rowLayout}
           draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
           reorderable={!ghost && c.manual}
@@ -342,6 +345,8 @@ export interface GroupedListProps {
   earlierActions?: (ids: readonly string[]) => ReactNode
   /** Upcoming's calendar events for a day, drawn above its tasks and outside the count. */
   eventsFor?: (key: string) => ReactNode
+  /** Upcoming's later days while summarised (sidebar-brand-and-row-grid D8): closed bars with their count and first titles until opened. */
+  summarised?: ReadonlySet<string>
   /** The row the cursor is on: drawn even before the rows above it (useRowLimit). */
   reveal?: string | null
   /** A tree list's positions among siblings, written as ARIA on its rows (SiblingAria). */
@@ -609,21 +614,25 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
   // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
   const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
-  const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length) : collapsedGroups.has(groupKey(view, g.key))
+  // A summarised later day (sidebar-brand-and-row-grid D8) is closed until this device opens it.
+  const summary = !earlier && !!summarised?.has(g.key)
+  const collapsed = earlier ? earlierCollapsed(collapsedGroups, g.rows.length)
+    : summary ? !collapsedGroups.has(groupKey(view, summaryOpenKey(g.key))) : collapsedGroups.has(groupKey(view, g.key))
   const toggle = () => {
+    if (summary) return setGroupCollapsed(view, summaryOpenKey(g.key), collapsed)
     if (!earlier) return setGroupCollapsed(view, g.key, !collapsed)
     setGroupCollapsed('today', 'earlier', !collapsed)
     setGroupCollapsed('today', 'earlier:open', collapsed)
   }
   return (
     // Upcoming's day groups take a dragged task anywhere on them (upcoming-drag), resolved by the drag as `drop:day:<date>`.
-    <section className={g.dropDay ? 'mb-4 rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : 'mb-4'} data-group={g.key}
+    <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
@@ -631,7 +640,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
-          collapsed={collapsed} onToggle={toggle}
+          collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
@@ -642,6 +651,48 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
       {!(g.heading && collapsed) && (g.projected?.length || g.projectedNote) ? <Suspense fallback={null}><ProjectedGroupRows g={g} projects={projects} /></Suspense> : null}
     </section>
   )
+}
+
+/** The device key that records a summarised day as opened (the collapsed-groups store keeps the exceptions). */
+export const summaryOpenKey = (key: string): string => `${key}:open`
+
+/** How many days with tasks Upcoming lists in full before it summarises (sidebar-brand-and-row-grid D8). */
+export const FULL_DAYS = 3
+
+/**
+ * Upcoming's later days while Later days is Summarised: every date group after the
+ * first three that have tasks. Event-only days count toward neither.
+ */
+export function summarisedDays(groups: readonly ListGroup[], inFull: boolean): ReadonlySet<string> {
+  const out = new Set<string>()
+  if (inFull) return out
+  let days = 0
+  for (const g of groups) {
+    if (!g.dropDay || liveRows(g.rows) === 0) continue
+    if (++days > FULL_DAYS) out.add(g.key)
+  }
+  return out
+}
+
+/**
+ * Calm Upcoming for the list: the summarised days, and the rows the cursor steps through
+ * (the rows of a closed summarised day are not, since they are not shown).
+ */
+export function useCalmUpcoming<R extends Row>(on: boolean, groups: readonly ListGroup[], rows: R[], inFull: boolean, collapsedGroups: ReadonlySet<string>): { summarised: ReadonlySet<string>; cursorRows: R[] } {
+  const summarised = useMemo(() => summarisedDays(on ? groups : [], inFull), [on, groups, inFull])
+  const cursorRows = useMemo(() => {
+    if (summarised.size === 0) return rows
+    const hidden = new Set<string>()
+    for (const g of groups) if (summarised.has(g.key) && !collapsedGroups.has(groupKey('upcoming', summaryOpenKey(g.key)))) for (const r of g.rows) hidden.add(r.task.id)
+    return hidden.size ? rows.filter((r) => !hidden.has(r.task.id)) : rows
+  }, [rows, groups, summarised, collapsedGroups])
+  return { summarised, cursorRows }
+}
+
+/** A closed day's first titles, faint and cut with an ellipsis. */
+function SummaryTitles({ rows }: { rows: Row[] }) {
+  const titles = rows.filter((r) => !isGhost(r.task) && r.depth === 0).map((r) => r.task.title || t('Untitled'))
+  return <span className="text-faint" data-day-summary>{titles.slice(0, 3).join(', ')}{titles.length > 3 ? '…' : ''}</span>
 }
 
 /** Today's part headings take a dragged task (day-parts D4), resolved by the drag as `drop:part:<part>`. */

@@ -729,6 +729,9 @@
   "About OpenTodo": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "About and What's new": [
+    "web/src/app/SidebarBrandLine.tsx"
+  ],
   "About location access": [
     "web/src/app/LocationRemindersSettings.tsx"
   ],
@@ -970,6 +973,7 @@
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a subtask": [
+    "web/src/app/task-detail/Subtasks.tsx",
     "web/src/app/task-list/TaskListRow.tsx"
   ],
   "Add a subtask to the selected task": [
@@ -1197,9 +1201,6 @@
   ],
   "Add subtask": [
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/task-detail/Subtasks.tsx"
-  ],
-  "Add subtask…": [
     "web/src/app/task-detail/Subtasks.tsx"
   ],
   "Add task": [
@@ -3224,9 +3225,6 @@
   "Clear due date": [
     "web/src/app/DueField.tsx"
   ],
-  "Clear estimate": [
-    "web/src/app/EstimateField.tsx"
-  ],
   "Clear filter": [
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/calendar/queryFilter.tsx",
@@ -3503,6 +3501,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Comments, activity, history and time": [
+    "web/src/app/task-detail/ConversationTabs.tsx"
+  ],
+  "Comments, {n}": [
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Common tasks": [
@@ -7774,6 +7775,9 @@
   "In days": [
     "web/src/app/routines/words.tsx"
   ],
+  "In full": [
+    "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
   "In list order": [
     "web/src/app/routines/StepCard.tsx"
   ],
@@ -8570,6 +8574,9 @@
   ],
   "Later dates of this task follow its completions, so they cannot be changed one by one.": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Later days": [
+    "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Later|method": [
     "web/src/lib/method/vocabulary.json"
@@ -16259,6 +16266,9 @@
   "Summarise {text}": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Summarised": [
+    "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
   "Summit: Medium first": [
     "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/app/review/DailyCheck.tsx"
@@ -18641,6 +18651,9 @@
   "Time · {duration}": [
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
+  "Time, {duration}": [
+    "web/src/app/task-detail/ConversationTabs.tsx"
+  ],
   "Timeline": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -19518,6 +19531,7 @@
     "web/src/app/task-detail/TaskPath.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
+    "web/src/app/task-list/ListGroups.tsx",
     "web/src/app/task-list/WaitingSoon.tsx",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
@@ -24094,6 +24108,9 @@
   ],
   "{name}, hex value": [
     "web/src/ui/ColourField.tsx"
+  ],
+  "{name}, new notes": [
+    "web/src/app/SidebarBrandLine.tsx"
   ],
   "{name}, revoked": [
     "web/src/app/CaldavPanel.tsx"

@@ -1,17 +1,17 @@
 // The time column of task lists (OpenSpec change rows-v2, task-list-presentation
 // "Time column", design D2 and D3). A row's column holds the one value that places
-// the task in the day: its due time, else (no due time) its deadline countdown, else
-// nothing. Whether a list shows the column at all is one fact of the whole list,
+// the task in the day: its due time, else (no due time) the part of the day as its icon
+// (sidebar-brand-and-row-grid D4), else its deadline countdown, else nothing. Whether a list shows the column at all is one fact of the whole list,
 // computed once where the list is built, so titles align and the column never
 // flickers row by row. Presentation only: it reads the tasks' own fields.
 import type { Task } from './types'
 
-type ColumnFields = Pick<Task, 'due' | 'deadline' | 'completed_at'>
+type ColumnFields = Pick<Task, 'due' | 'deadline' | 'completed_at'> & Partial<Pick<Task, 'evening' | 'day_part'>>
 
-/** Whether the task has a value for the column: a due time, or a deadline with no due time while open. */
+/** Whether the task has a value for the column: a due time, or, while open, a part of the day or a deadline. */
 export function hasColumnValue(task: ColumnFields): boolean {
   if (task.due?.time) return true
-  return !task.completed_at && !!task.deadline
+  return !task.completed_at && (!!task.deadline || !!task.evening || task.day_part === 'morning' || task.day_part === 'afternoon')
 }
 
 /**

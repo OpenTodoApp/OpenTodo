@@ -22,11 +22,13 @@ const label = (id: string, name: string, color: string) => ({ id, name, color, p
 function Header({ title, done = false, readOnly = false, priority = 4 }: { title: string; done?: boolean; readOnly?: boolean; priority?: 1 | 2 | 3 | 4 }) {
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4' }[priority]
   return (
-    <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2">
-      <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
-        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${done ? 'bg-faint border-input text-on-accent' : ring}`}>{done && <Icon name="check" size="xs" />}</span>
-      </button>
-      <input className={`min-w-0 flex-1 bg-transparent text-h3 font-semibold text-strong focus:outline-none ${done ? 'text-faint line-through' : ''}`} defaultValue={title} readOnly={readOnly} aria-label="Title" />
+    <div data-panel-header className="flex items-start gap-2 border-b border-default px-4 py-2">
+      <span className="flex h-6 shrink-0 items-center">
+        <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
+          <span className={`flex size-[18px] items-center justify-center rounded-full border-2 ${done ? 'bg-faint border-input text-on-accent' : ring}`}>{done && <Icon name="check" size="xs" />}</span>
+        </button>
+      </span>
+      <input className={`min-w-0 flex-1 bg-transparent text-title font-semibold text-strong focus:outline-none ${done ? 'text-faint line-through' : ''}`} defaultValue={title} readOnly={readOnly} aria-label="Title" />
       <IconButton icon="ellipsis" label="Task actions" />
       <IconButton icon="x" label="Close" />
     </div>
@@ -46,7 +48,7 @@ function Notes({ text, editing = false }: { text?: string | string[]; editing?: 
 function AddControl() {
   return (
     <div className="pl-7">
-      <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-7 items-center rounded-control px-1 text-muted">
+      <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-8 items-center rounded-control px-1 text-muted">
         <span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />Add</span>
       </button>
     </div>
@@ -93,7 +95,7 @@ export const EmptyTask: StoryObj = {
       <div className="min-w-0 space-y-4 p-4">
         <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
         <section aria-label="Subtasks" className="flex items-center gap-2 px-1 text-faint">
-          <Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span>
+          <Icon name="plus" size="xs" /><span className="text-body">Add a subtask</span>
         </section>
         <Notes />
       </div>
@@ -114,16 +116,20 @@ export const FullTask: StoryObj = {
           how={[{ id: 'priority', text: 'P2' }, { id: 'estimate', text: '2h' }, { id: 'labels', text: 'finance, deck', labels: [label('l1', 'finance', 'var(--ot-hue-green-solid)'), label('l2', 'deck', 'var(--ot-hue-violet-solid)')] }]}
           who={[{ id: 'assignee', text: 'Ana' }, { id: 'blocked-by', text: 'waits for Collect the numbers' }]} />
         <section aria-label="Subtasks">
-          <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">1/3</span></h3>
-          <ul className="space-y-0.5" aria-label="Subtasks">
+          {/* The quiet checklist (sidebar-brand-and-row-grid D7): the heading carries the weight, the rows are borderless 32 px lines. */}
+          <div className="flex min-h-8 items-center gap-2 px-1 text-meta">
+            <h3 className="flex items-baseline gap-2 font-medium text-default">Subtasks<span className="font-normal tabular-nums text-faint">1 of 3</span></h3>
+            <span className="ml-auto h-1 w-16 overflow-hidden rounded-full bg-sunken" aria-hidden="true"><span className="block h-full w-1/3 rounded-full bg-accent" /></span>
+          </div>
+          <ul aria-label="Subtasks">
             {[['Collect the numbers', true], ['Draw the charts', false], ['Write the summary', false]].map(([t, done]) => (
-              <li key={String(t)} className="flex items-center gap-2 rounded-control px-1 py-1">
+              <li key={String(t)} className="flex min-h-8 items-center gap-2 rounded-control px-1">
                 <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${done ? 'border-input bg-faint text-on-accent' : 'border-input'}`}>{done && <Icon name="check" size={10} />}</span>
                 <span className={`min-w-0 flex-1 truncate text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{t}</span>
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-2 px-1 text-faint"><Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span></div>
+          <div className="flex min-h-8 items-center gap-2 px-1 text-faint"><span className="flex size-5 items-center justify-center"><Icon name="plus" size="xs" /></span><span className="text-body">Add a subtask</span></div>
         </section>
         <section aria-label="Attachments">
           <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="paperclip" className="text-faint" />Attachments<span className="font-normal text-faint">1</span></h3>

@@ -1067,12 +1067,13 @@ describe('quiet sidebar (quiet-sidebar 1.2-1.4, 2.1)', () => {
 
 // sidebar-v2 D1, D8: the header row is the brand slot; the column takes the tinted sidebar colour.
 describe('the brand header and the sidebar colour', () => {
-  it('Header: the mono mark and the wordmark, no image, search beside them, one row of at most 40 px', async () => {
+  it('Header at rest: the workspace picture and name, no app mark, search beside them, one row of at most 40 px (sidebar-brand-and-row-grid)', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} />)
     await waitFor(() => !!r.container.querySelector('[data-sidebar-header] [data-palette-button]'), 'the header')
     const header = r.container.querySelector('[data-sidebar-header]')!
-    expect(header.querySelector('[data-brand-mark="mono"]')).not.toBeNull()
-    expect(header.querySelector('[data-brand-wordmark]')!.textContent).toBe('OpenTodo')
+    expect(header.querySelector('[data-workspace-mark]')).not.toBeNull()
+    expect(header.querySelector('[data-brand-mark]')).toBeNull()
+    expect(header.querySelector('[data-brand-wordmark]')).toBeNull()
     expect(r.container.querySelector('img')).toBeNull()
     expect(header.querySelector('[data-palette-button]')).not.toBeNull()
     // 32 px with a fine pointer (min-h-8), never wrapping: one flex row.
@@ -1081,12 +1082,18 @@ describe('the brand header and the sidebar colour', () => {
     await r.unmount()
   })
 
-  it('Rail: the mark alone, named OpenTodo', async () => {
+  it('Icon rail: the workspace picture alone, named by the workspace', async () => {
     const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} onSearch={() => {}} collapsed />)
     await waitFor(() => !!r.container.querySelector('[data-sidebar-header] [role="img"]'), 'the rail header')
     const header = r.container.querySelector('[data-sidebar-header]')!
-    expect(header.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('OpenTodo')
-    expect(header.querySelector('[data-brand-wordmark]')).toBeNull()
+    expect(header.querySelector('[role="img"]')!.getAttribute('aria-label')).toBe('Personal')
+    expect(header.querySelector('[data-workspace-mark]')).not.toBeNull()
+    expect(header.querySelector('[data-brand-mark]')).toBeNull()
+    // The brand line keeps the mark alone at the rail's end.
+    const line = r.container.querySelector('[data-brand-line]')!
+    expect(line.querySelector('[data-brand-mark]')).not.toBeNull()
+    expect(line.querySelector('[data-brand-text]')).toBeNull()
+    expect(line.getAttribute('aria-label')).toBe('OpenTodo')
     await r.unmount()
   })
 

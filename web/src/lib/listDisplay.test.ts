@@ -217,7 +217,7 @@ describe('built-in view options (builtin-view-options)', () => {
 
   it('reads every default, and a missing, unknown or not-offered value as the default, writing nothing', async () => {
     expect(listDisplayOf('today', null)).toEqual({ groupBy: 'day', sortBy: 'due', sortDir: 'asc', rowLayout: 'line', subtasks: false })
-    expect(listDisplayOf('upcoming', undefined, 'detailed')).toEqual({ groupBy: 'none', sortBy: 'due', sortDir: 'asc', rowLayout: 'detailed', subtasks: false })
+    expect(listDisplayOf('upcoming', undefined, 'detailed')).toEqual({ groupBy: 'none', sortBy: 'due', sortDir: 'asc', rowLayout: 'detailed', subtasks: false, laterInFull: false })
     expect(listDisplayOf('inbox', {})).toEqual({ groupBy: 'none', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' })
     // A project's grouping on Today, manual order on Today, a newer client's value, a custom field in the Inbox.
     expect(listDisplayOf('today', { today_group_by: 'section', today_sort_by: 'position', today_sort_dir: 'sideways', today_subtasks: 'tree' }))

@@ -216,8 +216,9 @@ describe('one row language (rows-v2)', () => {
   it('counts sit beside the title, quiet and read in full; a row with only counts is one line', async () => {
     const r = await row({ description: 'n' }, { progress: { done: 2, total: 3 }, labels: [L('l1', 'errand')] })
     const li = r.container.querySelector('li')!
-    const counts = li.querySelector('[data-row-head] > [data-row-counts]')!
-    expect(counts.previousElementSibling!.hasAttribute('data-row-title')).toBe(true)
+    // The counts close the marks' run, right after the title (sidebar-brand-and-row-grid D3).
+    const counts = li.querySelector('[data-row-head] > [data-row-marks] > [data-row-counts]')!
+    expect(counts.parentElement!.previousElementSibling!.hasAttribute('data-row-title')).toBe(true)
     for (const cls of ['text-faint', 'group-hover:text-muted', 'group-focus-within:text-muted', 'tabular-nums']) expect(counts.className).toContain(cls)
     expect(counts.querySelector('button, [tabindex]')).toBeNull()
     expect(visibleText(counts.querySelector('[data-progress]')!)).toBe('2/3')
@@ -230,28 +231,31 @@ describe('one row language (rows-v2)', () => {
     await only.unmount()
   })
 
-  it('the third cell holds the labels, else the deadline, else the sub-task progress (precision-rows D2)', () => atNoon(async () => {
-    const extra = async (patch: Partial<Task>, extraProps: Record<string, unknown>) => {
+  it('Each slot holds one kind of fact: the labels in their slot, the deadline in the facts, the progress beside the title (sidebar-brand-and-row-grid D2)', () => atNoon(async () => {
+    const place = async (patch: Partial<Task>, extraProps: Record<string, unknown>) => {
       const r = await row(patch, extraProps)
-      const cell = r.container.querySelector('[data-row-cell="extra"]')
-      const out = cell?.querySelector('[data-label-chips]') ? 'labels' : cell?.querySelector('[data-deadline]') ? 'deadline' : cell?.querySelector('[data-progress]') ? 'progress' : null
-      const inHead = !!r.container.querySelector('[data-row-head] [data-progress]')
-      const deadlineInRest = !!r.container.querySelector('[data-row-rest] [data-deadline]')
+      const out = {
+        labels: !!r.container.querySelector('[data-row-cell="labels"] [data-label-chips]'),
+        progressInHead: !!r.container.querySelector('[data-row-head] [data-row-marks] [data-progress]'),
+        deadlineInRest: !!r.container.querySelector('[data-row-rest] [data-deadline]'),
+        extra: !!r.container.querySelector('[data-row-cell="extra"]'),
+      }
       await r.unmount()
-      return { out, inHead, deadlineInRest }
+      return out
     }
     const progress = { done: 1, total: 2 }
-    expect(await extra({ labels: ['l1'], deadline: '2026-10-16' }, { labels: [L('l1', 'errand')], progress })).toEqual({ out: 'labels', inHead: true, deadlineInRest: true })
-    expect(await extra({ deadline: '2026-10-16' }, { progress })).toEqual({ out: 'deadline', inHead: true, deadlineInRest: false })
-    expect(await extra({}, { progress })).toEqual({ out: 'progress', inHead: false, deadlineInRest: false })
+    expect(await place({ labels: ['l1'], deadline: '2026-10-16' }, { labels: [L('l1', 'errand')], progress })).toEqual({ labels: true, progressInHead: true, deadlineInRest: true, extra: false })
+    expect(await place({ deadline: '2026-10-16' }, { progress })).toEqual({ labels: false, progressInHead: true, deadlineInRest: true, extra: false })
+    expect(await place({}, { progress })).toEqual({ labels: false, progressInHead: true, deadlineInRest: false, extra: false })
   }))
 
-  it('the cells come in the column\'s order, the other facts after them (precision-rows D1)', () => atNoon(async () => {
+  it('The slots come in the narrow line\'s reading order and take their named tracks; the other facts after them (sidebar-brand-and-row-grid D2)', () => atNoon(async () => {
     const r = await row({ due: { date: '2026-10-20' }, labels: ['l1'], estimate_minutes: 30, start: '2026-10-01' },
-      { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project, labels: [L('l1', 'errand')], blockedBy: 1 })
+      { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project, labels: [L('l1', 'errand')], blockedBy: 1, slotsOff: 'assignee' })
     const meta = r.container.querySelector('[data-row-meta="row"]')!
-    expect([...meta.querySelectorAll('[data-row-cell]')].map((c) => c.getAttribute('data-row-cell'))).toEqual(['date', 'project', 'extra', 'estimate'])
+    expect([...meta.querySelectorAll('[data-row-cell]')].map((c) => c.getAttribute('data-row-cell'))).toEqual(['date', 'project', 'labels', 'estimate'])
     expect(meta.querySelector('[data-row-props]')!.getAttribute('data-row-props')).toBe('project')
+    expect(meta.querySelector('[data-row-props]')!.getAttribute('data-slots-off')).toBe('assignee')
     expect([...meta.querySelectorAll('[data-row-rest] [data-row-item]')].map((c) => [...c.attributes].map((a) => a.name).find((n) => n !== 'data-row-item' && n.startsWith('data-')))).toEqual(['data-start', 'data-blocked'])
     await r.unmount()
   }))

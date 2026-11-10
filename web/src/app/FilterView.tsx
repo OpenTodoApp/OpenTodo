@@ -14,6 +14,7 @@ import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
+import { listSlotsOff } from '../lib/rowSlots'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { habitStatsMap } from '../lib/habits'
@@ -167,7 +168,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
   const { groups, shown } = useFoldedGroups('filter', useMemo(() => (result ? groupTasks(result.tasks, display.groupBy, ctx) : []), [result, display.groupBy, ctx]))
   const rows = useMemo(() => shown.flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [shown])
   // The time column (rows-v2 D2): one fact of the whole result.
-  const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
+  const [timeColumn, slotsOff] = useMemo(() => { const ts = rows.map((r) => r.task); return [hasTimeColumn(ts), listSlotsOff(ts)] as const }, [rows])
 
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -328,7 +329,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             task={tk}
             project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
             labels={resolveLabels(tk.labels, labelMap)}
-            showProject={display.groupBy !== 'project'} timeColumn={timeColumn}
+            showProject={display.groupBy !== 'project'} timeColumn={timeColumn} slotsOff={slotsOff}
             hidden={display.hidden}
             layout={display.rowLayout} notes={shape === 'card' && !!display.cardNotes}
             onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}

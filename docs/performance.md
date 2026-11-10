@@ -195,7 +195,8 @@ timing it, so a slow runner cannot make them fail:
 - opening Today reads the tasks table at most once, a search keystroke reads
   nothing from the device's database, and completing a task in a 2,000-row list
   draws at most three rows again (`web/src/app/scale10k.perf.test.tsx`, CI's web
-  scale tests);
+  scale tests), also in a summarised Upcoming of 2,000 dated tasks, which draws
+  only its first three days' rows (`web/src/app/calmUpcoming.perf.test.tsx`);
 - each page of a first sync is written in one local transaction, and two
   devices that receive the same operations in different orders end with the
   same rows;

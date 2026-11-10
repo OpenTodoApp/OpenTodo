@@ -4,7 +4,7 @@
 import source from './brand.svg?raw'
 
 export type BrandVariant = 'mono' | 'colour'
-export type BrandSize = 16 | 20 | 24 | 32
+export type BrandSize = 14 | 16 | 20 | 24 | 32
 
 /** The inner markup and viewBox of one `<symbol>` in brand.svg. */
 export function brandSymbol(svg: string, id: BrandVariant): { viewBox: string; body: string } {

@@ -15,13 +15,13 @@ Today (<kbd>g</kbd> <kbd>t</kbd>) and Upcoming (<kbd>g</kbd> <kbd>u</kbd>) are t
 
 ## Plan your day with Today
 
-Today sits under its [briefing](briefing.md). A task you add here with [quick add](quick-add.md) is due today. Tasks planned for an earlier day sit in **Earlier** at the top. **Move all to today** and **Reschedule…** in its header move the whole group at once, with Undo. Above five tasks the group starts folded; this device remembers once you open or close it. Below are today's tasks, sorted by time; a timed task shows only its time.
+Today sits under its [briefing](briefing.md). A task you add here with [quick add](quick-add.md) is due today. Tasks planned for an earlier day sit in **Earlier** at the top. **Move all to today** and **Reschedule…** in its header move the whole group at once, with Undo. Below are today's tasks, sorted by time; a timed task shows only its time.
 
-A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Earlier**. Each task is listed once, and the sidebar's Today count agrees.
+A [deadline](tasks-and-projects.md#deadlines) brings a task into Today too: a task whose deadline is today shows up even if it has no due date or is planned for later. If the deadline has already passed and the task isn't planned for today, it sits under **Earlier**.
 
 A task whose start date has come shows up in Today too, with a **Started** chip, and stays until you complete it, give it a date or defer it again. Deferred and parked tasks stay out of Today, unless their due date or deadline has come: a hard date always wins. **This Evening** tasks get their own group below the day's tasks; [day parts](day-parts.md) add Morning and Afternoon.
 
-Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) gather in a **Blocked** group at the end; select the heading to open it (your choice is kept on this device). When the task they wait for is completed, they move up among today's tasks. In Upcoming and other lists, blocked tasks stay in place, dimmed.
+Tasks [waiting for another task](tasks-and-projects.md#wait-for-another-task) gather in a **Blocked** group at the end; select the heading to open it. When the task they wait for is completed, they move up among today's tasks.
 
 To push a task to later, open it and change **Due**, or press <kbd>s</kbd> to place it on the Day calendar.
 
@@ -40,6 +40,8 @@ A task you add here with [quick add](quick-add.md) is due tomorrow unless you ty
 A task with a deadline but no due date is listed under its deadline day, after the tasks due that day. A task with both dates is listed under its due date only; its row shows the deadline countdown. Deferred and parked tasks are left out until they start, except one without a project or due date, listed under its start day.
 
 Drag a task under another day to move it there; its time stays. On a touch screen, hold it first.
+
+After the first three days with tasks, each day is one bar with its count and first titles: click it or press <kbd>Enter</kbd> to open it; drop a task on it to move it there. **Display options → Later days → In full** lists every day.
 
 One list for both: [Start with Today](upcoming-with-today.md).
 

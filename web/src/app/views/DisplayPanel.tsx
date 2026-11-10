@@ -45,6 +45,8 @@ export interface PanelValue {
   cardNotes?: boolean
   /** Nest subtasks on Today and Upcoming (builtin-view-options D5). */
   subtasks?: boolean
+  /** Upcoming's Later days: In full, else Summarised (sidebar-brand-and-row-grid D8). */
+  laterInFull?: boolean
 }
 
 export const GROUP_LABEL = translatedMap<ListGroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None'), section: msg('Section'), day: msg('Time of day') })

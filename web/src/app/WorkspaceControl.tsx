@@ -1,9 +1,10 @@
 // The workspace control (OpenSpec change workspaces, design D6): the sidebar's
 // header row names the current workspace and opens the switcher, a menu of the
 // account's workspaces with their Inbox and Today counts, "New workspace" and
-// "Manage workspaces". It is not a destination and adds no row; with one
-// workspace it shows "OpenTodo" with "Personal" below it (sidebar-title-lines).
-// Switching is device state.
+// "Manage workspaces". It is not a destination and adds no row. It shows the
+// workspace's own picture and its name on one line (sidebar-brand-and-row-grid D1);
+// the app's mark and name are in the brand line at the sidebar's end. Switching is
+// device state.
 import { useMemo } from 'react'
 import { CatalogueIcon, hueFor, Icon, isCatalogueIcon, Menu, MenuItem, MenuSeparator, StatusDot } from '../ui'
 import { t } from '../lib/i18n'
@@ -16,19 +17,32 @@ import type { Workspace } from '../lib/types'
 import { inToday } from '../lib/views'
 import { Partition } from '../lib/workspaces'
 import { requestNewWorkspace } from './NewWorkspaceDialog'
-import { InstanceMark, InstanceWordmark, useInstanceName } from './InstanceBrand'
 import { navigate, type Route } from './router'
 import { useToday } from './useViews'
 import { switchWorkspace, workspaceLabel } from './workspaceNav'
 
-/** A workspace's mark: its catalogue icon in its colour, a colour dot, or the app's mark for an unstyled default workspace. */
-export function WorkspaceMark({ workspace, size = 20 }: { workspace: Pick<Workspace, 'icon' | 'color' | 'default'> | undefined; size?: 20 | 24 }) {
-  if (!workspace || (workspace.default && !workspace.icon && !workspace.color)) return <InstanceMark size={size} />
+/**
+ * A workspace's picture (sidebar-brand-and-row-grid D1, app-shell "Workspace picture"):
+ * its catalogue icon on its colour, else the first character of its name on its colour,
+ * else on the neutral surface. Never the app's mark: the brand line carries that.
+ */
+export function WorkspaceMark({ workspace, size = 20 }: { workspace: Pick<Workspace, 'icon' | 'color' | 'default' | 'name'> | undefined; size?: 20 | 24 }) {
   // Stored colours render through the palette's hues (design-system).
-  const hue = workspace.color ? hueFor(workspace.color) : undefined
-  const dot = <span data-hue={hue} className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${hue ? 'bg-hue-solid' : 'bg-accent'}`} />
-  if (!workspace.icon || !isCatalogueIcon(workspace.icon)) return <span className="flex w-5 justify-center" data-workspace-mark>{dot}</span>
-  return <span data-hue={hue} className={`flex w-5 justify-center ${hue ? 'text-hue' : 'text-accent'}`} data-workspace-mark><CatalogueIcon name={workspace.icon} size="sm" fallback={dot} /></span>
+  const hue = workspace?.color ? hueFor(workspace.color) : undefined
+  const name = workspace ? workspaceLabel(workspace.name, workspace.default) : t('Personal')
+  const initial = (Array.from(name.trim())[0] ?? '').toLocaleUpperCase()
+  const icon = workspace?.icon && isCatalogueIcon(workspace.icon) ? workspace.icon : null
+  return (
+    <span aria-hidden="true" data-hue={hue} data-workspace-mark={icon ? 'icon' : 'initial'}
+      className={`inline-flex shrink-0 select-none items-center justify-center rounded-control font-semibold leading-none ${size === 24 ? 'size-6 text-meta' : 'size-5 text-hint'} ${hue ? 'bg-hue-soft text-hue' : 'border border-default bg-sunken text-muted dark:bg-raised'}`}>
+      {/* The initial is drawn by CSS, not a text node: it is a picture, never part of the control's visible name (label-content-name-mismatch). */}
+      {icon ? <CatalogueIcon name={icon} size="xs" fallback={<Initial c={initial} />} /> : <Initial c={initial} />}
+    </span>
+  )
+}
+
+function Initial({ c }: { c: string }) {
+  return <span data-initial={c} className="before:content-[attr(data-initial)]" />
 }
 
 type Counts = Map<string, { inbox: number; today: number; unread: number }>
@@ -62,35 +76,30 @@ function useWorkspaceCounts(): Counts {
   }, [state, projects, tasks, today, unread])
 }
 
-/** The sidebar header's control. `collapsed` is the icon rail: the mark alone, the name in the tooltip. */
+/** The current workspace and its shown name, for the icon rail's picture and its tooltip. */
+export function useCurrentWorkspace(): { workspace: Workspace | undefined; name: string } {
+  const state = useWorkspaceState()
+  const workspace = state.list.find((w) => w.id === state.current)
+  return { workspace, name: workspace ? workspaceLabel(workspace.name, workspace.default) : t('Personal') }
+}
+
+/** The sidebar header's control. `collapsed` is the icon rail: the picture alone, the name in the tooltip. */
 export function WorkspaceControl({ route, collapsed = false }: { route: Route; collapsed?: boolean }) {
   const state = useWorkspaceState()
   const counts = useWorkspaceCounts()
   const current = state.list.find((w) => w.id === state.current)
   const name = current ? workspaceLabel(current.name, current.default) : t('Personal')
-  const single = state.list.length <= 1
   const elsewhere = state.list.filter((w) => w.id !== state.current && (counts.get(w.id)?.unread ?? 0) > 0)
   const updates = elsewhere.length > 0 ? t('Updates in {names}', { names: elsewhere.map((w) => workspaceLabel(w.name, w.default)).join(', ') }) : ''
-  const app = useInstanceName()
-  const label = single ? `${app} · ${name}` : name
   return (
-    <div data-workspace-control className="flex min-w-0 flex-1">
-      <Menu kind="menu" label={updates ? t('Workspace: {name}, {updates}', { name: label, updates }) : t('Workspace: {name}', { name: label })} title={t('Workspaces')}
-        align="start" width="sm:w-72" tip={collapsed || updates ? (updates || label) : undefined} tipSide={collapsed ? 'right' : 'bottom'}
+    <div data-workspace-control className={`flex min-w-0 ${collapsed ? 'justify-center' : 'flex-1'}`}>
+      <Menu kind="menu" label={updates ? t('Workspace: {name}, {updates}', { name, updates }) : t('Workspace: {name}', { name })} title={t('Workspaces')}
+        align="start" width="sm:w-72" tip={collapsed || updates ? (updates || name) : undefined} tipSide={collapsed ? 'right' : 'bottom'}
         triggerProps={{ 'data-workspace-trigger': true }}
-        triggerClassName={`flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-control px-1 text-left hover:bg-sunken focus-visible:bg-sunken pointer-fine:min-h-8 dark:hover:bg-raised ${collapsed ? 'justify-center' : ''}`}
+        triggerClassName={`flex min-h-9 min-w-0 items-center gap-2 rounded-control text-left hover:bg-sunken focus-visible:bg-sunken pointer-fine:min-h-8 dark:hover:bg-raised ${collapsed ? 'relative min-w-9 justify-center px-1.5' : 'flex-1 px-1'}`}
         trigger={<>
           <WorkspaceMark workspace={current} />
-          {/* With one workspace both names show, on two lines that truncate on their own
-              (sidebar-title-lines, GitHub issue 492); the accessible label keeps "app · name".
-              The space after the wordmark keeps the visible text "app name", so it still
-              matches the label for speech input (axe label-content-name-mismatch). */}
-          {!collapsed && (single
-            ? <span className="flex min-w-0 flex-1 flex-col" data-workspace-lines>
-              <span className="truncate font-semibold leading-5 text-strong" data-workspace-app><InstanceWordmark />{' '}</span>
-              <span className="truncate text-meta text-muted" data-workspace-name>{name}</span>
-            </span>
-            : <span className="min-w-0 flex-1 truncate font-semibold text-strong" data-workspace-name>{name}</span>)}
+          {!collapsed && <span className="user-text min-w-0 flex-1 truncate text-body font-semibold text-strong" data-workspace-name>{name}</span>}
           {updates && <StatusDot label={updates} data-workspace-updates />}
           {!collapsed && <span aria-hidden className="text-faint"><Icon name="chevron-down" size="xs" /></span>}
         </>}>
