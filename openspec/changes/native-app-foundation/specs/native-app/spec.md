@@ -89,9 +89,10 @@ CI SHALL run the app's checks only for changes that can affect it. A Linux job S
 - **WHEN** a pull request changes a file in `mobile/app/`
 - **THEN** `app-check`, `app-ios` and `app-android` run
 
-### Requirement: Preview distribution
-The app SHALL be published to TestFlight as a separate app record, "OpenTodo Preview", that installs next to the current OpenTodo app. Builds SHALL be made, signed and uploaded by the repository's CI with the release environment's key. No build SHALL be submitted for review by CI.
+### Requirement: TestFlight distribution
+The app SHALL be published to TestFlight under the existing OpenTodo App Store record (bundle id `app.open-todo.ios`), as version 2.0.0, and SHALL NOT be released on the App Store by this change. On Android it SHALL use the current app's application id, `app.opentodo`. Builds SHALL be made, signed and uploaded by the repository's CI with the release environment's key. No build SHALL be submitted for review by CI.
 
-#### Scenario: Side by side
-- **WHEN** a tester has the current OpenTodo app installed and accepts the Preview invitation
-- **THEN** both apps are installed and can sign in to the same server at the same time
+#### Scenario: A tester installs the trial
+- **WHEN** a tester with the current OpenTodo app accepts the TestFlight invitation and installs version 2.0.0
+- **THEN** the native app replaces the shell on that device, and people who did not join TestFlight keep the App Store version
+

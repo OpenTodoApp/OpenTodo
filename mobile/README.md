@@ -9,7 +9,7 @@ Thin apps around the OpenTodo web app (OpenSpec change `native-shells`). A shell
 
 ## The native app (`mobile/app`)
 
-The trial of a native app (`native-app-foundation`): React Native 0.88 with Expo SDK 58 (New Architecture, Hermes), iPhone only, installed as **OpenTodo Preview** next to the shell (`app.open-todo.preview` on iOS; `app.opentodo.preview` on Android, where an id cannot hold a hyphen). For now it has one screen, the server's address and its check (`GET /api/v1/health` must answer `"app_sign_in": true`); sign-in, the local database and sync follow.
+The trial of a native app (`native-app-foundation`): React Native 0.88 with Expo SDK 58 (New Architecture, Hermes), iPhone only, under the current apps' ids (`app.open-todo.ios` on iOS, `app.opentodo` on Android) as version 2.0.0, on TestFlight first. For now it has one screen, the server's address and its check (`GET /api/v1/health` must answer `"app_sign_in": true`), and its local database (SQLite, `src/storage`); sign-in and sync follow.
 
 ```sh
 make app                                              # Linux is enough: npm ci, type-check, lint, Jest with the shared vectors

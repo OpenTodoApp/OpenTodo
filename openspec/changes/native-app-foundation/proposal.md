@@ -38,7 +38,7 @@ The screens people use every day are `native-app-everyday`. Widgets, share, remi
   - Mac and Android builds run only when the app itself changes, every night, and when a release is cut.
   - A web-only pull request runs exactly the jobs it runs today.
 - **A trial build in TestFlight:**
-  - It is a separate App Store Connect record, "OpenTodo Preview", that can be installed next to the current app, for comparison.
+  - It ships under the existing App Store record (`app.open-todo.ios`) as version 2.0.0, on TestFlight only (owner decision, 2026-11-10): a tester gets it in place of the shell, everyone else keeps the App Store version.
   - It is built by the existing TestFlight workflow on GitHub's Mac runners, with no Xcode on anyone's machine.
 - A minimal first screen to prove the foundation end to end: sign in, sync, see Today, and complete a task with the change reaching the web app.
 
@@ -65,7 +65,7 @@ The screens people use every day are `native-app-everyday`. Widgets, share, remi
   - two routes: the sign-in hand-off page and the code exchange;
   - app grants shown in the sessions list.
 - **CI:** `scripts/ci-changes.sh` gains the `app` answer, computed from `shared-modules.json`, and `.github/workflows/ci.yml` gains `app-check`. A nightly job builds the app and runs its simulator tests.
-- **Owner actions:** create the "OpenTodo Preview" record in App Store Connect (Apple's API cannot create app records). The existing `release` environment's key signs and uploads.
+- **Owner actions:** none for the trial: the App Store record and the bundle id exist (design D10). The existing `release` environment's key signs and uploads.
 - **No new mandatory environment variable and no change to the op log.** The app writes ops through the same `mutate()` path with its own device id. Older servers that lack the app sign-in routes are refused with a clear message, never half-supported.
 
 ## Out of scope
