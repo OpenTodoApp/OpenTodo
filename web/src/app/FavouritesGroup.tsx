@@ -19,7 +19,8 @@ import { canEditTasks, roleOf } from '../lib/sharing'
 import { LabelMenu } from './LabelsView'
 import { ProjectRowMenu } from './ProjectRowMenu'
 import { navigate, type Route } from './router'
-import { openTasksLabel, ProjectMark } from './Sidebar'
+import { openTasksLabel } from './Sidebar'
+import { ProjectMark } from './ProjectMark'
 import { ViewMark, ViewMenu } from './ViewsView'
 
 const keyOf = (f: Pick<Favourite, 'kind' | 'id'>) => `${f.kind}:${f.id}`

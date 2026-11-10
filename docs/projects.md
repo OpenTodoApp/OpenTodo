@@ -23,7 +23,7 @@ The **Project** menu at the top right of a project lets you:
 - **Pin to sidebar**, which adds it to **Favourites** (see below),
 - **Move to…** another project, or back to the top level; <kbd>m</kbd> opens the menu straight at this step.
 - **Rename** it,
-- pick an **Icon…**: type to search, or **No icon** for the dot,
+- set the sidebar and row **Icon…**, or **No icon** for the dot,
 - choose a **Flow…** ([flows](project-flows.md)), **Review every…** or **Put in maintenance** ([intervals](review-intervals.md)),
 - make it a [reusable list](reusable-lists.md) with **List…**,
 - **Archive…** it: it and its sub-projects leave the sidebar, every task kept,

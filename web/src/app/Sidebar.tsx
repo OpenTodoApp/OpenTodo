@@ -1,5 +1,8 @@
 import { useWorkspaceFilter } from './useWorkspaceFilter'
-import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { ProjectMark } from './ProjectMark'
+// ProjectHeader imports through this re-export to preserve the entry chunk split (see the bundle budget).
+export { ProjectMark } from './ProjectMark'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -620,7 +623,6 @@ function ProjectNameEditor({ project, drawer, onDone }: { project: Project; draw
     }} />
 }
 
-/** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
 /**
  * The sidebar's inline New project form, under the last project. It opens from the
  * + menu, often below the fold with a long list (GitHub issue 997), and on a phone that
@@ -662,13 +664,6 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
       </div>
     </form>
   )
-}
-
-export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, 'color' | 'icon'>; size?: 'sm' | 'md' }) {
-  const dot = <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
-  // A catalogue icon (icons-and-section-style); the dot while the catalogue loads and for a name this device does not know.
-  if (!project.icon || !isCatalogueIcon(project.icon)) return dot
-  return <span style={{ color: project.color }} className="flex items-center"><CatalogueIcon name={project.icon} size={size === 'md' ? 'md' : 'sm'} fallback={dot} /></span>
 }
 
 /** Unread activity count (activity-feed): others' changes since the project's activity was last seen. */

@@ -27,6 +27,7 @@ import { hueFor, Icon, LabelChips, ProgressRing, ReadAs, ToneText, Tooltip, Trun
 import { slotName, useSlotOf } from '../lib/slots'
 import { lazy, memo, type ReactNode, Suspense, use, useLayoutEffect, useRef } from 'react'
 import { RowBlockContext } from './task-list/rowBlockContext'
+import { ProjectMark } from './ProjectMark'
 import type { RowImplied } from '../lib/listGroups'
 import { describeDeadline, describeDue, formatDate, formatTime, localDueOf, logicalToday, zoneHint, type ResolvedDateTime } from '../lib/dates'
 import { formatMinutes } from '../lib/duration'
@@ -304,7 +305,7 @@ export function PriorityMark({ priority, text = false }: { priority: number; tex
  * estimate, the assignee and the other facts, and the labels on one line, as many as
  * fit, then "+n".
  */
-function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; priority: number | null; projectColor?: string; labels: ReactNode }) {
+function DetailedMeta({ m, priority, projectMark, labels }: { m: MetaValues; priority: number | null; projectMark: ReactNode; labels: ReactNode }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   const facts = [
     (m.date || m.hint) && (
@@ -318,7 +319,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
     m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>,
     m.project && (
       <span key="project" data-row-cell="project" className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
-        {projectColor && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: projectColor }} />}
+        {projectMark}
         {m.project}
       </span>
     ),
@@ -344,7 +345,7 @@ function DetailedMeta({ m, priority, projectColor, labels }: { m: MetaValues; pr
   )
 }
 
-/** The one cell a phone row keeps (precision-phone D2): the date, else the deadline, else the assignee, else the project's dot. */
+/** The one cell a phone row keeps (precision-phone D2): the date, else the deadline, else the assignee, else the project marker. */
 export type PhoneCell = 'date' | 'deadline' | 'assignee' | 'project' | null
 
 export function phoneCell(c: { date: boolean; deadline: boolean; assignee: boolean; project: boolean }): PhoneCell {
@@ -361,7 +362,7 @@ export function phoneCell(c: { date: boolean; deadline: boolean; assignee: boole
  * is one line that keeps a single cell (`data-row-phone`, precision-phone D2). The
  * deadline is never a slot: it is in the time column, else in the facts.
  */
-function RowLine({ m, projectColor, projectColumn, slotsOff }: { m: MetaValues; projectColor?: string; projectColumn: boolean; slotsOff?: string }) {
+function RowLine({ m, projectMark, projectColumn, slotsOff }: { m: MetaValues; projectMark: ReactNode; projectColumn: boolean; slotsOff?: string }) {
   const more = m.badges.slice(MAX_FIELD_BADGES)
   const phone = phoneCell({ date: !!(m.date || m.hint), deadline: !!m.deadline, assignee: !!m.assignee, project: !!m.project })
   const keep = (cell: Exclude<PhoneCell, null>) => (phone === cell ? { 'data-row-phone': '' } : {})
@@ -388,8 +389,8 @@ function RowLine({ m, projectColor, projectColumn, slotsOff }: { m: MetaValues; 
           </span>
         )}
         {m.project && (
-          <span data-row-cell="project" data-row-item="" {...keep('project')} data-dot={projectColor ? '' : undefined} className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
-            {projectColor && <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: projectColor }} />}
+          <span data-row-cell="project" data-row-item="" {...keep('project')} data-project-mark={projectMark ? '' : undefined} className="inline-flex min-w-0 items-center gap-1 text-meta text-muted">
+            {projectMark}
             {m.project}
           </span>
         )}
@@ -828,10 +829,11 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     m.counts = rest.length > 0 ? <RowCounts counts={rest} /> : null
   }
   const priority = !done && task.priority < 4 ? task.priority : null
+  const projectMark = projectName && project?.color && !card ? <ProjectMark project={project} size="xs" /> : null
   const meta = card ? (metaItems(m) > 0 || m.project) && <CardMeta m={m} />
-    : detailed ? <DetailedMeta m={m} priority={priority} projectColor={projectName ? project?.color : undefined}
+    : detailed ? <DetailedMeta m={m} priority={priority} projectMark={projectMark}
       labels={m.labels && <LabelChips labels={labels} omit={omitLabel} fit />} />
-    : (metaItems({ ...m, repeat: null }) > 0 || m.project) && <RowLine m={m} projectColor={projectName ? project?.color : undefined} projectColumn={showProject && !hides('project')} slotsOff={slotsOff} />
+    : (metaItems({ ...m, repeat: null }) > 0 || m.project) && <RowLine m={m} projectMark={projectMark} projectColumn={showProject && !hides('project')} slotsOff={slotsOff} />
   // Expanded rows (row-expand D2): a list row may show its details under it; never a card, the row edited in place or a departing row.
   const canExpand = !!onExpand && !card && !inline && motion !== 'leave'
   const showDetails = canExpand && expanded

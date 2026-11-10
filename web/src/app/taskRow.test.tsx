@@ -300,6 +300,26 @@ describe('one row language (rows-v2)', () => {
     await r.unmount()
   })
 
+  it.each(['line', 'detailed'] as const)('uses the configured project icon in %s rows', async (layout) => {
+    const project = { id: 'p', name: 'Home renovation', color: '#f00', icon: 'briefcase' } as Project
+    const r = await row({ project_id: project.id }, { layout, showProject: true, project })
+    const cell = r.container.querySelector('[data-row-cell="project"]')!
+    expect(cell.querySelector('svg[data-icon="briefcase"][aria-hidden="true"]')).toBeTruthy()
+    expect(cell.querySelector('.rounded-full')).toBeNull()
+    expect(spokenText(cell)).toBe(project.name)
+    await r.unmount()
+  })
+
+  it('keeps the project colour dot for an icon from a newer client', async () => {
+    const project = { id: 'p', name: 'Home renovation', color: '#f00', icon: 'from-a-newer-release' } as Project
+    const r = await row({ project_id: project.id }, { showProject: true, project })
+    const cell = r.container.querySelector('[data-row-cell="project"]')!
+    expect(cell.querySelector('svg')).toBeNull()
+    expect(cell.querySelector<HTMLElement>('.rounded-full')?.style.backgroundColor).toBe(project.color)
+    expect(spokenText(cell)).toBe(project.name)
+    await r.unmount()
+  })
+
   // OpenSpec change multi-day-tasks, D5: the range takes the date's place, "until" the Started chip's.
   it('a span shows its range in place of the date, and "until" once begun, with no more items than before', () => atNoon(async () => {
     const items = (root: ParentNode) => root.querySelectorAll('[data-date], [data-start]').length
