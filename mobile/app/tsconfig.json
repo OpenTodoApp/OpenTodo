@@ -1,0 +1,15 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "types": ["jest", "node"],
+    "paths": {
+      "@shared/*": ["../../web/src/lib/*"]
+    }
+  },
+  "include": ["index.ts", "app.config.ts", "src", "test"]
+}

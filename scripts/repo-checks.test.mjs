@@ -93,7 +93,19 @@ const tiers = [
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['changelog.d/Fixed/x.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true', app: 'true', app_native: 'false' }],
+  // The native app (native-app-foundation D9): a web-only change runs no app job, a
+  // shared module only the Linux checks, an app change those and the two builds.
+  [['web/src/app/today/TodayView.tsx'], { app: 'false', app_native: 'false' }],
+  [['web/src/app/today/TodayView.tsx', 'web/src/lib/sync.test.ts'], { app: 'false', app_native: 'false' }],
+  [['web/src/lib/sync.ts'], { app: 'true', app_native: 'false', ios: 'false', mobile: 'false' }],
+  [['web/src/generated/opSchema.ts'], { app: 'true', app_native: 'false' }],
+  [['web/src/locales/de.json'], { app: 'true', app_native: 'false' }],
+  [['mobile/app/src/App.tsx'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false', app: 'true', app_native: 'true' }],
+  [['mobile/app/package-lock.json'], { app: 'true', app_native: 'true' }],
+  [['mobile/ios/OpenTodo/Bridge.swift'], { app: 'false', app_native: 'false' }],
+  [['mobile/README.md'], { app: 'false', app_native: 'false' }],
+  [['scripts/shared-graph.mjs'], { app: 'true', app_native: 'false' }],
   // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
   [['web/src/app/Shell.tsx'], { a11y: 'true' }],
   [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
@@ -954,6 +966,44 @@ test('a browser global in a shared module fails the boundary check, naming the m
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('every module in shared-modules.json runs the app checks on Linux, never an app build', () => {
+  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
+  for (const m of modules) assert.deepEqual(pick(changes([m]), ['app', 'app_native']), { app: 'true', app_native: 'false' }, m)
+})
+
+// Every package of mobile/app/package.json is pinned exactly and has its reason in
+// DEPENDENCIES.md (native-app-foundation D7), and every line there names a package.
+function appDependencyProblems(pkg, doc) {
+  const problems = []
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies }
+  const listed = new Set([...doc.matchAll(/^- `([^`]+)`: \S/gm)].map((m) => m[1]))
+  for (const [name, version] of Object.entries(deps)) {
+    if (!/^\d+\.\d+\.\d+$/.test(version)) problems.push(`mobile/app/package.json: ${name} ${version} is not pinned to an exact version`)
+    if (!listed.has(name)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} has no line with its reason`)
+  }
+  for (const name of listed) if (!(name in deps)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} is not in package.json`)
+  return problems
+}
+
+test("the app's dependencies are pinned and each has its reason in DEPENDENCIES.md", () => {
+  assert.deepEqual(appDependencyProblems(JSON.parse(read('mobile/app/package.json')), read('mobile/app/DEPENDENCIES.md')), [])
+})
+
+test('a dependency without a reason, or a reason without a dependency, fails naming the package', () => {
+  const pkg = { dependencies: { expo: '58.0.19', 'left-pad': '^1.3.0' }, devDependencies: { jest: '30.5.2' } }
+  const doc = '- `expo`: the SDK.\n- `jest`: the tests.\n- `gone`: was removed.\n'
+  assert.deepEqual(appDependencyProblems(pkg, doc), [
+    'mobile/app/package.json: left-pad ^1.3.0 is not pinned to an exact version',
+    'mobile/app/DEPENDENCIES.md: left-pad has no line with its reason',
+    'mobile/app/DEPENDENCIES.md: gone is not in package.json',
+  ])
+})
+
+test("the app's native projects are generated, never committed (design D8)", () => {
+  const ignore = read('mobile/app/.gitignore')
+  for (const dir of ['/ios/', '/android/', '/node_modules/']) assert.match(ignore, new RegExp(`^${dir}$`, 'm'), `mobile/app/.gitignore ignores ${dir}`)
 })
 
 test('the boundary check ignores comments, strings and properties of the same name', () => {

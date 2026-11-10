@@ -1,5 +1,5 @@
 {
-  "$comment": "The modules of web/ the native app shares (native-app-foundation D2): the whole import graph of web/src/lib/sync.ts and web/src/lib/ops.ts, as node scripts/shared-graph.mjs prints it. Written by hand until task 4.1, when mobile/app/scripts/shared-modules.mjs generates it from the app's import graph. scripts/shared-boundary.mjs refuses a browser global in a listed module, and the repo check refuses a list that misses a module of the graph.",
+  "$comment": "The modules of web/ the native app shares (native-app-foundation D2): the import graph (scripts/shared-graph.mjs) of the sync path (web/src/lib/sync.ts, ops.ts) and of every @shared/* module the app and its tests import. Generated: node mobile/app/scripts/shared-modules.mjs --write; make app fails when it is stale. scripts/shared-boundary.mjs refuses a browser global in a listed module, and the repo check refuses a list that misses a module of the sync path.",
   "modules": [
     "web/src/generated/opSchema.ts",
     "web/src/lib/activity.ts",
@@ -67,6 +67,8 @@
     "web/src/lib/moduleState.ts",
     "web/src/lib/nlp/attributes.ts",
     "web/src/lib/nlp/dates.ts",
+    "web/src/lib/nlp/parse.ts",
+    "web/src/lib/nlp/recurrence.ts",
     "web/src/lib/nlp/reminders.ts",
     "web/src/lib/nlp/tokenize.ts",
     "web/src/lib/nlp/vocab/de.ts",

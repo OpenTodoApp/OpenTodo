@@ -97,6 +97,17 @@ interface Platform {
 
 Cryptography stays `crypto.subtle`. In the app it is provided by `react-native-quick-crypto`, a native implementation of the Web Crypto subset `crypto.ts` uses (AES-GCM, PBKDF2, HKDF, random values). The shared envelope vectors (`e2eeEnvelope`) run on the iOS simulator every night, so the native implementation is checked against the browser's.
 
+Other web APIs the listed modules use directly (task 4.1, as built). The table is what React Native 0.88 with Expo SDK 58 is expected to provide; each row is confirmed on the simulator with sync in the app (task 4.5), and a gap gets a polyfill listed in `mobile/app/DEPENDENCIES.md`:
+
+| API | Used by | In the app |
+| --- | --- | --- |
+| `crypto.subtle`, `crypto.getRandomValues` | `crypto`, `e2ee`, `attachments`, `taskPageCrypto`, `ids` | `react-native-quick-crypto`, installed at start-up |
+| `EventSource` | `sync` (the live stream) | none: `sync.ts` checks `typeof EventSource` and polls instead. Task 4.5 decides between a native stream and polling while in the foreground |
+| `TextEncoder`, `atob`, `btoa` | `crypto`, `ids`, `taskOrigin`, `taskPages`, `rules/steps`, `richtext` | Hermes |
+| `TextDecoder`, `URL`, `URLSearchParams` | `crypto`, `api`, `share`, `shell`, `taskOrigin`, `attachments` | Expo's runtime (`expo/winter`); `URL` must be the standard one, not React Native's partial one |
+| `fetch`, `Response`, `Headers`, `AbortController`, `XMLHttpRequest`, `FormData`, `Blob` | `http`, `api`, `sync`, `attachments`, `shareInbox`, `db`, `crypto` | React Native. `File` (`attachments`, `shareInbox`) and `Blob`'s `arrayBuffer()` are partial there: attachments wait for `native-app-everyday` |
+| `performance`, `requestAnimationFrame` | `perfMarks` | React Native (`performance.mark` for the perf marks) |
+
 ### D4. Local storage: Dexie on SQLite, chosen by measurement
 
 The data layer calls Dexie in 114 modules, and rewriting them is not on the table. Dexie runs on any IndexedDB implementation it is handed (`new Dexie(name, { indexedDB, IDBKeyRange })`). Two candidates give it one on the phone:
@@ -179,14 +190,15 @@ The app uses Expo's continuous native generation: `npx expo prebuild` writes `io
 | Job | Runner | Runs when | Time target |
 |---|---|---|---|
 | `app-check`: type-check, lint, unit tests (Jest with the shared vectors), the boundary check | Linux | `app` | ≤ 3 min |
-| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly; release | ≤ 25 min |
-| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly; release | ≤ 15 min |
+| `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly | ≤ 25 min |
+| `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly | ≤ 15 min |
 | `app-perf`: the `perfseed` account on the simulator, D4's three numbers | macOS | nightly | n/a |
 | TestFlight preview | macOS | `workflow_dispatch` and release tags | n/a |
 
 Further rules:
 - A web-only pull request, one that touches no shared module the app imports, runs no app job. A change to a shared module runs only `app-check`, never a Mac build.
 - `app-check` has its own `node_modules` cache keyed on `mobile/app/package-lock.json`. The web jobs never install the app's dependencies, and `make check` does not run the app. `make app` does, and `make check APP=1` adds it.
+- Release tags do not run `app-ios` or `app-android` while no release ships the app: a web release is never blocked by an app build. They join the release gates when the app ships in releases (`native-app-handover`). As built, both are in `.github/workflows/app-native.yml`, which `ci.yml` and `nightly.yml` call.
 - Dependabot groups the app's updates weekly in one pull request, so its lockfile does not churn the queue.
 - The boundary and `DEPENDENCIES.md` checks run in the existing repo-check job. They are text checks, about a second, and need no install.
 
