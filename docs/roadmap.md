@@ -134,6 +134,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
+| `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | In progress (12 of 12) |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
 | `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | In progress (12 of 12) |
 

@@ -388,6 +388,36 @@ const shots = [
     await p.keyboard.press('Escape')
     for (const id of p.connections ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
   } },
+  // The graph of all notes (notes-graph-page): a dozen linked notes in the Notes page's Graph mode; removed after.
+  { name: 'notes-graph', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    // Each cluster in a project of the sample data, so the graph shows its colours.
+    const projects = await p.evaluate(async () => ((await (await fetch('/api/v1/projects')).json()).projects ?? []).map((x) => x.id))
+    let cluster = 0
+    const add = (title, description) => p.evaluate(async ([t, d, pid]) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: t, description: d, project_id: pid }) })).json()).id, [title, description, projects[cluster] ?? null])
+    const link = (title, id) => `[${title}](?note=${id})`
+    const index = await add('Index', '')
+    const made = { Index: index }
+    const groups = [['Trip to Lisbon', 'Packing list', 'Ferry times', 'Places to eat', 'Tram 28'], ['Reading list', 'Deep Work', 'Quotes', 'Book club'], ['Garden', 'Tomatoes', 'Compost', 'Seed swap']]
+    for (const g of groups) {
+      cluster++
+      let prev = null
+      for (const title of g) {
+        const parts = [prev && link(prev, made[prev]), g[0] !== title && link(g[0], made[g[0]])].filter(Boolean)
+        made[title] = await add(title, parts.length ? `See ${parts.join(' and ')}.` : '')
+        prev = title
+      }
+    }
+    made['Weekly review'] = await add('Weekly review', `${link('Index', index)}, ${link('Reading list', made['Reading list'])}, ${link('Garden', made.Garden)} and ${link('Trip to Lisbon', made['Trip to Lisbon'])}.`)
+    p.graphNotes = Object.values(made)
+    await go(p, demoBase, '/notes?view=graph', () => p.locator('[data-notes-graph][data-ready]').waitFor())
+    // The demo's reminder toast would cover the graph.
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
+    await p.mouse.move(10, 700); await settle(p, 600)
+  }, async after(p) {
+    await p.evaluate(() => localStorage.removeItem('opentodo.notes.view'))
+    for (const id of p.graphNotes ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
+  } },
   // Focus (focus-mode 7.2): a task of the sample data, its session started a moment ago.
   { name: 'focus', server: D, async run(p) {
     await go(p, demoBase, '/focus', () => p.locator('[data-focus-timer], [data-empty-state="focus"]').first().waitFor())

@@ -1,0 +1,83 @@
+# Design
+
+## Context
+
+- `note-links` keeps an index of internal links on the device (source → targets, target → sources) over task notes, project notes and standalone notes, built from the decrypted projections in 8 ms slices and followed incrementally. `notes-graph` draws two steps of it around one item in a dialog (radial layout, SVG, one DOM button per node, at most 73 nodes).
+- The Notes page (`notes-page`, `notes-home`) lists the notes of the current workspace, with a search field, the Source, Project and Label filters, and a standalone note docked beside the list from 1024 px (`note-pane-width`).
+- The first load has a gzip budget: the entry chunk is at its 143.4 KB limit (`web/bundle-budget.json`). The Notes page is already a lazy route chunk.
+- Notes have a project and labels like tasks (`standalone-notes`); a task note reads its task's, a project note its project. The sibling change `notes-space` adds the space switch in the sidebar, a compact list and search tokens, and the project and labels on a standalone note wherever the editor lacks them.
+
+## Goals / Non-Goals
+
+**Goals:** the whole graph of a workspace's notes as the second mode of the Notes page, one click away and in the address; a picture that does not move on its own and changes locally; navigation by pointer, touch and keyboard; topics by project and label; smooth at 2,000 notes and 5,000 links; nothing in the first load.
+
+**Non-Goals:** editing links in the graph; dragging nodes; a new tag field; a graph across workspaces; analytics (clusters, centrality, paths).
+
+## Decisions
+
+**D1. A mode of the Notes page, not a new page.** The header gets **List | Graph** (in the `viewSwitch` slot `notes-space` left for it), the Notes space of the sidebar gets a **Graph** row under All notes, (a two-button switch like the project's layout switch, icons below 1024 px; on a phone one icon button in the bar). The graph replaces the list under the same header: same title, count, search field and filters, so switching keeps what the person was looking at. The address is `/notes?view=graph` (and `/notes/<id>?view=graph` with a note open beside it); Back and reload keep the mode. The last mode shown is kept on the device (`opentodo.notes.view`), and every way into Notes that does not name a mode (the sidebar, `g e`, the palette, a note's page Back on a phone) opens it. `v` switches on the page (`notes.view-mode`, the same key as the project's layout cycle; no conflict, the views differ). Alternatives: a separate `/notes/graph` destination (rejected: a second place for the same notes and a second set of filters); the graph as a larger dialog (rejected by the owner: "the graph isn't modal").
+
+**D2. What is drawn.**
+- **Nodes:** the notes the list shows (standalone, project and task notes of the current workspace, not in the Trash). Tasks and projects that a note links to but that have no note of their own are **secondary nodes**: smaller and hollow, shown by default, hidden with "Tasks and projects without notes" in the header menu. A linked standalone note of another workspace the device can read is a secondary node too. Recommended because a note that links to five tasks is half its meaning; hiding them removes the clutter for someone who links mostly notes.
+- **Edges:** one line per linked pair, either direction, from the link index; a link to something the device cannot read is not drawn (as in Connections). Direction is not drawn (it is in the List and in Linked references); the picture stays quiet.
+- **Notes without links** (orphans) are hidden by default and shown from the header menu ("Notes without links"). Seen on the 10,000-task fixture: about 2,000 task notes link nowhere, and as loose dots they buried the 500 linked notes. They take no part in the force layout: each sits on a band around the linked picture at an angle and distance from its key's hash (kept on the device like every position), so showing them, or adding one, moves nothing; once an orphan gains a link it joins the layout as a new node. Hiding never moves anything.
+- **Structure is not drawn** (task in project, subtasks, dependencies), as in `notes-graph` D1.
+- **Workspace:** the graph follows the current workspace, as the list and every page do; a workspace "topic" is the workspace switch itself. A graph across workspaces is out of scope.
+
+**D3. Look.** Quiet: lines in the hairline colour, nodes as small marks, labels in the body font at the metadata size with a halo in the page colour. Colour by project: each project's stored colour mapped to the palette hue (`hueFor`), resolved from the tokens at draw time, so light and dark and the themes follow; a node without a project in the muted text colour. **Shape by kind** so colour is never the only signal: a standalone note is a circle, a task note a rounded square, a project note a diamond; a secondary node is the same shape hollow. Size grows with the number of links (square root, capped). A completed task or archived project is drawn at lower contrast. Focus is the focus ring colour, hover and the centre the accent.
+
+**D4. Navigate.**
+- **Pan:** drag the background; two-finger scroll on a trackpad; one finger on a phone.
+- **Zoom:** the mouse wheel and a trackpad pinch (Ctrl+wheel) zoom around the pointer; pinch on touch around the fingers; **+** and **−** buttons and keys; **Fit** (button and `0`, the target icon: the interface icon set has no fit icon and adding one would grow the first load) shows every visible node. Zoom is bounded (0.1 to 4). A mouse wheel and a trackpad scroll are told apart by the event (a wheel moves in whole lines or steps of 100 or more on one axis), recorded here because it is a heuristic: a mis-detected device only swaps pan and zoom, both of which have buttons.
+- **Hover or focus** lights the node and its neighbours (and the lines between them) and dims the rest; the node's full title shows beside it.
+- **Click** opens the item without leaving the graph: a standalone note docked in the side pane (as from the list; the pane's width is the note pane's, `note-pane-width`), a task note or a secondary task docked as the task panel (the graph keeps a split while it is open), a project or project note opens the project with its note (the graph is one Back away). **Escape** closes the pane.
+- **Double click** (or **Space**) centres a node: the view flies to it, its neighbourhood within the **depth** (1, 2 or 3, default 2, a small control beside the centre's name in the corner) stays lit, the rest dims. **Backspace** returns to the previous centre; the centre's × (or Escape with no pane open) clears it.
+- **Find a note:** in graph mode the search field is "Find a note"; it uses the list's search (the same matching), the matches stay lit and the rest dims; Enter or ↓ flies to the next match and focuses it, Shift+Enter or ↑ the previous; the count is announced ("2 of 5: Trip").
+- Keyboard and pointer keys differ from the brief on purpose: Enter opens and Space centres, as in the Connections dialog (`notes-graph`), so the two graphs answer the same keys.
+
+**D5. Topic.** The chips of the search field (`notes-space`: `in:`, `label:`, `kind:`, `linked:`, `orphan`, `pinned`, `changed:`) are the topic in graph mode: the notes the list would keep stay lit, the rest is dimmed, never hidden or moved, and the view fits the topic when the chips change. A secondary node (a task or project without a note) is lit when a note of the topic links with it. A task note matches by its task's project and labels, a project note by its project, a standalone note by its own, exactly as the list's chips do (the graph reuses the list's filtering, so the two never disagree). (Before `notes-space` merged, the topic was the Source, Project and Label pickers it replaced.) Colour stays by project; a label topic lights its notes in their projects' colours. Owner addition (2026-11-10): "notes can have projects and tags as tasks" — the tags are the existing labels (`note.labels`, the same labels as tasks; no op change), so a topic is a project, a label or (through the workspace switch) a workspace; no tag field is added. Setting a standalone note's project and labels in the editor and label tokens in the search come with `notes-space`; the graph reads whatever the note holds. Alternatives: a separate Topic control (rejected: two ways to say "this project" on one page); hiding what is outside the topic (rejected: a filtered force picture either moves or leaves holes; dimming keeps the context and the places).
+
+**D6. A picture that stays put.**
+- **Layout:** our own force layout, about 250 lines: springs on links, a Barnes–Hut quadtree for repulsion (θ 1.2), gravity toward the centre, velocity decay, a fixed cooling schedule of 220 steps (300 steps at θ 0.9 took 825 ms at 2,000 nodes and 5,000 links in Node; 220 at θ 1.2 take 450 ms and look the same). Starting positions come from the nodes sorted by key on a golden-angle spiral; nothing random. Same nodes and links, same picture.
+- **Kept on the device:** the positions (whole numbers) are stored under `opentodo.notes.graph.positions` as one JSON map of `<kind>:<id>` → `[x, y]` (about 30 bytes a node; 60 KB at 2,000 nodes); a visit draws from them at once.
+- **Local change:** when the graph has positions for most of its nodes (at least 70 %), only the new nodes move: each starts at the mean of its placed neighbours (or on the rim at a hashed angle when it has none) and 80 steps run with every placed node fixed. A removed node simply disappears. A link added between two placed nodes draws a line and moves nothing. Below 70 % (first visit, a big import) the whole layout runs again and replaces the stored positions. The positions are a device-only cache: a lost or refused store means a fresh, still deterministic, layout.
+- **Live:** a change arriving by sync (a new note, a new link, a rename) updates the picture as it lands; the camera does not move.
+- **Motion:** flying to a node or fitting uses the motion tokens' emphasis duration; with reduced motion the view jumps. Nothing moves at rest.
+
+**D7. Scale.** Canvas 2D, one canvas sized to the page with the device pixel ratio; edges in one path, nodes batched by colour; only what is in view is drawn. Labels by level of detail: the hovered, focused, centred and found nodes and their neighbours always; others only when the zoom gives their node room, at most 150 labels a frame, by number of links. Hit testing by a uniform grid over the positions. A frame is drawn only when something changed (one `requestAnimationFrame` per change, nothing at rest). The layout runs in 8 ms slices on the main thread, like the link index; at 2,000 nodes and 5,000 links it is about 300 steps of a few milliseconds each. A Web Worker was considered and not taken: the work is short and sliced, a worker needs a second copy of the model and a module worker in the service worker's file list, and it cannot be tested in the unit suite; it remains the next step if the budget is missed on phones.
+- **Budgets** (in `scripts/perf/budgets.json` and `docs/performance.md`, measured nightly in the notes session): `notes-graph` from opening `/notes?view=graph` to the graph's first paint on a device without stored positions, 800 ms on a computer, 2,000 ms in the phone profile; `notes-graph-frame` from a wheel input to the frame drawn, 95th percentile, 50 ms and 150 ms (the cursor's limits). Measured locally on the 10,000-task account with the notes fixture (500 notes, light history), link index not yet built: 480 to 550 ms and 6 to 8 ms on the computer, 1,380 to 1,450 ms and 81 ms in the phone profile; a second visit draws from the stored positions. A scale test (`notesGraph.perf.test.ts`) builds 2,000 notes and 5,000 links and checks counts: the steps of the layout, that the same input gives the same positions, that adding one note moves no other node, the labels drawn per frame and the nodes a hit test visits.
+
+**D8. Accessibility.** The List is the equivalent and one key away. The canvas sits in a focusable region named "Graph of notes" with a description of its keys; arrow keys move to the neighbour in that direction (else the nearest node in that direction), and a polite live region announces the node: title, kind and number of links ("Trip, note, 3 links"). +, −, 0, Enter, Space, Backspace and Escape as in D4; `/` goes to Find a note. Every control (switch, zoom, fit, depth, the menu) is a button with a name. Reduced motion: no animated transitions. Colours from the tokens in light and dark; contrast of labels follows the text tokens.
+
+**D9. Phones (390 px).** The graph fills the space between the header row (Find a note and Filters) and the tab bar. One finger pans, two pinch; a tap lights a node and its neighbours and shows its title, a second tap opens it: a standalone note as its page (Back returns to the graph where it was), a task as its page. The brief asked for a sheet; the interface guide says a task is never a sheet and a note on a phone is its page, so the graph follows the list. Controls are compact: Fit and the depth control only; zoom is the pinch.
+
+**D10. Connections.** The dialog stays for one item. Its header gains **Open in graph** (an icon button), which closes the dialog and opens `/notes?view=graph` centred on the item, when the item is a node of the graph (a note, or a task or project with links).
+
+**D11. Loading.** The graph is its own lazy chunk, imported when the mode is first shown (a dynamic import inside the already lazy Notes page). The entry chunk gains only the mode in the router: parsing `?view=graph` and the remembered mode (target +0, measured below). The graph reads local data and the link index only: offline, on an unlocked encrypted account, no request; a locked account drops the index and the graph shows nothing until it is unlocked.
+
+## Data model impact
+
+None. No op, field, table or route. Device-only preferences in local storage: the mode (`opentodo.notes.view`), the display toggles (`opentodo.notes.graph.show`), the depth (`opentodo.notes.graph.depth`) and the positions (`opentodo.notes.graph.positions`). Nothing converges because nothing syncs; the picture is rebuilt from synced data on each device.
+
+## Size and memory
+
+No dependency (the force layout is ours; `d3-force` with `d3-quadtree` would be about 9 KB gzip, nondeterministic unless seeded and settling in view, and was the fallback named by `notes-graph` D7). The graph chunk is 11.0 KB gzip. First load, measured: the entry chunk 146,804 → 146,811 bytes gzip (+7, the mode in the router), the entry and its static imports 703,502 → 703,742 (+240: the router and the one shortcut entry); both stay within the budget (143.4 KB and 696 KB). Memory at 2,000 nodes and 5,000 links: typed arrays for positions and velocities (about 50 KB), the adjacency (about 100 KB), the stored positions (about 60 KB of JSON); the canvas is the page's size at the device pixel ratio (about 8 MB at 1600 × 900 × 2²). Container image size and server memory: unchanged.
+
+## Interface budget
+
+- **Chrome rows:** unchanged: the header row (with the switch among its actions) and the search and filter row the list already has. The zoom and Fit buttons and the centre's depth control sit inside the graph, as a map's controls do; display toggles are in the header's menu.
+- **Task properties:** unchanged.
+- **Sidebar destinations:** none added.
+- **Scroll regions:** the graph does not scroll (it pans); the page's scroller does not scroll in graph mode. Still three at most.
+- **Shortcuts:** one registered, `notes.view-mode` (`v` on the Notes page, the same key as the project's layout cycle in another view), no conflict. The graph's keys act only while the graph has focus and are listed in its accessible description and the help page, as the Connections dialog's are; registering them as local entries would add about 250 bytes to the first load (the registry is in it).
+
+## Risks / Trade-offs
+
+- [A dense graph is a hairball] → topics dim, depth around a centre, orphans and secondary nodes can be hidden, labels by level of detail.
+- [Canvas text is not in the accessibility tree] → the List is the equivalent; the graph announces the focused node; every action has a key.
+- [Positions kept per device differ between devices] → accepted: each device's picture is stable for that device, and the same data from scratch gives the same layout everywhere.
+- [Main-thread layout on a slow phone] → slices of 8 ms and the stored positions mean the first visit only; the worker is the next step (D7).
+
+## Migration Plan
+
+Additive, client-only. Rollback removes the mode; the stored preferences are ignored.

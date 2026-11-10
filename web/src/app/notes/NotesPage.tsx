@@ -6,6 +6,8 @@
 // The notes space (notes-space D5 to D7): filter tokens in the search field replace
 // the Source, Project and Label pickers; the rows are one line; the header keeps a
 // slot for the view switch of notes-graph-page.
+// Graph mode (notes-graph-page): List | Graph in that slot, the graph in place of the
+// list under the same header, the search field finding notes in it and the chips its topic.
 // Keys: `q` new note and `/` the search (registry entries notes.new, notes.search),
 // `j`/`k` (or the arrows) move between rows and Enter opens, Escape in the search
 // returns to the list. A lazy route chunk: the shell loads it on first visit.
@@ -13,7 +15,7 @@
 // first under Pinned, the others under Recent (D4); typed text offers New note
 // "<text>" as the first row, under the cursor when no note matches (D3); Source
 // gains Unlinked, read from the note-links index (D5); `p` pins the focused note.
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { encryptionSnapshot, onEncryptionChange } from '../../lib/e2ee'
 import { currentLanguage } from '../../lib/i18n/catalog'
 import { isFavourite, pinnedNoteIds, setFavourite } from '../../lib/favourites'
@@ -25,16 +27,16 @@ import { filterByTokens, parseStoredTokens, replaceTyping, tokensFromFilters, ty
 import { createNote } from '../../lib/noteOps'
 import { useNoteRows } from '../../lib/noteRows'
 import type { SnippetSegment } from '../../lib/noteSearch'
-import { readJSON, readString, writeJSON } from '../../lib/deviceStorage'
+import { readJSON, readString, writeJSON, writeString } from '../../lib/deviceStorage'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { keysOf } from '../../lib/shortcuts'
-import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, ListGroupHeader, PageBody, PageHeader, useMediaQuery } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuItem, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
 import type { ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { closePanel, openPanel, panelOccupant, SPLIT_QUERY } from '../panel'
-import { navigate } from '../router'
+import { navigate, NOTES_VIEW_KEY, useRoute } from '../router'
 import { useShortcutScope } from '../shortcuts'
 import { relativeLabel } from '../task-detail/RelativeTime'
 import { NoteSearchField } from './NoteSearchField'
@@ -44,6 +46,11 @@ import { NoteMenu, NoteRow } from './NoteRow'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
+import { graphShow } from '../../lib/notesGraphPrefs'
+import type { GraphHandle } from '../notes-graph/GraphView'
+
+// The Graph mode (notes-graph-page), its own chunk: loaded when the mode is first shown.
+const NotesGraph = lazy(() => import('../notes-graph/NotesGraph'))
 
 /** The page's filters on this device as an earlier version stored them (never synced; read once, left in place). */
 export const NOTE_FILTERS_KEY = 'opentodo.notes.filters'
@@ -162,23 +169,53 @@ function useNotesMarks(listed: boolean, query: string, rows: unknown) {
   useEffect(() => { if (query.trim()) perfMark(SEARCH_RESULTS, { view: 'notes' }) }, [query, rows])
 }
 
+type NotesMode = 'list' | 'graph'
+
+/** List | Graph in the header (notes-graph-page D1): two buttons on a computer, the other mode's icon on a phone. */
+export function NotesModeSwitch({ mode, onChange, compact }: { mode: NotesMode; onChange: (m: NotesMode) => void; compact: boolean }) {
+  const label = { list: t('List'), graph: t('Graph') }
+  const icon = { list: 'list', graph: 'waypoints' } as const
+  if (compact) {
+    const other = mode === 'list' ? 'graph' : 'list'
+    return <IconButton icon={icon[other]} label={other === 'graph' ? t('Show as graph') : t('Show as list')} onClick={() => onChange(other)} data-notes-mode={mode} />
+  }
+  return (
+    <span className="flex rounded-control border border-default text-meta" role="group" aria-label={t('Show notes as')} data-notes-mode={mode}>
+      {(['list', 'graph'] as const).map((m) => (
+        <Tooltip key={m} label={label[m]} shortcut={keysOf('notes.view-mode')}>
+          <button type="button" aria-pressed={mode === m} onClick={() => onChange(m)} data-notes-mode-option={m}
+            className={`${m === 'list' ? 'rounded-l-control' : 'rounded-r-control'} touch-target flex items-center gap-1.5 px-2 py-1 ${mode === m ? 'bg-sunken font-medium dark:bg-raised' : 'text-muted hover:bg-sunken dark:hover:bg-raised'}`}>
+            <Icon name={icon[m]} size="sm" /><span className="max-lg:sr-only">{label[m]}</span>
+          </button>
+        </Tooltip>
+      ))}
+    </span>
+  )
+}
+
 /**
  * The Notes page's header (notes-space D7): the title, the note count, New note and
  * Help, and the search row under them. `viewSwitch` is the place for the List | Graph
- * toggle of the sibling change notes-graph-page, among the actions; nothing fills it yet.
+ * toggle of notes-graph-page, among the actions; `overflow` holds the graph's display choices.
  */
-export function NotesHeader({ count, desktop, onNew, viewSwitch, children }: { count: number; desktop: boolean; onNew: () => void; viewSwitch?: ReactNode; children: ReactNode }) {
+export function NotesHeader({ count, desktop, onNew, viewSwitch, overflow, children }: { count: number; desktop: boolean; onNew: () => void; viewSwitch?: ReactNode; overflow?: ReactNode; children: ReactNode }) {
   return (
     <PageHeader title={t('Notes')} help="notes" barActions
       meta={t('{n, plural, one {# note} other {# notes}}', { n: count })}
       // On a phone the floating + starts a note (the one add of the screen); the header keeps the title, count and Help.
-      actions={desktop || viewSwitch ? <>{viewSwitch}{desktop && <Button size="sm" variant="ghost" onClick={onNew} data-note-new><Icon name="plus" />{t('New note')}</Button>}</> : undefined}>
+      actions={desktop || viewSwitch ? <>{viewSwitch}{desktop && <Button size="sm" variant="ghost" onClick={onNew} data-note-new><Icon name="plus" />{t('New note')}</Button>}</> : undefined}
+      overflow={overflow}>
       {children}
     </PageHeader>
   )
 }
 
 export function NotesPage({ id }: { id?: string }) {
+  const route = useRoute()
+  const mode: NotesMode = route.view === 'notes' && route.graph ? 'graph' : 'list'
+  const graphMode = mode === 'graph'
+  const graph = useRef<GraphHandle>(null)
+  const show = graphShow.use()
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
   const labels = useLabels()
@@ -241,6 +278,11 @@ export function NotesPage({ id }: { id?: string }) {
   // The cursor starts on the first match, else on New note; the arrows in the field move it.
   const at = typed ? Math.min(cursor ?? (shown.length > 0 ? 1 : 0), shown.length) : -1
   useNotesMarks(entries.length > 0, query, rows)
+  // Graph mode: the last mode shown is where Notes opens next on this device (D1); the chips are the topic, the words find (D4, D5).
+  useEffect(() => { writeString(NOTES_VIEW_KEY, graphMode ? 'graph' : null) }, [graphMode])
+  const matches = useMemo(() => (graphMode && typed ? rows.map((r) => r.entry.key) : null), [graphMode, typed, rows])
+  const topic = useMemo(() => (graphMode && tokens.length > 0 && filtered ? new Set(filtered.map((e) => e.key)) : null), [graphMode, tokens.length, filtered])
+  const switchMode = (m: NotesMode) => navigate({ view: 'notes', ...(id ? { id } : {}), graph: m === 'graph' })
 
   const changeTokens = (next: NoteToken[]) => {
     setTokens(next)
@@ -276,13 +318,14 @@ export function NotesPage({ id }: { id?: string }) {
   // /notes?new=1 (the palette's New note): create one, open it, drop the parameter.
   useEffect(() => {
     if (new URLSearchParams(location.search).get('new') !== '1') return
-    history.replaceState(history.state, '', '/notes')
+    history.replaceState(history.state, '', graphMode ? '/notes?view=graph' : '/notes')
     newNote()
   })
 
   useShortcutScope('view', {
     'notes.new': () => newNote(),
     'notes.search': () => { search.current?.focus() },
+    'notes.view-mode': () => switchMode(graphMode ? 'list' : 'graph'),
   }, { view: 'notes', enabled: !phonePage })
 
   if (phonePage) return <NotePage id={id} />
@@ -314,6 +357,21 @@ export function NotesPage({ id }: { id?: string }) {
   }
   // The field's own keys come first (chips, suggestions); these move the list's cursor.
   const onFieldKey = (e: KeyboardEvent<HTMLInputElement>) => {
+    // Graph mode (D4): Enter and the arrows fly to the next or previous match, Escape returns to the graph.
+    if (graphMode && !e.altKey && !e.ctrlKey && !e.metaKey && !e.nativeEvent.isComposing) {
+      const step = e.key === 'Enter' ? (e.shiftKey ? -1 : 1) : e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0
+      if (step && typed) {
+        e.preventDefault()
+        graph.current?.find(step)
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        document.querySelector<HTMLElement>('[data-notes-graph-area]')?.focus()
+        return
+      }
+    }
     if (typed && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
       e.preventDefault()
       setCursor(Math.max(0, Math.min(shown.length, at + (e.key === 'ArrowDown' ? 1 : -1))))
@@ -352,13 +410,25 @@ export function NotesPage({ id }: { id?: string }) {
     )
   }
 
+  // The graph's display choices (D2) in the header's menu, only in Graph mode.
+  const overflow = graphMode ? (
+    <>
+      <MenuItem label={t('Notes without links')} checked={show.orphans} onSelect={() => graphShow.set({ ...show, orphans: !show.orphans })} data-notes-graph-show="orphans" />
+      <MenuItem label={t('Tasks and projects without notes')} checked={show.secondary} onSelect={() => graphShow.set({ ...show, secondary: !show.secondary })} data-notes-graph-show="secondary" />
+    </>
+  ) : undefined
+
   return (
-    <PageBody width="list" data-page="notes">
-      <NotesHeader count={entries.length} desktop={desktop} onNew={newNote}>
+    <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'flex h-full flex-col' : undefined} data-notes-mode={mode}>
+      <NotesHeader count={entries.length} desktop={desktop} onNew={newNote} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
         <NoteSearchField text={text} onText={changeText} tokens={tokens} onTokens={changeTokens} projects={projects} labels={labels} world={world}
-          inputRef={search} onListKey={onFieldKey} label={t('Search notes')} shortcut={keysOf('notes.search')} />
+          inputRef={search} onListKey={onFieldKey} label={graphMode ? t('Find a note') : t('Search notes')} shortcut={keysOf('notes.search')} />
       </NotesHeader>
-      {entries.length === 0 && !typed && tokens.length === 0 ? <NotesEmpty onNew={newNote} /> : pending ? null : (
+      {entries.length === 0 && !typed && tokens.length === 0 ? <NotesEmpty onNew={newNote} /> : graphMode ? (
+        <Suspense fallback={<div className="notes-graph" data-notes-graph />}>
+          <NotesGraph entries={entries} topic={topic} topicKey={JSON.stringify(tokens)} matches={matches} openId={id} handle={graph} />
+        </Suspense>
+      ) : pending ? null : (
         <>
           <ul ref={list} className="space-y-px" aria-label={t('Notes')} onKeyDown={onListKey} data-notes-list>
             {typed && <NewNoteRow text={typed} cursor={at === 0} onCreate={() => act(createFromSearch())} />}

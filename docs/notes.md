@@ -35,7 +35,7 @@ Mentions, images and **Make subtask** are not offered in standalone notes: they 
 
 ## Linking notes, tasks and projects
 
-Type `[[` in a note to link to another note, a task or a project; what links to a note shows at its end. See [Link notes, tasks and projects](note-links.md). **Show connections** draws what an item is connected to, two steps out: [See an item's connections](note-connections.md).
+Type `[[` in a note to link to another note, a task or a project; what links to a note shows at its end. See [Link notes, tasks and projects](note-links.md). **Show connections** draws one item's: [See an item's connections](note-connections.md); **Graph** shows them all: [See all your notes as a graph](notes-graph.md).
 
 ## Searching and pinning
 

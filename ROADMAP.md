@@ -158,6 +158,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
 | [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
 | [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
+| [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
 | [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
 

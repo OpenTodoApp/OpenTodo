@@ -379,6 +379,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
   // notes-home: pin or unpin the focused note, handled by the list itself.
   { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
+  // notes-graph-page D1: the List | Graph switch (the project's layout key). The graph's own keys are local to it, as the Connections dialog's are, and listed in its help.
+  { id: 'notes.view-mode', keys: ['v'], description: 'On the Notes page: switch between the list and the graph', section: 'notes', scope: 'view', views: ['notes'] },
   // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
   { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
   { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
