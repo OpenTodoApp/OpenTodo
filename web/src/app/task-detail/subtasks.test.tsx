@@ -7,7 +7,7 @@ import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createSubtask, createTask } from '../../lib/ops'
-import { click, key, type } from '../../ui/test-utils'
+import { click, key, spokenText, type, visibleText } from '../../ui/test-utils'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
@@ -126,6 +126,11 @@ describe('the quiet checklist', () => {
     expect(head.className).toContain('text-meta')
     expect(h3.querySelector('svg')).toBeNull()
     expect(head.querySelector('[data-subtask-progress]')).not.toBeNull()
+    // The share after the bar, read as a percentage (task-progress D3).
+    const percent = head.querySelector('[data-subtask-percent]')!
+    expect(visibleText(percent)).toBe('40%')
+    expect(spokenText(percent)).toBe('40% done')
+    expect(percent.previousElementSibling!.hasAttribute('data-subtask-progress')).toBe(true)
     for (const li of section(container).querySelectorAll('li')) {
       expect(li.className).not.toMatch(/\bborder\b|border-t/)
       expect(li.className).toContain('min-h-8')

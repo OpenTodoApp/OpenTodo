@@ -9,6 +9,7 @@ import type { Due, Project, Task } from './types'
 import { openCount } from './views'
 import { projectFlowOf } from './flow'
 import { inMaintenance } from './reviewCadence'
+import { progressPart } from './progress'
 
 /**
  * The health words, most urgent first (design D2): the first rule that holds decides.
@@ -171,9 +172,10 @@ function ownFigures(project: HealthProject, tasks: readonly HealthTask[], input:
   for (const task of tasks) {
     const changed = clockTime(task._clock)
     if (changed && (f.updated === null || changed > f.updated)) f.updated = changed
-    if (task.completed_at !== null) {
-      // A completed occurrence record is a past turn of a series, not a task of its own.
-      if (!task.series_id) f.done++
+    // One rule with the project page (lib/progress.ts): a completed occurrence record is a past turn of a series, not a task of its own.
+    const part = progressPart(task)
+    if (part !== 'open') {
+      if (part === 'done') f.done++
       continue
     }
     f.pending++

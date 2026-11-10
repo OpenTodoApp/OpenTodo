@@ -51,6 +51,8 @@ export interface ToneTextProps {
   tone?: Tone
   /** 12 px, before the text (the deadline's hourglass). */
   icon?: IconName
+  /** A 12 px mark drawn in place of an icon (a card's progress ring). */
+  leading?: ReactNode
   children: ReactNode
   /** The full phrase for assistive technology when the text is abbreviated. */
   label?: string
@@ -59,10 +61,11 @@ export interface ToneTextProps {
 }
 
 /** A short phrase in a tone colour: the date ("Today · evening · repeats") or the deadline. */
-export function ToneText({ tone = 'muted', icon, children, label, className, ...rest }: ToneTextProps & Record<`data-${string}`, string | undefined>) {
+export function ToneText({ tone = 'muted', icon, leading, children, label, className, ...rest }: ToneTextProps & Record<`data-${string}`, string | undefined>) {
   return (
     <span className={`inline-flex min-w-0 items-center gap-1 text-meta tabular-nums ${TONE[tone]}${className ? ` ${className}` : ''}`} {...rest}>
       {icon && <Icon name={icon} size="xs" />}
+      {leading}
       <span className="truncate"><ReadAs label={label}>{children}</ReadAs></span>
     </span>
   )

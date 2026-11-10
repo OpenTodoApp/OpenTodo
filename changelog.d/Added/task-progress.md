@@ -1,0 +1,1 @@
+- **Progress at a glance.** A task with subtasks shows a small ring before its count ("1/4") in lists and on boards, and the task panel's Subtasks heading ends with the percentage. A project's page shows its progress next to its title, the same figure All projects shows. Everything is worked out on your device, offline too, and nothing new is stored or synced.

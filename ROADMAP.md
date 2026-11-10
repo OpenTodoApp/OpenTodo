@@ -199,6 +199,7 @@ These changes come from the owner's November review of the screens used every da
 | [`when-picker`](openspec/changes/when-picker/) | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
 | [`focus-redesign`](openspec/changes/focus-redesign/) | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
 | [`close-the-day-redesign`](openspec/changes/close-the-day-redesign/) | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
+| [`task-progress`](openspec/changes/task-progress/) | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | [#1107](https://github.com/OpenTodoApp/OpenTodo/issues/1107) |
 | [`loop-guided-dashboard`](openspec/changes/loop-guided-dashboard/) | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.

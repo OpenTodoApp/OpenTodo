@@ -33,6 +33,8 @@ Archive and delete ask first.
 
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
+A project shows how much is done next to its title, as [All projects](all-projects.md) does.
+
 A project's open-task count shows in the sidebar on hover or focus (always on touch, or with [every count on](sidebar-counts-and-order.md)). A folded project counts its sub-projects.
 
 Inside a project you can also group tasks into sections and show them as a board: see [Sections and boards](sections-and-boards.md). Other groupings: [Group and order a list](group-and-order.md).
@@ -57,4 +59,4 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 
 ## When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring one back, select **Restore** next to it in the **Archived** tab of the Projects page; see [Archived projects](archived-projects.md).
+When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. Turn that off in **Settings → Data** (per device). To bring one back, use **Restore** in the **Archived** tab; see [Archived projects](archived-projects.md).

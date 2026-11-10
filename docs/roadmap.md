@@ -161,6 +161,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `when-picker` | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | In progress (9 of 9) |
 | `focus-redesign` | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | In progress (8 of 8) |
 | `close-the-day-redesign` | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | In progress (9 of 9) |
+| `task-progress` | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | In progress (8 of 8) |
 | `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | In progress (13 of 13) |
 
 <!-- roadmap:end -->
