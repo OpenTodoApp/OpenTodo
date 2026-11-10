@@ -1,83 +1,93 @@
-// The Loop home (OpenSpec change loop-home-refresh; open-loops "Loop home" and
-// "Loop pulse"): an inline capture field, the five moves on one rail with exactly
-// one lit as the next move, today's focus with its progress, and the Loop pulse.
-// Everything is computed on the device from the local rows, nothing is stored or
-// sent, and the page follows changes from other devices as they sync.
-import { useMemo, type MouseEvent, type ReactNode } from 'react'
-import { formatDate, formatInstant } from '../../lib/dates'
+// The Loop home (OpenSpec changes loop-home-refresh and loop-guided-dashboard;
+// open-loops "Loop home" and "Loop pulse"): a Next step card naming one move and
+// its reason, the five moves as a stepper in method order, the Loop pulse as one
+// quiet line, and the open move in place below them (/loop/<move>). Everything is
+// computed on the device from the local rows, nothing is stored or sent, and the
+// page follows changes from other devices as they sync. Each move's part and the
+// pulse details are lazy chunks.
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
-import { resolveLabels } from '../../lib/labels'
-import { hasTimeColumn } from '../../lib/rowTime'
-import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels, useReviewRow, useReviewedAt, useUserPrefsRow } from '../../lib/localData'
 import { BENTO_SLOTS, orderedFocusIds, readBento, readFocusStyle } from '../../lib/bento'
-import { move, PLACES, RHYTHMS, termDescription, termName, type MoveId, type RhythmId } from '../../lib/method'
+import { move as term, RHYTHMS, termName, type MoveId, type RhythmId } from '../../lib/method'
 import { nextGroups } from '../../lib/method/groups'
-import { decided, INBOX_AGE_CAUTION_DAYS, inboxAge, lastDays, nextMove, PULSE_DAYS } from '../../lib/method/pulse'
-import { MethodRules, waitingTasks } from '../../lib/method/rules'
-import { createTask, setTaskCompleted } from '../../lib/ops'
+import { decided, INBOX_AGE_CAUTION_DAYS, inboxAge, lastDays, nextMove, type NextStep } from '../../lib/method/pulse'
+import { MethodRules } from '../../lib/method/rules'
 import { dailyDue, dayClosed, FOCUS_MAX, focusTasks, monthlyDue, reviewAgo, reviewDue } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { qualifies } from '../../lib/triage'
-import type { Label, Project, Task } from '../../lib/types'
-import { Button, Icon, PageBody, PageHeader, Skeleton, Tooltip, type IconName } from '../../ui'
-import { act } from '../actionError'
+import type { Project, Task } from '../../lib/types'
+import { Button, DESKTOP_HEADER_QUERY, Icon, IconButton, PageBody, PageHeader, Skeleton, useMediaQuery, type IconName } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
-import { requestFocusPick } from '../focus/focusRequest'
 import { MethodLink } from '../help/MethodLink'
-import { setPanelTaskId } from '../panel'
-import { QuickAdd } from '../QuickAdd'
-import { navigate, routePath, type Route } from '../router'
-import { TaskRow } from '../TaskRow'
+import { navigate, type Route } from '../router'
 import { useMethodInput } from './useMethodInput'
 
-interface Move {
-  id: MoveId
-  icon: IconName
-  route: Route
-  /** The full sentence, read by assistive technology in place of the numeral. */
-  sentence: string
-  /** The big numeral; null shows the done mark (Catch, Clarify and Place at zero). */
-  count: number | null
-  unit?: string
-  lines: ReactNode[]
-  /** A line outside the move's link (the Review move's Close the day line, close-the-day D6). */
-  extra?: ReactNode
-  action: string
-}
+const Catch = lazy(() => import('./loop/CatchMove'))
+const Clarify = lazy(() => import('./loop/ClarifyMove'))
+const Place = lazy(() => import('./loop/PlaceMove'))
+const Do = lazy(() => import('./loop/DoMove'))
+const Review = lazy(() => import('./loop/ReviewMove'))
+const PulseDetails = lazy(() => import('./loop/PulseDetails'))
 
+/** The moves in method order, the stepper's order (D3). */
+const ORDER: readonly MoveId[] = ['catch', 'clarify', 'place', 'do', 'review']
 const ICONS: Record<MoveId, IconName> = { catch: 'inbox', clarify: 'list', place: 'layers', do: 'arrow-right', review: 'clipboard-check' }
-const inboxPlace = PLACES.find((p) => p.id === 'inbox')!
-const CLOSE_ROUTE: Route = { view: 'review', step: 'close' }
+const RHYTHM_ROUTES: Record<RhythmId, Route> = { daily: { view: 'review', step: 'daily' }, weekly: { view: 'review' }, monthly: { view: 'review', step: 'monthly' } }
 
-function linkTo(route: Route) {
-  return (e: MouseEvent<HTMLAnchorElement>) => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
-    e.preventDefault()
-    navigate(route)
-  }
+export interface PulseData { week: number; lastWeek: number; decided: number; caught: number; age: number | null; days: { date: string; count: number }[] }
+
+export interface RhythmLine { id: RhythmId; name: string; due: boolean; when: string }
+
+/** What the home and its moves read, computed once per change of the local rows. */
+export interface LoopData {
+  inbox: number
+  /** The open Inbox tasks, newest first (Catch's latest captures). */
+  latest: Task[]
+  withoutNext: Project[]
+  stalled: Project[]
+  contexts: { key: string; heading: string; tasks: Task[] }[]
+  nextCount: number
+  rhythms: RhythmLine[]
+  /** When the day was closed on the logical today, else null. */
+  closedAt: number | null
+  focus: Task[]
+  /** Room for one more focus task by touch. */
+  room: boolean
+  pulse: PulseData
+  up: NextStep
 }
 
-export function LoopHome() {
+/** The props every move's part gets. */
+export interface MoveProps {
+  data: LoopData
+  /** Close the move (Esc, the Vim `:q`), as Back would. */
+  onClose: () => void
+  /** The Clarify move reports how many tasks are left. */
+  onLeft?: (n: number) => void
+}
+
+function useLoopData(): LoopData | null {
   const input = useMethodInput()
   const labels = useAllLabels()
   const review = useReviewRow()
   const prefs = useUserPrefsRow()
   const reviewedAt = useReviewedAt()
   const weekStart = useDateTimeFormat().resolved.weekStart
-  const data = useMemo(() => {
+  return useMemo(() => {
     if (!input) return null
     const now = Date.now()
     const rules = new MethodRules(input)
     const live = input.tasks.filter((x) => !x.deleted_at)
-    const inbox = live.filter(qualifies).length
-    const withoutNext = rules.working.filter((p) => rules.needsNextAction(p.id)).length
-    const stalled = rules.working.filter((p) => rules.stalled(p.id, now)).length
+    const inboxTasks = live.filter(qualifies)
+    const withoutNext = rules.working.filter((p) => rules.needsNextAction(p.id))
+    const stalled = rules.working.filter((p) => rules.stalled(p.id, now))
     const contexts = nextGroups(input, labels)
     const nextCount = new Set(contexts.flatMap((g) => g.tasks.map((x) => x.id))).size
-    const waiting = waitingTasks(input).length
-    const rhythms = { daily: dailyDue(review?.daily_at, input.today), weekly: reviewDue(review?.completed_at, now), monthly: monthlyDue(review?.monthly_at, now) }
-    const rhythmDue = rhythms.daily || rhythms.weekly || rhythms.monthly
+    const due = { daily: dailyDue(review?.daily_at, input.today), weekly: reviewDue(review?.completed_at, now), monthly: monthlyDue(review?.monthly_at, now) }
+    const stamps = { weekly: review?.completed_at ?? null, monthly: review?.monthly_at ?? null }
+    const rhythms = RHYTHMS.map((r) => ({ id: r.id, name: termName(r), due: due[r.id], when: due[r.id] ? t('due') : r.id === 'daily' ? t('done today') : reviewAgo(stamps[r.id]) }))
+    const rhythm = (['daily', 'weekly', 'monthly'] as const).find((id) => due[id]) ?? null
     const byId = new Map(live.map((x) => [x.id, x]))
     // Listed in the Bento order when Bento is on (bento-daily-check D6).
     const focus = orderedFocusIds(review, prefs, input.today, live).map((id) => byId.get(id)).filter((x): x is Task => !!x)
@@ -93,242 +103,230 @@ export function LoopHome() {
       age: inboxAge(input.tasks, input.today),
       days: compute(stats, lastDays(input.today), weekStart).perDay,
     }
-    const stamps = { weekly: review?.completed_at ?? null, monthly: review?.monthly_at ?? null }
     const closedAt = review && dayClosed(review, input.today) ? review.closed_at : null
-    return { inbox, withoutNext, stalled, contexts, nextCount, waiting, rhythms, rhythmDue, stamps, closedAt, focus, room, pulse, up: nextMove({ inbox, withoutNext, rhythmDue, nextCount }) }
+    const latest = [...inboxTasks].sort((a, b) => b.created_at - a.created_at)
+    const up = nextMove({ inbox: inboxTasks.length, withoutNext: withoutNext.length, rhythm, nextCount })
+    return { inbox: inboxTasks.length, latest, withoutNext, stalled, contexts, nextCount, rhythms, closedAt, focus, room, pulse, up }
   }, [input, labels, review, prefs, reviewedAt, weekStart]) // eslint-disable-line react-hooks/exhaustive-deps -- reviewedAt: the walk's stamps change what Place counts
-  const labelMap = useMemo(() => new Map(labels.map((l) => [l.id, l])), [labels])
-  const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
-  const projects = useMemo(() => (input?.projects ?? []).filter((p) => !p.deleted_at && !p.archived), [input])
+}
 
-  const closed = !!data && data.inbox === 0 && data.withoutNext === 0 && !data.rhythmDue
+export function LoopHome({ move }: { move?: MoveId }) {
+  const data = useLoopData()
+  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
+  // Opened from this page: Back (history) closes it. Opened by a link: closing replaces the address.
+  const pushed = useRef(false)
+  const items = useRef<Partial<Record<MoveId, HTMLButtonElement | null>>>({})
+  const [left, setLeft] = useState<number | null>(null)
+  const last = useRef(move)
+  useEffect(() => {
+    const was = last.current
+    last.current = move
+    if (move) return
+    pushed.current = false
+    setLeft(null)
+    // Closed (Back, Esc, the open step): focus returns to the step it was opened from.
+    const active = document.activeElement
+    if (was && (!active || active === document.body)) items.current[was]?.focus()
+  }, [move])
+
+  const open = (id: MoveId) => {
+    if (id === move) { close(); return }
+    // Switching moves replaces the entry, so Back always closes to the Loop home.
+    navigate({ view: 'loop', move: id }, { replace: !!move })
+    if (!move) pushed.current = true
+  }
+  const close = () => {
+    if (pushed.current) { pushed.current = false; history.back() } else navigate({ view: 'loop' }, { replace: true })
+  }
+  // Below 768 px an open move takes the screen as a page with Back (D7).
+  const page = !wide && !!move
+  const name = move ? termName(term(move)) : ''
+
   return (
     <PageBody width="list">
-      <PageHeader title={t('Loop home')} icon="rotate-ccw" meta={<MethodLink />} subtitle={<MethodLink />} help="loop" />
-      <div className="mb-4" data-loop-capture>
-        <QuickAdd placeholder={t('Whatever is on your mind…')} label={t('Catch into the Inbox')} projects={projects} labels={labels}
-          onAdd={async (task) => { await createTask({ ...task, project_id: task.project_id ?? null, labels: task.labels ?? [] }) }} />
-      </div>
-      {!data || !input ? <LoopSkeleton /> : (
-        <>
-          {closed && (
-            <p className="mb-3 flex items-center gap-2 rounded-card bg-success-soft px-3 py-2 text-body text-on-success-soft" data-loop-closed>
-              <Icon name="circle-check-big" className="shrink-0 text-success" />{t('Your loops are closed. Work from Next, and catch things as they come.')}
-            </p>
+      <PageHeader title={page ? name : t('Loop home')} icon={page ? undefined : 'rotate-ccw'} help="loop"
+        back={page ? { label: t('Loop home'), onClick: close } : undefined}
+        meta={page ? (move === 'clarify' && left ? t('{n} left', { n: left }) : undefined) : <MethodLink />} subtitle={page ? undefined : <MethodLink />} />
+      {!data ? <LoopSkeleton /> : (
+        <div onKeyDown={move && move !== 'clarify' ? escCloses(close) : undefined}>
+          {!page && (
+            <>
+              <NextStepCard step={data.up} onOpen={open} open={move} />
+              <Stepper data={data} open={move} up={data.up.move} onOpen={open} items={items.current} />
+              <PulseLine pulse={data.pulse} />
+            </>
           )}
-          <Rail moves={movesOf(data)} up={data.up} />
-          <Focus tasks={data.focus} room={data.room} projectMap={projectMap} labelMap={labelMap} />
-          <Pulse pulse={data.pulse} />
-        </>
+          {move && <MovePart move={move} data={data} page={page} left={left} onLeft={setLeft} onClose={close} />}
+        </div>
       )}
     </PageBody>
   )
 }
 
-interface Data {
-  inbox: number
-  withoutNext: number
-  stalled: number
-  contexts: { heading: string; tasks: Task[] }[]
-  nextCount: number
-  waiting: number
-  rhythms: Record<RhythmId, boolean>
-  stamps: { weekly: number | null; monthly: number | null }
-  /** When the day was closed on the logical today, else null. */
-  closedAt: number | null
-  up: MoveId
+/** Esc closes the open move (Clarify's own triage key does it there), except in a field with text. */
+function escCloses(close: () => void) {
+  return (e: KeyboardEvent<HTMLElement>) => {
+    if (e.key !== 'Escape' || e.defaultPrevented) return
+    const el = e.target instanceof HTMLElement ? e.target : null
+    if (el?.matches('input, textarea') && (el as HTMLInputElement).value) return
+    if (el?.closest('[data-overlay-root]')) return
+    e.preventDefault()
+    close()
+  }
 }
 
-/** The five moves with their counts, sentences and destinations (open-loops "Loop home", the table). */
-function movesOf(d: Data): Move[] {
-  const inboxSentence = t('{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}', { n: d.inbox })
-  const decideSentence = t('{n, plural, =0 {Nothing to decide} one {# to decide} other {# to decide}}', { n: d.inbox })
-  const placeSentence = t('{n, plural, =0 {Every project has a next action} one {# project without a next action} other {# projects without a next action}}', { n: d.withoutNext })
-  const nextSentence = t('{n, plural, =0 {No next action} one {# next action} other {# next actions}}', { n: d.nextCount })
-  const reviewRoute: Route = d.rhythms.daily ? { view: 'review', step: 'daily' } : d.rhythms.weekly ? { view: 'review' } : d.rhythms.monthly ? { view: 'review', step: 'monthly' } : { view: 'review' }
-  const rhythmLines = RHYTHMS.map((r) => {
-    const due = d.rhythms[r.id]
-    const when = due ? t('due') : r.id === 'daily' ? t('done today') : reviewAgo(d.stamps[r.id])
-    return { id: r.id, name: termName(r), due, when }
-  })
-  return [
-    { id: 'catch', icon: ICONS.catch, route: { view: 'inbox' }, sentence: inboxSentence, count: d.inbox || null, unit: t('in the Inbox'), lines: [d.inbox ? termDescription(inboxPlace) : inboxSentence], action: t('Open the Inbox') },
-    { id: 'clarify', icon: ICONS.clarify, route: { view: 'triage' }, sentence: decideSentence, count: d.inbox || null, unit: t('to decide'), lines: [d.inbox ? termDescription(move('clarify')) : decideSentence], action: t('Process the Inbox') },
-    {
-      id: 'place', icon: ICONS.place, route: { view: 'review', step: 'projects' }, sentence: placeSentence, count: d.withoutNext || null,
-      unit: t('{n, plural, one {project without a next action} other {projects without a next action}}', { n: d.withoutNext }),
-      lines: [d.withoutNext ? '' : placeSentence, ...(d.stalled ? [t('{n, plural, one {# stalled} other {# stalled}}', { n: d.stalled })] : [])].filter(Boolean),
-      action: t('Walk your projects'),
-    },
-    {
-      id: 'do', icon: ICONS.do, route: { view: 'next' }, sentence: nextSentence, count: d.nextCount, unit: t('{n, plural, one {next action} other {next actions}}', { n: d.nextCount }),
-      lines: [t('{n} waiting', { n: d.waiting }), ...(d.contexts.length ? [<Chips key="c" groups={d.contexts} />] : [])],
-      action: t('Go to Next'),
-    },
-    {
-      id: 'review', icon: ICONS.review, route: reviewRoute, count: null, lines: rhythmLines.map((r) => <Rhythm key={r.id} {...r} lit={d.up === 'review'} />),
-      sentence: rhythmLines.map((r) => `${r.name}: ${r.when}`).join(', '),
-      // Close the day (close-the-day D6): a plain link, never the primary action, and it does not change the next move.
-      extra: d.closedAt
-        ? <span data-loop-day="closed">{t('Day: closed {time}', { time: formatInstant(d.closedAt, 'time') })}</span>
-        : <a href={routePath(CLOSE_ROUTE)} onClick={linkTo(CLOSE_ROUTE)} className="inline-flex min-h-6 items-center text-accent underline" data-loop-day="open">{t('Close the day')}</a>,
-      action: d.rhythms.daily ? t('Start the daily check') : d.rhythms.monthly && !d.rhythms.weekly ? t('Open the monthly look') : t('Open the weekly review'),
-    },
-  ]
+/** The reason and the label of the card's one button (D2). */
+function stepText(step: NextStep): { reason: string; action: string } {
+  switch (step.move) {
+    case 'clarify':
+      return { reason: t('{n, plural, one {# thing in the Inbox is waiting.} other {# things in the Inbox are waiting.}}', { n: step.count }), action: termName(term('clarify')) }
+    case 'place':
+      return { reason: t('{n, plural, one {# project has no next action.} other {# projects have no next action.}}', { n: step.count }), action: t('Walk your projects') }
+    case 'review':
+      return step.rhythm === 'daily' ? { reason: t('Your Daily check is due.'), action: t('Start the daily check') }
+        : step.rhythm === 'monthly' ? { reason: t('Your Monthly look is due.'), action: t('Open the monthly look') }
+          : { reason: t('Your weekly review is due.'), action: t('Start the weekly review') }
+    case 'do':
+      return { reason: t('{n, plural, one {# next action is ready.} other {# next actions are ready.}}', { n: step.count }), action: t('Go to Next') }
+    default:
+      return { reason: t('Your loops are closed.'), action: t('Catch something') }
+  }
 }
 
-function Chips({ groups }: { groups: { heading: string; tasks: Task[] }[] }) {
+/**
+ * The Next step card: one sentence with the reason and the page's only primary
+ * button. While its move is open below, the button has done its job and steps
+ * aside, so the open move's own primary action is the only one.
+ */
+function NextStepCard({ step, onOpen, open }: { step: NextStep; onOpen: (id: MoveId) => void; open?: MoveId }) {
+  const { reason, action } = stepText(step)
+  const closed = step.move === 'catch'
+  // A due rhythm opens its own screen; every other step opens its move in place.
+  const run = () => (step.move === 'review' && step.rhythm ? navigate(RHYTHM_ROUTES[step.rhythm]) : onOpen(step.move))
   return (
-    <span className="flex flex-wrap gap-1" data-loop-contexts>
-      {groups.slice(0, 3).map((g) => (
-        <span key={g.heading} className="rounded-chip border border-default bg-sunken px-1.5 text-hint text-default">{g.heading} {new Set(g.tasks.map((x) => x.id)).size}</span>
-      ))}
-    </span>
-  )
-}
-
-function Rhythm({ name, due, when, lit }: { name: string; due: boolean; when: string; lit: boolean }) {
-  return (
-    <span className="flex flex-wrap items-center gap-x-1.5">
-      <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${due ? 'bg-warning' : 'bg-success'}`} />
-      <span>{name}{' '}</span>
-      <span className={due ? (lit ? 'font-semibold' : 'font-semibold text-warning') : undefined}>{when}</span>
-    </span>
-  )
-}
-
-/** The five moves on one rail, in method order; the next move is lit and carries the page's only primary action. */
-function Rail({ moves, up }: { moves: Move[]; up: MoveId }) {
-  return (
-    <ul className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label={t('The five moves')} data-loop-tiles>
-      {moves.map((m) => {
-        const lit = m.id === up
-        const done = m.count === null && m.id !== 'review'
-        return (
-          <li key={m.id} data-loop-tile={m.id} data-loop-up={lit || undefined} className={`flex flex-col rounded-card border shadow-1 transition duration-(--duration-ui) ease-calm ${lit ? 'border-accent bg-accent-soft' : 'border-default bg-surface'}`}>
-            <a href={routePath(m.route)} onClick={linkTo(m.route)}
-              className="flex flex-1 flex-col gap-1 rounded-card p-3 outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus">
-              <h2 className={`flex items-center gap-1.5 text-meta font-semibold uppercase tracking-wide ${lit ? 'text-on-accent-soft' : 'text-muted'}`}>
-                <Icon name={m.icon} />{termName(move(m.id))}
-              </h2>{' '}
-              {m.id !== 'review' && !done && <span className="sr-only">{m.sentence}</span>}
-              {m.id !== 'review' && (
-                <span className="flex items-baseline gap-1.5" aria-hidden="true">
-                  {done ? <span className="flex self-center text-success" data-loop-done><Icon name="circle-check-big" size="md" /></span> : <span className="text-h1 font-semibold tabular-nums text-strong">{m.count}</span>}
-                  {!done && <span className={`text-meta ${lit ? 'text-on-accent-soft' : 'text-muted'}`}>{m.unit}</span>}
-                </span>
-              )}
-              <span className={`flex flex-col gap-1 text-meta ${lit ? 'text-on-accent-soft' : 'text-muted'}`}>
-                {m.lines.map((line, i) => <span key={i} className="user-text">{line}{' '}</span>)}
-              </span>
-            </a>
-            {m.extra && <div className={`px-3 pb-3 text-meta ${lit ? 'text-on-accent-soft' : 'text-muted'}`} data-loop-extra>{m.extra}</div>}
-            {lit && <div className="px-3 pb-3"><Button size="sm" variant="primary" iconEnd="arrow-right" onClick={() => navigate(m.route)} data-loop-action>{m.action}</Button></div>}
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-/** Today's focus from the Daily check, with how many of the chosen tasks are done. */
-function Focus({ tasks, room, projectMap, labelMap }: { tasks: Task[]; room: boolean; projectMap: Map<string, Project>; labelMap: Map<string, Label> }) {
-  const done = tasks.filter((x) => x.completed_at).length
-  // The time column (rows-v2 D2): one fact of the focus list.
-  const timeColumn = hasTimeColumn(tasks)
-  const slotsOff = listSlotsOff(tasks)
-  const r = 7
-  const c = 2 * Math.PI * r
-  return (
-    <section className="mt-6" aria-labelledby="loop-focus" data-loop-focus>
-      <div className="mb-1 flex items-center gap-2 px-2">
-        <h2 id="loop-focus" className="text-meta font-semibold text-faint">{t('Today’s focus')}</h2>
-        {tasks.length > 0 && (
-          <span className="ml-auto flex items-center gap-1.5 text-meta tabular-nums text-muted" data-loop-focus-progress>
-            <svg aria-hidden="true" viewBox="0 0 18 18" className="h-4 w-4 -rotate-90">
-              <circle cx="9" cy="9" r={r} fill="none" strokeWidth="3" className="stroke-(--ot-border)" />
-              <circle cx="9" cy="9" r={r} fill="none" strokeWidth="3" strokeLinecap="round" className="stroke-(--ot-accent) transition-[stroke-dashoffset] duration-(--duration-emphasis) ease-calm"
-                strokeDasharray={c} strokeDashoffset={c * (1 - done / tasks.length)} />
-            </svg>
-            {t('{done} of {total} done', { done, total: tasks.length })}
-          </span>
-        )}
+    <section aria-labelledby="loop-next" data-loop-next={step.move}
+      className="mt-2 flex flex-col gap-4 rounded-surface border border-default bg-surface p-5 shadow-1 sm:flex-row sm:items-center sm:gap-5">
+      <span aria-hidden="true" className={`hidden h-10 w-10 shrink-0 place-items-center rounded-full sm:grid ${closed ? 'bg-success-soft text-on-success-soft' : 'bg-accent-soft text-on-accent-soft'}`}>
+        <Icon name={closed ? 'circle-check-big' : ICONS[step.move]} size="md" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <h2 id="loop-next" className="text-meta font-medium text-muted">{t('Next step', { context: 'method' })}</h2>
+        <p className="mt-0.5 text-h2 text-strong" data-loop-reason>{reason}</p>
       </div>
-      {tasks.length === 0 ? (
-        <div className="flex flex-wrap items-center gap-3 px-2 py-1 text-body text-faint">
-          <span>{t('No focus chosen today.')}</span>
-          <Button size="sm" onClick={() => navigate({ view: 'review', step: 'daily' })}>{t('Pick up to three in the Daily check')}</Button>
-          {room && <Button size="sm" variant="ghost" icon="plus" data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>{t('Add to focus')}</Button>}
-        </div>
-      ) : (
-        <>
-          <ul>
-            {tasks.map((task) => (
-              <TaskRow key={task.id} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined} labels={resolveLabels(task.labels, labelMap)}
-                showProject selected={false} timeColumn={timeColumn} slotsOff={slotsOff} onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))} onOpen={() => setPanelTaskId(task.id)} />
-            ))}
-          </ul>
-          {room && <Button size="sm" variant="ghost" icon="plus" className="mt-1 ml-1" data-focus-add onClick={() => requestFocusPick({ mode: 'task', slot: null })}>{t('Add to focus')}</Button>}
-        </>
-      )}
+      {open !== step.move && <Button variant="primary" iconEnd="arrow-right" className="self-start sm:self-auto" onClick={run} data-loop-action>{action}</Button>}
     </section>
   )
 }
 
-interface PulseData { week: number; lastWeek: number; decided: number; caught: number; age: number | null; days: { date: string; count: number }[] }
+/** One move's line in the stepper: the count, the done mark, or Review's "due", and what assistive technology reads. */
+function stepFacts(id: MoveId, d: LoopData): { count: number | null; due?: boolean; sentence: string } {
+  switch (id) {
+    case 'catch':
+      return { count: d.inbox || null, sentence: t('{n, plural, =0 {The Inbox is empty} one {# in the Inbox} other {# in the Inbox}}', { n: d.inbox }) }
+    case 'clarify':
+      return { count: d.inbox || null, sentence: t('{n, plural, =0 {Nothing to decide} one {# to decide} other {# to decide}}', { n: d.inbox }) }
+    case 'place':
+      return { count: d.withoutNext.length || null, sentence: t('{n, plural, =0 {Every project has a next action} one {# project without a next action} other {# projects without a next action}}', { n: d.withoutNext.length }) }
+    case 'do':
+      return { count: d.nextCount || null, sentence: t('{n, plural, =0 {No next action} one {# next action} other {# next actions}}', { n: d.nextCount }) }
+    default:
+      return { count: null, due: d.rhythms.some((r) => r.due), sentence: d.rhythms.map((r) => `${r.name}: ${r.when}`).join(', ') }
+  }
+}
 
-/** The Loop pulse (open-loops "Loop pulse"): four figures about the last 14 days, from the statistics definitions. */
-function Pulse({ pulse }: { pulse: PulseData }) {
-  const dt = useDateTimeFormat().resolved
-  const delta = pulse.week - pulse.lastWeek
-  const max = Math.max(1, ...pulse.days.map((d) => d.count))
-  const pct = pulse.caught ? Math.round((100 * pulse.decided) / pulse.caught) : 0
-  const stale = pulse.age !== null && pulse.age > INBOX_AGE_CAUTION_DAYS
-  const figure = 'flex min-w-0 flex-col gap-0.5 rounded-card border border-default bg-surface px-3 py-2.5'
-  const label = 'break-words text-hint font-semibold uppercase tracking-wide text-muted'
-  const value = 'flex items-baseline gap-1.5 text-h2 font-semibold tabular-nums text-strong'
+/**
+ * The stepper (D3): the five moves in method order, each with its count or a done
+ * mark; only the next move carries the accent. ← and → move between the steps, and
+ * Enter or a click opens a step below or closes it when it is open.
+ */
+function Stepper({ data, open, up, onOpen, items }: { data: LoopData; open?: MoveId; up: MoveId; onOpen: (id: MoveId) => void; items: Partial<Record<MoveId, HTMLButtonElement | null>> }) {
+  const [focus, setFocus] = useState<MoveId>(open ?? 'catch')
+  useEffect(() => { if (open) setFocus(open) }, [open])
+  const onKey = (e: KeyboardEvent<HTMLOListElement>) => {
+    const i = ORDER.indexOf(focus)
+    const to = e.key === 'ArrowRight' ? ORDER[(i + 1) % ORDER.length] : e.key === 'ArrowLeft' ? ORDER[(i + ORDER.length - 1) % ORDER.length]
+      : e.key === 'Home' ? ORDER[0] : e.key === 'End' ? ORDER[ORDER.length - 1] : null
+    if (!to) return
+    e.preventDefault()
+    setFocus(to)
+    items[to]?.focus()
+  }
   return (
-    <section className="mt-6" aria-labelledby="loop-pulse" data-loop-pulse>
-      <div className="mb-1 flex items-center gap-2 px-2">
-        <h2 id="loop-pulse" className="text-meta font-semibold text-faint">{t('Loop pulse · last {n} days', { n: PULSE_DAYS })}</h2>
-        <a href={routePath({ view: 'stats' })} onClick={linkTo({ view: 'stats' })} className="ml-auto text-meta text-accent underline">{t('Statistics')}</a>
-      </div>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-[1fr_1fr_1fr_1.6fr]">
-        <div className={figure} data-pulse="week">
-          <span className={label}>{t('Done this week')}</span>
-          <span className={value}>{pulse.week}<span className="text-meta font-normal text-muted">{t('{n, plural, one {task} other {tasks}}', { n: pulse.week })}</span></span>
-          <span className={`break-words text-meta ${delta < 0 ? 'text-on-warning-soft' : 'text-on-success-soft'}`}>{t('{n} vs last week', { n: delta > 0 ? `+${delta}` : String(delta) })}</span>
+    <nav aria-label={t('The five moves')} className="mt-6">
+      <ol onKeyDown={onKey} className="grid grid-cols-5 gap-1 rounded-surface bg-sunken p-1" data-loop-stepper>
+        {ORDER.map((id) => {
+          const f = stepFacts(id, data)
+          const lit = id === up
+          const expanded = id === open
+          const done = f.count === null && !f.due
+          return (
+            <li key={id} className="min-w-0" data-loop-step={id} data-loop-up={lit || undefined}>
+              <button ref={(el) => { items[id] = el }} type="button" tabIndex={id === focus ? 0 : -1} aria-expanded={expanded} aria-controls={expanded ? 'loop-move' : undefined}
+                onClick={() => onOpen(id)} onFocus={() => setFocus(id)}
+                className={`flex min-h-12 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-control px-1 py-1.5 outline-none transition duration-(--duration-ui) ease-calm focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus md:flex-row md:justify-between md:gap-2 md:px-3 md:py-2.5 ${expanded ? 'bg-surface shadow-1' : 'hover:bg-hover'}`}>
+                <span className={`flex min-w-0 items-center gap-1.5 text-meta font-medium md:text-body ${lit ? 'text-accent' : expanded ? 'text-strong' : 'text-default'}`}>
+                  {lit && <span aria-hidden="true" className="hidden h-1.5 w-1.5 shrink-0 rounded-full bg-accent md:block" />}
+                  <span className="truncate">{termName(term(id))}</span>
+                </span>{' '}
+                <span aria-hidden="true" className="flex h-5 items-center text-meta tabular-nums md:text-body">
+                  {done ? <span className="flex text-success" data-loop-done><Icon name="check" /></span>
+                    : f.due ? <span className={lit ? 'text-accent' : 'text-on-warning-soft'}>{t('due')}</span>
+                      : <span className={lit ? 'font-semibold text-accent' : 'text-muted'}>{f.count}</span>}
+                </span>
+                <span className="sr-only">{f.sentence}</span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}
+
+/** The Loop pulse as one quiet line (D6); its figures and the 14-day strip open behind it. */
+function PulseLine({ pulse }: { pulse: PulseData }) {
+  const [shown, setShown] = useState(false)
+  const anchor = useRef<HTMLButtonElement>(null)
+  const stale = pulse.age !== null && pulse.age > INBOX_AGE_CAUTION_DAYS
+  return (
+    <>
+      <button ref={anchor} type="button" aria-haspopup="dialog" aria-expanded={shown} onClick={() => setShown(true)} data-loop-pulse-line
+        className="mt-2 flex w-full min-w-0 items-center gap-1.5 rounded-control px-3 py-1.5 text-left text-meta text-muted outline-none hover:text-default focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus">
+        <span className="min-w-0 flex-1 tabular-nums">
+          {t('{n} done this week', { n: pulse.week })}
+          <span aria-hidden="true"> · </span><span className="sr-only">, </span>
+          {t('{decided} of {caught} decided', { decided: pulse.decided, caught: pulse.caught })}
+          <span aria-hidden="true"> · </span><span className="sr-only">, </span>
+          {pulse.age === null ? t('Inbox empty') : (
+            <span className={stale ? 'text-on-warning-soft' : undefined} data-loop-age-stale={stale || undefined}>
+              {stale && <Icon name="circle-alert" size="xs" className="mr-1 inline align-[-2px]" />}
+              {t('{n, plural, one {oldest in Inbox # day} other {oldest in Inbox # days}}', { n: pulse.age })}
+            </span>
+          )}
+        </span>
+        <Icon name="chevron-right" className="shrink-0" />
+      </button>
+      {shown && <Suspense fallback={null}><PulseDetails pulse={pulse} anchor={anchor} onClose={() => setShown(false)} /></Suspense>}
+    </>
+  )
+}
+
+/** The open move below the stepper (D4), or the page of its own on a phone (D7). */
+function MovePart({ move, data, page, left, onLeft, onClose }: { move: MoveId; data: LoopData; page: boolean; left: number | null; onLeft: (n: number) => void; onClose: () => void }) {
+  const props: MoveProps = { data, onClose, onLeft }
+  const part: ReactNode = move === 'catch' ? <Catch {...props} /> : move === 'clarify' ? <Clarify {...props} /> : move === 'place' ? <Place {...props} />
+    : move === 'do' ? <Do {...props} /> : <Review {...props} />
+  const meta = move === 'clarify' && left ? t('{n} left', { n: left }) : null
+  return (
+    <section id="loop-move" aria-labelledby="loop-move-title" data-loop-move={move} className={page ? '' : 'mt-8'}>
+      {page ? <h2 id="loop-move-title" className="sr-only">{termName(term(move))}</h2> : (
+        <div className="mb-3 flex items-center gap-3 border-b border-soft pb-2">
+          <h2 id="loop-move-title" className="text-title text-strong">{termName(term(move))}</h2>
+          {meta && <span className="text-meta tabular-nums text-muted" data-loop-left>{meta}</span>}
+          <IconButton icon="x" size="sm" label={t('Close')} className="ml-auto" onClick={onClose} data-loop-close />
         </div>
-        <div className={figure} data-pulse="decided">
-          <span className={label}>{t('Caught, decided')}</span>
-          <span className={value}>{pulse.decided}<span className="text-meta font-normal text-muted">{t('of {n}', { n: pulse.caught })}</span></span>
-          <span className="break-words text-meta text-muted">{t('{pct}% left the Inbox', { pct })}</span>
-        </div>
-        <div className={figure} data-pulse="age">
-          <span className={label}>{t('Oldest in Inbox')}</span>
-          <span className={value}>
-            {pulse.age === null ? <span className="text-body font-semibold text-success">{t('empty')}</span>
-              : <>{pulse.age}<span className="text-meta font-normal text-muted">{t('{n, plural, one {day} other {days}}', { n: pulse.age })}</span></>}
-          </span>
-          <span className={`break-words text-meta ${stale ? 'text-on-warning-soft' : 'text-muted'}`}>{pulse.age === null ? t('nothing waiting') : stale ? t('older than a week') : t('within the week')}</span>
-        </div>
-        <div className={`${figure} col-span-2 lg:col-span-1`} data-pulse="strip">
-          <span className={label}>{t('Completed per day')}</span>
-          <div className="flex h-10 items-end gap-0.5" aria-hidden="true">
-            {pulse.days.map((d) => (
-              <Tooltip key={d.date} label={`${formatDate(d.date, 'compact', dt)}: ${d.count}`}>
-                <span tabIndex={-1} className={`block min-w-0 flex-1 rounded-chip ${d.count ? 'bg-accent' : 'bg-(--ot-border)'}`} style={{ height: `${Math.max(6, Math.round((100 * d.count) / max))}%` }} />
-              </Tooltip>
-            ))}
-          </div>
-          <span className="flex justify-between text-hint tabular-nums text-faint" aria-hidden="true">
-            <span>{formatDate(pulse.days[0].date, 'compact', dt)}</span><span className="text-muted">{t('{n} this week', { n: pulse.week })}</span><span>{t('today')}</span>
-          </span>
-          <ul className="sr-only" aria-label={t('Completed per day, last {n} days', { n: PULSE_DAYS })} data-loop-strip-values>
-            {pulse.days.map((d) => <li key={d.date}>{t('{date}: {n, plural, one {# task} other {# tasks}}', { date: formatDate(d.date, 'long', dt), n: d.count })}</li>)}
-          </ul>
-        </div>
-      </div>
+      )}
+      <Suspense fallback={<Skeleton shape="row" count={3} />}>{part}</Suspense>
     </section>
   )
 }
@@ -336,11 +334,12 @@ function Pulse({ pulse }: { pulse: PulseData }) {
 /** The loading state has the final layout's shape, so nothing shifts when the rows arrive. */
 export function LoopSkeleton() {
   return (
-    <div data-loop-skeleton>
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-hidden="true">
-        {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} shape="card" count={1} label="" />)}
+    <div data-loop-skeleton aria-hidden="true">
+      <Skeleton shape="card" count={1} label="" />
+      <div className="mt-6 grid grid-cols-5 gap-1 rounded-surface bg-sunken p-1">
+        {ORDER.map((id) => <span key={id} className="h-12 rounded-control" />)}
       </div>
-      <Skeleton shape="row" count={3} className="mt-6" />
+      <Skeleton shape="line" count={1} className="mt-3" label="" />
     </div>
   )
 }

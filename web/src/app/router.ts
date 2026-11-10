@@ -70,11 +70,16 @@ export type Route =
   // Open Loops (open-loops-method): the derived Next and Waiting views.
   | { view: 'next' }
   | { view: 'waiting' }
-  | { view: 'loop' }
+  // The Loop home (loop-guided-dashboard D4): /loop/<move> opens that move in place.
+  | { view: 'loop'; move?: LoopMove }
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
   | { view: 'notes'; id?: string; create?: boolean }
+
+/** The Open Loops moves a Loop home address can open (lib/method's MoveId, kept here so the router stays small). */
+export type LoopMove = 'catch' | 'clarify' | 'place' | 'do' | 'review'
+const LOOP_MOVES: readonly string[] = ['catch', 'clarify', 'place', 'do', 'review']
 
 /**
  * Whether a view offers quick add, which decides the floating add button on a
@@ -265,7 +270,7 @@ export function parseRoute(pathname: string): Route {
     case 'waiting':
       return { view: 'waiting' }
     case 'loop':
-      return { view: 'loop' }
+      return LOOP_MOVES.includes(parts[1]) ? { view: 'loop', move: parts[1] as LoopMove } : { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
     case 'focus':
@@ -359,6 +364,8 @@ export function routePath(r: Route): string {
     }
     case 'review':
       return r.step ? `/review/${r.step}` : '/review'
+    case 'loop':
+      return r.move ? `/loop/${r.move}` : '/loop'
     case 'focus':
       return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
     case 'notes':

@@ -343,7 +343,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'waiting' ? (
             <Suspense fallback={null}><WaitingView /></Suspense>
           ) : route.view === 'loop' ? (
-            <Suspense fallback={null}><LoopHome /></Suspense>
+            <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (

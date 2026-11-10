@@ -112,7 +112,7 @@ describe('Three tasks by touch', () => {
   it('The Loop home offers Add to focus while there is room', async () => {
     const id = await task('Water the plants', null)
     await db.userPrefs.put({ id: 'me', method_mode: 'first' } as never)
-    const r = await shell({ view: 'loop' })
+    const r = await shell({ view: 'loop', move: 'do' })
     await waitFor(() => !!q('[data-loop-focus] [data-focus-add]'), 'Add to focus on the Loop home')
     await click(q('[data-loop-focus] [data-focus-add]')!)
     await waitFor(() => !!option('Water the plants'), 'the picker')
