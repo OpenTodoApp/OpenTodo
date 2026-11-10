@@ -1,0 +1,305 @@
+{
+  "$comment": "The Dexie API the shared modules call (native-app-foundation D4), with the modules that call each member. Generated: node mobile/app/scripts/dexie-surface.mjs --write; make app fails when it is stale, and test/storage.surface.test.ts fails on a member the SQLite adapter lacks.",
+  "members": {
+    "Collection.count": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts"
+    ],
+    "Collection.filter": [
+      "web/src/lib/localData.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sections.ts"
+    ],
+    "Collection.first": [
+      "web/src/lib/localData.ts",
+      "web/src/lib/ops.ts"
+    ],
+    "Collection.last": [
+      "web/src/lib/ops.ts"
+    ],
+    "Collection.limit": [
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/sync.ts"
+    ],
+    "Collection.primaryKeys": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Collection.reverse": [
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Collection.sortBy": [
+      "web/src/lib/localData.ts"
+    ],
+    "Collection.toArray": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/bulk.ts",
+      "web/src/lib/defaultReminder.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/labels.ts",
+      "web/src/lib/lineageRows.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sections.ts",
+      "web/src/lib/seriesSplitActions.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/taskPages.ts",
+      "web/src/lib/trash.ts"
+    ],
+    "Dexie.close": [
+      "web/src/lib/db.ts"
+    ],
+    "Dexie.name": [
+      "web/src/lib/e2ee.ts",
+      "web/src/lib/e2eeSync.ts"
+    ],
+    "Dexie.on": [
+      "web/src/lib/db.ts"
+    ],
+    "Dexie.transaction": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/calendarFeeds.ts",
+      "web/src/lib/db.ts",
+      "web/src/lib/dependencies.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/labels.ts",
+      "web/src/lib/limits.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/views.ts",
+      "web/src/lib/workspaces.ts"
+    ],
+    "Dexie.version": [
+      "web/src/lib/db.ts"
+    ],
+    "DexieConstructor.currentTransaction": [
+      "web/src/lib/docfields.ts"
+    ],
+    "DexieConstructor.maxKey": [
+      "web/src/lib/activity.ts"
+    ],
+    "DexieConstructor.minKey": [
+      "web/src/lib/activity.ts"
+    ],
+    "DexieConstructor.waitFor": [
+      "web/src/lib/docfields.ts"
+    ],
+    "Observable.subscribe": [
+      "web/src/lib/liveSnapshot.ts"
+    ],
+    "PromiseExtended.finally": [
+      "web/src/lib/activity.ts"
+    ],
+    "Subscription.unsubscribe": [
+      "web/src/lib/liveSnapshot.ts"
+    ],
+    "Table.bulkAdd": [
+      "web/src/lib/clockSkew.ts",
+      "web/src/lib/limits.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sync.ts"
+    ],
+    "Table.bulkDelete": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Table.bulkGet": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/favourites.ts",
+      "web/src/lib/feed.ts",
+      "web/src/lib/lineageRows.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/locations.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sectorWrites.ts",
+      "web/src/lib/seriesRepair.ts"
+    ],
+    "Table.bulkPut": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/calendarFeeds.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/workspaces.ts"
+    ],
+    "Table.clear": [
+      "web/src/lib/calendarFeeds.ts",
+      "web/src/lib/db.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/workspaces.ts"
+    ],
+    "Table.count": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/sync.ts"
+    ],
+    "Table.delete": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/calendarFeeds.ts",
+      "web/src/lib/e2ee.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/filter/draft.ts",
+      "web/src/lib/sharing.ts"
+    ],
+    "Table.each": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/comments.ts"
+    ],
+    "Table.filter": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/bulk.ts",
+      "web/src/lib/labels.ts",
+      "web/src/lib/lineageRows.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/trash.ts"
+    ],
+    "Table.get": [
+      "web/src/lib/agentAccess.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/bulk.ts",
+      "web/src/lib/clockSkew.ts",
+      "web/src/lib/comments.ts",
+      "web/src/lib/dayParts.ts",
+      "web/src/lib/db.ts",
+      "web/src/lib/defaultReminder.ts",
+      "web/src/lib/dependencies.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/energy.ts",
+      "web/src/lib/favourites.ts",
+      "web/src/lib/feed.ts",
+      "web/src/lib/focus/prefs.ts",
+      "web/src/lib/labels.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/locations.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/review.ts",
+      "web/src/lib/sections.ts",
+      "web/src/lib/seriesPastActions.ts",
+      "web/src/lib/seriesSplitActions.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/taskPages.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts",
+      "web/src/lib/userPrefs.ts",
+      "web/src/lib/views.ts",
+      "web/src/lib/workspaces.ts"
+    ],
+    "Table.orderBy": [
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Table.put": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/clockSkew.ts",
+      "web/src/lib/db.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Table.toArray": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/attachments.ts",
+      "web/src/lib/dependencies.ts",
+      "web/src/lib/favourites.ts",
+      "web/src/lib/feed.ts",
+      "web/src/lib/labels.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/locations.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/projects.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/sync.ts",
+      "web/src/lib/taskPages.ts",
+      "web/src/lib/trash.ts",
+      "web/src/lib/views.ts",
+      "web/src/lib/workspaces.ts"
+    ],
+    "Table.update": [
+      "web/src/lib/attachments.ts",
+      "web/src/lib/notifications.ts",
+      "web/src/lib/undo.ts"
+    ],
+    "Table.where": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/defaultReminder.ts",
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sections.ts",
+      "web/src/lib/seriesSplitActions.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/taskPages.ts",
+      "web/src/lib/trash.ts"
+    ],
+    "Version.stores": [
+      "web/src/lib/db.ts"
+    ],
+    "WhereClause.above": [
+      "web/src/lib/e2eeSync.ts"
+    ],
+    "WhereClause.anyOf": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/trash.ts"
+    ],
+    "WhereClause.between": [
+      "web/src/lib/activity.ts"
+    ],
+    "WhereClause.equals": [
+      "web/src/lib/activity.ts",
+      "web/src/lib/defaultReminder.ts",
+      "web/src/lib/localData.ts",
+      "web/src/lib/ops.ts",
+      "web/src/lib/reminders.ts",
+      "web/src/lib/sections.ts",
+      "web/src/lib/seriesSplitActions.ts",
+      "web/src/lib/sharing.ts",
+      "web/src/lib/taskPages.ts",
+      "web/src/lib/trash.ts"
+    ],
+    "import.liveQuery": [
+      "web/src/lib/liveSnapshot.ts"
+    ]
+  }
+}

@@ -2,8 +2,10 @@
 // D3), over the host that src/host.ts reads from React Native (AppState, NetInfo,
 // MMKV, expo-localization). One process, so no leader lock, no broadcast channel and
 // no other instance changing the preferences: the app leads at once. No IndexedDB and
-// no shell bridge: the app's database comes with the storage choice (task 4.3).
+// no shell bridge. The database db.ts declares opens on SQLite (src/storage, design D4).
 import type { KeyValue, Platform } from '@shared/platform'
+import { sqliteDatabase } from './storage/adapter'
+import type { Sql } from './storage/sql'
 
 /** What the app's platform reads from React Native; tests pass fakes. */
 export interface Host {
@@ -15,6 +17,8 @@ export interface Host {
   timeZone(): string | null
   /** The device's preferred languages (BCP 47), most preferred first. */
   languages(): string[]
+  /** The SQLite the local database lives in (op-sqlite on the phone). */
+  sql: Sql
 }
 
 /** Session values: this process only, gone when it ends (sessionStorage on the web). */
@@ -73,6 +77,7 @@ export function createPlatform(host: Host): Platform {
     languages: () => (host.languages().length ? host.languages() : ['en']),
     showLanguage: () => undefined,
     indexedDB: () => undefined,
+    database: (declared) => sqliteDatabase(declared, host.sql),
     // The app's own storage is not evicted under pressure the way a site's can be.
     persistStorage: async () => true,
     shell: () => undefined,
