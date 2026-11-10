@@ -135,7 +135,7 @@ In Today, tasks of today's group with `evening` set SHALL be listed under a **Th
 - **THEN** the task moves between the groups at once and the change uploads on the next sync
 
 ### Requirement: Setting when from the panel and the keyboard
-The detail panel SHALL set the start inside the When popover: a Start segment offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, with the Evening toggle in the Do on segment; a task with a start SHALL show it as a part of the When line reading "from" with a future date, "since" with a past date, or "Someday". Viewers SHALL see the values as text. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
+The detail panel SHALL set the start inside the When popover: a Start segment offering Anytime (no start), a start date through the same date field and calendar as the due date, and Someday, with the evening part chosen in the Do on segment's time of day row. A task with a start SHALL show it as a part of the When line reading "from" with a future date, "since" with a past date, or "Someday". Viewers SHALL see the values as text. The date field SHALL refuse a start after the due date with a message and leave the task unchanged.
 
 #### Scenario: Start after due refused
 - **WHEN** a task is due 2026-10-16 and the user types `2026-10-21` into its start date field
@@ -152,6 +152,10 @@ The detail panel SHALL set the start inside the When popover: a Start segment of
 #### Scenario: Parked task
 - **WHEN** a task is parked in Someday
 - **THEN** the When line reads "Someday" and the Start segment shows Someday selected
+
+#### Scenario: Evening without a switch
+- **WHEN** day parts are off and the user opens the Do on segment of a task due Friday
+- **THEN** Evening is one choice of the time of day row and no "This Evening" switch is shown
 
 ### Requirement: Start shortcuts in a list
 In a list, `n` SHALL park or un-park the selected task, `Shift+N` SHALL open the inline start date field and `Shift+E` SHALL toggle This Evening.

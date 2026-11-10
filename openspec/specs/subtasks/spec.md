@@ -58,15 +58,27 @@ Views that span projects or filter by date SHALL list each matching task once, f
 - **THEN** Today lists "Hotel" with "Compare prices" indented under it, and does not list "Plan trip"
 
 ### Requirement: Parent progress
-A task with at least one non-deleted subtask SHALL show its progress as "completed/total" over its direct subtasks in list rows and in the detail panel, computed from local data so it is correct offline and updates live when a subtask changes on any device.
+A task with at least one non-deleted subtask SHALL show its progress as "completed/total" over its direct subtasks in list rows and in the detail panel, computed from local data so it is correct offline and updates live when a subtask changes on any device. A subtask's own subtasks SHALL count toward that subtask's progress, not its parent's; a deleted subtask SHALL count nowhere, and a completed parent SHALL keep showing the progress of its subtasks. In a list row and on a card the count SHALL be led by a small progress ring showing the share done, in the count's own colour, decorative, so assistive technology reads the count ("3 of 5 subtasks completed") and nothing more. The detail panel's Subtasks heading SHALL show the count, the bar and the share as a whole percentage ("60%", read "60% done"). Progress is derived, never stored or synced, so it converges whenever the subtasks it counts converge.
 
 #### Scenario: Progress indicator
 - **WHEN** "Plan trip" has five direct subtasks of which three are completed
-- **THEN** its row shows "3/5"
+- **THEN** its row shows a ring three-fifths full and "3/5", and its panel's Subtasks heading reads "3 of 5" with the bar and "60%"
 
 #### Scenario: Remote completion updates progress
 - **WHEN** another device completes a fourth subtask and this device syncs
-- **THEN** the row shows "4/5" without a page reload
+- **THEN** the row shows "4/5" and its ring four-fifths full without a page reload
+
+#### Scenario: Nested subtasks count toward their own parent
+- **WHEN** "Plan trip" has four direct subtasks, one completed, and its open subtask "Hotel" has two completed subtasks of its own
+- **THEN** "Plan trip" shows "1/4" and "Hotel" shows "2/2" with a full ring
+
+#### Scenario: Deleted subtask
+- **WHEN** "Plan trip" has five subtasks, three completed, and one of the completed ones is moved to the Trash
+- **THEN** its row shows "2/4" and its ring half full
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user completes a subtask
+- **THEN** its parent's ring, count and percentage update at once
 
 ### Requirement: Completing a parent
 Completing a parent SHALL also complete every open descendant, one completion operation per task, so the result converges on every device. Reopening a parent SHALL reopen only the parent. Completing the last open subtask SHALL not complete the parent automatically but SHALL offer a one-key action to complete it. Under concurrent edits, a subtask added to a parent that was completed on another device SHALL remain open and SHALL be displayed at the top level of its project.
