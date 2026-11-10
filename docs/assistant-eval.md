@@ -41,20 +41,21 @@ Models vary, so each scenario runs 3 times and passes when at least 2 runs pass.
 
 ## Cost
 
-There are 15 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 40 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
+There are 21 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 40 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
 
 ## Scenarios
 
 Each scenario is a JSON file in `scripts/assistant-eval/scenarios/`:
 
-- `seed`: `labels`, `projects` (`kept_away` keeps one away from assistants), `tasks` (`due` and `deadline` in whole days from today, `time`, `estimate_minutes`, `labels`, `location`, `description`) and `notes`, each with a `key`;
+- `seed`: `labels`, `projects` (`kept_away` keeps one away from assistants), `sections` (`name`, `project`), `tasks` (`due`, `deadline` and `start` in whole days from today, `time`, `estimate_minutes`, `labels`, `location`, `description`, `project`, `section`, `recurrence`, `habit`) and `notes`, each with a `key`;
+- `view`: the view the user asks from (`today` by default; `project` offers the board and timeline to a skill);
 - `turns`: the user's messages in order, each with an `expect`.
 
 An `expect` can hold:
 
 | Key | Passes when |
 | --- | --- |
-| `blocks` | a block of that `kind` was shown, with exactly `ids`, or at least `ids_include` and `min_ids`, on `date` or until `to` (days from today), grouped by `group_by`, or with at least `min_options` |
+| `blocks` | a block of that `kind` was shown, with exactly `ids`, or at least `ids_include` and `min_ids`, on `date` or until `to` (days from today), grouped by `group_by`, of the board column `section`, of a `project` or `task` (`of`, activity), or with at least `min_options` |
 | `no_tools` | none of these display tools was called (`show_map`, …) |
 | `changeset` | a change set was proposed (`true`) or nothing was (`false`) |
 | `changes` | the proposed changes of an `entity`, with `fields`, touch exactly `ids`, or at least `min` of them (`create`) |

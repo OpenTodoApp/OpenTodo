@@ -17,6 +17,13 @@ const ProjectBlock = lazy(() => import('./ProjectBlock'))
 const TimeBlock = lazy(() => import('./TimeBlock'))
 const FreeTimeBlock = lazy(() => import('./FreeTimeBlock'))
 const DeadlinesBlock = lazy(() => import('./DeadlinesBlock'))
+// The project view blocks (assistant-project-blocks), each its own chunk.
+const BoardBlock = lazy(() => import('./BoardBlock'))
+const TimelineBlock = lazy(() => import('./TimelineBlock'))
+const ActivityBlock = lazy(() => import('./ActivityBlock'))
+const StatsBlock = lazy(() => import('./StatsBlock'))
+const TaskBlock = lazy(() => import('./TaskBlock'))
+const HabitBlock = lazy(() => import('./HabitBlock'))
 
 /** A block that fails to render (or whose chunk is gone after an upgrade) says so; the answer stays. */
 class BlockBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -49,6 +56,18 @@ function BlockBody({ block, choice }: { block: AssistantBlock; choice?: ChoiceSt
       return <FreeTimeBlock block={block} />
     case 'deadlines':
       return <DeadlinesBlock block={block} />
+    case 'board':
+      return <BoardBlock block={block} />
+    case 'timeline':
+      return <TimelineBlock block={block} />
+    case 'activity':
+      return <ActivityBlock block={block} />
+    case 'stats':
+      return <StatsBlock block={block} />
+    case 'task':
+      return <TaskBlock block={block} />
+    case 'habit':
+      return <HabitBlock block={block} />
   }
 }
 

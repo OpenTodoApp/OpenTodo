@@ -1,0 +1,30 @@
+{
+  "name": "task-in-full",
+  "title": "One task asked about in detail is shown in full",
+  "seed": {
+    "tasks": [
+      {
+        "key": "brief",
+        "title": "Write the launch brief",
+        "description": "One page: goal, audience, three messages.",
+        "due": 1
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Show me everything about the launch brief task.",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "task",
+            "ids": [
+              "brief"
+            ]
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

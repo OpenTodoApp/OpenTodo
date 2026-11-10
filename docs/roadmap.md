@@ -143,7 +143,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | In progress (4 of 4) |
 | `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | In progress (4 of 4) |
 | `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | In progress (4 of 5) |
-| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | Planned |
+| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | In progress (3 of 4) |
 | `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | Planned |
 | `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | Planned |
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Planned |

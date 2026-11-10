@@ -41,6 +41,8 @@ export interface Manifest {
   endpoints: Record<'anthropic' | 'openai' | 'gemini', string>
   tools: ManifestTool[]
   skills: ManifestSkill[]
+  /** The display tools each view suggests to a skill turn (assistant-project-blocks D2). */
+  view_display: Record<string, string[]>
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

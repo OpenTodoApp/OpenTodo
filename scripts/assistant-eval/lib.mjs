@@ -4,10 +4,11 @@
 // (lib.test.mjs) drive this on recorded events.
 
 // Display tools and the block kind each streams (internal/assistant/blocks.go).
-export const DISPLAY_TOOLS = { show_tasks: 'tasks', show_calendar: 'calendar', show_map: 'map', show_note: 'note', show_project: 'project', ask_choice: 'choice', show_time: 'time', show_free_time: 'free_time', show_deadlines: 'deadlines' }
+export const DISPLAY_TOOLS = { show_tasks: 'tasks', show_calendar: 'calendar', show_map: 'map', show_note: 'note', show_project: 'project', ask_choice: 'choice', show_time: 'time', show_free_time: 'free_time', show_deadlines: 'deadlines',
+  show_board: 'board', show_timeline: 'timeline', show_activity: 'activity', show_stats: 'stats', show_task: 'task', show_habit: 'habit' }
 const KINDS = new Set(Object.values(DISPLAY_TOOLS))
 const EXPECT_KEYS = new Set(['blocks', 'no_tools', 'no_text', 'text', 'links', 'changeset', 'changes', 'never_ids', 'no_map_claim'])
-const BLOCK_KEYS = new Set(['kind', 'ids', 'ids_include', 'min_ids', 'date', 'span', 'min_options', 'to', 'group_by'])
+const BLOCK_KEYS = new Set(['kind', 'ids', 'ids_include', 'min_ids', 'date', 'span', 'min_options', 'to', 'group_by', 'section', 'of'])
 const CHANGE_KEYS = new Set(['entity', 'ids', 'fields', 'create', 'min'])
 
 // A text that says a map is there (proposal: "no claim that a map appeared").
@@ -27,15 +28,16 @@ export function validateScenario(s, file = 'scenario') {
   if (s.fake !== undefined && typeof s.fake !== 'boolean') bad('fake: true or false')
   const seed = s.seed ?? {}
   const keys = new Map()
-  for (const kind of ['labels', 'projects', 'tasks', 'notes']) {
+  for (const kind of ['labels', 'projects', 'sections', 'tasks', 'notes']) {
     const list = seed[kind] ?? []
     if (!Array.isArray(list)) { bad(`seed.${kind}: a list`); continue }
     for (const [i, it] of list.entries()) {
       if (typeof it?.key !== 'string' || !it.key) bad(`seed.${kind}[${i}]: a key`)
       else if (keys.has(it.key)) bad(`seed.${kind}[${i}]: key "${it.key}" used twice`)
       else keys.set(it.key, kind)
-      const name = kind === 'labels' || kind === 'projects' ? it?.name : it?.title
-      if (typeof name !== 'string' || !name) bad(`seed.${kind}[${i}]: ${kind === 'labels' || kind === 'projects' ? 'name' : 'title'}`)
+      const named = kind === 'labels' || kind === 'projects' || kind === 'sections'
+      const name = named ? it?.name : it?.title
+      if (typeof name !== 'string' || !name) bad(`seed.${kind}[${i}]: ${named ? 'name' : 'title'}`)
       if (it?.due !== undefined && !Number.isInteger(it.due)) bad(`seed.${kind}[${i}].due: whole days from today`)
     }
   }
@@ -45,10 +47,13 @@ export function validateScenario(s, file = 'scenario') {
   }
   for (const [i, t] of (seed.tasks ?? []).entries()) {
     if (t.project) ref(`seed.tasks[${i}].project`, t.project, ['projects'])
+    if (t.section) ref(`seed.tasks[${i}].section`, t.section, ['sections'])
     for (const l of t.labels ?? []) ref(`seed.tasks[${i}].labels`, l, ['labels'])
   }
   for (const [i, n] of (seed.notes ?? []).entries()) if (n.project) ref(`seed.notes[${i}].project`, n.project, ['projects'])
   for (const [i, p] of (seed.projects ?? []).entries()) if (p.parent) ref(`seed.projects[${i}].parent`, p.parent, ['projects'])
+  for (const [i, sec] of (seed.sections ?? []).entries()) ref(`seed.sections[${i}].project`, sec.project, ['projects'])
+  if (s.view !== undefined && typeof s.view !== 'string') bad('view: the view the user asks from')
   if (!Array.isArray(s.turns) || s.turns.length === 0) { bad('turns: at least one'); return out }
   for (const [i, turn] of s.turns.entries()) {
     const at = `turns[${i}]`
@@ -60,6 +65,7 @@ export function validateScenario(s, file = 'scenario') {
       for (const k of Object.keys(b)) if (!BLOCK_KEYS.has(k)) bad(`${at}.expect.blocks[${j}].${k}: unknown`)
       if (!KINDS.has(b.kind)) bad(`${at}.expect.blocks[${j}].kind: one of ${[...KINDS].join(', ')}`)
       for (const id of [...(b.ids ?? []), ...(b.ids_include ?? [])]) ref(`${at}.expect.blocks[${j}]`, id)
+      if (b.section) ref(`${at}.expect.blocks[${j}].section`, b.section, ['sections'])
     }
     for (const n of e.no_tools ?? []) if (!(n in DISPLAY_TOOLS)) bad(`${at}.expect.no_tools: "${n}" is not a display tool (writes are "changeset": false)`)
     for (const k of ['no_text', 'text']) for (const p of e[k] ?? []) { try { new RegExp(p, 'i') } catch { bad(`${at}.expect.${k}: bad pattern ${p}`) } }
@@ -135,11 +141,13 @@ export function checkTurn(expect, sum, ids = {}, today = new Date().toISOString(
       if (want.min_options && (b.options ?? []).length < want.min_options) return false
       if (want.to !== undefined && b.to !== day(want.to, today)) return false
       if (want.group_by && b.group_by !== want.group_by) return false
+      if (want.section && b.section_id !== id(want.section)) return false
+      if (want.of && b.of !== want.of) return false
       return true
     })
     if (!match) {
       const detail = ofKind.length ? `; got ${ofKind.map((b) => `${b.kind}${b.date ? ' ' + b.date : ''} ${show(blockIds(b))}`).join(', ')}` : sum.blocks.length ? `; got only ${sum.blocks.map((b) => b.kind).join(', ')}` : '; no block was shown'
-      const parts = [want.ids && `ids ${show(want.ids.map(id))}`, want.ids_include && `including ${show(want.ids_include.map(id))}`, want.min_ids && `at least ${want.min_ids} ids`, want.date !== undefined && `on ${day(want.date, today)}`, want.min_options && `${want.min_options}+ options`, want.to !== undefined && `until ${day(want.to, today)}`, want.group_by && `by ${want.group_by}`].filter(Boolean)
+      const parts = [want.ids && `ids ${show(want.ids.map(id))}`, want.ids_include && `including ${show(want.ids_include.map(id))}`, want.min_ids && `at least ${want.min_ids} ids`, want.date !== undefined && `on ${day(want.date, today)}`, want.min_options && `${want.min_options}+ options`, want.to !== undefined && `until ${day(want.to, today)}`, want.group_by && `by ${want.group_by}`, want.section && `column ${id(want.section)}`, want.of && `of a ${want.of}`].filter(Boolean)
       fail.push(`expected a ${want.kind} block${parts.length ? ' with ' + parts.join(', ') : ''}${detail}`)
     }
   }

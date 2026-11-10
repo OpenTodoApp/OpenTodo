@@ -55,6 +55,17 @@ test('time blocks match by grouping and last day (assistant-time-blocks)', () =>
   assert.deepEqual(validateScenario({ name: 'x', title: 'X', turns: [{ say: 'hi', expect: { blocks: [{ kind: 'free_time', date: 1 }] } }] }), [])
 })
 
+test('project blocks match by column and subject (assistant-project-blocks)', () => {
+  const ids = { web: 'p1', doing: 's1', todo: 's2' }
+  const sum = { blocks: [{ kind: 'board', id: 'p1', section_id: 's1' }, { kind: 'activity', of: 'project', id: 'p1' }], changes: [], text: '' }
+  assert.deepEqual(checkTurn({ blocks: [{ kind: 'board', ids: ['web'], section: 'doing' }, { kind: 'activity', ids: ['web'], of: 'project' }] }, sum, ids), [])
+  assert.match(checkTurn({ blocks: [{ kind: 'board', section: 'todo' }] }, sum, ids)[0], /column s2/)
+  assert.match(checkTurn({ blocks: [{ kind: 'activity', of: 'task' }] }, sum, ids)[0], /of a task/)
+  const seed = { projects: [{ key: 'web', name: 'Web' }], sections: [{ key: 'doing', name: 'Doing', project: 'web' }], tasks: [{ key: 'a', title: 'A', section: 'doing' }] }
+  assert.deepEqual(validateScenario({ name: 'x', title: 'X', view: 'project', seed, turns: [{ say: 'hi', expect: { blocks: [{ kind: 'board', section: 'doing' }] } }] }), [])
+  assert.match(validateScenario({ name: 'x', title: 'X', seed, turns: [{ say: 'hi', expect: { blocks: [{ kind: 'board', section: 'a' }] } }] })[0], /not one of sections/)
+})
+
 test('change sets, links, forbidden text and ids', () => {
   const sum = summarize([ev('text', { text: 'Moved [Pay](?task=t1). Salary stays.' }), ev('changeset', { items: [{ entity: 'task', entityId: 't1', patch: { due: {} } }] })])
   const ids = { pay: 't1', secret: 't9' }

@@ -5,12 +5,14 @@ import type { AssistantStatus } from '../../lib/assistantStatus'
 import { db, setMeta, type AssistantMessage } from '../../lib/db'
 import { createPlace } from '../../lib/locations'
 import { createNote } from '../../lib/noteOps'
-import { createProject, createTask } from '../../lib/ops'
+import { createProject, createTask, updateTask } from '../../lib/ops'
 import { createSection } from '../../lib/sections'
 import { setCurrentUserId } from '../../lib/sharing'
 import { logTime } from '../../lib/timeEntries'
 import { addDaysISO } from '../../lib/dates'
-import { HEX, seeded, seedBase, storyUser, TODAY, TOMORROW, withSeed } from '../stories/fixtures'
+import { createComment } from '../../lib/comments'
+import { occurrenceId } from '../../lib/ids'
+import { HEX, seeded, seedBase, seedProjectWithSections, storyUser, TODAY, TOMORROW, withSeed } from '../stories/fixtures'
 import { AssistantPanelBody, type PanelViewProps } from './AssistantPanelBody'
 
 // Blocks in the assistant's answers (OpenSpec change assistant-generative-ui): the
@@ -177,6 +179,75 @@ export const TimeFreeTimeAndDeadlines: StoryObj = {
           { at: 'This week so far:\n'.length, block: { kind: 'time', from: addDaysISO(TODAY, -2), to: addDaysISO(TODAY, 4), group_by: 'project' } },
           { at: 'This week so far:\n\nTomorrow has room between meetings:\n'.length, block: { kind: 'free_time', date: TOMORROW, span: 'day', min_minutes: 60 } },
           { at: 999, block: { kind: 'deadlines', from: TODAY, to: addDaysISO(TODAY, 2) } },
+        ],
+      },
+    ]} />
+  ),
+}
+
+/** What is in progress on the website, whether the renovation is on track, and what happened on it (assistant-project-blocks). */
+export const BoardTimelineAndActivity: StoryObj = {
+  ...withSeed(async () => {
+    await seedProjectWithSections(false)
+    await setCurrentUserId(storyUser.id)
+    seeded.doing = (await db.sections.where('project_id').equals(seeded.website).filter((x) => x.name === 'In progress').first())!.id
+    seeded.reno = await createProject({ name: 'Renovation', color: HEX.teal })
+    await createTask({ title: 'Order the tiles', project_id: seeded.reno, start: '2026-10-06', deadline: '2026-10-12' })
+    await createTask({ title: 'Strip the old wallpaper', project_id: seeded.reno, start: '2026-10-10', due: { date: '2026-10-16' } })
+    await createTask({ title: 'Paint the living room', project_id: seeded.reno, start: '2026-10-17', due: { date: '2026-10-21' }, deadline: '2026-10-23' })
+    await createTask({ title: 'Fit the new lights', project_id: seeded.reno, due: { date: '2026-10-27' } })
+    await createTask({ title: 'Choose a sofa', project_id: seeded.reno })
+  }),
+  render: () => (
+    <Conversation messages={() => [
+      { role: 'user', text: 'What is in progress on the website, and is the renovation on track?', at: 1 },
+      {
+        role: 'assistant', at: 2, status: ['Looking at your projects…'],
+        text: 'In progress on Website launch:\n\nThe renovation, with the tiles already late:\n\nAnd the latest on it:',
+        blocks: [
+          { at: 'In progress on Website launch:\n'.length, block: { kind: 'board', id: seeded.website, section_id: seeded.doing } },
+          { at: 'In progress on Website launch:\n\nThe renovation, with the tiles already late:\n'.length, block: { kind: 'timeline', id: seeded.reno } },
+          { at: 999, block: { kind: 'activity', of: 'project', id: seeded.reno } },
+        ],
+      },
+    ]} />
+  ),
+}
+
+/** How the week went, one task in full and a habit's streak (assistant-project-blocks). */
+export const StatsTaskAndHabit: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    await setCurrentUserId(storyUser.id)
+    await db.userPrefs.put({ id: 'me', today_limit: 5, _clock: {} } as never)
+    for (const [title, date] of [['Send the invoice', '2026-10-12'], ['Book the venue', '2026-10-13'], ['Reply to the agency', TODAY]] as const) {
+      await createTask({ title, due: { date }, completed: true })
+    }
+    await createTask({ title: 'File the expenses', due: { date: '2026-10-09' } })
+    seeded.brief = await createTask({ title: 'Write the launch brief', project_id: seeded.website, due: { date: TOMORROW }, deadline: '2026-10-17', priority: 2,
+      description: 'One page for the agency: **goal**, audience, the three messages and the dates.' })
+    await createTask({ title: 'Collect the numbers', parent_id: seeded.brief, completed: true })
+    await createTask({ title: 'Draft the three messages', parent_id: seeded.brief })
+    await createComment({ taskId: seeded.brief, body: 'The agency needs it by Friday.' })
+    await createComment({ taskId: seeded.brief, body: 'Use the Q3 numbers, not the forecast.' })
+    seeded.run = await createTask({ title: 'Run', recurrence: 'every day', due: { date: TODAY }, project_id: seeded.health })
+    await updateTask(seeded.run, { habit: true })
+    const days = [1, 2, 3, 4, 5, 7, 8, 9, 11, 12].map((n) => addDaysISO(TODAY, -n))
+    await db.tasks.bulkPut(days.map((date) => ({
+      id: occurrenceId(seeded.run, date), title: 'Run', description: '', project_id: seeded.health, parent_id: null, priority: 4, due: { date }, labels: [], position: 0,
+      created_at: 1, completed_at: 1, deleted_at: null, series_id: seeded.run, occurrence_date: date, _clock: {},
+    })) as never)
+  }),
+  render: () => (
+    <Conversation messages={() => [
+      { role: 'user', text: 'How am I doing this week? And where is the launch brief?', at: 1 },
+      {
+        role: 'assistant', at: 2, status: ['Looking at Today…'],
+        text: 'This week so far:\n\nThe brief is half done:\n\nAnd running is on a roll:',
+        blocks: [
+          { at: 'This week so far:\n'.length, block: { kind: 'stats', from: '2026-10-12', to: '2026-10-18' } },
+          { at: 'This week so far:\n\nThe brief is half done:\n'.length, block: { kind: 'task', id: seeded.brief } },
+          { at: 999, block: { kind: 'habit', id: seeded.run } },
         ],
       },
     ]} />

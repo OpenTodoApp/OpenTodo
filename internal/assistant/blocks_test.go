@@ -56,7 +56,9 @@ func TestDisplayToolsOffered(t *testing.T) {
 	got := offered(p)
 	// 2.6: the fixed instructions say when to show a block and when not to.
 	for _, w := range []string{"two or more specific tasks go in show_tasks", "Do not repeat a block's content in prose", "At most 4 per answer", "After ask_choice, end your answer",
-		"never describe it or claim that a map or view appeared", "do not call the same tool again"} {
+		"never describe it or claim that a map or view appeared", "do not call the same tool again",
+		// assistant-project-blocks 2.3: when to use each project view block.
+		"goes in show_board with that section_id", "whether a project is on track in show_timeline", "in show_activity", "in show_stats", "in show_task", "how a habit is going in show_habit"} {
 		if !strings.Contains(p.req.System, w) {
 			t.Errorf("system prompt lacks %q", w)
 		}
@@ -66,9 +68,13 @@ func TestDisplayToolsOffered(t *testing.T) {
 			t.Errorf("%s not offered without a skill: %v", d.Name, got)
 		}
 	}
-	for id, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice", "show_free_time"}, "break-down": nil, "triage-inbox": {"show_tasks", "ask_choice"}} {
+	// assistant-project-blocks D2: a skill turn adds the display tools its view suggests.
+	for key, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice", "show_free_time"}, "break-down": nil, "triage-inbox": {"show_tasks", "ask_choice"},
+		"weekly-review": {"show_stats"}, "weekly-review@today": {"show_deadlines", "show_stats"}, "plan-week@project": {"show_calendar", "ask_choice", "show_free_time", "show_board", "show_timeline"},
+		"break-down@inbox": nil} {
+		id, view, _ := strings.Cut(key, "@")
 		p := &scripted{rounds: []scriptRound{{text: "ok"}}}
-		f.loop.Run(context.Background(), p, TurnInput{UserID: "u1", Zone: time.UTC, Messages: []Message{{Role: "user", Text: "go"}}, Skill: skill(t, id)}, Events{Text: func(string) {}})
+		f.loop.Run(context.Background(), p, TurnInput{UserID: "u1", Zone: time.UTC, View: view, Messages: []Message{{Role: "user", Text: "go"}}, Skill: skill(t, id)}, Events{Text: func(string) {}})
 		var shown []string
 		for _, n := range offered(p) {
 			if isDisplay(n) {
@@ -76,7 +82,7 @@ func TestDisplayToolsOffered(t *testing.T) {
 			}
 		}
 		if strings.Join(shown, ",") != strings.Join(want, ",") {
-			t.Errorf("%s offers display tools %v, want %v", id, shown, want)
+			t.Errorf("%s offers display tools %v, want %v", key, shown, want)
 		}
 	}
 	// Display tools never turn strict tool use off where it was on (Anthropic's limits).
@@ -198,6 +204,13 @@ func TestDisplayToolsArguments(t *testing.T) {
 		{"show_free_time", map[string]any{"date": "2026-10-12", "span": "month"}},
 		{"show_free_time", map[string]any{"date": "2026-10-12", "span": "day", "min_minutes": 721}},
 		{"show_deadlines", map[string]any{"from": "2026-10-12", "to": "2026-10-11"}},
+		{"show_board", map[string]any{"section_id": "s1"}},
+		{"show_timeline", map[string]any{"id": " "}},
+		{"show_activity", map[string]any{}},
+		{"show_activity", map[string]any{"project_id": "work", "task_id": "t1"}},
+		{"show_stats", map[string]any{"from": "2026-10-01", "to": "2026-11-01"}},
+		{"show_task", map[string]any{}},
+		{"show_habit", map[string]any{"id": ""}},
 	} {
 		if _, err := parseBlock(c.name, mustJSON(c.args)); err == nil {
 			t.Errorf("%s %v accepted", c.name, c.args)
@@ -288,6 +301,15 @@ func blockRows() map[string][]map[string]any {
 			{"id": "gone", "title": "Deleted", "project_id": nil, "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": 5, "completed_at": nil},
 			{"id": "hidden", "title": "Hidden", "project_id": "private", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil},
 			{"id": "orphan", "title": "In a deleted project", "project_id": "old", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil},
+			{"id": "run", "title": "Run", "project_id": nil, "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil,
+				"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-11-10"}},
+			{"id": "secret-habit", "title": "Meditate", "project_id": "private", "priority": 4, "labels": []string{}, "created_at": 1, "deleted_at": nil, "completed_at": nil,
+				"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-11-10"}},
+		},
+		"section": {
+			{"id": "s1", "project_id": "work", "name": "In progress", "position": 1, "created_at": 1, "deleted_at": nil},
+			{"id": "s2", "project_id": "work", "name": "Old stage", "position": 2, "created_at": 1, "deleted_at": 5},
+			{"id": "s3", "project_id": "private", "name": "Secret stage", "position": 1, "created_at": 1, "deleted_at": nil},
 		},
 		"note": {
 			{"id": "n1", "title": "Ideas", "description": "x", "project_id": nil, "created_at": 1, "deleted_at": nil},
@@ -328,6 +350,37 @@ var blockCalls = []struct {
 		{"show_deadlines", map[string]any{"from": "2026-11-13", "to": "2026-11-09"}},
 		{"show_deadlines", map[string]any{"from": "2026-11-09"}},
 	}},
+	// assistant-project-blocks: one id (and a board's column) checked like the others.
+	{"board, timeline and activity", []blockCall{
+		{"show_board", map[string]any{"id": "work", "section_id": "s1"}},
+		{"show_timeline", map[string]any{"id": "work"}},
+		{"show_activity", map[string]any{"project_id": "work"}},
+		{"show_activity", map[string]any{"task_id": "t2"}},
+	}},
+	{"board columns that are not the project's", []blockCall{
+		{"show_board", map[string]any{"id": "work", "section_id": "s2"}},
+		{"show_board", map[string]any{"id": "work", "section_id": "s3"}},
+		{"show_board", map[string]any{"id": "private", "section_id": "s3"}},
+		{"show_board", map[string]any{"id": "work"}},
+	}},
+	{"stats, task and habit", []blockCall{
+		{"show_stats", map[string]any{"from": "2026-11-09", "to": "2026-11-15"}},
+		{"show_task", map[string]any{"id": "t2"}},
+		{"show_habit", map[string]any{"id": "run"}},
+	}},
+	{"habits must be habits", []blockCall{
+		{"show_habit", map[string]any{"id": "t1"}},
+		{"show_habit", map[string]any{"id": "secret-habit"}},
+		{"show_task", map[string]any{"id": "hidden"}},
+		{"show_activity", map[string]any{"task_id": "gone"}},
+		{"show_timeline", map[string]any{"id": "old"}},
+	}},
+	{"project blocks with invalid arguments", []blockCall{
+		{"show_activity", map[string]any{"project_id": "work", "task_id": "t2"}},
+		{"show_activity", map[string]any{}},
+		{"show_stats", map[string]any{"from": "2026-11-15", "to": "2026-11-09"}},
+		{"show_board", map[string]any{"section_id": "s1"}},
+	}},
 	{"invalid arguments", []blockCall{
 		{"show_calendar", map[string]any{"date": "12.11.2026", "span": "day"}},
 		{"ask_choice", map[string]any{"question": "One?", "options": []string{"only"}}},
@@ -347,7 +400,7 @@ func TestDeviceBlockVectors(t *testing.T) {
 	f := newFixture(t)
 	x := withExclusions(f)
 	rows := blockRows()
-	for _, entity := range []string{"project", "task", "note", "place"} {
+	for _, entity := range []string{"project", "section", "task", "note", "place"} {
 		for _, r := range rows[entity] {
 			fields := map[string]any{}
 			for k, v := range r {

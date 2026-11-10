@@ -1,7 +1,7 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
 import { Switch, Tooltip } from '../ui'
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSeriesRecords } from '../lib/localData'
 import { formatShort, logicalToday, weekday } from '../lib/dates'
 import { habitRule, habitStats } from '../lib/habits'
@@ -10,9 +10,11 @@ import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from
 import { pieceRule, seriesBudget } from '../lib/recurring'
 import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
-import { HabitHistory } from './HabitHistory'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+
+// The month grid shows only for a habit: loaded with the first one (assistant-project-blocks shares it).
+const HabitHistory = lazy(() => import('./HabitHistory').then((m) => ({ default: m.HabitHistory })))
 
 /**
  * The detail panel's recurrence controls (OpenSpec change recurring-tasks): the
@@ -124,7 +126,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
           {stats && (
             <>
               <p className="text-meta text-muted" data-habit-streak>{t('Streak {current} · Best {best}', { current: stats.current, best: stats.best })}{stats.atRisk ? ` · ${t('at risk')}` : ''}</p>
-              <HabitHistory series={task} records={related} today={today} />
+              <Suspense fallback={null}><HabitHistory series={task} records={related} today={today} /></Suspense>
             </>
           )}
         </div>

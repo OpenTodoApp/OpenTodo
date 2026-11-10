@@ -58,6 +58,13 @@ const (
 	BlockTime      = "time"
 	BlockFreeTime  = "free_time"
 	BlockDeadlines = "deadlines"
+	// The project view blocks of OpenSpec change assistant-project-blocks.
+	BlockBoard    = "board"
+	BlockTimeline = "timeline"
+	BlockActivity = "activity"
+	BlockStats    = "stats"
+	BlockTask     = "task"
+	BlockHabit    = "habit"
 )
 
 // Block is one shown block: its kind and its checked parameters.
@@ -78,6 +85,10 @@ type Block struct {
 	To         string `json:"to,omitempty"`
 	GroupBy    string `json:"group_by,omitempty"`
 	MinMinutes int    `json:"min_minutes,omitempty"`
+	// SectionID is a board block's one column (assistant-project-blocks); Of
+	// says whether an activity block's ID is a "project" or a "task".
+	SectionID string `json:"section_id,omitempty"`
+	Of        string `json:"of,omitempty"`
 }
 
 func idList(desc string) map[string]any {
@@ -136,12 +147,47 @@ var DisplayTools = []ToolDef{
 			"from": dateProp("First day (YYYY-MM-DD); today for what is coming, earlier to include missed deadlines."),
 			"to":   dateProp("Last day (YYYY-MM-DD), at most 30 days after from."),
 		})},
+	// The project view blocks (assistant-project-blocks): ids and days only, drawn
+	// from the device's rows with the app's own views, read-only.
+	{Name: "show_board", Description: "Show a project's board read-only: one column of cards, the section_id's or, without it, the first with the others to switch to. Use it for what is in a stage of a project, such as what is in progress. Changes nothing.",
+		Schema: displayObject([]string{"id"}, map[string]any{
+			"id":         idProp("A project id from tool results."),
+			"section_id": idProp("A section id of that project from tool results, for one column."),
+		})},
+	{Name: "show_timeline", Description: "Show a project's open tasks as bars from their start to their deadline or due day, with today marked. Use it for whether a project is on track. Changes nothing.",
+		Schema: displayObject([]string{"id"}, map[string]any{"id": idProp("A project id from tool results.")})},
+	{Name: "show_activity", Description: "Show the latest changes and comments (at most 20) of one project or one task, newest first, with who made them. Use it for what happened recently. Name exactly one of project_id and task_id. Changes nothing.",
+		Schema: displayObject([]string{}, map[string]any{
+			"project_id": idProp("A project id from tool results."),
+			"task_id":    idProp("A task id from tool results."),
+		})},
+	{Name: "show_stats", Description: "Show small number cards: tasks completed on the days from..to (at most 31 days), overdue tasks, the Inbox count and Today against the user's Today limit. Use it for how the user is doing. Changes nothing.",
+		Schema: displayObject([]string{"from", "to"}, map[string]any{
+			"from": dateProp("First day (YYYY-MM-DD)."),
+			"to":   dateProp("Last day (YYYY-MM-DD), at most 30 days after from."),
+		})},
+	{Name: "show_task", Description: "Show one task in full, read-only: its dates, notes, subtasks and latest comments, with a way to open it. Use it when the user asks about one task. Changes nothing.",
+		Schema: displayObject([]string{"id"}, map[string]any{"id": idProp("A task id from tool results.")})},
+	{Name: "show_habit", Description: "Show a habit's month grid and its current streak. Use it for how a habit is going. The id must be a task marked habit in tool results. Changes nothing.",
+		Schema: displayObject([]string{"id"}, map[string]any{"id": idProp("A habit task id from tool results.")})},
+}
+
+func idProp(desc string) map[string]any {
+	return map[string]any{"type": "string", "description": desc}
+}
+
+// viewDisplay lists the display tools a turn's view suggests (assistant-project-blocks
+// D2): a skill turn offers them with the skill's own.
+var viewDisplay = map[string][]string{
+	"project": {"show_board", "show_timeline"},
+	"today":   {"show_stats", "show_deadlines"},
 }
 
 // skillDisplay lists the display tools each skill may use (design D1); the
 // skills' registry tools stay in agenttools, which MCP's prompts share.
 var skillDisplay = map[string][]string{
 	"plan-week":       {"show_calendar", "ask_choice", "show_free_time"},
+	"weekly-review":   {"show_stats"},
 	"triage-inbox":    {"show_tasks", "ask_choice"},
 	"idea-to-project": {"show_project", "ask_choice"},
 	"capture":         {"ask_choice"},
@@ -156,13 +202,15 @@ func isDisplay(name string) bool {
 	return false
 }
 
-// displayOffered reports whether a turn offers the display tool: every one
-// without a skill, the skill's own with one.
-func displayOffered(name string, skill *agenttools.Skill) bool {
+// displayOffered reports whether a turn offers the display tool (assistant-project-blocks
+// D2). A turn without a skill offers every one: its registry tools already go past
+// the providers' strict-tool limits, so it runs without strict mode either way. A
+// skill turn offers the skill's own and those its view suggests, which keeps it lean.
+func displayOffered(name string, skill *agenttools.Skill, view string) bool {
 	if skill == nil {
 		return isDisplay(name)
 	}
-	for _, n := range skillDisplay[skill.ID] {
+	for _, n := range append(skillDisplay[skill.ID], viewDisplay[view]...) {
 		if n == name {
 			return true
 		}
@@ -173,9 +221,20 @@ func displayOffered(name string, skill *agenttools.Skill) bool {
 // SkillDisplayTools lists a skill's display tools (the device manifest).
 func SkillDisplayTools(id string) []string { return append([]string{}, skillDisplay[id]...) }
 
+// ViewDisplayTools is viewDisplay for the device manifest.
+func ViewDisplayTools() map[string][]string {
+	out := map[string][]string{}
+	for v, names := range viewDisplay {
+		out[v] = append([]string{}, names...)
+	}
+	return out
+}
+
 // Shower checks the ids a block names: the registry's Shown.
 type Shower interface {
 	Shown(ctx context.Context, userID, kind string, ids []string) ([]string, error)
+	// ShownSection reports whether the section is a live column of the project (a board block).
+	ShownSection(ctx context.Context, userID, projectID, sectionID string) (bool, error)
 }
 
 // displayTurn is one turn's display state: the blocks shown so far.
@@ -245,6 +304,9 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 		To       string   `json:"to"`
 		GroupBy  string   `json:"group_by"`
 		Min      *float64 `json:"min_minutes"`
+		Section  string   `json:"section_id"`
+		Project  string   `json:"project_id"`
+		Task     string   `json:"task_id"`
 	}
 	if len(raw) > 0 && string(raw) != "null" {
 		if err := json.Unmarshal(raw, &a); err != nil {
@@ -330,9 +392,37 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 			return Block{}, err
 		}
 		return Block{Kind: BlockDeadlines, From: a.From, To: a.To}, nil
+	case "show_board", "show_timeline", "show_task", "show_habit":
+		if strings.TrimSpace(a.ID) == "" {
+			return Block{}, argError("id is required")
+		}
+		kinds := map[string]string{"show_board": BlockBoard, "show_timeline": BlockTimeline, "show_task": BlockTask, "show_habit": BlockHabit}
+		b := Block{Kind: kinds[name], ID: a.ID}
+		if name == "show_board" {
+			b.SectionID = strings.TrimSpace(a.Section)
+		}
+		return b, nil
+	case "show_activity":
+		p, tk := strings.TrimSpace(a.Project), strings.TrimSpace(a.Task)
+		if (p == "") == (tk == "") {
+			return Block{}, argError("name exactly one of project_id and task_id")
+		}
+		if p != "" {
+			return Block{Kind: BlockActivity, Of: "project", ID: p}, nil
+		}
+		return Block{Kind: BlockActivity, Of: "task", ID: tk}, nil
+	case "show_stats":
+		if err := checkRange(a.From, a.To); err != nil {
+			return Block{}, err
+		}
+		return Block{Kind: BlockStats, From: a.From, To: a.To}, nil
 	}
 	return Block{}, argError("unknown display tool")
 }
+
+// oneKind is the entity a one-id project view block names (its kind, and Of for activity).
+var oneKind = map[string]string{BlockBoard: agenttools.ShownProject, BlockTimeline: agenttools.ShownProject, BlockActivity + "project": agenttools.ShownProject,
+	BlockActivity + "task": agenttools.ShownTask, BlockTask: agenttools.ShownTask, BlockHabit: agenttools.ShownHabit}
 
 // check keeps the ids that name a live, visible entity; found is how many are left.
 func (d *displayTurn) check(ctx context.Context, b Block) (Block, int, int, error) {
@@ -363,7 +453,18 @@ func (d *displayTurn) check(ctx context.Context, b Block) (Block, int, int, erro
 		var ids []string
 		ids, err = keep(kind, []string{b.ID})
 		asked, found = 1, len(ids)
-	case BlockCalendar, BlockTime, BlockFreeTime, BlockDeadlines:
+	case BlockBoard, BlockTimeline, BlockActivity, BlockTask, BlockHabit:
+		var ids []string
+		ids, err = keep(oneKind[b.Kind+b.Of], []string{b.ID})
+		asked, found = 1, len(ids)
+		if err == nil && found == 1 && b.SectionID != "" {
+			// A column of another project, or a gone one, is not found.
+			var ok bool
+			if ok, err = d.shower.ShownSection(ctx, d.userID, b.ID, b.SectionID); !ok {
+				found = 0
+			}
+		}
+	case BlockCalendar, BlockTime, BlockFreeTime, BlockDeadlines, BlockStats:
 		asked, found = 1, 1
 	case BlockChoice:
 		asked, found = len(b.Options), len(b.Options)

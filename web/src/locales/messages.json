@@ -889,8 +889,10 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
-    "web/src/app/task-detail/ConversationTabs.tsx"
+    "web/src/app/task-detail/ConversationTabs.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Ada · yesterday": [
     "web/src/app/themes/ThemePreview.tsx"
@@ -2450,7 +2452,8 @@
   "Board": [
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
-    "web/src/app/views/DisplayPanel.tsx"
+    "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Board and timeline": [
     "web/src/lib/shortcuts.ts"
@@ -3425,7 +3428,8 @@
     "web/src/app/BoardView.tsx"
   ],
   "Columns": [
-    "web/src/app/TaskListView.tsx"
+    "web/src/app/TaskListView.tsx",
+    "web/src/app/assistant/blocks/BoardBlock.tsx"
   ],
   "Columns used:": [
     "web/src/app/ImportScreen.tsx"
@@ -3493,6 +3497,7 @@
     "web/src/lib/feed.ts"
   ],
   "Comments": [
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx",
     "web/src/lib/activity.ts"
@@ -5007,6 +5012,7 @@
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
@@ -5249,6 +5255,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
+    "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/review/DailyCheck.tsx",
@@ -7196,7 +7203,8 @@
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Habit": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Haptic feedback": [
     "web/src/app/AppearanceSection.tsx",
@@ -7891,6 +7899,8 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
@@ -10173,7 +10183,8 @@
   ],
   "No activity on this device yet.": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx"
   ],
   "No activity yet": [
     "web/src/app/task-detail/ActivityTab.tsx"
@@ -10433,8 +10444,12 @@
   "No open task was moved later three times or more in the last 90 days, on this device.": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "No open tasks": [
+    "web/src/app/assistant/blocks/BoardBlock.tsx"
+  ],
   "No open tasks in this project.": [
-    "web/src/app/TimelineView.tsx"
+    "web/src/app/TimelineView.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx"
   ],
   "No option matches.": [
     "web/src/app/task-detail/FieldsGroup.tsx"
@@ -10531,6 +10546,7 @@
     "web/src/app/BoardView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
+    "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -11770,7 +11786,10 @@
     "web/src/app/task-detail/TaskHead.tsx"
   ],
   "Open project": [
-    "web/src/app/assistant/blocks/ProjectBlock.tsx"
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/BoardBlock.tsx",
+    "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx"
   ],
   "Open recurring task": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -11782,6 +11801,9 @@
     "web/src/app/review/CarryOver.tsx"
   ],
   "Open task": [
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "Open tasks": [
@@ -13626,9 +13648,13 @@
     "web/src/app/palette/registry.ts"
   ],
   "Removed": [
+    "web/src/app/assistant/blocks/BoardBlock.tsx",
+    "web/src/app/assistant/blocks/HabitBlock.tsx",
     "web/src/app/assistant/blocks/MapBlock.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/lib/assistantBlockData.ts",
     "web/src/lib/assistantBlocks.ts"
   ],
@@ -15788,6 +15814,8 @@
     "web/src/app/MemberInvitations.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -16056,6 +16084,9 @@
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Statistics, {date} – {date2}": [
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Status": [
     "web/src/app/RuleEditor.tsx",
@@ -16432,7 +16463,9 @@
   "Task": [
     "web/src/app/FieldColumns.tsx",
     "web/src/app/TimelineView.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/themes/ThemePreview.tsx",
+    "web/src/lib/assistantBlocks.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "Task actions": [
@@ -18655,7 +18688,9 @@
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
   "Timeline": [
-    "web/src/app/task-list/ListChrome.tsx"
+    "web/src/app/assistant/blocks/TimelineBlock.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Timeline zoom": [
     "web/src/app/TimelineView.tsx"
@@ -18769,6 +18804,8 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/YearView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/assistant/blocks/StatsBlock.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/display/DisplayScreen.tsx",
@@ -19493,6 +19530,8 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/YearView.tsx",
     "web/src/app/assistant/blocks/DeadlinesBlock.tsx",
+    "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
@@ -19577,6 +19616,7 @@
     "web/src/app/BoardView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
+    "web/src/app/assistant/blocks/BoardBlock.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-list/useListShortcuts.ts"
@@ -20459,6 +20499,8 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
@@ -20953,6 +20995,7 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/rules/proposal.ts"
   ],
@@ -21030,6 +21073,7 @@
   ],
   "another project": [
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "any of {labels}": [
@@ -22098,7 +22142,8 @@
   ],
   "on|comment": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/assistant/blocks/ActivityBlock.tsx"
   ],
   "open": [
     "web/src/app/MembersPanel.tsx"
@@ -23143,6 +23188,7 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "{done} of {total}": [
+    "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/task-detail/Subtasks.tsx"
   ],
@@ -23412,7 +23458,8 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "{n, plural, one {# day late} other {# days late}}": [
-    "web/src/app/TimelineView.tsx"
+    "web/src/app/TimelineView.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx"
   ],
   "{n, plural, one {# day left} other {# days left}}": [
     "web/src/app/TrashView.tsx"
@@ -23427,6 +23474,7 @@
     "web/src/app/ProjectsTable.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TimelineView.tsx",
+    "web/src/app/assistant/blocks/HabitBlock.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/lib/facets.ts"
   ],
@@ -23514,6 +23562,10 @@
   ],
   "{n, plural, one {# more routine} other {# more routines}}": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
+  ],
+  "{n, plural, one {# more task} other {# more tasks}}": [
+    "web/src/app/assistant/blocks/BoardBlock.tsx",
+    "web/src/app/assistant/blocks/TimelineBlock.tsx"
   ],
   "{n, plural, one {# more with a time} other {# more with a time}}": [
     "web/src/app/task-list/WaitingSoon.tsx"
@@ -23737,6 +23789,9 @@
   ],
   "{n, plural, one {# task will be updated.} other {# tasks will be updated.}}": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "{n, plural, one {# task without dates} other {# tasks without dates}}": [
+    "web/src/app/assistant/blocks/TimelineBlock.tsx"
   ],
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
@@ -24116,7 +24171,8 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
-    "web/src/app/BoardView.tsx"
+    "web/src/app/BoardView.tsx",
+    "web/src/app/assistant/blocks/BoardBlock.tsx"
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": [
     "web/src/app/BoardView.tsx",

@@ -10,7 +10,8 @@ import { calendarDate } from './args'
 import { isDeleted, loadSnapshot, str, type Row } from './data'
 import { manifest } from './manifest'
 
-export const DISPLAY_TOOLS = ['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project', 'show_time', 'show_free_time', 'show_deadlines']
+export const DISPLAY_TOOLS = ['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project', 'show_time', 'show_free_time', 'show_deadlines',
+  'show_board', 'show_timeline', 'show_activity', 'show_stats', 'show_task', 'show_habit']
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_TITLE = 80
@@ -97,20 +98,39 @@ export function parseBlock(name: string, a: Record<string, unknown>): AssistantB
     }
     case 'show_deadlines':
       return { kind: 'deadlines', ...range(a) }
+    // The project view blocks (assistant-project-blocks): one id, a board's column, or days.
+    case 'show_board':
+    case 'show_timeline':
+    case 'show_task':
+    case 'show_habit': {
+      const id = typeof a.id === 'string' ? a.id : ''
+      if (!id.trim()) throw new DisplayArgError('id is required')
+      if (name !== 'show_board') return { kind: name.slice(5) as 'timeline' | 'task' | 'habit', id }
+      const section = typeof a.section_id === 'string' ? a.section_id.trim() : ''
+      return { kind: 'board', id, ...(section ? { section_id: section } : {}) }
+    }
+    case 'show_activity': {
+      const p = typeof a.project_id === 'string' ? a.project_id.trim() : ''
+      const tk = typeof a.task_id === 'string' ? a.task_id.trim() : ''
+      if (!p === !tk) throw new DisplayArgError('name exactly one of project_id and task_id')
+      return p ? { kind: 'activity', of: 'project', id: p } : { kind: 'activity', of: 'task', id: tk }
+    }
+    case 'show_stats':
+      return { kind: 'stats', ...range(a) }
   }
   throw new DisplayArgError('unknown display tool')
 }
 
-type ShownKind = 'task' | 'project' | 'note' | 'place'
+type ShownKind = 'task' | 'project' | 'note' | 'place' | 'habit'
 
 /** The ids, in order and without repeats, that name a live entity this device's assistant may read (Registry.Shown). */
 export async function shown(kind: ShownKind, list: readonly string[]): Promise<string[]> {
   if (!list.length) return []
   const snap = await loadSnapshot()
   const live = new Set<string>()
-  if (kind === 'task') {
+  if (kind === 'task' || kind === 'habit') {
     // As on the server: a task whose project is gone or kept away is not shown.
-    for (const t of snap.tasks) if (!str(t, 'project_id') || snap.projects.has(str(t, 'project_id'))) live.add(str(t, 'id'))
+    for (const t of snap.tasks) if ((!str(t, 'project_id') || snap.projects.has(str(t, 'project_id'))) && (kind === 'task' || t.habit === true)) live.add(str(t, 'id'))
   } else if (kind === 'project') {
     for (const id of snap.projects.keys()) live.add(id)
   } else if (kind === 'place') {
@@ -124,6 +144,14 @@ export async function shown(kind: ShownKind, list: readonly string[]): Promise<s
   const out: string[] = []
   for (const id of list) if (live.has(id) && !out.includes(id)) out.push(id)
   return out
+}
+
+/** Whether the section is a live column of the project, a project this device's assistant may read (ShownSection). */
+export async function shownSection(projectId: string, sectionId: string): Promise<boolean> {
+  const snap = await loadSnapshot()
+  if (!snap.projects.has(projectId)) return false
+  const s = snap.sections.get(sectionId)
+  return !!s && str(s, 'project_id') === projectId
 }
 
 /** One turn's display state: the blocks shown so far. */
@@ -144,10 +172,22 @@ async function check(b: AssistantBlock): Promise<{ block: AssistantBlock; asked:
     case 'note':
     case 'project':
       return { block: b, asked: 1, found: (await shown(b.kind, [b.id])).length }
+    case 'board': {
+      const found = (await shown('project', [b.id])).length === 1 && (!b.section_id || await shownSection(b.id, b.section_id))
+      return { block: b, asked: 1, found: found ? 1 : 0 }
+    }
+    case 'timeline':
+      return { block: b, asked: 1, found: (await shown('project', [b.id])).length }
+    case 'activity':
+      return { block: b, asked: 1, found: (await shown(b.of, [b.id])).length }
+    case 'task':
+    case 'habit':
+      return { block: b, asked: 1, found: (await shown(b.kind, [b.id])).length }
     case 'calendar':
     case 'time':
     case 'free_time':
     case 'deadlines':
+    case 'stats':
       return { block: b, asked: 1, found: 1 }
     case 'choice':
       return { block: b, asked: b.options.length, found: b.options.length }
