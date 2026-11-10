@@ -629,13 +629,13 @@ export function weekDays(iso: string, p: ResolvedDateTime = current): string[] {
 export interface QuickChoice {
   id: string
   label: string
-  /** The date it means, `null` for "No date", `'someday'` for Someday. */
+  /** The date it means, `'someday'` for Someday (`null`: no date). */
   date: string | null | 'someday'
 }
 
 /**
  * The quick choices of a date segment, from one table so the words match the row and
- * the quick-add parser: Do on (Today, Tomorrow, This weekend, Next week, No date),
+ * the quick-add parser: Do on (Today, Tomorrow, This weekend, Next week; Clear removes the date),
  * Start (Today, Tomorrow, Next week, Someday) and Deadline (End of week, End of
  * month, In 2 weeks). Weeks follow the user's first day of the week.
  */
@@ -653,7 +653,6 @@ export function quickChoices(kind: 'due' | 'start' | 'deadline', today = logical
       { id: 'tomorrow', label: t('Tomorrow'), date: addDaysISO(today, 1) },
       { id: 'weekend', label: t('This weekend'), date: weekend },
       { id: 'next-week', label: t('Next week'), date: nextWeek },
-      { id: 'none', label: t('No date'), date: null },
     ]
     case 'start': return [
       { id: 'today', label: t('Today'), date: today },

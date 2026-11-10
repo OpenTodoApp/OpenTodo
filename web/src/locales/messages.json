@@ -1225,8 +1225,7 @@
     "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Add time": [
-    "web/src/app/task-detail/TimeTab.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Add to OpenTodo": [
     "web/src/app/CaptureSettings.tsx"
@@ -1392,7 +1391,8 @@
   "Afternoon": [
     "web/src/app/ParseChips.tsx",
     "web/src/lib/dayParts.ts",
-    "web/src/lib/listGroups.ts"
+    "web/src/lib/listGroups.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "All": [
     "web/src/app/Sidebar.tsx",
@@ -1749,7 +1749,8 @@
   "Any time": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/assistant/blocks/CalendarBlock.tsx",
-    "web/src/lib/dayParts.ts"
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "Any.do (JSON from a data request)": [
     "web/src/app/ImportScreen.tsx"
@@ -2836,7 +2837,6 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/import/SwitchFromPicker.tsx",
-    "web/src/app/task-detail/ZoneControl.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Change email": [
@@ -4993,7 +4993,6 @@
   "Do on": [
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowSchedule.tsx"
   ],
   "Do today: {title}": [
@@ -5807,8 +5806,8 @@
   ],
   "Evening": [
     "web/src/app/ParseChips.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/dayParts.ts"
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "Event": [
     "web/src/app/AuditPanel.tsx",
@@ -6504,16 +6503,10 @@
   "Fixed to a time zone:": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
-  "Fixed to {zoneCity}": [
-    "web/src/app/task-detail/ZoneControl.tsx"
-  ],
   "Floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Floating (now):": [
-    "web/src/app/task-detail/ZoneControl.tsx"
-  ],
-  "Floating time": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
   "Floating:": [
@@ -8849,9 +8842,6 @@
   "List text size": [
     "web/src/app/themes/EditorSections.tsx"
   ],
-  "Listed in the evening group of Today": [
-    "web/src/app/task-detail/WhenControl.tsx"
-  ],
   "Listed on the All projects page, where each can be restored.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -9539,7 +9529,8 @@
   "Morning": [
     "web/src/app/ParseChips.tsx",
     "web/src/lib/dayParts.ts",
-    "web/src/lib/listGroups.ts"
+    "web/src/lib/listGroups.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "Morning, Afternoon and This Evening; a task with a time goes to its part.": [
     "web/src/lib/settingsCopy.ts"
@@ -10281,7 +10272,6 @@
     "web/src/app/calendar/planSource.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
-    "web/src/lib/dates.ts",
     "web/src/lib/facets.ts",
     "web/src/lib/views.ts"
   ],
@@ -10886,7 +10876,6 @@
   "Not scheduled": [
     "web/src/app/RemindersField.tsx",
     "web/src/app/ScheduleSheet.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/facets.ts"
   ],
   "Not sent: the account uses end-to-end encryption": [
@@ -12279,8 +12268,7 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Part of the day": [
-    "web/src/app/ParseChips.tsx",
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/ParseChips.tsx"
   ],
   "Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -13654,9 +13642,6 @@
   ],
   "Remove this group": [
     "web/src/app/filter/FilterBuilder.tsx"
-  ],
-  "Remove time": [
-    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Remove {condition}": [
     "web/src/app/filter/FilterBuilder.tsx"
@@ -17901,7 +17886,6 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/task-detail/Facets.tsx",
-    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/listGroups.ts"
   ],
@@ -18659,7 +18643,8 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Time (server time)": [
     "web/src/app/BackupsPanel.tsx"
@@ -18678,8 +18663,12 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Time of day": [
+    "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/views/DisplayPanel.tsx",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Time of day (choose a date first)": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Time passed": [
     "web/src/app/task-list/WaitingSoon.tsx"
@@ -20261,6 +20250,7 @@
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/app/task-detail/WhenEditor.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "When I arrive": [
@@ -21099,7 +21089,8 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "afternoon": [
-    "web/src/lib/dayParts.ts"
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "against {time} estimated": [
     "web/src/app/review/StatsView.tsx"
@@ -21585,7 +21576,8 @@
     "web/src/lib/rules/summary.ts"
   ],
   "evening": [
-    "web/src/lib/dayParts.ts"
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "every day": [
     "web/src/lib/rules/summary.ts"
@@ -21938,7 +21930,8 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "morning": [
-    "web/src/lib/dayParts.ts"
+    "web/src/lib/dayParts.ts",
+    "web/src/lib/testdata/dayParts-1.0.ts"
   ],
   "moved the due date to {date}": [
     "web/src/lib/activity.ts"
@@ -22909,6 +22902,9 @@
   "tomorrow": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/routines/words.tsx"
+  ],
+  "tomorrow 3pm, next fri": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "too many attempts": [
     "web/src/app/auditFormat.ts"

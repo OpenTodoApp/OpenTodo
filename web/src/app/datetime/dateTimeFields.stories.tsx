@@ -41,15 +41,21 @@ export const CalendarSundayStart: StoryObj = {
   ),
 }
 
-/** The When popover's date picker (task-panel-polish): quick choices, the date in words, the calendar. */
+/**
+ * The When popover's date picker (task-panel-polish): quick choices, the date in words, the calendar.
+ * Do on is compact (when-picker D4, D5): the field first with an example, the quick choices as one line.
+ */
 function Picker({ kind, initial }: { kind: 'due' | 'start' | 'deadline'; initial: string | null }) {
   const [value, setValue] = useState<string | null>(initial)
+  const doOn = kind === 'due'
   return (
     <div className="w-[28rem] max-w-full rounded-lg border border-default bg-surface p-3">
-      <DatePicker label="Due date" value={value} onChange={setValue} choices={quickChoices(kind, '2026-10-14')} />
+      <DatePicker label="Due date" value={value} onChange={setValue} choices={quickChoices(kind, '2026-10-14')}
+        compact={doOn} emptyText={doOn ? 'tomorrow 3pm, next fri' : undefined} onChangeTimed={doOn ? (date) => setValue(date) : undefined} />
     </div>
   )
 }
 
 export const DatePickerDoOn: StoryObj = { decorators: [withClock], render: () => <Picker kind="due" initial="2026-10-15" /> }
+export const DatePickerDoOnEmpty: StoryObj = { decorators: [withClock], render: () => <Picker kind="due" initial={null} /> }
 export const DatePickerDeadlineEmpty: StoryObj = { decorators: [withClock], render: () => <Picker kind="deadline" initial={null} /> }

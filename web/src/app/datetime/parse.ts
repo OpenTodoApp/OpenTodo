@@ -5,7 +5,7 @@
 // week) in the user's languages. Times are read in 12-hour or 24-hour form
 // whatever the time format.
 import type { ResolvedDateTime } from '../../lib/dates'
-import { isValidDate, matchDateAt, nextOccurrence, toISO, type DateContext } from '../../lib/nlp/dates'
+import { isValidDate, matchDateAt, matchTimeAt, nextOccurrence, toISO, type DateContext } from '../../lib/nlp/dates'
 import { tokenize } from '../../lib/nlp/tokenize'
 import { vocabulariesFor } from '../../lib/nlp/vocab'
 
@@ -52,16 +52,18 @@ function numericDate(m: RegExpExecArray, { today, prefs }: DateParseOptions): st
   return nextOccurrence(today, month, day)
 }
 
-function phraseDate(s: string, { today, prefs, languages = [] }: DateParseOptions): string | null {
+/** The quick-add date reader's context for the options. */
+const contextOf = ({ today, prefs, languages = [] }: DateParseOptions): DateContext => ({
+  today,
+  vocabs: vocabulariesFor(languages),
+  dayMonthOrder: prefs.order === 'MD' ? 'MD' : 'DM',
+  weekStart: prefs.weekStart,
+})
+
+function phraseDate(s: string, opts: DateParseOptions): string | null {
   const { tokens } = tokenize(s)
   if (!tokens.length) return null
-  const ctx: DateContext = {
-    today,
-    vocabs: vocabulariesFor(languages),
-    dayMonthOrder: prefs.order === 'MD' ? 'MD' : 'DM',
-    weekStart: prefs.weekStart,
-  }
-  const match = matchDateAt(tokens, 0, ctx)
+  const match = matchDateAt(tokens, 0, contextOf(opts))
   return match && match.to === tokens.length ? match.date : null
 }
 
@@ -84,4 +86,30 @@ export function parseTimeInput(text: string): string | null {
     return null
   }
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`
+}
+
+/** A typed date with an optional time ("tomorrow 3pm", "fri at 9", "15:30"); `date` is null for a time alone. */
+export interface DateTimeInput { date: string | null; time?: string }
+
+/**
+ * A typed date, else a date with a time through the quick-add date reader
+ * (when-picker D4): a date phrase then a time ("tomorrow 3pm", "morgen um 15 Uhr"),
+ * a time then a date ("3pm tomorrow"), or a time alone. Text the date reader
+ * understands on its own reads exactly as before.
+ */
+export function parseDateTimeInput(text: string, opts: DateParseOptions): DateTimeInput | null {
+  const date = parseDateInput(text, opts)
+  if (date) return { date }
+  const { tokens } = tokenize(text.trim())
+  if (!tokens.length) return null
+  const ctx = contextOf(opts)
+  const end = tokens.length
+  const first = matchDateAt(tokens, 0, ctx)
+  const then = first && matchTimeAt(tokens, first.to, ctx)
+  if (first && then && then.to === end) return { date: first.date, time: then.time }
+  const lead = matchTimeAt(tokens, 0, ctx)
+  if (!lead) return null
+  if (lead.to === end) return { date: null, time: lead.time }
+  const after = matchDateAt(tokens, lead.to, ctx)
+  return after && after.to === end ? { date: after.date, time: lead.time } : null
 }

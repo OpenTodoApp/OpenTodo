@@ -70,7 +70,7 @@ export function ScheduleSheet({ task, onPick, onClose }: ScheduleSheetProps) {
           </div>
         )}
         <DatePicker label={t('Due date')} value={task.due?.date ?? null} emptyText={t('Not scheduled')}
-          choices={quickChoices('due').filter((c) => c.date !== null)}
+          choices={quickChoices('due')}
           marked={deadline ? { date: deadline, label: t('deadline') } : undefined}
           onChange={(iso) => { if (iso) onPick(iso) }} />
       </div>
