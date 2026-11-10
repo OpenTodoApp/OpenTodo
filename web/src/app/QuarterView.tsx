@@ -114,7 +114,7 @@ export default function QuarterView({ date }: { date?: string }) {
         onPointerLeave={() => { clearTimeout(hoverTimer.current); setTip(null) }}
         onFocus={(e) => { const d = (e.target as HTMLElement).dataset.yearDay; if (d) { setFocused(d); showTip(e.target as HTMLElement, 0) } }}
         onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setTip(null) }}>
-        <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-5 @3xl/quarter:grid-cols-3">
           {quarter.months.map((m) => {
             const name = monthName(m, 'long')
             const weeks = monthGrid(`${m}-01`, resolved.weekStart)

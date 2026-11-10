@@ -16,8 +16,8 @@
 
 ## 3. Plan spans
 
-- [x] 3.1 Widen `PlanSpan` to `number`, `PLAN_SPANS` to `[3, 7, 14, 21]` and add `MIN/MAX_PLAN_DAYS = 1/90` with `validPlanDays()` in `web/src/lib/calendar.ts` (re-exported by `web/src/lib/plan.ts`); widen `GridPrefs.planDays` and `normalizeGridPrefs()` in `web/src/lib/calendar.ts` to any integer in range, default 14. Verify `npm test -- plan.test calendar.test` with cases for 3, 10, 90, 91, 0, a string, a missing value and the old 21.
-- [x] 3.2 Add the `3 days` preset and a `Custom…` menu item to Plan's overflow menu; `Custom…` opens a labelled numeric dialog (1–90, Save/Cancel), refuses invalid input, and saves through `saveGridPrefs`. Mark the custom item checked with its current length when the span is not a preset. Verify a new `planView.test.tsx` case: choose `3 days`, choose `Custom…` with 10, reload and read `calendar.grid` back, and reject 91.
+- [x] 3.1 Widen `PlanSpan` to `number`, `PLAN_SPANS` to `[3, 7, 14, 21]` and add `MIN/MAX_PLAN_DAYS = 2/90` with `validPlanDays()` in `web/src/lib/calendar.ts` (re-exported by `web/src/lib/plan.ts`); widen `GridPrefs.planDays` and `normalizeGridPrefs()` in `web/src/lib/calendar.ts` to any integer in range, default 14. Verify `npm test -- plan.test calendar.test` with cases for 3, 10, 90, 91, 0, a string, a missing value and the old 21.
+- [x] 3.2 Add the `3 days` preset and a `Custom…` menu item to Plan's overflow menu; `Custom…` opens a labelled numeric dialog (2–90, Save/Cancel), refuses invalid input, and saves through `saveGridPrefs`. Mark the custom item checked with its current length when the span is not a preset. Verify a new `planView.test.tsx` case: choose `3 days`, choose `Custom…` with 10, reload and read `calendar.grid` back, and reject 91.
 
 ## 4. Documentation and release
 
@@ -25,3 +25,11 @@
 - [x] 4.2 Document Quarter in `docs/calendar-views.md` and `docs/months-and-year.md` (reusing the `calendar` screen id), then run `make docs` so `docs/keyboard.md` and `docs/roadmap.md` are current; verify `make docs-check`.
 - [x] 4.3 Add `changelog.d/Added/quarter-view-and-plan-spans.md`; verify `make docs-check`.
 - [x] 4.4 `cd web && npm test && npm run build`, `make openspec-validate`, `make bundle-budget`, `make check` with TZ=UTC; verify all pass.
+
+## 5. Second review on the pull request
+
+- [x] 5.1 Hide the Quarter button below 640 px so the range switch stays beside the date navigation on a phone; keep `g q` and the palette entry; add the scenario to the Quarter spec.
+- [x] 5.2 Shorten `SHORTCUT_SECTIONS`' calendar title to `Calendar` so the cheat sheet heading no longer wraps, and drop the stale title from all six catalogs.
+- [x] 5.3 Raise `entryGzipKB` by Quarter's own cost with a reason in `$comment`, and update the Size sections of `design.md` and `proposal.md` to the CI measurements.
+- [x] 5.4 Start the custom Plan span at 2 days (no "1 days" in six languages), align the spec, design, docs, changelog and tests, and assert the invalid-value message in the dialog test.
+- [x] 5.5 Use the `Button` primitive in the custom-span dialog and a container query for the Quarter grid; verify `make i18n-check`, `make docs-check`, `make openspec-validate` and the affected vitest files.

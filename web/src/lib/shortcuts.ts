@@ -63,7 +63,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'go', title: 'Go to a view' },
   { id: 'tasks', title: 'Tasks in a list' },
   { id: 'board', title: 'Board and timeline' },
-  { id: 'calendar', title: 'Day, Week, Month, Quarter, Plan and Year calendar' },
+  { id: 'calendar', title: 'Calendar' },
   { id: 'filter', title: 'Views and boards' },
   { id: 'arrange', title: 'Group and order' },
   { id: 'trash', title: 'Trash and projects' },

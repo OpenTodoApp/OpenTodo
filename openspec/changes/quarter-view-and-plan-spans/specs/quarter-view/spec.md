@@ -1,11 +1,15 @@
 ## ADDED Requirements
 
 ### Requirement: Quarter mode
-The client SHALL provide a Quarter mode of the Calendar destination, inserted between Month and Plan in the `Day | Week | Month | Quarter | Plan | Year` range switch and reachable from `/quarter[/YYYY-MM-DD]`, from `g` then `q`, from the command palette and from the sidebar's Calendar item when Quarter was the last mode used on the device. It SHALL show the three calendar months of the quarter containing the anchor date (January–March, April–June, July–September or October–December; today when the address carries no date), titled `Q<n> <year>`. Switching to or from Quarter SHALL keep the anchor date, as the other modes do. The view SHALL render from local data and work offline.
+The client SHALL provide a Quarter mode of the Calendar destination, inserted between Month and Plan in the `Day | Week | Month | Quarter | Plan | Year` range switch and reachable from `/quarter[/YYYY-MM-DD]`, from `g` then `q`, from the command palette and from the sidebar's Calendar item when Quarter was the last mode used on the device. Below 640 px the Quarter button SHALL be omitted from the range switch so the six-button control does not wrap under the date navigation; Quarter SHALL remain reachable there with `g q` and the command palette. It SHALL show the three calendar months of the quarter containing the anchor date (January–March, April–June, July–September or October–December; today when the address carries no date), titled `Q<n> <year>`. Switching to or from Quarter SHALL keep the anchor date, as the other modes do. The view SHALL render from local data and work offline.
 
 #### Scenario: Open a quarter
 - **WHEN** the user is on 18 November 2026 in Month and chooses Quarter
 - **THEN** the Quarter view opens with October, November and December 2026, titled "Q4 2026", and the focused day stays the 18th
+
+#### Scenario: A phone keeps one row of chrome
+- **WHEN** the Calendar is opened at a width below 640 px in any mode
+- **THEN** the range switch shows Day, Week, Month, Plan and Year on one row beside the date navigation, and `g q` still opens Quarter
 
 #### Scenario: Quarter boundary
 - **WHEN** the address is `/quarter/2027-01-31`

@@ -2632,7 +2632,8 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Calendar accounts": [
     "web/src/lib/settingsCopy.ts"
@@ -4482,9 +4483,6 @@
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
-  ],
-  "Day, Week, Month, Quarter, Plan and Year calendar": [
-    "web/src/lib/shortcuts.ts"
   ],
   "Day-month": [
     "web/src/app/DateTimeSettings.tsx"

@@ -399,8 +399,9 @@ export interface GridPrefs {
 export const DEFAULT_GRID_PREFS: GridPrefs = { startHour: 6, endHour: 22, dayLength: 480, planDays: 14, countEvents: false }
 export const GRID_PREFS_META_KEY = 'calendar.grid'
 
-/** The shortest and longest Plan span a device may store (quarter-view-and-plan-spans D4): a day to a quarter. */
-export const MIN_PLAN_DAYS = 1
+/** The shortest and longest Plan span a device may store (quarter-view-and-plan-spans D4): two days to a quarter.
+ * One day is the Day view, and a "1 days" title would need a plural form in six languages. */
+export const MIN_PLAN_DAYS = 2
 export const MAX_PLAN_DAYS = 90
 
 /** Whether a stored or typed value is a Plan span we can draw. */

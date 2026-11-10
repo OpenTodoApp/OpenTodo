@@ -22,6 +22,6 @@ The Calendar's range switch is **Day | Week | Month | Quarter | Plan | Year**. Q
 
 ## Choose a Plan span
 
-**Plan** shows consecutive days as columns. Its page menu offers **3 days**, **7 days**, **14 days** (the default) and **21 days**, plus **Custom…** for any whole number of days from 1 to 90. A custom value is refused with a message until it is a whole number in that range; **Save** applies it, and the checked **Custom…** item then shows the current length. **Cancel** leaves the span alone.
+**Plan** shows consecutive days as columns. Its page menu offers **3 days**, **7 days**, **14 days** (the default) and **21 days**, plus **Custom…** for any whole number of days from 2 to 90. A custom value is refused with a message until it is a whole number in that range; **Save** applies it, and the checked **Custom…** item then shows the current length. **Cancel** leaves the span alone.
 
 The span lives in this device's grid preferences, like the day length and the grid hours; it is never synced, so another device signed into the same account keeps its own span. The page title, the columns, the projected occurrences and the week-based navigation all follow the chosen length. See [Plan the next days](calendar-views.md#plan-the-next-two-weeks) for what a column shows.

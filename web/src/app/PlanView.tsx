@@ -282,8 +282,8 @@ export function CustomSpanDialog({ span, onSave, onCancel }: { span: number; onS
         <NumberInput label={t('Number of days')} value={draft} min={MIN_PLAN_DAYS} max={MAX_PLAN_DAYS} unit={t('Days')}
           onChange={(n) => { if (n !== null) setDraft(n) }} onValidityChange={setValid} />
         <div className="flex flex-wrap items-center gap-2">
-          <button type="submit" className="ui-btn ui-btn--primary ui-btn--md" disabled={!valid} data-plan-custom-save>{t('Save')}</button>
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>{t('Cancel')}</button>
+          <Button type="submit" variant="primary" size="md" disabled={!valid} data-plan-custom-save>{t('Save')}</Button>
+          <Button variant="ghost" size="md" onClick={onCancel}>{t('Cancel')}</Button>
         </div>
       </form>
     </Dialog>

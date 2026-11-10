@@ -85,4 +85,18 @@ describe('quarter grid', () => {
     expect(day(r.container, '2027-02-18')?.getAttribute('aria-selected')).toBe('true')
     await r.unmount()
   })
+
+  // Review of PR #1064: a sixth button wrapped the whole switch onto a second row under
+  // the date navigation on a phone, so Quarter alone is hidden below 640 px.
+  it('hides only the Quarter button below 640 px, keeping the other five', async () => {
+    const r = await render(<Routed />)
+    const sw = r.container.querySelector('[role="group"][aria-label="Calendar range"]')!
+    const buttons = [...sw.querySelectorAll('button')]
+    expect(buttons).toHaveLength(6)
+    const hidden = buttons.filter((b) => b.className.includes('hidden sm:inline')).map((b) => b.textContent)
+    expect(hidden).toEqual(['Quarter'])
+    // Still reachable there: the shortcut opens Quarter even with the button hidden.
+    expect(SHORTCUTS.find((s) => s.id === 'go.quarter')?.keys).toEqual(['g q'])
+    await r.unmount()
+  })
 })

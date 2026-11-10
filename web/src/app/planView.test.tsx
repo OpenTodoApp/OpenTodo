@@ -430,7 +430,7 @@ describe('span and phone', () => {
     await r.unmount()
   })
 
-  it('refuses a custom span outside 1 to 90', async () => {
+  it('refuses a custom span outside 2 to 90, with a message', async () => {
     const r = await plan()
     await click(r.container.querySelector('[data-page-header] button[aria-label="More actions"]')!)
     await waitFor(() => !!document.querySelector('[data-plan-span="custom"]'), 'the custom item')
@@ -438,6 +438,8 @@ describe('span and phone', () => {
     const form = document.querySelector<HTMLFormElement>('[data-plan-custom-form]')!
     await type(form.querySelector('input')!, '91')
     expect(form.querySelector<HTMLButtonElement>('[data-plan-custom-save]')!.disabled).toBe(true)
+    // The spec promises a message, not just a disabled Save (NumberInput's range error).
+    expect(form.querySelector('[data-number-input]')!.textContent).toContain('Between 2 and 90 Days')
     expect(r.container.querySelectorAll('[role="gridcell"]').length).toBe(14)
     expect(await getMeta(GRID_PREFS_META_KEY, null)).not.toMatchObject({ planDays: 91 })
     await r.unmount()

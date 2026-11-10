@@ -55,6 +55,6 @@ Switching views keeps the date you're looking at. On a phone, each day shows how
 [Objectives](objectives.md), when on, sit in a strip above the columns.
 
 - Drag a task onto another day, or select it and press the arrows: a day (<kbd>←</kbd> <kbd>→</kbd>) or a week (<kbd>↑</kbd> <kbd>↓</kbd>). <kbd>q</kbd> adds a task on the focused day, <kbd>c</kbd> completes the selected one.
-- Choose 3, 7, 14 or 21 days, or **Custom…** (1–90), in the page's menu; this device remembers it.
+- Choose 3, 7, 14 or 21 days, or **Custom…** (2–90), in the page's menu; this device remembers it.
 
 On a phone the days are listed vertically.

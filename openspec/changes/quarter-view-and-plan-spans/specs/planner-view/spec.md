@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Plan mode
-The client SHALL provide a Plan mode of the Calendar destination, reachable by `g` then `Shift+C`, from the sidebar's Calendar item when it was the last mode used on the device, and from the Day | Week | Month | Quarter | Plan | Year switch, showing a span of consecutive days as columns starting on the anchor day (today by default, or the day carried in the address). The view SHALL render from local data and work offline. The span SHALL be one of the presets 3, 7, 14 or 21 days, 14 by default, or a custom whole number of days from 1 to 90 chosen in the page's menu; the choice SHALL be per device and never synced. A stored span that is missing, not a whole number, or outside 1 to 90 SHALL fall back to 14.
+The client SHALL provide a Plan mode of the Calendar destination, reachable by `g` then `Shift+C`, from the sidebar's Calendar item when it was the last mode used on the device, and from the Day | Week | Month | Quarter | Plan | Year switch, showing a span of consecutive days as columns starting on the anchor day (today by default, or the day carried in the address). The view SHALL render from local data and work offline. The span SHALL be one of the presets 3, 7, 14 or 21 days, 14 by default, or a custom whole number of days from 2 to 90 chosen in the page's menu; the choice SHALL be per device and never synced. A stored span that is missing, not a whole number, or outside 2 to 90 SHALL fall back to 14.
 
 #### Scenario: Open the plan offline
 - **WHEN** the device is offline and the user presses `g` then `Shift+C`
@@ -20,7 +20,7 @@ The client SHALL provide a Plan mode of the Calendar destination, reachable by `
 - **THEN** ten columns are shown, the title reads "Next 10 days", the "Custom…" item is checked and shows 10, and a reload on this device still shows ten columns
 
 #### Scenario: Custom span bounds
-- **WHEN** the user enters 0, 91, 10.5 or an empty value in the custom dialog
+- **WHEN** the user enters 0, 1, 91, 10.5 or an empty value in the custom dialog
 - **THEN** the value is refused with a message, the span is unchanged, and nothing is written to the meta row
 
 #### Scenario: An older or invalid stored row
