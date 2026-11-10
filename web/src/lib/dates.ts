@@ -2,6 +2,7 @@ import { t } from './i18n/catalog'
 import type { Due } from './types'
 import type { DateTimePrefs } from './userPrefs'
 import { createSignal } from './store'
+import { onPageVisibility, platform } from './platform'
 
 /** Local calendar date as YYYY-MM-DD. */
 export function todayISO(now = new Date()): string {
@@ -68,13 +69,7 @@ export function addDaysISO(iso: string, days: number): string {
 
 const DAY_MS = 86_400_000
 
-function resolveZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-  } catch {
-    return 'UTC'
-  }
-}
+const resolveZone = () => platform.timeZone.current()
 
 let currentZone = resolveZone()
 const zone = createSignal()
@@ -100,13 +95,13 @@ export function refreshViewerZone(): boolean {
 /** Subscribe to viewer-zone changes; returns the unsubscribe function. */
 export const onViewerZoneChange = zone.subscribe
 
-/** Re-resolve the zone whenever the page becomes visible again (design D5). */
-export function watchViewerZone(doc: Document = document): () => void {
-  const onVisibility = () => {
-    if (doc.visibilityState === 'visible') refreshViewerZone()
-  }
-  doc.addEventListener('visibilitychange', onVisibility)
-  return () => doc.removeEventListener('visibilitychange', onVisibility)
+/**
+ * Re-resolve the zone when the host says it may have changed: on the web, when
+ * the page becomes visible again (design D5); `doc` is a test's page.
+ */
+export function watchViewerZone(doc?: Document): () => void {
+  if (doc) return onPageVisibility((visible) => visible && refreshViewerZone(), doc)
+  return platform.timeZone.onChange(refreshViewerZone)
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>()

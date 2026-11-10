@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os'
 import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
+import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -900,4 +901,38 @@ test('a renamed make target fails the contributor pages check, naming the page',
     'docs/contributing/x.md: names `make i18n-check`, which is not a target of the Makefile',
     'docs/contributing/x.md: names `make screens`, which is not a target of the Makefile',
   ])
+})
+
+// ---- the native app's shared-code boundary (native-app-foundation D2, D3) ----
+
+test('the modules the app shares reach their host only through the platform port', () => {
+  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
+  assert.ok(modules.includes('web/src/lib/sync.ts'))
+  assert.deepEqual(boundaryProblems(root), [])
+})
+
+test('a browser global in a shared module fails the boundary check, naming the module, the global and the port', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'boundary-'))
+  try {
+    const rel = 'web/src/lib/sync.ts'
+    mkdirSync(path.join(dir, 'web/src/lib'), { recursive: true })
+    const src = read(rel)
+    writeFileSync(path.join(dir, rel), `${src}export const hidden = () => document.hidden\n`)
+    assert.deepEqual(boundaryProblems(dir, [rel, 'web/src/lib/gone.ts']), [
+      `${rel}:${src.split('\n').length} uses the browser global document; a module the app shares reaches its host through the platform port (web/src/lib/platform.ts)`,
+      `${SHARED_MODULES_FILE} lists web/src/lib/gone.ts, which does not exist`,
+    ])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('the boundary check ignores comments, strings and properties of the same name', () => {
+  const src = [
+    '// the window of the last sync, a document field',
+    "const s = 'window.open', t = `navigator`, u = \"localStorage\"",
+    '/* indexedDB */ const v = doc.document + x.window',
+    'if (typeof BroadcastChannel !== "undefined") {}',
+  ].join('\n')
+  assert.deepEqual(browserGlobals(src), [{ global: 'BroadcastChannel', line: 4 }])
 })
