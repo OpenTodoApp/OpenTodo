@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
+	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -77,6 +79,17 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["themes"] = themes
+	// What the in-app assistant remembers (assistant-memory D1): personal,
+	// deleted ones included, but never to read or agent tokens, which MCP
+	// clients and other AI agents hold: memory stays with the person.
+	if auth.FullAccess(httpx.TokenFrom(r.Context()).Scope) {
+		memory, err := s.sync.List(r.Context(), uid, "memory", true)
+		if err != nil {
+			s.internal(w, err)
+			return
+		}
+		out["memory"] = memory
+	}
 	// The caller's date and time preferences (date-time-preferences D1): personal,
 	// no REST collection, but part of what the user owns, so the export carries them.
 	prefs, err := s.sync.List(r.Context(), uid, "user_prefs", true)

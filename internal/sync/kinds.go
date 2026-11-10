@@ -158,10 +158,17 @@ const (
 	// MaxReminderRadius (reminder.radius_m, OpenSpec change location-reminders,
 	// design D1).
 	kRadius
+	// kMemoryText is a memory item's text (OpenSpec change assistant-memory,
+	// design D1): 1 to MaxMemoryText characters after trimming, on one line, or
+	// an encrypted account's ciphertext string in its place.
+	kMemoryText
 )
 
 // MaxObjectiveTitle is the longest objective title in characters (plan-objectives D2).
 const MaxObjectiveTitle = 140
+
+// MaxMemoryText is the longest memory item in characters (assistant-memory).
+const MaxMemoryText = 200
 
 // kindChecks validates an op value per field kind (see the kind constants
 // above). checkKind looks the check up; kinds_test.go keeps the table whole.
@@ -207,6 +214,7 @@ var kindChecks = map[kind]func(raw json.RawMessage) error{
 	kObjectiveTitle:  checkObjectiveTitle,
 	kObjectivePeriod: checkObjectivePeriod,
 	kRadius:          orNull(checkRadius),
+	kMemoryText:      checkMemoryText,
 }
 
 // checkRadius accepts a whole number of metres from MinReminderRadius to
@@ -232,6 +240,23 @@ func checkObjectiveTitle(raw json.RawMessage) error {
 	v = strings.TrimSpace(v)
 	if v == "" || utf8.RuneCountInString(v) > MaxObjectiveTitle || strings.ContainsAny(v, "\r\n") {
 		return fmt.Errorf("must be one line of 1 to %d characters", MaxObjectiveTitle)
+	}
+	return nil
+}
+
+// checkMemoryText accepts a one-line text of 1 to MaxMemoryText characters
+// after trimming, or ciphertext (assistant-memory D1).
+func checkMemoryText(raw json.RawMessage) error {
+	var v string
+	if err := json.Unmarshal(raw, &v); err != nil || isNullValue(raw) {
+		return errors.New("must be a string")
+	}
+	if e2ee.IsCiphertext(v) {
+		return nil
+	}
+	v = strings.TrimSpace(v)
+	if v == "" || utf8.RuneCountInString(v) > MaxMemoryText || strings.ContainsAny(v, "\r\n") {
+		return fmt.Errorf("must be one line of 1 to %d characters", MaxMemoryText)
 	}
 	return nil
 }

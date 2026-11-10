@@ -14,7 +14,7 @@ card: import
 
 Your tasks are yours. You can download all of them at any time, and bring tasks in from other places. Nothing is locked in.
 
-The export includes your [automation rules](automations.md) (`rules`), and importing your own export restores them with their ids.
+The export includes your [automation rules](automations.md) (`rules`), and importing your own export restores them with their ids. The same goes for [memory](assistant-memory.md) (`memory`).
 
 ## Download everything
 

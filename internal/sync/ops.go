@@ -963,6 +963,18 @@ var Schema = map[string]map[string]Field{
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
+	// memory: one fact the user told the in-app assistant to remember (OpenSpec
+	// change assistant-memory, design D1), such as "Does not work on Fridays".
+	// Personal like an objective, with ids unique on the server; sent with every
+	// assistant turn, never to MCP clients, agent tokens or routines. Devices keep
+	// at most 20 live items; the server does not count.
+	"memory": {
+		// The fact, one line of 1 to 200 characters (ciphertext for an encrypted account).
+		"text":       {Kind: kMemoryText, Default: `""`, Content: true},
+		"position":   {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
 	// review: when the user last finished a weekly review (OpenSpec change
 	// `stats-and-review`, design D4). One row with the entityId "me"; like
 	// user_prefs it resolves to the author's personal scope (the default branch of

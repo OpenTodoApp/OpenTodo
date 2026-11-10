@@ -109,6 +109,18 @@ describe('DisclosureNotice', () => {
     expect(onStatus.mock.calls[0][0].consented).toBe(false)
   })
 
+  // assistant-memory 2.3 ("Told once"): a consent before memory hears once that memory goes with every turn.
+  it('tells a consent before memory once, alone or with the complete list', async () => {
+    const mem = await body({ disclosure_notice: false, memory_notice: true, consent: { ...status.consent!, disclosure_version: 5, seen_version: 4 } })
+    expect(mem).toContain('The assistant now remembers what you tell it')
+    expect(mem).toContain('data-disclosure-memory')
+    expect(mem).not.toContain('is now complete')
+    const both = await body({ disclosure_notice: true, memory_notice: true })
+    expect(both).toContain('is now complete')
+    expect(both).toContain('data-disclosure-memory')
+    expect(await body({ disclosure_notice: false, memory_notice: false }, false)).not.toContain('data-disclosure-notice')
+  })
+
   it('shows the error when Got it fails', async () => {
     api.assistantDisclosureSeen.mockRejectedValue(new Error('Server unreachable'))
     const { container } = await render(<DisclosureNotice status={status} connected />)

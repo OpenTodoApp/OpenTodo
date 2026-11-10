@@ -1,0 +1,184 @@
+[
+  {
+    "name": "plain",
+    "live": [
+      "Anna is my manager"
+    ],
+    "args": {
+      "text": "Does not work on Fridays"
+    },
+    "text": "Does not work on Fridays"
+  },
+  {
+    "name": "whitespace and lines",
+    "live": [],
+    "args": {
+      "text": "  Mornings are\n\tfor  deep work  "
+    },
+    "text": "Mornings are for deep work"
+  },
+  {
+    "name": "200 characters",
+    "live": [],
+    "args": {
+      "text": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+    },
+    "text": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+  },
+  {
+    "name": "201 characters",
+    "live": [],
+    "args": {
+      "text": "ééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé"
+    },
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "empty",
+    "live": [],
+    "args": {
+      "text": "  "
+    },
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "missing",
+    "live": [],
+    "args": {},
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "unknown argument",
+    "live": [],
+    "args": {
+      "text": "Fine",
+      "pin": true
+    },
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "not a string",
+    "live": [],
+    "args": {
+      "text": 3
+    },
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "ciphertext",
+    "live": [],
+    "args": {
+      "text": "enc:v1:AAAA"
+    },
+    "error": "invalid_arguments"
+  },
+  {
+    "name": "duplicate ignoring case",
+    "live": [
+      "Does not work on Fridays"
+    ],
+    "args": {
+      "text": "does NOT work on fridays"
+    },
+    "error": "already_remembered"
+  },
+  {
+    "name": "duplicate in the draft",
+    "live": [],
+    "draft": [
+      "Likes tea"
+    ],
+    "args": {
+      "text": "Likes tea"
+    },
+    "error": "already_remembered"
+  },
+  {
+    "name": "twentieth",
+    "live": [
+      "Fact a",
+      "Fact b",
+      "Fact c",
+      "Fact d",
+      "Fact e",
+      "Fact f",
+      "Fact g",
+      "Fact h",
+      "Fact i",
+      "Fact j",
+      "Fact k",
+      "Fact l",
+      "Fact m",
+      "Fact n",
+      "Fact o",
+      "Fact p",
+      "Fact q",
+      "Fact r",
+      "Fact s"
+    ],
+    "args": {
+      "text": "Twentieth"
+    },
+    "text": "Twentieth"
+  },
+  {
+    "name": "full",
+    "live": [
+      "Fact a",
+      "Fact b",
+      "Fact c",
+      "Fact d",
+      "Fact e",
+      "Fact f",
+      "Fact g",
+      "Fact h",
+      "Fact i",
+      "Fact j",
+      "Fact k",
+      "Fact l",
+      "Fact m",
+      "Fact n",
+      "Fact o",
+      "Fact p",
+      "Fact q",
+      "Fact r",
+      "Fact s",
+      "Fact t"
+    ],
+    "args": {
+      "text": "Twenty-first"
+    },
+    "error": "memory_full"
+  },
+  {
+    "name": "full with the draft",
+    "live": [
+      "Fact a",
+      "Fact b",
+      "Fact c",
+      "Fact d",
+      "Fact e",
+      "Fact f",
+      "Fact g",
+      "Fact h",
+      "Fact i",
+      "Fact j",
+      "Fact k",
+      "Fact l",
+      "Fact m",
+      "Fact n",
+      "Fact o",
+      "Fact p",
+      "Fact q",
+      "Fact r",
+      "Fact s"
+    ],
+    "draft": [
+      "Twentieth"
+    ],
+    "args": {
+      "text": "Twenty-first"
+    },
+    "error": "memory_full"
+  }
+]

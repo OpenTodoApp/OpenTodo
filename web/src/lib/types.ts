@@ -1,12 +1,12 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, MemoryItemFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective' | 'memory'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective', 'memory']
 
 export interface Op {
   id: string
@@ -357,6 +357,22 @@ export interface Objective extends ObjectiveFields {
   period: string
   position: number
   done_at: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
+/**
+ * One fact the user asked the assistant to remember (OpenSpec change
+ * `assistant-memory`): personal, at most 20 live, sent with every assistant
+ * turn and never to MCP clients or routines. A text this device could not
+ * decrypt is the placeholder string.
+ */
+export interface MemoryItem extends MemoryItemFields {
+  id: string
+  text: string
+  position: number
   created_at: number
   deleted_at: number | null
   _clock: Clock

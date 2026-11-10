@@ -11,7 +11,7 @@ order: 79
 
 <picture><source srcset="images/assistant-settings-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-settings-light.webp" alt="Settings, Integrations, the Assistant card: the provider and model in use, this month's usage, and the switch Small changes without review."></picture>
 
-**Settings → Integrations → Assistant** holds your consent, which assistant you use, this month's usage, **Small changes without review** (this device) and **Clear conversations on this device**, which are stored only on this device. The owner's part of the card is described in [Set up the assistant](assistant-setup.md).
+**Settings → Integrations → Assistant** holds your consent, which assistant you use, this month's usage, **Small changes without review** (this device), **Clear conversations on this device**, which are stored only on this device, and [Memory](assistant-memory.md). The owner's part of the card is described in [Set up the assistant](assistant-setup.md).
 
 Your consent also covers the [AI steps of routines](routines.md#ai-steps), which send what they read to the same provider on a schedule, while you may not be looking. If you accepted before routines had AI steps, **Accept for routines** asks again; your chats keep working meanwhile. The usage counts the month's routine calls separately too.
 
