@@ -1,37 +1,24 @@
-// Device storage (wave 4, W5): localStorage and sessionStorage behind calls that
-// never throw. Storage may be missing (a worker, a test), blocked (privacy
-// settings) or full (quota); then a read returns the fallback and a write is
-// dropped.
+// Device storage (wave 4, W5): the host's preferences and session values
+// (localStorage and sessionStorage on the web, through the platform port) behind
+// calls that never throw. Storage may be missing (a worker, a test), blocked
+// (privacy settings) or full (quota); then a read returns the fallback and a write
+// is dropped.
 import { useSyncExternalStore } from 'react'
+import { platform } from './platform'
 import { createSignal, createStore, type Store } from './store'
 
 export type StorageArea = 'local' | 'session'
 
-function area(which: StorageArea): Storage | null {
-  try {
-    if (which === 'session') return typeof sessionStorage === 'undefined' ? null : sessionStorage
-    return typeof localStorage === 'undefined' ? null : localStorage
-  } catch {
-    return null
-  }
-}
+const area = (which: StorageArea) => which === 'session' ? platform.session : platform.prefs
 
 /** The stored text, or null when absent or unreadable. */
 export function readString(key: string, which: StorageArea = 'local'): string | null {
-  try { return area(which)?.getItem(key) ?? null } catch { return null }
+  return area(which).get(key)
 }
 
 /** Stores text; null removes the key. Returns whether the storage took it. */
 export function writeString(key: string, value: string | null, which: StorageArea = 'local'): boolean {
-  try {
-    const s = area(which)
-    if (!s) return false
-    if (value === null) s.removeItem(key)
-    else s.setItem(key, value)
-    return true
-  } catch {
-    return false
-  }
+  return area(which).set(key, value)
 }
 
 export function removeItem(key: string, which: StorageArea = 'local'): void {
@@ -116,11 +103,10 @@ export function createStoredValue<T>(key: string, codec: StoredCodec<T>, opts: {
   const subscribe = (listener: () => void) => {
     const off = changes.subscribe(listener)
     if (!opts.crossTab) return off
-    const onStorage = (e: StorageEvent) => { if (e.key === key || e.key === null) listener() }
-    if (typeof window !== 'undefined') window.addEventListener('storage', onStorage)
+    const offOther = platform.prefs.onChange((k) => { if (k === key || k === null) listener() })
     return () => {
       off()
-      if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage)
+      offOther()
     }
   }
   return {

@@ -25,7 +25,7 @@ export async function clearDeviceData(): Promise<void> {
   await stopSyncAndWait()
   await withSyncLock(() => clearLocalData())
   // Files shared to the app and not saved yet (OpenSpec attachments D9).
-  await clearInbox().catch(() => undefined)
+  await clearInbox(indexedDB).catch(() => undefined)
   forgetMemoryKeys()
   // The badge on the app icon belongs to the account (app-icon-badge).
   await clearBadge().catch(() => undefined)

@@ -139,11 +139,6 @@ export function openInMapsHref(lat: number, lon: number, phone: boolean): string
   return phone ? `geo:${a},${o}?q=${a},${o}` : `https://www.openstreetmap.org/?mlat=${a}&mlon=${o}#map=17/${a}/${o}`
 }
 
-/** True on a touch-first phone, where `geo:` opens the maps app. */
-export function isPhone(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
-}
-
 // ---- writes ----
 
 /** Sets or clears a task's location as one edit (one whole value, design D1). */

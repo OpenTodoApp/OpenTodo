@@ -3,8 +3,9 @@
 // server's origin only. Everything here is optional: outside a shell `shell()` is
 // null and every caller keeps today's browser behaviour. A method the shell does not
 // list in `capabilities` is never called, so an older shell keeps working for the
-// capabilities both sides know.
-
+// capabilities both sides know. The bridge comes from the platform port
+// (native-app-foundation D3): the native app has no web view and no bridge.
+import { platform } from './platform'
 
 /** The bridge version this web app speaks. */
 export const BRIDGE_VERSION = 1
@@ -105,8 +106,7 @@ declare global {
 
 /** The shell's bridge, or null in a browser (or a bridge of an unknown shape). */
 export function shell(): OpenTodoShell | null {
-  if (typeof window === 'undefined') return null
-  const s = window.opentodoShell
+  const s = platform.shell()
   if (!s || typeof s !== 'object' || typeof s.bridge !== 'number' || !Array.isArray(s.capabilities)) return null
   return s
 }
@@ -273,10 +273,10 @@ export function setSystemBars(color: string): boolean {
 }
 
 /** True for an absolute http(s) URL of another origin than the page's. */
-function external(href: string): boolean {
+function external(href: string, page: Location): boolean {
   try {
-    const u = new URL(href, window.location.href)
-    return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin !== window.location.origin
+    const u = new URL(href, page.href)
+    return (u.protocol === 'http:' || u.protocol === 'https:') && u.origin !== page.origin
   } catch {
     return false
   }
@@ -288,22 +288,24 @@ function external(href: string): boolean {
  * carries the bridge; `window.open` of such a URL does the same. Does nothing in a
  * browser. Returns the uninstall function.
  */
-export function installShellLinks(doc: Document = document): () => void {
-  if (!has('links')) return () => {}
+export function installShellLinks(doc: Document): () => void {
+  const win = doc.defaultView
+  if (!win || !has('links')) return () => {}
+  const page = win.location
   const onClick = (e: MouseEvent) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
     const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null
     if (!a) return
     const href = a.getAttribute('href') ?? ''
-    if (a.target !== '_blank' && !external(href)) return
-    if (openExternal(new URL(href, window.location.href).href)) e.preventDefault()
+    if (a.target !== '_blank' && !external(href, page)) return
+    if (openExternal(new URL(href, page.href).href)) e.preventDefault()
   }
   doc.addEventListener('click', onClick)
-  const original = window.open
-  window.open = ((url?: string | URL, target?: string, features?: string) => {
+  const original = win.open
+  win.open = ((url?: string | URL, target?: string, features?: string) => {
     const href = url == null ? '' : String(url)
-    if (href && (target === '_blank' || external(href)) && openExternal(new URL(href, window.location.href).href)) return null
-    return original.call(window, url, target, features)
-  }) as typeof window.open
-  return () => { doc.removeEventListener('click', onClick); window.open = original }
+    if (href && (target === '_blank' || external(href, page)) && openExternal(new URL(href, page.href).href)) return null
+    return original.call(win, url, target, features)
+  }) as typeof win.open
+  return () => { doc.removeEventListener('click', onClick); win.open = original }
 }
