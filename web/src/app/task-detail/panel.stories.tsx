@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge, Icon, IconButton, Tabs } from '../../ui'
 import type { FacetPart } from '../../lib/facets'
 import { useLabels, useProjects, useTask } from '../../lib/localData'
@@ -214,10 +214,15 @@ function SeededWhen() {
   const task = useTask(seeded.inboxTask)
   const projects = useProjects()
   const labels = useLabels()
+  // The When editor loads lazily (when-picker): the story stays pending until its control is on
+  // screen, so the visual check never captures the moment before the chunk arrives.
+  const [open, setOpen] = useState(false)
   useEffect(() => {
     if (!task) return
     const id = requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[data-facet="when"] [data-part="due"]')?.click())
-    return () => cancelAnimationFrame(id)
+    const seen = new MutationObserver(() => { if (document.querySelector('[data-when-control]')) { setOpen(true); seen.disconnect() } })
+    seen.observe(document.body, { childList: true, subtree: true })
+    return () => { cancelAnimationFrame(id); seen.disconnect() }
   }, [task?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- open once the task is there
   if (!task) return null
   return (
@@ -225,6 +230,7 @@ function SeededWhen() {
       <div className="p-4">
         <Facets task={task} readOnly={false} projects={projects} labelMap={new Map(labels.map((l) => [l.id, l]))} childCount={0} />
       </div>
+      {!open && <span data-story-pending />}
     </Panel>
   )
 }
