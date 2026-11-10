@@ -9,7 +9,12 @@
 // Script:
 //   "… overdue … / … Friday …"  → list_tasks(today) → schedule_tasks(overdue or due today → next Friday) → a short answer
 //   "… plan my day …"           → today_summary → show_tasks → show_calendar → a short answer (assistant-generative-ui)
-//   anything else               → today_summary → a list of what is due
+//   "… in progress …"           → list_projects → show_board(the "In progress" section) → a short answer
+//   "… errands …"               → search_tasks("errands") → show_map → suggest_followups → words only if asked for
+//   "… don't see any map …"     → an apology in words, no tool
+//   "what do I have to do …"    → today_summary → a lead-in with show_tasks(the one task) → its link once refused
+//                                 (the last four: the eval's assistant-eval-gaps scenarios)
+//   anything else              → today_summary → a list of what is due
 // It also answers the connection test (one tool, "Reply with OK").
 import { createServer } from 'node:http'
 
@@ -36,11 +41,15 @@ export function startFakeLLM(port = 18099, host = '127.0.0.1') {
         for (const part of t.split(/(?<= )/)) send({ choices: [{ index: 0, delta: { content: part } }] })
         finish('stop')
       }
-      const tool = (name, args) => {
+      // A tool call, optionally after some text in the same round (as real models do).
+      const tool = (name, args, before = '') => {
+        if (before) send({ choices: [{ index: 0, delta: { content: before } }] })
         send({ choices: [{ index: 0, delta: { tool_calls: [{ index: 0, id: `call_${name}`, type: 'function', function: { name, arguments: JSON.stringify(args) } }] } }] })
         finish('tool_calls')
       }
-      reply(body, { text, tool })
+      // An answer with no words: the round ends without text.
+      const silent = () => finish('stop')
+      reply(body, { text, tool, silent })
     })
   })
   return new Promise((resolve) => server.listen(port, host, () => resolve(server)))
@@ -65,7 +74,7 @@ function nextFriday(date) {
 
 const words = (date) => new Date(date + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
 
-function reply(body, { text, tool }) {
+function reply(body, { text, tool, silent }) {
   const msgs = body.messages ?? []
   const system = msgs.find((m) => m.role === 'system')?.content ?? ''
   if (system.startsWith('Connection test')) return text('OK')
@@ -75,8 +84,10 @@ function reply(body, { text, tool }) {
   const last = msgs[msgs.length - 1]
   const lastCall = [...msgs].reverse().find((m) => m.role === 'assistant' && m.tool_calls)?.tool_calls?.[0]?.function?.name
   const result = last?.role === 'tool' ? safeJSON(last.content) : null
+  const fresh = toolMsgs.length === 0 || last.role !== 'tool'
+  if (evalGaps({ question, fresh, lastCall, result, zone }, { text, tool, silent })) return
   const reschedule = /overdue|friday|move|reschedule/.test(question)
-  if (toolMsgs.length === 0 || last.role !== 'tool') {
+  if (fresh) {
     return reschedule ? tool('list_tasks', { view: 'today', timezone: zone }) : tool('today_summary', { timezone: zone })
   }
   // Write tools on request (assistant-lean-tools): ask for them first when only propose_changes is offered.
@@ -110,6 +121,56 @@ function reply(body, { text, tool }) {
     return text(`You have ${items.length} task${items.length === 1 ? '' : 's'} for today:\n\n${list}\n\nWant me to move the overdue ones to Friday?`)
   }
   return text('Done.')
+}
+
+// The paths of the eval scenarios a real model failed on (assistant-eval-gaps),
+// scripted the way that model went, so the server's fixes are what makes them
+// pass. Returns true when it answered.
+function evalGaps({ question, fresh, lastCall, result, zone }, { text, tool, silent }) {
+  // board-column: the project's sections come with list_projects, so the column is named.
+  if (/in progress/.test(question)) {
+    if (fresh) return tool('list_projects', {}), true
+    if (lastCall === 'list_projects') {
+      const p = (result?.projects ?? []).find((x) => (x.sections ?? []).some((s) => /in progress/i.test(s.untrusted_text?.name ?? '')))
+      if (!p) return text('Sections are unknown, so here is the whole board.'), true
+      const s = p.sections.find((x) => /in progress/i.test(x.untrusted_text?.name ?? ''))
+      return tool('show_board', { id: p.id, section_id: s.id }), true
+    }
+    if (lastCall === 'show_board') return text('Those are the cards in progress.'), true
+    return false
+  }
+  // errands-map and complaint-no-repeat: the search says "errands", the label is "errand".
+  if (/don't see any map|no map/.test(question)) {
+    return text('Sorry about that. The places may lack coordinates, or maps may be turned off on this server. I can list the errands with their addresses instead.'), true
+  }
+  if (/errands/.test(question)) {
+    if (fresh) return tool('search_tasks', { query: 'errands', timezone: zone }), true
+    if (lastCall === 'search_tasks') {
+      const ids = (result?.tasks ?? []).filter((t) => t.location?.lat !== undefined).map((t) => t.id)
+      // The model the eval caught answered with only follow-ups when the search found nothing.
+      if (ids.length === 0) return tool('suggest_followups', { suggestions: ['Add an errand'] }), true
+      return tool('show_map', { task_ids: ids }), true
+    }
+    if (lastCall === 'show_map') return tool('suggest_followups', { suggestions: ['Plan a route'] }), true
+    // Words only when the result asks for them: a model that ignores it would end silent.
+    if (lastCall === 'suggest_followups') return /no words yet/.test(result?.message ?? '') ? text('Your errands with a place are below.') : silent(), true
+    return false
+  }
+  // one-task-link: the model wrote a lead-in and showed the one task as a block.
+  if (/what do i have to do/.test(question)) {
+    if (fresh) return tool('today_summary', { timezone: zone }), true
+    if (lastCall === 'today_summary') {
+      const items = [...(result?.overdue ?? []), ...(result?.due_today ?? [])]
+      if (items.length !== 1) return false
+      return tool('show_tasks', { ids: [items[0].id] }, 'Today you only have one task:'), true
+    }
+    if (lastCall === 'show_tasks') {
+      if (result?.error === 'one_task') return text(`[Your one task](?task=${result.id}) is all; nothing else is due.`), true
+      return text('That is all for today.'), true
+    }
+    return false
+  }
+  return false
 }
 
 function safeJSON(s) {

@@ -141,7 +141,8 @@ func TestAnthropicRequestShape(t *testing.T) {
 	if res.Err != nil || res.Stop != StopEndTurn {
 		t.Fatalf("turn: %+v", res)
 	}
-	if text != "Looking. You have one task due on Wednesday." {
+	// A round's text after tool calls starts a new paragraph (assistant-eval-gaps).
+	if text != "Looking. \n\nYou have one task due on Wednesday." {
 		t.Fatalf("streamed text %q", text)
 	}
 	if res.Input != 250 || res.Output != 50 {

@@ -3,7 +3,7 @@
     {
       "name": "list_projects",
       "title": "List projects",
-      "description": "List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each. Archived projects are left out unless include_archived is true.",
+      "description": "List the user's projects (their own and shared ones they are a member of) with the number of open tasks in each and their sections (board columns) in order. Archived projects are left out unless include_archived is true.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
@@ -70,7 +70,7 @@
             "type": "boolean"
           },
           "label": {
-            "description": "Only tasks carrying this label (name, case-insensitive, or id).",
+            "description": "Only tasks carrying this label (name, case-insensitive, or id; a plural of a label's name finds it: errands for errand).",
             "type": "string"
           },
           "limit": {
@@ -165,7 +165,7 @@
     {
       "name": "search_tasks",
       "title": "Search tasks",
-      "description": "Find tasks whose title or description contains the query (case-insensitive). Open tasks only unless include_completed is true. Paged like list_tasks.",
+      "description": "Find tasks whose title or description contains the query (case-insensitive), or that carry a label named like it (the name holds the query, or the query is the name with a plural s or es: errands finds errand). Open tasks only unless include_completed is true. Paged like list_tasks.",
       "inputSchema": {
         "additionalProperties": false,
         "properties": {

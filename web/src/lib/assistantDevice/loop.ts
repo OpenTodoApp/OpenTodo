@@ -155,6 +155,29 @@ async function displayCall(call: ToolCall, turn: DisplayTurn, emit: Parameters<t
   }
 }
 
+/**
+ * A turn's text (answerText on the server, assistant-eval-gaps): a round's text after tool calls starts a new
+ * paragraph when the text so far did not end one, and the display state learns that the answer has words.
+ */
+export function answerText(emit: (t: string) => void, turn: DisplayTurn) {
+  let tail = ''
+  const out = (s: string) => {
+    tail = (tail + s).slice(-2)
+    emit(s)
+  }
+  const a = {
+    gap: false,
+    write: (s: string) => {
+      if (!s) return
+      const sep = a.gap && tail && !tail.endsWith('\n\n') ? (tail.endsWith('\n') ? '\n' : '\n\n') : ''
+      a.gap = false
+      out(sep + s)
+      turn.wrote = true
+    },
+  }
+  return a
+}
+
 /** One change per entity: later values win, the first base of each field is kept (finalise). */
 export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) => boolean): ProposedChange[] {
   const out: ProposedChange[] = []
@@ -206,7 +229,8 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
   let draft: ProposedChange[] = [...open]
-  const display: DisplayTurn = { shown: 0 }
+  const display: DisplayTurn = { shown: 0, chat: true }
+  const text = answerText((t) => onEvent({ type: 'text', text: t }), display)
   let input = 0
   let cached = 0
   let cacheWrite = 0
@@ -224,7 +248,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   for (let round = 0; round < manifest.limits.max_rounds; round++) {
     let r
     try {
-      r = await conv.next((t) => onEvent({ type: 'text', text: t }), signal)
+      r = await conv.next(text.write, signal)
     } catch (err) {
       if (signal?.aborted) throw err
       // The panel words device failures itself: the key is this device's, and a block may need a reload.
@@ -308,6 +332,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
           results.push({ id: call.id, content: res.content, isError: res.isError })
         }
         conv.addToolResults(results)
+        text.gap = true
         continue
       }
       default:

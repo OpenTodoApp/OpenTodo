@@ -63,6 +63,7 @@ func (r *Registry) searchTasks(ctx context.Context, userID string, a args) (map[
 // searchItems renders the snapshot's tasks that match a search.
 func (snap *snapshot) searchItems(needle, ws string, includeCompleted bool, loc *time.Location, today string) []keyed[taskOut] {
 	items := []keyed[taskOut]{}
+	labels := searchLabels(snap.labelList, needle)
 	for _, t := range snap.tasks {
 		if !snap.visible(t, false) || (!includeCompleted && !isOpen(t)) {
 			continue
@@ -70,7 +71,7 @@ func (snap *snapshot) searchItems(needle, ws string, includeCompleted bool, loc 
 		if ws != "" && snap.partition().Task(str(t, "id")) != ws {
 			continue
 		}
-		if !textMatches(rawStr(t, "title"), needle) && !textMatches(rawStr(t, "description"), needle) {
+		if !textMatches(rawStr(t, "title"), needle) && !textMatches(rawStr(t, "description"), needle) && !hasAny(stringList(t, "labels"), labels) {
 			continue
 		}
 		items = append(items, keyed[taskOut]{key: taskKey(t, loc), id: str(t, "id"), v: snap.render(t, loc, today, true)})
@@ -88,10 +89,10 @@ func textMatches(stored, needle string) bool {
 	return strings.Contains(strings.ToLower(stored), needle)
 }
 
-// searchFields are the task fields search_tasks' first pass reads: the text it
-// matches, and what rendering a match reads of other tasks (its blockers' state
+// searchFields are the task fields search_tasks' first pass reads: the text and
+// labels it matches, and what rendering a match reads of other tasks (its blockers' state
 // and its series' records; a split lineage reads every task).
-var searchFields = []string{"title", "description", "blocked_by", "series_id", "split_from"}
+var searchFields = []string{"title", "description", "labels", "blocked_by", "series_id", "split_from"}
 
 // searchReader narrows search_tasks' snapshot to the tasks its answer can
 // depend on (performance-10k: listing every task of a 10,000-task account was
@@ -108,6 +109,11 @@ func (r *Registry) searchReader(userID, needle, workspace string) taskReader {
 		return nil
 	}
 	return func(ctx context.Context) ([]opsync.Entity, bool, error) {
+		labelRows, err := r.list(ctx, userID, "label", false)
+		if err != nil {
+			return nil, false, err
+		}
+		labels := searchLabels(labelRows, needle)
 		vals, err := r.sync.FieldValues(ctx, userID, "task", searchFields)
 		if err != nil {
 			return nil, false, err
@@ -118,6 +124,14 @@ func (r *Registry) searchReader(userID, needle, workspace string) taskReader {
 			case "title", "description":
 				if textMatches(rawText(v.Value), needle) {
 					matched[v.EntityID] = true
+				}
+			case "labels":
+				if len(labels) > 0 {
+					var ids []string
+					_ = json.Unmarshal(v.Value, &ids)
+					if hasAny(ids, labels) {
+						matched[v.EntityID] = true
+					}
 				}
 			case "split_from":
 				if _, ok := opsync.DecodeSplitFrom(v.Value); ok {

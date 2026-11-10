@@ -35,7 +35,7 @@ export interface Manifest {
   images_note: string
   views: Record<string, string>
   messages: { refusal: string; cut_off: string; round_limit: string; block_limit: string; not_found: string; choice_asked: string
-    followups_shown: string; followups_once: string; followups_choice: string }
+    followups_shown: string; followups_once: string; followups_choice: string; followups_no_text: string; one_task: string }
   limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number; max_blocks: number; max_block_ids: number }
   default_anthropic_model: string
   anthropic_models: string[]
