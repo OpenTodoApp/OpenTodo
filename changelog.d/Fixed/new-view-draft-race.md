@@ -1,0 +1,1 @@
+- **New view keeps what you type while the app is still loading.** On a new device, a query typed before the first sync finished could be cleared when the workspace list arrived.
