@@ -1,16 +1,16 @@
-// The pieces of the Focus screen (OpenSpec change focus-mode, design D6, D13): the
-// timer card, the done state, the task (title, project, due, read-only notes,
-// subtasks) and the two dialogs (the task picker and the Countdown length).
-import { useEffect, useRef, useState, type RefObject } from 'react'
-import { Button, ComboboxPanel, Dialog, Field, Icon, Input } from '../../ui'
+// The pieces of the Focus screen (OpenSpec changes focus-mode and focus-redesign):
+// the stage (project, title, next open subtask, the time, the state line), the
+// "Notes and subtasks" disclosure, and the two dialogs (the task picker and the
+// Countdown length). The screen composes them in FocusView.
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Button, ComboboxPanel, Dialog, Field, Icon, Input, Tooltip } from '../../ui'
 import { formatDueLong } from '../../lib/dates'
-import { useProjects, useSubtasks } from '../../lib/localData'
+import { createStoredValue } from '../../lib/deviceStorage'
+import { useProjects } from '../../lib/localData'
 import { COUNTDOWN_BOUNDS, modeName, type FocusMode, type FocusPrefs } from '../../lib/focus/prefs'
 import { clockText, displayMs, inRun, isRunning, type FocusState } from '../../lib/focus/timer'
-import { EXTEND_MINUTES } from '../../lib/focus/session'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { keysOf } from '../../lib/shortcuts'
 import { Markdown } from '../Markdown'
 import { openTaskPanel } from '../panel'
 import { AddSubtask } from '../task-detail/TaskDetail'
@@ -25,122 +25,151 @@ export function idlePlanMs(mode: FocusMode, prefs: FocusPrefs, lengthMinutes: nu
   return mode === 'pomodoro' ? prefs.workMinutes * 60_000 : mode === 'countdown' ? lengthMinutes * 60_000 : 0
 }
 
-/** The line under the digits: which phase runs, or why it waits. */
-export function phaseLine(s: FocusState | null, mode: FocusMode, prefs: FocusPrefs): string {
-  if (!s || s.phase === 'idle') return t('Ready: {mode}', { mode: modeName(mode) })
-  if (s.phase === 'done') return s.ended?.kind === 'break' ? t('Break over') : t('Session done')
+/**
+ * The state line under the time (focus-redesign D2): the mode where it matters, the
+ * phase and the cycle position, as "Pomodoro · Work · 2 of 4", "Flowtime",
+ * "Countdown · 25 min", "Short break" or "Paused". The done state brings its own line.
+ */
+export function stateLine(s: FocusState | null, mode: FocusMode, prefs: FocusPrefs): string {
+  const name = modeName(mode)
+  if (!s || s.phase === 'idle' || s.phase === 'done') return [name, t('Ready')].join(' · ')
   if (s.resumedAt === null) return s.pausedReason === 'elsewhere' ? t('Paused: the time entry was stopped on another device. Start again to go on.') : t('Paused')
   if (s.phase === 'break') return s.breakKind === 'long' ? t('Long break') : t('Short break')
-  if (s.mode === 'pomodoro') return t('Work session {n} of {total}', { n: s.cycle, total: prefs.longBreakEvery })
-  return s.mode === 'flowtime' ? t('Working, counting up') : t('Countdown')
+  if (s.mode === 'pomodoro') return [name, t('Work'), t('{n} of {total}', { n: s.cycle, total: prefs.longBreakEvery })].join(' · ')
+  if (s.mode === 'countdown') return [name, t('{n} min', { n: Math.round((s.plannedMs ?? s.lengthMinutes * 60_000) / 60_000) })].join(' · ')
+  return name
 }
 
-export interface CardActions {
-  onBreak: () => void
-  onStop: () => void
-  onNext: () => void
-  /** "+5 min" and "+15 min" over a break that started on its own at the end of work (focus-everywhere D4). */
-  onExtend?: (minutes: number) => void
-}
-
-/** "+5 min" and "+15 min" (focus-everywhere D4): the finished work session goes on for that long. */
-function ExtendButtons({ onExtend }: { onExtend: (minutes: number) => void }) {
-  return (
-    <>
-      {EXTEND_MINUTES.map((m) => (
-        <Button key={m} size="sm" variant="secondary" onClick={() => onExtend(m)} data-focus-extend={m}>{t('+{n} min', { n: m })}</Button>
-      ))}
-    </>
-  )
-}
-
-/** The timer: digits (hidden from assistive technology; the live region speaks), the phase line and the secondary buttons. */
-export function TimerCard({ session, mode, prefs, now, actions }: { session: FocusState | null; mode: FocusMode; prefs: FocusPrefs; now: number; actions: CardActions }) {
-  const ms = session ? displayMs(session, now, idlePlanMs(mode, prefs, session.lengthMinutes)) : idlePlanMs(mode, prefs, 25) ?? 0
-  const working = session?.phase === 'work'
-  return (
-    <section aria-label={t('Timer')} data-focus-timer={session?.phase ?? 'idle'} data-running={isRunning(session) || undefined}
-      className="rounded-card border border-default bg-surface p-5 text-center shadow-1">
-      <p className="focus-clock" aria-hidden="true" data-focus-clock>{clockText(ms)}</p>
-      <p className="mt-1 text-meta text-muted transition-opacity duration-(--duration-ui)" data-focus-phase>{phaseLine(session, session && inRun(session) ? session.mode : mode, prefs)}</p>
-      {session?.entryId && <p className="mt-1 flex items-center justify-center gap-1 text-hint text-faint" data-focus-logged><Icon name="clock" size="xs" />{t('Logged as time on this task')}</p>}
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {actions.onExtend && <ExtendButtons onExtend={actions.onExtend} />}
-        {(working || session?.phase === 'break') && (
-          <Button size="sm" variant="secondary" onClick={actions.onBreak} aria-keyshortcuts="b" data-focus-break>
-            {session?.phase === 'break' ? t('End the break') : t('Take a break')} <span className="ui-kbd ml-1">{keysOf('focus.break')}</span>
-          </Button>
-        )}
-        {working && session?.mode === 'flowtime' && <Button size="sm" variant="secondary" onClick={actions.onStop} data-focus-stop>{t('Stop the timer')}</Button>}
-        <Button size="sm" variant="ghost" onClick={actions.onNext} aria-keyshortcuts="n" data-focus-next>
-          {t('Next task')} <span className="ui-kbd ml-1">{keysOf('focus.next')}</span>
-        </Button>
-      </div>
-    </section>
-  )
-}
-
+/** What ended and what comes next: the done state's line and its one primary step first (focus-redesign D4). */
 export interface DoneAction { key: string; label: string; run: () => void }
 
-/** What ended, the time worked, and the next steps; its first action takes the focus unless the user is typing. */
-export function DoneState({ session, title, heading, actions, first, onExtend }: { session: FocusState; title: string; heading: string; actions: DoneAction[]; first: RefObject<HTMLButtonElement | null>; onExtend?: (minutes: number) => void }) {
-  const worked = session.ended?.workedMs ?? 0
+/**
+ * The stage (focus-redesign D1): one centred column, no card. The project small and
+ * muted, the title at the display step (three lines at most, the whole title in its
+ * name), the next open subtask, the time, the state line, then `children`: the
+ * controls row, or the done state's. A break dims the title; the page takes the
+ * sunken tone (FocusView).
+ */
+export function FocusStage({ task, session, mode, prefs, now, nextSubtask, done, children }: {
+  task: Task
+  session: FocusState | null
+  mode: FocusMode
+  prefs: FocusPrefs
+  now: number
+  nextSubtask: Task | null
+  /** The done state's line: what ended, and the completed task when the stage already shows the next one. */
+  done?: { kind: 'work' | 'break' | 'complete'; heading: string; title?: string }
+  children: ReactNode
+}) {
+  const projects = useProjects()
+  const project = task.project_id ? projects.find((p) => p.id === task.project_id) : null
+  const ms = session ? displayMs(session, now, idlePlanMs(mode, prefs, session.lengthMinutes)) : idlePlanMs(mode, prefs, 25) ?? 0
+  const phase = session?.phase ?? 'idle'
+  const resting = phase === 'break'
+  const title = task.title || t('Untitled')
+  const digits = <span className="focus-clock" data-focus-clock>{clockText(ms)}</span>
+  const line = stateLine(session, session && inRun(session) ? session.mode : mode, prefs)
+  const logged = !!session?.entryId && phase === 'work'
   return (
-    <section aria-labelledby="focus-done-heading" data-focus-done={session.ended?.kind} className="mb-4 rounded-card border border-default bg-surface p-4 shadow-1">
-      <h2 id="focus-done-heading" className="text-h3 font-semibold text-strong">{heading}</h2>
-      <p className="mt-1 text-meta text-muted">
-        {session.ended?.kind !== 'break' && <span data-focus-worked>{t('{time} worked', { time: clockText(worked) })}</span>}
-        {session.ended?.kind !== 'break' && title && ' · '}
-        <span className="user-text">{title}</span>
-      </p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {actions.map((a, i) => (
-          <Button key={a.key} ref={i === 0 ? first : undefined} size="sm" variant={i === 0 ? 'primary' : 'secondary'} onClick={a.run} data-done-action={a.key}>{a.label}</Button>
-        ))}
-        {onExtend && <ExtendButtons onExtend={onExtend} />}
+    <section className="focus-stage" data-focus-task={task.id} data-focus-done={done?.kind} aria-labelledby="focus-task-title">
+      <p className="min-h-[1.125rem] text-meta text-muted" data-focus-project>{project?.name ?? ''}</p>
+      <h2 id="focus-task-title" aria-label={title} data-focus-title data-resting={resting || undefined}
+        className="focus-title user-text">{title}</h2>
+      {nextSubtask && <NextSubtask task={nextSubtask} />}
+      <div className="mt-10 flex flex-col items-center md:mt-12" data-focus-timer={phase} data-running={isRunning(session) || undefined}>
+        {done
+          // A finished run is still: the time worked is said in words, not hidden.
+          ? <p className="focus-clock-line" data-focus-worked>{t.rich('{time} worked', { time: digits })}</p>
+          : <p className="focus-clock-line" aria-hidden="true">{digits}</p>}
+        {done ? (
+          <h3 id="focus-done-heading" className="mt-2 text-meta font-medium text-default">
+            {done.heading}{done.title && <span className="font-normal text-muted"> · <span className="user-text">{done.title}</span></span>}
+          </h3>
+        ) : logged ? (
+          <Tooltip label={t('Logged as time on this task')}>
+            <p className="mt-2 text-meta text-muted" data-focus-phase data-focus-logged>{line}</p>
+          </Tooltip>
+        ) : <p className="mt-2 text-meta text-muted" data-focus-phase>{line}</p>}
       </div>
+      {children}
     </section>
   )
 }
 
-/** The task: title, project, due, notes (read-only here; a click opens the panel to edit) and the subtasks as a checklist. */
-export function FocusTask({ task }: { task: Task }) {
+/** The next open subtask as one line (focus-redesign D1): ticking it completes it with Undo and the following one takes its place. */
+function NextSubtask({ task }: { task: Task }) {
+  const title = task.title || t('Untitled')
+  return (
+    <div className="mt-4 flex min-w-0 max-w-full items-center justify-center gap-2 text-body text-muted" data-focus-next-subtask={task.id}>
+      <SubtaskCheck task={task} />
+      <span className="user-text min-w-0 truncate">{title}</span>
+    </div>
+  )
+}
+
+/** A subtask's round checkbox, as in the lists: ticks or reopens it with Undo. */
+function SubtaskCheck({ task }: { task: Task }) {
+  const done = !!task.completed_at
+  const title = task.title || t('Untitled')
+  return (
+    <button type="button" className="group/check touch-target inline-flex size-6 shrink-0 items-center justify-center rounded-full"
+      aria-label={done ? t('Reopen {title}', { title }) : t('Complete {title}', { title })} onClick={() => act(completeWithUndo(task.id, !done))}>
+      <span className={`flex size-4 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${done ? 'border-input bg-faint text-on-accent' : 'border-input group-hover/check:border-strong group-hover/check:bg-success-soft'}`}>
+        {done && <Icon name="check" size="xs" />}
+      </span>
+    </button>
+  )
+}
+
+/** The controls row under the time: wraps on a phone, centred. */
+export function StageControls({ children }: { children: ReactNode }) {
+  return <div className="mt-8 flex flex-wrap items-center justify-center gap-2" data-focus-controls>{children}</div>
+}
+
+// "Notes and subtasks" (focus-redesign D3): closed by default, remembered on this device only.
+export const DETAILS_KEY = 'opentodo.focusDetails'
+const details = createStoredValue<boolean>(DETAILS_KEY, { parse: (raw) => raw === '1', serialize: (on) => (on ? '1' : null) })
+export const setFocusDetailsOpen = details.set
+
+/** The task's due, notes (read-only; Edit opens the panel) and the whole checklist, behind one disclosure. */
+export function FocusDetails({ task, subtasks }: { task: Task; subtasks: readonly Task[] }) {
+  const open = details.use()
   const zone = useViewerZone()
-  const projects = useProjects()
-  const subtasks = useSubtasks(task.id)
-  const project = task.project_id ? projects.find((p) => p.id === task.project_id) : null
+  const body = useId()
   const done = subtasks.filter((c) => c.completed_at).length
   return (
-    <article className="mt-4 space-y-3" data-focus-task={task.id} aria-labelledby="focus-task-title">
-      <h2 id="focus-task-title" className="user-text text-h2 font-semibold text-strong">{task.title || t('Untitled')}</h2>
-      {(project || task.due) && (
-        <p className="flex flex-wrap gap-2 text-meta text-muted">
-          {project && <span className="rounded-chip bg-sunken px-1.5" data-focus-project>{project.name}</span>}
-          {task.due && <span>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</span>}
-        </p>
+    <div className="mt-12 flex w-full max-w-xl flex-col items-center" data-focus-details={open ? 'open' : 'closed'}>
+      <button type="button" aria-expanded={open} aria-controls={body} onClick={() => details.set(!open)} data-focus-details-toggle
+        className="ui-btn ui-btn--ghost ui-btn--sm text-muted">
+        <Icon name={open ? 'chevron-down' : 'chevron-right'} size="sm" />
+        {t('Notes and subtasks')}
+        {subtasks.length > 0 && <span className="tabular-nums text-faint">{done}/{subtasks.length}</span>}
+      </button>
+      {open && (
+        <div id={body} className="mt-4 w-full space-y-4 text-left">
+          {task.due && <p className="text-meta text-muted" data-focus-due>{t('Due {date}', { date: formatDueLong(task.due, zone) })}</p>}
+          {task.description?.trim()
+            ? (
+              <div className="text-body" data-focus-notes>
+                <Markdown source={task.description} />
+                <Button size="sm" variant="ghost" className="-ml-2.5 mt-1" onClick={() => openTaskPanel(task.id)}>{t('Edit the notes')}</Button>
+              </div>
+            )
+            : <Button size="sm" variant="ghost" className="-ml-2.5" onClick={() => openTaskPanel(task.id)} data-focus-notes-add>{t('Add notes')}</Button>}
+          <section aria-label={t('Subtasks')} data-focus-subtasks>
+            <ul className="space-y-0.5 empty:hidden">
+              {subtasks.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 py-1">
+                  <SubtaskCheck task={c} />
+                  <span className={`min-w-0 flex-1 truncate user-text text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`}>{c.title || t('Untitled')}</span>
+                </li>
+              ))}
+            </ul>
+            <AddSubtask parent={task} />
+          </section>
+        </div>
       )}
-      {task.description?.trim()
-        ? (
-          <div className="relative rounded-control text-body" data-focus-notes>
-            <Markdown source={task.description} />
-            <Button size="sm" variant="ghost" className="mt-1" onClick={() => openTaskPanel(task.id)}>{t('Edit the notes')}</Button>
-          </div>
-        )
-        : <Button size="sm" variant="ghost" onClick={() => openTaskPanel(task.id)} data-focus-notes-add>{t('Add notes')}</Button>}
-      <section aria-label={t('Subtasks')} data-focus-subtasks>
-        {subtasks.length > 0 && <h3 className="mb-1 text-meta font-semibold text-muted">{t('Subtasks')} <span className="font-normal text-faint">{done}/{subtasks.length}</span></h3>}
-        <ul className="space-y-0.5 empty:hidden">
-          {subtasks.map((c) => (
-            <li key={c.id} className="flex items-center gap-2 rounded-control px-1 py-1">
-              <input type="checkbox" className="h-4 w-4 shrink-0" checked={!!c.completed_at} onChange={() => act(completeWithUndo(c.id, !c.completed_at))}
-                aria-label={c.completed_at ? t('Reopen {title}', { title: c.title }) : t('Complete {title}', { title: c.title })} />
-              <span className={`min-w-0 flex-1 truncate user-text text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`}>{c.title || t('Untitled')}</span>
-            </li>
-          ))}
-        </ul>
-        <AddSubtask parent={task} />
-      </section>
-    </article>
+    </div>
   )
 }
 
