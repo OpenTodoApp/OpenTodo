@@ -226,6 +226,9 @@ func SystemPrompt(in TurnInput, now time.Time) string {
 			b.WriteString(agenttools.SlotDayNote(w.StartHour, w.EndHour) + "\n")
 		}
 	}
+	if leanTurn(in) {
+		b.WriteString(LeanNote)
+	}
 	b.WriteString(openSection(changesOf(in.Open)))
 	return b.String()
 }
@@ -274,7 +277,9 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 		log = slog.New(slog.DiscardHandler)
 	}
 	caller := Caller(in.UserID)
-	var tools []ToolDef
+	// tools are offered from the first round; writes join them in a turn
+	// without a skill once the model calls propose_changes (assistant-lean-tools D1).
+	var tools, writes []ToolDef
 	for _, d := range l.Tools.Definitions(caller) {
 		if notInApp[d.Name] {
 			continue
@@ -282,7 +287,12 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 		if in.Skill != nil && !in.Skill.Allows(d.Name) {
 			continue // a skill offers only its own tools (assistant-skills D2)
 		}
-		tools = append(tools, ToolDef{Name: d.Name, Description: d.Description, Schema: d.InputSchema})
+		def := ToolDef{Name: d.Name, Description: d.Description, Schema: d.InputSchema}
+		if in.Skill == nil && d.Kind == agenttools.KindWrite {
+			writes = append(writes, def)
+			continue
+		}
+		tools = append(tools, def)
 	}
 	for _, d := range DisplayTools {
 		if displayOffered(d.Name, in.Skill, in.View) {
@@ -290,7 +300,7 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 		}
 	}
 	if in.Skill == nil {
-		tools = append(tools, RememberTool) // in-app only (assistant-memory D2)
+		writes = append(writes, RememberTool) // in-app only (assistant-memory D2)
 	}
 	if in.Memory == nil {
 		mem, err := l.Memory(ctx, in.UserID)
@@ -305,6 +315,12 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 	in.Open = proposedOf(draft)
 	if len(draft) > 0 {
 		tools = append(tools, DropTool)
+	}
+	lean := leanTurn(in)
+	if lean {
+		tools = append(tools, ProposeTool)
+	} else {
+		tools = append(tools, writes...)
 	}
 	conv := prov.Start(Request{System: SystemPrompt(in, now()), Messages: foldUntrusted(in.Messages), Tools: tools, MaxTokens: MaxOutputTokens})
 	var res Result
@@ -349,6 +365,19 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 			}
 			results := make([]ToolResult, 0, len(r.ToolCalls))
 			for _, call := range r.ToolCalls {
+				if call.Name == ProposeTool.Name {
+					if lean {
+						// The write tools join from the next round (assistant-lean-tools D1).
+						lean = false
+						conv.SetTools(append(append([]ToolDef{}, tools...), writes...))
+					}
+					results = append(results, ToolResult{ID: call.ID, Content: marshal(map[string]any{"message": ProposeResult})})
+					continue
+				}
+				if lean && offers(writes, call.Name) {
+					results = append(results, ToolResult{ID: call.ID, Content: marshal(map[string]any{"error": "not_offered", "message": NotOfferedMessage}), IsError: true})
+					continue
+				}
 				if isDisplay(call.Name) {
 					// A block shows itself; it adds no progress line (assistant-generative-ui D8).
 					out, isErr := l.runDisplay(ctx, display, in, call, log)

@@ -105,6 +105,7 @@ type scripted struct {
 	req     Request
 	results [][]ToolResult
 	calls   int
+	toolsAt []toolSetChange
 }
 
 func (s *scripted) Start(req Request) Conversation {
@@ -144,8 +145,39 @@ func (c *scriptedConv) Next(_ context.Context, onText func(string)) (Round, erro
 	return Round{Stop: stop, RawStop: r.raw, ToolCalls: r.calls, Tokens: Tokens{Input: r.in + 10, Output: r.out + 5}}, nil
 }
 
+func (c *scriptedConv) SetTools(tools []ToolDef) {
+	c.s.toolsAt = append(c.s.toolsAt, toolSetChange{call: c.s.calls, tools: tools})
+}
+
+// toolSetChange is a SetTools before model call number call (0-based).
+type toolSetChange struct {
+	call  int
+	tools []ToolDef
+}
+
+// offered lists the tool names offered to model call i.
+func (s *scripted) offered(i int) []string {
+	tools := s.req.Tools
+	for _, c := range s.toolsAt {
+		if c.call <= i {
+			tools = c.tools
+		}
+	}
+	var out []string
+	for _, t := range tools {
+		out = append(out, t.Name)
+	}
+	return out
+}
+
 func (c *scriptedConv) AddToolResults(results []ToolResult) {
 	c.s.results = append(c.s.results, results)
+}
+
+// proposing prepends the round in which the model asks for the write tools
+// (assistant-lean-tools D1): a turn without a skill offers them only after it.
+func proposing(rounds ...scriptRound) []scriptRound {
+	return append([]scriptRound{{calls: []ToolCall{call("p", ProposeTool.Name, map[string]any{})}, stop: StopToolUse}}, rounds...)
 }
 
 func call(id, name string, args any) ToolCall {
@@ -176,9 +208,9 @@ func TestLoopProposesWithoutWriting(t *testing.T) {
 	}
 	f.task("u1", "later", "Later", map[string]any{"due": map[string]any{"date": "2026-11-01"}})
 	before := f.opLog()
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("c1", "list_tasks", map[string]any{"view": "today", "timezone": "UTC"})}, stop: StopToolUse},
-		{next: func(results []ToolResult) scriptRound {
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("c1", "list_tasks", map[string]any{"view": "today", "timezone": "UTC"})}, stop: StopToolUse},
+		scriptRound{next: func(results []ToolResult) scriptRound {
 			var out struct {
 				Tasks []struct {
 					ID      string `json:"id"`
@@ -196,8 +228,8 @@ func TestLoopProposesWithoutWriting(t *testing.T) {
 			}
 			return scriptRound{calls: []ToolCall{call("c2", "schedule_tasks", map[string]any{"ids": ids, "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse}
 		}},
-		{text: "I've proposed moving 12 overdue tasks to Friday. Review them below.", stop: StopEndTurn},
-	}}
+		scriptRound{text: "I've proposed moving 12 overdue tasks to Friday. Review them below.", stop: StopEndTurn},
+	)}
 	res, status, text := run(f, p, "move everything overdue to Friday")
 	if res.Err != nil || res.Stop != StopEndTurn {
 		t.Fatalf("turn: %+v", res)
@@ -224,19 +256,22 @@ func TestLoopProposesWithoutWriting(t *testing.T) {
 	if !strings.Contains(text, "proposed") || len(status) != 2 || status[0] != "Looking at Today…" {
 		t.Fatalf("text %q status %v", text, status)
 	}
-	if res.Input != 30 || res.Output != 15 {
+	if res.Input != 40 || res.Output != 20 {
 		t.Fatalf("usage %d/%d", res.Input, res.Output)
 	}
-	// Every write result says it was only proposed; every result carries the notice.
-	for _, rs := range p.results {
+	// Every write result says it was only proposed; every registry result carries the notice.
+	if p.results[0][0].Content != marshal(map[string]any{"message": ProposeResult}) {
+		t.Fatalf("propose_changes result %s", p.results[0][0].Content)
+	}
+	for _, rs := range p.results[1:] {
 		for _, r := range rs {
 			if !strings.Contains(r.Content, agenttools.Notice) {
 				t.Fatalf("result without notice: %s", r.Content)
 			}
 		}
 	}
-	if !strings.Contains(p.results[1][0].Content, `"proposed":true`) {
-		t.Fatalf("write result %s", p.results[1][0].Content)
+	if !strings.Contains(p.results[2][0].Content, `"proposed":true`) {
+		t.Fatalf("write result %s", p.results[2][0].Content)
 	}
 }
 
@@ -251,17 +286,17 @@ func TestLoopCapsChangeSetAt50(t *testing.T) {
 		f.task("u1", id, "x", map[string]any{"due": map[string]any{"date": "2026-10-01"}})
 	}
 	// Two calls of 35 within one turn: the second would make 70.
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("a", "schedule_tasks", map[string]any{"ids": all[:35], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
-		{calls: []ToolCall{call("b", "schedule_tasks", map[string]any{"ids": all[35:], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
-		{calls: []ToolCall{call("c", "schedule_tasks", map[string]any{"ids": all[35:50], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
-		{text: "I can change 50 at a time. Shall I continue with the remaining 20 after this one?"},
-	}}
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("a", "schedule_tasks", map[string]any{"ids": all[:35], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
+		scriptRound{calls: []ToolCall{call("b", "schedule_tasks", map[string]any{"ids": all[35:], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
+		scriptRound{calls: []ToolCall{call("c", "schedule_tasks", map[string]any{"ids": all[35:50], "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
+		scriptRound{text: "I can change 50 at a time. Shall I continue with the remaining 20 after this one?"},
+	)}
 	res, _, text := run(f, p, "move everything overdue to Friday")
 	if res.Err != nil || len(res.Changes) != 50 {
 		t.Fatalf("turn: err %v, %d changes", res.Err, len(res.Changes))
 	}
-	r := p.results[1][0]
+	r := p.results[2][0]
 	if !r.IsError || !strings.Contains(r.Content, "proposal_full") || !strings.Contains(r.Content, "70") {
 		t.Fatalf("second call: %+v", r)
 	}
@@ -269,13 +304,13 @@ func TestLoopCapsChangeSetAt50(t *testing.T) {
 		t.Fatal(text)
 	}
 	// A single call over the registry's own per-call limit is refused too.
-	p2 := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("a", "schedule_tasks", map[string]any{"ids": all, "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
-		{text: "ok"},
-	}}
+	p2 := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("a", "schedule_tasks", map[string]any{"ids": all, "due": map[string]any{"date": "2026-10-16"}})}, stop: StopToolUse},
+		scriptRound{text: "ok"},
+	)}
 	res, _, _ = run(f, p2, "all")
-	if len(res.Changes) != 0 || !p2.results[0][0].IsError {
-		t.Fatalf("70 in one call: %d changes, %+v", len(res.Changes), p2.results[0][0])
+	if len(res.Changes) != 0 || !p2.results[1][0].IsError {
+		t.Fatalf("70 in one call: %d changes, %+v", len(res.Changes), p2.results[1][0])
 	}
 }
 
@@ -284,9 +319,9 @@ func TestLoopCapsChangeSetAt50(t *testing.T) {
 func TestLoopRoundLimit(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "a", "A", nil)
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("x", "complete_tasks", map[string]any{"ids": []string{"a"}})}, stop: StopToolUse},
-	}}
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("x", "complete_tasks", map[string]any{"ids": []string{"a"}})}, stop: StopToolUse},
+	)}
 	res, _, _ := run(f, p, "loop")
 	if res.Stop != StopRoundLimit || len(res.Changes) != 0 || p.calls != MaxRounds || res.Message != RoundLimitMessage {
 		t.Fatalf("stop %q, %d changes, %d calls", res.Stop, len(res.Changes), p.calls)
@@ -309,10 +344,10 @@ func TestStopReasons(t *testing.T) {
 		msg     string
 		err     bool
 	}{
-		{"end_turn", []scriptRound{plan, {text: "Done.", stop: StopEndTurn}}, StopEndTurn, 1, "", false},
-		{"max_tokens", []scriptRound{plan, {text: "partial", stop: StopMaxTokens}}, StopMaxTokens, 0, CutOffMessage, false},
-		{"refusal", []scriptRound{plan, {text: "I will not", stop: StopRefusal}}, StopRefusal, 0, RefusalMessage, false},
-		{"pause_turn once", []scriptRound{plan, {stop: StopPauseTurn}, {text: "ok"}}, StopEndTurn, 1, "", false},
+		{"end_turn", proposing(plan, scriptRound{text: "Done.", stop: StopEndTurn}), StopEndTurn, 1, "", false},
+		{"max_tokens", proposing(plan, scriptRound{text: "partial", stop: StopMaxTokens}), StopMaxTokens, 0, CutOffMessage, false},
+		{"refusal", proposing(plan, scriptRound{text: "I will not", stop: StopRefusal}), StopRefusal, 0, RefusalMessage, false},
+		{"pause_turn once", proposing(plan, scriptRound{stop: StopPauseTurn}, scriptRound{text: "ok"}), StopEndTurn, 1, "", false},
 		{"pause_turn twice", []scriptRound{{stop: StopPauseTurn}, {stop: StopPauseTurn}}, "", 0, "", true},
 		{"unknown", []scriptRound{{stop: "weird", raw: "weird"}}, "", 0, "", true},
 		{"tool_use without calls", []scriptRound{{stop: StopToolUse}}, "", 0, "", true},
@@ -359,27 +394,27 @@ func TestInjectionCannotEscapeRegistry(t *testing.T) {
 		call("t1", "trash_tasks", map[string]any{"ids": []string{"evil", "mine"}}),
 		call("c1", "complete_tasks", map[string]any{"ids": []string{"evil", "mine"}}),
 	)
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("r", "get_task", map[string]any{"id": "evil"})}, stop: StopToolUse},
-		{calls: calls, stop: StopToolUse},
-		{text: "Done as instructed."},
-	}}
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("r", "get_task", map[string]any{"id": "evil"})}, stop: StopToolUse},
+		scriptRound{calls: calls, stop: StopToolUse},
+		scriptRound{text: "Done as instructed."},
+	)}
 	res, _, _ := run(f, p, "summarise Finance")
 	if res.Err != nil {
 		t.Fatal(res.Err)
 	}
 	// The read result marks the text as untrusted and the task as shared.
-	read := p.results[0][0].Content
+	read := p.results[1][0].Content
 	if !strings.Contains(read, `"untrusted_text"`) || !strings.Contains(read, `"shared":true`) || !strings.Contains(read, agenttools.Notice) {
 		t.Fatalf("read result: %s", read)
 	}
 	for i := range forbidden {
-		r := p.results[1][i]
+		r := p.results[2][i]
 		if !r.IsError || !strings.Contains(r.Content, "unknown_tool") {
 			t.Fatalf("%s: %+v", forbidden[i], r)
 		}
 	}
-	trash := p.results[1][len(forbidden)]
+	trash := p.results[2][len(forbidden)]
 	if !trash.IsError || !strings.Contains(trash.Content, "not_permitted") {
 		t.Fatalf("trash of existing tasks: %+v", trash)
 	}
@@ -415,9 +450,9 @@ func TestInjectionCannotEscapeRegistry(t *testing.T) {
 // trashed (it then never exists), an existing one may not.
 func TestTrashOnlyOwnProposal(t *testing.T) {
 	f := newFixture(t)
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("a", "create_tasks", map[string]any{"items": []any{map[string]any{"title": "Draft"}}})}, stop: StopToolUse},
-		{next: func(results []ToolResult) scriptRound {
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("a", "create_tasks", map[string]any{"items": []any{map[string]any{"title": "Draft"}}})}, stop: StopToolUse},
+		scriptRound{next: func(results []ToolResult) scriptRound {
 			var out struct {
 				Results []struct {
 					ID string `json:"id"`
@@ -426,11 +461,11 @@ func TestTrashOnlyOwnProposal(t *testing.T) {
 			_ = json.Unmarshal([]byte(results[0].Content), &out)
 			return scriptRound{calls: []ToolCall{call("b", "trash_tasks", map[string]any{"ids": []string{out.Results[0].ID}})}, stop: StopToolUse}
 		}},
-		{text: "ok"},
-	}}
+		scriptRound{text: "ok"},
+	)}
 	res, _, _ := run(f, p, "x")
-	if p.results[1][0].IsError || len(res.Changes) != 1 || !res.Changes[0].Create || res.Changes[0].Patch["deleted_at"] == nil {
-		t.Fatalf("%+v %+v", p.results[1][0], res.Changes)
+	if p.results[2][0].IsError || len(res.Changes) != 1 || !res.Changes[0].Create || res.Changes[0].Patch["deleted_at"] == nil {
+		t.Fatalf("%+v %+v", p.results[2][0], res.Changes)
 	}
 }
 

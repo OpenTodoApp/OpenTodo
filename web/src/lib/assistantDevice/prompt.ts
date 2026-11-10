@@ -48,6 +48,8 @@ export function systemPrompt(p: PromptInput, now: number): string {
     // assistant-in-context: the hours find_free_time searches within.
     if (sk.id === 'find-slot') b += `Working day: from ${pad(w.startHour)}:00 to ${pad(w.endHour)}:00. Pass day_start_hour ${w.startHour} and day_end_hour ${w.endHour} to find_free_time.\n`
   }
+  // A turn that starts without the write tools says how to get them (assistant-lean-tools D1).
+  if (!sk && !(p.open ?? []).length) b += manifest.lean.note
   b += openSection(p.open ?? [])
   return b
 }

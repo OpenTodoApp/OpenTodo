@@ -55,15 +55,16 @@ func (p *AnthropicProvider) client() anthropic.Client {
 	return anthropic.NewClient(opts...)
 }
 
-// Start implements Provider.
-func (p *AnthropicProvider) Start(req Request) Conversation {
-	tools := make([]anthropic.ToolUnionParam, 0, len(req.Tools))
-	schemas := make([]map[string]any, len(req.Tools))
-	for i, t := range req.Tools {
+// anthropicTools are the tools of a request: strict when the whole list fits
+// Anthropic's strict-tool limits.
+func anthropicTools(defs []ToolDef) []anthropic.ToolUnionParam {
+	tools := make([]anthropic.ToolUnionParam, 0, len(defs))
+	schemas := make([]map[string]any, len(defs))
+	for i, t := range defs {
 		schemas[i] = strictSchema(t.Schema, false)
 	}
 	strict := fitsAnthropicStrict(schemas)
-	for i, t := range req.Tools {
+	for i, t := range defs {
 		schema := schemas[i]
 		props, _ := schema["properties"].(map[string]any)
 		if props == nil {
@@ -92,6 +93,12 @@ func (p *AnthropicProvider) Start(req Request) Conversation {
 		}
 		tools = append(tools, anthropic.ToolUnionParam{OfTool: &tp})
 	}
+	return tools
+}
+
+// Start implements Provider.
+func (p *AnthropicProvider) Start(req Request) Conversation {
+	tools := anthropicTools(req.Tools)
 	effort := p.Effort
 	if effort == "" {
 		effort = DefaultEffort
@@ -219,6 +226,11 @@ func (c *anthropicConv) Next(ctx context.Context, onText func(string)) (Round, e
 		}
 	}
 	return r, nil
+}
+
+// SetTools implements Conversation (assistant-lean-tools D1).
+func (c *anthropicConv) SetTools(tools []ToolDef) {
+	c.params.Tools = anthropicTools(tools)
 }
 
 func (c *anthropicConv) AddToolResults(results []ToolResult) {
