@@ -663,7 +663,15 @@ export interface RoutineRun {
   tokens?: number
   ai_auto?: boolean
   proposal?: RoutineProposal
+  /** What the run's Ask AI steps showed, kinds and parameters only (assistant-routine-blocks D1). */
+  blocks?: RoutineRunBlock[]
 }
+
+/** A block a routine run showed: tasks, a day or week of the calendar, or deadlines (assistant-routine-blocks D1). */
+export type RoutineRunBlock =
+  | { kind: 'tasks'; ids: string[] }
+  | { kind: 'calendar'; date: string; span: 'day' | 'week' }
+  | { kind: 'deadlines'; from: string; to: string }
 
 /** A run the Inbox card lists (routines-editor D10; proposals: routines-ai-step D2). */
 export interface RoutineInboxRun extends RoutineRun {

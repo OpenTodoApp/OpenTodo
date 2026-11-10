@@ -34,6 +34,9 @@ type AICall struct {
 	Context     []string
 	Answer      string
 	MaxTokens   int64
+	// Show is how many blocks the call may still show; 0 offers no show
+	// tool (assistant-routine-blocks D1: Ask AI steps answering in text).
+	Show int
 }
 
 // AIAnswer is the answer and its tokens.
@@ -41,6 +44,8 @@ type AIAnswer struct {
 	Text          string
 	Lines         []string
 	Input, Output int64
+	// Blocks are the blocks the answer showed, checked.
+	Blocks []RunBlock
 }
 
 // AIError is a call that gave no answer; Code is the failed step's error code
@@ -97,17 +102,19 @@ func (st *runState) aiCallOf(s *ruleval.Step, in map[string]ruleval.Value) AICal
 			c.MaxTokens = aiMediumTokens
 		}
 		if v, ok := in["text"]; ok {
-			c.Context = append(c.Context, st.material(v))
+			c.Context = append(c.Context, st.materialOf(v, false))
 		}
 		return c
 	}
 	c := AICall{Instruction: st.litText(s.In["instruction"].Lit), Answer: ruleval.AIAnswer(s), MaxTokens: aiTextTokens}
 	if c.Answer == "lines" {
 		c.MaxTokens = aiLinesTokens
+	} else {
+		c.Show = max(MaxRunBlocks-len(st.blocks), 0)
 	}
 	for _, name := range []string{"context", "context2", "context3"} {
 		if v, ok := in[name]; ok {
-			c.Context = append(c.Context, st.material(v))
+			c.Context = append(c.Context, st.materialOf(v, c.Show > 0))
 		}
 	}
 	return c
@@ -120,17 +127,18 @@ func summaryInstruction(length string) string {
 	return "Summarise the material in about 50 words."
 }
 
-// material is a value as the model reads it (D1): text and lines as they
+// materialOf is a value as the model reads it (D1): text and lines as they
 // are; tasks with title, due, priority, labels and project; a project with its
-// name, sections and open tasks.
-func (st *runState) material(v ruleval.Value) string {
+// name, sections and open tasks. A call that may show blocks names each task's
+// id too, so show_tasks can name it (assistant-routine-blocks D1).
+func (st *runState) materialOf(v ruleval.Value, ids bool) string {
 	switch v.Type {
 	case ruleval.TTask:
-		return st.taskLine(v.ID)
+		return st.taskLine(v.ID, ids)
 	case ruleval.TTasks:
 		lines := make([]string, 0, len(v.IDs))
 		for _, id := range v.IDs {
-			lines = append(lines, st.taskLine(id))
+			lines = append(lines, st.taskLine(id, ids))
 		}
 		return strings.Join(lines, "\n")
 	case ruleval.TProject:
@@ -160,7 +168,7 @@ func (st *runState) material(v ruleval.Value) string {
 		if len(open) > 0 {
 			b.WriteString("\nOpen tasks:")
 			for _, id := range open {
-				b.WriteString("\n" + st.taskLine(id))
+				b.WriteString("\n" + st.taskLine(id, ids))
 			}
 		}
 		return b.String()
@@ -168,10 +176,14 @@ func (st *runState) material(v ruleval.Value) string {
 	return st.render(v)
 }
 
-// taskLine is one task for the model: "- title (due …, priority …, labels …, project …)".
-func (st *runState) taskLine(id string) string {
+// taskLine is one task for the model: "- title (due …, priority …, labels …,
+// project …)", with "id …" first when withID.
+func (st *runState) taskLine(id string, withID bool) string {
 	t := st.tasks[id]
 	var parts []string
+	if withID {
+		parts = append(parts, "id "+id)
+	}
 	var due struct {
 		Date string `json:"date"`
 		Time string `json:"time"`
@@ -245,6 +257,12 @@ func (st *runState) aiStep(s *ruleval.Step, in map[string]ruleval.Value, at int)
 			return empty, "", failf(ae.Code, "%s", ae.Msg)
 		}
 		return empty, "", err
+	}
+	// Only a step offered the show tools keeps blocks, within what the run has left.
+	for _, b := range ans.Blocks[:min(len(ans.Blocks), call.Show)] {
+		if len(st.blocks) < MaxRunBlocks && b.valid() {
+			st.blocks = append(st.blocks, b)
+		}
 	}
 	if call.Answer == "lines" && s.Kind == "ask_ai" {
 		lines := ans.Lines

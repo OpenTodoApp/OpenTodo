@@ -1,6 +1,7 @@
 // The wire shapes of a device run (OpenSpec change routines-ai-step, D8): what
 // a device commits for a routine it ran on its decrypted copy. Content values
 // are ciphertext; the step records hold ids, counts, statuses and codes only.
+import type { RunBlock } from './run/types'
 
 /** One step of a device run, as the server records it (never text). */
 export interface DeviceStepRecord {
@@ -39,6 +40,8 @@ export interface DeviceCommit {
   sides?: DeviceSide[]
   /** A proposal run: one envelope holding the proposal's body, and its item count. */
   proposal?: { envelope: string; items: number }
+  /** What the run's Ask AI steps showed: kinds and parameters only (assistant-routine-blocks D1). */
+  blocks?: RunBlock[]
 }
 
 /** Where an encrypted proposal's body is sealed: bound to its run. */

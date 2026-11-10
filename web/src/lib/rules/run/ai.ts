@@ -8,7 +8,7 @@ import { budgetOf, estimateTokens } from '../ai'
 import { isNull } from './actions'
 import { textOut } from './kinds'
 import { fail, str, num, type ExecResult, type Inputs, type RunState } from './state'
-import { AIError, type AICall } from './types'
+import { AIError, MAX_RUN_BLOCKS, type AICall, type RunBlock } from './types'
 import type { StepValue } from '../stepData'
 
 const TEXT_TOKENS = 1000
@@ -20,10 +20,11 @@ function summaryInstruction(length: string): string {
   return length === 'medium' ? 'Summarise the material in about 150 words.' : 'Summarise the material in about 50 words.'
 }
 
-/** One task for the model: "- title (due …, priority …, labels …, project …)". */
-function taskLine(st: RunState, id: string): string {
+/** One task for the model: "- title (due …, priority …, labels …, project …)", with "id …" first when withId. */
+function taskLine(st: RunState, id: string, withId: boolean): string {
   const t = st.tasks.get(id)
   const parts: string[] = []
+  if (withId) parts.push(`id ${id}`)
   const due = t?.due as { date?: string; time?: string } | null | undefined
   if (due?.date) parts.push(`due ${due.date} ${due.time ?? ''}`.trim())
   const p = Math.trunc(num(t, 'priority'))
@@ -37,18 +38,18 @@ function taskLine(st: RunState, id: string): string {
   return line
 }
 
-/** A value as the model reads it (D1). */
-function material(st: RunState, v: StepValue): string {
+/** A value as the model reads it (D1); a call that may show blocks names each task's id (assistant-routine-blocks D1). */
+function material(st: RunState, v: StepValue, ids: boolean): string {
   switch (v.type) {
-    case 'task': return taskLine(st, v.id ?? '')
-    case 'tasks': return (v.ids ?? []).map((id) => taskLine(st, id)).join('\n')
+    case 'task': return taskLine(st, v.id ?? '', ids)
+    case 'tasks': return (v.ids ?? []).map((id) => taskLine(st, id, ids)).join('\n')
     case 'project': {
       const id = v.id ?? ''
       let b = `Project: ${str(st.projects.get(id), 'name')}`
       const sections = st.w.sections.filter((x) => str(x, 'project_id') === id && isNull(x.deleted_at) && str(x, 'name')).map((x) => str(x, 'name')).sort()
       if (sections.length) b += `\nSections: ${sections.join(', ')}`
       const open = [...st.tasks.entries()].filter(([, t]) => str(t, 'project_id') === id && isNull(t.completed_at) && isNull(t.deleted_at)).map(([tid]) => tid).sort().slice(0, 500)
-      if (open.length) b += '\nOpen tasks:' + open.map((tid) => `\n${taskLine(st, tid)}`).join('')
+      if (open.length) b += '\nOpen tasks:' + open.map((tid) => `\n${taskLine(st, tid, ids)}`).join('')
       return b
     }
   }
@@ -60,17 +61,31 @@ function callOf(st: RunState, s: RoutineStep, inputs: Inputs): AICall {
     const length = st.litStr(s, 'length') ?? ''
     const c: AICall = { instruction: summaryInstruction(length), context: [], answer: 'text', maxTokens: length === 'medium' ? MEDIUM_TOKENS : SHORT_TOKENS }
     const v = inputs.get('text')
-    if (v) c.context.push(material(st, v))
+    if (v) c.context.push(material(st, v, false))
     return c
   }
   const answer = aiAnswer(s)
   const instr = s.in?.instruction
   const c: AICall = { instruction: st.litText(instr && 'literal' in instr ? instr.literal : undefined), context: [], answer, maxTokens: answer === 'lines' ? LINES_TOKENS : TEXT_TOKENS }
+  if (answer !== 'lines') c.show = Math.max(MAX_RUN_BLOCKS - st.blocks.length, 0)
   for (const name of ['context', 'context2', 'context3']) {
     const v = inputs.get(name)
-    if (v) c.context.push(material(st, v))
+    if (v) c.context.push(material(st, v, (c.show ?? 0) > 0))
   }
   return c
+}
+
+const BLOCK_DATE = /^\d{4}-\d{2}-\d{2}$/
+const BLOCK_ID = /^[A-Za-z0-9_-]{1,64}$/
+
+/** Whether a block is one a run may keep (internal/rules RunBlock.valid; the server checks again). */
+function validBlock(b: RunBlock): boolean {
+  switch (b.kind) {
+    case 'tasks': return b.ids.length > 0 && b.ids.length <= 20 && b.ids.every((id) => BLOCK_ID.test(id))
+    case 'calendar': return BLOCK_DATE.test(b.date) && (b.span === 'day' || b.span === 'week')
+    case 'deadlines': return BLOCK_DATE.test(b.from) && BLOCK_DATE.test(b.to) && b.from <= b.to
+  }
+  return false
 }
 
 /** A call's expected tokens: the material at four characters a token, plus the answer's maximum. */
@@ -101,6 +116,8 @@ export async function aiStep(st: RunState, s: RoutineStep, inputs: Inputs, at: n
   const tokens = (ans.input || 0) + (ans.output || 0)
   rec.tokens = (rec.tokens ?? 0) + tokens
   st.aiTokens += tokens
+  // Only a step offered the show tools keeps blocks, within what the run has left.
+  for (const b of (ans.blocks ?? []).slice(0, call.show ?? 0)) if (st.blocks.length < MAX_RUN_BLOCKS && validBlock(b)) st.blocks.push(b)
   if (call.answer === 'lines' && s.kind === 'ask_ai') {
     const lines = (ans.lines ?? []).slice(0, 500)
     st.aiTexts.push(...lines)

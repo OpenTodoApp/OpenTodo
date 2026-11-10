@@ -36,6 +36,9 @@ var routinesAIColumns = []struct{ table, name, def string }{
 	{"rule_runs", "device_rev", "TEXT NOT NULL DEFAULT ''"},
 	// The disclosure version the person accepted for routines (D10); 0 = none.
 	{"assistant_consent", "routines_version", "INTEGER NOT NULL DEFAULT 0"},
+	// The blocks a run's Ask AI steps showed (assistant-routine-blocks D1): a
+	// JSON list of kinds and checked parameters (ids, days), never text; '' is none.
+	{"rule_runs", "blocks_json", "TEXT NOT NULL DEFAULT ''"},
 }
 
 // migrateRoutinesAI adds the routines-ai-step columns when missing.

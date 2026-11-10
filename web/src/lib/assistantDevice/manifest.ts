@@ -50,6 +50,8 @@ export interface Manifest {
   open_proposal: { note: string; max_items: number; tool: ManifestTool }
   /** Memory (assistant-memory D2, D3): the note, the limits, remember's messages and the tool. */
   memory: { note: string; max_items: number; max_text: number; messages: { full: string; duplicate: string; invalid: string; proposed: string; unavailable: string }; tool: ManifestTool }
+  /** A routine's AI step (routines-ai-step D7, assistant-routine-blocks D1): its instructions, the show note and tools, rounds and blocks. */
+  routine: { system: string; show_note: string; tools: string[]; max_rounds: number; max_blocks: number }
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string
