@@ -73,6 +73,9 @@ type TurnInput struct {
 	// offered. Workday is the device's working day, used by plan-week.
 	Skill   *agenttools.Skill
 	Workday *Workday
+	// Open is the open, unapplied proposal the app sent back (assistant-proposal-editing
+	// D3): checked by Run, it seeds the draft and is listed in the instructions.
+	Open []Proposed
 }
 
 // Workday is the device's working-day settings (web/src/lib/calendar.ts).
@@ -214,6 +217,7 @@ func SystemPrompt(in TurnInput, now time.Time) string {
 			b.WriteString(agenttools.WorkdayNote(w.StartHour, w.EndHour, w.DayLength) + "\n")
 		}
 	}
+	b.WriteString(openSection(changesOf(in.Open)))
 	return b.String()
 }
 
@@ -277,8 +281,13 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 		}
 	}
 	display := &displayTurn{shower: l.Tools, userID: in.UserID, emit: ev.Block}
+	// The open proposal, checked, seeds the draft (assistant-proposal-editing D3).
+	draft := l.openDraft(ctx, in.UserID, in.Open, log)
+	in.Open = proposedOf(draft)
+	if len(draft) > 0 {
+		tools = append(tools, DropTool)
+	}
 	conv := prov.Start(Request{System: SystemPrompt(in, now()), Messages: foldUntrusted(in.Messages), Tools: tools, MaxTokens: MaxOutputTokens})
-	var draft agenttools.ChangeSet
 	var res Result
 	paused := false
 	for round := 0; round < MaxRounds; round++ {
@@ -329,6 +338,11 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 				}
 				if ev.Status != nil {
 					ev.Status(statusFor(call.Name, call.Args))
+				}
+				if call.Name == DropTool.Name && len(in.Open) > 0 {
+					out, isErr := dropFromDraft(&draft, call.Args)
+					results = append(results, ToolResult{ID: call.ID, Content: out, IsError: isErr})
+					continue
 				}
 				out, isErr := l.runTool(ctx, caller, in.Skill, withWorkday(call, in.Workday), &draft, log)
 				results = append(results, ToolResult{ID: call.ID, Content: out, IsError: isErr})

@@ -6,6 +6,7 @@ import { resettable } from './moduleState'
 import { useEffect, useState } from 'react'
 import { useOnline } from './online'
 import type { AssistantBlock } from './assistantBlocks'
+import type { Review } from './assistant'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs } from './calendar'
 import { ensureEventsFor } from './calendarFeeds'
 import { db, getMeta } from './db'
@@ -369,4 +370,33 @@ export function useBlockHabit(id: string): { series: Task | null; records: Task[
     return { id, series, records: await lineageRows(id) }
   }, [id])
   return read?.id === id ? read : undefined
+}
+
+/** Names a proposal's before-and-after view shows for ids (assistant-proposal-editing). */
+export interface ProposalNames { projects: Map<string, string>; sections: Map<string, string>; labels: Map<string, string> }
+
+const PROPOSAL_TABLES: Record<string, 'tasks' | 'projects' | 'sections' | 'labels' | 'notes' | 'reminders' | 'comments'> = {
+  task: 'tasks', project: 'projects', section: 'sections', label: 'labels', note: 'notes', reminder: 'reminders', comment: 'comments',
+}
+
+/** Each proposed item's row on this device now (null for a new one), and the names its fields refer to. */
+export function useProposalBefore(review: Review): { names: ProposalNames; rows: (Record<string, unknown> | null)[] } | undefined {
+  const key = review.items.map((i) => i.change.entity + i.change.entityId).join()
+  return useLiveQuery(async () => {
+    const [projects, sections, labels] = await Promise.all([db.projects.toArray(), db.sections.toArray(), db.labels.toArray()])
+    const names: ProposalNames = { projects: new Map(projects.map((p) => [p.id, p.name])), sections: new Map(sections.map((s) => [s.id, s.name])), labels: new Map(labels.map((l) => [l.id, l.name])) }
+    // Entities the proposal creates are named from it.
+    for (const { change: c } of review.items) {
+      const name = typeof c.patch.name === 'string' ? c.patch.name : ''
+      if (name && c.entity === 'project') names.projects.set(c.entityId, name)
+      if (name && c.entity === 'section') names.sections.set(c.entityId, name)
+      if (name && c.entity === 'label') names.labels.set(c.entityId, name)
+    }
+    const rows = await Promise.all(review.items.map(async ({ change: c }) => {
+      const table = PROPOSAL_TABLES[c.entity]
+      if (c.create || !table) return null
+      return ((await db[table].get(c.entityId)) as Record<string, unknown> | undefined) ?? null
+    }))
+    return { names, rows }
+  }, [key, review])
 }

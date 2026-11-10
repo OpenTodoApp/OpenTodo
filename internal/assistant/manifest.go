@@ -101,6 +101,16 @@ type Manifest struct {
 	AlwaysDisplay []string `json:"always_display"`
 	// RoutineDraft is Describe it on the device (routines-describe-it D5).
 	RoutineDraft DraftManifest `json:"routine_draft"`
+	// OpenProposal is how a turn amends an open proposal (assistant-proposal-editing D3).
+	OpenProposal OpenManifest `json:"open_proposal"`
+}
+
+// OpenManifest is the open proposal's note in the instructions, its most items
+// and the tool that drops items, offered only with an open proposal.
+type OpenManifest struct {
+	Note     string       `json:"note"`
+	MaxItems int          `json:"max_items"`
+	Tool     ManifestTool `json:"tool"`
 }
 
 // DraftManifest is what a device needs to draft a routine like the server:
@@ -147,6 +157,8 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
 		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
+		OpenProposal: OpenManifest{Note: OpenProposalNote, MaxItems: MaxOpenProposal, Tool: ManifestTool{Name: DropTool.Name, Kind: "proposal", Description: DropTool.Description,
+			InputSchema: DropTool.Schema, Strict: strictSchema(DropTool.Schema, false), StrictNullable: strictSchema(DropTool.Schema, true)}},
 	}
 	offered := map[string]bool{}
 	for _, t := range deviceTools {

@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../db'
 import { setCurrentUserId } from '../sharing'
-import type { TurnEvent } from '../assistantTypes'
+import type { ProposedChange, TurnEvent } from '../assistantTypes'
 import promptVectors from './prompt.vectors.json'
 import { manifest, manifestSkill } from './manifest'
 import { finalise, foldUntrusted, runDeviceTurn } from './loop'
@@ -57,9 +57,31 @@ describe('prompt vectors', () => {
   for (const v of promptVectors) {
     it(v.name, () => {
       const skill = v.skill ? manifestSkill(v.skill) : null
-      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null }, v.now)).toBe(v.want)
+      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null, open: (v as { open?: ProposedChange[] }).open }, v.now)).toBe(v.want)
     })
   }
+})
+
+describe('open proposal on the device (assistant-proposal-editing 1.3)', () => {
+  const move = (id: string, date: string): ProposedChange => ({ entity: 'task', entityId: id, patch: { due: { date } }, base: { due: null } })
+  it('seeds the draft, lists it, offers drop_from_proposal, and the change set is the merge', async () => {
+    const { events, seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'drop_from_proposal', args: '{"ids":["b","nope"]}' }, { id: 'c2', name: 'create_tasks', args: '{"items":[{"title":"Call the plumber"}]}' }] },
+      { stop: 'end_turn', text: 'Done.' },
+    ], { open_proposal: [move('a', '2026-10-16'), move('b', '2026-10-16'), move('gone', '2026-10-16')] })
+    expect(seen.req!.tools.map((t) => t.name)).toContain('drop_from_proposal')
+    expect(seen.req!.system).toContain(manifest.open_proposal.note)
+    expect(seen.req!.system).toContain('{"entity":"task","id":"a","set":{"due":{"date":"2026-10-16"}}}')
+    expect(seen.req!.system).not.toContain('"gone"')
+    expect(JSON.parse(seen.results[0][0].content)).toMatchObject({ dropped: 1, not_in_proposal: 1 })
+    const cs = events.find((e) => e.type === 'changeset') as Extract<TurnEvent, { type: 'changeset' }>
+    expect(cs.items.map((c) => (c.create ? `new:${String(c.patch.title)}` : c.entityId)).sort()).toEqual(['a', 'new:Call the plumber'])
+  })
+
+  it('offers no drop tool without an open proposal', async () => {
+    const { seen } = await run([{ stop: 'end_turn', text: 'ok' }])
+    expect(seen.req!.tools.map((t) => t.name)).not.toContain('drop_from_proposal')
+  })
 })
 
 describe('device loop', () => {
