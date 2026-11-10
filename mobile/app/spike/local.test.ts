@@ -23,7 +23,7 @@ const hooks = {
   },
 }
 
-for (const candidate of (process.env.SPIKE_CANDIDATES ?? 'A,B').split(',') as Candidate[]) {
+for (const candidate of (process.env.SPIKE_CANDIDATES ?? 'A,A0,B').split(',') as Candidate[]) {
   run(`candidate ${candidate}`, async () => {
     installSql(nodeSql(mkdtempSync(join(tmpdir(), `spike-${candidate}-`))))
     const rows = JSON.parse(readFileSync(ROWS!, 'utf8')) as Rows

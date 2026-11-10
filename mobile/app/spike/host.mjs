@@ -80,7 +80,7 @@ async function run(rowsFile, bundle, out, runs = 3) {
     try { simctl('terminate', 'booted', bundle) } catch { /* not running */ }
     const result = new Promise((resolve, reject) => {
       waiter = resolve
-      setTimeout(() => reject(new Error(`no result for ${JSON.stringify(step)} in 15 min`)), 15 * 60_000)
+      setTimeout(() => reject(new Error(`no result for ${JSON.stringify(step)} in 40 min`)), 40 * 60_000)
     })
     const launchedAt = Date.now()
     const pid = Number(simctl('launch', 'booted', bundle).split(':').pop())
@@ -97,7 +97,7 @@ async function run(rowsFile, bundle, out, runs = 3) {
     }
   }
 
-  for (const candidate of ['A', 'B']) {
+  for (const candidate of ['A', 'A0', 'B']) {
     try {
       log(`${candidate}: seed`)
       const seed = await launch({ candidate, phase: 'seed' })

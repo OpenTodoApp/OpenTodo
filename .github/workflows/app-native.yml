@@ -103,7 +103,7 @@ jobs:
     name: Storage spike (iOS simulator)
     if: ${{ inputs.storage_spike }}
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -131,7 +131,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 30
         working-directory: mobile/app
-        run: SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js local 2>&1 | tee ../../dist/storage-spike/node-reference.txt
+        run: SPIKE_CANDIDATES=A,A0 SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js local 2>&1 | tee ../../dist/storage-spike/node-reference.txt
       - name: The spike's entry and Metro configuration instead of the app's
         working-directory: mobile/app
         run: |

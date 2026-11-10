@@ -12,13 +12,15 @@ import { applyOps } from '@shared/ops'
 import type { Op, Project, Task } from '@shared/types'
 import { openCandidateA, type CandidateA } from './candidateA'
 import { openCandidateB } from './candidateB'
+import { installFastIndexes, setFastIndexes } from './fastIndexes'
 import { sql } from './sqlite'
 
-export type Candidate = 'A' | 'B'
+/** A: fake-indexeddb with the index fix (fastIndexes.ts); A0: as published; B: indexeddbshim. */
+export type Candidate = 'A0' | 'A' | 'B'
 export type Rows = Record<string, Record<string, unknown>[]>
 
 const DB_NAME = 'opentodo-spike'
-const A_FILE = 'spike-a.sqlite'
+const fileOf = (c: Candidate) => `spike-${c.toLowerCase()}.sqlite`
 
 export interface Hooks {
   /** Draws the list and resolves after the frame that shows it. */
@@ -29,9 +31,11 @@ export interface Hooks {
 
 const ms = (t: number) => Math.round(t * 10) / 10
 
-function engine(candidate: Candidate): { a: CandidateA | null } {
-  if (candidate === 'A') {
-    const a = openCandidateA(A_FILE)
+async function engine(candidate: Candidate): Promise<{ a: CandidateA | null }> {
+  if (candidate !== 'B') {
+    await installFastIndexes()
+    setFastIndexes(candidate === 'A')
+    const a = openCandidateA(fileOf(candidate))
     Dexie.dependencies.indexedDB = a.indexedDB as unknown as IDBFactory
     Dexie.dependencies.IDBKeyRange = a.IDBKeyRange as unknown as typeof IDBKeyRange
     return { a }
@@ -44,8 +48,8 @@ function engine(candidate: Candidate): { a: CandidateA | null } {
 
 /** Empties the candidate's storage and writes the account's rows, one transaction per table. */
 export async function seed(candidate: Candidate, rows: Rows): Promise<Record<string, unknown>> {
-  if (candidate === 'A') sql().remove(A_FILE)
-  const { a } = engine(candidate)
+  if (candidate !== 'B') sql().remove(fileOf(candidate))
+  const { a } = await engine(candidate)
   const db = databaseNamed(DB_NAME)
   const t0 = performance.now()
   await db.delete()
@@ -81,7 +85,7 @@ export function pullPage(tasks: readonly Task[], now: number): Op[] {
 export async function measure(candidate: Candidate, hooks: Hooks, startedAt: number): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = { candidate, phase: 'measure' }
   const t0 = performance.now()
-  const { a } = engine(candidate)
+  const { a } = await engine(candidate)
   const db = databaseNamed(DB_NAME)
   await db.open()
   const opened = performance.now()

@@ -7,11 +7,14 @@ import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { useDatabase as databaseNamed } from '@shared/db'
 import { applyOps } from '@shared/ops'
 import type { Op } from '@shared/types'
+import { installFastIndexes, setFastIndexes } from './fastIndexes'
 
 const OPS = process.env.SPIKE_OPS
 const run = OPS ? it : it.skip
 
 run('builds the rows', async () => {
+  await installFastIndexes()
+  setFastIndexes(true)
   Dexie.dependencies.indexedDB = new IDBFactory()
   Dexie.dependencies.IDBKeyRange = IDBKeyRange
   const db = databaseNamed('opentodo-rows')
