@@ -6,7 +6,6 @@
 // URL captured on a phone, through the CLI or by an assistant yields the same
 // origin. Nothing here makes a request: only the URL's host and path are read.
 // (lib/origin.ts is unrelated: it explains a refusal for the page's own host.)
-import { has, openObsidian, shell } from './shell'
 import type { Origin, Task } from './types'
 
 export const MAX_ORIGIN_URL = 2048
@@ -38,7 +37,7 @@ const RULES: { host: (h: string) => boolean; path: RegExp; origin: (m: RegExpExe
 ]
 
 /** The parsed URL when `raw` is an http(s) URL with a host of at most MAX_ORIGIN_URL bytes. */
-function httpURL(raw: string): URL | null {
+export function httpURL(raw: string): URL | null {
   if (!raw || new TextEncoder().encode(raw).length > MAX_ORIGIN_URL) return null
   // "scheme://host" spelled out, as Go's url.Parse needs it: the browser parser
   // would also read "https:///x" or "https:x" as having a host.
@@ -241,46 +240,8 @@ export function originIcon(origin: Origin): 'link' | 'at-sign' | 'download' | 'n
   return origin.kind === 'email' ? 'at-sign' : origin.kind === 'import' ? 'download' : 'link'
 }
 
-/**
- * The address the device may open for an origin, as it reads it after any
- * decryption ("Origin links open only http(s)"): an http(s) URL of any kind but
- * `obsidian`, or the valid note link of an `obsidian` origin. In a native shell a
- * note link opens only when the shell lists `obsidian-links`. Null otherwise: the
- * chip then has no link, and its menu offers Copy link when there is a URL.
- */
-export function originLink(origin: Origin): { href: string; obsidian: boolean } | null {
-  if (!origin.url) return null
-  if (origin.kind === 'obsidian') {
-    if (!obsidianURL(origin.url, origin.id)) return null
-    return !shell() || has('obsidian-links') ? { href: origin.url, obsidian: true } : null
-  }
-  return httpURL(origin.url) ? { href: origin.url, obsidian: false } : null
-}
-
 /** Whether `value` names the origin's provider, or its kind when it has none (the `origin:` filter term). */
 export function originMatches(origin: Origin | null, value: string): boolean {
   if (!origin) return false
   return (origin.provider ?? origin.kind).toLowerCase() === value.toLowerCase()
-}
-
-/**
- * Open the origin: an http(s) URL in a new tab without passing the opener or the
- * referrer; an Obsidian note through the system (design D4), in a browser by an
- * ordinary link activation (the browser asks before opening the app and leaves
- * no tab behind), in a shell through its external-link method. Opens nothing
- * when `originLink` gives no link.
- */
-export function openOrigin(origin: Origin): void {
-  const link = originLink(origin)
-  if (!link) return
-  if (!link.obsidian) {
-    window.open(link.href, '_blank', 'noopener,noreferrer')
-  } else if (shell()) {
-    openObsidian(link.href)
-  } else {
-    const a = document.createElement('a')
-    a.href = link.href
-    a.rel = 'noreferrer'
-    a.click()
-  }
 }

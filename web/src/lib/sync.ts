@@ -700,7 +700,8 @@ export function startSync(): void {
   // Projects kept away from AI assistants (agent-planning-fields D9).
   void refreshAgentExclusions()
   // Shares abandoned on the capture screen leave the hand-over store (attachments D9).
-  void sweepInbox().catch(() => undefined)
+  const idb = platform.indexedDB()
+  if (idb) void sweepInbox(idb).catch(() => undefined)
   const offMutation = onLocalMutation(({ push }) => {
     // Reflect the pending edit immediately so the indicator never claims "Synced"
     // while an op is still waiting in the debounce window (or the note's pause).

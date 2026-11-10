@@ -9,6 +9,7 @@ import { api, isNetworkError } from './api'
 import { fetchWithTimeout, transferTimeoutMs } from './http'
 import { db, getMeta, setMeta, type AttachmentBlob } from './db'
 import { mutateMany, type Change } from './ops'
+import { platform } from './platform'
 import { decryptFile, encryptFile } from './crypto'
 import { currentKey, isEnabled, publishEncryption } from './e2ee'
 import { currentUserId, membershipMap } from './sharing'
@@ -251,49 +252,11 @@ export function isImage(mime: string): boolean {
 }
 
 /**
- * Open an attachment in a new tab: a link opens its address; a file this
- * device still holds opens from here (also offline); an uploaded file opens
- * from the server, which serves risky types as downloads.
+ * The address a link attachment may open: a decrypted link never passed the
+ * server's URL check, so only http(s) opens (attachment-client-hardening D3).
  */
-export async function openAttachment(a: Attachment, opts: { download?: boolean } = {}): Promise<void> {
-  if (a.url) {
-    // A decrypted link never passed the server's URL check: only http(s) opens
-    // (attachment-client-hardening D3).
-    const href = safeUrl(a.url)
-    if (href) window.open(href, '_blank', 'noopener,noreferrer')
-    return
-  }
-  const local = await db.attachmentBlobs.get(a.id)
-  if (a.encrypted) {
-    // The server holds an envelope only: fetch it (or use the local copy) and decrypt here.
-    const key = await currentKey()
-    if (!key) throw new AttachmentError('locked', t('Unlock encryption on this device to open this file.'))
-    let envelope = local?.blob
-    if (!envelope) {
-      const res = await fetchWithTimeout(contentUrl(a.id), { credentials: 'same-origin', timeoutMs: transferTimeoutMs() })
-      if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? t('This file is missing on the server.') : t('The server answered {status}.', { status: res.status }))
-      envelope = await res.blob()
-    }
-    openBlob(await decryptFile(key, a.id, envelope, a.mime), a, opts.download)
-    return
-  }
-  if (local) {
-    openBlob(new Blob([local.blob], { type: a.mime }), a, opts.download)
-    return
-  }
-  window.open(contentUrl(a.id, opts.download), '_blank', 'noopener')
-}
-
-/** Open bytes held on this device; types the browser should not render are downloaded. */
-function openBlob(blob: Blob, a: Attachment, download?: boolean) {
-  const href = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = href
-  link.target = '_blank'
-  link.rel = 'noopener'
-  if (download || !isInlineType(a.mime)) link.download = a.name
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(href), 60_000)
+export function linkHref(url: string): string | null {
+  return safeUrl(url)
 }
 
 /** The types the server shows in the browser (design D6); the rest download. */
@@ -364,7 +327,7 @@ export function runUploader(): Promise<void> {
 }
 
 async function uploadPass(): Promise<void> {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+  if (!platform.network.online()) return
   if ((await db.outbox.count()) > 0) return
   const blobs = await db.attachmentBlobs.toArray()
   if (blobs.length === 0) return
@@ -506,7 +469,7 @@ async function migrateFiles(mode: FileMigrationMode): Promise<void> {
 /** Resume a file phase that a reload or the network stopped (called after a sync round). */
 export async function resumeFileMigration(): Promise<void> {
   const mode = await getMeta<FileMigrationMode | null>(K_FILE_MIGRATION, null)
-  if (!mode || (typeof navigator !== 'undefined' && navigator.onLine === false)) return
+  if (!mode || !platform.network.online()) return
   try {
     await runFileMigration(mode)
   } catch (err) {
@@ -525,7 +488,7 @@ export async function waitForUploads(ms = 120_000): Promise<boolean> {
     await runUploader()
     const left = await db.attachmentBlobs.filter((b) => !b.reason).count()
     if (left === 0) return true
-    if (Date.now() > until || (typeof navigator !== 'undefined' && navigator.onLine === false)) return false
+    if (Date.now() > until || !platform.network.online()) return false
     requestUpload()
     await new Promise((r) => setTimeout(r, 1000))
   }

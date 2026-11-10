@@ -13,7 +13,7 @@ import { shellGeofences } from './geofences'
 import { forgetShellData, setSystemBars, type OpenTodoShell, type ShellGeofencePayload } from './shell'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
-import { openOrigin } from './taskOrigin'
+import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import type { Place, Reminder, Task } from './types'
 

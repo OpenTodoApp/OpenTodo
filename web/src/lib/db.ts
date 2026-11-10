@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
+import { platform } from './platform'
 import { forgetShellData } from './shell'
 import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type CustomTheme, type MemoryItem, type Objective, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 import { createStore } from './store'
@@ -508,15 +509,8 @@ export const onDatabaseOutdated = outdated.subscribe
  * unpersisted data after weeks without a visit). Called after sign-in; the
  * answer is the browser's, and a refusal changes nothing.
  */
-export async function requestPersistentStorage(): Promise<boolean> {
-  try {
-    const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined
-    if (!storage?.persist) return false
-    if (await storage.persisted?.()) return true
-    return await storage.persist()
-  } catch {
-    return false
-  }
+export function requestPersistentStorage(): Promise<boolean> {
+  return platform.persistStorage()
 }
 
 // ---- local data epoch (client-sync-robustness) ----

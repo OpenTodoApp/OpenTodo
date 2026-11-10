@@ -20,6 +20,9 @@ import { getDeviceId } from './ops'
 import { onLeadership } from './sync'
 import type { Entity } from './types'
 import { createStore } from './store'
+import type { RelayDevice, RoutineRunRequest } from './relayTypes'
+
+export type { RelayDevice, RoutineRunRequest }
 
 export const EVENTS_PATH = '/api/v1/relay/events'
 export const HKDF_INFO = 'opentodo relay v1'
@@ -36,19 +39,6 @@ const K_RECENT = 'relay.recent'
 const K_ROUTINES = 'relay.routines'
 const K_ROUTINE_RECENT = 'relay.routineRecent'
 
-export interface RelayDevice {
-  deviceId: string
-  label: string
-  enabledAt: number
-  online: boolean
-  thisSession: boolean
-  /** routines-ai-step D7: the device's opt-ins, its own stream and what it announced. */
-  mcp?: boolean
-  routines?: boolean
-  connected?: boolean
-  capabilities?: string[]
-}
-
 /** One routine run of this device, as its relay panel lists it: never text. */
 export interface RecentRoutineRun {
   at: number
@@ -58,19 +48,6 @@ export interface RecentRoutineRun {
   writes: number
 }
 
-/** A routine.run request (ids and numbers only, routines-ai-step D7). */
-export interface RoutineRunRequest {
-  op: 'routine.run'
-  rule: string
-  run: string
-  occurrence: string
-  at: number
-  task?: string
-  rev: string
-  auto: boolean
-  tokens: number
-  budget: number
-}
 
 /** One relayed call, as the device lists it: never a value or the call's arguments. */
 export interface RecentCall {

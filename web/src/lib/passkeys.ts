@@ -4,42 +4,9 @@ import { t } from './i18n'
 // field; the browser wants ArrayBuffers. This module converts between the two
 // and keeps feature detection in one place. No dependencies.
 
-/** Server-sent creation options (PublicKeyCredentialCreationOptionsJSON). */
-export interface CreationOptionsJSON {
-  challenge: string
-  rp: { id: string; name: string }
-  user: { id: string; name: string; displayName: string }
-  pubKeyCredParams: { type: 'public-key'; alg: number }[]
-  authenticatorSelection?: AuthenticatorSelectionCriteria
-  timeout?: number
-  attestation?: AttestationConveyancePreference
-  excludeCredentials?: { type: 'public-key'; id: string }[]
-}
+import type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON } from './passkeyTypes'
 
-/** Server-sent request options (PublicKeyCredentialRequestOptionsJSON). */
-export interface RequestOptionsJSON {
-  challenge: string
-  rpId: string
-  userVerification?: UserVerificationRequirement
-  timeout?: number
-  allowCredentials?: { type: 'public-key'; id: string }[]
-}
-
-/** What the server accepts back from a registration ceremony. */
-export interface RegistrationJSON {
-  id: string
-  rawId: string
-  type: 'public-key'
-  response: { clientDataJSON: string; attestationObject: string; transports: string[] }
-}
-
-/** What the server accepts back from a sign-in ceremony. */
-export interface AssertionJSON {
-  id: string
-  rawId: string
-  type: 'public-key'
-  response: { clientDataJSON: string; authenticatorData: string; signature: string; userHandle: string | null }
-}
+export type { AssertionJSON, CreationOptionsJSON, RegistrationJSON, RequestOptionsJSON }
 
 export function toBase64Url(buf: ArrayBuffer | ArrayBufferView): string {
   const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)

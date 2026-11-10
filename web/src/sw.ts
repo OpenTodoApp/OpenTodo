@@ -196,6 +196,6 @@ async function share(request: Request): Promise<Response> {
   const id = crypto.randomUUID()
   const entry = entryFromForm(await request.formData(), id)
   if (entrySize(entry) > SHARE_MAX_BYTES) return Response.redirect('/', 303)
-  await putInboxEntry(entry)
+  await putInboxEntry(indexedDB, entry)
   return Response.redirect(`/share?inbox=${encodeURIComponent(id)}`, 303)
 }
