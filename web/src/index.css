@@ -1093,7 +1093,7 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    mark and the counts in one run at the metadata size with 12 px icons. A zero-width
    character gives the run a text baseline, so it sits on the title's first baseline
    whatever its first mark is; `clip`, not `hidden`, so it keeps that baseline. */
-.row-marks { display: inline-flex; min-width: 0; align-items: center; gap: 0.375rem; overflow: clip; font-size: var(--text-meta); line-height: var(--text-meta--line-height); }
+.row-marks { display: inline-flex; flex: none; align-items: center; gap: 0.375rem; overflow: clip; font-size: var(--text-meta); line-height: var(--text-meta--line-height); }
 .row-marks::before { content: '\200b'; margin-inline-end: -0.375rem; }
 /* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
    D1): the browser skips it while it stays in the document, so focus, find in page,
