@@ -13,7 +13,7 @@ export function CloseProgress({ step, seen, onStep }: { step: CloseStepId; seen:
   return (
     <nav aria-label={t('Close the day progress')} data-review-progress>
       <p className="sr-only">{t('Step {n} of {total}', { n: at + 1, total: CLOSE_STEP_IDS.length })}</p>
-      <ol className="flex items-center gap-1">
+      <ol className="flex items-center">
         {CLOSE_STEP_IDS.map((s) => {
           const current = s === step
           const visited = !current && seen.has(s)
@@ -24,7 +24,7 @@ export function CloseProgress({ step, seen, onStep }: { step: CloseStepId; seen:
               <Tooltip label={CLOSE_STEP_TITLES[s]}>
                 <button type="button" onClick={() => onStep(s)} aria-current={current ? 'step' : undefined} data-progress-step={s} data-progress-state={state}
                   aria-label={`${CLOSE_STEP_TITLES[s]}, ${status}`}
-                  className="touch-target flex h-6 items-center justify-center rounded-full px-1 outline-none focus-visible:ring-2 focus-visible:ring-focus">
+                  className="touch-target flex h-6 min-w-6 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus">
                   <span aria-hidden="true" className={`block h-2 rounded-full transition-all duration-(--duration-ui) motion-reduce:transition-none ${
                     current ? 'w-6 bg-accent forced-colors:bg-[Highlight]' : state === 'decided' ? 'w-2 bg-accent ring-2 ring-accent-soft forced-colors:bg-[CanvasText]' : visited ? 'w-2 bg-accent/50 forced-colors:bg-[CanvasText]' : 'w-2 bg-faint/40 forced-colors:border forced-colors:border-[CanvasText]'}`} />
                 </button>
