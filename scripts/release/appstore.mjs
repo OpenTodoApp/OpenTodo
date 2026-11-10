@@ -256,7 +256,10 @@ function writeState(dir, state) {
  * (profiles/<uuid>.mobileprovision) and ExportOptions.plist. Records what it made in state.json
  * as it goes, so `cleanup` removes it even when a later step fails.
  */
-export async function prepareSigning(call, { dir, team, stamp = String(Date.now()), log = defaultLog }) {
+/** Tries for a new certificate after retiring one, and the base pause between them. */
+export const CERT_RETRIES = 4
+export const CERT_RETRY_SECONDS = 20
+export async function prepareSigning(call, { dir, team, stamp = String(Date.now()), log = defaultLog, wait = sleep }) {
   if (!team) throw new Error('APPLE_TEAM_ID is not set')
   const state = readState(dir)
   writeState(dir, state)
@@ -272,7 +275,18 @@ export async function prepareSigning(call, { dir, team, stamp = String(Date.now(
     } catch (err) {
       // At Apple's limit: make room by retiring the oldest certificate of an earlier run, once.
       if (err.status !== 409 || !(await retireOldestCertificate(call, { log }))) throw err
-      cert = await create()
+      // Apple takes a moment to count a revoked certificate out (v1.4.2: 409 again right after
+      // revoking), so the new one is asked for a few times with a growing pause.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          cert = await create()
+          break
+        } catch (again) {
+          if (again.status !== 409 || attempt >= CERT_RETRIES) throw again
+          log('notice', `Apple has not freed the revoked certificate's place yet; asking again in ${attempt * CERT_RETRY_SECONDS} s`)
+          await wait(attempt * CERT_RETRY_SECONDS * 1000)
+        }
+      }
     }
   } catch (err) {
     if (err.status === 403) throw new Error(`${err.message}. The API key's role may not create certificates: make a key with the Admin role and replace ASC_KEY_ID and ASC_KEY_P8`)
