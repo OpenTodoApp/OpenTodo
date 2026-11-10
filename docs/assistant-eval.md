@@ -41,7 +41,7 @@ Models vary, so each scenario runs 3 times and passes when at least 2 runs pass.
 
 ## Cost
 
-There are 21 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 40 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
+There are 23 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 40 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
 
 ## Scenarios
 
@@ -55,7 +55,7 @@ An `expect` can hold:
 
 | Key | Passes when |
 | --- | --- |
-| `blocks` | a block of that `kind` was shown, with exactly `ids`, or at least `ids_include` and `min_ids`, on `date` or until `to` (days from today), grouped by `group_by`, of the board column `section`, of a `project` or `task` (`of`, activity), or with at least `min_options` |
+| `blocks` | a block of that `kind` was shown (`followups` for the suggestions under the answer), with exactly `ids`, or at least `ids_include` and `min_ids`, on `date` or until `to` (days from today), grouped by `group_by`, of the board column `section`, of a `project` or `task` (`of`, activity), or with at least `min_options` |
 | `no_tools` | none of these display tools was called (`show_map`, …) |
 | `changeset` | a change set was proposed (`true`) or nothing was (`false`) |
 | `changes` | the proposed changes of an `entity`, with `fields`, touch exactly `ids`, or at least `min` of them (`create`) |

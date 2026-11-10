@@ -58,7 +58,9 @@ func TestDisplayToolsOffered(t *testing.T) {
 	for _, w := range []string{"two or more specific tasks go in show_tasks", "Do not repeat a block's content in prose", "At most 4 per answer", "After ask_choice, end your answer",
 		"never describe it or claim that a map or view appeared", "do not call the same tool again",
 		// assistant-project-blocks 2.3: when to use each project view block.
-		"goes in show_board with that section_id", "whether a project is on track in show_timeline", "in show_activity", "in show_stats", "in show_task", "how a habit is going in show_habit"} {
+		"goes in show_board with that section_id", "whether a project is on track in show_timeline", "in show_activity", "in show_stats", "in show_task", "how a habit is going in show_habit",
+		// assistant-followups D2: when to suggest next steps.
+		"end with suggest_followups", "none after a plain fact, none with ask_choice", "never a choice's options again"} {
 		if !strings.Contains(p.req.System, w) {
 			t.Errorf("system prompt lacks %q", w)
 		}
@@ -69,9 +71,12 @@ func TestDisplayToolsOffered(t *testing.T) {
 		}
 	}
 	// assistant-project-blocks D2: a skill turn adds the display tools its view suggests.
-	for key, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice", "show_free_time"}, "break-down": nil, "triage-inbox": {"show_tasks", "ask_choice"},
-		"weekly-review": {"show_stats"}, "weekly-review@today": {"show_deadlines", "show_stats"}, "plan-week@project": {"show_calendar", "ask_choice", "show_free_time", "show_board", "show_timeline"},
-		"break-down@inbox": nil} {
+	// assistant-followups: every turn offers suggest_followups, a skill's included.
+	for key, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice", "show_free_time", "suggest_followups"}, "break-down": {"suggest_followups"},
+		"triage-inbox": {"show_tasks", "ask_choice", "suggest_followups"}, "weekly-review": {"show_stats", "suggest_followups"},
+		"weekly-review@today": {"show_deadlines", "show_stats", "suggest_followups"},
+		"plan-week@project":   {"show_calendar", "ask_choice", "show_free_time", "show_board", "show_timeline", "suggest_followups"},
+		"break-down@inbox":    {"suggest_followups"}} {
 		id, view, _ := strings.Cut(key, "@")
 		p := &scripted{rounds: []scriptRound{{text: "ok"}}}
 		f.loop.Run(context.Background(), p, TurnInput{UserID: "u1", Zone: time.UTC, View: view, Messages: []Message{{Role: "user", Text: "go"}}, Skill: skill(t, id)}, Events{Text: func(string) {}})
@@ -386,6 +391,27 @@ var blockCalls = []struct {
 		{"ask_choice", map[string]any{"question": "One?", "options": []string{"only"}}},
 		{"show_map", map[string]any{}},
 		{"show_tasks", map[string]any{"ids": []string{}}},
+	}},
+	// assistant-followups: outside the block limit, once per answer, never with a choice.
+	{"follow-ups after four blocks, once", []blockCall{
+		{"show_calendar", map[string]any{"date": "2026-11-12", "span": "day"}},
+		{"show_calendar", map[string]any{"date": "2026-11-13", "span": "day"}},
+		{"show_note", map[string]any{"id": "n1"}},
+		{"show_tasks", map[string]any{"ids": []string{"t1"}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{" Move them to Friday ", "Break down Pay taxes"}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{"Plan tomorrow"}}},
+	}},
+	{"no follow-ups in an answer that asked a choice", []blockCall{
+		{"ask_choice", map[string]any{"question": "Saturday or Sunday?", "options": []string{"Saturday", "Sunday"}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{"Saturday"}}},
+	}},
+	{"follow-ups with invalid arguments", []blockCall{
+		{"suggest_followups", map[string]any{"suggestions": []string{}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{"a", "b", "c", "d"}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{strings.Repeat("x", 61)}}},
+		{"suggest_followups", map[string]any{"suggestions": []string{"  "}}},
+		{"suggest_followups", map[string]any{}},
+		{"suggest_followups", map[string]any{"suggestions": []string{"Plan tomorrow"}}},
 	}},
 	{"fifth block refused", []blockCall{
 		{"show_calendar", map[string]any{"date": "2026-11-12", "span": "day"}},

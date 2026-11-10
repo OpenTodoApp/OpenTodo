@@ -153,7 +153,7 @@ describe('device loop', () => {
 
   it('offers a skill only its tools and drops unknown selections', async () => {
     const { seen } = await run([{ stop: 'end_turn' }], { skill: 'break-down', selected: ['a', 'gone'] })
-    expect(seen.req!.tools.map((t) => t.name)).toEqual(['get_task', 'create_tasks'])
+    expect(seen.req!.tools.map((t) => t.name)).toEqual(['get_task', 'create_tasks', 'suggest_followups'])
     expect(seen.req!.system).toContain('Selected task ids: a.')
     expect(seen.req!.system).toContain('Skill: Break this down')
   })
@@ -246,8 +246,8 @@ describe('display tools on the device (assistant-generative-ui 4.3)', () => {
   it('a skill turn adds the display tools its view suggests, as on the server', async () => {
     const { seen } = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'plan-week', view: 'project' })
     const display = seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)
-    expect(display).toEqual(['show_calendar', 'ask_choice', 'show_free_time', 'show_board', 'show_timeline'])
+    expect(display).toEqual(['show_calendar', 'ask_choice', 'show_free_time', 'show_board', 'show_timeline', 'suggest_followups'])
     const today = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'weekly-review', view: 'today' })
-    expect(today.seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)).toEqual(['show_deadlines', 'show_stats'])
+    expect(today.seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)).toEqual(['show_deadlines', 'show_stats', 'suggest_followups'])
   })
 })

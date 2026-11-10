@@ -13,7 +13,8 @@ import type { ItemEdits } from '../../lib/assistantShape'
 import { AnswerActions, QuestionActions } from './MessageActions'
 import { AnswerContent } from './blocks/AnswerContent'
 import type { ChoiceState } from './blocks/ChoiceBlock'
-import { answerMarkdown } from '../../lib/assistantBlocks'
+import { FollowupChips } from './blocks/FollowupChips'
+import { answerFollowups, answerMarkdown } from '../../lib/assistantBlocks'
 import { DeviceLocked, DeviceSetupForm } from './AssistantDevice'
 import type { DeviceMode } from './useDeviceAssistant'
 
@@ -63,6 +64,8 @@ export interface PanelViewProps {
   canRedo?: boolean
   /** A choice block's option, sent as the next message (assistant-generative-ui D4). */
   onChoose?: (option: string) => void
+  /** A follow-up suggestion, sent as the next message (assistant-followups D1). */
+  onFollowUp?: (text: string) => void
   /** The page's empty state holds the composer; the sheet keeps it at its foot. */
   composer?: ReactNode
   layout?: 'page' | 'sheet'
@@ -168,7 +171,7 @@ function AnswerSteps({ lines }: { lines: string[] }) {
   )
 }
 
-interface ItemActions { enabled: boolean; regenerate?: () => void; edit?: () => void; choice: ChoiceState }
+interface ItemActions { enabled: boolean; regenerate?: () => void; edit?: () => void; choice: ChoiceState; followUp?: (text: string) => void }
 
 /** Which actions a message offers: Copy on every answer, Regenerate and Edit on the latest ones only. */
 function actionsFor(p: PanelViewProps, i: number): ItemActions {
@@ -180,6 +183,8 @@ function actionsFor(p: PanelViewProps, i: number): ItemActions {
     enabled,
     // Only the latest answer's choice is active, and only while nothing follows it.
     choice: { active: enabled && i === msgs.length - 1, chosen: msgs[i]?.chosen, onChoose: p.onChoose },
+    // Only the latest answer offers its follow-ups (assistant-followups).
+    followUp: i === msgs.length - 1 ? p.onFollowUp : undefined,
     regenerate: redo && latest('assistant') && i === msgs.length - 1 && !p.streaming ? p.onRegenerate : undefined,
     edit: redo && latest('user') && !p.streaming ? p.onEditLast : undefined,
   }
@@ -208,6 +213,7 @@ function MessageItem({ m, actions }: { m: AssistantMessage; actions: ItemActions
       {m.note && <p className="text-meta text-muted">{m.note}</p>}
       {m.usage && <p className="text-meta text-faint">{usageLine(m.usage)}</p>}
       {(m.text || m.blocks?.length) && <AnswerActions text={() => answerMarkdown(m)} onRegenerate={actions.regenerate} enabled={actions.enabled} />}
+      {actions.followUp && <FollowupChips suggestions={answerFollowups(m)} enabled={actions.enabled} onFollowUp={actions.followUp} />}
     </AnswerItem>
   )
 }

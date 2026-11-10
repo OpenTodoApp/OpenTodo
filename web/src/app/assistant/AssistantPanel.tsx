@@ -125,7 +125,8 @@ export function AssistantPanel({ onClose, context, onApplied, name = '' }: Assis
         onToggle={rv.toggle} onEdit={(i, e) => void rv.edit(i, e)} onApply={() => void rv.apply()} onDiscard={() => void rv.discard()} onUndo={() => void rv.undo()} onDraft={composer.setDraft} onSend={() => void c.send()}
         onStop={c.stop} onAccept={(k) => void c.consent.accept(k)} onPickThread={c.pickThread}
         name={name} skills={composer.skills} onStarter={(s) => { composer.chooseSkill(s); focusComposer() }} layout="sheet" device={c.device} onStatus={c.consent.update} followRef={follow.contentRef}
-        onRegenerate={c.regenerate} onEditLast={() => { c.editLast(); focusComposer() }} canRedo={c.canRedo} onChoose={(o) => void c.choose(o)} />
+        onRegenerate={c.regenerate} onEditLast={() => { c.editLast(); focusComposer() }} canRedo={c.canRedo} onChoose={(o) => void c.choose(o)}
+        onFollowUp={(s) => void c.followUp(s)} />
     </AssistantSheet>
   )
 }

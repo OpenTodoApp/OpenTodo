@@ -97,6 +97,8 @@ type Manifest struct {
 	Skills         []ManifestSkill   `json:"skills"`
 	// ViewDisplay is the display tools each view suggests to a skill turn (assistant-project-blocks D2).
 	ViewDisplay map[string][]string `json:"view_display"`
+	// AlwaysDisplay is the display tools every turn offers, a skill's included (assistant-followups).
+	AlwaysDisplay []string `json:"always_display"`
 	// RoutineDraft is Describe it on the device (routines-describe-it D5).
 	RoutineDraft DraftManifest `json:"routine_draft"`
 }
@@ -138,12 +140,13 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		Version: ManifestVersion, Rules: SystemRules, DeviceNote: DeviceNote, Notice: agenttools.Notice, UntrustedNote: UntrustedNote, ImagesNote: ImagesNote,
 		Views: views,
 		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage,
-			"block_limit": BlockLimitMessage, "not_found": NotFoundMessage, "choice_asked": ChoiceAskedMessage},
+			"block_limit": BlockLimitMessage, "not_found": NotFoundMessage, "choice_asked": ChoiceAskedMessage,
+			"followups_shown": FollowupsShownMessage, "followups_once": FollowupsOnceMessage, "followups_choice": FollowupsChoiceMessage},
 		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
 			"max_images": MaxImages, "max_image_bytes": MaxImageBytes, "max_blocks": MaxBlocks, "max_block_ids": MaxBlockIDs},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
-		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(),
+		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
 	}
 	offered := map[string]bool{}
 	for _, t := range deviceTools {

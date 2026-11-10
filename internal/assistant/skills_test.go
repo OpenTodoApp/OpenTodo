@@ -38,7 +38,7 @@ func TestSkillFiltersAndRefusesTools(t *testing.T) {
 	for _, d := range p.req.Tools {
 		offered = append(offered, d.Name)
 	}
-	if strings.Join(offered, ",") != "get_task,create_tasks" {
+	if strings.Join(offered, ",") != "get_task,create_tasks,suggest_followups" { // assistant-followups: offered on every turn
 		t.Fatalf("offered tools = %v", offered)
 	}
 	var refused map[string]any

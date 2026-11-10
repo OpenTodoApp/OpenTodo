@@ -37,6 +37,9 @@ const (
 	// Free time blocks name stretches of at least this many minutes (default 30).
 	defaultFreeMinutes = 30
 	maxFreeMinutes     = 12 * 60
+	// A follow-ups call's suggestions (assistant-followups): 1 to 3, each at most 60 characters.
+	maxFollowups    = 3
+	maxFollowupText = 60
 )
 
 // The display tools' fixed results, the same on the device (its manifest).
@@ -44,6 +47,10 @@ var (
 	BlockLimitMessage  = fmt.Sprintf("this answer already shows %d blocks, the most one answer can show; nothing more was shown. Go on in words.", MaxBlocks)
 	NotFoundMessage    = "none of the ids was found; nothing was shown. Use only ids from tool results."
 	ChoiceAskedMessage = "Asked; the user's answer arrives as their next message. End this answer now."
+	// The follow-ups' results (assistant-followups D1).
+	FollowupsShownMessage  = "Shown as buttons under your answer; do not repeat them in words."
+	FollowupsOnceMessage   = "follow-ups are already shown under this answer; nothing more was shown."
+	FollowupsChoiceMessage = "this answer asks a choice, so no follow-ups were shown. End this answer now."
 )
 
 // Block kinds, as the stream and the device name them.
@@ -65,6 +72,8 @@ const (
 	BlockStats    = "stats"
 	BlockTask     = "task"
 	BlockHabit    = "habit"
+	// Follow-up suggestions (assistant-followups): buttons under the answer, not a framed block.
+	BlockFollowups = "followups"
 )
 
 // Block is one shown block: its kind and its checked parameters.
@@ -89,6 +98,8 @@ type Block struct {
 	// says whether an activity block's ID is a "project" or a "task".
 	SectionID string `json:"section_id,omitempty"`
 	Of        string `json:"of,omitempty"`
+	// Suggestions are a follow-ups block's next steps (assistant-followups).
+	Suggestions []string `json:"suggestions,omitempty"`
 }
 
 func idList(desc string) map[string]any {
@@ -170,6 +181,12 @@ var DisplayTools = []ToolDef{
 		Schema: displayObject([]string{"id"}, map[string]any{"id": idProp("A task id from tool results.")})},
 	{Name: "show_habit", Description: "Show a habit's month grid and its current streak. Use it for how a habit is going. The id must be a task marked habit in tool results. Changes nothing.",
 		Schema: displayObject([]string{"id"}, map[string]any{"id": idProp("A habit task id from tool results.")})},
+	// Follow-up suggestions (assistant-followups D1): text only, once per answer, never with ask_choice.
+	{Name: "suggest_followups", Description: "Offer the user 1 to 3 short next steps as buttons under your answer; tapping one sends its text as their next message. Call it at most once, at the end, only when a next step is likely, and never in an answer that calls ask_choice. Changes nothing.",
+		Schema: displayObject([]string{"suggestions"}, map[string]any{
+			"suggestions": map[string]any{"type": "array", "minItems": 1, "maxItems": maxFollowups, "description": "1 to 3 steps you can do, each at most 60 characters, written as the user would ask in their language, such as \"Move them to Friday\".",
+				"items": map[string]any{"type": "string", "maxLength": maxFollowupText}},
+		})},
 }
 
 func idProp(desc string) map[string]any {
@@ -193,6 +210,12 @@ var skillDisplay = map[string][]string{
 	"capture":         {"ask_choice"},
 }
 
+// alwaysDisplay are the display tools every turn offers, a skill's included (assistant-followups).
+var alwaysDisplay = []string{"suggest_followups"}
+
+// AlwaysDisplayTools is alwaysDisplay for the device manifest.
+func AlwaysDisplayTools() []string { return append([]string{}, alwaysDisplay...) }
+
 func isDisplay(name string) bool {
 	for _, d := range DisplayTools {
 		if d.Name == name {
@@ -210,7 +233,7 @@ func displayOffered(name string, skill *agenttools.Skill, view string) bool {
 	if skill == nil {
 		return isDisplay(name)
 	}
-	for _, n := range append(skillDisplay[skill.ID], viewDisplay[view]...) {
+	for _, n := range append(append(skillDisplay[skill.ID], viewDisplay[view]...), alwaysDisplay...) {
 		if n == name {
 			return true
 		}
@@ -237,12 +260,15 @@ type Shower interface {
 	ShownSection(ctx context.Context, userID, projectID, sectionID string) (bool, error)
 }
 
-// displayTurn is one turn's display state: the blocks shown so far.
+// displayTurn is one turn's display state: the blocks shown so far, and
+// whether the answer asked a choice or showed its follow-ups.
 type displayTurn struct {
-	shower Shower
-	userID string
-	shown  int
-	emit   func(Block)
+	shower    Shower
+	userID    string
+	shown     int
+	choice    bool
+	followups bool
+	emit      func(Block)
 }
 
 var datePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
@@ -307,6 +333,7 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 		Section  string   `json:"section_id"`
 		Project  string   `json:"project_id"`
 		Task     string   `json:"task_id"`
+		Suggest  []string `json:"suggestions"`
 	}
 	if len(raw) > 0 && string(raw) != "null" {
 		if err := json.Unmarshal(raw, &a); err != nil {
@@ -416,6 +443,19 @@ func parseBlock(name string, raw json.RawMessage) (Block, error) {
 			return Block{}, err
 		}
 		return Block{Kind: BlockStats, From: a.From, To: a.To}, nil
+	case "suggest_followups":
+		if len(a.Suggest) < 1 || len(a.Suggest) > maxFollowups {
+			return Block{}, argError(fmt.Sprintf("suggestions holds 1 to %d steps", maxFollowups))
+		}
+		b := Block{Kind: BlockFollowups}
+		for _, s := range a.Suggest {
+			s, err = checkText("each suggestion", s, maxFollowupText, true)
+			if err != nil {
+				return Block{}, err
+			}
+			b.Suggestions = append(b.Suggestions, s)
+		}
+		return b, nil
 	}
 	return Block{}, argError("unknown display tool")
 }
@@ -468,12 +508,17 @@ func (d *displayTurn) check(ctx context.Context, b Block) (Block, int, int, erro
 		asked, found = 1, 1
 	case BlockChoice:
 		asked, found = len(b.Options), len(b.Options)
+	case BlockFollowups:
+		asked, found = len(b.Suggestions), len(b.Suggestions)
 	}
 	return b, asked, found, err
 }
 
 // run handles one display call: the checks, the limit, the block, the result.
 func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, error) {
+	if call.Name == "suggest_followups" {
+		return d.followupsCall(call)
+	}
 	if d.shown >= MaxBlocks {
 		return marshal(map[string]any{"error": "block_limit", "message": BlockLimitMessage}), true, nil
 	}
@@ -497,7 +542,28 @@ func (d *displayTurn) run(ctx context.Context, call ToolCall) (string, bool, err
 		out["not_found"] = asked - found
 	}
 	if b.Kind == BlockChoice {
+		d.choice = true
 		out["message"] = ChoiceAskedMessage
 	}
 	return marshal(out), false, nil
+}
+
+// followupsCall handles suggest_followups (assistant-followups D1): outside the
+// block limit, at most once per answer and never in an answer that asked a choice.
+func (d *displayTurn) followupsCall(call ToolCall) (string, bool, error) {
+	if d.choice {
+		return marshal(map[string]any{"error": "choice_asked", "message": FollowupsChoiceMessage}), true, nil
+	}
+	if d.followups {
+		return marshal(map[string]any{"error": "followups_shown", "message": FollowupsOnceMessage}), true, nil
+	}
+	b, err := parseBlock(call.Name, call.Args)
+	if err != nil {
+		return marshal(map[string]any{"error": "invalid_arguments", "message": err.Error()}), true, nil
+	}
+	d.followups = true
+	if d.emit != nil {
+		d.emit(b)
+	}
+	return marshal(map[string]any{"shown": b.Kind, "count": len(b.Suggestions), "message": FollowupsShownMessage}), false, nil
 }

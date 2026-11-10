@@ -11,7 +11,7 @@ import {
 import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
-import { blockLabel, blockOf, type AssistantBlock } from '../../lib/assistantBlocks'
+import { blockLabel, blockOf, followupsOf, type AssistantBlock } from '../../lib/assistantBlocks'
 import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
@@ -56,6 +56,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
   let text = ''
   const statusLines: string[] = []
   const blocks: NonNullable<AssistantMessage['blocks']> = []
+  let followups: string[] | null = null
   let proposal: ProposedChange[] | null = null
   let failure: StreamedAnswer['failure']
   let errorCode: string | undefined
@@ -72,6 +73,12 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
           on.status(ev.text, text, [...statusLines])
           break
         case 'block': {
+          // Follow-ups go under the answer, not into its text (assistant-followups D1); the first set is kept.
+          const next = followupsOf(ev)
+          if (next) {
+            followups ??= next
+            break
+          }
           // Where the model called it: the length of the text so far (D3); an unknown block is skipped.
           const block = blockOf(ev)
           if (block) {
@@ -104,6 +111,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
   // The steps stay on the answer (assistant-generative-ui D8).
   if (statusLines.length) answer.status = [...statusLines]
   if (blocks.length) answer.blocks = blocks
+  if (followups) answer.followups = followups
   return { answer, proposal, failure, errorCode }
 }
 
@@ -446,6 +454,18 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     }
   }
 
+  /** A follow-up suggestion of the latest answer, sent as the next message the way typing it is (assistant-followups D1). */
+  const followUp = async (text: string) => {
+    const msgs = thread?.messages ?? []
+    if (choosing.current || !thread || streaming || msgs[msgs.length - 1]?.role !== 'assistant') return
+    choosing.current = true
+    try {
+      await send({ cut: msgs.length, question: text, skill: null, base: thread })
+    } finally {
+      choosing.current = false
+    }
+  }
+
   // Emptying the composer ends an Edit: the next question is a new one, not a replacement.
   useEffect(() => { if (!composer.draft.trim()) editCut.current = null }, [composer.draft])
 
@@ -472,7 +492,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
 
   return {
     status, device, thread, threads, toggleThreads, clearAll, composer, streaming, error, statusAnnounce, live, abort, consent, review: rv,
-    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate, choose,
+    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate, choose, followUp,
     /** Whether the latest question can be asked again: its material (pasted text, photos) is not kept. */
     canRedo: !!redoTarget(thread, composer.skills),
   }
