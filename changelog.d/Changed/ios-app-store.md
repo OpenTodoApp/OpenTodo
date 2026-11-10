@@ -1,1 +1,0 @@
-- **OpenTodo for iPhone and iPad is in the App Store.** The first release: it connects to your server and adds reminders on the phone, the share sheet, a Today widget and Face ID unlock.

@@ -24,9 +24,9 @@ beforeEach(() => {
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
 test("a new OpenTodo image raises the version, tipi_version and updated_at", async () => {
-  fs.writeFileSync(path.join(dir, "docker-compose.yml"), compose("ghcr.io/opentodoapp/opentodo:1.3.0", "busybox:1.37.0"));
-  const c = await updateAppConfig(path.join(dir, "docker-compose.yml"), "1.3.0", "ghcr.io/opentodoapp/opentodo", 1000);
-  expect(c.version).toBe("1.3.0");
+  fs.writeFileSync(path.join(dir, "docker-compose.yml"), compose("ghcr.io/opentodoapp/opentodo:1.4.0", "busybox:1.37.0"));
+  const c = await updateAppConfig(path.join(dir, "docker-compose.yml"), "1.4.0", "ghcr.io/opentodoapp/opentodo", 1000);
+  expect(c.version).toBe("1.4.0");
   expect(c.tipi_version).toBe(2);
   expect(c.updated_at).toBe(1000);
 });

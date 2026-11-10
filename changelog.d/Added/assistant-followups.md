@@ -1,1 +1,0 @@
-- **The assistant suggests what to do next.** When a next step is likely, the latest answer ends with up to three one-tap suggestions such as "Move them to Friday"; selecting one sends it as your next message. They are not offered after a plain answer or with a choice, and they go away once you send something else.
