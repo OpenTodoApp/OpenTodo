@@ -35,7 +35,7 @@ async function setSelect(sel: HTMLSelectElement, value: string) {
   await new Promise((r) => setTimeout(r, 0))
 }
 
-/** Adds "Priority is Priority {n}" to the group whose "+ Condition" button is `add`. */
+/** Adds "Priority is P{n}" to the group whose "+ Condition" button is `add`. */
 async function addPriority(add: HTMLButtonElement, n: number) {
   await click(add)
   await waitFor(() => !!editor(), 'the condition dialog')
@@ -94,7 +94,7 @@ describe('FilterBuilder', () => {
     const inner = r.container.querySelector('[data-filter-group="or"]')!
     expect(inner.textContent).toContain('Label is call')
     const not = r.container.querySelector('[data-filter-chip][data-not]')!
-    expect(not.textContent).toContain('Priority is Priority 4')
+    expect(not.textContent).toContain('Priority is P4')
     await r.unmount()
   })
 
@@ -114,7 +114,7 @@ describe('FilterBuilder', () => {
     expect(document.activeElement).toBe(chips()[1])
     await key(chips()[1], 'Delete')
     expect(current).toBe('p1 & p3')
-    await waitFor(() => document.activeElement?.textContent?.includes('Priority is Priority 3') ?? false, 'focus on the next chip')
+    await waitFor(() => document.activeElement?.textContent?.includes('Priority is P3') ?? false, 'focus on the next chip')
     await r.unmount()
   })
 
@@ -129,7 +129,7 @@ describe('FilterBuilder', () => {
     const r = await render(<Harness initial="p1" />)
     const input = r.container.querySelector('input[aria-label="Filter query"]') as HTMLInputElement
     await type(input, 'p1 & (')
-    expect(r.container.textContent).toContain('Priority is Priority 1')
+    expect(r.container.textContent).toContain('Priority is P1')
     expect(current).toBe('p1 & (')
     await r.unmount()
   })
@@ -161,7 +161,7 @@ describe('conditionText', () => {
     setPriorityNames(['Must', '', '', ''])
     const tree = parse('p1 | p2')!
     const leaves = (tree as { items: Leaf[] }).items
-    expect(leaves.map((l) => conditionText(l))).toEqual(['Priority is Must', 'Priority is Priority 2'])
+    expect(leaves.map((l) => conditionText(l))).toEqual(['Priority is Must', 'Priority is P2'])
     expect(formatQuery(tree)).toBe('p1 | p2')
   })
 
@@ -169,7 +169,7 @@ describe('conditionText', () => {
     const words = (q: string) => conditionText(parse(q) as Leaf)
     expect(words('@errand')).toBe('Label is errand')
     expect(words('##Work')).toBe('Project is Work or a sub-project')
-    expect(words('p1')).toBe('Priority is Priority 1')
+    expect(words('p1')).toBe('Priority is P1')
     expect(words('due <= tomorrow')).toBe('Due on or before tomorrow')
     expect(words('completed = last week')).toBe('Completed last week')
     expect(words('created > 3 days ago')).toBe('Created after 3 days ago')

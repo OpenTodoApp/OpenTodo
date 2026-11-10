@@ -55,7 +55,7 @@ Wherever the app shows a priority level to a person, it SHALL show the level's n
 
 #### Scenario: Filter builder chip
 - **WHEN** a saved view's query is `p1 | p2` and level 1 is named "Must"
-- **THEN** the builder shows the chips "Priority is Must" and "Priority is Priority 2", and the stored query stays `p1 | p2`
+- **THEN** the builder shows the chips "Priority is Must" and "Priority is P2" (an unnamed level keeps today's text), and the stored query stays `p1 | p2`
 
 #### Scenario: Screen reader
 - **WHEN** a screen reader user moves to the priority fact of a task at level 1 named "Must"
