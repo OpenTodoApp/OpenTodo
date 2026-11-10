@@ -16,7 +16,7 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 
 ## Development
 
-- `typescript`: the type-check (`npm run typecheck`), and the import graph walk of `scripts/shared-modules.mjs`.
+- `typescript`: the type-check (`npm run typecheck`), and the import graph of `scripts/shared-modules.mjs` (`scripts/shared-graph.mjs` uses the app's TypeScript when web's is not installed).
 - `@types/react`: React's types.
 - `@types/node`: types for `app.config.ts` and the scripts (Node 24, as in CI).
 - `@types/jest`: Jest's globals in the tests.

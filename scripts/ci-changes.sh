@@ -52,7 +52,7 @@ ios=$(match 'mobile/ios/|scripts/release/ios-testflight\.sh$')
 # The list's paths (one quoted path per line, so no JSON parser), as anchored patterns.
 list="$(cd "$(dirname "$0")/.." && pwd)/mobile/app/shared-modules.json"
 shared=$(sed -n 's/^ *"\(web\/[^"]*\)",\{0,1\}$/\1/p' "$list" | sed 's/[.]/\\./g; s/$/$/' | paste -sd '|' -)
-app=$(match "mobile/app/|\\.github/workflows/app-native\\.yml\$|web/src/generated/opSchema\\.ts\$|web/src/locales/|Makefile\$${shared:+|$shared}")
+app=$(match "mobile/app/|\\.github/workflows/app-native\\.yml\$|scripts/shared-(graph|boundary)\\.mjs\$|web/src/generated/opSchema\\.ts\$|web/src/locales/|Makefile\$${shared:+|$shared}")
 app_native=false
 if printf '%s\n' "$files" | grep -qE '^(mobile/app/|\.github/workflows/app-native\.yml$)'; then app_native=true; fi
 echo "code=$code"

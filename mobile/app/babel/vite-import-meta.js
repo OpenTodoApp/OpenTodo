@@ -78,5 +78,3 @@ function viteImportMeta({ types: t }) {
 }
 
 module.exports = viteImportMeta
-// Shared with scripts/shared-modules.mjs, which lists the files a glob reaches.
-module.exports.globFiles = globFiles

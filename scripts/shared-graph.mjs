@@ -16,16 +16,27 @@ import { browserGlobals } from './shared-boundary.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 export const SYNC_PATH = ['web/src/lib/sync.ts', 'web/src/lib/ops.ts']
 
-const requireWeb = createRequire(path.join(root, 'web/package.json'))
-
-/** Whether web's TypeScript is installed (npm ci in web/). */
-export function hasTypeScript() {
-  try {
-    requireWeb.resolve('typescript')
-    return true
-  } catch {
-    return false
+// Web's TypeScript, or the app's (mobile/app's app-check job installs only the app).
+const requirers = ['web/package.json', 'mobile/app/package.json'].map((p) => createRequire(path.join(root, p)))
+const requireTS = () => {
+  for (const r of requirers) {
+    try {
+      return r(r.resolve('typescript'))
+    } catch { /* the next one */ }
   }
+  throw new Error('shared-graph: needs TypeScript (npm ci in web/ or mobile/app)')
+}
+
+/** Whether web's or the app's TypeScript is installed. */
+export function hasTypeScript() {
+  return requirers.some((r) => {
+    try {
+      r.resolve('typescript')
+      return true
+    } catch {
+      return false
+    }
+  })
 }
 
 const EXTENSIONS = ['.ts', '.tsx', '/index.ts', '/index.tsx']
@@ -43,7 +54,7 @@ function resolve(fromFile, spec) {
 
 /** The repo-relative paths of every local module the entries reach, sorted. */
 export function sharedGraph(entries = SYNC_PATH, repo = root) {
-  const ts = requireWeb('typescript')
+  const ts = requireTS()
   const seen = new Set()
   const queue = entries.map((e) => path.join(repo, e))
   while (queue.length) {

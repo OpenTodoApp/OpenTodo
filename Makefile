@@ -87,13 +87,13 @@ obsidian-review:
 
 ## The native app (native-app-foundation): its own install (npm ci in mobile/app, never
 ## web's), type-check, lint, the Jest tests with the shared vectors, and the shared
-## module list against the app's import graph (advisory until 4.1 is complete). Linux
+## module list against the app's import graph (scripts/shared-graph.mjs). Linux
 ## is enough; the iOS and Android builds run in CI (app-ios, app-android). Not part of
 ## `make check` unless APP=1. See mobile/README.md.
 app:
 	cd mobile/app && npm ci --no-audit --no-fund
 	cd mobile/app && npm run typecheck && npm run lint && npm test -- --ci
-	node mobile/app/scripts/shared-modules.mjs --check --advisory
+	node mobile/app/scripts/shared-modules.mjs --check
 
 ## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
 ## check, translations, store metadata and a debug APK. Needs JDK 17+ and the

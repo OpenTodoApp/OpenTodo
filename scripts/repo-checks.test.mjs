@@ -105,6 +105,7 @@ const tiers = [
   [['mobile/app/package-lock.json'], { app: 'true', app_native: 'true' }],
   [['mobile/ios/OpenTodo/Bridge.swift'], { app: 'false', app_native: 'false' }],
   [['mobile/README.md'], { app: 'false', app_native: 'false' }],
+  [['scripts/shared-graph.mjs'], { app: 'true', app_native: 'false' }],
   // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
   [['web/src/app/Shell.tsx'], { a11y: 'true' }],
   [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],

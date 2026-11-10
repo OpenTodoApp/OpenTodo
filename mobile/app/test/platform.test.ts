@@ -18,6 +18,7 @@ function fakeHost(state = 'active') {
     },
     storage: { getString: (k) => store.get(k), set: (k, v) => { store.set(k, v) }, remove: (k) => { store.delete(k) } },
     timeZone: () => zone,
+    languages: () => ['it-IT', 'en-GB'],
   }
   return {
     host,
@@ -62,13 +63,22 @@ describe('the app platform', () => {
     expect(p.broadcast('opentodo-sync')).toBeNull()
   })
 
-  it('keeps preferences in the device store', () => {
+  it('keeps preferences in the device store, session values in memory', () => {
     const p = createPlatform(fakeHost().host)
     expect(p.prefs.get('k')).toBeNull()
-    p.prefs.set('k', 'v')
+    expect(p.prefs.set('k', 'v')).toBe(true)
     expect(p.prefs.get('k')).toBe('v')
-    p.prefs.remove('k')
+    p.prefs.set('k', null)
     expect(p.prefs.get('k')).toBeNull()
+    p.session.set('s', '1')
+    expect([p.session.get('s'), createPlatform(fakeHost().host).session.get('s')]).toEqual(['1', null])
+  })
+
+  it('has the device languages, no IndexedDB and no shell bridge', async () => {
+    const p = createPlatform(fakeHost().host)
+    expect(p.languages()).toEqual(['it-IT', 'en-GB'])
+    expect([p.indexedDB(), p.shell()]).toEqual([undefined, undefined])
+    expect(await p.persistStorage()).toBe(true)
   })
 
   it('reads the zone again when the app comes to the front, UTC when unknown', () => {

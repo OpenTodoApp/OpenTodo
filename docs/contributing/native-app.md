@@ -31,7 +31,7 @@ The app imports `web/src/lib` as `@shared/*`, through Metro (`metro.config.js`),
 
 - **What the app may import.** Only `@shared/*`. ESLint refuses `web/src/app`, `web/src/ui` and the browser-only packages (`react-dom`, `dexie-react-hooks`, `prosemirror-*`, `maplibre-gl`).
 - **The host.** A shared module never reads `window`, `document`, `navigator`, `localStorage`, `BroadcastChannel` or `indexedDB` directly; it asks `web/src/lib/platform.ts`. The app installs its implementation (`src/platform.ts`, `src/host.ts`) at start-up. `make repo-check` fails on a browser global in a module listed in `mobile/app/shared-modules.json`.
-- **The list.** `node mobile/app/scripts/shared-modules.mjs` prints the modules the app's code and tests reach; `--write` rewrites `shared-modules.json`. `make app` compares the two (a report for now, a failure once the sync modules have moved behind the port).
+- **The list.** `node mobile/app/scripts/shared-modules.mjs` prints the modules the app shares: the import graph (`scripts/shared-graph.mjs`) of the sync path and of every `@shared/*` module the app's code and tests import. `--write` rewrites `shared-modules.json`, and `make app` fails when the file is stale.
 - **Vite forms.** `import.meta.glob` and `import.meta.env.MODE` are compiled by `babel/vite-import-meta.js`, so the shared i18n layer loads the same catalogs as the web app.
 - **Vectors.** The tests in `mobile/app/test/` run the shared vectors (hybrid clock, recurrence, quick add, project flows, encryption) on the app's runtime against the same modules the web app runs. A change that breaks one fails in both.
 

@@ -97,6 +97,17 @@ interface Platform {
 
 Cryptography stays `crypto.subtle`. In the app it is provided by `react-native-quick-crypto`, a native implementation of the Web Crypto subset `crypto.ts` uses (AES-GCM, PBKDF2, HKDF, random values). The shared envelope vectors (`e2eeEnvelope`) run on the iOS simulator every night, so the native implementation is checked against the browser's.
 
+Other web APIs the listed modules use directly (task 4.1, as built). The table is what React Native 0.88 with Expo SDK 58 is expected to provide; each row is confirmed on the simulator with sync in the app (task 4.5), and a gap gets a polyfill listed in `mobile/app/DEPENDENCIES.md`:
+
+| API | Used by | In the app |
+| --- | --- | --- |
+| `crypto.subtle`, `crypto.getRandomValues` | `crypto`, `e2ee`, `attachments`, `taskPageCrypto`, `ids` | `react-native-quick-crypto`, installed at start-up |
+| `EventSource` | `sync` (the live stream) | none: `sync.ts` checks `typeof EventSource` and polls instead. Task 4.5 decides between a native stream and polling while in the foreground |
+| `TextEncoder`, `atob`, `btoa` | `crypto`, `ids`, `taskOrigin`, `taskPages`, `rules/steps`, `richtext` | Hermes |
+| `TextDecoder`, `URL`, `URLSearchParams` | `crypto`, `api`, `share`, `shell`, `taskOrigin`, `attachments` | Expo's runtime (`expo/winter`); `URL` must be the standard one, not React Native's partial one |
+| `fetch`, `Response`, `Headers`, `AbortController`, `XMLHttpRequest`, `FormData`, `Blob` | `http`, `api`, `sync`, `attachments`, `shareInbox`, `db`, `crypto` | React Native. `File` (`attachments`, `shareInbox`) and `Blob`'s `arrayBuffer()` are partial there: attachments wait for `native-app-everyday` |
+| `performance`, `requestAnimationFrame` | `perfMarks` | React Native (`performance.mark` for the perf marks) |
+
 ### D4. Local storage: Dexie on SQLite, chosen by measurement
 
 The data layer calls Dexie in 114 modules, and rewriting them is not on the table. Dexie runs on any IndexedDB implementation it is handed (`new Dexie(name, { indexedDB, IDBKeyRange })`). Two candidates give it one on the phone:
