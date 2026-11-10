@@ -404,8 +404,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'triage.title', keys: ['Tab'], description: 'Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it', section: 'triage', scope: 'view', views: ['triage'], local: true },
   { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
   // ---- the reviews (open-loops-method D6): the weekly review's project walk and the Daily check
-  { id: 'review.prev-step', keys: ['['], description: 'Weekly review: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
-  { id: 'review.next-step', keys: [']'], description: 'Weekly review: the next step', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'review.prev-step', keys: ['['], description: 'Weekly review and Close the day: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
+  { id: 'review.next-step', keys: [']'], description: 'Weekly review and Close the day: the next step', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-reviewed', keys: ['r'], description: 'Project walk: mark the project reviewed, then the next one', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'], overrides: ['list.quick-add'] },
   { id: 'review.walk-open', keys: ['Enter'], description: 'Project walk: open the project', section: 'review', scope: 'view', views: ['review'] },
@@ -415,13 +415,19 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.walk-skip', keys: ['j', 'Space'], description: 'Project walk: skip to the next project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-back', keys: ['k'], description: 'Project walk: back to the previous project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.focus', keys: ['f'], description: 'Daily check: put the selected task in today\'s focus (up to three), or take it out', section: 'review', scope: 'view', views: ['review'] },
-  // Close the day's carry-over (close-the-day D4): on the selected row. The screen's
-  // rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
-  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day: carry the task on the card over to tomorrow', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.pick', keys: ['p'], description: 'Close the day: pick a day for the task on the card', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.someday', keys: ['y'], description: 'Close the day: move the task on the card to Someday', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.keep', keys: ['h'], description: 'Close the day: keep the task on the card in Today', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.done', keys: ['d'], description: 'Close the day: the task on the card was done already (completed with the carry-over)', section: 'review', scope: 'view', views: ['review'], overrides: ['vim.delete'] },
+  // Close the day (close-the-day-redesign D3): Enter continues, Esc leaves without writing; on What moves,
+  // j / k move the row cursor and t, p, y, h, d set the current row's decision and move on.
+  // The screen's rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
+  { id: 'close.next', keys: ['Enter'], description: 'Close the day: the next step; on the last step, close the day', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-open'] },
+  { id: 'close.leave', keys: ['Esc'], description: 'Close the day: leave without writing anything', section: 'review', scope: 'view', views: ['review'], typing: true },
+  { id: 'close.down', keys: ['j'], description: 'Close the day, What moves: the next row', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-skip'] },
+  { id: 'close.up', keys: ['k'], description: 'Close the day, What moves: the previous row', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-back'] },
+  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day, What moves: the current row moves to tomorrow', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.pick', keys: ['p'], description: 'Close the day, What moves: pick a later day for the current row', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.someday', keys: ['y'], description: 'Close the day, What moves: the current row moves to Someday', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.keep', keys: ['h'], description: 'Close the day, What moves: keep the current row in Today', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.done', keys: ['d'], description: 'Close the day, What moves: the current row was done already (completed with the close)', section: 'review', scope: 'view', views: ['review'], overrides: ['vim.delete'] },
+  { id: 'close.all-tomorrow', keys: ['Shift+T'], description: 'Close the day, What moves: every row to tomorrow', section: 'review', scope: 'view', views: ['review'] },
 
   // ---- display mode (display-mode D5): the shell's shortcuts (`g` sequences, `q`, `?`) are not active there
   { id: 'display.down', keys: ['j', '↓', '→'], description: 'Move the focus to the next row, across the day columns', section: 'display', scope: 'view', views: ['display'] },
@@ -471,7 +477,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit', 'close.leave'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 

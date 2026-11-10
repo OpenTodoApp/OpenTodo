@@ -401,10 +401,10 @@ const shots = [
     await p.locator('[data-method-mode="lists"]').click(); await settle(p, 300)
   } },
   { name: 'next', server: D, async run(p) { await go(p, demoBase, '/next', () => p.locator('[data-group]').first().waitFor()); await settle(p, 300) } },
-  // close-the-day: the Carry over step with its decisions.
+  // close-the-day-redesign: the What moves step with its decisions.
   { name: 'close-day', server: D, async run(p) {
-    await go(p, demoBase, '/review/close', () => p.locator('#review-step-title').waitFor())
-    await p.keyboard.press(']'); await p.locator('[data-review-step="carry"]').waitFor(); await settle(p, 300)
+    await go(p, demoBase, '/review/close', () => p.locator('#close-step-title').waitFor())
+    await p.keyboard.press(']'); await p.locator('[data-close-step="moves"]').waitFor(); await settle(p, 300)
   } },
   { name: 'review-walk', server: D, async run(p) { await go(p, demoBase, '/review/projects', () => p.locator('[data-walk-card]').waitFor()); await settle(p, 300) } },
   { name: 'stats', server: D, async run(p) { await go(p, demoBase, '/stats', () => p.locator('[data-period-chooser]').waitFor()); await settle(p, 300) } },

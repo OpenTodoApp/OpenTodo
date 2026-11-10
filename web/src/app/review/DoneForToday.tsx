@@ -1,18 +1,14 @@
 // Done for today (OpenSpec change moments-and-onboarding, design D6; weekly-review
 // "Done for today"): after the close writes, the Close the day screen shows one calm
-// state in place of its step card: the day-done drawing, "Day closed, 18:42", the
-// day's figures, the line for tomorrow, "Back to Today" (focused) and "Reopen the
-// day". No streak, score or comparison. Device state only: nothing is written to
+// state in place of its steps: the day-done drawing, "Day closed, 18:42", the
+// day's figures, tomorrow's first thing (close-the-day-redesign D4), the line for
+// tomorrow, "Back to Today" (focused) and "Reopen the day". No streak, score or comparison. Device state only: nothing is written to
 // show it, and a reload shows the ordinary first step. It appears with a crossfade
 // (an opacity transition, which reduced motion keeps) and never moves.
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { t } from '../../lib/i18n'
-import type { CarryDecision } from '../../lib/review'
+import type { Carried } from '../../lib/closeDay'
 import { Button, Illustration } from '../../ui'
-
-/** What the close carried: the decisions applied, by kind. */
-export type Carried = Record<CarryDecision['kind'], number>
-export const NOTHING_CARRIED: Carried = { tomorrow: 0, day: 0, someday: 0, keep: 0, done: 0 }
 
 export interface DayDoneFigures {
   /** The close's time, already formatted. */
@@ -23,6 +19,8 @@ export interface DayDoneFigures {
   /** Tasks still in Today when the day was closed. */
   kept: number
   note: string
+  /** The title of tomorrow's first thing, when one was chosen. */
+  first?: string
 }
 
 /** The figures line ("5 done, 3 moved to tomorrow, 1 kept"), or "Nothing was planned today". */
@@ -55,6 +53,11 @@ export function DoneForToday({ figures, onBack, onReopen }: { figures: DayDoneFi
       <Illustration name="day-done" />
       <h2 id="day-done-title" className="text-h2 font-semibold text-strong">{t('Day closed, {time}', { time: figures.time })}</h2>
       <p className="text-body text-muted" data-day-done-figures>{figuresLine(figures)}</p>
+      {figures.first && (
+        <p className="max-w-sm text-body text-default" data-day-done-first>
+          {t.rich('Tomorrow starts with <b>{title}</b>', { title: figures.first, b: (s) => <strong className="user-text font-semibold text-strong">{s}</strong> })}
+        </p>
+      )}
       {figures.note && <blockquote className="max-w-sm text-body text-default" data-day-done-note>“{figures.note}”</blockquote>}
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         <Button ref={back} variant="primary" onClick={onBack} data-day-done-back>{t('Back to Today')}</Button>
