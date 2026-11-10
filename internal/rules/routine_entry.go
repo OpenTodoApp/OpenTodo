@@ -18,7 +18,7 @@ import (
 // (made by a newer version).
 func readRule(row opsync.Entity) (rule, bool) {
 	r := rule{ID: str(row, "id"), Name: str(row, "name"), Enabled: boolOf(row, "enabled"), AIApply: str(row, "ai_apply"), AIBudget: AIBudget(num(row, "ai_budget")),
-		ProjectID: str(row, "project_id")}
+		ProjectID: str(row, "project_id"), WorkspaceID: str(row, "workspace_id")}
 	var err error
 	if r.Trigger, err = ruleval.ParseTrigger(row["trigger"]); err != nil {
 		return r, false
@@ -175,7 +175,7 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 	if err != nil {
 		return Result{}, err
 	}
-	if w, err = e.sharedWorld(ctx, uid, r, w); err != nil {
+	if w, err = e.worldOf(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
 	if req.TaskID != "" {
@@ -213,6 +213,8 @@ type Draft struct {
 	CallAI bool `json:"call_ai"`
 	// ProjectID plans a routine of that project (routines-shared D3).
 	ProjectID string `json:"project_id"`
+	// WorkspaceID plans a routine of that workspace (routine-conditions D1).
+	WorkspaceID string `json:"workspace_id"`
 }
 
 // TestRule plans a saved rule's steps on a task (when its steps read one) and
@@ -234,6 +236,9 @@ func (e *Engine) TestDraft(ctx context.Context, uid string, d Draft) (Result, er
 	if !ok {
 		return Result{}, ErrInvalidDraft
 	}
+	if !r.Shared {
+		r.WorkspaceID = d.WorkspaceID
+	}
 	if d.ProjectID != "" {
 		if _, shared, err := e.projectRole(ctx, d.ProjectID, uid); err != nil {
 			return Result{}, err
@@ -250,7 +255,7 @@ func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID strin
 	if err != nil {
 		return Result{}, err
 	}
-	if w, err = e.sharedWorld(ctx, uid, r, w); err != nil {
+	if w, err = e.worldOf(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
 	if taskID != "" {

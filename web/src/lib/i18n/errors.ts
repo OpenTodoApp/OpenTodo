@@ -19,6 +19,8 @@ export const ERROR_MESSAGES: Record<string, string> = {
   proposal_closed: msg('This proposal was already applied, dismissed or expired.'),
   run_closed: msg('This run already finished.'),
   routine_changed: msg('The routine changed while this run waited. Nothing was written.'),
+  other_workspace: msg('This routine works only in its workspace. Nothing was written.'),
+  workspace_gone: msg('This routine’s workspace is gone. Choose another one in the routine.'),
   fallback: msg('Apply without asking does not allow this result, so it waits as a proposal.'),
   write_limit: msg('The run would write more than 500 items. Nothing was written.'),
   plaintext: msg('This account is encrypted: the change must be sent encrypted.'),

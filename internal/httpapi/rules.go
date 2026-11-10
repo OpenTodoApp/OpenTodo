@@ -143,6 +143,9 @@ func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string
 	if err != nil {
 		return err
 	}
+	if err := s.checkRuleWorkspace(ctx, uid, body); err != nil {
+		return err
+	}
 	ref := refs{shared: pid}
 	if raw, has := body["trigger"]; has {
 		tr, err := ruleval.ParseTrigger(raw)
@@ -203,6 +206,29 @@ func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string
 		ref.webhook = a.WebhookID
 	}
 	return s.resolveRuleRefs(ctx, uid, ref)
+}
+
+// checkRuleWorkspace checks a rule's workspace_id (routine-conditions D1):
+// null for every workspace, or one of the user's workspaces.
+func (s *Server) checkRuleWorkspace(ctx context.Context, uid string, body map[string]json.RawMessage) error {
+	v, has := body["workspace_id"]
+	if !has || isNullish(v) {
+		return nil
+	}
+	var id string
+	if json.Unmarshal(v, &id) != nil || id == "" {
+		return invalidRule("rule.workspace_id must be a workspace id or null")
+	}
+	list, err := s.sync.Workspaces(ctx, uid)
+	if err != nil {
+		return err
+	}
+	for _, w := range list {
+		if w.ID == id {
+			return nil
+		}
+	}
+	return invalidRule("workspace %s is not one of yours", id)
 }
 
 // refs are the ids a rule names.

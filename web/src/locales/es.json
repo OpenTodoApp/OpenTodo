@@ -7331,5 +7331,20 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {tarea} other {proyecto}}, {ring, select, centre {en el centro} direct {enlace directo} other {a dos pasos}}",
   "calendar frames and slots": "marcos y lotes del calendario",
   "Expand the row": "Expandir la fila",
-  "Edit the title, open the details or expand the row. This device only.": "Editar el título, abrir los detalles o expandir la fila. Solo este dispositivo."
+  "Edit the title, open the details or expand the row. This device only.": "Editar el título, abrir los detalles o expandir la fila. Solo este dispositivo.",
+  "Choose a priority": "Elige una prioridad",
+  "Choose a section": "Elige una sección",
+  "Every workspace": "Todos los espacios de trabajo",
+  "every workspace": "todos los espacios de trabajo",
+  "Is": "Es",
+  "Is not": "No es",
+  "This routine works only in its workspace. Nothing was written.": "Esta rutina solo actúa en su espacio de trabajo. No se escribió nada.",
+  "This routine’s workspace is gone. Choose another one in the routine.": "El espacio de trabajo de esta rutina ya no existe. Elige otro en la rutina.",
+  "a removed workspace": "un espacio de trabajo eliminado",
+  "in|workspace": "en",
+  "not in section {sections}": "no en la sección {sections}",
+  "not in {projects}": "no en {projects}",
+  "not priority {p}": "sin prioridad {p}",
+  "{field} test": "Condición de {field}",
+  "{name} ({workspace})": "{name} ({workspace})"
 }

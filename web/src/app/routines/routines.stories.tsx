@@ -14,7 +14,7 @@ import { InboxCardView } from './RoutinesInboxCard'
 import { ChoicePopover, InlineText } from './pickers'
 import { WordButton } from '../../ui'
 import type { InboxLine } from '../../lib/rules/inbox'
-import type { Label, RuleCondition } from '../../lib/types'
+import type { Label, Project, RuleCondition } from '../../lib/types'
 import { ConditionFields } from '../rules/RuleFields'
 
 // Routines (OpenSpec change routines-editor): the page, the sentence-card
@@ -163,8 +163,10 @@ export const WordListOpen: StoryObj = { name: 'Word list, open', render: () => <
 
 /** Condition rows (routines-editor-polish): one grid, names in one plain style, selects of one width. */
 function ConditionRows() {
-  const [value, setValue] = useState<RuleCondition>({ due: 'overdue', labels: { all: ['l1'] } })
-  const names = { projects: [], sections: [], labels: [{ id: 'l1', name: 'waiting-on', color: '#e8a33d' } as Label] }
+  // "Is not" and "No section" beside the plain tests (routine-conditions).
+  const [value, setValue] = useState<RuleCondition>({ project: { not_in: ['p1'], descendants: true }, section: 'none', priority: { not_in: [4] }, due: 'overdue', labels: { all: ['l1'] } })
+  const names = { projects: [{ id: 'p1', name: 'Errands', color: '#3b82f6', archived: false, deleted_at: null, parent_id: null, position: 1 } as Project], sections: [],
+    labels: [{ id: 'l1', name: 'waiting-on', color: '#e8a33d' } as Label] }
   return (
     <div className="-m-4 bg-canvas p-4">
       <section className="max-w-xl rounded-control border border-default bg-sunken p-3"><ConditionFields value={value} onChange={setValue} names={names} /></section>

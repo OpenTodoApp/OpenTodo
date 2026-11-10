@@ -104,7 +104,7 @@ func Matches(c *Condition, t Task, ctx Context) bool {
 		func() bool { return c.Project == nil || matchProject(c.Project, t, ctx) },
 		func() bool { return c.Section == nil || matchSection(c.Section, t) },
 		func() bool { return c.Labels == nil || matchLabels(c.Labels, t.Labels) },
-		func() bool { return len(c.Priority) == 0 || slices.Contains(c.Priority, t.Priority) },
+		func() bool { return c.Priority == nil || slices.Contains(c.Priority.In, t.Priority) != c.Priority.Not },
 		func() bool { return c.Due == nil || matchDate(c.Due, t.DueDate, ctx.Today) },
 		func() bool { return c.Deadline == nil || matchDate(c.Deadline, t.Deadline, ctx.Today) },
 		func() bool { return c.Start == "" || matchStart(c.Start, t.Start, ctx.Today) },
@@ -135,13 +135,20 @@ func matchUnchanged(n int, t Task, ctx Context) bool {
 	return d != "" && d <= AddDays(ctx.Today, -n)
 }
 
+// matchProject: no project, one of the projects (with their sub-projects when
+// asked), or none of them; a task without a project is in none of them
+// (routine-conditions D2).
 func matchProject(p *ProjectPred, t Task, ctx Context) bool {
 	if p.None {
 		return t.ProjectID == ""
 	}
-	if t.ProjectID == "" {
-		return false
+	if p.Not {
+		return t.ProjectID == "" || !inProjects(p, t, ctx)
 	}
+	return t.ProjectID != "" && inProjects(p, t, ctx)
+}
+
+func inProjects(p *ProjectPred, t Task, ctx Context) bool {
 	if slices.Contains(p.In, t.ProjectID) {
 		return true
 	}
@@ -167,7 +174,8 @@ func matchSection(p *SectionPred, t Task) bool {
 	if p.None {
 		return t.SectionID == ""
 	}
-	return t.SectionID != "" && slices.Contains(p.In, t.SectionID)
+	in := t.SectionID != "" && slices.Contains(p.In, t.SectionID)
+	return in != p.Not
 }
 
 func matchLabels(p *LabelsPred, labels []string) bool {

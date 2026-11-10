@@ -32,6 +32,9 @@ var (
 	ErrDeviceWrites   = errors.New("the run would write more than 500 items")
 	ErrPlaintext      = errors.New("an encrypted account's content must be sent encrypted")
 	ErrBadCommit      = errors.New("invalid commit")
+	// ErrOutsideWorkspace: the changes reach beyond the routine's workspace
+	// (routine-conditions D4).
+	ErrOutsideWorkspace = errors.New("the changes reach beyond the routine's workspace: nothing was written")
 )
 
 // MaxEnvelope bounds a proposal envelope (a proposal holds at most 500 items).
@@ -237,9 +240,22 @@ func (e *Engine) CommitDeviceRun(ctx context.Context, uid, runID, session string
 	if err != nil {
 		return Result{}, err
 	}
+	if r.WorkspaceID != "" && !r.Shared {
+		if w = w.inWorkspace(r.WorkspaceID); w == nil {
+			f.Outcome, f.Reason = OutcomeFailed, "the routine's workspace is gone"
+			return e.deviceDone(ctx, uid, r, run, f)
+		}
+	}
 	st := e.newRun(ctx, w, r, run.OccurrenceKey, run.RunID, false)
 	if err := st.layDevice(c); err != nil {
 		return Result{}, err
+	}
+	if where := st.outsideWorkspace(); where != "" {
+		// A device that does not know the routine's workspace (an older
+		// release) planned beyond it: the run fails, nothing is written
+		// (routine-conditions D4).
+		f.Outcome, f.Reason = OutcomeFailed, st.workspaceFailure(where)
+		return e.deviceDone(ctx, uid, r, run, f)
 	}
 	if st.writesPlanned() > MaxWrites {
 		return Result{}, ErrDeviceWrites
@@ -432,9 +448,17 @@ func (e *Engine) ApplyEncryptedProposal(ctx context.Context, uid, id string, a E
 	if err != nil {
 		return out, err
 	}
+	if r.WorkspaceID != "" && !r.Shared {
+		if w = w.inWorkspace(r.WorkspaceID); w == nil {
+			return out, ErrProposalClosed
+		}
+	}
 	st := e.newRun(ctx, w, r, run.OccurrenceKey, run.RunID, false)
 	if err := st.layDevice(DeviceCommit{Changes: a.Changes, Completing: a.Completing, Sides: a.Sides}); err != nil {
 		return out, err
+	}
+	if st.outsideWorkspace() != "" {
+		return out, ErrOutsideWorkspace
 	}
 	wrote, n, refused, err := st.commit(run.Depth)
 	if err != nil {

@@ -130,6 +130,9 @@ type rule struct {
 	// (routines-shared D3, D4).
 	ProjectID string
 	Shared    bool
+	// WorkspaceID is rule.workspace_id: the one workspace a personal routine
+	// works in, "" for every workspace (routine-conditions D1).
+	WorkspaceID string
 }
 
 func str(e opsync.Entity, f string) string {
@@ -218,6 +221,16 @@ type world struct {
 	// project is set on a shared routine's world: only that project's
 	// tasks and sections (routines-shared D3).
 	project string
+	// workspace is set on a routine's world of one workspace: only its
+	// tasks, projects and sections; elsewhere holds the other workspaces'
+	// projects (routine-conditions D1).
+	workspace        string
+	workspaceName    string
+	workspaceDefault bool
+	elsewhere        map[string]bool
+	// loadWorkspaces reads the user's workspaces once, when a routine needs them.
+	loadWorkspaces func() ([]opsync.Workspace, error)
+	wsList         *[]opsync.Workspace
 }
 
 // load reads one user's rows, zone and preferences.
@@ -284,6 +297,7 @@ func (e *Engine) load(ctx context.Context, uid string) (*world, error) {
 		w.shared[id] = true
 	}
 	w.encrypted, _ = e.keys.Enabled(ctx, uid)
+	w.loadWorkspaces = func() ([]opsync.Workspace, error) { return e.Sync.Workspaces(ctx, uid) }
 	return w, nil
 }
 
@@ -386,10 +400,11 @@ func (e *Engine) matches(ctx context.Context, w *world, r *rule, t opsync.Entity
 
 func (w *world) planContext(nowMs int64) PlanContext {
 	return PlanContext{Today: w.today, NowMs: nowMs, UserID: w.uid, WeekStart: w.weekStart,
-		LabelLive:      func(id string) bool { return w.labels[id] },
-		SectionProject: func(id string) string { return w.sections[id] },
-		ProjectShared:  func(id string) bool { return w.shared[id] },
-		ProjectLive:    func(id string) bool { _, ok := w.parent[id]; return ok },
+		LabelLive:        func(id string) bool { return w.labels[id] },
+		SectionProject:   func(id string) string { return w.sections[id] },
+		ProjectShared:    func(id string) bool { return w.shared[id] },
+		ProjectLive:      func(id string) bool { _, ok := w.parent[id]; return ok },
+		ProjectElsewhere: func(id string) bool { return w.elsewhere[id] },
 	}
 }
 

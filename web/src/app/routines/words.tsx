@@ -15,7 +15,7 @@ import { dateLiteral, stepKind, textLiteral, triggerOutput, type StepInput } fro
 import type { RoutineArg, RoutineStep, RoutineStepType, RuleActions, RuleCondition } from '../../lib/types'
 import { Button, Combobox, DataChip, Field, Input, Switch } from '../../ui'
 import { ActionFields, ConditionFields } from '../rules/RuleFields'
-import type { RoutineNames } from './data'
+import { pickerNames, type RoutineNames } from './data'
 
 export const ENUM_LABEL = translatedMap<string>({
   deep: msg('Deep'), medium: msg('Medium'), low: msg('Low'), due: msg('date'), deadline: msg('deadline'), priority: msg('priority'), created: msg('creation'),
@@ -221,7 +221,8 @@ export function ComparePicker({ value, onSet }: { value: unknown; onSet: (a: Rou
 export function LiteralPicker({ step, def, ctx, onSet, me }: { step: RoutineStep; def: StepInput; ctx: WordContext; onSet: (a: RoutineArg | undefined) => void; me: string }) {
   const a = step.in?.[def.name]
   const v = a && 'literal' in a ? a.literal : undefined
-  const n = ctx.names
+  // The pickers offer the routine's workspace (routine-conditions D5).
+  const n = pickerNames(ctx.names)
   const encrypted = useEncryption().enabled
   const memberships = useMemberships()
   const shared = useMemo(() => new Set(memberships.map((m) => m.projectId)), [memberships])

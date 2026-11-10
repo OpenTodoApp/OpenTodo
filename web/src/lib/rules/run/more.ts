@@ -13,7 +13,7 @@ import { periodRange, resolveDate } from '../stepData'
 import { isNull } from './actions'
 import { ids2 } from './kinds'
 import { PER_CALL } from './tools'
-import { fail, none, str, tasksVal, type ExecResult, type Inputs, type RunState } from './state'
+import { fail, none, str, tasksVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
 import type { LibraryTask, LibraryTemplate, Row } from './types'
 
 const MAX_NOTIFY_TEXT = 300
@@ -149,7 +149,7 @@ export function projectFromTemplate(st: RunState, s: RoutineStep, inputs: Inputs
   ;(tpl.projects ?? []).forEach((p, i) => {
     let name = pick(p.name, lang)
     if (i === 0) { const v = st.textIn(s, inputs, 'name'); if (v !== null && v.trim()) name = v }
-    const args: Record<string, unknown> = { name, id: id('p', String(i)), color: p.color || PALETTE[i % PALETTE.length] }
+    const args: Record<string, unknown> = { name, id: id('p', String(i)), color: p.color || PALETTE[i % PALETTE.length], ...workspaceArg(st) }
     if (p.icon) args.icon = p.icon
     else if (i === 0 && tpl.icon) args.icon = tpl.icon
     const pid = st.tool('create_project', args).filter((c) => c.entity === 'project' && c.create)[0].entityId

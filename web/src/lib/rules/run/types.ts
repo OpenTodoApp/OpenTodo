@@ -75,6 +75,15 @@ export interface RunWorld {
   memberships: Map<string, Membership>
   /** Set for a shared routine: `assigned:` names only that project's members. */
   project?: string
+  /**
+   * Set for a routine of one workspace (routine-conditions D1): the world then
+   * holds only that workspace's tasks, projects and sections; elsewhere names
+   * the other workspaces' projects. workspaceDefault: it is the default one.
+   */
+  workspace?: string
+  workspaceName?: string
+  workspaceDefault?: boolean
+  elsewhere?: ReadonlySet<string>
   /** Each task's logical date of its newest change, for the condition `unchanged`. */
   changed?: Record<string, string>
   encrypted: boolean
