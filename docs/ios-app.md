@@ -28,6 +28,12 @@ On first start the app asks for your server's address, the one you open in the b
 
 To point the app at another server later, long-press its icon and choose **Change server**. It asks first, because it also forgets the cached web app and its data, including changes that have not reached the server yet.
 
+### Single sign-on and login walls
+
+OpenTodo's own **Sign in with …** button (see [Single sign-on](self-hosting/sso.md)) signs in inside the app: the provider's page opens in the app and sends you back signed in. A bar above the provider's page names the site you are signing in on, since the app has no address bar; the **×** in the bar, or swiping back, returns to your server. A login wall in front of the server (Pangolin, Authelia, Authentik's proxy, Cloudflare Access, oauth2-proxy) works the same way once the app is connected: when the wall asks again, its sign-in page opens in the app. If a sign-in can't continue in the app (for example a page left open for a long time), the app says so and offers **Sign in here** to start again.
+
+Only pages the sign-in leads through stay in the app; a link to another site on a sign-in page (a privacy policy, a help page) opens in Safari, like every other link. The app's first-run check does not pass a login wall: let the wall bypass `/api/v1/health` and `/healthz` (the [Android guide](android-app.md#bypassing-the-wall-instead) lists the paths). The hourly background refresh never follows the wall's redirect; while its session has expired, the refresh waits until you next open the app. Some providers refuse to sign in inside an app's web view (Google answers "Error 403: disallowed_useragent"); with those, sign in with a password or a passkey. An app built for one server with app-bound domains (see [Building it](#building-it)) can only show the pages of the hosts it declares, so add the provider's host to `OPENTODO_APP_BOUND_HOST` too.
+
 ## Reminders
 
 Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Snooze 10 min** and **Dismiss** on the notification. Both open the app, which then moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone.
