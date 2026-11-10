@@ -96,6 +96,9 @@ func TestDevicePromptVectors(t *testing.T) {
 		{Name: "plan week own day", User: "Ada", Zone: "UTC", Now: now, Skill: "plan-week", Workday: &Workday{StartHour: 8, EndHour: 17, DayLength: 300}},
 		{Name: "break down", User: "Ada", Zone: "UTC", Now: now, Skill: "break-down", View: "project", Selected: []string{"t1"}},
 		{Name: "capture", User: "Ada", Zone: "UTC", Now: now, Skill: "capture"},
+		{Name: "find slot default day", User: "Ada", Zone: "UTC", Now: now, Skill: "find-slot", Selected: []string{"t1"}},
+		{Name: "find slot own day", User: "Ada", Zone: "Europe/Rome", Now: now, Skill: "find-slot", Selected: []string{"t1"}, Workday: &Workday{StartHour: 8, EndHour: 17, DayLength: 300}},
+		{Name: "brief today", User: "Ada", Zone: "UTC", Now: now, Skill: "brief-today", View: "today"},
 		{Name: "open proposal", User: "Ada", Zone: "UTC", Now: now, Open: []Proposed{
 			{Entity: "task", EntityID: "t1", Patch: map[string]json.RawMessage{"due": json.RawMessage(`{"date":"2026-10-14","time":"09:00"}`), "priority": json.RawMessage(`2`)}, Base: map[string]json.RawMessage{"due": json.RawMessage(`null`)}},
 			{Entity: "task", EntityID: "n1", Create: true, Patch: map[string]json.RawMessage{"title": json.RawMessage(`"Call <the> plumber & co"`), "project_id": json.RawMessage(`null`), "labels": json.RawMessage(`[]`)}},

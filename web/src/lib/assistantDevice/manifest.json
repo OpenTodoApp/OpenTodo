@@ -3361,6 +3361,70 @@
         "create_label",
         "ask_choice"
       ]
+    },
+    {
+      "id": "rewrite-task",
+      "name": "Rewrite this",
+      "description": "Proposes a clearer title and description for one task.",
+      "example": "Rewrite this task so it is clear what to do",
+      "result": "changes",
+      "subject": "selection",
+      "instructions": "Rewrite the user's selected task so it is clear what to do. When no task is selected, ask which one, and propose nothing.\n- Read the task with get_task.\n- Call update_tasks once for that task: a title that is a short, concrete action starting with a verb, in the task's language, and a description of one to three short sentences or a short list when the task needs details. Keep every fact, name, date and link of the original; add nothing the task does not say.\n- Change nothing else: not the date, project, labels, priority or subtasks. When the title and description are already clear, say so and propose nothing.\n- End with the new title in one line.",
+      "tools": [
+        "get_task",
+        "update_tasks"
+      ]
+    },
+    {
+      "id": "find-slot",
+      "name": "Find a slot",
+      "description": "Proposes a day and time in your free time this week for one task.",
+      "example": "Find a slot for this task",
+      "result": "changes",
+      "subject": "selection",
+      "instructions": "Find a slot for the user's selected task in the next 7 days. When no task is selected, ask which one, and propose nothing.\n- Read the task with get_task. Its length is its estimate_minutes, or 30 minutes when it has none; say so in the answer when it has none.\n- Call find_free_time once from today for 7 days, with min_minutes set to that length and the working day below.\n- Choose the earliest free stretch at least that long, today only when it starts later than now, and call schedule_tasks once for the task with that date and the stretch's start time (HH:MM).\n- When no stretch is long enough, say so, propose nothing, and suggest a shorter estimate or another week.\n- Do not change anything else.\n- End with one line: the day, the time and the stretch it fits in.",
+      "tools": [
+        "get_task",
+        "find_free_time",
+        "schedule_tasks",
+        "show_free_time"
+      ]
+    },
+    {
+      "id": "project-next",
+      "name": "What's next?",
+      "description": "Names the next actions of a project and shows where it stands.",
+      "example": "What's next in this project?",
+      "result": "answer",
+      "instructions": "Tell the user what to do next in the project their message names.\n- Find the project with list_projects and read its open tasks with list_tasks (project_id).\n- Name its next 1 to 3 actions: open tasks that are not blocked by an open task and not parked in Someday, the overdue and high-priority ones first, then the ones that unblock others.\n- Show where the project stands with show_board when it has sections, or show_timeline when its tasks have dates; show the next actions with show_tasks.\n- When the project has no open task anyone can do now, say so and suggest one next step in words.\n- Change nothing. Keep the answer to a few lines.",
+      "tools": [
+        "today_summary",
+        "list_projects",
+        "list_tasks",
+        "search_tasks",
+        "get_task",
+        "list_time_entries",
+        "show_board",
+        "show_timeline",
+        "show_tasks"
+      ]
+    },
+    {
+      "id": "brief-today",
+      "name": "Brief me",
+      "description": "Sums up your day: what is planned, what is due and how you are doing.",
+      "example": "Brief me on today",
+      "result": "answer",
+      "instructions": "Give the user a short briefing on today.\n- Read today with today_summary and list_tasks (view today); check what is overdue and what is due in the next 3 days.\n- Show today's agenda with show_calendar for today, the deadlines of the next 7 days with show_deadlines when there are any, and how the user is doing with show_stats.\n- Then say in at most four short lines: how full the day is, the one or two tasks that matter most, and anything overdue or due soon to decide on.\n- Change nothing.",
+      "tools": [
+        "today_summary",
+        "list_tasks",
+        "get_task",
+        "find_free_time",
+        "show_calendar",
+        "show_deadlines",
+        "show_stats"
+      ]
     }
   ],
   "view_display": {

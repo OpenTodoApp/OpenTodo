@@ -7394,5 +7394,12 @@
   "The assistant forgets every item, on all your devices.": "助手会在你的所有设备上忘记所有条目。",
   "The assistant now remembers what you tell it": "助手现在会记住你告诉它的内容",
   "Write one line of up to 200 characters.": "请写一行，最多 200 个字符。",
-  "your memory items, with every message": "你的记忆条目，随每条消息发送"
+  "your memory items, with every message": "你的记忆条目，随每条消息发送",
+  "Brief me": "今日简报",
+  "Find a slot for “{title}”": "为“{title}”找个时段",
+  "Find a slot": "找个时段",
+  "Rewrite this": "改写",
+  "Rewrite “{title}”": "改写“{title}”",
+  "What’s next in “{name}”?": "“{name}”接下来做什么？",
+  "What’s next?": "接下来做什么？"
 }

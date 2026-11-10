@@ -2125,8 +2125,10 @@
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/TaskListView.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/assistant/AssistantPage.tsx",
@@ -2134,6 +2136,7 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
+    "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2534,6 +2537,9 @@
   ],
   "Break this down": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Brief me": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Briefing": [
     "web/src/lib/settingsCopy.ts"
@@ -6421,6 +6427,12 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Find a slot": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Find a slot for “{title}”": [
+    "web/src/app/task-detail/useTaskDetail.ts"
   ],
   "Find a task this one waits for…": [
     "web/src/app/task-detail/Facets.tsx"
@@ -14291,6 +14303,12 @@
   "Revoked {day}": [
     "web/src/app/CaldavPanel.tsx"
   ],
+  "Rewrite this": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Rewrite “{title}”": [
+    "web/src/app/task-detail/useTaskDetail.ts"
+  ],
   "Right completes, left schedules; the same two actions start the task's menu": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -20376,6 +20394,12 @@
   "Whatever is on your mind…": [
     "web/src/app/method/loop/CatchMove.tsx",
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "What’s next in “{name}”?": [
+    "web/src/app/ProjectHeader.tsx"
+  ],
+  "What’s next?": [
+    "web/src/app/ProjectHeader.tsx"
   ],
   "When": [
     "web/src/app/AuditPanel.tsx",

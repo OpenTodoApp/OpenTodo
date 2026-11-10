@@ -41,7 +41,7 @@ Models vary, so each scenario runs 3 times and passes when at least 2 runs pass.
 
 ## Cost
 
-There are 23 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 40 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
+There are 25 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 42 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
 
 ## Scenarios
 
@@ -49,6 +49,7 @@ Each scenario is a JSON file in `scripts/assistant-eval/scenarios/`:
 
 - `seed`: `labels`, `projects` (`kept_away` keeps one away from assistants), `sections` (`name`, `project`), `tasks` (`due`, `deadline` and `start` in whole days from today, `time`, `estimate_minutes`, `labels`, `location`, `description`, `project`, `section`, `recurrence`, `habit`) and `notes`, each with a `key`;
 - `view`: the view the user asks from (`today` by default; `project` offers the board and timeline to a skill);
+- `skill` and `selected`: a [built-in skill](assistant-skills.md) the turn runs and the seed tasks it is about, as an entry in a task's or Today's menu sends them (`find-slot`, `brief-today`);
 - `turns`: the user's messages in order, each with an `expect`.
 
 An `expect` can hold:

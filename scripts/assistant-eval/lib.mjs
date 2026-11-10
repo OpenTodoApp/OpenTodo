@@ -56,6 +56,10 @@ export function validateScenario(s, file = 'scenario') {
   for (const [i, p] of (seed.projects ?? []).entries()) if (p.parent) ref(`seed.projects[${i}].parent`, p.parent, ['projects'])
   for (const [i, sec] of (seed.sections ?? []).entries()) ref(`seed.sections[${i}].project`, sec.project, ['projects'])
   if (s.view !== undefined && typeof s.view !== 'string') bad('view: the view the user asks from')
+  // A skill turn (assistant-in-context): the skill's id and the tasks it is about.
+  if (s.skill !== undefined && (typeof s.skill !== 'string' || !s.skill)) bad('skill: a built-in skill id')
+  if (s.selected !== undefined && !Array.isArray(s.selected)) bad('selected: a list of task keys')
+  for (const k of s.selected ?? []) ref('selected', k, ['tasks'])
   if (!Array.isArray(s.turns) || s.turns.length === 0) { bad('turns: at least one'); return out }
   for (const [i, turn] of s.turns.entries()) {
     const at = `turns[${i}]`
