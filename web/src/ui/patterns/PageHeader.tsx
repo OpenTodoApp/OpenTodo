@@ -147,7 +147,8 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
     : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title>{title}</H>
   // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
   // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
-  const lead = (ownRow || phoneDay) && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta'}`} data-page-lead data-page-meta>{meta}</div>
+  // A lead holding a button (the calendar's "2 blocks behind · Re-plan") is never cut: it keeps its width and the tools wrap instead.
+  const lead = (ownRow || phoneDay) && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta has-[button]:min-w-fit'}`} data-page-lead data-page-meta>{meta}</div>
   // At most the row's width: actions longer than a line (the calendar's range, view switch and
   // menus in German or French at 768 px) wrap inside it instead of pushing the page sideways.
   const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>

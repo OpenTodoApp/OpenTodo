@@ -16,7 +16,7 @@ A workspace is a separate room with its own projects, labels, filters and people
 
 ## Your default workspace
 
-Every account starts with one workspace, **Personal**, which holds everything you had before. With a single workspace the sidebar shows **OpenTodo** with **Personal** below it, and nothing else changes.
+Every account starts with one workspace, **Personal**, which holds everything you had before. The top of the sidebar shows its picture (its icon, or its first letter, on its colour) and name.
 
 ## Switch
 

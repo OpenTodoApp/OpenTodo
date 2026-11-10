@@ -87,6 +87,21 @@ export function tabRowOverflow() {
   return out
 }
 
+// Crumbs that paint over each other (GitHub issue 1050): a crumb of a breadcrumb squeezed
+// below its content must clip it, or its text and chevron run into the next crumb.
+export function crumbOverlap() {
+  const out = []
+  for (const nav of document.querySelectorAll('[data-breadcrumb]')) {
+    if (!nav.getClientRects().length) continue
+    for (const crumb of nav.children) {
+      if (getComputedStyle(crumb).overflowX === 'visible' && crumb.scrollWidth > crumb.clientWidth + 1) {
+        out.push(`breadcrumb: "${crumb.textContent.trim().slice(0, 40)}" overflows its crumb (${crumb.scrollWidth} px in ${crumb.clientWidth} px) and paints over its neighbour`)
+      }
+    }
+  }
+  return out
+}
+
 // Cut labels (polish 2026-11-02): an option of a segmented control and the day's name
 // in a Day or Week header are never cut. The scope toggle split its row evenly and cut
 // "This occurrence" with room to spare; the Week header beside the planning list cut
@@ -174,6 +189,23 @@ export function rowCheckReach() {
 // field gets focus, and an installed app stays zoomed. Every input that takes text, every
 // textarea and select, and every editable area with the text inside it, measured under
 // the touch emulation the layout check runs with (pointer: coarse).
+// Quick add's token tints (GitHub issue 1051): the copy of the text behind the field must
+// set its text exactly as the field does, or the tints drift off the words they mark. The
+// field takes the phone's 16 px size; the copy took the 13 px body size and sat above.
+export function tintDrift(rootSel) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body
+  const out = []
+  for (const tint of root?.querySelectorAll('[data-quick-add-tints]') ?? []) {
+    const field = tint.parentElement?.querySelector('textarea')
+    if (!field || !tint.getClientRects().length) continue
+    const a = getComputedStyle(tint), b = getComputedStyle(field)
+    for (const k of ['fontSize', 'lineHeight', 'fontFamily', 'paddingTop', 'paddingLeft', 'borderTopWidth', 'letterSpacing']) {
+      if (a[k] !== b[k]) out.push(`quick add tints: ${k} ${a[k]} behind a field of ${b[k]}`)
+    }
+  }
+  return out
+}
+
 export function smallFields([rootSel, min]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []

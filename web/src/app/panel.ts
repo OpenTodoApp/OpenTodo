@@ -100,24 +100,30 @@ function setSidePanelOpen(open: boolean): void {
 }
 
 /**
- * The docked task's width (task-side-panel D3): CSS pixels on this device, never synced,
- * read by `:root[data-task-split]` as `--task-panel-w` and bounded there.
+ * A docked panel's width (task-side-panel D3, note-pane-width D1): CSS pixels on this
+ * device, never synced, kept under `key` and set on the root as `cssVar`, which
+ * `:root[data-task-split]` (the docked task) or `:root[data-note-split]` (the Notes
+ * page's note) reads as `--panel-w` and bounds. Each keeps its own width.
  */
+export interface PanelWidthStore { key: string; cssVar: string }
 export const PANEL_WIDTH_KEY = 'opentodo.taskPanel.width'
-export function storedPanelWidth(): number | null {
-  const n = Number(readString(PANEL_WIDTH_KEY))
+export const TASK_PANEL_WIDTH: PanelWidthStore = { key: PANEL_WIDTH_KEY, cssVar: '--task-panel-w' }
+export const NOTE_PANEL_WIDTH: PanelWidthStore = { key: 'opentodo.notePanel.width', cssVar: '--note-panel-w' }
+export function storedPanelWidth(store: PanelWidthStore = TASK_PANEL_WIDTH): number | null {
+  const n = Number(readString(store.key))
   return Number.isFinite(n) && n > 0 ? n : null
 }
-function applyPanelWidth(): void {
-  setPanelWidth(storedPanelWidth(), false)
+/** Puts the width kept on this device on the root, as the panel opens. */
+export function applyPanelWidth(store: PanelWidthStore = TASK_PANEL_WIDTH): void {
+  setPanelWidth(storedPanelWidth(store), false, store)
 }
-/** Sets (a number) or forgets (null: the default width) the docked task's width; `persist` keeps it on the device. */
-export function setPanelWidth(px: number | null, persist = true): void {
+/** Sets (a number) or forgets (null: the default width) a docked panel's width; `persist` keeps it on the device. */
+export function setPanelWidth(px: number | null, persist = true, store: PanelWidthStore = TASK_PANEL_WIDTH): void {
   if (typeof document === 'undefined') return
-  if (px) document.documentElement.style.setProperty('--task-panel-w', `${Math.round(px)}px`)
-  else document.documentElement.style.removeProperty('--task-panel-w')
+  if (px) document.documentElement.style.setProperty(store.cssVar, `${Math.round(px)}px`)
+  else document.documentElement.style.removeProperty(store.cssVar)
   if (!persist) return
-  writeString(PANEL_WIDTH_KEY, px ? String(Math.round(px)) : null) // storage refused: the width holds until the next split
+  writeString(store.key, px ? String(Math.round(px)) : null) // storage refused: the width holds until the panel opens again
 }
 
 export const SPLIT_QUERY = '(min-width: 64rem)'
@@ -235,12 +241,6 @@ export function panelHandlers(): PanelHandlers {
   return handlers
 }
 
-/** The task id in the address on launch, if any. */
-export function taskIdFromAddress(): string | null {
-  if (typeof location === 'undefined') return null
-  return new URLSearchParams(location.search).get(QUERY)
-}
-
 function subscribe(fn: () => void): () => void {
   listeners.add(fn)
   return () => listeners.delete(fn)
@@ -252,6 +252,27 @@ export function usePanel(): PanelOccupant | null {
 
 export function usePanelTaskId(): string | null {
   return useSyncExternalStore(subscribe, panelTaskId, () => null)
+}
+
+const hasTask = () => panelTaskId() !== null
+/**
+ * Whether the slot shows a task. A list reads this, not the id, so a side panel that follows
+ * the cursor does not draw the whole list again on every move (row-click-modes D4).
+ */
+export function usePanelHasTask(): boolean {
+  return useSyncExternalStore(subscribe, hasTask, () => false)
+}
+
+/** Calls `fn` with the docked task's id and the one before it whenever it changes, without a render (row-click-modes D4). */
+export function watchPanelTaskId(fn: (id: string | null, was: string | null) => void): () => void {
+  let last = panelTaskId()
+  return subscribe(() => {
+    const id = panelTaskId()
+    if (id === last) return
+    const was = last
+    last = id
+    fn(id, was)
+  })
 }
 
 /** The projected date the task `id` was opened from, if it was opened from a projection. */

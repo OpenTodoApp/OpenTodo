@@ -11,7 +11,7 @@
 // step over the changed range, so ProseMirror maps the selection through it and
 // the caret stays on its character.
 import { chainCommands, exitCode, newlineInCode, setBlockType, toggleMark, baseKeymap } from 'prosemirror-commands'
-import { history, redo, undo, undoDepth } from 'prosemirror-history'
+import { closeHistory, history, redo, undo, undoDepth } from 'prosemirror-history'
 import { InputRule, inputRules, textblockTypeInputRule, wrappingInputRule } from 'prosemirror-inputrules'
 import { keymap } from 'prosemirror-keymap'
 import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment } from 'prosemirror-model'
@@ -23,6 +23,7 @@ import { LINK_REL, safeHref } from './markdown'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
+import { refOf, titleOf } from './noteLinks'
 import { tablePlugins, tableShiftTab, tableTab } from './editorTables'
 
 // ---- schema ----
@@ -83,6 +84,16 @@ export const schema = new Schema({
       toDOM: (n) => ['figure', { 'data-attachment': n.attrs.id, 'data-alt': n.attrs.alt, class: 'note-image' }],
     },
     text: { group: 'inline' },
+    // An internal link (note-links D1, D2): editor-only, never stored as a node. The
+    // document holds a run of text (`label`, the title when written) carrying the
+    // link mark with an in-app address; the node view shows the target's current title.
+    ref: {
+      inline: true, group: 'inline', atom: true, selectable: false, draggable: false,
+      attrs: { href: {}, label: { default: '' } },
+      parseDOM: [{ tag: 'a[data-ref-href]', priority: 60, getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('data-ref-href') ?? '', label: (d as HTMLElement).getAttribute('data-ref-label') ?? (d as HTMLElement).textContent ?? '' }) }],
+      toDOM: (n) => ['a', { href: n.attrs.href, 'data-ref-href': n.attrs.href, 'data-ref-label': n.attrs.label, class: 'note-ref' }, n.attrs.label],
+      leafText: (n) => n.attrs.label as string,
+    },
     hard_break: { inline: true, group: 'inline', selectable: false, parseDOM: [{ tag: 'br' }], toDOM: () => ['br'] },
   },
   marks: {
@@ -120,8 +131,18 @@ function runsOfBlock(node: PMNode): Run[] {
   node.forEach((child) => {
     if (child.isText) runs.push({ text: child.text ?? '', marks: marksOf(child.marks) })
     else if (child.type.name === 'hard_break') runs.push({ text: '\n', marks: {} })
+    else if (child.type === schema.nodes.ref) runs.push(refRun(child))
   })
   return runs
+}
+
+/**
+ * The stored form of a link node: its target's current title when the device can
+ * read it (so an edit refreshes a stale label, D2), else the label it was stored with.
+ */
+function refRun(node: PMNode): Run {
+  const href = node.attrs.href as string
+  return { text: titleOf(href) || (node.attrs.label as string) || href, marks: { link: { href } } }
 }
 
 /** The neutral model of an editor document (what updateBody writes). */
@@ -151,7 +172,17 @@ function nodeToModel(n: PMNode): RNode {
 
 function inline(runs: Run[] | undefined): PMNode[] {
   const out: PMNode[] = []
-  for (const r of runs ?? []) {
+  const list = runs ?? []
+  for (let i = 0; i < list.length; i++) {
+    const r = list[i]
+    // Each maximal run with one internal address is one link node (D2).
+    const href = r.marks.link?.href as string | undefined
+    if (href && refOf(href)) {
+      let label = r.text
+      while (i + 1 < list.length && list[i + 1].marks.link?.href === href) label += list[++i].text
+      out.push(schema.nodes.ref.create({ href, label }))
+      continue
+    }
     const marks = Object.entries(r.marks)
       .filter(([name]) => name in schema.marks)
       .map(([name, attrs]) => schema.marks[name].create(name === 'link' || name === 'mention' ? attrs : null))
@@ -460,6 +491,52 @@ function placeholder(text: string): Plugin {
   })
 }
 
+/** Backspace right after a link node (or Delete right before one) removes the whole link (note-links D3). */
+export function deleteRef(dir: -1 | 1): Command {
+  return (state, dispatch) => {
+    const { $from, empty } = state.selection
+    if (!empty) return false
+    const node = dir < 0 ? $from.nodeBefore : $from.nodeAfter
+    if (node?.type !== schema.nodes.ref) return false
+    if (dispatch) dispatch(state.tr.delete(dir < 0 ? $from.pos - node.nodeSize : $from.pos, dir < 0 ? $from.pos : $from.pos + node.nodeSize).scrollIntoView())
+    return true
+  }
+}
+
+/** Meta of the transaction that inserted a link and the space after it: the space's position. */
+export const linkSpaceKey = new PluginKey<number | null>('link-space')
+const LINK_PUNCT = new Set(['.', ',', ';', ':', '!', '?', ')'])
+
+/**
+ * Punctuation typed right after the space a link was inserted with takes that
+ * space's place ("Renovation." not "Renovation ."), note-links D3. Only that space,
+ * only with the caret directly after it, and only until the next change; one Undo
+ * brings the space back.
+ */
+export function linkSpacePlugin(): Plugin<number | null> {
+  return new Plugin<number | null>({
+    key: linkSpaceKey,
+    state: {
+      init: () => null,
+      apply: (tr, prev) => {
+        const meta = tr.getMeta(linkSpaceKey) as number | undefined
+        if (meta !== undefined) return meta
+        return tr.docChanged ? null : prev
+      },
+    },
+    props: {
+      handleTextInput(view, from, to, text) {
+        const at = linkSpaceKey.getState(view.state)
+        if (at === null || at === undefined || from !== to || from !== at + 1 || !LINK_PUNCT.has(text)) return false
+        const $at = view.state.doc.resolve(at)
+        if (view.state.doc.textBetween(at, at + 1) !== ' ' || $at.nodeBefore?.type !== schema.nodes.ref) return false
+        view.dispatch(closeHistory(view.state.tr).insertText(text, at, at + 1))
+        return true
+      },
+    },
+  })
+}
+
 /** "```" (and a language) then Enter on its own line starts a code block. */
 export const fenceOnEnter: Command = (state, dispatch) => {
   const { $from, empty } = state.selection
@@ -506,6 +583,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     placeholder(hooks.placeholder ?? ''),
     sizeLimit(hooks.size),
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
+    linkSpacePlugin(),
     rules(),
     ...tablePlugins(),
     trailingParagraph(),
@@ -523,6 +601,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
       Tab: chainCommands(tableTab(notify), sinkListItem(nodes.list_item)),
       'Shift-Tab': chainCommands(tableShiftTab, liftListItem(nodes.list_item)),
       'Shift-Enter': lineBreak,
+      Backspace: deleteRef(-1), Delete: deleteRef(1),
       Escape: () => {
         hooks.onEscape()
         return true

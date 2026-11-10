@@ -3,6 +3,7 @@
 // Help, Keyboard shortcuts and Sign out; then the assistant launcher, notifications,
 // the sync dot and, from 1024 px, the collapse control. The icon rail stacks them.
 // While an entry runs, its pill takes the name's place in the same row (sidebar-v2 D6).
+// Under the row, the brand line: the app's mark, name and version (sidebar-brand-and-row-grid D1).
 import { useState } from 'react'
 import { PersonAvatar } from './PersonAvatar'
 import { IconButton, Menu, MenuItem, MenuSeparator, SidebarItem } from '../ui'
@@ -10,24 +11,28 @@ import { keysOf } from '../lib/shortcuts'
 import type { User } from '../lib/types'
 import { t } from '../lib/i18n'
 import { SignOutDialog } from './AccountSettings'
+import { openFeedback } from '../lib/feedbackRequest'
 import { NotificationBell } from './NotificationBell'
 import { navigate, type Route } from './router'
 import { SyncStatus } from './SyncStatus'
 import { RelayIndicator } from './RelaySettings'
 import { RunningPill, TrackingAnnouncer, useRunning } from './TrackingIndicator'
+import { SidebarBrandLine } from './SidebarBrandLine'
 
 const ACTIVE = 'bg-selected font-medium text-strong'
 const IDLE = 'text-faint hover:bg-sunken hover:text-default dark:hover:bg-raised'
 /** Below 768 px every control of the row keeps a touch-height target. */
 const TOUCH = 'max-md:min-h-11 max-md:min-w-11 touch-target'
 
-export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, onAssistant, onToggleCollapse, onSignOut }: {
+export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, onFeedback = openFeedback, onAssistant, onToggleCollapse, onSignOut }: {
   route: Route
   user: User
   /** The icon rail. */
   collapsed: boolean
   onSearch?: () => void
   onShortcuts?: () => void
+  /** Opens "Something isn't working" (feedback-door); the shell closes the drawer first. */
+  onFeedback?: () => void
   onAssistant?: () => void
   onToggleCollapse?: () => void
   /** Signs out of this device, after the same confirmation as Settings → Account. */
@@ -54,6 +59,7 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
           </>}>
           <MenuItem label={t('Settings')} icon="settings" shortcut={keysOf('go.settings')} onSelect={() => navigate({ view: 'settings' })} data-settings-button />
           <MenuItem label={t('Help')} icon="circle-help" shortcut={keysOf('go.help')} onSelect={() => navigate({ view: 'help' })} data-help-button />
+          <MenuItem label={t("Something isn't working")} icon="messages-square" onSelect={onFeedback} data-feedback-button />
           {onShortcuts && <MenuItem label={t('Keyboard shortcuts')} icon="keyboard" shortcut={keysOf('global.help')} onSelect={onShortcuts} data-shortcuts-button />}
           {onSignOut && <>
             <MenuSeparator />
@@ -74,6 +80,8 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
             className="hidden lg:inline-flex" onClick={onToggleCollapse} data-sidebar-collapse aria-pressed={collapsed} />
         )}
       </div>
+      {/* The brand line ends the sidebar (sidebar-brand-and-row-grid D1): quiet, it opens About. */}
+      <SidebarBrandLine collapsed={collapsed} />
       {signingOut && onSignOut && <SignOutDialog onConfirm={onSignOut} onCancel={() => setSigningOut(false)} />}
     </div>
   )

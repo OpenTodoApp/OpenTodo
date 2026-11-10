@@ -93,7 +93,10 @@ export interface AssistantTestResult {
 
 export interface AssistantUsage {
   month: string
+  /** Fresh input; cached_tokens and cache_write_tokens were read from and written to the provider's cache (assistant-usage-cache). */
   input_tokens: number
+  cached_tokens?: number
+  cache_write_tokens?: number
   output_tokens: number
   total_tokens: number
   turns: number
@@ -141,9 +144,11 @@ export type TurnEvent =
   | { type: 'text'; text: string }
   | { type: 'status'; text: string }
   | { type: 'changeset'; items: ProposedChange[]; limit: number }
-  | { type: 'usage'; input: number; output: number; month_total: number; cap: number; own_key?: boolean }
+  | { type: 'usage'; input: number; output: number; cached?: number; cache_write?: number; month_total: number; cap: number; own_key?: boolean }
   | { type: 'done'; stop_reason: string; message?: string; server_time?: string }
   | { type: 'error'; code: string; message: string }
+  /** assistant-generative-ui D3: a block's kind and parameters, read with `blockOf`. */
+  | ({ type: 'block' } & Record<string, unknown>)
 
 export function isOwnerSettings(s: AssistantOwnerSettings | AssistantMemberSettings | null): s is AssistantOwnerSettings {
   return !!s && 'providers' in s

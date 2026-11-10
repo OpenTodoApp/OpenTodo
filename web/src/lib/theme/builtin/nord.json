@@ -30,10 +30,10 @@
     "hue-teal": "#8fbcbb",
     "hue-cyan": "#88c0d0",
     "hue-blue": "oklch(0.7315 0.0591 248.69)",
-    "hue-indigo": "oklch(0.7385 0.1206 276.93)",
+    "hue-indigo": "oklch(0.741 0.1206 276.93)",
     "hue-violet": "oklch(0.741 0.1206 293.54)",
     "hue-pink": "oklch(0.7396 0.0625 332.66)",
-    "hue-slate": "oklch(0.7323 0.0352 264.13)"
+    "hue-slate": "oklch(0.7348 0.0352 264.13)"
   },
   "bar": "#2e3440",
   "notes": {

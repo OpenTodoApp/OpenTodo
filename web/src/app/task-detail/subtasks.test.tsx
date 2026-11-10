@@ -7,7 +7,7 @@ import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createSubtask, createTask } from '../../lib/ops'
-import { click, key, type } from '../../ui/test-utils'
+import { click, key, spokenText, type, visibleText } from '../../ui/test-utils'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
@@ -28,7 +28,7 @@ describe('subtasks', () => {
     input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
     await waitFor(() => s.querySelectorAll('li').length === 1)
     expect(s.querySelector('h3')!.textContent).toContain('Subtasks')
-    expect(s.querySelector('h3')!.textContent).toContain('0/1')
+    expect(s.querySelector('h3')!.textContent).toContain('0 of 1')
     expect(input.value).toBe('')
     await unmount()
   })
@@ -47,7 +47,7 @@ describe('subtasks', () => {
     await click(box)
     await waitFor(() => !!(section(container).querySelector('button[aria-label="Reopen Paint"]')))
     expect((await db.tasks.get(sub))!.completed_at).not.toBeNull()
-    expect(section(container).querySelector('h3')!.textContent).toContain('1/1')
+    expect(section(container).querySelector('h3')!.textContent).toContain('1 of 1')
     await unmount()
   })
 
@@ -83,7 +83,7 @@ describe('pasting several subtasks', () => {
     await act(async () => { document.querySelector<HTMLButtonElement>('[data-paste-add]')!.click() })
     await waitFor(() => s.querySelectorAll('li').length === 3)
     expect([...s.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['Passport', 'Charger', 'Tickets tomorrow p1'])
-    expect(s.querySelector('h3')!.textContent).toContain('0/3')
+    expect(s.querySelector('h3')!.textContent).toContain('0 of 3')
     const subs = (await db.tasks.toArray()).filter((x) => x.parent_id === id)
     expect(subs.every((x) => x.due === null && x.priority === 4)).toBe(true)
     // Locally first, as one batch: every op of the paste shares one clock in the outbox.
@@ -102,6 +102,56 @@ describe('pasting several subtasks', () => {
     await act(async () => { input.setSelectionRange(5, 5) })
     expect(await paste(input, 'one\ntwo')).toBe(false)
     expect(document.querySelector('[data-paste-offer]')).toBeNull()
+    await unmount()
+  })
+})
+
+// A quiet subtask checklist (OpenSpec change sidebar-brand-and-row-grid, design D7; web-app "Quiet subtask checklist").
+describe('the quiet checklist', () => {
+  const five = async () => {
+    const id = await createTask({ title: 'Renovate' })
+    const subs: string[] = []
+    for (const title of ['Paint', 'Sand', 'Prime', 'Tile', 'Grout']) subs.push(await createSubtask(id, title))
+    await db.tasks.update(subs[0], { completed_at: 1 })
+    await db.tasks.update(subs[1], { completed_at: 1 })
+    return id
+  }
+
+  it('Heading and items: "Subtasks", "2 of 5" and the bar in the heading, then five borderless rows, the done ones faint with their strike', async () => {
+    const { container, unmount } = await open(await five())
+    await waitFor(() => section(container).querySelectorAll('li').length === 5 && section(container).textContent!.includes('2 of 5'))
+    const head = section(container).querySelector('[data-subtasks-head]')!
+    const h3 = head.querySelector('h3')!
+    expect(h3.className).toContain('font-medium')
+    expect(head.className).toContain('text-meta')
+    expect(h3.querySelector('svg')).toBeNull()
+    expect(head.querySelector('[data-subtask-progress]')).not.toBeNull()
+    // The share after the bar, read as a percentage (task-progress D3).
+    const percent = head.querySelector('[data-subtask-percent]')!
+    expect(visibleText(percent)).toBe('40%')
+    expect(spokenText(percent)).toBe('40% done')
+    expect(percent.previousElementSibling!.hasAttribute('data-subtask-progress')).toBe(true)
+    for (const li of section(container).querySelectorAll('li')) {
+      expect(li.className).not.toMatch(/\bborder\b|border-t/)
+      expect(li.className).toContain('min-h-8')
+      expect(li.className).toContain('pointer-coarse:min-h-11')
+      expect(li.querySelector('[data-check-mark]')!.className).toContain('h-4 w-4')
+    }
+    const done = [...section(container).querySelectorAll('li')].filter((li) => li.querySelector('button[aria-pressed="true"]'))
+    expect(done).toHaveLength(2)
+    for (const li of done) expect(li.querySelectorAll('button')[1].className).toMatch(/text-faint line-through/)
+    expect(section(container).querySelector<HTMLInputElement>('input[aria-label="Add subtask"]')!.placeholder).toBe('Add a subtask')
+    await unmount()
+  })
+
+  it('Tick offline: the row is done at once, the heading reads "3 of 5", and the change waits in the outbox', async () => {
+    const { container, unmount } = await open(await five())
+    await waitFor(() => section(container).textContent!.includes('2 of 5'))
+    const before = await db.outbox.count()
+    await click(section(container).querySelector<HTMLButtonElement>('button[aria-label="Complete Prime"]')!)
+    await waitFor(() => section(container).textContent!.includes('3 of 5'))
+    expect(section(container).querySelector('button[aria-label="Reopen Prime"]')).not.toBeNull()
+    expect(await db.outbox.count()).toBeGreaterThan(before)
     await unmount()
   })
 })

@@ -1,6 +1,6 @@
 ---
 title: Format notes and comments
-summary: Headings, lists, quotes, code, tables, images and mentions in notes and comments, the / command menu, and turning a checklist line into a subtask.
+summary: Headings, lists, quotes, code, tables, images, mentions and links to notes, tasks and projects, the / command menu, and turning a checklist line into a subtask.
 audience: user
 section: Guides
 specs: [rich-text-editing, comments, attachments]
@@ -11,7 +11,7 @@ order: 15
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="The task panel with formatted notes under the title and the comments below."></picture>
 
-Notes and comments use the same editor, so everything here works in both (except **Make subtask**, which only notes have). Everything also works offline.
+Notes and comments use the same editor, so everything here works in both (except **Make subtask** and links with `[[`, which only notes have). Everything also works offline.
 
 ## Type to format
 
@@ -19,7 +19,7 @@ Start a line with `- ` for a bullet list, `1. ` for a numbered list, `[ ] ` for 
 
 ## The / menu
 
-Type `/` at the start of a line or after a space to open a menu of everything the editor can insert: headings, lists, a table, a quote, a code block, a link, an image, today's date and a mention. Keep typing to filter it (`/tab` finds the table), move with <kbd>↑</kbd> and <kbd>↓</kbd>, press <kbd>Enter</kbd> to insert, or <kbd>Esc</kbd> to keep what you typed.
+Type `/` at the start of a line or after a space to open a menu of everything the editor can insert: headings, lists, a table, a quote, a code block, a link, an image, today's date, a mention and, in notes, **Link to…** (or type `[[`) a [note, task or project](note-links.md). Keep typing to filter it (`/tab` finds the table), move with <kbd>↑</kbd> and <kbd>↓</kbd>, press <kbd>Enter</kbd> to insert, or <kbd>Esc</kbd> to keep what you typed.
 
 On a phone, a row of buttons (bold, italic, link, lists and **More**) sits above the text while you write. On a computer, the **Formatting** button beside a note or in the comment box shows the same row ([The formatting row](formatting-row.md)), and the comment box's **@** button starts a mention.
 
@@ -41,4 +41,4 @@ In a task's notes, put the caret on a checklist line and press <kbd>Ctrl</kbd>+<
 
 ## What other apps see
 
-Notes and comments are stored as Markdown text too, so the API, the command line, exports and email show them as `| pipe | tables |`, `> quotes`, fenced code, `![name](attachment:…)` for pictures and `@name` for mentions.
+Notes and comments are stored as Markdown text too, so the API, the command line, exports and email show them as `| pipe | tables |`, `> quotes`, fenced code, `![name](attachment:…)` for pictures and `@name` for mentions. A link to a note, task or project is `[Title](?note=<id>)` ([Link notes, tasks and projects](note-links.md)).

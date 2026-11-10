@@ -309,7 +309,7 @@ export const SETTINGS_COPY = {
       hints: { label: msg('Show shortcut hints'), description: msg('Print the keys in the app itself, not only in tooltips. This device only.') },
       singleKeys: { label: msg('Single-key shortcuts'), description: msg('Letters and symbols alone run commands. Turn off for speech input. This device only.') },
       vim: { label: msg('Vim keybindings'), description: msg('Normal, Insert and Command modes with counts, {kbd}, {kbd2} and {kbd3}. This device only.') },
-      rowClick: { label: msg('Click a task to'), description: msg('Edit its title in place, or open its details beside the list. This device only.') },
+      rowClick: { label: msg('Click a task to'), description: msg('Edit the title, open the details or expand the row. This device only.') },
     },
   },
   focus: {
@@ -327,7 +327,7 @@ export const SETTINGS_COPY = {
       autoWork: { label: msg('Start work automatically') },
       reminder: { label: msg('Break reminder'), description: msg('A notice on any screen after a long stretch of work without a break.') },
       remindAfter: { label: msg('Remind me after') },
-      sound: { label: msg('Sound'), description: msg('A short tone when a session or a break ends, while the app is shown.') },
+      sound: { label: msg('Sound') },
       presets: { label: msg('Countdown presets'), description: msg('Up to four lengths in minutes, offered when a countdown starts.') },
       noise: { label: msg('Background noise'), description: msg('Generated on this device; plays only while you work.') },
       volume: { label: msg('Noise volume'), description: msg('This device only.') },
@@ -501,11 +501,20 @@ export const SETTINGS_COPY = {
       help: { label: msg('Help'), description: msg('The guides of this version, inside the app and offline.') },
       docs: { label: msg('Documentation'), description: msg('The same guides on the website, with setup and self-hosting.') },
       website: { label: msg('Website'), description: msg('News, guides, comparisons and what is new in each release.') },
-      feedback: { label: msg('Feedback and problems'), description: msg('Open an issue on GitHub. Every report is read.') },
+      feedback: { label: msg('Feedback and problems'), description: msg('Write it here. It opens as a GitHub issue or an email.') },
       community: { label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.') },
-      news: { label: msg('News and updates'), description: msg('Releases and what is being built, on X.') },
+      x: { label: msg('Follow on X'), description: msg('Releases and what is being built, on X.') },
       source: { label: msg('Source code'), description: msg('A star on GitHub helps other people find it.') },
       welcome: { label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.') },
+    },
+  },
+  // Settings → About → What's new (OpenSpec whats-new): the card's copy; its entries are English.
+  'about-news': {
+    title: msg("What's new"),
+    icon: 'sparkles',
+    description: msg('What changed in each version, in English.'),
+    rows: {
+      notices: { label: msg('Version notices'), description: msg('A dot shows when this version has notes you have not read yet.') },
     },
   },
   'about-support': {

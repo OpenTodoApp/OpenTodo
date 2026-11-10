@@ -1,13 +1,14 @@
-// The task's subtasks as a checklist with a quiet add line (ux-overhaul, "Task panel
-// layout"). On the task page the list is one bordered block with its count and a
-// progress bar in the head (task-full-page D1); in the docked panel it stays bare.
+// The task's subtasks as a quiet checklist under a heading that carries the weight
+// (sidebar-brand-and-row-grid D7): "Subtasks", "2 of 5" and the progress bar, then
+// borderless 32 px rows with a 16 px checkbox, and the add field as the last row. On the
+// task page the list keeps its bordered block (task-full-page D1) with the same rows.
 // With two subtasks or more the head has "One at a time" (subtask-flow): the task's
 // subtasks are then offered in list order, each after the one before.
 import { type FormEvent, useRef, useState } from 'react'
 import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { Icon, Switch } from '../../ui'
+import { Icon, ReadAs, Switch } from '../../ui'
 import { taskFlowOf } from '../../lib/flow'
 import { flowUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
@@ -29,7 +30,8 @@ export interface SubtasksProps {
 }
 
 export function Subtasks({ task, items, progress, readOnly, boxed = false, add = true, onToggle, onOpen }: SubtasksProps) {
-  const row = boxed ? 'flex min-h-9 items-center gap-2 border-t border-soft px-3 hover:bg-hover' : 'flex items-center gap-2 rounded-control px-1 py-1 hover:bg-sunken dark:hover:bg-raised'
+  // 32 px rows (44 px on a coarse pointer), no border, no background of their own.
+  const row = `flex min-h-8 items-center gap-2 rounded-control pointer-coarse:min-h-11 hover:bg-sunken dark:hover:bg-raised ${boxed ? 'mx-1 px-2' : 'px-1'}`
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
   const inOrder = taskFlowOf(task) === 'sequential'
   // Where subtasks are listed with their add line, in every mode: it is about what the page shows.
@@ -42,24 +44,26 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
     <section aria-label={t('Subtasks')} data-subtasks className={boxed ? 'overflow-hidden rounded-card border border-default' : undefined}>
       {(items.length > 0 || boxed) && (
         // The switch sits beside the heading, never inside it, so the heading reads as its name and count.
-        <div className={`flex items-center gap-2 text-meta text-muted ${boxed ? 'min-h-9 px-3' : 'mb-1'}`}>
-          <h3 className="flex items-center gap-2 font-semibold">
-            <Icon name="list" className="text-faint" />{t('Subtasks')}
-            {items.length > 0 && <span className="font-normal text-faint">{boxed ? t('{done} of {total}', progress) : `${progress.done}/${progress.total}`}</span>}
+        <div className={`flex min-h-8 items-center gap-2 text-meta ${boxed ? 'px-3' : 'px-1'}`} data-subtasks-head>
+          <h3 className="flex items-baseline gap-2 font-medium text-default">
+            {t('Subtasks')}
+            {items.length > 0 && <span className="font-normal tabular-nums text-faint" data-subtask-count>{t('{done} of {total}', progress)}</span>}
           </h3>
           {flow && (
             <span className="ml-auto" data-subtask-flow>
               <Switch checked={inOrder} onChange={(on) => { void setInOrder(on) }} label={t('One at a time')} disabled={readOnly} />
             </span>
           )}
-          {boxed && items.length > 0 && (
-            <span className={`${flow ? 'ml-2 ' : 'ml-auto '}h-1 w-20 overflow-hidden rounded-full bg-sunken`} aria-hidden="true" data-subtask-progress>
+          {items.length > 0 && (
+            <span className={`${flow ? 'ml-2 ' : 'ml-auto '}h-1 w-16 overflow-hidden rounded-full bg-sunken`} aria-hidden="true" data-subtask-progress>
               <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
             </span>
           )}
+          {/* The share as a percentage after the bar (task-progress D3), in a fixed width so the bar never moves. */}
+          {items.length > 0 && <span className="w-9 shrink-0 text-right tabular-nums text-faint" data-subtask-percent><ReadAs label={t('{n}% done', { n: pct })}>{`${pct}%`}</ReadAs></span>}
         </div>
       )}
-      <ul className={`empty:hidden ${boxed ? '' : 'space-y-0.5'}`} aria-label={t('Subtasks')}>
+      <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')}>
         {items.map((c) => (
           <li key={c.id} className={row}>
             <button
@@ -68,7 +72,7 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
               aria-pressed={!!c.completed_at}
               onClick={() => onToggle(c)}
               disabled={readOnly}
-              className="touch-target inline-flex shrink-0 items-center justify-center rounded-full"
+              className="touch-target inline-flex size-5 shrink-0 items-center justify-center rounded-full"
             >
               {/* The circle is a span: on a touch screen the button grows to 44 px, the circle stays 16 px. */}
               <span data-check-mark className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${c.completed_at ? 'border-accent bg-accent text-on-accent' : 'border-input hover:bg-success-soft'}`}>
@@ -81,7 +85,7 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
           </li>
         ))}
       </ul>
-      {!readOnly && add && <div className={boxed ? 'border-t border-soft px-2 py-1' : undefined}><AddSubtask parent={task} /></div>}
+      {!readOnly && add && <div className={boxed ? 'border-t border-soft px-2' : undefined}><AddSubtask parent={task} /></div>}
     </section>
   )
 }
@@ -110,12 +114,12 @@ export function AddSubtask({ parent }: { parent: Task }) {
     onPasteAsLine: (text) => { setValue(text); ref.current?.focus() },
   })
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex items-center gap-2 px-1" data-add-subtask>
-      <span className="text-faint"><Icon name="plus" size="xs" /></span>
+    <form onSubmit={(e) => void submit(e)} className="flex min-h-8 items-center gap-2 px-1 pointer-coarse:min-h-11" data-add-subtask>
+      <span className="flex size-5 shrink-0 items-center justify-center text-faint"><Icon name="plus" size="xs" /></span>
       <input
         ref={ref}
         className="min-w-0 flex-1 rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30"
-        placeholder={t('Add subtask…')}
+        placeholder={t('Add a subtask')}
         aria-label={t('Add subtask')}
         value={value}
         onChange={(e) => setValue(e.target.value)}

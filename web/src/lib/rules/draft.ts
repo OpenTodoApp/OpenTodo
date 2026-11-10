@@ -14,6 +14,17 @@ export interface RoutineDraft {
   /** Apply without asking ("auto" or "") and the daily AI token budget (0 = 20,000), routines-ai-step D4, D11. */
   aiApply?: string
   aiBudget?: number
+  /**
+   * The workspace the routine works in (routine-conditions D1): an id, null
+   * for every workspace, undefined for a new routine, which takes the
+   * workspace it is created in when saved.
+   */
+  workspace?: string | null
+}
+
+/** The workspace a draft works in: its own, or for a new routine the current one ('' unknown: every workspace). */
+export function draftWorkspace(d: Pick<RoutineDraft, 'workspace'>, current: string): string | null {
+  return d.workspace === undefined ? current || null : d.workspace
 }
 
 /** Where a step sits: its list (the top level or a block of a step) and its index there. */
@@ -27,14 +38,16 @@ export interface StepPlace {
 export const NEW_ROUTINE: RoutineDraft = { name: '', trigger: { kind: 'manual' }, condition: null, steps: [] }
 
 /** A rule as a draft: a rule without steps is one Change tasks step over the trigger (D1). */
-export function draftOf(rule: Pick<Rule, 'name' | 'trigger' | 'condition' | 'actions' | 'steps'> & Partial<Pick<Rule, 'ai_apply' | 'ai_budget'>>): RoutineDraft {
+export function draftOf(rule: Pick<Rule, 'name' | 'trigger' | 'condition' | 'actions' | 'steps'> & Partial<Pick<Rule, 'ai_apply' | 'ai_budget' | 'workspace_id' | 'id'>>): RoutineDraft {
   let steps: RoutineStep[] = []
   try {
     steps = readRoutine(rule.actions, rule.steps ?? null)?.steps ?? []
   } catch {
     steps = Array.isArray(rule.steps) ? rule.steps : []
   }
-  return { name: rule.name, trigger: rule.trigger ?? NEW_ROUTINE.trigger, condition: rule.condition, steps, aiApply: rule.ai_apply ?? '', aiBudget: rule.ai_budget ?? 0 }
+  // A saved routine keeps its workspace (null: every workspace, as before the field); a new one takes the current workspace.
+  const workspace = rule.id ? rule.workspace_id ?? null : rule.workspace_id
+  return { name: rule.name, trigger: rule.trigger ?? NEW_ROUTINE.trigger, condition: rule.condition, steps, aiApply: rule.ai_apply ?? '', aiBudget: rule.ai_budget ?? 0, ...(workspace !== undefined ? { workspace } : {}) }
 }
 
 /**
@@ -54,7 +67,7 @@ export function storedOf(d: RoutineDraft): { actions: RuleActions | null; steps:
 
 /** Whether two drafts store the same routine (saving an unchanged one writes nothing). */
 export function sameDraft(a: RoutineDraft, b: RoutineDraft): boolean {
-  const s = (d: RoutineDraft) => JSON.stringify([d.name.trim(), d.trigger, d.condition ?? null, storedOf(d), d.aiApply ?? '', d.aiBudget ?? 0])
+  const s = (d: RoutineDraft) => JSON.stringify([d.name.trim(), d.trigger, d.condition ?? null, storedOf(d), d.aiApply ?? '', d.aiBudget ?? 0, d.workspace ?? 'new'])
   return s(a) === s(b)
 }
 

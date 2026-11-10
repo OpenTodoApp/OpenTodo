@@ -1,0 +1,44 @@
+---
+title: Answers that show your tasks
+summary: The assistant's answers show your tasks, days, time, projects, places, notes and choices as part of the app, and proposals in their own shape.
+audience: user
+section: Guides
+specs: [assistant-blocks]
+screens: []
+order: 78
+---
+# Answers that show your tasks
+
+<picture><source srcset="images/assistant-answers-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-answers-light.webp" alt="The assistant panel answering Plan my day: the day's tasks as rows with checkboxes under the heading On your plate today, then the day as a short agenda with its planned total, and a sentence suggesting where to start."></picture>
+
+Tasks the assistant names are links to the task, with its current title, struck through once it is done. A finished answer keeps what it read under **2 steps** (select it to see them). The conversation follows the answer as it grows; **Jump to latest** returns after you scroll up.
+
+## What answers can show
+
+Where it saves reading, an answer shows the app's own view of what it talks about, read from this device, so it stays current and works offline:
+
+- **Tasks**: rows with their checkbox, dates and project. Ticking one completes it, with **Undo** as everywhere.
+- **A day or a week**: each day with its planned total against your working day and its tasks in time order. Select a day to open it in the calendar.
+- **A choice**: when the assistant needs a decision, its answers as buttons. Selecting one sends it as your reply; **Something else** puts the cursor in the message box.
+- **Places**: tasks' places and saved places on the map with a numbered list, or the list alone when maps are off.
+- **A note** or **a project's outline**, with a way to open it.
+- **Tracked time**: your own time on a range of days as bars per project or per day, each with its total, and the total for the range. Select a bar to open Statistics.
+- **Free time**: for a day or a week, the stretches within your working day (Settings → Calendar) that no calendar event, [frame](frames.md), [slot](slots.md) or task with a time takes. Select a day to open it. Event titles are never needed, so it looks the same with end-to-end encryption.
+- **Deadlines**: the open tasks with a deadline on a range of days, in date order, each with its countdown. Select one to open it.
+- **A project**: one column of its [board](sections-and-boards.md), such as **In progress**, its [timeline](project-timeline.md) with today marked, or its latest 20 changes and comments.
+- **Statistics**: what you completed on a range of days, what is still open from earlier days, the Inbox, and Today against your [Today limit](today-limit.md).
+- **A task** in full, with its notes, subtasks and latest comments, or **a habit**'s [month grid](recurring-and-reminders.md#track-a-habit) and streak.
+
+These views are read-only, apart from ticking tasks. An answer shows at most four of them. Anything deleted since reads **Removed**.
+
+## Suggested next steps
+
+The latest answer may end with up to three next steps, such as **Move them to Friday**; selecting one sends it as your message.
+
+## Copy, regenerate, edit
+
+Under each answer, **Copy answer** copies it as Markdown, with the tasks, day, places or choice it showed written out. The latest answer has **Regenerate** to ask again, and your latest question has **Edit question** to change it and send it again; both replace what came after, and an applied proposal stays applied. Neither is offered for a question with pasted text or photos, which are not kept.
+
+## Proposals
+
+A proposal shows as a calendar, an outline or a map, and you can change it before you apply it: see [Shape a proposal](assistant-proposals.md).

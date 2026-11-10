@@ -15,13 +15,14 @@ A due date is just a calendar day, and a time is the time on the clock where you
 
 ## Type or pick a date and time
 
-Click the date on a task's **When** line. **Today**, **Tomorrow**, **This weekend**, **Next week** or **No date** sets it in one click. Or type in the field, which previews what it understood ("→ Fri 23 Oct"), or pick a day in the calendar. **Add time** suggests 09:00, 13:00 and 18:00. Formats follow **Settings → Language and region → Date and time**:
+Click the date on a task's **When** line. Type in the field, which previews what it understood ("→ Fri 23 Oct 15:00"), choose **Today**, **Tomorrow**, **This weekend** or **Next week**, or pick a day in the calendar. Under it, **Any time**, **Evening** or **Time** says when on that day ([more](day-parts.md#when-on-that-day)); **Time** suggests 09:00, 13:00 and 18:00. Formats follow **Settings → Language and region → Date and time**:
 
-- **Date:** a date in your format (`14/10` or `10/14`, with or without a year), an ISO date (`2026-10-14`), or a word: `today`, `tomorrow`, a weekday such as `fri`, `next week` or `3 Nov`. A date without a year that has already passed this year means next year. Press <kbd>Enter</kbd> or leave the field to save it. If the date doesn't exist (`31/02`), the field says so and the task keeps its date.
-- **Calendar:** always shown under the field, with weeks starting on your first day of the week. Arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, <kbd>Home</kbd> and <kbd>End</kbd> to the start and end of the week, <kbd>Enter</kbd> picks the day and <kbd>Esc</kbd> closes it.
-- **Time:** `15`, `1530`, `15:30`, `3pm`, `3:30 pm` or `noon`, whichever clock you use. <kbd>↓</kbd> in the field shows times in 15-minute steps to pick from.
+- **Date:** a date in your format (`14/10` or `10/14`, with or without a year), an ISO date (`2026-10-14`), or a word: `today`, `tomorrow`, a weekday such as `fri`, `next week` or `3 Nov`. A past date without a year means next year. <kbd>Enter</kbd> or leaving the field saves it; an impossible date (`31/02`) is refused.
+- **Date and time:** `tomorrow 3pm` or `fri at 9` sets both; a time alone keeps the day.
+- **Calendar:** weeks start on your first day of the week. Arrow keys move by day and week, <kbd>Page Up</kbd> and <kbd>Page Down</kbd> by month, <kbd>Home</kbd> and <kbd>End</kbd> to the week's edges, <kbd>Enter</kbd> picks the day.
+- **Time:** `15`, `1530`, `15:30`, `3pm`, `3:30 pm` or `noon`, whichever clock you use. <kbd>↓</kbd> in the field lists times in 15-minute steps.
 
-**Clear** at the bottom removes the due date; **Remove time** keeps only the day.
+**Clear** at the bottom removes the due date.
 
 ## When a day ends
 
@@ -35,10 +36,10 @@ At 04:00 the views move on by themselves. Nothing stored changes: due dates stay
 
 ## Fix a time to a time zone
 
-Once a due has a time, a line under it says how the time is meant: **Floating time** (the same clock time wherever you are) or **Fixed to New York** (one moment worldwide). Choose **Change** to:
+Once a due has a time, the end of its time line says how the time is meant: **Floating** (the same clock time wherever you are) or a city such as **New York** (one moment worldwide). Choose it to:
 
 - **Fix to my zone:** tie the time to your current time zone, for things that happen at a fixed moment. Press <kbd>z</kbd> with the panel open to do the same, and again to release it.
 - **Fix to another time zone:** search any city or zone, for example a call at 15:00 in New York. The panel shows how that reads for you ("15:00 in New York = 21:00 your time (Berlin)") before you choose **Fix to New York**. Your own zone is listed first, then the zones you used recently.
 - **Make floating:** release a fixed time to the clock time you currently see.
 
-Devices elsewhere show a fixed time converted to their local time, with the original time and city as a hint. Without a time the button is off: a due date alone always stays floating.
+Devices elsewhere show a fixed time converted to their local time, with the original time and city as a hint. Without a time nothing about zones is shown: a due date alone always stays floating.

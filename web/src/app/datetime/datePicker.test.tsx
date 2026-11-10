@@ -26,7 +26,8 @@ describe('DatePicker', () => {
     const r = await render(<DatePicker label="Due date" value={null} choices={quickChoices('due')} onChange={onChange} />)
     const tomorrow = r.container.querySelector('[data-choice="tomorrow"]')!
     expect(tomorrow.textContent).toContain('22 Oct')
-    expect(r.container.querySelector('[data-choice="none"]')!.getAttribute('aria-checked')).toBe('true')
+    expect(r.container.querySelector('[data-choice="none"]')).toBeNull()
+    expect(r.container.querySelector('[aria-checked="true"]')).toBeNull()
     await click(tomorrow)
     expect(onChange).toHaveBeenCalledWith('2026-10-22')
     await r.unmount()
@@ -71,6 +72,75 @@ describe('DatePicker', () => {
     expect(r.container.querySelector('[role="alert"]')!.textContent).toContain('on or before')
     expect(onChange).not.toHaveBeenCalled()
     await r.unmount()
+  })
+
+  // OpenSpec change when-picker, D4 and D5: the Do on layout.
+  describe('Do on (compact, with a time)', () => {
+    const doOn = (props: { onChange?: (iso: string | null) => void; onChangeTimed?: (iso: string, time: string) => void; value?: string | null } = {}) => (
+      <DatePicker compact label="Due date" value={props.value ?? null} choices={quickChoices('due')} emptyText="tomorrow 3pm, next fri"
+        onChange={props.onChange ?? (() => {})} onChangeTimed={props.onChangeTimed ?? (() => {})} />
+    )
+
+    it('puts the field first with its example, the quick choices as one line named with their dates, and no empty preview room', async () => {
+      const r = await render(doOn())
+      const picker = r.container.querySelector('[data-date-picker]')!
+      expect(picker.firstElementChild!.querySelector('[data-date-words]')).toBeTruthy()
+      expect(field(r.container).placeholder).toBe('tomorrow 3pm, next fri')
+      const tomorrow = r.container.querySelector('[data-choice="tomorrow"]')!
+      expect(tomorrow.textContent).toBe('Tomorrow')
+      expect(tomorrow.getAttribute('aria-label')).toBe('Tomorrow, Thu 22 Oct')
+      expect([...r.container.querySelectorAll('[data-choice]')].map((c) => c.getAttribute('data-choice'))).toEqual(['today', 'tomorrow', 'weekend', 'next-week'])
+      expect(r.container.querySelector('[data-date-preview]')!.className).toContain('h-0')
+      await r.unmount()
+    })
+
+    it('fri sets the date alone, through onChange', async () => {
+      const onChange = vi.fn()
+      const onChangeTimed = vi.fn()
+      const r = await render(doOn({ onChange, onChangeTimed }))
+      field(r.container).focus()
+      await type(field(r.container), 'fri')
+      await key(field(r.container), 'Enter')
+      expect(onChange).toHaveBeenCalledWith('2026-10-23')
+      expect(onChangeTimed).not.toHaveBeenCalled()
+      await r.unmount()
+    })
+
+    it('tomorrow 3pm previews the date and the time, then hands both over in one call', async () => {
+      const onChange = vi.fn()
+      const onChangeTimed = vi.fn()
+      const r = await render(doOn({ onChange, onChangeTimed }))
+      field(r.container).focus()
+      await type(field(r.container), 'tomorrow 3pm')
+      await flush()
+      expect(r.container.querySelector('[data-date-preview]')!.textContent).toBe('→ Thu 22 Oct 15:00')
+      await key(field(r.container), 'Enter')
+      expect(onChangeTimed).toHaveBeenCalledWith('2026-10-22', '15:00')
+      expect(onChange).not.toHaveBeenCalled()
+      await r.unmount()
+    })
+
+    it('a time alone keeps the date', async () => {
+      const onChangeTimed = vi.fn()
+      const r = await render(doOn({ onChangeTimed, value: '2026-10-28' }))
+      field(r.container).focus()
+      await type(field(r.container), '18:30')
+      await key(field(r.container), 'Enter')
+      expect(onChangeTimed).toHaveBeenCalledWith('2026-10-28', '18:30')
+      await r.unmount()
+    })
+
+    it('reads the German example in German', async () => {
+      const languages = vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['de-DE'])
+      const onChangeTimed = vi.fn()
+      const r = await render(doOn({ onChangeTimed }))
+      field(r.container).focus()
+      await type(field(r.container), 'morgen 15 Uhr')
+      await key(field(r.container), 'Enter')
+      expect(onChangeTimed).toHaveBeenCalledWith('2026-10-22', '15:00')
+      languages.mockRestore()
+      await r.unmount()
+    })
   })
 
   it('a day picked in the calendar commits', async () => {

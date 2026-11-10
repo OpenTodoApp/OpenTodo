@@ -135,6 +135,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'quickadd.notes', keys: ['Shift+Enter'], description: 'In quick add: write notes under the title; Enter adds the task with them', section: 'everywhere', scope: 'global', local: true },
   { id: 'global.assistant', keys: ['Shift+I'], description: 'Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes', section: 'everywhere', scope: 'global' },
   { id: 'assistant.review', keys: ['Enter', 'Esc'], description: 'Apply the checked changes / discard the proposal; Space toggles an item', section: 'everywhere', scope: 'global', local: true, when: 'proposed changes', overrides: ['list.open', 'list.escape', 'calendar.escape', 'month.open', 'month.escape', 'plan.open', 'plan.escape', 'feed.open', 'dashboard.open', 'trash.confirm', 'trash.escape', 'dashboard.escape', 'share.escape', 'panel.escape', 'task.escape', 'routines.escape', 'list.archive-offer'] },
+  { id: 'assistant.proposal-move', keys: ['Alt+↑', 'Alt+↓'], description: 'In a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same', section: 'everywhere', scope: 'global', local: true, when: 'proposed item in a calendar', overrides: ['list.move-up', 'list.move-down'] },
   { id: 'list.dictate', keys: ['Shift+V'], description: 'Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves', section: 'everywhere', scope: 'list' },
   { id: 'list.dictate-stop', keys: ['Esc'], description: 'Stop dictating', section: 'everywhere', scope: 'list', hidden: true, typing: true, overrides: ['list.escape', 'panel.escape'] },
   { id: 'global.row-menu', keys: ['.', 'Shift+F10', 'Menu'], description: 'Open the menu of the focused row: a label, view, section heading or project', section: 'everywhere', scope: 'global', local: true },
@@ -200,7 +201,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'note.drag', keys: ["Drag (touch: drag the row's grip, or press and hold the row, then move)"], description: 'Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels', section: 'tasks', scope: 'list', note: true },
   { id: 'note.swipe', keys: ['Swipe a task (touch)'], description: 'Right completes, left schedules; the same two actions start the task\'s menu', section: 'tasks', scope: 'list', note: true },
   { id: 'note.hold', keys: ['Press and hold the grip (touch)'], description: "Tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Close hides them", section: 'tasks', scope: 'list', note: true },
-  { id: 'note.sorted-views', keys: ['Today, Upcoming, Assigned, Completed, labels, filters'], description: 'Sorted by date (or their own rule): no drag or Alt moves there', section: 'tasks', scope: 'list', note: true },
+  { id: 'note.sorted-views', keys: ['Today, Upcoming, Assigned, Completed, labels, filters'], description: 'Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it', section: 'tasks', scope: 'list', note: true },
   // Expanded rows (row-expand D1): → shows more, ← shows less; the details open after folded subtasks unfold and close before they fold.
   { id: 'list.expand', keys: ['→'], label: 'Show details', description: 'Show the details of the selected task under its row (unfold its subtasks first when they are folded), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
   { id: 'list.collapse', keys: ['←'], label: 'Hide details', description: 'Hide the details of the selected task, else fold its subtasks (or go to its parent), or the sub-projects of the focused sidebar project', section: 'tasks', scope: 'list' },
@@ -347,14 +348,15 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'dashboard.move-next', keys: ['Shift+→'], description: 'On a board: move the selected card to the next panel that has a rule, applying it', section: 'filter', scope: 'view', views: ['dashboard'] },
   { id: 'filter.history', keys: ['↑', '↓'], description: 'In the query of New view: recall recent queries on this device', section: 'filter', scope: 'view', views: ['filter'], local: true, typing: true },
 
-  // ---- group and order (display-keys): the Display options of a project's list, a label's page and a saved view,
+  // ---- group and order (display-keys): the Display options of a project's list, a label's page, a saved view, Today, Upcoming and the Inbox,
   // as `r` sequences; a list registers only the choices its panel offers.
   { id: 'arrange.group-section', keys: ['r g s'], label: 'Section', description: 'Group by section (in a project)', section: 'arrange', scope: 'list' },
-  { id: 'arrange.group-project', keys: ['r g j'], label: 'Project', description: 'Group by project (on a label page or in a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-project', keys: ['r g j'], label: 'Project', description: 'Group by project (on a label page, in a saved view or on Today)', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-none', keys: ['r g n'], label: 'None', description: 'No grouping', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-due', keys: ['r g d'], label: 'Due date', description: 'Group by due date', section: 'arrange', scope: 'list' },
   { id: 'arrange.group-priority', keys: ['r g p'], label: 'Priority', description: 'Group by priority', section: 'arrange', scope: 'list' },
-  { id: 'arrange.group-label', keys: ['r g l'], label: 'Label', description: 'Group by label (in a project or a saved view)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-label', keys: ['r g l'], label: 'Label', description: 'Group by label (in a project, a saved view, Today or the Inbox)', section: 'arrange', scope: 'list' },
+  { id: 'arrange.group-time', keys: ['r g t'], label: 'Time of day', description: 'Group by time of day (on Today)', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-manual', keys: ['r o m'], label: 'Manual order', description: 'Order by manual order', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-priority', keys: ['r o p'], label: 'Priority', description: 'Order by priority', section: 'arrange', scope: 'list' },
   { id: 'arrange.order-due', keys: ['r o d'], label: 'Due date', description: 'Order by due date', section: 'arrange', scope: 'list' },
@@ -385,6 +387,8 @@ export const SHORTCUTS: Shortcut[] = [
   // ---- Notes (notes-overview D7): `q` overrides the global quick add as the calendar's does; `/` focuses the search as in Settings.
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
+  // notes-home: pin or unpin the focused note, handled by the list itself.
+  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
   // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
   { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
   { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
@@ -411,8 +415,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'triage.title', keys: ['Tab'], description: 'Edit the title. Tab, Enter or a click away saves it and the decision keys work again. Esc restores it', section: 'triage', scope: 'view', views: ['triage'], local: true },
   { id: 'triage.escape', keys: ['Esc'], description: 'Close the panel, else back to the Inbox with this task selected', section: 'triage', scope: 'view', views: ['triage'] },
   // ---- the reviews (open-loops-method D6): the weekly review's project walk and the Daily check
-  { id: 'review.prev-step', keys: ['['], description: 'Weekly review: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
-  { id: 'review.next-step', keys: [']'], description: 'Weekly review: the next step', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'review.prev-step', keys: ['['], description: 'Weekly review and Close the day: the previous step', section: 'review', scope: 'view', views: ['review'], overrides: ['global.sidebar'] },
+  { id: 'review.next-step', keys: [']'], description: 'Weekly review and Close the day: the next step', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-reviewed', keys: ['r'], description: 'Project walk: mark the project reviewed, then the next one', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-add', keys: ['q'], description: 'Project walk: add a next action to the project', section: 'review', scope: 'view', views: ['review'], overrides: ['list.quick-add'] },
   { id: 'review.walk-open', keys: ['Enter'], description: 'Project walk: open the project', section: 'review', scope: 'view', views: ['review'] },
@@ -422,13 +426,19 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'review.walk-skip', keys: ['j', 'Space'], description: 'Project walk: skip to the next project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.walk-back', keys: ['k'], description: 'Project walk: back to the previous project', section: 'review', scope: 'view', views: ['review'] },
   { id: 'review.focus', keys: ['f'], description: 'Daily check: put the selected task in today\'s focus (up to three), or take it out', section: 'review', scope: 'view', views: ['review'] },
-  // Close the day's carry-over (close-the-day D4): on the selected row. The screen's
-  // rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
-  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day: carry the task on the card over to tomorrow', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.pick', keys: ['p'], description: 'Close the day: pick a day for the task on the card', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.someday', keys: ['y'], description: 'Close the day: move the task on the card to Someday', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.keep', keys: ['h'], description: 'Close the day: keep the task on the card in Today', section: 'review', scope: 'view', views: ['review'] },
-  { id: 'close.done', keys: ['d'], description: 'Close the day: the task on the card was done already (completed with the carry-over)', section: 'review', scope: 'view', views: ['review'], overrides: ['vim.delete'] },
+  // Close the day (close-the-day-redesign D3): Enter continues, Esc leaves without writing; on What moves,
+  // j / k move the row cursor and t, p, y, h, d set the current row's decision and move on.
+  // The screen's rows pass the list's `y` (time tracking) through, so `y` reaches this entry there.
+  { id: 'close.next', keys: ['Enter'], description: 'Close the day: the next step; on the last step, close the day', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-open'] },
+  { id: 'close.leave', keys: ['Esc'], description: 'Close the day: leave without writing anything', section: 'review', scope: 'view', views: ['review'], typing: true },
+  { id: 'close.down', keys: ['j'], description: 'Close the day, What moves: the next row', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-skip'] },
+  { id: 'close.up', keys: ['k'], description: 'Close the day, What moves: the previous row', section: 'review', scope: 'view', views: ['review'], overrides: ['review.walk-back'] },
+  { id: 'close.tomorrow', keys: ['t'], description: 'Close the day, What moves: the current row moves to tomorrow', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.pick', keys: ['p'], description: 'Close the day, What moves: pick a later day for the current row', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.someday', keys: ['y'], description: 'Close the day, What moves: the current row moves to Someday', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.keep', keys: ['h'], description: 'Close the day, What moves: keep the current row in Today', section: 'review', scope: 'view', views: ['review'] },
+  { id: 'close.done', keys: ['d'], description: 'Close the day, What moves: the current row was done already (completed with the close)', section: 'review', scope: 'view', views: ['review'], overrides: ['vim.delete'] },
+  { id: 'close.all-tomorrow', keys: ['Shift+T'], description: 'Close the day, What moves: every row to tomorrow', section: 'review', scope: 'view', views: ['review'] },
 
   // ---- display mode (display-mode D5): the shell's shortcuts (`g` sequences, `q`, `?`) are not active there
   { id: 'display.down', keys: ['j', '↓', '→'], description: 'Move the focus to the next row, across the day columns', section: 'display', scope: 'view', views: ['display'] },
@@ -478,7 +488,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'quarter.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'quarter.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit', 'close.leave'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 

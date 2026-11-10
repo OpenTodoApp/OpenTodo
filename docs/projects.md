@@ -15,7 +15,7 @@ Projects keep related tasks together, and projects can sit inside other projects
 
 ## Organise with projects
 
-To create a project, click **+** next to **Projects**, type a name and choose **Create**. Pick a parent project to make it a sub-project. Inside a project, [quick add](quick-add.md) puts new tasks in it. See also [workspaces](workspaces.md).
+To create a project, use **+** next to **Projects**. Enter a name, optionally pick a colour and icon with **Appearance**, then choose **Create**. Pick a parent for a sub-project. [Quick add](quick-add.md) inside a project puts tasks there. See [workspaces](workspaces.md).
 
 The **Project** menu at the top right of a project lets you:
 
@@ -33,6 +33,8 @@ Archive and delete ask first.
 
 <picture><source srcset="images/project-move-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/project-move-light.webp" alt="The Move to step of the project menu: a search field above the possible targets, Top level first, each project shown with the projects it sits in."></picture>
 
+A project shows how much is done next to its title, as [All projects](all-projects.md) does.
+
 A project's open-task count shows in the sidebar on hover or focus (always on touch, or with [every count on](sidebar-counts-and-order.md)). A folded project counts its sub-projects.
 
 Inside a project you can also group tasks into sections and show them as a board: see [Sections and boards](sections-and-boards.md). Other groupings: [Group and order a list](group-and-order.md).
@@ -41,7 +43,9 @@ Inside a project you can also group tasks into sections and show them as a board
 
 **All** next to **Projects** in the sidebar (or <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>P</kbd>) opens the **Projects** page: every project in a table with its health and progress, and an **Archived** tab. See [All projects](all-projects.md).
 
-**Pin to sidebar** in the menu of a project, a label or a saved view puts it in **Favourites** at the top of the sidebar. **Move up** and **Move down** in its menu there, or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, reorder them. A pin is yours alone, even on a shared project, and syncs to your devices.
+**Pin to sidebar** adds a project, label or saved view to **Favourites**. Reorder it with **Move up**, **Move down** or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>. Pins are personal and sync to your devices.
+
+Owners and admins can edit name, icon and colour from **⋯**. **Rename** is inline in **Projects** and opens a dialog in **Favourites**.
 
 ## Sub-projects
 
@@ -55,4 +59,4 @@ To duplicate one task with its open subtasks, select it and press <kbd>Shift</kb
 
 ## When a project is done
 
-When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept or any other key to keep it. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. You can turn that off in **Settings → Data** (each device has its own setting). To bring one back, select **Restore** next to it in the **Archived** tab of the Projects page; see [Archived projects](archived-projects.md).
+When you complete the last open task of a project, OpenTodo offers to archive it; press <kbd>Enter</kbd> to accept. Projects that have had no open tasks for 30 days are archived automatically, with a notice you can undo. Turn that off in **Settings → Data** (per device). To bring one back, use **Restore** in the **Archived** tab; see [Archived projects](archived-projects.md).

@@ -1,6 +1,6 @@
 // The Inbox card "Routines since your last visit" (OpenSpec change
 // routines-editor, design D10, spec routine-inbox): inside the Inbox list
-// above the first task, only when it has lines; one line per routine, at most
+// under the last task, only when it has lines; one line per routine, at most
 // five, then "See all runs". It counts as seen after 2 seconds on screen or
 // with Mark as seen (the synced marker moves to the newest displayed run);
 // failures stay until handled, a success line can be dismissed on every device.
@@ -34,7 +34,7 @@ export function InboxCardView({ lines, more, hide, online, onOpen, onDismiss, on
     { kind: 'action', id: 'all', label: t('See all runs'), icon: 'history', onSelect: onAll },
   ] }]
   return (
-    <Card as="section" padding="none" className="mb-3 p-3" aria-labelledby="routines-inbox-title" data-routines-inbox>
+    <Card as="section" padding="none" className="mt-4 p-3" aria-labelledby="routines-inbox-title" data-routines-inbox>
       <div className="flex items-center gap-2">
         <Icon name="zap" className="text-accent" />
         <h2 id="routines-inbox-title" className="flex-1 text-body font-medium text-strong">{t('Routines since your last visit')}</h2>

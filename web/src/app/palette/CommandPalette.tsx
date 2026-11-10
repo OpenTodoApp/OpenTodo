@@ -121,6 +121,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       } : undefined,
       view: view ? { row: view, peers: sorted, isStart: startView === `view:${view.id}` } : undefined,
       label: label ? { row: label, labels: [...labels].sort((a, b) => a.position - b.position), pinned: isFavourite(prefs, 'label', label.id) } : undefined,
+      note: route.view === 'notes' && route.id ? { id: route.id, pinned: isFavourite(prefs, 'note', route.id) } : undefined,
       section: sectionInfo && task && list && !list.readOnly(task) ? sectionInfo : undefined,
       earlier,
       dayParts: dayPartsOn(prefs),

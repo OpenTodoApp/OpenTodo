@@ -58,8 +58,13 @@ func (p *AnthropicProvider) client() anthropic.Client {
 // Start implements Provider.
 func (p *AnthropicProvider) Start(req Request) Conversation {
 	tools := make([]anthropic.ToolUnionParam, 0, len(req.Tools))
-	for _, t := range req.Tools {
-		schema := strictSchema(t.Schema, false)
+	schemas := make([]map[string]any, len(req.Tools))
+	for i, t := range req.Tools {
+		schemas[i] = strictSchema(t.Schema, false)
+	}
+	strict := fitsAnthropicStrict(schemas)
+	for i, t := range req.Tools {
+		schema := schemas[i]
 		props, _ := schema["properties"].(map[string]any)
 		if props == nil {
 			props = map[string]any{}
@@ -78,7 +83,7 @@ func (p *AnthropicProvider) Start(req Request) Conversation {
 		tp := anthropic.ToolParam{
 			Name:        t.Name,
 			Description: anthropic.String(t.Description),
-			Strict:      anthropic.Bool(true),
+			Strict:      anthropic.Bool(strict),
 			InputSchema: anthropic.ToolInputSchemaParam{
 				Properties:  props,
 				Required:    required,
@@ -181,8 +186,8 @@ func (c *anthropicConv) Next(ctx context.Context, onText func(string)) (Round, e
 	}
 	r := Round{
 		RawStop: string(msg.StopReason),
-		Input:   msg.Usage.InputTokens + msg.Usage.CacheCreationInputTokens + msg.Usage.CacheReadInputTokens,
-		Output:  msg.Usage.OutputTokens,
+		Tokens: Tokens{Input: msg.Usage.InputTokens, CachedRead: msg.Usage.CacheReadInputTokens,
+			CachedWrite: msg.Usage.CacheCreationInputTokens, Output: msg.Usage.OutputTokens},
 	}
 	switch msg.StopReason {
 	case anthropic.StopReasonEndTurn, anthropic.StopReasonStopSequence:

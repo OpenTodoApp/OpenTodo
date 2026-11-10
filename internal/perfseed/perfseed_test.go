@@ -400,7 +400,11 @@ func TestNotesFixture(t *testing.T) {
 	const notes, saves = 20, 40
 	for n := range notes {
 		for s := range saves {
-			line, _ := json.Marshal(map[string]any{"note": n, "save": s, "doc": "ydoc:v1:" + base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "note %d save %d", n, s)), "text": fmt.Sprintf("Note %d, save %d", n, s)})
+			text := fmt.Sprintf("Note %d, save %d", n, s)
+			if s == saves-1 {
+				text += " [Note 1](?note=x) [t](?task=y)"
+			}
+			line, _ := json.Marshal(map[string]any{"note": n, "save": s, "doc": "ydoc:v1:" + base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "note %d save %d", n, s)), "text": text})
 			lines.Write(append(line, '\n'))
 		}
 	}
@@ -426,7 +430,9 @@ func TestNotesFixture(t *testing.T) {
 	if _, again := seed(); again != first {
 		t.Errorf("same seed, different summaries: %+v, %+v", first, again)
 	}
-	want := NotesSummary{Notes: notes, Standalone: notes / 2, TaskNotes: notes / 2, Saves: notes * saves, Recent: notes / RecentEvery, RecentSaves: notes / RecentEvery * RecentSaves, DocBytes: first.DocBytes}
+	// The linked note's id is the one web/src/lib/notesSeed.gen.test.ts links to (ids.ts nameId, the default seed).
+	want := NotesSummary{Notes: notes, Standalone: notes / 2, TaskNotes: notes / 2, Saves: notes * saves, Recent: notes / RecentEvery, RecentSaves: notes / RecentEvery * RecentSaves, DocBytes: first.DocBytes,
+		Links: notes * 2, LinkedNote: "7271cf71-f7ad-84b6-a0b0-c81e3b439b84"}
 	if first != want {
 		t.Errorf("summary = %+v, want %+v", first, want)
 	}

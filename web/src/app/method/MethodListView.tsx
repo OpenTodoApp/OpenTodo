@@ -7,6 +7,7 @@ import { blockedMap } from '../../lib/dependencies'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { listSlotsOff } from '../../lib/rowSlots'
 import { useAllLabels } from '../../lib/localData'
 import { nextGroups, waitingGroups, type MethodGroup } from '../../lib/method/groups'
 import { setTaskCompleted } from '../../lib/ops'
@@ -17,6 +18,7 @@ import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from '../panel'
 import { openFromRow } from '../sidePanel'
+import { openTaskPage } from '../taskTrail'
 import { keysOf } from '../../lib/shortcuts'
 import { navigate } from '../router'
 import { TaskRow } from '../TaskRow'
@@ -63,6 +65,7 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
   const rows = useMemo(() => (groups ?? []).flatMap((g) => g.tasks.map((task) => ({ key: `${g.key}:${task.id}`, task }))), [groups])
   // The time column (rows-v2 D2): one fact of the whole list.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
+  const slotsOff = useMemo(() => listSlotsOff(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const openId = usePanelTaskId()
@@ -93,11 +96,12 @@ function MethodList({ title, icon, move, help, groups, empty }: Props) {
                     const key = `${g.key}:${task.id}`
                     return (
                       <TaskRow key={key} task={task} project={task.project_id ? projectMap.get(task.project_id) : undefined}
-                        labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected} timeColumn={timeColumn}
+                        labels={resolveLabels(task.labels, labelMap)} showProject selected={key === selected} timeColumn={timeColumn} slotsOff={slotsOff}
                         onMore={(from) => { setSelected(key); bulk.openActions(null, from) }}
                         blockedBy={blocked.get(task.id)} breadcrumb={g.notes?.get(task.id) ?? null}
                         onToggle={() => act(setTaskCompleted(task.id, !task.completed_at))}
                         onOpen={(e) => { setSelected(key); openFromRow(task.id, e) }}
+                        onOpenPage={() => openTaskPage(task.id)}
                         {...bulk.rowProps(task)} />
                     )
                   })}

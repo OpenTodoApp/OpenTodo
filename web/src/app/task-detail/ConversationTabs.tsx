@@ -11,6 +11,7 @@ import { ActivityTab } from './ActivityTab'
 import { CommentsTab } from './CommentsTab'
 import { TimeTab, useTaskTotal } from './TimeTab'
 import { formatMinutes } from '../../lib/duration'
+import { spokenMinutes } from '../../lib/time'
 import { useTaskEntries } from '../../lib/timeEntries'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
@@ -125,8 +126,16 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
       <Tabs label={t('Task conversation')} value={tab} onChange={(id) => setTab(id as TaskTab)}
         rowRef={(el) => { bar.current = el }} panelStyle={minHeight ? { minHeight, overflowAnchor: 'none' } : { overflowAnchor: 'none' }}
         rowClassName={`sticky z-[5] -mx-4 [&>[role=tablist]]:px-4 ${page ? 'top-[var(--panel-header-h,0px)] bg-canvas' : 'top-0 bg-surface'}`}
-        tabs={[{ id: 'comments', label: t('Comments'), count }, { id: 'activity', label: t('Activity') }, { id: 'history', label: t('History') },
-          { id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }) }]}>
+        // The row fits the panel (sidebar-brand-and-row-grid D6): icons with their counts when the words do not fit.
+        fit
+        tabs={[
+          { id: 'comments', label: t('Comments'), count, icon: 'message-circle', name: count ? t('Comments, {n}', { n: count }) : t('Comments') },
+          { id: 'activity', label: t('Activity'), icon: 'activity', name: t('Activity') },
+          { id: 'history', label: t('History'), icon: 'history', name: t('History') },
+          { id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }), icon: 'timer',
+            word: t('Time', { context: 'tracking' }), value: hasEntries ? formatMinutes(tracked) : undefined,
+            name: hasEntries ? t('Time, {duration}', { duration: spokenMinutes(tracked) }) : t('Time', { context: 'tracking' }) },
+        ]}>
         {tab === 'comments' && <CommentsTab ref={composerRef} task={task} userId={userId} focusComment={focusComment} composerHost={composerHost} expand={focusComposer} />}
         {tab === 'activity' && (
           <ActivityTab task={task} userId={userId} onOpenComment={(id) => { setFocusComment(id); setTab('comments') }} />

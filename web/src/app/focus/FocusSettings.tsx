@@ -1,13 +1,13 @@
 // Settings → General → Focus (OpenSpec change focus-mode, design D5; settings-
 // navigation "Account and General section contents", screen id settings/focus):
 // the timer mode, the three lengths, the long-break cycle, the two auto-start
-// switches, the break reminder and the sound; since focus-everywhere (D5, D6)
+// switches, the break reminder and the sound (Off, Short or Long, focus-end-alert); since focus-everywhere (D5, D6)
 // also the Countdown presets, the background noise and this device's volume. Each row writes one synced
 // `user_prefs` field after its bounds check; a value out of range is refused with
 // the allowed range and nothing is written.
 import { useState } from 'react'
 import { Button, Input, Select, SettingRow, SettingsSection, Switch } from '../../ui'
-import { autoStartValue, COUNTDOWN_BOUNDS, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, FOCUS_NOISES, inBounds, MAX_PRESETS, modeName, presetInBounds, presetsValue, setFocusPref, useFocusPrefs, useNoiseVolume, writeNoiseVolume, type FocusMode, type FocusNoise, type FocusNumberField, type FocusPrefs } from '../../lib/focus/prefs'
+import { autoStartValue, COUNTDOWN_BOUNDS, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, FOCUS_NOISES, FOCUS_SOUNDS, inBounds, MAX_PRESETS, modeName, presetInBounds, presetsValue, setFocusPref, setFocusSound, soundChoice, useFocusPrefs, useNoiseVolume, writeNoiseVolume, type FocusMode, type FocusNoise, type FocusNumberField, type FocusSound, type FocusPrefs } from '../../lib/focus/prefs'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { act } from '../actionError'
 import { cardCopy, rowCopy } from '../../lib/settingsCopy'
@@ -38,6 +38,8 @@ function NumberRow({ field, label, value, unit = 'minutes', description }: { fie
     } />
   )
 }
+
+const SOUND_LABEL = translatedMap<FocusSound>({ off: msg('Off'), short: msg('Short'), long: msg('Long') })
 
 const NOISE_LABEL = translatedMap<FocusNoise>({ off: msg('Off'), white: msg('White'), pink: msg('Pink'), brown: msg('Brown') })
 
@@ -117,8 +119,10 @@ export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
       } />
       {reminderOn && <NumberRow field="focus_break_after_minutes" {...rowCopy('focus', 'remindAfter')} value={prefs.breakAfterMinutes} />}
       {!reminderOn && <p className="pb-3 text-meta text-muted" data-focus-reminder-off>{t('Off. When on, the reminder comes after {n} minutes of work.', { n: DEFAULT_BREAK_AFTER })}</p>}
-      <SettingRow {...rowCopy('focus', 'sound')} control={
-        <Switch checked={prefs.sound} onChange={(on) => act(setFocusPref({ field: 'focus_sound', value: on ? 'on' : 'off' }))} label={t('Sound at the end of a session')} hideLabel />
+      <SettingRow {...rowCopy('focus', 'sound')} htmlFor="focus-sound" control={
+        <Select id="focus-sound" className="sm:w-40" value={soundChoice(prefs)} onChange={(e) => act(setFocusSound(e.target.value as FocusSound))}>
+          {FOCUS_SOUNDS.map((s) => <option key={s} value={s}>{SOUND_LABEL[s]}</option>)}
+        </Select>
       } />
       <PresetsRow presets={prefs.presets} />
       <NoiseRows noise={prefs.noise} />

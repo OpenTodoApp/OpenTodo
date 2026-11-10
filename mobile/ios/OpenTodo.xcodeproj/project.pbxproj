@@ -27,6 +27,7 @@
 		66ACE71599133FD6F72251D1 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750F4C1ECA56E888998D2B8C /* AppModel.swift */; };
 		6EF08424DEF31BCC9E483D41 /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30808D5A379DF00A50741685 /* Store.swift */; };
 		727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E0B20322933077E18A7D51 /* FirstRunTests.swift */; };
+		7A11C0DE5EED0F1A2B3C4D5E /* WalkthroughTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */; };
 		754F1F0DA4E9CEC80D381AC0 /* WidgetPublication.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76B6CC810FF847258BFE66C /* WidgetPublication.swift */; };
 		806F4F34BA69562B003495FF /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 957AC17D01C033216546B603 /* SetupView.swift */; };
 		8580D45311D98649791F0605 /* ShareMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F2434289E6B5E5C230FE9 /* ShareMap.swift */; };
@@ -135,6 +136,7 @@
 		C7D944907B9AC239B781669B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C7E631346169346BF2C4779E /* ShellTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellTests.swift; sourceTree = "<group>"; };
 		C8E0B20322933077E18A7D51 /* FirstRunTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTests.swift; sourceTree = "<group>"; };
+		7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkthroughTests.swift; sourceTree = "<group>"; };
 		CFD246A16B3958BB2712D921 /* AppBoundDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBoundDomains.swift; sourceTree = "<group>"; };
 		D76B6CC810FF847258BFE66C /* WidgetPublication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPublication.swift; sourceTree = "<group>"; };
 		DBD2D9F3CA1F7C5D63C9F0FC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -160,6 +162,7 @@
 			isa = PBXGroup;
 			children = (
 				C8E0B20322933077E18A7D51 /* FirstRunTests.swift */,
+				7A11C0DE5EED0F1A2B3C4D5F /* WalkthroughTests.swift */,
 			);
 			path = OpenTodoUITests;
 			sourceTree = "<group>";
@@ -259,6 +262,7 @@
 				C9A820EFBD5DA11E70EC2DD1 /* Sources */,
 				E3E731A009DE647AB6372C29 /* Resources */,
 				1637260C5AD6CBEF7EB44BDB /* Embed Foundation Extensions */,
+				A11B0D0DA11B0D0DA11B0D01 /* App-bound domains */,
 			);
 			buildRules = (
 			);
@@ -429,12 +433,36 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		A11B0D0DA11B0D0DA11B0D01 /* App-bound domains */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "App-bound domains";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# ios-shell D2, ios-bridge-portable: WKAppBoundDomains only in a one-server build.\nplist=\"$TARGET_BUILD_DIR/$INFOPLIST_PATH\"\n/usr/libexec/PlistBuddy -c \"Delete :WKAppBoundDomains\" \"$plist\" 2>/dev/null || true\n[ -n \"$OPENTODO_APP_BOUND_HOST\" ] || exit 0\n/usr/libexec/PlistBuddy -c \"Add :WKAppBoundDomains array\" \"$plist\"\ni=0\nfor host in $(printf '%s' \"$OPENTODO_APP_BOUND_HOST\" | tr ',' ' '); do\n  [ \"$i\" -lt 10 ] || { echo \"error: OPENTODO_APP_BOUND_HOST lists more than ten hosts\"; exit 1; }\n  case $host in *[!A-Za-z0-9.-]*) echo \"error: OPENTODO_APP_BOUND_HOST: $host is not a host name\"; exit 1 ;; esac\n  /usr/libexec/PlistBuddy -c \"Add :WKAppBoundDomains:$i string $host\" \"$plist\"\n  i=$((i + 1))\ndone\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		301B02D227D1B3C030B7A897 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				727ECE59A8C0B1E621FDCBB2 /* FirstRunTests.swift in Sources */,
+				7A11C0DE5EED0F1A2B3C4D5E /* WalkthroughTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -533,12 +561,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = OpenTodo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OPENTODO_APP_BOUND_HOST = none.invalid;
+				OPENTODO_APP_BOUND_HOST = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -552,12 +581,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OpenTodo/OpenTodo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = OpenTodo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OPENTODO_APP_BOUND_HOST = none.invalid;
+				OPENTODO_APP_BOUND_HOST = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "app.open-todo.ios";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

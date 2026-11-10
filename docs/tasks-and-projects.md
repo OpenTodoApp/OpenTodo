@@ -42,7 +42,7 @@ A deadline is the day a task must be finished by, separate from the day you plan
 
 ### When a task starts
 
-**Start** defers a task until a date or parks it in Someday, and **This Evening** puts a task due today in its own group. See [Deadlines and start dates](deadlines-and-start-dates.md#when-a-task-starts).
+**Start** defers a task until a date or parks it in Someday, and **Evening** puts a task in the evening of its day. See [Deadlines and start dates](deadlines-and-start-dates.md#when-a-task-starts).
 
 ### Wait for another task
 

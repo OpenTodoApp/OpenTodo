@@ -69,8 +69,14 @@ const DefaultMonthlyCap = 500_000
 // AI step. Version 4 changes no data flow, so earlier consents still count
 // (MinDisclosureVersion stays 1): no spec asks for consent again when the
 // text grows, and asking would interrupt everyone for a correction. Raise
-// MinDisclosureVersion only when what is sent changes.
-const DisclosureVersion = 4
+// MinDisclosureVersion only when what is sent changes. Version 5
+// (assistant-time-blocks) names the free time find_free_time returns: free
+// stretches worked out from data the list already named or the calendar the
+// person sees (event times, never titles), so earlier consents still count.
+// Version 6 (assistant-memory D4) names the memory items sent with every turn:
+// facts the person saved themselves, so earlier consents still count and the
+// person is told once (MemoryDisclosureVersion).
+const DisclosureVersion = 6
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1
@@ -80,6 +86,11 @@ const MinDisclosureVersion = 1
 // that names an older one keeps counting, but its person is told once that
 // the list is now complete (assistant-disclosure-notice D2).
 const CompleteDisclosureVersion = 4
+
+// MemoryDisclosureVersion is the first disclosure that names memory items
+// (assistant-memory D4). A consent that names an older one keeps counting, and
+// its person is told once that saved memory is sent with every turn.
+const MemoryDisclosureVersion = 6
 
 // ProviderSettings is one provider's owner configuration.
 type ProviderSettings struct {
@@ -515,6 +526,13 @@ func (c *Consent) NeedsNotice() bool {
 	return c.Current() && c.DisclosureVersion < CompleteDisclosureVersion && c.SeenVersion < CompleteDisclosureVersion
 }
 
+// NeedsMemoryNotice reports whether the person should be told once that memory
+// items are sent with every turn: a consent that still counts names a
+// disclosure before memory and its notice was not dismissed (assistant-memory D4).
+func (c *Consent) NeedsMemoryNotice() bool {
+	return c.Current() && c.DisclosureVersion < MemoryDisclosureVersion && c.SeenVersion < MemoryDisclosureVersion
+}
+
 // MarkDisclosureSeen records that the person saw the current disclosure's
 // notice; false when there is no consent to attach it to.
 func (st *Store) MarkDisclosureSeen(ctx context.Context, userID string) (bool, error) {
@@ -580,37 +598,53 @@ func (st *Store) SetConsent(ctx context.Context, userID, provider string, accept
 // ---- usage ----
 
 // Usage is a user's token usage in one UTC month: every turn, and the part
-// of it that ran on the user's own key.
+// of it that ran on the user's own key. InputTokens is fresh input; months
+// recorded before assistant-usage-cache hold their cached input there too.
 type Usage struct {
-	Month        string   `json:"month"`
-	InputTokens  int64    `json:"input_tokens"`
-	OutputTokens int64    `json:"output_tokens"`
-	Turns        int64    `json:"turns"`
-	Cap          int64    `json:"cap"`
-	ResetsAt     string   `json:"resets_at"`
-	Own          OwnUsage `json:"own_key"`
+	Month            string   `json:"month"`
+	InputTokens      int64    `json:"input_tokens"`
+	CachedTokens     int64    `json:"cached_tokens"`
+	CacheWriteTokens int64    `json:"cache_write_tokens"`
+	OutputTokens     int64    `json:"output_tokens"`
+	Turns            int64    `json:"turns"`
+	Cap              int64    `json:"cap"`
+	ResetsAt         string   `json:"resets_at"`
+	Own              OwnUsage `json:"own_key"`
 }
 
 // OwnUsage is the part of a month's usage that ran on the user's own key.
 type OwnUsage struct {
-	InputTokens  int64 `json:"input_tokens"`
-	OutputTokens int64 `json:"output_tokens"`
-	Turns        int64 `json:"turns"`
+	InputTokens      int64 `json:"input_tokens"`
+	CachedTokens     int64 `json:"cached_tokens"`
+	CacheWriteTokens int64 `json:"cache_write_tokens"`
+	OutputTokens     int64 `json:"output_tokens"`
+	Turns            int64 `json:"turns"`
 }
 
-// Total is input plus output tokens.
-func (u Usage) Total() int64 { return u.InputTokens + u.OutputTokens }
+// Tokens is the month's usage as Tokens.
+func (u Usage) Tokens() Tokens {
+	return Tokens{Input: u.InputTokens, CachedRead: u.CachedTokens, CachedWrite: u.CacheWriteTokens, Output: u.OutputTokens}
+}
 
-// Total is input plus output tokens on the user's own key.
-func (o OwnUsage) Total() int64 { return o.InputTokens + o.OutputTokens }
+// Tokens is the own-key part as Tokens.
+func (o OwnUsage) Tokens() Tokens {
+	return Tokens{Input: o.InputTokens, CachedRead: o.CachedTokens, CachedWrite: o.CacheWriteTokens, Output: o.OutputTokens}
+}
 
-// Counted is the usage measured against the monthly cap: everything when the
-// owner caps member keys, otherwise everything but the own-key turns.
+// Total is every token of the month, cached or not.
+func (u Usage) Total() int64 { return u.Tokens().Total() }
+
+// Total is every token on the user's own key.
+func (o OwnUsage) Total() int64 { return o.Tokens().Total() }
+
+// Counted is the usage measured against the monthly cap, cache reads at one
+// tenth: everything when the owner caps member keys, otherwise everything
+// but the own-key turns.
 func (u Usage) Counted(capMemberKeys bool) int64 {
 	if capMemberKeys {
-		return u.Total()
+		return u.Tokens().Counted()
 	}
-	return max(0, u.Total()-u.Own.Total())
+	return max(0, u.Tokens().Counted()-u.Own.Tokens().Counted())
 }
 
 // month is the UTC calendar month of t and the first day of the next one.
@@ -624,13 +658,13 @@ func month(t time.Time) (string, string) {
 func (st *Store) Usage(ctx context.Context, userID string, cap int64) (Usage, error) {
 	m, reset := month(st.now())
 	u := Usage{Month: m, Cap: cap, ResetsAt: reset}
-	err := st.db.QueryRowContext(ctx, `SELECT input_tokens, output_tokens, turns FROM assistant_usage WHERE user_id = ? AND month = ?`, userID, m).
-		Scan(&u.InputTokens, &u.OutputTokens, &u.Turns)
+	err := st.db.QueryRowContext(ctx, `SELECT input_tokens, cached_read, cached_write, output_tokens, turns FROM assistant_usage WHERE user_id = ? AND month = ?`, userID, m).
+		Scan(&u.InputTokens, &u.CachedTokens, &u.CacheWriteTokens, &u.OutputTokens, &u.Turns)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return u, fmt.Errorf("read assistant usage: %w", err)
 	}
-	err = st.db.QueryRowContext(ctx, `SELECT input_tokens, output_tokens, turns FROM assistant_usage_own_key WHERE user_id = ? AND month = ?`, userID, m).
-		Scan(&u.Own.InputTokens, &u.Own.OutputTokens, &u.Own.Turns)
+	err = st.db.QueryRowContext(ctx, `SELECT input_tokens, cached_read, cached_write, output_tokens, turns FROM assistant_usage_own_key WHERE user_id = ? AND month = ?`, userID, m).
+		Scan(&u.Own.InputTokens, &u.Own.CachedTokens, &u.Own.CacheWriteTokens, &u.Own.OutputTokens, &u.Own.Turns)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return u, fmt.Errorf("read assistant own-key usage: %w", err)
 	}
@@ -670,16 +704,17 @@ func (st *Store) SkillUses(ctx context.Context, userID string) (map[string]int64
 
 // AddUsage adds one turn's tokens to this month's row; own marks a turn on
 // the user's own key, which is also added to the own-key row.
-func (st *Store) AddUsage(ctx context.Context, userID string, in, out int64, own bool) error {
+func (st *Store) AddUsage(ctx context.Context, userID string, t Tokens, own bool) error {
 	m, _ := month(st.now())
 	tables := []string{"assistant_usage"}
 	if own {
 		tables = append(tables, "assistant_usage_own_key")
 	}
 	for _, tbl := range tables {
-		_, err := st.db.ExecContext(ctx, `INSERT INTO `+tbl+`(user_id, month, input_tokens, output_tokens, turns) VALUES(?,?,?,?,1)
+		_, err := st.db.ExecContext(ctx, `INSERT INTO `+tbl+`(user_id, month, input_tokens, cached_read, cached_write, output_tokens, turns) VALUES(?,?,?,?,?,?,1)
 		ON CONFLICT(user_id, month) DO UPDATE SET input_tokens = input_tokens + excluded.input_tokens,
-		output_tokens = output_tokens + excluded.output_tokens, turns = turns + 1`, userID, m, in, out)
+		cached_read = cached_read + excluded.cached_read, cached_write = cached_write + excluded.cached_write,
+		output_tokens = output_tokens + excluded.output_tokens, turns = turns + 1`, userID, m, t.Input, t.CachedRead, t.CachedWrite, t.Output)
 		if err != nil {
 			return fmt.Errorf("record assistant usage: %w", err)
 		}

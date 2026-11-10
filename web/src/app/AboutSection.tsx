@@ -2,19 +2,22 @@
 // the website, the source code, where to report a problem, the Discord server
 // (discord-community), the account on X (x-account-link), Buy Me a Coffee, and the
 // owner's welcome note on demand. Every link is a plain link opening a new tab;
-// the version comes from this server's status while online. The App code row
-// says who signed the code this device runs (signed-web-app).
-import { useEffect, useState } from 'react'
+// the version comes from this server's status while online. What's new (OpenSpec whats-new)
+// loads with this section. The App code row says who signed the code this device
+// runs (signed-web-app).
+import { lazy, Suspense, useState } from 'react'
 import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
-import { api } from '../lib/api'
 import { t } from '../lib/i18n'
-import { useOnline } from '../lib/online'
 import type { User } from '../lib/types'
 import { navigate } from './router'
-import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
+import { CoffeeButton, DISCORD_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
+import { openFeedback } from '../lib/feedbackRequest'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
+import { useServerVersion } from '../lib/serverVersion'
 import { AppCodeRow } from './AppCodeRow'
+
+const WhatsNew = lazy(() => import('./WhatsNew'))
 
 export const WEBSITE_URL = 'https://open-todo.app'
 export const DOCS_URL = 'https://open-todo.app/docs/'
@@ -28,27 +31,19 @@ function ExternalLink({ href, label, testId }: { href: string; label: string; te
   )
 }
 
-/** The server's version while online; null before it is known or offline. */
-function useServerVersion(): string | null {
-  const online = useOnline()
-  const [version, setVersion] = useState<string | null>(null)
-  useEffect(() => {
-    if (!online) return
-    let cancelled = false
-    api.authStatus().then((s) => { if (!cancelled) setVersion(s.version || null) }, () => {})
-    return () => { cancelled = true }
-  }, [online])
-  return version
-}
-
 const PLATFORM_NAME: Record<OpenTodoShell['platform'], string> = { android: 'Android', ios: 'iOS', desktop: 'desktop' }
 
-/** The native shell this page runs in (native-shells): its name and version, and a notice when it is older than this server expects. */
-export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform']; version: string; outdated: boolean } | null }) {
+/**
+ * The native shell this page runs in (native-shells): its name and version, the exact server
+ * address it opened (ios-setup-address: the shell loads only that origin, so it is this page's),
+ * and a notice when it is older than this server expects.
+ */
+export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform']; version: string; outdated: boolean; server?: string } | null }) {
   if (!app) return null
   return (
     <>
       <SettingRow id="about-shell" label={t('OpenTodo for {platform}', { platform: PLATFORM_NAME[app.platform] ?? app.platform })}
+        description={app.server && <span className="break-all" data-about-shell-server>{app.server}</span>}
         status={<Badge hue="slate">{app.version}</Badge>} />
       {app.outdated && <Notice tone="warning">{t('This app is older than this server expects. Update OpenTodo from your app store to keep everything working.')}</Notice>}
     </>
@@ -58,7 +53,7 @@ export function ShellAppRow({ app }: { app: { platform: OpenTodoShell['platform'
 export function AboutSection({ user }: { user: User }) {
   const version = useServerVersion()
   const s = shell()
-  const app = s ? { platform: s.platform, version: s.app, outdated: shellOutdated() } : null
+  const app = s ? { platform: s.platform, version: s.app, outdated: shellOutdated(), server: window.location.origin } : null
   const [note, setNote] = useState(false)
   return (
     <>
@@ -72,10 +67,10 @@ export function AboutSection({ user }: { user: User }) {
         <SettingRow id="about-website" {...rowCopy('about', 'website')}
           control={<ExternalLink href={WEBSITE_URL} label="open-todo.app" testId="website" />} />
         <SettingRow id="about-feedback" {...rowCopy('about', 'feedback')}
-          control={<ExternalLink href={ISSUES_URL} label={t('Open an issue')} testId="issues" />} />
+          control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={openFeedback} data-about-feedback>{t("Something isn't working")}</button>} />
         <SettingRow id="about-community" {...rowCopy('about', 'community')}
           control={<ExternalLink href={DISCORD_URL} label={t('Join on Discord')} testId="discord" />} />
-        <SettingRow id="about-news" {...rowCopy('about', 'news')}
+        <SettingRow id="about-x" {...rowCopy('about', 'x')}
           control={<ExternalLink href={X_URL} label={t('Follow on X')} testId="x" />} />
         <SettingRow id="about-source" {...rowCopy('about', 'source')}
           control={<ExternalLink href={REPO_URL} label="GitHub" testId="source" />} />
@@ -84,6 +79,9 @@ export function AboutSection({ user }: { user: User }) {
             control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => setNote(true)} data-about-welcome>{t('Show it again')}</button>} />
         )}
       </SettingsSection>
+      <Suspense fallback={null}>
+        <WhatsNew serverVersion={version} />
+      </Suspense>
       <SettingsSection {...cardCopy('about-support')}>
         <div className="pt-1"><CoffeeButton className="sm:w-64" /></div>
       </SettingsSection>

@@ -28,7 +28,7 @@ func (s *Server) wireRoutines() {
 		return
 	}
 	s.rules.Tools = agenttools.New(s.sync, agenttools.Options{Log: s.log, Now: s.now, UserZone: s.tzLocation,
-		LocalToday: func() string { return localToday(s.now()) }})
+		LocalToday: func() string { return localToday(s.now()) }, Events: s.freeTimeEvents})
 	s.rules.Env = s.routineEnv
 	s.rules.Mail = routineMailer{s}
 	s.rules.AI = routineAI{s}
@@ -66,6 +66,32 @@ func (m routineMailer) SendRoutine(ctx context.Context, uid string, rm rules.Rou
 
 func (m routineMailer) RefuseRoutine(ctx context.Context, uid string, rm rules.RoutineMail, reason string) {
 	if msg, ok := m.message(ctx, uid, rm); ok {
+		m.s.mail.RecordFailure(ctx, msg, reason)
+	}
+}
+
+// SendRoutineMember sends an Email project members message to one member in
+// their language, with a stop link of its own (routines-shared-email D3, D4).
+func (m routineMailer) SendRoutineMember(ctx context.Context, runAs, member string, rm rules.RoutineMail) error {
+	msg, ok := m.message(ctx, member, rm)
+	if !ok {
+		return errors.New("routine email: no verified address")
+	}
+	if m.s.rules == nil {
+		return errors.New("routine email: routines are off")
+	}
+	secret, err := m.s.rules.Store.MintStopLink(ctx, rm.RuleID, member, m.s.now())
+	if err != nil {
+		return err
+	}
+	msg.ActorID = runAs
+	msg.Vars.Routine.Stop = msg.Origin + "/routine-emails/" + secret
+	return m.s.mail.Send(ctx, msg)
+}
+
+func (m routineMailer) RefuseRoutineMember(ctx context.Context, runAs, member string, rm rules.RoutineMail, reason string) {
+	if msg, ok := m.message(ctx, member, rm); ok {
+		msg.ActorID = runAs
 		m.s.mail.RecordFailure(ctx, msg, reason)
 	}
 }
@@ -268,6 +294,8 @@ func (s *Server) routineError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "already_undone", err.Error())
 	case errors.Is(err, rules.ErrForbidden):
 		writeError(w, http.StatusForbidden, "forbidden", err.Error())
+	case errors.Is(err, rules.ErrWorkspaceGone):
+		writeError(w, http.StatusConflict, "workspace_gone", "the routine's workspace is gone: choose another one")
 	default:
 		s.internal(w, err)
 	}
@@ -410,6 +438,9 @@ func (s *Server) handleRoutineDraftTest(w http.ResponseWriter, r *http.Request) 
 	}
 	if d.ProjectID != "" {
 		body["project_id"] = jsonRaw(d.ProjectID)
+	}
+	if d.WorkspaceID != "" {
+		body["workspace_id"] = jsonRaw(d.WorkspaceID)
 	}
 	if err := s.checkRuleParts(r.Context(), uid, body, nil); err != nil {
 		s.ruleError(w, err)

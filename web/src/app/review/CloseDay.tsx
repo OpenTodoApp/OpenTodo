@@ -1,43 +1,37 @@
-// Close the day (OpenSpec changes close-the-day D1–D4, D8 and close-the-day-v2):
-// three steps on the review stepper. The day being closed is the logical today
-// when the screen opened and stays that day (v2 D1). How the day went is one
-// sentence of figures from lib/review.ts `daySummary` (the Statistics definitions);
-// Carry over takes the unfinished tasks one at a time (v2 D2, CarryOver.tsx) and
-// writes the decisions as ONE undoable batch through the bulk path when the user
-// moves on (v2 D3); A note for tomorrow morning closes the day, writing `closed_at`,
-// `closed_day` and `tomorrow_note` on the synced `review` row. The screen then shows
-// Done for today (moments-and-onboarding D6, DoneForToday.tsx).
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { formatInstant, localDueOf } from '../../lib/dates'
+// Close the day (OpenSpec changes close-the-day, close-the-day-v2 and
+// close-the-day-redesign): a guided ritual of three steps, one at a time, in the
+// page column. Done lists what was finished today; What moves takes every
+// unfinished task on one list, each with Tomorrow, Later or Someday (CarryOver.tsx);
+// Tomorrow's first thing picks the task tomorrow starts with, plus a line for the
+// morning. Decisions are device state: nothing is written until "Close the day",
+// which writes ONE batch with one Undo (lib/review.ts `closeTheDay`). The day being
+// closed is the logical today when the screen opened and stays that day (v2 D1).
+// The screen then shows Done for today (DoneForToday.tsx).
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { useReviewRow } from '../../lib/localData'
 import {
-  applyCarryOver, CLOSE_PHASE_TITLES, CLOSE_STEP_IDS, CLOSE_STEP_TITLES, closeDay, dayClosed, daySummary, TOMORROW_NOTE_MAX,
+  CLOSE_STEP_IDS, CLOSE_STEP_TITLES, closeTheDay, daySummary, tomorrowsTasks,
   type CarryDecision, type CarryTask, type CloseStepId, type DaySummary,
-} from '../../lib/review'
-import type { Project } from '../../lib/types'
-import { Button, Dialog, Field, Input, Notice, PageBody, PageHeader, Skeleton, type IconName } from '../../ui'
+} from '../../lib/closeDay'
+import { dayClosed, TOMORROW_NOTE_MAX } from '../../lib/review'
+import type { Project, Task } from '../../lib/types'
+import { Button, DESKTOP_HEADER_QUERY, Dialog, Icon, Input, PageBody, PageHeader, Skeleton, TruncatedText, useMediaQuery } from '../../ui'
 import { act } from '../actionError'
 import { showBulkToast } from '../bulk/toastStore'
 import { DateField } from '../datetime/DateField'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { useMethodInput } from '../method/useMethodInput'
 import { navigate } from '../router'
-import { useShortcutScope } from '../shortcuts'
+import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcuts'
 import { reopenDayAction } from '../reopenDay'
-import { CarryCard, CarryList } from './CarryOver'
-import { ReviewProgress } from './ReviewProgress'
-import { StepCard } from './StepCard'
-import { DoneForToday, NOTHING_CARRIED, type Carried, type DayDoneFigures } from './DoneForToday'
+import { MovesList, type Kind } from './CarryOver'
+import { CloseProgress } from './CloseProgress'
+import { DoneForToday, type DayDoneFigures } from './DoneForToday'
 
-const ICONS: Record<CloseStepId, IconName> = { summary: 'chart-column', carry: 'calendar-days', note: 'moon' }
-const PHASE_OF: Record<CloseStepId, 'close'> = { summary: 'close', carry: 'close', note: 'close' }
-const TOMORROW: CarryDecision = { kind: 'tomorrow' }
-const KEEP: CarryDecision = { kind: 'keep' }
-const CARRY_AT = CLOSE_STEP_IDS.indexOf('carry')
-
-/** The decision of a task: the chosen one, else Tomorrow (Keep for a task the user may not edit). */
-const decisionOf = (decisions: ReadonlyMap<string, CarryDecision>, x: CarryTask): CarryDecision => (x.editable ? decisions.get(x.task.id) ?? TOMORROW : KEEP)
+/** Completed tasks shown before "and n more". */
+const DONE_FOLD = 8
 
 /**
  * The day being closed (close-the-day-v2 D1): the first logical today the screen
@@ -53,186 +47,255 @@ function useClosingDay(initialDay?: string) {
 }
 
 /** `initialStep` opens another step first, `initialDay` fixes the day (the stories). */
-export function CloseDay({ initialStep = 'summary', initialDay }: { initialStep?: CloseStepId; initialDay?: string } = {}) {
+export function CloseDay({ initialStep = 'done', initialDay }: { initialStep?: CloseStepId; initialDay?: string } = {}) {
   const weekStart = useDateTimeFormat().resolved.weekStart
   const { live, input, day } = useClosingDay(initialDay)
   const review = useReviewRow()
   const summary = useMemo(() => (input ? daySummary(input, review, weekStart) : null), [input, review, weekStart])
   const [step, setStep] = useState<CloseStepId>(initialStep)
+  const [seen, setSeen] = useState<Set<CloseStepId>>(() => new Set(CLOSE_STEP_IDS.slice(0, CLOSE_STEP_IDS.indexOf(initialStep) + 1)))
   const [decisions, setDecisions] = useState<Map<string, CarryDecision>>(() => new Map())
-  // The task on the card; 'end' once every task has a decision.
   const [cursor, setCursor] = useState<string | null>(null)
-  // Whether the user has moved on from Carry over (its circle then shows a check).
-  const [passed, setPassed] = useState(initialStep === 'note')
-  // What the batches carried, and the final state once the close is written (device state only).
-  const [carried, setCarried] = useState<Carried>(NOTHING_CARRIED)
-  // The tasks the latest batch left in Today (Keep, or read-only); null until a batch is written.
-  const [kept, setKept] = useState<number | null>(null)
-  const [closed, setClosed] = useState<DayDoneFigures | null>(null)
+  const [first, setFirst] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const [picking, setPicking] = useState<CarryTask | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [closed, setClosed] = useState<DayDoneFigures | null>(null)
+  const closing = useRef(false)
   // Opening the screen and every step change put focus on the step's title.
   const title = useRef<HTMLHeadingElement>(null)
   const loaded = !!summary
   useEffect(() => { if (loaded) title.current?.focus({ preventScroll: false }) }, [step, loaded])
 
   const unfinished = useMemo(() => summary?.unfinished ?? [], [summary])
-  const shown = cursor === 'end' ? null : unfinished.find((x) => x.task.id === cursor) ?? unfinished.find((x) => !decisions.has(x.task.id)) ?? null
-  const decide = (x: CarryTask, d: CarryDecision) => {
-    if (!x.editable && d.kind !== 'keep') return
-    const next = new Map(decisions).set(x.task.id, d)
-    setDecisions(next)
-    const after = unfinished.slice(unfinished.indexOf(x) + 1).find((y) => !next.has(y.task.id))
-    setCursor(after?.task.id ?? unfinished.find((y) => !next.has(y.task.id))?.task.id ?? 'end')
-  }
-  const choose = (x: CarryTask, kind: CarryDecision['kind']) => (kind === 'day' ? (x.editable && setPicking(x)) : decide(x, { kind } as CarryDecision))
-  const index = CLOSE_STEP_IDS.indexOf(step)
+  const rowAt = unfinished.find((x) => x.task.id === cursor) ?? unfinished[0] ?? null
+  const tomorrow = useMemo(() => (input && day ? tomorrowsTasks(decisions, unfinished, day, input.tasks) : []), [input, day, decisions, unfinished])
+  const chosen = first && tomorrow.some((x) => x.id === first) ? first : null
+  const projects = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
 
-  // Moving on from Carry over writes its decisions as one batch (close-the-day-v2 D3).
-  const apply = async () => {
-    if (!input) return
-    const r = await applyCarryOver(decisions, unfinished, input.today, [...input.tasks])
-    if (r.entry) {
-      showBulkToast(r.label, r.entry.id)
-      const counts = { ...carried }
-      for (const x of unfinished) if (x.editable && decisionOf(decisions, x).kind !== 'keep') counts[decisionOf(decisions, x).kind]++
-      setCarried(counts)
+  const decide = (x: CarryTask, d: CarryDecision, advance: boolean) => {
+    if (!x.editable) return
+    setDecisions((m) => new Map(m).set(x.task.id, d))
+    if (advance) {
+      const next = unfinished[unfinished.indexOf(x) + 1]
+      if (next) setCursor(next.task.id)
     }
-    setKept(unfinished.filter((x) => decisionOf(decisions, x).kind === 'keep').length)
-    setDecisions((m) => new Map([...m].filter(([, d]) => d.kind === 'keep')))
-    setCursor(null)
   }
-  const go = async (to: CloseStepId) => {
-    if (step === 'carry' && CLOSE_STEP_IDS.indexOf(to) > CARRY_AT) {
-      await apply()
-      setPassed(true)
-    }
-    setStep(to)
+  const choose = (x: CarryTask, kind: Kind, advance = false) => {
+    if (!x.editable) return
+    if (kind === 'day') setPicking(x)
+    else decide(x, { kind } as CarryDecision, advance)
   }
+  const index = CLOSE_STEP_IDS.indexOf(step)
   const prev = index > 0 ? CLOSE_STEP_IDS[index - 1] : null
   const next = index < CLOSE_STEP_IDS.length - 1 ? CLOSE_STEP_IDS[index + 1] : null
-  const onCard = (fn: (x: CarryTask) => void) => () => {
-    if (step !== 'carry' || !shown) return false
-    fn(shown)
+  const go = (to: CloseStepId) => {
+    setSeen((s) => new Set(s).add(to))
+    setStep(to)
   }
-  useShortcutScope('view', {
-    'review.prev-step': () => { if (!prev) return false; void go(prev) },
-    'review.next-step': () => { if (!next) return false; void act(go(next)) },
-    'close.tomorrow': onCard((x) => choose(x, 'tomorrow')),
-    'close.pick': onCard((x) => choose(x, 'day')),
-    'close.someday': onCard((x) => choose(x, 'someday')),
-    'close.keep': onCard((x) => choose(x, 'keep')),
-    'close.done': onCard((x) => choose(x, 'done')),
-  }, { view: 'review', paused: !!picking })
 
+  // The one write (close-the-day-redesign D5): carry-over, first thing, stamp, note and record.
   const finish = async () => {
-    if (!summary || !day) return
-    const at = Date.now()
-    await closeDay(note, day, at)
-    setClosed({ time: formatInstant(at, 'time'), planned: summary.planned, done: summary.done, carried, kept: kept ?? unfinished.length, note: note.trim() })
+    if (!summary || !day || !input || closing.current) return
+    closing.current = true
+    try {
+      const at = Date.now()
+      const r = await closeTheDay({ decisions, tasks: unfinished, day, note, first: chosen, all: [...input.tasks], now: at })
+      if (r.entry) showBulkToast(r.label, r.entry.id)
+      const firstTask = chosen ? tomorrow.find((x) => x.id === chosen) : undefined
+      setClosed({ time: formatInstant(at, 'time'), planned: summary.planned, done: summary.done, carried: r.carried, kept: r.carried.keep, note: note.trim(), first: firstTask ? firstTask.title || t('Untitled') : undefined })
+    } finally {
+      closing.current = false
+    }
   }
+
+  const onRow = (fn: (x: CarryTask) => void) => () => {
+    if (step !== 'moves' || !rowAt) return false
+    fn(rowAt)
+  }
+  const moveCursor = (by: number) => () => {
+    if (step !== 'moves' || !rowAt) return false
+    const to = unfinished[Math.max(0, Math.min(unfinished.length - 1, unfinished.indexOf(rowAt) + by))]
+    setCursor(to.task.id)
+    document.querySelector(`[data-carry-row="${CSS.escape(to.task.id)}"]`)?.scrollIntoView?.({ block: 'nearest' })
+  }
+  const allToTomorrow = () => setDecisions(new Map())
+  useShortcutScope('view', {
+    'review.prev-step': () => { if (!prev) return false; go(prev) },
+    'review.next-step': () => { if (!next) return false; go(next) },
+    'close.next': (e) => {
+      if (isActivationTarget(e.target) || isTypingTarget(e.target)) return false
+      if (next) go(next)
+      else void act(finish())
+    },
+    'close.leave': () => navigate({ view: 'today' }),
+    'close.down': moveCursor(1),
+    'close.up': moveCursor(-1),
+    'close.all-tomorrow': () => { if (step !== 'moves') return false; allToTomorrow() },
+    'close.tomorrow': onRow((x) => choose(x, 'tomorrow', true)),
+    'close.pick': onRow((x) => choose(x, 'day', true)),
+    'close.someday': onRow((x) => choose(x, 'someday', true)),
+    'close.keep': onRow((x) => choose(x, 'keep', true)),
+    'close.done': onRow((x) => choose(x, 'done', true)),
+  }, { view: 'review', paused: !!picking || menuOpen, enabled: !closed })
 
   // The header and Reopen follow the day being closed and the live day: Reopen only while that day lasts.
   const closedHere = !!day && dayClosed(review, day)
   const reopenable = !!live && dayClosed(review, live.today)
   const meta = closedHere ? t('Day closed, {time}', { time: formatInstant(review!.closed_at, 'time') }) : undefined
-  const progress = {
-    done: { summary: index > 0, carry: unfinished.length === 0 || (passed && step !== 'carry'), note: false },
-    left: { summary: 0, carry: passed ? 0 : unfinished.filter((x) => x.editable).length, note: 0 },
-  }
-  const projectMap = useMemo(() => new Map((input?.projects ?? []).map((p) => [p.id, p])), [input])
+  const ready = !!summary && !!day && !closed
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const showReopen = reopenable && !!live && !closed
+  const reopen = showReopen && <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(live.today)} data-reopen-day>{t('Reopen the day')}</Button>
 
   return (
     <PageBody width="list">
+      {/* On a phone Reopen stands in the page, under the shell's bar and its one divider; in the header it drew a second (no-layout-jump). */}
       <PageHeader title={t('Close the day')} icon="moon" meta={meta} help="review/close"
-        actions={reopenable && live && !closed ? <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(live.today)} data-reopen-day>{t('Reopen the day')}</Button> : undefined}
+        actions={desktop && (showReopen || ready) ? <>{reopen}{ready && <CloseProgress step={step} seen={seen} onStep={go} />}</> : undefined}
         back={{ label: t('Today'), onClick: () => navigate({ view: 'today' }), hideFrom: 'lg' }} />
+      {!desktop && reopen && <div className="pt-2">{reopen}</div>}
       {closed && live ? (
         <DoneForToday figures={closed} onBack={() => navigate({ view: 'today' })}
           onReopen={reopenable ? () => { reopenDayAction(live.today); setClosed(null) } : undefined} />
       ) : !summary || !day ? <Skeleton shape="row" count={4} /> : (
-        <>
-          <ReviewProgress<CloseStepId, 'close'> steps={progress} step={step} onStep={(s) => void act(go(s))} ids={CLOSE_STEP_IDS} phases={['close']}
-            phaseOf={PHASE_OF} phaseTitles={CLOSE_PHASE_TITLES} stepTitles={CLOSE_STEP_TITLES} label={t('Close the day progress')} />
-          <StepCard step={step} titleRef={title} icon={ICONS[step]} title={CLOSE_STEP_TITLES[step]} navInside
-            position={t('Step {n} of {total} · {phase}', { n: index + 1, total: CLOSE_STEP_IDS.length, phase: CLOSE_PHASE_TITLES.close })}
-            onBack={prev ? () => void go(prev) : null}
-            next={next ? { label: t('Next: {step}', { step: CLOSE_STEP_TITLES[next] }), onClick: () => void act(go(next)) } : { label: t('Close the day'), onClick: () => void act(finish()), finish: true }}>
-            {step === 'summary' && <SummaryStep summary={summary} />}
-            {step === 'carry' && (
-              <CarryStep rows={unfinished} shown={shown} day={day} decisions={decisions} projectMap={projectMap}
-                onChoose={choose} onShow={(id) => setCursor(id)} />
+        <section aria-labelledby="close-step-title" data-close-step={step} data-review-step={step} className="mx-auto max-w-[42rem] pt-4 sm:pt-12">
+          {!desktop && <div className="-ml-1 mb-3"><CloseProgress step={step} seen={seen} onStep={go} /></div>}
+          <div className="mb-5 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+            {/* Focused from code on each step so a screen reader reads it; not a stop for Tab, so no ring. */}
+            <h2 id="close-step-title" ref={title} tabIndex={-1} className="text-h1 text-strong outline-none">{CLOSE_STEP_TITLES[step]}</h2>
+            {step === 'done' && <DoneLead summary={summary} />}
+            {step === 'moves' && unfinished.some((x) => x.editable) && (
+              <Button variant="ghost" size="sm" onClick={allToTomorrow} aria-keyshortcuts="Shift+T" data-close-all-tomorrow>{t('All to tomorrow')}</Button>
             )}
-            {step === 'note' && <NoteStep note={note} onNote={setNote} left={kept ?? unfinished.length} onClose={finish} />}
-          </StepCard>
-        </>
+          </div>
+          {step === 'done' && <DoneStep summary={summary} projects={projects} />}
+          {step === 'moves' && (unfinished.length === 0
+            ? <Quiet data-close-nothing>{t('Today is done: nothing to carry over.')}</Quiet>
+            : <MovesList rows={unfinished} day={day} decisions={decisions} projects={projects} cursor={rowAt?.task.id ?? null}
+                onCursor={setCursor} onChoose={(x, k) => choose(x, k)} onMenu={setMenuOpen} />)}
+          {step === 'first' && <FirstStep tasks={tomorrow} projects={projects} chosen={chosen} onChoose={setFirst} note={note} onNote={setNote} onClose={finish} />}
+          <div className="mt-10 flex flex-wrap items-center gap-2 border-t border-soft pt-4" data-close-nav>
+            {prev && <Button variant="ghost" icon="chevron-left" onClick={() => go(prev)} data-close-back>{t('Back')}</Button>}
+            <span className="flex-1" />
+            {next ? <>
+              <Button variant="ghost" onClick={() => void act(finish())} data-close-now>{t('Close the day')}</Button>
+              <Button variant="primary" iconEnd="chevron-right" onClick={() => go(next)} data-close-next>{t('Next')}</Button>
+            </> : <Button variant="primary" icon="check" onClick={() => void act(finish())} data-close-finish>{t('Close the day')}</Button>}
+          </div>
+        </section>
       )}
       {picking && (
-        <Dialog title={t('Pick a day for {title}', { title: picking.task.title })} onClose={() => setPicking(null)}>
-          <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { const x = picking; setPicking(null); if (iso) decide(x, { kind: 'day', date: iso }) }} />
+        <Dialog title={t('Move {title} to', { title: picking.task.title || t('Untitled') })} onClose={() => setPicking(null)}>
+          <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => {
+            const x = picking
+            setPicking(null)
+            if (iso) decide(x, { kind: 'day', date: iso }, x.task.id === rowAt?.task.id)
+          }} />
         </Dialog>
       )}
     </PageBody>
   )
 }
 
-/** How the day went: one sentence of figures, no time, mood or score (weekly-review "How the day went"). */
-function SummaryStep({ summary }: { summary: DaySummary }) {
-  if (summary.planned === 0) return <p className="text-body text-muted" data-close-empty>{t('Nothing was planned for today and nothing was completed.')}</p>
-  // Each number is its own tag, so a translation can move it and the tests can read it.
-  const figure = (key: string) => (s: ReactNode) => <strong className="font-semibold tabular-nums text-strong" data-close-figure={key}>{s}</strong>
+function Quiet({ children, ...hooks }: { children: ReactNode; [hook: `data-${string}`]: boolean | string | undefined }) {
+  return <p {...hooks} className="py-6 text-body text-muted">{children}</p>
+}
+
+/** The Done step's lead: "5 of 8 done · focus 2 of 3". Each number is its own tag, so a translation can move it and the tests can read it. */
+function DoneLead({ summary }: { summary: DaySummary }) {
+  if (summary.planned === 0) return null
+  const figure = (key: string) => (s: ReactNode) => <strong className="font-semibold tabular-nums text-default" data-close-figure={key}>{s}</strong>
   return (
-    <div className="space-y-2 text-h3 font-normal text-default" data-close-summary>
-      <p>{t.rich('You planned <n-planned>{planned}</n-planned> {planned, plural, one {task} other {tasks}} and finished <n-done>{done}</n-done>.', { planned: summary.planned, done: summary.done, 'n-planned': figure('planned'), 'n-done': figure('done') })}</p>
-      {summary.focusTotal > 0 && (
-        <p>{t.rich('Today’s focus: <n-focus>{done} of {total}</n-focus> done.', { done: summary.focusDone, total: summary.focusTotal, 'n-focus': figure('focus') })}</p>
-      )}
-    </div>
+    <p className="text-meta text-muted" data-close-summary>
+      {t.rich('<n-done>{done}</n-done> of <n-planned>{planned}</n-planned> done', { planned: summary.planned, done: summary.done, 'n-planned': figure('planned'), 'n-done': figure('done') })}
+      {summary.focusTotal > 0 && <>
+        <span aria-hidden="true"> · </span>
+        {t.rich('focus <n-focus>{done} of {total}</n-focus>', { done: summary.focusDone, total: summary.focusTotal, 'n-focus': figure('focus') })}
+      </>}
+    </p>
   )
 }
 
-/** Carry over: the card for the task in hand and the decisions so far (weekly-review "Carry over unfinished tasks"). */
-function CarryStep({ rows, shown, day, decisions, projectMap, onChoose, onShow }: {
-  rows: CarryTask[]
-  shown: CarryTask | null
-  day: string
-  decisions: ReadonlyMap<string, CarryDecision>
-  projectMap: Map<string, Project>
-  onChoose: (x: CarryTask, kind: CarryDecision['kind']) => void
-  onShow: (id: string) => void
-}) {
-  if (rows.length === 0) return <p className="text-body text-muted" data-close-nothing>{t('Today is done: nothing to carry over.')}</p>
-  const earlier = rows.filter((x) => x.task.due && localDueOf(x.task.due).date < day).length
+function ProjectName({ task, projects }: { task: Task; projects: ReadonlyMap<string, Project> }) {
+  const p = task.project_id ? projects.get(task.project_id) : undefined
+  return p ? <span className="shrink-0 truncate text-meta text-muted">{p.name}</span> : null
+}
+
+/** Done (weekly-review "How the day went"): the tasks completed today, read-only, in completion order. */
+function DoneStep({ summary, projects }: { summary: DaySummary; projects: ReadonlyMap<string, Project> }) {
+  const [all, setAll] = useState(false)
+  if (summary.planned === 0 && summary.completed.length === 0) return <Quiet data-close-empty>{t('Nothing was planned for today and nothing was completed.')}</Quiet>
+  if (summary.completed.length === 0) return <Quiet data-close-none-done>{t('Nothing finished yet today.')}</Quiet>
+  const shown = all ? summary.completed : summary.completed.slice(0, DONE_FOLD)
+  const more = summary.completed.length - shown.length
   return (
     <>
-      <p className="mb-3 text-body text-muted" data-close-count>
-        {t('{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}', { n: rows.length })}{' '}
-        {earlier > 0 && <>{t('{n, plural, one {# is still open from earlier.} other {# are still open from earlier.}}', { n: earlier })}{' '}</>}
-        {t('Decide for each; moving on carries them over.')}
-      </p>
-      {shown ? (
-        <CarryCard row={shown} position={rows.indexOf(shown) + 1} total={rows.length} day={day}
-          project={shown.task.project_id ? projectMap.get(shown.task.project_id) : undefined}
-          decision={decisionOf(decisions, shown)} onDecide={onChoose} />
-      ) : (
-        <p className="rounded-card border border-dashed border-default px-4 py-3 text-body text-muted" data-carry-all-set>{t('Every task has a decision. Change one below, or move on.')}</p>
+      <ul className="-mx-2 sm:-mx-3" aria-label={t('Done today')} data-close-done-list>
+        {shown.map((x) => (
+          <li key={x.id} className="flex min-w-0 items-center gap-3 rounded-control px-2 py-2 sm:px-3" data-close-done-row={x.id}>
+            <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><Icon name="check" size="sm" /></span>
+            <TruncatedText as="span" text={x.title || t('Untitled')} className="user-text min-w-0 flex-1 text-body text-default" />
+            <ProjectName task={x} projects={projects} />
+          </li>
+        ))}
+      </ul>
+      {more > 0 && (
+        <button type="button" onClick={() => setAll(true)} data-close-done-more
+          className="mt-1 cursor-pointer rounded-control px-2 py-1 text-meta text-muted hover:text-default focus-visible:outline-2 focus-visible:outline-focus sm:-mx-1">
+          {t('and {n} more', { n: more })}
+        </button>
       )}
-      <CarryList rows={rows} current={shown?.task.id ?? null} decisionOf={(x) => decisionOf(decisions, x)} onShow={onShow} />
     </>
   )
 }
 
-/** A note for tomorrow morning: one optional field with a preview of where it appears; Enter or the primary action closes the day. */
-function NoteStep({ note, onNote, left, onClose }: { note: string; onNote: (v: string) => void; left: number; onClose: () => Promise<void> }) {
+/** Tomorrow's first thing (weekly-review "Tomorrow's first thing"): one of tomorrow's tasks, or none, and the line for the morning. */
+function FirstStep({ tasks, projects, chosen, onChoose, note, onNote, onClose }: {
+  tasks: Task[]
+  projects: ReadonlyMap<string, Project>
+  chosen: string | null
+  onChoose: (id: string | null) => void
+  note: string
+  onNote: (v: string) => void
+  onClose: () => Promise<void>
+}) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([])
+  const at = Math.max(0, tasks.findIndex((x) => x.id === chosen))
+  const onKeyDown = (e: KeyboardEvent, i: number) => {
+    const to = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? i - 1 : null
+    if (to === null || to < 0 || to >= tasks.length) return
+    e.preventDefault()
+    refs.current[to]?.focus()
+  }
   return (
-    <form onSubmit={(e) => { e.preventDefault(); act(onClose()) }} data-close-note>
-      {left > 0 && <div className="mb-3"><Notice tone="info">{t('{n, plural, one {# task stays in Today.} other {# tasks stay in Today.}}', { n: left })}</Notice></div>}
-      <Field label={t('Note (optional)')} description={t('One line you want to read first tomorrow morning.')}>
+    <form onSubmit={(e) => { e.preventDefault(); void act(onClose()) }} data-close-note>
+      {tasks.length === 0 ? <Quiet data-close-first-none>{t('Nothing is due tomorrow yet.')}</Quiet> : (
+        <div role="radiogroup" aria-label={CLOSE_STEP_TITLES.first} className="-mx-2 sm:-mx-3" data-close-first-list>
+          {tasks.map((x, i) => {
+            const on = x.id === chosen
+            return (
+              <button key={x.id} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={i === at ? 0 : -1}
+                onClick={() => onChoose(on ? null : x.id)} onKeyDown={(e) => onKeyDown(e, i)} data-close-first={x.id}
+                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-control px-2 py-2.5 text-left outline-none transition-colors duration-(--duration-ui) hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus sm:px-3 ${on ? 'bg-accent-soft' : ''}`}>
+                <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${on ? 'border-accent bg-accent' : 'border-strong'}`}>
+                  {on && <span className="h-1.5 w-1.5 rounded-full bg-on-accent" />}
+                </span>
+                <span className={`user-text min-w-0 flex-1 truncate text-body ${on ? 'font-medium text-strong' : 'text-default'}`}>{x.title || t('Untitled')}</span>
+                <ProjectName task={x} projects={projects} />
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <label className="mt-8 block">
+        <span className="mb-1.5 block text-meta font-medium text-muted">{t('A line for tomorrow')}</span>
         <Input value={note} maxLength={TOMORROW_NOTE_MAX} onChange={(e) => onNote(e.target.value)} placeholder={t('Start with…')} data-close-note-input />
-      </Field>
-      <p className="mt-2 text-meta text-muted" data-close-note-preview>
-        {note.trim() ? t('Tomorrow your Daily check starts with: “{note}”', { note: note.trim() }) : t('Leave it empty if there’s nothing to remember.')}
-      </p>
+      </label>
+      {note.trim() && (
+        <p className="mt-2 text-meta text-muted" data-close-note-preview>{t('Tomorrow your Daily check starts with: “{note}”', { note: note.trim() })}</p>
+      )}
     </form>
   )
 }
+

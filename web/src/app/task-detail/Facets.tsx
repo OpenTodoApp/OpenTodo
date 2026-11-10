@@ -4,10 +4,10 @@
 // sheet on phones) with Clear and Done; the When parts share one popover that shows
 // one segment at a time. The Add menu offers what is not set, grouped by facet.
 // Every editor writes exactly the operation its chip wrote (usePropertiesModel).
-import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
-import { createProject, setRecurrence, unparkTask, updateTask } from '../../lib/ops'
+import { createProject, updateTask } from '../../lib/ops'
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
@@ -25,14 +25,11 @@ import { originText, originTip } from '../OriginChip'
 import { LocationEditor, useShownLocation } from '../locations/LocationEditor'
 import { LocationPreview } from '../locations/LocationPreview'
 import { setTaskLocation, locationLabel } from '../../lib/locations'
-import { setDueWithUndo } from '../undoable'
 import { requestAttach } from './attachRequest'
 import { FacetEditor } from './FacetEditor'
 import { FacetLine } from './FacetLine'
 import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
-import { useSectorSegment, WhenControl, WhenSegmentPicker } from './WhenControl'
-import { setSectorWithUndo } from './SectorChoice'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { dayPartFields } from '../../lib/dayParts'
@@ -72,6 +69,8 @@ const itemMeta = (i: PickerItem) => i.meta
 export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminders', 'estimate', 'repeat', 'labels', 'assignee', 'blocked-by', 'parent', 'section', 'location', 'energy'])
 /** The When segment a part opens on. */
 const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', sector: 'sector', reminders: 'reminders' }
+/** The When popover, loaded on first use: the When editor stays out of the first load (when-picker). */
+const WhenEditor = lazy(() => import('./WhenEditor'))
 
 function Dot({ color }: { color?: string }) {
   return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
@@ -181,21 +180,17 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
   onClose: () => void
 }) {
   const { task, readOnly, userId, childCount, onOpen } = props
-  const sectorSegment = useSectorSegment(task)
   const frame = (icon: IconName, title: string, body: ReactNode, onClear?: () => void, extra: { header?: ReactNode; width?: string } = {}) => (
     <FacetEditor anchor={anchor} icon={icon} title={title} onClose={onClose} onClear={onClear} {...extra}>{body}</FacetEditor>
   )
 
   if (SEGMENT_OF[id]) {
-    const clear: Partial<Record<WhenSegmentId, () => void>> = {
-      due: task.due ? () => act(setDueWithUndo(task.id, null)) : undefined,
-      start: task.start ? () => void unparkTask(task.id) : undefined,
-      deadline: task.deadline ? () => act(updateTask(task.id, { deadline: null })) : undefined,
-      repeat: task.recurrence ? () => act(setRecurrence(task.id, null)) : undefined,
-      sector: task.sector ? () => act(setSectorWithUndo(task.id, '')) : undefined,
-    }
-    return frame('calendar-days', t('When'), <WhenControl task={task} readOnly={readOnly} segment={segment} onOpen={onOpen} onClose={onClose} onAddLocation={() => m.editing.reveal('location')} />, clear[segment],
-      { header: <WhenSegmentPicker value={segment} onChange={onSegment} sector={sectorSegment} />, width: 'sm:w-[28rem]' })
+    return (
+      <Suspense fallback={null}>
+        <WhenEditor task={task} readOnly={readOnly} anchor={anchor} segment={segment} onSegment={onSegment} onClose={onClose}
+          onOpen={onOpen} onAddLocation={() => m.editing.reveal('location')} />
+      </Suspense>
+    )
   }
 
   switch (id) {
@@ -314,7 +309,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     <div className="pl-7" data-add-property>
       <Menu kind="menu" label={t('Add a property')} title={t('Add')} width="sm:w-64" align="start"
         trigger={<span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />{t('Add')}</span>}
-        triggerClassName="inline-flex min-h-7 items-center rounded-control px-1 text-muted hover:bg-sunken hover:text-default dark:hover:bg-raised">
+        triggerClassName="inline-flex min-h-8 items-center rounded-control px-1 text-muted pointer-coarse:min-h-11 hover:bg-sunken hover:text-default dark:hover:bg-raised">
         {shown.map((g) => (
           <MenuGroup key={g.title} label={g.title}>
             {g.offers.map((o) => <MenuItem key={o.id} label={o.label} icon={o.icon} shortcut={o.shortcut} onSelect={() => (o.run ? o.run() : ed.reveal(o.id))} />)}

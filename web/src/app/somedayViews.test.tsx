@@ -12,6 +12,7 @@ import { Sidebar } from './Sidebar'
 import { TaskPageHost } from './taskPage.testkit'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
+import { createSection } from '../lib/sections'
 
 let n = 0
 beforeEach(() => {
@@ -93,6 +94,30 @@ describe('Later group, Upcoming and counts (2.3, 2.4)', () => {
     await waitFor(() => text(up.container).includes('Dentist'), 'Upcoming with its dated task')
     expect(text(up.container)).not.toContain('Renew passport')
     await up.unmount()
+  })
+
+  it('in a project with sections, deferred and parked tasks stay in their section under a folded Later (later-in-section)', async () => {
+    mockFetch(noPublicLinks)
+    const home = await createProject({ name: 'Home' })
+    const garden = await createSection(home, 'Garden')
+    await createSection(home, 'Kitchen')
+    await createTask({ title: 'Water plants', project_id: home, section_id: garden })
+    await createTask({ title: 'Paint the fence', project_id: home, section_id: garden, start: '2026-10-21' })
+    await createTask({ title: 'Build a pond', project_id: home, section_id: garden, start: 'someday' })
+    const r = await render(<TaskListView route={{ view: 'project', id: home }} />)
+    await waitFor(() => text(r.container).includes('Water plants'))
+    const later = () => r.container.querySelector('[data-group="later:' + garden + '"]') as HTMLElement | null
+    // Folded by default, inside Garden, with its count; no project-wide Later.
+    await waitFor(() => !!later())
+    expect(later()!.closest('section')!.textContent).toContain('Garden')
+    expect(later()!.querySelector('[data-group-count]')!.textContent).toMatch(/^2/)
+    expect(text(r.container)).not.toContain('Paint the fence')
+    expect(r.container.querySelector('[data-group="later"]')).toBeNull()
+    await act(async () => { (later()!.querySelector('[data-group-toggle]') as HTMLElement).click() })
+    await waitFor(() => text(later()!).includes('Paint the fence'))
+    expect(text(later()!)).toContain('Build a pond')
+    expect(text(later()!)).toContain('Starts 21 Oct')
+    await r.unmount()
   })
 
   it('Deferred until next week (inbox-means-unplaced): a deferred or parked task without a project is not in the Inbox; a deferred one is in Upcoming on its start date', async () => {

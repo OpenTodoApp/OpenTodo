@@ -29,7 +29,7 @@ A label SHALL have a name, a colour, a sort position, creation time, optional de
 - **THEN** no chip is shown for that id in Work, the id stays in the task's array, and moving the task back shows the chip again
 
 ### Requirement: Assign and unassign labels
-A task's `labels` array SHALL hold label ids. The user SHALL add and remove labels from the task detail panel and from a picker opened with `L` on a selected task, with type-ahead that can create a missing label. Labels SHALL appear on task rows in every view: with Detailed rows as one chip per label; with Calm rows as one row of colour dots in the task's label order followed by the first label's name and "+n" for the rest, with every name read by assistive technology and shown in a tooltip on hover and keyboard focus, except the label whose own view is open. Ids referring to deleted or not yet received labels SHALL be kept in the data but not displayed. Changes apply locally at once and work offline.
+A task's `labels` array SHALL hold label ids. The user SHALL add and remove labels from the task detail panel and from a picker opened with `L` on a selected task, with type-ahead that can create a missing label. A shared label chip SHALL show the label name with a soft fill in the label hue and no separate colour dot. Editable chips SHALL keep the labelled remove control. In task rows, labels SHALL follow the order, overflow and accessible name behaviour of the active layout in task-list-presentation and row-layouts, omitting the label whose own view is open. Ids referring to deleted or not yet received labels SHALL be kept in the data but not displayed. Changes apply locally at once and work offline. After sync, devices render their shared label data through the active theme.
 
 #### Scenario: Assign from the picker
 - **WHEN** the user presses `L` on a selected task, types "err" and presses Enter
@@ -44,8 +44,12 @@ A task's `labels` array SHALL hold label ids. The user SHALL add and remove labe
 - **THEN** no chip is shown for it, the id stays in the task's array, and the chip appears once the label arrives
 
 #### Scenario: Second label in Calm rows
-- **WHEN** Calm rows are on, a task already carries "errand" and the user adds "call" from the picker
-- **THEN** the row shows two dots, "errand" and "+1" at once, and a screen reader hears "Labels: errand, call"
+- **WHEN** a One line row already carries "errand" and the user adds "call" from the picker
+- **THEN** the row shows tinted chips for "errand" and "call" at once, and a screen reader hears "Labels: errand, call"
+
+#### Scenario: Removing a label from a task
+- **WHEN** an editable chip shows the "errand" label in the task detail panel
+- **THEN** it shows the label name on a soft fill in its hue, and its remove button keeps the accessible name "Remove label errand"
 
 ### Requirement: Label views and counts
 The sidebar SHALL show a collapsible "Labels" group at the same level as Projects, inside the sidebar's single scroller, closed on a device that has not stored a state for it and hidden until the user has a label, listing non-deleted labels by position, each opening a view of that label's open tasks across all projects grouped by project. With the default sidebar counts preference a sidebar label row SHALL show no count; with every count on (`appearance-preferences` "Sidebar counts preference") it SHALL show its open-task count, as `app-shell` "Sidebar structure" describes. The label's open-task count SHALL always be in the row's accessible name ("errand, 3 open tasks"), on the labels overview, and in the label view's page header. A pinned label SHALL also appear in the Favourites group, with a visible count only when every count is on. `g l` and the group's "All" action SHALL open the labels overview. Views and the counts in accessible names and on the overview SHALL be computed from local data and update live, so they are correct offline and follow other devices after sync.

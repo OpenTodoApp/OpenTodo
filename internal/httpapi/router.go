@@ -214,11 +214,15 @@ func (s *Server) registerWebAppRoutes(mux *routes, web http.Handler) {
 		})
 		// A task page (task-pages D8): its own small document, t.html, never the
 		// app; no indexing, no referrer, never stored by a cache, no cookie.
-		mux.handle("GET /t/", public("a task page; its data comes from the task page API"), func(w http.ResponseWriter, r *http.Request) {
+		taskPage := func(w http.ResponseWriter, r *http.Request) {
 			publicHeaders(w)
 			r2 := r.Clone(r.Context())
 			r2.URL.Path = "/t.html"
 			web.ServeHTTP(noStoreWriter{w}, r2)
-		})
+		}
+		mux.handle("GET /t/", public("a task page; its data comes from the task page API"), taskPage)
+		// A routine email's stop page (routines-shared-email D5): the same small
+		// document, never the app; its data comes from the stop link API.
+		mux.handle("GET /routine-emails/", public("a routine email's stop page; its data comes from the stop link API"), taskPage)
 	}
 }

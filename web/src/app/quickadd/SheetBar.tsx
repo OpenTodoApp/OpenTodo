@@ -42,7 +42,7 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
     <div data-quick-add-sheet-bar>
-      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')}>
+      <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
           const color = c.kind === 'project' ? projectColor(projects.find((p) => p.id === c.value)) : undefined
           return (

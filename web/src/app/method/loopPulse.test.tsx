@@ -1,12 +1,12 @@
 // @vitest-environment happy-dom
-// The Loop pulse (OpenSpec change loop-home-refresh; open-loops "Loop pulse").
+// The Loop pulse (OpenSpec changes loop-home-refresh and loop-guided-dashboard; open-loops "Loop pulse").
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { compute, periodFor } from '../../lib/stats'
 import type { User } from '../../lib/types'
-import { render, waitFor } from '../../ui/test-utils'
+import { click, key, render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
 import { navigate } from '../router'
 import { Shell } from '../Shell'
@@ -35,6 +35,13 @@ afterEach(() => {
 })
 
 const figure = (k: string) => document.querySelector<HTMLElement>(`[data-pulse="${k}"]`)!
+const line = () => document.querySelector<HTMLButtonElement>('[data-loop-pulse-line]')
+/** Details on demand: the line opens the full pulse. */
+async function details() {
+  await waitFor(() => !!line(), 'the pulse line')
+  await click(line()!)
+  await waitFor(() => !!document.querySelector('[data-pulse="week"]'), 'the full pulse')
+}
 
 /** A task created `createdAgo` days ago and, when given, completed `doneAgo` days ago (the clock moves, then comes back). */
 async function seed(title: string, createdAgo: number, doneAgo: number | null, project: string | null = null) {
@@ -46,7 +53,7 @@ async function seed(title: string, createdAgo: number, doneAgo: number | null, p
 }
 
 describe('Loop pulse', () => {
-  it('agrees with Statistics, counts what was decided, ages the Inbox and lists fourteen days', async () => {
+  it('Details on demand: the line agrees with Statistics; the full pulse counts what was decided, ages the Inbox and lists fourteen days', async () => {
     const garage = await createProject({ name: 'Garage' })
     // Done this week (today) and last week.
     for (let i = 0; i < 9; i++) await seed(`Done ${i}`, 20, 0, garage)
@@ -60,7 +67,13 @@ describe('Loop pulse', () => {
     await db.tasks.update(gone, { deleted_at: NOW.getTime() })
     navigate({ view: 'loop' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!figure('week'))
+    // At rest: one quiet line with the three figures that read as words, the caution past seven days.
+    await waitFor(() => (line()?.textContent ?? '').includes('9 done this week'), 'the pulse line')
+    expect(line()!.textContent).toContain('11 of 18 decided')
+    expect(line()!.textContent).toContain('oldest in Inbox 9 days')
+    expect(line()!.querySelector('[data-loop-age-stale]')).not.toBeNull()
+    expect(document.querySelector('[data-pulse="week"]')).toBeNull()
+    await details()
     const tasks = await db.tasks.toArray()
     const input = { tasks, projects: [], shared: new Set<string>(), me: 'u1', today: '2026-10-19' }
     // The same number whichever day the week starts on, as Statistics would show it.
@@ -76,6 +89,11 @@ describe('Loop pulse', () => {
     expect(values[13]).toContain('9 tasks')
     expect(values[10]).toContain('2 tasks')
     expect(values[11]).toContain('5 tasks')
+    expect([...document.querySelectorAll('[data-loop-pulse] button')].map((b) => b.textContent)).toContain('Statistics')
+    // Esc closes it with focus back on the line.
+    await key(document.activeElement ?? document.body, 'Escape')
+    await waitFor(() => !document.querySelector('[data-pulse="week"]'), 'closed')
+    await waitFor(() => document.activeElement === line(), 'focus on the line')
     await r.unmount()
   })
 
@@ -84,7 +102,9 @@ describe('Loop pulse', () => {
     await seed('Placed', 1, null, garage)
     navigate({ view: 'loop' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
-    await waitFor(() => !!figure('age'))
+    await waitFor(() => (line()?.textContent ?? '').includes('Inbox empty'), 'the pulse line')
+    expect(line()!.querySelector('[data-loop-age-stale]')).toBeNull()
+    await details()
     expect(figure('age').textContent).toContain('empty')
     expect(figure('age').textContent).toContain('nothing waiting')
     expect(figure('decided').textContent).toContain('1')

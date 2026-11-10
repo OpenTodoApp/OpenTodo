@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { todayISO } from '../lib/dates'
 import type { User } from '../lib/types'
-import { click, key, render, waitFor } from '../ui/test-utils'
+import { click, key, minWidthPx, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { navigate } from './router'
 import { Shell } from './Shell'
@@ -190,6 +190,36 @@ describe('the task page', () => {
     expect(page()!.querySelector('[data-crumb="more"]')).toBeNull()
     expect(page()!.querySelector('[data-crumb="parent"]')).toBeNull()
     await r.unmount()
+  })
+
+  it('on a phone shows only the nearest step up (GitHub issue 1050)', async () => {
+    const original = window.matchMedia
+    window.matchMedia = ((q: string) => ({
+      matches: minWidthPx(q) <= 390,
+      media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+    // Below 768 px the title, and so the path, sits in the shell's bar, outside the page.
+    const bar = () => document.querySelector<HTMLElement>('[data-breadcrumb]')
+    try {
+      const project = await createProject({ name: 'Work' })
+      const budget = await createTask({ title: 'Draft the budget', project_id: project })
+      const gather = await createTask({ title: 'Gather numbers', project_id: project, parent_id: budget })
+      const ask = await createTask({ title: 'Ask finance', project_id: project, parent_id: gather })
+      navigate({ view: 'task', id: ask })
+      const r = await render(<Shell user={user} onLogout={() => {}} />)
+      await waitFor(() => bar()?.querySelector('[data-crumb="parent"]')?.textContent === 'Gather numbers')
+      const crumbs = bar()!
+      expect(crumbs.querySelectorAll('[data-crumb]')).toHaveLength(1)
+      await click(crumbs.querySelector<HTMLButtonElement>('[data-crumb="parent"]')!)
+      await waitFor(() => bar()?.querySelector('[data-crumb="parent"]')?.textContent === 'Draft the budget')
+      await click(bar()!.querySelector<HTMLButtonElement>('[data-crumb="parent"]')!)
+      await waitFor(() => !!bar()?.querySelector('[data-crumb="project"]'))
+      expect(bar()!.querySelector('[data-crumb="project"]')!.textContent).toContain('Work')
+      expect(bar()!.querySelector('[data-crumb="task"]')).toBeNull()
+      await r.unmount()
+    } finally {
+      window.matchMedia = original
+    }
   })
 
   it('u on a task page opens the parent, and u in the title does not', async () => {

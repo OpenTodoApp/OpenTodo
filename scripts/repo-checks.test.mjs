@@ -257,7 +257,8 @@ test('base and job images are pinned by digest', () => {
   const dockerfile = read('Dockerfile')
   const stages = [...dockerfile.matchAll(/^FROM .* AS (\S+)$/gm)].map((m) => m[1])
   for (const [, from] of dockerfile.matchAll(/^FROM (?:--platform=\S+ )?(\S+)/gm)) {
-    if (stages.includes(from)) continue
+    // scratch is the empty image, nothing to pin (the web-dist stage, signed-web-app D4).
+    if (stages.includes(from) || from === 'scratch') continue
     assert.match(from, /^[\w.\/-]+:[\w.-]+@sha256:[0-9a-f]{64}$/, `Dockerfile: ${from} must be tag@sha256:digest`)
   }
   const pinned = read('Makefile').match(/^PLAYWRIGHT_IMAGE := (.+)$/m)?.[1].replace('$(PLAYWRIGHT_VERSION)', read('Makefile').match(/^PLAYWRIGHT_VERSION := (\S+)$/m)[1])
@@ -304,6 +305,7 @@ test('the image, stable tag and release are published only after every gate', ()
   assert.deepEqual(needsOf(jobs.play), ['release'], 'the Play upload runs only after the release')
   assert.deepEqual(needsOf(jobs['obsidian-plugin']), ['release'], 'the Obsidian plugin is published only after the release')
   assert.deepEqual(needsOf(jobs['ios-testflight']), ['release'], 'the TestFlight upload runs only after the release')
+  assert.match(jobs['ios-testflight'], /^ {4}secrets: inherit$/m, 'the called TestFlight workflow gets the release secrets')
   const gates = Object.keys(jobs).filter((j) => !publishing.includes(j))
   for (const g of gates) {
     assert.ok(needsOf(jobs.docker).includes(g), `the docker (publish) job must need ${g}`)
@@ -537,7 +539,7 @@ function androidToolchainProblems({ wrapper, rootGradle, appGradle, ci, readme }
   const tools = appGradle.match(/^\s*buildToolsVersion = "(\d+\.\d+\.\d+)"$/m)?.[1]
   if (!tools) problems.push('app/build.gradle.kts: no buildToolsVersion')
   const javas = [...ci.matchAll(/^\s+java-version: (\S+)$/gm)].map((m) => m[1])
-  if (javas.length === 0 || javas.some((j) => !/^17\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 17 (found ${javas.join(', ') || 'none'})`)
+  if (javas.length === 0 || javas.some((j) => !/^21\.\d+\.\d+\+\d+$/.test(j))) problems.push(`CI: setup-java must pin an exact JDK 21 (found ${javas.join(', ') || 'none'})`)
   if (new Set(javas).size > 1) problems.push(`CI: one JDK everywhere (found ${[...new Set(javas)].join(', ')})`)
   if (tools && !ci.includes(`build-tools;${tools}`)) problems.push(`CI: the SDK step installs another build-tools than ${tools}`)
   for (const [what, v] of [['Gradle', gradle], ['the Android Gradle Plugin', agp], ['build tools', tools], ['the JDK', javas[0]]]) {
@@ -562,7 +564,7 @@ test('a Gradle wrapper without its checksum is refused', () => {
   const t = androidToolchain()
   const wrapper = t.wrapper.replace(/^distributionSha256Sum=.*\n/m, '')
   assert.deepEqual(androidToolchainProblems({ ...t, wrapper }), ['gradle-wrapper.properties: no distributionSha256Sum'])
-  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 17\.\S+/, 'java-version: 17') }).join('\n'), /exact JDK 17/)
+  assert.match(androidToolchainProblems({ ...t, ci: t.ci.replace(/java-version: 21\.\S+/, 'java-version: 21') }).join('\n'), /exact JDK 21/)
 })
 
 test('the release APK carries no dependency block or commit file', () => {
@@ -603,6 +605,46 @@ test('the Play AAB is the build without location, checked on every Android run (
   assert.match(read('mobile/android/app/src/play/AndroidManifest.xml'), /ACCESS_BACKGROUND_LOCATION" tools:node="remove"/)
 })
 
+// Signed web app (OpenSpec signed-web-app D4): one job signs, on release tags, in the
+// protected environment whose required reviewer approves every signing; the
+// binaries and the image embed what it signed.
+test('only web-sign reads the web signing key, on release tags, in the web-signing environment', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const sign = jobs['web-sign']
+  assert.ok(sign, 'ci.yml has a web-sign job')
+  assert.match(sign, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'release tags only')
+  assert.match(sign, /^ {4}environment: web-signing$/m)
+  assert.match(sign, /websign sign -version "\$GITHUB_REF_NAME"/, 'the version must match the tag')
+  assert.match(sign, /::warning::WEB_SIGNING_KEY is not set/, 'without the secret the release stays unsigned and green')
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      const uses = /environment: web-signing|secrets\.WEB_SIGNING_KEY/.test(block)
+      if (uses) assert.ok(f.endsWith('ci.yml') && id === 'web-sign', `${f}: only the web-sign job uses the web-signing environment or its key (${id})`)
+    }
+  }
+  for (const id of ['cli', 'image', 'docker']) {
+    assert.ok(needsOf(jobs[id]).includes('web-sign'), `${id} waits for the signed web app`)
+    assert.match(jobs[id], /web-dist-signed/, `${id} embeds the signed web app on release tags`)
+  }
+})
+
+test('the official web app keys are published, and the test key is never one of them', async () => {
+  const { createHash, createPrivateKey, createPublicKey } = await import('node:crypto')
+  const official = JSON.parse(read('internal/websign/release-keys.json'))
+  assert.equal(typeof official.refuse, 'boolean')
+  const security = read('SECURITY.md')
+  const page = read('docs/security/signed-app.md')
+  for (const k of official.keys) {
+    const fp = createHash('sha256').update(Buffer.from(k.spki, 'base64')).digest('hex')
+    assert.ok(security.includes(fp), `SECURITY.md publishes the ${k.role} key's fingerprint ${fp}`)
+    assert.ok(page.includes(fp), `docs/security/signed-app.md publishes the ${k.role} key's fingerprint ${fp}`)
+  }
+  for (const test of ['test-key.pem', 'test-recovery-key.pem']) {
+    const spki = createPublicKey(createPrivateKey(read(`internal/websign/testdata/${test}`))).export({ type: 'spki', format: 'der' }).toString('base64')
+    assert.ok(!official.keys.some((k) => k.spki === spki), `${test} is a test key and never official`)
+  }
+})
+
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
   const play = jobsOf(read('.github/workflows/ci.yml')).play
   assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
@@ -631,7 +673,8 @@ test('the TestFlight upload runs for final tags after the release and by hand, w
   assert.match(job, /^ {4}environment: release$/m)
   assert.match(job, /::warning::APPLE_TEAM_ID, ASC_KEY_ID, ASC_ISSUER_ID or ASC_KEY_P8 is not set in the release environment: no TestFlight upload/)
   assert.match(job, /node scripts\/release\/appstore\.mjs register\n[\s\S]*ios-testflight\.sh archive /, 'the bundle IDs are registered before the archive')
-  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n {8}run: \|\n.*\n.*appstore\.mjs cleanup/, 'the certificate and profiles are removed whatever happened')
+  assert.match(job, /^ {8}id: upload$/m, 'the upload step has an id the cleanup reads')
+  assert.match(job, /if: always\(\) && steps\.secrets\.outputs\.ready == 'true'\n[\s\S]*?UPLOADED: \$\{\{ steps\.upload\.outcome == 'success' \}\}\n[\s\S]*?if \[ "\$UPLOADED" != "true" \][^\n]*appstore\.mjs cleanup/, 'the keychain always goes; the certificate is revoked only when nothing was uploaded (ITMS-90035)')
   assert.doesNotMatch(flow, /reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions/, 'CI never submits for review')
   const register = jobsOf(read('.github/workflows/ios-register-ids.yml'))['ios-register-ids']
   assert.ok(register, 'ios-register-ids.yml has an ios-register-ids job')
@@ -667,17 +710,22 @@ test('the F-Droid metadata allows the release certificate that docs/android-app.
   const cert = fdroid.match(/^AllowedAPKSigningKeys: ([0-9a-f]{64})$/m)?.[1]
   assert.ok(cert, 'AllowedAPKSigningKeys names one SHA-256')
   assert.ok(read('docs/android-app.md').includes(cert), 'docs/android-app.md publishes the same certificate')
-  assert.match(fdroid, /^Binaries: https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
-  assert.match(fdroid, /^UpdateCheckMode: Tags \^v\[0-9\.\]\+\$$/m, 'release candidates are skipped')
+  assert.match(fdroid, /^Binaries: \n {2}https:\/\/github\.com\/OpenTodoApp\/OpenTodo\/releases\/download\/v%v\/opentodo-android-%v\.apk$/m)
+  // The version comes from the tag, so the bot reads it from this file at each tag, which only a
+  // final release's prepare commit moves (release candidates never reach F-Droid).
+  assert.match(fdroid, /^UpdateCheckMode: Tags$/m)
+  assert.match(fdroid, /^UpdateCheckData: \n {2}mobile\/android\/store\/fdroid\/app\.opentodo\.yml\|CurrentVersionCode:\\s\*\(\\d\+\)\|\.\|CurrentVersion:\\s\*\(\[0-9\.\]\+\)$/m)
   assert.match(fdroid, /^AutoUpdateMode: Version$/m, "F-Droid's bot adds each final tag")
-  // F-Droid takes the name, summary and description from fastlane/; its build pins a full commit hash.
-  assert.doesNotMatch(fdroid, /^(AutoName|Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
+  assert.doesNotMatch(fdroid, /^ {4}sudo:/m, "the build server's default JDK, as in CI")
+  // F-Droid takes the name, summary and description from fastlane/.
+  // AutoName is the app's label, which F-Droid's checkupdates writes itself.
+  assert.doesNotMatch(fdroid, /^(Name|Summary|Description):/m, 'the texts live in fastlane/metadata/android/')
   const builds = [...fdroid.matchAll(/^ {2}- versionName: (\S+)\n {4}versionCode: (\d+)\n {4}commit: (\S+)$/gm)]
   assert.equal(builds.length, 1, 'Builds keeps only the latest version')
   const [, name, code, commit] = builds[0]
   const [maj, min, patch] = name.split('.').map(Number)
   assert.equal(Number(code), maj * 10000 + min * 100 + patch, 'versionCode is major·10000 + minor·100 + patch')
-  assert.match(commit, /^[0-9a-f]{40}$/, 'commit is a full hash, not a tag')
+  assert.ok(/^[0-9a-f]{40}$/.test(commit) || commit === `v${name}`, 'commit is a full hash or the tag of its version')
   assert.match(fdroid, new RegExp(`^CurrentVersion: ${name.replaceAll('.', '\\.')}\\nCurrentVersionCode: ${code}$`, 'm'))
 })
 

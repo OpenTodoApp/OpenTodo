@@ -2,9 +2,10 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
-import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput } from './listGroups'
+import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
+import { defaultListDisplay, type ListDisplay } from './listDisplay'
 import { buildTaskTree } from './subtasks'
-import type { Project, Section, Task } from './types'
+import type { Label, Project, Section, Task } from './types'
 
 const TODAY = '2026-10-14'
 let n = 0
@@ -251,6 +252,57 @@ describe('listGroups', () => {
     expect(sectionOfRows(false, [], g)).toEqual(new Map([[loose.id, ''], [one.id, 's1']]))
   })
 
+  it('deferred and parked tasks stay in their section under a folded Later, with their subtasks (later-in-section)', () => {
+    const s1 = section('s1', 'p', 1)
+    const s2 = section('s2', 'p', 2)
+    const active = task({ title: 'Active', project_id: 'p', section_id: 's1' })
+    const deferred = task({ title: 'Deferred', project_id: 'p', section_id: 's1', start: '2026-11-20' })
+    const sub = task({ title: 'Sub', project_id: 'p', section_id: 's1', parent_id: deferred.id })
+    const parked = task({ title: 'Parked', project_id: 'p', section_id: 's2', start: 'someday' })
+    const loose = task({ title: 'Loose', project_id: 'p', start: 'someday' })
+    const gone = task({ title: 'Deleted section', project_id: 'p', section_id: 'gone', start: 'someday' })
+    const all = [active, deferred, sub, parked, loose, gone]
+    const split = splitLater(all, TODAY)
+    const tree = buildTaskTree(split.active)
+    const buckets = sectionBuckets('p', tree, [s1, s2])
+    const base = input({ view: 'project', projectId: 'p', tasks: split.active, laterTasks: split.later, tree, buckets, sectionCount: 2 })
+    // Folded by default: each Later shows its count and no rows; "No section" is listed for its Later alone.
+    const folded = listGroups(base)
+    expect(folded.map((g) => [g.key, g.count, g.folded ?? null, titles(g)])).toEqual([
+      ['section:', 0, null, []], ['later:', 2, true, []],
+      ['section:s1', 1, null, ['Active']], ['later:s1', 2, true, []],
+      ['section:s2', 0, null, []], ['later:s2', 1, true, []],
+    ])
+    expect(folded[3]).toMatchObject({ heading: 'Later', laterOf: 's1', openKey: laterOpenKey('p', 's1') })
+    // Opened on this device: its rows, the subtask nested under its deferred parent.
+    const open = listGroups({ ...base, collapsed: new Set([laterOpenKey('p', 's1'), laterOpenKey('p', '')]) })
+    expect(open.find((g) => g.key === 'later:s1')!.rows.map((r) => [r.task.title, r.depth, r.parent])).toEqual([['Deferred', 0, null], ['Sub', 1, deferred.id]])
+    expect(titles(open.find((g) => g.key === 'later:')!)).toEqual(['Loose', 'Deleted section'])
+    expect(open.find((g) => g.key === 'later:s2')!.rows).toEqual([])
+    // A drop beside a Later row takes that section; the Later rows count among their own siblings.
+    expect(sectionOfRows(false, [], open).get(deferred.id)).toBe('s1')
+    expect(sectionOfRows(false, [], open).get(loose.id)).toBe('')
+    expect(sectionOfRows(false, [], open).has(sub.id)).toBe(false)
+    expect(siblingPositions(open).get(deferred.id)).toEqual({ pos: 1, size: 1 })
+    // A collapsed section hides its Later as well.
+    expect(listGroups({ ...base, collapsedSections: ['s1'] }).some((g) => g.key === 'later:s1')).toBe(false)
+  })
+
+  it('without sections, grouped otherwise or on the timeline, Later stays one group at the end', () => {
+    const s1 = section('s1', 'p', 1)
+    const active = task({ title: 'Active', project_id: 'p', section_id: 's1', priority: 1 })
+    const deferred = task({ title: 'Deferred', project_id: 'p', section_id: 's1', start: '2026-11-20' })
+    const tree = buildTaskTree([active])
+    const buckets = sectionBuckets('p', tree, [s1])
+    const base = input({ view: 'project', projectId: 'p', tasks: [active], laterTasks: [deferred], tree, buckets, sectionCount: 1 })
+    const keys = (over: Partial<GroupInput>) => listGroups({ ...base, ...over }).map((g) => g.key)
+    expect(keys({ timeline: true })).toEqual(['section:s1', 'later'])
+    expect(keys({ sectionCount: 0, buckets: sectionBuckets('p', tree, []) })).toEqual(['all', 'later'])
+    expect(keys({ display: { groupBy: 'none', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display'] })).toEqual(['all', 'later'])
+    expect(keys({ display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } as GroupInput['display'] }).at(-1)).toBe('later')
+    expect(listGroups({ ...base, timeline: true }).at(-1)).toMatchObject({ heading: 'Later', rows: [expect.objectContaining({ task: deferred })] })
+  })
+
   it('the board has a column per section and "No section" only while it has cards', () => {
     const s1 = section('s1', 'p', 1)
     const one = task({ title: 'One', project_id: 'p', section_id: 's1' })
@@ -318,10 +370,10 @@ describe('implied metadata', () => {
   it('projects, sections, Later, trees, boards, the logbook and flat views imply nothing', () => {
     const s1 = section('s1', 'p', 1)
     const one = task({ project_id: 'p', section_id: 's1', due: { date: TODAY } })
-    const later = task({ start: 'someday' })
+    const later = task({ project_id: 'p', section_id: 's1', start: 'someday' })
     const tree = buildTaskTree([one])
     const buckets = sectionBuckets('p', tree, [s1])
-    const sectioned = listGroups(input({ view: 'project', tree, buckets, sectionCount: 1, laterTasks: [later] }))
+    const sectioned = listGroups(input({ view: 'project', projectId: 'p', tree, buckets, sectionCount: 1, laterTasks: [later], collapsed: new Set([laterOpenKey('p', 's1')]) }))
     expect(sectioned.map(implied)).toEqual([[null], [null]])
     expect(listGroups(input({ view: 'inbox', tree: buildTaskTree([later]) })).map(implied)).toEqual([[null]])
     const board = listGroups(input({ view: 'project', board: true, columns: boardColumns(buckets) }))
@@ -440,5 +492,207 @@ describe('keepGroups (list-rendering-at-scale D6)', () => {
     const [s1] = next.filter((g) => g.section)
     expect(s1.rows.map((r) => [r.task.title, r.depth])).toEqual([['A', 0], ['B', 1]])
     expect(s1.rows[0].hasChildren).toBe(true)
+  })
+})
+
+// Display options on Today, Upcoming and the Inbox (OpenSpec change builtin-view-options).
+describe('built-in view options (builtin-view-options)', () => {
+  const home = project('home', 1)
+  const work = project('work', 2)
+  const projects = [home, work]
+  const projectMap = new Map(projects.map((p) => [p.id, p]))
+  const d = (kind: 'today' | 'upcoming' | 'inbox', over: Partial<ListDisplay> = {}): ListDisplay => ({ ...defaultListDisplay(kind), ...over })
+  const today = (tasks: Task[], over: Partial<GroupInput> = {}) => input({ view: 'today', tasks, projects, projectMap, taskMap: new Map(tasks.map((x) => [x.id, x])), ...over })
+  const shape = (groups: ListGroup[]) => groups.map((g) => [g.key, g.heading, titles(g)])
+
+  it('with every option at its default, Today, Upcoming and the Inbox are exactly as before (D2 "Defaults")', () => {
+    const late = task({ title: 'Late', due: { date: '2026-10-12' }, priority: 1 })
+    const day = task({ title: 'Day', due: { date: TODAY, time: '10:00' } })
+    const morning = task({ title: 'Morning', due: { date: TODAY }, day_part: 'morning' })
+    const eve = task({ title: 'Eve', due: { date: TODAY }, evening: true })
+    const wait = task({ title: 'Wait', due: { date: TODAY } })
+    const slot = task({ title: 'Slot', due: { date: TODAY }, priority: 2 })
+    const child = task({ title: 'Child', due: { date: TODAY }, parent_id: day.id })
+    const next = task({ title: 'Next', due: { date: '2026-10-15' } })
+    const all = [late, day, morning, eve, wait, slot, child]
+    const fixtures: GroupInput[] = [
+      today(all, { blocked: new Set([wait.id]), collapsed: new Set([BLOCKED_OPEN_KEY]) }),
+      today(all, { dayParts: true }),
+      today(all, { closedList: { limit: 2, waiting: [slot, eve] }, doneToday: [task({ title: 'Done', completed_at: 5 })], collapsed: new Set([WAITING_OPEN_KEY, DONE_OPEN_KEY]) }),
+      input({ view: 'upcoming', tasks: [next, task({ title: 'Later', due: { date: '2026-10-20' } })] }),
+      input({ view: 'upcoming', tasks: [late, day, eve, next], upcomingToday: true, dayParts: true }),
+    ]
+    for (const f of fixtures) {
+      const kind = f.view as 'today' | 'upcoming'
+      const withOptions = listGroups({ ...f, display: d(kind), todayDisplay: f.upcomingToday ? d('today') : undefined })
+      expect(withOptions).toEqual(listGroups(f))
+    }
+    const inboxTasks = [task({ title: 'B', position: 2 }), task({ title: 'A', position: 1 })]
+    const inbox = input({ view: 'inbox', tasks: inboxTasks, tree: buildTaskTree(inboxTasks) })
+    expect(listGroups({ ...inbox, display: d('inbox') })).toEqual(listGroups(inbox))
+  })
+
+  it('Today by project: Earlier first with its late task, then the projects, then Blocked folded (D3)', () => {
+    const late = task({ title: 'Late', due: { date: '2026-10-13' }, project_id: 'home' })
+    const w1 = task({ title: 'W1', due: { date: TODAY }, project_id: 'work' })
+    const w2 = task({ title: 'W2', due: { date: TODAY }, project_id: 'work', evening: true })
+    const h1 = task({ title: 'H1', due: { date: TODAY }, project_id: 'home', day_part: 'morning' })
+    const stuck = task({ title: 'Stuck', due: { date: TODAY }, project_id: 'work' })
+    const g = listGroups(today([late, w1, w2, h1, stuck], { blocked: new Set([stuck.id]), dayParts: true, display: d('today', { groupBy: 'project' }) }))
+    expect(shape(g)).toEqual([['earlier', 'Earlier', ['Late']], ['day:home', 'HOME', ['H1']], ['day:work', 'WORK', ['W1', 'W2']], ['blocked', 'Blocked', []]])
+    expect(g[3]).toMatchObject({ folded: true, count: 1 })
+    expect(g[1]).toMatchObject({ named: true })
+    // The heading names the project, the date stays implied, and the part of the day shows on the row.
+    expect(g[1].rows[0].implied).toEqual({ date: TODAY, project: true })
+    expect(g[0].rows[0].implied).toBeUndefined()
+    // Only Time of day's headings take drops.
+    expect(g.some((x) => x.dropPart)).toBe(false)
+  })
+
+  it('Today by priority, label and None: each task once, the part of the day on its row', () => {
+    const l1 = { id: 'l1', name: 'Calls', color: '#000', position: 1, created_at: 0, deleted_at: null } as Label
+    const l2 = { id: 'l2', name: 'Errands', color: '#000', position: 2, created_at: 0, deleted_at: null } as Label
+    const late = task({ title: 'Late', due: { date: '2026-10-13' } })
+    const a = task({ title: 'A', due: { date: TODAY }, priority: 2, labels: ['l2', 'l1'] })
+    const b = task({ title: 'B', due: { date: TODAY }, evening: true })
+    expect(shape(listGroups(today([a, b], { display: d('today', { groupBy: 'priority' }) })))).toEqual([['day:p2', 'Priority 2', ['A']], ['day:p4', 'Priority 4', ['B']]])
+    const byLabel = listGroups(today([a, b], { labels: [l1, l2], display: d('today', { groupBy: 'label' }) }))
+    expect(shape(byLabel)).toEqual([['day:l1', 'Calls', ['A']], ['day:none', 'No label', ['B']]])
+    expect(byLabel[0].named).toBe(true)
+    expect(byLabel[1].rows[0].implied).toEqual({ date: TODAY })
+    expect(shape(listGroups(today([a, b], { display: d('today', { groupBy: 'none' }) })))).toEqual([['day:all', null, ['A', 'B']]])
+    expect(shape(listGroups(today([late, a, b], { display: d('today', { groupBy: 'none' }) })))).toEqual([['earlier', 'Earlier', ['Late']], ['day:all', 'Today', ['A', 'B']]])
+  })
+
+  it('Order inside Earlier: by priority, descending, the priority-1 task first', () => {
+    const mon = task({ title: 'Monday p3', due: { date: '2026-10-12' }, priority: 3 })
+    const tue = task({ title: 'Tuesday p1', due: { date: '2026-10-13' }, priority: 1 })
+    const g = listGroups(today([mon, tue], { display: d('today', { sortBy: 'priority', sortDir: 'desc' }) }))
+    expect(shape(g)).toEqual([['earlier', 'Earlier', ['Tuesday p1', 'Monday p3']], ['today', 'Today', []]])
+    // Default: due first.
+    expect(titles(listGroups(today([mon, tue]))[0])).toEqual(['Monday p3', 'Tuesday p1'])
+  })
+
+  it('Slots do not move: ordered by title, the slots are listed by title and Waiting keeps its fill order', () => {
+    const [e, c, a, d1, b] = ['E', 'C', 'A', 'D', 'B'].map((title) => task({ title, due: { date: TODAY } }))
+    const closedList = { limit: 3, waiting: [b, d1] }
+    const g = listGroups(today([e, c, a, d1, b], { closedList, collapsed: new Set([WAITING_OPEN_KEY]), display: d('today', { sortBy: 'title' }) }))
+    expect(shape(g)).toEqual([['today', null, ['A', 'C', 'E']], ['waiting', 'Waiting for a slot', ['B', 'D']]])
+    expect(g[1].count).toBe(2)
+  })
+
+  it('Done today stays newest first whatever the order', () => {
+    const one = task({ title: 'Older', completed_at: 1 })
+    const two = task({ title: 'Newer', completed_at: 2 })
+    const g = listGroups(today([task({ title: 'X', due: { date: TODAY } })], { doneToday: [two, one], collapsed: new Set([DONE_OPEN_KEY]), display: d('today', { sortBy: 'title' }) }))
+    expect(titles(g.find((x) => x.key === 'done')!)).toEqual(['Newer', 'Older'])
+  })
+
+  it('Upcoming by priority: each day by priority, still one group per day that takes drops (D4)', () => {
+    const thu = '2026-10-15'
+    const timed = task({ title: 'p4 at nine', due: { date: thu, time: '09:00' }, priority: 4 })
+    const urgent = task({ title: 'p1', due: { date: thu }, priority: 1 })
+    const fri = task({ title: 'Friday', due: { date: '2026-10-16' } })
+    const base = input({ view: 'upcoming', tasks: [timed, urgent, fri] })
+    expect(shape(listGroups(base)).map((x) => x[2])).toEqual([['p4 at nine', 'p1'], ['Friday']])
+    const g = listGroups({ ...base, display: d('upcoming', { sortBy: 'priority', sortDir: 'desc' }) })
+    expect(g.map((x) => [x.key, titles(x), x.dropDay])).toEqual([[thu, ['p1', 'p4 at nine'], thu], ['2026-10-16', ['Friday'], '2026-10-16']])
+    const titleDesc = listGroups({ ...base, display: d('upcoming', { sortBy: 'title', sortDir: 'desc' }) })
+    expect(titles(titleDesc[0])).toEqual(['p4 at nine', 'p1'])
+  })
+
+  it('Start with Today: the Today groups follow Today\'s options, Tomorrow onwards Upcoming\'s (D4)', () => {
+    const late = task({ title: 'Late', due: { date: '2026-10-13' }, project_id: 'home' })
+    const w = task({ title: 'Work today', due: { date: TODAY }, project_id: 'work' })
+    const h = task({ title: 'Home today', due: { date: TODAY }, project_id: 'home' })
+    const z = task({ title: 'Zebra', due: { date: '2026-10-15' }, priority: 1 })
+    const a = task({ title: 'Apple', due: { date: '2026-10-15' }, priority: 4 })
+    const g = listGroups(input({
+      view: 'upcoming', tasks: [late, w, h, z, a], projects, projectMap, upcomingToday: true,
+      display: d('upcoming', { sortBy: 'title' }), todayDisplay: d('today', { groupBy: 'project' }),
+    }))
+    expect(shape(g)).toEqual([['earlier', 'Earlier', ['Late']], ['day:home', 'HOME', ['Home today']], ['day:work', 'WORK', ['Work today']], ['2026-10-15', 'Tomorrow', ['Apple', 'Zebra']]])
+    // The headings of another grouping take no drop.
+    expect(g.filter((x) => x.key.startsWith('day:')).every((x) => !x.dropDay)).toBe(true)
+  })
+
+  it('Inbox by priority: a subtask stays under its parent, indented, in its manual order (D6)', () => {
+    const parent = task({ title: 'Parent p2', priority: 2 })
+    const sub = task({ title: 'Sub p4', priority: 4, parent_id: parent.id })
+    const other = task({ title: 'Other p4', priority: 4 })
+    const tasks = [parent, sub, other]
+    const g = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { groupBy: 'priority' }) }))
+    expect(g.map((x) => [x.key, x.heading, x.rows.map((r) => [r.task.title, r.depth])])).toEqual([
+      ['p2', 'Priority 2', [['Parent p2', 0], ['Sub p4', 1]]],
+      ['p4', 'Priority 4', [['Other p4', 0]]],
+    ])
+    // Ordered by title, descending: top-level tasks only.
+    const byTitle = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { sortBy: 'title', sortDir: 'desc' }) }))
+    expect(byTitle[0].rows.map((r) => r.task.title)).toEqual(['Parent p2', 'Sub p4', 'Other p4'])
+  })
+
+  describe('Nest subtasks (D5)', () => {
+    const nested = d('today', { subtasks: true })
+    const rows = (g: ListGroup) => g.rows.map((r) => [r.task.title, r.depth, r.breadcrumb])
+
+    it('parent and child due today: nested to any depth', () => {
+      const plan = task({ title: 'Plan trip', due: { date: TODAY } })
+      const book = task({ title: 'Book flights', due: { date: TODAY }, parent_id: plan.id })
+      const compare = task({ title: 'Compare prices', due: { date: TODAY }, parent_id: book.id })
+      const g = listGroups(today([compare, book, plan], { display: nested }))
+      expect(rows(g[0])).toEqual([['Plan trip', 0, null], ['Book flights', 1, null], ['Compare prices', 2, null]])
+      expect(g[0].rows[0]).toMatchObject({ hasChildren: true, parent: null })
+      const pos = siblingPositions(g)
+      expect(pos.get(book.id)).toEqual({ pos: 1, size: 1 })
+      // Off: flat, each with its breadcrumb, as before.
+      expect(listGroups(today([compare, book, plan])).flatMap((x) => x.rows.map((r) => r.depth))).toEqual([0, 0, 0])
+    })
+
+    it('parent in another group: the child stays a row of its own with the breadcrumb', () => {
+      const plan = task({ title: 'Plan trip', due: { date: '2026-10-13' } })
+      const book = task({ title: 'Book flights', due: { date: TODAY }, parent_id: plan.id })
+      const g = listGroups(today([plan, book], { display: nested }))
+      expect(g.map((x) => [x.key, rows(x)])).toEqual([['earlier', [['Plan trip', 0, null]]], ['today', [['Book flights', 0, 'Plan trip']]]])
+    })
+
+    it('parent not in the view: listed once with its breadcrumb, the parent not shown', () => {
+      const plan = task({ title: 'Plan trip' })
+      const compare = task({ title: 'Compare prices', due: { date: TODAY }, parent_id: plan.id })
+      const g = listGroups(today([compare], { display: nested, taskMap: new Map([[plan.id, plan], [compare.id, compare]]) }))
+      expect(g.map(rows)).toEqual([[['Compare prices', 0, 'Plan trip']]])
+    })
+
+    it('collapsed on this device: the subtasks are hidden, the parent row says so', () => {
+      const plan = task({ title: 'Plan trip', due: { date: TODAY } })
+      const book = task({ title: 'Book flights', due: { date: TODAY }, parent_id: plan.id })
+      const g = listGroups(today([plan, book], { display: nested, collapsed: new Set([plan.id]) }))
+      expect(rows(g[0])).toEqual([['Plan trip', 0, null]])
+      expect(g[0].rows[0]).toMatchObject({ collapsed: true, hasChildren: true })
+    })
+
+    it('the order sorts top-level rows; subtasks keep their manual order; Upcoming nests within a day', () => {
+      const p = task({ title: 'Parent', due: { date: '2026-10-15' }, priority: 4 })
+      const c2 = task({ title: 'Second', due: { date: '2026-10-15' }, parent_id: p.id, position: 2, priority: 1 })
+      const c1 = task({ title: 'First', due: { date: '2026-10-15' }, parent_id: p.id, position: 1, priority: 4 })
+      const solo = task({ title: 'Solo', due: { date: '2026-10-15' }, priority: 1 })
+      const tasks = [p, c2, c1, solo]
+      const g = listGroups(input({ view: 'upcoming', tasks, taskMap: new Map(tasks.map((x) => [x.id, x])), display: d('upcoming', { subtasks: true, sortBy: 'priority', sortDir: 'desc' }) }))
+      expect(rows(g[0])).toEqual([['Solo', 0, null], ['Parent', 0, null], ['First', 1, null], ['Second', 1, null]])
+      expect(g[0].rows[2].implied).toEqual({ date: '2026-10-15' })
+    })
+  })
+
+  it('a write under a non-default option keeps the rows and groups it did not change (D3, risks)', () => {
+    const a = task({ title: 'A', due: { date: TODAY }, project_id: 'home' })
+    const b = task({ title: 'B', due: { date: TODAY }, project_id: 'work' })
+    const c = task({ title: 'C', due: { date: TODAY }, project_id: 'work' })
+    const display = d('today', { groupBy: 'project', sortBy: 'title', subtasks: true })
+    const first = listGroups(today([a, b, c], { display }))
+    expect(keepGroups(first, listGroups(today([a, b, c], { display })))).toBe(first)
+    const c2: Task = { ...c, priority: 1 }
+    const next = keepGroups(first, listGroups(today([a, b, c2], { display })))
+    expect(next[0]).toBe(first[0])
+    expect(next[1]).not.toBe(first[1])
+    expect(next[1].rows[0]).toBe(first[1].rows[0])
   })
 })

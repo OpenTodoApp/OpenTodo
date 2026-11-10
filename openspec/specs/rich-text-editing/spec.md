@@ -114,7 +114,7 @@ A client that knows only `description` SHALL keep working: it SHALL continue to 
 - **THEN** the note still opens and the unknown mark is preserved through the merge, not stripped
 
 ### Requirement: Slash command menu
-Typing `/` at the start of a line or after a space in the editor SHALL open a menu of commands (heading 1 to 3, bullet list, numbered list, checklist, table, quote, code block, link, image, date, mention, and in notes Make subtask) filtered by the letters typed after the slash. Arrow keys SHALL move, Enter SHALL apply the command and remove the typed `/` text, Escape SHALL close the menu and keep the text, and the menu SHALL close when no command matches. The menu SHALL be announced as a listbox and SHALL fit a 360 px screen.
+Typing `/` at the start of a line or after a space in the editor SHALL open a menu of commands (heading 1 to 3, bullet list, numbered list, checklist, table, quote, code block, link, image, date, mention, in notes Link to… (a note, task or project, see `note-links`), and in task notes Make subtask) filtered by the letters typed after the slash. Arrow keys SHALL move, Enter SHALL apply the command and remove the typed `/` text, Escape SHALL close the menu and keep the text, and the menu SHALL close when no command matches. The menu SHALL be announced as a listbox and SHALL fit a 360 px screen.
 
 #### Scenario: Insert a table by keyboard
 - **WHEN** the user types `/tab` and presses Enter
@@ -127,6 +127,14 @@ Typing `/` at the start of a line or after a space in the editor SHALL open a me
 #### Scenario: Date
 - **WHEN** the user types `/date`, chooses Date and presses Enter
 - **THEN** today's date in the user's date format is inserted as text
+
+#### Scenario: Link to a note
+- **WHEN** the user types `/link to` in a standalone note and presses Enter
+- **THEN** the `/link to` text is gone and the picker of notes, tasks and projects is open at the caret
+
+#### Scenario: Not in comments
+- **WHEN** the user opens the `/` menu in the comment composer
+- **THEN** it offers no Link to… entry
 
 ### Requirement: Tables
 The editor SHALL insert and edit tables of inline-only cells, with a header row, at most 10 columns and 100 rows; Tab and Shift+Tab SHALL move between cells (adding a row at the end), and row and column commands (add before or after, delete, toggle header) SHALL be reachable from the cell's context menu and the slash menu. The editor SHALL refuse to exceed the limits rather than produce a document the projection cannot hold, and a table SHALL scroll inside its own box on narrow screens rather than widen the panel. Tables are part of the mergeable document and converge like every other node.

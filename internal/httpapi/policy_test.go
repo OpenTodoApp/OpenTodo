@@ -172,6 +172,7 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"POST /api/v1/tokens":                 "auth admin-token fresh demo",
 		"DELETE /api/v1/tokens/{id}":          "auth demo",
 		"POST /api/v1/app-passwords":          "auth admin-token fresh demo",
+		"PATCH /api/v1/app-passwords/{id}":    "auth admin-token fresh demo",
 		"DELETE /api/v1/app-passwords/{id}":   "auth demo",
 		"POST /api/v1/me/sign-out-everywhere": "auth session-only fresh demo",
 		// Second factor and passkeys.

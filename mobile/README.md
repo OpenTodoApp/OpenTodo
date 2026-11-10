@@ -14,9 +14,9 @@ The release build is reproducible (OpenSpec change `play-production`): the same 
 
 | Tool | Version | Pinned in |
 | --- | --- | --- |
-| JDK | Temurin 17.0.21+9 (F-Droid: Debian's OpenJDK 17) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml`; `sudo` in `android/store/fdroid/app.opentodo.yml` |
+| JDK | Temurin 21.0.13+9 (F-Droid: its build server's default, Debian's OpenJDK 21) | `java-version` in `.github/workflows/ci.yml` and `android-repro.yml` |
 | Gradle | 9.8.2 | `distributionUrl` and `distributionSha256Sum` in `android/gradle/wrapper/gradle-wrapper.properties` |
-| Android Gradle Plugin | 9.5.0 (Kotlin 2.4.21) | `android/build.gradle.kts` |
+| Android Gradle Plugin | 9.5.1 (Kotlin 2.4.21) | `android/build.gradle.kts` |
 | Build tools | 36.0.0 | `buildToolsVersion` in `android/app/build.gradle.kts`; the SDK step in CI |
 
 The APK carries no build-time, machine or checkout metadata: no dependency block (`dependenciesInfo`, which F-Droid refuses) and no commit file (`vcsInfo`); the version comes only from `OPENTODO_VERSION`. `scripts/repo-checks.test.mjs` fails when one of the pins goes missing or this table stops naming it.
@@ -61,7 +61,7 @@ SIM="iPhone 16" make ios                   # a specific simulator
 cd mobile/ios && open OpenTodo.xcodeproj   # Run, with your team selected for signing
 ```
 
-`make ios` is not part of `make check` (it needs macOS). CI's `ios` job runs it on a macOS runner, only when `mobile/ios` or the workflow changes.
+`make ios` is not part of `make check` (it needs macOS). CI's `ios` job runs it on a macOS runner, only when `mobile/ios` or the workflow changes. `WalkthroughTests` is skipped there; it needs a server and runs in the on-demand iPhone walkthrough workflow (`docs/ios-app.md`).
 
 ### Signing for a device
 
@@ -71,7 +71,7 @@ Two build settings matter:
 
 | Setting | Effect |
 | --- | --- |
-| `OPENTODO_APP_BOUND_HOST` | empty (`none.invalid`, the default): a portable build that opens any server, without a service worker, so it needs the network. Set to a host name (`todo.example.com`, at most ten, comma separated): the app-bound domains list, and only for those origins `limitsNavigationsToAppBoundDomains` is switched on at runtime, which is what gives the web app its service worker, its precache and an offline start (design D2) |
+| `OPENTODO_APP_BOUND_HOST` | empty (the default): a portable build that opens any server, without a service worker, so it needs the network; its Info.plist has no `WKAppBoundDomains` at all, since the key alone, even with a placeholder, denies the bridge on every other server (`ios-bridge-portable`). Set to a host name (`todo.example.com`, at most ten, comma separated): the "App-bound domains" build phase writes them as `WKAppBoundDomains`, and only for those origins `limitsNavigationsToAppBoundDomains` is switched on at runtime, which is what gives the web app its service worker, its precache and an offline start (design D2) |
 | `OPENTODO_VERSION` | the version the shell reports to the web app and the app's `CFBundleShortVersionString`; `CFBundleVersion` is `major·10000 + minor·100 + patch` |
 
 A build without `OPENTODO_VERSION` reports `0.0.0-dev`, which is older than `MIN_SHELL_APP` (`0.10.0`) in `web/src/lib/shell.ts`, so the web app's About screen calls that build outdated. `make ios` and CI pass the version from `git describe`, so this only affects a plain Run from Xcode.
@@ -97,7 +97,7 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 
 | File | What it does |
 | --- | --- |
-| `OpenTodo/SetupView`, `ServerAddress`, `HealthCheck` | first-run screen with the same address rules as Android (`https`, or `http` only for local addresses); `GET /api/v1/health`, then `/healthz` for older servers, names the failure (no answer, not OpenTodo, untrusted certificate, must be https) |
+| `OpenTodo/SetupView`, `ServerAddress`, `HealthCheck` | first-run screen with the same address rules as Android (`https`, or `http` only for local addresses, typed explicitly and shown as not encrypted); an address without a scheme is shown as the `https://` origin it is reached over, a Unicode host is sent as Punycode, and Connect is active only for a well-formed address; `GET /api/v1/health`, then `/healthz` for older servers, names the failure (no answer, not OpenTodo, untrusted certificate, must be https) |
 | `OpenTodo/ShellView` | the `WKWebView` on the configured origin, origin-locked navigation, other origins and `mailto:`/`tel:` in the system browser (only the schemes the bridge allows), the system's own certificate check (no bypass, and a private authority the user installed works), reload after a WebContent crash, pull to refresh, an offline screen until the first page loads |
 | `OpenTodo/Bridge` | the bridge: a document-start `WKUserScript` that defines `window.opentodoShell` on the configured origin, and one `WKScriptMessageHandlerWithReply` that checks the frame's origin and main-frame flag again |
 | `OpenTodo/Reminders`, `OpenTodo/Notifications` | the handed-over schedule: `UNUserNotificationCenter`, at most 64 pending notifications, Snooze 10 min and Dismiss as foreground actions, a tap or an action carrying `opentodo://task/…` or `opentodo://reminder/…?action=` into the web app; notifications are shown while the app is in front |
@@ -106,7 +106,7 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 | `OpenTodo/WidgetPublication`, `OpenTodoWidget/TodayWidget` | the Today widget (WidgetKit, medium): rows from the last publication, counts only while locked, no request of its own |
 | `OpenTodoShare/ShareViewController` | the share sheet: text, links and files (10 files, 20 MB each, 25 MB in all) through the App Group, then `opentodo://share?files=1` and the `opentodo-files` message into the capture screen |
 | `OpenTodo/BiometricKeyStore` | the account key in the Keychain under `kSecAccessControlBiometryCurrentSet`, so an added face or finger invalidates it |
-| `OpenTodo/AppBoundDomains` | reads `WKAppBoundDomains` and turns `limitsNavigationsToAppBoundDomains` on only for those origins |
+| `OpenTodo/AppBoundDomains` | reads `WKAppBoundDomains` (only a one-server build has it) and turns `limitsNavigationsToAppBoundDomains` on only for those origins |
 
 Storage, the schedule, the widget data and the key are in the app's container and the App Group; nothing is backed up to iCloud unless the phone's own backup is on, and `Change server` (long-press the icon) asks once and then deletes all of it.
 
@@ -168,7 +168,7 @@ Record each run here: date, device, Android version, server version.
 
 ## Testing the iOS app
 
-- Unit tests (`make ios`, `OpenTodoTests`): the address rules, the health check's status and error mapping, the origin signatures, the version and version-code rules, the reminder schedule (future only, sorted, capped), the widget publication round trip, the share mapping and limits, the bridge script and its capability list, the background-request defaults, the app-bound-domain placeholder, the bundle's build number against its version, and what App Review reads from the bundle (the export compliance key, both privacy manifests).
+- Unit tests (`make ios`, `OpenTodoTests`): the address rules, the health check's status and error mapping, the origin signatures, the version and version-code rules, the reminder schedule (future only, sorted, capped), the widget publication round trip, the share mapping and limits, the bridge script and its capability list, the background-request defaults, no app-bound domain in the portable build, the bridge on a page from a server on an ordinary host (`BridgeOnAServerTests`), the bundle's build number against its version, and what App Review reads from the bundle (the export compliance key, both privacy manifests).
 - UI tests (`make ios`, `OpenTodoUITests`): the first-run screen in the real app — an unusable address is refused, a public `http` address is refused with the `https` suggestion as a button. They start from a clean install (`-OPENTODO_RESET`).
 - Not covered automatically, because no simulator command can grant a notification permission or tap: the notification prompt and the delivered reminder, the share sheet end to end, the Face ID prompt, the widget on a home screen. `docs/ios-app.md` says what these should do; record a run here when you do it.
 - The background refresh cannot be run in the simulator at all: `BGTaskScheduler.submit` answers `BGTaskScheduler is not available on this platform.` (`BGTaskSchedulerErrorDomain` code 1), so even the debugger's `_simulateLaunchForTaskWithIdentifier:` hook does nothing. It is the one part that is only ever exercised on a device.
@@ -211,7 +211,8 @@ The official iOS build comes from TestFlight and the App Store. As the copyright
 4. A new key and CSR on the runner; `appstore.mjs sign` creates an Apple Distribution certificate and three App Store profiles through the API, checks they carry the App Group and writes `ExportOptions.plist`; they go into a keychain made for the run.
 5. `xcodebuild -exportArchive`, then `xcrun altool --upload-package` with the API key.
 6. "What to test" from the version's CHANGELOG section, once Apple has the build.
-7. Always, even after a failure: the certificate is revoked, the profiles, the keychain and the key file deleted. Apple emails the account holder about each certificate created and revoked.
+7. Always, even after a failure: the keychain and the key file are deleted. The certificate and the profiles of a build that was uploaded stay: Apple checks the signature again when the build is submitted for TestFlight or App Store review, and a revoked certificate makes it fail with ITMS-90035 "Invalid Signature". Their private key never left the runner, so nobody can sign with them. A run that uploaded nothing revokes its certificate and deletes its profiles.
+8. When Apple refuses a new certificate because the team is at its limit, `sign` revokes the oldest certificate this workflow made (the one named by the oldest "OpenTodo CI" profiles), deletes its profiles and tries again. Builds signed with it can no longer be submitted for review, which with one release a week only affects older builds. A certificate made by hand is never touched. Apple emails the account holder about each certificate created and revoked.
 
 **When it runs:** after the GitHub release of a final tag (never a release candidate), and by hand: **Actions → iOS TestFlight → Run workflow**, with a tag, branch or commit and, rarely, a build number. Without the secrets it warns and succeeds. A failed upload never touches the release. Nothing is submitted for review; that is a step in [RELEASING.md](../RELEASING.md).
 

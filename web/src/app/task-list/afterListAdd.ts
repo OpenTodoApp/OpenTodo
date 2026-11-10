@@ -11,6 +11,7 @@ import { effectiveSection } from '../../lib/sections'
 import type { Section } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { addedWhere } from '../addedWhere'
+import { isInboxTask } from '../../lib/inbox'
 import { ACTION_TOAST_MS, showBulkToast } from '../bulk/toastStore'
 import { navigate, type Route } from '../router'
 import { selectTask } from '../signals'
@@ -86,11 +87,11 @@ export async function afterListAddMany(added: AddedBatch, c: {
   }
   let label = added.label
   if (c.route.view === 'inbox') {
-    const prefs = currentDateTime()
+    // Every task the Inbox does not list went elsewhere: a date or a project (quick-add docs).
     let elsewhere = 0
     for (const id of added.ids) {
       const task = await getTask(id)
-      if (task && addedWhere(task, c.today, prefs)) elsewhere++
+      if (task && !isInboxTask(task)) elsewhere++
     }
     if (elsewhere > 0) label = t('{n, plural, one {# task added, {k} not in the Inbox} other {# tasks added, {k} not in the Inbox}}', { n: added.ids.length, k: elsewhere })
   }

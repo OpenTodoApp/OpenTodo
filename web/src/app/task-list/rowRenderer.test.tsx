@@ -14,7 +14,7 @@ import type { RowActions } from './TaskListRow'
 
 const task = (id: string): Task => ({ id, title: id, notes: '', project_id: null, section_id: null, parent_id: null, position: 1, priority: 4, due: null, deadline: null, start: null, labels: [], completed_at: null, deleted_at: null, created_at: 1, updated_at: 1, assignee_id: null } as unknown as Task)
 const noop = () => {}
-const actions: RowActions = { toggle: noop, toggleCollapse: noop, open: noop, tick: noop, drag: noop, grip: noop, gripTap: noop, more: noop, expand: noop, context: noop, contextAt: noop }
+const actions: RowActions = { toggle: noop, toggleCollapse: noop, open: noop, openPage: noop, tick: noop, drag: noop, grip: noop, gripTap: noop, more: noop, expand: noop, context: noop, contextAt: noop }
 const NONE = new Set<string>()
 const readOnly = () => false
 // The list-wide fields: the same objects from one render to the next, as the list keeps them.

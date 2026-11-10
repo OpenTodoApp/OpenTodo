@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Este mensaje lo envió la rutina «{{.Routine}}» de un proyecto del que eres miembro en OpenTodo, en {{.Origin}}.
+
+Ver esta ejecución:
+
+{{.Link}}
+
+Recibes este mensaje porque la rutina tiene un paso Enviar correo a los miembros del proyecto y eres miembro con la dirección verificada {{.Email}}. Para no recibir más correos de esta rutina, abre:
+
+{{.Stop}}

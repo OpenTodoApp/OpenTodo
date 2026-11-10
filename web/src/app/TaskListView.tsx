@@ -39,13 +39,14 @@ import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
 import { withListTransition } from './motion'
-import { usePanelTaskId, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
+import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
 import { useRowClick } from './rowClick'
 import { ProjectHeader } from './ProjectHeader'
 import { LabelMenu } from './LabelsView'
 import { ProjectNote } from './ProjectNote'
+import { LinkedRefs } from './Markdown'
 import { holdSelect, useListSwipe } from './task-list/RowSwipe'
 import { QuickAdd, type QuickAddInput } from './QuickAdd'
 import type { Route } from './router'
@@ -55,7 +56,7 @@ import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
-import { GroupedList, LogbookMore, useListMotion, useRowRenderer } from './task-list/ListGroups'
+import { GroupedList, LogbookMore, useCalmUpcoming, useListMotion, useRowRenderer } from './task-list/ListGroups'
 import { ProjectionsMenuItem } from './calendar/projectionSwitches'
 import { useListSplit } from './task-list/useInboxSplit'
 import { STICKY_QUICK_ADD, useStickyQuickAdd } from './task-list/stickyQuickAdd'
@@ -70,6 +71,7 @@ import { markPendingDone } from '../lib/pendingDone'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
 import { InboxMenu } from './SampleNotice'
+import { canPrint, PrintMenuItem } from './menus/printItem'
 import { TodayAgenda, useTodayAgenda } from './calendar/TodayAgenda'
 import { UpcomingEventsNote, useUpcomingList } from './calendar/UpcomingAgenda'
 import { RoutinesInboxSlot } from './routines/InboxSlot'
@@ -211,13 +213,17 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [currentColumn, setCurrentColumn] = useState<string | null>(null)
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set())
   const collapsedGroups = useCollapsedGroups()
+  // Calm Upcoming (sidebar-brand-and-row-grid D8): the later days are closed bars unless Later days is In full.
+  const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
   const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
   // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
-  const openId = usePanelTaskId()
-  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, openId, ticking: selection.ticked.size > 0 })
+  // The list reads only whether a task is open: the docked id is read where it is needed, so a panel that
+  // follows the cursor does not draw the list again on every move (row-click-modes D4).
+  const panelOpen = usePanelHasTask()
+  const inbox = useListSplit({ inbox: route.view === 'inbox', rows, ownRows: m.ownRows, selectedId, setSelectedId, ticking: selection.ticked.size > 0 })
   const quickAddRef = useRef<HTMLTextAreaElement>(null)
   const quickAddRow = useRef<HTMLDivElement>(null)
   // The first-day checklist's "Plan today" (moments-and-onboarding D5): Today opened after the first task.
@@ -228,10 +234,10 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const [inline, setInline] = useState<{ id: string; caret?: number } | null>(null)
   const clickPref = useRowClick()
   // A press on empty space clears the selection and closes the panel (inline-task-editing D4), never the side panel (task-side-panel D4).
-  useClickAway(listRoot, !!selectedId || !!openId || !!inline, () => {
+  useClickAway(listRoot, !!selectedId || panelOpen || !!inline, () => {
     setInline(null)
     setSelectedId(null)
-    if (openId && !sidePanelDocks()) setOpenId(null)
+    if (panelTaskId() && !sidePanelDocks()) setOpenId(null)
   })
   // A click on a title edits it in place: a mouse click (not Enter) with a fine pointer from 768 px,
   // the "Edit in place" preference, no panel open and no Inbox split (inbox-split D1), a task the user may edit; otherwise the task opens.
@@ -239,11 +245,11 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const task = taskMap.get(id)
     const fine = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
     const wide = typeof window !== 'undefined' && window.innerWidth >= 768
-    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || openId || taskSplitDocks() || isReadOnly(task)) return false
+    if (!e || e.detail === 0 || !task || board || clickPref !== 'edit' || !fine || !wide || panelTaskId() || taskSplitDocks() || isReadOnly(task)) return false
     setSelectedId(id)
     setInline({ id, caret: caretFromClick(e) })
     return true
-  }, [taskMap, board, clickPref, openId, isReadOnly])
+  }, [taskMap, board, clickPref, isReadOnly])
   const renderInline = useCallback((task: Task) => (
     <InlineEditor key={task.id} task={task} caret={inline?.id === task.id ? inline.caret : undefined} projects={m.projects} labelMap={m.labelMap}
       onFollow={(id) => setSelectedId(id)}
@@ -329,9 +335,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     act(toggleComplete(parent.id, true))
   }, [ui.prompt, setPrompt, toggleComplete])
 
-  const shared = { route, rows, columns: dataColumns, board, manual, moveInView: ownOrder?.step, selectedId, setSelectedId, openId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
+  const shared = { route, rows: cursorRows, columns: dataColumns, board, manual, moveInView: ownOrder?.step, selectedId, setSelectedId, isReadOnly, taskMap, ticked, selection, ui, quickAddRef, toggleComplete, toggleCollapsed: m.toggleCollapsed }
   useListShortcuts({
-    ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
+    ...shared, onReorder: m.listDisplay.onReorder, projectId, tree: m.tree, tickRows, treeView: m.treeView, nested: m.nested, projectReadOnly: m.projectReadOnly, projectEditable: m.projectEditable,
     today, userId, acceptPrompt, moveToSection, toggleViewMode, foldColumn: toggleSection,
     editInline: (id) => { setSelectedId(id); setInline({ id }) }, expandedId, setExpandedId,
   })
@@ -341,9 +347,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const { edgeOf, boardGroups, queryControl: queryFilter, queryHost, cardNotes } = useListExtras(board, m.queryFilter, projectId ? { mode: viewMode, onChoose: chooseViewMode } : null, projectId) // Colour by on boards, Upcoming's query filter (calendar-clarity)
   const renderRow = useRowRenderer({
     view: route.view, labelId: route.view === 'label' ? route.id : undefined, userId, projectMap: m.projectMap, labelMap: m.labelMap, memberMap: m.memberMap, selectedId, progress: m.progress, blocked: m.blocked, flow: m.flow,
-    habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
+    habits: m.habits, isReadOnly, board, manual, ownOrder: !!ownOrder, treeView: m.treeView || m.nested, dropAt: drag.dropAt, draggingId: drag.draggingId, ticked: selection.ticked,
     showCheckbox: selectMode || (fine && selection.ticked.size > 0), selectMode, fieldColumns: m.fieldColumns, projectFieldDefs: m.projectFieldDefs, siblingPos: m.siblingPos,
-    timeColumn: m.timeColumn, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
+    timeColumn: m.timeColumn, slotsOff: m.slotsOff, rowLayout: m.display?.rowLayout, actions: rowActions, ...useAddLines(rows, ui), edgeOf, cardNotes,
     inlineId: inline?.id ?? null, renderInline, expandedId, swipe: useListSwipe(listRoot, !fine && selection.ticked.size === 0 && !selectMode && !board, rows.length),
   })
 
@@ -387,7 +393,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
-            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined} extraGroups={boardGroups}
+            <ProjectHeader project={currentProject} userId={userId} actions={pageActions} subtitle={board ? currentColumn : undefined} extraGroups={boardGroups} print={!board && !timeline}
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
@@ -396,7 +402,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
           {route.view !== 'completed' && (
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
-            <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 border-b border-default pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
+            <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName)} voiceShortcut />
               )}
@@ -412,7 +418,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           )}
           {rowMenu.element}{queryHost}
 
-          {route.view === 'inbox' && <RoutinesInboxSlot />}{route.view === 'project' && currentProject && <ProjectNote project={currentProject} phone={phone} />}
+          {route.view === 'project' && currentProject && <><ProjectNote project={currentProject} phone={phone} /><LinkedRefs kind="project" id={currentProject.id} folded /></>}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {m.offerColumns && <ColumnsToggle on={!!m.columnsPref} onToggle={() => projectId && saveListColumns(projectId, !m.columnsPref)} />}
           {own.length === 0 && !upcomingCal.hasEvents && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query
@@ -427,17 +433,17 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <TimelineView groups={upcomingCal.groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
           ) : (
-            <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={m.treeView && !board ? m.siblingPos : undefined} reveal={selectedId}
+            <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={(m.treeView || m.nested) && !board ? m.siblingPos : undefined} reveal={selectedId}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)), gotIt: m.reusable } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}
               earlierActions={route.view === 'today' || m.upcomingToday ? earlierActions : undefined}
-              eventsFor={upcomingCal.eventsFor}
+              eventsFor={upcomingCal.eventsFor} summarised={summarised}
               onReveal={(key) => setRevealed((s) => { const n = new Set(s); if (n.has(key)) n.delete(key); else n.add(key); return n })} />
           )}
           {upcomingCal.hasEvents && <UpcomingEventsNote status={upcomingCal.status} fetchedAt={upcomingCal.fetchedAt} />}
           {own.length > 0 && hiddenDone > 0 && showCompleted && !board && !timeline && <HiddenNote count={hiddenDone} onShow={showCompleted} />}
-          {route.view === 'today' && <CloseDayRow />}
+          {route.view === 'today' && <CloseDayRow />}{route.view === 'inbox' && <RoutinesInboxSlot />}
           {m.logbook && <LogbookMore total={m.logbook.total} limit={m.logbookLimit} onMore={() => m.setLogbookLimit((n) => n + LOGBOOK_PAGE)} />}
           {route.view === 'project' && !board && !timeline && m.projectEditable && <div className="mb-4"><AddSection projectId={route.id} layout="list" /></div>}
         </div>
@@ -529,9 +535,11 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
       onSelect={() => act(setUpcomingEventsShown(!upcomingEvents))} />
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
+  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : null
+  // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
   return (
     <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}</> : undefined}
+      overflow={menu || (!own && !canPrint()) ? undefined : <>{own}{own && canPrint() && <MenuSeparator />}<PrintMenuItem /></>}
       leading={label && <span className="h-3 w-3 rounded-full" style={{ backgroundColor: label.color }} />}
       meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
       briefing={briefing && <BriefingText briefing={briefing} />} />

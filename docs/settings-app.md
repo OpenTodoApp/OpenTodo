@@ -16,8 +16,8 @@ The **App** group of [Settings](settings.md) is about how the app behaves. Setti
 
 ## General
 
-- **Start view and briefing**: the start view is the view this device opens on, including **Display: Today** and **Display: Upcoming** for a wall panel. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md). **Show the briefing**: the sentence under Today's title.
-- **Keyboard** (this device): **Show shortcut hints** prints keys in the app; **Single-key shortcuts** off stops letters and symbols alone running commands (for speech input); **Vim keybindings**. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
+- **Start view and briefing**: the view this device opens on, including **Display: Today** and **Display: Upcoming** for a wall panel. See [Views](views.md#choose-where-the-app-opens) and [Display mode](display-mode.md). **Show the briefing**: the sentence under Today's title.
+- **Keyboard** (this device): **Click a task to**: edit the title in place, open the details or [expand the row](expand-a-row.md); a double-click opens the page. **Show shortcut hints** prints keys in the app; **Single-key shortcuts** off stops letters and symbols alone running commands (for speech input); **Vim keybindings**. See [Keyboard shortcuts](keyboard.md#vim-keybindings).
 - **Focus timer**: the [Focus](focus.md) timer, its lengths, breaks, sound, presets and noise, on all your devices (the noise volume is per device).
 - **Maps**: maps and address search on your devices, if the owner allows. See [Locations and places](locations-and-places.md).
 
@@ -33,7 +33,7 @@ All following your account:
 
 Four choices that follow your account to every device:
 
-- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Each option shows today's date in that format. Month and weekday names are written in the [interface language](language.md).
+- **Date format**: **System** (the way this browser writes dates), **Day-month** (`14 Oct`, `14/10/2026`), **Month-day** (`Oct 14`, `10/14/2026`) or **ISO** (`2026-10-14`). Month and weekday names are written in the [interface language](language.md).
 - **Time format**: **System**, **12-hour** (`3:00 PM`) or **24-hour** (`15:00`).
 - **Week starts on**: **System**, **Monday**, **Sunday** or **Saturday**. It decides where the Week view and the calendar of a date field start, and which days `this week` and `last week` cover in [filters](filters.md#periods).
 - **My day starts at**: **Midnight** (the default) or a time up to 06:00. If you work past midnight, set it to when your day really ends: until then the app still treats it as the previous day. See [When a day ends](dates-and-times.md#when-a-day-ends).

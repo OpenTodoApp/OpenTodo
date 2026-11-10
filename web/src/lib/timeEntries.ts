@@ -285,6 +285,23 @@ export function useTrackedTotals(): TrackedTotals {
   return useSyncExternalStore(totals.subscribe, totals.read, totals.read)
 }
 
+/**
+ * Whether any of these tasks has tracked time on its row (the estimate slot of a list,
+ * sidebar-brand-and-row-grid D2). A boolean snapshot, so the list re-renders only when
+ * the answer changes, never on each tick of a running entry. Off (`ids` null): false.
+ */
+export function useAnyTracked(ids: readonly string[] | null): boolean {
+  const read = useCallback(() => {
+    if (!ids) return false
+    const occ = totals.read().trackedOccurrence
+    if (occ.size === 0) return false
+    for (const id of ids) if (occ.has(id)) return true
+    return false
+  }, [ids])
+  return useSyncExternalStore(ids ? totals.subscribe : noSubscribe, read, read)
+}
+const noSubscribe = () => () => {}
+
 /** One task's tracked minutes shown against its estimate, a repeating task's current occurrence; undefined without entries (rows). */
 export function useTaskTracked(taskId: string): number | undefined {
   const read = useCallback(() => totals.read().trackedOccurrence.get(taskId), [taskId])

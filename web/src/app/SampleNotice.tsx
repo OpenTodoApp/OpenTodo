@@ -6,6 +6,7 @@ import { Icon, Menu, MenuItem, MenuSeparator } from '../ui'
 import { useHasSampleTasks } from '../lib/sampleTasks'
 import { t } from '../lib/i18n'
 import { removeSamplesWithUndo } from './sampleActions'
+import { canPrint, PrintMenuItem } from './menus/printItem'
 
 export function SampleNotice() {
   return (
@@ -19,16 +20,19 @@ export function SampleNotice() {
   )
 }
 
-/** The Inbox header's menu, present while a sample task exists or a phone adds its list items (phone-v2 D1). */
+/** The Inbox header's menu: a phone's list items (phone-v2 D1), Remove sample tasks while one exists, and Print… where the window can print (print-lists). */
 export function InboxMenu({ extra }: { extra?: ReactNode }) {
   const samples = useHasSampleTasks()
-  if (!samples && !extra) return null
+  const print = canPrint()
+  if (!samples && !extra && !print) return null
   return (
     <Menu kind="menu" label={t('Inbox menu')} title={t('Inbox')} trigger={<Icon name="ellipsis" size="md" />}
       triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" triggerProps={{ 'data-inbox-menu': true }}>
       {extra}
       {extra && samples && <MenuSeparator />}
       {samples && <MenuItem icon="trash-2" label={t('Remove sample tasks')} data-remove-samples onSelect={removeSamplesWithUndo} />}
+      {(extra || samples) && print && <MenuSeparator />}
+      <PrintMenuItem />
     </Menu>
   )
 }

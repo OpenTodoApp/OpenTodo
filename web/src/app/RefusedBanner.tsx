@@ -1,7 +1,8 @@
 import { dismissRefusal, type Refusal } from '../lib/appUpdate'
 import { causeMessage, REFUSED, SIGNED_UPDATES_PAGE, WHAT_TO_DO } from '../lib/appCodeCopy'
 import { t } from '../lib/i18n'
-import { Icon } from '../ui'
+import { Icon, ToastRegion } from '../ui'
+import { UPDATE_NOTICE_CLASS } from './UpdateBanner'
 import { navigate } from './router'
 
 /**
@@ -11,12 +12,14 @@ import { navigate } from './router'
  */
 export default function RefusedBanner({ refused }: { refused: Refusal }) {
   return (
-    <div role="alert" data-update-banner="refused" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft">
-      <p className="min-w-0 flex-1">
-        {t(REFUSED)} {t(causeMessage(refused.check.cause, refused.ownKey))}{' '}
-        <button type="button" className="underline" onClick={() => navigate({ view: 'help', page: SIGNED_UPDATES_PAGE })}>{t(WHAT_TO_DO)}</button>
-      </p>
-      <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismissRefusal}><Icon name="x" size="xs" /></button>
-    </div>
+    <ToastRegion side="start">
+      <div role="alert" data-update-banner="refused" className={`${UPDATE_NOTICE_CLASS} flex items-start gap-2`}>
+        <p className="min-w-0 flex-1">
+          {t(REFUSED)} {t(causeMessage(refused.check.cause, refused.ownKey))}{' '}
+          <button type="button" className="underline" onClick={() => navigate({ view: 'help', page: SIGNED_UPDATES_PAGE })}>{t(WHAT_TO_DO)}</button>
+        </p>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm -mr-1 px-1 py-1" aria-label={t('Dismiss')} onClick={dismissRefusal}><Icon name="x" size="xs" /></button>
+      </div>
+    </ToastRegion>
   )
 }

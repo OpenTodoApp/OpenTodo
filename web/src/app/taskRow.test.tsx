@@ -216,12 +216,19 @@ describe('one row language (rows-v2)', () => {
   it('counts sit beside the title, quiet and read in full; a row with only counts is one line', async () => {
     const r = await row({ description: 'n' }, { progress: { done: 2, total: 3 }, labels: [L('l1', 'errand')] })
     const li = r.container.querySelector('li')!
-    const counts = li.querySelector('[data-row-head] > [data-row-counts]')!
-    expect(counts.previousElementSibling!.hasAttribute('data-row-title')).toBe(true)
+    // The counts close the marks' run, right after the title (sidebar-brand-and-row-grid D3).
+    const counts = li.querySelector('[data-row-head] > [data-row-marks] > [data-row-counts]')!
+    expect(counts.parentElement!.previousElementSibling!.hasAttribute('data-row-title')).toBe(true)
     for (const cls of ['text-faint', 'group-hover:text-muted', 'group-focus-within:text-muted', 'tabular-nums']) expect(counts.className).toContain(cls)
     expect(counts.querySelector('button, [tabindex]')).toBeNull()
     expect(visibleText(counts.querySelector('[data-progress]')!)).toBe('2/3')
     expect(spokenText(counts.querySelector('[data-progress]')!)).toBe('2 of 3 subtasks completed')
+    // A 12 px ring before the count, in the counts' own colour, decorative (task-progress D2).
+    const ring = counts.querySelector('[data-progress] svg[data-progress-ring]')!
+    expect(ring.getAttribute('width')).toBe('12')
+    expect(ring.getAttribute('aria-hidden')).toBe('true')
+    expect(ring.getAttribute('class')).not.toContain('text-accent')
+    expect(ring.querySelectorAll('circle')).toHaveLength(2)
     expect(spokenText(counts.querySelector('[data-notes]')!)).toBe('Has notes')
     await r.unmount()
     const only = await row({ description: 'n' }, { progress: undefined })
@@ -230,28 +237,31 @@ describe('one row language (rows-v2)', () => {
     await only.unmount()
   })
 
-  it('the third cell holds the labels, else the deadline, else the sub-task progress (precision-rows D2)', () => atNoon(async () => {
-    const extra = async (patch: Partial<Task>, extraProps: Record<string, unknown>) => {
+  it('Each slot holds one kind of fact: the labels in their slot, the deadline in the facts, the progress beside the title (sidebar-brand-and-row-grid D2)', () => atNoon(async () => {
+    const place = async (patch: Partial<Task>, extraProps: Record<string, unknown>) => {
       const r = await row(patch, extraProps)
-      const cell = r.container.querySelector('[data-row-cell="extra"]')
-      const out = cell?.querySelector('[data-label-chips]') ? 'labels' : cell?.querySelector('[data-deadline]') ? 'deadline' : cell?.querySelector('[data-progress]') ? 'progress' : null
-      const inHead = !!r.container.querySelector('[data-row-head] [data-progress]')
-      const deadlineInRest = !!r.container.querySelector('[data-row-rest] [data-deadline]')
+      const out = {
+        labels: !!r.container.querySelector('[data-row-cell="labels"] [data-label-chips]'),
+        progressInHead: !!r.container.querySelector('[data-row-head] [data-row-marks] [data-progress]'),
+        deadlineInRest: !!r.container.querySelector('[data-row-rest] [data-deadline]'),
+        extra: !!r.container.querySelector('[data-row-cell="extra"]'),
+      }
       await r.unmount()
-      return { out, inHead, deadlineInRest }
+      return out
     }
     const progress = { done: 1, total: 2 }
-    expect(await extra({ labels: ['l1'], deadline: '2026-10-16' }, { labels: [L('l1', 'errand')], progress })).toEqual({ out: 'labels', inHead: true, deadlineInRest: true })
-    expect(await extra({ deadline: '2026-10-16' }, { progress })).toEqual({ out: 'deadline', inHead: true, deadlineInRest: false })
-    expect(await extra({}, { progress })).toEqual({ out: 'progress', inHead: false, deadlineInRest: false })
+    expect(await place({ labels: ['l1'], deadline: '2026-10-16' }, { labels: [L('l1', 'errand')], progress })).toEqual({ labels: true, progressInHead: true, deadlineInRest: true, extra: false })
+    expect(await place({ deadline: '2026-10-16' }, { progress })).toEqual({ labels: false, progressInHead: true, deadlineInRest: true, extra: false })
+    expect(await place({}, { progress })).toEqual({ labels: false, progressInHead: true, deadlineInRest: false, extra: false })
   }))
 
-  it('the cells come in the column\'s order, the other facts after them (precision-rows D1)', () => atNoon(async () => {
+  it('The slots come in the narrow line\'s reading order and take their named tracks; the other facts after them (sidebar-brand-and-row-grid D2)', () => atNoon(async () => {
     const r = await row({ due: { date: '2026-10-20' }, labels: ['l1'], estimate_minutes: 30, start: '2026-10-01' },
-      { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project, labels: [L('l1', 'errand')], blockedBy: 1 })
+      { showProject: true, project: { id: 'p', name: 'Home', color: '#f00' } as unknown as Project, labels: [L('l1', 'errand')], blockedBy: 1, slotsOff: 'assignee' })
     const meta = r.container.querySelector('[data-row-meta="row"]')!
-    expect([...meta.querySelectorAll('[data-row-cell]')].map((c) => c.getAttribute('data-row-cell'))).toEqual(['date', 'project', 'extra', 'estimate'])
+    expect([...meta.querySelectorAll('[data-row-cell]')].map((c) => c.getAttribute('data-row-cell'))).toEqual(['date', 'project', 'labels', 'estimate'])
     expect(meta.querySelector('[data-row-props]')!.getAttribute('data-row-props')).toBe('project')
+    expect(meta.querySelector('[data-row-props]')!.getAttribute('data-slots-off')).toBe('assignee')
     expect([...meta.querySelectorAll('[data-row-rest] [data-row-item]')].map((c) => [...c.attributes].map((a) => a.name).find((n) => n !== 'data-row-item' && n.startsWith('data-')))).toEqual(['data-start', 'data-blocked'])
     await r.unmount()
   }))
@@ -330,7 +340,7 @@ describe('one row language (rows-v2)', () => {
     await r.unmount()
   }))
 
-  it('the card property row (precision-boards-timeline D3): date, estimate and progress lead with icons, the assignee ends it', () => atNoon(async () => {
+  it('the card property row (precision-boards-timeline D3): date, estimate and progress lead with icons (the progress with its ring, task-progress D2), the assignee ends it', () => atNoon(async () => {
     const r = await row({ due: { date: '2026-10-16' }, estimate_minutes: 45, assignee_id: 'u2' },
       { shape: 'card', progress: { done: 2, total: 5 }, assignee: 'Mia' })
     const meta = r.container.querySelector('[data-row-meta="card"]')!
@@ -341,6 +351,7 @@ describe('one row language (rows-v2)', () => {
     expect(items[1].querySelector('[data-icon="clock"]')).not.toBeNull()
     expect(items[2].hasAttribute('data-progress')).toBe(true)
     expect(visibleText(items[2])).toBe('2/5')
+    expect(items[2].querySelector('svg[data-progress-ring][width="12"]')).not.toBeNull()
     expect(meta.lastElementChild!.hasAttribute('data-row-assignee')).toBe(true)
     // The progress is not repeated among the counts, and the title may wrap to two lines.
     expect(r.container.querySelector('[data-row-counts] [data-progress]')).toBeNull()
@@ -697,7 +708,7 @@ describe('a narrow row keeps its title (issue 844)', () => {
     render(<ul><TaskRow task={task({ title, ...over })} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onExpand={() => {}} {...extra} /></ul>)
   /** The rules of the phone's one-line row: under 48 rem of screen and 40 rem of row. */
   const phoneRules = () => {
-    const start = css.indexOf('@media (width < 48rem) {\n  .row-pad')
+    const start = css.indexOf('@media screen and (width < 48rem) {\n  .row-pad')
     const block = css.slice(start, css.indexOf('\n}\n', start))
     return block.slice(block.indexOf('@container row (width < 40rem)'))
   }

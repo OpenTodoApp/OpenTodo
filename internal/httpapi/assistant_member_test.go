@@ -342,7 +342,7 @@ func TestMemberKeyCap(t *testing.T) {
 	me.member.consentAssistant("openai")
 	mid := userIDOf(t, me.member)
 	// The member already used the whole allowance on the server's key.
-	if err := me.svc.Store.AddUsage(context.Background(), mid, 900, 100, false); err != nil {
+	if err := me.svc.Store.AddUsage(context.Background(), mid, assistant.Tokens{Input: 900, Output: 100}, false); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 3; i++ {
@@ -405,7 +405,7 @@ func TestLegacyOwnKeyStillWorks(t *testing.T) {
 	}
 	me.member.consentAssistant("anthropic")
 	mid := userIDOf(t, me.member)
-	_ = me.svc.Store.AddUsage(context.Background(), mid, 100, 0, false)
+	_ = me.svc.Store.AddUsage(context.Background(), mid, assistant.Tokens{Input: 100, Output: 0}, false)
 	if code, body, _ := me.member.turn(ask("hi")); code != 200 {
 		t.Fatalf("legacy own-key turn: %d %v", code, body)
 	}

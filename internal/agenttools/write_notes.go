@@ -35,7 +35,7 @@ var (
 func init() {
 	register(tool{def: func(Caller) Definition {
 		return writeDef("create_note", "Create a note",
-			"Create a standalone note (not a task): a title and a Markdown text, optionally in a project and with labels. Returns its id.",
+			"Create a standalone note (not a task): a title and a Markdown text, optionally in a project and with labels. Returns its id."+linkHowTo,
 			object(nil, map[string]any{
 				"title":       noteTitleProp,
 				"description": noteDescProp,
@@ -47,7 +47,7 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("update_note", "Update a note",
-			"Change a standalone note's title, project, labels or text. description replaces the whole text and needs base_version, the body_version get_note returned: when the note changed since, the call is refused with body_changed; read it again and retry. To add text at the end without replacing anything, use append_to_note.",
+			"Change a standalone note's title, project, labels or text. description replaces the whole text and needs base_version, the body_version get_note returned: when the note changed since, the call is refused with body_changed; read it again and retry. To add text at the end without replacing anything, use append_to_note."+linkHowTo,
 			object([]string{"id"}, map[string]any{
 				"id":           map[string]any{"type": "string", "description": "Note id."},
 				"title":        noteTitleProp,
@@ -60,7 +60,7 @@ func init() {
 
 	register(tool{def: func(Caller) Definition {
 		return writeDef("append_to_note", "Append to a note",
-			"Add Markdown text at the end of a standalone note (note_id) or of a task's note (task_id). Nothing is replaced: edits made on devices meanwhile are kept, and every device merges the text at the end once. Give exactly one of note_id and task_id.",
+			"Add Markdown text at the end of a standalone note (note_id) or of a task's note (task_id). Nothing is replaced: edits made on devices meanwhile are kept, and every device merges the text at the end once. Give exactly one of note_id and task_id."+linkHowTo,
 			object([]string{"text"}, map[string]any{
 				"note_id":   map[string]any{"type": "string", "description": "Standalone note id."},
 				"task_id":   map[string]any{"type": "string", "description": "Task id."},

@@ -10,7 +10,7 @@ import { UPCOMING_FILTER_KEY, useQueryFilter } from '../calendar/queryFilter'
 import { habitStatsMap, patchHabitStats, type HabitStats } from '../../lib/habits'
 import { boardColumns, completedBySection, completedNewestFirst, completedOpenKey, keepGroups, listGroups, patchCompletedBySection, patchTreeParts, patchViewTasks, siblingPositions, tasksForView, treeParts, type ListGroup, type ListScope, type TreeParts } from '../../lib/listGroups'
 import { useAllLabels, useCollapsedSections, useListColumnsPref, useLiveProjects, useMemberships, useProjectPrefsRow, useProjectSectionRows, useProjectViewMode, useShowCompletedPref } from '../../lib/liveData'
-import { listDisplayOf, type DisplayScope } from '../../lib/listDisplay'
+import { listDisplayOf, type DisplayScope, type ListDisplay } from '../../lib/listDisplay'
 import { useListDisplay } from './useListDisplay'
 import { orderRank } from '../../lib/viewOrder'
 import { useAccountRowLayout } from '../../lib/rowLayout'
@@ -29,6 +29,8 @@ import { inToday, upcomingDate } from '../../lib/views'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { useUnusedSlots } from '../../lib/rowSlots'
+import { localDueOf } from '../../lib/dates'
 import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields, useFieldDefs } from '../useFields'
@@ -123,6 +125,14 @@ function useProjectLayout(projectId: string | null) {
   }
 }
 
+/** The same display object while its options are the same, so the groups are not worked out again. */
+function useStableDisplay(d: ListDisplay | undefined): ListDisplay | undefined {
+  const { groupBy, sortBy, sortDir, rowLayout, subtasks, laterInFull } = d ?? {}
+  return useMemo(() => (groupBy && sortBy && sortDir && rowLayout
+    ? { groupBy, sortBy, sortDir, rowLayout, ...(subtasks !== undefined ? { subtasks } : {}), ...(laterInFull !== undefined ? { laterInFull } : {}) }
+    : undefined), [groupBy, sortBy, sortDir, rowLayout, subtasks, laterInFull])
+}
+
 export function useListModel(route: ListRoute, userId?: string) {
   const allFieldDefs = useFieldDefs()
   const dt = useDateTimeFormat()
@@ -201,8 +211,9 @@ export function useListModel(route: ListRoute, userId?: string) {
   const layout = useProjectLayout(projectId)
   const { board, sections, liveSections, collapsedSections } = layout
 
-  // Project lists keep deferred and parked tasks in a Later group at the
-  // end (someday-and-evening D2), each with its subtasks (subtasks-follow-later);
+  // Project lists keep deferred and parked tasks apart from the active ones, each with its
+  // subtasks (subtasks-follow-later): in a folded Later inside their own section when the list
+  // is grouped by section (later-in-section), else in a Later group at the end (someday-and-evening D2);
   // the board keeps every card in its column.
   // The split, the tree and the section buckets follow the rows a write changed (incremental-list-updates D2).
   const partsOf = useRef(new Derived<TreeParts, [boolean, boolean, string, string | null, Section[]]>(treeParts,
@@ -211,16 +222,22 @@ export function useListModel(route: ListRoute, userId?: string) {
   const laterTasks = split?.later ?? NO_TASKS
   const columns = useMemo(() => boardColumns(buckets, collapsedSections), [buckets, collapsedSections])
 
-  // A project's or label's display options (list-display-options): personal and synced.
+  // A project's, label's or built-in view's display options (list-display-options, builtin-view-options): personal and synced.
   const prefsRow = useProjectPrefsRow(projectId)
   const labelRow = route.view === 'label' ? labelMap.get(route.id) : undefined
-  const displayScope = useMemo<DisplayScope | null>(() => (route.view === 'project' || route.view === 'label' ? { kind: route.view, id: route.id } : null), [route])
+  const builtin = route.view === 'today' || route.view === 'upcoming' || route.view === 'inbox'
+  const displayScope = useMemo<DisplayScope | null>(() => (route.view === 'project' || route.view === 'label' ? { kind: route.view, id: route.id }
+    : route.view === 'today' || route.view === 'upcoming' || route.view === 'inbox' ? { kind: route.view } : null), [route])
   const account = useAccountRowLayout()
-  const { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } = displayScope ? listDisplayOf(displayScope.kind, displayScope.kind === 'project' ? prefsRow : labelRow, account) : { groupBy: undefined, sortBy: undefined, sortDir: undefined, rowLayout: undefined }
-  const display = useMemo(() => (dGroup && dSort && dDir && dRows ? { groupBy: dGroup, sortBy: dSort, sortDir: dDir, rowLayout: dRows } : undefined), [dGroup, dSort, dDir, dRows])
+  const displayOf = (scope: DisplayScope | null) => (scope ? listDisplayOf(scope.kind, scope.kind === 'project' ? prefsRow : scope.kind === 'label' ? labelRow : accountPrefs, account) : undefined)
+  const display = useStableDisplay(displayOf(displayScope))
+  // Upcoming's Today groups follow Today's own options (builtin-view-options D4).
+  const todayDisplay = useStableDisplay(upcomingToday ? displayOf({ kind: 'today' }) : undefined)
+  // Nest subtasks (D5): the rows are a tree, with the collapse toggle and Left and Right.
+  const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const sortFields = route.view === 'project' ? layout.projectFieldDefs : allFieldDefs
-  const listDisplay = useListDisplay(display, displayScope, route.view === 'label' || layout.viewMode === 'list', sortFields)
+  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account)
   // A label page's own manual order (view-manual-order D1): the rank of each placed task.
   const labelOrder = labelRow?.manual_order
   const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
@@ -243,11 +260,11 @@ export function useListModel(route: ListRoute, userId?: string) {
   // A write keeps every group and row it did not change (list-rendering-at-scale D6).
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
-    view: route.view, tasks, laterTasks, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
+    view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
-    upcomingToday,
+    upcomingToday, todayDisplay,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday])
+  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
@@ -257,7 +274,19 @@ export function useListModel(route: ListRoute, userId?: string) {
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).
   const slotted = useSlotted()
-  const timeColumn = useMemo(() => !board && hasTimeColumn(rows.map((r) => r.task), slotted), [board, rows, slotted])
+  const rowTasks = useMemo(() => rows.map((r) => r.task), [rows])
+  const timeColumn = useMemo(() => !board && hasTimeColumn(rowTasks, slotted), [board, rowTasks, slotted])
+  // The property column's slots no row uses (sidebar-brand-and-row-grid D2): one fact of the whole list, like the time column.
+  // A row under a heading that names its day shows no date words (Upcoming's days): its date slot stays empty.
+  const dateShown = useMemo(() => {
+    const implied = new Map(rows.filter((r) => r.implied?.date).map((r) => [r.task.id, r.implied!.date!]))
+    return (task: Pick<Task, 'id' | 'due' | 'start' | 'sector' | 'evening' | 'day_part'>) => {
+      const day = implied.get(task.id)
+      if (!day || !task.due || task.due.tz || task.start || task.evening || task.day_part) return true
+      return localDueOf(task.due).date !== day || (!!task.due.time && !timeColumn)
+    }
+  }, [rows, timeColumn])
+  const slotsOff = useUnusedSlots(board ? undefined : rowTasks, { omitLabel: route.view === 'label' ? route.id : undefined, dateShown })
   // Sections with only completed tasks keep a header with "n completed" and Show
   // (task-list-presentation "Empty groups").
   const doneOf = useRef(new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)).current
@@ -285,8 +314,8 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
-    collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, doneBySection,
-    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, dayParts, closed, upcomingToday, upcomingThrough,
+    collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
+    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }

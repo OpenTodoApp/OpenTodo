@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Ce message a été envoyé par la routine « {{.Routine}} » d’un projet dont vous êtes membre sur OpenTodo à {{.Origin}}.
+
+Voir cette exécution :
+
+{{.Link}}
+
+Vous recevez ce message parce que la routine a une étape Envoyer un e-mail aux membres du projet et que vous en êtes membre avec l’adresse vérifiée {{.Email}}. Pour ne plus recevoir d’e-mails de cette routine, ouvrez :
+
+{{.Stop}}

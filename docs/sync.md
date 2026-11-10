@@ -158,6 +158,7 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | user_prefs | `sidebar_order` | string: a comma-separated order of the primary sidebar destinations (`inbox`, `today`, `upcoming`, `calendar` and promotable ids); missing ids follow in the default order, unknown ids are ignored and kept |
 | user_prefs | `focus_presets` | string: up to four comma-separated whole minutes (5-180), the Countdown presets; empty or unreadable reads as `10,20,40`, entries out of range are ignored and the value is kept |
 | user_prefs | `focus_noise` | string: `"off"`, `"white"`, `"pink"` or `"brown"`, background noise during work sessions (empty or unknown reads as off and is kept); the volume is device storage, never synced |
+| user_prefs | `focus_alert` | string: `"short"` or `"long"`, the length of the end-of-session sound while `focus_sound` is `"on"` (empty or unknown reads as short and is kept); a client without it plays the short tone |
 | user_prefs | `favourites` | string: an ordered, comma-separated list of `kind:id` entries (`project:<id>`, `label:<id>`, `view:<id>`), the sidebar's Favourites group; entries of an unknown kind or for a missing, archived or deleted item are ignored and kept |
 | review | `completed_at` | number (Unix ms: when the last weekly review was finished; personal scope only) |
 | review | `daily_at`, `monthly_at` | number (Unix ms: the last Daily check and Monthly look) |

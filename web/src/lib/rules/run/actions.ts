@@ -38,6 +38,8 @@ export interface PlanContext {
   sectionProject?: (id: string) => string
   projectShared?: (id: string) => boolean
   projectLive?: (id: string) => boolean
+  /** A project of another workspace than the routine's: a move into it is skipped (routine-conditions D1). */
+  projectElsewhere?: (id: string) => boolean
 }
 
 export interface Planned {
@@ -204,6 +206,7 @@ function planDue(a: Actions, cur: Row, ctx: PlanContext, set: (f: string, v: unk
 }
 
 function planSection(s: NonNullable<Actions['section']>, cur: Row, ctx: PlanContext, set: (f: string, v: unknown) => void): string[] {
+  if (ctx.projectElsewhere?.(s.project_id)) return ['other workspace']
   if (ctx.projectLive && !ctx.projectLive(s.project_id)) return ['project gone']
   const project = strOf(cur.project_id)
   if (s.project_id !== project) {

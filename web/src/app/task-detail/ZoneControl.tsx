@@ -3,7 +3,7 @@
 // explains both modes, fixes the due to the viewer's zone or releases it, and fixes
 // it to any IANA zone with a preview of how it reads in the viewer's zone. Every
 // change is one ordinary due edit through updateTask; `z` toggles as before.
-import { useId, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { dueToInstant, fixDueToZone, isKnownZone, localDueOf, releaseDue, setDueZone, zoneCity } from '../../lib/dates'
 import { updateTask } from '../../lib/ops'
 import type { Due, Task } from '../../lib/types'
@@ -71,8 +71,8 @@ export interface ZoneControlProps {
   viewerZone?: string
   /** Opens the panel on mount (stories). */
   defaultOpen?: boolean
-  /** `line`: a quiet "Floating time · Change" line (the Do on segment); `chip` by default. */
-  variant?: 'chip' | 'line'
+  /** `inline`: quiet text, "Floating" or the city, at the end of the Do on time line (when-picker D3); `chip` by default. */
+  variant?: 'chip' | 'inline'
 }
 
 export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = false, variant = 'chip' }: ZoneControlProps) {
@@ -121,25 +121,26 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
     return t('{there} = {time}{day} your time ({city})', { there, time: dt.formatTime(local.time!), day, city: zoneCity(zone) })
   }
 
-  // In the Do on segment (task-panel-polish D3): one quiet line, "Floating time · Change", shown only with a time.
-  // The button is named by its visible word and described by the line (WCAG 2.5.3), 24 px tall (2.5.8).
-  const lineId = useId()
-  const line = variant === 'line' && (
-    <span className="flex flex-wrap items-center gap-1 text-meta text-muted" data-zone-line>
-      <Icon name="globe" size="xs" className="text-faint" />
-      <span id={lineId}>{zoned ? t('Fixed to {zoneCity}', { zoneCity: zoneCity(due!.tz!) }) : t('Floating time')}</span>
-      {!readOnly && <span aria-hidden="true" className="text-faint">·</span>}
-      {!readOnly && (
-        <button ref={chip} type="button" className="inline-flex min-h-6 items-center rounded-control px-1 text-accent hover:underline focus-visible:outline-2 focus-visible:outline-focus"
-          aria-describedby={lineId} aria-haspopup="dialog" aria-expanded={open} aria-keyshortcuts={ZONE_TOGGLE_KEY}
-          onClick={() => setOpen(true)}>{t('Change')}</button>
-      )}
-    </span>
-  )
+  // At the end of the Do on segment's time line (when-picker D3): the behaviour as quiet
+  // text, "Floating" or the city, opening the choices. Named "Time zone: Floating", so the
+  // visible word is in the name (WCAG 2.5.3); 28 px tall (2.5.8). A reader sees the text.
+  const word = zoned ? zoneCity(due!.tz!) : t('Floating')
+  const inline = variant === 'inline' && (readOnly
+    ? <span className="inline-flex items-center gap-1 text-meta text-muted" data-zone-inline><Icon name="globe" size="xs" className="text-faint" />{word}</span>
+    : (
+      <Tooltip label={t('Time zone')} shortcut={ZONE_TOGGLE_KEY}>
+        <button ref={chip} type="button" data-zone-inline
+          className="inline-flex min-h-7 items-center gap-1 rounded-control px-1.5 text-meta text-muted transition duration-(--duration-ui) hover:bg-sunken hover:text-default focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised"
+          aria-label={t('Time zone: {text}', { text: word })} aria-haspopup="dialog" aria-expanded={open} aria-keyshortcuts={ZONE_TOGGLE_KEY}
+          onClick={() => setOpen(true)}>
+          <Icon name="globe" size="xs" className="text-faint" />{word}<Icon name="chevron-down" size="xs" className="text-faint" />
+        </button>
+      </Tooltip>
+    ))
 
   return (
     <span className="inline-flex flex-wrap items-center gap-2">
-      {line || <><Tooltip label={canFix ? t('Time zone') : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
+      {inline || <><Tooltip label={canFix ? t('Time zone') : reason} shortcut={canFix ? ZONE_TOGGLE_KEY : undefined}>
         <button
           ref={chip}
           type="button"
@@ -156,7 +157,7 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
         </button>
       </Tooltip>
       {!canFix && due && <span id={`zone-reason-${task.id}`} className="text-meta text-faint">{reason}</span>}</>}
-      <Popover open={open} onClose={close} anchor={chip} label={t('Time zone')} align="start" width="sm:w-80" className="space-y-3 p-3">
+      <Popover open={open} onClose={close} anchor={chip} label={t('Time zone')} align={variant === 'inline' ? 'end' : 'start'} width="sm:w-80" className="space-y-3 p-3">
         <div className="space-y-2 text-meta">
           <p className={zoned ? 'text-muted' : 'text-default'} data-testid="zone-mode-floating">
             <strong className="font-semibold">{zoned ? t('Floating:') : t('Floating (now):')}</strong>{' '}{t('the same clock time wherever you are.')}

@@ -25,9 +25,10 @@ import { derived, liveSnapshot } from './liveSnapshot'
 import { compareByPosition } from './ordering'
 import { REVIEW_ID } from './review'
 import { USER_PREFS_ID } from './userPrefs'
-import { ownIn, projectsIn, readWorkspaceState, type WorkspaceState } from './workspaces'
+import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
+import { pinnedNoteIds } from './favourites'
 import type {
-  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -89,6 +90,21 @@ export function useWorkspaceMembers(): WorkspaceMember[] {
 export function useWorkspaceGroups(): WorkspaceGroup[] {
   return groupRows.use() ?? NO_GROUPS
 }
+// The pinned notes of the current workspace (notes-home D4), for the Favourites
+// group: only the rows the favourites name, so the sidebar never reads every note.
+const pinnedNotes = liveSnapshot('pinned notes', keepRows(async () => {
+  const ids = pinnedNoteIds((await db.userPrefs.get(USER_PREFS_ID))?.favourites)
+  if (ids.length === 0) return []
+  const [state, projects, rows] = await Promise.all([readWorkspaceState(), db.projects.toArray(), db.notes.bulkGet(ids)])
+  return tasksIn(state, projects, rows.filter((n) => !!n))
+}))
+const NO_NOTES: Note[] = []
+
+/** The rows of the pinned notes in the current workspace, deleted ones too (favouritesOf leaves them out). */
+export function usePinnedNoteRows(): Note[] {
+  return pinnedNotes.use() ?? NO_NOTES
+}
+
 const prefsRow = liveSnapshot('user prefs', async () => (await db.userPrefs.get(USER_PREFS_ID)) ?? null)
 const reviewRow = liveSnapshot('review', async () => (await db.review.get(REVIEW_ID)) ?? null)
 const projectPrefRows = liveSnapshot('project prefs', () => db.prefs.toArray())

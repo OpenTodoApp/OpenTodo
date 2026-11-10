@@ -141,7 +141,7 @@ func (s *Server) handleRoutineDraft(w http.ResponseWriter, r *http.Request) {
 	})
 	// Logs hold the provider, outcome, duration and token counts only (in-app-assistant D8).
 	s.log.Info("assistant routine draft", "provider", route.Provider, "own_key", route.Own, "duration_ms", time.Since(start).Milliseconds(),
-		"input_tokens", ans.Input, "output_tokens", ans.Output, "drafted", ans.Draft != nil, "errors", len(ans.Errors), "failed", err != nil)
+		"input_tokens", ans.Input, "cached_read_tokens", ans.CachedRead, "cached_write_tokens", ans.CachedWrite, "output_tokens", ans.Output, "drafted", ans.Draft != nil, "errors", len(ans.Errors), "failed", err != nil)
 	if err != nil {
 		status, code, msg := s.draftError(err, route.Own)
 		writeError(w, status, code, msg)
@@ -149,7 +149,7 @@ func (s *Server) handleRoutineDraft(w http.ResponseWriter, r *http.Request) {
 	}
 	total := usage.Counted(set.CapMemberKeys)
 	if !route.Own || set.CapMemberKeys {
-		total += ans.Input + ans.Output
+		total += ans.Counted()
 	}
 	draftCap := set.MonthlyTokenCap
 	if !capped {
@@ -163,7 +163,7 @@ func (s *Server) handleRoutineDraft(w http.ResponseWriter, r *http.Request) {
 		warns = []ruleval.StepWarning{}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"draft": ans.Draft, "note": ans.Note, "errors": errs, "warnings": warns,
-		"usage": map[string]any{"input": ans.Input, "output": ans.Output, "month_total": total, "cap": draftCap, "own_key": route.Own}})
+		"usage": turnUsage(ans.Tokens, total, draftCap, route.Own)})
 }
 
 // draftError is the status, code and message of a draft turn that failed.

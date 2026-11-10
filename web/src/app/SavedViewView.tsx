@@ -11,6 +11,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, u
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
+import { listSlotsOff } from '../lib/rowSlots'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
@@ -20,6 +21,7 @@ import { DashboardView } from './DashboardView'
 import { LabelPicker } from './LabelPicker'
 import { setPanelTaskId, usePanelTaskId } from './panel'
 import { openFromRow } from './sidePanel'
+import { openTaskPage } from './taskTrail'
 import { TaskRow } from './TaskRow'
 import { ViewMark, ViewMenu } from './ViewsView'
 import { useListKeys, type KeyRow } from './useListKeys'
@@ -153,6 +155,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const rows = useMemo(() => shownGroups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [shownGroups])
   // The time column (rows-v2 D2): one fact of the whole view.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
+  const slotsOff = useMemo(() => listSlotsOff(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
@@ -226,7 +229,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
             actions={<IconButton icon={view.pinned ? 'pin-off' : 'pin'} size="sm" label={view.pinned ? t('Unpin') : t('Pin')} onClick={() => act(setFavourite('view', view.id, !view.pinned))} />}
-            menu={<ViewMenu view={view} />} />
+            menu={<ViewMenu view={view} print={display.layout !== 'board'} />} />
 
           <ViewToolbar sortFields={ctx.fields} query={view.query} filterOpen={filterOpen} setFilterOpen={setFilterOpen} display={display}
             onDisplay={(patch) => act(updateView(view.id, displayPatch(patch)))}
@@ -273,7 +276,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                 labels={resolveLabels(tk.labels, labelMap)}
                 showProject={opts.groupBy !== 'project'}
-                timeColumn={timeColumn}
+                timeColumn={timeColumn} slotsOff={slotsOff}
                 hidden={display.hidden}
                 layout={display.rowLayout}
                 edge={shape === 'card' && boardColor.mode !== 'project' ? boardColor.hueOf(tk) : undefined}
@@ -287,6 +290,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                 onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
+                onOpenPage={() => openTaskPage(tk.id)}
                 onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }}
                 {...bulk.rowProps(tk)}
                 onPointerDown={(e) => drag.startDrag(e, key, tk)}

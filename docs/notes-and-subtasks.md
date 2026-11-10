@@ -11,7 +11,7 @@ order: 14
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, its notes and its properties."></picture>
 
-In the task panel, **Notes** sits under the title. Below the property lines are the **Subtasks** as a checklist, with an **Add subtask…** line under them, the attachments once there is one (attach from **Add** or the **⋯** menu, or paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box rests as one line at the bottom of the panel while Comments is shown and opens when you click it or press <kbd>Shift</kbd>+<kbd>C</kbd>. Activity starts with when the task was created and completed.
+In the task panel, **Notes** sits under the title. Below the property lines are the **Subtasks** (**2 of 5**, **40%**) with an **Add a subtask** line, the attachments once there is one (attach from **Add** or the **⋯** menu, or paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box rests as one line at the bottom of the panel while Comments is shown and opens when you click it or press <kbd>Shift</kbd>+<kbd>C</kbd>. Activity starts with when the task was created and completed.
 
 ## Write notes
 
@@ -25,7 +25,7 @@ Big tasks are easier as a few small steps. To add one:
 - choose **Add subtask** in its menu, or
 - select the task in the list and press <kbd>a</kbd>.
 
-Subtasks appear indented under their parent, and the parent shows your progress, like **1/3**. You can nest subtasks inside subtasks.
+Subtasks appear indented under their parent, which shows a ring and its progress (**1/3**). You can nest subtasks; each level counts its own.
 
 To add several at once, paste a list (up to 100 lines) into the empty **Add subtask** line and confirm **Add 3 subtasks**. Markers such as `-` and `1.` are removed as in [quick add](quick-add.md#paste-a-list), but dates and projects are not read. One **Undo** removes them all.
 

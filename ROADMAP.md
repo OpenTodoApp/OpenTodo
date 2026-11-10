@@ -143,9 +143,78 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 | [`routines-describe-it`](openspec/changes/archive/2026-11-01-routines-describe-it/) | **Shipped.** "Describe it": the AI drafts a routine from one sentence into the editor, never saving or running it | [#735](https://github.com/OpenTodoApp/OpenTodo/issues/735) |
 | [`routines-ai-step`](openspec/changes/archive/2026-11-01-routines-ai-step/) | **Shipped.** Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | [#661](https://github.com/OpenTodoApp/OpenTodo/issues/661) |
 | [`routines-shared`](openspec/changes/archive/2026-11-01-routines-shared/) | **Shipped.** Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
-| `routines-shared-email` | Email project members and a "members" recipient for Notify me in shared routines | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| `routines-shared-email` | Email project members in shared routines, with a stop link per member | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
+| [`routine-conditions`](openspec/changes/routine-conditions/) | A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | [#1132](https://github.com/OpenTodoApp/OpenTodo/issues/1132), [#1134](https://github.com/OpenTodoApp/OpenTodo/issues/1134) |
 
 The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
+
+### Notes area
+
+Notes that link to each other, a calm home for them, and a picture of what is connected.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
+| [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
+| [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
+| [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
+
+The three changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
+
+### Assistant area
+
+The assistant's answers show the app's own interface (`assistant-generative-ui`, `assistant-map-lookup`). These changes build on that, in four waves.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`assistant-eval`](openspec/changes/assistant-eval/) | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | |
+| [`assistant-usage-cache`](openspec/changes/assistant-usage-cache/) | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | |
+| [`assistant-device-reads`](openspec/changes/assistant-device-reads/) | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | |
+| [`assistant-time-blocks`](openspec/changes/assistant-time-blocks/) | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | |
+| [`assistant-project-blocks`](openspec/changes/assistant-project-blocks/) | Board, timeline, activity, stats, task and habit blocks, offered by relevance | |
+| [`assistant-followups`](openspec/changes/assistant-followups/) | Up to three follow-up suggestions under an answer, sent with one tap | |
+| [`assistant-proposal-editing`](openspec/changes/assistant-proposal-editing/) | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | |
+| [`assistant-memory`](openspec/changes/assistant-memory/) | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | |
+| [`assistant-in-context`](openspec/changes/assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
+| [`assistant-routine-blocks`](openspec/changes/assistant-routine-blocks/) | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
+| [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
+| [`mcp-blocks`](openspec/changes/mcp-blocks/) | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
+
+They land in waves:
+1. the evaluation suite, the usage accounting and the device reads;
+2. the new blocks, follow-ups and proposal editing;
+3. memory and the assistant in context;
+4. routines with blocks, fewer tools per turn, and MCP blocks.
+
+Each change ships on its own. Blocks keep carrying ids only, rendered on the device, except over MCP, where the host can't read the device's data.
+
+### UX polish (2026-11 feedback)
+
+These changes come from the owner's November review of the screens used every day. Each one gives a screen a single job and lets the layout carry it.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`sidebar-brand-and-row-grid`](openspec/changes/sidebar-brand-and-row-grid/) | The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | |
+| [`when-picker`](openspec/changes/when-picker/) | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
+| [`focus-redesign`](openspec/changes/focus-redesign/) | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
+| [`close-the-day-redesign`](openspec/changes/close-the-day-redesign/) | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
+| [`task-progress`](openspec/changes/task-progress/) | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | [#1107](https://github.com/OpenTodoApp/OpenTodo/issues/1107) |
+| [`loop-guided-dashboard`](openspec/changes/loop-guided-dashboard/) | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
+
+Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
+
+### Native app
+
+A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`native-app-foundation`](openspec/changes/native-app-foundation/) | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | [#600](https://github.com/OpenTodoApp/OpenTodo/issues/600) |
+| [`native-app-everyday`](openspec/changes/native-app-everyday/) | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | |
+| [`native-app-handover`](openspec/changes/native-app-handover/) | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
+
+In order. No op field changes; the server gains only app sign-in.
 
 ## Shipped
 
@@ -263,7 +332,7 @@ In this order. Each starts as an OpenSpec change under `openspec/changes/`. The 
 | --- | --- | --- | --- |
 | 1 | **Shipped.** AI assistants can act through MCP: create, edit, complete, reschedule and move tasks, create projects and labels, comment | `mcp-write-tools` | Needs an `agent` token plus owner and user switches (both off by default). Every write goes through the op log, is attributed in history, audited, rate limited and reversible. No permanent deletion |
 | 2 | **Shipped.** `ot` as a dependable tool for agent harnesses | `agent-ready-cli` | Versioned `--json` schemas, `ot schema`, `--dry-run`, idempotency keys, `--yes` required without a terminal, read-only mode, a shipped agent skill file. The CLI stays in this repository; no Homebrew or Scoop repositories for now |
-| 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface`. Optionally, right after a task is added, it proposes a clearer title, a project and subtasks for review: `assistant-suggest-after-add` |
+| 3 | **Shipped.** Conversational assistant in the app, with your own model key | `in-app-assistant` | Anthropic, OpenAI, Gemini or any OpenAI-compatible endpoint (including local models). Off by default, per-user consent, every change reviewed before it applies and undoable in one step. End-to-end encrypted accounts run it on their own device with their own key when the owner allows it (`assistant-on-device`). Its own page, the composer tray and the change-set card: `assistant-surface`. Optionally, right after a task is added, it proposes a clearer title, a project and subtasks for review: `assistant-suggest-after-add`. Answers show tasks, a day or week, places, notes, project outlines and choices as part of the app, and proposals as a calendar, an outline or a map, editable before applying: `assistant-generative-ui` |
 | 4 | **Shipped.** A Claude Code plugin with an MCP agent skill | `claude-plugin` | Built in `deploy/claude-plugin/`, published to `OpenTodoApp/opentodo-claude` after each release. Asks for the server address and an agent token; checks keep the skills in step with the MCP tools |
 
 ### Design refresh
@@ -321,7 +390,7 @@ Considered and set aside for now, so they are not forgotten: ~~a focus timer wit
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view |
+| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view. Follow-up [`row-click-modes`](openspec/changes/row-click-modes/): a click can expand the row, a double-click opens the page, and the side panel follows the selection in every list ([#1129](https://github.com/OpenTodoApp/OpenTodo/issues/1129), [#1116](https://github.com/OpenTodoApp/OpenTodo/issues/1116)) |
 | 2 | **Shipped.** **Group mentions and a workspace filter**: mention `@Family` to reach everyone in a group, and narrow any view with `workspace:` | `group-mentions` | The follow-ups named by `workspaces`: mentions resolve against the workspace's groups; the filter term joins the query language and the builder |
 | 3 | **Shipped.** **Rich comments**: write comments with the notes editor | `rich-comments` | Without losing the plain-text API for scripts and assistants |
 | 4 | **Shipped.** **Shell completion for `ot`**: `ot completion bash`, `zsh` or `fish` | `ot-completion` | Commands, flags and fixed values from the description `ot schema` prints, plus project, label and view names |

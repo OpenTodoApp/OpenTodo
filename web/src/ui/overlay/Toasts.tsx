@@ -25,7 +25,7 @@ export function ToastRegion({ children, live = 'polite', label, side, regionRef 
   return (
     <div ref={ref} role="region" aria-live={live} aria-label={label} data-toast-region data-toast-side={at}
       className={`pointer-events-none fixed inset-x-0 z-40 md:z-[46] flex flex-col items-stretch gap-2 pl-[max(0.75rem,var(--safe-left))] pr-[max(0.75rem,var(--safe-right))] sm:w-[22rem] sm:px-0 ${at === 'start' ? 'sm:left-[calc(1rem+var(--safe-left))] sm:right-auto' : 'sm:left-auto sm:right-[calc(1rem+var(--safe-right))]'}`}
-      style={top ? { top: 'calc(var(--safe-top) + 4rem)' } : { bottom: 'calc(var(--vv-bottom, 0px) + var(--toast-lift, 0px) + max(1rem, var(--safe-bottom)))' }}>
+      style={top ? { top: 'calc(var(--safe-top) + 4rem)' } : { bottom: 'calc(var(--vv-bottom, 0px) + var(--toast-lift, 0px) + var(--selection-lift, 0px) + max(1rem, var(--safe-bottom)))' }}>
       {children}
     </div>
   )

@@ -105,7 +105,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `stability-contract` | A frozen v1 API and op schema, upgrade paths from any 0.x, an export guarantee | Shipped in 0.22 |
 | `external-security-review` | A threat model and disclosure policy; an independent security review is optional, depending on funding | In progress (38 of 44) |
 | `accessibility-aa` | WCAG 2.2 AA on every screen, with a conformance statement | Shipped in 0.22 |
-| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | In progress (16 of 16) |
+| `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | Shipped in 1.3 |
 | `notes-compaction-at-scale` | A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | Shipped in 0.22 |
 | `migration-everywhere` | A switch guide and checked importer for every competitor | Shipped in 0.22 |
 | `caldav-verified` | CalDAV verified on real clients | Planned |
@@ -123,6 +123,53 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-describe-it` | "Describe it": the AI drafts a routine from one sentence into the editor, never saving or running it | Shipped in 0.20 |
 | `routines-ai-step` | Ask AI and Summarise steps, proposals by default, a bounded "apply without asking", device runs for encrypted accounts | Shipped in 0.21 |
 | `routines-shared` | Routines that belong to a shared project and run as whoever turned them on | Shipped in 0.21 |
-| `routines-shared-email` | Email project members and a "members" recipient for Notify me in shared routines | Planned |
+| `routines-shared-email` | Email project members in shared routines, with a stop link per member | Shipped in 1.3 |
+| `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
+| `routine-conditions` | A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | In progress (16 of 16) |
+
+## Notes area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
+| `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
+| `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
+| `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
+
+## Assistant area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | In progress (4 of 5) |
+| `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | In progress (4 of 4) |
+| `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | In progress (4 of 4) |
+| `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | In progress (4 of 5) |
+| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | In progress (3 of 4) |
+| `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | In progress (2 of 3) |
+| `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | In progress (4 of 4) |
+| `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | In progress (7 of 7) |
+| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | Planned |
+| `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Planned |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
+| `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Planned |
+
+## UX polish (2026-11 feedback)
+
+| Change | What | Status |
+| --- | --- | --- |
+| `sidebar-brand-and-row-grid` | The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | In progress (17 of 17) |
+| `when-picker` | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | In progress (9 of 9) |
+| `focus-redesign` | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | In progress (8 of 8) |
+| `close-the-day-redesign` | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | In progress (9 of 9) |
+| `task-progress` | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | In progress (8 of 8) |
+| `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | In progress (13 of 13) |
+
+## Native app
+
+| Change | What | Status |
+| --- | --- | --- |
+| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | Planned |
+| `native-app-everyday` | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | Planned |
+| `native-app-handover` | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | Planned |
 
 <!-- roadmap:end -->

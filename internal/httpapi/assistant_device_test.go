@@ -91,8 +91,9 @@ func TestDeviceAssistantSettings(t *testing.T) {
 		t.Fatalf("encrypted member: %v", out)
 	}
 	// The disclosure lists what the device sends, not the server's tools
-	// (assistant-disclosure-accuracy).
-	if f := strings.Join(toStrings(out["fields"]), "|"); f != strings.Join(deviceConsentFields, "|") || strings.Contains(f, "notes") {
+	// (assistant-disclosure-accuracy): notes and tracked time since
+	// assistant-device-reads, never attachments.
+	if f := strings.Join(toStrings(out["fields"]), "|"); f != strings.Join(deviceConsentFields, "|") || !strings.Contains(f, "notes") || strings.Contains(f, "attachments") {
 		t.Fatalf("device fields: %v", out["fields"])
 	}
 	for _, p := range []string{"device:openai", "device:skynet"} {

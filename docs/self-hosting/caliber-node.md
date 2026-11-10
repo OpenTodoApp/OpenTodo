@@ -26,7 +26,7 @@ Other `OPENTODO_*` variables are in the [configuration table](https://github.com
 
 ## Updates
 
-The `stable` tag moves with every release. To update, pull the image again (redeploy or restart the app so Caliber Node pulls `stable`). Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, use `ghcr.io/opentodoapp/opentodo:1.2` (or one version, `1.2.0`) instead of `stable`.
+The `stable` tag moves with every release. To update, pull the image again (redeploy or restart the app so Caliber Node pulls `stable`). Migrations run on start and there are no down-migrations, so back up first. To stay on one release line, use `ghcr.io/opentodoapp/opentodo:1.3` (or one version, `1.3.0`) instead of `stable`.
 
 ## Data and backups
 

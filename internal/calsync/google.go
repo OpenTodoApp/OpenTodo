@@ -5,9 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -101,6 +103,60 @@ type Token struct {
 	Access  string
 	Refresh string
 	Expires time.Time
+	// Scope is the granted scopes, space-separated ("" when not said).
+	Scope string
+}
+
+// GrantsCalendar reports whether the calendar scope was granted: Google's
+// consent page lets a person untick it. A token that names no scopes counts
+// as granted.
+func (t *Token) GrantsCalendar() bool {
+	return t.Scope == "" || slices.Contains(strings.Fields(t.Scope), GoogleScope)
+}
+
+// Results of a Google sign-in that name their cause, each shown with the
+// matching section of the guide (OpenSpec change google-sync-guide).
+const (
+	// ResultDenied: Google returned access_denied (the person declined, or
+	// is not a test user of an app in Testing).
+	ResultDenied = "denied"
+	// ResultAuthorizationFailed: Google returned another error.
+	ResultAuthorizationFailed = "authorization_failed"
+	// ResultRedirectMismatch: Google refused the redirect address.
+	ResultRedirectMismatch = "redirect_uri_mismatch"
+	// ResultClientRefused: Google refused the owner's client id or secret.
+	ResultClientRefused = "google_client_refused"
+	// ResultScopeNotGranted: the calendar permission was unticked.
+	ResultScopeNotGranted = "scope_not_granted"
+	// ResultCalDAVDisabled: Google's CalDAV answered 403 to a fresh grant,
+	// which means the CalDAV API is not enabled in the owner's project.
+	ResultCalDAVDisabled = "caldav_api_disabled"
+)
+
+// GoogleCallbackResult maps the error Google put on the callback address to
+// a result. Only known codes pass; anything else is ResultAuthorizationFailed,
+// so the address never carries text Google or a third party chose.
+func GoogleCallbackResult(code string) string {
+	switch code {
+	case "access_denied":
+		return ResultDenied
+	case "redirect_uri_mismatch":
+		return ResultRedirectMismatch
+	}
+	return ResultAuthorizationFailed
+}
+
+// GoogleDiscoveryResult is the result of a discovery that failed right after
+// a granted sign-in: a 403 means the CalDAV API is off in the owner's project.
+func GoogleDiscoveryResult(err error) string {
+	var e *Error
+	if !errors.As(err, &e) {
+		return "internal_error"
+	}
+	if e.Reason == ReasonUnauthorized && e.Status == http.StatusForbidden {
+		return ResultCalDAVDisabled
+	}
+	return e.Reason
 }
 
 // TokenEndpoint talks to Google's token endpoint.
@@ -123,11 +179,24 @@ func googleTokenError(a tokenAnswer) string {
 	return ""
 }
 
+// googleExchangeError: a refused client or redirect address is the owner's
+// set-up, not the person's grant (google-sync-guide).
+func googleExchangeError(a tokenAnswer) string {
+	switch a.Error {
+	case "invalid_client", "unauthorized_client":
+		return ResultClientRefused
+	case "redirect_uri_mismatch":
+		return ResultRedirectMismatch
+	}
+	return googleTokenError(a)
+}
+
 // tokenAnswer is an OAuth token endpoint's JSON answer.
 type tokenAnswer struct {
 	Access      string `json:"access_token"`
 	Refresh     string `json:"refresh_token"`
 	ExpiresIn   int64  `json:"expires_in"`
+	Scope       string `json:"scope"`
 	Error       string `json:"error"`
 	Description string `json:"error_description"`
 }
@@ -169,13 +238,13 @@ func postToken(ctx context.Context, client *http.Client, endpoint string, form u
 	if out.ExpiresIn <= 0 {
 		out.ExpiresIn = 3600
 	}
-	return &Token{Access: out.Access, Refresh: out.Refresh, Expires: now().Add(time.Duration(out.ExpiresIn) * time.Second)}, nil
+	return &Token{Access: out.Access, Refresh: out.Refresh, Scope: out.Scope, Expires: now().Add(time.Duration(out.ExpiresIn) * time.Second)}, nil
 }
 
 // Exchange trades an authorization code for tokens.
 func (t *TokenEndpoint) Exchange(ctx context.Context, c GoogleClient, code, verifier, redirectURI string) (*Token, error) {
-	return t.post(ctx, url.Values{"grant_type": {"authorization_code"}, "code": {code}, "code_verifier": {verifier},
-		"redirect_uri": {redirectURI}, "client_id": {c.ID}, "client_secret": {c.Secret}})
+	return postToken(ctx, t.HTTP, t.URL, url.Values{"grant_type": {"authorization_code"}, "code": {code}, "code_verifier": {verifier},
+		"redirect_uri": {redirectURI}, "client_id": {c.ID}, "client_secret": {c.Secret}}, t.now, googleExchangeError)
 }
 
 // Refresh gets a new access token; a revoked grant is ReasonUnauthorized.

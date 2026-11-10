@@ -148,11 +148,12 @@ which the database holds twice (the operation and the stored value). That is
 | `notes-db-size` The database file after compaction | MB | 250 | — | — | — | — | 250 |
 | `notes-share` What the notes take of it | MB | 130 | — | — | — | — | — |
 | `notes-compaction` A full compaction of the fixture | s | 120 | — | — | — | — | 480 |
-| `notes-push-wait` The longest a write waits behind compaction | ms | 100 | — | — | — | — | — |
+| `notes-push-wait` The longest a write waits behind compaction, leaving out the single slowest (a runner's disk alone can stall one write; the longest is reported) | ms | 100 | — | — | — | — | — |
 | `notes-first-sync` First sync of a new device, tasks and notes | s | — | 45 | 110 | 120 | 120 | — |
 | `notes-indexeddb` Storage on the device after that sync | MB | — | 120 | — | — | — | — |
 | `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
 | `notes-search` A keystroke in the note search (95th percentile) | ms | — | 50 | 150 | 150 | 150 | — |
+| `note-references` Open a note other notes link to, before anything built the link index, to its Linked references painted | ms | — | 200 | 600 | — | — | — |
 | `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
 
 The report also gives, without a limit, the database size before compaction,
@@ -194,7 +195,8 @@ timing it, so a slow runner cannot make them fail:
 - opening Today reads the tasks table at most once, a search keystroke reads
   nothing from the device's database, and completing a task in a 2,000-row list
   draws at most three rows again (`web/src/app/scale10k.perf.test.tsx`, CI's web
-  scale tests);
+  scale tests), also in a summarised Upcoming of 2,000 dated tasks, which draws
+  only its first three days' rows (`web/src/app/calmUpcoming.perf.test.tsx`);
 - each page of a first sync is written in one local transaction, and two
   devices that receive the same operations in different orders end with the
   same rows;

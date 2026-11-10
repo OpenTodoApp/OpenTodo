@@ -8,7 +8,7 @@ import type { RoutineStep } from '../../types'
 
 interface PlanCase {
   name: string; today: string; now: number; me: string; week_start: 'mon' | 'sun'; actions: unknown; task: Row
-  live_labels: string[]; projects?: Record<string, boolean>; sections?: Record<string, string>; expect: Record<string, unknown>; skipped?: string[]
+  live_labels: string[]; projects?: Record<string, boolean>; sections?: Record<string, string>; elsewhere?: string[]; expect: Record<string, unknown>; skipped?: string[]
 }
 
 describe('rule actions (plan.fixture.json, shared with internal/rules Plan)', () => {
@@ -18,7 +18,7 @@ describe('rule actions (plan.fixture.json, shared with internal/rules Plan)', ()
       const got = planActions(parseActions(c.actions), c.task, {
         today: c.today, nowMs: c.now, userId: c.me, weekStart: c.week_start === 'sun' ? 0 : 1,
         labelLive: (id) => c.live_labels.includes(id), sectionProject: (id) => c.sections?.[id] ?? '',
-        projectShared: (id) => projects[id] === true, projectLive: (id) => id in projects,
+        projectShared: (id) => projects[id] === true, projectLive: (id) => id in projects, projectElsewhere: (id) => (c.elsewhere ?? []).includes(id),
       })
       expect(got.patch).toEqual(c.expect)
       if (c.skipped) expect(got.skipped).toEqual(c.skipped)

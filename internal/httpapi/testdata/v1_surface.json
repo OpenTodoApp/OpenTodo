@@ -295,6 +295,14 @@
           "(type)": "ref:note_text"
         }
       },
+      "notes links": {
+        "args": {
+          "ref": "required"
+        },
+        "output": {
+          "(type)": "ref:note_links"
+        }
+      },
       "notes list": {
         "flags": {
           "label": "string",
@@ -1158,6 +1166,21 @@
         "entity": "any",
         "entity_id": "string"
       },
+      "note_links": {
+        "(type)": "object",
+        "id": "string",
+        "kind": "any",
+        "linked_from": "array",
+        "linked_from[].id": "string",
+        "linked_from[].kind": "any",
+        "linked_from[].title": "string",
+        "links": "array",
+        "links[].available": "boolean",
+        "links[].id": "string",
+        "links[].kind": "any",
+        "links[].title": "string",
+        "title": "string"
+      },
       "note_result": {
         "(type)": "any"
       },
@@ -1545,6 +1568,10 @@
       "400",
       "listed"
     ],
+    "base_url_mismatch": [
+      "409",
+      "listed"
+    ],
     "base_url_required": [
       "409",
       "listed"
@@ -1893,6 +1920,10 @@
     "oidc_state_invalid": [
       "listed"
     ],
+    "other_workspace": [
+      "409",
+      "listed"
+    ],
     "owner_must_transfer": [
       "409",
       "listed"
@@ -2076,6 +2107,10 @@
       "404",
       "listed"
     ],
+    "workspace_gone": [
+      "409",
+      "listed"
+    ],
     "workspace_not_empty": [
       "409",
       "listed"
@@ -2252,7 +2287,8 @@
         "position": "number",
         "project_id": "nullable_string",
         "steps": "routine_steps",
-        "trigger": "rule_trigger"
+        "trigger": "rule_trigger",
+        "workspace_id": "nullable_string"
       },
       "sections": {
         "aisle": "nullable_string",
@@ -2350,6 +2386,7 @@
         "energy": "string",
         "favourites": "string",
         "first_run": "string",
+        "focus_alert": "string",
         "focus_auto_start": "string",
         "focus_break_after_minutes": "number",
         "focus_long_break_every": "number",
@@ -2365,6 +2402,10 @@
         "full_titles": "string",
         "haptics": "string",
         "id": "string",
+        "inbox_group_by": "string",
+        "inbox_row_layout": "string",
+        "inbox_sort_by": "string",
+        "inbox_sort_dir": "string",
         "language": "string",
         "maps": "string",
         "method_mode": "string",
@@ -2390,8 +2431,18 @@
         "today_assignees": "string",
         "today_done": "string",
         "today_events": "string",
+        "today_group_by": "string",
         "today_limit": "number",
+        "today_row_layout": "string",
+        "today_sort_by": "string",
+        "today_sort_dir": "string",
+        "today_subtasks": "string",
         "upcoming_events": "string",
+        "upcoming_later": "string",
+        "upcoming_row_layout": "string",
+        "upcoming_sort_by": "string",
+        "upcoming_sort_dir": "string",
+        "upcoming_subtasks": "string",
         "upcoming_today": "string",
         "week_start": "string",
         "welcome": "string"
@@ -2431,6 +2482,7 @@
       "format": "string",
       "frames": "array",
       "labels": "array",
+      "memory": "array",
       "notes": "array",
       "objectives": "array",
       "places": "array",
@@ -2540,7 +2592,8 @@
         "name": "string",
         "project": "string?",
         "steps": "string?",
-        "trigger": "string"
+        "trigger": "string",
+        "workspace": "string|null?"
       },
       "kind": "write"
     },
@@ -2599,6 +2652,32 @@
         "items[].workspace_id": "string|null?"
       },
       "kind": "write"
+    },
+    "find_free_time": {
+      "arguments": {
+        "day_end_hour": "integer?",
+        "day_start_hour": "integer?",
+        "from": "string?",
+        "min_minutes": "integer?",
+        "timezone": "string?",
+        "to": "string?"
+      },
+      "kind": "read",
+      "result": {
+        "_notice": "string",
+        "days": "array",
+        "days[].date": "string",
+        "days[].free": "array",
+        "days[].free_minutes": "number",
+        "from": "string",
+        "min_minutes": "number",
+        "server_time": "string",
+        "timezone": "string",
+        "to": "string",
+        "working_day": "object",
+        "working_day.end": "string",
+        "working_day.start": "string"
+      }
     },
     "get_note": {
       "arguments": {
@@ -3045,7 +3124,8 @@
         "name": "string?",
         "routine": "string",
         "steps": "string?",
-        "trigger": "string?"
+        "trigger": "string?",
+        "workspace": "string|null?"
       },
       "kind": "write"
     },
@@ -3167,6 +3247,12 @@
       "sort_dir": "string",
       "workspace_id": "nullable_string"
     },
+    "memory": {
+      "created_at": "number",
+      "deleted_at": "nullable_number",
+      "position": "number",
+      "text": "memory_text"
+    },
     "note": {
       "created_at": "number",
       "deleted_at": "nullable_number",
@@ -3258,7 +3344,8 @@
       "position": "number",
       "project_id": "nullable_string",
       "steps": "routine_steps",
-      "trigger": "rule_trigger"
+      "trigger": "rule_trigger",
+      "workspace_id": "nullable_string"
     },
     "section": {
       "aisle": "nullable_string",
@@ -3351,6 +3438,7 @@
       "energy": "string",
       "favourites": "string",
       "first_run": "string",
+      "focus_alert": "string",
       "focus_auto_start": "string",
       "focus_break_after_minutes": "number",
       "focus_long_break_every": "number",
@@ -3365,6 +3453,10 @@
       "formatting_toggle": "string",
       "full_titles": "string",
       "haptics": "string",
+      "inbox_group_by": "string",
+      "inbox_row_layout": "string",
+      "inbox_sort_by": "string",
+      "inbox_sort_dir": "string",
       "language": "string",
       "maps": "string",
       "method_mode": "string",
@@ -3390,8 +3482,18 @@
       "today_assignees": "string",
       "today_done": "string",
       "today_events": "string",
+      "today_group_by": "string",
       "today_limit": "number",
+      "today_row_layout": "string",
+      "today_sort_by": "string",
+      "today_sort_dir": "string",
+      "today_subtasks": "string",
       "upcoming_events": "string",
+      "upcoming_later": "string",
+      "upcoming_row_layout": "string",
+      "upcoming_sort_by": "string",
+      "upcoming_sort_dir": "string",
+      "upcoming_subtasks": "string",
       "upcoming_today": "string",
       "week_start": "string",
       "welcome": "string"
@@ -3878,7 +3980,12 @@
         "appPasswords[].id": "string",
         "appPasswords[].lastUsedAt": "number|null",
         "appPasswords[].name": "string",
-        "appPasswords[].revokedAt": "number|null"
+        "appPasswords[].revokedAt": "number|null",
+        "appPasswords[].scope": "object",
+        "appPasswords[].scope.inboxes": "array",
+        "appPasswords[].scope.mode": "string",
+        "appPasswords[].scope.projects": "array",
+        "appPasswords[].scope.workspaces": "array"
       },
       "statuses": [
         "200"
@@ -4267,6 +4374,11 @@
         "connections[].password_set": "boolean",
         "connections[].provider": "string",
         "connections[].read": "array",
+        "connections[].scope": "object",
+        "connections[].scope.inboxes": "array",
+        "connections[].scope.mode": "string",
+        "connections[].scope.projects": "array",
+        "connections[].scope.workspaces": "array",
         "connections[].server_url": "string",
         "connections[].state": "string",
         "connections[].stopped_reason": "string",
@@ -4330,6 +4442,7 @@
         "encryption.wrappedByRecovery": "string",
         "exportedAt": "string",
         "format": "string",
+        "memory": "array",
         "places": "array",
         "project_prefs": "array",
         "review": "array",
@@ -4924,6 +5037,7 @@
         "proposals[].list[].side.mail.RunID": "string",
         "proposals[].list[].side.mail.Subject": "string",
         "proposals[].list[].side.mail.Text": "string",
+        "proposals[].list[].side.members": "array",
         "proposals[].list[].side.notice": "object|null",
         "proposals[].list[].side.notice.at": "number",
         "proposals[].list[].side.notice.ruleId": "string",
@@ -4932,6 +5046,7 @@
         "proposals[].list[].side.notice.stepId": "string",
         "proposals[].list[].side.notice.taskId": "string",
         "proposals[].list[].side.notice.text": "string",
+        "proposals[].list[].side.project": "string",
         "proposals[].rule_id": "string",
         "proposals[].run_id": "string",
         "proposals[].skipped": "number",
@@ -4982,6 +5097,7 @@
         "list[].side.mail.RunID": "string",
         "list[].side.mail.Subject": "string",
         "list[].side.mail.Text": "string",
+        "list[].side.members": "array",
         "list[].side.notice": "object|null",
         "list[].side.notice.at": "number",
         "list[].side.notice.ruleId": "string",
@@ -4990,6 +5106,7 @@
         "list[].side.notice.stepId": "string",
         "list[].side.notice.taskId": "string",
         "list[].side.notice.text": "string",
+        "list[].side.project": "string",
         "rule_id": "string",
         "run_id": "string",
         "skipped": "number",
@@ -5056,6 +5173,7 @@
         "runs[].proposal.list[].side.mail.RunID": "string",
         "runs[].proposal.list[].side.mail.Subject": "string",
         "runs[].proposal.list[].side.mail.Text": "string",
+        "runs[].proposal.list[].side.members": "array",
         "runs[].proposal.list[].side.notice": "object|null",
         "runs[].proposal.list[].side.notice.at": "number",
         "runs[].proposal.list[].side.notice.ruleId": "string",
@@ -5064,6 +5182,7 @@
         "runs[].proposal.list[].side.notice.stepId": "string",
         "runs[].proposal.list[].side.notice.taskId": "string",
         "runs[].proposal.list[].side.notice.text": "string",
+        "runs[].proposal.list[].side.project": "string",
         "runs[].proposal.rule_id": "string",
         "runs[].proposal.run_id": "string",
         "runs[].proposal.skipped": "number",
@@ -5603,6 +5722,16 @@
         "task_id": "id"
       }
     },
+    "GET /api/v1/routine-emails/{token}": {
+      "policy": "public",
+      "response": {
+        "routine": "string",
+        "stopped": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/rules": {
       "policy": "signed-in",
       "statuses": [
@@ -5689,6 +5818,7 @@
         "runs[].proposal.list[].side.mail.RunID": "string",
         "runs[].proposal.list[].side.mail.Subject": "string",
         "runs[].proposal.list[].side.mail.Text": "string",
+        "runs[].proposal.list[].side.members": "array",
         "runs[].proposal.list[].side.notice": "object|null",
         "runs[].proposal.list[].side.notice.at": "number",
         "runs[].proposal.list[].side.notice.ruleId": "string",
@@ -5697,6 +5827,7 @@
         "runs[].proposal.list[].side.notice.stepId": "string",
         "runs[].proposal.list[].side.notice.taskId": "string",
         "runs[].proposal.list[].side.notice.text": "string",
+        "runs[].proposal.list[].side.project": "string",
         "runs[].proposal.rule_id": "string",
         "runs[].proposal.run_id": "string",
         "runs[].proposal.skipped": "number",
@@ -5781,6 +5912,7 @@
         "proposal.list[].side.mail.RunID": "string",
         "proposal.list[].side.mail.Subject": "string",
         "proposal.list[].side.mail.Text": "string",
+        "proposal.list[].side.members": "array",
         "proposal.list[].side.notice": "object|null",
         "proposal.list[].side.notice.at": "number",
         "proposal.list[].side.notice.ruleId": "string",
@@ -5789,6 +5921,7 @@
         "proposal.list[].side.notice.stepId": "string",
         "proposal.list[].side.notice.taskId": "string",
         "proposal.list[].side.notice.text": "string",
+        "proposal.list[].side.project": "string",
         "proposal.rule_id": "string",
         "proposal.run_id": "string",
         "proposal.skipped": "number",
@@ -6710,6 +6843,32 @@
         "200"
       ]
     },
+    "PATCH /api/v1/app-passwords/{id}": {
+      "policy": "signed-in.credential.recent",
+      "request": {
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array"
+      },
+      "response": {
+        "appPassword": "object|null",
+        "appPassword.createdAt": "number",
+        "appPassword.id": "string",
+        "appPassword.lastUsedAt": "number|null",
+        "appPassword.name": "string",
+        "appPassword.revokedAt": "number|null",
+        "appPassword.scope": "object",
+        "appPassword.scope.inboxes": "array",
+        "appPassword.scope.mode": "string",
+        "appPassword.scope.projects": "array",
+        "appPassword.scope.workspaces": "array"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "PATCH /api/v1/attachments/{id}": {
       "policy": "signed-in",
       "request": {
@@ -6758,6 +6917,11 @@
         "name": "string|null?",
         "password": "string|null?",
         "read": "array?",
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array",
         "target": "string|null?"
       },
       "response": {
@@ -6791,6 +6955,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",
@@ -7506,7 +7675,12 @@
     "POST /api/v1/app-passwords": {
       "policy": "signed-in.credential.recent",
       "request": {
-        "name": "string"
+        "name": "string",
+        "scope": "object|null?",
+        "scope.inboxes": "array",
+        "scope.mode": "string",
+        "scope.projects": "array",
+        "scope.workspaces": "array"
       },
       "response": {
         "appPassword": "object|null",
@@ -7515,6 +7689,11 @@
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
         "appPassword.revokedAt": "number|null",
+        "appPassword.scope": "object",
+        "appPassword.scope.inboxes": "array",
+        "appPassword.scope.mode": "string",
+        "appPassword.scope.projects": "array",
+        "appPassword.scope.workspaces": "array",
         "secret": "string"
       },
       "statuses": [
@@ -7539,6 +7718,8 @@
         "errors[].step": "string",
         "note": "string",
         "usage": "object",
+        "usage.cache_write": "number",
+        "usage.cached": "number",
         "usage.cap": "number",
         "usage.input": "number",
         "usage.month_total": "number",
@@ -7933,6 +8114,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",
@@ -7974,6 +8160,11 @@
         "connection.password_set": "boolean",
         "connection.provider": "string",
         "connection.read": "array",
+        "connection.scope": "object",
+        "connection.scope.inboxes": "array",
+        "connection.scope.mode": "string",
+        "connection.scope.projects": "array",
+        "connection.scope.workspaces": "array",
         "connection.server_url": "string",
         "connection.state": "string",
         "connection.stopped_reason": "string",
@@ -8702,6 +8893,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -8710,6 +8902,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -8839,6 +9032,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -8847,6 +9041,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -9431,6 +9626,16 @@
         "task_id": "id"
       }
     },
+    "POST /api/v1/routine-emails/{token}/stop": {
+      "policy": "public",
+      "response": {
+        "routine": "string",
+        "stopped": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "POST /api/v1/rules": {
       "policy": "signed-in",
       "response": {
@@ -9449,7 +9654,8 @@
         "project_id": "string",
         "steps": "string",
         "task_id": "string",
-        "trigger": "string"
+        "trigger": "string",
+        "workspace_id": "string"
       },
       "response": {
         "device_run": "object|null",
@@ -9514,6 +9720,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -9522,6 +9729,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",
@@ -9652,6 +9860,7 @@
         "run.proposal.list[].side.mail.RunID": "string",
         "run.proposal.list[].side.mail.Subject": "string",
         "run.proposal.list[].side.mail.Text": "string",
+        "run.proposal.list[].side.members": "array",
         "run.proposal.list[].side.notice": "object|null",
         "run.proposal.list[].side.notice.at": "number",
         "run.proposal.list[].side.notice.ruleId": "string",
@@ -9660,6 +9869,7 @@
         "run.proposal.list[].side.notice.stepId": "string",
         "run.proposal.list[].side.notice.taskId": "string",
         "run.proposal.list[].side.notice.text": "string",
+        "run.proposal.list[].side.project": "string",
         "run.proposal.rule_id": "string",
         "run.proposal.run_id": "string",
         "run.proposal.skipped": "number",

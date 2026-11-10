@@ -17,6 +17,7 @@ import {
   nextBuildNumber,
   normalizeKey,
   prepareSigning,
+  retireOldestCertificate,
   register,
   registerReport,
   setWhatToTest,
@@ -297,4 +298,49 @@ test('the certificate outlives Apple\'s processing: wait for VALID, fail on INVA
   const warned = []
   assert.equal(await waitForProcessing(slow.call, { version: '1.2.0', build: '10200', attempts: 3, pause: async () => {}, log: (l, m) => warned.push(l) }), null)
   assert.deepEqual(warned, ['warning'])
+})
+
+test('at the certificate limit, sign retires the oldest certificate of an earlier run and tries again', async () => {
+  const dir = signingDir()
+  let tries = 0
+  const revoked = []
+  const removed = []
+  const profile = (id, name, cert, created) => ({ type: 'profiles', id, attributes: { name, createdDate: created }, relationships: { certificates: { data: [{ type: 'certificates', id: cert }] } } })
+  const { call } = fakeAsc({
+    'GET /v1/bundleIds': (u) => [200, { data: [bundle(`B-${u.searchParams.get('filter[identifier]')}`, u.searchParams.get('filter[identifier]'))] }],
+    'POST /v1/certificates': () => (++tries === 1
+      ? [409, { errors: [{ code: 'ENTITY_ERROR', detail: 'You already have a current Distribution certificate or a pending certificate request.' }] }]
+      : [201, { data: { id: 'C9', attributes: { certificateContent: Buffer.from('DER').toString('base64') } } }]),
+    'GET /v1/profiles': () => [200, { data: [
+      profile('Pnew', 'OpenTodo CI app.open-todo.ios 7.1', 'Cnew', '2026-11-08T10:00:00Z'),
+      profile('Pold1', 'OpenTodo CI app.open-todo.ios 3.1', 'Cold', '2026-11-01T10:00:00Z'),
+      profile('Pold2', 'OpenTodo CI app.open-todo.ios.share 3.1', 'Cold', '2026-11-01T10:00:01Z'),
+      profile('Phand', 'My own profile', 'Chand', '2025-01-01T00:00:00Z'),
+    ] }],
+    'DELETE /v1/certificates/Cold': () => (revoked.push('Cold'), [204, null]),
+    'DELETE /v1/profiles/Pold1': () => (removed.push('Pold1'), [204, null]),
+    'DELETE /v1/profiles/Pold2': () => [404, { errors: [{ code: 'NOT_FOUND', detail: 'gone with its certificate' }] }],
+    'POST /v1/profiles': (_, body) => {
+      const identifier = body.data.relationships.bundleId.data.id.slice(2)
+      assert.ok(body.data.attributes.name.startsWith('OpenTodo CI '))
+      const xml = `<plist><string>${APP_GROUP}</string><string>${identifier}</string></plist>`
+      return [201, { data: { id: `N-${identifier}`, attributes: { uuid: `uuid-${identifier}`, profileContent: Buffer.from(xml).toString('base64') } } }]
+    },
+  })
+  const res = await prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} })
+  assert.equal(res.certificateId, 'C9')
+  assert.equal(tries, 2)
+  assert.deepEqual(revoked, ['Cold'], 'the oldest certificate of an earlier run, never the one made by hand')
+  assert.deepEqual(removed, ['Pold1'])
+})
+
+test('at the certificate limit with no certificate of an earlier run, sign stops and says what to do', async () => {
+  const dir = signingDir()
+  const { call, calls } = fakeAsc({
+    'POST /v1/certificates': () => [409, { errors: [{ code: 'ENTITY_ERROR', detail: 'limit reached' }] }],
+    'GET /v1/profiles': () => [200, { data: [{ type: 'profiles', id: 'Phand', attributes: { name: 'My own profile', createdDate: '2025-01-01T00:00:00Z' }, relationships: { certificates: { data: [{ type: 'certificates', id: 'Chand' }] } } }] }],
+  })
+  await assert.rejects(prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} }), /none of them was made by this workflow: revoke an unused one/)
+  assert.ok(!calls.some((c) => c.key.startsWith('DELETE')), 'nothing is revoked')
+  assert.equal(await retireOldestCertificate(call, { log: () => {} }), null)
 })

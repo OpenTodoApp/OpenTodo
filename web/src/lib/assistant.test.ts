@@ -85,6 +85,8 @@ describe('words', () => {
     expect(usageLine({ input: 1000, output: 240, month_total: 90_000, cap: 500_000 })).toBe('1,240 tokens · this month 18% of your limit')
     expect(usageLine({ input: 1000, output: 240, month_total: 0, cap: 0, own_key: true })).toBe('1,240 tokens · your key')
     expect(usageLine({ input: 1, output: 1 })).toBe('2 tokens')
+    expect(usageLine({ input: 2000, cached: 18000, output: 300 })).toBe('20,300 tokens, 18,000 from cache')
+    expect(usageLine({ input: 2000, cached: 0, cache_write: 500, output: 300 })).toBe('2,800 tokens')
   })
   it('describes each change in words', () => {
     const names = { projects: new Map([['g', 'Garden']]), labels: new Map([['l1', 'errand']]), sections: new Map(), tasks: new Map() }

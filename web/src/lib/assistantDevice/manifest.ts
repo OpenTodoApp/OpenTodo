@@ -6,7 +6,8 @@ import data from './manifest.json'
 
 export interface ManifestTool {
   name: string
-  kind: 'read' | 'write'
+  /** display: a block in the answer (assistant-generative-ui D1); it changes nothing. */
+  kind: 'read' | 'write' | 'display' | 'proposal' | 'memory'
   description: string
   input_schema: Record<string, unknown>
   strict_schema: Record<string, unknown>
@@ -33,13 +34,22 @@ export interface Manifest {
   /** Introduces a message's photos (voice-ramble D8). */
   images_note: string
   views: Record<string, string>
-  messages: { refusal: string; cut_off: string; round_limit: string }
-  limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number }
+  messages: { refusal: string; cut_off: string; round_limit: string; block_limit: string; not_found: string; choice_asked: string
+    followups_shown: string; followups_once: string; followups_choice: string }
+  limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number; max_blocks: number; max_block_ids: number }
   default_anthropic_model: string
   anthropic_models: string[]
   endpoints: Record<'anthropic' | 'openai' | 'gemini', string>
   tools: ManifestTool[]
   skills: ManifestSkill[]
+  /** The display tools each view suggests to a skill turn (assistant-project-blocks D2). */
+  view_display: Record<string, string[]>
+  /** The display tools every turn offers, a skill's included (assistant-followups). */
+  always_display: string[]
+  /** Amending an open proposal (assistant-proposal-editing D3): the note, the most items and drop_from_proposal. */
+  open_proposal: { note: string; max_items: number; tool: ManifestTool }
+  /** Memory (assistant-memory D2, D3): the note, the limits, remember's messages and the tool. */
+  memory: { note: string; max_items: number; max_text: number; messages: { full: string; duplicate: string; invalid: string; proposed: string; unavailable: string }; tool: ManifestTool }
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

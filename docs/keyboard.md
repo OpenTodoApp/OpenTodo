@@ -57,6 +57,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+Enter</kbd> | In quick add: write notes under the title; Enter adds the task with them |
 | <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: apply the checked changes / discard the proposal; Space toggles an item |
+| <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> | Proposed item in a calendar: in a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |
 | <kbd>.</kbd> / <kbd>Shift+F10</kbd> / <kbd>Menu</kbd> | Open the menu of the focused row: a label, view, section heading or project |
 | <kbd>F2</kbd> | Focused label: rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom |
@@ -123,7 +124,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Drag</kbd> (touch: drag the row's grip, or press and hold the row, then move) | Reorder tasks in project lists, boards and the Inbox, and projects in the sidebar; drop on the middle of a row to nest it; Esc cancels |
 | <kbd>Swipe</kbd> then <kbd>a</kbd> then <kbd>task</kbd> | Touch: right completes, left schedules; the same two actions start the task's menu |
 | <kbd>Press</kbd> then <kbd>and</kbd> then <kbd>hold</kbd> then <kbd>the</kbd> then <kbd>grip</kbd> | Touch: tick the task and show every checkbox (a tap on the grip at the row's edge does the same); Select tasks in the page menu does the same, Close hides them |
-| Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no drag or Alt moves there |
+| Today, Upcoming, Assigned, Completed, labels, filters | Sorted by date (or their own rule): no Alt moves there; in Upcoming, drag a task onto another day to move it |
 | <kbd>→</kbd> | Show the details of the selected task under its row (unfold its subtasks first when they are folded), or the sub-projects of the focused sidebar project |
 | <kbd>←</kbd> | Hide the details of the selected task, else fold its subtasks (or go to its parent), or the sub-projects of the focused sidebar project |
 | <kbd>p</kbd> | In the Inbox: process its tasks one at a time |
@@ -248,11 +249,12 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | Keys | What it does |
 | --- | --- |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>s</kbd> | Group by section (in a project) |
-| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>j</kbd> | Group by project (on a label page or in a saved view) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>j</kbd> | Group by project (on a label page, in a saved view or on Today) |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>n</kbd> | No grouping |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>d</kbd> | Group by due date |
 | <kbd>r</kbd> then <kbd>g</kbd> then <kbd>p</kbd> | Group by priority |
-| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>l</kbd> | Group by label (in a project or a saved view) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>l</kbd> | Group by label (in a project, a saved view, Today or the Inbox) |
+| <kbd>r</kbd> then <kbd>g</kbd> then <kbd>t</kbd> | Group by time of day (on Today) |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>m</kbd> | Order by manual order |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>p</kbd> | Order by priority |
 | <kbd>r</kbd> then <kbd>o</kbd> then <kbd>d</kbd> | Order by due date |
@@ -309,6 +311,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
+| <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note |
 
 ### Routine editor
 
@@ -325,8 +328,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>[</kbd> | Weekly review: the previous step |
-| <kbd>]</kbd> | Weekly review: the next step |
+| <kbd>[</kbd> | Weekly review and Close the day: the previous step |
+| <kbd>]</kbd> | Weekly review and Close the day: the next step |
 | <kbd>r</kbd> | Project walk: mark the project reviewed, then the next one |
 | <kbd>q</kbd> | Project walk: add a next action to the project |
 | <kbd>Enter</kbd> | Project walk: open the project |
@@ -336,11 +339,16 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
 | <kbd>k</kbd> | Project walk: back to the previous project |
 | <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |
-| <kbd>t</kbd> | Close the day: carry the task on the card over to tomorrow |
-| <kbd>p</kbd> | Close the day: pick a day for the task on the card |
-| <kbd>y</kbd> | Close the day: move the task on the card to Someday |
-| <kbd>h</kbd> | Close the day: keep the task on the card in Today |
-| <kbd>d</kbd> | Close the day: the task on the card was done already (completed with the carry-over) |
+| <kbd>Enter</kbd> | Close the day: the next step; on the last step, close the day |
+| <kbd>Esc</kbd> | Close the day: leave without writing anything |
+| <kbd>j</kbd> | Close the day, What moves: the next row |
+| <kbd>k</kbd> | Close the day, What moves: the previous row |
+| <kbd>t</kbd> | Close the day, What moves: the current row moves to tomorrow |
+| <kbd>p</kbd> | Close the day, What moves: pick a later day for the current row |
+| <kbd>y</kbd> | Close the day, What moves: the current row moves to Someday |
+| <kbd>h</kbd> | Close the day, What moves: keep the current row in Today |
+| <kbd>d</kbd> | Close the day, What moves: the current row was done already (completed with the close) |
+| <kbd>Shift+T</kbd> | Close the day, What moves: every row to tomorrow |
 
 ### Display mode
 

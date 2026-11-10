@@ -26,7 +26,7 @@ Due date groups read *Earlier*, *Today*, *Tomorrow*, later dates and *No date*. 
 
 Number and Date fields also appear in **Order by**. Same-named fields match across a label's projects without regard to case. When types differ, numbers precede dates and text in either direction; direction reverses values within each type and missing values stay last. Text fields from other projects take part too.
 
-Subtasks stay under their parent in the order you gave them, also in **Later**: when a task is deferred or parked, its subtasks move there with it. A project's **Later** and **Completed** groups stay at the end.
+Subtasks stay under their parent, also in **Later**, where deferred and parked tasks go: by section, a folded line at the end of each section; otherwise one group at the end, before **Completed**.
 
 A new task goes at the end of manual order, or at the top if **Add new tasks: At the top of the list** is set in Settings → Capture → Quick add (see [Where new tasks go](quick-add.md#where-new-tasks-go)). Other orders place it by their value; the setting breaks ties.
 
@@ -48,4 +48,4 @@ A label page and a [saved view](saved-views.md) keep their **own** manual order.
 - Tasks you never moved follow the ones you placed, in project order, so a new task appears after them.
 - The order is kept for up to 500 tasks per page, follows you to your other devices and works offline. If you reorder a page on two devices offline, the last device to sync wins.
 
-Today, Upcoming, Anytime, Someday, Assigned to me, Completed and places have fixed orders. **New view** offers Manual order after the view is saved.
+Anytime, Someday, Assigned to me, Completed and places have fixed orders; Today, Upcoming and the Inbox have [their own options](arrange-built-in-views.md). **New view** offers Manual order after the view is saved.

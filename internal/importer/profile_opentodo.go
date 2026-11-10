@@ -61,6 +61,8 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		// Objectives are the account's quarterly and weekly objectives
 		// (plan-objectives D7), tombstones included.
 		Objectives []map[string]json.RawMessage `json:"objectives"`
+		// Memory is what the assistant remembers (assistant-memory D1), tombstones included.
+		Memory []map[string]json.RawMessage `json:"memory"`
 		// UserID is the exporting account.
 		UserID string `json:"userId"`
 		// UserPrefs is the exporting account's date and time preferences row
@@ -155,6 +157,7 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 	add(KindRule, "name", doc.Rules)
 	add(KindTheme, "", doc.Themes)
 	add(KindObjective, "title", doc.Objectives)
+	add(KindMemory, "text", doc.Memory)
 	add(KindUserPrefs, "", doc.UserPrefs)
 	add(KindReview, "", doc.Review)
 	add(KindProjectPrefs, "", doc.ProjectPrefs)

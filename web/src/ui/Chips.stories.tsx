@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { LabelChip, LabelChips, NeutralChip, ToneText, type Tone } from './Chips'
+import { HUES, type HueName } from './tokens/palette'
 
 // The metadata language (OpenSpec change ux-overhaul, task-list-presentation
 // "Metadata language"): three styles only, in the metadata size with tabular
@@ -9,6 +10,7 @@ const meta: Meta = { title: 'UI/Chips' }
 export default meta
 
 const TONES: Tone[] = ['muted', 'faint', 'accent', 'danger', 'warning', 'success', 'violet', 'indigo']
+const paletteColour = (name: HueName) => HUES.find((hue) => hue.name === name)!.hex
 
 export const Tones: StoryObj = {
   render: () => (
@@ -27,18 +29,17 @@ export const Chips: StoryObj = {
       <NeutralChip icon="message-circle">3</NeutralChip>
       <NeutralChip icon="paperclip">1</NeutralChip>
       <NeutralChip dot="var(--ot-hue-blue-solid)">Website launch</NeutralChip>
-      <LabelChip name="errand" color="var(--ot-hue-green-solid)" />
-      <LabelChip name="call" color="var(--ot-hue-violet-solid)" onRemove={() => {}} />
+      <LabelChip name="errand" color={paletteColour('green')} />
+      <LabelChip name="call" color={paletteColour('violet')} onRemove={() => {}} />
     </div>
   ),
 }
 
-// Calm rows' labels (calm-rows D6): dots, the first name and "+n"; the group takes
-// focus and shows every name in a tooltip only when names are hidden.
-const ERRAND = { id: 'l1', name: 'errand', color: 'var(--ot-hue-green-solid)' }
-const CALL = { id: 'l2', name: 'call', color: 'var(--ot-hue-violet-solid)' }
-const HOME = { id: 'l3', name: 'home', color: 'var(--ot-hue-blue-solid)' }
-const DEEP = { id: 'l4', name: 'deep work', color: 'var(--ot-hue-orange-solid)' }
+// The group takes focus and shows every name in a tooltip when names are hidden.
+const ERRAND = { id: 'l1', name: 'errand', color: paletteColour('green') }
+const CALL = { id: 'l2', name: 'call', color: paletteColour('violet') }
+const HOME = { id: 'l3', name: 'home', color: paletteColour('blue') }
+const DEEP = { id: 'l4', name: 'deep work', color: paletteColour('orange') }
 
 export const LabelChipsVariants: StoryObj = {
   render: () => (

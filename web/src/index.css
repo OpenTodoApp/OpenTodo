@@ -119,6 +119,8 @@
   --text-prose: var(--ot-text-prose); --text-prose--line-height: 1.5rem;
   /* Headings and the display step (tokens-v2 D7): weight 600, tighter tracking as the size grows. */
   --text-h3: var(--ot-text-h3); --text-h3--line-height: 1.25rem; --text-h3--font-weight: 600;
+  /* The title step (sidebar-brand-and-row-grid D5): the docked task panel's title, between the section heading and the page's. */
+  --text-title: 1rem; --text-title--line-height: 1.5rem; --text-title--font-weight: 600; --text-title--letter-spacing: -0.005em;
   --text-h2: 1.25rem; --text-h2--line-height: 1.75rem; --text-h2--font-weight: 600; --text-h2--letter-spacing: -0.01em;
   --text-h1: 1.375rem; --text-h1--line-height: 1.75rem; --text-h1--font-weight: 600; --text-h1--letter-spacing: -0.015em;
   --text-display: 1.75rem; --text-display--line-height: 2.125rem; --text-display--font-weight: 650; --text-display--letter-spacing: -0.025em;
@@ -754,7 +756,10 @@ body {
 @layer base {
   @media (pointer: coarse) {
     input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
-    textarea, select, [contenteditable]:not([contenteditable="false"]) {
+    textarea, select, [contenteditable]:not([contenteditable="false"]),
+    /* The copies of quick add's text behind its fields (QuickAddTint, the notes sizer)
+       wrap and tint the same text, so they take the same size (GitHub issue 1051). */
+    [data-quick-add-tints], .quick-add-notes-sizer {
       --ot-text-hint: 16px; --ot-text-meta: 16px; --ot-text-list: 16px;
       --ot-text-prose: 16px; --ot-text-h3: 16px;
       font-size: max(16px, 1em);
@@ -772,6 +777,12 @@ body {
    and an overlay. Dark pairs a border with the elevation, which does not read on a
    dark canvas on its own. */
 .surface-row { @apply rounded-chip hover:bg-hover; }
+/* The quick add's line field (quick-add-field-surface): a filled input surface with a resting
+   hairline, because the dark fill alone is about 1.03:1 on the surface. The sunken and surface
+   tokens are one colour in the high-contrast presentation, so it gets a stronger border there. */
+.quick-add-surface { @apply rounded-control border border-soft bg-sunken px-3 py-1.5 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/30; }
+.quick-add-surface:has(:disabled) { @apply opacity-60; }
+html:root[data-contrast="high"] .quick-add-surface:not(:focus-within) { @apply border-default; }
 .surface-card { @apply rounded-card border border-default bg-surface; }
 .surface-overlay { @apply rounded-popover border border-strong bg-pop shadow-3; }
 /* Shared Button (src/ui/Button.tsx, OpenSpec change ui-primitives D3): the same
@@ -858,7 +869,7 @@ select.ui-input:not([multiple]) {
 }
 .notes-editor li.task-item[data-checked="true"] > p { @apply text-faint line-through; }
 .notes-editor code { @apply rounded-chip bg-sunken px-1 font-mono text-meta; }
-.notes-editor a { @apply text-accent underline; }
+.notes-editor a:not(.note-ref) { @apply text-accent underline; }
 .notes-editor .ProseMirror-gapcursor { @apply hidden; }
 .notes-editor .ProseMirror-hideselection *::selection { background: transparent; }
 /* editor-everywhere: quotes, code blocks, tables (scrolling in their own box), images, mentions. */
@@ -876,9 +887,55 @@ select.ui-input:not([multiple]) {
 /* group-mentions D4: a group reads as the same chip with an outline (and the group icon where rendered). */
 .mention[data-mention^="group:"], .mention-chip--group { @apply font-medium ring-1 ring-inset ring-focus; }
 .mention-chip--group svg { display: inline; vertical-align: -0.125em; margin-right: 0.125rem; }
+/* note-links D2, D4: an internal link reads as a quiet reference (icon and current
+   title in the accent tone, underlined only on hover); a done task's is struck
+   through; one the reader cannot open is muted text with no hover. */
+.note-ref { @apply inline-flex max-w-full items-baseline gap-0.5 rounded-chip px-0.5 text-accent no-underline transition-colors duration-(--duration-ui) ease-calm; }
+.note-ref svg { @apply shrink-0 self-center; }
+a.note-ref:hover { @apply bg-accent-soft underline; }
+a.note-ref:focus-visible { @apply outline-2 outline-focus; }
+.note-ref[data-ref-state="done"] { @apply text-muted line-through; }
+.note-ref[data-ref-state="muted"] { @apply cursor-default text-muted; }
+.notes-editor .note-ref { @apply align-baseline; }
+/* Linked references (note-links D5): a calm section at the end, rows without boxes. */
+.linked-refs { @apply mt-6 space-y-1; }
+.linked-refs[data-folded] { @apply -mx-2 mt-0 mb-3; }
+.linked-refs__head { @apply flex items-center gap-1.5 px-2 text-meta font-medium text-muted; }
+.linked-refs__toggle { @apply -mx-0 min-h-8 rounded-control hover:bg-sunken hover:text-default dark:hover:bg-raised; }
+.linked-ref { @apply block min-w-0 space-y-0.5 rounded-control px-2 py-1.5 no-underline transition-colors duration-(--duration-ui) ease-calm hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised; }
+.linked-ref__link { @apply rounded-chip bg-accent-soft px-0.5 text-accent; }
 .issue-chip { @apply inline-flex items-center gap-1 rounded-chip border border-default bg-sunken px-1 font-mono text-meta text-default no-underline; }
 .slash-menu { @apply z-50 w-64 max-w-[calc(100vw-2rem)] rounded-control border border-default bg-surface p-1 shadow-3 dark:bg-raised; }
 .slash-menu [aria-selected="true"] { @apply bg-accent-soft text-strong; }
+/* The `[[` picker (note-links D3): a little wider, its rows grouped by kind under quiet headings. */
+.slash-menu.link-menu { @apply w-80; }
+.link-menu__group { @apply px-2 pt-2 pb-0.5 text-meta font-medium text-faint first:pt-1; }
+/* The Connections dialog (notes-graph D2, D4): edges thin and quiet in the border colour,
+   nodes small pills (the centre larger, in the accent); the node with focus or the pointer
+   and its edges take the accent. Nothing moves at rest: nodes glide only when the centre
+   changes and the edges fade in after them; reduced motion makes both immediate. */
+.connections-area { @apply relative h-[calc(100dvh-6.5rem)] w-full sm:h-[30rem]; }
+.connections-graph { @apply relative mx-auto; }
+.connections-graph__edges { @apply pointer-events-none absolute inset-0 overflow-visible; }
+.connections-graph__edge { stroke: var(--ot-line-strong); stroke-width: 1; transition: stroke var(--duration-ui) var(--ease-calm); }
+.connections-graph__edge[data-hot] { stroke: var(--ot-accent); stroke-width: 1.5; }
+.connections-graph--moved .connections-graph__edges { animation: row-fade-in var(--duration-ui) var(--ease-calm) var(--duration-emphasis) both; }
+.connections-node { @apply absolute top-0 left-0 inline-flex items-center justify-center gap-1.5 rounded-full border border-default bg-surface px-2.5 text-meta text-default transition-[transform,border-color,color] duration-(--duration-emphasis) ease-calm hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus; }
+.connections-node > svg { @apply text-muted; }
+.connections-node[data-hot] { @apply z-10 border-accent text-strong; }
+.connections-node--centre { @apply border-accent bg-accent-soft px-3 text-body font-semibold text-strong; }
+.connections-node--centre > svg { @apply text-accent; }
+.connections-node--compact { @apply px-0; }
+.connections-node__label { @apply min-w-0 truncate; }
+.connections-node--done .connections-node__label { @apply text-muted line-through; }
+.connections-node__tip { @apply pointer-events-none absolute top-full left-1/2 mt-1 hidden max-w-60 -translate-x-1/2 truncate rounded-chip border border-default bg-surface px-1.5 py-0.5 text-meta font-normal text-strong; }
+.connections-node:hover .connections-node__tip, .connections-node:focus-visible .connections-node__tip { @apply block; }
+.connections-graph__more { @apply pointer-events-none absolute top-0 left-0 inline-flex items-center justify-center text-meta text-faint tabular-nums; }
+@media (forced-colors: active) {
+  .connections-graph__edge { stroke: CanvasText; }
+  .connections-graph__edge[data-hot] { stroke: Highlight; }
+  .connections-node[data-hot], .connections-node--centre { border-color: Highlight; }
+}
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 /* The Formatting toggle on a computer (notes-toolbar-desktop D2): at the note's top
    end corner, over end padding of the first block (and of the row), so text never
@@ -961,6 +1018,13 @@ html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { backg
   background: color-mix(in oklab, var(--hue-soft) 40%, transparent);
   border-top-color: color-mix(in oklab, var(--hue-solid) 35%, transparent);
 }
+/* A coloured section's header (section-tint): the frame band's recipe, the soft step
+   mixed towards the surface, at 50 % so every text tone keeps AA on it in every theme.
+   Opaque, so it reads the same on the list and on a board column. Measured as
+   hue-<name>-tint in ui/tokens/pairs.ts (DERIVED_TOKENS). */
+.ui-group-tint {
+  background: color-mix(in oklab, var(--hue-soft) 50%, var(--ot-surface));
+}
 /* An event of Today's agenda that already ended (OpenSpec change today-agenda, D6): dimmed by mixing, never by opacity. */
 .ui-event-past {
   color: var(--ot-faint);
@@ -1025,6 +1089,12 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    preference", precision-tokens D5): comfortable rows are 36 px, compact 32 px. Touch
    targets keep 44 px on coarse pointers through the rules further down. */
 .row-pad { padding-block: 0.5rem; }
+/* The marks beside a row's title (sidebar-brand-and-row-grid D3): the priority, the repeat
+   mark and the counts in one run at the metadata size with 12 px icons. A zero-width
+   character gives the run a text baseline, so it sits on the title's first baseline
+   whatever its first mark is; `clip`, not `hidden`, so it keeps that baseline. */
+.row-marks { display: inline-flex; flex: none; align-items: center; gap: 0.375rem; overflow: clip; font-size: var(--text-meta); line-height: var(--text-meta--line-height); }
+.row-marks::before { content: '\200b'; margin-inline-end: -0.375rem; }
 /* A list row far from the viewport costs no layout or paint (list-rendering-at-scale
    D1): the browser skips it while it stays in the document, so focus, find in page,
    drag and drop and screen readers reach every row. Its last drawn height holds its
@@ -1107,6 +1177,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 :root { --list-scroll-pad: 8rem; }
 /* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap. */
 :root { --add-room: 4.75rem; }
+/* While the selection bar floats over the bottom (no-layout-jump), the content keeps room
+   under its last row for it; adding room at the end never moves a row. */
+#content:has([data-selection-dock]) { padding-bottom: 5rem; }
+/* The phone's add button steps aside while the bar stands in its place: out of sight, out of the tab order and the accessibility tree. */
+[data-app-frame]:has([data-selection-dock]) ~ [data-add-button]:not([aria-expanded="true"]) { visibility: hidden; translate: 0 calc(100% + 6rem); }
 /* Completion feedback (task-list-presentation; motion-v2 D3). The op is written at
    once; the list keeps the row as a departing row (`data-departing`) for the moment:
    0-250 ms the check mark pops, 60-260 ms the strike draws and the text fades to half,
@@ -1180,18 +1255,26 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 .briefing-link { @apply inline cursor-pointer rounded-chip text-inherit underline-offset-2 outline-none hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-1 focus-visible:outline-focus; font: inherit; text-align: inherit; }
 }
 
-/* The property column (precision-rows D1 to D3, task-list-presentation "One row
-   anatomy"). Every list row is its own size container. From 40 rem of row width the
-   open control is a grid: the title with its marks on the left, the column's cells on
-   the right in fixed tracks, so values line up down the list, and the facts the column
-   does not hold on a second line. The column drops cells from its end as the row
-   narrows (assignee and estimate under 56 rem, then the third cell under 48 rem; with
-   no project cell, assignee and estimate under 48 rem); the task panel shows them all.
+/* The property column (precision-rows D1 to D3, sidebar-brand-and-row-grid D2 and D3,
+   task-list-presentation "One row anatomy"). Every list row is its own size container.
+   From 40 rem of row width the open control is a grid: the title with its marks on the
+   left, the column's slots on the right, and the facts the column does not hold on a
+   second line. The slots are, in order, project, labels, estimate, date and assignee,
+   each one kind of fact, the date ending the column. Each slot is one list-wide track
+   (--slot-*, the same in both densities): a slot that is empty on a row keeps its width,
+   and a slot no row of the list uses (`data-slots-off`, decided by the list from its
+   rows) is 0 wide. A slot carries its own lead gap, so a 0-wide slot leaves no gap. The
+   head and the slots align on the title's first baseline. The column drops slots as the
+   row narrows (assignee and estimate under 56 rem, then the labels under 48 rem; with
+   no project slot, assignee and estimate under 48 rem); the task panel shows them all.
    Under 40 rem the wrappers are not boxes and the row keeps its two lines. These rules
    are outside the layers so they win over the line's utility classes. */
 @container row (width < 40rem) {
   [data-row-props] :is([data-date], [data-estimate], [data-progress]) > svg { display: none; }
 }
+/* The deadline is never a slot: it is in the time column or the facts. Its copy in the
+   column's wrapper is the phone row's one cell only (precision-phone D2). */
+[data-row-cell="deadline"] { display: none; }
 /* The title keeps a very narrow row's width (row-title-first-on-phones): the origin at its
    end is its icon, the words stay in the link's name and the task's details. */
 @container row (width < 30rem) {
@@ -1199,9 +1282,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 }
 /* The row's end is one width from 40 rem (GitHub issue 945): every list row has the
    trailing slot, with an origin or empty, so the property column ends at the same
-   place on every row and the date and label cells line up down the list. A longer
-   origin is cut with an ellipsis; its whole text stays in the link's name and the
-   task's details. A detailed row has no column and keeps its end as wide as it is. */
+   place on every row and the slots line up down the list. A longer origin is cut with
+   an ellipsis; its whole text stays in the link's name and the task's details. A
+   detailed row has no column and keeps its end as wide as it is. */
 @container row (width >= 40rem) {
   [data-row-trailing] { flex: none; width: 6rem; }
   [data-row-trailing] > span, [data-row-trailing] [data-origin] { flex-shrink: 1; min-width: 0; max-width: 100%; }
@@ -1210,21 +1293,33 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @container row (width >= 40rem) {
   /* align-content: on touch the open control is at least 44 px tall (the coarse-pointer
      button rule); the lines stay at its top, on the circle's line, not in its middle. */
-  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; align-content: start; column-gap: 0.75rem; row-gap: 0.125rem; }
+  [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: first baseline; align-content: start; column-gap: 0; row-gap: 0.125rem; }
   [data-row-head] { grid-area: 1 / 1; }
   [data-row-meta="row"] { display: contents; }
-  /* On the title's first line, also when the title takes two (task-list-width D1). */
+  /* On the title's first baseline, also when the title takes two (task-list-width D1). */
   [data-row-props] {
-    grid-area: 1 / 2; align-self: start; min-height: 1.25rem; display: grid; align-items: center; column-gap: 0.75rem; white-space: nowrap;
-    grid-template-columns: [date] 5.75rem [extra] 6.875rem [estimate] 4rem [assignee] 1.25rem;
+    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 6.5rem; --slot-assignee: 2rem;
+    grid-area: 1 / 2; display: grid; align-items: baseline; column-gap: 0; white-space: nowrap;
+    grid-template-columns: [project] var(--slot-project) [labels] var(--slot-labels) [estimate] var(--slot-estimate) [date] var(--slot-date) [assignee] var(--slot-assignee);
   }
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem [estimate] 4rem [assignee] 1.25rem; }
-  [data-row-cell] { overflow: hidden; }
-  [data-row-cell="date"] { grid-column: date; }
+  [data-row-props="project"] { --slot-project: 10.125rem; --slot-labels: 6.75rem; }
+  [data-row-props][data-slots-off~="project"] { --slot-project: 0rem; }
+  [data-row-props][data-slots-off~="labels"] { --slot-labels: 0rem; }
+  [data-row-props][data-slots-off~="estimate"] { --slot-estimate: 0rem; }
+  [data-row-props][data-slots-off~="date"] { --slot-date: 0rem; }
+  [data-row-props][data-slots-off~="assignee"] { --slot-assignee: 0rem; }
+  [data-row-cell] { grid-row: 1; overflow: clip; padding-inline-start: 0.75rem; }
+  /* `clip` keeps a cut value's text baseline (a scroll container's is its bottom edge), so every slot sits on the title's baseline. */
+  [data-row-cell] .truncate { overflow: clip; }
+  /* A value that leads with its icon takes its baseline from its text, not from the icon. */
+  [data-row-cell] :is([data-date], [data-estimate]) { align-items: baseline; }
+  [data-row-cell] :is([data-date], [data-estimate]) > svg { align-self: center; }
   [data-row-cell="project"] { grid-column: project; }
-  [data-row-cell="extra"] { grid-column: extra; }
-  [data-row-cell="estimate"] { grid-column: estimate; }
-  [data-row-cell="assignee"] { grid-column: assignee; }
+  [data-row-cell="labels"] { grid-column: labels; }
+  /* Figures and dates end their slots, so the dates of a list form its right edge. */
+  [data-row-cell="estimate"] { grid-column: estimate; justify-content: flex-end; }
+  [data-row-cell="date"] { grid-column: date; justify-content: flex-end; }
+  [data-row-cell="assignee"] { grid-column: assignee; justify-content: flex-end; }
   [data-row-cell] [data-label-chips] { flex-wrap: nowrap; }
   /* The assignee cell shows the avatar; the name stays in the tooltip and is read out. */
   [data-row-cell="assignee"] [data-assignee] > :last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -1237,16 +1332,16 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
      at about 100 characters before its two lines end, whatever room the column leaves. */
   [data-row-title] { max-width: 48rem; }
   /* The Inbox's source line, in the column's place: on the title's first line too. */
-  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; }
+  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; }
 }
 @container row (40rem <= width < 48rem) {
-  [data-row-props] { grid-template-columns: [date] 5.75rem [extra] 6.875rem; }
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem; }
-  [data-row-props="project"] > [data-row-cell="extra"] { display: none; }
+  [data-row-props] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
+  [data-row-props="project"] { --slot-labels: 0rem; }
+  [data-row-props="project"] > [data-row-cell="labels"] { display: none; }
   [data-row-cell="estimate"], [data-row-cell="assignee"] { display: none; }
 }
 @container row (48rem <= width < 56rem) {
-  [data-row-props="project"] { grid-template-columns: [date] 5.75rem [project] 9.375rem [extra] 6rem; }
+  [data-row-props="project"] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
   [data-row-props="project"] > :is([data-row-cell="estimate"], [data-row-cell="assignee"]) { display: none; }
 }
 /* The phone row (precision-phone D2, task-list-presentation "Phone rows"): below 768 px
@@ -1257,8 +1352,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
    no row padding adds to its 44 px minimum; the slots before it sit on the title's first
    line, also when a second line (the Inbox's source) follows. The time column shows
-   only where a row has a time, and the counts stay off the line. */
-@media (width < 48rem) {
+   only where a row has a time, and the counts stay off the line. Screens only: a printed
+   page is narrower than 768 px too, and keeps the column (print-lists). */
+@media screen and (width < 48rem) {
   .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
   .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
   .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }
@@ -1273,6 +1369,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-meta="row"] { display: contents; }
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
+    [data-row-props] > [data-row-cell="deadline"][data-row-phone] { display: inline-flex; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
     /* The title comes first (row-title-first-on-phones): the origin is left to the row's
        details and the task page, and the Inbox's source line is the second line, never a
@@ -1292,7 +1389,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    it wins at every width. On the phone row the cell at the end stays on the title's
    first line rather than in the middle of a tall title. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
-@media (width < 48rem) {
+@media screen and (width < 48rem) {
   @container row (width < 40rem) {
     :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
   }
@@ -1305,7 +1402,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @container row (width >= 40rem) {
   [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
 }
-@media (width < 48rem) {
+@media screen and (width < 48rem) {
   @container row (width < 40rem) {
     [data-row-layout="detailed"] [data-row-open] { display: flex; align-items: stretch; }
   }
@@ -1439,7 +1536,21 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @layer components {
 /* Focus (OpenSpec change focus-mode, design D6): the timer's digits, from the type
    tokens, with tabular figures so they do not jump each second; fit at 360 px. */
-.focus-clock { @apply font-semibold text-strong; font-size: min(calc(var(--text-display) * 2.357), 20vw); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.focus-clock { @apply font-medium text-strong; font-size: clamp(calc(var(--text-display) * 2.286), 16vw, calc(var(--text-display) * 3.429)); line-height: 1; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+/* The stage (focus-redesign D1): one centred column without a card, vertically centred
+   from 768 px and top-aligned with 24 px of room on a phone. A break dims the title and
+   the page takes the sunken tone, over the moment duration (instant without motion). */
+.focus-page { @apply flex min-h-full flex-col; }
+/* The whole content column, its reserved bottom room included, so the tone has no seam. */
+#content:has(.focus-page) { @apply transition-colors duration-(--duration-moment) ease-calm; }
+#content:has(.focus-page[data-resting]) { @apply bg-sunken; }
+/* The header's own background is a utility, so the break's tone is marked important there. */
+.focus-page[data-resting] > [data-page-header] { @apply bg-sunken!; }
+.focus-page > [data-page-header] { @apply transition-colors duration-(--duration-moment) ease-calm; }
+.focus-stage { @apply flex w-full flex-1 flex-col items-center pt-6 pb-8 text-center md:justify-center md:py-12; }
+.focus-title { @apply mt-1 max-w-[32rem] text-display text-strong transition-opacity duration-(--duration-moment) ease-calm; text-wrap: balance; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.focus-title[data-resting] { @apply text-muted; }
+.focus-clock-line { @apply text-meta text-muted; }
 /* Display mode (OpenSpec change display-mode, design D4): one view at a large type
    scale for a tablet or an e-ink panel. Sizes derive from the type tokens times
    --display-scale (set per size on the display's root), so they follow the
@@ -1545,6 +1656,12 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
 :root[data-task-split] {
   --panel-w: clamp(22rem, var(--task-panel-w, clamp(26rem, 42vw, 44rem)), max(22rem, min(64rem, 100vw - 38rem)));
 }
+/* The Notes page's docked note (note-pane-width D1, D2): room to write, about half of the
+   content by default, or the width chosen with its own handle (`--note-panel-w`, this
+   device only), within the docked task's bounds. */
+:root[data-note-split] {
+  --panel-w: clamp(22rem, var(--note-panel-w, clamp(30rem, 46vw, 48rem)), max(22rem, min(64rem, 100vw - 38rem)));
+}
 /* The panel's resize handle: a hairline that takes the accent on hover, focus and drag. */
 .panel-resize::after {
   content: ""; position: absolute; inset-block: 0; left: 50%; width: 2px; transform: translateX(-50%);
@@ -1560,3 +1677,56 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
    inherited. It changes when a row comes or goes, and as an inherited property it restyled every
    element of the block's rows (about 800, 55 ms in the phone profile). */
 @property --block-rows { syntax: '<number>'; inherits: false; initial-value: 25; }
+
+/* Printing a list (OpenSpec change print-lists): the browser's Print gives the page's title,
+   its groups and every row as on screen, black on white in any theme, nothing else. The
+   colour tokens are overridden (important, so they win over a custom theme and high
+   contrast); the app's scroll container grows so the rows flow over the pages. */
+@media print {
+  :root, [data-theme], [data-accent] {
+    --ot-canvas: oklch(1 0 0) !important; --ot-surface: oklch(1 0 0) !important; --ot-raised: oklch(1 0 0) !important;
+    --ot-sunken: oklch(1 0 0) !important; --ot-pop: oklch(1 0 0) !important; --ot-hover: oklch(1 0 0) !important;
+    --ot-selected: oklch(1 0 0) !important; --ot-selected-row: oklch(1 0 0) !important; --ot-sidebar: oklch(1 0 0) !important;
+    --ot-text-strong: oklch(0 0 0) !important; --ot-text: oklch(0 0 0) !important;
+    --ot-muted: oklch(0.32 0 0) !important; --ot-faint: oklch(0.4 0 0) !important;
+    --ot-border: oklch(0.8 0 0) !important; --ot-border-soft: oklch(0.85 0 0) !important;
+    --ot-border-input: oklch(0.45 0 0) !important; --ot-line-strong: oklch(0.7 0 0) !important;
+    --ot-accent: oklch(0 0 0) !important; --ot-accent-text: oklch(0 0 0) !important; --ot-accent-soft: oklch(1 0 0) !important;
+    --ot-accent-soft-text: oklch(0 0 0) !important; --ot-on-accent: oklch(1 0 0) !important;
+    --ot-p1: oklch(0.5771 0.2152 27.33) !important; --ot-p2: oklch(0.6461 0.1943 41.12) !important;
+    --ot-p3: oklch(0.5461 0.2152 262.88) !important; --ot-p4: oklch(0.45 0 0) !important;
+    --ot-p1-soft: oklch(1 0 0) !important; --ot-p2-soft: oklch(1 0 0) !important; --ot-p3-soft: oklch(1 0 0) !important; --ot-p4-soft: oklch(1 0 0) !important;
+    --ot-success: oklch(0 0 0) !important; --ot-warning: oklch(0 0 0) !important; --ot-danger: oklch(0 0 0) !important; --ot-info: oklch(0 0 0) !important;
+    --ot-success-soft: oklch(1 0 0) !important; --ot-warning-soft: oklch(1 0 0) !important; --ot-danger-soft: oklch(1 0 0) !important; --ot-info-soft: oklch(1 0 0) !important;
+    --ot-success-soft-text: oklch(0 0 0) !important; --ot-warning-soft-text: oklch(0 0 0) !important; --ot-danger-soft-text: oklch(0 0 0) !important; --ot-info-soft-text: oklch(0 0 0) !important;
+    --ot-highlight: oklch(1 0 0) !important; --ot-highlight-text: oklch(0 0 0) !important;
+    --ot-hue-red-soft: oklch(1 0 0) !important; --ot-hue-orange-soft: oklch(1 0 0) !important; --ot-hue-yellow-soft: oklch(1 0 0) !important;
+    --ot-hue-lime-soft: oklch(1 0 0) !important; --ot-hue-green-soft: oklch(1 0 0) !important; --ot-hue-teal-soft: oklch(1 0 0) !important;
+    --ot-hue-cyan-soft: oklch(1 0 0) !important; --ot-hue-blue-soft: oklch(1 0 0) !important; --ot-hue-indigo-soft: oklch(1 0 0) !important;
+    --ot-hue-violet-soft: oklch(1 0 0) !important; --ot-hue-pink-soft: oklch(1 0 0) !important; --ot-hue-slate-soft: oklch(1 0 0) !important;
+    --ot-hue-red-text: oklch(0 0 0) !important; --ot-hue-orange-text: oklch(0 0 0) !important; --ot-hue-yellow-text: oklch(0 0 0) !important;
+    --ot-hue-lime-text: oklch(0 0 0) !important; --ot-hue-green-text: oklch(0 0 0) !important; --ot-hue-teal-text: oklch(0 0 0) !important;
+    --ot-hue-cyan-text: oklch(0 0 0) !important; --ot-hue-blue-text: oklch(0 0 0) !important; --ot-hue-indigo-text: oklch(0 0 0) !important;
+    --ot-hue-violet-text: oklch(0 0 0) !important; --ot-hue-pink-text: oklch(0 0 0) !important; --ot-hue-slate-text: oklch(0 0 0) !important;
+    color-scheme: light !important;
+  }
+}
+@layer components {
+@media print {
+  /* 14 px type: a row on an A4 or Letter page is 48 rem wide, so it keeps its date, project and labels. */
+  html { font-size: 87.5%; }
+  html, body, #root, :has(> [data-app-frame]), [data-app-frame], #content { display: block !important; height: auto !important; overflow: visible !important; }
+  [data-app-frame] { margin: 0 !important; border: 0 !important; padding: 0 !important; }
+  /* Only the page: no sidebar, bars, panels, toasts, assistant, overlay or control. */
+  body > :not(#root), :has(> [data-app-frame]) > :not([data-app-frame]), [data-app-frame] > :not(#content, [data-phone-bar]),
+  [data-phone-bar] > :not(:has([data-phone-title])), [data-page-actions], [data-page-back], [data-quick-add-row], [data-row-actions],
+  [data-row-grip], [data-row-expand], [data-group-actions], [data-add-line], [data-add-section], [data-close-day] { display: none !important; }
+  [data-page-header] { position: static !important; }
+  * { box-shadow: none !important; outline: none !important; }
+  .row-offscreen, .row-block { content-visibility: visible !important; }
+  /* Paper has no tooltip: a long title is printed whole. */
+  [data-row-title] { -webkit-line-clamp: none !important; line-clamp: none !important; }
+  [data-task-id] { break-inside: avoid; }
+  [data-group-header] { break-after: avoid; }
+}
+}

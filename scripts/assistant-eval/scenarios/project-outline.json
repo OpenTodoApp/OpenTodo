@@ -1,0 +1,45 @@
+{
+  "name": "project-outline",
+  "title": "A project's outline is shown as the project block",
+  "seed": {
+    "projects": [
+      {
+        "key": "garden",
+        "name": "Garden"
+      }
+    ],
+    "tasks": [
+      {
+        "key": "g1",
+        "title": "Prune the roses",
+        "project": "garden"
+      },
+      {
+        "key": "g2",
+        "title": "Order compost",
+        "project": "garden"
+      },
+      {
+        "key": "g3",
+        "title": "Fix the fence",
+        "project": "garden"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Show me the outline of my Garden project.",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "project",
+            "ids": [
+              "garden"
+            ]
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

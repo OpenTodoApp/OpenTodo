@@ -1,12 +1,12 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, MemoryItemFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective' | 'memory'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective', 'memory']
 
 export interface Op {
   id: string
@@ -363,6 +363,22 @@ export interface Objective extends ObjectiveFields {
   _e2ee?: RowEncryption
 }
 
+/**
+ * One fact the user asked the assistant to remember (OpenSpec change
+ * `assistant-memory`): personal, at most 20 live, sent with every assistant
+ * turn and never to MCP clients or routines. A text this device could not
+ * decrypt is the placeholder string.
+ */
+export interface MemoryItem extends MemoryItemFields {
+  id: string
+  text: string
+  position: number
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+  _e2ee?: RowEncryption
+}
+
 /** A task's origin kind; the list is closed (the server refuses any other). */
 export type OriginKind = 'url' | 'email' | 'issue' | 'import' | 'obsidian'
 
@@ -564,10 +580,11 @@ export type RuleMinutesPredicate = 'none' | { min_minutes: number } | { max_minu
 
 /** An automation rule's condition: every predicate that is set must hold (automation-rules "Conditions"). */
 export interface RuleCondition {
-  project?: 'none' | { in: string[]; descendants?: boolean }
-  section?: 'none' | { in: string[] }
+  /** No project, one of the projects, or none of them (`not_in`, routine-conditions D2). */
+  project?: 'none' | { in: string[]; descendants?: boolean } | { not_in: string[]; descendants?: boolean }
+  section?: 'none' | { in: string[] } | { not_in: string[] }
   labels?: { any?: string[]; all?: string[]; none?: string[] }
-  priority?: { in: number[] }
+  priority?: { in: number[] } | { not_in: number[] }
   due?: RuleDatePredicate
   deadline?: 'none' | 'set' | { within_days: number }
   start?: 'someday' | 'deferred' | 'none'
@@ -664,7 +681,7 @@ export interface RoutineProposalItem {
   before?: Record<string, unknown>
   /** Text the AI wrote ("Written by AI"). */
   ai: boolean
-  side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string } }
+  side?: { kind: string; notice?: { text: string; taskId?: string }; fired?: { taskId?: string }; hook?: string; delivery?: { Text?: string | null }; mail?: { Subject: string; Text: string }; members?: string[] }
 }
 
 /** What applying a proposal did. */
@@ -1001,6 +1018,8 @@ export interface UserPrefs extends UserPrefsFields {
   focus_presets?: string
   /** Background noise (focus-everywhere D6): off | white | pink | brown; '' and anything else read as off. */
   focus_noise?: string
+  /** End-of-session sound length (focus-end-alert D1): short | long, read while focus_sound is 'on'; '' and anything else read as short. */
+  focus_alert?: string
   _clock: Clock
 }
 
@@ -1340,6 +1359,8 @@ export interface CalendarConnection {
   target: string
   read: string[]
   include_date_only: boolean
+  /** The part of the account written to the calendar (sync-scope); absent from older servers: all. */
+  scope?: SyncScope
   enabled: boolean
   state: 'off' | 'choose_calendar' | 'pending' | 'ok' | 'failed' | 'reconnect' | 'stopped'
   next_sync_at: number
@@ -1383,6 +1404,21 @@ export interface CalendarConnectionPatch {
   include_date_only?: boolean
   enabled?: boolean
   password?: string
+  scope?: SyncScope
+}
+
+/**
+ * The part of an account a calendar sync connection or a CalDAV app password
+ * covers (OpenSpec change sync-scope): everything, only the chosen places, or
+ * everything except them. `workspaces` covers a workspace's projects and its
+ * Inbox, `projects` a project and its sub-projects, `inboxes` the tasks
+ * without a project of a workspace (by workspace id).
+ */
+export interface SyncScope {
+  mode: 'all' | 'only' | 'except'
+  workspaces: string[]
+  projects: string[]
+  inboxes: string[]
 }
 
 /** The filter of an issue connection (OpenSpec issue-connections "Filter"). */
@@ -1733,6 +1769,8 @@ export interface AppPassword {
   createdAt: number
   lastUsedAt: number | null
   revokedAt: number | null
+  /** Absent from servers before sync-scope: the whole account. */
+  scope?: SyncScope
 }
 
 export interface WebhookDelivery {

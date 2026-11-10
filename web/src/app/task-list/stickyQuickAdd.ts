@@ -12,7 +12,7 @@ import { useBelowStickyHeader } from '../bulk/useBelowStickyHeader'
 
 /**
  * The classes that make the wrapper stick from 768 px, except on a landscape phone (the
- * `pins` variant), on the page surface with its bottom border. The row keeps its box (the
+ * `pins` variant), on the page surface. The row keeps its box (the
  * page's left edge and spacing do not move); a pseudo-element paints the surface into the
  * page gutters so rows never show beside it.
  */

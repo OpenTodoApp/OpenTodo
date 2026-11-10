@@ -31,6 +31,7 @@ export function requestProjectNote(projectId: string): void {
 
 /** Folded height: about eight lines of body text. */
 const FOLD_PX = 8 * 22
+
 export function ProjectNote({ project, phone = false }: { project: Project; phone?: boolean }) {
   // null: a personal project; undefined: still loading (render nothing rather than flash "Add a note" to a viewer).
   const membership = useMembership(project.id)

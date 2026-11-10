@@ -39,7 +39,8 @@ describe('the Focus card', () => {
     expect(value('focus-mode')).toBe('pomodoro')
     expect([value('focus-focus_work_minutes'), value('focus-focus_short_break_minutes'), value('focus-focus_long_break_minutes'), value('focus-focus_long_break_every')]).toEqual(['25', '5', '15', '4'])
     const switches = [...document.querySelectorAll('[role="switch"]')].map((s) => s.getAttribute('aria-checked'))
-    expect(switches).toEqual(['false', 'false', 'false', 'false'])
+    expect(switches).toEqual(['false', 'false', 'false'])
+    expect(value('focus-sound')).toBe('off')
     expect(document.querySelector('[data-focus-reminder-off]')?.textContent).toContain('90 minutes')
     await r.unmount()
   })
@@ -58,13 +59,31 @@ describe('the Focus card', () => {
     await r.unmount()
   })
 
-  it('the break reminder switch turns it on at 90 minutes and the sound switch writes on', async () => {
+  it('the break reminder switch turns it on at 90 minutes', async () => {
     const r = await render(<FocusSection />)
     const switches = () => [...document.querySelectorAll<HTMLButtonElement>('[role="switch"]')]
     await click(switches()[2])
     await waitFor(async () => (await db.userPrefs.get('me'))?.focus_break_after_minutes === 90, 'reminder on')
-    await click(switches()[3])
-    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_sound === 'on', 'sound on')
+    await r.unmount()
+  })
+
+  it('Sound (focus-end-alert): Off, Short or Long in one choice; Long writes the sound on and its length together, Off keeps the length', async () => {
+    const r = await render(<FocusSection />)
+    const select = () => document.getElementById('focus-sound') as HTMLSelectElement
+    await waitFor(() => !!select(), 'the choice')
+    expect([...select().options].map((o) => o.value)).toEqual(['off', 'short', 'long'])
+    const choose = (v: string) => act(async () => {
+      select().value = v
+      select().dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await choose('long')
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_alert === 'long', 'long')
+    expect((await db.userPrefs.get('me'))?.focus_sound).toBe('on')
+    await waitFor(() => select().value === 'long', 'shown')
+    await choose('off')
+    await waitFor(async () => (await db.userPrefs.get('me'))?.focus_sound === 'off', 'off')
+    expect((await db.userPrefs.get('me'))?.focus_alert).toBe('long')
+    expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['focus_sound=on', 'focus_alert=long', 'focus_sound=off'])
     await r.unmount()
   })
 

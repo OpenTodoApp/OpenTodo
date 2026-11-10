@@ -9,6 +9,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/calsync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Calendar sync (OpenSpec change calendar-two-way): a user's own calendar
@@ -63,13 +64,14 @@ func (s *Server) calsyncSettingExtra(r *http.Request) map[string]any {
 	return map[string]any{"google": err == nil && c.Complete(), "microsoft": merr == nil && m.Complete(), "max_connections": calsync.MaxConnections}
 }
 
-// feedTasksFor is the task feed's selection for the worker, outside a request.
-func (s *Server) feedTasksFor(ctx context.Context, uid string) ([]calfeed.FeedTask, error) {
+// feedTasksFor is the task feed's selection in a connection's scope for the
+// worker, outside a request.
+func (s *Server) feedTasksFor(ctx context.Context, uid string, scope syncscope.Scope) ([]calfeed.FeedTask, error) {
 	r, err := http.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 	if err != nil {
 		return nil, err
 	}
-	return s.feedTasks(r, uid)
+	return s.dav.FeedTasksIn(r, uid, scope)
 }
 
 // googleRedirectURI is the callback address registered at Google (design D13).

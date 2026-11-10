@@ -14,6 +14,7 @@ import (
 	"time"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Providers.
@@ -83,6 +84,10 @@ type Error struct {
 	Reason string
 	// Until is set for a server's rate limit (Retry-After).
 	Until time.Time
+	// Status is the refusing answer's HTTP status (401 or 403) for
+	// ReasonUnauthorized, so a Google sign-in can tell a disabled CalDAV API
+	// from a refused grant (google-sync-guide).
+	Status int
 }
 
 func (e *Error) Error() string { return "calendar sync: " + e.Reason }
@@ -147,19 +152,21 @@ type Connection struct {
 	TargetURL       string     `json:"target"`
 	ReadURLs        []string   `json:"read"`
 	IncludeDateOnly bool       `json:"include_date_only"`
-	SyncToken       string     `json:"-"`
-	CTag            string     `json:"-"`
-	Enabled         bool       `json:"enabled"`
-	NextSyncAt      int64      `json:"next_sync_at"`
-	BackoffSeconds  int64      `json:"-"`
-	LastSyncAt      *int64     `json:"last_sync_at"`
-	LastSuccessAt   *int64     `json:"last_success_at"`
-	LastError       string     `json:"last_error"`
-	LastErrorAt     *int64     `json:"last_error_at"`
-	StoppedReason   string     `json:"stopped_reason"`
-	LastRun         *RunCounts `json:"last_run"`
-	CreatedAt       int64      `json:"created_at"`
-	UpdatedAt       int64      `json:"updated_at"`
+	// Scope is the part of the account written to the calendar (sync-scope).
+	Scope          syncscope.Scope `json:"scope"`
+	SyncToken      string          `json:"-"`
+	CTag           string          `json:"-"`
+	Enabled        bool            `json:"enabled"`
+	NextSyncAt     int64           `json:"next_sync_at"`
+	BackoffSeconds int64           `json:"-"`
+	LastSyncAt     *int64          `json:"last_sync_at"`
+	LastSuccessAt  *int64          `json:"last_success_at"`
+	LastError      string          `json:"last_error"`
+	LastErrorAt    *int64          `json:"last_error_at"`
+	StoppedReason  string          `json:"stopped_reason"`
+	LastRun        *RunCounts      `json:"last_run"`
+	CreatedAt      int64           `json:"created_at"`
+	UpdatedAt      int64           `json:"updated_at"`
 }
 
 // States served to the client (design D2).

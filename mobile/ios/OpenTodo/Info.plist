@@ -78,9 +78,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>WKAppBoundDomains</key>
-	<array>
-		<string>$(OPENTODO_APP_BOUND_HOST)</string>
-	</array>
 </dict>
 </plist>

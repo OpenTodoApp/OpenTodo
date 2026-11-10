@@ -37,9 +37,12 @@ export function screens(ids, base) {
     { name: 'task-page', path: `/t/${ids.pageSecret}/paint-the-fence`, anon: true, ready: (p) => p.locator('[data-page-send]').waitFor() },
     { name: 'project-invite-member', path: `/invite/p/${ids.projectInvite}`, ready: heading(/already a member/) },
     { name: 'inbox', path: '/inbox', ready: row('Undated inbox task'), overlays: ['notifications', 'command-palette', 'help', 'spotlight', 'sidebar', 'sidebar-view-menu', 'task-detail', 'label-picker', 'bulk-actions-menu', 'bulk-review', 'bulk-toast', 'reminder-toast', 'assistant', 'assistant-review', 'template-dialog', 'template-detail'] },
-    { name: 'today', path: '/today', ready: row('Renew passport') },
+    { name: 'today', path: '/today', ready: row('Renew passport'), overlays: ['quick-add'] },
     // A repeating task's page: the scope toggle's options are not cut (truncated-labels).
     ...(ids.repeating ? [{ name: 'task-repeating', path: `/task/${ids.repeating}`, ready: (p) => p.locator('[data-scope-control]').waitFor() }] : []),
+    // A subtask two parents deep in a long-named project: its path never paints over itself, and on a
+    // phone shows only the nearest parent (GitHub issue 1050), so the screen waits for that crumb.
+    ...(ids.deep ? [{ name: 'task-deep-path', path: `/task/${ids.deep}`, ready: (p) => p.locator('[data-breadcrumb] [data-crumb="parent"]').first().waitFor() }] : []),
     // Display mode (display-mode 3.4, 5.1): no shell, large type; high contrast and the largest size included.
     { name: 'display-today', path: '/display/today', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
     { name: 'display-today-high-xl', path: '/display/today?contrast=high&size=xl', ready: (p) => p.locator('[data-screen="display"] [data-display-row]').first().waitFor() },
@@ -287,6 +290,17 @@ export const OVERLAYS = {
     const reopen = async () => { await trigger.click(); await p.getByRole('menuitem', { name: 'Keyboard shortcuts' }).click() }
     await reopen()
     return { overlay: p.getByRole('dialog', { name: 'Keyboard shortcuts' }), trigger, kind: 'dialog', reopen }
+  },
+  // Quick add as the phone's bottom sheet, with recognised tokens tinted behind the text (GitHub issue 1051).
+  async 'quick-add'(p) {
+    const trigger = p.locator('[data-add-button]').filter({ visible: true }).first()
+    if (!(await trigger.count())) return null
+    await trigger.click()
+    const overlay = p.locator('[data-overlay="sheet"]').filter({ has: p.locator('[data-quick-add-tints]') })
+    await overlay.locator('textarea').first().fill('Call Ana tomorrow p1')
+    await overlay.locator('[data-quick-add-tints] mark').first().waitFor()
+    // No trigger: the add button leaves with the tab bar while the sheet is open.
+    return { overlay, kind: 'sheet' }
   },
   async sidebar(p, ctx) {
     if (ctx.width >= 768) return null

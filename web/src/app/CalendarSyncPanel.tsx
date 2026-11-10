@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button, Card, ConfirmDialog, Icon, Menu, MenuItem, Notice, SettingRow, SettingsSection, StatusIndicator, Switch, type HueName, toneForHue } from '../ui'
-import { api } from '../lib/api'
+import { Button, Card, ConfirmDialog, Icon, LearnMore, Menu, MenuItem, Notice, SettingRow, SettingsSection, StatusIndicator, Switch, type HueName, toneForHue } from '../ui'
+import { api, ApiError } from '../lib/api'
 import { refreshEvents } from '../lib/calendarFeeds'
 import { cacheCalendarConnections, cachedCalendarConnections } from '../lib/localData'
 import { useEncryption } from '../lib/e2ee'
@@ -49,9 +49,31 @@ export function googleResultText(result: string): string | null {
     case 'invalid_state': return t('Google Calendar was not connected: the sign-in expired or was started elsewhere. Try again.')
     case 'no_refresh_token': return t('Google did not grant lasting access. Remove OpenTodo at myaccount.google.com/permissions and connect again.')
     case 'limit_reached': return t('You already have the most calendar accounts allowed.')
+    case 'authorization_failed': return t('Google Calendar was not connected: Google did not complete the sign-in. Try again.')
+    case 'redirect_uri_mismatch': return t('Google Calendar was not connected: Google refused the redirect address. The server owner must register it in the Google client.')
+    case 'google_client_refused': return t('Google Calendar was not connected: Google refused the server’s client ID or secret. The server owner must check them.')
+    case 'scope_not_granted': return t('Google Calendar was not connected: the calendar permission was not allowed. Connect again and leave it ticked.')
+    case 'caldav_api_disabled': return t('Google Calendar was not connected: the CalDAV API is not enabled in the server owner’s Google project.')
   }
   return t('Google Calendar was not connected: {reason}', { reason: syncReasonText(result) })
 }
+
+/**
+ * The help screen (a section of the calendar sync guide, named in its `screens`)
+ * that fixes a Google sign-in result or a refused start (OpenSpec change google-sync-guide).
+ */
+export const GOOGLE_HELP: Readonly<Record<string, { helpScreen: string }>> = {
+  denied: { helpScreen: 'calendar-sync/denied' },
+  authorization_failed: { helpScreen: 'calendar-sync/authorization_failed' },
+  redirect_uri_mismatch: { helpScreen: 'calendar-sync/redirect_uri_mismatch' },
+  base_url_mismatch: { helpScreen: 'calendar-sync/base_url_mismatch' },
+  google_client_refused: { helpScreen: 'calendar-sync/google_client_refused' },
+  scope_not_granted: { helpScreen: 'calendar-sync/scope_not_granted' },
+  caldav_api_disabled: { helpScreen: 'calendar-sync/caldav_api_disabled' },
+}
+
+/** A message above the cards, with the help screen that fixes it. */
+export interface SyncNotice { text: string; help?: string }
 
 /** The result of a Microsoft sign-in (outlook-calendar-sync D3). */
 export function microsoftResultText(result: string): string | null {
@@ -114,7 +136,7 @@ export interface CalendarSyncViewProps {
   syncing: ReadonlySet<string>
   error: string | null
   /** A message about the Google sign-in that just returned. */
-  notice: string | null
+  notice: SyncNotice | null
   now?: number
   onToggle: (on: boolean) => void
   onSaveGoogleClient: (id: string, secret: string | undefined) => Promise<void>
@@ -221,7 +243,7 @@ export function CalendarSyncView(p: CalendarSyncViewProps) {
     <SettingsSection {...cardCopy('calendar-sync')} testId="calendar-sync-panel">
       {!p.connected && <Notice>{noticeCopy('calendar-sync', 'offline')}</Notice>}
       <OwnerRows p={p} disabled={disabled} on={on} onGoogle={() => setGoogleOpen(true)} onMicrosoft={() => setMicrosoftOpen(true)} />
-      {p.notice && <Notice>{p.notice}</Notice>}
+      {p.notice && <Notice>{p.notice.text}{p.notice.help && <>{' '}<LearnMore screen={p.notice.help} /></>}</Notice>}
       {p.error && !draft && !choosing && !password && !googleOpen && !microsoftOpen && <Notice tone="danger">{p.error}</Notice>}
       {on && (
         <>
@@ -292,7 +314,7 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
   const [maxConnections, setMax] = useState(3)
   const [googleClient, setGoogleClient] = useState<GoogleClientSetting | null>(null)
   const [syncing, setSyncing] = useState<ReadonlySet<string>>(new Set())
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<SyncNotice | null>(null)
   const [choose, setChoose] = useState<string | null>(null)
   const server = useServerList({
     setting: api.calendarSyncSwitch.get,
@@ -318,7 +340,8 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
   useEffect(() => {
     const back = takeSignInResult()
     if (back) {
-      setNotice(back.provider === 'microsoft' ? microsoftResultText(back.result) : googleResultText(back.result))
+      const text = back.provider === 'microsoft' ? microsoftResultText(back.result) : googleResultText(back.result)
+      setNotice(text === null ? null : { text, help: back.provider === 'microsoft' ? undefined : GOOGLE_HELP[back.result]?.helpScreen })
       if (back.result === 'connected' && back.id) setChoose(back.id)
     }
   }, [])
@@ -350,8 +373,14 @@ export function CalendarSyncPanel({ isOwner }: { isOwner: boolean }) {
         return res.connection
       }).catch(() => null)}
       onConnectGoogle={(c) => void run(async () => {
-        const { url } = await api.startGoogleCalendar(c?.id)
-        window.location.assign(url)
+        try {
+          const { url } = await api.startGoogleCalendar(c?.id)
+          window.location.assign(url)
+        } catch (err) {
+          // A redirect address Google would refuse: say how to fix it instead of a bare error.
+          if (!(err instanceof ApiError) || err.code !== 'base_url_mismatch') throw err
+          setNotice({ text: err.message, help: GOOGLE_HELP.base_url_mismatch.helpScreen })
+        }
       })}
       onConnectMicrosoft={(c) => void run(async () => {
         const { url } = await api.startMicrosoftCalendar(c?.id)

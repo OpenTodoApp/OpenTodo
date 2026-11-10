@@ -11,6 +11,9 @@ import {
 import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
+import { blockLabel, blockOf, followupsOf, type AssistantBlock } from '../../lib/assistantBlocks'
+import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
+import { amendReview } from '../../lib/assistantAmend'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
 import type { ReviewResult } from './ChangeSetReview'
@@ -25,7 +28,7 @@ export interface ConversationOptions {
   userName?: string
 }
 
-type Streaming = { text: string; status: string[] }
+type Streaming = { text: string; status: string[]; blocks?: AssistantMessage['blocks'] }
 
 /** The assistant's message of one turn, the change set it proposed, and the error that ended it early, if any. */
 interface StreamedAnswer {
@@ -43,9 +46,18 @@ interface StreamedAnswer {
  */
 type TurnRunner = (req: TurnRequest, onEvent: (e: TurnEvent) => void, signal?: AbortSignal) => Promise<void>
 
-async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (delta: string, all: string, status: string[]) => void; status: (line: string, all: string, lines: string[]) => void }, run: TurnRunner = streamTurn): Promise<StreamedAnswer> {
+interface StreamCallbacks {
+  text: (delta: string, all: string, status: string[]) => void
+  status: (line: string, all: string, lines: string[]) => void
+  /** A block arrived (assistant-generative-ui D3): every block so far. */
+  block?: (block: AssistantBlock, blocks: NonNullable<AssistantMessage['blocks']>) => void
+}
+
+async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCallbacks, run: TurnRunner = streamTurn): Promise<StreamedAnswer> {
   let text = ''
   const statusLines: string[] = []
+  const blocks: NonNullable<AssistantMessage['blocks']> = []
+  let followups: string[] | null = null
   let proposal: ProposedChange[] | null = null
   let failure: StreamedAnswer['failure']
   let errorCode: string | undefined
@@ -61,8 +73,23 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
           statusLines.push(ev.text)
           on.status(ev.text, text, [...statusLines])
           break
+        case 'block': {
+          // Follow-ups go under the answer, not into its text (assistant-followups D1); the first set is kept.
+          const next = followupsOf(ev)
+          if (next) {
+            followups ??= next
+            break
+          }
+          // Where the model called it: the length of the text so far (D3); an unknown block is skipped.
+          const block = blockOf(ev)
+          if (block) {
+            blocks.push({ at: text.length, block })
+            on.block?.(block, [...blocks])
+          }
+          break
+        }
         case 'usage':
-          answer.usage = { input: ev.input, output: ev.output, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
+          answer.usage = { input: ev.input, output: ev.output, cached: ev.cached, cache_write: ev.cache_write, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
           break
         case 'changeset':
           proposal = ev.items
@@ -82,6 +109,10 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: { text: (
     failure = { err }
   }
   answer.text = text
+  // The steps stay on the answer (assistant-generative-ui D8).
+  if (statusLines.length) answer.status = [...statusLines]
+  if (blocks.length) answer.blocks = blocks
+  if (followups) answer.followups = followups
   return { answer, proposal, failure, errorCode }
 }
 
@@ -204,7 +235,32 @@ function useReview(thread: AssistantThread | null, note: (x: AssistantThread, te
     }
   }
   const toggle = (i: number, c: boolean) => setReview((r) => r && { ...r, items: r.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) })
-  return { review, setReview, result, setResult, reviewBusy, reviewRef, apply, discard, undo, toggle }
+  // An edit before applying (assistant-generative-ui D6): the edited value is what applies.
+  const edit = async (i: number, edits: ItemEdits) => {
+    if (!review) return
+    const next = await editReviewItem(review, i, edits)
+    setReview((cur) => (cur === review ? next : cur))
+  }
+  return { review, setReview, result, setResult, reviewBusy, reviewRef, apply, discard, undo, toggle, edit }
+}
+
+/** A question asked again: where it cuts the thread, its text and its skill. */
+interface Redo { cut: number; question: string; skill: AssistantSkill | null; base?: AssistantThread }
+
+/**
+ * The latest question of a thread, when it can be asked again (assistant-generative-ui
+ * D8): pasted text and photos are not kept, and a skill must still be offered.
+ */
+export function redoTarget(thread: AssistantThread | null, skills: AssistantSkill[]): Redo | null {
+  const msgs = thread?.messages ?? []
+  let i = msgs.length - 1
+  while (i >= 0 && msgs[i].role !== 'user') i--
+  if (i < 0) return null
+  const q = msgs[i]
+  if (q.pastedLines || q.photos) return null
+  const skill = q.skill ? skills.find((x) => x.name === q.skill) ?? null : null
+  if (q.skill && !skill) return null
+  return { cut: i, question: q.text, skill }
 }
 
 export function useAssistantConversation({ context, onApplied, userName = '' }: ConversationOptions) {
@@ -221,6 +277,10 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const [statusAnnounce, setStatusAnnounce] = useState('')
   const live = useSentenceAnnouncer()
   const abort = useRef<AbortController | null>(null)
+  // Where an edited question replaces the thread (assistant-generative-ui D8).
+  const editCut = useRef<number | null>(null)
+  // A choice in flight: a second click before the turn starts sends nothing.
+  const choosing = useRef(false)
   const consent = useConsent(status, setStatus)
 
   // Tells the suggest-after-add trigger that a turn is running (it skips instead of replacing the draft).
@@ -253,9 +313,11 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
    * A capture (a ramble or photos) is always reviewed: its proposal is never applied automatically (voice-ramble),
    * and so is a suggestion after adding a task (`review` in the prefill): the person did not type that turn.
    */
-  const offer = async (entry: AssistantThread, items: ProposedChange[], review = false) => {
-    const r = await reviewChangeSet(items)
-    if (r.items.length && !review && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
+  const offer = async (entry: AssistantThread, items: ProposedChange[], review = false, prior: Review | null = null) => {
+    const fresh = await reviewChangeSet(items)
+    // An amended open proposal marks what this turn changed, and is always reviewed (assistant-proposal-editing D3).
+    const r = prior ? amendReview(prior, fresh) : fresh
+    if (r.items.length && !review && !prior && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
       const undo = await applyChanges(r.items.map((i) => i.change))
       const res: ReviewResult = { applied: r.items.length, total: r.items.length, undoId: undo?.id ?? null, auto: true }
       rv.setResult(res)
@@ -268,23 +330,35 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
     }
   }
 
-  const send = async () => {
-    const { draft, skill: chosen, pasted, photos } = composer
+  /** Regenerate runs a question again from the thread, never from the composer (assistant-generative-ui D8). */
+  const send = async (redo?: Redo) => {
+    const { draft, pasted, photos } = redo ? { draft: redo.question, pasted: null, photos: [] as PreparedPhoto[] } : composer
+    const chosen = redo ? redo.skill : composer.skill
     // A skill, pasted material or photos can be sent without typed text.
     const question = draft.trim() || (chosen ? chosen.example : pasted ? t('Use the pasted text.') : photos.length ? t('Turn this into tasks') : '')
     if (!question || streaming) return
     const material = pasted
-    const selection = composer.selectedFor.current
-    const mustReview = composer.reviewNext.current
-    composer.reviewNext.current = false
+    const selection = redo ? null : composer.selectedFor.current
+    const mustReview = !redo && composer.reviewNext.current
+    // Edit and Regenerate replace the question they start from and everything after it.
+    const cut = redo ? redo.cut : editCut.current
+    editCut.current = null
     // The latest thread may still be loading from the device: start a new one then.
-    const current = thread ?? newThread(status?.provider ?? '')
-    composer.setDraft('')
-    composer.setSkill(null)
-    composer.setPasted(null)
-    composer.setPhotos([])
-    composer.clearSelection()
+    const loaded = redo?.base ?? thread ?? newThread(status?.provider ?? '')
+    const current = cut === null ? loaded : { ...loaded, messages: loaded.messages.slice(0, cut) }
+    if (!redo) {
+      composer.reviewNext.current = false
+      composer.setDraft('')
+      composer.setSkill(null)
+      composer.setPasted(null)
+      composer.setPhotos([])
+      composer.clearSelection()
+    }
     setError(null)
+    // An open, unapplied proposal goes with a new question (not with Regenerate or Edit, which replace the answer it came with).
+    const from = redo?.base ?? thread
+    const open = (!redo || redo.cut >= (from?.messages.length ?? 0)) && rv.review?.items.length ? rv.review : null
+    const reopen = () => { if (open) rv.setReview(open) }
     rv.setReview(null)
     rv.setResult(null)
     live.reset()
@@ -305,15 +379,19 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       delete ctx.projectId
       const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined, photos.length ? wireImages(photos) : undefined), timezone: zone, ...ctx,
         ...(selection ? { selected: selection } : {}),
-        ...(chosen ? { skill: chosen.id, workday: await workday() } : {}) }
+        // The working day goes with every turn: plan-week and find_free_time read it (assistant-time-blocks D2).
+        workday: await workday(), ...(chosen ? { skill: chosen.id } : {}),
+        ...(open ? { open_proposal: open.items.map((i) => i.change) } : {}) }
       // Device mode runs the loop here and calls the provider directly; the server sees nothing (assistant-on-device D7).
       const setup = device.setup
       const run = status?.mode === 'device' && setup
         ? await import('../../lib/assistantDevice/loop').then(({ runDeviceTurn }) => (r: TurnRequest, on: (e: TurnEvent) => void, sig?: AbortSignal) => runDeviceTurn(r, on, sig, { setup, userName }))
         : undefined
       streamed = await streamAnswer(req, ctl.signal, {
-        text: (delta, text, lines) => { live.push(delta); setStreaming({ text, status: lines }) },
-        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming({ text, status: lines }) },
+        text: (delta, text, lines) => { live.push(delta); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
+        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
+        // A block is announced once, by its label, where it arrives (D4).
+        block: (block, all) => { live.push(` ${blockLabel(block)}. `); setStreaming((cur) => ({ text: cur?.text ?? '', status: cur?.status ?? [], blocks: all })) },
       }, run)
     } catch (err) {
       streamed = { answer: { role: 'assistant', text: '', at: Date.now() }, proposal: null, failure: { err } }
@@ -331,6 +409,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       setError(imagesUnsupportedMessage(failedCode))
       live.setAnnounce(imagesUnsupportedMessage(failedCode))
       await persist({ ...current, updated_at: Date.now() })
+      reopen()
       return
     }
     photos.forEach(releasePhoto)
@@ -352,10 +431,57 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       usage: { input: entry.usage.input + (answer.usage?.input ?? 0), output: entry.usage.output + (answer.usage?.output ?? 0) } }
     await persist(entry)
     const items = answer.stop === 'end_turn' ? streamed.proposal : null
-    if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0)
+    if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0, open)
+    // A turn that failed or proposed nothing leaves the open proposal as it was.
+    else if (!items) reopen()
   }
 
+  /** Edit puts the latest question back in the composer; sending it replaces that question and its answer. */
+  const editLast = () => {
+    const target = redoTarget(thread, composer.skills)
+    if (!target || streaming) return
+    editCut.current = target.cut
+    composer.setDraft(target.question)
+    composer.chooseSkill(target.skill)
+  }
+  const regenerate = () => {
+    const target = redoTarget(thread, composer.skills)
+    if (target && !streaming) void send(target)
+  }
+
+  /** A choice block's option, sent as the next message (assistant-generative-ui D4); the answer keeps what was chosen. */
+  const choose = async (option: string) => {
+    const msgs = [...(thread?.messages ?? [])]
+    const last = msgs[msgs.length - 1]
+    if (choosing.current || !thread || streaming || last?.role !== 'assistant' || last.chosen) return
+    choosing.current = true
+    try {
+      msgs[msgs.length - 1] = { ...last, chosen: option }
+      const base = { ...thread, messages: msgs }
+      await persist(base)
+      await send({ cut: msgs.length, question: option, skill: null, base })
+    } finally {
+      choosing.current = false
+    }
+  }
+
+  /** A follow-up suggestion of the latest answer, sent as the next message the way typing it is (assistant-followups D1). */
+  const followUp = async (text: string) => {
+    const msgs = thread?.messages ?? []
+    if (choosing.current || !thread || streaming || msgs[msgs.length - 1]?.role !== 'assistant') return
+    choosing.current = true
+    try {
+      await send({ cut: msgs.length, question: text, skill: null, base: thread })
+    } finally {
+      choosing.current = false
+    }
+  }
+
+  // Emptying the composer ends an Edit: the next question is a new one, not a replacement.
+  useEffect(() => { if (!composer.draft.trim()) editCut.current = null }, [composer.draft])
+
   const startNew = () => {
+    editCut.current = null
     abort.current?.abort()
     setThread(newThread(status?.provider ?? ''))
     rv.setReview(null)
@@ -371,12 +497,14 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
   const pickThread = (id: string) => {
     void listThreads().then((all) => {
       const item = all.find((x) => x.id === id)
-      if (item) { setThread(item); setThreads(null); rv.setReview(null); rv.setResult(null) }
+      if (item) { editCut.current = null; setThread(item); setThreads(null); rv.setReview(null); rv.setResult(null) }
     })
   }
 
   return {
     status, device, thread, threads, toggleThreads, clearAll, composer, streaming, error, statusAnnounce, live, abort, consent, review: rv,
-    send, startNew, pickThread, stop: () => abort.current?.abort(),
+    send, startNew, pickThread, stop: () => abort.current?.abort(), editLast, regenerate, choose, followUp,
+    /** Whether the latest question can be asked again: its material (pasted text, photos) is not kept. */
+    canRedo: !!redoTarget(thread, composer.skills),
   }
 }

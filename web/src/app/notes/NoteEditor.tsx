@@ -5,8 +5,8 @@
 // as a page on a phone. A viewer of a shared project gets it read-only, without
 // conversions. The title saves on the note editor's cadence (notes-save-cadence):
 // a timed save pushed later, leaving the field pushes at once.
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { useLabels, useMembershipMap, useProjects } from '../../lib/localData'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../../lib/localData'
 import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
 import { setNoteProject, toggleNoteLabel } from '../../lib/noteOps'
@@ -14,18 +14,35 @@ import { mutate } from '../../lib/ops'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
+import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
-import { Markdown } from '../Markdown'
+import { LinkedRefs, Markdown } from '../Markdown'
 import { PanelFrame } from '../PanelFrame'
+import { applyPanelWidth, NOTE_PANEL_WIDTH } from '../panel'
+import { PanelResizeHandle } from '../sidePanel'
 import { ProjectPickerField } from '../ProjectPickerField'
 import { navigate } from '../router'
+import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
+import { openConnections, useConnected } from '../signals'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
+
+/** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
+let bodyFocus: string | null = null
+resettable('noteBodyFocus', () => { bodyFocus = null })
+export function focusBodyOnOpen(id: string): void {
+  bodyFocus = id
+}
+function takeBodyFocus(id: string): boolean {
+  if (bodyFocus !== id) return false
+  bodyFocus = null
+  return true
+}
 
 /** Debounce of the title's timed save, as the note editor's (NotesEditor SAVE_MS). */
 const TITLE_SAVE_MS = 400
@@ -98,11 +115,12 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const projects = useProjects()
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
+  const [focusBody] = useState(() => takeBodyFocus(note.id))
   return (
     <div className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} />
       </Suspense>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
         <span className="pt-2 text-meta text-muted">{t('Project')}</span>
@@ -113,6 +131,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
         <span className="pt-2 text-meta text-muted">{t('Labels')}</span>
         <LabelsField note={note} readOnly={readOnly} labels={labels} />
       </div>
+      <LinkedRefs kind="note" id={note.id} />
     </div>
   )
 }
@@ -120,24 +139,50 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
 /** Back to the list, which closes the panel or leaves the phone's note page. */
 const toList = () => navigate({ view: 'notes' })
 
-function menuFor(note: Note) {
+/** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
+function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
+  const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
+  const connected = useConnected('note', note.id)
   return (
-    <NoteMenu
-      onTurnIntoTask={() => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() })}
-      onDelete={() => { toList(); void deleteNote(note.id) }} />
+    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+      onConnections={connected ? () => openConnections('note', note.id) : undefined}
+      onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
+      onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
   )
 }
 
-/** The docked panel on a computer: a non-task occupant of the shell's panel slot. */
+/**
+ * While the note is docked, the root says so and carries the width this device chose
+ * for it (note-pane-width D1): `:root[data-note-split]` sizes the slot from it, apart
+ * from the docked task's width. Before paint, so the pane opens at its width.
+ */
+function useNoteSplit() {
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-note-split', '')
+    applyPanelWidth(NOTE_PANEL_WIDTH)
+    return () => root.removeAttribute('data-note-split')
+  }, [])
+}
+
+/**
+ * The docked panel on a computer: a non-task occupant of the shell's panel slot, resized
+ * by its left edge like the docked task (D1). The text keeps a readable column, centred
+ * when the pane is wide (D2).
+ */
 export function NotePanel({ id }: { id: string }) {
   const note = useNoteRow(id)
   const editable = useNoteEditable(note)
+  useNoteSplit()
   // A note that is gone (deleted here or on another device) leaves the slot.
   useEffect(() => { if (note === null || note?.deleted_at) toList() }, [note])
   if (!note || note.deleted_at) return null
   return (
-    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={editable ? menuFor(note) : undefined}>
-      <NoteForm note={note} readOnly={!editable} />
+    <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}
+      edge={<PanelResizeHandle store={NOTE_PANEL_WIDTH} label={t('Resize the note')} />}>
+      <div className="mx-auto w-full max-w-[40rem] px-2 pt-2 pb-12 lg:px-4" data-note-column>
+        <NoteForm note={note} readOnly={!editable} />
+      </div>
     </PanelFrame>
   )
 }
@@ -157,7 +202,7 @@ export function NotePage({ id }: { id: string }) {
   }
   return (
     <PageBody width="form" data-note-page={id}>
-      <PageHeader title={note.title.trim() || t('Untitled note')} back={{ label: t('Notes'), onClick: toList }} menu={editable ? menuFor(note) : undefined} />
+      <PageHeader title={note.title.trim() || t('Untitled note')} back={{ label: t('Notes'), onClick: toList }} menu={<NoteActions note={note} editable={editable} />} />
       <NoteForm note={note} readOnly={!editable} />
     </PageBody>
   )

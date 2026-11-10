@@ -77,6 +77,8 @@ A signed-in user SHALL create, list, change, enable or disable and delete their 
 ### Requirement: Connecting Google
 With a Google client configured, a user SHALL connect Google Calendar through `POST /api/v1/calendar-sync/google/start`, which needs a recently confirmed session and returns Google's authorization address with a single-use state bound to the user and a PKCE challenge, valid for 10 minutes. Google SHALL return the browser to `GET /api/v1/calendar-sync/google/callback`, which SHALL accept only the signed-in session the state belongs to, exchange the code, store the refresh token as the connection's secret, discover the calendars and redirect to the Calendar sync panel. The same flow with a connection id SHALL reconnect that connection.
 
+When the request to start carries an `Origin` that is not the origin of the redirect address (scheme, host and port), the start SHALL be refused with 409 `base_url_mismatch` and no state SHALL be stored. A failed sign-in SHALL name its cause in the address it returns to: `denied` for Google's `access_denied`, `redirect_uri_mismatch` for Google's refusal of the redirect address, `authorization_failed` for any other error from Google or a missing code (Google's own text SHALL never be copied into the address), `google_client_refused` when Google refuses the owner's client id or secret, `scope_not_granted` when the granted scopes leave out the calendar scope, and `caldav_api_disabled` when Google's CalDAV answers 403 to the fresh grant. The panel SHALL show each as a translated message with a link that opens the calendar sync guide at the section that fixes it. No message, address or log line SHALL carry the client secret, a code or a token.
+
 #### Scenario: Connect
 - **WHEN** a user starts the flow, consents at Google and Google redirects back with a code and the state
 - **THEN** a Google connection exists in the state `choose_calendar`, the refresh token is only in the secrets file, and the browser lands on Settings → Integrations → Calendar sync
@@ -88,6 +90,22 @@ With a Google client configured, a user SHALL connect Google Calendar through `P
 #### Scenario: No client
 - **WHEN** a user calls the start route while no Google client is configured
 - **THEN** the response is a 409 `google_not_configured` error
+
+#### Scenario: Redirect address is not the page's
+- **WHEN** the server runs behind a proxy without `OPENTODO_BASE_URL`, so the redirect address starts with `http://`, and a user on the `https://` page chooses Connect Google
+- **THEN** the start answers 409 `base_url_mismatch`, Google is not opened, and the panel says to set `OPENTODO_BASE_URL` with a link to "Wrong address behind a proxy" in the guide
+
+#### Scenario: CalDAV API not enabled
+- **WHEN** Google grants the sign-in but its CalDAV answers 403 to discovery
+- **THEN** no connection is created, the browser lands on the panel with `calendar-sync=caldav_api_disabled`, and the panel says the CalDAV API is not enabled with a link to "The CalDAV API is not enabled"
+
+#### Scenario: Calendar permission unticked
+- **WHEN** the token Google returns lists scopes without `https://www.googleapis.com/auth/calendar`
+- **THEN** no connection is created and the panel says the calendar permission was not allowed
+
+#### Scenario: Google's error is not copied
+- **WHEN** the callback arrives with a valid state and `error=<script>`
+- **THEN** the browser lands on the panel with `calendar-sync=authorization_failed`
 
 ### Requirement: Tasks written to the calendar
 For a connection with a target calendar, the server SHALL write each task of the user's task feed selection (open, visible to the user, with a due date from 30 days back to 365 days ahead) as one event `<task-id>.ics` with the task id as UID: a timed task as an event of its estimate (30 minutes without one) in its zone, or floating; a date-only task as an all-day event only when **Include tasks without a time** is on. A recurring task SHALL be written as its next occurrence. Creation SHALL use `If-None-Match: *`, changes and deletions `If-Match` with the stored ETag. Completed, deleted, undated and out-of-window tasks SHALL have their event removed. Offline edits reach the calendar after the device syncs and the next cycle runs.
@@ -293,3 +311,32 @@ A `429` or `503` answer from Microsoft SHALL end the cycle with the reason `rate
 #### Scenario: Client secret expired
 - **WHEN** the owner's client secret expired and a cycle refreshes a token
 - **THEN** every Microsoft connection stops with `microsoft_client_refused`, the owner's form says Microsoft refused the client secret, and saving a new secret resumes them within a minute
+
+### Requirement: Connection scope
+Each connection SHALL have a scope: `all` (the default, and the meaning of every connection created before scopes), `only` the chosen workspaces, projects and Inboxes, or everything `except` them. A workspace SHALL cover its projects and its Inbox, a project its sub-projects, an Inbox the tasks without a project of that workspace. The user SHALL set it in the connection's Calendars dialog (**Tasks from**: All, Only these, All except these) and through `PATCH /api/v1/calendar-sync/connections/{id}` with `scope`; every connection answer SHALL carry it. A scope SHALL hold at most 200 ids of at most 64 characters; anything else SHALL be refused with 400 `invalid_input` (field `scope`) and nothing SHALL change. A scope with nothing chosen SHALL be stored as `all`. The scope is server configuration of the connection: never an operation, never synced or exported, so it changes only while online; it never changes a task.
+
+Only the tasks of the task feed's selection that are in the scope SHALL be written as events. A new scope SHALL make the connection due at once; the next cycles SHALL remove the events the connection wrote for tasks that left the scope, and SHALL never remove or change an event the connection did not write. Changes and deletions of an event whose task is outside the scope SHALL not be applied to the task. A scope change SHALL be recorded in `calendar_connection.updated` with `scope` among the changed settings.
+
+#### Scenario: One calendar per workspace
+- **WHEN** a user with the workspaces Personal and Work sets a connection's scope to `{"mode":"only","workspaces":["<work id>"]}`
+- **THEN** the next cycle writes the dated tasks of Work's projects and Work's Inbox, and none of Personal's
+
+#### Scenario: Scope narrowed
+- **WHEN** the scope of a connection that wrote events for the projects Garden and Website becomes "All except Garden", and the target calendar also holds the user's own event "Dentist"
+- **THEN** the next cycle removes the event of Garden's task, keeps Website's and "Dentist", and Garden's task keeps its date
+
+#### Scenario: Event of a task outside the scope moved
+- **WHEN** the user moves in the calendar the event of a task that left the scope before the cycle removed it
+- **THEN** the task's due date and title do not change and the event is removed
+
+#### Scenario: Invalid scope
+- **WHEN** a user PATCHes a connection with `{"scope":{"mode":"some"}}`
+- **THEN** the response is a 400 `invalid_input` error and the connection is unchanged
+
+#### Scenario: Unauthenticated
+- **WHEN** `PATCH /api/v1/calendar-sync/connections/{id}` with a scope is sent without credentials
+- **THEN** the response is a 401 `unauthorized` error
+
+#### Scenario: Existing connections
+- **WHEN** a server with connections from before scopes upgrades
+- **THEN** every connection reports `{"mode":"all"}` and writes the same tasks as before

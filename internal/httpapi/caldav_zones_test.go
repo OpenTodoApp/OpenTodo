@@ -114,3 +114,21 @@ func TestCaldavZonedSeriesKeepsTZID(t *testing.T) {
 		t.Fatalf("echo wrote ops: %s -> %s", before, after)
 	}
 }
+
+// A task created elsewhere without a description is served without
+// DESCRIPTION; the client's echo must not turn the missing description into
+// an empty one (issue #1033).
+func TestCaldavEchoWithoutDescriptionWritesNothing(t *testing.T) {
+	e, c := davSetup(t)
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Plain"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+	_, ics := c.must("GET", c.cal("inbox")+id+".ics", "", 200)
+	if strings.Contains(ics, "DESCRIPTION") {
+		t.Fatalf("served a description:\n%s", ics)
+	}
+	c.must("PUT", c.cal("inbox")+id+".ics", ics, 204)
+	if ops := e.caldavOps(id); len(ops) != 0 {
+		t.Fatalf("echo wrote ops: %v", ops)
+	}
+}

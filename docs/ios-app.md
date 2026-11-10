@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, from TestFlight or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
 audience: user
 section: Reference
 specs: []
@@ -13,13 +13,13 @@ The OpenTodo app for iPhone and iPad opens your own OpenTodo server, like the [i
 
 ## Install it
 
-The official app comes through TestFlight, Apple's app for testing new apps, and later from the App Store. Install **TestFlight** from the App Store, then open the OpenTodo invitation link; the link will be on this page once the first build is out. TestFlight updates the app with every release.
+The official app is in the App Store: [OpenTodo for iPhone and iPad](https://apps.apple.com/us/app/opentodo/id6832200428). It is the first release, so expect some rough edges, and [say what to improve](feedback-and-support.md). New builds go to testers through TestFlight, Apple's app for testing, before they reach the App Store.
 
 As the copyright holder, the author of OpenTodo allows distributing its iOS app through Apple's App Store and TestFlight. You can still build the app yourself from source ([Building it](#building-it)).
 
 ## Connect to your server
 
-On first start the app asks for your server's address, the one you open in the browser (for example `todo.example.com`). Plain `http` is only accepted for addresses on your own network; everything else must be `https`. The screen says what is wrong when it can't connect:
+On first start the app asks for your server's address, the one you open in the browser (for example `todo.example.com`). An address without a scheme is reached over `https`, and the field shows it as `https://todo.example.com` before anything is sent; the app never tries `http` by itself and never follows a redirect to another address. Plain `http` is only used when you type it, only for addresses on your own network, and the screen then says the connection is not encrypted; everything else must be `https`. **Connect** becomes active once the address is well-formed. After connecting, **Settings → About** shows the exact address under **OpenTodo for iOS**. The screen says what is wrong when it can't connect:
 
 - **No answer**: the first start needs the network. Check the address and the connection.
 - **Not an OpenTodo server**: the address answers, but not like OpenTodo. Check for typos.
@@ -49,6 +49,8 @@ The app appears in the share sheet of other apps. A link, some text or files ope
 ## Widgets
 
 **Today**, in the medium size, shows the tasks due today and the overdue ones, with the time and priority, from the last thing the web app published. Tap a task to open it. For an encrypted account the widget shows counts only until you unlock.
+
+Version 1.2.0 of the app never filled the widget, never scheduled reminders and offered browser push in **Settings → Notifications**. Update the app from the App Store or TestFlight and open it once; the widget fills and reminders are scheduled.
 
 ## Theme colours
 
@@ -88,5 +90,9 @@ Reminders, Face ID, the certificate and local-network behaviour and the backgrou
 **Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.open-todo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
 
 Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.open-todo.ios` prefix in `mobile/ios/project.yml` for every target and run `xcodegen generate`.
+
+### Walkthrough
+
+To look at the app on several iPhones without a Mac, run **Actions → iPhone walkthrough** (`gh workflow run ios-walkthrough.yml --ref <branch>`). On a macOS runner it builds the server, seeds an account and walks the app through first run, sign-in, the lists, a project, a task, quick add, completing, swiping and dragging, search, the calendar and Settings (`mobile/ios/OpenTodoUITests/WalkthroughTests.swift`), on an iPhone SE (3rd generation), an iPhone 16, an iPhone 16 Pro Max and an iPhone 16 in dark mode with the largest text. The `ios-walkthrough` artifact holds one PNG per step and device and `summary.txt`, with what the accessibility audit found and the steps it could not reach. It reports and never fails; `scripts/ios-walkthrough.sh` runs the same on a Mac.
 
 `mobile/README.md` describes the files, the bridge and the build settings; `openspec/changes/ios-shell` records the decisions and what was measured on the platform.

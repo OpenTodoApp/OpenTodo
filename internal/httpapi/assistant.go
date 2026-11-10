@@ -235,8 +235,12 @@ var consentFields = []string{
 	"workspace, project, section and label names, and project descriptions",
 	"saved view names and the hosts of your webhooks, when you describe a routine",
 	"your routines and calendar frames",
+	// find_free_time (assistant-time-blocks): free stretches only, never an event's title.
+	"your free time, worked out from your calendar events, frames, slots and timed tasks",
 	"tracked time and its notes",
 	"names of members and groups of shared projects and workspaces",
+	// assistant-memory D4: the person's own saved facts, with every turn.
+	"your memory items, with every message",
 	"your display name, today's date and your time zone",
 	"the messages you type",
 	"photos you add",
@@ -244,14 +248,21 @@ var consentFields = []string{
 
 // deviceConsentFields is consentFields for the on-device assistant of an
 // encrypted account (assistant-on-device): its read tools return tasks,
-// comments and projects only (web/src/lib/assistantDevice/read.ts), and a
-// Describe it draft on the device adds the same names as the server's.
+// comments, projects, notes, calendar frames and slots and tracked time
+// (web/src/lib/assistantDevice/read*.ts, assistant-device-reads), free time
+// (readFreeTime.ts, assistant-time-blocks), and a Describe it draft on the
+// device adds the same names as the server's.
 var deviceConsentFields = []string{
 	"task titles and descriptions",
 	"due dates, repeats, priorities, estimates and completion",
 	"comments",
+	"notes",
 	"project, section and label names, and project descriptions",
 	"saved view names and the hosts of your webhooks, when you describe a routine",
+	"calendar frames and slots",
+	"your free time, worked out from your calendar events, frames, slots and timed tasks",
+	"tracked time and its notes",
+	"your memory items, with every message",
 	"your display name, today's date and your time zone",
 	"the messages you type",
 	"photos you add",
@@ -316,6 +327,8 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"routines_consented": consent.RoutinesValid(route.Provider),
 		// disclosure_notice: tell once that the list is now complete (assistant-disclosure-notice D2).
 		"disclosure_notice": consent.NeedsNotice(),
+		// memory_notice: tell once that memory items are sent with every turn (assistant-memory D4).
+		"memory_notice":     consent.NeedsMemoryNotice(),
 		"allow_member_keys": set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
 		"server_own_key_set": sec.Has(assistant.UserKey(u.ID, set.DefaultProvider)),
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,
@@ -609,13 +622,26 @@ func (s *Server) handleMyAssistantUsage(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, v)
 }
 
-// usageView is the month's usage: total_tokens counts every turn,
-// counted_tokens what is measured against cap, own_key the turns on the
-// user's own key (left out of counted_tokens unless cap_member_keys).
+// usageView is the month's usage: total_tokens counts every token of every
+// turn, input_tokens the fresh input, cached_tokens the input read from the
+// provider's cache and cache_write_tokens the input written to it,
+// counted_tokens what is measured against cap (cache reads at one tenth),
+// own_key the turns on the user's own key (left out of counted_tokens unless
+// cap_member_keys).
 func usageView(u assistant.Usage, capMemberKeys bool) map[string]any {
-	return map[string]any{"month": u.Month, "input_tokens": u.InputTokens, "output_tokens": u.OutputTokens, "total_tokens": u.Total(),
+	return map[string]any{"month": u.Month, "input_tokens": u.InputTokens, "cached_tokens": u.CachedTokens, "cache_write_tokens": u.CacheWriteTokens,
+		"output_tokens": u.OutputTokens, "total_tokens": u.Total(),
 		"turns": u.Turns, "cap": u.Cap, "resets_at": u.ResetsAt, "counted_tokens": u.Counted(capMemberKeys), "cap_member_keys": capMemberKeys,
-		"own_key": map[string]any{"input_tokens": u.Own.InputTokens, "output_tokens": u.Own.OutputTokens, "total_tokens": u.Own.Total(), "turns": u.Own.Turns}}
+		"own_key": map[string]any{"input_tokens": u.Own.InputTokens, "cached_tokens": u.Own.CachedTokens, "cache_write_tokens": u.Own.CacheWriteTokens,
+			"output_tokens": u.Own.OutputTokens, "total_tokens": u.Own.Total(), "turns": u.Own.Turns}}
+}
+
+// turnUsage is the usage event of a turn or a draft: input is the fresh
+// input, cached and cache_write the input read from and written to the
+// provider's cache, month_total what counts against cap.
+func turnUsage(t assistant.Tokens, monthTotal, turnCap int64, own bool) map[string]any {
+	return map[string]any{"input": t.Input, "cached": t.CachedRead, "cache_write": t.CachedWrite, "output": t.Output,
+		"month_total": monthTotal, "cap": turnCap, "own_key": own}
 }
 
 // ---- the turn ----
@@ -629,6 +655,9 @@ type turnRequest struct {
 	// (assistant-skills D2); both optional.
 	Skill   string             `json:"skill,omitempty"`
 	Workday *assistant.Workday `json:"workday,omitempty"`
+	// OpenProposal is the open, unapplied proposal this turn amends
+	// (assistant-proposal-editing D3): at most 50 items, checked by the loop.
+	OpenProposal []assistant.Proposed `json:"open_proposal,omitempty"`
 }
 
 func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
@@ -727,15 +756,17 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	res := s.assistant.Loop.Run(tctx, prov, assistant.TurnInput{
-		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: s.visibleToAssistants(ctx, u.ID, in.Selected), Skill: skill, Workday: in.Workday,
+		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: s.visibleToAssistants(ctx, u.ID, in.Selected), Skill: skill, Workday: in.Workday, Open: in.OpenProposal,
 	}, assistant.Events{
 		Text:   func(t string) { send("text", map[string]string{"text": t}) },
 		Status: func(t string) { send("status", map[string]string{"text": t}) },
+		// A block carries its kind and checked ids only, never content (assistant-generative-ui D3).
+		Block: func(b assistant.Block) { send("block", b) },
 	})
 	// Usage is counted from the provider's usage fields, whatever the outcome
 	// (a refusal still costs tokens), in a context that outlives a disconnect.
-	if res.Input+res.Output > 0 {
-		if err := s.assistant.Store.AddUsage(context.WithoutCancel(ctx), u.ID, res.Input, res.Output, route.Own); err != nil {
+	if res.Total() > 0 {
+		if err := s.assistant.Store.AddUsage(context.WithoutCancel(ctx), u.ID, res.Tokens, route.Own); err != nil {
 			s.log.Error("assistant usage not recorded", "err", err)
 		}
 		if skill != nil {
@@ -746,7 +777,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	}
 	// Logs hold the provider, outcome, duration and token counts only (design D8).
 	s.log.Info("assistant turn", "provider", route.Provider, "own_key", route.Own, "skill", in.Skill, "stop", string(res.Stop), "duration_ms", time.Since(start).Milliseconds(),
-		"input_tokens", res.Input, "output_tokens", res.Output, "proposed", len(res.Changes), "failed", res.Err != nil)
+		"input_tokens", res.Input, "cached_read_tokens", res.CachedRead, "cached_write_tokens", res.CachedWrite, "output_tokens", res.Output, "proposed", len(res.Changes), "failed", res.Err != nil)
 	if ctx.Err() != nil {
 		return // the browser went away (stopped or closed)
 	}
@@ -754,13 +785,13 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	// cap does not apply to (the member's own key).
 	total := usage.Counted(set.CapMemberKeys)
 	if !route.Own || set.CapMemberKeys {
-		total += res.Input + res.Output
+		total += res.Counted()
 	}
 	turnCap := set.MonthlyTokenCap
 	if !capped {
 		turnCap = 0
 	}
-	send("usage", map[string]any{"input": res.Input, "output": res.Output, "month_total": total, "cap": turnCap, "own_key": route.Own})
+	send("usage", turnUsage(res.Tokens, total, turnCap, route.Own))
 	if res.Err != nil {
 		code, msg := s.turnError(res.Err, route.Own)
 		send("error", map[string]string{"code": code, "message": msg})
@@ -802,6 +833,10 @@ func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.
 	}
 	if len(in.Messages) > turnMaxMessages {
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("a turn carries at most %d messages", turnMaxMessages))
+		return turnRequest{}, nil, nil, false
+	}
+	if len(in.OpenProposal) > assistant.MaxOpenProposal {
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("an open proposal holds at most %d items; apply or discard it first", assistant.MaxOpenProposal))
 		return turnRequest{}, nil, nil, false
 	}
 	if msg := validateTurn(in); msg != "" {
@@ -891,6 +926,7 @@ func (s *Server) turnError(err error, own bool) (code, msg string) {
 	code, msg = "provider_error", "the provider could not answer"
 	if pe, ok := assistant.AsProviderError(err); ok {
 		code, msg = pe.Code, pe.Msg
+		s.log.Warn("assistant turn refused by the provider", "code", pe.Code, "status", pe.Status, "type", pe.Type)
 		if own && pe.Code == assistant.CodeProviderAuth {
 			msg = assistant.OwnKeyRejected()
 		}

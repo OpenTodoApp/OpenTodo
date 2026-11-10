@@ -8,8 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import type { CalendarConnection } from '../lib/types'
 import { click, render, type, waitFor } from '../ui/test-utils'
-import { CalendarSyncPanel, googleResultText, microsoftResultText, syncStateLine } from './CalendarSyncPanel'
+import { CalendarSyncPanel, GOOGLE_HELP, googleResultText, microsoftResultText, syncStateLine } from './CalendarSyncPanel'
 import { validTenant } from './CalendarSyncDialogs'
+import { loadHelp } from '../lib/help'
 
 const NOW = new Date(2026, 9, 26, 12, 0).getTime()
 const base: CalendarConnection = {
@@ -122,7 +123,7 @@ describe('calendar sync panel', () => {
     await click(choice.querySelector('[role="switch"]')!)
     await click(button(choice, 'Save')!)
     await waitFor(() => keys().includes('PATCH /api/v1/calendar-sync/connections/c1'))
-    expect(calls.find((c) => c.key === 'PATCH /api/v1/calendar-sync/connections/c1')!.body).toEqual({ target: base.target, read: [], include_date_only: true })
+    expect(calls.find((c) => c.key === 'PATCH /api/v1/calendar-sync/connections/c1')!.body).toEqual({ target: base.target, read: [], include_date_only: true, scope: { mode: 'all', workspaces: [], projects: [], inboxes: [] } })
     await waitFor(() => document.querySelector('[data-testid="calendar-choice"]') === null)
     await r.unmount()
   })
@@ -230,6 +231,36 @@ describe('Microsoft in calendar sync (outlook-calendar-sync)', () => {
     await r.unmount()
   })
 
+  it('names why Google did not connect and links to the fix (google-sync-guide)', async () => {
+    window.history.replaceState(null, '', '/settings/integrations/calendar-sync?calendar-sync=caldav_api_disabled')
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: true, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [] },
+    })
+    const r = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => r.container.textContent!.includes('the CalDAV API is not enabled'))
+    expect(r.container.querySelector('[data-learn-more][data-help-screen="calendar-sync/caldav_api_disabled"]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('says how to fix a redirect address the page is not open at', async () => {
+    window.history.replaceState(null, '', '/settings/integrations/calendar-sync')
+    serve({
+      'GET /api/v1/settings/calendar-sync': { enabled: true, google: true, max_connections: 3 },
+      'GET /api/v1/calendar-sync/connections': { connections: [] },
+    })
+    const fetchOk = globalThis.fetch as ReturnType<typeof vi.fn>
+    const inner = fetchOk.getMockImplementation() as (url: string, init?: RequestInit) => Promise<Response>
+    fetchOk.mockImplementation(async (url: string, init?: RequestInit) => (String(url).includes('/google/start')
+      ? new Response(JSON.stringify({ error: { code: 'base_url_mismatch', message: 'Google would return to http://x/api/v1/calendar-sync/google/callback' } }), { status: 409 })
+      : inner(url, init)))
+    const r = await render(<CalendarSyncPanel isOwner={false} />)
+    await waitFor(() => button(r.container, 'Connect Google') !== undefined)
+    await click(button(r.container, 'Connect Google')!)
+    await waitFor(() => r.container.querySelector('[data-help-screen="calendar-sync/base_url_mismatch"]') !== null)
+    await r.unmount()
+  })
+
   it('checks tenants and words the results', () => {
     for (const ok of ['', 'common', 'organizations', 'consumers', 'contoso.onmicrosoft.com', '72f988bf-86f1-41af-91ab-2d7cd011db47']) expect(validTenant(ok)).toBe(true)
     for (const bad of ['contoso corp', 'contoso', '../x']) expect(validTenant(bad)).toBe(false)
@@ -242,11 +273,20 @@ describe('Microsoft in calendar sync (outlook-calendar-sync)', () => {
 })
 
 describe('calendar sync texts', () => {
+  it('links only to sections the guide has', async () => {
+    const { bundle } = await loadHelp()
+    for (const { helpScreen: screen } of Object.values(GOOGLE_HELP)) expect(bundle.screens[screen], screen).toMatchObject({ page: 'calendar-sync' })
+  })
+
   it('words the states and the Google results', () => {
     expect(syncStateLine({ ...base, state: 'choose_calendar' }, NOW)).toBe('Choose the calendar to write tasks into.')
     expect(syncStateLine({ ...base, state: 'failed', last_error: 'timeout' }, NOW)).toBe('The calendar server did not answer in time. · last success 2 min ago')
     expect(syncStateLine({ ...base, state: 'stopped', stopped_reason: 'calendar_missing' }, NOW)).toContain('no longer exists')
     expect(googleResultText('connected')).toBeNull()
     expect(googleResultText('invalid_state')).toContain('sign-in expired')
+    for (const result of ['authorization_failed', 'redirect_uri_mismatch', 'google_client_refused', 'scope_not_granted', 'caldav_api_disabled']) {
+      expect(googleResultText(result)).not.toContain('Error:')
+      expect(GOOGLE_HELP[result]).toBeTruthy()
+    }
   })
 })

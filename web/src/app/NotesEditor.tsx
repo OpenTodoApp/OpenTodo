@@ -14,14 +14,23 @@ import { encryptionSnapshot } from '../lib/e2ee'
 import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNotes'
 import { foldNote, mutate, mutateMany, planTask, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, insertBlocks, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { pushPendingNotes } from '../lib/sync'
 import { useMe } from '../lib/timeEntries'
+import type { Suggest } from '../lib/editorSuggest'
+import { suggestKey } from '../lib/editorSuggest'
+import { linkCandidates, type LinkCandidate } from '../lib/linkPicker'
+import { useMembershipMap, useProjects } from '../lib/localData'
+import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
+import { hrefOf } from '../lib/noteLinks'
+import { planNote } from '../lib/noteOps'
+import { useNoteRows } from '../lib/noteRows'
 import type { Clock } from '../lib/types'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
 import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
-import type { CommandEnv } from './editorCommands'
+import type { CommandEnv, LinkPickerEnv } from './editorCommands'
 import { imageViews } from './editorImage'
+import { refViews } from './editorRef'
 import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
 import { useMentionTargets } from './useMentionTargets'
@@ -92,6 +101,45 @@ function makeSubtaskCommand(o: { enabled: boolean; taskId: string; projectId: ()
       await o.save(change, id, undoDepth(v.state))
     })()
     return true
+  }
+}
+
+/** A link node in place of the typed `[[text`, then a space (note-links D3). */
+function insertLink(view: EditorView, s: Suggest, kind: LinkCandidate['kind'], id: string, title: string) {
+  const node = schema.nodes.ref.create({ href: hrefOf(kind, id), label: title })
+  // The space after the link: punctuation typed next takes its place (linkSpacePlugin).
+  return view.state.tr.replaceWith(s.from, s.to, [node, schema.text(' ')]).setMeta(linkSpaceKey, s.from + node.nodeSize).scrollIntoView()
+}
+
+/**
+ * The `[[` picker over the current workspace's rows (D3): only the project's items
+ * in a note of a shared project; New note creates the note and the link in one
+ * batch (`save`), which one Undo of the editor reverts.
+ */
+function useLinkPicker(o: { self: string; projectId: string | null; enabled: boolean; save: (change: Change, id: string, depth: number) => Promise<void> }): LinkPickerEnv | undefined {
+  const tasks = useLiveTasks() ?? NO_TASKS
+  const projects = useProjects()
+  const notes = useNoteRows()
+  const memberships = useMembershipMap()
+  const scope = o.projectId && memberships.has(o.projectId) ? o.projectId : null
+  if (!o.enabled) return undefined
+  return {
+    candidates: (query) => linkCandidates(query, { tasks, projects, notes, scope, self: o.self, untitled: t('Untitled note') }),
+    insert: (view, s, item) => {
+      view.dispatch(insertLink(view, s, item.kind, item.id, item.title))
+      view.focus()
+    },
+    create: (view, _s, title) => {
+      void (async () => {
+        const change = await planNote({ title, project_id: o.projectId })
+        // The typed text as it is now (a remote merge may have moved it meanwhile).
+        const s = suggestKey.getState(view.state)?.active
+        if (view.isDestroyed || !s || s.kind !== 'link') return
+        view.dispatch(closeHistory(insertLink(view, s, 'note', change.entityId, title.trim())))
+        view.focus()
+        await o.save(change, change.entityId, undoDepth(view.state))
+      })()
+    },
   }
 }
 
@@ -188,21 +236,20 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   mentioned.current = note.note_mentions
   const projectId = useRef(note.project_id ?? null)
   projectId.current = note.project_id ?? null
-  // The subtask Make subtask created, undone with the note's next undo of that step.
-  const pendingSubtask = useRef<{ id: string; depth: number } | null>(null)
-  const makeSubtask = makeSubtaskCommand({
-    enabled: isTask && !readOnly, taskId, projectId: () => projectId.current,
-    // One batch: the subtask and the note that links to it.
-    save: async (change, id, depth) => {
-      pendingSubtask.current = { id, depth }
-      if (timer.current) clearTimeout(timer.current)
-      dirty.current = false
-      await mutateMany([change, { entity, entityId: taskId, patch: notePatch() }])
-    },
-  })
+  // The subtask Make subtask created (or the note New note created), undone with the note's next undo of that step.
+  const pendingSubtask = useRef<{ entity: 'task' | 'note'; id: string; depth: number } | null>(null)
+  // One batch: the new subtask or note and the note that links to it.
+  const saveCreated = (kind: 'task' | 'note') => async (change: Change, id: string, depth: number) => {
+    pendingSubtask.current = { entity: kind, id, depth }
+    if (timer.current) clearTimeout(timer.current)
+    dirty.current = false
+    await mutateMany([change, { entity, entityId: taskId, patch: notePatch() }])
+  }
+  const makeSubtask = makeSubtaskCommand({ enabled: isTask && !readOnly, taskId, projectId: () => projectId.current, save: saveCreated('task') })
+  const linkTo = useLinkPicker({ self: `${entity}:${taskId}`, projectId: entity === 'project' ? taskId : note.project_id ?? null, enabled: !readOnly, save: saveCreated('note') })
   const env: CommandEnv = {
     notes: isTask, members: members.length > 0, askLink, notify: (m) => chrome.notify(m),
-    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask,
+    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask, linkTo,
   }
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
   const envRef = useRef(env)
@@ -266,14 +313,14 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         const p = pendingSubtask.current
         if (!p || depthBefore !== p.depth) return
         pendingSubtask.current = null
-        void mutate('task', p.id, { deleted_at: Date.now() })
+        void mutate(p.entity, p.id, { deleted_at: Date.now() })
       },
     }
     const v = new EditorView(host.current as HTMLDivElement, {
       state: createState(toModel(activeBody(doc)), hooks),
       editable: () => !readOnly,
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
-      nodeViews: imageViews(entity === 'task' ? taskId : null),
+      nodeViews: { ...imageViews(entity === 'task' ? taskId : null), ...refViews },
       clipboardTextParser: (text) => markdownSlice(text),
       ...(entity === 'task' && !readOnly ? imageHandlers(taskId) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {

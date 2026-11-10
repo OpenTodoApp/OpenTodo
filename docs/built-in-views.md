@@ -11,7 +11,7 @@ order: 21
 
 <picture><source srcset="images/sidebar-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/sidebar-light.webp" alt="The sidebar with Inbox, Today, Upcoming and Calendar at the top, counts only next to Inbox and Today, then the Projects, Labels and Filters groups and one footer row with your name."></picture>
 
-Each view is built from your device's tasks, so it works offline. Today and Upcoming have [a page of their own](today-and-upcoming.md); for views you make yourself, see [Saved views](saved-views.md).
+Each view works offline, from your device's tasks. Today and Upcoming have [a page of their own](today-and-upcoming.md); [Display options](arrange-built-in-views.md) arrange them and the Inbox. For your own views, see [Saved views](saved-views.md).
 
 ## What each view shows
 
@@ -45,7 +45,7 @@ Anytime lists every open task that has no due date, no deadline and no start dat
 
 ## Park ideas in Someday
 
-Someday holds the tasks you parked: ideas and maybes you don't want to see every day; [quick add](quick-add.md) here parks what you add. They stay out of Today, Upcoming, Anytime and the counts, and are listed here by project and in their project's **Later** group. Press <kbd>n</kbd> on a task to park it or bring it back.
+Someday holds the tasks you parked: ideas and maybes you don't want to see every day; [quick add](quick-add.md) here parks what you add. They stay out of Today, Upcoming, Anytime and the counts, and are listed here by project and under **Later** in their project. Press <kbd>n</kbd> on a task to park it or bring it back.
 
 ## Narrow a list by duration
 

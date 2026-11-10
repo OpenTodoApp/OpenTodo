@@ -1,12 +1,12 @@
-// The Loop pulse and the next move (OpenSpec change loop-home-refresh, design D3,
-// D7; open-loops "Loop pulse"): pure functions over the local rows, computed when
-// shown, nothing stored, nothing sent. "Done this week" and the per-day strip come
+// The Loop pulse and the next move (OpenSpec changes loop-home-refresh, design D3,
+// D7, and loop-guided-dashboard, D2; open-loops "Loop pulse"): pure functions over
+// the local rows, computed when shown, nothing stored, nothing sent. "Done this week" and the per-day strip come
 // from the statistics module so the Loop home, Statistics and the digest agree.
 import { addDaysISO, currentDayStart, daysBetweenISO, logicalDay } from '../dates'
 import type { Period } from '../stats'
 import { qualifies } from '../triage'
 import type { Task } from '../types'
-import type { MoveId } from './index'
+import type { MoveId, RhythmId } from './index'
 
 /** How many local days the pulse looks back, today included. */
 export const PULSE_DAYS = 14
@@ -60,18 +60,29 @@ export const INBOX_AGE_CAUTION_DAYS = 7
 export interface MoveCounts {
   inbox: number
   withoutNext: number
-  rhythmDue: boolean
+  /** The due rhythm the Review move would open (the Daily check first, then the weekly review, then the Monthly look), else null. */
+  rhythm: RhythmId | null
   nextCount: number
 }
 
+/** The next move and the facts its sentence names (loop-guided-dashboard D2): a count, or the due rhythm for Review. */
+export interface NextStep {
+  move: MoveId
+  /** Inbox tasks for Clarify, projects without a next action for Place, next actions for Do; 0 for Review and Catch. */
+  count: number
+  /** The due rhythm, for Review only. */
+  rhythm: RhythmId | null
+}
+
 /**
- * The one move the Loop home lights up: the first in method order that needs the
- * user, so the page has exactly one primary action.
+ * The one move the Loop home names as the next step: the first that needs the user,
+ * in the order Clarify, Place, Review, Do, then Catch when every loop is closed, so
+ * the page has exactly one primary action and a reason for it.
  */
-export function nextMove(counts: MoveCounts): MoveId {
-  if (counts.inbox > 0) return 'clarify'
-  if (counts.withoutNext > 0) return 'place'
-  if (counts.rhythmDue) return 'review'
-  if (counts.nextCount > 0) return 'do'
-  return 'catch'
+export function nextMove(counts: MoveCounts): NextStep {
+  if (counts.inbox > 0) return { move: 'clarify', count: counts.inbox, rhythm: null }
+  if (counts.withoutNext > 0) return { move: 'place', count: counts.withoutNext, rhythm: null }
+  if (counts.rhythm) return { move: 'review', count: 0, rhythm: counts.rhythm }
+  if (counts.nextCount > 0) return { move: 'do', count: counts.nextCount, rhythm: null }
+  return { move: 'catch', count: 0, rhythm: null }
 }

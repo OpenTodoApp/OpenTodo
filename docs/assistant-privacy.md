@@ -18,20 +18,20 @@ The [assistant](assistant.md) sends your task content to a model provider only a
 The panel first shows what will be sent and to whom:
 
 - the provider and model the owner chose, or the provider you chose with your own key,
-- what may be sent: tasks (title, description, dates, repeats, priority, estimate, completion, custom fields, location, the link a task came from), comments, attachment names, types and links (never the files), notes, tracked time, your routines and calendar frames; workspace, project, section and label names and project descriptions; names of members and groups you share with; saved view names and webhook hosts when you [describe a routine](routines.md#describe-it); your display name, date and time zone, your messages and [photos you add](assistant-capture.md#what-is-kept),
+- what may be sent: tasks (title, description, dates, repeats, priority, estimate, completion, custom fields, location, the link a task came from), comments, attachment names, types and links (never the files), notes, tracked time, routines, calendar frames and free time; workspace, project, section and label names and project descriptions; names of members and groups you share with; saved view names and webhook hosts when you [describe a routine](routines.md#describe-it); your [memory](assistant-memory.md), display name, date and time zone, your messages and [photos you add](assistant-capture.md#what-is-kept),
 - for a routine's **Ask AI** or **Summarise** step: its instruction and what it reads, on a schedule or after an event, while you may not be looking.
 
 In a shared project that includes text other members wrote. Select **Accept and continue** to start. If the provider changes later (also to [your own](assistant-settings.md#use-your-own-provider-and-key)), the assistant asks you again. You can withdraw consent in **Settings → Integrations → Assistant**. If you agreed to the earlier, shorter list, a [notice](assistant-settings.md#the-complete-list-notice) tells you once.
 
 ## Conversations stay on this device
 
-Conversations are stored only in this browser: never synced, shared, exported or backed up. The panel keeps the last 50 for up to 30 days. **History** lists them (also offline), **New** starts another, and **Clear conversations** deletes them (also in **Settings → Integrations → Assistant**). Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
+Conversations are stored only in this browser: never synced, shared, exported or backed up. The panel keeps the last 50 for up to 30 days. **History** lists them, **New** starts another, and **Clear conversations** deletes them (also in **Settings → Integrations → Assistant**). Signing out deletes them too. The server keeps nothing of a conversation after it has answered.
 
 Offline you can read earlier conversations and apply or undo a proposal that already arrived; asking needs a connection.
 
 ## Costs and limits
 
-Each answer shows how many tokens it used and how much of your monthly allowance that is ("1,240 tokens · this month 18% of your limit"); **Settings → Integrations → Assistant** shows the month so far. The owner sets the allowance (500,000 tokens per person per month by default). It resets on the first day of each month (UTC). One answer at a time per person. A [Describe it](routines.md#describe-it) draft is one answer too.
+Each answer shows its tokens and its share of your monthly allowance ("1,240 tokens · this month 18% of your limit"); **Settings → Integrations → Assistant** shows the month so far. Input read from the provider's cache is named ("20,300 tokens, 18,000 from cache") and counts at one tenth. The owner sets the allowance (500,000 tokens per person a month by default); it resets on the first of each month (UTC). One answer at a time per person; a [Describe it](routines.md#describe-it) draft is one too.
 
 Answers on your own key are paid by you and do not count toward the allowance unless the owner chooses to count them ("1,240 tokens · your key").
 

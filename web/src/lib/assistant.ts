@@ -61,6 +61,8 @@ export interface TurnRequest {
   /** A built-in skill id and the device's working day (assistant-skills D2). */
   skill?: string
   workday?: { startHour: number; endHour: number; dayLength: number }
+  /** The open, unapplied proposal this turn amends (assistant-proposal-editing D3), at most 50 items. */
+  open_proposal?: ProposedChange[]
 }
 
 /**
@@ -141,6 +143,10 @@ export interface ReviewItem {
   /** Each change in words ("Due Wed 14 Oct → Fri 16 Oct"). */
   lines: string[]
   shared: boolean
+  /** Edited before applying (assistant-generative-ui D6): the change holds the edited values. */
+  edited?: boolean
+  /** What the latest turn did to this item of an open proposal (assistant-proposal-editing D3). */
+  turn?: 'added' | 'changed'
 }
 
 export interface Review {
@@ -261,6 +267,8 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
     switch (c.entity) {
       case 'project': return { title: t('New project: {name}', { name: String(p.name ?? '') }), lines: [] }
       case 'label': return { title: t('New label: {name}', { name: String(p.name ?? '') }), lines: [] }
+      // assistant-memory D2: a fact to remember, applied like any other item.
+      case 'memory': return { title: t('Remember: {text}', { text: String(p.text ?? '') }), lines: [] }
       case 'comment': {
         const task = names.tasks.get(String(p.task_id)) ?? t('a task')
         return { title: t('Comment on “{task}”', { task: clip(task, 50) }), lines: [clip(String(p.body ?? ''), 140)] }
@@ -347,7 +355,15 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
     }
   }
   const review: Review = { items: [], dropped: [] }
+  // Memory holds at most 20 live items (assistant-memory): new ones past the room are left out.
+  // lib/memory loads only with a memory item, keeping it out of the first load.
+  const mem = changes.some((c) => c.entity === 'memory' && c.create) ? await import('./memory') : null
+  let room = mem ? mem.MAX_MEMORY_ITEMS - (await mem.liveMemory()).length : 0
   for (const c of changes) {
+    if (c.entity === 'memory' && c.create && room-- <= 0) {
+      review.dropped.push(t('Memory holds 20 items, so “{text}” was left out. Remove one in Settings first.', { text: clip(String(c.patch.text ?? ''), 60) }))
+      continue
+    }
     const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
     if (!c.create && (!local || local.deleted_at)) {
       const { title } = describe(c, undefined, names)
@@ -371,8 +387,10 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
 export async function refreshReview(r: Review): Promise<Review> {
   const fresh = await reviewChangeSet(r.items.map((i) => i.change))
   const wasChecked = new Map(r.items.map((i) => [i.change.entity + i.change.entityId, i.checked]))
+  const wasEdited = new Set(r.items.filter((i) => i.edited).map((i) => i.change.entity + i.change.entityId))
   for (const i of fresh.items) {
     if (i.state === 'ok') i.checked = wasChecked.get(i.change.entity + i.change.entityId) ?? true
+    if (wasEdited.has(i.change.entity + i.change.entityId)) i.edited = true
   }
   return { items: fresh.items, dropped: [...r.dropped, ...fresh.dropped.filter((d) => !r.dropped.includes(d))] }
 }
@@ -490,11 +508,19 @@ export function describeStreamError(code: string, message: string): string {
   return message ? message.charAt(0).toUpperCase() + message.slice(1) + '.' : t('The model provider could not answer.')
 }
 
-/** "1,240 tokens · this month 18% of your limit". */
-export function usageLine(u: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }): string {
-  const n = u.input + u.output
-  if (!u.cap) return u.own_key ? t('{n, plural, one {# token · your key} other {# tokens · your key}}', { n }) : t('{n, plural, one {# token} other {# tokens}}', { n })
+/**
+ * "1,240 tokens · this month 18% of your limit", or with input read from the
+ * provider's cache "20,300 tokens, 18,000 from cache · …" (assistant-usage-cache D3).
+ */
+export function usageLine(u: { input: number; output: number; cached?: number; cache_write?: number; month_total?: number; cap?: number; own_key?: boolean }): string {
+  const cached = u.cached ?? 0
+  const n = u.input + cached + (u.cache_write ?? 0) + u.output
+  if (!u.cap) {
+    if (cached) return u.own_key ? t('{n, plural, one {# token, {cached, number} from cache · your key} other {# tokens, {cached, number} from cache · your key}}', { n, cached }) : t('{n, plural, one {# token, {cached, number} from cache} other {# tokens, {cached, number} from cache}}', { n, cached })
+    return u.own_key ? t('{n, plural, one {# token · your key} other {# tokens · your key}}', { n }) : t('{n, plural, one {# token} other {# tokens}}', { n })
+  }
   const pct = Math.min(100, Math.round(((u.month_total ?? 0) / u.cap) * 100))
+  if (cached) return t('{n, plural, one {# token, {cached, number} from cache · this month {pct}% of your limit} other {# tokens, {cached, number} from cache · this month {pct}% of your limit}}', { n, cached, pct })
   return t('{n, plural, one {# token · this month {pct}% of your limit} other {# tokens · this month {pct}% of your limit}}', { n, pct })
 }
 

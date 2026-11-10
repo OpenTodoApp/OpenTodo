@@ -32,6 +32,7 @@ import { Shell } from './Shell'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
 import { setBranding } from '../lib/branding'
+import { rememberServerVersion } from '../lib/serverVersion'
 import { PanelBoundary } from './PanelBoundary'
 import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
@@ -72,6 +73,7 @@ export function App() {
       setDemo(status.demo)
       setHosted(status.hosted)
       setBranding(status.branding)
+      rememberServerVersion(status.version)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))

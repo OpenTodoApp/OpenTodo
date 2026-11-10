@@ -24,7 +24,7 @@ for (const width of [1280, 768, 390]) {
       return {
         rows: rows.length,
         date: rows.map((r) => box(r, '[data-row-cell="date"]')),
-        labels: rows.map((r) => box(r, '[data-row-cell="extra"]')),
+        labels: rows.map((r) => box(r, '[data-row-cell="labels"]')),
         // textContent includes visually hidden text, which a screen reader reads.
         text: `${document.querySelector('[data-alignment-list]')!.textContent} ${named.join(' ')}`,
       }
@@ -46,3 +46,50 @@ for (const width of [1280, 768, 390]) {
     }
   })
 }
+
+// The row grid (sidebar-brand-and-row-grid D2, D3): in the story Screens/Task row SlotGrid,
+// rows with and without a label, an estimate or a date keep every slot in its column, the
+// dates end at one x, and the title, the marks and every slot share the title's first baseline.
+test('slots line up when values are missing, on the title\'s first baseline', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/iframe.html?id=screens-task-row--slot-grid&viewMode=story&globals=theme:light')
+  await page.locator('li[data-task-id]').first().waitFor()
+  await page.evaluate(() => document.fonts.ready)
+  const m = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('li[data-task-id]')]
+    const cell = (row: Element, slot: string) => {
+      const b = row.querySelector(`[data-row-cell="${slot}"]`)?.getBoundingClientRect()
+      return b && b.width > 0 ? { left: b.left, right: b.right } : null
+    }
+    // The bottom of a text's first line box: equal bottoms at one size mean one baseline.
+    const base = (el: Element | null) => {
+      if (!el) return null
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent!.trim() && !n.parentElement!.closest('.sr-only') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) })
+      const n = walker.nextNode()
+      if (!n) return null
+      const r = document.createRange()
+      r.selectNodeContents(n)
+      return r.getClientRects()[0].bottom
+    }
+    return rows.map((r) => ({
+      date: cell(r, 'date'), labels: cell(r, 'labels'), project: cell(r, 'project'),
+      title: base(r.querySelector('[data-row-title]')),
+      textBases: ['date', 'labels', 'project', 'estimate'].map((s) => base(r.querySelector(`[data-row-cell="${s}"]`))).filter((x) => x !== null) as number[],
+      marks: base(r.querySelector('[data-row-marks] [data-row-counts]')),
+    }))
+  })
+  const spread = (xs: number[]) => Math.max(...xs) - Math.min(...xs)
+  const dates = m.map((r) => r.date).filter((b) => b !== null)
+  expect(dates.length).toBeGreaterThanOrEqual(3)
+  expect(spread(dates.map((b) => b.right))).toBeLessThanOrEqual(0.5)
+  const labels = m.map((r) => r.labels).filter((b) => b !== null)
+  expect(labels.length).toBeGreaterThanOrEqual(2)
+  expect(spread(labels.map((b) => b.left))).toBeLessThanOrEqual(0.5)
+  const projects = m.map((r) => r.project).filter((b) => b !== null)
+  expect(spread(projects.map((b) => b.left))).toBeLessThanOrEqual(0.5)
+  for (const r of m) {
+    // The metadata size is a little smaller than the title's: its first line ends within a pixel and a half.
+    for (const b of r.textBases) expect(Math.abs(b - r.title!)).toBeLessThanOrEqual(1.5)
+    if (r.marks !== null) expect(Math.abs(r.marks - r.title!)).toBeLessThanOrEqual(1.5)
+  }
+})

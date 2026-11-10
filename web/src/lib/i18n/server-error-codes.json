@@ -15,6 +15,7 @@
   "automations_off",
   "bad_origin",
   "bad_request",
+  "base_url_mismatch",
   "base_url_required",
   "body_changed",
   "busy",
@@ -102,6 +103,7 @@
   "oidc_failed",
   "oidc_link_required",
   "oidc_state_invalid",
+  "other_workspace",
   "owner_must_transfer",
   "page_invalid",
   "page_not_encrypted",
@@ -148,6 +150,7 @@
   "unsupported_protocol_version",
   "user_not_found",
   "verification_invalid",
+  "workspace_gone",
   "workspace_not_empty",
   "write_limit"
 ]

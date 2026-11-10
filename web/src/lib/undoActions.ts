@@ -19,9 +19,10 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
-import { dayPartFields, dayPartName, dayPartOf, type DayPart } from './dayParts'
+import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type DoOnChoice } from './dayParts'
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
+import { planDayDrop } from './dayDrop'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -120,7 +121,20 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     if (part === 'none') return dayPartUndoable(ids, null)
     return part === 'morning' || part === 'afternoon' || part === 'evening' ? dayPartUndoable(ids, part) : null
   }
+  // Upcoming's day groups (upcoming-drag).
+  if (target.startsWith('day:')) {
+    const date = target.slice('day:'.length)
+    return /^\d{4}-\d{2}-\d{2}$/.test(date) ? dayDropUndoable(ids, date) : null
+  }
   return null
+}
+
+/** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */
+export async function dayDropUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes = planDayDrop(tasks, date, today)
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, changes.length === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length }))
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */
@@ -185,6 +199,9 @@ export async function parkUndoable(id: string): Promise<UndoableResult> {
   return apply([{ entity: 'task', entityId: id, patch }], t('Moved to Someday'))
 }
 
+/** The toast after a part is set: "Moved to Morning", "Moved to Any time". */
+const movedTo = (part: DayPart | null) => (part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
+
 /**
  * Set the part of the day of tasks (day-parts D2): both fields in one batch per
  * task, with Undo; a task already in that part writes nothing.
@@ -196,7 +213,19 @@ export async function dayPartUndoable(ids: readonly string[], part: DayPart | nu
     .filter((task) => dayPartOf(task) !== part || (task.day_part ?? null) !== fields.day_part)
     .map((task) => ({ entity: 'task', entityId: task.id, patch: { ...fields } }))
   if (!changes.length) return { entry: null, label: '' }
-  return apply(changes, part ? t('Moved to {part}', { part: dayPartName(part) }) : t('Moved to Any time'))
+  return apply(changes, movedTo(part))
+}
+
+/**
+ * A choice of the Do on segment's time of day row, or a typed date with a time
+ * (when-picker D2, D4): the part or the time with what it clears, one batch with Undo.
+ */
+export async function doOnUndoable(id: string, choice: DoOnChoice, zone?: string): Promise<UndoableResult> {
+  const task = await db.tasks.get(id)
+  const patch = task && doOnPatch(task, choice, zone)
+  if (!patch) return { entry: null, label: '' }
+  const label = 'part' in choice ? movedTo(choice.part) : t('Date changed')
+  return apply([{ entity: 'task', entityId: id, patch }], label)
 }
 
 /** Set (or with null clear) the energy of the ticked tasks (task-energy D6): one batch, with Undo. */

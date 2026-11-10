@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { manifest } from './manifest'
-import { anthropicProvider, chatProvider, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
+import { anthropicProvider, chatProvider, fitsAnthropicStrict, deviceCode, ProviderError, sseEvents, testConnection, type Fetch } from './providers'
 import vectors from './errors.vectors.json'
 import { checkSetup, originOf, baseUrlOf, ENDPOINTS } from './settings'
 
@@ -27,6 +27,26 @@ function fakeFetch(bodies: string[], status = 200) {
 }
 
 const tool = manifest.tools.find((t) => t.name === 'complete_tasks')!
+
+describe('Anthropic strict limits (#1102)', () => {
+  const opt = (n: number) => ({ type: 'object', properties: Object.fromEntries(Array.from({ length: n }, (_, i) => [`p${i}`, { type: 'string' }])), required: [] })
+  it('keeps a set within 20 tools and 24 optional parameters strict', () => {
+    expect(fitsAnthropicStrict(Array.from({ length: 20 }, () => opt(0)))).toBe(true)
+    expect(fitsAnthropicStrict([opt(24)])).toBe(true)
+  })
+  it('drops strict past either limit, nested parameters included', () => {
+    expect(fitsAnthropicStrict(Array.from({ length: 21 }, () => opt(0)))).toBe(false)
+    expect(fitsAnthropicStrict([opt(25)])).toBe(false)
+    expect(fitsAnthropicStrict([{ type: 'object', properties: { a: { type: 'array', items: opt(24) } }, required: [] }])).toBe(false)
+  })
+  it('sends the whole device manifest without strict mode', async () => {
+    expect(fitsAnthropicStrict(manifest.tools.map((t) => t.strict_schema))).toBe(false)
+    const { f, calls } = fakeFetch([sse([{ type: 'message_stop' }])])
+    await anthropicProvider({ provider: 'anthropic', key: 'k', model: 'm' } as never, f).start({ system: 'S', messages: [{ role: 'user', text: 'Q' }], tools: manifest.tools, maxTokens: 64 }).next(() => {}).catch(() => {})
+    const body = JSON.parse(String(calls[0].init.body))
+    expect(body.tools.every((t: { strict: boolean }) => t.strict === false)).toBe(true)
+  })
+})
 
 describe('sseEvents', () => {
   it('reads events split across chunks and CRLF lines', async () => {
@@ -61,7 +81,7 @@ describe('Anthropic from the browser', () => {
     const conv = anthropicProvider(setup, f).start({ system: 'S', messages: [{ role: 'assistant', text: 'skip' }, { role: 'user', text: 'Q' }], tools: [tool], maxTokens: 8192 })
     const texts: string[] = []
     const r = await conv.next((t) => texts.push(t))
-    expect(r).toMatchObject({ stop: 'tool_use', input: 120, output: 42, toolCalls: [{ id: 'tu1', name: 'complete_tasks', args: '{"ids":["a"]}' }] })
+    expect(r).toMatchObject({ stop: 'tool_use', input: 100, cached: 20, cacheWrite: 0, output: 42, toolCalls: [{ id: 'tu1', name: 'complete_tasks', args: '{"ids":["a"]}' }] })
     expect(texts).toEqual(['Let me check.'])
     expect(calls[0].url).toBe('https://api.anthropic.com/v1/messages')
     const h = calls[0].init.headers as Record<string, string>
@@ -111,6 +131,18 @@ describe('Chat Completions from the browser', () => {
     expect(calls[0].url).toBe('http://localhost:11434/v1/chat/completions')
     expect((calls[0].init.headers as Record<string, string>).authorization).toBeUndefined()
     expect(JSON.parse(String(calls[0].init.body))).toMatchObject({ max_tokens: 100, tool_choice: 'auto', stream_options: { include_usage: true } })
+  })
+
+  it('reads the cached part of prompt_tokens (assistant-usage-cache)', async () => {
+    const setup = { provider: 'openai' as const, model: 'gpt-5', key: 'sk-test', savedAt: 1 }
+    const body = sse([
+      { choices: [{ delta: { content: 'Nothing is overdue.' }, finish_reason: 'stop' }] },
+      { choices: [], usage: { prompt_tokens: 20000, completion_tokens: 300, prompt_tokens_details: { cached_tokens: 18000 } } },
+      '[DONE]',
+    ], false)
+    const { f } = fakeFetch([body])
+    const r = await chatProvider(setup, f).start({ system: 'S', messages: [{ role: 'user', text: 'Q' }], tools: [tool], maxTokens: 100 }).next(() => {})
+    expect(r).toMatchObject({ stop: 'end_turn', input: 2000, cached: 18000, output: 300 })
   })
 
   it('sends OpenAI a bearer key and Gemini schemas without type lists', async () => {

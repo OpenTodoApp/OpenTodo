@@ -574,9 +574,16 @@ var Schema = map[string]map[string]Field{
 		// project's scope like a task, its editors write it, and it runs as
 		// whoever last turned it on, only inside that project.
 		"project_id": {Kind: kNullableString, Default: `null`},
-		"position":   {Kind: kNumber, Default: `0`},
-		"created_at": {Kind: kNumber, Default: `0`},
-		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace a personal routine works in (routine-conditions D1):
+		// its trigger fires only for that workspace's tasks, its steps see and
+		// change only that workspace's tasks and projects. Null is every
+		// workspace, what each routine made before this field reads as. Unlike a
+		// label's workspace_id, the default workspace is written as its id.
+		// Ignored on a shared project's routine, which its project bounds.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
+		"position":     {Kind: kNumber, Default: `0`},
+		"created_at":   {Kind: kNumber, Default: `0`},
+		"deleted_at":   {Kind: kNullableNumber, Default: `null`},
 	},
 	// frame: a recurring background window on the Day and Week grid (OpenSpec
 	// change calendar-frames, design D1), such as "Deep work" on weekdays from
@@ -825,6 +832,12 @@ var Schema = map[string]map[string]Field{
 		// an empty or unknown value as off and keep it. The volume is device
 		// storage and never synced.
 		"focus_noise": {Kind: kString, Default: `""`},
+		// The length of the end-of-session sound (OpenSpec change
+		// focus-end-alert, design D1): "short" or "long", read only while
+		// focus_sound is "on"; clients read an empty or unknown value as
+		// short and keep it. A client without this field plays the short
+		// tone.
+		"focus_alert": {Kind: kString, Default: `""`},
 		// Today grouped by part of the day (OpenSpec change day-parts, design
 		// D3): "on" groups Today into Morning, Afternoon and This Evening and
 		// turns on the part phrases of quick add; clients read an empty or
@@ -883,6 +896,54 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
+		// Today's display options (OpenSpec change builtin-view-options, design
+		// D1, D2): the grouping of the day's own tasks, "day" (Time of day),
+		// "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
+		// a slot and Done today keep their place. Clients read an empty, unknown
+		// or not-offered value as "day" and keep the stored value. Settings,
+		// never content.
+		"today_group_by": {Kind: kString, Default: `""`},
+		// Today's order (builtin-view-options D2): "due", "priority", "created",
+		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
+		"today_sort_by": {Kind: kString, Default: `""`},
+		// Today's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"today_sort_dir": {Kind: kString, Default: `""`},
+		// Today's row layout (row-layouts): "line" or "detailed"; empty or
+		// unknown follows the account's row_layout.
+		"today_row_layout": {Kind: kString, Default: `""`},
+		// Today's Nest subtasks (builtin-view-options D5): "nested" lists a
+		// subtask under its parent when both are in the same group; anything
+		// else reads as flat.
+		"today_subtasks": {Kind: kString, Default: `""`},
+		// Upcoming's order within each day (builtin-view-options D2, D4): the
+		// same values as today_sort_by; empty or unknown reads as "due".
+		"upcoming_sort_by": {Kind: kString, Default: `""`},
+		// Upcoming's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"upcoming_sort_dir": {Kind: kString, Default: `""`},
+		// Upcoming's row layout: "line" or "detailed"; empty or unknown follows
+		// the account's row_layout.
+		"upcoming_row_layout": {Kind: kString, Default: `""`},
+		// Upcoming's Nest subtasks: "nested" or flat, as today_subtasks.
+		"upcoming_subtasks": {Kind: kString, Default: `""`},
+		// Upcoming's later days (OpenSpec change sidebar-brand-and-row-grid,
+		// design D8): "full" lists every day in full; "" or "summary" (the
+		// default) lists the first three days with tasks in full and each later
+		// day as one closed bar with its count and first titles. Clients read an
+		// empty or unknown value as summarised and keep the stored value.
+		// Settings, never content.
+		"upcoming_later": {Kind: kString, Default: `""`},
+		// The Inbox's grouping of its top-level tasks (builtin-view-options D6):
+		// "none", "due", "priority" or "label"; empty, unknown or not-offered
+		// reads as "none".
+		"inbox_group_by": {Kind: kString, Default: `""`},
+		// The Inbox's order: "position" (manual), "priority", "due", "created",
+		// "deadline" or "title"; empty or unknown reads as "position".
+		"inbox_sort_by": {Kind: kString, Default: `""`},
+		// The Inbox's order direction: "asc" or "desc"; empty or unknown reads as "asc".
+		"inbox_sort_dir": {Kind: kString, Default: `""`},
+		// The Inbox's row layout: "line" or "detailed"; empty or unknown follows
+		// the account's row_layout.
+		"inbox_row_layout": {Kind: kString, Default: `""`},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the
@@ -899,6 +960,18 @@ var Schema = map[string]map[string]Field{
 		"position": {Kind: kNumber, Default: `0`},
 		// When it was marked done, Unix ms; 0 = open.
 		"done_at":    {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+	},
+	// memory: one fact the user told the in-app assistant to remember (OpenSpec
+	// change assistant-memory, design D1), such as "Does not work on Fridays".
+	// Personal like an objective, with ids unique on the server; sent with every
+	// assistant turn, never to MCP clients, agent tokens or routines. Devices keep
+	// at most 20 live items; the server does not count.
+	"memory": {
+		// The fact, one line of 1 to 200 characters (ciphertext for an encrypted account).
+		"text":       {Kind: kMemoryText, Default: `""`, Content: true},
+		"position":   {Kind: kNumber, Default: `0`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},

@@ -217,7 +217,7 @@ func TestAgentTokenDowngradeSafe(t *testing.T) {
 	if _, err := e.db.Exec(`DELETE FROM api_token_agent WHERE token_id = ?`, tokenID); err != nil {
 		t.Fatal(err)
 	}
-	if n := len(c.toolNames(secret)); n != 18 {
+	if n := len(c.toolNames(secret)); n != 19 {
 		t.Fatalf("tools without the marker = %d", n)
 	}
 	if sc, isErr := c.toolCall(secret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "token_scope" {
@@ -307,11 +307,11 @@ func TestToolsListByToken(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	tid := out["id"].(string)
 	read, full := e.token("read"), e.token("full")
-	if n := len(c.toolNames(agentSecret)); n != 52 {
+	if n := len(c.toolNames(agentSecret)); n != 53 {
 		t.Fatalf("agent tools = %d", n)
 	}
 	for name, secret := range map[string]string{"read": read, "full": full} {
-		if n := len(c.toolNames(secret)); n != 18 {
+		if n := len(c.toolNames(secret)); n != 19 {
 			t.Fatalf("%s token sees %d tools", name, n)
 		}
 		for _, tool := range []string{"complete_tasks", "create_tasks", "trash_tasks"} {
@@ -326,7 +326,7 @@ func TestToolsListByToken(t *testing.T) {
 	}
 	// The user's switch off: writes_disabled_by_user, nothing created.
 	e.allowMyAssistants(false)
-	if n := len(c.toolNames(agentSecret)); n != 18 {
+	if n := len(c.toolNames(agentSecret)); n != 19 {
 		t.Fatalf("user off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "x"}}}); !isErr || sc["error"] != "writes_disabled_by_user" {
@@ -336,7 +336,7 @@ func TestToolsListByToken(t *testing.T) {
 	e.allowMyAssistants(true)
 	c.mustTool(agentSecret, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "while allowed"}}})
 	e.allowWrites(false)
-	if n := len(c.toolNames(agentSecret)); n != 18 {
+	if n := len(c.toolNames(agentSecret)); n != 19 {
 		t.Fatalf("owner off: %d tools", n)
 	}
 	if sc, isErr := c.toolCall(agentSecret, "complete_tasks", map[string]any{"ids": []string{tid}}); !isErr || sc["error"] != "writes_disabled_by_owner" {
@@ -790,5 +790,34 @@ func TestUntrustedTextInSharedProject(t *testing.T) {
 	}
 	if countOps(t, se.alice) != before {
 		t.Fatal("a read wrote")
+	}
+}
+
+// TestSetFavouriteNote (notes-home, mcp-server "Pinning notes in write tools"):
+// an allowed assistant pins a standalone note through the op log, the user's
+// phone receives it, and with the user's switch off nothing changes.
+func TestSetFavouriteNote(t *testing.T) {
+	e, tokenID, secret, c := agentReady(t)
+	resp, out := e.do("POST", "/api/v1/notes", map[string]any{"title": "Wi-Fi", "description": "home-5G"})
+	e.mustStatus(resp, 201, out)
+	note := out["id"].(string)
+	if sc, isErr := c.toolCall(secret, "set_favourite", map[string]any{"kind": "note", "id": "nope", "favourite": true}); !isErr || sc["error"] != "not_found" {
+		t.Fatalf("unknown note: %v", sc)
+	}
+	c.mustTool(secret, "set_favourite", map[string]any{"kind": "note", "id": note, "favourite": true})
+	ops, _, _ := syncAll(e, "phone", 0)
+	pinned := false
+	for _, o := range ops {
+		op := o.(map[string]any)
+		if op["entity"] == "user_prefs" && op["field"] == "favourites" && op["value"] == "note:"+note && op["device"] == "agent:"+tokenID {
+			pinned = true
+		}
+	}
+	if !pinned {
+		t.Fatalf("phone did not receive the pin: %v", ops)
+	}
+	e.allowMyAssistants(false)
+	if sc, isErr := c.toolCall(secret, "set_favourite", map[string]any{"kind": "note", "id": note, "favourite": false}); !isErr || sc["error"] != "writes_disabled_by_user" {
+		t.Fatalf("switch off: %v", sc)
 	}
 }

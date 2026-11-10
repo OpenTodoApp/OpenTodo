@@ -72,25 +72,31 @@ export type Route =
   // Open Loops (open-loops-method): the derived Next and Waiting views.
   | { view: 'next' }
   | { view: 'waiting' }
-  | { view: 'loop' }
+  // The Loop home (loop-guided-dashboard D4): /loop/<move> opens that move in place.
+  | { view: 'loop'; move?: LoopMove }
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
   | { view: 'notes'; id?: string; create?: boolean }
+
+/** The Open Loops moves a Loop home address can open (lib/method's MoveId, kept here so the router stays small). */
+export type LoopMove = 'catch' | 'clarify' | 'place' | 'do' | 'review'
+const LOOP_MOVES: readonly string[] = ['catch', 'clarify', 'place', 'do', 'review']
 
 /**
  * Whether a view offers quick add, which decides the floating add button on a
  * phone. Screens with nothing to add a task to (Settings and its sub-pages, the
  * theme editor, Import, Help, the feeds, statistics, sign-in links) leave the
  * button out: there it would only cover the ends of rows and form fields. Every
- * view is listed, so a new one has to decide.
+ * view is listed, so a new one has to decide. The rituals that keep nothing else
+ * on screen, Focus and Close the day, leave it out too (no-layout-jump).
  */
 export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   inbox: true, today: true, upcoming: true, someday: true, anytime: true,
   day: true, week: true, month: true, quarter: true, plan: true, year: true,
   completed: true, assigned: true, project: true, task: true, label: true, labels: true,
   places: true, place: true, projects: true, filter: true, views: true, view: true,
-  triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
+  triage: true, review: true, next: true, waiting: true, loop: true, focus: false, notes: true,
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
@@ -99,6 +105,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
 
 /** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
 export function offersQuickAdd(r: Route): boolean {
+  if (r.view === 'review' && r.step === 'close') return false
   return VIEW_QUICK_ADD[r.view]
 }
 
@@ -268,7 +275,7 @@ export function parseRoute(pathname: string): Route {
     case 'waiting':
       return { view: 'waiting' }
     case 'loop':
-      return { view: 'loop' }
+      return LOOP_MOVES.includes(parts[1]) ? { view: 'loop', move: parts[1] as LoopMove } : { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
     case 'focus':
@@ -363,6 +370,8 @@ export function routePath(r: Route): string {
     }
     case 'review':
       return r.step ? `/review/${r.step}` : '/review'
+    case 'loop':
+      return r.move ? `/loop/${r.move}` : '/loop'
     case 'focus':
       return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
     case 'notes':

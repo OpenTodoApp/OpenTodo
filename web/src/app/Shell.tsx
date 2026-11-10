@@ -5,7 +5,7 @@ import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
-import { dismissRejected, useSyncStatus } from '../lib/sync'
+import { useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
@@ -27,7 +27,7 @@ import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
 import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
-import { closePanelIfStale, panelTaskId, taskIdFromAddress, usePanel } from './panel'
+import { closePanelIfStale, panelTaskId, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
 import { usePhoneChrome } from './useScrollDirection'
@@ -36,14 +36,18 @@ import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { watchViewerZone } from '../lib/dates'
 import { ActionToasts } from './ActionToasts'
+import { showActionToast } from './bulk/toastStore'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
 import { setCurrentUserId } from '../lib/sharing'
 import { type HelpSection, ShortcutHelp } from './ShortcutHelp'
+import { FeedbackHost } from './FeedbackHost'
+import { openFeedback } from '../lib/feedbackRequest'
 import { Spotlight } from './shortcuts/Spotlight'
 import { useVimEnabled } from './vim/prefs'
 import { closeHelp, useHelpRequest } from '../lib/helpRequest'
+import { closeConnections, useConnectionsRequest } from './signals'
 import { assistantStatus, openAssistant, refreshAssistantStatus, showLauncher, useAssistantOpen, useAssistantStatus } from '../lib/assistantStatus'
 import { t } from '../lib/i18n'
 import { handleShellUrl } from '../lib/shellActions'
@@ -134,14 +138,35 @@ function CommandBar({ palette, user, showShortcuts }: { palette: ReturnType<type
   )
 }
 
+/**
+ * `?task=`, `?note=` and `?project=<id>` in the address (a notification, a link in a
+ * note, note-links D7): the item opens and the parameter goes. True when one did.
+ */
+function openAddressItem(): boolean {
+  const params = new URLSearchParams(location.search)
+  for (const kind of ['task', 'note', 'project'] as const) {
+    const id = params.get(kind)
+    if (!id) continue
+    params.delete(kind)
+    history.replaceState(null, '', location.pathname + (params.size ? `?${params}` : ''))
+    if (kind === 'task') openTaskPage(id)
+    else navigate(kind === 'note' ? { view: 'notes', id } : { view: 'project', id }, { replace: true })
+    return true
+  }
+  return false
+}
+
 export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) {
   const route = useRoute()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
-  const [notice, setNotice] = useState<string | null>(null)
-  // Changes the server refused after a role change (project-sharing).
+  // Changes the server refused after a role change (project-sharing): a toast, which never moves the page (app-shell "Notices are toasts").
   const { rejected } = useSyncStatus()
+  useEffect(() => {
+    if (!rejected) return
+    showActionToast(t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) }))
+  }, [rejected])
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
@@ -156,15 +181,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // settings ids) are replaced in place.
     const canonical = canonicalPath(location.pathname)
     if (canonical && canonical !== location.pathname) history.replaceState(null, '', `${canonical}${location.search}`)
-    const taskParam = taskIdFromAddress()
-    if (taskParam) {
-      const params = new URLSearchParams(location.search)
-      params.delete('task')
-      const q = params.toString()
-      history.replaceState(null, '', `${location.pathname}${q ? `?${q}` : ''}`)
-      openTaskPage(taskParam)
-      return
-    }
+    if (openAddressItem()) return
     if (location.pathname !== '/') return
     let cancelled = false
     void resolveStartView().then((start) => {
@@ -174,7 +191,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) setNotice(t('Your start view was deleted, so the Inbox opened instead.'))
+        if (start.removed) showActionToast(t('Your start view was deleted, so the Inbox opened instead.'))
       }
     })
     return () => {
@@ -250,6 +267,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const vim = useVimEnabled()
   const [vimHelp, setVimHelp] = useState<HelpSection | null>(null)
   const helpRequest = useHelpRequest()
+  const connections = useConnectionsRequest()
   // Page changes are announced (assistive-tech-semantics): the tab title names the
   // page and a navigation moves focus to its heading; the skip link jumps there too.
   const frame = useRef<HTMLElement>(null)
@@ -268,7 +286,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
-          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
+          <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebarCollapsed} />
         </div>
         {!sidebar.collapsed && <SidebarResizer width={sidebar.width} />}
       </aside>
@@ -277,22 +295,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
-        {notice && (
-          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{notice}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>{t('Dismiss')}</button>
-          </div>
-        )}
-        {rejected && (
-          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) })}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>{t('Dismiss')}</button>
-          </div>
-        )}
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2). */}
+        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2);
+            the room under the selection bar is in index.css (no-layout-jump). */}
         <div ref={content} id="content" data-add-room={phoneChrome || undefined}
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
@@ -330,7 +337,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'waiting' ? (
             <Suspense fallback={null}><WaitingView /></Suspense>
           ) : route.view === 'loop' ? (
-            <Suspense fallback={null}><LoopHome /></Suspense>
+            <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (
@@ -361,15 +368,18 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
-      {((phoneChrome && offersQuickAdd(route)) || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} onClick={() => setAddOpen((v) => !v)} />}
+      {((phoneChrome && offersQuickAdd(route)) || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
+        onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}
         context={{ view: route.view, board: hasScope('board') || hasScope('timeline'), panelOpen: hasScope('panel') || !!panelTaskId() }} />}
       {helpRequest && <PanelBoundary><Suspense fallback={null}><HelpPanel key={helpRequest.screen} screen={helpRequest.screen} trigger={helpRequest.trigger} onClose={closeHelp} /></Suspense></PanelBoundary>}
+      {/* The Connections dialog (notes-graph D6), its chunk loaded by openConnections. */}
+      {connections && <PanelBoundary><connections.Dialog key={`${connections.kind}:${connections.id}`} kind={connections.kind} id={connections.id} onClose={closeConnections} /></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       <CommandBar palette={palette} user={user} showShortcuts={() => setShowHelp(true)} />
       {/* The owner's one-time thank-you on a new server (welcome-note). */}
-      <WelcomeDialog user={user} />
+      <WelcomeDialog user={user} /><FeedbackHost />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
       <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
       {/* The g … spotlight (shortcut-spotlight): shown after a hesitation, never focused. */}

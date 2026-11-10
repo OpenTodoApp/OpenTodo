@@ -9,7 +9,7 @@ order: 22
 ---
 # Focus breaks, presets and noise
 
-<picture><source srcset="images/focus-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/focus-light.webp" alt="The Focus screen: one task with a large timer at 24:58, Work session 1 of 4, and buttons for Pause, Complete, Take a break and Next task."></picture>
+<picture><source srcset="images/focus-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/focus-light.webp" alt="The Focus screen: one task with a large timer at 24:58, Pomodoro · Work · 1 of 4, and buttons for Pause, Complete, Next task and Take a break."></picture>
 
 Small comforts of the [Focus](focus.md) timer. Their settings are in **Settings → General → Focus timer** and follow your account to every device.
 
@@ -17,7 +17,7 @@ Small comforts of the [Focus](focus.md) timer. Their settings are in **Settings 
 
 **Break reminder** (off until you turn it on) shows a notice on any screen after 90 minutes of work without a break: **Take a break** starts a short break, **Not now** asks again after another 90 minutes. Pauses don't count as work.
 
-**Sound** plays a short tone when a session or a break ends while the app is on screen. If the tab is in the background and you allowed [notifications](push-notifications.md) on this device, a system notification says the session is done; select it to come back to Focus.
+**Sound** plays a tone when a session or a break ends while the app is on screen. **Short** plays it once. **Long** plays it louder, once a second, until you click, tap or press a key, or for ten seconds; on a phone it also vibrates while [haptic feedback](settings-you.md#appearance) is on. Both are generated on the device, with no audio file. If the tab is in the background and you allowed [notifications](push-notifications.md) on this device, a system notification says the session is done; select it to come back to Focus.
 
 ## Countdown presets
 

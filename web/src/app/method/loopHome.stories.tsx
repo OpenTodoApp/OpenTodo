@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { db } from '../../lib/db'
 import { createLabel } from '../../lib/labels'
 import { createProject, createTask, REVIEW_DEFAULTS, setTaskCompleted } from '../../lib/ops'
@@ -6,10 +7,10 @@ import { setMethodMode } from '../../lib/method/mode'
 import { HEX, seeded, withClock, withSeed } from '../stories/fixtures'
 import { LoopHome, LoopSkeleton } from './LoopHome'
 
-// The Loop home (OpenSpec change loop-home-refresh; open-loops "Loop home" and
-// "Loop pulse"): the capture field, the five moves on one rail with the next move
-// lit, today's focus with its progress and the Loop pulse, over seeded local rows.
-// Light and dark, 375 and 1280 px, through the a11y and visual gates.
+// The Loop home (OpenSpec changes loop-home-refresh and loop-guided-dashboard;
+// open-loops "Loop home" and "Loop pulse"): the Next step card, the five moves as a
+// stepper with the next move lit, the pulse line, and a move open in place, over
+// seeded local rows. Light and dark, 375 and 1280 px, through the a11y and visual gates.
 const meta: Meta = { title: 'Screens/Loop home' }
 export default meta
 
@@ -49,16 +50,41 @@ async function seedClosed() {
   await db.review.put({ ...REVIEW_DEFAULTS, id: 'me', completed_at: at(2), daily_at: at(0, 8), monthly_at: at(20), focus_date: '2026-10-14', focus: `${plan},${plumber}`, _clock: {} })
 }
 
-/** A busy morning: eight in the Inbox, Clarify lit, one project stalled, a focus of two with one done, the pulse. */
+/** The open move is a lazy chunk: the visual check waits until its part is on screen. */
+function Settled({ part, children }: { part: string; children: ReactNode }) {
+  const root = useRef<HTMLDivElement>(null)
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    let stop = false
+    const tick = () => {
+      if (stop) return
+      const ready = root.current?.querySelector(`[data-loop-part="${part}"] ${part === 'clarify' ? '[data-triage-card]' : '*'}`)
+      // The triage card takes the focus once its task is on screen: wait for that, then rest without the ring.
+      if (ready && (part !== 'clarify' || document.activeElement === ready)) { (document.activeElement as HTMLElement | null)?.blur(); setDone(true); return }
+      setTimeout(tick, 50)
+    }
+    tick()
+    return () => { stop = true }
+  }, [part])
+  return <div ref={root}>{children}{!done && <span data-story-pending />}</div>
+}
+
+/** A busy morning: eight in the Inbox, the Next step card names Clarify, Place and Review need the user, the pulse line. */
 export const BusyMorning: StoryObj = {
   ...withSeed(seedBusy),
   render: () => <LoopHome />,
 }
 
-/** A closed loop: done marks on Catch, Clarify and Place, Do lit, nothing due, the closed line. */
+/** The same morning with Clarify open in place: the triage card on the first Inbox task and how many are left. */
+export const ClarifyOpen: StoryObj = {
+  ...withSeed(seedBusy),
+  render: () => <Settled part="clarify"><LoopHome move="clarify" /></Settled>,
+}
+
+/** A closed loop: done marks on Catch, Clarify, Place and Review; the card names Do, and Do is open with today's focus and the next actions. */
 export const LoopClosed: StoryObj = {
   ...withSeed(seedClosed),
-  render: () => <LoopHome />,
+  render: () => <Settled part="do"><LoopHome move="do" /></Settled>,
 }
 
 /** The loading state has the final layout's shape, so nothing shifts when the rows arrive. */

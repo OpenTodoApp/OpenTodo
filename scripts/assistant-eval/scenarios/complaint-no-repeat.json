@@ -1,0 +1,77 @@
+{
+  "name": "complaint-no-repeat",
+  "title": "After a complaint about a missing map the assistant does not show it again",
+  "seed": {
+    "labels": [
+      {
+        "key": "errand",
+        "name": "errand"
+      }
+    ],
+    "tasks": [
+      {
+        "key": "milk",
+        "title": "Buy milk",
+        "due": 0,
+        "labels": [
+          "errand"
+        ],
+        "location": {
+          "name": "Corner shop",
+          "address": "Via Roma 12, Milano",
+          "lat": 45.4668,
+          "lon": 9.19
+        }
+      },
+      {
+        "key": "parcel",
+        "title": "Pick up the parcel",
+        "due": 0,
+        "labels": [
+          "errand"
+        ],
+        "location": {
+          "name": "Post office",
+          "address": "Piazza Cordusio 1, Milano",
+          "lat": 45.4655,
+          "lon": 9.1866
+        }
+      },
+      {
+        "key": "keys",
+        "title": "Copy the house keys",
+        "due": 1,
+        "labels": [
+          "errand"
+        ],
+        "location": {
+          "name": "Key cutter",
+          "address": "Corso Magenta 5, Milano",
+          "lat": 45.4651,
+          "lon": 9.1789
+        }
+      },
+      {
+        "key": "email",
+        "title": "Email the landlord",
+        "due": 0
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Show me my errands",
+      "expect": {}
+    },
+    {
+      "say": "I don't see any map.",
+      "expect": {
+        "no_tools": [
+          "show_map"
+        ],
+        "no_map_claim": true,
+        "changeset": false
+      }
+    }
+  ]
+}

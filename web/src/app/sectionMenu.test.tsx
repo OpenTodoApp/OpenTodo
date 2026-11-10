@@ -90,6 +90,31 @@ describe('section style', () => {
     await r.unmount()
   })
 
+  it('tints the header of a coloured section in the list and on the board, and only that (section-tint)', async () => {
+    const id = await createSection('p1', 'This week')
+    await setSectionStyle(id, { color: '#22c55e' })
+    const header = (c: HTMLElement) => c.querySelector<HTMLElement>('[data-group-header]')!
+    const r = await render(<SectionHeader section={(await db.sections.get(id))!} count={2} completed={1} layout="list" editable first last />)
+    expect(header(r.container).getAttribute('data-hue')).toBe('green')
+    expect(header(r.container).className).toContain('ui-group-tint')
+    expect(header(r.container).className).not.toContain('bg-raised')
+    await r.rerender(<SectionHeader section={(await db.sections.get(id))!} count={0} completed={1} layout="board" editable first last />)
+    expect(header(r.container).getAttribute('data-hue')).toBe('green')
+    expect(header(r.container).className).toContain('ui-group-tint')
+    // Show stays in a tone measured on the tint (no accent text there).
+    expect(r.container.querySelector('[data-reveal-completed]')!.className).toContain('text-default')
+    // No colour, and "No section": the plain bar, no tint.
+    const plain = await createSection('p1', 'Plain')
+    for (const section of [(await db.sections.get(plain))!, null]) {
+      await r.rerender(<SectionHeader section={section} count={0} completed={1} layout="list" editable first last />)
+      expect(header(r.container).hasAttribute('data-hue')).toBe(false)
+      expect(header(r.container).className).not.toContain('ui-group-tint')
+      expect(header(r.container).className).toContain('bg-raised')
+      expect(r.container.querySelector('[data-reveal-completed]')!.className).toContain('text-accent')
+    }
+    await r.unmount()
+  })
+
   it('a viewer sees the style but gets no menu to change it', async () => {
     const id = await createSection('p1', 'Waiting')
     await setSectionStyle(id, { icon: 'hourglass', color: '#eab308' })

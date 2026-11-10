@@ -1,0 +1,1 @@
+- **The iPhone app's widget and reminders work.** The App Store and TestFlight builds never let the web app reach the phone, so the Today widget stayed empty, reminders were not scheduled and Settings offered browser push instead. The app now connects to any server with its widget, reminders, share sheet and Face ID unlock.

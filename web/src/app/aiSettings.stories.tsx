@@ -5,6 +5,8 @@ import { AssistantsView, type AssistantsViewProps } from './AssistantsPanel'
 import { RelayConfirmView } from './RelayConfirm'
 import { RelayIndicatorView, RelayView, type RelayViewProps } from './RelaySettings'
 import { draftFrom, OwnerAssistantSettings, OwnerAssistantSummary, UserAssistantSettings } from './assistant/AssistantSettings'
+import { MemoryListView, type MemoryListActions } from './assistant/MemorySettings'
+import type { MemoryItem } from '../lib/types'
 
 const noop = () => {}
 const endpoint = 'https://todo.example.com/mcp'
@@ -53,6 +55,19 @@ export const AssistantMemberOwnKey: StoryObj = {
 }
 export const AssistantNotConsented: StoryObj = { render: () => card(user({ status: { ...status, consented: false, allow_member_keys: false }, usage: null, error: 'The server is unreachable.' })) }
 export const AssistantOff: StoryObj = { render: () => card(user({ status: { ...status, enabled: false } })) }
+const memoryActions: MemoryListActions = { onAdd: async () => {}, onEdit: async () => {}, onDelete: noop, onMove: noop, onClear: noop }
+const fact = (id: string, text: string, position: number): MemoryItem => ({ id, text, position, created_at: 1, deleted_at: null, _clock: {} })
+const memory = (items: MemoryItem[], startAdding = false) => card(
+  <section className="pt-3" aria-labelledby="story-memory">
+    <h3 id="story-memory" className="text-meta font-medium uppercase text-muted">Memory</h3>
+    <MemoryListView items={items} actions={memoryActions} startAdding={startAdding} />
+  </section>,
+)
+/** Settings → Integrations → Assistant → Memory (assistant-memory): the kept facts, Add and Clear all. */
+export const AssistantMemory: StoryObj = {
+  render: () => memory([fact('m1', 'Works Monday to Thursday', 1), fact('m2', 'Mornings are for deep work; meetings after 14:00', 2), fact('m3', 'Anna is my manager', 3)]),
+}
+export const AssistantMemoryEmpty: StoryObj = { render: () => memory([], true) }
 export const AssistantsMcp: StoryObj = { render: () => assistants() }
 export const AssistantsMcpOff: StoryObj = { render: () => assistants({ status: { enabled: false, endpoint } }) }
 export const AssistantsMcpMember: StoryObj = { render: () => assistants({ isOwner: false, status: { enabled: true, endpoint }, access: { allow_writes: false, owner_allows_writes: false } }) }

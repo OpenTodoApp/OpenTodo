@@ -39,6 +39,8 @@ func (s *Server) registerMCPRoutes(mux *routes) {
 		// Reminders an assistant adds are read in the zone REST uses (agent-tools-complete D2).
 		UserZone: s.tzLocation,
 		Now:      s.now,
+		// find_free_time counts the calendar's events (assistant-time-blocks D1).
+		Events: s.freeTimeEvents,
 		// Relative reminders follow a new due date (deadline reminders a new
 		// deadline), as for a REST write, and a task that gets a due date gets
 		// the person's default reminder (default-reminders D6).

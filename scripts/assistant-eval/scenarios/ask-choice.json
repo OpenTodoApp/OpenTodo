@@ -1,0 +1,27 @@
+{
+  "name": "ask-choice",
+  "title": "A question with two clear options asks a choice",
+  "seed": {
+    "tasks": [
+      {
+        "key": "clean",
+        "title": "Clean the garage",
+        "estimate_minutes": 180
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "I want to clean the garage this weekend. Saturday or Sunday? Ask me with buttons before you plan anything.",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "choice",
+            "min_options": 2
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

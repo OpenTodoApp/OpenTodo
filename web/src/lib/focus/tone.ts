@@ -27,8 +27,8 @@ export function primeTone(): void {
   }
 }
 
-/** Plays 660 Hz then 880 Hz, 120 ms each with a 20 ms ramp, at gain 0.2. Returns whether it played. */
-export async function playTone(): Promise<boolean> {
+/** Plays 660 Hz then 880 Hz, 120 ms each with a 20 ms ramp, at `peak` (0.2, the Short sound; the Long alert plays louder). Returns whether it played. */
+export async function playTone(peak = 0.2): Promise<boolean> {
   try {
     if (!ctx) primeTone()
     const c = ctx
@@ -44,8 +44,8 @@ export async function playTone(): Promise<boolean> {
       osc.frequency.value = hz
       osc.connect(gain)
       gain.gain.setValueAtTime(0, at)
-      gain.gain.linearRampToValueAtTime(0.2, at + 0.02)
-      gain.gain.setValueAtTime(0.2, at + 0.1)
+      gain.gain.linearRampToValueAtTime(peak, at + 0.02)
+      gain.gain.setValueAtTime(peak, at + 0.1)
       gain.gain.linearRampToValueAtTime(0, at + 0.12)
       osc.start(at)
       osc.stop(at + 0.12)

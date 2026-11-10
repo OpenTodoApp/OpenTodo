@@ -16,6 +16,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // Every CalDAV write is a batch of ops applied with ApplyStrict under the
@@ -322,20 +323,12 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 			extra += "\r\n" + l
 		}
 	}
-	f["parent_id"] = json.RawMessage("null")
-	if in.ParentUID != "" {
-		if p := v.taskByUID(in.ParentUID); p != nil {
-			f["parent_id"] = mustJSON(idOf(p["id"]))
-		} else {
-			// Not known yet (the client may upload the parent later): keep the
-			// relation as client data so the next PUT can resolve it.
-			line := caldav.Prop{Name: "RELATED-TO", Value: caldav.EscapeText(in.ParentUID)}.Line()
-			if extra == "" {
-				extra = line
-			} else {
-				extra += "\r\n" + line
-			}
-		}
+	var line string
+	f["parent_id"], line = v.parentWrite(in, current)
+	if line != "" && extra == "" {
+		extra = line
+	} else if line != "" {
+		extra += "\r\n" + line
 	}
 	// DEPENDS-ON lines name blockers by UID (task-dependencies D10): those that
 	// resolve in this calendar become blocked_by; the rest stay client data.
@@ -345,7 +338,7 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	_ = json.Unmarshal(current["blocked_by"], &currentBlockers)
 	var blockedBy []string
 	for _, b := range currentBlockers {
-		if _, here := v.byID[b]; !here {
+		if bt, here := v.byID[b]; !here || !v.inView(bt) {
 			blockedBy = append(blockedBy, b)
 		}
 	}
@@ -414,6 +407,23 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	}
 	f["labels"] = mustJSON(labels)
 	return davFields{f: f, pre: extraOps, post: alarms.ops, touched: alarms.touched}, nil
+}
+
+// parentWrite is the parent_id an inbound VTODO writes, and the RELATED-TO
+// line kept as client data for a parent not known yet (the client may upload
+// it later, and the next PUT resolves it). A parent outside the app
+// password's scope was never served and is kept (sync-scope).
+func (v *davView) parentWrite(in *caldav.Inbound, current opsync.Entity) (json.RawMessage, string) {
+	if in.ParentUID != "" {
+		if p := v.taskByUID(in.ParentUID); p != nil {
+			return mustJSON(idOf(p["id"])), ""
+		}
+		return json.RawMessage("null"), caldav.Prop{Name: "RELATED-TO", Value: caldav.EscapeText(in.ParentUID)}.Line()
+	}
+	if p, ok := v.byID[idOf(current["parent_id"])]; ok && !v.inView(p) {
+		return current["parent_id"], ""
+	}
+	return json.RawMessage("null"), ""
 }
 
 func sameLabels(a, b json.RawMessage) bool {
@@ -532,6 +542,10 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 			same = sameLabels(val, cur["labels"])
 		}
 		if field == "ical_extra" && isNullish(cur[field]) && isNullish(val) {
+			same = true
+		}
+		// No DESCRIPTION is how a missing description is served (issue #1033).
+		if field == "description" && idOf(cur[field]) == "" && idOf(val) == "" {
 			same = true
 		}
 		if !same {
@@ -896,13 +910,22 @@ func (d *davRequest) mkcalendar() {
 			}
 		}
 	}
+	ws, ok := v.newCalendarWorkspace(id)
+	if !ok {
+		d.precondition(http.StatusForbidden, "d", "need-privileges")
+		return
+	}
 	ts := d.s.opTS()
 	now := d.s.now().UnixMilli()
 	var ops []opsync.Op
-	for field, val := range map[string]json.RawMessage{
+	fields := map[string]json.RawMessage{
 		"name": mustJSON(name), "color": mustJSON(color), "position": mustJSON(now), "archived": json.RawMessage("false"),
 		"parent_id": json.RawMessage("null"), "created_at": mustJSON(now), "deleted_at": json.RawMessage("null"),
-	} {
+	}
+	if ws != "" && ws != v.ws.def {
+		fields["workspace_id"] = mustJSON(ws)
+	}
+	for field, val := range fields {
 		ops = append(ops, d.op("project", id, field, val, ts))
 	}
 	res, err := d.apply(ops)
@@ -916,6 +939,25 @@ func (d *davRequest) mkcalendar() {
 	}
 	d.w.Header().Set("Cache-Control", "no-store")
 	d.w.WriteHeader(http.StatusCreated)
+}
+
+// newCalendarWorkspace is the workspace a calendar made with MKCALENDAR goes
+// into (sync-scope): the default workspace, or under a scope of chosen
+// workspaces the first of them the account has. ok is false when the new
+// project would still be outside the scope (a scope of chosen projects, or
+// one that leaves the default workspace out): it is refused, since the client
+// could not see it.
+func (v *davView) newCalendarWorkspace(id string) (string, bool) {
+	ws := v.ws.def
+	if v.scope.Mode == syncscope.Only {
+		for _, w := range v.scope.Workspaces {
+			if v.ws.part.Known[w] {
+				ws = w
+				break
+			}
+		}
+	}
+	return ws, v.scope.Includes(syncscope.Place{Workspace: ws, Projects: []string{id}})
 }
 
 func (d *davRequest) proppatch() {

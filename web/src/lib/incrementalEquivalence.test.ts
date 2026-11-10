@@ -10,12 +10,13 @@ import { todaySlots } from './closedListPrefs'
 import { blockedMap, liveBlocked } from './dependencies'
 import { availability } from './flow'
 import { habitStatsMap, patchHabitStats } from './habits'
-import { completedBySection, listGroups, patchCompletedBySection, patchTreeParts, patchViewTasks, splitLater, sectionBuckets, tasksForView, treeParts, type GroupInput, type ListScope, type TreeParts } from './listGroups'
+import { completedBySection, laterOpenKey, listGroups, patchCompletedBySection, patchTreeParts, patchViewTasks, splitLater, sectionBuckets, tasksForView, treeParts, type GroupInput, type ListScope, type TreeParts } from './listGroups'
 import { flattenTree } from './tree'
 import { openCountsByProject, openTasksOf, taskIndexOf } from './liveTasks'
 import { currentDateTime, currentDayStart, logicalDay } from './dates'
 import { labelCounts, patchLabelCounts, patchSidebarCounts, sidebarCounts } from './sidebarCounts'
 import { buildTaskTree, liveProgress, progressMap } from './subtasks'
+import { progressPart, projectProgressOf } from './progress'
 import { Derived, keysBetween, patchOrdered, type TaskChange } from './taskDelta'
 import { deriveSets, patchSets } from './taskSnapshot'
 import { flowView, nextFlowView } from './useFlow'
@@ -144,6 +145,16 @@ function projectGroups(view: 'project' | 'inbox', projectId: string | null, task
   }
   return listGroups(input)
 }
+/** A project list's groups from its TreeParts, every section's Later open (later-in-section): what useListModel renders. */
+function partsGroups(parts: TreeParts, projectId: string, tasks: Task[], all: readonly Task[]): ReturnType<typeof listGroups> {
+  const own = sections.filter((s) => s.project_id === projectId)
+  return listGroups({
+    view: 'project', projectId, tasks, laterTasks: parts.split?.later ?? [], tree: parts.tree, today: TODAY, resolved: currentDateTime(),
+    collapsed: new Set(['', ...own.map((s) => s.id)].map((k) => laterOpenKey(projectId, k))), blocked: new Set(),
+    taskMap: new Map(all.map((t) => [t.id, t])), projects, projectMap: new Map(projects.map((p) => [p.id, p])), board: false, columns: [],
+    buckets: parts.buckets, sectionCount: own.length, collapsedSections: [], logbook: null,
+  })
+}
 const groupIds = (gs: ReturnType<typeof listGroups>) => gs.map((g) => [g.key, g.count ?? null, g.rows.map((row) => [row.task.id, row.task.title, row.depth, row.parent, row.hasChildren, row.breadcrumb])])
 
 function run(seed: number, steps: number) {
@@ -209,6 +220,16 @@ function run(seed: number, steps: number) {
     for (const t of all) if (!t.completed_at && t.project_id) ownOpen.set(t.project_id, (ownOpen.get(t.project_id) ?? 0) + 1)
     expect(entries(openCountsByProject(all)), at).toEqual(entries(ownOpen))
 
+    // A project's progress beside its title (task-progress D4).
+    const projectProgress = new Map<string, { done: number; total: number }>()
+    for (const t of all) {
+      const part = progressPart(t)
+      if (!t.project_id || !part) continue
+      const v = projectProgress.get(t.project_id) ?? { done: 0, total: 0 }
+      projectProgress.set(t.project_id, { done: v.done + (part === 'done' ? 1 : 0), total: v.total + 1 })
+    }
+    expect(entries(projectProgressOf(all)), at).toEqual(entries(projectProgress))
+
     const progressBefore = liveProgress(before.here)
     const progress = liveProgress(all)
     expect(entries(progress), at).toEqual(entries(progressMap(all)))
@@ -253,6 +274,8 @@ function run(seed: number, steps: number) {
       const got = parts[i].get(list, true, false, TODAY, pid, sections)
       const want = treeParts(pid ? tasksForView({ view: 'project', id: pid }, all, projects, TODAY) : tasksForView({ view: 'inbox' }, all, projects, TODAY), true, false, TODAY, pid, sections)
       expect(shape(got), `${at} tree ${pid}`).toEqual(shape(want))
+      // The groups drawn from the patched parts, Later inside each section, equal those from the full ones.
+      if (pid) expect(groupIds(partsGroups(got, pid, list, all)), `${at} later groups`).toEqual(groupIds(partsGroups(want, pid, list, all)))
     })
     const todayList = views[1].get(all)
     const slots = todaySlots(todayList, TODAY, { today_limit: 5 }, null, (id) => view.state.available(id) && !blocked.has(id))
@@ -298,5 +321,21 @@ describe('patchTreeParts', () => {
     const got = patchTreeParts(prev, [...changes].reverse(), () => false)!
     expect(flattenTree(got.tree!.roots).map((n) => n.id)).toEqual(['c'])
     expect([...got.tree!.nodes.keys()]).toEqual(['c'])
+  })
+
+  it('an edit to a deferred task in a section is patched, and its section\'s Later shows it (later-in-section)', () => {
+    const active = t('a', { section_id: 's-a1' })
+    const deferred = t('b', { section_id: 's-a1', start: '2026-11-20' })
+    const sub = t('c', { section_id: 's-a1', parent_id: 'b' })
+    const prev = treeParts([active, deferred, sub], true, false, TODAY, 'p-a', sections)
+    const renamed = { ...deferred, title: 'b!' }
+    const got = patchTreeParts(prev, [{ id: 'b', before: deferred, after: renamed }], () => false)!
+    expect(got).not.toBeNull()
+    const list = [active, renamed, sub]
+    const want = treeParts(list, true, false, TODAY, 'p-a', sections)
+    expect(groupIds(partsGroups(got, 'p-a', list, list))).toEqual(groupIds(partsGroups(want, 'p-a', list, list)))
+    expect(partsGroups(got, 'p-a', list, list).find((g) => g.key === 'later:s-a1')!.rows.map((r) => [r.task.title, r.depth])).toEqual([['b!', 0], ['c', 1]])
+    // A new start moves it: worked out in full.
+    expect(patchTreeParts(prev, [{ id: 'b', before: deferred, after: { ...deferred, start: null } }], () => false)).toBeNull()
   })
 })

@@ -367,6 +367,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"themes",
 			// quarterly and weekly objectives (plan-objectives).
 			"objectives",
+			// what the assistant remembers (assistant-memory).
+			"memory",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:

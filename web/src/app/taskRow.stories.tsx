@@ -371,6 +371,27 @@ export const EveryMetadata: StoryObj = {
   ),
 }
 
+/**
+ * The row grid (sidebar-brand-and-row-grid D2 to D4) in a 64 rem list: the slots project,
+ * labels, estimate, date and assignee line up down the list, an empty slot keeps its
+ * width, the unused assignee slot takes none, the dates end the column; the marks sit on
+ * the title's first baseline, also on a wrapped title; Evening is an icon in the time column.
+ */
+export const SlotGrid: StoryObj = {
+  render: () => (
+    <ul className="max-w-5xl space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">
+      {[
+        <TaskRow key="a" {...base} showProject timeColumn slotsOff="assignee" project={home} labels={[errand]} task={task({ id: 'g1', title: 'Fix the bike light', project_id: home.id, labels: [errand.id], estimate_minutes: 45, due: { date: TOMORROW, time: '09:30' } })} />,
+        <TaskRow key="b" {...base} showProject timeColumn slotsOff="assignee" project={home} task={task({ id: 'g2', title: 'Pay the water bill', project_id: home.id, due: { date: '2026-10-20' } })} />,
+        <TaskRow key="c" {...base} showProject timeColumn slotsOff="assignee" labels={[deepWork]} task={task({ id: 'g3', title: 'Read the sync protocol draft', labels: [deepWork.id] })} />,
+        <TaskRow key="d" {...base} showProject timeColumn slotsOff="assignee" project={home} progress={{ done: 2, total: 3 }}
+          task={task({ id: 'g4', title: 'Prepare the quarterly report with the three charts finance asked for, the summary and the appendix of every number that changed since the last quarter', priority: 1, recurrence: 'every week', project_id: home.id, due: { date: TODAY } })} />,
+        <TaskRow key="e" {...base} showProject timeColumn slotsOff="assignee" project={home} task={task({ id: 'g5', title: 'Water the plants', evening: true, project_id: home.id, due: { date: '2026-10-16' } })} />,
+      ]}
+    </ul>
+  ),
+}
+
 /** Label chips (rows-v2 D5): one, two, four (two and "+2"), and a row in the errand label's view, which leaves errand out. */
 export const Labels: StoryObj = {
   render: () => (

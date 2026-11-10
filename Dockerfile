@@ -25,6 +25,7 @@ COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json
 COPY internal/notesearch/testdata/vectors.json /src/internal/notesearch/testdata/vectors.json
+COPY internal/notelinks/testdata/links.vectors.json /src/internal/notelinks/testdata/links.vectors.json
 # The signed web app (signed-web-app): the official keys built into the service worker,
 # and the page policy the worker writes (equal to the server's cspBase).
 COPY internal/websign/release-keys.json /src/internal/websign/release-keys.json
@@ -33,8 +34,23 @@ COPY internal/httpapi/testdata/csp_fixture.json /src/internal/httpapi/testdata/c
 # Markdown pages and CHANGELOG.md (the release they describe), without their images.
 COPY docs/ /src/docs/
 COPY CHANGELOG.md /src/CHANGELOG.md
-# vite writes to ../internal/web/dist (see web/vite.config.ts)
-RUN mkdir -p /src/internal/web && npm run build
+# vite writes to ../internal/web/dist (see web/vite.config.ts). The signed file list
+# (signed-web-app): a v* VERSION is the list's version, OPENTODO_BUILD=preview labels a
+# build of main, and the optional BuildKit secret web_signing_key (an operator's own
+# key, D11) makes the build trust that key; the server stage signs with it.
+ARG VERSION=dev
+ARG OPENTODO_BUILD=
+RUN --mount=type=secret,id=web_signing_key,target=/run/secrets/web_signing_key \
+    mkdir -p /src/internal/web \
+    && case "$VERSION" in v[0-9]*) export OPENTODO_VERSION="$VERSION" ;; esac \
+    && if [ -s /run/secrets/web_signing_key ]; then export WEB_SIGNING_KEY=/run/secrets/web_signing_key; fi \
+    && OPENTODO_BUILD="$OPENTODO_BUILD" npm run build
+
+# ---- 1b. the web app the binary embeds --------------------------------------
+# A release replaces this stage with the build its web-sign job signed:
+# docker build --build-context web-dist=<signed dist> (signed-web-app D4).
+FROM scratch AS web-dist
+COPY --from=web /src/internal/web/dist /
 
 # ---- 2. server --------------------------------------------------------------
 FROM --platform=$BUILDPLATFORM golang:1.27.3-alpine@sha256:f2c872bcee949b7be9c490efd02b48a8a2fbf947cdf533f1c58525ec9d8170fd AS build
@@ -46,7 +62,12 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 COPY cmd/ cmd/
 COPY internal/ internal/
-COPY --from=web /src/internal/web/dist internal/web/dist
+COPY --from=web-dist / internal/web/dist/
+# An own key (docker build --secret id=web_signing_key,src=key.pem) signs the list here,
+# on the build machine; the image never holds the key.
+RUN --mount=type=secret,id=web_signing_key,target=/run/secrets/web_signing_key \
+    --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
+    if [ -s /run/secrets/web_signing_key ]; then WEB_SIGNING_KEY=/run/secrets/web_signing_key go run ./cmd/websign sign internal/web/dist; fi
 # Coolify passes the git commit when the application's "Source commit availability" is
 # "Available during build"; a build without VERSION then reports dev+<commit> instead of dev.
 ARG SOURCE_COMMIT=

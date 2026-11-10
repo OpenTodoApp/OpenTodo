@@ -12,6 +12,7 @@ import { formatInstant } from '../../lib/dates'
 import { createTask, setTaskCompleted } from '../../lib/ops'
 import { resolveLabels } from '../../lib/labels'
 import { hasTimeColumn } from '../../lib/rowTime'
+import { listSlotsOff } from '../../lib/rowSlots'
 import { finishReview, firstUnfinished, PHASE_OF, PHASE_TITLES, reviewSteps, STEP_IDS, STEP_TITLES, SWEEP_PROMPTS, type ReviewSteps, type StepId, type WalkProject } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import type { Project, Task } from '../../lib/types'
@@ -84,6 +85,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const taskRows = useMemo(() => (steps ? stepTasks(steps, current) : []), [steps, current])
   // The time column (rows-v2 D2): one fact of the step's list.
   const timeColumn = useMemo(() => hasTimeColumn(taskRows), [taskRows])
+  const slotsOff = useMemo(() => listSlotsOff(taskRows), [taskRows])
   // Time sectors in Look ahead (time-sectors): carried over and Next week, part of the step's key list.
   const sectorsOn = useTimeSectors()
   // Objectives in Look ahead (plan-objectives D4): above the next seven days, outside the step's counts.
@@ -100,7 +102,7 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const row = (item: Task) => (
     <TaskRow key={item.id} task={item} project={item.project_id ? projectMap.get(item.project_id) : undefined} labels={resolveLabels(item.labels, labelMap)}
-      showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn}
+      showProject={step !== 'clear'} selected={item.id === selected} timeColumn={timeColumn} slotsOff={slotsOff}
       onToggle={() => act(setTaskCompleted(item.id, !item.completed_at))}
       onOpen={() => { setSelected(item.id); setPanelTaskId(item.id) }} />
   )

@@ -575,6 +575,18 @@ func TestRoutineClearNoteTwoDevices(t *testing.T) {
 type fakeMailer struct {
 	sent    []RoutineMail
 	refused []string
+	// members are the Email project members messages, "runAs>member".
+	members []string
+}
+
+func (f *fakeMailer) SendRoutineMember(_ context.Context, runAs, member string, m RoutineMail) error {
+	f.sent = append(f.sent, m)
+	f.members = append(f.members, runAs+">"+member)
+	return nil
+}
+
+func (f *fakeMailer) RefuseRoutineMember(_ context.Context, _, member string, _ RoutineMail, reason string) {
+	f.refused = append(f.refused, member+":"+reason)
 }
 
 func (f *fakeMailer) SendRoutine(_ context.Context, _ string, m RoutineMail) error {

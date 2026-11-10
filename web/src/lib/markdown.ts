@@ -3,7 +3,8 @@
 // line breaks, headings, *emphasis*, **strong**, ~~strike~~, `inline code`,
 // fenced code blocks, [links](https://…) and bare https:// links, bulleted,
 // numbered and check lists, > block quotes, pipe tables, images that name an
-// attachment (`![alt](attachment:<id>)`), links to a task (`?task=<id>`) and
+// attachment (`![alt](attachment:<id>)`), links to a task, note or project of the
+// app (`?task=<id>`, `?note=<id>`, `?project=<id>`, note-links D1) and
 // @mentions the caller can resolve.
 //
 // The parser produces plain data; the React renderer (app/Markdown.tsx) turns it
@@ -17,8 +18,8 @@ export type Inline =
   | { t: 'code'; v: string }
   | { t: 'em' | 'strong' | 'strike'; c: Inline[] }
   | { t: 'link'; href: string; c: Inline[] }
-  /** A link to a task of this app (Make subtask, editor-everywhere D6). */
-  | { t: 'task'; id: string; c: Inline[] }
+  /** A link to a task, note or project of this app (Make subtask, note-links D1). */
+  | { t: 'ref'; kind: 'task' | 'note' | 'project'; id: string; c: Inline[] }
   /** `@token` of a member the caller resolved. */
   | { t: 'mention'; v: string }
   | { t: 'br' }
@@ -42,7 +43,7 @@ const LIST = /^ {0,3}([-*+]|(\d{1,9})[.)])\s+(.*)$/
 const FENCE = /^ {0,3}(```+|~~~+)\s*([^`\s]*)/
 const IMAGE = /^ {0,3}!\[((?:\\.|[^\]\\])*)\]\(attachment:([A-Za-z0-9_-]+)\)\s*$/
 const RULE_CELL = /^:?-+:?$/
-const TASK_HREF = /^\?task=([A-Za-z0-9_-]+)$/
+const REF_HREF = /^\?(task|note|project)=([A-Za-z0-9_-]+)$/
 
 /**
  * The rel of every link written by a user (comments, notes): no referrer, no
@@ -215,11 +216,11 @@ export function parseInline(s: string, depth = 0, opts: MarkdownOptions = {}): I
       const end = close > 0 ? s.indexOf(')', close + 2) : -1
       if (close > 0 && end > 0 && !s.slice(at + 1, close).includes('[')) {
         const target = s.slice(close + 2, end).trim()
-        const task = TASK_HREF.exec(target)
+        const ref = REF_HREF.exec(target)
         const href = safeHref(target)
         const label = parseInline(s.slice(at + 1, close), depth + 1, opts)
         flush()
-        if (task) out.push({ t: 'task', id: task[1], c: label })
+        if (ref) out.push({ t: 'ref', kind: ref[1] as 'task', id: ref[2], c: label })
         else if (href) out.push({ t: 'link', href, c: label })
         else out.push(...label)
         i = end + 1

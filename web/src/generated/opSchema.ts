@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, MemoryItem, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -575,6 +575,15 @@ export interface RuleFields {
    * whoever last turned it on, only inside that project.
    */
   project_id?: string | null
+  /**
+   * The workspace a personal routine works in (routine-conditions D1):
+   * its trigger fires only for that workspace's tasks, its steps see and
+   * change only that workspace's tasks and projects. Null is every
+   * workspace, what each routine made before this field reads as. Unlike a
+   * label's workspace_id, the default workspace is written as its id.
+   * Ignored on a shared project's routine, which its project bounds.
+   */
+  workspace_id?: string | null
   position?: number
   created_at?: number
   deleted_at?: number | null
@@ -917,6 +926,14 @@ export interface UserPrefsFields {
    */
   focus_noise?: string
   /**
+   * The length of the end-of-session sound (OpenSpec change
+   * focus-end-alert, design D1): "short" or "long", read only while
+   * focus_sound is "on"; clients read an empty or unknown value as
+   * short and keep it. A client without this field plays the short
+   * tone.
+   */
+  focus_alert?: string
+  /**
    * Today grouped by part of the day (OpenSpec change day-parts, design
    * D3): "on" groups Today into Morning, Afternoon and This Evening and
    * turns on the part phrases of quick add; clients read an empty or
@@ -998,6 +1015,74 @@ export interface UserPrefsFields {
    * keep the stored value. Settings, never content.
    */
   full_titles?: string
+  /**
+   * Today's display options (OpenSpec change builtin-view-options, design
+   * D1, D2): the grouping of the day's own tasks, "day" (Time of day),
+   * "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
+   * a slot and Done today keep their place. Clients read an empty, unknown
+   * or not-offered value as "day" and keep the stored value. Settings,
+   * never content.
+   */
+  today_group_by?: string
+  /**
+   * Today's order (builtin-view-options D2): "due", "priority", "created",
+   * "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
+   */
+  today_sort_by?: string
+  /** Today's order direction: "asc" or "desc"; empty or unknown reads as "asc". */
+  today_sort_dir?: string
+  /**
+   * Today's row layout (row-layouts): "line" or "detailed"; empty or
+   * unknown follows the account's row_layout.
+   */
+  today_row_layout?: string
+  /**
+   * Today's Nest subtasks (builtin-view-options D5): "nested" lists a
+   * subtask under its parent when both are in the same group; anything
+   * else reads as flat.
+   */
+  today_subtasks?: string
+  /**
+   * Upcoming's order within each day (builtin-view-options D2, D4): the
+   * same values as today_sort_by; empty or unknown reads as "due".
+   */
+  upcoming_sort_by?: string
+  /** Upcoming's order direction: "asc" or "desc"; empty or unknown reads as "asc". */
+  upcoming_sort_dir?: string
+  /**
+   * Upcoming's row layout: "line" or "detailed"; empty or unknown follows
+   * the account's row_layout.
+   */
+  upcoming_row_layout?: string
+  /** Upcoming's Nest subtasks: "nested" or flat, as today_subtasks. */
+  upcoming_subtasks?: string
+  /**
+   * Upcoming's later days (OpenSpec change sidebar-brand-and-row-grid,
+   * design D8): "full" lists every day in full; "" or "summary" (the
+   * default) lists the first three days with tasks in full and each later
+   * day as one closed bar with its count and first titles. Clients read an
+   * empty or unknown value as summarised and keep the stored value.
+   * Settings, never content.
+   */
+  upcoming_later?: string
+  /**
+   * The Inbox's grouping of its top-level tasks (builtin-view-options D6):
+   * "none", "due", "priority" or "label"; empty, unknown or not-offered
+   * reads as "none".
+   */
+  inbox_group_by?: string
+  /**
+   * The Inbox's order: "position" (manual), "priority", "due", "created",
+   * "deadline" or "title"; empty or unknown reads as "position".
+   */
+  inbox_sort_by?: string
+  /** The Inbox's order direction: "asc" or "desc"; empty or unknown reads as "asc". */
+  inbox_sort_dir?: string
+  /**
+   * The Inbox's row layout: "line" or "detailed"; empty or unknown follows
+   * the account's row_layout.
+   */
+  inbox_row_layout?: string
 }
 
 /**
@@ -1020,6 +1105,22 @@ export interface ObjectiveFields {
   position?: number
   /** When it was marked done, Unix ms; 0 = open. */
   done_at?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
+ * memory: one fact the user told the in-app assistant to remember (OpenSpec
+ * change assistant-memory, design D1), such as "Does not work on Fridays".
+ * Personal like an objective, with ids unique on the server; sent with every
+ * assistant turn, never to MCP clients, agent tokens or routines. Devices keep
+ * at most 20 live items; the server does not count.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface MemoryItemFields {
+  /** The fact, one line of 1 to 200 characters (ciphertext for an encrypted account). */
+  text?: string
+  position?: number
   created_at?: number
   deleted_at?: number | null
 }
@@ -1117,7 +1218,7 @@ export const OP_DEFAULTS = {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
   rule: {
-    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, project_id: null, position: 0, created_at: 0, deleted_at: null,
+    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, project_id: null, workspace_id: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,
@@ -1135,11 +1236,14 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', full_titles: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', full_titles: '', today_group_by: '', today_sort_by: '', today_sort_dir: '', today_row_layout: '', today_subtasks: '', upcoming_sort_by: '', upcoming_sort_dir: '', upcoming_row_layout: '', upcoming_subtasks: '', upcoming_later: '', inbox_group_by: '', inbox_sort_by: '', inbox_sort_dir: '', inbox_row_layout: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   objective: {
     title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Objective, 'id' | '_clock'>,
+  memory: {
+    text: '', position: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<MemoryItem, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
@@ -1162,5 +1266,6 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   slot: ['title'],
   place: ['name', 'address', 'geo'],
   objective: ['title'],
+  memory: ['text'],
   review: ['tomorrow_note'],
 }

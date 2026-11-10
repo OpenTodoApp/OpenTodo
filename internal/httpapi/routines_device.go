@@ -158,6 +158,8 @@ func (s *Server) deviceRunError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "plaintext", err.Error())
 	case errors.Is(err, rules.ErrBadCommit):
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+	case errors.Is(err, rules.ErrOutsideWorkspace):
+		writeError(w, http.StatusConflict, "other_workspace", err.Error())
 	default:
 		s.routineError(w, err)
 	}

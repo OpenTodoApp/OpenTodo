@@ -8,11 +8,19 @@ import type { ProposedChange, TurnEvent } from '../assistantTypes'
 import type { TurnRequest } from '../assistant'
 import { ArgError, ToolError, type Args } from './args'
 import { loadSnapshot } from './data'
-import { manifest, manifestSkill, type ManifestTool } from './manifest'
+import { manifest, manifestSkill, type ManifestSkill, type ManifestTool } from './manifest'
 import { PLANNERS } from './plan'
 import { systemPrompt } from './prompt'
 import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
 import { getTask, listProjects, listTasks, searchTasks, todaySummary } from './read'
+import { getNote, listNotes, searchNotes } from './readNotes'
+import { listFrames, listSlots, listTimeEntries } from './readTime'
+import { findFreeTime } from './readFreeTime'
+import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
+import { checkOpen, dropFromDraft } from './open'
+import { checkOpenMemory, planRemember } from './memory'
+import { memoryTexts } from '../memory'
+import { uuid } from '../ids'
 import type { DeviceSetup } from './settings'
 
 export interface DeviceTurnOptions {
@@ -30,10 +38,18 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
   get_task: getTask,
   search_tasks: searchTasks,
   today_summary: todaySummary,
+  list_time_entries: listTimeEntries,
+  list_frames: listFrames,
+  list_slots: listSlots,
+  list_notes: listNotes,
+  search_notes: searchNotes,
+  get_note: getNote,
+  // assistant-time-blocks: the free stretches of internal/freetime, from this device's rows.
+  find_free_time: (s, a, n) => findFreeTime(s, a, n),
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */
-export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS)]
+export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS]
 
 const clip = (s: string) => [...s.slice(0, 64)].filter((ch) => ch >= ' ' && ch !== '\u007f').join('')
 
@@ -69,6 +85,7 @@ export function statusFor(name: string, args: string): string {
     }
     case 'get_task': return 'Reading a task…'
     case 'search_tasks': return 'Searching tasks…'
+    case 'find_free_time': return 'Looking for free time…'
   }
   return 'Preparing changes…'
 }
@@ -111,6 +128,30 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
+/** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools, the display tools its view suggests and the follow-ups. */
+export function offeredTool(t: ManifestTool, skill: ManifestSkill | null, view: string | undefined): boolean {
+  if (!skill) return true
+  if (t.kind === 'display' && manifest.always_display.includes(t.name)) return true
+  return skill.tools.includes(t.name) || (t.kind === 'display' && !!view && (manifest.view_display[view] ?? []).includes(t.name))
+}
+
+/** A display call offered in this turn (runDisplay on the server). */
+async function displayCall(call: ToolCall, turn: DisplayTurn, emit: Parameters<typeof runDisplay>[3]): Promise<{ content: string; isError: boolean }> {
+  let args: Record<string, unknown>
+  try {
+    const parsed = call.args ? JSON.parse(call.args) : {}
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error()
+    args = parsed as Record<string, unknown>
+  } catch {
+    return { content: JSON.stringify({ error: 'invalid_arguments', message: 'the arguments are not a JSON object of the tool\'s schema' }), isError: true }
+  }
+  try {
+    return await runDisplay(call.name, args, turn, emit)
+  } catch {
+    return { content: JSON.stringify({ error: 'internal', message: 'the tool failed on this device' }), isError: true }
+  }
+}
+
 /** One change per entity: later values win, the first base of each field is kept (finalise). */
 export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) => boolean): ProposedChange[] {
   const out: ProposedChange[] = []
@@ -130,7 +171,7 @@ export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) =>
     }
   }
   for (const p of out) if (shared(p)) p.shared = true
-  const rank: Record<string, number> = { project: 0, label: 1, section: 2, task: 3, comment: 4 }
+  const rank: Record<string, number> = { project: 0, label: 1, section: 2, task: 3, comment: 4, memory: 5 }
   return out.map((p, i) => [p, i] as const).sort((a, b) => (rank[a[0].entity] ?? 9) - (rank[b[0].entity] ?? 9) || a[1] - b[1]).map(([p]) => p)
 }
 
@@ -142,17 +183,26 @@ export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) =>
 export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) => void, signal: AbortSignal | undefined, opts: DeviceTurnOptions): Promise<void> {
   const now = opts.now ?? Date.now
   const skill = req.skill ? manifestSkill(req.skill) ?? null : null
-  const tools = manifest.tools.filter((t) => !skill || skill.tools.includes(t.name))
   const snap0 = await loadSnapshot()
+  // The open proposal, checked, seeds the draft and brings drop_from_proposal (assistant-proposal-editing D3).
+  // Memory items are checked apart from the registry's entities (assistant-memory D2).
+  const openMemory = await checkOpenMemory(req.open_proposal)
+  const open = [...(await checkOpen(openMemory.rest, snap0)), ...openMemory.memory]
+  // remember is offered in turns without a skill, with the live items in the instructions (D2, D3).
+  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
-  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null }, now()) + '\n' + manifest.device_note + '\n'
+  const memory = await memoryTexts()
+  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open, memory }, now()) + '\n' + manifest.device_note + '\n'
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
-  let draft: ProposedChange[] = []
+  let draft: ProposedChange[] = [...open]
+  const display: DisplayTurn = { shown: 0 }
   let input = 0
+  let cached = 0
+  let cacheWrite = 0
   let output = 0
   let paused = false
-  const usage = () => onEvent({ type: 'usage', input, output, month_total: 0, cap: 0, own_key: true })
+  const usage = () => onEvent({ type: 'usage', input, ...(cached || cacheWrite ? { cached, cache_write: cacheWrite } : {}), output, month_total: 0, cap: 0, own_key: true })
   const done = (stop: string, message?: string) => {
     usage()
     onEvent({ type: 'done', stop_reason: stop, ...(message ? { message } : {}) })
@@ -172,6 +222,8 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
       return failed('provider_error', 'the provider could not answer')
     }
     input += r.input
+    cached += r.cached ?? 0
+    cacheWrite += r.cacheWrite ?? 0
     output += r.output
     switch (r.stop) {
       case 'end_turn': {
@@ -195,7 +247,39 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
         if (!r.toolCalls.length) return failed('provider_error', 'the provider asked for a tool without naming one')
         const results = []
         for (const call of r.toolCalls) {
+          const def = tools.find((t) => t.name === call.name)
+          if (!def && DISPLAY_TOOLS.includes(call.name)) {
+            results.push({ id: call.id, content: JSON.stringify({ error: 'unavailable', message: `the tool ${clip(call.name)} is not available in this turn; use only the tools listed` }), isError: true })
+            continue
+          }
+          if (def?.kind === 'display') {
+            // A block shows itself, with no progress line, and carries ids only (assistant-generative-ui D2, D3).
+            const res = await displayCall(call, display, (block) => onEvent({ type: 'block', ...block }))
+            results.push({ id: call.id, content: res.content, isError: res.isError })
+            continue
+          }
           onEvent({ type: 'status', text: statusFor(call.name, call.args) })
+          if (call.name === manifest.memory.tool.name) {
+            let args: unknown = null
+            try { args = JSON.parse(call.args || '{}') } catch { /* invalid arguments below */ }
+            const plan = def ? planRemember(await memoryTexts(), draft, args, uuid(), now()) : { result: { error: 'unavailable', message: manifest.memory.messages.unavailable } }
+            const next = plan.change ? [...draft, plan.change] : draft
+            if (plan.change && countEntities(next) > manifest.limits.max_entities) {
+              results.push({ id: call.id, content: JSON.stringify({ error: 'proposal_full', message: `one proposal holds at most ${manifest.limits.max_entities} changed items; nothing from this call was added.`, limit: manifest.limits.max_entities, in_proposal: countEntities(draft) }), isError: true })
+              continue
+            }
+            draft = next
+            results.push({ id: call.id, content: JSON.stringify(plan.result), isError: !plan.change })
+            continue
+          }
+          if (def?.kind === 'proposal') {
+            let args: Record<string, unknown> = {}
+            try { args = JSON.parse(call.args || '{}') as Record<string, unknown> } catch { /* invalid arguments below */ }
+            const res = dropFromDraft(draft, args && typeof args === 'object' ? args : {})
+            draft = res.draft
+            results.push({ id: call.id, content: res.content, isError: res.isError })
+            continue
+          }
           const res = await runTool(call, tools, draft, now())
           draft = res.draft
           results.push({ id: call.id, content: res.content, isError: res.isError })

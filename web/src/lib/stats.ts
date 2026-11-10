@@ -5,9 +5,12 @@
 // fixture internal/digest/testdata/stats_fixture.json.
 import { resolveRange, shiftISO, weekdayOf } from './filter/parse'
 import { addDaysISO, currentDayStart, logicalDay } from './dates'
-import type { Membership, Project, Task } from './types'
+import type { Membership, Task } from './types'
 import { t, msg, translatedMap } from './i18n'
 import { minutesOf, type EntryLike } from './time'
+import { countedTasks, overdueOf, type StatProject, type StatTask } from './statsCounted'
+
+export { countedTasks, isMine, overdueOf } from './statsCounted'
 
 /**
  * The periods Statistics offers (stats-dashboard D3), plus `4-weeks`, which the
@@ -107,9 +110,6 @@ export function daysOf(p: Pick<Period, 'start' | 'end'>): string[] {
   return out
 }
 
-type StatTask = Pick<Task, 'id' | 'project_id' | 'created_at' | 'completed_at' | 'deleted_at' | 'due' | 'series_id' | 'assignee_id'>
-  & Partial<Pick<Task, 'skipped' | 'completed_by' | 'sample'>>
-type StatProject = Pick<Project, 'id' | 'name' | 'archived' | 'deleted_at'>
 
 export interface StatsInput<T extends StatTask = Task> {
   tasks: readonly T[]
@@ -180,34 +180,6 @@ export function sharedIds(memberships: readonly Pick<Membership, 'projectId'>[])
 
 /** The device's logical day of an instant (day-boundary D4); the shared fixture overrides it with `dayOf`. */
 const deviceDay = (ms: number) => logicalDay(ms, currentDayStart())
-
-/**
- * Whether a row counts for the user (design D1): every row outside shared
- * projects; in a shared project the account that completed it when recorded
- * (`completed_by`), otherwise the assignee, or the user when unassigned.
- */
-export function isMine(item: StatTask, shared: ReadonlySet<string>, me: string | null): boolean {
-  if (!item.project_id || !shared.has(item.project_id)) return true
-  if (item.completed_at !== null && item.completed_by) return item.completed_by === me
-  return !item.assignee_id || item.assignee_id === me
-}
-
-/**
- * The rows statistics see: live (not in the Trash, nor in a trashed project), not a skipped habit
- * occurrence, not a start guide sample (moments-and-onboarding D3), and the user's.
- */
-export function countedTasks<T extends StatTask>(input: Pick<StatsInput<T>, 'tasks' | 'projects' | 'shared' | 'me'>): T[] {
-  const trashed = new Set(input.projects.filter((p) => p.deleted_at).map((p) => p.id))
-  return input.tasks.filter((item) => !item.deleted_at && !(item.project_id && trashed.has(item.project_id)) && !item.skipped && !item.sample && isMine(item, input.shared, input.me))
-}
-
-/** Open tasks due before today, outside archived projects, oldest due first. */
-export function overdueOf<T extends StatTask>(counted: readonly T[], projects: readonly StatProject[], today: string): T[] {
-  const archived = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  return counted
-    .filter((item) => item.completed_at === null && item.due && item.due.date < today && !(item.project_id && archived.has(item.project_id)))
-    .sort((a, b) => (a.due!.date < b.due!.date ? -1 : a.due!.date > b.due!.date ? 1 : a.id < b.id ? -1 : 1))
-}
 
 export function compute<T extends StatTask>(input: StatsInput<T>, period: Pick<Period, 'start' | 'end'>, weekStart = 1): Stats<T> {
   const dayOf = input.dayOf ?? deviceDay

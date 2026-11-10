@@ -84,7 +84,7 @@ describe('the day head on a phone (D1)', () => {
 describe('the phone row (D2)', () => {
   it('keeps the date, else the deadline, else the assignee, else the project', () => {
     expect(phoneCell({ date: true, deadline: true, assignee: true, project: true })).toBe('date')
-    expect(phoneCell({ date: false, deadline: true, assignee: true, project: true })).toBe('extra')
+    expect(phoneCell({ date: false, deadline: true, assignee: true, project: true })).toBe('deadline')
     expect(phoneCell({ date: false, deadline: false, assignee: true, project: true })).toBe('assignee')
     expect(phoneCell({ date: false, deadline: false, assignee: false, project: true })).toBe('project')
     expect(phoneCell({ date: false, deadline: false, assignee: false, project: false })).toBeNull()

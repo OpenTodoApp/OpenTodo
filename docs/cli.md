@@ -252,6 +252,7 @@ ot notes list --source task --project Home # note, task, project or all; --stand
 ot notes list --label work --limit 20
 ot notes search plumber                    # every word in the title or text, title matches first
 ot notes show 3fa1                         # the text, then text appended that no device merged yet
+ot notes links Trip                        # what the note links to and what links to it
 ot notes add "Wi-Fi" --project Home --label home --body "- network: home" [--idempotency-key wifi-1]
 ot notes add "Meeting" --body-file agenda.md       # or --body-file - for standard input
 ot notes edit 3fa1 --title "Wi-Fi at home" --project none --label none
@@ -263,7 +264,7 @@ ot task note 8c2a                          # a task's note as Markdown
 ot task note 8c2a --set "New plan" | --file plan.md | --file - | --append "- called, no answer" | --clear
 ```
 
-A note `<ref>` is a full id, a unique id prefix, a title (ignoring case) or a unique title prefix; an ambiguous one changes nothing and exits 2 with the candidates. `ot notes show` accepts the id of a task or project note from the list too; `edit`, `append`, `rm` and `to-task` act on standalone notes, and `ot task note` on a task's note (a task id, unique id prefix or title). The list prints KIND (`note`, `task`, `project`; `task (done)` and `project (archived)` are marked), id prefix, title (`Untitled note` when a note has none), project and when its text last changed; `ot notes search` adds a MATCH column with the text around the first match. Search runs on your machine over the notes the server returned, with the matching of the app: every word must occur in the title or the text, case and accents ignored, a quoted phrase as one; title matches first.
+A note `<ref>` is a full id, a unique id prefix, a title (ignoring case) or a unique title prefix; an ambiguous one changes nothing and exits 2 with the candidates. `ot notes show` accepts the id of a task or project note from the list too; `edit`, `append`, `rm` and `to-task` act on standalone notes, and `ot task note` on a task's note (a task id, unique id prefix or title). The list prints KIND (`note`, `task`, `project`; `task (done)` and `project (archived)` are marked), id prefix, title (`Untitled note` when a note has none), project and when its text last changed; `ot notes search` adds a MATCH column with the text around the first match. Search runs on your machine over the notes the server returned, with the matching of the app: every word must occur in the title or the text, case and accents ignored, a quoted phrase as one; title matches first. `ot notes links <ref>` (a note, or a task or project, with or without a note) prints two lists: what its text links to (`[Title](?note=<id>)`, `?task=`, `?project=`; `(not found)` for something missing, in the Trash or not yours) and the notes that link to it, newest change first. It is worked out on your machine from the notes the server returned, so it works with an unlocked encrypted account; a locked one stops with `encryption_enabled` (exit 5).
 
 Text is Markdown. What a note shows is its text followed by anything appended that no device has merged into it yet; the next device that opens the note turns the Markdown into formatted content. **A replacement** (`edit --body`, `edit --body-file`, `task note --set`, `--file` and `--clear`) carries the version `ot` read: when someone changed the note in the app after that (or another write came first), the server refuses it with `body_changed`, exit 1, and nothing changes. Read it again and retry. **An append** (`ot notes append`, `ot task note --append`) never replaces anything, so it is safe while someone edits the same note on a phone: every device adds the text at the end once. A note holds at most 100 appends no device has merged yet (`too_many_appends`). `ot task note` takes one of `--set`, `--file`, `--append` and `--clear` per call; two exit 2 before anything is sent.
 
@@ -461,6 +462,7 @@ Every command accepts `--json`. Stdout then holds only JSON, with the same field
 | `token list` / `create` / `revoke` | array of `token` / `token_created` (`{token, secret}`) / `token` |
 | `notes list`, `notes search` | array of `note`: `{kind, id, title, project_id, project, label_ids, updated_at, body_version, encrypted}`, `search` adds `snippet` (`[{text, mark}]`) |
 | `notes show`, `add`, `edit`, `task note` | `note_text`: `{kind, id, title, text, appends, body_version, project_id, label_ids, encrypted}` |
+| `notes links` | `note_links`: `{kind, id, title, links: [{kind, id, title, available}], linked_from: [{kind, id, title}]}` |
 | `notes append`, `task note --append` | `note_append`: `{entity, entity_id, append_id, body_version}` |
 | `task occurrences` | `occurrences`: `{series_id, rule, capped, occurrences: [{date, time?, tz?, state, record_id?, due?}]}` |
 | `task occurrence` | `task`: the occurrence's record |

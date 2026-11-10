@@ -14,6 +14,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/calsync"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	ob "github.com/OpenTodoApp/opentodo/internal/outbound"
+	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
 // remoteError answers a failed discovery with a code the form explains.
@@ -134,6 +135,8 @@ type calendarPatch struct {
 	IncludeDateOnly *bool     `json:"include_date_only"`
 	Enabled         *bool     `json:"enabled"`
 	Password        *string   `json:"password"`
+	// Scope is the part of the account written to the calendar (sync-scope).
+	Scope *syncscope.Scope `json:"scope"`
 }
 
 // patchOf checks a patch against the connection's calendars; it returns the
@@ -179,6 +182,14 @@ func patchOf(c *calsync.Connection, in calendarPatch) (calsync.Patch, []string, 
 	}
 	if in.Enabled != nil {
 		changed = append(changed, "enabled")
+	}
+	if in.Scope != nil {
+		scope, err := syncscope.Normalize(*in.Scope)
+		if err != nil {
+			return p, nil, "scope", fmt.Sprintf("choose all, only or except with at most %d workspaces, projects and Inboxes", syncscope.MaxItems)
+		}
+		p.Scope = &scope
+		changed = append(changed, "scope")
 	}
 	return p, changed, "", ""
 }
@@ -367,6 +378,11 @@ func (s *Server) handleGoogleStart(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "google_not_configured", "the server owner has not set up a Google client for calendar sync")
 		return
 	}
+	redirect := s.googleRedirectURI(r)
+	if !pageOriginIs(r.Header.Get("Origin"), redirect) {
+		writeError(w, http.StatusConflict, "base_url_mismatch", "Google would return to "+redirect+", not to the address this page is open at: set OPENTODO_BASE_URL to the address people open OpenTodo at")
+		return
+	}
 	if in.ConnectionID != "" {
 		c, err := s.calsync.Store.Get(ctx, uid, in.ConnectionID)
 		if err != nil || c.Provider != calsync.ProviderGoogle {
@@ -382,7 +398,6 @@ func (s *Server) handleGoogleStart(w http.ResponseWriter, r *http.Request) {
 	}
 	state := ids.Secret(32)
 	verifier, challenge := calsync.PKCE()
-	redirect := s.googleRedirectURI(r)
 	if err := s.calsync.Store.PutState(ctx, calsync.StateHash(state), calsync.OAuthState{UserID: uid, Verifier: verifier, ConnectionID: in.ConnectionID,
 		RedirectURI: redirect}, calsync.StateTTL); err != nil {
 		s.internal(w, err)
@@ -411,8 +426,12 @@ func (s *Server) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		back("invalid_state", "")
 		return
 	}
-	if q.Get("error") != "" || q.Get("code") == "" {
-		back("denied", "")
+	if q.Get("error") != "" {
+		back(calsync.GoogleCallbackResult(q.Get("error")), "")
+		return
+	}
+	if q.Get("code") == "" {
+		back(calsync.ResultAuthorizationFailed, "")
 		return
 	}
 	id, result := s.finishGoogle(ctx, uid, st, q.Get("code"))
@@ -430,12 +449,15 @@ func (s *Server) finishGoogle(ctx context.Context, uid string, st *calsync.OAuth
 	if err != nil {
 		return "", reasonText(err)
 	}
+	if !tok.GrantsCalendar() {
+		return "", calsync.ResultScopeNotGranted
+	}
 	if tok.Refresh == "" {
 		return "", "no_refresh_token"
 	}
 	d, err := s.calsync.DiscoverGoogle(ctx, tok.Access)
 	if err != nil {
-		return "", reasonText(err)
+		return "", calsync.GoogleDiscoveryResult(err)
 	}
 	if st.ConnectionID != "" {
 		c, err := s.calsync.Store.Get(ctx, uid, st.ConnectionID)
@@ -467,6 +489,31 @@ func (s *Server) finishGoogle(ctx context.Context, uid string, st *calsync.OAuth
 	s.audit.Record(ctx, audit.CalendarConnectionCreated(uid, c.ID, c.Provider))
 	s.calsync.Changed()
 	return c.ID, "connected"
+}
+
+// pageOriginIs reports whether a browser's Origin is the origin of address. A
+// request without an Origin (not a browser) is not checked.
+func pageOriginIs(origin, address string) bool {
+	if origin == "" || origin == "null" {
+		return true
+	}
+	o, err := url.Parse(origin)
+	u, uerr := url.Parse(address)
+	if err != nil || uerr != nil {
+		return false
+	}
+	return strings.EqualFold(o.Scheme, u.Scheme) && strings.EqualFold(hostWithPort(o), hostWithPort(u))
+}
+
+// hostWithPort is a URL's host with its scheme's default port spelled out.
+func hostWithPort(u *url.URL) string {
+	if u.Port() != "" {
+		return u.Host
+	}
+	if strings.EqualFold(u.Scheme, "https") {
+		return u.Host + ":443"
+	}
+	return u.Host + ":80"
 }
 
 // reasonText is an error's stored reason, for the panel's message.

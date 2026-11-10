@@ -25,7 +25,7 @@ val keystoreProps = Properties().apply {
 android {
     namespace = "app.opentodo"
     compileSdk = 37
-    // Pinned with the Gradle wrapper (checksum), AGP and JDK 17 for reproducible builds (play-production D4).
+    // Pinned with the Gradle wrapper (checksum), AGP and JDK 21 for reproducible builds (play-production D4).
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
@@ -157,8 +157,8 @@ tasks.register("checkStoreMetadata") {
         val forms = listOf("data-safety.md", "play-review.md").filter { !rootProject.file("store/$it").exists() }
         if (forms.isNotEmpty()) throw GradleException("Store forms missing: $forms")
         val review = rootProject.file("store/play-review.md").readText()
-        if (!review.contains("demo.open-todo.app") || !review.contains("SCHEDULE_EXACT_ALARM")) {
-            throw GradleException("store/play-review.md must give the demo instance for App access and the exact-alarm declaration")
+        if (!review.contains("review.open-todo.app") || !review.contains("SCHEDULE_EXACT_ALARM")) {
+            throw GradleException("store/play-review.md must give the review server for App access and the exact-alarm declaration")
         }
     }
 }

@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -558,10 +559,16 @@ func TestTurnRouteGuards(t *testing.T) {
 	}
 	refused("41 messages", 413, "too_large", e, map[string]any{"messages": many, "timezone": "UTC"})
 	refused("over 256 KB", 413, "too_large", e, ask(strings.Repeat("x", 260<<10)))
+	// assistant-proposal-editing: an open proposal of more than 50 items.
+	bigOpen := []any{}
+	for i := 0; i < 51; i++ {
+		bigOpen = append(bigOpen, map[string]any{"entity": "task", "entityId": fmt.Sprintf("t%d", i), "patch": map[string]any{"priority": 1}})
+	}
+	refused("open proposal of 51 items", 413, "too_large", e, map[string]any{"messages": []any{map[string]any{"role": "user", "text": "also this"}}, "timezone": "UTC", "open_proposal": bigOpen})
 	refused("bad zone", 400, "invalid_input", e, map[string]any{"messages": []any{map[string]any{"role": "user", "text": "x"}}, "timezone": "Mars/Base"})
 	refused("last is not the user", 400, "invalid_input", e, map[string]any{"messages": []any{map[string]any{"role": "assistant", "text": "x"}}, "timezone": "UTC"})
 	// Quota: at the cap, 429 naming the reset date.
-	if err := (*svc).Store.AddUsage(context.Background(), userIDOf(t, e), 900, 100, false); err != nil {
+	if err := (*svc).Store.AddUsage(context.Background(), userIDOf(t, e), assistant.Tokens{Input: 900, Output: 100}, false); err != nil {
 		t.Fatal(err)
 	}
 	got, out, _ := e.turn(ask("hi"))
@@ -674,6 +681,46 @@ func TestTurnStreamsEvents(t *testing.T) {
 	b, _ := json.Marshal(llm.bodies[0])
 	if strings.Contains(string(b), fakeKey) || !strings.Contains(string(b), "Owner") || llm.keys[0] != fakeKey {
 		t.Fatal("request body")
+	}
+}
+
+// TestTurnStreamsBlock (assistant-generative-ui 2.3): a display call streams a
+// block event between the text before and after it, with ids and no content.
+func TestTurnStreamsBlock(t *testing.T) {
+	e, llm, _ := assistantEnv(t)
+	e.enableAssistant(nil)
+	e.consentAssistant("anthropic")
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Pay taxes"})
+	e.mustStatus(resp, 201, out)
+	task := out["id"].(string)
+	before := countOps(t, e)
+	llm.set(
+		reply([]fakeBlock{{text: "Here is what is overdue: "}, {tool: "show_tasks", input: `{"ids":["` + task + `","unknown"]}`}}, "tool_use"),
+		reply([]fakeBlock{{text: "Start with the first."}}, "end_turn"),
+	)
+	code, _, events := e.turn(ask("show me what's overdue"))
+	if code != 200 {
+		t.Fatalf("%d", code)
+	}
+	var order []string
+	for _, ev := range events {
+		if (ev.name == "text" || ev.name == "block") && (len(order) == 0 || order[len(order)-1] != ev.name) {
+			order = append(order, ev.name)
+		}
+	}
+	if strings.Join(order, ",") != "text,block,text" {
+		t.Fatalf("event order %v", order)
+	}
+	b := named(events, "block")[0].data
+	if b["kind"] != "tasks" || len(b["ids"].([]any)) != 1 || b["ids"].([]any)[0] != task {
+		t.Fatalf("block %v", b)
+	}
+	raw, _ := json.Marshal(b)
+	if strings.Contains(string(raw), "Pay taxes") {
+		t.Fatalf("the block carries content: %s", raw)
+	}
+	if countOps(t, e) != before {
+		t.Fatal("a display call wrote")
 	}
 }
 
@@ -852,5 +899,50 @@ func TestTestConnectionRoute(t *testing.T) {
 	resp, out = m.do("POST", "/api/v1/settings/assistant/test", map[string]any{"provider": "anthropic"})
 	if resp.StatusCode != 403 {
 		t.Fatalf("member test: %d %v", resp.StatusCode, out)
+	}
+}
+
+// assistant-proposal-editing D3: an open proposal goes back with the turn; the
+// change set that comes back is the merge, with the new task added to the open moves.
+func TestTurnAmendsOpenProposal(t *testing.T) {
+	e, llm, _ := assistantEnv(t)
+	e.enableAssistant(nil)
+	e.consentAssistant("anthropic")
+	var ids []string
+	for _, title := range []string{"Water plants", "Pay rent", "Call mum"} {
+		resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": title})
+		e.mustStatus(resp, 201, out)
+		ids = append(ids, out["id"].(string))
+	}
+	open := []any{}
+	for _, id := range ids {
+		open = append(open, map[string]any{"entity": "task", "entityId": id, "patch": map[string]any{"due": map[string]any{"date": "2026-10-16"}}, "base": map[string]any{"due": nil}})
+	}
+	llm.set(
+		reply([]fakeBlock{{tool: "create_tasks", input: `{"items":[{"title":"Call the plumber"}]}`}}, "tool_use"),
+		reply([]fakeBlock{{text: "Added."}}, "end_turn"),
+	)
+	body := ask("also add a task to call the plumber")
+	body["open_proposal"] = open
+	code, _, events := e.turn(body)
+	if code != 200 {
+		t.Fatalf("%d", code)
+	}
+	cs := named(events, "changeset")
+	if len(cs) != 1 {
+		t.Fatalf("changeset events %v", events)
+	}
+	items := cs[0].data["items"].([]any)
+	moves, added := 0, 0
+	for _, it := range items {
+		m := it.(map[string]any)
+		if m["create"] == true && m["patch"].(map[string]any)["title"] == "Call the plumber" {
+			added++
+		} else if slices.Contains(ids, m["entityId"].(string)) {
+			moves++
+		}
+	}
+	if moves != 3 || added != 1 || len(items) != 4 {
+		t.Fatalf("items %v", items)
 	}
 }

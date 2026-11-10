@@ -47,11 +47,13 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
-          # Built and vendored files are not ours to fix.
+          # Built and vendored files are not ours to fix; frozen copies of released
+          # code are test data (their live versions are scanned).
           config: |
             paths-ignore:
               - internal/web/dist
               - deploy/*/upstream
+              - web/src/lib/testdata
       # internal/web/dist/.gitkeep keeps the embed compiling without the web build.
       - if: matrix.language == 'go'
         run: go build ./...

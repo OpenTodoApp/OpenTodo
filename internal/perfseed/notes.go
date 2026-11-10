@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/notelinks"
 	"github.com/OpenTodoApp/opentodo/internal/store"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -35,6 +36,10 @@ type NotesSummary struct {
 	Recent      int   `json:"recent"`
 	RecentSaves int   `json:"recentSaves"`
 	DocBytes    int64 `json:"docBytes"`
+	// Links counts the internal links in the notes' last texts (note-links D5);
+	// LinkedNote is a standalone note other notes link to (the note-references metric).
+	Links      int    `json:"links"`
+	LinkedNote string `json:"linkedNote"`
 }
 
 // save is one line of the documents file.
@@ -69,7 +74,7 @@ func SeedNotes(ctx context.Context, dataDir, docs string, owner string, o Option
 	svc := opsync.NewService(db)
 	g := &gen{o: o}
 	rng := rand.New(rand.NewPCG(o.Seed^0x5eed, o.Seed)) // #nosec G404 -- test data from a fixed seed, never a secret
-	var sum NotesSummary
+	sum := NotesSummary{LinkedNote: g.id("note", 0)}
 	var clock time.Time
 	svc.SetClock(func() time.Time { return clock })
 
@@ -139,6 +144,7 @@ func SeedNotes(ctx context.Context, dataDir, docs string, owner string, o Option
 			sum.Saves += to - from
 		}
 		sum.Notes++
+		sum.Links += len(notelinks.LinksIn(note[len(note)-1].Text))
 		if standalone {
 			sum.Standalone++
 		} else {

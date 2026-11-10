@@ -1,6 +1,8 @@
 package assistant
 
 import (
+	"strings"
+
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
@@ -19,11 +21,14 @@ const DeviceNote = "This assistant runs on the user's device and reads the tasks
 
 // deviceTool names a registry tool the device offers and the arguments it
 // keeps: top-level ones, and for item lists the list's name and its items' ones.
+// drop is a sentence of the registry's description that does not hold on the
+// device (a test checks the description still has it).
 type deviceTool struct {
 	name     string
 	keep     []string
 	itemList string
 	itemKeep []string
+	drop     string
 }
 
 // deviceTools is the device subset in the registry's order (design D8).
@@ -33,6 +38,16 @@ var deviceTools = []deviceTool{
 	{name: "get_task", keep: []string{"id", "timezone"}},
 	{name: "search_tasks", keep: []string{"query", "include_completed", "limit", "timezone"}},
 	{name: "today_summary", keep: []string{"timezone"}},
+	// The reads of OpenSpec change assistant-device-reads, pinned by read.vectors.json.
+	{name: "list_frames", keep: []string{"from", "to", "timezone"}},
+	// assistant-time-blocks: the same free stretches from the device's rows (readFreeTime.ts).
+	{name: "find_free_time", keep: []string{"from", "to", "min_minutes", "day_start_hour", "day_end_hour", "timezone"}},
+	{name: "list_notes", keep: []string{"source", "project_id", "label_id", "limit"}},
+	// The device holds the decrypted notes, so it searches them itself.
+	{name: "search_notes", keep: []string{"query", "source", "project_id", "label_id", "limit"}, drop: " Not available on an end-to-end encrypted account."},
+	{name: "get_note", keep: []string{"id", "kind"}},
+	{name: "list_slots", keep: []string{"from", "to", "timezone"}},
+	{name: "list_time_entries", keep: []string{"task_id", "from", "to", "running", "timezone", "limit"}},
 	{name: "create_tasks", keep: []string{"items"}, itemList: "items", itemKeep: []string{"id", "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "deadline", "start", "evening", "span", "blocked_by"}},
 	{name: "update_tasks", keep: []string{"updates"}, itemList: "updates", itemKeep: []string{"id", "title", "description", "priority", "labels", "estimate_minutes", "deadline", "start", "evening", "span", "blocked_by"}},
 	{name: "complete_tasks", keep: []string{"ids", "timezone"}},
@@ -80,8 +95,34 @@ type Manifest struct {
 	Endpoints      map[string]string `json:"endpoints"`
 	Tools          []ManifestTool    `json:"tools"`
 	Skills         []ManifestSkill   `json:"skills"`
+	// ViewDisplay is the display tools each view suggests to a skill turn (assistant-project-blocks D2).
+	ViewDisplay map[string][]string `json:"view_display"`
+	// AlwaysDisplay is the display tools every turn offers, a skill's included (assistant-followups).
+	AlwaysDisplay []string `json:"always_display"`
 	// RoutineDraft is Describe it on the device (routines-describe-it D5).
 	RoutineDraft DraftManifest `json:"routine_draft"`
+	// OpenProposal is how a turn amends an open proposal (assistant-proposal-editing D3).
+	OpenProposal OpenManifest `json:"open_proposal"`
+	// Memory is the memory items' note in the instructions, their limits and
+	// remember (assistant-memory D2, D3).
+	Memory MemoryManifest `json:"memory"`
+}
+
+// MemoryManifest is what a device needs to send memory and run remember.
+type MemoryManifest struct {
+	Note     string            `json:"note"`
+	MaxItems int               `json:"max_items"`
+	MaxText  int               `json:"max_text"`
+	Messages map[string]string `json:"messages"`
+	Tool     ManifestTool      `json:"tool"`
+}
+
+// OpenManifest is the open proposal's note in the instructions, its most items
+// and the tool that drops items, offered only with an open proposal.
+type OpenManifest struct {
+	Note     string       `json:"note"`
+	MaxItems int          `json:"max_items"`
+	Tool     ManifestTool `json:"tool"`
 }
 
 // DraftManifest is what a device needs to draft a routine like the server:
@@ -119,13 +160,21 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 	}
 	m := Manifest{
 		Version: ManifestVersion, Rules: SystemRules, DeviceNote: DeviceNote, Notice: agenttools.Notice, UntrustedNote: UntrustedNote, ImagesNote: ImagesNote,
-		Views:    views,
-		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage},
+		Views: views,
+		Messages: map[string]string{"refusal": RefusalMessage, "cut_off": CutOffMessage, "round_limit": RoundLimitMessage,
+			"block_limit": BlockLimitMessage, "not_found": NotFoundMessage, "choice_asked": ChoiceAskedMessage,
+			"followups_shown": FollowupsShownMessage, "followups_once": FollowupsOnceMessage, "followups_choice": FollowupsChoiceMessage},
 		Limits: map[string]int{"max_rounds": MaxRounds, "max_output_tokens": MaxOutputTokens, "max_entities": MaxEntities, "max_items": agenttools.MaxItems,
-			"max_images": MaxImages, "max_image_bytes": MaxImageBytes},
+			"max_images": MaxImages, "max_image_bytes": MaxImageBytes, "max_blocks": MaxBlocks, "max_block_ids": MaxBlockIDs},
 		AnthropicModel: DefaultAnthropicModel, AnthropicList: AnthropicModels,
 		Endpoints:    map[string]string{Anthropic: "https://api.anthropic.com/v1", OpenAI: OpenAIBaseURL, Gemini: GeminiBaseURL},
-		RoutineDraft: draftManifest(),
+		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
+		OpenProposal: OpenManifest{Note: OpenProposalNote, MaxItems: MaxOpenProposal, Tool: ManifestTool{Name: DropTool.Name, Kind: "proposal", Description: DropTool.Description,
+			InputSchema: DropTool.Schema, Strict: strictSchema(DropTool.Schema, false), StrictNullable: strictSchema(DropTool.Schema, true)}},
+		Memory: MemoryManifest{Note: MemoryNote, MaxItems: MaxMemoryItems, MaxText: MaxMemoryText,
+			Messages: map[string]string{"full": MemoryFullMessage, "duplicate": MemoryDuplicateMessage, "invalid": MemoryInvalidMessage, "proposed": MemoryProposedNote, "unavailable": memoryUnavailableReason},
+			Tool: ManifestTool{Name: RememberTool.Name, Kind: "memory", Description: RememberTool.Description, InputSchema: RememberTool.Schema,
+				Strict: strictSchema(RememberTool.Schema, false), StrictNullable: strictSchema(RememberTool.Schema, true)}},
 	}
 	offered := map[string]bool{}
 	for _, t := range deviceTools {
@@ -141,8 +190,13 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 			list["items"] = prune(list["items"].(map[string]any), t.itemKeep)
 			props[t.itemList] = list
 		}
-		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: string(d.Kind), Description: d.Description, InputSchema: schema,
+		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: string(d.Kind), Description: strings.Replace(d.Description, t.drop, "", 1), InputSchema: schema,
 			Strict: strictSchema(schema, false), StrictNullable: strictSchema(schema, true)})
+	}
+	// The display tools (assistant-generative-ui D1): the same definitions as the server's.
+	for _, d := range DisplayTools {
+		m.Tools = append(m.Tools, ManifestTool{Name: d.Name, Kind: "display", Description: d.Description, InputSchema: d.Schema,
+			Strict: strictSchema(d.Schema, false), StrictNullable: strictSchema(d.Schema, true)})
 	}
 	for _, sk := range agenttools.Skills {
 		ms := ManifestSkill{Skill: sk, Instructions: sk.Instructions, Tools: []string{}}
@@ -151,6 +205,7 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 				ms.Tools = append(ms.Tools, name)
 			}
 		}
+		ms.Tools = append(ms.Tools, SkillDisplayTools(sk.ID)...)
 		m.Skills = append(m.Skills, ms)
 	}
 	return m

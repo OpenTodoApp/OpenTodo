@@ -1,0 +1,31 @@
+{
+  "$comment": "Internal links in a note's Markdown (OpenSpec change note-links, D1, D5): [label](?note=<id>), ?task= and ?project=, outside code spans and fenced blocks. Read by internal/notelinks/notelinks_test.go and web/src/lib/noteLinks.test.ts. Each case lists the links in order with their kind, id and label (escapes read).",
+  "cases": [
+    { "name": "none", "markdown": "Just text with a [web link](https://example.com).", "links": [] },
+    { "name": "empty", "markdown": "", "links": [] },
+    { "name": "one note", "markdown": "See [Trip](?note=8f2c-a_1).", "links": [{ "kind": "note", "id": "8f2c-a_1", "label": "Trip" }] },
+    { "name": "three kinds", "markdown": "[A](?task=t1) and [B](?project=p1)\n- [C](?note=n1)", "links": [
+      { "kind": "task", "id": "t1", "label": "A" }, { "kind": "project", "id": "p1", "label": "B" }, { "kind": "note", "id": "n1", "label": "C" }] },
+    { "name": "adjacent", "markdown": "[a](?note=1)[b](?note=2)", "links": [{ "kind": "note", "id": "1", "label": "a" }, { "kind": "note", "id": "2", "label": "b" }] },
+    { "name": "duplicates kept", "markdown": "[x](?task=t) then [x](?task=t)", "links": [{ "kind": "task", "id": "t", "label": "x" }, { "kind": "task", "id": "t", "label": "x" }] },
+    { "name": "escaped label", "markdown": "[a \\] b \\\\ c](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "a ] b \\ c" }] },
+    { "name": "backslash before a letter stays", "markdown": "[C:\\dir](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "C:\\dir" }] },
+    { "name": "escaped opening bracket is text", "markdown": "\\[x](?note=n)", "links": [] },
+    { "name": "double backslash before bracket", "markdown": "\\\\[x](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "x" }] },
+    { "name": "empty label", "markdown": "[](?project=p)", "links": [{ "kind": "project", "id": "p", "label": "" }] },
+    { "name": "nested bracket starts again", "markdown": "[a [b](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "b" }] },
+    { "name": "unknown kind", "markdown": "[x](?label=l) [y](?view=v)", "links": [] },
+    { "name": "bad id", "markdown": "[x](?note=) [y](?note=a b) [z](?note=a.b)", "links": [] },
+    { "name": "extra parameter", "markdown": "[x](?note=a&b=c)", "links": [] },
+    { "name": "absolute address", "markdown": "[x](/notes/a) [y](https://h/?note=a)", "links": [] },
+    { "name": "image form", "markdown": "![x](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "x" }] },
+    { "name": "code span", "markdown": "`[x](?note=a)` and [y](?note=b) ``[z](?note=c)``", "links": [{ "kind": "note", "id": "b", "label": "y" }] },
+    { "name": "unclosed code span", "markdown": "a ` b [y](?note=b)", "links": [{ "kind": "note", "id": "b", "label": "y" }] },
+    { "name": "fenced block", "markdown": "```\n[x](?note=a)\n```\n[y](?note=b)\n~~~js\n[z](?note=c)", "links": [{ "kind": "note", "id": "b", "label": "y" }] },
+    { "name": "label across lines is not a link", "markdown": "[a\nb](?note=n)", "links": [] },
+    { "name": "windows line ends", "markdown": "a\r\n[x](?task=t)\r\n", "links": [{ "kind": "task", "id": "t", "label": "x" }] },
+    { "name": "unicode label", "markdown": "[Café über 東京](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "Café über 東京" }] },
+    { "name": "inside formatting and a table", "markdown": "**[B](?task=t)**\n\n| a | b |\n| - | - |\n| [C](?project=p) | x |", "links": [{ "kind": "task", "id": "t", "label": "B" }, { "kind": "project", "id": "p", "label": "C" }] },
+    { "name": "doubled label after concurrent refresh", "markdown": "[HolidayHoliday](?note=n)", "links": [{ "kind": "note", "id": "n", "label": "HolidayHoliday" }] }
+  ]
+}

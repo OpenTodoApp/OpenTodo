@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Diese Nachricht hat die Routine „{{.Routine}}“ eines Projekts gesendet, dessen Mitglied du in OpenTodo unter {{.Origin}} bist.
+
+Diesen Lauf ansehen:
+
+{{.Link}}
+
+Du bekommst diese Nachricht, weil die Routine einen Schritt „Projektmitgliedern mailen“ hat und du Mitglied mit der bestätigten Adresse {{.Email}} bist. Um keine E-Mails dieser Routine mehr zu bekommen, öffne:
+
+{{.Stop}}

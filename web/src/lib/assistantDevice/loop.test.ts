@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from '../db'
 import { setCurrentUserId } from '../sharing'
-import type { TurnEvent } from '../assistantTypes'
+import type { ProposedChange, TurnEvent } from '../assistantTypes'
 import promptVectors from './prompt.vectors.json'
 import { manifest, manifestSkill } from './manifest'
 import { finalise, foldUntrusted, runDeviceTurn } from './loop'
@@ -57,12 +57,52 @@ describe('prompt vectors', () => {
   for (const v of promptVectors) {
     it(v.name, () => {
       const skill = v.skill ? manifestSkill(v.skill) : null
-      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null }, v.now)).toBe(v.want)
+      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null, open: (v as { open?: ProposedChange[] }).open, memory: (v as { memory?: string[] }).memory }, v.now)).toBe(v.want)
     })
   }
 })
 
+describe('open proposal on the device (assistant-proposal-editing 1.3)', () => {
+  const move = (id: string, date: string): ProposedChange => ({ entity: 'task', entityId: id, patch: { due: { date } }, base: { due: null } })
+  it('seeds the draft, lists it, offers drop_from_proposal, and the change set is the merge', async () => {
+    const { events, seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'drop_from_proposal', args: '{"ids":["b","nope"]}' }, { id: 'c2', name: 'create_tasks', args: '{"items":[{"title":"Call the plumber"}]}' }] },
+      { stop: 'end_turn', text: 'Done.' },
+    ], { open_proposal: [move('a', '2026-10-16'), move('b', '2026-10-16'), move('gone', '2026-10-16')] })
+    expect(seen.req!.tools.map((t) => t.name)).toContain('drop_from_proposal')
+    expect(seen.req!.system).toContain(manifest.open_proposal.note)
+    expect(seen.req!.system).toContain('{"entity":"task","id":"a","set":{"due":{"date":"2026-10-16"}}}')
+    expect(seen.req!.system).not.toContain('"gone"')
+    expect(JSON.parse(seen.results[0][0].content)).toMatchObject({ dropped: 1, not_in_proposal: 1 })
+    const cs = events.find((e) => e.type === 'changeset') as Extract<TurnEvent, { type: 'changeset' }>
+    expect(cs.items.map((c) => (c.create ? `new:${String(c.patch.title)}` : c.entityId)).sort()).toEqual(['a', 'new:Call the plumber'])
+  })
+
+  it('offers no drop tool without an open proposal', async () => {
+    const { seen } = await run([{ stop: 'end_turn', text: 'ok' }])
+    expect(seen.req!.tools.map((t) => t.name)).not.toContain('drop_from_proposal')
+  })
+})
+
 describe('device loop', () => {
+  it('searches notes and reads time on the device (assistant-device-reads)', async () => {
+    await db.notes.put({ id: 'n1', title: 'Moving', description: 'Book the van for the move', project_id: null, labels: [], created_at: 1, deleted_at: null, _clock: {} } as never)
+    await db.timeEntries.put({ id: 'e1', task_id: 'a', user_id: 'u1', started_at: NOW - 3_600_000, ended_at: NOW - 1_800_000, note: '', created_at: 1, deleted_at: null, _clock: {} } as never)
+    const { events, seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'search_notes', args: '{"query":"van"}' }, { id: 'c2', name: 'list_time_entries', args: '{"from":"2026-10-12"}' }] },
+      { stop: 'end_turn', text: 'Your note says to book the van; you tracked 30 minutes today.' },
+    ])
+    const [notes, time] = seen.results[0].map((r) => JSON.parse(r.content))
+    expect(notes._notice).toBe(manifest.notice)
+    expect(notes.notes[0]).toMatchObject({ kind: 'note', id: 'n1', untrusted_text: { title: 'Moving' } })
+    expect(time).toMatchObject({ total_minutes: 30, time_entries: [{ id: 'e1', task_id: 'a', untrusted_text: { task: 'Pay rent' } }] })
+    expect(events.map((e) => e.type)).not.toContain('changeset')
+    // The device's description no longer says note search is unavailable.
+    expect(seen.req!.tools.find((t) => t.name === 'search_notes')!.description).not.toContain('Not available')
+    // A skill that reads time offers the tool on the device too.
+    expect(manifestSkill('weekly-review')!.tools).toContain('list_time_entries')
+  })
+
   it('reads, plans a change set and never writes', async () => {
     const { events, seen } = await run([
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'list_tasks', args: '{"view":"today","timezone":"UTC"}' }] },
@@ -135,7 +175,7 @@ describe('device loop', () => {
 
   it('offers a skill only its tools and drops unknown selections', async () => {
     const { seen } = await run([{ stop: 'end_turn' }], { skill: 'break-down', selected: ['a', 'gone'] })
-    expect(seen.req!.tools.map((t) => t.name)).toEqual(['get_task', 'create_tasks'])
+    expect(seen.req!.tools.map((t) => t.name)).toEqual(['get_task', 'create_tasks', 'suggest_followups'])
     expect(seen.req!.system).toContain('Selected task ids: a.')
     expect(seen.req!.system).toContain('Skill: Break this down')
   })
@@ -196,5 +236,40 @@ describe('foldUntrusted and finalise', () => {
       { entity: 'project', entityId: 'p', create: true, patch: { name: 'Garden' }, shared: true },
       { entity: 'task', entityId: 't', patch: { due: { date: '2026-10-14' }, priority: 1 }, base: { due: null, priority: 4 } },
     ])
+  })
+})
+
+describe('display tools on the device (assistant-generative-ui 4.3)', () => {
+  it('a display call streams a block of ids, adds no progress line, and the provider gets no content back', async () => {
+    const { events, seen } = await run([
+      { stop: 'tool_use', text: 'Here they are:', toolCalls: [{ id: 'c1', name: 'show_tasks', args: '{"ids":["a","b","zzz"]}' }] },
+      { stop: 'end_turn', text: 'Start with the rent.' },
+    ], { messages: [{ role: 'user', text: 'what is overdue?' }] })
+    expect(seen.req!.tools.map((t) => t.name)).toEqual(expect.arrayContaining(['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project']))
+    expect(events.map((e) => e.type)).toEqual(['text', 'block', 'text', 'usage', 'done'])
+    expect(events[1]).toEqual({ type: 'block', kind: 'tasks', ids: ['a', 'b'] })
+    const result = seen.results[0][0]
+    expect(JSON.parse(result.content)).toEqual({ shown: 'tasks', count: 2, not_found: 1 })
+    expect(result.content).not.toContain('Pay rent')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('a skill offers only its display tools and refuses the others', async () => {
+    const { seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'show_map', args: '{"task_ids":["a"]}' }] },
+      { stop: 'end_turn', text: 'ok' },
+    ], { skill: 'plan-week' })
+    const names = seen.req!.tools.map((t) => t.name)
+    expect(names).toEqual(expect.arrayContaining(['show_calendar', 'ask_choice']))
+    expect(names).not.toContain('show_map')
+    expect(JSON.parse(seen.results[0][0].content).error).toBe('unavailable')
+  })
+
+  it('a skill turn adds the display tools its view suggests, as on the server', async () => {
+    const { seen } = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'plan-week', view: 'project' })
+    const display = seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)
+    expect(display).toEqual(['show_calendar', 'ask_choice', 'show_free_time', 'show_board', 'show_timeline', 'suggest_followups'])
+    const today = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'weekly-review', view: 'today' })
+    expect(today.seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)).toEqual(['show_deadlines', 'show_stats', 'suggest_followups'])
   })
 })

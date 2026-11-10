@@ -70,10 +70,9 @@ type RoutineCall struct {
 
 // RoutineAnswer is the model's answer and what it cost.
 type RoutineAnswer struct {
-	Text     string
-	Lines    []string
-	Input    int64
-	Output   int64
+	Text  string
+	Lines []string
+	Tokens
 	Own      bool
 	Provider string
 }
@@ -191,9 +190,9 @@ func (s *Service) Routine(ctx context.Context, set Settings, c RoutineCall) (Rou
 			text.WriteString(t)
 		}
 	})
-	ans.Input, ans.Output = r.Input, r.Output
-	if ans.Input+ans.Output > 0 {
-		if uerr := s.Store.AddRoutineUsage(context.WithoutCancel(ctx), c.UserID, ans.Input, ans.Output, route.Own); uerr != nil {
+	ans.Tokens = r.Tokens
+	if ans.Total() > 0 {
+		if uerr := s.Store.AddRoutineUsage(context.WithoutCancel(ctx), c.UserID, ans.Tokens, route.Own); uerr != nil {
 			err = errors.Join(err, uerr)
 		}
 	}
@@ -269,15 +268,15 @@ func (c *Consent) RoutinesValid(provider string) bool {
 
 // AddRoutineUsage adds a routine call's tokens to the month's usage (so they
 // count toward the allowance like a turn, own-key calls as own key) and to
-// the routines part of it.
-func (st *Store) AddRoutineUsage(ctx context.Context, userID string, in, out int64, own bool) error {
-	if err := st.AddUsage(ctx, userID, in, out, own); err != nil {
+// the routines part of it (which keeps cached input in input_tokens).
+func (st *Store) AddRoutineUsage(ctx context.Context, userID string, t Tokens, own bool) error {
+	if err := st.AddUsage(ctx, userID, t, own); err != nil {
 		return err
 	}
 	m, _ := month(st.now())
 	_, err := st.db.ExecContext(ctx, `INSERT INTO assistant_usage_routines(user_id, month, input_tokens, output_tokens, calls) VALUES(?,?,?,?,1)
 		ON CONFLICT(user_id, month) DO UPDATE SET input_tokens = input_tokens + excluded.input_tokens,
-		output_tokens = output_tokens + excluded.output_tokens, calls = calls + 1`, userID, m, in, out)
+		output_tokens = output_tokens + excluded.output_tokens, calls = calls + 1`, userID, m, t.AllInput(), t.Output)
 	if err != nil {
 		return fmt.Errorf("record routine usage: %w", err)
 	}

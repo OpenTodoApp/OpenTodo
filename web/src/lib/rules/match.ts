@@ -81,19 +81,30 @@ function matchDate(p: RuleCondition['due'], date: string | null, today: string):
   return false
 }
 
-function matchProject(p: NonNullable<RuleCondition['project']>, t: MatchTask, ctx: MatchContext): boolean {
-  if (p === 'none') return !t.project_id
-  if (!t.project_id) return false
-  if (p.in.includes(t.project_id)) return true
-  if (!p.descendants) return false
-  let cur: string = t.project_id
+/** The ids of an `in` or `not_in` predicate and whether it is `not_in` (routine-conditions D2). */
+export function listOf<T>(p: { in: T[] } | { not_in: T[] }): { ids: T[]; not: boolean } {
+  return 'not_in' in p ? { ids: p.not_in, not: true } : { ids: p.in, not: false }
+}
+
+function inProjects(ids: readonly string[], descendants: boolean, projectId: string, ctx: MatchContext): boolean {
+  if (ids.includes(projectId)) return true
+  if (!descendants) return false
+  let cur: string = projectId
   for (let i = 0; i < 64; i++) {
     const parent = ctx.parent(cur)
     if (!parent) return false
-    if (p.in.includes(parent)) return true
+    if (ids.includes(parent)) return true
     cur = parent
   }
   return false
+}
+
+// No project, one of the projects, or none of them: a task without a project is in none of them.
+function matchProject(p: NonNullable<RuleCondition['project']>, t: MatchTask, ctx: MatchContext): boolean {
+  if (p === 'none') return !t.project_id
+  const { ids, not } = listOf(p)
+  const inside = !!t.project_id && inProjects(ids, !!p.descendants, t.project_id, ctx)
+  return inside !== not
 }
 
 function matchMinutes(p: NonNullable<RuleCondition['estimate']>, v: number | null): boolean {
@@ -109,7 +120,12 @@ export function matchesCondition(c: RuleCondition | null | undefined, t: MatchTa
   if (!c) return true
   if (c.project !== undefined && !matchProject(c.project, t, ctx)) return false
   if (c.section !== undefined) {
-    if (c.section === 'none' ? !!t.section_id : !t.section_id || !c.section.in.includes(t.section_id)) return false
+    if (c.section === 'none') {
+      if (t.section_id) return false
+    } else {
+      const { ids, not } = listOf(c.section)
+      if ((!!t.section_id && ids.includes(t.section_id)) === not) return false
+    }
   }
   if (c.labels) {
     const has = (id: string) => t.labels.includes(id)
@@ -117,7 +133,10 @@ export function matchesCondition(c: RuleCondition | null | undefined, t: MatchTa
     if (c.labels.all && !c.labels.all.every(has)) return false
     if (c.labels.none && c.labels.none.some(has)) return false
   }
-  if (c.priority && !c.priority.in.includes(t.priority)) return false
+  if (c.priority) {
+    const { ids, not } = listOf(c.priority)
+    if (ids.includes(t.priority) === not) return false
+  }
   if (c.due !== undefined && !matchDate(c.due, t.dueDate, ctx.today)) return false
   if (c.deadline !== undefined && !matchDate(c.deadline, t.deadline, ctx.today)) return false
   if (c.start !== undefined) {

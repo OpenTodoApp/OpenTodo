@@ -47,6 +47,8 @@ import { newSlotNow } from '../calendar/slotActions'
 import { act, reportActionError } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
+import { connectedNow } from '../../lib/noteLinks'
+import { openConnections } from '../signals'
 
 /** What the registry needs to know about the screen the palette was opened on. */
 export interface PaletteContext {
@@ -61,6 +63,8 @@ export interface PaletteContext {
   project?: { row: Project; role: ProjectRole; shared: boolean; targets: MoveTarget[]; subCount: number; openTasks: number; pinned?: boolean; keptAway?: boolean; reviewEvery?: string }
   view?: { row: View; peers: View[]; isStart: boolean }
   label?: { row: Label; labels: Label[]; pinned?: boolean }
+  /** The standalone note open on the Notes page (notes-home D4): Pin note or Unpin note. */
+  note?: { id: string; pinned: boolean }
   section?: { row: Section; first: boolean; last: boolean; layout: 'list' | 'board'; count: number }
   /** The Filter view's current valid query, on the Filter view. */
   filterQuery: string | null
@@ -191,6 +195,12 @@ function fromMenu(prefix: string, groups: ActionGroup[], idPrefix: string): Comm
   }))
 }
 
+/** Show connections of an open item (notes-graph D3); `title` names a task or project, a note is the open one. */
+function connectionsCommand(kind: 'task' | 'project' | 'note', id: string, title: string | null): Command {
+  return { id: `${kind}:connections`, label: title ? t('Show connections of {title}', { title }) : t('Show connections'), icon: 'waypoints',
+    keywords: 'connections graph links linked references map', run: () => openConnections(kind, id) }
+}
+
 /** Every command available in this context, in registry order. */
 export function commands(ctx: PaletteContext): Command[] {
   const out: Command[] = []
@@ -221,6 +231,8 @@ export function commands(ctx: PaletteContext): Command[] {
     const title = `“${tk.title || t('Untitled')}”`
     const list = ctx.list
     out.push({ id: 'task:open', label: t('Open {title}', { title }), icon: 'chevron-right', shortcut: keysOf('list.open'), run: () => list.open(tk.id) })
+    // Show connections (notes-graph D3): while the task links with something.
+    if (connectedNow('task', tk.id)) out.push(connectionsCommand('task', tk.id, title))
     // Take a slot / Give back the slot (today-closed-list D3): personal, so also for a viewer's task.
     if (ctx.slot === 'waiting') out.push({ id: 'task:take-slot', label: t('Take a slot for {title}', { title }), icon: 'arrow-up', keywords: 'today limit slot waiting', run: () => runTakeSlot(tk.id) })
     if (ctx.slot === 'taken') out.push({ id: 'task:give-back-slot', label: t('Give back the slot of {title}', { title }), icon: 'undo-2', keywords: 'today limit slot', run: () => runGiveBackSlot(tk.id) })
@@ -309,6 +321,7 @@ export function commands(ctx: PaletteContext): Command[] {
       })
     }
   }
+  if (ctx.project && connectedNow('project', ctx.project.row.id)) out.push(connectionsCommand('project', ctx.project.row.id, `“${ctx.project.row.name}”`))
   if (ctx.view) {
     const v = ctx.view
     out.push(...fromMenu(t('View “{name}”', { name: v.row.name }), viewMenuGroups(v.row, v.peers, v.isStart, {
@@ -327,6 +340,12 @@ export function commands(ctx: PaletteContext): Command[] {
       move: (to) => reorderLabel(l.row.id, to),
       pin: { checked: !!l.pinned, toggle: () => setFavourite('label', l.row.id, !l.pinned) },
     }), 'label'))
+  }
+  if (ctx.note) {
+    const n = ctx.note
+    out.push({ id: n.pinned ? 'note:unpin' : 'note:pin', label: n.pinned ? t('Unpin note') : t('Pin note'), icon: n.pinned ? 'pin-off' : 'pin',
+      keywords: 'pin favourite favorite sidebar notes', run: () => setFavourite('note', n.id, !n.pinned) })
+    if (connectedNow('note', n.id)) out.push(connectionsCommand('note', n.id, null))
   }
   if (ctx.section) {
     const s = ctx.section

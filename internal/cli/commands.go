@@ -169,6 +169,7 @@ var cmdSpecs = []cmdSpec{
 		noteLimitFlag,
 	}, Output: arrayOf("note")},
 	{Name: "notes show", Summary: "print a note as Markdown: its text, then text appended that no device has merged yet", Args: []argSpec{{Name: "ref", Required: true}}, Output: ref("note_text")},
+	{Name: "notes links", Summary: "list what a note links to and the notes that link to it (a task or project too), computed on this machine; read-only", Args: []argSpec{{Name: "ref", Required: true}}, Output: ref("note_links")},
 	{Name: "notes add", Aliases: []string{"notes create"}, Summary: "create a standalone note and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
 		Flags: []flagSpec{
 			{Name: "project", Type: "string", Description: "project name or id (default: a personal note)"},

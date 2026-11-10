@@ -62,6 +62,12 @@
       "sort_dir",
       "workspace_id"
     ],
+    "memory": [
+      "created_at",
+      "deleted_at",
+      "position",
+      "text"
+    ],
     "note": [
       "created_at",
       "deleted_at",
@@ -153,7 +159,8 @@
       "position",
       "project_id",
       "steps",
-      "trigger"
+      "trigger",
+      "workspace_id"
     ],
     "section": [
       "aisle",
@@ -246,6 +253,7 @@
       "energy",
       "favourites",
       "first_run",
+      "focus_alert",
       "focus_auto_start",
       "focus_break_after_minutes",
       "focus_long_break_every",
@@ -260,6 +268,10 @@
       "formatting_toggle",
       "full_titles",
       "haptics",
+      "inbox_group_by",
+      "inbox_row_layout",
+      "inbox_sort_by",
+      "inbox_sort_dir",
       "language",
       "maps",
       "method_mode",
@@ -285,8 +297,18 @@
       "today_assignees",
       "today_done",
       "today_events",
+      "today_group_by",
       "today_limit",
+      "today_row_layout",
+      "today_sort_by",
+      "today_sort_dir",
+      "today_subtasks",
       "upcoming_events",
+      "upcoming_later",
+      "upcoming_row_layout",
+      "upcoming_sort_by",
+      "upcoming_sort_dir",
+      "upcoming_subtasks",
       "upcoming_today",
       "week_start",
       "welcome"
@@ -346,6 +368,9 @@
     ],
     "label": [
       "name"
+    ],
+    "memory": [
+      "text"
     ],
     "note": [
       "description",

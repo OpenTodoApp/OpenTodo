@@ -141,3 +141,17 @@ describe('Ramble into tasks', () => {
     resetAssistantStatus()
   })
 })
+
+describe('Pin note (notes-home D4)', () => {
+  it('is offered while a note is open and writes the note favourite', async () => {
+    useDatabase(`palette-pin-note-${Date.now()}`)
+    resetDeviceId()
+    const base: PaletteContext = { ...ctx, project: undefined, view: undefined, label: undefined, section: undefined, route: { view: 'notes', id: 'n1' } }
+    expect(commands({ ...base, note: undefined }).some((c) => c.id.startsWith('note:'))).toBe(false)
+    const pinCmd = commands({ ...base, note: { id: 'n1', pinned: false } }).find((c) => c.id === 'note:pin')!
+    expect(pinCmd.label).toBe('Pin note')
+    await pinCmd.run()
+    expect((await db.userPrefs.get('me'))!.favourites).toBe('note:n1')
+    expect(commands({ ...base, note: { id: 'n1', pinned: true } }).find((c) => c.id === 'note:unpin')!.label).toBe('Unpin note')
+  })
+})

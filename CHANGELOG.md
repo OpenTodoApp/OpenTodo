@@ -6,6 +6,40 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.3.0] - 2026-11-09
+
+OpenTodo 1.3.0 gives you more control over what goes where. Calendar sync and CalDAV app passwords can now cover only the workspaces and projects you choose. Upcoming lets you drag a task to another day, deferred tasks stay in their own section, and a section's colour tints its header. Shared routines can email the project's members, and Focus can end with a sound that repeats until you notice it. The in-app assistant works with Anthropic again. The web app now checks the signature of every update, in report-only mode for now: if your server sits behind Cloudflare or another proxy that rewrites pages, read **Signed updates** before upgrading.
+
+### Security
+
+- **The app checks the code of every update, in report-only mode for now.** Every build lists the web app's files with a fingerprint of each in `app-manifest.json`, and release builds sign the list. An installed app checks who signed an update, that it is not older than the version it runs, and every file, then installs it. For now an update that fails the check is still installed: Settings → About shows the result under **App code**, with the likely cause, **What to do** and **Copy diagnostics**. A later release turns refusal on, after real setups have been seen to pass. If your server is behind Cloudflare or another proxy, turn off Rocket Loader, Auto Minify and anything else that rewrites the app's pages or scripts; [Signed updates](docs/signed-updates.md) explains how, and `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest verify https://your.server/` checks a server (#970).
+
+### Added
+
+- **A Focus end sound you will not miss.** Settings → General → Focus → Sound is now Off, Short or Long. Long plays the end-of-session tone louder, once a second, until you click, tap or press a key, or for ten seconds, and vibrates on phones while haptic feedback is on. It is still generated on the device. A synced `user_prefs.focus_alert` field holds the length; an older device plays the short tone instead (#1005).
+- **Email project members in shared routines.** A routine of a shared project can email its members: one plain-text message to each member with a verified address, in their own language, with a link to the run and a link of their own to stop emails from that routine. Each message counts toward the routine's and the person's daily email limits; it needs outgoing email and is never offered on a demo (#741).
+- **Choose which workspaces and projects sync to a calendar.** A calendar sync connection (**Tasks from**) and a CalDAV app password (**Lists**) now cover All, Only the chosen workspaces, projects and Inboxes, or All except them, so work tasks stay out of a personal calendar and a phone's Reminders shows only the lists you pick. Narrowing a connection removes the events OpenTodo wrote for tasks that left it, never your own; CalDAV clients drop the lists outside the choice, and writes to them are refused. A task moved between workspace Inboxes now also leaves the old Inbox in calendar apps (#1006).
+- **Drag a task to another day in Upcoming.** Drop it under that day's heading: its date moves there, its time stays, and the toast offers Undo. On a touch screen, press and hold the task first ([#892](https://github.com/OpenTodoApp/OpenTodo/issues/892)).
+
+### Changed
+
+- **Connecting Google Calendar says what went wrong.** A sign-in that fails now names the cause (the CalDAV API not enabled, the calendar permission unticked, a refused client, a redirect address that is not the page's, a declined or blocked sign-in) with a link to the fix, and the calendar sync guide walks through the Google Cloud console step by step, with a section for each of these errors and for access that ends after 7 days ([#1047](https://github.com/OpenTodoApp/OpenTodo/issues/1047)).
+- **Deferred tasks stay in their section.** In a project listed by section, a task with a future start date or parked in Someday no longer leaves for one Later group at the end: it stays in its own section, under a folded **Later** with its count after the section's tasks, and its subtasks go with it. Projects without sections, other groupings, the timeline and the board are unchanged.
+- **The "Add a task" field looks like a field.** On Today, the Inbox, projects and labels it now sits on a filled, rounded surface with a focus ring, in light, dark and high contrast.
+- **A section's colour tints its header.** In a project's list the section's group bar, and on the board the top of its column, carry a soft tint of the section's colour, so sections stand apart at a glance; rows and cards keep their surface, and the header's text stays readable in light, dark, high contrast and every theme (#781).
+
+### Fixed
+
+- The in-app assistant works with Anthropic again: every chat turn failed with "the provider refused the request" because the request marked more tools strict than Anthropic allows. Tools are now strict only when the whole set fits Anthropic's limits, and a refused turn is logged with the provider's status and error type (#1102).
+- **A calendar app no longer adds an empty description to a task.** A task created without notes and then synced back unchanged by a CalDAV app got a pointless description change in its history.
+- **The sidebar's schedule and the re-plan preview follow the Calendar's Colour by.** With Colour by set to Label or Priority, they still showed project colours.
+- **The calendar's Re-plan button is no longer cut off** when the header is narrow, as on an iPad: the header's tools move under the title instead.
+- iOS: the app fills the whole screen; a coloured band no longer shows under the tab bar and the sheets.
+- **iOS builds can be submitted for review.** The release workflow revoked its signing certificate once Apple had processed a build, so the build failed with "Invalid Signature" (ITMS-90035) when it was submitted for TestFlight or App Store review. The certificate of an uploaded build now stays valid, and the oldest one is retired only when Apple's certificate limit is reached.
+- **Renaming a project starts from its own name.** After switching projects, the name field could show the previous project's name.
+- **Quick add's token highlights line up with the typed text on phones.** On a touch screen the field's text is 16 px but the highlights behind it were laid out at the smaller desktop size, so they sat above and beside the words they marked.
+- **A task's path reads clearly on a phone.** The task page's header used to squeeze the whole path into a few cut-off crumbs ("H. › G…") that could overlap. On a phone it now shows only the nearest step up, the parent task or the project, in full. Tap it to go up one level.
+
 ## [1.2.0] - 2026-11-08
 
 OpenTodo 1.2.0 makes capturing and finishing tasks quicker. A reminder notification now has a **Done** button, quick add wraps long titles and takes notes while you add (Shift+Enter, or the notes button on a phone), and the phone's add sheet stays open so you can add several tasks in a row. A task's subtasks can now run **one at a time**, a task's menu adds a task right below it or under it, and dragging sideways chooses whether a dropped task becomes a subtask. The Android app gets its own store listing for F-Droid, and the iPhone app is on its way to TestFlight.
@@ -1484,7 +1518,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.0.0...v1.1.0

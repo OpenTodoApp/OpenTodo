@@ -1,7 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { forgetShellData } from './shell'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type CustomTheme, type Objective, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type CustomTheme, type MemoryItem, type Objective, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 import { createStore } from './store'
 
 export interface OutboxOp extends Op {
@@ -34,15 +34,45 @@ export interface AssistantMessage {
   /** The answer ended with this stop reason (refusal and max_tokens are shown). */
   stop?: string
   error?: string
-  usage?: { input: number; output: number; month_total?: number; cap?: number; own_key?: boolean }
+  /** input is fresh input; cached and cache_write the input read from and written to the provider's cache. */
+  usage?: { input: number; output: number; cached?: number; cache_write?: number; month_total?: number; cap?: number; own_key?: boolean }
   /** The skill this question ran (assistant-skills), by name. */
   skill?: string
   /** Lines of pasted material sent with this question. */
   pastedLines?: number
   /** Photos sent with this question (voice-ramble D3): a count, never the images. */
   photos?: number
+  /** Blocks the answer shows (assistant-generative-ui D3): where in the text, and the block's checked parameters. */
+  blocks?: { at: number; block: AssistantBlock }[]
+  /** The option chosen in this answer's choice block. */
+  chosen?: string
+  /** Next steps offered as buttons under the answer (assistant-followups): 1 to 3 short texts. */
+  followups?: string[]
   at: number
 }
+
+/**
+ * A block an answer shows (assistant-generative-ui D3): its kind and checked
+ * parameters, never the content of what it names; the device renders that from its rows.
+ */
+export type AssistantBlock =
+  | { kind: 'tasks'; ids: string[]; title?: string }
+  | { kind: 'calendar'; date: string; span: 'day' | 'week' }
+  | { kind: 'choice'; question: string; options: string[] }
+  | { kind: 'map'; task_ids?: string[]; place_ids?: string[] }
+  | { kind: 'note'; id: string }
+  | { kind: 'project'; id: string }
+  // The time blocks (assistant-time-blocks): days and a grouping, never the entries or tasks.
+  | { kind: 'time'; from: string; to: string; group_by: 'project' | 'day' }
+  | { kind: 'free_time'; date: string; span: 'day' | 'week'; min_minutes: number }
+  | { kind: 'deadlines'; from: string; to: string }
+  // The project view blocks (assistant-project-blocks): ids and days, rendered read-only from the rows.
+  | { kind: 'board'; id: string; section_id?: string }
+  | { kind: 'timeline'; id: string }
+  | { kind: 'activity'; of: 'project' | 'task'; id: string }
+  | { kind: 'stats'; from: string; to: string }
+  | { kind: 'task'; id: string }
+  | { kind: 'habit'; id: string }
 
 /** The inverse of one applied change set (in-app-assistant D2): kept for the last 20. */
 export interface AssistantUndo {
@@ -144,6 +174,8 @@ class OpenTodoDB extends Dexie {
   themes!: Table<CustomTheme, string>
   /** Quarterly and weekly objectives (OpenSpec plan-objectives): a synced entity, by period. */
   objectives!: Table<Objective, string>
+  /** What the assistant remembers (OpenSpec assistant-memory): a synced entity, by position. */
+  memories!: Table<MemoryItem, string>
   /** The focus timer's state (focus-mode D2): one row "current" on this device, never synced, cleared at sign-out. */
   focus!: Table<FocusState, string>
   /** The account's workspaces, their members and groups (workspaces D8): replaced from every sync response, never ops. */
@@ -153,12 +185,7 @@ class OpenTodoDB extends Dexie {
 
   constructor(name = 'opentodo') {
     super(name)
-    this.version(1).stores({
-      projects: 'id, position',
-      tasks: 'id, project_id, completed_at, position',
-      outbox: '++local, id',
-      meta: 'key',
-    })
+    this.version(1).stores({ projects: 'id, position', tasks: 'id, project_id, completed_at, position', outbox: '++local, id', meta: 'key' })
     // v2 (subtask-trees): index tasks by parent so subtree lookups stay cheap.
     this.version(2).stores({
       tasks: 'id, project_id, parent_id, completed_at, position',
@@ -440,6 +467,7 @@ class OpenTodoDB extends Dexie {
     this.version(27).stores({ notes: 'id, project_id' }) // v27 (notes-overview): the synced `note` entity.
     this.version(28).stores({ themes: 'id, position' }) // v28 (theme-editor): the synced `theme` entity.
     this.version(29).stores({ objectives: 'id, period' }) // v29 (plan-objectives): the synced `objective` entity.
+    this.version(30).stores({ memories: 'id, position' }) // v30 (assistant-memory): the synced `memory` entity.
   }
 }
 
@@ -518,7 +546,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
-    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames, slot: d.slots, note: d.notes, theme: d.themes, objective: d.objectives,
+    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames, slot: d.slots, note: d.notes, theme: d.themes, objective: d.objectives, memory: d.memories,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

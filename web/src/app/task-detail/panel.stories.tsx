@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Badge, Icon, IconButton, Tabs } from '../../ui'
 import type { FacetPart } from '../../lib/facets'
 import { useLabels, useProjects, useTask } from '../../lib/localData'
-import { seedInbox, seedTracking, seeded, withSeed } from '../stories/fixtures'
+import { setDayParts } from '../../lib/dayParts'
+import { updateTask } from '../../lib/ops'
+import { seedInbox, seedTracking, seeded, TOMORROW, withSeed } from '../stories/fixtures'
 import { Facets } from './Facets'
 import { FacetLine } from './FacetLine'
 import { TimeTab } from './TimeTab'
@@ -22,11 +24,13 @@ const label = (id: string, name: string, color: string) => ({ id, name, color, p
 function Header({ title, done = false, readOnly = false, priority = 4 }: { title: string; done?: boolean; readOnly?: boolean; priority?: 1 | 2 | 3 | 4 }) {
   const ring = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4' }[priority]
   return (
-    <div data-panel-header className="flex items-center gap-2 border-b border-default px-3 py-2">
-      <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
-        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${done ? 'bg-faint border-input text-on-accent' : ring}`}>{done && <Icon name="check" size="xs" />}</span>
-      </button>
-      <input className={`min-w-0 flex-1 bg-transparent text-h3 font-semibold text-strong focus:outline-none ${done ? 'text-faint line-through' : ''}`} defaultValue={title} readOnly={readOnly} aria-label="Title" />
+    <div data-panel-header className="flex items-start gap-2 border-b border-default px-4 py-2">
+      <span className="flex h-6 shrink-0 items-center">
+        <button type="button" aria-label={done ? 'Reopen task' : 'Complete task'} aria-pressed={done} disabled={readOnly} className="touch-target inline-flex shrink-0 items-center justify-center rounded-full">
+          <span className={`flex size-[18px] items-center justify-center rounded-full border-2 ${done ? 'bg-faint border-input text-on-accent' : ring}`}>{done && <Icon name="check" size="xs" />}</span>
+        </button>
+      </span>
+      <input className={`min-w-0 flex-1 bg-transparent text-title font-semibold text-strong focus:outline-none ${done ? 'text-faint line-through' : ''}`} defaultValue={title} readOnly={readOnly} aria-label="Title" />
       <IconButton icon="ellipsis" label="Task actions" />
       <IconButton icon="x" label="Close" />
     </div>
@@ -46,7 +50,7 @@ function Notes({ text, editing = false }: { text?: string | string[]; editing?: 
 function AddControl() {
   return (
     <div className="pl-7">
-      <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-7 items-center rounded-control px-1 text-muted">
+      <button type="button" aria-label="Add a property" aria-haspopup="menu" className="inline-flex min-h-8 items-center rounded-control px-1 text-muted">
         <span className="inline-flex items-center gap-1 text-meta"><Icon name="plus" size="xs" />Add</span>
       </button>
     </div>
@@ -93,7 +97,7 @@ export const EmptyTask: StoryObj = {
       <div className="min-w-0 space-y-4 p-4">
         <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
         <section aria-label="Subtasks" className="flex items-center gap-2 px-1 text-faint">
-          <Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span>
+          <Icon name="plus" size="xs" /><span className="text-body">Add a subtask</span>
         </section>
         <Notes />
       </div>
@@ -114,16 +118,20 @@ export const FullTask: StoryObj = {
           how={[{ id: 'priority', text: 'P2' }, { id: 'estimate', text: '2h' }, { id: 'labels', text: 'finance, deck', labels: [label('l1', 'finance', 'var(--ot-hue-green-solid)'), label('l2', 'deck', 'var(--ot-hue-violet-solid)')] }]}
           who={[{ id: 'assignee', text: 'Ana' }, { id: 'blocked-by', text: 'waits for Collect the numbers' }]} />
         <section aria-label="Subtasks">
-          <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="list" className="text-faint" />Subtasks<span className="font-normal text-faint">1/3</span></h3>
-          <ul className="space-y-0.5" aria-label="Subtasks">
+          {/* The quiet checklist (sidebar-brand-and-row-grid D7): the heading carries the weight, the rows are borderless 32 px lines. */}
+          <div className="flex min-h-8 items-center gap-2 px-1 text-meta">
+            <h3 className="flex items-baseline gap-2 font-medium text-default">Subtasks<span className="font-normal tabular-nums text-faint">1 of 3</span></h3>
+            <span className="ml-auto h-1 w-16 overflow-hidden rounded-full bg-sunken" aria-hidden="true"><span className="block h-full w-1/3 rounded-full bg-accent" /></span>
+          </div>
+          <ul aria-label="Subtasks">
             {[['Collect the numbers', true], ['Draw the charts', false], ['Write the summary', false]].map(([t, done]) => (
-              <li key={String(t)} className="flex items-center gap-2 rounded-control px-1 py-1">
+              <li key={String(t)} className="flex min-h-8 items-center gap-2 rounded-control px-1">
                 <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${done ? 'border-input bg-faint text-on-accent' : 'border-input'}`}>{done && <Icon name="check" size={10} />}</span>
                 <span className={`min-w-0 flex-1 truncate text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{t}</span>
               </li>
             ))}
           </ul>
-          <div className="flex items-center gap-2 px-1 text-faint"><Icon name="plus" size="xs" /><span className="text-body">Add subtask…</span></div>
+          <div className="flex min-h-8 items-center gap-2 px-1 text-faint"><span className="flex size-5 items-center justify-center"><Icon name="plus" size="xs" /></span><span className="text-body">Add a subtask</span></div>
         </section>
         <section aria-label="Attachments">
           <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted"><Icon name="paperclip" className="text-faint" />Attachments<span className="font-normal text-faint">1</span></h3>
@@ -206,10 +214,15 @@ function SeededWhen() {
   const task = useTask(seeded.inboxTask)
   const projects = useProjects()
   const labels = useLabels()
+  // The When editor loads lazily (when-picker): the story stays pending until its control is on
+  // screen, so the visual check never captures the moment before the chunk arrives.
+  const [open, setOpen] = useState(false)
   useEffect(() => {
     if (!task) return
     const id = requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('[data-facet="when"] [data-part="due"]')?.click())
-    return () => cancelAnimationFrame(id)
+    const seen = new MutationObserver(() => { if (document.querySelector('[data-when-control]')) { setOpen(true); seen.disconnect() } })
+    seen.observe(document.body, { childList: true, subtree: true })
+    return () => { cancelAnimationFrame(id); seen.disconnect() }
   }, [task?.id]) // eslint-disable-line react-hooks/exhaustive-deps -- open once the task is there
   if (!task) return null
   return (
@@ -217,12 +230,26 @@ function SeededWhen() {
       <div className="p-4">
         <Facets task={task} readOnly={false} projects={projects} labelMap={new Map(labels.map((l) => [l.id, l]))} childCount={0} />
       </div>
+      {!open && <span data-story-pending />}
     </Panel>
   )
 }
 
 export const WhenPopover: StoryObj = {
   ...withSeed(seedInbox),
+  render: () => <SeededWhen />,
+}
+
+/**
+ * The Do on segment of a task due tomorrow at 15:00 with day parts on (when-picker):
+ * the five-way time of day row on Time, and the time line with "Floating" at its end.
+ */
+export const WhenPopoverWithTime: StoryObj = {
+  ...withSeed(async () => {
+    await seedInbox()
+    await setDayParts(true)
+    await updateTask(seeded.inboxTask, { due: { date: TOMORROW, time: '15:00' } })
+  }),
   render: () => <SeededWhen />,
 }
 
