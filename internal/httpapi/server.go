@@ -80,6 +80,9 @@ type Server struct {
 	// oauthRegisterLimiter caps anonymous MCP OAuth client registrations per
 	// client address (mcp-oauth D3).
 	oauthRegisterLimiter *rateLimiter
+	// appTokenLimiter caps the app sign-in exchanges per address
+	// (native-app-foundation D5).
+	appTokenLimiter *rateLimiter
 	// accountLimiter counts failed passwords, second-factor codes and
 	// re-authentications per account (accountFailures in 15 minutes), on top of
 	// the per-address limits.

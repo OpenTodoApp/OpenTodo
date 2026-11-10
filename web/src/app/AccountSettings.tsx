@@ -1,5 +1,7 @@
 // Settings → Account: session and a pointer to Security (OpenSpec settings-redesign D1, D3).
-import { useState } from 'react'
+// The signed-in apps come in as children from the settings page, so this module,
+// which the sidebar loads, does not carry them (native-app-foundation).
+import { type ReactNode, useState } from 'react'
 import { Button } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
@@ -35,12 +37,13 @@ export function SignOutDialog({ onConfirm, onCancel }: { onConfirm: () => void; 
  * second is styled as dangerous: signing out here clears this device's copy but
  * loses nothing, while signing out everywhere also ends every token.
  */
-export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void> }) {
+export function SessionPanel({ onLogout, onSignOutEverywhere = signOutEverywhere, children }: { onLogout: () => void; onSignOutEverywhere?: () => Promise<void>; children?: ReactNode }) {
   const [confirming, setConfirming] = useState<'device' | 'everywhere' | null>(null)
   return (
     <SettingsSection {...cardCopy('session')}>
       <SettingRow {...rowCopy('session', 'device')}
         control={<Button variant="secondary" icon="log-out" onClick={() => setConfirming('device')}>{t('Sign out')}</Button>} />
+      {children}
       <SettingRow {...rowCopy('session', 'everywhere')}
         control={<Button variant="danger" icon="log-out" onClick={() => setConfirming('everywhere')}>{t('Sign out everywhere')}</Button>} />
       {confirming === 'device' && <SignOutDialog onConfirm={onLogout} onCancel={() => setConfirming(null)} />}

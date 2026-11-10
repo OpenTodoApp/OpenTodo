@@ -1745,6 +1745,10 @@
       "400",
       "listed"
     ],
+    "invalid_grant": [
+      "400",
+      "listed"
+    ],
     "invalid_input": [
       "400",
       "422",
@@ -1755,6 +1759,10 @@
       "listed"
     ],
     "invalid_redirect_uri": [
+      "400",
+      "listed"
+    ],
+    "invalid_request": [
       "400",
       "listed"
     ],
@@ -3586,6 +3594,9 @@
     "DELETE /api/v1/labels/{id}": {
       "policy": "signed-in"
     },
+    "DELETE /api/v1/me/apps/{id}": {
+      "policy": "signed-in"
+    },
     "DELETE /api/v1/me/avatar": {
       "policy": "signed-in.full-tokens",
       "response": {
@@ -4523,6 +4534,7 @@
     "GET /api/v1/health": {
       "policy": "public",
       "response": {
+        "app_sign_in": "boolean",
         "status": "string",
         "version": "string"
       },
@@ -4862,6 +4874,15 @@
         "allow_writes": "boolean",
         "mcp_enabled": "boolean",
         "owner_allows_writes": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/me/apps": {
+      "policy": "signed-in",
+      "response": {
+        "apps": "array"
       },
       "statuses": [
         "200"
@@ -7714,6 +7735,29 @@
         "201"
       ]
     },
+    "POST /api/v1/app/sign-out": {
+      "policy": "signed-in"
+    },
+    "POST /api/v1/app/token": {
+      "policy": "public",
+      "request": {
+        "code": "string",
+        "code_verifier": "string",
+        "grant_type": "string",
+        "refresh_token": "string",
+        "state": "string"
+      },
+      "response": {
+        "access_token": "string",
+        "expires_in": "number",
+        "refresh_token": "string",
+        "scope": "string",
+        "token_type": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "POST /api/v1/assistant/routine-draft": {
       "policy": "signed-in.session-only",
       "request": {
@@ -8675,6 +8719,19 @@
         "sort_dir": "string",
         "workspace_id": "nullable_string"
       }
+    },
+    "POST /api/v1/me/app-sign-in": {
+      "policy": "signed-in.session-only",
+      "request": {
+        "allow": "boolean",
+        "query": "string"
+      },
+      "response": {
+        "redirect": "string"
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/me/assistant/disclosure-seen": {
       "policy": "signed-in.full-tokens",

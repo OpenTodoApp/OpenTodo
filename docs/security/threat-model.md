@@ -444,10 +444,12 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - TOTP: `TestTOTPReplayRefused`, `TestRecoveryCodesSingleUseAndRegenerate`.
   - Passkeys: `TestVerifyAssertionRejectsMismatches`, `TestCOSEKeyOffCurveRefused`, and the five `internal/webauthn` fuzz targets.
   - Single sign-on: `TestVerifyIDTokenVectors`, which refuses `alg: none`, HS256 key confusion, the wrong issuer, audience, `azp`, expiry and nonce; `FuzzVerifyIDToken`.
+- **App sign-in:** the OpenTodo app signs in through this same sign-in in the system browser; see [App sign-in](#app-sign-in).
 
 ### Token scopes
 
-- **Code:** `internal/auth` (scope side tables `api_token_scopes`, `api_token_agent`, `api_token_admin`) and `internal/httpapi/middleware.go`.
+- **Code:** `internal/auth` (scope side tables `api_token_scopes`, `api_token_agent`, `api_token_admin`, `api_token_app`) and `internal/httpapi/middleware.go`.
+- The `app` scope of the OpenTodo app's access tokens acts as `full`, so the credential and administration routes refuse it. `TestAppScopeIsFullOverTheRouteTable` checks every route of the table.
 - **Covered in:** [API token holders](#api-token-holders).
 
 ### Route policy wrapper
@@ -492,6 +494,22 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
   - Refresh tokens rotate on every refresh. A refresh token that was already exchanged revokes the whole grant and records `mcp_oauth.refresh_reused` (OpenSpec `mcp-oauth-refresh-rotation`).
   - Tests: `TestMCPOAuthAuthorizeNeedsConsent`, `TestMCPOAuthDynamicRegistrationIsGoogleOnly`, `TestMCPOAuthDynamicRegistrationPlatforms`, `TestMCPOAuthCustomRedirect`, `TestLookAlikeRedirectsAreRefused`, `TestMCPOAuthRevokeIsScopedToTheClient`, `TestMCPOAuthRefreshRotates`, `TestMCPOAuthRefreshReuseRevokesTheGrant`, `TestMCPOAuthRefreshReuseNeedsTheClient`, `TestMCPOAuthConcurrentRotatingRefreshRevokes`.
   - **Not defended:** a client registered only for Google's connector addresses (the Gemini preset and every dynamic client) keeps one refresh token, because Google's guide for connected apps requires the same token back on a refresh. It lasts 180 days from the last refresh, and deleting the client or revoking the grant stops it (`TestMCPOAuthGoogleClientKeepsItsRefreshToken`).
+
+### App sign-in
+
+- **Code:** `internal/mcpoauth/app.go`, `internal/httpapi/app_sign_in.go`, `internal/auth/appsessions.go`, `web/src/app/AppSignIn.tsx` (OpenSpec `native-app-foundation`, design D5).
+- **How it works:** the OpenTodo app opens `/app/sign-in` in the system's authentication sheet. The server's own sign-in runs in it, then a confirmation; Confirm is a same-origin POST from a session, never a token, so a link alone grants nothing. The server then redirects to `opentodo://signed-in` with a code, and the app exchanges the code and its PKCE verifier at `POST /api/v1/app/token`.
+- **Controls:**
+  - **PKCE (S256 only).** The code is bound to the challenge and the `state`, single-use, and valid for 60 seconds. The first exchange attempt uses it up, right or wrong, so a code tried without the verifier is gone for everyone.
+  - **Scheme interception.** Another app on the device can register `opentodo://` and receive the redirect. It gets only the code, and without the verifier, which never leaves the app, the code is useless ([RFC 8252 §8.1](https://www.rfc-editor.org/rfc/rfc8252#section-8.1)). The `state` lets the app refuse an answer to a request it did not make.
+  - **Rotation and reuse.** Every refresh returns a new refresh token and retires the old one. A retired token presented again revokes the whole grant and its access token, and records `mcp_oauth.refresh_reused` ([RFC 6819 §5.2.2.3](https://www.rfc-editor.org/rfc/rfc6819#section-5.2.2.3)). Access tokens last one hour. Codes and refresh tokens are stored as SHA-256 hashes only.
+  - **Ending it.** Revoking the app in the sessions list, signing out in the app, Sign out everywhere, a password change or reset and deactivation delete the grant and its access token in the same transaction, so the next request gets 401.
+  - The token route is rate limited (20 a minute per address) and refused on a demo instance. The built-in client `opentodo-app` has no secret and no redirect address, so the MCP endpoints never accept it.
+- **Tests:** `TestAppSignInInterceptedCode`, `TestAppTokenErrors`, `TestAppRefreshRotationAndReuse`, `TestAppSignInWithoutSession`, `TestAppSessionsListAndRevoke`, `TestAppSignOutEverywhere`, `TestAppPasswordChange`, `TestAppDeactivation`, `TestAppScopeIsFullOverTheRouteTable`, `TestAppClientIsNotAnMCPClient`, `TestAppCode`, `TestAppGrantRotation`.
+- **Not defended:**
+  - A malicious app on the person's device can start a sign-in of its own, with its own verifier, and receive the code if the person confirms it. A custom scheme cannot prove which app it belongs to, and a self-hosted server cannot give the app a claimed `https` address ([RFC 8252 §8.6](https://www.rfc-editor.org/rfc/rfc8252#section-8.6)). The confirmation names the device and asks to confirm only a sign-in the person just started; the grant then shows in the sessions list, where it can be revoked.
+  - The device name in the confirmation is what the app sent. It is shown as plain text, at most 100 bytes.
+  - A device that is unlocked and in someone else's hands keeps the app's tokens until the app is revoked in the sessions list; see [Stolen or unlocked device](#stolen-or-unlocked-device).
 
 ### Assistant tool loop
 

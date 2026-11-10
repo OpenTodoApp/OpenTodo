@@ -5,6 +5,9 @@
 // whose guide requires the same token back), reuse detection, and the PKCE
 // check.
 //
+// It also holds the app sign-in of the OpenTodo app (app.go): a built-in
+// public client, the `app` scope and one rotating grant per device.
+//
 // It holds no HTTP and no policy: internal/httpapi owns the endpoints and mints
 // the access tokens through internal/auth, so an OAuth access token is an
 // ordinary API token (design D2).
@@ -214,10 +217,11 @@ func (s *Store) Authenticate(ctx context.Context, id, secret string) (Client, er
 	return c, nil
 }
 
-// ListClients returns every client, newest first.
+// ListClients returns every client, newest first, leaving out the app's
+// built-in one.
 func (s *Store) ListClients(ctx context.Context) ([]Client, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id,name,secret_hash,redirect_uris,scope,dynamic,created_by,created_at,last_used_at
-		FROM mcp_oauth_client ORDER BY created_at DESC`)
+		FROM mcp_oauth_client WHERE id <> ? ORDER BY created_at DESC`, AppClientID)
 	if err != nil {
 		return nil, err
 	}
@@ -245,6 +249,9 @@ type IssuedToken struct {
 // D8). A refresh that races it cannot attach a new token to a grant that is
 // gone: SwapGrantToken finds no row and the caller drops what it minted.
 func (s *Store) DeleteClient(ctx context.Context, id string) ([]IssuedToken, error) {
+	if id == AppClientID {
+		return nil, ErrNotFound
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -414,6 +421,21 @@ func (s *Store) GrantByUsedRefresh(ctx context.Context, plain string) (Grant, er
 // revoked ErrRevoked, so two requests can never both rotate the same token.
 // The new token's lifetime is RefreshTTL from now.
 func (s *Store) RotateRefresh(ctx context.Context, grantID, plain string) (string, error) {
+	return s.rotate(ctx, mcpTables, grantID, plain)
+}
+
+// grantTables names the tables of one kind of grant for rotate: the grants,
+// the used refresh tokens, and the expression that is non-zero for a revoked
+// grant.
+type grantTables struct{ grant, used, revoked string }
+
+var (
+	mcpTables = grantTables{grant: "mcp_oauth_grant", used: "mcp_oauth_refresh_used", revoked: "revoked_at"}
+	appTables = grantTables{grant: "app_sign_in_grant", used: "app_sign_in_refresh_used", revoked: "0"}
+)
+
+// rotate is RotateRefresh over the tables of t.
+func (s *Store) rotate(ctx context.Context, t grantTables, grantID, plain string) (string, error) {
 	now := s.now()
 	next := ids.Secret(32)
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -421,8 +443,8 @@ func (s *Store) RotateRefresh(ctx context.Context, grantID, plain string) (strin
 		return "", err
 	}
 	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `UPDATE mcp_oauth_grant SET refresh_hash = ?, refresh_expires_at = ?
-		WHERE id = ? AND refresh_hash = ? AND revoked_at = 0`,
+	res, err := tx.ExecContext(ctx, `UPDATE `+t.grant+` SET refresh_hash = ?, refresh_expires_at = ?
+		WHERE id = ? AND refresh_hash = ? AND `+t.revoked+` = 0`,
 		HashSecret(next), now.Add(RefreshTTL).UnixMilli(), grantID, HashSecret(plain))
 	if err != nil {
 		return "", err
@@ -431,7 +453,7 @@ func (s *Store) RotateRefresh(ctx context.Context, grantID, plain string) (strin
 		return "", err
 	} else if n == 0 {
 		var revoked int64
-		err := tx.QueryRowContext(ctx, `SELECT revoked_at FROM mcp_oauth_grant WHERE id = ?`, grantID).Scan(&revoked)
+		err := tx.QueryRowContext(ctx, `SELECT `+t.revoked+` FROM `+t.grant+` WHERE id = ?`, grantID).Scan(&revoked)
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return "", ErrNotFound
@@ -442,13 +464,13 @@ func (s *Store) RotateRefresh(ctx context.Context, grantID, plain string) (strin
 		}
 		return "", ErrReused
 	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO mcp_oauth_refresh_used(refresh_hash,grant_id,used_at) VALUES(?,?,?)
+	if _, err := tx.ExecContext(ctx, `INSERT INTO `+t.used+`(refresh_hash,grant_id,used_at) VALUES(?,?,?)
 		ON CONFLICT(refresh_hash) DO NOTHING`, HashSecret(plain), grantID, now.UnixMilli()); err != nil {
 		return "", err
 	}
 	// A used token older than RefreshTTL would have expired unrotated, so it
 	// no longer needs to be recognised.
-	if _, err := tx.ExecContext(ctx, `DELETE FROM mcp_oauth_refresh_used WHERE used_at < ?`,
+	if _, err := tx.ExecContext(ctx, `DELETE FROM `+t.used+` WHERE used_at < ?`,
 		now.Add(-RefreshTTL).UnixMilli()); err != nil {
 		return "", err
 	}

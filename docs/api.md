@@ -24,7 +24,7 @@ Two options:
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
 - **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
-A token has a **scope**: `full` (the default), `read`, `agent` or `admin`. A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
 An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
@@ -53,6 +53,47 @@ Login is rate limited (10 attempts per minute per address); a token created in S
 
 If the account has two-factor authentication, step 1 answers `{"mfaRequired":true,"challenge":"…"}` without a cookie. Post the challenge and a code to `POST /api/v1/auth/mfa` to get the cookie, then continue with step 2 (see [Two-factor authentication](#two-factor-authentication)). The fresh session can create the token without re-authenticating. Bearer tokens are never asked for a code.
 
+### App sign-in
+
+The OpenTodo app signs in through the system's authentication sheet (`ASWebAuthenticationSession` on iOS, a Custom Tab on Android) with an authorization code and PKCE ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636), S256 only). The sheet shares the browser's cookies and passkeys, so every sign-in method of the web app works, and a browser that is already signed in only confirms. It does not depend on the owner's AI assistants (MCP) switch. A server that has it says so in `GET /api/v1/health` with `"app_sign_in": true`.
+
+1. The app makes a random verifier (43 to 128 characters of `A–Z a–z 0–9 - . _ ~`), its challenge `base64url(SHA-256(verifier))` and a random `state`, and opens `/app/sign-in?code_challenge=…&code_challenge_method=S256&state=…&device=iPhone`.
+2. Without a session, the server's sign-in page runs first and returns to the confirmation. The confirmation asks "Sign in to the OpenTodo app on iPhone?".
+3. Confirm sends the sheet to `opentodo://signed-in?code=…&state=…`; Cancel to `opentodo://signed-in?error=access_denied&state=…`. The code is single-use, expires after 60 seconds and is bound to the challenge and the state.
+4. The app posts the code, the verifier and the state to `POST /api/v1/app/token` and gets an access token (one hour) and a refresh token. Before the access token expires, or on a 401, it posts the refresh token for a new pair.
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/app/sign-in` | cookie | `?code_challenge, code_challenge_method=S256, state, device?`: browser navigation; 302 to the confirmation, or to sign-in first when there is no session; 400 `invalid_request` without an S256 challenge or a `state` (at most 512 bytes); a token gets 403 `session_required`; demo instances → 403 `demo_restricted` |
+| POST | `/api/v1/me/app-sign-in` | cookie | `{query, allow}` (the confirmation's answer; `query` is the sign-in request) → `{redirect}`: `opentodo://signed-in` with `code` and `state` on allow, with `error=access_denied` and `state` otherwise; recorded as `mcp_oauth.granted` with `oauth_client_id` `opentodo-app` |
+| POST | `/api/v1/app/token` | none | `{grant_type: "authorization_code", code, code_verifier, state}` or `{grant_type: "refresh_token", refresh_token}` → `{access_token, token_type: "Bearer", expires_in: 3600, refresh_token, scope: "app"}` with `Cache-Control: no-store`; the errors below |
+| POST | `/api/v1/app/sign-out` | `app` token | → 204: ends the grant of the app token sent (signing out in the app); any other credential → 400 `invalid_request` |
+| GET | `/api/v1/me/apps` | yes | `{apps:[{id, device, createdAt, lastUsedAt}]}`: the signed-in apps, most recently used first, shown with the sessions in Settings → Account |
+| DELETE | `/api/v1/me/apps/{id}` | yes | 204: signs that app out; its next request gets 401; another person's or an unknown id → 404 `not_found`; recorded as `mcp_oauth.revoked` |
+
+Errors of `POST /api/v1/app/token`, in the usual `{error:{code,message}}` envelope:
+
+| Status and code | When |
+| --- | --- |
+| 400 `invalid_grant` | the code is unknown, used, expired, or does not match the verifier or the state; or the refresh token is unknown, revoked or reused. A code is used up by the first attempt, right or wrong |
+| 400 `invalid_request` | the body is not a JSON object of these fields, `grant_type` is missing or another, or `code` or `refresh_token` is missing |
+| 403 `demo_restricted` | the server is a [demo instance](self-hosting/demo.md) |
+| 429 `rate_limited` | more than 20 exchanges a minute from this address |
+
+Every refresh returns a new refresh token and retires the one sent. A refresh token that was already exchanged revokes the whole grant: every token of it stops working, and `mcp_oauth.refresh_reused` is recorded. The app then signs in again.
+
+```bash
+curl -s -X POST "$OT/api/v1/app/token" -H 'Content-Type: application/json' \
+  -d '{"grant_type":"authorization_code","code":"Xb4…","code_verifier":"dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk","state":"af0ifjsldkj"}'
+# {"access_token":"ot_…","token_type":"Bearer","expires_in":3600,"refresh_token":"N2c…","scope":"app"}
+
+curl -s -X POST "$OT/api/v1/app/token" -H 'Content-Type: application/json' \
+  -d '{"grant_type":"refresh_token","refresh_token":"N2c…"}'
+# {"access_token":"ot_…","token_type":"Bearer","expires_in":3600,"refresh_token":"q8Z…","scope":"app"}
+```
+
+An `app` token is accepted wherever a `full` token is, and refused like one on the [credential routes](#token-scopes) (403 `insufficient_scope`): the app links to the web for them. It is not listed with the API tokens. Revoking the app in the sessions list, signing out in the app, Sign out everywhere, a password change or reset and deactivation end the grant, and its tokens get 401 from the next request.
+
 ### Endpoints
 
 Auth column: **none** = public; **yes** = any session or token (a `read` token only on `GET`); **owner**, **admin** = that account role; **member** = a member of the project; **fresh** = a step-up route for sessions (see [Two-factor authentication](#two-factor-authentication)); **credential** = a session or an `admin` token, never a `full` one (see [token scopes](#token-scopes)); **cookie** = a browser session; **deprecated** = still served, answers with the `Deprecation` and `Sunset` headers, and the row names its replacement ([deprecation](stability.md#deprecation); no route is deprecated in 1.0). Every route's policy is declared where it is registered (`internal/httpapi/policy.go`) and checked by a test. Every `/api/v1` route not listed as public requires authentication.
@@ -61,7 +102,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/healthz` | none | `{"status":"ok","version":"…"}`; 503 `unhealthy` when the database is unreachable |
+| GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in)); 503 `unhealthy` when the database is unreachable |
 | GET | `/api/v1/health` | none | The same answer as `/healthz`, under the API path, for reverse proxies and platforms that answer `/healthz` themselves (Pomerium, Google Cloud Run). The mobile apps check a server here first, then at `/healthz` |
 | GET | `/.well-known/security.txt` | none | [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) text: the OpenTodo project's reporting channels (`Contact`), `Expires` 180 days ahead, `Policy` (SECURITY.md), `Canonical` when `OPENTODO_BASE_URL` is set; see [Security](security/README.md) |
 | GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, setupCodeRequired, setupCodeForHost, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `setupCodeRequired` is true while no account exists and no setup token is configured, when either `OPENTODO_SETUP_CODE=required` and the request does not come over a direct loopback connection without forwarding headers, or no `OPENTODO_BASE_URL` is set and the request is addressed to a domain name (not an IP address, a name without a dot or a local-only name such as `*.local`, `*.lan` or `*.home.arpa`); `setupCodeForHost` is true when the second reason alone asks for the code; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md); `wipeKey` for a signed-in browser session, and `revoked: {proof}` for the cookie of a session ended by sign out everywhere, deactivation or deletion, where `proof` is base64url(HMAC-SHA256(wipe key, `opentodo device revoked v1`)): the web app removes its local copy when it matches the key it stored (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
@@ -493,7 +534,7 @@ curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempot
 | Field | When | Value |
 | --- | --- | --- |
 | `method` | always | `session` or `token` |
-| `scope` | always | `full`, `read`, `agent` or `admin` (a session is `full`) |
+| `scope` | always | `full`, `read`, `agent`, `admin` or `app` (a session is `full`) |
 | `token_id`, `token_name` | tokens | the token in use, as listed by `GET /api/v1/tokens` |
 | `writes_allowed` | `agent` tokens | whether both assistant switches are on right now |
 | `writes_denied` | `agent` tokens with writes off | `writes_disabled_by_owner` or `writes_disabled_by_user` |
@@ -1258,9 +1299,9 @@ The server records security-relevant events in its own database (never synced to
 | `workspace_invite.accepted` | success | actor = the account that joined, target = the link's creator | `workspace_invite_id`, `workspace`, `workspace_role` |
 | `mcp_oauth.client_created` | success | actor = owner, or none for a dynamic registration | `oauth_client_id`, `token_scope`, `method` (`manual` or `dynamic`); never the secret |
 | `mcp_oauth.client_deleted` | success | actor = owner | `oauth_client_id`; its grants and access tokens are gone with it |
-| `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token |
-| `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke` |
-| `mcp_oauth.refresh_reused` | failure | actor = the user | `oauth_client_id`; a refresh token the grant had already exchanged was presented again, so the grant and its access token were revoked |
+| `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token. An [app sign-in](#app-sign-in) confirmed in the browser is recorded the same way, with `oauth_client_id` `opentodo-app` and `token_scope` `app` |
+| `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke`, or for `opentodo-app`, the app was signed out (in the app or in the sessions list) |
+| `mcp_oauth.refresh_reused` | failure | actor = the user | `oauth_client_id`; a refresh token the grant had already exchanged was presented again, so the grant and its access token were revoked (MCP clients and `opentodo-app`) |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
@@ -2589,6 +2630,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `setup_token_invalid` | 403 | creating the first account without the `OPENTODO_SETUP_TOKEN` value |
 | `setup_code_invalid` | 403 | creating the first account without the setup code from another machine (`OPENTODO_SETUP_CODE=required`), or under a domain name while no `OPENTODO_BASE_URL` is set |
 | `invalid_token` | 400 | an email change link that is unknown, used or expired |
+| `invalid_grant` | 400 | [app sign-in](#app-sign-in): a code that is unknown, used, expired or does not match the verifier or the state; a refresh token that is unknown, revoked or reused |
+| `invalid_request` | 400 | [app sign-in](#app-sign-in): a sign-in request without an S256 challenge or a state; a token request whose body or fields are missing or malformed; `/app/sign-out` with a credential that is not an app token |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed |
 | `email_taken` | 409 | registration with an existing email |
 | `invitation_email_mismatch` | 403 | registration email differs from the invitation's bound email |

@@ -12,11 +12,11 @@
 
 ## 3. App sign-in (server)
 
-- [ ] 3.1 Add the built-in `opentodo-app` client, the `app` scope and refresh-token rotation with reuse detection in `internal/mcpoauth`, with a migration. Verify: `go test ./internal/mcpoauth ./internal/store`.
-- [ ] 3.2 Add `GET /app/sign-in` (`signedIn`, confirmation page, redirect to `opentodo://signed-in`) and `POST /api/v1/app/token` (`public("app code exchange")`, rate limit, `.demoDenied()`, a demo deny list entry). Verify: `go test ./internal/httpapi`, covering every error in the table and the scenarios. `policy_test.go` and the demo test pass.
-- [ ] 3.3 Treat the `app` scope as `full` in authorization and refuse it on credential and administration routes. Verify: an httpapi test over the route table.
-- [ ] 3.4 List app grants in the sessions list. Sign out everywhere, a password change and deactivation revoke them. Verify: httpapi tests, and a web test for the sessions list row.
-- [ ] 3.5 Document app sign-in in `docs/api.md` and `docs/security.md` (threat notes: PKCE, scheme interception, rotation). Verify: `make docs-check`.
+- [x] 3.1 Add the built-in `opentodo-app` client, the `app` scope and refresh-token rotation with reuse detection in `internal/mcpoauth`, with a migration. Verify: `go test ./internal/mcpoauth ./internal/store`.
+- [x] 3.2 Add `GET /app/sign-in` (`signedIn`, confirmation page, redirect to `opentodo://signed-in`) and `POST /api/v1/app/token` (`public("app code exchange")`, rate limit, `.demoDenied()`, a demo deny list entry). Verify: `go test ./internal/httpapi`, covering every error in the table and the scenarios. `policy_test.go` and the demo test pass.
+- [x] 3.3 Treat the `app` scope as `full` in authorization and refuse it on credential and administration routes. Verify: an httpapi test over the route table.
+- [x] 3.4 List app grants in the sessions list. Sign out everywhere, a password change and deactivation revoke them. Verify: httpapi tests, and a web test for the sessions list row.
+- [x] 3.5 Document app sign-in in `docs/api.md` and `docs/security/threat-model.md` (threat notes: PKCE, scheme interception, rotation). Verify: `make docs-check`.
 
 ## 4. The app
 

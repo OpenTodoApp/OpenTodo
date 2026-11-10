@@ -114,6 +114,15 @@ A demo instance denies `/api/v1/app/token` (`.demoDenied()`).
 
 A custom URL scheme can be claimed by another app. PKCE makes an intercepted code useless without the verifier, which never leaves the app (RFC 8252 §8.1). The `state` value prevents injection.
 
+As built (task 3):
+- **Codes and grants have tables of their own.** `mcp_oauth_grant` holds one grant per client and person, but the app needs one per device, and `mcp_oauth_code` has no column for the state or the device name. Adding columns to either would need a table rebuild. So migration 0065 adds `app_sign_in_code` and `app_sign_in_grant` (plus `app_sign_in_refresh_used` for reuse detection) next to them, and seeds the `opentodo-app` row in `mcp_oauth_client` that the codes reference. The PKCE check, the hashing and the rotation transaction are shared with MCP.
+- **The code is bound to the state too.** The exchange sends `code`, `code_verifier` and `state`, and a mismatch of either is `invalid_grant`. The first attempt uses the code up, right or wrong.
+- **Revoking deletes the grant.** A token of a deleted grant is unknown, which answers `invalid_grant` like a revoked one, and nothing has to be kept for it.
+- **The access token is an ordinary API token** of the `app` scope: a `full` scope row plus a marker in `api_token_app`, so a downgraded server reads it as `full`. It is left out of the API token list; the sessions list shows the grant instead.
+- **The token route speaks the `/api/v1` envelope** (`{error:{code,message}}`, a JSON body), not the OAuth form of `/oauth/token`, because only our own app calls it. A demo instance answers it with the usual 403 `demo_restricted`.
+- **Signing out in the app** is `POST /api/v1/app/sign-out` with the app's access token; the sessions list uses `GET /api/v1/me/apps` and `DELETE /api/v1/me/apps/{id}`.
+- **`signedIn` that signs in first.** A `signedIn` route answers 401 without a session, so the policy gained the modifier `.SignInFirst()`: a browser without a session is sent to the sign-in page, which returns to `/app/sign-in` afterwards. The route is also `.SessionOnly()`, so a token cannot reach the confirmation. The confirmation is a web app dialog: `/app/sign-in` hands the request to the MCP consent host (`?oauth_consent=` with `client_id=opentodo-app`), whose lazily loaded screen shows the app's confirmation for that client, so the first load carries nothing new but the return to `/app/sign-in` after sign-in.
+
 ### D6. Sync lifecycle on a phone
 
 The shared engine runs unchanged: outbox, pull pages, live stream, hybrid clock.
@@ -169,15 +178,16 @@ The trial ships as a separate App Store Connect app, "OpenTodo Preview" (bundle 
 
 On the server screen, the app reads `GET /api/v1/version`.
 - A server without the app sign-in routes gets "This server needs OpenTodo 1.5 or later for the app" and a link to the update guide. No half-working fallback to a web view.
+- As built, the app detects the routes by a capability flag rather than by the version: `GET /api/v1/health` (public; `/api/v1/version` does not exist) answers `"app_sign_in": true`. The flag also holds for a development build, whose version string does not compare. The minimum version in the message is the first release that carries the flag.
 - The app's version follows the repo's version. Its minimum server version is a constant checked in its unit tests against `internal/version`.
 
 ## Data model
 
 - No new synced field and no op change.
 - **Server:**
-  - a migration adds the `app` scope to the grants' check;
+  - migration 0065 adds the app's code and grant tables and the `api_token_app` marker of the `app` scope (see D5, "As built");
   - the built-in client is a seeded row;
-  - app grants join the sessions query.
+  - app grants are listed with the sessions (`GET /api/v1/me/apps`).
 
 ## Size and memory
 
