@@ -1,0 +1,44 @@
+{
+  "name": "timeline-on-track",
+  "title": "Whether a project is on track is shown as its timeline",
+  "seed": {
+    "projects": [
+      {
+        "key": "reno",
+        "name": "Renovation"
+      }
+    ],
+    "tasks": [
+      {
+        "key": "tiles",
+        "title": "Order the tiles",
+        "project": "reno",
+        "start": -6,
+        "deadline": -1
+      },
+      {
+        "key": "paint",
+        "title": "Paint the living room",
+        "project": "reno",
+        "start": 2,
+        "deadline": 9
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Is the renovation on track?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "timeline",
+            "ids": [
+              "reno"
+            ]
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

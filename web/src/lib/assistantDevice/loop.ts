@@ -8,7 +8,7 @@ import type { ProposedChange, TurnEvent } from '../assistantTypes'
 import type { TurnRequest } from '../assistant'
 import { ArgError, ToolError, type Args } from './args'
 import { loadSnapshot } from './data'
-import { manifest, manifestSkill, type ManifestTool } from './manifest'
+import { manifest, manifestSkill, type ManifestSkill, type ManifestTool } from './manifest'
 import { PLANNERS } from './plan'
 import { systemPrompt } from './prompt'
 import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type Provider, type ToolCall } from './providers'
@@ -124,6 +124,12 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
+/** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools and the display tools its view suggests. */
+export function offeredTool(t: ManifestTool, skill: ManifestSkill | null, view: string | undefined): boolean {
+  if (!skill) return true
+  return skill.tools.includes(t.name) || (t.kind === 'display' && !!view && (manifest.view_display[view] ?? []).includes(t.name))
+}
+
 /** A display call offered in this turn (runDisplay on the server). */
 async function displayCall(call: ToolCall, turn: DisplayTurn, emit: Parameters<typeof runDisplay>[3]): Promise<{ content: string; isError: boolean }> {
   let args: Record<string, unknown>
@@ -172,7 +178,7 @@ export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) =>
 export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) => void, signal: AbortSignal | undefined, opts: DeviceTurnOptions): Promise<void> {
   const now = opts.now ?? Date.now
   const skill = req.skill ? manifestSkill(req.skill) ?? null : null
-  const tools = manifest.tools.filter((t) => !skill || skill.tools.includes(t.name))
+  const tools = manifest.tools.filter((t) => offeredTool(t, skill, req.view))
   const snap0 = await loadSnapshot()
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
   const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null }, now()) + '\n' + manifest.device_note + '\n'

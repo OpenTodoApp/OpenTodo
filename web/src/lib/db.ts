@@ -64,6 +64,13 @@ export type AssistantBlock =
   | { kind: 'time'; from: string; to: string; group_by: 'project' | 'day' }
   | { kind: 'free_time'; date: string; span: 'day' | 'week'; min_minutes: number }
   | { kind: 'deadlines'; from: string; to: string }
+  // The project view blocks (assistant-project-blocks): ids and days, rendered read-only from the rows.
+  | { kind: 'board'; id: string; section_id?: string }
+  | { kind: 'timeline'; id: string }
+  | { kind: 'activity'; of: 'project' | 'task'; id: string }
+  | { kind: 'stats'; from: string; to: string }
+  | { kind: 'task'; id: string }
+  | { kind: 'habit'; id: string }
 
 /** The inverse of one applied change set (in-app-assistant D2): kept for the last 20. */
 export interface AssistantUndo {

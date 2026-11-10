@@ -1,0 +1,31 @@
+{
+  "name": "stats-week",
+  "title": "How the user is doing is shown as the statistics tiles",
+  "seed": {
+    "tasks": [
+      {
+        "key": "late",
+        "title": "File the expenses",
+        "due": -3
+      },
+      {
+        "key": "today",
+        "title": "Call the bank",
+        "due": 0
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "How am I doing this week?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "stats"
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

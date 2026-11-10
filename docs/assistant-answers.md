@@ -1,6 +1,6 @@
 ---
 title: Answers that show your tasks
-summary: The assistant's answers show your tasks, a day or week, your time, places, notes and choices as part of the app, and proposals as a calendar, an outline or a map you can edit before applying.
+summary: The assistant's answers show your tasks, days, time, projects, places, notes and choices as part of the app, and proposals as a calendar, an outline or a map you can edit before applying.
 audience: user
 section: Guides
 specs: [assistant-blocks]
@@ -25,10 +25,13 @@ Where it saves reading, an answer shows the app's own view of what it talks abou
 - **Places**: tasks' places and saved places on the map with a numbered list, or the list alone when maps are off.
 - **A note** or **a project's outline**, with a way to open it.
 - **Tracked time**: your own time on a range of days as bars per project or per day, each with its total, and the total for the range. Select a bar to open Statistics.
-- **Free time**: for a day or a week, the stretches within your working day (Settings → Calendar) that no calendar event, [frame](frames.md), [slot](slots.md) or task with a time takes, as times and as a strip across the day. Select a day to open it. Event titles are never needed, so it looks the same with end-to-end encryption.
+- **Free time**: for a day or a week, the stretches within your working day (Settings → Calendar) that no calendar event, [frame](frames.md), [slot](slots.md) or task with a time takes. Select a day to open it. Event titles are never needed, so it looks the same with end-to-end encryption.
 - **Deadlines**: the open tasks with a deadline on a range of days, in date order, each with its countdown. Select one to open it.
+- **A project**: one column of its [board](sections-and-boards.md), such as **In progress**, its [timeline](project-timeline.md) with today marked, or its latest 20 changes and comments.
+- **Statistics**: what you completed on a range of days, what is still open from earlier days, the Inbox, and Today against your [Today limit](today-limit.md).
+- **A task** in full, with its notes, subtasks and latest comments, or **a habit**'s [month grid](recurring-and-reminders.md#track-a-habit) and streak.
 
-An answer shows at most four of these. Something that has been deleted since reads **Removed**.
+These views are read-only, apart from ticking tasks. An answer shows at most four of them. Something that has been deleted since reads **Removed**.
 
 ## Copy, regenerate, edit
 

@@ -70,6 +70,32 @@
         "position": 3
       }
     ],
+    "section": [
+      {
+        "created_at": 1,
+        "deleted_at": null,
+        "id": "s1",
+        "name": "In progress",
+        "position": 1,
+        "project_id": "work"
+      },
+      {
+        "created_at": 1,
+        "deleted_at": 5,
+        "id": "s2",
+        "name": "Old stage",
+        "position": 2,
+        "project_id": "work"
+      },
+      {
+        "created_at": 1,
+        "deleted_at": null,
+        "id": "s3",
+        "name": "Secret stage",
+        "position": 1,
+        "project_id": "private"
+      }
+    ],
     "task": [
       {
         "completed_at": null,
@@ -130,6 +156,36 @@
         "priority": 4,
         "project_id": "old",
         "title": "In a deleted project"
+      },
+      {
+        "completed_at": null,
+        "created_at": 1,
+        "deleted_at": null,
+        "due": {
+          "date": "2026-11-10"
+        },
+        "habit": true,
+        "id": "run",
+        "labels": [],
+        "priority": 4,
+        "project_id": null,
+        "recurrence": "every day",
+        "title": "Run"
+      },
+      {
+        "completed_at": null,
+        "created_at": 1,
+        "deleted_at": null,
+        "due": {
+          "date": "2026-11-10"
+        },
+        "habit": true,
+        "id": "secret-habit",
+        "labels": [],
+        "priority": 4,
+        "project_id": "private",
+        "recurrence": "every day",
+        "title": "Meditate"
       }
     ]
   },
@@ -497,6 +553,306 @@
           "error": "invalid_arguments",
           "is_error": true
         },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        },
+        {
+          "error": "invalid_arguments",
+          "is_error": true
+        }
+      ]
+    },
+    {
+      "name": "board, timeline and activity",
+      "calls": [
+        {
+          "name": "show_board",
+          "args": {
+            "id": "work",
+            "section_id": "s1"
+          }
+        },
+        {
+          "name": "show_timeline",
+          "args": {
+            "id": "work"
+          }
+        },
+        {
+          "name": "show_activity",
+          "args": {
+            "project_id": "work"
+          }
+        },
+        {
+          "name": "show_activity",
+          "args": {
+            "task_id": "t2"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "board",
+          "id": "work",
+          "section_id": "s1"
+        },
+        {
+          "kind": "timeline",
+          "id": "work"
+        },
+        {
+          "kind": "activity",
+          "id": "work",
+          "of": "project"
+        },
+        {
+          "kind": "activity",
+          "id": "t2",
+          "of": "task"
+        }
+      ],
+      "results": [
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "board"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "timeline"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "activity"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "activity"
+        }
+      ]
+    },
+    {
+      "name": "board columns that are not the project's",
+      "calls": [
+        {
+          "name": "show_board",
+          "args": {
+            "id": "work",
+            "section_id": "s2"
+          }
+        },
+        {
+          "name": "show_board",
+          "args": {
+            "id": "work",
+            "section_id": "s3"
+          }
+        },
+        {
+          "name": "show_board",
+          "args": {
+            "id": "private",
+            "section_id": "s3"
+          }
+        },
+        {
+          "name": "show_board",
+          "args": {
+            "id": "work"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "board",
+          "id": "work"
+        }
+      ],
+      "results": [
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "board"
+        }
+      ]
+    },
+    {
+      "name": "stats, task and habit",
+      "calls": [
+        {
+          "name": "show_stats",
+          "args": {
+            "from": "2026-11-09",
+            "to": "2026-11-15"
+          }
+        },
+        {
+          "name": "show_task",
+          "args": {
+            "id": "t2"
+          }
+        },
+        {
+          "name": "show_habit",
+          "args": {
+            "id": "run"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "stats",
+          "from": "2026-11-09",
+          "to": "2026-11-15"
+        },
+        {
+          "kind": "task",
+          "id": "t2"
+        },
+        {
+          "kind": "habit",
+          "id": "run"
+        }
+      ],
+      "results": [
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "stats"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "task"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "shown": "habit"
+        }
+      ]
+    },
+    {
+      "name": "habits must be habits",
+      "calls": [
+        {
+          "name": "show_habit",
+          "args": {
+            "id": "t1"
+          }
+        },
+        {
+          "name": "show_habit",
+          "args": {
+            "id": "secret-habit"
+          }
+        },
+        {
+          "name": "show_task",
+          "args": {
+            "id": "hidden"
+          }
+        },
+        {
+          "name": "show_activity",
+          "args": {
+            "task_id": "gone"
+          }
+        },
+        {
+          "name": "show_timeline",
+          "args": {
+            "id": "old"
+          }
+        }
+      ],
+      "blocks": [],
+      "results": [
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        },
+        {
+          "error": "not_found",
+          "is_error": true,
+          "message": "none of the ids was found; nothing was shown. Use only ids from tool results."
+        }
+      ]
+    },
+    {
+      "name": "project blocks with invalid arguments",
+      "calls": [
+        {
+          "name": "show_activity",
+          "args": {
+            "project_id": "work",
+            "task_id": "t2"
+          }
+        },
+        {
+          "name": "show_activity",
+          "args": {}
+        },
+        {
+          "name": "show_stats",
+          "args": {
+            "from": "2026-11-15",
+            "to": "2026-11-09"
+          }
+        },
+        {
+          "name": "show_board",
+          "args": {
+            "section_id": "s1"
+          }
+        }
+      ],
+      "blocks": [],
+      "results": [
         {
           "error": "invalid_arguments",
           "is_error": true

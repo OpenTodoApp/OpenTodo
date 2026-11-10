@@ -17,7 +17,7 @@ func TestDisplayToolsNotInMCP(t *testing.T) {
 	for _, d := range assistant.DisplayTools {
 		display[d.Name] = true
 	}
-	if len(display) != 9 {
+	if len(display) != 15 {
 		t.Fatalf("display tools = %v", display)
 	}
 	for _, c := range []agenttools.Caller{

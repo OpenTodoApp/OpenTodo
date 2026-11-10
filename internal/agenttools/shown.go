@@ -12,6 +12,8 @@ const (
 	ShownProject = "project"
 	ShownNote    = "note"
 	ShownPlace   = "place"
+	// ShownHabit is a task tracked as a habit (assistant-project-blocks).
+	ShownHabit = "habit"
 )
 
 // Shown returns the ids, in the order given and without repeats, that name a
@@ -28,6 +30,12 @@ func (r *Registry) Shown(ctx context.Context, userID, kind string, ids []string)
 	case ShownTask:
 		for _, t := range snap.tasks {
 			if snap.visible(t, true) {
+				live[rawStr(t, "id")] = true
+			}
+		}
+	case ShownHabit:
+		for _, t := range snap.tasks {
+			if snap.visible(t, true) && boolean(t, "habit") {
 				live[rawStr(t, "id")] = true
 			}
 		}
@@ -59,4 +67,16 @@ func (r *Registry) Shown(ctx context.Context, userID, kind string, ids []string)
 		}
 	}
 	return out, nil
+}
+
+// ShownSection reports whether the section is a live section of the project and
+// the project one the user can see and has not kept away from AI assistants (a
+// board block's column, assistant-project-blocks).
+func (r *Registry) ShownSection(ctx context.Context, userID, projectID, sectionID string) (bool, error) {
+	snap, err := r.load(ctx, userID)
+	if err != nil {
+		return false, err
+	}
+	_, visible := snap.projects[projectID]
+	return visible && snap.sectionProject[sectionID] == projectID, nil
 }

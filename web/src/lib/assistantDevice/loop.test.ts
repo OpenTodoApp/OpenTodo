@@ -242,4 +242,12 @@ describe('display tools on the device (assistant-generative-ui 4.3)', () => {
     expect(names).not.toContain('show_map')
     expect(JSON.parse(seen.results[0][0].content).error).toBe('unavailable')
   })
+
+  it('a skill turn adds the display tools its view suggests, as on the server', async () => {
+    const { seen } = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'plan-week', view: 'project' })
+    const display = seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)
+    expect(display).toEqual(['show_calendar', 'ask_choice', 'show_free_time', 'show_board', 'show_timeline'])
+    const today = await run([{ stop: 'end_turn', text: 'ok' }], { skill: 'weekly-review', view: 'today' })
+    expect(today.seen.req!.tools.filter((t) => t.kind === 'display').map((t) => t.name)).toEqual(['show_deadlines', 'show_stats'])
+  })
 })

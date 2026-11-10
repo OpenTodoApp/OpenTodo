@@ -1,0 +1,31 @@
+{
+  "name": "habit-streak",
+  "title": "How a habit is going is shown as the habit block",
+  "seed": {
+    "tasks": [
+      {
+        "key": "run",
+        "title": "Run",
+        "due": 0,
+        "recurrence": "every day",
+        "habit": true
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "How am I doing with running?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "habit",
+            "ids": [
+              "run"
+            ]
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

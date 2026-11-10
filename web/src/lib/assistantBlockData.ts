@@ -9,13 +9,20 @@ import type { AssistantBlock } from './assistantBlocks'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs } from './calendar'
 import { ensureEventsFor } from './calendarFeeds'
 import { db, getMeta } from './db'
-import { addDaysISO, daysBetweenISO, formatDate, instantToLocalDue, localDueOf, viewerZone } from './dates'
+import { addDaysISO, currentDayStart, daysBetweenISO, formatDate, instantToLocalDue, localDueOf, logicalDay, viewerZone } from './dates'
 import { freeTime, type FreeDay } from './freeTime'
 import { t } from './i18n'
 import { geoOf, locationLabel, placeEncrypted, searchAddress, shownLocation } from './locations'
-import { currentUserId } from './sharing'
+import { membershipMap, currentUserId } from './sharing'
+import { projectActivity, taskActivity } from './activity'
+import { todayLimitOf } from './closedList'
+import { isInboxTask } from './inbox'
+import { lineageRows } from './lineageRows'
+import { countedTasks, overdueOf } from './statsCounted'
+import { spanOf, type Span } from './timeline'
+import { inToday } from './views'
 import { entryDay, minutesOf } from './time'
-import type { Geo, Note, Place, Project, Task } from './types'
+import type { ActivityEvent, Comment, Geo, Note, Place, Project, Section, Task } from './types'
 import { readDayStart } from './userPrefs'
 
 /** The block's tasks in order: a row, or null for one that is gone (deleted, or not on this device). */
@@ -267,4 +274,99 @@ export function useDeadlines(block: Extract<AssistantBlock, { kind: 'deadlines' 
     const rows = await db.tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !!tk.deadline && tk.deadline >= block.from && tk.deadline <= block.to && !(tk.project_id && gone.has(tk.project_id))).toArray()
     return rows.sort((a, b) => (a.deadline! < b.deadline! ? -1 : a.deadline! > b.deadline! ? 1 : a.title.localeCompare(b.title)))
   }, [block.from, block.to])
+}
+
+// ---- the project view blocks (OpenSpec change assistant-project-blocks, design D1) ----
+
+/** A board column: a section ('' for "No section") and its open top-level cards by position. */
+export interface BlockColumn { key: string; section: Section | null; cards: Task[] }
+
+/** A project's board as the board view builds it: "No section" first when it holds cards, then the live sections in order. */
+export function useBlockBoard(id: string): { project: Project | null; columns: BlockColumn[] } | undefined {
+  return useLiveQuery(async () => {
+    const project = await db.projects.get(id)
+    if (!project || project.deleted_at) return { project: null, columns: [] }
+    const [sections, tasks] = await Promise.all([
+      db.sections.where('project_id').equals(id).filter((s) => !s.deleted_at).sortBy('position'),
+      db.tasks.where('project_id').equals(id).filter((tk) => !tk.deleted_at && !tk.completed_at && !tk.parent_id).sortBy('position'),
+    ])
+    const cards = (key: string) => tasks.filter((tk) => (tk.section_id ?? '') === key)
+    const columns: BlockColumn[] = sections.map((s) => ({ key: s.id, section: s, cards: cards(s.id) }))
+    const loose = cards('')
+    if (loose.length || !columns.length) columns.unshift({ key: '', section: null, cards: loose })
+    return { project, columns }
+  }, [id])
+}
+
+/** A timeline row: an open top-level task of the project with its bar (lib/timeline's span). */
+export interface TimelineLine { task: Task; span: Span }
+
+/** A project's open top-level tasks with dates, by start; how many have none. */
+export function useBlockTimeline(id: string, today: string): { project: Project | null; lines: TimelineLine[]; undated: number } | undefined {
+  return useLiveQuery(async () => {
+    const project = await db.projects.get(id)
+    if (!project || project.deleted_at) return { project: null, lines: [], undated: 0 }
+    const tasks = await db.tasks.where('project_id').equals(id).filter((tk) => !tk.deleted_at && !tk.completed_at && !tk.parent_id).sortBy('position')
+    const zone = viewerZone()
+    const lines: TimelineLine[] = []
+    let undated = 0
+    for (const task of tasks) {
+      const span = spanOf(task, today, zone)
+      if (span) lines.push({ task, span })
+      else undated++
+    }
+    lines.sort((a, b) => (a.span.from < b.span.from ? -1 : a.span.from > b.span.from ? 1 : a.span.to < b.span.to ? -1 : a.span.to > b.span.to ? 1 : 0))
+    return { project, lines, undated }
+  }, [id, today])
+}
+
+/** An activity block's events, newest first, from this device's activity record. */
+export function useBlockActivity(block: Extract<AssistantBlock, { kind: 'activity' }>): ActivityEvent[] | undefined {
+  return useLiveQuery(() => (block.of === 'project' ? projectActivity(block.id) : taskActivity(block.id)), [block.of, block.id])
+}
+
+/** The numbers of a stats block, as Statistics, Today and the Inbox count them on this device. */
+export interface BlockStats { completed: number; overdue: number; inbox: number; today: number; limit: number }
+
+export function useBlockStats(block: Extract<AssistantBlock, { kind: 'stats' }>, today: string): BlockStats | undefined {
+  return useLiveQuery(async () => {
+    const [tasks, projects, memberships, me, prefs] = await Promise.all([db.tasks.toArray(), db.projects.toArray(), membershipMap(), currentUserId(), db.userPrefs.get('me')])
+    // Counted as Statistics counts them: the user's live rows, each completion on its logical day.
+    const counted = countedTasks({ tasks, projects, shared: new Set(memberships.keys()), me })
+    const dayStart = currentDayStart()
+    const completed = counted.filter((tk) => tk.completed_at !== null && logicalDay(tk.completed_at, dayStart) >= block.from && logicalDay(tk.completed_at, dayStart) <= block.to).length
+    const gone = new Set(projects.filter((p) => p.deleted_at).map((p) => p.id))
+    const open = tasks.filter((tk) => !tk.deleted_at && !tk.completed_at && !(tk.project_id && gone.has(tk.project_id)))
+    const byId = new Map(tasks.map((tk) => [tk.id, tk]))
+    return {
+      completed, overdue: overdueOf(counted, projects, today).length,
+      inbox: open.filter((tk) => isInboxTask(tk, (pid) => byId.get(pid))).length,
+      today: open.filter((tk) => inToday(tk, today)).length,
+      limit: todayLimitOf(prefs),
+    }
+  }, [block.from, block.to, today])
+}
+
+/** A task block's task, its subtasks and its live comments (oldest first); task null when it is gone. */
+export function useBlockTask(id: string): { task: Task | null; subtasks: Task[]; comments: Comment[] } | undefined {
+  const read = useLiveQuery(async () => {
+    const task = (await db.tasks.get(id)) ?? null
+    if (!task || task.deleted_at) return { id, task: null, subtasks: [] as Task[], comments: [] as Comment[] }
+    const [subtasks, comments] = await Promise.all([
+      db.tasks.where('parent_id').equals(id).filter((tk) => !tk.deleted_at).sortBy('position'),
+      db.comments.where('task_id').equals(id).filter((c) => !c.deleted_at).sortBy('created_at'),
+    ])
+    return { id, task, subtasks, comments }
+  }, [id])
+  return read?.id === id ? read : undefined
+}
+
+/** A habit block's series and its occurrence records; series null when it is gone. */
+export function useBlockHabit(id: string): { series: Task | null; records: Task[] } | undefined {
+  const read = useLiveQuery(async () => {
+    const series = (await db.tasks.get(id)) ?? null
+    if (!series || series.deleted_at) return { id, series: null, records: [] as Task[] }
+    return { id, series, records: await lineageRows(id) }
+  }, [id])
+  return read?.id === id ? read : undefined
 }

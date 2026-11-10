@@ -1,0 +1,36 @@
+{
+  "name": "project-activity",
+  "title": "What happened recently on a project is shown as its activity",
+  "seed": {
+    "projects": [
+      {
+        "key": "web",
+        "name": "Website launch"
+      }
+    ],
+    "tasks": [
+      {
+        "key": "copy",
+        "title": "Landing page copy",
+        "project": "web"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "What happened on the Website launch project lately?",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "activity",
+            "ids": [
+              "web"
+            ],
+            "of": "project"
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}
