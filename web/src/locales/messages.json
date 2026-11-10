@@ -4459,10 +4459,14 @@
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Deadline {date}, {label}": [
-    "web/src/app/TaskRow.tsx"
+    "web/src/app/TaskRow.tsx",
+    "web/src/app/assistant/blocks/DeadlinesBlock.tsx"
   ],
   "Deadline {from} → {to}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Deadlines, {date} – {date2}": [
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Decide for each; moving on carries them over.": [
     "web/src/app/review/CloseDay.tsx"
@@ -6651,6 +6655,12 @@
   "Free and open source · no tracking, no telemetry.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Free time, week of {date}": [
+    "web/src/lib/assistantBlocks.ts"
+  ],
+  "Free time, {date}": [
+    "web/src/lib/assistantBlocks.ts"
+  ],
   "Frequency": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -7889,6 +7899,7 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
+    "web/src/lib/assistantBlockData.ts",
     "web/src/lib/dashboard.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts",
@@ -10231,6 +10242,9 @@
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "No deadlines on these days.": [
+    "web/src/app/assistant/blocks/DeadlinesBlock.tsx"
+  ],
   "No deliveries yet.": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -10267,6 +10281,9 @@
   ],
   "No focus chosen today.": [
     "web/src/app/method/LoopHome.tsx"
+  ],
+  "No free time": [
+    "web/src/app/assistant/blocks/FreeTimeBlock.tsx"
   ],
   "No further occurrences: the next completion ends the series.": [
     "web/src/app/RecurrenceField.tsx"
@@ -10597,6 +10614,9 @@
   ],
   "No time tracked and nothing completed in this period.": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "No time tracked on these days.": [
+    "web/src/app/assistant/blocks/TimeBlock.tsx"
   ],
   "No time tracked yet.": [
     "web/src/app/task-detail/TimeTab.tsx"
@@ -13602,6 +13622,7 @@
     "web/src/app/assistant/blocks/MapBlock.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/lib/assistantBlockData.ts",
     "web/src/lib/assistantBlocks.ts"
   ],
   "Removed from a group": [
@@ -18921,6 +18942,9 @@
   "Topic": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Total": [
+    "web/src/app/assistant/blocks/TimeBlock.tsx"
+  ],
   "Total per account": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -18946,6 +18970,9 @@
   ],
   "Tracked time per project: {values}.": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Tracked time, {date} – {date2}": [
+    "web/src/lib/assistantBlocks.ts"
   ],
   "Tracked ÷ estimate": [
     "web/src/app/review/StatsView.tsx"
@@ -19452,6 +19479,7 @@
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/YearView.tsx",
+    "web/src/app/assistant/blocks/DeadlinesBlock.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
@@ -22983,6 +23011,9 @@
   "your email address is not verified": [
     "web/src/lib/rules/catalogue.ts"
   ],
+  "your free time, worked out from your calendar events, frames, slots and timed tasks": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
   "your own time entries": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -23457,6 +23488,9 @@
   ],
   "{n, plural, one {# month ago} other {# months ago}}": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "{n, plural, one {# more deadline} other {# more deadlines}}": [
+    "web/src/app/assistant/blocks/DeadlinesBlock.tsx"
   ],
   "{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}": [
     "web/src/app/ShareCapture.tsx"
@@ -24347,6 +24381,9 @@
   "{slot} resized": [
     "web/src/lib/slots.ts"
   ],
+  "{start}–{end}": [
+    "web/src/app/assistant/blocks/FreeTimeBlock.tsx"
+  ],
   "{step} can take only one item here": [
     "web/src/lib/rules/fixes.ts"
   ],
@@ -24394,6 +24431,9 @@
   ],
   "{time} for {duration}": [
     "web/src/app/calendar/DayColumn.tsx"
+  ],
+  "{time} free": [
+    "web/src/app/assistant/blocks/FreeTimeBlock.tsx"
   ],
   "{time} in {city}": [
     "web/src/app/task-detail/ZoneControl.tsx"

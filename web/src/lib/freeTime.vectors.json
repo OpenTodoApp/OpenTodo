@@ -1,0 +1,1381 @@
+{
+  "_comment": "Free time (OpenSpec change assistant-time-blocks, design D1): shared by internal/freetime and web/src/lib/freeTime.ts; written by `go test ./internal/freetime -update`. Each day of from..to is free within [day_start, day_end) (minutes) except where a timed, non-free event (zoned points read in zone, clipped to the day), a frame occurrence, a slot or an open timed task (its estimate, else 30 minutes, cut at midnight) takes time. Stretches shorter than min_minutes (at least 1) are left out. With today, earlier days have nothing and today starts at now rounded up to 15 minutes.",
+  "cases": [
+    {
+      "name": "an empty day is free from start to end",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two meetings, two hours at least (the spec's scenario)",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 120,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "11:00"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "13:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "15:00"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "11:00",
+              "end": "13:00",
+              "minutes": 120
+            },
+            {
+              "start": "15:00",
+              "end": "18:00",
+              "minutes": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two meetings, half an hour at least",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "11:00"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "13:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "15:00"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "09:00",
+              "minutes": 60
+            },
+            {
+              "start": "11:00",
+              "end": "13:00",
+              "minutes": 120
+            },
+            {
+              "start": "15:00",
+              "end": "18:00",
+              "minutes": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overlapping and touching events merge",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "10:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "11:30"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "11:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "12:00"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "12:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "12:30"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "10:00",
+              "minutes": 120
+            },
+            {
+              "start": "12:30",
+              "end": "18:00",
+              "minutes": 330
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "free and all-day events take no time",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "12:00"
+            },
+            "allDay": false,
+            "free": true
+          },
+          {
+            "start": {
+              "date": "2026-10-15"
+            },
+            "end": {
+              "date": "2026-10-16"
+            },
+            "allDay": true,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a zero-length event takes no time",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "10:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "10:00"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an event across midnight takes the start of the next day",
+      "input": {
+        "from": "2026-10-14",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-14",
+              "time": "17:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "09:30"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-14",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "17:00",
+              "minutes": 540
+            }
+          ]
+        },
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "09:30",
+              "end": "18:00",
+              "minutes": 510
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an event ending at midnight leaves the next day free",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-16",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "16:00"
+            },
+            "end": {
+              "date": "2026-10-16",
+              "time": "00:00"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "16:00",
+              "minutes": 480
+            }
+          ]
+        },
+        {
+          "date": "2026-10-16",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a zoned event is read in the viewer's zone",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "Europe/Berlin",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "07:00",
+              "tz": "America/New_York"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "08:00",
+              "tz": "America/New_York"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "13:00",
+              "minutes": 300
+            },
+            {
+              "start": "14:00",
+              "end": "18:00",
+              "minutes": 240
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a zoned event moves to the viewer's previous day",
+      "input": {
+        "from": "2026-10-14",
+        "to": "2026-10-15",
+        "zone": "America/Los_Angeles",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "08:00",
+              "tz": "Asia/Tokyo"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "10:00",
+              "tz": "Asia/Tokyo"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-14",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "16:00",
+              "minutes": 480
+            }
+          ]
+        },
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an event without an end takes no time",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-15"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "timed tasks take their estimate, or half an hour",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": [
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "estimate_minutes": 90,
+            "done": false
+          },
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "14:00"
+            },
+            "estimate_minutes": null,
+            "done": false
+          },
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "16:00"
+            },
+            "estimate_minutes": 0,
+            "done": false
+          }
+        ]
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "09:00",
+              "minutes": 60
+            },
+            {
+              "start": "10:30",
+              "end": "14:00",
+              "minutes": 210
+            },
+            {
+              "start": "14:30",
+              "end": "16:00",
+              "minutes": 90
+            },
+            {
+              "start": "16:30",
+              "end": "18:00",
+              "minutes": 90
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "done, untimed and other days' tasks take no time",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": [
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "estimate_minutes": 60,
+            "done": true
+          },
+          {
+            "due": {
+              "date": "2026-10-15"
+            },
+            "estimate_minutes": 120,
+            "done": false
+          },
+          {
+            "due": {
+              "date": "2026-10-16",
+              "time": "09:00"
+            },
+            "estimate_minutes": 60,
+            "done": false
+          },
+          {
+            "due": null,
+            "estimate_minutes": 60,
+            "done": false
+          }
+        ]
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a zoned task is placed in the viewer's zone",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "Europe/London",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": [
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "12:00",
+              "tz": "Europe/Rome"
+            },
+            "estimate_minutes": 60,
+            "done": false
+          }
+        ]
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "11:00",
+              "minutes": 180
+            },
+            {
+              "start": "12:00",
+              "end": "18:00",
+              "minutes": 360
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a task late in the evening is cut at midnight",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 1200,
+        "day_end": 1440,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": [
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "23:00"
+            },
+            "estimate_minutes": 180,
+            "done": false
+          }
+        ]
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "20:00",
+              "end": "23:00",
+              "minutes": 180
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "slots take their minutes",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [],
+        "slots": [
+          {
+            "date": "2026-10-15",
+            "start": "16:00",
+            "minutes": 45
+          },
+          {
+            "date": "2026-10-15",
+            "start": "08:00",
+            "minutes": 15
+          },
+          {
+            "date": "2026-10-16",
+            "start": "10:00",
+            "minutes": 60
+          },
+          {
+            "date": "2026-10-15",
+            "start": "bad",
+            "minutes": 60
+          },
+          {
+            "date": "2026-10-15",
+            "start": "12:00",
+            "minutes": 0
+          }
+        ],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:15",
+              "end": "16:00",
+              "minutes": 465
+            },
+            {
+              "start": "16:45",
+              "end": "18:00",
+              "minutes": 75
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "frames take their window on their weekdays",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-17",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "events": [],
+        "frames": [
+          {
+            "id": "f1",
+            "weekdays": "1,2,3,4,5",
+            "start": "09:00",
+            "end": "11:00",
+            "from_date": null,
+            "until_date": null,
+            "position": 1,
+            "deleted_at": null
+          },
+          {
+            "id": "f2",
+            "weekdays": "6",
+            "start": "10:00",
+            "end": "12:30",
+            "from_date": "2026-10-17",
+            "until_date": null,
+            "position": 2,
+            "deleted_at": null
+          },
+          {
+            "id": "f3",
+            "weekdays": "4",
+            "start": "15:00",
+            "end": "14:00",
+            "from_date": null,
+            "until_date": null,
+            "position": 3,
+            "deleted_at": null
+          },
+          {
+            "id": "f4",
+            "weekdays": "4",
+            "start": "16:00",
+            "end": "17:00",
+            "from_date": null,
+            "until_date": null,
+            "position": 4,
+            "deleted_at": 9
+          }
+        ],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "09:00",
+              "minutes": 60
+            },
+            {
+              "start": "11:00",
+              "end": "18:00",
+              "minutes": 420
+            }
+          ]
+        },
+        {
+          "date": "2026-10-16",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "09:00",
+              "minutes": 60
+            },
+            {
+              "start": "11:00",
+              "end": "18:00",
+              "minutes": 420
+            }
+          ]
+        },
+        {
+          "date": "2026-10-17",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "10:00",
+              "minutes": 120
+            },
+            {
+              "start": "12:30",
+              "end": "18:00",
+              "minutes": 330
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "everything together over a week",
+      "input": {
+        "from": "2026-10-12",
+        "to": "2026-10-18",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 60,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-12",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-12",
+              "time": "10:00"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-14",
+              "time": "13:00"
+            },
+            "end": {
+              "date": "2026-10-14",
+              "time": "17:30"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-16",
+              "time": "15:00",
+              "tz": "UTC"
+            },
+            "end": {
+              "date": "2026-10-16",
+              "time": "16:00",
+              "tz": "UTC"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [
+          {
+            "id": "deep",
+            "weekdays": "2,4",
+            "start": "08:00",
+            "end": "10:00",
+            "from_date": null,
+            "until_date": null,
+            "position": 1,
+            "deleted_at": null
+          }
+        ],
+        "slots": [
+          {
+            "date": "2026-10-13",
+            "start": "16:00",
+            "minutes": 45
+          }
+        ],
+        "tasks": [
+          {
+            "due": {
+              "date": "2026-10-15",
+              "time": "11:00"
+            },
+            "estimate_minutes": 240,
+            "done": false
+          },
+          {
+            "due": {
+              "date": "2026-10-18",
+              "time": "10:00"
+            },
+            "estimate_minutes": null,
+            "done": false
+          }
+        ]
+      },
+      "days": [
+        {
+          "date": "2026-10-12",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "09:00",
+              "minutes": 60
+            },
+            {
+              "start": "10:00",
+              "end": "18:00",
+              "minutes": 480
+            }
+          ]
+        },
+        {
+          "date": "2026-10-13",
+          "free": [
+            {
+              "start": "10:00",
+              "end": "16:00",
+              "minutes": 360
+            },
+            {
+              "start": "16:45",
+              "end": "18:00",
+              "minutes": 75
+            }
+          ]
+        },
+        {
+          "date": "2026-10-14",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "13:00",
+              "minutes": 300
+            }
+          ]
+        },
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "10:00",
+              "end": "11:00",
+              "minutes": 60
+            },
+            {
+              "start": "15:00",
+              "end": "18:00",
+              "minutes": 180
+            }
+          ]
+        },
+        {
+          "date": "2026-10-16",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "15:00",
+              "minutes": 420
+            },
+            {
+              "start": "16:00",
+              "end": "18:00",
+              "minutes": 120
+            }
+          ]
+        },
+        {
+          "date": "2026-10-17",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        },
+        {
+          "date": "2026-10-18",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "10:00",
+              "minutes": 120
+            },
+            {
+              "start": "10:30",
+              "end": "18:00",
+              "minutes": 450
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a stretch shorter than the minimum is left out",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 61,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "09:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "17:00"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": []
+        }
+      ]
+    },
+    {
+      "name": "a minimum of zero still needs a minute",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 0,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "08:01"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "17:59"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "08:01",
+              "minutes": 1
+            },
+            {
+              "start": "17:59",
+              "end": "18:00",
+              "minutes": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "today starts at now, rounded up to a quarter hour",
+      "input": {
+        "from": "2026-10-14",
+        "to": "2026-10-16",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "today": "2026-10-15",
+        "now": 787,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-14",
+          "free": []
+        },
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "13:15",
+              "end": "18:00",
+              "minutes": 285
+            }
+          ]
+        },
+        {
+          "date": "2026-10-16",
+          "free": [
+            {
+              "start": "08:00",
+              "end": "18:00",
+              "minutes": 600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "today after the working day has nothing left",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "today": "2026-10-15",
+        "now": 1140,
+        "events": [],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": []
+        }
+      ]
+    },
+    {
+      "name": "today before the working day starts at its start",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 480,
+        "day_end": 1080,
+        "min_minutes": 30,
+        "today": "2026-10-15",
+        "now": 360,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "07:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "08:30"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "08:30",
+              "end": "18:00",
+              "minutes": 570
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a whole working day",
+      "input": {
+        "from": "2026-10-15",
+        "to": "2026-10-15",
+        "zone": "UTC",
+        "day_start": 0,
+        "day_end": 1440,
+        "min_minutes": 15,
+        "events": [
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "00:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "06:00"
+            },
+            "allDay": false,
+            "free": false
+          },
+          {
+            "start": {
+              "date": "2026-10-15",
+              "time": "22:00"
+            },
+            "end": {
+              "date": "2026-10-15",
+              "time": "23:59"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-10-15",
+          "free": [
+            {
+              "start": "06:00",
+              "end": "22:00",
+              "minutes": 960
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a spring-forward gap moves a zoned event to the transition",
+      "input": {
+        "from": "2026-03-29",
+        "to": "2026-03-29",
+        "zone": "Europe/Berlin",
+        "day_start": 0,
+        "day_end": 360,
+        "min_minutes": 15,
+        "events": [
+          {
+            "start": {
+              "date": "2026-03-29",
+              "time": "02:30",
+              "tz": "Europe/Berlin"
+            },
+            "end": {
+              "date": "2026-03-29",
+              "time": "04:00",
+              "tz": "Europe/Berlin"
+            },
+            "allDay": false,
+            "free": false
+          }
+        ],
+        "frames": [],
+        "slots": [],
+        "tasks": []
+      },
+      "days": [
+        {
+          "date": "2026-03-29",
+          "free": [
+            {
+              "start": "00:00",
+              "end": "03:00",
+              "minutes": 180
+            },
+            {
+              "start": "04:00",
+              "end": "06:00",
+              "minutes": 120
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -211,6 +211,8 @@ type Registry struct {
 	userZone func(ctx context.Context, uid string) *time.Location
 	// routines serves the routine tools (routines-engine); nil: unavailable.
 	routines Routines
+	// events reads calendar events for find_free_time (nil: none counted).
+	events EventSource
 }
 
 // Options configure a Registry.
@@ -228,11 +230,13 @@ type Options struct {
 	// UserZone is the user's time zone, in which relative, deadline and
 	// absolute reminders are read as for a REST write (nil: UTC).
 	UserZone func(ctx context.Context, uid string) *time.Location
+	// Events are the user's calendar events find_free_time counts (nil: none).
+	Events EventSource
 }
 
 // New wires a Registry.
 func New(syncSvc *opsync.Service, opts Options) *Registry {
-	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday, exclusions: opts.Exclusions, userZone: opts.UserZone}
+	r := &Registry{sync: syncSvc, now: opts.Now, audit: opts.Audit, limits: opts.Limits, extraOps: opts.ExtraOps, log: opts.Log, today0: opts.LocalToday, exclusions: opts.Exclusions, userZone: opts.UserZone, events: opts.Events}
 	if r.now == nil {
 		r.now = time.Now
 	}

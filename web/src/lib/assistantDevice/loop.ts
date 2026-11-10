@@ -15,6 +15,7 @@ import { deviceCode, providerFor, ProviderError, type Fetch, type Message, type 
 import { getTask, listProjects, listTasks, searchTasks, todaySummary } from './read'
 import { getNote, listNotes, searchNotes } from './readNotes'
 import { listFrames, listSlots, listTimeEntries } from './readTime'
+import { findFreeTime } from './readFreeTime'
 import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
 import type { DeviceSetup } from './settings'
 
@@ -39,6 +40,8 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
   list_notes: listNotes,
   search_notes: searchNotes,
   get_note: getNote,
+  // assistant-time-blocks: the free stretches of internal/freetime, from this device's rows.
+  find_free_time: (s, a, n) => findFreeTime(s, a, n),
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */
@@ -78,6 +81,7 @@ export function statusFor(name: string, args: string): string {
     }
     case 'get_task': return 'Reading a task…'
     case 'search_tasks': return 'Searching tasks…'
+    case 'find_free_time': return 'Looking for free time…'
   }
   return 'Preparing changes…'
 }

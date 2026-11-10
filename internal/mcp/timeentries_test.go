@@ -61,7 +61,7 @@ func TestTimeEntriesReadTool(t *testing.T) {
 	_ = json.Unmarshal(out, &lr)
 	var timeTools []string
 	for _, tl := range lr["result"].(map[string]any)["tools"].([]any) {
-		if n := tl.(map[string]any)["name"].(string); containsAny(n, "time", "track") {
+		if n := tl.(map[string]any)["name"].(string); containsAny(n, "time", "track") && n != "find_free_time" {
 			timeTools = append(timeTools, n)
 		}
 	}

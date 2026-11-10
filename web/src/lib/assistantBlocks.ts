@@ -15,6 +15,9 @@ const MAX_IDS = 20
 const ids = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && ID_RE.test(x)).slice(0, MAX_IDS) : [])
 const text = (v: unknown, max: number): string => (typeof v === 'string' ? v.trim().slice(0, max) : '')
 
+/** A time or deadlines block's days: two dates in order (the server checked the span). */
+const days = (ev: Record<string, unknown>): boolean => typeof ev.from === 'string' && typeof ev.to === 'string' && DATE_RE.test(ev.from) && DATE_RE.test(ev.to) && ev.from <= ev.to
+
 /** The block of a stream event, or null when it is not one this app knows (it is then skipped). */
 export function blockOf(ev: Record<string, unknown>): AssistantBlock | null {
   switch (ev.kind) {
@@ -38,6 +41,14 @@ export function blockOf(ev: Record<string, unknown>): AssistantBlock | null {
     case 'note':
     case 'project':
       return typeof ev.id === 'string' && ID_RE.test(ev.id) ? { kind: ev.kind, id: ev.id } : null
+    case 'time':
+      return days(ev) && (ev.group_by === 'project' || ev.group_by === 'day') ? { kind: 'time', from: ev.from as string, to: ev.to as string, group_by: ev.group_by } : null
+    case 'free_time': {
+      const min = typeof ev.min_minutes === 'number' && Number.isInteger(ev.min_minutes) && ev.min_minutes >= 1 && ev.min_minutes <= 720 ? ev.min_minutes : 30
+      return typeof ev.date === 'string' && DATE_RE.test(ev.date) && (ev.span === 'day' || ev.span === 'week') ? { kind: 'free_time', date: ev.date, span: ev.span, min_minutes: min } : null
+    }
+    case 'deadlines':
+      return days(ev) ? { kind: 'deadlines', from: ev.from as string, to: ev.to as string } : null
   }
   return null
 }
@@ -74,6 +85,12 @@ export function blockLabel(b: AssistantBlock): string {
       return t('Note')
     case 'project':
       return t('Project outline')
+    case 'time':
+      return t('Tracked time, {date} – {date2}', { date: formatDate(b.from, 'long'), date2: formatDate(b.to, 'long') })
+    case 'free_time':
+      return b.span === 'day' ? t('Free time, {date}', { date: formatDate(b.date, 'long') }) : t('Free time, week of {date}', { date: formatDate(b.date, 'long') })
+    case 'deadlines':
+      return t('Deadlines, {date} – {date2}', { date: formatDate(b.from, 'long'), date2: formatDate(b.to, 'long') })
   }
 }
 
@@ -87,7 +104,14 @@ export async function blockText(b: AssistantBlock): Promise<string> {
       return [b.title, ...rows.map((r) => `- [${r.completed_at ? 'x' : ' '}] ${r.title}`)].filter(Boolean).join('\n')
     }
     case 'calendar':
+    case 'time':
+    case 'free_time':
       return blockLabel(b)
+    case 'deadlines': {
+      const rows = await db.tasks.filter((r) => !r.deleted_at && !r.completed_at && !!r.deadline && r.deadline >= b.from && r.deadline <= b.to).toArray()
+      rows.sort((x, y) => (x.deadline! < y.deadline! ? -1 : x.deadline! > y.deadline! ? 1 : x.title.localeCompare(y.title)))
+      return [blockLabel(b), ...rows.map((r) => `- ${r.title} (${formatDate(r.deadline!, 'compact')})`)].join('\n')
+    }
     case 'choice':
       return [b.question, ...b.options.map((o) => `- ${o}`)].join('\n')
     case 'map': {

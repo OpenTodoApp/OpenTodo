@@ -66,7 +66,7 @@ func TestDisplayToolsOffered(t *testing.T) {
 			t.Errorf("%s not offered without a skill: %v", d.Name, got)
 		}
 	}
-	for id, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice"}, "break-down": nil, "triage-inbox": {"show_tasks", "ask_choice"}} {
+	for id, want := range map[string][]string{"plan-week": {"show_calendar", "ask_choice", "show_free_time"}, "break-down": nil, "triage-inbox": {"show_tasks", "ask_choice"}} {
 		p := &scripted{rounds: []scriptRound{{text: "ok"}}}
 		f.loop.Run(context.Background(), p, TurnInput{UserID: "u1", Zone: time.UTC, Messages: []Message{{Role: "user", Text: "go"}}, Skill: skill(t, id)}, Events{Text: func(string) {}})
 		var shown []string
@@ -192,6 +192,12 @@ func TestDisplayToolsArguments(t *testing.T) {
 		{"ask_choice", map[string]any{"question": "Which?", "options": []string{"a", strings.Repeat("b", 61)}}},
 		{"show_map", map[string]any{}},
 		{"show_note", map[string]any{"id": " "}},
+		{"show_time", map[string]any{"from": "2026-10-01", "to": "2026-11-01", "group_by": "day"}},
+		{"show_time", map[string]any{"from": "2026-10-01", "to": "2026-10-02"}},
+		{"show_time", map[string]any{"from": "2026-02-30", "to": "2026-03-02", "group_by": "day"}},
+		{"show_free_time", map[string]any{"date": "2026-10-12", "span": "month"}},
+		{"show_free_time", map[string]any{"date": "2026-10-12", "span": "day", "min_minutes": 721}},
+		{"show_deadlines", map[string]any{"from": "2026-10-12", "to": "2026-10-11"}},
 	} {
 		if _, err := parseBlock(c.name, mustJSON(c.args)); err == nil {
 			t.Errorf("%s %v accepted", c.name, c.args)
@@ -200,6 +206,13 @@ func TestDisplayToolsArguments(t *testing.T) {
 	b, err := parseBlock("ask_choice", mustJSON(map[string]any{"question": " Saturday or Sunday? ", "options": []string{"Saturday", " Sunday "}}))
 	if err != nil || b.Question != "Saturday or Sunday?" || strings.Join(b.Options, "|") != "Saturday|Sunday" {
 		t.Fatalf("choice %+v %v", b, err)
+	}
+	// A free time block without min_minutes asks for half an hour; 31 days is the widest range.
+	if b, err := parseBlock("show_free_time", mustJSON(map[string]any{"date": "2026-10-12", "span": "week"})); err != nil || b.MinMinutes != 30 || b.Kind != BlockFreeTime {
+		t.Fatalf("free time %+v %v", b, err)
+	}
+	if b, err := parseBlock("show_time", mustJSON(map[string]any{"from": "2026-10-01", "to": "2026-10-31", "group_by": "day"})); err != nil || b.GroupBy != "day" {
+		t.Fatalf("time %+v %v", b, err)
 	}
 }
 
@@ -299,6 +312,21 @@ var blockCalls = []struct {
 	{"calendar and choice", []blockCall{
 		{"show_calendar", map[string]any{"date": "2026-11-12", "span": "week"}},
 		{"ask_choice", map[string]any{"question": "Saturday or Sunday?", "options": []string{" Saturday", "Sunday "}}},
+	}},
+	// assistant-time-blocks: parameters only, nothing to look up.
+	{"time, free time and deadlines", []blockCall{
+		{"show_time", map[string]any{"from": "2026-11-09", "to": "2026-11-15", "group_by": "project"}},
+		{"show_free_time", map[string]any{"date": "2026-11-12", "span": "day", "min_minutes": 120}},
+		{"show_free_time", map[string]any{"date": "2026-11-09", "span": "week"}},
+		{"show_deadlines", map[string]any{"from": "2026-11-09", "to": "2026-11-13"}},
+	}},
+	{"time blocks with invalid arguments", []blockCall{
+		{"show_time", map[string]any{"from": "2026-11-09", "to": "2026-12-15", "group_by": "day"}},
+		{"show_time", map[string]any{"from": "2026-11-09", "to": "2026-11-15", "group_by": "label"}},
+		{"show_free_time", map[string]any{"date": "2026-11-12", "span": "day", "min_minutes": 0}},
+		{"show_free_time", map[string]any{"date": "2026-11-12", "span": "day", "min_minutes": 1.5}},
+		{"show_deadlines", map[string]any{"from": "2026-11-13", "to": "2026-11-09"}},
+		{"show_deadlines", map[string]any{"from": "2026-11-09"}},
 	}},
 	{"invalid arguments", []blockCall{
 		{"show_calendar", map[string]any{"date": "12.11.2026", "span": "day"}},

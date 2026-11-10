@@ -4,16 +4,22 @@
 // away from assistants), the same limit and the same results, pinned by
 // blocks.vectors.json. A display call changes nothing.
 import type { AssistantBlock } from '../assistantBlocks'
+import { daysBetweenISO } from '../dates'
 import { db } from '../db'
+import { calendarDate } from './args'
 import { isDeleted, loadSnapshot, str, type Row } from './data'
 import { manifest } from './manifest'
 
-export const DISPLAY_TOOLS = ['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project']
+export const DISPLAY_TOOLS = ['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project', 'show_time', 'show_free_time', 'show_deadlines']
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_TITLE = 80
 const MAX_QUESTION = 200
 const MAX_OPTION = 60
+// The time blocks (assistant-time-blocks), as blocks.go: MaxBlockDays and the free time minutes.
+const MAX_DAYS = 31
+const DEFAULT_FREE = 30
+const MAX_FREE = 12 * 60
 
 class DisplayArgError extends Error {}
 
@@ -35,6 +41,16 @@ function ids(field: string, v: unknown, required: boolean): string[] {
   if (required && !list.length) throw new DisplayArgError(`${field} needs at least one id`)
   if (list.length > manifest.limits.max_block_ids) throw new DisplayArgError(`${field} holds at most ${manifest.limits.max_block_ids} ids`)
   return list
+}
+
+/** A block's days from..to (checkRange): two dates in order, at most MAX_DAYS. */
+function range(a: Record<string, unknown>): { from: string; to: string } {
+  const from = typeof a.from === 'string' ? a.from : ''
+  const to = typeof a.to === 'string' ? a.to : ''
+  if (!calendarDate(from) || !calendarDate(to)) throw new DisplayArgError('from and to must be YYYY-MM-DD')
+  if (to < from) throw new DisplayArgError('to must not be before from')
+  if (daysBetweenISO(from, to) + 1 > MAX_DAYS) throw new DisplayArgError(`a block covers at most ${MAX_DAYS} days`)
+  return { from, to }
 }
 
 /** A display call's arguments as a block, before its ids are checked (parseBlock). */
@@ -67,6 +83,20 @@ export function parseBlock(name: string, a: Record<string, unknown>): AssistantB
       if (!id.trim()) throw new DisplayArgError('id is required')
       return { kind: name === 'show_note' ? 'note' : 'project', id }
     }
+    case 'show_time': {
+      const r = range(a)
+      if (a.group_by !== 'project' && a.group_by !== 'day') throw new DisplayArgError('group_by must be "project" or "day"')
+      return { kind: 'time', ...r, group_by: a.group_by }
+    }
+    case 'show_free_time': {
+      if (typeof a.date !== 'string' || !DATE_RE.test(a.date)) throw new DisplayArgError('date must be YYYY-MM-DD')
+      if (a.span !== 'day' && a.span !== 'week') throw new DisplayArgError('span must be "day" or "week"')
+      const m = a.min_minutes
+      if (m !== undefined && m !== null && (typeof m !== 'number' || !Number.isInteger(m) || m < 1 || m > MAX_FREE)) throw new DisplayArgError(`min_minutes must be a whole number from 1 to ${MAX_FREE}`)
+      return { kind: 'free_time', date: a.date, span: a.span, min_minutes: typeof m === 'number' ? m : DEFAULT_FREE }
+    }
+    case 'show_deadlines':
+      return { kind: 'deadlines', ...range(a) }
   }
   throw new DisplayArgError('unknown display tool')
 }
@@ -115,6 +145,9 @@ async function check(b: AssistantBlock): Promise<{ block: AssistantBlock; asked:
     case 'project':
       return { block: b, asked: 1, found: (await shown(b.kind, [b.id])).length }
     case 'calendar':
+    case 'time':
+    case 'free_time':
+    case 'deadlines':
       return { block: b, asked: 1, found: 1 }
     case 'choice':
       return { block: b, asked: b.options.length, found: b.options.length }
