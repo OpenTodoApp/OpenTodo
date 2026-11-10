@@ -119,6 +119,8 @@ The automated gate runs on every pull request; "not toured" screens are only rea
 | `sidebar` | core | pass | 2 of 6 passes done, 4 pending |
 | `quick-add` | core | pass | 2 of 6 passes done, 4 pending |
 | `add-menu` | core | pass | 2 of 6 passes done, 4 pending |
+| `sidebar-new-project-appearance` | rare | pass | not in the manual audit |
+| `sidebar-new-label-colour` | rare | pass | not in the manual audit |
 | `notifications` | core | pass | 2 of 6 passes done, 4 pending |
 | `bulk-actions` | core | pass | 2 of 6 passes done, 4 pending |
 | `undo-toast` | core | pass | 2 of 6 passes done, 4 pending |

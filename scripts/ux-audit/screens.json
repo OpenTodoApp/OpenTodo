@@ -235,6 +235,59 @@
   }
  },
  {
+  "id": "sidebar-new-project-appearance",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "opened by the tour from the sidebar's new project form",
+  "story": "Screens/Sidebar",
+  "on": "inbox",
+  "open": {
+   "steps": [
+    {
+     "clickIfVisible": "button[aria-label=\"Open menu\"]"
+    },
+    {
+     "click": "aside[data-sidebar] button[aria-label=\"Add or fold projects\"]"
+    },
+    {
+     "click": "role=menuitem[name=\"New project\"]"
+    },
+    {
+     "click": "aside[data-sidebar] [data-new-project-form] button[aria-label=\"Appearance\"]"
+    }
+   ]
+  }
+ },
+ {
+  "id": "sidebar-new-label-colour",
+  "route": "inbox",
+  "kind": "overlay",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "opened by the tour from the sidebar's new label form",
+  "story": "Screens/Sidebar",
+  "on": "inbox",
+  "open": {
+   "steps": [
+    {
+     "clickIfVisible": "button[aria-label=\"Open menu\"]"
+    },
+    {
+     "click": "aside[data-sidebar] button[aria-label=\"New label\"]"
+    },
+    {
+     "click": "aside[data-sidebar] [data-sidebar-group=\"Labels\"] button[aria-label=\"Colour\"]"
+    }
+   ]
+  }
+ },
+ {
   "id": "notifications",
   "route": "inbox",
   "kind": "overlay",
