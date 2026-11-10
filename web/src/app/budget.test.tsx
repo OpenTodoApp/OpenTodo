@@ -100,7 +100,7 @@ describe('scroll regions', () => {
 })
 
 describe('the Focus screen (focus-mode)', () => {
-  it('Phone width: one row of chrome above the timer, and no scroll region of its own', async () => {
+  it('Phone width: at most one row of chrome above the stage, and no scroll region of its own', async () => {
     const id = await createTask({ title: 'Write the report', description: Array.from({ length: 80 }, (_, i) => `Line ${i} of long notes.`).join('\n\n') })
     navigate({ view: 'focus', id })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
@@ -111,7 +111,9 @@ describe('the Focus screen (focus-mode)', () => {
       if (child.querySelector('[data-focus-timer]') || child.matches('[data-focus-timer]')) break
       if (!child.classList.contains('sr-only')) before.push(child)
     }
-    expect(before.map((e) => e.tagName)).toEqual(['HEADER'])
+    // The header holds only Back, the title and the menu; below 768 px the shell's bar carries them (focus-redesign D2).
+    expect(before.map((e) => e.tagName).filter((x) => x !== 'HEADER')).toEqual([])
+    expect(before.length).toBeLessThanOrEqual(1)
     expect(scrollers(page)).toEqual([])
     expect(scrollers(r.container).length).toBeLessThanOrEqual(MAX_SCROLLERS)
     await r.unmount()
@@ -145,7 +147,9 @@ describe('the Plan (planner-view)', () => {
       if (child.matches('[data-plan-grid], [data-plan-agenda]')) break
       if (!child.classList.contains('sr-only')) before.push(child)
     }
-    expect(before.map((e) => e.tagName)).toEqual(['HEADER'])
+    // The header holds only Back, the title and the menu; below 768 px the shell's bar carries them (focus-redesign D2).
+    expect(before.map((e) => e.tagName).filter((x) => x !== 'HEADER')).toEqual([])
+    expect(before.length).toBeLessThanOrEqual(1)
     expect(scrollers(page)).toEqual([])
     expect(scrollers(r.container).length).toBeLessThanOrEqual(MAX_SCROLLERS)
     await r.unmount()

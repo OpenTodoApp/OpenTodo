@@ -9,7 +9,7 @@ order: 22
 ---
 # Focus breaks, presets and noise
 
-<picture><source srcset="images/focus-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/focus-light.webp" alt="The Focus screen: one task with a large timer at 24:58, Work session 1 of 4, and buttons for Pause, Complete, Take a break and Next task."></picture>
+<picture><source srcset="images/focus-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/focus-light.webp" alt="The Focus screen: one task with a large timer at 24:58, Pomodoro · Work · 1 of 4, and buttons for Pause, Complete, Next task and Take a break."></picture>
 
 Small comforts of the [Focus](focus.md) timer. Their settings are in **Settings → General → Focus timer** and follow your account to every device.
 
