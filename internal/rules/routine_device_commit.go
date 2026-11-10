@@ -78,6 +78,9 @@ type DeviceCommit struct {
 	Completing []string        `json:"completing"`
 	Sides      []DeviceSide    `json:"sides"`
 	Proposal   *DeviceProposal `json:"proposal"`
+	// Blocks are what the run's Ask AI steps showed, kinds and parameters
+	// only (assistant-routine-blocks D1); an older device sends none.
+	Blocks []RunBlock `json:"blocks"`
 }
 
 // DeviceFail is the body of POST /api/v1/me/rules/runs/{run}/fail.
@@ -226,13 +229,13 @@ func (e *Engine) CommitDeviceRun(ctx context.Context, uid, runID, session string
 		return Result{Run: run}, err
 	}
 	steps, tokens, err := cleanSteps(c.Steps, ruleval.MaxSteps*ruleval.MaxIterations)
-	if err != nil || c.DurationMs < 0 {
+	if err != nil || c.DurationMs < 0 || checkRunBlocks(c.Blocks) != nil {
 		return Result{}, ErrBadCommit
 	}
 	if c.Tokens > tokens {
 		tokens = c.Tokens
 	}
-	f := routineFinish{Outcome: OutcomeApplied, FailedStep: -1, Steps: steps, DurationMs: c.DurationMs, Tokens: tokens}
+	f := routineFinish{Outcome: OutcomeApplied, FailedStep: -1, Steps: steps, DurationMs: c.DurationMs, Tokens: tokens, Blocks: c.Blocks}
 	if c.Proposal != nil {
 		return e.commitProposal(ctx, uid, r, run, c, f)
 	}

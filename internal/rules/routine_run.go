@@ -60,6 +60,7 @@ func (e *Engine) runRoutine(ctx context.Context, w *world, r *rule, o runOpts) (
 	finish := func(f routineFinish) (Result, error) {
 		f.DurationMs = e.now().Sub(st.start).Milliseconds()
 		f.Tokens = st.aiTokens
+		f.Blocks = st.blocks
 		f.Steps = make([]StepRecord, len(st.records))
 		for i := range st.records {
 			f.Steps[i] = st.records[i].StepRecord

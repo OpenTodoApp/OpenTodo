@@ -183,6 +183,8 @@ type runState struct {
 	callAI   bool
 	aiTokens int64
 	aiTexts  []string
+	// blocks are what the Ask AI steps showed (assistant-routine-blocks D1).
+	blocks []RunBlock
 }
 
 // sideEffect is a notification, a delivery or an email queued after commit.

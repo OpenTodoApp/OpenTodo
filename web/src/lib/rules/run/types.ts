@@ -2,7 +2,7 @@
 // design D7): what a run reads (RunWorld), what it is asked to run (RunRoutine,
 // RunOptions) and what it plans (RunPlan). Values are plaintext: the device
 // holds its decrypted copy; the runner encrypts before it commits.
-import type { Membership, RoutineStep, RuleCondition } from '../../types'
+import type { Membership, RoutineRunBlock, RoutineStep, RuleCondition } from '../../types'
 import type { StepValue } from '../stepData'
 
 /** A stored row: field name to value (JSON-decoded). */
@@ -109,7 +109,15 @@ export interface AICall {
   context: string[]
   answer: 'text' | 'lines'
   maxTokens: number
+  /** How many blocks the call may still show; 0 offers no show tool (assistant-routine-blocks D1). */
+  show?: number
 }
+
+/** A block a run's Ask AI step showed (internal/rules RunBlock): kind and parameters, never text. */
+export type RunBlock = RoutineRunBlock
+
+/** The most blocks one run shows (internal/rules MaxRunBlocks). */
+export const MAX_RUN_BLOCKS = 4
 
 /** The model's answer and its tokens. */
 export interface AIAnswer {
@@ -117,6 +125,7 @@ export interface AIAnswer {
   lines?: string[]
   input: number
   output: number
+  blocks?: RunBlock[]
 }
 
 /** A call that gave no answer; code is the failed step's error code (ai_refused, ai_truncated, …). */
@@ -214,6 +223,8 @@ export interface RunPlan {
   sides: SideSpec[]
   /** The AI's answers (to mark items "Written by AI"). */
   aiTexts: string[]
+  /** What the Ask AI steps showed (assistant-routine-blocks D1). */
+  blocks: RunBlock[]
   tokens: number
   writesPlanned: number
   /** A test's previews by step id (titles included, never stored). */

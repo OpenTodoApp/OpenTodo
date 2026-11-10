@@ -88,8 +88,14 @@ func TestDeviceRunCommit(t *testing.T) {
 		t.Fatalf("plaintext: %v", err)
 	}
 	commit.Changes[0].Fields["title"] = json.RawMessage(`"` + sealed(1) + `"`)
+	// Blocks (assistant-routine-blocks D1): kinds and parameters only, checked.
+	commit.Blocks = []RunBlock{{Kind: RunBlockTasks, IDs: []string{"new1"}}, {Kind: "note", IDs: []string{"n1"}}}
+	if _, err := h.e.CommitDeviceRun(h.ctx, "alice", req.RunID, "sess-laptop", commit); !errors.Is(err, ErrBadCommit) {
+		t.Fatalf("bad block: %v", err)
+	}
+	commit.Blocks = commit.Blocks[:1]
 	done, err := h.e.CommitDeviceRun(h.ctx, "alice", req.RunID, "sess-laptop", commit)
-	if err != nil || done.Run.Outcome != OutcomeApplied || done.Run.Writes != 1 {
+	if err != nil || done.Run.Outcome != OutcomeApplied || done.Run.Writes != 1 || len(done.Run.Blocks) != 1 || done.Run.Blocks[0].IDs[0] != "new1" {
 		t.Fatalf("commit: %+v %v", done.Run, err)
 	}
 	row := h.get("alice", "new1")

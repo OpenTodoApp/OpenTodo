@@ -23,7 +23,16 @@ import (
 type routineAI struct{ s *Server }
 
 func (a routineAI) call(c rules.AICall, uid string) assistant.RoutineCall {
-	return assistant.RoutineCall{UserID: uid, Instruction: c.Instruction, Context: c.Context, Answer: c.Answer, MaxTokens: c.MaxTokens}
+	return assistant.RoutineCall{UserID: uid, Instruction: c.Instruction, Context: c.Context, Answer: c.Answer, MaxTokens: c.MaxTokens, Show: c.Show}
+}
+
+// runBlocks are an answer's blocks as a run keeps them (assistant-routine-blocks D1).
+func runBlocks(list []assistant.Block) []rules.RunBlock {
+	var out []rules.RunBlock
+	for _, b := range list {
+		out = append(out, rules.RunBlock{Kind: b.Kind, IDs: b.IDs, Date: b.Date, Span: b.Span, From: b.From, To: b.To})
+	}
+	return out
 }
 
 func (a routineAI) Estimate(c rules.AICall) int64 { return assistant.EstimateTokens(a.call(c, "")) }
@@ -34,7 +43,7 @@ func (a routineAI) Complete(ctx context.Context, uid string, c rules.AICall) (ru
 	}
 	ans, err := a.s.assistant.Routine(ctx, a.s.assistantSettings(ctx), a.call(c, uid))
 	// A routine's daily budget weighs cache reads like the monthly cap.
-	out := rules.AIAnswer{Text: ans.Text, Lines: ans.Lines, Input: ans.CountedInput(), Output: ans.Output}
+	out := rules.AIAnswer{Text: ans.Text, Lines: ans.Lines, Input: ans.CountedInput(), Output: ans.Output, Blocks: runBlocks(ans.Blocks)}
 	// The log holds the provider, the outcome and the counts, never text.
 	a.s.log.Info("routine AI call", "provider", ans.Provider, "own_key", ans.Own, "input_tokens", ans.Input, "cached_read_tokens", ans.CachedRead, "cached_write_tokens", ans.CachedWrite, "output_tokens", ans.Output, "failed", err != nil)
 	if err == nil {

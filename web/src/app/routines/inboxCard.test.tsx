@@ -4,12 +4,14 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../../lib/db'
-import { resetDeviceId } from '../../lib/ops'
+import { completeTask, createTask, resetDeviceId } from '../../lib/ops'
+import { todayISO } from '../../lib/dates'
 import { markRoutinesSeen } from '../../lib/rules/inbox'
 import { createRule } from '../../lib/rules/store'
 import type { RoutineInboxRun } from '../../lib/types'
 import { click, mockFetch, render, waitFor } from '../../ui/test-utils'
 import RoutinesInboxCard from './RoutinesInboxCard'
+import { RunDetailBody } from './RunHistory'
 import { RoutineRunsSection } from './RoutineRunsSection'
 
 let n = 0
@@ -64,6 +66,43 @@ describe('Routines card in the Inbox', () => {
     expect(lines()[1]).toBe('Morning sweep ran 2 times · 9 tasks changed')
     await click(document.querySelector('[data-inbox-line="failure"] button')!)
     expect(location.pathname + location.search).toBe(`/routines/${digest}?run=${digest}-300`)
+    await r.unmount()
+  })
+
+  it('"Morning briefing" (assistant-routine-blocks 1.2): the run shows the day and the three tasks under its line, live and read-only', async () => {
+    const { sweep } = await routines()
+    const ids = [await createTask({ title: 'Send the slides' }), await createTask({ title: 'Call the bank' }), await createTask({ title: 'Book the room' })]
+    runs = [run(sweep, 'success', 600, { writes: 0, outcome: 'already_matched', blocks: [{ kind: 'calendar', date: todayISO(), span: 'day' }, { kind: 'tasks', ids }] })]
+    const r = await render(<RoutinesInboxCard />)
+    await waitFor(() => document.querySelectorAll('[data-inbox-blocks] [data-assistant-tasks] li').length === 3, 'the three task rows')
+    const under = document.querySelector('[data-inbox-blocks]')!
+    expect(under.previousElementSibling?.getAttribute('data-inbox-line')).toBe('success')
+    expect(under.querySelector('[data-assistant-block="calendar"]')).not.toBeNull()
+    expect(under.textContent).toContain('Send the slides')
+    // Live from this device's rows: a task done elsewhere reads as done here.
+    await completeTask(ids[0])
+    await waitFor(() => !!under.querySelector('[aria-label="Reopen Send the slides"]'), 'the done row')
+    await r.unmount()
+  })
+
+  it("the run's detail shows its blocks above the steps", async () => {
+    const { sweep } = await routines()
+    const id = await createTask({ title: 'Send the slides' })
+    const detail = { ...run(sweep, 'success', 650), blocks: [{ kind: 'deadlines' as const, from: todayISO(), to: todayISO() }, { kind: 'tasks' as const, ids: [id] }] }
+    mockFetch((_method, path) => (path.includes('/runs/') ? detail : {}))
+    const r = await render(<RunDetailBody rule={undefined} ruleId={sweep} runId={detail.run_id} initial={detail} />)
+    await waitFor(() => !!document.querySelector('[data-run-detail] [data-run-blocks] [data-assistant-tasks] li'), 'the task row')
+    expect(document.querySelector('[data-run-blocks] [data-assistant-block="deadlines"]')).not.toBeNull()
+    await r.unmount()
+  })
+
+  it('a failed line shows no blocks', async () => {
+    const { digest } = await routines()
+    const id = await createTask({ title: 'Send the slides' })
+    runs = [run(digest, 'failure', 700, { blocks: [{ kind: 'tasks', ids: [id] }] })]
+    const r = await render(<RoutinesInboxCard />)
+    await waitFor(() => lines().length === 1, 'the line')
+    expect(document.querySelector('[data-inbox-blocks]')).toBeNull()
     await r.unmount()
   })
 

@@ -11,11 +11,11 @@ import type { DeviceCommit } from './deviceTypes'
 
 const key = vi.hoisted(() => ({ current: null as CryptoKey | null }))
 vi.mock('../e2ee', async (orig) => ({ ...(await orig<typeof import('../e2ee')>()), currentKey: async () => key.current }))
-const ai = vi.hoisted(() => ({ ready: true, answer: { text: 'Milk\nBread', lines: ['Milk', 'Bread'], input: 300, output: 40 } }))
+const ai = vi.hoisted(() => ({ ready: true, answer: { text: 'Milk\nBread', lines: ['Milk', 'Bread'], input: 300, output: 40 } as Record<string, unknown>, calls: [] as Record<string, unknown>[] }))
 vi.mock('./deviceAI', async (orig) => ({
   ...(await orig<typeof import('./deviceAI')>()),
   deviceAIReady: async () => ai.ready,
-  completeOnDevice: async () => ai.answer,
+  completeOnDevice: async (c: Record<string, unknown>) => { ai.calls.push(c); return ai.answer },
 }))
 
 const { api, ApiError } = await import('../api')
@@ -123,6 +123,25 @@ describe('AI results on an encrypted account', () => {
     expect((await runOnDevice(req('s', { auto: true }))).outcome).toBe('proposal')
     expect((commit.mock.calls[0][1] as DeviceCommit).changes).toHaveLength(2)
     expect((commit.mock.calls[1][1] as DeviceCommit).proposal?.items).toBe(2)
+  })
+
+  it('"Morning briefing" (assistant-routine-blocks 1.1): an Ask AI step in text may show blocks; the commit carries them as kinds and ids only', async () => {
+    await db.tasks.put({ id: 't1', title: 'Send the slides', labels: [], priority: 4, deleted_at: null, completed_at: null, position: 1, created_at: 1 } as never)
+    await seedRule('m', [
+      { id: 'a', kind: 'find_tasks', in: { condition: { literal: {} } } },
+      { id: 'b', kind: 'ask_ai', in: { instruction: { literal: 'brief me' }, context: { ref: 'a' } } },
+      { id: 'c', kind: 'ask_ai', in: { instruction: { literal: 'list them' }, context: { ref: 'a' }, answer: { literal: 'lines' } } },
+    ])
+    ai.calls = []
+    ai.answer = { text: 'A light day.', lines: ['Send the slides'], input: 10, output: 5, blocks: [{ kind: 'calendar', date: '2026-11-06', span: 'day' }, { kind: 'tasks', ids: ['t1'] }] }
+    const commit = vi.spyOn(api, 'commitDeviceRun').mockResolvedValue({ run: { run_id: 'run-1', outcome: 'already_matched', writes: 0 } })
+    await runOnDevice(req('m'))
+    expect(ai.calls.map((c) => c.show)).toEqual([4, undefined])
+    expect((ai.calls[0].context as string[])[0]).toContain('(id t1')
+    expect((ai.calls[1].context as string[])[0]).not.toContain('id t1')
+    const body = commit.mock.calls[0][1] as DeviceCommit
+    expect(body.blocks).toEqual([{ kind: 'calendar', date: '2026-11-06', span: 'day' }, { kind: 'tasks', ids: ['t1'] }])
+    expect(JSON.stringify(body.blocks)).not.toContain('Send the slides')
   })
 
   it('fails the AI step when this device cannot run AI steps', async () => {
