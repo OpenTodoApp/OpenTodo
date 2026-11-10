@@ -941,7 +941,7 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
    depth sit in its lower corners as a map's controls do. The canvas takes every touch
    (pan and pinch are the graph's own). */
 .notes-graph { @apply relative -mx-4 min-h-80 flex-1 md:-mx-8; }
-.notes-graph__area { @apply absolute inset-0 overflow-hidden outline-none focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus; }
+.notes-graph__area { @apply absolute inset-0 overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus; }
 .notes-graph__canvas { @apply block cursor-grab touch-none select-none; }
 .notes-graph__empty { @apply pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center; }
 .notes-graph__zoom { @apply absolute right-3 bottom-3 flex flex-col gap-0.5 rounded-control border border-default bg-surface p-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
