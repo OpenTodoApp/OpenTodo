@@ -203,6 +203,18 @@ These changes come from the owner's November review of the screens used every da
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
 
+### Native app
+
+A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`native-app-foundation`](openspec/changes/native-app-foundation/) | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | [#600](https://github.com/OpenTodoApp/OpenTodo/issues/600) |
+| [`native-app-everyday`](openspec/changes/native-app-everyday/) | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | |
+| [`native-app-handover`](openspec/changes/native-app-handover/) | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | [#603](https://github.com/OpenTodoApp/OpenTodo/issues/603) |
+
+In order. No op field changes; the server gains only app sign-in.
+
 ## Shipped
 
 ### 1. Core engine and architecture
