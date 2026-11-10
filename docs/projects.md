@@ -15,7 +15,7 @@ Projects keep related tasks together, and projects can sit inside other projects
 
 ## Organise with projects
 
-To create a project, click **+** next to **Projects**, type a name and choose **Create**. Pick a parent project to make it a sub-project. Inside a project, [quick add](quick-add.md) puts new tasks in it. See also [workspaces](workspaces.md).
+To create a project, use **+** next to **Projects**. Enter a name, optionally pick a colour and icon with **Appearance**, then choose **Create**. Pick a parent for a sub-project. [Quick add](quick-add.md) inside a project puts tasks there. See [workspaces](workspaces.md).
 
 The **Project** menu at the top right of a project lets you:
 
@@ -41,7 +41,9 @@ Inside a project you can also group tasks into sections and show them as a board
 
 **All** next to **Projects** in the sidebar (or <kbd>g</kbd> then <kbd>Shift</kbd>+<kbd>P</kbd>) opens the **Projects** page: every project in a table with its health and progress, and an **Archived** tab. See [All projects](all-projects.md).
 
-**Pin to sidebar** in the menu of a project, a label or a saved view puts it in **Favourites** at the top of the sidebar. **Move up** and **Move down** in its menu there, or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, reorder them. A pin is yours alone, even on a shared project, and syncs to your devices.
+**Pin to sidebar** adds a project, label or saved view to **Favourites**. Reorder it with **Move up**, **Move down** or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>. Pins are personal and sync to your devices.
+
+Owners and admins can edit name, icon and colour from **⋯**. **Rename** is inline in **Projects** and opens a dialog in **Favourites**.
 
 ## Sub-projects
 

@@ -659,7 +659,7 @@ function lastAmongProjectSiblings(all: Project[], id: string, parentId: string |
 }
 
 /** A new project goes last at the top level, or last under `parent_id` when given. */
-export async function createProject(input: { name: string; color?: string; parent_id?: string | null }): Promise<string> {
+export async function createProject(input: { name: string; color?: string; icon?: string | null; parent_id?: string | null }): Promise<string> {
   const id = uuid()
   const now = Date.now()
   const all = await liveProjects()
@@ -668,6 +668,7 @@ export async function createProject(input: { name: string; color?: string; paren
   await mutate('project', id, {
     name: input.name.trim(), color: input.color ?? pickColor(), position: lastAmongProjectSiblings(all, id, parentId),
     archived: false, parent_id: parentId, created_at: now, deleted_at: null,
+    ...(input.icon ? { icon: input.icon } : {}),
     // A top-level project starts in the current workspace; a sub-project follows its parent (workspaces).
     ...(parentId ? {} : await workspaceFields()),
   })

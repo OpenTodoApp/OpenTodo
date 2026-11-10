@@ -15,6 +15,8 @@ order: 41
 
 **All** next to **Labels** in the sidebar (or <kbd>g</kbd> <kbd>l</kbd>) opens the labels page: every label with its colour, its number of open tasks, a drag handle and a **⋯** menu. The sidebar rows and the label's own page have the same menu, with **Pin to sidebar** to add the label to **Favourites**.
 
+When adding a label with **+** in the sidebar, use **Colour** beside its name to choose a colour, then press <kbd>Enter</kbd> to create the label.
+
 ## Rename, recolour and reorder
 
 - **Rename**: double-click a label, or focus it and press <kbd>F2</kbd>. A name another label already has is refused, and the old name stays.
