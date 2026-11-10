@@ -35,16 +35,16 @@ afterEach(() => { window.matchMedia = original; vi.unstubAllGlobals(); width = 3
 const addButton = () => document.querySelector<HTMLElement>('[data-add-button]')
 
 /**
- * Whether the stylesheet's rule hiding the add button applies now (tests load no CSS, and
- * happy-dom's `:has` is unreliable): the rule is there, the button is a later sibling of the
- * app frame, and the frame holds a selection bar's dock.
+ * Whether the stylesheet's rule hiding the add button applies now (tests load no CSS): the
+ * rule reads the root's mark, which the selection bar sets while it shows. No rule of the
+ * bar uses `:has()` over the list, which restyled 2,000 rows on every change (issue 1179).
  */
 const stepsAside = () => {
-  expect(css).toMatch(/\[data-app-frame\]:has\(\[data-selection-dock\]\) ~ \[data-add-button\]:not\(\[aria-expanded="true"\]\) \{ visibility: hidden;/)
-  const frame = document.querySelector('[data-app-frame]')!
-  expect(addButton()!.parentElement).toBe(frame.parentElement)
-  expect(frame.compareDocumentPosition(addButton()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-  return !!frame.querySelector('[data-selection-dock]')
+  expect(css).toMatch(/:root\[data-selection-docked\] \[data-add-button\]:not\(\[aria-expanded="true"\]\) \{ visibility: hidden;/)
+  expect(css).not.toMatch(/:has\(\[data-selection-dock\]\)/)
+  const marked = document.documentElement.hasAttribute('data-selection-docked')
+  expect(marked).toBe(!!document.querySelector('[data-selection-dock]'))
+  return marked
 }
 const row = (title: string) => [...document.querySelectorAll<HTMLElement>('li[data-task-id]')].find((li) => li.textContent?.includes(title))!
 
