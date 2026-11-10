@@ -28,6 +28,7 @@ import { t } from './i18n'
 import { uuid } from './ids'
 import { onTestTeardown } from './testTeardown'
 import { resettable } from './moduleState'
+import { platform, type Channel } from './platform'
 import { messageOf } from './errorText'
 import { createStore } from './store'
 import { holdLiveSnapshots } from './liveSnapshot'
@@ -78,7 +79,7 @@ let controller: AbortController | null = null
 /** Failed exchanges in a row without an answer (offline, timeout): the retry backs off. */
 let failures = 0
 let retryTimer: ReturnType<typeof setTimeout> | null = null
-/** Removes the window and document listeners startSync added. */
+/** Removes the listeners startSync added (platform visibility and network). */
 let removeListeners: (() => void) | null = null
 
 /** The session's local data went away while an exchange waited (client-sync-robustness). */
@@ -187,7 +188,7 @@ export function syncNow(): Promise<void> {
 }
 
 function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && navigator.onLine === false
+  return !platform.network.online()
 }
 
 /** The shape every sync answer has; anything else did not come from the sync endpoint. */
@@ -712,31 +713,22 @@ export function startSync(): void {
     requestSync()
   })
   const offs: (() => void)[] = [offMutation, () => onUploadRequest(null)]
-  if (typeof window !== 'undefined') {
-    const onOnline = () => {
-      requestSync(0)
+  offs.push(platform.network.onOnline(() => {
+    requestSync(0)
+    attempts = 0
+    failures = 0
+    connectLive()
+    void refreshEvents()
+  }), platform.visibility.onChange((visible) => {
+    if (!visible) return
+    requestSync(0)
+    // Mobile browsers drop the stream silently in the background; reconnect now
+    // instead of waiting out the backoff.
+    if (!source) {
       attempts = 0
-      failures = 0
       connectLive()
-      void refreshEvents()
     }
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        requestSync(0)
-        // Mobile browsers drop the stream silently in the background; reconnect now
-        // instead of waiting out the backoff.
-        if (!source) {
-          attempts = 0
-          connectLive()
-        }
-      }
-    }
-    const win = window
-    const doc = document
-    win.addEventListener('online', onOnline)
-    doc.addEventListener('visibilitychange', onVisible)
-    offs.push(() => win.removeEventListener('online', onOnline), () => doc.removeEventListener('visibilitychange', onVisible))
-  }
+  }))
   removeListeners = () => offs.forEach((off) => off())
   electLeader()
 }
@@ -827,10 +819,10 @@ onTestTeardown(stopSyncAndWait)
 // ---- one tab syncs (client-sync-robustness) ----
 //
 // Every tab of the app shares one database and one device id. Only the tab that
-// holds the Web Lock runs the loop (exchanges, timer, live channel); the others
-// ask it to sync over a BroadcastChannel and show the status it broadcasts.
-// When the leader closes, the lock passes to another tab. Without Web Locks or
-// BroadcastChannel every tab syncs on its own, as before.
+// holds the lock runs the loop (exchanges, timer, live channel); the others ask
+// it to sync over the channel and show the status it broadcasts. When the leader
+// closes, the lock passes to another tab. Without a shared lock (platform.leader:
+// no Web Locks or BroadcastChannel, or the native app) every instance syncs on its own.
 
 const LOCK_NAME = 'opentodo-sync'
 const CHANNEL_NAME = 'opentodo-sync'
@@ -845,27 +837,21 @@ type Message =
 
 /** True while this tab runs the sync loop (always, without coordination). */
 let leader = false
-let channel: BroadcastChannel | null = null
+let channel: Channel | null = null
 let lockAbort: AbortController | null = null
 let releaseLock: (() => void) | null = null
 const waiting = new Map<string, () => void>()
 const signOutListeners = new Set<() => void>()
 
-function coordination(): LockManager | null {
-  if (typeof navigator === 'undefined' || typeof BroadcastChannel === 'undefined') return null
-  return typeof navigator.locks?.request === 'function' ? navigator.locks : null
-}
-
 function post(msg: Message): void {
   try {
-    channel?.postMessage(msg)
+    channel?.post(msg)
   } catch {
     // A closed channel: nothing to tell.
   }
 }
 
-function onMessage(ev: MessageEvent<Message>): void {
-  const msg = ev.data
+function onMessage(msg: Message): void {
   if (msg.type === 'signout') {
     for (const fn of signOutListeners) fn()
     return
@@ -893,21 +879,21 @@ function onMessage(ev: MessageEvent<Message>): void {
 }
 
 function electLeader(): void {
-  const locks = coordination()
-  if (!locks) {
+  const locks = platform.leader
+  channel = locks && platform.broadcast(CHANNEL_NAME)
+  if (!locks || !channel) {
     lead()
     return
   }
   leader = false
-  channel = new BroadcastChannel(CHANNEL_NAME)
-  channel.onmessage = onMessage
+  channel.on((m) => onMessage(m as Message))
   const abort = new AbortController()
   lockAbort = abort
-  locks.request(LOCK_NAME, { signal: abort.signal }, () => new Promise<void>((resolve) => {
+  locks.request(LOCK_NAME, () => new Promise<void>((resolve) => {
     if (abort.signal.aborted || !started) return resolve()
     releaseLock = resolve
     lead()
-  })).catch(() => undefined)
+  }), abort.signal).catch(() => undefined)
   // Until the lock is ours, the leader (if any) syncs for this tab too.
   post({ type: 'sync' })
 }
@@ -922,7 +908,6 @@ function resign(): void {
   releaseLock = null
   if (release) void (current ?? Promise.resolve()).catch(() => undefined).finally(release)
   if (channel) {
-    channel.onmessage = null
     channel.close()
     channel = null
   }
@@ -956,10 +941,9 @@ export function announceSignOut(): void {
     post({ type: 'signout' })
     return
   }
-  if (typeof BroadcastChannel === 'undefined') return
-  const c = new BroadcastChannel(CHANNEL_NAME)
-  c.postMessage({ type: 'signout' } satisfies Message)
-  c.close()
+  const c = platform.broadcast(CHANNEL_NAME)
+  c?.post({ type: 'signout' } satisfies Message)
+  c?.close()
 }
 
 /** Subscribes to sign-outs in other tabs; returns an unsubscribe function. */
@@ -970,10 +954,9 @@ export function onSignOutElsewhere(fn: () => void): () => void {
 
 /**
  * Runs fn while holding the sync lock, so no tab's exchange runs at the same
- * time (sign-out clears the local data in it). Runs fn directly without Web Locks.
+ * time (sign-out clears the local data in it). Runs fn directly without a shared lock.
  */
 export async function withSyncLock<T>(fn: () => Promise<T>): Promise<T> {
-  const locks = coordination()
-  if (!locks) return fn()
-  return locks.request(LOCK_NAME, fn) as Promise<T>
+  const locks = platform.leader
+  return locks ? locks.request(LOCK_NAME, fn) : fn()
 }

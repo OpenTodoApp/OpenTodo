@@ -1,0 +1,11 @@
+{
+  "$comment": "The modules of web/src/lib the native app shares (native-app-foundation D2). Seeded by hand with the sync-path modules on the platform port (task 1.1); from task 4.1, mobile/app/scripts/shared-modules.mjs generates it from the app's import graph. scripts/shared-boundary.mjs refuses a browser global in a listed module.",
+  "modules": [
+    "web/src/lib/dates.ts",
+    "web/src/lib/http.ts",
+    "web/src/lib/ops.ts",
+    "web/src/lib/platform.ts",
+    "web/src/lib/sync.ts",
+    "web/src/lib/trash.ts"
+  ]
+}

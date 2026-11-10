@@ -56,8 +56,8 @@ The app lives in `mobile/app/` (rejected: a separate repo).
 ```ts
 interface Platform {
   visibility: { visible(): boolean; onChange(fn: (visible: boolean) => void): () => void }
-  network:    { online(): boolean;  onChange(fn: (online: boolean) => void): () => void }
-  leader:     { request<T>(name: string, fn: () => Promise<T>): Promise<T> } // Web Locks, or immediate
+  network:    { online(): boolean;  onOnline(fn: () => void): () => void }
+  leader:     { request<T>(name: string, fn: () => Promise<T>, signal?: AbortSignal): Promise<T> } | null // Web Locks, or null: lead at once
   broadcast:  (name: string) => { post(m: unknown): void; on(fn: (m: unknown) => void): () => void; close(): void } | null
   prefs:      { get(k: string): string | null; set(k: string, v: string): void; remove(k: string): void }
   timeZone:   { current(): string; onChange(fn: () => void): () => void }
@@ -67,7 +67,7 @@ interface Platform {
 - **On the web.** The web implementation is exactly today's code: `document.visibilityState`, `navigator.onLine`, `navigator.locks`, `BroadcastChannel`, `localStorage`, and the time-zone watcher in `dates.ts`.
 - **In the app.**
   - Visibility comes from `AppState`, and the network from `@react-native-community/netinfo`.
-  - The leader runs immediately, because there is one process. Broadcast is `null`.
+  - The leader is `null`, so the one process leads at once. Broadcast is `null`.
   - `prefs` is MMKV, and the time zone comes from `expo-localization`.
 - **What uses it.** `sync.ts`, `http.ts` and `dates.ts` use the port and no longer touch globals. A repo check lists every browser global in a module of `shared-modules.json` and fails on a new one, so the boundary cannot erode.
 - **Cost on the web.** It moves code and adds no behaviour. The first-load gzip budget is near its limit, so the port must stay within it. The design target is under 150 bytes, which `make bundle-budget` reports.
