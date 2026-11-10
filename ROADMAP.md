@@ -179,6 +179,7 @@ The assistant's answers show the app's own interface (`assistant-generative-ui`,
 | [`assistant-in-context`](openspec/changes/assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
 | [`assistant-routine-blocks`](openspec/changes/archive/2026-11-10-assistant-routine-blocks/) | **Shipped.** Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
 | [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
+| [`assistant-eval-gaps`](openspec/changes/assistant-eval-gaps/) | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | |
 | [`mcp-blocks`](openspec/changes/archive/2026-11-10-mcp-blocks/) | **Shipped.** Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
 
 They land in waves:

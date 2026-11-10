@@ -17,7 +17,7 @@ Tasks the assistant names are links to the task, with its current title, struck 
 
 Where it saves reading, an answer shows the app's own view of what it talks about, read from this device, so it stays current and works offline:
 
-- **Tasks**: rows with their checkbox, dates and project. Ticking one completes it, with **Undo** as everywhere.
+- **Tasks**: two or more as rows with their checkbox, dates and project. Ticking one completes it, with **Undo** as everywhere. A single task is a link in the answer instead.
 - **A day or a week**: each day with its planned total against your working day and its tasks in time order. Select a day to open it in the calendar.
 - **A choice**: when the assistant needs a decision, its answers as buttons. Selecting one sends it as your reply; **Something else** puts the cursor in the message box.
 - **Places**: tasks' places and saved places on the map with a numbered list, or the list alone when maps are off.
@@ -33,7 +33,7 @@ These views are read-only, apart from ticking tasks. An answer shows at most fou
 
 ## Suggested next steps
 
-The latest answer may end with up to three next steps, such as **Move them to Friday**; selecting one sends it as your message.
+The latest answer may end with up to three next steps, such as **Move them to Friday**; selecting one sends it as your message. They never replace the answer: it always says something, such as what it looked for when nothing was found.
 
 ## Copy, regenerate, edit
 
