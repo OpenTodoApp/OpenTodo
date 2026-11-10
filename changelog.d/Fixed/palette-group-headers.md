@@ -1,0 +1,1 @@
+- **The command palette lists each group once, right above its results.** Typing a word that matched tasks, projects and commands showed the Tasks, Projects and Commands headings several times, piled up above the results; each heading now sits over its own rows.

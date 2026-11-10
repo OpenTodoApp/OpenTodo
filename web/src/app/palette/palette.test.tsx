@@ -318,6 +318,35 @@ describe('sections and shortcuts from the registry (ux-overhaul 6.4, 6.5)', () =
     await r.unmount()
   })
 
+  it('each group has one heading, right above its own rows, while typing on (issue #1183)', async () => {
+    // Ranked alone, these interleave: the prefix matches of each kind, then the word matches of each.
+    await createTask({ title: 'Garden chairs' })
+    await createProject({ name: 'Garden' })
+    await createTask({ title: 'Water the garden' })
+    await createProject({ name: 'Backyard garden' })
+    const r = await render(<CommandPalette user={user} onClose={() => {}} showShortcuts={() => {}} />)
+    await waitFor(() => !!field(), 'the search field')
+    const rows = () => [...document.querySelectorAll('[data-palette] [role="listbox"] > li:not([data-more])')]
+      .map((li) => (li.getAttribute('role') === 'option' ? 'option' : `# ${li.textContent}`))
+    for (const q of ['gar', 'gard', 'garden']) {
+      await type(field(), q)
+      await waitFor(() => options().some((o) => o.includes('Water the garden')) && options().some((o) => o.includes('Backyard garden')), `results for "${q}"`)
+      const list = rows()
+      const heads = list.filter((x) => x.startsWith('# '))
+      expect(new Set(heads).size).toBe(heads.length)
+      // Every heading sits directly above a row of its group, never above another heading.
+      list.forEach((x, i) => { if (x.startsWith('# ')) expect(list[i + 1]).toBe('option') })
+      const group = (name: string) => {
+        const from = list.indexOf(`# ${name}`) + 1
+        const to = list.findIndex((x, i) => i >= from && x.startsWith('# '))
+        return list.slice(from, to < 0 ? undefined : to).length
+      }
+      expect(group('Tasks')).toBe(2)
+      expect(group('Projects')).toBe(2)
+    }
+    await r.unmount()
+  })
+
   it('an empty box lists recent picks under "Recent", from the pick history', async () => {
     const id = await createTask({ title: 'Picked again' })
     await recordPick('palette', `task:${id}`)
