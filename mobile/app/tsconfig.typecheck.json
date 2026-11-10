@@ -1,0 +1,15 @@
+{
+  "//": "npm run typecheck. A package a shared module (web/src/lib) names is typed from this app's node_modules, as Metro and Jest resolve it, never from web/node_modules; dexie-react-hooks never runs in the app and has only its signature (types/). Kept out of tsconfig.json because Expo's Jest preset turns those paths into module aliases.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@shared/*": ["../../web/src/lib/*"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "dexie": ["./node_modules/dexie"],
+      "dexie-react-hooks": ["./types/dexie-react-hooks.d.ts"],
+      "yjs": ["./node_modules/yjs"]
+    }
+  }
+}

@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
+.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
@@ -84,6 +84,16 @@ obsidian-e2e:
 obsidian-review:
 	cd obsidian/review && npm ci --no-audit --no-fund
 	node obsidian/review/review.mjs
+
+## The native app (native-app-foundation): its own install (npm ci in mobile/app, never
+## web's), type-check, lint, the Jest tests with the shared vectors, and the shared
+## module list against the app's import graph (advisory until 4.1 is complete). Linux
+## is enough; the iOS and Android builds run in CI (app-ios, app-android). Not part of
+## `make check` unless APP=1. See mobile/README.md.
+app:
+	cd mobile/app && npm ci --no-audit --no-fund
+	cd mobile/app && npm run typecheck && npm run lint && npm test -- --ci
+	node mobile/app/scripts/shared-modules.mjs --check --advisory
 
 ## The Android app (native-shells): unit tests, lint, the AndroidX-only dependency
 ## check, translations, store metadata and a debug APK. Needs JDK 17+ and the
@@ -355,6 +365,7 @@ brand-icons:
 	node scripts/brand-icons.mjs
 
 check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
+	@if [ -n "$(APP)" ]; then $(MAKE) app; fi
 
 ## The parts of `make check` that CI runs in its Checks job (the others run in the web,
 ## server and extension jobs; scripts/repo-checks.test.mjs keeps the two lists whole).

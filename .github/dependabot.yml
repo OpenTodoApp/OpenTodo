@@ -32,6 +32,21 @@ updates:
       web-minor-and-patch:
         update-types: [minor, patch]
 
+  # The native app (native-app-foundation D9): one weekly pull request for all of its
+  # packages, so its lockfile does not churn the queue. An Expo SDK upgrade is a pull
+  # request of its own (major versions wait 30 days like the others).
+  - package-ecosystem: npm
+    directory: /mobile/app
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+      semver-major-days: 30
+    open-pull-requests-limit: 1
+    groups:
+      app:
+        patterns: ["*"]
+
   # The Android app (native-shells): AndroidX, the Android Gradle plugin, Kotlin.
   - package-ecosystem: gradle
     directory: /mobile/android

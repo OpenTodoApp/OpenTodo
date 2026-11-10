@@ -1,0 +1,85 @@
+name: App builds
+
+# The native app's iOS and Android builds (OpenSpec change native-app-foundation D8, D9):
+# the native projects are generated from mobile/app/app.config.ts (`expo prebuild`), never
+# committed, and built here with no signing. ci.yml calls this for a pull request that
+# changes mobile/app/ and for release tags; nightly.yml calls it every night. A change to
+# a shared module runs only the Linux app-check job in ci.yml, never these. Actions → App
+# builds → Run workflow builds any branch by hand.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Called from CI or Nightly, or run by hand: one run per ref and trigger; a new push to a
+# pull request cancels the builds of the previous one.
+concurrency:
+  group: app-native-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Prebuild and a Release build for the simulator: Release, so the JavaScript bundle is
+  # compiled to Hermes bytecode and embedded, which checks the whole bundle too. The
+  # newest Xcode on the runner, as for the TestFlight upload.
+  app-ios:
+    name: App on iOS (prebuild, simulator build)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/app/package-lock.json
+      - name: Newest Xcode
+        run: scripts/release/ios-testflight.sh xcode
+      - run: npm ci --no-audit --no-fund
+        working-directory: mobile/app
+      - name: Prebuild (ios/ from app.config.ts, CocoaPods)
+        working-directory: mobile/app
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform ios
+      - name: Simulator build (Release, unsigned)
+        working-directory: mobile/app/ios
+        run: |
+          xcodebuild build -quiet -workspace OpenTodoPreview.xcworkspace -scheme OpenTodoPreview -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+          app=build/Build/Products/Release-iphonesimulator/OpenTodoPreview.app
+          test -f "$app/main.jsbundle" || { echo "::error::no JavaScript bundle in $app"; exit 1; }
+          du -sh "$app"
+
+  # Prebuild, a debug build for the emulator's ABI only (the four-ABI build is the
+  # release's) and the app module's unit tests. The JDK is the one the Android shell pins.
+  app-android:
+    name: App on Android (prebuild, debug build, unit tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/app/package-lock.json
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21.0.13+9
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - run: npm ci --no-audit --no-fund
+        working-directory: mobile/app
+      - name: Prebuild (android/ from app.config.ts)
+        working-directory: mobile/app
+        env:
+          CI: "1"
+        run: npx expo prebuild --platform android --no-install
+      - name: Debug build and unit tests
+        working-directory: mobile/app/android
+        run: |
+          ./gradlew --no-daemon -PreactNativeArchitectures=x86_64 :app:assembleDebug :app:testDebugUnitTest
+          ls -l app/build/outputs/apk/debug/

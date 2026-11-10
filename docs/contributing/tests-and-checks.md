@@ -58,6 +58,6 @@ Changing the public surface (a route, a field, an error code, an MCP tool, an `o
 
 ## CI tiers
 
-A pull request runs the jobs its paths need (`scripts/ci-changes.sh`): the checks always; for code, the web, server and image jobs and one binary; a Chromium layout and end-to-end job when the app or server changes; Storybook checks for `web/src`; Android, extension and Obsidian jobs for their own directories. A change to `web/` also runs the accessibility gate on every real screen.
+A pull request runs the jobs its paths need (`scripts/ci-changes.sh`): the checks always; for code, the web, server and image jobs and one binary; a Chromium layout and end-to-end job when the app or server changes; Storybook checks for `web/src`; Android, extension and Obsidian jobs for their own directories; the native app's checks for `mobile/app/` and the shared modules it uses, and its iOS and Android builds only for `mobile/app/` ([Work on the native app](native-app.md#ci-lanes)). A change to `web/` also runs the accessibility gate on every real screen.
 
-A push to `main` or a release tag runs every job: WebKit, German and French layouts, all binaries. Every night CI runs the race detector, the upgrade check, the full accessibility matrix, fuzzing and the [performance budgets](../performance.md); a failed night opens an issue labelled `ci-nightly`.
+A push to `main` or a release tag runs every job: WebKit, German and French layouts, all binaries (the native app's builds only on tags). Every night CI runs the race detector, the upgrade check, the full accessibility matrix, fuzzing, the native app's builds and the [performance budgets](../performance.md); a failed night opens an issue labelled `ci-nightly`.
