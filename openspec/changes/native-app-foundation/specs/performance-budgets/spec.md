@@ -16,4 +16,4 @@ The budgets SHALL be kept as data beside the web budgets in `scripts/perf/budget
 
 #### Scenario: Storage choice
 - **WHEN** the storage spike measures both candidates
-- **THEN** the chosen candidate meets the cold start, Inbox and pull-page budgets, and the numbers are recorded in the change's design
+- **THEN** the numbers of both candidates are recorded in the change's design, and the storage the app uses (a candidate that meets the cold start, Inbox and pull-page budgets, or else the fallback adapter of the design) meets them when `app-perf` measures it

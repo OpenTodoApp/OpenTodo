@@ -10,11 +10,6 @@ name: App builds
 on:
   workflow_call:
   workflow_dispatch:
-    inputs:
-      storage_spike:
-        description: Run the storage spike (native-app-foundation task 2) instead of the builds
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -31,7 +26,6 @@ jobs:
   # newest Xcode on the runner, as for the TestFlight upload.
   app-ios:
     name: App on iOS (prebuild, simulator build)
-    if: ${{ !inputs.storage_spike }}
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -63,7 +57,6 @@ jobs:
   # release's) and the app module's unit tests. The JDK is the one the Android shell pins.
   app-android:
     name: App on Android (prebuild, debug build, unit tests)
-    if: ${{ !inputs.storage_spike }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -91,84 +84,3 @@ jobs:
         run: |
           ./gradlew --no-daemon -PreactNativeArchitectures=x86_64 :app:assembleDebug :app:testDebugUnitTest
           ls -l app/build/outputs/apk/debug/
-
-  # The measured storage spike (task 2, design D4): the perfseed 10,000-task account on the
-  # iOS simulator with Dexie on candidate A (fake-indexeddb in memory, persisted to SQLite
-  # through op-sqlite) and candidate B (indexeddbshim over SQLite). A Release simulator
-  # build of the spike's own entry (mobile/app/spike/index.ts, never the app's), launched
-  # by spike/host.mjs once per candidate to seed it and three times cold to measure.
-  # Uploads storage-spike: results.json and the reference run on the runner. By hand only:
-  #   gh workflow run app-native.yml --ref <branch> -f storage_spike=true
-  storage-spike:
-    name: Storage spike (iOS simulator)
-    if: ${{ inputs.storage_spike }}
-    runs-on: macos-15
-    timeout-minutes: 180
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: mobile/app/package-lock.json
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: go.mod
-      - name: Newest Xcode
-        run: scripts/release/ios-testflight.sh xcode
-      - run: npm ci --no-audit --no-fund
-        working-directory: mobile/app
-      - name: The 10,000-task account, pulled as a new device would, and its local rows
-        run: |
-          mkdir -p dist/storage-spike
-          CGO_ENABLED=0 go build -trimpath -o bin/opentodo ./cmd/opentodo
-          go run ./cmd/perfseed -data "$RUNNER_TEMP/fixture"
-          node mobile/app/spike/host.mjs dump "$RUNNER_TEMP/fixture" bin/opentodo "$RUNNER_TEMP/ops.json"
-          cd mobile/app
-          SPIKE_OPS="$RUNNER_TEMP/ops.json" SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js rows
-          ls -l "$RUNNER_TEMP/ops.json" "$RUNNER_TEMP/rows.json"
-      - name: Reference run on the runner (Node, node:sqlite)
-        continue-on-error: true
-        timeout-minutes: 30
-        working-directory: mobile/app
-        run: SPIKE_CANDIDATES=A SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js local 2>&1 | tee ../../dist/storage-spike/node-reference.txt
-      - name: The spike's entry, Metro and Babel configuration instead of the app's
-        working-directory: mobile/app
-        run: |
-          npm pkg set main=spike/index.ts
-          mv metro.config.js metro.app.config.js
-          cp spike/metro.config.js metro.config.js
-          cp spike/babel.config.js babel.config.js
-      - name: Prebuild (ios/ from app.config.ts, CocoaPods)
-        working-directory: mobile/app
-        env:
-          CI: "1"
-        run: |
-          npx expo prebuild --platform ios
-          # The spike's host is plain HTTP on 127.0.0.1.
-          plutil -replace NSAppTransportSecurity -json '{"NSAllowsArbitraryLoads":true,"NSAllowsLocalNetworking":true}' ios/OpenTodoPreview/Info.plist
-      - name: Simulator build (Release, unsigned)
-        working-directory: mobile/app/ios
-        run: |
-          xcodebuild build -quiet -workspace OpenTodoPreview.xcworkspace -scheme OpenTodoPreview -configuration Release \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO
-          du -sh build/Build/Products/Release-iphonesimulator/OpenTodoPreview.app
-      - name: Measure on the simulator
-        working-directory: mobile/app
-        run: |
-          sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone 1[6-9]$/p' | head -1)
-          [ -n "$sim" ] || sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
-          echo "simulator: $sim"
-          xcrun simctl boot "$sim"
-          xcrun simctl bootstatus "$sim" -b
-          xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/OpenTodoPreview.app
-          node spike/host.mjs run "$RUNNER_TEMP/rows.json" app.open-todo.preview ../../dist/storage-spike/results.json 3
-      - name: Summary
-        if: always()
-        run: |
-          { echo '```json'; cat dist/storage-spike/results.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: storage-spike
-          path: dist/storage-spike
