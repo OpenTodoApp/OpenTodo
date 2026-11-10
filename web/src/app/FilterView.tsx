@@ -379,7 +379,11 @@ function useFilterDraft(initialQuery: string, query: string, display: ViewDispla
     void currentWorkspaceId().then(async (id) => {
       // Another workspace: the one being left keeps the page as it was.
       const prev = wsRef.current
-      if (prev !== null && prev !== id && !quiet.current) await saveFilterDraft(prev, toDraft(latest.current.query, latest.current.display))
+      // Still the same workspace, or the directory arriving after the page opened ('' to
+      // its default): not a switch, so the page keeps what was typed meanwhile.
+      if (prev === id) return
+      if (prev === '') { wsRef.current = id; setWs(id); return }
+      if (prev !== null && !quiet.current) await saveFilterDraft(prev, toDraft(latest.current.query, latest.current.display))
       const d = await getFilterDraft(id)
       if (!live) return
       if (d) {
