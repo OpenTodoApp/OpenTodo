@@ -180,6 +180,9 @@ function narrow(t: TabItem, word: boolean): ReactNode {
   return <>
     {t.icon && <Icon name={t.icon} size="sm" />}
     {(word || !t.icon) && <span>{t.word ?? t.label}</span>}
+    {/* A real space between the word and its value, so the visible text ("Comments 4") is part of the
+        accessible name ("Comments, 4"); a flex row does not draw it (axe label-content-name-mismatch). */}
+    {(word || !t.icon) && shown && ' '}
     {shown && <span className="tabular-nums" data-tab-value>{shown}</span>}
   </>
 }
