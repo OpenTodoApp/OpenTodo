@@ -5,13 +5,14 @@
 import { useRef, useState } from 'react'
 import { Popover, Tooltip } from '../ui'
 import { currentLocale, t } from '../lib/i18n'
+import { priorityName } from '../lib/priority'
 import type { Urgency, UrgencyPart } from '../lib/urgency'
 
 function partLabel({ key, n }: UrgencyPart): string {
   switch (key) {
     case 'due': return n === 0 ? t('Due today') : n > 0 ? t('Due in {n} d', { n }) : t('Due {n} d ago', { n: -n })
     case 'deadline': return n === 0 ? t('Deadline today') : n > 0 ? t('Deadline in {n} d', { n }) : t('Deadline passed')
-    case 'priority': return t('Priority {p}', { p: n })
+    case 'priority': return priorityName(n)
     case 'blocks': return t('Blocks {n, plural, one {# task} other {# tasks}}', { n })
     case 'age': return t('Age {n} d', { n })
     case 'timer': return t('Timer running')
