@@ -4,7 +4,7 @@
 // and Project, the panel's own editors, and Open details. Enter or a click away saves,
 // Esc discards the title change, Shift+Enter saves and opens the panel. The title is
 // the panel's TitleField, so `tomorrow p1 #work` typed here applies as it does there.
-import { type FocusEvent, type KeyboardEvent, useMemo, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, lazy, Suspense, useMemo, useRef, useState } from 'react'
 import { describeDue, localDueOf, logicalToday } from '../../lib/dates'
 import { sectorLabel } from '../../lib/sectorNames'
 import { removeLabel, resolveLabels } from '../../lib/labels'
@@ -16,12 +16,15 @@ import { act } from '../actionError'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { ProjectPickerField } from '../ProjectPickerField'
 import { FacetEditor } from '../task-detail/FacetEditor'
-import { WhenControl } from '../task-detail/WhenControl'
 import { TitleField } from '../TitleField'
 import { commitTitleEdit } from '../titleEdit'
 import { moveWithUndo } from '../undoable'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
+
+// Date opens the row's Schedule popover, loaded on first use like the row's own, so the
+// When editor stays out of the list's first load (when-picker).
+const RowSchedule = lazy(() => import('./RowSchedule'))
 
 export interface InlineEditorProps {
   task: Task
@@ -134,9 +137,9 @@ export function EditBar({ task, projects, labelMap, onDetails }: { task: Task; p
       </span>
       <IconButton icon="chevron-right" size="sm" label={t('Open details')} shortcut="Shift+Enter" onClick={onDetails} className="ml-auto" data-open-details />
       {open === 'date' && (
-        <FacetEditor anchor={dateAnchor} icon="calendar-days" title={t('Do on')} onClose={() => setOpen(null)} width="sm:w-[28rem]">
-          <WhenControl task={task} segment="due" />
-        </FacetEditor>
+        <Suspense fallback={null}>
+          <RowSchedule task={task} anchor={dateAnchor} onClose={() => setOpen(null)} />
+        </Suspense>
       )}
       {open === 'labels' && (
         <FacetEditor anchor={labelsAnchor} icon="tag" title={t('Labels')} onClose={() => setOpen(null)}>

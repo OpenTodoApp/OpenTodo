@@ -213,8 +213,8 @@ describe('quickChoices', () => {
   }
   afterEach(() => setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' }))
 
-  it('Do on: today, tomorrow, the coming Saturday, the next week start and no date', () => {
-    expect(dates('due', '2026-10-21', monday)).toEqual({ today: '2026-10-21', tomorrow: '2026-10-22', weekend: '2026-10-24', 'next-week': '2026-10-26', none: null })
+  it('Do on: today, tomorrow, the coming Saturday and the next week start; no "No date", Clear does it (when-picker D5)', () => {
+    expect(dates('due', '2026-10-21', monday)).toEqual({ today: '2026-10-21', tomorrow: '2026-10-22', weekend: '2026-10-24', 'next-week': '2026-10-26' })
     expect(dates('due', '2026-10-21', sunday)['next-week']).toBe('2026-10-25')
   })
 

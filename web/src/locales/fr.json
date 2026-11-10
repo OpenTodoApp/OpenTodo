@@ -1835,10 +1835,8 @@
   "Fix {fg} on {bg}": "Corriger {fg} sur {bg}",
   "Fixed to a time zone (now):": "Fixée à un fuseau horaire (maintenant) :",
   "Fixed to a time zone:": "Fixée à un fuseau horaire :",
-  "Fixed to {zoneCity}": "Fixée à {zoneCity}",
   "Floating": "Flottante",
   "Floating (now):": "Flottante (maintenant) :",
-  "Floating time": "Heure flottante",
   "Floating:": "Flottante :",
   "Flow": "Déroulement",
   "Flow set to {flow}": "Déroulement : {flow}",
@@ -2487,7 +2485,6 @@
   "List at most {n} labels.": "Indiquez au plus {n} étiquettes.",
   "List at most {n} repositories or projects.": "Indiquez au plus {n} dépôts ou projets.",
   "List text size": "Taille du texte des listes",
-  "Listed in the evening group of Today": "Listée dans le groupe du soir d’Aujourd’hui",
   "Listed on the All projects page, where each can be restored.": "Listés sur la page Tous les projets, où chacun peut être restauré.",
   "Listening": "Écoute en cours",
   "Listening {time}": "Écoute en cours {time}",
@@ -3811,7 +3808,6 @@
   "Remove the saved password": "Retirer le mot de passe enregistré",
   "Remove the skill {name}": "Retirer la compétence {name}",
   "Remove this group": "Supprimer ce groupe",
-  "Remove time": "Retirer l’heure",
   "Remove {condition}": "Supprimer {condition}",
   "Remove {nameOf} from the dashboard": "Retirer {nameOf} du tableau de bord",
   "Remove {name}": "Retirer {name}",
@@ -7331,5 +7327,7 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {note} task {tâche} other {projet}}, {ring, select, centre {au centre} direct {lien direct} other {à deux pas}}",
   "calendar frames and slots": "cadres et lots du calendrier",
   "Expand the row": "Déplier la ligne",
-  "Edit the title, open the details or expand the row. This device only.": "Modifier le titre, ouvrir les détails ou déplier la ligne. Cet appareil seulement."
+  "Edit the title, open the details or expand the row. This device only.": "Modifier le titre, ouvrir les détails ou déplier la ligne. Cet appareil seulement.",
+  "tomorrow 3pm, next fri": "demain 15h, vendredi prochain",
+  "Time of day (choose a date first)": "Moment de la journée (choisissez d’abord une date)"
 }

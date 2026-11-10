@@ -1835,10 +1835,8 @@
   "Fix {fg} on {bg}": "{fg} auf {bg} korrigieren",
   "Fixed to a time zone (now):": "An eine Zeitzone gebunden (jetzt):",
   "Fixed to a time zone:": "An eine Zeitzone gebunden:",
-  "Fixed to {zoneCity}": "Fest auf {zoneCity}",
   "Floating": "Schwebend",
   "Floating (now):": "Schwebend (jetzt):",
-  "Floating time": "Schwebende Zeit",
   "Floating:": "Schwebend:",
   "Flow": "Ablauf",
   "Flow set to {flow}": "Ablauf: {flow}",
@@ -2487,7 +2485,6 @@
   "List at most {n} labels.": "Gib höchstens {n} Labels an.",
   "List at most {n} repositories or projects.": "Gib höchstens {n} Repositories oder Projekte an.",
   "List text size": "Textgröße in Listen",
-  "Listed in the evening group of Today": "In der Abendgruppe von Heute aufgeführt",
   "Listed on the All projects page, where each can be restored.": "Auf der Seite Alle Projekte aufgeführt, wo sich jedes wiederherstellen lässt.",
   "Listening": "Hört zu",
   "Listening {time}": "Hört zu {time}",
@@ -3811,7 +3808,6 @@
   "Remove the saved password": "Gespeichertes Passwort entfernen",
   "Remove the skill {name}": "Die Fähigkeit {name} entfernen",
   "Remove this group": "Diese Gruppe entfernen",
-  "Remove time": "Uhrzeit entfernen",
   "Remove {condition}": "{condition} entfernen",
   "Remove {nameOf} from the dashboard": "{nameOf} aus dem Dashboard entfernen",
   "Remove {name}": "{name} entfernen",
@@ -7331,5 +7327,7 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {Notiz} task {Aufgabe} other {Projekt}}, {ring, select, centre {in der Mitte} direct {direkt verlinkt} other {zwei Schritte entfernt}}",
   "calendar frames and slots": "Kalenderrahmen und Slots",
   "Expand the row": "Zeile aufklappen",
-  "Edit the title, open the details or expand the row. This device only.": "Den Titel bearbeiten, die Details öffnen oder die Zeile aufklappen. Nur dieses Gerät."
+  "Edit the title, open the details or expand the row. This device only.": "Den Titel bearbeiten, die Details öffnen oder die Zeile aufklappen. Nur dieses Gerät.",
+  "tomorrow 3pm, next fri": "morgen 15 Uhr, nächsten Freitag",
+  "Time of day (choose a date first)": "Tageszeit (zuerst ein Datum wählen)"
 }

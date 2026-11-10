@@ -3,7 +3,9 @@ import { useEffect } from 'react'
 import { Badge, Icon, IconButton, Tabs } from '../../ui'
 import type { FacetPart } from '../../lib/facets'
 import { useLabels, useProjects, useTask } from '../../lib/localData'
-import { seedInbox, seedTracking, seeded, withSeed } from '../stories/fixtures'
+import { setDayParts } from '../../lib/dayParts'
+import { updateTask } from '../../lib/ops'
+import { seedInbox, seedTracking, seeded, TOMORROW, withSeed } from '../stories/fixtures'
 import { Facets } from './Facets'
 import { FacetLine } from './FacetLine'
 import { TimeTab } from './TimeTab'
@@ -229,6 +231,19 @@ function SeededWhen() {
 
 export const WhenPopover: StoryObj = {
   ...withSeed(seedInbox),
+  render: () => <SeededWhen />,
+}
+
+/**
+ * The Do on segment of a task due tomorrow at 15:00 with day parts on (when-picker):
+ * the five-way time of day row on Time, and the time line with "Floating" at its end.
+ */
+export const WhenPopoverWithTime: StoryObj = {
+  ...withSeed(async () => {
+    await seedInbox()
+    await setDayParts(true)
+    await updateTask(seeded.inboxTask, { due: { date: TOMORROW, time: '15:00' } })
+  }),
   render: () => <SeededWhen />,
 }
 

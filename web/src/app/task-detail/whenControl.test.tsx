@@ -5,8 +5,10 @@
 // locally first and offline.
 import 'fake-indexeddb/auto'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
+import { dayPartOf } from '../../lib/dayParts'
+import { undoBatch } from '../../lib/undo'
 import { createTask, mutate } from '../../lib/ops'
 import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
@@ -41,10 +43,10 @@ async function queuedFields(id: string, from: number): Promise<Record<string, un
 const queued = (id: string, from: number) => waitFor(async () => Object.keys(await queuedFields(id, from)).length > 0, 'the write queued')
 
 describe('WhenControl', () => {
-  it('shows six segments under one header, focuses the asked one, and Done calls back', async () => {
+  it('shows five segments under one header, focuses the asked one, and Done calls back', async () => {
     const id = await createTask({ title: 'Plan' })
     const { container, seg, onDone, unmount } = await mount(id, 'deadline')
-    expect([...container.querySelectorAll('[data-when-segment]')].map((s) => s.getAttribute('data-when-segment'))).toEqual(['due', 'start', 'deadline', 'evening', 'repeat', 'reminders'])
+    expect([...container.querySelectorAll('[data-when-segment]')].map((s) => s.getAttribute('data-when-segment'))).toEqual(['due', 'start', 'deadline', 'repeat', 'reminders'])
     expect(seg('deadline').contains(document.activeElement)).toBe(true)
     await click(container.querySelector<HTMLButtonElement>('[data-when-close]')!)
     expect(onDone).toHaveBeenCalled()
@@ -102,31 +104,6 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Evening writes the evening flag with no part of the day (day-parts D2)', async () => {
-    const id = await createTask({ title: 'Plan' })
-    const { seg, unmount } = await mount(id, 'evening')
-    expect(seg('evening').querySelector('[data-day-part-control]')).toBeNull()
-    const from = await mark()
-    await click(seg('evening').querySelector('[role="switch"]')!)
-    await queued(id, from)
-    expect(await queuedFields(id, from)).toEqual({ evening: true, day_part: null })
-    await unmount()
-  })
-
-  it('with day parts on, the part control writes the pair with Undo (day-parts D4)', async () => {
-    await mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
-    const id = await createTask({ title: 'Stretch', evening: true })
-    const { seg, unmount } = await mount(id, 'evening')
-    await waitFor(() => !!seg('evening').querySelector('[data-day-part-control]'), 'the part control')
-    expect(seg('evening').querySelector('[role="switch"]')).toBeNull()
-    const from = await mark()
-    await click(seg('evening').querySelector('[data-day-part="morning"]')!)
-    await waitFor(async () => (await db.tasks.get(id))?.day_part === 'morning', 'Morning written')
-    expect(await queuedFields(id, from)).toEqual({ day_part: 'morning', evening: false })
-    await waitFor(() => seg('evening').querySelector('[data-day-part="morning"]')?.getAttribute('aria-checked') === 'true', 'Morning checked')
-    await mutate('user_prefs', USER_PREFS_ID, { day_parts: '' })
-    await unmount()
-  })
 
   it('Repeat writes recurrence only, from a preset or the custom rule', async () => {
     const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
@@ -207,32 +184,188 @@ describe('WhenControl', () => {
     await unmount()
   })
 
-  it('Do on: Tomorrow in one click; Add time with a suggestion; the zone line only with a time', async () => {
-    const id = await createTask({ title: 'Plan' })
-    const { seg, unmount } = await mount(id)
-    let from = await mark()
-    await click(seg('due').querySelector('[data-choice="tomorrow"]')!)
-    await queued(id, from)
-    expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15' } })
-    expect(seg('due').querySelector('[data-zone-line]')).toBeNull()
-    expect(seg('due').textContent).not.toContain('time zone')
-    // Add time comes with the date, once the live task has it.
-    await waitFor(() => !!seg('due').querySelector('[data-add-time]'), 'Add time')
-    await click(seg('due').querySelector('[data-add-time]')!)
-    await waitFor(() => !!seg('due').querySelector('[data-time-suggestion="09:00"]'), 'the time suggestions')
-    from = await mark()
-    await click(seg('due').querySelector('[data-time-suggestion="09:00"]')!)
-    await queued(id, from)
-    expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '09:00' } })
-    await waitFor(() => !!seg('due').querySelector('[data-zone-line]'), 'the zone line')
-    expect(seg('due').querySelector('[data-zone-line]')!.textContent).toContain('Floating time')
-    // Named by its visible word and described by the line (WCAG 2.5.3 Label in Name).
-    const change = seg('due').querySelector<HTMLButtonElement>('[data-zone-line] button[aria-haspopup="dialog"]')!
-    expect(change.textContent).toBe('Change')
-    expect(change.hasAttribute('aria-label')).toBe(false)
-    expect(document.getElementById(change.getAttribute('aria-describedby')!)!.textContent).toBe('Floating time')
-    expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
-    await unmount()
+  // OpenSpec change when-picker: web-app "Do on segment", day-parts "Setting the part of the day".
+  describe('Do on: the time of day row', () => {
+    const row = (seg: (n: string) => HTMLElement) => seg('due').querySelector<HTMLElement>('[data-time-of-day]')!
+    const option = (seg: (n: string) => HTMLElement, id: string) => row(seg).querySelector<HTMLButtonElement>(`[data-segment="${id}"]`)!
+    const checked = (seg: (n: string) => HTMLElement) => row(seg).querySelector('[aria-checked="true"]')?.getAttribute('data-segment')
+    const timeLine = (seg: (n: string) => HTMLElement) => seg('due').querySelector<HTMLElement>('[data-due-time]')
+    /** The task ops queued after `from` were one batch (one timestamp). */
+    const oneBatch = async (id: string, from: number) => new Set((await db.outbox.toArray()).slice(from).filter((o) => o.entityId === id).map((o) => o.ts)).size === 1
+    const undoLast = async () => { await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id) }
+    const partsOn = () => mutate('user_prefs', USER_PREFS_ID, { day_parts: 'on' })
+    afterEach(() => mutate('user_prefs', USER_PREFS_ID, { day_parts: '' }))
+
+    it('the placeholder teaches the field; Tomorrow in one click; no zone and no time-zone hint without a time', async () => {
+      const id = await createTask({ title: 'Plan' })
+      const { seg, unmount } = await mount(id)
+      expect(seg('due').querySelector<HTMLInputElement>('[data-date-words]')!.placeholder).toBe('tomorrow 3pm, next fri')
+      expect(seg('due').querySelector('[data-choice="none"]')).toBeNull()
+      const from = await mark()
+      await click(seg('due').querySelector('[data-choice="tomorrow"]')!)
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15' } })
+      await waitFor(() => !option(seg, 'none').disabled, 'the row enabled')
+      expect(seg('due').querySelector('[data-zone-inline]')).toBeNull()
+      expect(seg('due').textContent).not.toMatch(/time zone|Floating/i)
+      expect(seg('due').querySelector('button[aria-label="Clear due date"]')).toBeNull()
+      await unmount()
+    })
+
+    it('without a date the row is shown disabled, named so; a day picked in the calendar enables it in place', async () => {
+      const id = await createTask({ title: 'Plan' })
+      const { seg, unmount } = await mount(id)
+      expect(row(seg).getAttribute('aria-label')).toBe('Time of day (choose a date first)')
+      expect([...row(seg).querySelectorAll('button')].every((b) => b.disabled)).toBe(true)
+      const place = () => [...row(seg).parentElement!.parentElement!.children].indexOf(row(seg).parentElement!)
+      const before = place()
+      await click(seg('due').querySelector('[data-date="2026-10-20"]')!)
+      await waitFor(() => !option(seg, 'evening').disabled, 'the row enabled')
+      expect(row(seg).getAttribute('aria-label')).toBe('Time of day')
+      expect(place()).toBe(before)
+      await unmount()
+    })
+
+    it('day parts off: Any time, Evening and Time; Evening on a later day writes the flag and never reads "This Evening"', async () => {
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-20' } })
+      const { seg, unmount } = await mount(id)
+      expect([...row(seg).querySelectorAll('[role="radio"]')].map((b) => b.textContent)).toEqual(['Any time', 'Evening', 'Time'])
+      expect(row(seg).getAttribute('role')).toBe('radiogroup')
+      expect(checked(seg)).toBe('none')
+      expect(seg('due').querySelector('[role="switch"]')).toBeNull()
+      const from = await mark()
+      await click(option(seg, 'evening'))
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ evening: true, day_part: null })
+      await waitFor(() => checked(seg) === 'evening', 'Evening selected')
+      expect(seg('due').textContent).not.toContain('This Evening')
+      await unmount()
+    })
+
+    it('day parts on: Morning in the row of a task due at 14:00 clears the time in one batch, and one Undo restores both', async () => {
+      await partsOn()
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-14', time: '14:00' } })
+      const { seg, unmount } = await mount(id)
+      await waitFor(() => row(seg).querySelectorAll('[role="radio"]').length === 5, 'five choices')
+      expect([...row(seg).querySelectorAll('[role="radio"]')].map((b) => b.textContent)).toEqual(['Any time', 'Morning', 'Afternoon', 'Evening', 'Time'])
+      expect(checked(seg)).toBe('time')
+      const from = await mark()
+      await click(option(seg, 'morning'))
+      await waitFor(async () => (await db.tasks.get(id))?.day_part === 'morning', 'Morning written')
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-14' }, day_part: 'morning', evening: false })
+      expect(await oneBatch(id, from)).toBe(true)
+      await waitFor(() => checked(seg) === 'morning' && !timeLine(seg), 'Morning selected, the time line gone')
+      await undoLast()
+      await waitFor(async () => (await db.tasks.get(id))?.due?.time === '14:00', 'undone')
+      expect(await db.tasks.get(id)).toMatchObject({ day_part: null, evening: false })
+      await waitFor(() => checked(seg) === 'time', 'Time selected again')
+      await unmount()
+    })
+
+    it('adding a time: Time on a Morning task opens the line, a suggestion writes it with Any time, Floating at the line end', async () => {
+      await partsOn()
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' }, day_part: 'morning' })
+      const { seg, unmount } = await mount(id)
+      await waitFor(() => checked(seg) === 'morning', 'Morning selected')
+      expect(timeLine(seg)).toBeNull()
+      let from = await mark()
+      await click(option(seg, 'time'))
+      await waitFor(() => !!timeLine(seg)?.querySelector('[data-time-suggestion="09:00"]'), 'the time line')
+      expect(checked(seg)).toBe('time')
+      // Choosing Time writes nothing until a time is chosen.
+      expect(await queuedFields(id, from)).toEqual({})
+      await waitFor(() => document.activeElement === timeLine(seg)!.querySelector('input'), 'the time field focused')
+      from = await mark()
+      await click(timeLine(seg)!.querySelector('[data-time-suggestion="09:00"]')!)
+      await waitFor(async () => (await db.tasks.get(id))?.due?.time === '09:00', 'the time written')
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '09:00' }, day_part: null, evening: false })
+      expect(await oneBatch(id, from)).toBe(true)
+      await waitFor(() => !!timeLine(seg)?.querySelector('[data-zone-inline]'), 'the zone at the line end')
+      expect(timeLine(seg)!.querySelector('input')!.value).toBe('09:00')
+      expect(timeLine(seg)!.querySelector('[data-time-suggestion]')).toBeNull()
+      const zone = timeLine(seg)!.querySelector<HTMLButtonElement>('[data-zone-inline]')!
+      // The visible word is in the name (WCAG 2.5.3); `z` is announced.
+      expect(zone.textContent).toBe('Floating')
+      expect(zone.getAttribute('aria-label')).toBe('Time zone: Floating')
+      expect(zone.getAttribute('aria-keyshortcuts')).toBe('z')
+      expect(seg('due').textContent).not.toMatch(/Add time|Remove time|Change/)
+      await unmount()
+    })
+
+    it('a part replaces the time: Afternoon on a task due tomorrow at 19:30, Undo restores 19:30', async () => {
+      await partsOn()
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-15', time: '19:30' } })
+      const { seg, unmount } = await mount(id)
+      await waitFor(() => !!option(seg, 'afternoon'), 'Afternoon offered')
+      await click(option(seg, 'afternoon'))
+      await waitFor(async () => (await db.tasks.get(id))?.day_part === 'afternoon', 'Afternoon written')
+      expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-15' })
+      await waitFor(() => !timeLine(seg), 'the time line gone')
+      await undoLast()
+      await waitFor(async () => (await db.tasks.get(id))?.due?.time === '19:30', 'undone')
+      expect(dayPartOf((await db.tasks.get(id))!)).toBeNull()
+      await unmount()
+    })
+
+    it('Any time removes the time and writes the Any time pairing', async () => {
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-15', time: '08:00' } })
+      const { seg, unmount } = await mount(id)
+      const from = await mark()
+      await click(option(seg, 'none'))
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15' }, day_part: null, evening: false })
+      await unmount()
+    })
+
+    it('both stored (an older client): Evening selected with the time line, nothing written until a choice', async () => {
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-15', time: '08:00' }, evening: true })
+      const from = await mark()
+      const { seg, unmount } = await mount(id)
+      expect(checked(seg)).toBe('evening')
+      expect(timeLine(seg)!.querySelector('input')!.value).toBe('08:00')
+      expect(await queuedFields(id, from)).toEqual({})
+      // Time keeps the time and clears the part.
+      await click(option(seg, 'time'))
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '08:00' }, day_part: null, evening: false })
+      await unmount()
+    })
+
+    it('typed date and time: tomorrow 3pm on an evening task writes date, time and Any time at once; one Undo restores Evening', async () => {
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-20' }, evening: true })
+      const { seg, unmount } = await mount(id)
+      const field = seg('due').querySelector<HTMLInputElement>('[data-date-words]')!
+      const from = await mark()
+      await type(field, 'tomorrow 3pm')
+      await waitFor(() => seg('due').querySelector('[data-date-preview]')!.textContent!.includes('15:00'), 'the preview')
+      await key(field, 'Enter')
+      await waitFor(async () => (await db.tasks.get(id))?.due?.time === '15:00', 'the date and time written')
+      expect(await queuedFields(id, from)).toEqual({ due: { date: '2026-10-15', time: '15:00' }, day_part: null, evening: false })
+      expect(await oneBatch(id, from)).toBe(true)
+      await waitFor(() => checked(seg) === 'time' && timeLine(seg)?.querySelector('input')?.value === '15:00', 'Time selected with 15:00')
+      await undoLast()
+      await waitFor(async () => (await db.tasks.get(id))?.evening === true, 'undone')
+      expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-10-20' })
+      await unmount()
+    })
+
+    it('keyboard: one tab stop, arrows choose (writing each choice), Time opens the line without taking focus; passes axe', async () => {
+      const id = await createTask({ title: 'Plan', due: { date: '2026-10-15' } })
+      const { seg, unmount } = await mount(id)
+      expect([...row(seg).querySelectorAll('[role="radio"]')].filter((b) => b.getAttribute('tabindex') === '0').map((b) => b.getAttribute('data-segment'))).toEqual(['none'])
+      option(seg, 'none').focus()
+      await key(option(seg, 'none'), 'ArrowRight')
+      await waitFor(async () => (await db.tasks.get(id))?.evening === true && checked(seg) === 'evening', 'Evening by keyboard')
+      expect(document.activeElement).toBe(option(seg, 'evening'))
+      await key(option(seg, 'evening'), 'ArrowRight')
+      await waitFor(() => !!timeLine(seg), 'the time line')
+      expect(document.activeElement).toBe(option(seg, 'time'))
+      expect(checked(seg)).toBe('time')
+      const axe = (await import('axe-core')).default
+      const res = await axe.run(seg('due'), { rules: { 'color-contrast': { enabled: false } } })
+      expect(res.violations.map((v) => v.id)).toEqual([])
+      await unmount()
+    })
   })
 
   // OpenSpec change multi-day-tasks, D2 ("Making a task multi-day").

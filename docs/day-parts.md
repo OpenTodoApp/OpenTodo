@@ -25,12 +25,20 @@ Turning day parts off puts Today back as it was. Nothing is changed on your task
 
 ## Give a task a part
 
-- In the task's **When** editor, **Do on** shows **Any time**, **Morning**, **Afternoon** and **Evening** instead of the Evening switch.
+- In the task's **When** editor, in **Do on**'s row (see [When on that day](#when-on-that-day)).
 - Drag a task onto the **Morning**, **Afternoon**, **This Evening** or **Today** heading in Today.
 - The task's **Actions** menu has **Day part**, for one task or a selection.
 - The command palette has **Move to Morning**, **Afternoon**, **Evening** and **Any time** for the selected task.
 
-Each one can be undone. <kbd>Shift</kbd>+<kbd>E</kbd> still toggles This Evening. Outside Today the part is a chip on the row (**Tomorrow · morning**), in the place of the evening one. Someone who can only view a shared project sees the part but can't change it.
+Each one can be undone. <kbd>Shift</kbd>+<kbd>E</kbd> still toggles This Evening and keeps the time. Outside Today the part is a chip on the row (**Tomorrow · morning**), in the place of the evening one. Someone who can only view a shared project sees the part but can't change it.
+
+## When on that day
+
+Under the calendar of the **When** editor's **Do on**, one row says when on the day: **Any time**, **Evening** or **Time**, plus **Morning** and **Afternoon** while day parts are on. It works once the task has a date, and arrow keys move through it.
+
+- **Time** opens a line with the time and its suggestions, and at its end the [time zone](dates-and-times.md#fix-a-time-to-a-time-zone): **Floating** or a city.
+- In this row a part and a time are one or the other: a part removes the time, and a time sets the part to **Any time**. One **Undo** brings both back. Only this row removes a time.
+- A task that holds both, for example from an older app, shows its part selected and its time under the row; nothing changes until you choose.
 
 ## Type it
 

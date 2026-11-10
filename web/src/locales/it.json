@@ -1835,10 +1835,8 @@
   "Fix {fg} on {bg}": "Correggi {fg} su {bg}",
   "Fixed to a time zone (now):": "Fissata a un fuso orario (ora):",
   "Fixed to a time zone:": "Fissata a un fuso orario:",
-  "Fixed to {zoneCity}": "Fissata a {zoneCity}",
   "Floating": "Fluttuante",
   "Floating (now):": "Fluttuante (ora):",
-  "Floating time": "Ora fluttuante",
   "Floating:": "Fluttuante:",
   "Flow": "Flusso",
   "Flow set to {flow}": "Flusso: {flow}",
@@ -2487,7 +2485,6 @@
   "List at most {n} labels.": "Indica al massimo {n} etichette.",
   "List at most {n} repositories or projects.": "Indica al massimo {n} repository o progetti.",
   "List text size": "Dimensione del testo negli elenchi",
-  "Listed in the evening group of Today": "Elencata nel gruppo serale di Oggi",
   "Listed on the All projects page, where each can be restored.": "Elencati nella pagina Tutti i progetti, dove ognuno può essere ripristinato.",
   "Listening": "In ascolto",
   "Listening {time}": "In ascolto {time}",
@@ -3811,7 +3808,6 @@
   "Remove the saved password": "Rimuovi la password salvata",
   "Remove the skill {name}": "Rimuovi l’abilità {name}",
   "Remove this group": "Rimuovi questo gruppo",
-  "Remove time": "Togli l’ora",
   "Remove {condition}": "Rimuovi {condition}",
   "Remove {nameOf} from the dashboard": "Rimuovi {nameOf} dalla dashboard",
   "Remove {name}": "Rimuovi {name}",
@@ -7331,5 +7327,7 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {nota} task {attività} other {progetto}}, {ring, select, centre {al centro} direct {collegamento diretto} other {a due passi}}",
   "calendar frames and slots": "cornici e slot del calendario",
   "Expand the row": "Espandi la riga",
-  "Edit the title, open the details or expand the row. This device only.": "Modifica il titolo, apri i dettagli o espandi la riga. Solo questo dispositivo."
+  "Edit the title, open the details or expand the row. This device only.": "Modifica il titolo, apri i dettagli o espandi la riga. Solo questo dispositivo.",
+  "tomorrow 3pm, next fri": "domani alle 15, venerdì prossimo",
+  "Time of day (choose a date first)": "Momento della giornata (scegli prima una data)"
 }

@@ -35,6 +35,6 @@ A due date or a deadline that has come always shows the task in Today, even if i
 
 With **Multi-day** on, a task is drawn across the days from its start date to its due date: see [Tasks that span days](tasks-that-span-days.md).
 
-**This Evening** (the **Evening** switch in the same editor, or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. With [day parts](day-parts.md) on, the switch becomes **Any time**, **Morning**, **Afternoon** and **Evening**, and Today groups the day by them.
+**This Evening** (**Evening** in the same editor's [day row](day-parts.md#when-on-that-day), or **Add › This Evening**) moves a task due today into its own group below the day's tasks in Today, and shows a moon on its row elsewhere. With [day parts](day-parts.md) on, the row also offers **Morning** and **Afternoon**, and Today groups the day by them.
 
 From the list: <kbd>n</kbd> parks a task or brings it back, <kbd>Shift</kbd>+<kbd>N</kbd> asks for its start date, and <kbd>Shift</kbd>+<kbd>E</kbd> toggles This Evening.
