@@ -204,7 +204,7 @@ describe('Bento order', () => {
       { id: 'a', entity: 'review', entityId: 'me', field: 'focus_date', value: TODAY, ts: 10, device: 'phone' },
       { id: 'b', entity: 'review', entityId: 'me', field: 'focus', value: ids.join(','), ts: 10, device: 'phone' },
     ])
-    navigate({ view: 'loop' })
+    navigate({ view: 'loop', move: 'do' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     const listed = () => [...document.querySelectorAll('[data-loop-focus] [data-task-id]')].map((x) => x.textContent ?? '')
     await waitFor(() => listed().length === 3, 'the focus on the Loop home')

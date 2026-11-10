@@ -395,7 +395,7 @@ const shots = [
     await p.locator('[data-offer="start"]').getByRole('button', { name: 'Keep my start view' }).click()
     const contexts = p.locator('[data-offer="contexts"]')
     if (await contexts.count()) await contexts.getByRole('button', { name: 'Create them' }).click()
-    await go(p, demoBase, '/loop', () => p.locator('[data-loop-tile="do"]').waitFor()); await settle(p, 300)
+    await go(p, demoBase, '/loop/clarify', () => p.locator('[data-loop-part="clarify"]').waitFor()); await settle(p, 300)
   }, async after(p) {
     await go(p, demoBase, '/settings/account/profile', () => p.locator('[data-method-mode="lists"]').waitFor())
     await p.locator('[data-method-mode="lists"]').click(); await settle(p, 300)

@@ -17,13 +17,13 @@ Five minutes, usually in the morning: open it from the Review screen's menu, the
 
 1. **Process the Inbox** if anything is in it.
 2. Look at what is still open from **Earlier**: complete it, or give it a new date.
-3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown on the Loop home on every device, with how many of them are done. To work through them one at a time with a timer, press <kbd>g</kbd> <kbd>Shift+F</kbd> for [Focus](../focus.md).
+3. Pick **today's focus**: press <kbd>f</kbd> on up to three of today's tasks. They are shown in the Loop home's Do move on every device, with how many of them are done. To work through them one at a time with a timer, press <kbd>g</kbd> <kbd>Shift+F</kbd> for [Focus](../focus.md).
 
 ### Pick the focus by touch
 
 On a phone, or without a keyboard:
 
-- Tap **Add to focus** under Today's focus in the Daily check, or on the Loop home, and choose a task. The picker lists today's and overdue tasks first; type to find any open task.
+- Tap **Add to focus** under Today's focus in the Daily check, or in the Loop home's Do move, and choose a task. The picker lists today's and overdue tasks first; type to find any open task.
 - In a task's menu, choose **Add to focus**, or **Remove from focus** when it is in. The menu is the **⋯** of the task panel or page, the Focus screen's **⋯**, and the **Actions** menu: on a phone, hold the task, then tap **Actions**.
 
 These follow the same rules as <kbd>f</kbd>: at most three tasks, and every change has **Undo**. The focus is yours, so a task of a shared project you only view can be in it too.

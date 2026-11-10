@@ -5,7 +5,7 @@
 // toast, so it applies locally first, works offline and converges like any edit.
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, ComboboxPanel, EmptyState, Notice, PageBody, PageHeader, Dialog } from '../ui'
+import { Button, ComboboxPanel, EmptyState, Icon, Notice, PageBody, PageHeader, Dialog } from '../ui'
 import { formatDate, formatDueLong, logicalToday } from '../lib/dates'
 import { useAllLabels, useMemberships, useProjects, useReminderRows } from '../lib/localData'
 import { moveTaskAcrossScopes } from '../lib/ops'
@@ -80,7 +80,49 @@ function TriageTitle({ task, projects, labels, onLeave }: { task: Task; projects
   )
 }
 
+/** The decision that needs a choice: a day, a project, a person or labels. */
+function Pickers({ picker, task, projects, delegates, onClose, onSchedule, onMove, onDelegate, afterSchedule }: {
+  picker: Exclude<Picker, null>; task: Task; projects: readonly Project[]; delegates: DelegateEntry[]; onClose: () => void
+  onSchedule: (iso: string | null) => void; onMove: (id: string | null) => void; onDelegate: (d: DelegateEntry) => void; afterSchedule: () => void
+}) {
+  if (picker === 'schedule') return <ScheduleSheet task={task} onPick={onSchedule} onClose={() => { onClose(); afterSchedule() }} />
+  if (picker === 'move') {
+    return (
+      <Dialog title={t('Move to a project')} onClose={onClose} size="sm">
+        <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={onMove} />
+      </Dialog>
+    )
+  }
+  if (picker === 'delegate') {
+    return (
+      <Dialog title={t('Delegate')} onClose={onClose} size="sm">
+        <ComboboxPanel<DelegateEntry> label={t('Delegate to')} placeholder={t('Find a person…')} emptyText={t('Nobody matches.')} source={delegates}
+          getKey={(d) => d.key} getLabel={(d) => d.label} rankContext="triage.delegate" onPick={onDelegate} onClose={onClose} />
+      </Dialog>
+    )
+  }
+  return (
+    <Dialog title={t('Labels')} label={t('Labels for task')} onClose={onClose}>
+      <LabelPicker taskId={task.id} onClose={onClose} />
+    </Dialog>
+  )
+}
+
+/** Process the Inbox (`/triage`): the card as its own screen. */
 export function TriageView() {
+  return <Triage />
+}
+
+/**
+ * The same card embedded in the Loop home's Clarify move (loop-guided-dashboard D4):
+ * no page header, Esc and the Vim `:q` close the move, and `onLeft` hears how many
+ * tasks are left. Its keys are registered only while it is mounted, so while Clarify is open.
+ */
+export function TriageCard({ onLeave, onLeft }: { onLeave: () => void; onLeft?: (n: number) => void }) {
+  return <Triage embedded={{ onLeave, onLeft }} />
+}
+
+function Triage({ embedded }: { embedded?: { onLeave: () => void; onLeft?: (n: number) => void } }) {
   const zone = useViewerZone()
   const tasks = useLiveTasks()
   const projects = useProjects()
@@ -159,12 +201,18 @@ export function TriageView() {
     setState((s) => (s ? claim(s, id) : s))
   }, [])
 
+  const onLeave = embedded?.onLeave
   const leave = useCallback(() => {
+    if (onLeave) { onLeave(); return }
     // Back to the Inbox with the current task selected (the list reads ?task=).
     const id = stateRef.current ? current(stateRef.current) : null
     if (id) selectTask.set(id)
     navigate({ view: 'inbox' })
-  }, [])
+  }, [onLeave])
+  // How many are left, the current task included (the Clarify move's "n left").
+  const left = !state ? null : p.done ? 0 : p.total - p.n + 1
+  const onLeft = embedded?.onLeft
+  useEffect(() => { if (left !== null) onLeft?.(left) }, [left, onLeft])
 
   const decide = useCallback(async (kind: 'today' | 'complete' | 'trash' | 'someday' | 'skip') => {
     const item = task
@@ -261,16 +309,20 @@ export function TriageView() {
     { key: 'back', hint: 'k', label: t('Back'), run: () => setState((s) => (s ? back(s) : s)), disabled: !state || state.index === 0 },
   ] : []
 
-  return (
-    <PageBody data-triage>
-      <PageHeader title={t('Process the Inbox')} help="inbox/triage" back={{ label: t('Inbox'), onClick: leave }}
-        meta={meta} subtitle={methodSubtitle} />
+  const body = (
+    <>
       <p className="sr-only" role="status" aria-live="polite" data-triage-live>{announce}</p>
       {notice && <div className="mb-3"><Notice>{notice}</Notice></div>}
       {!state ? null : !task ? (
-        <div data-empty-state="triage">
-          <EmptyState illustration="inbox-zero" title={t('Inbox zero: every task has a place.')} action={{ label: t('Back to the Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
-        </div>
+        embedded ? (
+          <p className="flex items-center gap-2 py-2 text-body text-muted" data-empty-state="triage">
+            <Icon name="circle-check-big" className="shrink-0 text-success" />{t('Inbox zero: every task has a place.')}
+          </p>
+        ) : (
+          <div data-empty-state="triage">
+            <EmptyState illustration="inbox-zero" title={t('Inbox zero: every task has a place.')} action={{ label: t('Back to the Inbox'), onClick: () => navigate({ view: 'inbox' }), shortcut: keysOf('go.inbox') }} />
+          </div>
+        )
       ) : (
         <>
           <section ref={card} tabIndex={-1} aria-label={t('Task {n} of {total}', { n: p.n, total: p.total })} data-triage-card={task.id}
@@ -298,25 +350,16 @@ export function TriageView() {
         </>
       )}
 
-      {task && picker === 'schedule' && (
-        <ScheduleSheet task={task} onPick={(iso) => void schedule(iso)} onClose={() => { setPicker(null); card.current?.focus() }} />
-      )}
-      {task && picker === 'move' && (
-        <Dialog title={t('Move to a project')} onClose={() => setPicker(null)} size="sm">
-          <ProjectPickerField label={t('Project')} projects={projects} value={task.project_id} inbox rankContext="triage.move" onChange={(id) => act(moveTo(id))} />
-        </Dialog>
-      )}
-      {task && picker === 'delegate' && (
-        <Dialog title={t('Delegate')} onClose={() => setPicker(null)} size="sm">
-          <ComboboxPanel<DelegateEntry> label={t('Delegate to')} placeholder={t('Find a person…')} emptyText={t('Nobody matches.')} source={delegates}
-            getKey={(d) => d.key} getLabel={(d) => d.label} rankContext="triage.delegate" onPick={(d) => void delegate(d)} onClose={() => setPicker(null)} />
-        </Dialog>
-      )}
-      {task && picker === 'labels' && (
-        <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPicker(null)}>
-          <LabelPicker taskId={task.id} onClose={() => setPicker(null)} />
-        </Dialog>
-      )}
+      {task && picker && <Pickers picker={picker} task={task} projects={projects} delegates={delegates} onClose={() => setPicker(null)} onSchedule={(iso) => void schedule(iso)}
+        onMove={(id) => act(moveTo(id))} onDelegate={(d) => void delegate(d)} afterSchedule={() => card.current?.focus()} />}
+    </>
+  )
+  if (embedded) return <div data-triage data-triage-embedded>{body}</div>
+  return (
+    <PageBody data-triage>
+      <PageHeader title={t('Process the Inbox')} help="inbox/triage" back={{ label: t('Inbox'), onClick: leave }}
+        meta={meta} subtitle={methodSubtitle} />
+      {body}
     </PageBody>
   )
 }
