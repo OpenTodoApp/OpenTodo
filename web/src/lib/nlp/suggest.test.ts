@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { matchProject } from './attributes'
 import { findLabel } from './quickadd'
-import { energySuggestions, hasExact, insertToken, labelSuggestions, projectSuggestions, tokenAtCaret } from './suggest'
+import { energySuggestions, hasExact, insertToken, labelSuggestions, PRIORITY_SUGGESTIONS, projectSuggestions, tokenAtCaret } from './suggest'
 
 const projects = [
   { id: 'p-home', name: 'Home' }, { id: 'p-homework', name: 'Homework' }, { id: 'p-reno', name: 'Home renovation' },
@@ -22,6 +22,22 @@ describe('tokenAtCaret', () => {
     expect(tokenAtCaret('Call the bank', 9)).toBeNull()
     expect(tokenAtCaret('a#b', 3)).toBeNull()
     expect(tokenAtCaret('Read "#notes', 12)).toBeNull()
+  })
+})
+
+describe('priority suggestions (priority-names D4)', () => {
+  it('a lone p after a space lists the four levels; a word, a whole p1 or a line-start p does not', () => {
+    expect(tokenAtCaret('Pay rent p', 10)).toEqual({ kind: 'priority', start: 9, end: 10, query: '' })
+    expect(tokenAtCaret('Pay rent P', 10)?.kind).toBe('priority')
+    expect(tokenAtCaret('Pay rent pa', 11)).toBeNull()
+    expect(tokenAtCaret('Pay rent p1', 11)).toBeNull()
+    expect(tokenAtCaret('p', 1)).toBeNull()
+    expect(tokenAtCaret('Say "hi p', 9)).toBeNull()
+  })
+  it('picking a level inserts its numeric token, never a name', () => {
+    expect(PRIORITY_SUGGESTIONS.map((s) => s.token)).toEqual(['p1', 'p2', 'p3', 'p4'])
+    const at = tokenAtCaret('Pay rent p', 10)!
+    expect(insertToken('Pay rent p', at, PRIORITY_SUGGESTIONS[0].token)).toEqual({ value: 'Pay rent p1 ', caret: 12 })
   })
 })
 

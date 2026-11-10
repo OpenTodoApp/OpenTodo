@@ -20,6 +20,7 @@ import {
   fieldSortId, readSortBy, type FieldDef, type GroupBy, type OnDropRule, type Project, type RowProperty, type SortBy, type SortDir, type Task, type View, type ViewKind, type ViewLayout,
 } from './types'
 import { t, msg } from './i18n'
+import { priorityName } from './priority'
 import { uuid } from './ids'
 import { workspaceFields } from './workspaces'
 import { compareManual, orderRank } from './viewOrder'
@@ -586,7 +587,7 @@ export function groupTasks(tasks: Task[], groupBy: GroupBy, ctx: Pick<FilterCont
       return tasks.length ? [{ key: 'all', heading: '', tasks }] : []
     case 'priority':
       for (const tk of tasks) put(`p${tk.priority}`, tk)
-      return emit([1, 2, 3, 4].map((p) => [`p${p}`, t('Priority {p}', { p })]))
+      return emit([1, 2, 3, 4].map((p) => [`p${p}`, priorityName(p)]))
     case 'due': {
       const today = ctx.today
       const tomorrow = addDaysISO(today, 1)

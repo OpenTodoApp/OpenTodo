@@ -44,6 +44,7 @@ import { dragFeedback, dropIndent } from './listDrop'
 import { fieldBadges } from '../lib/fields'
 import { useApplicableFields, useFieldDefs } from './useFields'
 import { t } from '../lib/i18n'
+import { priorityAccessibleName, priorityShort } from '../lib/priority'
 import { originOf, rowOrigin } from '../lib/taskOrigin'
 import { taskSource, type SourceKind } from '../lib/taskSource'
 import { relativeLabel } from './task-detail/RelativeTime'
@@ -282,15 +283,16 @@ const PRIORITY_TEXT: Record<number, string> = { 1: 'text-p1', 2: 'text-p2', 3: '
 /**
  * A task's priority as a mark (row-layouts D3): the bars in the priority's colour,
  * beside the title of a one-line row (read as "Priority 1"), with "P1" after them on
- * a detailed row. Priority 4, the default, has none.
+ * a detailed row. Priority 4, the default, has none. A named level (priority-names)
+ * reads and shows its name.
  */
 export function PriorityMark({ priority, text = false }: { priority: number; text?: boolean }) {
   if (!PRIORITY_ICON[priority]) return null
-  const label = t('Priority {p}', { p: priority })
+  const label = priorityAccessibleName(priority)
   return (
     <span data-priority-mark={priority} className={`inline-flex shrink-0 items-center gap-0.5 text-meta font-medium ${PRIORITY_TEXT[priority]}`}>
       <Icon name={PRIORITY_ICON[priority]} size="xs" />
-      {text ? <ReadAs label={label}>{`P${priority}`}</ReadAs> : <span className="sr-only">{label}</span>}
+      {text ? <span className="max-w-40 truncate"><ReadAs label={label}>{priorityShort(priority)}</ReadAs></span> : <span className="sr-only">{label}</span>}
     </span>
   )
 }
@@ -622,7 +624,7 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       {/* The row's priority ring: coloured for P1 and P2, neutral for P3; read as "P1". */}
       {priority && (
         <span data-priority={task.priority} className="inline-flex shrink-0 items-center">
-          <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">P{task.priority}</span>
+          <span aria-hidden data-priority-dot className={`h-2.5 w-2.5 rounded-full border-2 ${priority}`} /><span className="sr-only">{priorityAccessibleName(task.priority)}</span>
         </span>
       )}
       {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}

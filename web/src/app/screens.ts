@@ -78,7 +78,7 @@ export const SETTINGS_SCREENS: readonly string[] = [
   'settings/data', 'settings/date-time', 'settings/digest', 'settings/email', 'settings/encryption', 'settings/focus',
   'settings/general', 'settings/integrations', 'settings/invitations', 'settings/issues', 'settings/keyboard',
   'settings/language', 'settings/notification-channels', 'settings/notifications', 'settings/outgoing-email',
-  'settings/people', 'settings/quick-add', 'settings/security', 'settings/server', 'settings/sso',
+  'settings/people', 'settings/priorities', 'settings/quick-add', 'settings/security', 'settings/server', 'settings/sso',
   'settings/start-view', 'settings/tokens', 'settings/users', 'settings/voice', 'settings/webhooks',
   'settings/workspaces',
 ]

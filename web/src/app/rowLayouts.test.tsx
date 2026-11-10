@@ -6,6 +6,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
+import { setPriorityNames } from '../lib/priority'
 import { rowLayoutOf, setAccountRowLayout } from '../lib/rowLayout'
 import type { Label, Task } from '../lib/types'
 import { createView } from '../lib/views'
@@ -48,6 +49,22 @@ describe('the priority mark', () => {
     expect(mark.querySelector('svg')).toBeTruthy()
     expect(spokenText(mark)).toBe('Priority 1')
     expect(r.container.querySelector('[data-task-id="b"] [data-priority-mark]')).toBeNull()
+    await r.unmount()
+  })
+})
+
+describe('a renamed level (priority-names)', () => {
+  it('reads its name on a detailed row and "Must, priority 1" to a screen reader; an unnamed one stays P2', async () => {
+    setPriorityNames(['Must', '', '', ''])
+    const r = await render(<ul>
+      <TaskRow task={task({ id: 'a', title: 'Pay rent', priority: 1 })} selected={false} showProject={false} onToggle={noop} onOpen={noop} layout="detailed" />
+      <TaskRow task={task({ id: 'b', title: 'Book flights', priority: 2 })} selected={false} showProject={false} onToggle={noop} onOpen={noop} layout="detailed" />
+    </ul>)
+    const mark = (id: string, n: number) => r.container.querySelector(`[data-task-id="${id}"] [data-row-details] [data-priority-mark="${n}"]`)!
+    expect(visibleText(mark('a', 1))).toBe('Must')
+    expect(spokenText(mark('a', 1))).toBe('Must, priority 1')
+    expect(visibleText(mark('b', 2))).toBe('P2')
+    expect(spokenText(mark('b', 2))).toBe('Priority 2')
     await r.unmount()
   })
 })

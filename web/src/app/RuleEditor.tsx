@@ -13,6 +13,7 @@ import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { openRoutineDraft } from './routines/routineNav'
 import { t, translatedMap, msg } from '../lib/i18n'
+import { priorityName } from '../lib/priority'
 import { messageOf } from '../lib/errorText'
 
 
@@ -103,7 +104,7 @@ export function RuleEditor({ view, labels, projects, sections, onClose }: RuleEd
           <span>{t('Priority')}</span>
           <select className="ui-input w-44" value={draft.priority ?? ''} onChange={(e) => set('priority', e.target.value ? (Number(e.target.value) as Priority) : undefined)}>
             <option value="">{t('Keep')}</option>
-            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{t('Priority {p}', { p })}</option>)}
+            {[1, 2, 3, 4].map((p) => <option key={p} value={p}>{priorityName(p)}</option>)}
           </select>
         </label>
         <Choice label={t('Date')} value={draft.due} options={RULE_DUE} names={DUE_LABEL} onChange={(v) => set('due', v)} />

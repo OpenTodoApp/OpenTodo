@@ -12,6 +12,7 @@ import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
 import type { PublicList } from '../lib/types'
 import { t, msg, translatedMap } from '../lib/i18n'
+import { priorityAccessibleName, priorityShort } from '../lib/priority'
 import { appendTo } from '../lib/collections'
 
 /** Refresh interval while the page is visible. */
@@ -149,7 +150,7 @@ export function PublicListScreen({ token }: { token: string }) {
                         <>
                           <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{x1.title || t('Untitled')}</span>
                           {due && <span className="shrink-0 text-meta tabular-nums text-muted">{due}</span>}
-                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" ><ReadAs label={t('Priority {priority}', { priority: x1.priority })}>P{x1.priority}</ReadAs></span>}
+                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" ><ReadAs label={priorityAccessibleName(x1.priority)}>{priorityShort(x1.priority)}</ReadAs></span>}
                         </>
                       )
                       return (

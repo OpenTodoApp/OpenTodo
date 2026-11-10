@@ -8,7 +8,10 @@
 //   4. "Learn more" is rendered only by the LearnMore element (settings-refresh D2),
 //   5. no screen in web/src/app renders a raw radio input: use RadioGroup from web/src/ui
 //      (OpenSpec change settings-foundation, design D7; files still being moved are in
-//      RAW_RADIO_ALLOWED and leave it as they move).
+//      RAW_RADIO_ALLOWED and leave it as they move),
+//   6. a priority level is named only through web/src/lib/priority.ts (OpenSpec change
+//      priority-names, design D3): no raw "Priority {n}" message elsewhere, so a renamed
+//      level reads the same on every screen.
 // A glyph counts as an icon when it stands alone in a string or JSX text, starts or
 // ends a label ("✓ Complete", "Next ›"), or is a trigger=/icon= prop. Typography
 // inside copy ("Settings → Integrations", "2 × 3") is fine.
@@ -105,6 +108,21 @@ export function rawRadioProblems(file, text) {
   return out
 }
 
+// A level's name (OpenSpec change priority-names, design D3): the raw message
+// "Priority {n}" (any one placeholder) is used only by lib/priority.ts, whose
+// priorityName, priorityShort and priorityAccessibleName read the person's names.
+export const PRIORITY_NAME_HELPER = 'web/src/lib/priority.ts'
+
+export function rawPriorityNameProblems(file, text) {
+  if (file === PRIORITY_NAME_HELPER) return []
+  const out = []
+  text.split('\n').forEach((line, i) => {
+    const code = line.replace(/\/\/.*$/, '').replace(/^\s*\*.*$/, '')
+    if (/\b(?:t|msg)\(\s*(['"`])Priority \{\w+\}\1/.test(code)) out.push(`${file}:${i + 1}: a raw "Priority {n}" message (use priorityName from lib/priority.ts)`)
+  })
+  return out
+}
+
 // Illustrations (OpenSpec change inbox-means-unplaced, design D9; design-system
 // "Illustrations") use the design tokens only: no hard-coded colour, no raster or
 // external image, no text, no gradient or filter, and at most 4 KB per file.
@@ -168,6 +186,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       .flatMap((f) => learnMoreProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(app).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => rawRadioProblems(relative(repo, f), readFileSync(f, 'utf8'))),
+    ...[...walk(app), ...walk(join(repo, 'web/src/lib')), ...walk(join(repo, 'web/src/ui'))].filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\.tsx?$/.test(f))
+      .flatMap((f) => rawPriorityNameProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...walk(join(repo, 'web/src/ui/illustrations')).filter((f) => f.endsWith('.tsx') && !/\.(test|stories)\.tsx$/.test(f))
       .flatMap((f) => illustrationProblems(relative(repo, f), readFileSync(f, 'utf8'))),
     ...untranslated().map((p) => `${p} (untranslated: wrap it in t() or add it to scripts/i18n/allow.txt)`),

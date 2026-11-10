@@ -5,7 +5,8 @@
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import { parse } from '../../lib/filter'
-import { stripPositions, type Leaf } from '../../lib/filter/builder'
+import { formatQuery, stripPositions, type Leaf } from '../../lib/filter/builder'
+import { setPriorityNames } from '../../lib/priority'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { conditionText } from './conditionText'
 import { draftOf, leafOf } from './ConditionEditor'
@@ -156,6 +157,14 @@ describe('condition dialog model', () => {
 })
 
 describe('conditionText', () => {
+  it('names a renamed level, and the stored query keeps the numbers (priority-names)', () => {
+    setPriorityNames(['Must', '', '', ''])
+    const tree = parse('p1 | p2')!
+    const leaves = (tree as { items: Leaf[] }).items
+    expect(leaves.map((l) => conditionText(l))).toEqual(['Priority is Must', 'Priority is P2'])
+    expect(formatQuery(tree)).toBe('p1 | p2')
+  })
+
   it('reads one condition of every kind in words', () => {
     const words = (q: string) => conditionText(parse(q) as Leaf)
     expect(words('@errand')).toBe('Label is errand')
