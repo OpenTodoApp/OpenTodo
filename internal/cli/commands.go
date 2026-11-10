@@ -102,6 +102,9 @@ var (
 	noteBodyFileFlag = flagSpec{Name: "body-file", Type: "string", Description: "read the text from a file, - for standard input"}
 )
 
+// sortFlag is the list commands' --sort (urgency-sort).
+var sortFlag = flagSpec{Name: "sort", Type: "string", Enum: []string{"default", "urgency"}, Default: "default", Description: "order: default, or urgency for the most urgent first by the urgency score (a URG column; urgency in --json; replaces the Today limit's waiting heading)"}
+
 var cmdSpecs = []cmdSpec{
 	{Name: "login", Summary: "sign in with email and password and store an API token", Args: []argSpec{{Name: "server-url"}},
 		Flags: []flagSpec{{Name: "email", Type: "string", Description: "account email (prompted when omitted)"}}, Writes: true, DryRun: true, Output: ref("auth_result")},
@@ -122,13 +125,13 @@ var cmdSpecs = []cmdSpec{
 		{Name: "completed-after", Type: "string", Description: "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "completed-before", Type: "string", Description: "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms"},
 		{Name: "sector", Type: "string", Description: "only tasks with this time sector: this-week, next-week, this-month, next-month, this-quarter, next-quarter, a period such as 2026-W45, or carried for periods that have ended"},
-		limitFlag,
+		sortFlag, limitFlag,
 	}, Output: arrayOf("task")},
 	{Name: "today", Summary: "alias for `ot list --today`; with a Today limit, the tasks waiting for a slot follow under their own heading", Flags: []flagSpec{
-		{Name: "all", Type: "bool", Description: "with a Today limit: every task in one list, without the waiting heading"}, limitFlag,
+		{Name: "all", Type: "bool", Description: "with a Today limit: every task in one list, without the waiting heading"}, sortFlag, limitFlag,
 	}, Output: arrayOf("task")},
-	{Name: "inbox", Summary: "alias for `ot list --inbox`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
-	{Name: "upcoming", Summary: "alias for `ot list --upcoming`", Flags: []flagSpec{limitFlag}, Output: arrayOf("task")},
+	{Name: "inbox", Summary: "alias for `ot list --inbox`", Flags: []flagSpec{sortFlag, limitFlag}, Output: arrayOf("task")},
+	{Name: "upcoming", Summary: "alias for `ot list --upcoming`", Flags: []flagSpec{sortFlag, limitFlag}, Output: arrayOf("task")},
 	{Name: "add", Summary: "create a task and print its id", Args: []argSpec{{Name: "title", Required: true, Repeatable: true}},
 		Flags: append(append(append([]flagSpec{}, taskFields...), addOnlyFields...), idemFlag), Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("task")},
 	{Name: "edit", Summary: "change a task (values equal to the current ones send nothing)", Args: []argSpec{{Name: "ref", Required: true}},

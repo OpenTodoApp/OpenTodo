@@ -7401,5 +7401,19 @@
   "Rewrite this": "改写",
   "Rewrite “{title}”": "改写“{title}”",
   "What’s next in “{name}”?": "“{name}”接下来做什么？",
-  "What’s next?": "接下来做什么？"
+  "What’s next?": "接下来做什么？",
+  "Age {n} d": "已创建 {n} 天",
+  "Blocks {n, plural, one {# task} other {# tasks}}": "阻挡 {n, plural, other {# 项任务}}",
+  "Deadline in {n} d": "{n} 天后到最后期限",
+  "Deadline passed": "已过最后期限",
+  "Deadline today": "今天是最后期限",
+  "Due in {n} d": "{n} 天后截止",
+  "Due {n} d ago": "已逾期 {n} 天",
+  "Starts in {n} d": "{n} 天后开始",
+  "Timer running": "计时中",
+  "Urgency": "紧迫度",
+  "Urgency {score}, show why": "紧迫度 {score}，查看原因",
+  "Why here?": "为什么排在这里？",
+  "Most urgent first": "最紧迫的在前",
+  "Least urgent first": "最不紧迫的在前"
 }

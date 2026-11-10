@@ -49,6 +49,7 @@ import type { ViewDisplay } from './views/DisplayPanel'
 import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
+import { UrgencyChip, UrgencyContext } from './useUrgency'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -223,8 +224,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const message = draftError ?? (!dirty && !result.ok ? result.error : null)
   const count = result.ok ? result.tasks.length : null
 
+  // The urgency order's score on each row and "Why here?" in the row menu (urgency-sort D4).
+  const urgency = opts.sortBy === 'urgency' ? data.urgency : null
   return (
-    <ListReorderContext.Provider value={listReorder}>
+    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={urgency}>
     <PageBody width="list">
           <PageHeader title={<ViewsCrumb name={view.name} />} meta={count !== null ? count : undefined} help="saved-filter"
             leading={view.icon ? <span className="flex h-5 w-5 shrink-0 items-center justify-center text-muted" aria-hidden="true"><ViewMark view={view} /></span> : undefined}
@@ -298,6 +301,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 dropIndicator={drag.dropAt?.key === key ? drag.dropAt.zone : null}
                 dragging={drag.draggingKey === key}
                 expanded={!drag.draggingKey && expanded === key}
+                score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}
               />
             )} />
           </div>
@@ -307,6 +311,6 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
         </Dialog>
       )}
     </PageBody>
-    </ListReorderContext.Provider>
+    </UrgencyContext.Provider></ListReorderContext.Provider>
   )
 }

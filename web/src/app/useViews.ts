@@ -13,6 +13,7 @@ import { useTrackedTotals } from '../lib/timeEntries'
 import { useFieldDefs } from './useFields'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
+import { scoreOf, useUrgencyOf, type UrgencyOf } from './useUrgency'
 
 /**
  * The viewer's IANA zone (absolute-datetimes); components that show zoned dues
@@ -56,6 +57,8 @@ export interface ViewData {
   labels: Label[]
   tasks: Task[]
   ctx: ViewContext
+  /** The urgency order's scorer (urgency-sort): the chip and the row menu of a view ordered by urgency. */
+  urgency: UrgencyOf
 }
 
 /** The viewer and the people `assigned:` can name, from the local membership cache. */
@@ -81,9 +84,11 @@ export function useViewData(): ViewData {
   // `workspace:` views look at every workspace (group-mentions D6).
   const ws = useWorkspaceFilter()
   const sections = useLiveSections()
+  // Worked out only for a view ordered by urgency, on its first score.
+  const urgency = useUrgencyOf(tasks, today, zone)
   // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, ...tracked, ...directory, ...ws }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone])
-  return { views, projects, labels, tasks, ctx }
+  const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, ...tracked, ...directory, ...ws, score: scoreOf(urgency) }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone, urgency])
+  return { views, projects, labels, tasks, ctx, urgency }
 }
 
 /** True when a keyboard event comes from a text field (shortcuts must not fire). */

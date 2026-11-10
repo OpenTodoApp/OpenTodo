@@ -9,6 +9,7 @@ import { createField, setFieldValue } from '../../lib/fields'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { createView } from '../../lib/views'
 import { fieldSortBy } from '../../lib/types'
+import { logicalToday } from '../../lib/dates'
 import { click, render, type, waitFor } from '../../ui/test-utils'
 import { FilterView } from '../FilterView'
 import { SavedViewRoute } from '../SavedViewView'
@@ -181,6 +182,30 @@ describe('the New view page', () => {
     expect(saved).toMatchObject({ name: 'By effort', query: 'p1', sort_by: sortBy })
     await waitFor(() => location.pathname === `/views/${saved.id}`, 'the saved view opens')
     await waitFor(() => titles(r.container).join() === 'Low effort,High effort', 'the saved view keeps the custom order')
+    await r.unmount()
+  })
+
+  it('orders by urgency with the score on each row and keeps that order in the saved view (urgency-sort)', async () => {
+    await createTask({ title: 'Someday low', priority: 4 })
+    await createTask({ title: 'Due p1', priority: 1, due: { date: logicalToday() } })
+    await createTask({ title: 'Plain p2', priority: 2 })
+    const r = await render(<FilterView />)
+    await type(r.container.querySelector('input[aria-label="Filter query"]') as HTMLInputElement, '!p4 | p4')
+    await waitFor(() => titles(r.container).length === 3, 'the new view matches')
+    expect(r.container.querySelector('[data-urgency-chip]')).toBeNull()
+    await click(r.container.querySelector('[data-display-trigger]') as HTMLButtonElement)
+    await waitFor(() => !!panel()?.querySelector('option[value="urgency"]'), 'the urgency order')
+    await choose(panel()!.querySelector('select[aria-label="Order by"]') as HTMLSelectElement, 'urgency')
+    await waitFor(() => titles(r.container).join() === 'Due p1,Plain p2,Someday low', 'most urgent first')
+    await waitFor(() => r.container.querySelectorAll('[data-urgency-chip]').length === 3, 'a score on each row')
+    await click(button(r.container, 'Save as view'))
+    await type(r.container.querySelector('input[aria-label="View name"]') as HTMLInputElement, 'Most urgent')
+    await click(button(r.container, 'Save view'))
+    await waitFor(async () => (await db.views.count()) === 1, 'the saved view')
+    const [saved] = await db.views.toArray()
+    expect(saved).toMatchObject({ sort_by: 'urgency', sort_dir: 'asc' })
+    await waitFor(() => location.pathname === `/views/${saved.id}`, 'the saved view opens')
+    await waitFor(() => titles(r.container).join() === 'Due p1,Plain p2,Someday low', 'the same order after saving')
     await r.unmount()
   })
 

@@ -44,7 +44,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `calendar-slots` | Several small tasks in one calendar block | Shipped in 0.18 |
 | `bento-daily-check` | A Large, a Medium and a Small task in the Daily check | Shipped in 0.18 |
 | `task-energy` | An energy property (deep, medium, low) with a filter and quick-add token | Shipped in 0.18 |
-| `urgency-sort` | A deterministic urgency score sort, and sort by a custom field | Planned |
+| `urgency-sort` | A deterministic urgency score sort, and sort by a custom field | In progress (20 of 20) |
 | `calendar-clarity` | Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | Shipped in 0.18 |
 
 ## 0.19 "Series and time"
