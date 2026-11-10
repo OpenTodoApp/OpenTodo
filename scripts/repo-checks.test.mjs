@@ -661,7 +661,7 @@ test('the official web app keys are published, and the test key is never one of 
 
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
   const play = jobsOf(read('.github/workflows/ci.yml')).play
-  assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(play, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(play, /^ {4}environment: release$/m)
   assert.match(play, /node scripts\/release\/play-upload\.mjs "\$GITHUB_REF_NAME"/)
   assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set/)
@@ -678,7 +678,7 @@ test('the Play upload runs only for final tags, after the release, with its secr
 // job of its own, and never any signing material in the repository.
 test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
   const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
-  assert.match(caller, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(caller, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(caller, /^ {4}uses: \.\/\.github\/workflows\/ios-testflight\.yml$/m)
   const flow = read('.github/workflows/ios-testflight.yml')
   assert.match(flow, /^ {2}workflow_call:$/m)
@@ -1014,4 +1014,16 @@ test('the boundary check ignores comments, strings and properties of the same na
     'if (typeof BroadcastChannel !== "undefined") {}',
   ].join('\n')
   assert.deepEqual(browserGlobals(src), [{ global: 'BroadcastChannel', line: 4 }])
+})
+
+// A job after the release (1.4.0): GitHub skips a job whose needs chain holds a skipped job unless
+// its condition is explicit, and the app builds are skipped on tags, so every job that needs the
+// release states !cancelled() && !failure() instead of relying on the implicit success().
+test('every job after the release runs even when a job before it was skipped', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const after = Object.entries(jobs).filter(([, block]) => /^ {4}needs: \[release\]$/m.test(block))
+  assert.ok(after.length >= 4, 'the publish jobs after the release')
+  for (const [id, block] of after) {
+    assert.match(block, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && /m, `${id}: explicit condition`)
+  }
 })

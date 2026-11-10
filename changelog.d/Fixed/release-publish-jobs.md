@@ -1,0 +1,1 @@
+- **A release publishes everything again.** Since the app builds stopped running on release tags, the TestFlight upload, the Google Play internal track and the Claude and Obsidian plugin pushes were skipped with them; they now run whenever the release itself does.
