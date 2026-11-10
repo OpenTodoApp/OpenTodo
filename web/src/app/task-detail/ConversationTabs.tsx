@@ -129,7 +129,7 @@ export function ConversationTabs({ task, userId, readOnly, onOpen, composerHost,
         // The row fits the panel (sidebar-brand-and-row-grid D6): icons with their counts when the words do not fit.
         fit
         tabs={[
-          { id: 'comments', label: t('Comments'), count, icon: 'message-circle', name: count ? t('Comments, {n}', { n: count }) : t('Comments') },
+          { id: 'comments', label: t('Comments'), count, icon: 'message-circle', name: count != null ? t('Comments, {n}', { n: count }) : t('Comments') },
           { id: 'activity', label: t('Activity'), icon: 'activity', name: t('Activity') },
           { id: 'history', label: t('History'), icon: 'history', name: t('History') },
           { id: 'time', label: hasEntries ? t('Time · {duration}', { duration: formatMinutes(tracked) }) : t('Time', { context: 'tracking' }), icon: 'timer',
