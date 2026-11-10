@@ -155,7 +155,8 @@ async function liveSources(favourites: string | undefined): Promise<FavouriteSou
 export function moveFavourite(kind: FavouriteKind, id: string, dir: -1 | 1): Promise<void> {
   return serial(async () => {
     const prefs = await db.userPrefs.get(USER_PREFS_ID)
-    const shown = favouritesOf(prefs, await liveSources(prefs?.favourites)).map((f) => entryOf(f.kind, f.id))
+    // Notes move among the pinned notes, the rest among the Favourites group: each sidebar space shows its own (notes-space D4).
+    const shown = favouritesOf(prefs, await liveSources(prefs?.favourites)).filter((f) => (f.kind === 'note') === (kind === 'note')).map((f) => entryOf(f.kind, f.id))
     const i = shown.indexOf(entryOf(kind, id))
     const j = i + dir
     if (i < 0 || j < 0 || j >= shown.length) return

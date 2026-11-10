@@ -81,7 +81,7 @@ export const PhoneDrawer: StoryObj = {
   ),
 }
 
-/** Favourites (sidebar-favourites): a pinned saved filter, project, label and note (notes-home), mixed in the user's order above Projects; Labels and Filters folded on this new device. */
+/** Favourites (sidebar-favourites): a pinned saved filter, project and label, mixed in the user's order above Projects (a pinned note is in the Notes space, notes-space D4); Labels and Filters folded on this new device. */
 async function seedFavourites() {
   await seedInbox()
   const { createView } = await import('../lib/views')
@@ -204,6 +204,21 @@ const open = (el: HTMLElement) => el.click()
 export const MoreGroup: StoryObj = {
   ...withSeed(seedMarkers),
   render: () => <Acting find={moreHeading} act={open}><Column><Sidebar route={{ view: 'someday' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
+}
+
+/** The Notes space (notes-space D1): the switch on Notes, All notes, two pinned notes in their order and the notes changed last; the lazy groups are awaited. */
+async function seedNotesSpace() {
+  await seedInbox()
+  const { createNote } = await import('../lib/noteOps')
+  const { pin } = await import('../lib/favourites')
+  await pin('note', await createNote({ title: 'Wi-Fi' }))
+  await pin('note', await createNote({ title: 'Packing list' }))
+  for (const title of ['Meeting with the architect', 'Trip to Lisbon', 'Book notes']) await createNote({ title })
+}
+const notesRecent = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-testid="sidebar-notes-recent"]')
+export const NotesSpace: StoryObj = {
+  ...withSeed(seedNotesSpace),
+  render: () => <Acting find={notesRecent} act={noop}><Column><Sidebar route={{ view: 'notes' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column></Acting>,
 }
 
 // ---- workspaces (OpenSpec change workspaces, task 5.8) ----

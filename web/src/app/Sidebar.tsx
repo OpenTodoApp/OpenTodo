@@ -7,7 +7,7 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -54,6 +54,11 @@ import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 import { readString, writeString } from '../lib/deviceStorage'
 import { SidebarSchedule } from './calendar/SidebarSchedule'
 import { useResetOnChange } from '../lib/useResetOnChange'
+import { useShownSpace } from '../lib/sidebarSpace'
+import { SpaceSwitch } from './SpaceSwitch'
+
+/** The Notes space's groups (notes-space D1), loaded when the space is first shown. */
+const NotesSidebar = lazy(() => import('./notes/NotesSidebar'))
 
 
 /**
@@ -157,6 +162,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   onToggleCollapse?: () => void
 }) {
   const workspace = useCurrentWorkspace()
+  // The space follows the screen where it belongs to one, else stays as chosen (notes-space D3).
+  const space = useShownSpace(route.view)
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
@@ -253,7 +260,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   // sidebar already observes, in one pass.
   const views = useViews()
   const viewCounts = useViewCounts(views, today, labels, allProjects, openTasks)
-  const favourites = useFavourites()
+  // Pinned notes are the Notes space's Pinned group (notes-space D4); the Favourites group keeps the rest.
+  const allFavourites = useFavourites()
+  const favourites = useMemo(() => allFavourites.filter((f) => f.kind !== 'note'), [allFavourites])
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')
 
@@ -430,15 +439,22 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<WorkspaceMark workspace={workspace.workspace} size={24} />} railLabel={workspace.name}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
-        <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
+        <SpaceSwitch space={space} collapsed={collapsed} />
+        {space === 'notes' ? (
+          <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
+            {item({ view: 'notes' }, t('All notes'), 'notebook-pen')}
+            {/* notes-graph-page: the Graph row goes here (the sibling change owns its route and view). */}
+          </nav>
+        ) : <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primary.map((d) => <Fragment key={d.id}>{d.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} collapsed={collapsed} hints={hints}
               active={rest.some((m) => m.route.view === route.view)} extra={<StartGuideMoreMenuItems />} />
           )}
-        </nav>
+        </nav>}
       </div>
       <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
+      {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
           <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or view…')} aria-label={t('Find in the sidebar')}
@@ -560,6 +576,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )
         })}
       </SidebarGroup>}
+      </>}
       </div>
       {/* The day's schedule (sidebar-schedule, issue 536): pinned above the footer, outside the scroller; not in the rail or the phone drawer. */}
       {!collapsed && !drawer && <SidebarSchedule />}
@@ -682,8 +699,6 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     // Focus (focus-everywhere D1): after Statistics in every mode, promotable, no count.
     { id: 'focus', route: { view: 'focus' }, label: t('Focus'), icon: 'clock' },
-    // Notes (notes-overview, app-shell "Notes in the More group"): after Focus in every mode, promotable, no count, no marker.
-    { id: 'notes', route: { view: 'notes' }, label: t('Notes'), icon: 'notebook-pen' },
     ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },

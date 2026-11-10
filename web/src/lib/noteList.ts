@@ -119,7 +119,7 @@ function byRecency(a: NoteEntry, b: NoteEntry): number {
   return b.updated - a.updated || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
 }
 
-/** The page's filters (D3); remembered per device by the page. `unlinked`: standalone notes nothing links to (notes-home D5). */
+/** The page's filters as an earlier version stored them (D3, notes-home D5); read once and turned into chips (notes-space D6). */
 export interface NoteFilters {
   source: 'all' | NoteSource | 'unlinked'
   projectId: string | null
@@ -127,20 +127,6 @@ export interface NoteFilters {
 }
 
 export const NO_NOTE_FILTERS: NoteFilters = { source: 'all', projectId: null, labelId: null }
-
-/** Whether every filter is at its default: the page then shows Pinned and Recent (notes-home D4). */
-export const isDefaultFilters = (f: NoteFilters): boolean => f.source === 'all' && !f.projectId && !f.labelId
-
-/**
- * The entries the filters keep, in the same order. A label filter leaves project notes out (they have no labels).
- * Unlinked keeps the standalone notes whose `note:<id>` is not in `linked`, the targets the link index
- * knows a source for (an outgoing link does not count); without `linked` it keeps none.
- */
-export function filterEntries(entries: readonly NoteEntry[], f: NoteFilters, linked?: ReadonlySet<string> | null): NoteEntry[] {
-  return entries.filter((e) => (f.source === 'all' || (f.source === 'unlinked' ? e.source === 'note' && !!linked && !linked.has(e.key) : e.source === f.source))
-    && (!f.projectId || e.projectId === f.projectId)
-    && (!f.labelId || e.labels.includes(f.labelId)))
-}
 
 /**
  * The default list in two groups (notes-home D4): the pinned standalone notes in the

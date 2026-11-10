@@ -2,11 +2,11 @@ import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBa
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
-import { resolveStartView } from '../lib/views'
+import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
 import { useSyncStatus } from '../lib/sync'
-import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
+import { canonicalPath, navigate, offersQuickAdd, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
@@ -183,16 +183,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     if (openAddressItem()) return
     if (location.pathname !== '/') return
     let cancelled = false
-    void resolveStartView().then((start) => {
-      if (cancelled || location.pathname !== '/') return
-      if (start.kind === 'saved') navigate({ view: 'view', id: start.id }, { replace: true })
-      // A display start view (display-mode D6): the app renders the display instead of the shell.
-      else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
-      else {
-        if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) showActionToast(t('Your start view was deleted, so the Inbox opened instead.'))
-      }
-    })
+    void openStartView({ replace: true, still: () => !cancelled && location.pathname === '/' })
     return () => {
       cancelled = true
     }
