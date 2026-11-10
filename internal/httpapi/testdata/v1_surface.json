@@ -2482,6 +2482,7 @@
       "format": "string",
       "frames": "array",
       "labels": "array",
+      "memory": "array",
       "notes": "array",
       "objectives": "array",
       "places": "array",
@@ -3245,6 +3246,12 @@
       "sort_by": "string",
       "sort_dir": "string",
       "workspace_id": "nullable_string"
+    },
+    "memory": {
+      "created_at": "number",
+      "deleted_at": "nullable_number",
+      "position": "number",
+      "text": "memory_text"
     },
     "note": {
       "created_at": "number",
@@ -4435,6 +4442,7 @@
         "encryption.wrappedByRecovery": "string",
         "exportedAt": "string",
         "format": "string",
+        "memory": "array",
         "places": "array",
         "project_prefs": "array",
         "review": "array",

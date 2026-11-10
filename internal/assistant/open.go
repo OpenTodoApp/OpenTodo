@@ -40,15 +40,21 @@ func (l *Loop) openDraft(ctx context.Context, userID string, open []Proposed, lo
 	if len(open) == 0 {
 		return nil
 	}
-	kept, dropped, err := l.Tools.OpenProposal(ctx, userID, changesOf(open))
+	// Memory items are checked here, outside the registry (assistant-memory D2).
+	mem, rest, memDropped, err := l.openMemory(ctx, userID, open)
 	if err != nil {
 		log.Error("assistant open proposal not read", "err", err)
 		return nil
 	}
-	if dropped > 0 {
+	kept, dropped, err := l.Tools.OpenProposal(ctx, userID, changesOf(rest))
+	if err != nil {
+		log.Error("assistant open proposal not read", "err", err)
+		return nil
+	}
+	if dropped += memDropped; dropped > 0 {
 		log.Info("assistant open proposal items left out", "count", dropped)
 	}
-	return kept
+	return append(kept, mem...)
 }
 
 // changesOf and proposedOf convert between the wire's items and the draft's changes.

@@ -23,7 +23,7 @@ Proposals, review, undo, skills, pasted notes and [photos](assistant-capture.md)
 
 ## What the device sends
 
-Tasks, comments, projects, notes, tracked time, frames and slots, [Describe it](routines.md#describe-it) names, your messages and photos; never routines, custom fields, locations or attachments.
+Tasks, comments, projects, notes, tracked time, frames and slots, your [memory items](assistant-memory.md), [Describe it](routines.md#describe-it) names, your messages and photos; never routines, custom fields, locations or attachments.
 
 ## Your key and your usage
 

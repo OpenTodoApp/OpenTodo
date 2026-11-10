@@ -7,7 +7,7 @@ import data from './manifest.json'
 export interface ManifestTool {
   name: string
   /** display: a block in the answer (assistant-generative-ui D1); it changes nothing. */
-  kind: 'read' | 'write' | 'display' | 'proposal'
+  kind: 'read' | 'write' | 'display' | 'proposal' | 'memory'
   description: string
   input_schema: Record<string, unknown>
   strict_schema: Record<string, unknown>
@@ -48,6 +48,8 @@ export interface Manifest {
   always_display: string[]
   /** Amending an open proposal (assistant-proposal-editing D3): the note, the most items and drop_from_proposal. */
   open_proposal: { note: string; max_items: number; tool: ManifestTool }
+  /** Memory (assistant-memory D2, D3): the note, the limits, remember's messages and the tool. */
+  memory: { note: string; max_items: number; max_text: number; messages: { full: string; duplicate: string; invalid: string; proposed: string; unavailable: string }; tool: ManifestTool }
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

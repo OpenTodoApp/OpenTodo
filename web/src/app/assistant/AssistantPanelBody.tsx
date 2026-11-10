@@ -121,7 +121,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
           device={dev?.setup ? { setup: dev.setup, onChange: () => dev.edit(true) } : undefined} />
       ) : (
         <>
-          {s.disclosure_notice && <Suspense fallback={null}><DisclosureNotice status={s} connected={p.connected} onStatus={p.onStatus} /></Suspense>}
+          {(s.disclosure_notice || s.memory_notice) && <Suspense fallback={null}><DisclosureNotice status={s} connected={p.connected} onStatus={p.onStatus} /></Suspense>}
           {p.messages.length === 0 && !p.streaming && !p.threads ? (
             <AssistantWelcome name={p.name ?? ''} skills={p.skills ?? []} onStarter={(s) => p.onStarter?.(s)} composer={p.composer} layout={p.layout ?? 'sheet'} />
           ) : (

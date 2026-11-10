@@ -2,6 +2,7 @@
 // line (pinned by prompt.vectors.json), with the fixed rules from the manifest.
 import type { ProposedChange } from '../assistantTypes'
 import { manifest, type ManifestSkill } from './manifest'
+import { memorySection } from './memory'
 import { openSection } from './open'
 
 export interface PromptInput {
@@ -13,6 +14,8 @@ export interface PromptInput {
   workday?: { startHour: number; endHour: number; dayLength: number } | null
   /** The checked open proposal (assistant-proposal-editing D3). */
   open?: readonly ProposedChange[]
+  /** The live memory items in order (assistant-memory D3). */
+  memory?: readonly string[]
 }
 
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/
@@ -36,6 +39,7 @@ export function systemPrompt(p: PromptInput, now: number): string {
   if (label) b += `\nThe user is looking at ${label}.`
   const sel = (p.selected ?? []).filter((id) => ID_RE.test(id)).slice(0, 20)
   if (sel.length) b += ` Selected task ids: ${sel.join(', ')}.`
+  b += memorySection(p.memory ?? [])
   const sk = p.skill
   if (sk) {
     b += `\n\nSkill: ${sk.name}\nThe user chose this skill. Follow these steps; the user's message below is the input to it.\n${sk.instructions}\n`

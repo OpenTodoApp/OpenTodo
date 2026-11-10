@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/OpenTodoApp/opentodo/internal/assistant"
 )
 
 // Photos in an assistant turn through the real HTTP stack (OpenSpec change
@@ -149,7 +151,7 @@ func TestEarlierConsentStillSendsTurns(t *testing.T) {
 	}
 	resp, st := e.do("GET", "/api/v1/me/assistant", nil)
 	e.mustStatus(resp, 200, st)
-	if st["consented"] != true || st["disclosure_version"].(float64) != 5 || !strings.Contains(strings.Join(toStrings(st["fields"]), ","), "photos you add") {
+	if st["consented"] != true || st["disclosure_version"].(float64) != assistant.DisclosureVersion || !strings.Contains(strings.Join(toStrings(st["fields"]), ","), "photos you add") {
 		t.Fatalf("status %v", st)
 	}
 	if code, out, events := e.turn(ask("hi")); code != 200 || len(named(events, "done")) != 1 {

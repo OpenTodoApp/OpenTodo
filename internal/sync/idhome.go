@@ -26,8 +26,9 @@ import (
 // unique on the server: projects, whose id names a sharing scope, automation
 // rules, whose id keys the server's run log and state, and calendar frames
 // (calendar-frames D1), calendar slots (calendar-slots D1), custom themes
-// (theme-editor D1) and objectives (plan-objectives D1).
-var uniqueIDs = map[string]bool{"project": true, "rule": true, "frame": true, "slot": true, "theme": true, "objective": true}
+// (theme-editor D1), objectives (plan-objectives D1) and memory items
+// (assistant-memory D1).
+var uniqueIDs = map[string]bool{"project": true, "rule": true, "frame": true, "slot": true, "theme": true, "objective": true, "memory": true}
 
 // homeScope picks, among holders (the scopes that hold fields of one entity
 // id), the scope acc reads and writes the entity in, or "" when acc may not

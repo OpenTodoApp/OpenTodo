@@ -911,6 +911,7 @@
   "Add": [
     "web/src/app/PlanView.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/assistant/MemorySettings.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/palette/CommandPalette.tsx",
@@ -3246,6 +3247,9 @@
   "Clear a note": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Clear all": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
   "Clear conversations": [
     "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
@@ -3267,6 +3271,9 @@
   ],
   "Clear filters": [
     "web/src/app/notes/NoteFilters.tsx"
+  ],
+  "Clear memory?": [
+    "web/src/app/assistant/MemorySettings.tsx"
   ],
   "Clear the app": [
     "web/src/app/import/SwitchFromPicker.tsx"
@@ -4738,6 +4745,9 @@
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
+  "Delete “{text}”": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
   "Deleted / restored": [
     "web/src/lib/activity.ts"
   ],
@@ -4979,7 +4989,6 @@
     "web/src/app/RefusedBanner.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
-    "web/src/app/Shell.tsx",
     "web/src/app/ThemeRow.tsx",
     "web/src/app/ToastActionHost.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
@@ -5369,6 +5378,9 @@
   "Edit link": [
     "web/src/app/LinkDialog.tsx"
   ],
+  "Edit memory": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
   "Edit question": [
     "web/src/app/assistant/MessageActions.tsx"
   ],
@@ -5424,6 +5436,9 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/assistant/blocks/CalendarBlock.tsx",
     "web/src/app/assistant/blocks/ProposalShapes.tsx"
+  ],
+  "Edit “{text}”": [
+    "web/src/app/assistant/MemorySettings.tsx"
   ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
@@ -6188,6 +6203,9 @@
   ],
   "Facts": [
     "web/src/app/task-detail/TaskPageView.tsx"
+  ],
+  "Facts you keep in Memory are sent to the model provider with every message, as your stated preferences. You review each one before it is kept, and your consent still counts.": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
   ],
   "Failed": [
     "web/src/app/BackupsPanel.tsx",
@@ -9367,6 +9385,35 @@
   "Members’ own keys": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Memory": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
+  "Memory added": [
+    "web/src/lib/memory.ts"
+  ],
+  "Memory already holds this.": [
+    "web/src/lib/memory.ts"
+  ],
+  "Memory changed": [
+    "web/src/lib/memory.ts"
+  ],
+  "Memory cleared": [
+    "web/src/lib/memory.ts"
+  ],
+  "Memory deleted": [
+    "web/src/app/assistant/MemorySettings.tsx",
+    "web/src/lib/memory.ts"
+  ],
+  "Memory holds 20 items, so “{text}” was left out. Remove one in Settings first.": [
+    "web/src/lib/assistant.ts"
+  ],
+  "Memory holds 20 items. Remove one first.": [
+    "web/src/app/assistant/MemorySettings.tsx",
+    "web/src/lib/memory.ts"
+  ],
+  "Memory moved": [
+    "web/src/lib/memory.ts"
+  ],
   "Mention": [
     "web/src/app/editorCommands.ts"
   ],
@@ -9746,6 +9793,7 @@
     "web/src/app/DashboardView.tsx"
   ],
   "Move {name}": [
+    "web/src/app/assistant/MemorySettings.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/objectives/ObjectiveCards.tsx"
   ],
@@ -13563,6 +13611,9 @@
   "Remember this device for 30 days": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Remember: {text}": [
+    "web/src/lib/assistant.ts"
+  ],
   "Remembered browsers": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -15915,6 +15966,9 @@
     "web/src/app/FeedbackDialog.tsx",
     "web/src/app/SidebarFooter.tsx"
   ],
+  "Something the assistant should remember": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
   "Something went wrong": [
     "web/src/app/EmailScreens.tsx",
     "web/src/app/InviteScreen.tsx",
@@ -16970,6 +17024,9 @@
   "The assistant did not draft a routine. Try saying what should happen, and when.": [
     "web/src/app/routines/DescribeIt.tsx"
   ],
+  "The assistant forgets every item, on all your devices.": [
+    "web/src/app/assistant/MemorySettings.tsx"
+  ],
   "The assistant inside OpenTodo: its provider, your consent and what it may do.": [
     "web/src/app/SettingsView.tsx"
   ],
@@ -16994,6 +17051,9 @@
   ],
   "The assistant needs a connection.": [
     "web/src/app/assistant/assistantHints.tsx"
+  ],
+  "The assistant now remembers what you tell it": [
+    "web/src/app/assistant/DisclosureNotice.tsx"
   ],
   "The assistant on the person’s own device, with their own key.": [
     "web/src/lib/settingsCopy.ts"
@@ -20586,6 +20646,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Write one line of up to 200 characters.": [
+    "web/src/lib/memory.ts"
+  ],
   "Write tasks into": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -23246,6 +23309,9 @@
     "web/src/lib/rules/catalogue.ts"
   ],
   "your free time, worked out from your calendar events, frames, slots and timed tasks": [
+    "web/src/lib/assistantDisclosure.ts"
+  ],
+  "your memory items, with every message": [
     "web/src/lib/assistantDisclosure.ts"
   ],
   "your own time entries": [

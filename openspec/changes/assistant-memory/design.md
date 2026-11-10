@@ -39,3 +39,14 @@ Settings gains one section inside the existing assistant card, with no new sideb
 ## Risks / Trade-offs
 
 - **Prompt injection through a memory item.** Items are confirmed by the user before they exist. The model is told to propose only facts the user stated. Proposals from untrusted text follow the existing rules.
+
+## Implementation notes
+
+- **Version 6, not 5.** `assistant-time-blocks` took disclosure version 5, so memory is `DisclosureVersion = 6` (`MemoryDisclosureVersion`). `MinDisclosureVersion` stays 1: as D4 and the spec say, earlier consents still count and are told once. `GET /api/v1/me/assistant` adds `memory_notice` beside `disclosure_notice` (whose meaning, the complete list, is unchanged for older apps); Got it records version 6 and closes both. The list gains "your memory items, with every message".
+- **Text.** `memory.text` has its own kind (`memory_text`): one line of 1 to 200 characters after trimming, or ciphertext. Memory ids are unique on the server like objectives (`uniqueIDs`).
+- **remember.** `PlanRemember` collapses whitespace, refuses an empty, longer or ciphertext-looking text (`invalid_arguments`), a duplicate of a live item or one already in the draft ignoring case (`already_remembered`) and a 21st item (`memory_full`). It is offered in turns without a skill; a skill's turn sends the items but has no `remember`. The device twin (`assistantDevice/memory.ts`) is pinned by `memory.vectors.json`; the manifest carries the note, limits, messages and tool under `memory`.
+- **Open proposals.** New memory items of an open proposal are checked in `internal/assistant` (new, an unused id, only `text`, `position` and `created_at`, values the op schema accepts, no ciphertext), not by the registry, and follow the registry's items in the draft.
+- **Sending.** The server reads the live rows in order (position, then id) and leaves out ciphertext; the device leaves out rows it could not decrypt. Each item is collapsed to one line and cut to 200 characters, at most 20 are sent. The section follows the view and selection and precedes a skill.
+- **Review and limits.** The review reads "Remember: …". With Memory full, new items past the room are left out of the review with a note; Settings refuses the 21st with "Memory holds 20 items. Remove one first."
+- **Export.** `memory` is in the export for a session and `full` or `admin` tokens only; read and agent tokens, which MCP clients and other agents hold, get an export without it. An import of an own export restores items with their ids and tombstones.
+- **Settings.** The Memory group follows "For you" in the assistant card while the assistant is available, or while items are kept (so they can still be removed). It is part of the assistant settings chunk.

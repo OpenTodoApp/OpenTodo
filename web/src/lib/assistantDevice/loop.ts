@@ -18,6 +18,9 @@ import { listFrames, listSlots, listTimeEntries } from './readTime'
 import { findFreeTime } from './readFreeTime'
 import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
 import { checkOpen, dropFromDraft } from './open'
+import { checkOpenMemory, planRemember } from './memory'
+import { memoryTexts } from '../memory'
+import { uuid } from '../ids'
 import type { DeviceSetup } from './settings'
 
 export interface DeviceTurnOptions {
@@ -168,7 +171,7 @@ export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) =>
     }
   }
   for (const p of out) if (shared(p)) p.shared = true
-  const rank: Record<string, number> = { project: 0, label: 1, section: 2, task: 3, comment: 4 }
+  const rank: Record<string, number> = { project: 0, label: 1, section: 2, task: 3, comment: 4, memory: 5 }
   return out.map((p, i) => [p, i] as const).sort((a, b) => (rank[a[0].entity] ?? 9) - (rank[b[0].entity] ?? 9) || a[1] - b[1]).map(([p]) => p)
 }
 
@@ -182,10 +185,14 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   const skill = req.skill ? manifestSkill(req.skill) ?? null : null
   const snap0 = await loadSnapshot()
   // The open proposal, checked, seeds the draft and brings drop_from_proposal (assistant-proposal-editing D3).
-  const open = await checkOpen(req.open_proposal, snap0)
-  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(open.length ? [manifest.open_proposal.tool] : [])]
+  // Memory items are checked apart from the registry's entities (assistant-memory D2).
+  const openMemory = await checkOpenMemory(req.open_proposal)
+  const open = [...(await checkOpen(openMemory.rest, snap0)), ...openMemory.memory]
+  // remember is offered in turns without a skill, with the live items in the instructions (D2, D3).
+  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
-  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open }, now()) + '\n' + manifest.device_note + '\n'
+  const memory = await memoryTexts()
+  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open, memory }, now()) + '\n' + manifest.device_note + '\n'
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
   let draft: ProposedChange[] = [...open]
@@ -252,6 +259,19 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
             continue
           }
           onEvent({ type: 'status', text: statusFor(call.name, call.args) })
+          if (call.name === manifest.memory.tool.name) {
+            let args: unknown = null
+            try { args = JSON.parse(call.args || '{}') } catch { /* invalid arguments below */ }
+            const plan = def ? planRemember(await memoryTexts(), draft, args, uuid(), now()) : { result: { error: 'unavailable', message: manifest.memory.messages.unavailable } }
+            const next = plan.change ? [...draft, plan.change] : draft
+            if (plan.change && countEntities(next) > manifest.limits.max_entities) {
+              results.push({ id: call.id, content: JSON.stringify({ error: 'proposal_full', message: `one proposal holds at most ${manifest.limits.max_entities} changed items; nothing from this call was added.`, limit: manifest.limits.max_entities, in_proposal: countEntities(draft) }), isError: true })
+              continue
+            }
+            draft = next
+            results.push({ id: call.id, content: JSON.stringify(plan.result), isError: !plan.change })
+            continue
+          }
           if (def?.kind === 'proposal') {
             let args: Record<string, unknown> = {}
             try { args = JSON.parse(call.args || '{}') as Record<string, unknown> } catch { /* invalid arguments below */ }

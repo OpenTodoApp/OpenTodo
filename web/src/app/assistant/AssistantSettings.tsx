@@ -1,5 +1,6 @@
 import { refreshCapabilities } from '../../lib/relay'
 import { RoutinesDisclosure } from './RoutinesDisclosure'
+import { MemorySettings } from './MemorySettings'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
@@ -672,6 +673,7 @@ export default function AssistantSettingsSection({ isOwner }: { isOwner: boolean
           onSaveOwn={saveOwn} onTestOwn={(v) => void testOwn(v)} ownTest={ownTest} ownMessage={ownMessage}
           onAutoApply={(on) => { setAuto(on); void setAutoApply(on) }} onSuggestAfterAdd={(on) => { setSuggest(on); void setSuggestAfterAdd(on) }} onClear={() => setClearing(true)} />
       </CardGroup>
+      <MemorySettings available={!!status?.available} />
       {configuring && isOwner && settings && isOwnerSettings(settings) && draft && (
         <Dialog title={t('Configure the assistant')} onClose={() => setConfiguring(false)} size="lg" dismissable={false} testId="assistant-configure">
           <OwnerAssistantSettings saved={settings} draft={draft} connected={connected} busy={busy} error={error} message={null} tests={tests} testedWith={testedWith}

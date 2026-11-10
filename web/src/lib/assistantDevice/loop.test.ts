@@ -57,7 +57,7 @@ describe('prompt vectors', () => {
   for (const v of promptVectors) {
     it(v.name, () => {
       const skill = v.skill ? manifestSkill(v.skill) : null
-      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null, open: (v as { open?: ProposedChange[] }).open }, v.now)).toBe(v.want)
+      expect(systemPrompt({ userName: v.user, zone: v.zone, view: v.view, selected: v.selected, skill, workday: v.workday ?? null, open: (v as { open?: ProposedChange[] }).open, memory: (v as { memory?: string[] }).memory }, v.now)).toBe(v.want)
     })
   }
 })

@@ -22,6 +22,7 @@ export const DISCLOSURE_FIELDS = [
   msg('your free time, worked out from your calendar events, frames, slots and timed tasks'),
   msg('tracked time and its notes'),
   msg('names of members and groups of shared projects and workspaces'),
+  msg('your memory items, with every message'),
   msg("your display name, today's date and your time zone"),
   msg('the messages you type'),
   msg('photos you add'),

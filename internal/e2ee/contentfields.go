@@ -23,5 +23,6 @@ var ContentFields = map[string][]string{
 	"slot":       {"title"},
 	"place":      {"name", "address", "geo"},
 	"objective":  {"title"},
+	"memory":     {"text"},
 	"review":     {"tomorrow_note"},
 }
