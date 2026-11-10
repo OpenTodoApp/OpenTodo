@@ -50,7 +50,7 @@ export interface PanelValue {
 }
 
 export const GROUP_LABEL = translatedMap<ListGroupBy>({ project: msg('Project'), due: msg('Due date'), priority: msg('Priority'), label: msg('Label'), none: msg('None'), section: msg('Section'), day: msg('Time of day') })
-export const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), deadline: msg('Deadline'), title: msg('Title') })
+export const SORT_LABEL = translatedMap<SortBy>({ due: msg('Due date'), priority: msg('Priority'), position: msg('Manual order'), created: msg('Created'), deadline: msg('Deadline'), title: msg('Title'), urgency: msg('Urgency') })
 export const LAYOUT_LABEL = translatedMap<ViewLayout>({ list: msg('List'), board: msg('Board') })
 export const ROW_LAYOUT_LABEL = translatedMap<RowLayout>({ line: msg('One line'), detailed: msg('Detailed') })
 export const PROPERTY_LABEL = translatedMap<RowProperty>({

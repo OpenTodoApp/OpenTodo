@@ -36,6 +36,8 @@ type listOptions struct {
 	todayAll bool
 	// sector is --sector: a relative word, a period or carried (time-sectors).
 	sector string
+	// sort is --sort: default or urgency (urgency-sort).
+	sort string
 }
 
 func (o *listOptions) bind(fs *flag.FlagSet) {
@@ -51,6 +53,7 @@ func (o *listOptions) bind(fs *flag.FlagSet) {
 	fs.BoolVar(&o.available, "available", false, "open tasks that can be done now (not blocked, not waiting for an earlier step, not in Someday or starting later)")
 	fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
 	fs.StringVar(&o.sector, "sector", "", "only tasks with this time sector: a relative word, a period or carried")
+	fs.StringVar(&o.sort, "sort", "", "order: default or urgency (most urgent first, with the score)")
 	fs.StringVar(&o.completedAfter, "completed-after", "", "only tasks completed at or after: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 	fs.StringVar(&o.completedBefore, "completed-before", "", "only tasks completed before: YYYY-MM-DD (local), an RFC 3339 time or Unix ms")
 }
@@ -142,6 +145,7 @@ func viewAlias(name string) func(a *App, ctx context.Context, g *globalFlags, ar
 			fs.BoolVar(&o.todayAll, "all", false, "with a Today limit: every task in one list, without the waiting heading")
 		}
 		fs.IntVar(&o.limit, "limit", 0, "print at most n tasks")
+		fs.StringVar(&o.sort, "sort", "", "order: default or urgency (most urgent first, with the score)")
 		pos, err := a.parse(g, fs, name, args)
 		if err != nil {
 			return a.helpOr(name, err)
@@ -163,6 +167,10 @@ func viewAlias(name string) func(a *App, ctx context.Context, g *globalFlags, ar
 
 func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error {
 	view, err := o.view()
+	if err != nil {
+		return err
+	}
+	byScore, err := sortOrder(o.sort)
 	if err != nil {
 		return err
 	}
@@ -233,8 +241,13 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		tasks = scope.filterTasks(projects, all, tasks)
 	}
 	// Today's closed list (today-closed-list D7): the slots first, then the waiting tasks.
+	// The urgency order replaces the list's own, Today's slots included (urgency-sort).
+	var scores map[string]float64
+	if byScore {
+		scores = byUrgency(tasks, all, today, a.Now().Location(), runningTask(ctx, c))
+	}
 	var split *todaySplit
-	if view == "today" && planning == "" && !o.ranged() {
+	if view == "today" && planning == "" && !o.ranged() && !byScore {
 		if split, err = a.todayClosedList(ctx, c, all, projects, tasks, today, a.Now().Format("15:04")); err != nil {
 			return err
 		}
@@ -246,7 +259,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 	if g.json {
 		raws := make([]json.RawMessage, 0, len(tasks))
 		for _, t := range tasks {
-			raws = append(raws, split.raw(t))
+			raws = append(raws, withUrgency(split.raw(t), t.ID, scores))
 		}
 		return a.printRawList(raws)
 	}
@@ -262,7 +275,7 @@ func runList(a *App, ctx context.Context, g *globalFlags, o *listOptions) error 
 		a.renderTasks(waiting, projects, all, today)
 		return nil
 	}
-	a.renderTasks(tasks, projects, all, today)
+	a.renderTable(tasks, projects, all, today, scores)
 	return nil
 }
 

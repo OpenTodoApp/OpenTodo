@@ -59,7 +59,8 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
         </OptionRow>}
         <OptionRow label={t('Order by')}>
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Order by')} value={value.sortBy}
-            onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}>
+            // Urgency starts most urgent first, its ascending (urgency-sort D1); the direction stays under More options.
+            onChange={(e) => onChange(e.target.value === 'urgency' ? { sortBy: 'urgency', sortDir: 'asc' } : { sortBy: e.target.value as SortBy })}>
             {sortOptions.map((s) => <option key={s} value={s}>{SORT_LABEL[s]}</option>)}
             {fieldOptions.length > 0 && <optgroup label={t('Custom fields')}>
               {fieldOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -118,8 +119,8 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
             <OptionRow label={t('Direction')}>
               <select className="ui-input w-full py-1 text-meta" aria-label={t('Sort direction')} value={value.sortDir}
                 onChange={(e) => onChange({ sortDir: e.target.value as SortDir })}>
-                <option value="asc">{value.sortBy === 'priority' ? t('Ascending (p4 first)') : t('Ascending')}</option>
-                <option value="desc">{value.sortBy === 'priority' ? t('Descending (p1 first)') : t('Descending')}</option>
+                <option value="asc">{value.sortBy === 'priority' ? t('Ascending (p4 first)') : value.sortBy === 'urgency' ? t('Most urgent first') : t('Ascending')}</option>
+                <option value="desc">{value.sortBy === 'priority' ? t('Descending (p1 first)') : value.sortBy === 'urgency' ? t('Least urgent first') : t('Descending')}</option>
               </select>
             </OptionRow>
           </div>

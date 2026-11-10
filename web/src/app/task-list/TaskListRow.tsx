@@ -1,4 +1,4 @@
-import { type FormEvent, memo, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, memo, use, useEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { createSubtask } from '../../lib/ops'
@@ -6,6 +6,7 @@ import type { Label, Task } from '../../lib/types'
 import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
+import { UrgencyChip, UrgencyContext } from '../useUrgency'
 
 /** The list's row handlers, stable for the life of the list (large-list-performance D1). */
 export interface RowActions {
@@ -64,6 +65,8 @@ export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>
 export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   const departure = useDeparture(task.id)
+  // Under the urgency order a top-level row shows its score (urgency-sort D4).
+  const urgency = use(UrgencyContext)
   // A departing row leaves by itself when its moment ends (or Undo turns it into a
   // restore): the list does not draw again for it, so a completion draws the list
   // once, when the task leaves its data (incremental-list-updates D4).
@@ -88,6 +91,7 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       onTick={(range) => actions.tick(task.id, range)}
       onMore={(from) => actions.more(task.id, from)}
       onExpand={expandable ? () => actions.expand(task.id) : undefined}
+      score={urgency && !rest.depth && rest.shape !== 'card' ? <UrgencyChip of={urgency} task={task} /> : undefined}
     />
   )
 })

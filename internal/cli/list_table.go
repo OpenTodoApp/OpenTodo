@@ -8,6 +8,12 @@ import (
 // renderTasks prints tasks as the list table: ID, priority, due, the deadline
 // and origin columns when a listed task has one, project and title.
 func (a *App) renderTasks(tasks []task, projects []project, all []task, today string) {
+	a.renderTable(tasks, projects, all, today, nil)
+}
+
+// renderTable is renderTasks with the urgency score as a URG column when scores
+// is set (`ot list --sort urgency`, urgency-sort).
+func (a *App) renderTable(tasks []task, projects []project, all []task, today string, scores map[string]float64) {
 	byID := map[string]project{}
 	for _, p := range projects {
 		byID[p.ID] = p
@@ -21,7 +27,11 @@ func (a *App) renderTasks(tasks []task, projects []project, all []task, today st
 		showBy = showBy || (t.Deadline != nil && *t.Deadline != "")
 		showEnergy = showEnergy || t.Energy != ""
 	}
-	headers := []string{"ID", "P", "DUE"}
+	headers := []string{"ID"}
+	if scores != nil {
+		headers = append(headers, "URG")
+	}
+	headers = append(headers, "P", "DUE")
 	if showBy {
 		headers = append(headers, "BY")
 	}
@@ -60,7 +70,15 @@ func (a *App) renderTasks(tasks []task, projects []project, all []task, today st
 		if t.CompletedAt != nil {
 			title = "[done] " + title
 		}
-		cells := []cell{{text: shortID(t.ID), style: styleCyan}, pr, dueCell}
+		cells := []cell{{text: shortID(t.ID), style: styleCyan}}
+		if scores != nil {
+			urg := ""
+			if s, ok := scores[t.ID]; ok {
+				urg = fmt.Sprintf("%.1f", s)
+			}
+			cells = append(cells, plain(urg))
+		}
+		cells = append(cells, pr, dueCell)
 		if showBy {
 			cells = append(cells, deadlineCell(t, today))
 		}

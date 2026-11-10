@@ -465,6 +465,20 @@ const shots = [
     await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
     await p.keyboard.press('Escape')
   } },
+  // A project ordered by urgency (urgency-sort) with the first row's breakdown open, as Enter on its score opens it; the order syncs, so the scene puts it back.
+  { name: 'urgency-order', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-panel] select[aria-label="Order by"]').selectOption('urgency')
+    await p.keyboard.press('Escape'); await p.locator('[data-urgency-chip]').first().waitFor(); await p.mouse.move(700, 40)
+    await p.locator('[data-urgency-chip]').first().focus(); await p.keyboard.press('Enter')
+    await p.locator('[data-urgency-breakdown]').waitFor(); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape')
+    await p.locator('main [data-display-trigger]').first().click().catch(() => {})
+    await p.locator('[data-display-panel] select[aria-label="Order by"]').selectOption('position').catch(() => {})
+    await p.keyboard.press('Escape')
+  } },
   // Detailed rows (row-layouts): the project's own choice in Display options; the choice syncs, so the scene puts it back.
   { name: 'row-layouts', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')

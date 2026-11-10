@@ -388,6 +388,8 @@ export async function createBoardFromTemplate(template: BoardTemplate, name: str
 export interface ViewContext extends FilterContext {
   /** Every task to evaluate against (deleted ones are ignored by the compiler). */
   tasks: readonly Task[]
+  /** The urgency order's score (urgency-sort); absent until a view is ordered by urgency. */
+  score?: (task: Task) => number | null
 }
 
 export interface ViewGroup {
@@ -451,6 +453,8 @@ function byTitle(a: Task, b: Task): number {
 export interface FieldSortContext {
   projects: readonly Project[]
   fields?: readonly FieldDef[]
+  /** The urgency order's score of a task (urgency-sort), null without one; without it the order reads as due date. */
+  score?: (task: Task) => number | null
 }
 
 interface SortableFieldValue {
@@ -527,6 +531,19 @@ export function compareTasks(sortBy: SortBy, dir: SortDir, context?: FieldSortCo
       return (a, b) => sign * (a.created_at - b.created_at) || fallback(a, b)
     case 'title':
       return (a, b) => sign * byTitle(a, b) || fallback(a, b)
+    case 'urgency': {
+      // Ascending, the stored default, is the most urgent first, like a rank (urgency-sort D1: a client
+      // without the order reads the view's own default order, never it reversed). Like a custom field,
+      // a task without a score (completed) comes last in either direction.
+      const score = context?.score
+      if (!score) return compareTasks('due', 'asc')
+      return (a, b) => {
+        const x = score(a)
+        const y = score(b)
+        if (x === null || y === null) return (x !== null ? -1 : y !== null ? 1 : 0) || fallback(a, b)
+        return sign * (y - x) || fallback(a, b)
+      }
+    }
     case 'deadline':
       // Like the due date: tasks without a deadline come last in either direction.
       return (a, b) => {

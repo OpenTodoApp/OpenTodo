@@ -33,6 +33,7 @@ import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
 import { BriefingText, useBriefing } from './Briefing'
+import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar, type ListReorder } from './bulk/BulkActions'
 import { useRowMenu } from './bulk/useRowMenu'
 import { useActionsOpen } from './bulk/useBulkList'
@@ -390,7 +391,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} onChoose={chooseViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
-    <ListReorderContext.Provider value={listReorder}><div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
+    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
@@ -450,7 +451,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
         </div>
       {ui.prompt && <CompleteParentPrompt parent={ui.prompt} onAccept={acceptPrompt} onDismiss={() => setPrompt(null)} />}
       <RowPickerDialogs assignFor={ui.assignFor} pickerFor={ui.pickerFor} userId={userId} onCloseAssign={() => ui.setAssignFor(null)} onClosePicker={() => ui.setPickerFor(null)} />
-    </div></ListReorderContext.Provider>
+    </div></UrgencyContext.Provider></ListReorderContext.Provider>
   )
 }
 

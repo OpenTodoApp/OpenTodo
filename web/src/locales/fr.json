@@ -7401,5 +7401,19 @@
   "Rewrite this": "Reformuler",
   "Rewrite “{title}”": "Reformuler « {title} »",
   "What’s next in “{name}”?": "Quelle est la suite dans « {name} » ?",
-  "What’s next?": "Et ensuite ?"
+  "What’s next?": "Et ensuite ?",
+  "Age {n} d": "Âge {n} j",
+  "Blocks {n, plural, one {# task} other {# tasks}}": "Bloque {n, plural, one {# tâche} other {# tâches}}",
+  "Deadline in {n} d": "Date limite dans {n} j",
+  "Deadline passed": "Date limite dépassée",
+  "Deadline today": "Date limite aujourd’hui",
+  "Due in {n} d": "Pour dans {n} j",
+  "Due {n} d ago": "Prévue il y a {n} j",
+  "Starts in {n} d": "Commence dans {n} j",
+  "Timer running": "Minuteur en cours",
+  "Urgency": "Urgence",
+  "Urgency {score}, show why": "Urgence {score}, afficher pourquoi",
+  "Why here?": "Pourquoi ici ?",
+  "Most urgent first": "Plus urgentes d’abord",
+  "Least urgent first": "Moins urgentes d’abord"
 }

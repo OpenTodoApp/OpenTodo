@@ -42,6 +42,7 @@
     "energy": {"type": ["string", "null"], "enum": ["deep", "medium", "low", null], "description": "the energy the task asks for; null for none"},
     "sector": {"type": ["string", "null"], "description": "the time sector: an ISO week YYYY-Www, a month YYYY-MM or a quarter YYYY-Qn the task is planned for without a date; null for none"},
     "waiting_for_slot": {"type": "boolean", "description": "ot today with a Today limit only: true when the limit keeps the task waiting for a slot"},
+    "urgency": {"type": "number", "description": "ot list --sort urgency only: the urgency score with two decimals (absent for a completed task)"},
     "blocked_by": {"type": "array", "items": {"type": "string"}, "description": "ids of the tasks this one waits for"},
     "location": {
       "type": ["object", "string", "null"],

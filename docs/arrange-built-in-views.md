@@ -18,7 +18,7 @@ order: 22
 | --- | --- | --- | --- |
 | **Today** | **Time of day**, Project, Priority, Label or None | **Due date**, Priority, Created, Deadline, Title or a number or date [custom field](custom-fields.md) | Off |
 | **Upcoming** | One group per day | Within each day, as in Today | Off |
-| **Inbox** | **None**, Due date, Priority or Label | **Manual order**, Priority, Due date, Created, Deadline or Title | Always under their parent |
+| **Inbox** | **None**, Due date, Priority or Label | **Manual order**, Priority, Due date, Created, Deadline, Title or [Urgency](urgency-order.md) | Always under their parent |
 
 Bold is the default. Each view also has **Rows** (One line or Detailed) and, under **More options**, the direction.
 
