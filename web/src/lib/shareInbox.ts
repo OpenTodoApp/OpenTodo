@@ -2,7 +2,10 @@
 // attachments, design D9). The service worker receives the share sheet's POST,
 // writes the files and text here and redirects to /share?inbox=<id>; the capture
 // screen reads the entry and deletes it on Save or Cancel. A separate IndexedDB
-// database with the raw API, so the service worker needs no Dexie.
+// database with the raw API, so the service worker needs no Dexie. Each call takes
+// the IndexedDB to use: the worker and the page pass theirs, and sync's sweep asks
+// the platform port (native-app-foundation D3), so the app, which has no share
+// inbox, sweeps nothing.
 
 export const INBOX_DB = 'opentodo-share'
 const STORE = 'inbox'
@@ -24,17 +27,17 @@ export interface InboxEntry {
   files: SharedFile[]
 }
 
-function open(): Promise<IDBDatabase> {
+function open(idb: IDBFactory): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const r = indexedDB.open(INBOX_DB, 1)
+    const r = idb.open(INBOX_DB, 1)
     r.onupgradeneeded = () => { r.result.createObjectStore(STORE, { keyPath: 'id' }) }
     r.onsuccess = () => resolve(r.result)
     r.onerror = () => reject(r.error)
   })
 }
 
-async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void): Promise<T | undefined> {
-  const db = await open()
+async function run<T>(idb: IDBFactory, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void): Promise<T | undefined> {
+  const db = await open(idb)
   try {
     return await new Promise<T | undefined>((resolve, reject) => {
       const tx = db.transaction(STORE, mode)
@@ -48,28 +51,28 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   }
 }
 
-export async function putInboxEntry(entry: InboxEntry): Promise<void> {
-  await run('readwrite', (s) => s.put(entry))
+export async function putInboxEntry(idb: IDBFactory, entry: InboxEntry): Promise<void> {
+  await run(idb, 'readwrite', (s) => s.put(entry))
 }
 
-export async function getInboxEntry(id: string): Promise<InboxEntry | undefined> {
-  return run<InboxEntry>('readonly', (s) => s.get(id))
+export async function getInboxEntry(idb: IDBFactory, id: string): Promise<InboxEntry | undefined> {
+  return run<InboxEntry>(idb, 'readonly', (s) => s.get(id))
 }
 
-export async function deleteInboxEntry(id: string): Promise<void> {
-  await run('readwrite', (s) => s.delete(id))
+export async function deleteInboxEntry(idb: IDBFactory, id: string): Promise<void> {
+  await run(idb, 'readwrite', (s) => s.delete(id))
 }
 
 /** Remove entries older than ten minutes (called at app start). */
-export async function sweepInbox(now = Date.now()): Promise<void> {
-  const all = (await run<InboxEntry[]>('readonly', (s) => s.getAll())) ?? []
+export async function sweepInbox(idb: IDBFactory, now = Date.now()): Promise<void> {
+  const all = (await run<InboxEntry[]>(idb, 'readonly', (s) => s.getAll())) ?? []
   const old = all.filter((e) => now - e.createdAt > INBOX_MAX_AGE_MS)
-  for (const e of old) await deleteInboxEntry(e.id)
+  for (const e of old) await deleteInboxEntry(idb, e.id)
 }
 
 /** Remove everything (sign-out). */
-export async function clearInbox(): Promise<void> {
-  await run('readwrite', (s) => s.clear())
+export async function clearInbox(idb: IDBFactory): Promise<void> {
+  await run(idb, 'readwrite', (s) => s.clear())
 }
 
 /** The entry for a share sheet POST: the files and the text fields. */

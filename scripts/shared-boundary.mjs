@@ -8,7 +8,7 @@ import path from 'node:path'
 
 export const SHARED_MODULES_FILE = 'mobile/app/shared-modules.json'
 export const PORT = 'web/src/lib/platform.ts'
-export const BROWSER_GLOBALS = ['window', 'document', 'navigator', 'localStorage', 'BroadcastChannel', 'indexedDB']
+export const BROWSER_GLOBALS = ['window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'BroadcastChannel', 'indexedDB']
 
 /** The source with comments and the text of string literals blanked, line breaks kept. */
 export function codeOnly(src) {

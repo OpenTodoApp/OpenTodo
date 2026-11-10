@@ -7,11 +7,11 @@
 import { useCallback, useMemo, useState } from 'react'
 import { isNetworkError, type MapResult } from '../../lib/api'
 import {
-  createPlace, formatCoordinates, isPhone, locationFromPlace, locationLabel, makeLocation, MAX_NAME, openInMapsHref, parseCoordinates,
+  createPlace, formatCoordinates, locationFromPlace, locationLabel, makeLocation, MAX_NAME, openInMapsHref, parseCoordinates,
   reverseAddress, searchAddress, setTaskLocation, shownLocation, useLivePlaces, useMapsOn, usePlaceRows, type ShownLocation,
 } from '../../lib/locations'
 import type { Geo, Place, Task, TaskLocation } from '../../lib/types'
-import { Button, ComboboxPanel, Icon, Input, type AsyncSource } from '../../ui'
+import { Button, coarsePointer, ComboboxPanel, Icon, Input, type AsyncSource } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
 import { LocationMap } from './LocationMap'
@@ -150,7 +150,7 @@ export function LocationEditor({ task, onClose }: { task: Task; onClose: () => v
           {hasPoint && (shown.name || shown.address) && <p className="text-meta tabular-nums text-faint">{formatCoordinates(shown.lat!, shown.lon!)}</p>}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             {hasPoint && (
-              <a href={openInMapsHref(shown.lat!, shown.lon!, isPhone())} target="_blank" rel="noreferrer noopener"
+              <a href={openInMapsHref(shown.lat!, shown.lon!, coarsePointer())} target="_blank" rel="noreferrer noopener"
                 className="inline-flex items-center gap-1 text-meta text-accent hover:underline" data-open-in-maps>
                 <Icon name="external-link" size="xs" />{t('Open in maps')}
               </a>

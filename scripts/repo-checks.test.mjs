@@ -19,6 +19,7 @@ import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/sur
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
+import { sharedGraph } from './shared-graph.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -909,6 +910,30 @@ test('the modules the app shares reach their host only through the platform port
   const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
   assert.ok(modules.includes('web/src/lib/sync.ts'))
   assert.deepEqual(boundaryProblems(root), [])
+})
+
+test('the shared list holds the whole import graph of the sync path (node scripts/shared-graph.mjs)', () => {
+  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
+  const graph = sharedGraph()
+  assert.ok(graph.includes('web/src/lib/platform.ts') && graph.includes('web/src/lib/deviceStorage.ts'))
+  assert.deepEqual(graph.filter((m) => !modules.includes(m)), [], `add these modules to ${SHARED_MODULES_FILE}`)
+})
+
+test('the import graph follows static, dynamic and type-only imports, and leaves packages and assets out', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'graph-'))
+  try {
+    const lib = path.join(dir, 'web/src/lib')
+    mkdirSync(path.join(lib, 'sub'), { recursive: true })
+    writeFileSync(path.join(lib, 'a.ts'), "import React from 'react'\nimport { b } from './b'\nimport type { C } from './sub'\nimport data from './d.json'\nexport const lazy = () => import('./e')\n")
+    writeFileSync(path.join(lib, 'b.ts'), "export const b = 1 // import './not-code'\n")
+    writeFileSync(path.join(lib, 'sub/index.ts'), 'export type C = number\n')
+    writeFileSync(path.join(lib, 'd.json'), '{}')
+    writeFileSync(path.join(lib, 'e.tsx'), "import { b } from './b'\nexport default b\n")
+    writeFileSync(path.join(lib, 'unused.ts'), 'export {}\n')
+    assert.deepEqual(sharedGraph(['web/src/lib/a.ts'], dir), ['web/src/lib/a.ts', 'web/src/lib/b.ts', 'web/src/lib/e.tsx', 'web/src/lib/sub/index.ts'])
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
 })
 
 test('a browser global in a shared module fails the boundary check, naming the module, the global and the port', () => {

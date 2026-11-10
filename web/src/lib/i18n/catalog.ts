@@ -14,6 +14,7 @@ import { SHIPPED, isShipped, type LanguageCode } from '../../locales'
 import { compile, formatNumberIn, render, type TagFn, type Values } from './format'
 import { createSignal } from '../store'
 import { readString, writeString } from '../deviceStorage'
+import { platform } from '../platform'
 
 type Catalog = Record<string, string>
 
@@ -64,7 +65,7 @@ export function applyCatalog(code: LanguageCode, intlLocale: string, entries: Ca
   locale = intlLocale
   catalog = entries
   version++
-  if (typeof document !== 'undefined') document.documentElement.lang = code
+  platform.showLanguage(code)
   changes.notify()
 }
 

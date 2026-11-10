@@ -33,7 +33,7 @@ const shared = (name: string, type: string, body = 'bytes'): SharedFile => ({ na
 
 async function open(entry: { title?: string; text?: string; url?: string; files: SharedFile[] }) {
   const id = `inbox-${n}`
-  await putInboxEntry({ id, createdAt: Date.now(), title: entry.title ?? '', text: entry.text ?? '', url: entry.url ?? '', files: entry.files })
+  await putInboxEntry(indexedDB, { id, createdAt: Date.now(), title: entry.title ?? '', text: entry.text ?? '', url: entry.url ?? '', files: entry.files })
   setPendingShare({ title: '', text: '', url: null }, { inbox: id })
   const r = await render(<ShareCapture />)
   mounted.push(r)
@@ -60,7 +60,7 @@ describe('shared files', () => {
     const a = (await db.attachments.toArray())[0]
     expect(a).toMatchObject({ task_id: task.id, name: 'Beach.jpg', mime: 'image/jpeg', uploaded_at: null })
     expect(await db.attachmentBlobs.get(a.id)).toBeDefined()
-    await waitFor(async () => !(await getInboxEntry(id)))
+    await waitFor(async () => !(await getInboxEntry(indexedDB, id)))
   })
 
   it('shows the shared title and text with the PDF below and attaches it', async () => {
@@ -86,7 +86,7 @@ describe('shared files', () => {
     const id = await open({ files: [shared('a.png', 'image/png')] })
     await waitFor(() => listedFiles().includes('a.png'))
     await click([...document.querySelectorAll('button')].find((b) => b.textContent === 'Cancel')!)
-    await waitFor(async () => !(await getInboxEntry(id)))
+    await waitFor(async () => !(await getInboxEntry(indexedDB, id)))
     expect(await db.tasks.count()).toBe(0)
   })
 

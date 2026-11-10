@@ -21,7 +21,7 @@ watchAppUpdates()
 // A rejected promise nobody handled leaves a trace instead of vanishing.
 logUnhandledRejections()
 // In a native shell, links to other origins open in the system browser (native-shells D5).
-installShellLinks()
+installShellLinks(document)
 // In a native shell, reminders and the widgets' Today list are handed over as they change.
 startShellPublishers()
 // The page's icons and description follow the instance branding: the service

@@ -4,9 +4,10 @@
 // Enter opens, Delete removes, F2 renames.
 import { type KeyboardEvent, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AttachmentError, contentUrl, formatBytes, isImage, openAttachment, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
+  AttachmentError, contentUrl, formatBytes, isImage, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
+import { openAttachment } from '../../lib/attachmentOpen'
 import { hasAttachmentBlob, useAttachmentBlobs, useTask, useTaskAttachments, type AttachmentBlob } from '../../lib/localData'
 import { embeddedIds } from '../../lib/markdown'
 import { useDemo } from '../../lib/demo'

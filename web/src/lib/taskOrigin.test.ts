@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import type { OpenTodoShell } from './shell'
 import { originText } from './originText'
-import { cutOriginTitle, importApp, obsidianLink, obsidianURL, openOrigin, originFromUrl, originIcon, originLabel, originLink, originMatches, originOf, obsidianPlace } from './taskOrigin'
+import { cutOriginTitle, importApp, obsidianLink, obsidianURL, originFromUrl, originIcon, originLabel, originMatches, originOf, obsidianPlace } from './taskOrigin'
+import { openOrigin, originLink } from './originOpen'
 import type { Origin } from './types'
 
 describe('originFromUrl (shared vectors with internal/origin)', () => {

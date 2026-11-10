@@ -1,5 +1,6 @@
 // The message layer (OpenSpec change app-localization). See docs/translating.md.
 import { setDateLocale } from '../dates'
+import { platform } from '../platform'
 import {
   currentLanguage, currentLocale, currentPreference, fetchCatalog, applyCatalog, mirrorPreference, mirroredPreference,
   setCurrentPreference, type LanguageCode,
@@ -30,7 +31,7 @@ export async function applyLanguagePreference(pref: string, browser?: readonly s
     setDateLocale(locale)
     applyCatalog(code, locale, entries)
   }
-  if (typeof document !== 'undefined') document.documentElement.lang = code
+  platform.showLanguage(code)
   mirrorPreference(pref)
 }
 
