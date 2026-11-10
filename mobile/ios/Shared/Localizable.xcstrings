@@ -1120,6 +1120,12 @@
             "state": "translated",
             "value": "此连接未加密。"
           }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze verbinding is niet versleuteld."
+          }
         }
       }
     },

@@ -9,7 +9,7 @@ order: 5
 ---
 # Add a language
 
-The app ships in seven languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted.** How messages are written is in [Translating OpenTodo](../translating.md).
+The app ships in eight languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted.** How messages are written is in [Translating OpenTodo](../translating.md).
 
 ## Before you start
 

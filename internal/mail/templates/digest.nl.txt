@@ -11,7 +11,7 @@ Afgelopen week ({{.Week}})
 Nog open van eerder
 {{.Overdue}}
 
-Vervalt in de komende zeven dagen
+Gepland voor de komende zeven dagen
 {{.Ahead}}
 
 Projecten zonder volgende actie
