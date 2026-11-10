@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
-// Pinned notes in the sidebar's Favourites (OpenSpec change notes-home, task 1.3;
-// app-shell "Favourites group", scenario "Pinned note"): the note icon, its title
-// and no count, opening the note, renamed after sync, reordered and unpinned from
-// its menu, gone while in the Trash.
+// Pinned notes in the sidebar (OpenSpec change notes-home, task 1.3; notes-space:
+// app-shell "Sidebar spaces" and "Favourites group", scenario "Pinned note"): in the
+// Notes space's Pinned group, not in the Tasks space's Favourites; renamed after sync,
+// reordered among the pinned notes and unpinned from the menu, gone while in the Trash.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
@@ -27,48 +27,48 @@ beforeEach(async () => {
 })
 afterEach(() => { vi.unstubAllGlobals(); resetSidebarLayout() })
 
-const favRows = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-favourite-row]')].map((row) => {
-  const name = row.querySelector('[data-sidebar-item] .truncate')?.textContent ?? ''
-  const n = row.querySelector('[data-sidebar-item] [data-count]')?.textContent
-  return n ? `${name} ${n}` : name
-})
+const pinnedRows = (root: ParentNode) => [...root.querySelectorAll<HTMLElement>('[data-testid="sidebar-notes-pinned"] [data-space-note]')].map((b) => b.textContent ?? '')
 const menuItem = (label: string) => [...document.querySelectorAll<HTMLElement>('[role^="menuitem"]')].find((el) => el.textContent?.includes(label))!
 
-describe('pinned notes in Favourites', () => {
-  it('Pinned note: the title with no count, renamed after sync, opening the note', async () => {
+describe('pinned notes in the Notes space (notes-space D1, D4)', () => {
+  it('Pinned note: the title, renamed after sync, opening the note; not in the Tasks space Favourites', async () => {
     const p = await createProject({ name: 'Home' })
     const wifi = await createNote({ title: 'Wi-Fi' })
     await pin('project', p)
     await pin('note', wifi)
-    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await waitFor(() => favRows(r.container).join('|') === 'Home|Wi-Fi', 'the two favourites')
-    const row = r.container.querySelector(`[data-favourite-row="note:${wifi}"]`)!
-    expect(row.querySelector('[data-count]')).toBeNull()
+    const tasks = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
+    await waitFor(() => !!tasks.container.querySelector('[data-favourite-row]'), 'the Favourites group')
+    expect(tasks.container.querySelector(`[data-favourite-row="note:${wifi}"]`)).toBeNull()
+    await tasks.unmount()
+    const r = await render(<Sidebar route={{ view: 'notes' }} user={user} />)
+    await waitFor(() => pinnedRows(r.container).join('|') === 'Wi-Fi', 'the pinned note')
     await applyOps([{ id: 'r1', entity: 'note', entityId: wifi, field: 'title', value: 'Home Wi-Fi', ts: Date.now() + 10_000, device: '~phone' } as unknown as Op])
-    await waitFor(() => favRows(r.container).includes('Home Wi-Fi'), 'the rename')
-    await click(r.container.querySelector(`[data-favourite="note:${wifi}"]`)!)
+    await waitFor(() => pinnedRows(r.container).includes('Home Wi-Fi'), 'the rename')
+    await click(r.container.querySelector(`[data-space-note="${wifi}"]`)!)
     expect(location.pathname).toBe(`/notes/${wifi}`)
     await r.unmount()
   })
 
-  it('reorders and unpins from its menu; a note in the Trash is not shown', async () => {
+  it('reorders among the pinned notes and unpins from its menu; a note in the Trash is not shown', async () => {
     const p = await createProject({ name: 'Home' })
     const wifi = await createNote({ title: 'Wi-Fi' })
+    const pack = await createNote({ title: 'Packing' })
     const old = await createNote({ title: 'Old' })
+    await pin('note', pack)
     await pin('project', p)
     await pin('note', wifi)
     await pin('note', old)
     await trashNote(old)
-    const r = await render(<Sidebar route={{ view: 'inbox' }} user={user} />)
-    await waitFor(() => favRows(r.container).join('|') === 'Home|Wi-Fi', 'the live favourites')
+    const r = await render(<Sidebar route={{ view: 'notes' }} user={user} />)
+    await waitFor(() => pinnedRows(r.container).join('|') === 'Packing|Wi-Fi', 'the live pinned notes')
     await click(r.container.querySelector('button[aria-label="Menu for note Wi-Fi"]')!)
     await waitFor(() => !!menuItem('Move up'), 'the menu')
     await click(menuItem('Move up'))
-    await waitFor(() => favRows(r.container).join('|') === 'Wi-Fi|Home', 'moved up')
+    await waitFor(() => pinnedRows(r.container).join('|') === 'Wi-Fi|Packing', 'moved up past the project')
     await click(r.container.querySelector('button[aria-label="Menu for note Wi-Fi"]')!)
     await waitFor(() => !!menuItem('Pin to sidebar'), 'the menu')
     await click(menuItem('Pin to sidebar'))
-    await waitFor(() => favRows(r.container).join('|') === 'Home', 'unpinned')
+    await waitFor(() => pinnedRows(r.container).join('|') === 'Packing', 'unpinned')
     expect(isFavourite(await db.userPrefs.get('me'), 'note', wifi)).toBe(false)
     // The trashed note's entry stays, so a restore brings it back.
     expect((await db.userPrefs.get('me'))!.favourites).toContain(`note:${old}`)

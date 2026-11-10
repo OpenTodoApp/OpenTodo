@@ -25,7 +25,7 @@ import { ViewMark, ViewMenu } from './ViewsView'
 const keyOf = (f: Pick<Favourite, 'kind' | 'id'>) => `${f.kind}:${f.id}`
 
 /** A pinned note's menu: Pin to sidebar (checked, so choosing it unpins), Move up, Move down. */
-function NoteFavouriteMenu({ id, name, favourites, className }: { id: string; name: string; favourites: Favourite[]; className: string }) {
+export function NoteFavouriteMenu({ id, name, favourites, className }: { id: string; name: string; favourites: Favourite[]; className: string }) {
   const { first, last } = favouriteEdges(favourites, 'note', id)
   return (
     <ActionMenu label={t('Menu for note {name}', { name })} title={name} groups={[

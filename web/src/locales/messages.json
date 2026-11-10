@@ -1445,14 +1445,13 @@
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All locations": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/Sidebar.tsx"
   ],
   "All occurrences": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -1467,7 +1466,6 @@
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "All runs": [
@@ -3284,9 +3282,6 @@
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/calendar/queryFilter.tsx",
     "web/src/app/task-list/ListChrome.tsx"
-  ],
-  "Clear filters": [
-    "web/src/app/notes/NoteFilters.tsx"
   ],
   "Clear memory?": [
     "web/src/app/assistant/MemorySettings.tsx"
@@ -6393,11 +6388,7 @@
     "web/src/app/calendar/queryFilter.tsx"
   ],
   "Filters": [
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
-  "Filters ({n})": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/AuditPanel.tsx"
   ],
   "Filter…": [
     "web/src/app/calendar/useCalendarChrome.tsx",
@@ -6418,7 +6409,6 @@
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "Find a member…": [
@@ -6444,7 +6434,6 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "Find a routine…": [
@@ -7029,7 +7018,7 @@
   "Go to Notes": [
     "web/src/app/palette/registry.ts"
   ],
-  "Go to Notes: every note, standalone and on tasks and projects, with search": [
+  "Go to Notes: every note with search, and the sidebar shows your notes": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Projects": [
@@ -7940,6 +7929,12 @@
   "In the command bar: add what you typed as a task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the last 30 days": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
+  "In the last 7 days": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "In the morning": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -8011,6 +8006,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
@@ -8503,7 +8499,6 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -9662,6 +9657,9 @@
   "More properties": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "More than 30 days ago": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "More theme actions": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -10517,9 +10515,6 @@
   "No label": [
     "web/src/lib/views.ts"
   ],
-  "No label matches.": [
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
   "No label named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
   ],
@@ -10671,8 +10666,7 @@
     "web/src/app/WorkspaceGroups.tsx"
   ],
   "No project matches.": [
-    "web/src/app/ProjectPickerField.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/ProjectPickerField.tsx"
   ],
   "No project named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
@@ -11098,11 +11092,11 @@
     "web/src/lib/noteOps.ts"
   ],
   "Notes": [
-    "web/src/app/AppearanceSection.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/LinkOption.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/SpaceSwitch.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
@@ -12725,7 +12719,8 @@
     "web/src/app/focus/FocusSettings.tsx"
   ],
   "Pinned": [
-    "web/src/app/notes/NotesPage.tsx"
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/notes/NotesSidebar.tsx"
   ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
@@ -13063,7 +13058,6 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
@@ -13135,7 +13129,7 @@
     "web/src/app/notes/NoteRow.tsx"
   ],
   "Project notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Project outline": [
     "web/src/lib/assistantBlocks.ts"
@@ -13538,6 +13532,7 @@
   ],
   "Recent": [
     "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/ui/Combobox/useCombobox.ts"
   ],
@@ -13804,6 +13799,7 @@
     "web/src/app/ShareCapture.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/RotationEditor.tsx"
@@ -16075,12 +16071,14 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Source": [
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Source code": [
     "web/src/app/SettingsView.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Space": [
+    "web/src/app/SpaceSwitch.tsx"
   ],
   "Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.": [
     "web/src/app/focus/FocusView.tsx"
@@ -16116,8 +16114,8 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
-  "Standalone only": [
-    "web/src/app/notes/NoteFilters.tsx"
+  "Standalone notes": [
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Star OpenTodo on GitHub": [
     "web/src/app/WelcomeDialog.tsx"
@@ -16508,6 +16506,9 @@
   "Suggested next steps": [
     "web/src/app/assistant/blocks/FollowupChips.tsx"
   ],
+  "Suggestions": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -16716,7 +16717,7 @@
     "web/src/app/notes/NoteRow.tsx"
   ],
   "Task notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Task page": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -16771,6 +16772,7 @@
   "Tasks": [
     "web/src/app/LinkOption.tsx",
     "web/src/app/PublicListScreen.tsx",
+    "web/src/app/SpaceSwitch.tsx",
     "web/src/app/assistant/blocks/TasksBlock.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
@@ -17635,7 +17637,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "The server answered {status}.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "The server can push to this device.": [
     "web/src/lib/push.ts"
@@ -18316,7 +18318,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This file is missing on the server.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "This file is not a VS Code colour theme: it has no colors.": [
     "web/src/lib/theme/vscode.ts"
@@ -19050,6 +19052,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
@@ -19682,9 +19685,6 @@
   "Unlink {email}?": [
     "web/src/app/SsoPanel.tsx"
   ],
-  "Unlinked": [
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
   "Unlock": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -19695,7 +19695,7 @@
     "web/src/lib/attachments.ts"
   ],
   "Unlock encryption on this device to open this file.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "Unlock encryption on this device to publish this task.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -19842,6 +19842,8 @@
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
+    "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/notesSection.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
@@ -20766,6 +20768,7 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/lib/logbook.ts"
   ],
   "Yesterday’s line": [
@@ -21158,7 +21161,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Your start view was deleted, so the Inbox opened instead.": [
-    "web/src/app/Shell.tsx"
+    "web/src/app/startView.ts"
   ],
   "Your task feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"

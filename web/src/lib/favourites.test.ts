@@ -164,13 +164,18 @@ describe('pinned notes', () => {
     expect(await shownWithNotes()).toEqual([])
   })
 
-  it('moves a note among the favourites', async () => {
+  it('moves a note among the pinned notes, past other kinds (notes-space D4)', async () => {
     const p = await createProject({ name: 'Home' })
     const n = await createNote({ title: 'Wi-Fi' })
-    await pin('project', p)
+    const m = await createNote({ title: 'Packing' })
     await pin('note', n)
-    await moveFavourite('note', n, -1)
-    expect((await prefs())!.favourites).toBe(`note:${n},project:${p}`)
+    await pin('project', p)
+    await pin('note', m)
+    await moveFavourite('note', m, -1)
+    expect((await prefs())!.favourites).toBe(`note:${m},project:${p},note:${n}`)
+    // A project moves among the Favourites group, which holds no notes.
+    await moveFavourite('project', p, -1)
+    expect((await prefs())!.favourites).toBe(`note:${m},project:${p},note:${n}`)
   })
 
   it('a 1.0 device ignores a pinned note and keeps it when it pins, moves and unpins', async () => {

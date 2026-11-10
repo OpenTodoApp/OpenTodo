@@ -135,6 +135,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
+| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Planned |
 
 ## Assistant area
 
