@@ -1,30 +1,18 @@
-// Carry over, one task at a time (OpenSpec change close-the-day-v2, design D2): a
-// card with the whole title, the project and why the task is in Today, the five
-// decisions with their keys, and below it the decisions so far, each line bringing
-// its task back to the card. Nothing here completes or moves a task: the decisions
-// are written as one batch when the user moves on from the step (D3).
+// What moves (OpenSpec change close-the-day-redesign, design D3): every unfinished
+// task of the day on one list, a row each with its title, its project and why it is
+// in Today, and a three-way choice: Tomorrow (the default), Later (a day from the
+// date dialog, which the row then shows) and Someday. The row's menu holds Keep in
+// Today and Done already. A row the user may not edit keeps its place. Nothing here
+// writes: the decisions are device state until the day is closed (D5).
 import { localDueOf } from '../../lib/dates'
 import { t } from '../../lib/i18n'
-import type { CarryDecision, CarryTask } from '../../lib/review'
+import { decisionOf, type CarryDecision, type CarryTask } from '../../lib/closeDay'
 import type { Project } from '../../lib/types'
-import { Button, Tooltip } from '../../ui'
+import { Icon, Menu, MenuItem, SegmentedControl, TruncatedText } from '../../ui'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
 
-type Kind = CarryDecision['kind']
-
-const CHOICES: { kind: Kind; key: string; label: () => string }[] = [
-  { kind: 'tomorrow', key: 't', label: () => t('Tomorrow') },
-  { kind: 'day', key: 'p', label: () => t('Pick a day') },
-  { kind: 'someday', key: 'y', label: () => t('Someday') },
-  { kind: 'keep', key: 'h', label: () => t('Keep in Today') },
-  { kind: 'done', key: 'd', label: () => t('Done already') },
-]
-
-/** The decision's name as the list shows it ("Friday 16 October" for a picked day). */
-function useDecisionName() {
-  const dt = useDateTimeFormat()
-  return (d: CarryDecision) => (d.kind === 'day' ? dt.formatDate(d.date, 'long') : CHOICES.find((c) => c.kind === d.kind)!.label())
-}
+export type Kind = CarryDecision['kind']
+type Choice = 'tomorrow' | 'day' | 'someday'
 
 /** Why the task is in Today on the day being closed: due that day, open since an earlier day, or started. */
 function useReason() {
@@ -32,68 +20,71 @@ function useReason() {
   return (x: CarryTask, day: string) => {
     const due = x.task.due ? localDueOf(x.task.due) : null
     if (due && due.date === day) return due.time ? t('Due today at {time}', { time: dt.formatTime(due.time) }) : t('Due today')
-    if (due && due.date < day) return t('Open since {date}', { date: dt.formatDate(due.date, 'long') })
-    return t('In Today since its start date')
+    if (due && due.date < day) return t('Open since {date}', { date: dt.formatDate(due.date, 'compact') })
+    return t('Started')
   }
 }
 
-/** The card for one task, and its decisions. A task the user may not edit offers Keep only, with the reason. */
-export function CarryCard({ row, position, total, day, project, decision, onDecide }: {
-  row: CarryTask
-  position: number
-  total: number
+export function MovesList({ rows, day, decisions, projects, cursor, onCursor, onChoose, onMenu }: {
+  rows: CarryTask[]
   day: string
-  project?: Project
-  decision: CarryDecision
-  onDecide: (x: CarryTask, kind: Kind) => void
+  decisions: ReadonlyMap<string, CarryDecision>
+  projects: ReadonlyMap<string, Project>
+  /** The row the keys act on. */
+  cursor: string | null
+  onCursor: (id: string) => void
+  onChoose: (x: CarryTask, kind: Kind) => void
+  /** A row menu opened or closed (the screen's keys pause meanwhile). */
+  onMenu: (open: boolean) => void
 }) {
   const reason = useReason()
-  const choices = row.editable ? CHOICES : CHOICES.filter((c) => c.kind === 'keep')
+  const dt = useDateTimeFormat()
+  const choices: { id: Choice; label: string }[] = [
+    { id: 'tomorrow', label: t('Tomorrow') },
+    { id: 'day', label: t('Later') },
+    { id: 'someday', label: t('Someday') },
+  ]
   return (
-    <section aria-label={t('Task {n} of {total}', { n: position, total })} data-carry-card={row.task.id}
-      className="rounded-card border border-default bg-surface p-4 shadow-1 sm:p-5">
-      <p className="text-hint font-semibold uppercase tracking-wide text-faint tabular-nums" data-carry-position>{t('{n} of {total}', { n: position, total })}</p>
-      <h3 className="user-text mt-1 text-h2 font-semibold text-strong break-words" data-carry-title>{row.task.title || t('Untitled')}</h3>
-      <p className="mt-1 flex flex-wrap gap-x-2 text-meta text-muted">
-        {project && <span>{project.name}</span>}
-        {project && <span aria-hidden="true">·</span>}
-        <span data-carry-reason>{reason(row, day)}</span>
-      </p>
-      {!row.editable && <p className="mt-2 text-meta text-faint">{t('You can only view tasks in this shared project, so it stays in Today.')}</p>}
-      <div role="toolbar" aria-label={t('What happens to {title}', { title: row.task.title })} className="mt-4 flex flex-wrap gap-2" data-carry-decision={decision.kind}>
-        {choices.map((c) => (
-          <Button key={c.kind} size="sm" variant={c.kind === decision.kind ? 'primary' : 'secondary'} aria-pressed={c.kind === decision.kind}
-            aria-keyshortcuts={c.key} onClick={() => onDecide(row, c.kind)} data-carry-choice={c.kind}>
-            {c.label()} <span className="ui-kbd ml-1">{c.key}</span>
-          </Button>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-/** The decisions so far: one line per task; activating a line brings its task back to the card. */
-export function CarryList({ rows, current, decisionOf, onShow }: {
-  rows: CarryTask[]
-  current: string | null
-  decisionOf: (x: CarryTask) => CarryDecision
-  onShow: (id: string) => void
-}) {
-  const name = useDecisionName()
-  return (
-    <ul className="mt-4 divide-y divide-default rounded-card border border-default" aria-label={t('Decisions so far')} data-carry-summary>
+    <ul className="-mx-2 sm:-mx-3" aria-label={t('What moves')} data-carry-list>
       {rows.map((x) => {
-        const d = decisionOf(x)
+        const d = decisionOf(decisions, x)
+        const project = x.task.project_id ? projects.get(x.task.project_id) : undefined
+        const current = x.task.id === cursor
+        const title = x.task.title || t('Untitled')
         return (
-          <li key={x.task.id} data-carry-line={x.task.id}>
-            {/* The whole title is the button's text (its accessible name); the line only cuts it visually, and the tooltip shows it. */}
-            <Tooltip label={x.task.title || t('Untitled')} side="top">
-              <button type="button" onClick={() => onShow(x.task.id)} aria-current={x.task.id === current ? 'true' : undefined}
-                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 px-3 py-2 text-left hover:bg-sunken focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus ${x.task.id === current ? 'bg-accent-soft/40' : ''}`}>
-                <span className="user-text min-w-0 flex-1 truncate text-body">{x.task.title || t('Untitled')}</span>
-                <span className="shrink-0 text-meta text-muted" data-carry-line-decision={d.kind}>{name(d)}</span>
-              </button>
-            </Tooltip>
+          <li key={x.task.id} data-carry-row={x.task.id} data-carry-decision={d.kind} aria-current={current ? 'true' : undefined}
+            onClick={() => onCursor(x.task.id)} onFocusCapture={() => onCursor(x.task.id)}
+            className={`flex flex-wrap items-center gap-x-4 gap-y-2 rounded-control px-2 py-2.5 transition-colors duration-(--duration-ui) sm:flex-nowrap sm:px-3 ${current ? 'bg-selected-row' : ''}`}>
+            <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
+              <TruncatedText as="p" text={title} className={`user-text block text-body ${d.kind === 'done' ? 'text-muted line-through decoration-faint' : 'text-strong'}`} data-carry-title="" />
+              <p className="flex min-w-0 flex-wrap gap-x-1.5 text-meta text-muted">
+                {project && <span className="truncate">{project.name}</span>}
+                {project && <span aria-hidden="true">·</span>}
+                <span data-carry-reason>{reason(x, day)}</span>
+                {d.kind === 'day' && <>
+                  <span aria-hidden="true">·</span>
+                  <button type="button" className="cursor-pointer text-accent hover:underline" onClick={() => onChoose(x, 'day')} data-carry-day>
+                    {t('Moves to {date}', { date: dt.formatDate(d.date, 'compact') })}
+                  </button>
+                </>}
+                {d.kind === 'keep' && x.editable && <><span aria-hidden="true">·</span><span className="text-default" data-carry-note>{t('Stays in Today')}</span></>}
+                {d.kind === 'done' && <><span aria-hidden="true">·</span><span className="text-default" data-carry-note>{t('Done already')}</span></>}
+              </p>
+            </div>
+            {x.editable ? (
+              <div className="flex shrink-0 items-center gap-1">
+                <SegmentedControl<Choice> options={choices} label={t('What happens to {title}', { title })} data-carry-choices
+                  value={d.kind === 'tomorrow' || d.kind === 'day' || d.kind === 'someday' ? d.kind : ('' as Choice)}
+                  onChange={(c) => onChoose(x, c)} />
+                <Menu kind="menu" label={t('More for {title}', { title })} trigger={<Icon name="ellipsis" />} onOpenChange={onMenu}
+                  triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon touch-target" triggerProps={{ 'data-carry-menu': x.task.id }}>
+                  <MenuItem label={t('Keep in Today')} shortcut="h" checked={d.kind === 'keep'} onSelect={() => onChoose(x, 'keep')} data-carry-choice="keep" />
+                  <MenuItem label={t('Done already')} shortcut="d" checked={d.kind === 'done'} onSelect={() => onChoose(x, 'done')} data-carry-choice="done" />
+                </Menu>
+              </div>
+            ) : (
+              <p className="shrink-0 text-meta text-faint" data-carry-readonly>{t('Keeps its place')}</p>
+            )}
           </li>
         )
       })}

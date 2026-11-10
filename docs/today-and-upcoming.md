@@ -29,7 +29,7 @@ Your appointments can show on Today and on each Upcoming day: [Calendar events i
 
 Today's menu offers **Hide tasks assigned to others**, off until you turn it on; Upcoming does not change.
 
-At the end of the list, **Close the day** moves what is left to tomorrow in one step ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
+At the end of the list, **Close the day** walks you through the evening ritual ([Close the day](method/rhythms.md#close-the-day)); afterwards it reads **Day closed** with the time.
 
 ## Plan your week with Upcoming
 

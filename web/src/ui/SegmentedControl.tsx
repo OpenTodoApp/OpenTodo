@@ -28,6 +28,8 @@ export interface SegmentedControlProps<T extends string> {
 
 export function SegmentedControl<T extends string>({ options, value, onChange, label, disabled = false, wrap = false, className = '', ...hooks }: SegmentedControlProps<T>) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
+  // With no option chosen (a value outside the options), the first one takes Tab.
+  const none = !options.some((o) => o.id === value)
   const move = (e: KeyboardEvent) => {
     const i = options.findIndex((o) => o.id === value)
     const next = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % options.length
@@ -41,14 +43,14 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
   return (
     <div {...hooks} role="radiogroup" aria-label={label} aria-disabled={disabled || undefined} onKeyDown={disabled ? undefined : move}
       className={`inline-grid max-w-full auto-cols-[minmax(0,1fr)] grid-flow-col rounded-control border border-default bg-sunken p-0.5 ${className}`}>
-      {options.map((o) => {
+      {options.map((o, i) => {
         const on = o.id === value
         return (
-          <button key={o.id} ref={(el) => { refs.current[o.id] = el }} type="button" role="radio" aria-checked={on} tabIndex={on ? 0 : -1} disabled={disabled}
+          <button key={o.id} ref={(el) => { refs.current[o.id] = el }} type="button" role="radio" aria-checked={on} tabIndex={on || (none && i === 0) ? 0 : -1} disabled={disabled}
             data-segment={o.id} onClick={() => { if (!on) onChange(o.id) }}
             className={`touch-target min-h-6 min-w-0 ${wrap ? 'whitespace-normal leading-tight text-balance' : 'truncate'} rounded-chip px-2.5 py-0.5 text-meta font-medium outline-none transition duration-(--duration-ui)
               focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed
-              ${on ? 'bg-surface text-strong shadow-1' : 'text-muted pointer-fine:hover:text-default'}`}>
+              ${on ? 'bg-surface text-strong shadow-1 forced-colors:border forced-colors:border-[Highlight]' : 'text-muted pointer-fine:hover:text-default'}`}>
             {o.label}
           </button>
         )

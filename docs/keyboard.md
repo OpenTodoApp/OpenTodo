@@ -319,8 +319,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 
 | Keys | What it does |
 | --- | --- |
-| <kbd>[</kbd> | Weekly review: the previous step |
-| <kbd>]</kbd> | Weekly review: the next step |
+| <kbd>[</kbd> | Weekly review and Close the day: the previous step |
+| <kbd>]</kbd> | Weekly review and Close the day: the next step |
 | <kbd>r</kbd> | Project walk: mark the project reviewed, then the next one |
 | <kbd>q</kbd> | Project walk: add a next action to the project |
 | <kbd>Enter</kbd> | Project walk: open the project |
@@ -330,11 +330,16 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>j</kbd> / <kbd>Space</kbd> | Project walk: skip to the next project |
 | <kbd>k</kbd> | Project walk: back to the previous project |
 | <kbd>f</kbd> | Daily check: put the selected task in today's focus (up to three), or take it out |
-| <kbd>t</kbd> | Close the day: carry the task on the card over to tomorrow |
-| <kbd>p</kbd> | Close the day: pick a day for the task on the card |
-| <kbd>y</kbd> | Close the day: move the task on the card to Someday |
-| <kbd>h</kbd> | Close the day: keep the task on the card in Today |
-| <kbd>d</kbd> | Close the day: the task on the card was done already (completed with the carry-over) |
+| <kbd>Enter</kbd> | Close the day: the next step; on the last step, close the day |
+| <kbd>Esc</kbd> | Close the day: leave without writing anything |
+| <kbd>j</kbd> | Close the day, What moves: the next row |
+| <kbd>k</kbd> | Close the day, What moves: the previous row |
+| <kbd>t</kbd> | Close the day, What moves: the current row moves to tomorrow |
+| <kbd>p</kbd> | Close the day, What moves: pick a later day for the current row |
+| <kbd>y</kbd> | Close the day, What moves: the current row moves to Someday |
+| <kbd>h</kbd> | Close the day, What moves: keep the current row in Today |
+| <kbd>d</kbd> | Close the day, What moves: the current row was done already (completed with the close) |
+| <kbd>Shift+T</kbd> | Close the day, What moves: every row to tomorrow |
 
 ### Display mode
 
