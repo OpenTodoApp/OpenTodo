@@ -7,7 +7,7 @@ import data from './manifest.json'
 export interface ManifestTool {
   name: string
   /** display: a block in the answer (assistant-generative-ui D1); it changes nothing. */
-  kind: 'read' | 'write' | 'display'
+  kind: 'read' | 'write' | 'display' | 'proposal'
   description: string
   input_schema: Record<string, unknown>
   strict_schema: Record<string, unknown>
@@ -46,6 +46,8 @@ export interface Manifest {
   view_display: Record<string, string[]>
   /** The display tools every turn offers, a skill's included (assistant-followups). */
   always_display: string[]
+  /** Amending an open proposal (assistant-proposal-editing D3): the note, the most items and drop_from_proposal. */
+  open_proposal: { note: string; max_items: number; tool: ManifestTool }
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

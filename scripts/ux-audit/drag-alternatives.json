@@ -100,6 +100,10 @@
   ] },
   { "id": "bookmarklet", "what": "The capture bookmarklet: drag it to the bookmarks bar.", "alternatives": [
    { "file": "web/src/app/CaptureSettings.tsx", "contains": "t('Copy bookmarklet')" }
+  ] },
+  { "id": "proposal-calendar-item", "what": "A proposed task in the assistant proposal's calendar shape: drag it to another day (assistant-proposal-editing D1).", "alternatives": [
+   { "file": "web/src/app/assistant/ItemEditor.tsx", "contains": "due: () => t('Do on')" },
+   { "file": "web/src/app/assistant/blocks/ProposalShapes.tsx", "contains": "move(index, addDaysISO(placedDate(item)!, step))" }
   ] }
  ],
  "notDrags": [

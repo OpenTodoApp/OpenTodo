@@ -57,6 +57,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Shift+Enter</kbd> | In quick add: write notes under the title; Enter adds the task with them |
 | <kbd>Shift+I</kbd> | Open the assistant (when the server owner has turned it on): ask about your tasks, review proposed changes; Enter sends, Esc closes |
 | <kbd>Enter</kbd> / <kbd>Esc</kbd> | Proposed changes: apply the checked changes / discard the proposal; Space toggles an item |
+| <kbd>Alt+↑</kbd> / <kbd>Alt+↓</kbd> | Proposed item in a calendar: in a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same |
 | <kbd>Shift+V</kbd> | Dictate into quick add (turn voice capture on in Settings first); Esc or a pause stops, Enter saves |
 | <kbd>.</kbd> / <kbd>Shift+F10</kbd> / <kbd>Menu</kbd> | Open the menu of the focused row: a label, view, section heading or project |
 | <kbd>F2</kbd> | Focused label: rename the label in place; Alt+↑ / Alt+↓ move it, Alt+Shift+↑ / ↓ to the top / bottom |
