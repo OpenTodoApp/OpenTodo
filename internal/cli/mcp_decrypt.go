@@ -58,6 +58,10 @@ var contentArgs = map[string]struct {
 	"update_note": {entity: "note", fields: []string{"title", "description"}},
 }
 
+// displayTools are the MCP Apps display tools (mcp-blocks), whose text content
+// names only the kind and count shown.
+var displayTools = map[string]bool{"show_tasks": true, "show_calendar": true, "show_deadlines": true}
+
 type decrypter struct {
 	c   *client
 	key []byte
@@ -109,7 +113,7 @@ func (d *decrypter) before(ctx context.Context, message []byte) ([]byte, string,
 // after transforms one server response: tool definitions lose their
 // ciphertext-only wording, tool results and resources get plaintext where the
 // server put the placeholder. Anything it cannot parse passes unchanged.
-func (d *decrypter) after(ctx context.Context, response []byte, method, _ string) []byte {
+func (d *decrypter) after(ctx context.Context, response []byte, method, tool string) []byte {
 	var m map[string]any
 	if json.Unmarshal(response, &m) != nil {
 		return response
@@ -130,6 +134,11 @@ func (d *decrypter) after(ctx context.Context, response []byte, method, _ string
 			return response
 		}
 		d.decryptResult(ctx, sc)
+		if displayTools[tool] {
+			// A block's rows are for the host's view; the model keeps reading the
+			// kind and count the server wrote (mcp-blocks D4).
+			break
+		}
 		text, err := json.Marshal(sc)
 		if err != nil {
 			return response

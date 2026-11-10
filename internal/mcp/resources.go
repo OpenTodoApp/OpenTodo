@@ -91,6 +91,9 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 	if len(params) == 0 || json.Unmarshal(params, &p) != nil || p.URI == "" {
 		return nil, invalidParams("uri: the resource URI is required")
 	}
+	if strings.HasPrefix(p.URI, "ui://") {
+		return readView(p.URI) // a block view (mcp-blocks D3)
+	}
 	u, err := url.Parse(p.URI)
 	if err != nil || u.Scheme != "opentodo" {
 		return nil, notFound(p.URI)

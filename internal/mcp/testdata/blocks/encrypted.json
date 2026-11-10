@@ -1,0 +1,10 @@
+{
+  "_comment": "An encrypted account's show_tasks block (mcp-blocks D4), shared by internal/mcp and internal/cli: the tasks to seed (the encrypted ones sealed for the account) due on date, and the ids to show in order.",
+  "date": "2026-03-11",
+  "ids": ["e1", "e2"],
+  "plaintext": {
+    "e1": "Pay the plumber",
+    "e2": "Plain dentist"
+  },
+  "encrypted": ["e1"]
+}

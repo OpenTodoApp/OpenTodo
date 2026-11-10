@@ -151,7 +151,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | In progress (3 of 3) |
 | `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
-| `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Planned |
+| `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | In progress (6 of 6) |
 
 ## UX polish (2026-11 feedback)
 
