@@ -199,12 +199,12 @@ await p2.keyboard.press('Escape')
 step('close the day on device 1, reopen it offline on device 2 (ux-feedback-2)')
 const serverDue = async (p, title) => p.evaluate(async (t) => ((await (await fetch('/api/v1/tasks')).json()).tasks ?? []).find((x) => x.title === t)?.due?.date ?? null, title)
 await page.goto(`${base}/review/close`)
-await page.locator('[data-review-step="summary"]').waitFor()
+await page.locator('[data-close-step="done"]').waitFor()
 await page.keyboard.press(']')
-await page.locator('[data-carry-card]').waitFor()
-// Moving on from Carry over applies its decisions (close-the-day-v2 D3): Tomorrow by default.
+await page.locator('[data-carry-row]').first().waitFor()
+// Decisions stay on the device until the close (close-the-day-redesign D5): Tomorrow by default.
 await page.keyboard.press(']')
-await page.locator('[data-review-step="note"]').waitFor()
+await page.locator('[data-close-step="first"]').waitFor()
 await page.locator('[data-close-note-input]').fill('Reopen check')
 await page.locator('[data-close-note-input]').press('Enter')
 // Done for today (moments-and-onboarding D6), then Back to Today.

@@ -151,7 +151,7 @@ describe('Loop home', () => {
     expect(link.getAttribute('href')).toBe('/review/close')
     expect(link.closest('a[href="/review"], a[href="/review/daily"]')).toBeNull()
     await click(link)
-    await waitFor(() => location.pathname === '/review/close' && document.querySelector('[data-review-step]')?.getAttribute('data-review-step') === 'summary')
+    await waitFor(() => location.pathname === '/review/close' && document.querySelector('[data-review-step]')?.getAttribute('data-review-step') === 'done')
     const { closeDay } = await import('../../lib/review')
     await act(async () => { await closeDay('', (await import('../../lib/dates')).logicalToday()) })
     navigate({ view: 'loop' })

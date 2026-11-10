@@ -234,6 +234,9 @@
   "<b>{task}</b> was reopened through its task page": [
     "web/src/app/NotificationBell.tsx"
   ],
+  "<n-done>{done}</n-done> of <n-planned>{planned}</n-planned> done": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "<span>?</span>Help": [
     "web/src/app/help/HelpLink.tsx"
   ],
@@ -392,6 +395,9 @@
   "A light theme.": [
     "web/src/app/themes/ImportReport.tsx"
   ],
+  "A line for tomorrow": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "A link adds whoever opens it. It works once and expires after the time you choose.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -436,9 +442,6 @@
   ],
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
-  ],
-  "A note for tomorrow morning": [
-    "web/src/lib/review.ts"
   ],
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
@@ -1467,6 +1470,9 @@
     "web/src/app/review/StatsView.tsx",
     "web/src/app/views/ViewResults.tsx"
   ],
+  "All to tomorrow": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "All views": [
     "web/src/app/Sidebar.tsx"
   ],
@@ -2278,6 +2284,7 @@
     "web/src/app/focus/FocusView.tsx",
     "web/src/app/menus/ActionMenu.tsx",
     "web/src/app/palette/CommandPalette.tsx",
+    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/StepCard.tsx"
   ],
   "Back to Appearance": [
@@ -2805,9 +2812,6 @@
   "Carry": [
     "web/src/app/objectives/ReviewObjectives.tsx"
   ],
-  "Carry over": [
-    "web/src/lib/review.ts"
-  ],
   "Catch everything|method": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -3326,28 +3330,42 @@
     "web/src/app/method/LoopHome.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
-    "web/src/lib/review.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Close the day progress": [
-    "web/src/app/review/CloseDay.tsx"
+    "web/src/app/review/CloseProgress.tsx"
   ],
-  "Close the day: carry the task on the card over to tomorrow": [
+  "Close the day, What moves: every row to tomorrow": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: keep the current row in Today": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: pick a later day for the current row": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: the current row moves to Someday": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: the current row moves to tomorrow": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: the current row was done already (completed with the close)": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: the next row": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Close the day, What moves: the previous row": [
     "web/src/lib/shortcuts.ts"
   ],
   "Close the day: how it went, carry over what is left, a line for tomorrow": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Close the day: keep the task on the card in Today": [
+  "Close the day: leave without writing anything": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Close the day: move the task on the card to Someday": [
-    "web/src/lib/shortcuts.ts"
-  ],
-  "Close the day: pick a day for the task on the card": [
-    "web/src/lib/shortcuts.ts"
-  ],
-  "Close the day: the task on the card was done already (completed with the carry-over)": [
+  "Close the day: the next step; on the last step, close the day": [
     "web/src/lib/shortcuts.ts"
   ],
   "Close the filter": [
@@ -4380,6 +4398,12 @@
   "Day calendar": [
     "web/src/app/CalendarView.tsx"
   ],
+  "Day closed": [
+    "web/src/lib/closeDay.ts"
+  ],
+  "Day closed · {n} moved to tomorrow": [
+    "web/src/lib/closeDay.ts"
+  ],
   "Day closed, {time}": [
     "web/src/app/CloseDayRow.tsx",
     "web/src/app/Sidebar.tsx",
@@ -4479,9 +4503,6 @@
   "Deadlines, {date} – {date2}": [
     "web/src/lib/assistantBlocks.ts"
   ],
-  "Decide for each; moving on carries them over.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Decide once what each item is and what it needs.": [
     "web/src/lib/method/vocabulary.json"
   ],
@@ -4491,9 +4512,6 @@
   "Decisions": [
     "web/src/app/TriageView.tsx",
     "web/src/app/review/ProjectWalk.tsx"
-  ],
-  "Decisions so far": [
-    "web/src/app/review/CarryOver.tsx"
   ],
   "Decline": [
     "web/src/app/MemberInvitations.tsx",
@@ -5047,6 +5065,7 @@
   ],
   "Done today": [
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/review/CloseDay.tsx",
     "web/src/lib/listGroups.ts"
   ],
   "Done today, {instant}": [
@@ -5904,9 +5923,6 @@
   ],
   "Every task can be done at any time": [
     "web/src/app/menus/flowMenu.ts"
-  ],
-  "Every task has a decision. Change one below, or move on.": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "Every task of these days is placed.": [
     "web/src/app/calendar/PlanPanel.tsx"
@@ -7481,9 +7497,6 @@
   "How quick add reads what you type, on this device.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "How the day went": [
-    "web/src/lib/review.ts"
-  ],
   "How to connect a calendar app": [
     "web/src/app/CaldavPanel.tsx"
   ],
@@ -7733,9 +7746,6 @@
   ],
   "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
-  ],
-  "In Today since its start date": [
-    "web/src/app/review/CarryOver.tsx"
   ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"
@@ -8333,6 +8343,9 @@
   "Keeps each colour's hue and moves only its lightness until the pair reads.": [
     "web/src/app/themes/ImportReport.tsx"
   ],
+  "Keeps its place": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "Kept away": [
     "web/src/app/AgentAccessRow.tsx"
   ],
@@ -8592,6 +8605,7 @@
   ],
   "Later": [
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/review/CarryOver.tsx",
     "web/src/app/themes/previewData.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/sectorNames.ts"
@@ -8642,9 +8656,6 @@
   ],
   "Leave empty to keep the stored token. It is never shown again.": [
     "web/src/app/IssueEditor.tsx"
-  ],
-  "Leave it empty if there’s nothing to remember.": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "Leave it empty to remove the link.": [
     "web/src/app/LinkDialog.tsx"
@@ -9508,6 +9519,9 @@
   "More actions for this comment": [
     "web/src/app/task-detail/CommentsTab.tsx"
   ],
+  "More for {title}": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "More formatting": [
     "web/src/app/EditorChrome.tsx"
   ],
@@ -9724,6 +9738,9 @@
   "Move {tasks} to “No section”": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Move {title} to": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "Move {title} to Any time": [
     "web/src/app/palette/registry.ts"
   ],
@@ -9790,6 +9807,9 @@
   ],
   "Moves": [
     "web/src/app/calendar/ReplanPreview.tsx"
+  ],
+  "Moves to {date}": [
+    "web/src/app/review/CarryOver.tsx"
   ],
   "Multi-day": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -10079,7 +10099,8 @@
   ],
   "Next": [
     "web/src/app/EncryptionPanel.tsx",
-    "web/src/app/NewBoardDialog.tsx"
+    "web/src/app/NewBoardDialog.tsx",
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Next action": [
     "web/src/app/review/ProjectWalk.tsx"
@@ -10155,7 +10176,6 @@
     "web/src/app/RecurrenceField.tsx"
   ],
   "Next: {step}": [
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
   "Next|method": [
@@ -10928,9 +10948,6 @@
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/assistantBlocks.ts"
   ],
-  "Note (optional)": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Note actions": [
     "web/src/app/notes/NoteRow.tsx"
   ],
@@ -11011,6 +11028,9 @@
     "web/src/app/MembersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "Nothing finished yet today.": [
+    "web/src/app/review/CloseDay.tsx"
+  ],
   "Nothing from this share was kept: the browser did not say where it came from. Update the browser, then share again.": [
     "web/src/app/ShareCapture.tsx"
   ],
@@ -11022,6 +11042,9 @@
   ],
   "Nothing is due today. Pick your focus from Next.": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Nothing is due tomorrow yet.": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "Nothing is open from earlier.": [
     "web/src/app/review/ReviewView.tsx"
@@ -11569,9 +11592,6 @@
   ],
   "One line or detailed rows in every list without its own choice": [
     "web/src/app/settingsIndex.ts"
-  ],
-  "One line you want to read first tomorrow morning.": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "One link for one person: whoever opens it joins this project with the role you pick. It works once.": [
     "web/src/app/InviteLinksSection.tsx"
@@ -12491,12 +12511,6 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/EarlierActions.tsx"
-  ],
-  "Pick a day": [
-    "web/src/app/review/CarryOver.tsx"
-  ],
-  "Pick a day for {title}": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "Pick a day…": [
     "web/src/app/task-list/RowSwipe.tsx"
@@ -16069,6 +16083,9 @@
   "Start your daily check: the Inbox, what is open from earlier and today’s focus.": [
     "web/src/app/method/DailyCheckToast.tsx"
   ],
+  "Started": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "Started {date}": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -16117,14 +16134,19 @@
   "Status colours: optional. A line that starts with // is derived.": [
     "web/src/app/themes/templateText.ts"
   ],
+  "Stays in Today": [
+    "web/src/app/review/CarryOver.tsx"
+  ],
   "Step deleted: {step}": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
   "Step {n} of {count}": [
     "web/src/app/FirstRun.tsx"
   ],
+  "Step {n} of {total}": [
+    "web/src/app/review/CloseProgress.tsx"
+  ],
   "Step {n} of {total} · {phase}": [
-    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/ReviewProgress.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
@@ -16564,7 +16586,6 @@
   ],
   "Task {n} of {total}": [
     "web/src/app/TriageView.tsx",
-    "web/src/app/review/CarryOver.tsx",
     "web/src/app/task-detail/TaskPageView.tsx"
   ],
   "Tasks": [
@@ -18874,9 +18895,6 @@
   "Today’s focus is done.": [
     "web/src/app/focus/FocusView.tsx"
   ],
-  "Today’s focus: <n-focus>{done} of {total}</n-focus> done.": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "Today’s sessions": [
     "web/src/app/focus/FocusSessions.tsx",
     "web/src/app/focus/FocusView.tsx"
@@ -18926,6 +18944,9 @@
   "Tomorrow 09:00": [
     "web/src/app/ReminderToasts.tsx"
   ],
+  "Tomorrow starts with <b>{title}</b>": [
+    "web/src/app/review/DoneForToday.tsx"
+  ],
   "Tomorrow starts with {n, plural, one {one task} other {# tasks}}; the first is <task>{title}</task> at {time}.": [
     "web/src/app/Briefing.tsx"
   ],
@@ -18934,6 +18955,9 @@
   ],
   "Tomorrow your Daily check starts with: “{note}”": [
     "web/src/app/review/CloseDay.tsx"
+  ],
+  "Tomorrow’s first thing": [
+    "web/src/lib/closeDay.ts"
   ],
   "Too deeply nested at position {pos}; use at most {max} levels of \"(\" and \"!\"": [
     "web/src/lib/filter/parse.ts"
@@ -19583,6 +19607,7 @@
     "web/src/app/palette/index.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CarryOver.tsx",
+    "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/ProjectWalk.tsx",
     "web/src/app/review/SectorReview.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -20132,10 +20157,10 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
-  "Weekly review: the next step": [
+  "Weekly review and Close the day: the next step": [
     "web/src/lib/shortcuts.ts"
   ],
-  "Weekly review: the previous step": [
+  "Weekly review and Close the day: the previous step": [
     "web/src/lib/shortcuts.ts"
   ],
   "Weekly review|method": [
@@ -20167,6 +20192,9 @@
   "What else is on your mind? Read each prompt and catch whatever comes up. Process it in the Inbox step afterwards.": [
     "web/src/app/review/ReviewView.tsx"
   ],
+  "What got done": [
+    "web/src/lib/closeDay.ts"
+  ],
   "What happens to {title}": [
     "web/src/app/review/CarryOver.tsx"
   ],
@@ -20184,6 +20212,10 @@
   ],
   "What may be sent": [
     "web/src/app/assistant/AssistantConsent.tsx"
+  ],
+  "What moves": [
+    "web/src/app/review/CarryOver.tsx",
+    "web/src/lib/closeDay.ts"
   ],
   "What should we sort out?": [
     "web/src/app/assistant/AssistantWelcome.tsx"
@@ -20616,9 +20648,6 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/lib/frames.ts"
   ],
-  "You can only view tasks in this shared project, so it stays in Today.": [
-    "web/src/app/review/CarryOver.tsx"
-  ],
   "You can view this project but not add tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -20661,9 +20690,6 @@
   ],
   "You now sign in with {email}.": [
     "web/src/app/EmailScreens.tsx"
-  ],
-  "You planned <n-planned>{planned}</n-planned> {planned, plural, one {task} other {tasks}} and finished <n-done>{done}</n-done>.": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "You ran it": [
     "web/src/app/routines/RunHistory.tsx"
@@ -21088,6 +21114,7 @@
     "web/src/app/calendar/projections.tsx"
   ],
   "and {n} more": [
+    "web/src/app/review/CloseDay.tsx",
     "web/src/app/themes/ImportReport.tsx"
   ],
   "and, or, not, grouping · quote names with spaces: @\"follow up\"": [
@@ -21331,6 +21358,9 @@
   "creation": [
     "web/src/app/routines/words.tsx"
   ],
+  "current step": [
+    "web/src/app/review/CloseProgress.tsx"
+  ],
   "custom fields, task locations and the links tasks came from": [
     "web/src/lib/assistantDisclosure.ts"
   ],
@@ -21365,6 +21395,9 @@
   ],
   "deadline {date}, {count}": [
     "web/src/lib/facets.ts"
+  ],
+  "decided, not moved yet": [
+    "web/src/app/review/CloseProgress.tsx"
   ],
   "declined on the device": [
     "web/src/app/auditFormat.ts"
@@ -21616,6 +21649,9 @@
   ],
   "fixed to {zone}": [
     "web/src/app/TaskRow.tsx"
+  ],
+  "focus <n-focus>{done} of {total}</n-focus>": [
+    "web/src/app/review/CloseDay.tsx"
   ],
   "focus, today, plan": [
     "web/src/lib/rules/sentence.ts"
@@ -22098,6 +22134,9 @@
   "not this evening": [
     "web/src/lib/rules/summary.ts"
   ],
+  "not yet": [
+    "web/src/app/review/CloseProgress.tsx"
+  ],
   "not yet encrypted": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -22453,6 +22492,9 @@
   ],
   "secure connection failed": [
     "web/src/app/auditFormat.ts"
+  ],
+  "seen": [
+    "web/src/app/review/CloseProgress.tsx"
   ],
   "sends a webhook": [
     "web/src/lib/rules/summary.ts"
@@ -23546,9 +23588,6 @@
   "{n, plural, one {# hour} other {# hours}}": [
     "web/src/lib/time.ts"
   ],
-  "{n, plural, one {# is still open from earlier.} other {# are still open from earlier.}}": [
-    "web/src/app/review/CloseDay.tsx"
-  ],
   "{n, plural, one {# item changed} other {# items changed}}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -23774,9 +23813,6 @@
   "{n, plural, one {# task added} other {# tasks added}}": [
     "web/src/lib/pasteTasks.ts"
   ],
-  "{n, plural, one {# task carried over} other {# tasks carried over}}": [
-    "web/src/lib/review.ts"
-  ],
   "{n, plural, one {# task carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.} other {# tasks carrying “{source}” will carry “{target}” instead, and “{source}” is deleted on all your devices.}}": [
     "web/src/app/LabelsView.tsx"
   ],
@@ -23794,9 +23830,6 @@
   ],
   "{n, plural, one {# task hidden by the filter} other {# tasks hidden by the filter}}": [
     "web/src/app/calendar/CapacityLine.tsx"
-  ],
-  "{n, plural, one {# task is still in Today.} other {# tasks are still in Today.}}": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "{n, plural, one {# task is} other {# tasks are}} late": [
     "web/src/app/Briefing.tsx"
@@ -23828,9 +23861,6 @@
   ],
   "{n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
-  ],
-  "{n, plural, one {# task stays in Today.} other {# tasks stay in Today.}}": [
-    "web/src/app/review/CloseDay.tsx"
   ],
   "{n, plural, one {# task will be updated.} other {# tasks will be updated.}}": [
     "web/src/app/FieldsDialog.tsx"
@@ -23932,6 +23962,9 @@
   ],
   "{n, plural, one {Date removed from # task} other {Date removed from # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {Day closed · # task carried over} other {Day closed · # tasks carried over}}": [
+    "web/src/lib/closeDay.ts"
   ],
   "{n, plural, one {Day reopened, # task back in Today} other {Day reopened, # tasks back in Today}}": [
     "web/src/lib/review.ts"
@@ -24346,7 +24379,6 @@
   "{n} of {total}": [
     "web/src/app/TriageView.tsx",
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "{n} of {total} changes applied": [
