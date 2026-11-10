@@ -276,6 +276,8 @@ describe('display tools on the device (assistant-generative-ui 4.3)', () => {
     expect(seen.req!.tools.map((t) => t.name)).toEqual(expect.arrayContaining(['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project']))
     expect(events.map((e) => e.type)).toEqual(['text', 'block', 'text', 'usage', 'done'])
     expect(events[1]).toEqual({ type: 'block', kind: 'tasks', ids: ['a', 'b'] })
+    // The round after the call starts a new paragraph (assistant-eval-gaps).
+    expect(events[2]).toEqual({ type: 'text', text: '\n\nStart with the rent.' })
     const result = seen.results[0][0]
     expect(JSON.parse(result.content)).toEqual({ shown: 'tasks', count: 2, not_found: 1 })
     expect(result.content).not.toContain('Pay rent')

@@ -694,9 +694,12 @@ func TestTurnStreamsBlock(t *testing.T) {
 	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Pay taxes"})
 	e.mustStatus(resp, 201, out)
 	task := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Call Anna"})
+	e.mustStatus(resp, 201, out)
+	other := out["id"].(string)
 	before := countOps(t, e)
 	llm.set(
-		reply([]fakeBlock{{text: "Here is what is overdue: "}, {tool: "show_tasks", input: `{"ids":["` + task + `","unknown"]}`}}, "tool_use"),
+		reply([]fakeBlock{{text: "Here is what is overdue: "}, {tool: "show_tasks", input: `{"ids":["` + task + `","unknown","` + other + `"]}`}}, "tool_use"),
 		reply([]fakeBlock{{text: "Start with the first."}}, "end_turn"),
 	)
 	code, _, events := e.turn(ask("show me what's overdue"))
@@ -713,7 +716,7 @@ func TestTurnStreamsBlock(t *testing.T) {
 		t.Fatalf("event order %v", order)
 	}
 	b := named(events, "block")[0].data
-	if b["kind"] != "tasks" || len(b["ids"].([]any)) != 1 || b["ids"].([]any)[0] != task {
+	if b["kind"] != "tasks" || len(b["ids"].([]any)) != 2 || b["ids"].([]any)[0] != task {
 		t.Fatalf("block %v", b)
 	}
 	raw, _ := json.Marshal(b)

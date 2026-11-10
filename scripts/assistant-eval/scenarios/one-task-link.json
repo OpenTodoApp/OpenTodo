@@ -1,6 +1,7 @@
 {
   "name": "one-task-link",
   "title": "A single task is named as a link, not a block",
+  "fake": true,
   "seed": {
     "tasks": [
       {

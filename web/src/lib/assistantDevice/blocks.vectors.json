@@ -1254,6 +1254,118 @@
           "message": "this answer already shows 4 blocks, the most one answer can show; nothing more was shown. Go on in words."
         }
       ]
+    },
+    {
+      "name": "chat: one task is a link, two are a block",
+      "chat": true,
+      "calls": [
+        {
+          "name": "show_tasks",
+          "args": {
+            "ids": [
+              "t1"
+            ]
+          }
+        },
+        {
+          "name": "show_tasks",
+          "args": {
+            "ids": [
+              "t1",
+              "gone",
+              "hidden"
+            ]
+          }
+        },
+        {
+          "name": "show_tasks",
+          "args": {
+            "ids": [
+              "t1",
+              "t2"
+            ]
+          }
+        },
+        {
+          "name": "suggest_followups",
+          "args": {
+            "suggestions": [
+              "Move them to Friday"
+            ]
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "tasks",
+          "ids": [
+            "t1",
+            "t2"
+          ]
+        },
+        {
+          "kind": "followups",
+          "suggestions": [
+            "Move them to Friday"
+          ]
+        }
+      ],
+      "results": [
+        {
+          "error": "one_task",
+          "id": "t1",
+          "is_error": true,
+          "message": "only one task, so nothing was shown: name it in your answer as a link, [its title](?task=<id>)."
+        },
+        {
+          "error": "one_task",
+          "id": "t1",
+          "is_error": true,
+          "message": "only one task, so nothing was shown: name it in your answer as a link, [its title](?task=<id>)."
+        },
+        {
+          "count": 2,
+          "is_error": false,
+          "shown": "tasks"
+        },
+        {
+          "count": 1,
+          "is_error": false,
+          "message": "Shown as buttons under your answer; do not repeat them in words. Your answer has no words yet: answer the user now in a sentence or two (when nothing was found, say so and what you looked for).",
+          "shown": "followups"
+        }
+      ]
+    },
+    {
+      "name": "chat with words: follow-ups as usual",
+      "chat": true,
+      "text": true,
+      "calls": [
+        {
+          "name": "suggest_followups",
+          "args": {
+            "suggestions": [
+              "Move them to Friday"
+            ]
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "followups",
+          "suggestions": [
+            "Move them to Friday"
+          ]
+        }
+      ],
+      "results": [
+        {
+          "count": 1,
+          "is_error": false,
+          "message": "Shown as buttons under your answer; do not repeat them in words.",
+          "shown": "followups"
+        }
+      ]
     }
   ]
 }
