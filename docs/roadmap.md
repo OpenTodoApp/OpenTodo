@@ -44,7 +44,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `calendar-slots` | Several small tasks in one calendar block | Shipped in 0.18 |
 | `bento-daily-check` | A Large, a Medium and a Small task in the Daily check | Shipped in 0.18 |
 | `task-energy` | An energy property (deep, medium, low) with a filter and quick-add token | Shipped in 0.18 |
-| `urgency-sort` | A deterministic urgency score sort, and sort by a custom field | Planned |
+| `urgency-sort` | A deterministic urgency score sort, and sort by a custom field | In progress (20 of 20) |
 | `calendar-clarity` | Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | Shipped in 0.18 |
 
 ## 0.19 "Series and time"
@@ -95,7 +95,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `location-reminders` | Reminders when you arrive at or leave a place | In progress (16 of 18) |
 | `more-languages` | Dutch, and a kit for community languages | Planned |
 | `simplified-chinese` | Simplified Chinese (简体中文) | In progress (15 of 16) |
-| `priority-names` | Rename the four priorities | Planned |
+| `priority-names` | Rename the four priorities | In progress (12 of 12) |
 | `telegram-channel` | Telegram as a notification channel | Planned |
 
 ## 1.0 "Trust"
@@ -148,7 +148,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | In progress (2 of 3) |
 | `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | In progress (4 of 4) |
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | In progress (7 of 7) |
-| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | Planned |
+| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Planned |
 | `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Planned |
@@ -168,7 +168,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | Planned |
+| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (2 of 20) |
 | `native-app-everyday` | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | Planned |
 | `native-app-handover` | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | Planned |
 

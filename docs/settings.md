@@ -49,7 +49,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### General
 
-[General](settings-app.md#general): **Start view and briefing**, **Keyboard**, **Focus timer** and **Maps**.
+[General](settings-app.md#general): **Start view and briefing**, **Keyboard**, **Focus timer**, **Priorities** and **Maps**.
 
 ### Language and region
 

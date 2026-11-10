@@ -26,6 +26,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { useFieldDefs } from '../useFields'
 import { RelativeTime } from './RelativeTime'
 import { t, msg, translatedMap, currentLanguage } from '../../lib/i18n'
+import { priorityShort } from '../../lib/priority'
 import { messageOf } from '../../lib/errorText'
 
 const PRIORITY_HUE: Record<number, HueName> = { 1: 'red', 2: 'orange', 3: 'blue', 4: 'slate' }
@@ -68,7 +69,7 @@ function Value({ change, value, refName, labels }: { change: VersionChange; valu
     if (!d.date) return t('No date')
     return [dt.formatDate(d.date, 'compact'), d.time ? dt.formatTime(d.time) : '', d.tz ? `(${zoneCity(d.tz)})` : ''].filter(Boolean).join(' ')
   }
-  if (f === 'priority' && typeof value === 'number') return <Badge hue={PRIORITY_HUE[value] ?? 'slate'}>P{value}</Badge>
+  if (f === 'priority' && typeof value === 'number') return <Badge hue={PRIORITY_HUE[value] ?? 'slate'}>{priorityShort(value)}</Badge>
   if (f === 'labels' && Array.isArray(value)) {
     if (!value.length) return t('No labels')
     return (

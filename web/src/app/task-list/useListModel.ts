@@ -39,6 +39,7 @@ import { readJSON, writeJSON } from '../../lib/deviceStorage'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
+import { scoreOf, useUrgencyOf } from '../useUrgency'
 
 export type ListRoute = Extract<Route, ListScope>
 
@@ -241,6 +242,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   // A label page's own manual order (view-manual-order D1): the rank of each placed task.
   const labelOrder = labelRow?.manual_order
   const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
+  // The urgency order (urgency-sort D4): scores follow every write and sync, worked out only while it is chosen.
+  const scorer = useUrgencyOf(allTasks, today, zone)
+  const urgency = display?.sortBy === 'urgency' ? scorer : null
+  const score = useMemo(() => (urgency ? scoreOf(urgency) : undefined), [urgency])
 
   // Today grouped by part of the day (day-parts D3): the account's synced choice.
   const dayParts = dayPartsOn(accountPrefs)
@@ -261,10 +266,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
-    projects, projectMap, fields: sortFields, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
+    projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
     upcomingToday, todayDisplay,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay])
+  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
@@ -315,7 +320,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
     allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
-    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, nested, dayParts, closed, upcomingToday, upcomingThrough,
+    showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
   }
 }

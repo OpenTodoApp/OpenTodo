@@ -465,6 +465,38 @@ const shots = [
     await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
     await p.keyboard.press('Escape')
   } },
+  // A project ordered by urgency (urgency-sort) with the first row's breakdown open, as Enter on its score opens it; the order syncs, so the scene puts it back.
+  { name: 'urgency-order', server: D, async run(p) {
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-panel] select[aria-label="Order by"]').selectOption('urgency')
+    await p.keyboard.press('Escape'); await p.locator('[data-urgency-chip]').first().waitFor(); await p.mouse.move(700, 40)
+    await p.locator('[data-urgency-chip]').first().focus(); await p.keyboard.press('Enter')
+    await p.locator('[data-urgency-breakdown]').waitFor(); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape')
+    await p.locator('main [data-display-trigger]').first().click().catch(() => {})
+    await p.locator('[data-display-panel] select[aria-label="Order by"]').selectOption('position').catch(() => {})
+    await p.keyboard.press('Escape')
+  } },
+  // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
+  // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  { name: 'priorities', server: D, async run(p) {
+    await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-name="1"]').waitFor())
+    for (const [n, name] of [[1, 'Must'], [2, 'Should'], [3, 'Could']]) await p.locator(`[data-priority-name="${n}"]`).fill(name)
+    await settle(p, 400)
+    await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
+    await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('priority')
+    await p.keyboard.press('Escape'); await p.locator('[data-group-label]', { hasText: 'Must' }).first().waitFor()
+    await p.mouse.move(700, 40); await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 500)
+  }, async after(p) {
+    await p.locator('main [data-display-trigger]').first().click().catch(() => {})
+    await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('section').catch(() => {})
+    await p.keyboard.press('Escape')
+    await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-names-reset]').waitFor())
+    await p.locator('[data-priority-names-reset]').click(); await settle(p, 400)
+  } },
   // Detailed rows (row-layouts): the project's own choice in Display options; the choice syncs, so the scene puts it back.
   { name: 'row-layouts', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation')
@@ -933,6 +965,13 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 560 }
   } },
+  // Brief me under Assistant in Today's menu (assistant-in-context), the menu open.
+  { name: 'assistant-in-context', server: 'assistant', async run(p) {
+    await go(p, assistantBase, '/today', () => p.getByRole('heading', { name: 'Today', level: 1 }).waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
+    const menu = p.getByRole('menu'); await p.locator('[data-assistant-brief]').waitFor(); await p.mouse.move(2, 2); await settle(p, 500)
+    return clipOf(p, menu, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   // The owner's switch for the on-device assistant of encrypted accounts (assistant-on-device), not saved.
   { name: 'assistant-device-owner', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())

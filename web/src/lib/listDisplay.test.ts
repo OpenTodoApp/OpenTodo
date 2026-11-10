@@ -49,6 +49,11 @@ describe('listDisplayOf', () => {
     expect(listDisplayOf('project', { group_by: 'priority', sort_by: 'deadline', sort_dir: 'desc' })).toEqual({ groupBy: 'priority', sortBy: 'deadline', sortDir: 'desc', rowLayout: 'line' })
     expect(listDisplayOf('project', { sort_by: fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc') }).sortBy).toBe(fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc'))
     expect(listDisplayOf('project', { sort_by: 'field:' }).sortBy).toBe('position')
+    // urgency-sort: offered on project, label and Inbox pages; Today and Upcoming keep their own orders.
+    expect(listDisplayOf('project', { sort_by: 'urgency' }).sortBy).toBe('urgency')
+    expect(listDisplayOf('label', { sort_by: 'urgency' }).sortBy).toBe('urgency')
+    expect(listDisplayOf('inbox', { inbox_sort_by: 'urgency' }).sortBy).toBe('urgency')
+    expect(listDisplayOf('today', { today_sort_by: 'urgency' }).sortBy).toBe('due')
     expect(isDefaultDisplay('project', defaultListDisplay('project'))).toBe(true)
     expect(isDefaultDisplay('label', { groupBy: 'project', sortBy: 'title', sortDir: 'asc', rowLayout: 'line' })).toBe(false)
   })
@@ -108,6 +113,24 @@ describe('project list with display options', () => {
       display: { groupBy: 'section', sortBy: fieldSortBy('cccccccc-cccc-4ccc-8ccc-cccccccccccc'), sortDir: 'asc', rowLayout: 'line' },
     })
     expect(g.map((group) => [group.key, titles(group)])).toEqual([['all', ['Sibling', 'Parent', 'Child', 'Empty']], ['later', ['Parked']]])
+  })
+
+  it('orders roots by urgency, most urgent first when ascending, subtasks under their parent and Later at the end', () => {
+    const scores: Record<string, number | null> = { Low: 1, High: 20, Mid: 5, Child: 99, Done: null }
+    const low = task({ title: 'Low' })
+    const high = task({ title: 'High' })
+    const child = task({ title: 'Child', parent_id: high.id })
+    const mid = task({ title: 'Mid' })
+    const parked = task({ title: 'Parked', start: 'someday' })
+    const score = (x: Task) => scores[x.title] ?? null
+    const input = { ...projectInput([low, high, child, mid], { laterTasks: [parked] }), score }
+    const asc = listGroups({ ...input, display: { groupBy: 'section', sortBy: 'urgency', sortDir: 'asc', rowLayout: 'line' } })
+    expect(asc.map((g) => [g.key, titles(g)])).toEqual([['all', ['High', 'Child', 'Mid', 'Low']], ['later', ['Parked']]])
+    const desc = listGroups({ ...input, display: { groupBy: 'section', sortBy: 'urgency', sortDir: 'desc', rowLayout: 'line' } })
+    expect(desc.flatMap(titles)).toEqual(['Low', 'Mid', 'High', 'Child', 'Parked'])
+    // Without the scorer (never on screen) the order reads as due date, not as reversed manual order.
+    const none = listGroups({ ...projectInput([low, high, mid]), display: { groupBy: 'section', sortBy: 'urgency', sortDir: 'asc', rowLayout: 'line' } })
+    expect(none.flatMap(titles)).toEqual(['Low', 'High', 'Mid'])
   })
 
   it('falls back to manual order when a project field sort is unavailable', () => {

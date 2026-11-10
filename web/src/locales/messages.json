@@ -1407,6 +1407,9 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
+  "Age {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "All": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
@@ -2127,8 +2130,10 @@
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
+    "web/src/app/TaskListView.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/assistant/AskEntry.tsx",
     "web/src/app/assistant/AssistantPage.tsx",
@@ -2136,6 +2141,7 @@
     "web/src/app/assistant/AssistantRoot.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
+    "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -2188,7 +2194,8 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "At most {n} characters": [
-    "web/src/app/routines/DescribeIt.tsx"
+    "web/src/app/routines/DescribeIt.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "At most {n} characters.": [
     "web/src/lib/fields.ts"
@@ -2452,6 +2459,7 @@
   ],
   "Blocked": [
     "web/src/app/NotificationsSettings.tsx",
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/listGroups.ts"
@@ -2476,6 +2484,9 @@
   ],
   "Blocks can be nested at most 3 deep": [
     "web/src/lib/rules/fixes.ts"
+  ],
+  "Blocks {n, plural, one {# task} other {# tasks}}": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Blue": [
     "web/src/lib/colourNames.ts"
@@ -2536,6 +2547,9 @@
   ],
   "Break this down": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Brief me": [
+    "web/src/app/TaskListView.tsx"
   ],
   "Briefing": [
     "web/src/lib/settingsCopy.ts"
@@ -4519,11 +4533,20 @@
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/shortcuts.ts"
   ],
+  "Deadline in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
+  "Deadline passed": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Deadline reminders fire once the task has a deadline.": [
     "web/src/app/RemindersField.tsx"
   ],
   "Deadline removed": [
     "web/src/lib/assistant.ts"
+  ],
+  "Deadline today": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Deadline {date}": [
     "web/src/app/ParseChips.tsx",
@@ -5228,12 +5251,16 @@
   "Due earlier": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "Due in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CarryOver.tsx"
   ],
@@ -5260,6 +5287,9 @@
   ],
   "Due {from} → {to}": [
     "web/src/lib/assistant.ts"
+  ],
+  "Due {n} d ago": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Duplicate": [
     "web/src/app/TemplateDialogs.tsx",
@@ -6426,6 +6456,12 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Find a slot": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Find a slot for “{title}”": [
+    "web/src/app/task-detail/useTaskDetail.ts"
   ],
   "Find a task this one waits for…": [
     "web/src/app/task-detail/Facets.tsx"
@@ -8732,6 +8768,10 @@
   "Learning|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
+  "Least urgent first": [
+    "web/src/app/views/DisplayOptionsBody.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
+  ],
   "Leave": [
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceGeneral.tsx"
@@ -9668,6 +9708,10 @@
   ],
   "Most tasks take {ratio} their estimate ({n} tasks).": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Most urgent first": [
+    "web/src/app/views/DisplayOptionsBody.tsx",
+    "web/src/app/views/useDisplayKeys.ts"
   ],
   "Move": [
     "web/src/app/TriageView.tsx",
@@ -12931,12 +12975,16 @@
     "web/src/app/menus/printItem.tsx"
   ],
   "Priorities": [
-    "web/src/app/themes/tokenNames.ts"
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
+    "web/src/app/themes/tokenNames.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Priority": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/TokenSuggest.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/bulk/BulkActions.tsx",
@@ -12969,32 +13017,17 @@
   "Priority 4": [
     "web/src/app/themes/tokenNames.ts"
   ],
-  "Priority P{from} → P{to}": [
-    "web/src/lib/assistant.ts"
-  ],
-  "Priority P{p}": [
-    "web/src/lib/assistant.ts"
-  ],
-  "Priority is P{n}": [
+  "Priority is {name}": [
     "web/src/app/filter/conditionText.ts"
   ],
   "Priority must be p1, p2, p3 or p4 at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Priority {from} → {to}": [
+    "web/src/lib/assistant.ts"
+  ],
   "Priority {n}": [
-    "web/src/app/quickadd/FieldRows.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
-  ],
-  "Priority {priority}": [
-    "web/src/app/PublicListScreen.tsx"
-  ],
-  "Priority {p}": [
-    "web/src/app/RuleEditor.tsx",
-    "web/src/app/TaskRow.tsx",
-    "web/src/app/assistant/ItemEditor.tsx",
-    "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/rules/RuleFields.tsx",
-    "web/src/lib/views.ts"
+    "web/src/lib/priority.ts"
   ],
   "Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)": [
     "web/src/lib/shortcuts.ts"
@@ -13367,9 +13400,6 @@
   ],
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": [
     "web/src/app/RestoreSection.tsx"
-  ],
-  "P{n}": [
-    "web/src/lib/rules/proposal.ts"
   ],
   "QR code to scan with your authenticator app": [
     "web/src/app/QrCode.tsx"
@@ -14062,6 +14092,7 @@
     "web/src/app/task-list/EarlierActions.tsx"
   ],
   "Reset": [
+    "web/src/app/PrioritiesSettings.tsx",
     "web/src/app/focus/FocusSettings.tsx",
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
@@ -14337,6 +14368,12 @@
   ],
   "Revoked {day}": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "Rewrite this": [
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
+  ],
+  "Rewrite “{title}”": [
+    "web/src/app/task-detail/useTaskDetail.ts"
   ],
   "Right completes, left schedules; the same two actions start the task's menu": [
     "web/src/lib/shortcuts.ts"
@@ -15974,6 +16011,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/UrgencyChip.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CarryOver.tsx",
@@ -16222,7 +16260,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "Start view, briefing, keyboard, focus timer and maps": [
+  "Start view, briefing, keyboard, focus timer, priorities and maps": [
     "web/src/app/settingsSections.ts"
   ],
   "Start with Today": [
@@ -16251,6 +16289,9 @@
   ],
   "Starts": [
     "web/src/app/calendar/FramesDialog.tsx"
+  ],
+  "Starts in {n} d": [
+    "web/src/app/UrgencyChip.tsx"
   ],
   "Starts later": [
     "web/src/app/filter/conditionText.ts",
@@ -18929,6 +18970,9 @@
   "Timer mode": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Timer running": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
@@ -19941,6 +19985,13 @@
   "Uploads the copy of the key record kept on this device. Your passphrase and recovery key stay the same.": [
     "web/src/app/UnlockScreen.tsx"
   ],
+  "Urgency": [
+    "web/src/app/UrgencyChip.tsx",
+    "web/src/app/views/DisplayPanel.tsx"
+  ],
+  "Urgency {score}, show why": [
+    "web/src/app/UrgencyChip.tsx"
+  ],
   "Urgent and important": [
     "web/src/lib/boardTemplates.ts"
   ],
@@ -20426,6 +20477,12 @@
     "web/src/app/method/loop/CatchMove.tsx",
     "web/src/app/review/ReviewView.tsx"
   ],
+  "What’s next in “{name}”?": [
+    "web/src/app/ProjectHeader.tsx"
+  ],
+  "What’s next?": [
+    "web/src/app/ProjectHeader.tsx"
+  ],
   "When": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -20523,6 +20580,10 @@
   ],
   "Who you are on this server, and how much of the method the app shows.": [
     "web/src/app/SettingsView.tsx"
+  ],
+  "Why here?": [
+    "web/src/app/UrgencyChip.tsx",
+    "web/src/app/bulk/BulkActions.tsx"
   ],
   "Windows PC": [
     "web/src/app/SecurityPanel.tsx"
@@ -21047,6 +21108,12 @@
     "web/src/app/settingsIndex.ts"
   ],
   "Your own name and logo in the tab, the app icon, the sign-in screen and the sidebar.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Your own names for priority 1 to 4": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "Your own names for the four levels. p1 to p4 still work when you type.": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Your own provider ({provider_label}) is kept but unused: own keys are not allowed now.": [
@@ -23565,6 +23632,9 @@
   "{field}: {from} → {to}": [
     "web/src/app/routines/ProposalReview.tsx"
   ],
+  "{first} or {second}": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "{from} to {to}": [
     "web/src/app/routines/words.tsx"
   ],
@@ -24249,9 +24319,6 @@
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": [
     "web/src/lib/undoActions.ts"
   ],
-  "{n, plural, one {Priority {p} set on # task} other {Priority {p} set on # tasks}}": [
-    "web/src/lib/bulk.ts"
-  ],
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"
   ],
@@ -24347,6 +24414,9 @@
   ],
   "{n, plural, one {{days} is already full} other {{days} are already full}}": [
     "web/src/app/Briefing.tsx"
+  ],
+  "{n, plural, one {{p} set on # task} other {{p} set on # tasks}}": [
+    "web/src/lib/bulk.ts"
   ],
   "{name} (copy)": [
     "web/src/lib/rules/store.ts"
@@ -24465,6 +24535,9 @@
   ],
   "{name}, new notes": [
     "web/src/app/SidebarBrandLine.tsx"
+  ],
+  "{name}, priority {n}": [
+    "web/src/lib/priority.ts"
   ],
   "{name}, revoked": [
     "web/src/app/CaldavPanel.tsx"

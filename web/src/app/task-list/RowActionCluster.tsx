@@ -9,6 +9,7 @@
 import { lazy, Suspense, useRef, useState, type KeyboardEvent } from 'react'
 import { act } from '../actionError'
 import { updateTask } from '../../lib/ops'
+import { priorityShort } from '../../lib/priority'
 import { keysOf } from '../../lib/shortcuts'
 import type { Priority, Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
@@ -17,7 +18,6 @@ import { slotAction, slotLabel, useSlotState } from './slotActions'
 
 const RowSchedule = lazy(() => import('./RowSchedule'))
 
-const PRIORITY_TEXT: Record<Priority, string> = { 1: 'P1', 2: 'P2', 3: 'P3', 4: 'P4' }
 
 /** Keeps a focused action fully visible above the toast and the selection bar (WCAG 2.2 2.4.11). */
 function reveal(el: HTMLElement) {
@@ -51,8 +51,9 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
   }
   // Hidden actions take no clicks: the trailing group's origin link stays under the pointer.
   // A focused part of the row's facts (a cut project name takes focus to show it whole) is never
-  // covered by the actions that its focus would reveal over the row's end (WCAG 2.4.11, large text).
-  const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-has-[[data-project]_:focus-visible]:pointer-events-none! group-has-[[data-project]_:focus-visible]:opacity-0! group-has-[[data-row-meta]_:focus-visible]:pointer-events-none! group-has-[[data-row-meta]_:focus-visible]:opacity-0!'
+  // covered by the actions that its focus would reveal over the row's end (WCAG 2.4.11, large text),
+  // nor is the urgency score while it has the focus (urgency-sort D4).
+  const shown = force || scheduling ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-has-[[data-project]_:focus-visible]:pointer-events-none! group-has-[[data-project]_:focus-visible]:opacity-0! group-has-[[data-row-meta]_:focus-visible]:pointer-events-none! group-has-[[data-row-meta]_:focus-visible]:opacity-0! group-has-[[data-urgency-chip]:focus-visible]:pointer-events-none! group-has-[[data-urgency-chip]:focus-visible]:opacity-0!'
   return (
     <span data-row-actions="" onKeyDown={onKeyDown} onFocus={(e) => reveal(e.target as HTMLElement)}
       className={`absolute top-px right-1 z-10 hidden items-center gap-2 rounded-control border border-strong bg-pop px-0.5 shadow-2 transition-opacity duration-(--duration-ui) md:pointer-fine:flex ${shown}`}>
@@ -68,12 +69,12 @@ export function RowActionCluster({ task, onMore, force = false, editable = true,
       {editable && <>
       <IconButton ref={schedule} icon="calendar-days" size="sm" label={t('Schedule')} aria-haspopup="dialog" aria-expanded={scheduling}
         data-row-action="schedule" onClick={() => setScheduling(true)} />
-      <Menu kind="menu" label={`${t('Priority')}: ${PRIORITY_TEXT[task.priority]}`} tip={t('Priority')} tipShortcut={keysOf('list.priority')} align="end"
+      <Menu kind="menu" label={`${t('Priority')}: ${priorityShort(task.priority)}`} tip={t('Priority')} tipShortcut={keysOf('list.priority')} align="end"
         triggerProps={{ 'data-row-action': 'priority' }}
         trigger={<Icon name="flag" size="sm" />}
         triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm">
         {([1, 2, 3, 4] as Priority[]).map((p) => (
-          <MenuItem key={p} label={PRIORITY_TEXT[p]} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
+          <MenuItem key={p} label={priorityShort(p)} checked={task.priority === p} onSelect={() => act(updateTask(task.id, { priority: p }))} />
         ))}
       </Menu>
       {onMore && <IconButton icon="ellipsis" size="sm" label={t('More actions')} shortcut={keysOf('list.actions')} data-row-action="more" onClick={(e) => onMore(e.currentTarget)} />}

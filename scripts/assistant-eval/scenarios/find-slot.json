@@ -1,0 +1,52 @@
+{
+  "name": "find-slot",
+  "title": "Find a slot proposes one do-on date and time in a free stretch the task fits, and nothing else",
+  "skill": "find-slot",
+  "selected": [
+    "report"
+  ],
+  "seed": {
+    "tasks": [
+      {
+        "key": "report",
+        "title": "Write the quarterly report",
+        "estimate_minutes": 60
+      },
+      {
+        "key": "standup",
+        "title": "Team standup",
+        "due": 1,
+        "time": "09:00",
+        "estimate_minutes": 30
+      },
+      {
+        "key": "other",
+        "title": "Renew the passport",
+        "due": 3
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Find a slot for “Write the quarterly report”",
+      "expect": {
+        "changeset": true,
+        "changes": [
+          {
+            "entity": "task",
+            "ids": [
+              "report"
+            ],
+            "fields": [
+              "due"
+            ]
+          }
+        ],
+        "never_ids": [
+          "standup",
+          "other"
+        ]
+      }
+    }
+  ]
+}

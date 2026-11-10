@@ -19,6 +19,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/origin"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/timetrack"
+	"github.com/OpenTodoApp/opentodo/internal/urgency"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -553,6 +554,10 @@ type taskOut struct {
 	// (OpenSpec change today-waiting-time-passed): true once its time today is
 	// before now in the asked time zone (a deadline without a time never is).
 	TimePassed *bool `json:"time_passed,omitempty"`
+	// Urgency and UrgencyParts are set by list_tasks with sort urgency only
+	// (OpenSpec change urgency-sort): the score and its non-zero components.
+	Urgency      *float64        `json:"urgency,omitempty"`
+	UrgencyParts *[]urgency.Part `json:"urgency_parts,omitempty"`
 }
 
 // render builds the assistant-facing view of a task, evaluating dates in loc
@@ -827,6 +832,18 @@ func taskKey(t opsync.Entity, loc *time.Location) string {
 		}
 	}
 	return fmt.Sprintf("%s|%s|%d|%s", date, clock, priority(t), sortableFloat(num(t, "created_at")))
+}
+
+// dueKey is the due date and clock of taskKey ("~" for none, so undated tasks come last).
+func dueKey(t opsync.Entity, loc *time.Location) string {
+	date, clock := "~", "~"
+	if d := taskDue(t); d != nil {
+		date, clock = localDue(d, loc)
+		if clock == "" {
+			clock = "~"
+		}
+	}
+	return date + "|" + clock
 }
 
 // sortableFloat encodes f so that string order matches numeric order.

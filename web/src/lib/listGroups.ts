@@ -380,6 +380,8 @@ export interface GroupInput {
   projects: readonly Project[]
   projectMap: Map<string, Project>
   fields?: readonly FieldDef[]
+  /** The urgency order's score (urgency-sort); given only while the list is ordered by urgency. */
+  score?: (task: Task) => number | null
   board: boolean
   columns: ListColumn[]
   buckets: SectionBucket[] | null
@@ -412,7 +414,7 @@ export interface GroupInput {
  * The comparator of a display's order, or null for manual order as stored (list-display-options D3).
  * A label page's manual order is its own (view-manual-order): `rank` of the label's placed tasks.
  */
-function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>, projects: readonly Project[] = [], fields: readonly FieldDef[] = []): ((a: Task, b: Task) => number) | null {
+function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, number>, projects: readonly Project[] = [], fields: readonly FieldDef[] = [], score?: (task: Task) => number | null): ((a: Task, b: Task) => number) | null {
   const selectedId = fieldSortId(d?.sortBy)
   if (selectedId && !fields.some((field) => field.id === selectedId && !field.deleted_at && (field.type === 'number' || field.type === 'date'))) {
     return rank ? compareManual(rank) : null
@@ -421,7 +423,7 @@ function displayOrder(d: ListDisplay | undefined, rank?: ReadonlyMap<string, num
     const asc = compareManual(rank)
     return d.sortDir === 'desc' ? (a, b) => asc(b, a) : asc
   }
-  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir, { projects, fields }) : null
+  return d && !(d.sortBy === 'position' && d.sortDir === 'asc') ? compareTasks(d.sortBy, d.sortDir, { projects, fields, score }) : null
 }
 
 /** Top-level nodes in the display's order; subtasks keep their manual order under their parent. */
@@ -443,7 +445,7 @@ function nodeRow(p: GroupInput): (n: TreeNode<Task>) => ListRow {
 
 /** Today's and Upcoming's chosen order (builtin-view-options D2), or null for their own: due, then priority. */
 function dayOrder(p: GroupInput, d: ListDisplay | undefined): ((a: Task, b: Task) => number) | null {
-  return !d || (d.sortBy === 'due' && d.sortDir === 'asc') ? null : displayOrder(d, undefined, p.projects, p.fields)
+  return !d || (d.sortBy === 'due' && d.sortDir === 'asc') ? null : displayOrder(d, undefined, p.projects, p.fields, p.score)
 }
 
 /**
@@ -467,7 +469,7 @@ export function listGroups(p: GroupInput): ListGroup[] {
     : [])
   // Board: cards are top-level tasks, column by column (keyboard order); a folded column has none on screen (board-polish D1).
   if (p.board) return p.columns.map((c) => ({ key: c.key, heading: null, rows: c.folded ? [] : c.cards.map((task) => flatRow(task)) }))
-  const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
+  const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields, p.score)
   const groupByKey = p.display?.groupBy
   if (p.tree && (p.view === 'project' || p.view === 'inbox') && groupByKey && groupByKey !== 'section' && groupByKey !== 'none' && groupByKey !== 'project' && groupByKey !== 'day') {
     // Grouped by a property of the top-level tasks (list-display-options D3); each brings its subtasks.
@@ -556,7 +558,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' && p.display && p.display.groupBy !== 'project') {
     // A label page with its own grouping (list-display-options D3): in its order, each task once.
-    const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields)
+    const order = displayOrder(p.display, p.manualOrder, p.projects, p.fields, p.score)
     const tasks = order ? [...p.tasks].sort(order) : p.tasks
     if (p.display.groupBy === 'none' || p.display.groupBy === 'section' || p.display.groupBy === 'day') return [{ key: 'all', heading: null, rows: tasks.map(row) }]
     return groupTasks(tasks, p.display.groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true)
@@ -564,7 +566,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
   }
   if (p.view === 'label' || p.view === 'assigned' || p.view === 'someday' || p.view === 'anytime') {
     // Grouped by project: Inbox first, then projects in sidebar order; flat rows with breadcrumbs.
-    const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder, p.projects, p.fields) : null
+    const sort = p.view === 'label' ? displayOrder(p.display, p.manualOrder, p.projects, p.fields, p.score) : null
     const byProject = groupBy(sort ? [...p.tasks].sort(sort) : p.tasks, (tk) => tk.project_id ?? '')
     const order = ['', ...p.projects.slice().sort(compareByPosition).map((pr) => pr.id)]
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined

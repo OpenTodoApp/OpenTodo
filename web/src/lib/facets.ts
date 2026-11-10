@@ -6,7 +6,8 @@
 import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, logicalToday, type ResolvedDateTime } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
-import type { Due, Label, Priority, Task } from './types'
+import type { Due, Label, Task } from './types'
+import { priorityShort } from './priority'
 import { dayPartOf, dayPartWord } from './dayParts'
 import { energyName, energyOf } from './energy'
 import { formatSpan, spanOf } from './span'
@@ -65,8 +66,6 @@ export interface FacetContext {
 }
 
 export interface Facets { where: FacetPart[]; when: FacetPart[]; how: FacetPart[]; who: FacetPart[] }
-
-const PRIORITY_TEXT: Record<Priority, string> = { 1: 'P1', 2: 'P2', 3: 'P3', 4: 'P4' }
 
 /** "deadline Sun, Oct 25 · 9 days", "deadline today", "deadline Oct 18 · 3 days over". */
 function deadlineText(deadline: string, ctx: FacetContext, today: string): string {
@@ -135,7 +134,7 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   else if (!due && !sector) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
 
   // How: priority, estimate, energy (task-energy), labels.
-  const how: FacetPart[] = [{ id: 'priority', text: PRIORITY_TEXT[task.priority] ?? 'P4' }]
+  const how: FacetPart[] = [{ id: 'priority', text: priorityShort(task.priority) }]
   if (task.estimate_minutes !== null) how.push({ id: 'estimate', text: formatMinutes(task.estimate_minutes) })
   else if (revealed.has('estimate')) how.push({ id: 'estimate', text: t('Estimate'), empty: true })
   const energy = energyOf(task)

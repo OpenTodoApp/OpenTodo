@@ -885,8 +885,8 @@ A saved view is a named filter query with presentation options (OpenSpec `custom
 | `query` | string | required on create for list views; must parse under the grammar in [`docs/filters.md`](filters.md), at most 4,096 characters and 64 levels of `(` and `!`; otherwise 400 with the parser's message (`view.query: Unknown term "urgent" at position 6`); may be empty for dashboards |
 | `kind` | `"list"` or `"dashboard"` | default `list`; cannot be changed after creation |
 | `group_by` | `"project"`, `"due"`, `"priority"`, `"label"` or `"none"` | default `project` |
-| `sort_by` | `due`, `priority`, `position`, `created`, `deadline`, `title` or `field:<definition-id>` (canonical UUID) | default `due` (undated tasks last; tasks without a deadline last under `deadline`) |
-| `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first |
+| `sort_by` | `due`, `priority`, `position`, `created`, `deadline`, `title`, `urgency` or `field:<definition-id>` (canonical UUID) | default `due` (undated tasks last; tasks without a deadline last under `deadline`); `urgency` orders by the [urgency score](urgency-order.md), computed on each device and never stored |
+| `sort_dir` | `"asc"` or `"desc"` | default `asc`; for `priority`, `desc` lists priority 1 first; for `urgency`, `asc` lists the most urgent first (like a rank, so a client without the order shows the view's default order, not its reverse) |
 | `pinned` | boolean | shown in the sidebar's Favourites group (every view is listed in the Views group); default `false` |
 | `position` | number | sidebar order; defaults to the creation time |
 | `color` | string | CSS colour; default `#64748b` |

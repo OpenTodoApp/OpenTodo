@@ -74,6 +74,7 @@ func init() {
 				"completed_after":   map[string]any{"type": "string", "description": "Only tasks completed at or after this time: YYYY-MM-DD (start of that day in timezone), an RFC 3339 time or Unix milliseconds. Implies completed tasks only."},
 				"completed_before":  map[string]any{"type": "string", "description": "Only tasks completed before this time, in the same forms as completed_after. Implies completed tasks only."},
 				"include_completed": completedArg,
+				"sort":              map[string]any{"type": "string", "enum": []string{"default", "urgency"}, "default": "default", "description": "default: by do-on date and priority. urgency: the most urgent first by the app's urgency score (due date, deadline, priority, the tasks it blocks, age and a running timer raise it; blocked, deferred and Someday lower it); each task then has urgency and urgency_parts."},
 				"timezone":          timezoneProp,
 				"limit":             limitProp,
 				"cursor":            cursorProp,
@@ -261,6 +262,9 @@ type taskQuery struct {
 	loc                             *time.Location
 	limit                           int
 	cursor                          string
+	// urgency orders by the urgency score (urgency-sort); scope is read for it.
+	urgency bool
+	scope   *urgencyScope
 }
 
 func parseTaskQuery(a args) (taskQuery, error) {
@@ -338,6 +342,9 @@ func parseTaskQuery(a args) (taskQuery, error) {
 		return q, err
 	}
 	if q.cursor, err = a.str("cursor"); err != nil {
+		return q, err
+	}
+	if q.urgency, err = parseSort(a); err != nil {
 		return q, err
 	}
 	return q, nil
@@ -444,7 +451,11 @@ func (r *Registry) queryTasks(snap *snapshot, q taskQuery) (map[string]any, erro
 		if sec := str(t, "sector"); q.sector != "" && !(sec == q.sector || (q.sector == "carried" && sector.Carried(sec, today, 1))) {
 			continue
 		}
-		items = append(items, keyed[taskOut]{key: taskKey(t, q.loc), id: str(t, "id"), v: snap.render(t, q.loc, today, false)})
+		out, key := snap.render(t, q.loc, today, false), taskKey(t, q.loc)
+		if q.scope != nil {
+			key = q.scope.score(t, &out, dueKey(t, q.loc))
+		}
+		items = append(items, keyed[taskOut]{key: key, id: str(t, "id"), v: out})
 	}
 	list, next, err := page(items, q.cursor, q.limit)
 	if err != nil {
@@ -477,6 +488,11 @@ func (r *Registry) listTasks(ctx context.Context, userID string, a args) (map[st
 	snap, err := r.load(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+	if q.urgency {
+		if q.scope, err = r.urgencyScope(ctx, userID, snap, q); err != nil {
+			return nil, err
+		}
 	}
 	return r.queryTasks(snap, q)
 }

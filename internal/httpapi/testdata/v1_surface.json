@@ -193,7 +193,8 @@
       },
       "inbox": {
         "flags": {
-          "limit": "int"
+          "limit": "int",
+          "sort": "string"
         },
         "output": {
           "(type)": "array"
@@ -226,6 +227,7 @@
           "project": "string",
           "sector": "string",
           "someday": "bool",
+          "sort": "string",
           "today": "bool",
           "upcoming": "bool"
         },
@@ -810,7 +812,8 @@
       "today": {
         "flags": {
           "all": "bool",
-          "limit": "int"
+          "limit": "int",
+          "sort": "string"
         },
         "output": {
           "(type)": "array"
@@ -845,7 +848,8 @@
       },
       "upcoming": {
         "flags": {
-          "limit": "int"
+          "limit": "int",
+          "sort": "string"
         },
         "output": {
           "(type)": "array"
@@ -1389,6 +1393,7 @@
         "split_from.series": "string",
         "start": "string|null",
         "title": "string",
+        "urgency": "number",
         "waiting_for_slot": "boolean"
       },
       "task_detail": {
@@ -2410,6 +2415,10 @@
         "maps": "string",
         "method_mode": "string",
         "objectives": "string",
+        "priority_name_1": "string",
+        "priority_name_2": "string",
+        "priority_name_3": "string",
+        "priority_name_4": "string",
         "reminder_default_dated": "string",
         "reminder_default_timed": "string",
         "routines_hide_successes": "string",
@@ -2838,6 +2847,7 @@
         "priority": "integer?",
         "project_id": "string?",
         "sector": "string?",
+        "sort": "string?",
         "timezone": "string?",
         "view": "string?",
         "workspace": "string?"
@@ -3461,6 +3471,10 @@
       "maps": "string",
       "method_mode": "string",
       "objectives": "string",
+      "priority_name_1": "string",
+      "priority_name_2": "string",
+      "priority_name_3": "string",
+      "priority_name_4": "string",
       "reminder_default_dated": "string",
       "reminder_default_timed": "string",
       "routines_hide_successes": "string",

@@ -128,6 +128,55 @@ Do it in exactly these steps:
 - Create the new tasks with as few create_tasks calls as possible. Keep the proposal within 50 changed items; offer to continue afterwards.
 - End with a short list: each task, and for an existing one "already in your tasks" and what changes.`,
 	},
+	// assistant-in-context: four skills started where their context is, from a
+	// task's menu, a project's header menu and Today's overflow menu.
+	{
+		ID: "rewrite-task", Name: "Rewrite this", Result: ResultChanges, Subject: SubjectSelection,
+		Description: "Proposes a clearer title and description for one task.",
+		Example:     "Rewrite this task so it is clear what to do",
+		Tools:       []string{"get_task", "update_tasks"},
+		Instructions: `Rewrite the user's selected task so it is clear what to do. When no task is selected, ask which one, and propose nothing.
+- Read the task with get_task.
+- Call update_tasks once for that task: a title that is a short, concrete action starting with a verb, in the task's language, and a description of one to three short sentences or a short list when the task needs details. Keep every fact, name, date and link of the original; add nothing the task does not say.
+- Change nothing else: not the date, project, labels, priority or subtasks. When the title and description are already clear, say so and propose nothing.
+- End with the new title in one line.`,
+	},
+	{
+		ID: "find-slot", Name: "Find a slot", Result: ResultChanges, Subject: SubjectSelection,
+		Description: "Proposes a day and time in your free time this week for one task.",
+		Example:     "Find a slot for this task",
+		Tools:       []string{"get_task", "find_free_time", "schedule_tasks"},
+		Instructions: `Find a slot for the user's selected task in the next 7 days. When no task is selected, ask which one, and propose nothing.
+- Read the task with get_task. Its length is its estimate_minutes, or 30 minutes when it has none; say so in the answer when it has none.
+- Call find_free_time once from today for 7 days, with min_minutes set to that length and the working day below.
+- Choose the earliest free stretch at least that long, today only when it starts later than now, and call schedule_tasks once for the task with that date and the stretch's start time (HH:MM).
+- When no stretch is long enough, say so, propose nothing, and suggest a shorter estimate or another week.
+- Do not change anything else.
+- End with one line: the day, the time and the stretch it fits in.`,
+	},
+	{
+		ID: "project-next", Name: "What's next?", Result: ResultAnswer,
+		Description: "Names the next actions of a project and shows where it stands.",
+		Example:     "What's next in this project?",
+		Tools:       withRead(),
+		Instructions: `Tell the user what to do next in the project their message names.
+- Find the project with list_projects and read its open tasks with list_tasks (project_id).
+- Name its next 1 to 3 actions: open tasks that are not blocked by an open task and not parked in Someday, the overdue and high-priority ones first, then the ones that unblock others.
+- Show where the project stands with show_board when it has sections, or show_timeline when its tasks have dates; show the next actions with show_tasks.
+- When the project has no open task anyone can do now, say so and suggest one next step in words.
+- Change nothing. Keep the answer to a few lines.`,
+	},
+	{
+		ID: "brief-today", Name: "Brief me", Result: ResultAnswer,
+		Description: "Sums up your day: what is planned, what is due and how you are doing.",
+		Example:     "Brief me on today",
+		Tools:       []string{"today_summary", "list_tasks", "get_task", "find_free_time"},
+		Instructions: `Give the user a short briefing on today.
+- Read today with today_summary and list_tasks (view today); check what is overdue and what is due in the next 3 days.
+- Show today's agenda with show_calendar for today, the deadlines of the next 7 days with show_deadlines when there are any, and how the user is doing with show_stats.
+- Then say in at most four short lines: how full the day is, the one or two tasks that matter most, and anything overdue or due soon to decide on.
+- Change nothing.`,
+	},
 }
 
 // SkillByID returns a built-in skill.
@@ -148,6 +197,12 @@ func (s Skill) Allows(tool string) bool {
 		}
 	}
 	return false
+}
+
+// SlotDayNote is find-slot's working day (assistant-in-context): the hours
+// find_free_time searches within.
+func SlotDayNote(startHour, endHour int) string {
+	return fmt.Sprintf("Working day: from %02d:00 to %02d:00. Pass day_start_hour %d and day_end_hour %d to find_free_time.", startHour, endHour, startHour, endHour)
 }
 
 // WorkdayNote is the plan-week rule with the device's working day (design D2).

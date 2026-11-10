@@ -10,7 +10,7 @@ import (
 
 // assistant-skills 1.1: the catalogue matches the spec and stays inside the registry.
 func TestSkillCatalogue(t *testing.T) {
-	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down", "capture"}
+	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down", "capture", "rewrite-task", "find-slot", "project-next", "brief-today"}
 	var ids []string
 	seen := map[string]bool{}
 	c := Caller{Scope: ScopeAgent, OwnerAllowsWrites: true, UserAllowsWrites: true}

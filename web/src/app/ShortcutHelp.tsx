@@ -11,6 +11,7 @@ import { Keys } from './shortcuts/Kbd'
 import { shortcutLabel } from './shortcuts/Spotlight'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
+import { priorityKeysText } from '../lib/priority'
 
 /** An extra block of the sheet that is not made of keys (the Vim command line). */
 export interface HelpSection {
@@ -107,7 +108,7 @@ export function distinctLabels(rows: SheetRow[]): SheetRow[] {
 
 /** The sheet's row for a registry entry, in the interface language. */
 export function sheetRow(s: Shortcut): SheetRow {
-  const description = t(s.description)
+  const description = t(s.description) + priorityKeysText(s.id)
   return { keys: s.keys, label: s.label ? shortcutLabel(s) : shortDescription(description), description, when: s.when ? t(s.when) : undefined }
 }
 

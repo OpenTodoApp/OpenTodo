@@ -1,12 +1,15 @@
 // Suggestions for `#project` and `@label` while typing (OpenSpec change
 // smart-title-tokens, design D1 and D2): which token the caret is in, the projects or
 // labels that match it on any word of their name, and the token that picking one
-// inserts, which the parser resolves to exactly that item. Pure.
+// inserts, which the parser resolves to exactly that item. Pure. A lone `p` after a
+// space lists the four priority levels (priority-names D4): the names teach the
+// tokens, and only the numeric token is ever inserted or parsed. A whole `p1` is
+// already a chip, so Enter saves the task instead of picking a suggestion.
 import { foldName, matchProject, type ProjectRef } from './attributes'
 import { findLabel, type LabelRef } from './quickadd'
 
-/** The `#`, `@` or `~` token the caret is in, with the text typed after the symbol. */
-export interface TokenAtCaret { kind: 'project' | 'label' | 'energy'; start: number; end: number; query: string }
+/** The `#`, `@`, `~` or `p` token the caret is in, with the text typed after the symbol. */
+export interface TokenAtCaret { kind: 'project' | 'label' | 'energy' | 'priority'; start: number; end: number; query: string }
 
 /**
  * The token at the caret, or null (no symbol at the word's start, or inside double
@@ -17,11 +20,13 @@ export function tokenAtCaret(value: string, caret: number, opts: { energy?: bool
   let start = caret
   while (start > 0 && !/\s/.test(value[start - 1])) start--
   const sym = value[start]
-  if (sym !== '#' && sym !== '@' && !(sym === '~' && opts.energy)) return null
-  // An odd number of quotes before the token: it is quoted text.
-  if ((value.slice(0, start).match(/"/g)?.length ?? 0) % 2 === 1) return null
   let end = caret
   while (end < value.length && !/\s/.test(value[end])) end++
+  const priority = start > 0 && /^p$/i.test(value.slice(start, end))
+  if (sym !== '#' && sym !== '@' && !(sym === '~' && opts.energy) && !priority) return null
+  // An odd number of quotes before the token: it is quoted text.
+  if ((value.slice(0, start).match(/"/g)?.length ?? 0) % 2 === 1) return null
+  if (priority) return { kind: 'priority', start, end, query: value.slice(start + 1, caret) }
   return { kind: sym === '#' ? 'project' : sym === '@' ? 'label' : 'energy', start, end, query: value.slice(start + 1, caret) }
 }
 
@@ -30,6 +35,9 @@ export function energySuggestions(query: string): { level: 'deep' | 'medium' | '
   const q = query.toLowerCase()
   return (['deep', 'medium', 'low'] as const).filter((e) => e.startsWith(q)).map((level) => ({ level, token: `~${level}` }))
 }
+
+/** The four priority levels a lone `p` suggests (priority-names D4), in order, each with the token picking it inserts. */
+export const PRIORITY_SUGGESTIONS = ([1, 2, 3, 4] as const).map((level) => ({ level, token: `p${level}` }))
 
 /** A project to suggest: its path of ancestor names, and the token picking it inserts. */
 export interface ProjectSuggestion { project: ProjectRef; path: string[]; token: string }

@@ -11,6 +11,7 @@ import { originText } from './originText'
 import { formatDate, formatInstant } from './dates'
 import { fieldValueLabel } from './fieldNames'
 import { t, msg, translatedMap } from './i18n'
+import { priorityShort } from './priority'
 import { dayPartName } from './dayParts'
 
 /** One page of history; ciphertext values (OpenSpec e2ee) are decrypted for display. */
@@ -104,7 +105,7 @@ export function formatValue(field: string, value: unknown, names?: (field: strin
   if (field === 'start' && typeof value === 'string') return value === 'someday' ? t('Someday') : formatDate(value, 'compact')
   if (field === 'evening' && typeof value === 'boolean') return value ? t('on') : t('off')
   if (field === 'day_part' && (value === 'morning' || value === 'afternoon')) return dayPartName(value)
-  if (field === 'priority') return `P${String(value)}`
+  if (field === 'priority') return priorityShort(Number(value))
   // A task's origin (task-origin D12): its id or host, "Email" for a mail.
   if (field === 'origin' && typeof value === 'object') return originText(value as Origin)
   if (field === 'estimate_minutes' && typeof value === 'number') return t('{value} min', { value })

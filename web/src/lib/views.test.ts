@@ -251,6 +251,19 @@ describe('runView', () => {
     expect(desc.ok && ids(desc.tasks)).toEqual(['later-p3', 'tomorrow-p1', 'today-p4', 'today-p1', 'overdue-p2', 'undated-p1'])
   })
 
+  it('sorts by urgency: equal scores by due date, priority, position and id, unscored last either way (urgency-sort)', () => {
+    const ts = [
+      task({ id: 'a', position: 1 }), task({ id: 'b', position: 2, priority: 1 }), task({ id: 'c', position: 3, due: { date: '2026-10-20' } }),
+      task({ id: 'd', position: 4 }), task({ id: 'e', position: 5 }),
+    ]
+    const scores: Record<string, number | null> = { a: 2, b: 2, c: 2, d: 9, e: null }
+    const context = { projects: [], score: (x: Task) => scores[x.id] ?? null }
+    expect(ids([...ts].sort(compareTasks('urgency', 'asc', context)))).toEqual(['d', 'c', 'b', 'a', 'e'])
+    expect(ids([...ts].sort(compareTasks('urgency', 'desc', context)))).toEqual(['c', 'b', 'a', 'd', 'e'])
+    const r = runView(view({ id: 'v', query: '@work', group_by: 'none', sort_by: 'urgency' }), { ...CTX, score: (x) => (x.priority === 1 ? 10 : 0) })
+    expect(r.ok && r.tasks.slice(0, 3).every((x) => x.priority === 1)).toBe(true)
+  })
+
   it('sorts by title, created and position', () => {
     const ts = [task({ id: 'a', title: 'banana', created_at: 3, position: 2 }), task({ id: 'b', title: 'Apple', created_at: 1, position: 3 }), task({ id: 'c', title: 'cherry', created_at: 2, position: 1 })]
     expect(ids([...ts].sort(compareTasks('title', 'asc')))).toEqual(['b', 'a', 'c'])

@@ -200,3 +200,16 @@ describe('deadline in the task input (OpenSpec deadlines 7.1)', () => {
     expect(await toTaskInput({ ...base, deadline: null }, deps)).toEqual({ title: 'Report' })
   })
 })
+
+describe('renamed priority levels (priority-names D4)', () => {
+  it('p1 still sets the priority; a level’s name is never a token', async () => {
+    const { setPriorityNames } = await import('../priority')
+    setPriorityNames(['Must', '', '', ''])
+    const paid = parse('Pay rent p1', ctx)
+    expect(paid.priority).toBe(1)
+    expect(paid.title).toBe('Pay rent')
+    const call = parse('Must call Ana', ctx)
+    expect(call.priority).toBeNull()
+    expect(call.title).toBe('Must call Ana')
+  })
+})

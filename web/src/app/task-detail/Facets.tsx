@@ -7,6 +7,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { facetsOf, type FacetId, type FacetPart, type WhenSegmentId } from '../../lib/facets'
 import { removeLabel } from '../../lib/labels'
+import { priorityAccessibleName, priorityShort } from '../../lib/priority'
 import { createProject, updateTask } from '../../lib/ops'
 import { INBOX_KEY, itemKeywords, NONE_KEY, sectionSource, type PickerItem } from '../../lib/pickerSources'
 import { moveTaskToSection } from '../../lib/sections'
@@ -37,13 +38,13 @@ import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
 import { EnergyChoice } from './EnergyChoice'
 
-export const PRIORITIES: { p: Priority; label: string; cls: string }[] = [
+export const PRIORITIES: { p: Priority; cls: string }[] = [
   // Priority colours come from the p1–p4 tokens (borders, 3:1); the labels use the
   // matching palette hue's text step so they stay readable (4.5:1) in both themes.
-  { p: 1, label: 'P1', cls: 'text-(--ot-hue-red-text) border-p1' },
-  { p: 2, label: 'P2', cls: 'text-(--ot-hue-orange-text) border-p2' },
-  { p: 3, label: 'P3', cls: 'text-(--ot-hue-blue-text) border-p3' },
-  { p: 4, label: 'P4', cls: 'text-muted border-p4' },
+  { p: 1, cls: 'text-(--ot-hue-red-text) border-p1' },
+  { p: 2, cls: 'text-(--ot-hue-orange-text) border-p2' },
+  { p: 3, cls: 'text-(--ot-hue-blue-text) border-p3' },
+  { p: 4, cls: 'text-muted border-p4' },
 ]
 
 export interface PropertiesProps {
@@ -230,11 +231,11 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         task.location != null ? () => act(setTaskLocation(task.id, null)) : undefined, { width: 'sm:w-[26rem]' })
     case 'priority':
       return frame('flag', t('Priority'), (
-        <div className="flex gap-1.5" role="group" aria-label={t('Priority')}>
-          {PRIORITIES.map(({ p, label, cls }) => (
-            <button key={p} type="button" aria-pressed={task.priority === p}
-              className={`min-w-11 rounded-control border px-2.5 py-1 text-meta ${cls} ${task.priority === p ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed hover:bg-sunken dark:hover:bg-raised'}`}
-              onClick={() => { act(updateTask(task.id, { priority: p })); onClose() }}>{label}</button>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('Priority')}>
+          {PRIORITIES.map(({ p, cls }) => (
+            <button key={p} type="button" aria-pressed={task.priority === p} aria-label={priorityAccessibleName(p)}
+              className={`min-w-11 max-w-full truncate rounded-control border px-2.5 py-1 text-meta ${cls} ${task.priority === p ? 'bg-sunken font-semibold dark:bg-raised' : 'border-dashed hover:bg-sunken dark:hover:bg-raised'}`}
+              onClick={() => { act(updateTask(task.id, { priority: p })); onClose() }}>{priorityShort(p)}</button>
           ))}
         </div>
       ))

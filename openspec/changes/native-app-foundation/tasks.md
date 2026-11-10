@@ -2,8 +2,8 @@
 
 ## 1. Platform port (web unchanged)
 
-- [ ] 1.1 Add `web/src/lib/platform.ts` (D3) with the web implementation, and route `sync.ts`, `http.ts` and `dates.ts` through it. Verify: `cd web && npm test -- --run`, `npm run build`, and `make bundle-budget`, with the entry chunk +150 B at most and the number reported.
-- [ ] 1.2 Add the boundary check: it lists browser globals per module of `shared-modules.json` and fails on a new one. Verify: `node --test scripts/repo-checks.test.mjs`, with a case that adds `document.hidden` to a listed module.
+- [x] 1.1 Add `web/src/lib/platform.ts` (D3) with the web implementation, and route `sync.ts`, `http.ts`, `dates.ts` and `trash.ts` through it (`http.ts` and `ops.ts` needed no change). Verify: `cd web && npm test -- --run`, `npm run build`, and `make bundle-budget`, with the entry chunk +150 B at most and the number reported (entry gzip 146,786 B → 146,776 B: −10 B; first load 701,946 B → 702,171 B: +225 B, within its budget).
+- [x] 1.2 Add the boundary check (`scripts/shared-boundary.mjs`): it lists browser globals per module of `shared-modules.json` and fails on a new one. Until 4.1, `mobile/app/shared-modules.json` is seeded by hand with the modules of 1.1. Verify: `node --test scripts/repo-checks.test.mjs`, with a case that adds `document.hidden` to a listed module.
 
 ## 2. Storage spike (D4)
 
@@ -20,7 +20,7 @@
 
 ## 4. The app
 
-- [ ] 4.1 Create `mobile/app`: the Expo app config (`app.config.ts`, bundle id `app.open-todo.preview`, iPhone only), Metro `watchFolders` and the `@shared/*` alias, a strict tsconfig, ESLint with the import restrictions, Jest, `DEPENDENCIES.md`, and `scripts/shared-modules.mjs` with its generated list. Verify: `make app` (type-check, lint, tests) on Linux.
+- [ ] 4.1 Create `mobile/app`: the Expo app config (`app.config.ts`, bundle id `app.open-todo.preview`, iPhone only), Metro `watchFolders` and the `@shared/*` alias, a strict tsconfig, ESLint with the import restrictions, Jest, `DEPENDENCIES.md`, and `scripts/shared-modules.mjs` with its generated list, which replaces the hand-seeded `shared-modules.json` of 1.2; the modules the generator adds that still use browser globals (among them `attachments`, `db`, `deviceStorage`, `i18n`, `locations`, `shareInbox`, `shell`, `taskOrigin` and `taskPages`) move to the port first. Verify: `make app` (type-check, lint, tests) on Linux.
 - [ ] 4.2 Add the app's platform implementation (AppState, NetInfo, MMKV, expo-localization) and `react-native-quick-crypto`. Run the shared vectors for `hlc`, `recurrence`, `nlp`, `e2eeEnvelope` and `flow` in Jest. Verify: `make app`.
 - [ ] 4.3 Open the database with the chosen storage candidate, per account and per server, and delete it at sign-out. Verify: a Jest test against the same in-memory engine, plus the kill-after-write Maestro flow on the simulator.
 - [ ] 4.4 Add the server screen (address, version check, the error messages from the spec) and sign-in through `expo-web-browser`'s auth session, with tokens in `expo-secure-store` and refresh on 401. Verify: Jest tests for the token logic, and a Maestro flow against a CI server.

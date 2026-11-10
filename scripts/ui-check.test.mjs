@@ -72,3 +72,13 @@ test('a raw radio input in a screen is refused, RadioGroup and allowed files are
   assert.deepEqual(rawRadioProblems('web/src/app/New.tsx', "t.matches('input[type=\"radio\"]')"), [])
   assert.deepEqual(rawRadioProblems('web/src/app/QuickAddSettings.tsx', '<input type="radio" />'), [])
 })
+
+test('a raw "Priority {n}" message outside lib/priority.ts is refused (priority-names D3)', async () => {
+  const { rawPriorityNameProblems } = await import('./ui-check.mjs')
+  assert.equal(rawPriorityNameProblems('web/src/app/X.tsx', "<option>{t('Priority {p}', { p })}</option>").length, 1)
+  assert.equal(rawPriorityNameProblems('web/src/lib/x.ts', 'const m = msg("Priority {n}")').length, 1)
+  assert.deepEqual(rawPriorityNameProblems('web/src/lib/priority.ts', "return t('Priority {n}', { n })"), [])
+  assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "<option>{priorityName(p)}</option>"), [])
+  assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "t('Priority {from} → {to}', { from, to })"), [])
+  assert.deepEqual(rawPriorityNameProblems('web/src/app/X.tsx', "// t('Priority {n}') was here"), [])
+})

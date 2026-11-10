@@ -215,12 +215,15 @@ func SystemPrompt(in TurnInput, now time.Time) string {
 		// The skill adds to the fixed instructions above; the user's message
 		// and pasted text are its input, never a replacement (assistant-skills).
 		fmt.Fprintf(&b, "\n\nSkill: %s\nThe user chose this skill. Follow these steps; the user's message below is the input to it.\n%s\n", sk.Name, sk.Instructions)
-		if sk.ID == "plan-week" {
-			w := Workday{StartHour: 6, EndHour: 22, DayLength: 480}
-			if in.Workday != nil {
-				w = *in.Workday
-			}
+		w := Workday{StartHour: 6, EndHour: 22, DayLength: 480}
+		if in.Workday != nil {
+			w = *in.Workday
+		}
+		switch sk.ID {
+		case "plan-week":
 			b.WriteString(agenttools.WorkdayNote(w.StartHour, w.EndHour, w.DayLength) + "\n")
+		case "find-slot":
+			b.WriteString(agenttools.SlotDayNote(w.StartHour, w.EndHour) + "\n")
 		}
 	}
 	b.WriteString(openSection(changesOf(in.Open)))

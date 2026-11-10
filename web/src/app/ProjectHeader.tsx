@@ -45,6 +45,7 @@ import { saveShowCompleted } from '../lib/sections'
 import { isReusable } from '../lib/reusable'
 import { listModeItem } from './menus/listMenu'
 import { printItems } from './menus/printItem'
+import { openAssistantWith, useAssistantStatus } from '../lib/assistantStatus'
 
 /** A "Move to" target: a project, or the top level (id ''). */
 export interface MoveTarget { id: string; name: string; path: string[] }
@@ -253,10 +254,15 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
     ...(print ? printItems() : []),
   ] }
   // Every role gets the copies (project-templates D6); editing items follow the role inside projectMenuGroups.
+  // What's next? (assistant-in-context): the project-next skill on this project, while the assistant is available.
+  const assistantAvailable = !!useAssistantStatus()?.available
+  const assistantGroup: ActionGroup[] = assistantAvailable ? [{ label: t('Assistant'), items: [{ kind: 'action', id: 'assistant-next', label: t('What’s next?'), icon: 'sparkles',
+    onSelect: () => openAssistantWith({ skill: 'project-next', text: t('What’s next in “{name}”?', { name: project.name }), send: true }) }] }] : []
   const groups: ActionGroup[] = [
     ...projectMenuGroups(project, { role, shared: !!membership, targets, subCount, openTasks, pinned, workspaces: otherWorkspaces, mode, reviewEvery },
       { rename: startEditing, duplicate: () => setDialog('duplicate'), saveTemplate: () => setDialog('template'), fields: () => setDialog('fields'), pin: () => setFavourite('project', project.id, !pinned) }),
     ...(extraGroups ?? []),
+    ...assistantGroup,
     panels,
   ]
 
