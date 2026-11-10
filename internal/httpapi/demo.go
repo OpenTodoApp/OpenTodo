@@ -219,6 +219,12 @@ var demoRules = []demoRule{
 	{"CalDAV", false, prefix("/.well-known/caldav")},
 	{"CalDAV", false, prefix("/principals")},
 	{"AI assistants (MCP)", false, prefix("/mcp")},
+	// App sign-in hands out credentials (native-app-foundation D5): every
+	// method. The list of signed-in apps stays readable.
+	{"The OpenTodo app", false, exact("/app/sign-in")},
+	{"The OpenTodo app", false, prefix("/api/v1/app")},
+	{"The OpenTodo app", false, exact("/api/v1/me/app-sign-in")},
+	{"The OpenTodo app", true, prefix("/api/v1/me/apps")},
 	// OAuth clients and grants for the MCP endpoint (mcp-oauth): every method,
 	// because a sandbox must not hand out credentials. Discovery stays readable.
 	{"AI assistants (MCP)", false, prefix("/oauth")},

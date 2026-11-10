@@ -7,9 +7,9 @@ Errors of `POST /api/v1/app/token`:
 
 | Error | When |
 |---|---|
-| 400 `invalid_grant` | the code is unknown, used, expired, or does not match the verifier; or the refresh token is unknown, revoked or reused |
+| 400 `invalid_grant` | the code is unknown, used, expired, or does not match the verifier or the `state`; or the refresh token is unknown, revoked or reused |
 | 400 `invalid_request` | a required field is missing or malformed |
-| 403 `demo_denied` | the server is a demo instance |
+| 403 `demo_restricted` | the server is a demo instance |
 | 429 `rate_limited` | too many exchanges from this address |
 
 #### Scenario: Signed in on the web already

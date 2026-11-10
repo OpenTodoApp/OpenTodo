@@ -16,7 +16,9 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusServiceUnavailable, "unhealthy", "database unavailable")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version})
+	// app_sign_in tells the OpenTodo app this server has its sign-in routes
+	// (native-app-foundation D11), whatever the version string of a dev build.
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "version": s.version, "app_sign_in": true})
 }
 
 func (s *Server) handleAuthStatus(w http.ResponseWriter, r *http.Request) {

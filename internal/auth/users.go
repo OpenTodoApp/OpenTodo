@@ -286,6 +286,8 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			{`INSERT INTO user_status(user_id, deactivated_at) VALUES(?, ?)
 				ON CONFLICT(user_id) DO UPDATE SET deactivated_at = excluded.deactivated_at`, []any{target.ID, now}},
 			{"DELETE FROM api_tokens WHERE user_id = ?", []any{target.ID}},
+			// Signed-in apps too (native-app-foundation); their access tokens went above.
+			{"DELETE FROM app_sign_in_grant WHERE user_id = ?", []any{target.ID}},
 			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
 			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
 			{"UPDATE invitations SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
@@ -558,6 +560,9 @@ func (s *Service) ResetPassword(ctx context.Context, secret, password string) er
 	if _, err := tx.ExecContext(ctx, "DELETE FROM trusted_devices WHERE user_id = ?", userID); err != nil {
 		return err
 	}
+	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
+		return err
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.PasswordResetCompleted(userID, id)); err != nil {
 		return err
 	}
@@ -594,6 +599,10 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, next, kee
 	if _, err := tx.ExecContext(ctx, "DELETE FROM sessions WHERE user_id = ? AND token_hash <> ?", userID, keepSessionHash); err != nil {
 		return err
 	}
+	// Signed-in apps sign in again, like other devices (native-app-foundation).
+	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
+		return err
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.PasswordChanged(userID)); err != nil {
 		return err
 	}
@@ -621,6 +630,7 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 		args []any
 	}{
 		{"DELETE FROM trusted_devices WHERE user_id = ?", []any{userID}},
+		// The app's access tokens go with the API tokens; its grants follow below.
 		{"DELETE FROM api_tokens WHERE user_id = ?", []any{userID}},
 		{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, userID}},
 	} {
@@ -629,6 +639,9 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 			return fmt.Errorf("sign out everywhere: %w", err)
 		}
 		counts[i+1], _ = res.RowsAffected()
+	}
+	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
+		return fmt.Errorf("sign out everywhere: %w", err)
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.SignedOutEverywhere(userID, counts[0], counts[1], counts[2], counts[3])); err != nil {
 		return err
