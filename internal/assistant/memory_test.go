@@ -21,10 +21,10 @@ func TestRememberProposesAndTurnsSendMemory(t *testing.T) {
 	f.put("u1", "memory", "enc", map[string]any{"text": "enc:v1:" + strings.Repeat("A", 60), "position": 3, "created_at": 1})
 	f.put("u2", "memory", "other", map[string]any{"text": "Someone else's fact", "position": 1, "created_at": 1})
 	before := f.opLog()
-	p := &scripted{rounds: []scriptRound{
-		{calls: []ToolCall{call("c1", "remember", map[string]any{"text": "  Does not work\non Fridays "})}, stop: StopToolUse},
-		{text: "I've proposed remembering that.", stop: StopEndTurn},
-	}}
+	p := &scripted{rounds: proposing(
+		scriptRound{calls: []ToolCall{call("c1", "remember", map[string]any{"text": "  Does not work\non Fridays "})}, stop: StopToolUse},
+		scriptRound{text: "I've proposed remembering that.", stop: StopEndTurn},
+	)}
 	res, _, _ := run(f, p, "I don't work on Fridays")
 	if res.Err != nil || len(res.Changes) != 1 {
 		t.Fatalf("result = %+v", res)
@@ -41,12 +41,9 @@ func TestRememberProposesAndTurnsSendMemory(t *testing.T) {
 	if !strings.Contains(sys, want) || strings.Contains(sys, "Old fact") || strings.Contains(sys, "enc:v1:") || strings.Contains(sys, "Someone else") {
 		t.Fatalf("system text memory section:\n%s", sys)
 	}
-	offered := false
-	for _, tool := range p.req.Tools {
-		offered = offered || tool.Name == "remember"
-	}
-	if !offered {
-		t.Fatal("remember not offered")
+	// remember is a write: offered once the model asked for the write tools (assistant-lean-tools D1).
+	if strings.Contains(strings.Join(p.offered(0), ","), "remember") || !strings.Contains(strings.Join(p.offered(1), ","), "remember") {
+		t.Fatalf("remember offered %v then %v", p.offered(0), p.offered(1))
 	}
 
 	// A skill turn: the items are sent, remember is neither offered nor run.

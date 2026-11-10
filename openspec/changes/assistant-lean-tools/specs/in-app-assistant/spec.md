@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: Write tools on request
-A turn without a skill SHALL first offer the read and display tools and `propose_changes`. After the model calls `propose_changes`, later rounds of that turn SHALL also offer the write tools. Proposals, limits and review are unchanged. The server and the device behave the same.
+A turn without a skill SHALL first offer the read and display tools and `propose_changes`, unless it amends an open proposal, which offers the write tools from its first round. After the model calls `propose_changes`, later rounds of that turn SHALL also offer the write tools, `remember` included; a write tool called before that SHALL be refused without planning anything. Proposals, limits and review are unchanged. The server and the device behave the same.
 
 #### Scenario: A question reads only
 - **WHEN** the user asks "what is due today?"

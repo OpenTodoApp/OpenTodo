@@ -150,7 +150,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Shipped |
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Shipped |
-| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | In progress (2 of 2) |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped |
 
 ## UX polish (2026-11 feedback)

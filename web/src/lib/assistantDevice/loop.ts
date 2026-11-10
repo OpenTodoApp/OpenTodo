@@ -49,7 +49,7 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */
-export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS]
+export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS, 'propose_changes']
 
 const clip = (s: string) => [...s.slice(0, 64)].filter((ch) => ch >= ' ' && ch !== '\u007f').join('')
 
@@ -128,6 +128,9 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
+/** propose_changes, the tool that brings the write tools (assistant-lean-tools D1). */
+const META_TOOL = 'propose_changes'
+
 /** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools, the display tools its view suggests and the follow-ups. */
 export function offeredTool(t: ManifestTool, skill: ManifestSkill | null, view: string | undefined): boolean {
   if (!skill) return true
@@ -189,7 +192,14 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   const openMemory = await checkOpenMemory(req.open_proposal)
   const open = [...(await checkOpen(openMemory.rest, snap0)), ...openMemory.memory]
   // remember is offered in turns without a skill, with the live items in the instructions (D2, D3).
-  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
+  // A turn without a skill or an open proposal starts without the write tools; propose_changes
+  // brings them (and remember) from the next round (assistant-lean-tools D1).
+  let lean = !skill && !open.length
+  const offered = manifest.tools.filter((t) => offeredTool(t, skill, req.view))
+  const writes = [...offered.filter((t) => t.kind === 'write'), ...(skill ? [] : [manifest.memory.tool])]
+  let tools = lean
+    ? offered.filter((t) => t.kind !== 'write')
+    : [...offered.filter((t) => t.kind !== 'meta'), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
   const memory = await memoryTexts()
   const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open, memory }, now()) + '\n' + manifest.device_note + '\n'
@@ -247,6 +257,19 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
         if (!r.toolCalls.length) return failed('provider_error', 'the provider asked for a tool without naming one')
         const results = []
         for (const call of r.toolCalls) {
+          if (call.name === META_TOOL) {
+            if (lean) {
+              lean = false
+              tools = [...tools, ...writes]
+              conv.setTools(tools)
+            }
+            results.push({ id: call.id, content: JSON.stringify({ message: manifest.lean.result }), isError: false })
+            continue
+          }
+          if (lean && writes.some((t) => t.name === call.name)) {
+            results.push({ id: call.id, content: JSON.stringify({ error: 'not_offered', message: manifest.lean.not_offered }), isError: true })
+            continue
+          }
           const def = tools.find((t) => t.name === call.name)
           if (!def && DISPLAY_TOOLS.includes(call.name)) {
             results.push({ id: call.id, content: JSON.stringify({ error: 'unavailable', message: `the tool ${clip(call.name)} is not available in this turn; use only the tools listed` }), isError: true })

@@ -53,7 +53,10 @@ beforeEach(async () => {
       provider.push({ url, headers: init?.headers as Record<string, string>, body: String(init?.body) })
       const id = JSON.parse(String(init?.body)).messages.length
       const ids = (await db.tasks.toArray()).map((t) => t.id)
+      // The write tools come after propose_changes (assistant-lean-tools D1).
       const text = id === 1
+        ? round([{ type: 'tool_use', id: 'tu0', name: 'propose_changes', input: {} }], [{ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: '{}' } }], 'tool_use')
+        : id === 3
         ? round([{ type: 'tool_use', id: 'tu1', name: 'schedule_tasks', input: {} }], [{ type: 'content_block_delta', index: 0, delta: { type: 'input_json_delta', partial_json: JSON.stringify({ ids, due: { date: '2026-10-16' } }) } }], 'tool_use')
         : round([{ type: 'text', text: '' }], [{ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'I proposed moving them to Friday; review it below.' } }], 'end_turn')
       return new Response(text, { status: 200, headers: { 'content-type': 'text/event-stream' } })
@@ -88,9 +91,9 @@ describe('on-device assistant in the panel', () => {
     await waitFor(() => !!document.querySelector('[data-assistant-review]'), 'proposal')
     expect(document.querySelector('[data-assistant-selected]')!.textContent).toBe('2 of 2 selected')
     // The provider got the turn with the device's key; the server got the consent and nothing else.
-    expect(provider).toHaveLength(2)
+    expect(provider).toHaveLength(3)
     expect(provider[0].headers['x-api-key']).toBe('sk-ant-device')
-    expect(provider[1].body).toContain('\\"proposed\\":true')
+    expect(provider[2].body).toContain('\\"proposed\\":true')
     const put = server.find((x) => x.method === 'PUT')!
     expect(JSON.parse(put.body)).toEqual({ consent: true, provider: 'device:anthropic' })
     expect(server.some((x) => x.path.includes('/assistant/turn'))).toBe(false)

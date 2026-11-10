@@ -20,6 +20,9 @@ type Conversation interface {
 	Next(ctx context.Context, onText func(string)) (Round, error)
 	// AddToolResults answers every tool call of the last round in one message.
 	AddToolResults(results []ToolResult)
+	// SetTools replaces the tools offered from the next call on
+	// (assistant-lean-tools D1); the history keeps earlier calls valid.
+	SetTools(tools []ToolDef)
 }
 
 // Message is one message of the device-local conversation: user or assistant text.
