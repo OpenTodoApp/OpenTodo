@@ -6,6 +6,14 @@ All notable changes to OpenTodo are documented here. The format follows [Keep a 
 
 Changes since the last release are in [changelog.d/](changelog.d/README.md), one file per change; `make release-prepare` moves them here when a release is cut.
 
+## [1.4.1] - 2026-11-10
+
+The same as 1.4.0 for servers: this patch publishes what the 1.4.0 release left out, the iPhone and Android app builds and the Claude and Obsidian plugins. Nothing changes for a running server, and upgrading from 1.4.0 is optional.
+
+### Fixed
+
+- **A release publishes everything again.** Since the app builds stopped running on release tags, the TestFlight upload, the Google Play internal track and the Claude and Obsidian plugin pushes were skipped with them; they now run whenever the release itself does.
+
 ## [1.4.0] - 2026-11-10
 
 The release of **notes** and the **assistant**. Notes get a side of the sidebar of their own (**Tasks | Notes**), a compact list with search chips (`in:`, `@label`, `kind:`, `linked:`, `changed:`), links between notes, tasks and projects with `[[`, and a full-page **graph** of how your notes connect. The assistant answers with the app's own views (tasks, a planned day, a board column, a map), lets you shape a proposal before you apply it, remembers what you tell it, works where you are (Rewrite this, Find a slot, What's next?, Brief me) and costs about a third less per question. Also new: your own names for the priorities, an Urgency order, progress rings, printing a list, calmer Focus and Close the day, and the server side of the coming native app's sign-in.
@@ -1576,7 +1584,8 @@ Other known limitations: CalDAV does not translate alarms into reminders (alarms
 | `0023_e2ee.sql` | `encryption_keys` (the wrapped key record) |
 | `0024_caldav_orphans.sql` | nothing new: removes `caldav_resources` rows of tasks that were already purged |
 
-[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/OpenTodoApp/OpenTodo/compare/v1.1.1...v1.2.0
