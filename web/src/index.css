@@ -936,6 +936,16 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
   .connections-graph__edge[data-hot] { stroke: Highlight; }
   .connections-node[data-hot], .connections-node--centre { border-color: Highlight; }
 }
+/* The Notes page's Graph mode (notes-graph-page D3, D7): the canvas fills the page
+   under the header, edge to edge, above a hairline; the zoom buttons and the centre's
+   depth sit in its lower corners as a map's controls do. The canvas takes every touch
+   (pan and pinch are the graph's own). */
+.notes-graph { @apply relative -mx-4 min-h-80 flex-1 md:-mx-8; }
+.notes-graph__area { @apply absolute inset-0 overflow-hidden focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus; }
+.notes-graph__canvas { @apply block cursor-grab touch-none select-none; }
+.notes-graph__empty { @apply pointer-events-none absolute inset-0 flex items-center justify-center px-6 text-center; }
+.notes-graph__zoom { @apply absolute right-3 bottom-3 flex flex-col gap-0.5 rounded-control border border-default bg-surface p-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
+.notes-graph__centre { @apply absolute bottom-3 left-3 flex max-w-[calc(100%-5rem)] items-center gap-2 rounded-control border border-default bg-surface py-0.5 ps-2.5 pe-0.5 shadow-2 max-md:bottom-[calc(var(--add-room,0px)+0.75rem)]; }
 .editor-toolbar { @apply -mx-2 mb-1 flex items-center gap-1 overflow-x-auto px-2 py-1; }
 /* The Formatting toggle on a computer (notes-toolbar-desktop D2): at the note's top
    end corner, over end padding of the first block (and of the row), so text never

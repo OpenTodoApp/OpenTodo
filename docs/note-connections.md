@@ -42,6 +42,8 @@ These keys work only inside the dialog.
 
 ## The List
 
+**Open in graph** in the dialog's header opens [the graph of all notes](notes-graph.md) centred on the item.
+
 **List** in the dialog's header shows the same as two lists: **Links**, what the item links to, and **Linked from**, what links to it, with the line around each link. Choose a row to open it, or its target button to move it to the middle. Your device remembers whether you chose Graph or List. When the graph does not fit, as with a busy note on a phone, the dialog opens in List unless you chose Graph.
 
 ## Private and offline

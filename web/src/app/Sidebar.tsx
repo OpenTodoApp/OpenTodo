@@ -398,7 +398,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
     // Day, Week, Month and Plan are one Calendar destination (ux-overhaul, planner-view).
     const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year'
     // A Loop home address with a move open (/loop/<move>) is still the Loop home.
-    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : JSON.stringify(r) === JSON.stringify(route)
+    // All notes and Graph: the Notes page's two modes, a note open beside them or not (notes-graph-page D1).
+    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? !!r.graph === !!route.graph : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
     const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : {})} />
@@ -442,8 +443,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         <SpaceSwitch space={space} collapsed={collapsed} />
         {space === 'notes' ? (
           <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
-            {item({ view: 'notes' }, t('All notes'), 'notebook-pen')}
-            {/* notes-graph-page: the Graph row goes here (the sibling change owns its route and view). */}
+            {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}
+            {item({ view: 'notes', graph: true }, t('Graph'), 'waypoints') /* notes-graph-page D1: the page's Graph mode */}
           </nav>
         ) : <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primary.map((d) => <Fragment key={d.id}>{d.node}</Fragment>)}

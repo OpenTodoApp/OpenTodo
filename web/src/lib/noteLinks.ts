@@ -372,6 +372,11 @@ export class LinkIndex {
     return out
   }
 
+  /** Calls `fn` once per link of the index, source key then target key (notes-graph-page D2: the graph's lines). */
+  forEachLink(fn: (source: string, target: string) => void): void {
+    for (const s of this.sources.values()) for (const tk of s.targets) if (tk !== s.key) fn(s.key, tk)
+  }
+
   /**
    * Every target some other source links to (`<kind>:<id>`): the Notes page's
    * Unlinked filter keeps the standalone notes not in it (notes-home D5). Kept
