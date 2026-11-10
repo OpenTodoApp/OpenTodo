@@ -7310,5 +7310,20 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}，{kind, select, note {笔记} task {任务} other {项目}}，{ring, select, centre {位于中心} direct {直接链接} other {相隔两步}}",
   "calendar frames and slots": "日历时间框和时段",
   "Expand the row": "展开该行",
-  "Edit the title, open the details or expand the row. This device only.": "编辑标题、打开详情或展开该行。仅限此设备。"
+  "Edit the title, open the details or expand the row. This device only.": "编辑标题、打开详情或展开该行。仅限此设备。",
+  "Choose a priority": "选择优先级",
+  "Choose a section": "选择分组",
+  "Every workspace": "所有工作区",
+  "every workspace": "所有工作区",
+  "Is": "是",
+  "Is not": "不是",
+  "This routine works only in its workspace. Nothing was written.": "此例程只在其工作区内运行。未写入任何内容。",
+  "This routine’s workspace is gone. Choose another one in the routine.": "此例程的工作区已不存在。请在例程中选择另一个。",
+  "a removed workspace": "已移除的工作区",
+  "in|workspace": "在",
+  "not in section {sections}": "不在分组 {sections} 中",
+  "not in {projects}": "不在 {projects} 中",
+  "not priority {p}": "非优先级 {p}",
+  "{field} test": "{field}条件",
+  "{name} ({workspace})": "{name}（{workspace}）"
 }

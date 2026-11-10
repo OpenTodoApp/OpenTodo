@@ -564,10 +564,11 @@ export type RuleMinutesPredicate = 'none' | { min_minutes: number } | { max_minu
 
 /** An automation rule's condition: every predicate that is set must hold (automation-rules "Conditions"). */
 export interface RuleCondition {
-  project?: 'none' | { in: string[]; descendants?: boolean }
-  section?: 'none' | { in: string[] }
+  /** No project, one of the projects, or none of them (`not_in`, routine-conditions D2). */
+  project?: 'none' | { in: string[]; descendants?: boolean } | { not_in: string[]; descendants?: boolean }
+  section?: 'none' | { in: string[] } | { not_in: string[] }
   labels?: { any?: string[]; all?: string[]; none?: string[] }
-  priority?: { in: number[] }
+  priority?: { in: number[] } | { not_in: number[] }
   due?: RuleDatePredicate
   deadline?: 'none' | 'set' | { within_days: number }
   start?: 'someday' | 'deferred' | 'none'

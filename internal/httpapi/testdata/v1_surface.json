@@ -1920,6 +1920,10 @@
     "oidc_state_invalid": [
       "listed"
     ],
+    "other_workspace": [
+      "409",
+      "listed"
+    ],
     "owner_must_transfer": [
       "409",
       "listed"
@@ -2103,6 +2107,10 @@
       "404",
       "listed"
     ],
+    "workspace_gone": [
+      "409",
+      "listed"
+    ],
     "workspace_not_empty": [
       "409",
       "listed"
@@ -2279,7 +2287,8 @@
         "position": "number",
         "project_id": "nullable_string",
         "steps": "routine_steps",
-        "trigger": "rule_trigger"
+        "trigger": "rule_trigger",
+        "workspace_id": "nullable_string"
       },
       "sections": {
         "aisle": "nullable_string",
@@ -2581,7 +2590,8 @@
         "name": "string",
         "project": "string?",
         "steps": "string?",
-        "trigger": "string"
+        "trigger": "string",
+        "workspace": "string|null?"
       },
       "kind": "write"
     },
@@ -3086,7 +3096,8 @@
         "name": "string?",
         "routine": "string",
         "steps": "string?",
-        "trigger": "string?"
+        "trigger": "string?",
+        "workspace": "string|null?"
       },
       "kind": "write"
     },
@@ -3299,7 +3310,8 @@
       "position": "number",
       "project_id": "nullable_string",
       "steps": "routine_steps",
-      "trigger": "rule_trigger"
+      "trigger": "rule_trigger",
+      "workspace_id": "nullable_string"
     },
     "section": {
       "aisle": "nullable_string",
@@ -9606,7 +9618,8 @@
         "project_id": "string",
         "steps": "string",
         "task_id": "string",
-        "trigger": "string"
+        "trigger": "string",
+        "workspace_id": "string"
       },
       "response": {
         "device_run": "object|null",

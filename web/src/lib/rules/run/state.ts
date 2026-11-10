@@ -494,3 +494,12 @@ export function collect(single: string, outs: StepValue[]): StepValue {
   if (single === 'text' || single === 'lines') return { type: 'lines', lines: [] }
   return none()
 }
+
+/**
+ * The workspace_id a routine of one workspace writes on a task or project it
+ * creates without a project or parent to follow (routine-conditions D1): null
+ * for the default workspace, as the server's tools write it.
+ */
+export function workspaceArg(st: RunState): { workspace_id?: string | null } {
+  return st.w.workspace ? { workspace_id: st.w.workspaceDefault ? null : st.w.workspace } : {}
+}

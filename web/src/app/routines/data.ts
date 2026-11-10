@@ -5,7 +5,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../lib/api'
 import { logicalDay, logicalToday } from '../../lib/dates'
 import { useOpenTasks } from '../../lib/liveTasks'
-import { useAllTaskRows, useLabels, useLiveSections, useProjects, useViewRows } from '../../lib/localData'
+import { t } from '../../lib/i18n'
+import { useAllTaskRows, useLabelsOfEveryWorkspace, useLiveSections, useProjects, useProjectsOfEveryWorkspace, useViewRows, useWorkspaceState } from '../../lib/localData'
+import { Partition, type WorkspaceState } from '../../lib/workspaces'
 import { matchesCondition, type MatchTask } from '../../lib/rules/match'
 import type { PreviewData } from '../../lib/rules/preview'
 import { inFindScope, projectScope } from '../../lib/rules/stepData'
@@ -22,8 +24,16 @@ export function matchTaskOf(task: Task): MatchTask {
 }
 
 export interface RoutineNames {
+  /**
+   * The live labels and projects of every workspace, for naming what a routine
+   * points at: one of another workspace than the current one is named with its
+   * workspace ("Website (Work)"), never as removed (routine-conditions D5).
+   */
   labels: readonly Label[]
   projects: readonly Project[]
+  /** What the pickers offer: the routine's workspace, or every workspace for a routine of every workspace. */
+  pickLabels?: readonly Label[]
+  pickProjects?: readonly Project[]
   sections: readonly Section[]
   views: readonly View[]
   webhooks: readonly Webhook[] | null
@@ -31,6 +41,38 @@ export interface RoutineNames {
   /** A task's title from local data ('' when this device has no such task). */
   title: (id: string) => string
   projectName: (id: string) => string
+}
+
+/** The names a picker offers: the routine's workspace's labels and projects (the full lists without them). */
+export function pickerNames<T extends Pick<RoutineNames, 'labels' | 'projects' | 'pickLabels' | 'pickProjects'>>(n: T): T {
+  return { ...n, labels: n.pickLabels ?? n.labels, projects: n.pickProjects ?? n.projects }
+}
+
+/**
+ * Every workspace's live labels and projects, named for a routine
+ * (routine-conditions D5): one outside the current workspace carries its
+ * workspace's name; the pickers offer those of `workspace` (every workspace
+ * for null; the current one when undefined).
+ */
+export function workspaceNames<L extends Pick<Label, 'id' | 'name' | 'workspace_id' | 'deleted_at'>, P extends Pick<Project, 'id' | 'name' | 'workspace_id' | 'parent_id' | 'deleted_at'>>(
+  state: WorkspaceState, labels: readonly L[], projects: readonly P[], workspace: string | null | undefined,
+): { labels: L[]; projects: P[]; pickLabels: L[]; pickProjects: P[] } {
+  const liveLabels = labels.filter((l) => !l.deleted_at)
+  const liveProjects = projects.filter((p) => !p.deleted_at)
+  if (state.list.length <= 1) return { labels: liveLabels, projects: liveProjects, pickLabels: liveLabels, pickProjects: liveProjects }
+  const part = new Partition(state.defaultId, state.list.map((w) => w.id), liveProjects)
+  const here = part.own(state.current)
+  const wsName = new Map(state.list.map((w) => [w.id, w.name]))
+  const named = <X extends { name: string }>(x: X, ws: string): X => (ws === here ? x : { ...x, name: t('{name} ({workspace})', { name: x.name, workspace: wsName.get(ws) ?? '' }) })
+  const pick = workspace === undefined ? here : workspace === null ? null : part.own(workspace)
+  const labelWs = (l: L) => part.own(l.workspace_id)
+  const projectWs = (p: P) => part.project(p.id)
+  return {
+    labels: liveLabels.map((l) => named(l, labelWs(l))),
+    projects: liveProjects.map((p) => named(p, projectWs(p))),
+    pickLabels: liveLabels.filter((l) => pick === null || labelWs(l) === pick).map((l) => named(l, labelWs(l))),
+    pickProjects: liveProjects.filter((p) => pick === null || projectWs(p) === pick).map((p) => named(p, projectWs(p))),
+  }
 }
 
 /** Names an output by its value where it has one: Get a task by the task's title, Find a project by the name it looks for. */
@@ -43,10 +85,16 @@ export function valueNamer(names: Pick<RoutineNames, 'title'>): (s: RoutineStep)
   }
 }
 
-/** Names of everything a routine can point at, from local data (webhooks from the server while online). */
-export function useRoutineNames(): RoutineNames {
-  const labels = useLabels()
-  const projects = useProjects()
+/**
+ * Names of everything a routine can point at, from local data (webhooks from
+ * the server while online); `workspace` is the routine's (null: every
+ * workspace; undefined: the current one) and decides what the pickers offer.
+ */
+export function useRoutineNames(workspace?: string | null): RoutineNames {
+  const everyLabel = useLabelsOfEveryWorkspace()
+  const everyProject = useProjectsOfEveryWorkspace()
+  const state = useWorkspaceState()
+  const { labels, projects, pickLabels, pickProjects } = useMemo(() => workspaceNames(state, everyLabel, everyProject, workspace), [state, everyLabel, everyProject, workspace])
   const sections = useLiveSections()
   const views = useViewRows()
   const tasks = useAllTaskRows()
@@ -55,8 +103,8 @@ export function useRoutineNames(): RoutineNames {
   return useMemo(() => {
     const byTask = new Map(tasks.filter((x) => !x.deleted_at).map((x) => [x.id, x.title]))
     const byProject = new Map(projects.map((p) => [p.id, p.name]))
-    return { labels, projects, sections, views: views.filter((v) => !v.deleted_at), webhooks, tasks, title: (id) => byTask.get(id) ?? '', projectName: (id) => byProject.get(id) ?? '' }
-  }, [labels, projects, sections, views, tasks, webhooks])
+    return { labels, projects, pickLabels, pickProjects, sections, views: views.filter((v) => !v.deleted_at), webhooks, tasks, title: (id) => byTask.get(id) ?? '', projectName: (id) => byProject.get(id) ?? '' }
+  }, [labels, projects, pickLabels, pickProjects, sections, views, tasks, webhooks])
 }
 
 /** The matcher's context for a user now. */

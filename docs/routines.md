@@ -77,6 +77,16 @@ A task chosen by hand is for the rare fixed target (a log or list kept in one ta
 
 A step is offered only when what it needs is set up: Email me needs the server's outgoing email and a verified address, Send a webhook one of your webhooks, energy changes the Energy levels switch. When a saved routine's step stops being available, the run fails at that step with the reason and writes nothing.
 
+### A routine's workspace
+
+With more than one [workspace](workspaces.md), a routine works in one of them or in every workspace. The When card says which: *When **a task is created** in **Work** if **no project***. A new routine starts in the workspace you create it in; choose **Every workspace** on that word for one that acts everywhere. Routines made before workspaces existed in routines work in every workspace and keep doing what they did. On the Routines page, a routine of another workspace than the current one names it under its line.
+
+A routine of a workspace sees only that workspace: its trigger fires only for the workspace's tasks, Find tasks and a schedule's matching tasks find only them, and Create tasks (without a project) and Create a project make them there. It never moves a task out of its workspace: a Change tasks step that would move a task into another workspace's project fails with *this routine works only in the workspace Work*, and nothing is written; a one-card routine skips the move (*other workspace*) and makes its other changes. A routine of every workspace moves tasks across workspaces as before. If you leave or delete the routine's workspace, it stops running until you choose another.
+
+So the *default project* routine is: *When **a task is created** in **Work** if **no project** → Change the task: move to **Triage***. Tasks you add to another workspace's Inbox stay there.
+
+The editor names a project or label of another workspace with its workspace, *Website (Work)*; *a removed project* means the project is really gone. The pickers offer the routine's workspace's projects and labels (every workspace's for a routine of every workspace).
+
 ### Which tasks a routine finds
 
 Find tasks, and the matching tasks of a routine that runs on a schedule with a condition, look at the same tasks your lists show. Tasks in the Trash are never found, and neither are the tasks of a project in the Trash; nothing changes that. Tasks of an **archived** project are left out too, as the Filter view, saved views, Today and Upcoming leave them out, so a saved view finds in a routine what it lists on its own page. To include them on purpose, open the Find tasks card's menu and choose **Add archived projects**: the card then reads *· Archived projects yes*. Only the task's own project counts. Completed tasks keep their rule: a condition finds open tasks, a query or view finds completed ones when it names `completed` or `open`. The card's preview and the **When** card's count follow the same rule.

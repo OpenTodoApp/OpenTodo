@@ -18,7 +18,8 @@ import { RULE_TRIGGERS, type RoutineArg, type RoutineStep, type RuleCondition, t
 import { Badge, Button, DataChip, Icon, WordButton } from '../../ui'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
 import { ConditionFields, TRIGGER_LABEL, TriggerDetails, triggerHasDetails, triggerOf } from '../rules/RuleFields'
-import { useMatchCount } from './data'
+import { pickerNames, useMatchCount } from './data'
+import { useWorkspaceState } from '../../lib/localData'
 import { inputDefs, wordValue, type WordContext } from './words'
 import { InputWord } from './wordPicker'
 import { ChoicePopover, Inspector, type Choice } from './pickers'
@@ -314,18 +315,31 @@ function defaultArg(step: RoutineStep, name: string): RoutineArg | undefined {
 }
 
 /** The When card: the trigger and its conditions as words (D2), edited with the rule dialog's controls. */
-export function WhenCard({ trigger, condition, ctx, me, onTrigger, onCondition }: {
+export function WhenCard({ trigger, condition, ctx, me, workspace, onTrigger, onCondition, onWorkspace }: {
   trigger: RuleTrigger; condition: RuleCondition | null; ctx: WordContext; me: string
+  /** The routine's workspace (null: every workspace); undefined hides the word (a shared routine). */
+  workspace?: string | null
   onTrigger: (t: RuleTrigger) => void; onCondition: (c: RuleCondition | null) => void
+  onWorkspace?: (ws: string | null) => void
 }) {
   // The trigger's kinds open as the word pickers' anchored list, at the word's start edge; a
   // kind's details (a time and days, a label, a project) and the condition rows open inside
   // the card, never as a dialog (routines-editor-no-modals).
-  const [open, setOpen] = useState<'' | 'trigger' | 'details' | 'condition'>('')
+  const [open, setOpen] = useState<'' | 'trigger' | 'details' | 'condition' | 'workspace'>('')
   const toDetails = useRef(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const condRef = useRef<HTMLButtonElement>(null)
+  const wsRef = useRef<HTMLButtonElement>(null)
   const names = ctx.names
+  const picker = pickerNames(names)
+  // The workspace word (routine-conditions D3): only for an account with more than one workspace.
+  const { list: workspaces } = useWorkspaceState()
+  const showWorkspace = workspace !== undefined && !!onWorkspace && workspaces.length > 1
+  const wsName = workspace ? workspaces.find((w) => w.id === workspace)?.name ?? t('a removed workspace') : t('every workspace')
+  const wsChoices: Choice[] = [
+    ...workspaces.map((w) => ({ key: w.id, label: w.name, selected: w.id === workspace, run: () => onWorkspace?.(w.id) })),
+    { key: '', label: t('Every workspace'), selected: workspace === null, run: () => onWorkspace?.(null) },
+  ]
   const phrase = triggerText(trigger, names)
   const cond = conditionParts(condition, names).join(', ')
   const count = useMatchCount(condition, me)
@@ -353,6 +367,13 @@ export function WhenCard({ trigger, condition, ctx, me, onTrigger, onCondition }
       <p className="leading-8 text-body text-default">
         <WordButton ref={triggerRef} label={t('When')} value={phrase.charAt(0).toLocaleUpperCase() + phrase.slice(1)} placeholder={t('choose when')} action={t('change')}
           haspopup="listbox" expanded={open === 'trigger'} onClick={openList} />
+        {showWorkspace && (
+          <>
+            <span> {t('in', { context: 'workspace' })} </span>
+            <WordButton ref={wsRef} label={t('Workspace')} value={wsName} placeholder={t('every workspace')} action={t('change')}
+              haspopup="listbox" expanded={open === 'workspace'} onClick={() => setOpen('workspace')} />
+          </>
+        )}
         {trigger.kind !== 'manual' && (
           <>
             <span> {t('if')} </span>
@@ -365,13 +386,14 @@ export function WhenCard({ trigger, condition, ctx, me, onTrigger, onCondition }
         <p className="text-meta text-muted" data-rule-count>{t('{n, plural, one {# open task matches now} other {# open tasks match now}}', { n: count })}</p>
       )}
       <ChoicePopover open={open === 'trigger'} onClose={closeList} anchor={triggerRef} label={t('When')} choices={choices} />
+      {showWorkspace && <ChoicePopover open={open === 'workspace'} onClose={() => back(wsRef)} anchor={wsRef} label={t('Workspace')} choices={wsChoices} />}
       {open === 'details' && triggerHasDetails(trigger.kind) && (
-        <TriggerDetailsPanel trigger={trigger} names={names} shared={shared} onTrigger={onTrigger} onDone={() => back(triggerRef)} />
+        <TriggerDetailsPanel trigger={trigger} names={picker} shared={shared} onTrigger={onTrigger} onDone={() => back(triggerRef)} />
       )}
       {/* The condition rows: inside this card from 1024 px, a bottom sheet below, as on a step's card. */}
       <div data-card-inspector="when" />
       <Inspector open={open === 'condition'} onClose={() => back(condRef)} stepId="when" title={t('Condition')}>
-        <ConditionFields value={condition ?? {}} onChange={(c) => onCondition(Object.keys(c).length ? c : null)} names={names} />
+        <ConditionFields value={condition ?? {}} onChange={(c) => onCondition(Object.keys(c).length ? c : null)} names={picker} />
       </Inspector>
     </section>
   )

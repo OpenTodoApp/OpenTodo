@@ -125,6 +125,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `routines-shared` | Routines that belong to a shared project and run as whoever turned them on | Shipped in 0.21 |
 | `routines-shared-email` | Email project members in shared routines, with a stop link per member | Shipped in 1.3 |
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | Planned |
+| `routine-conditions` | A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | In progress (16 of 16) |
 
 ## Notes area
 

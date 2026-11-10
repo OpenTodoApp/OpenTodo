@@ -328,10 +328,15 @@ func (w *world) bound(pid string) *world {
 // worldFor is the world one rule runs in: the user's, or for a shared
 // routine its project's (nil: it cannot run now).
 func (w *world) worldFor(r *rule) *world {
-	if !r.Shared {
-		return w
+	if r.Shared {
+		return w.bound(r.ProjectID)
 	}
-	return w.bound(r.ProjectID)
+	if r.WorkspaceID != "" {
+		// A personal routine of one workspace (routine-conditions D1); nil
+		// when the user left that workspace or it was deleted.
+		return w.inWorkspace(r.WorkspaceID)
+	}
+	return w
 }
 
 // mayRun checks before a shared routine's run that its run-as person still

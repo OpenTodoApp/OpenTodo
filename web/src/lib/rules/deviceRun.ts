@@ -16,7 +16,7 @@ import type { Entity, Rule } from '../types'
 import { completeOnDevice, deviceAIReady, DeviceAIError } from './deviceAI'
 import { NOTICE_BINDING, PROPOSAL_BINDING, type DeviceChange, type DeviceCommit, type DeviceSide, type DeviceStepRecord } from './deviceTypes'
 import { AIError, planRoutine, proposalItems, type MergedChange, type RunPlan, type RunWorld, type SideSpec, type StepRecord } from './run'
-import { loadRunWorld } from './run/load'
+import { loadRunWorld, WorkspaceGone } from './run/load'
 import { hasAI, readRoutine } from './steps'
 
 /** What a device run did, for this device's list of recent runs (no text). */
@@ -93,7 +93,15 @@ export async function runOnDevice(req: RoutineRunRequest, onStart: (name: string
   const withAI = hasAI(steps)
   const ai = withAI && (await deviceAIReady())
   const prefs = await db.userPrefs.get('me')
-  const world = await loadRunWorld({ steps, encrypted: true, project: rule.project_id || undefined, env: { ai, aiConsent: ai, energy: (prefs as { energy?: string } | undefined)?.energy === 'on' } })
+  let world: Awaited<ReturnType<typeof loadRunWorld>>
+  try {
+    world = await loadRunWorld({ steps, encrypted: true, project: rule.project_id || undefined, workspace: rule.workspace_id || undefined,
+      env: { ai, aiConsent: ai, energy: (prefs as { energy?: string } | undefined)?.energy === 'on' } })
+  } catch (err) {
+    if (!(err instanceof WorkspaceGone)) throw err
+    await api.failDeviceRun(req.run, { step: -1, code: 'workspace_gone' }).catch(() => undefined)
+    return { name, outcome: 'failed', writes: 0 }
+  }
   const plan = await planRoutine(world, { id: rule.id, name, steps, trigger: (rule.trigger ?? { kind: 'manual' }) as RunRoutineTrigger, condition: rule.condition ?? null, aiBudget: req.budget },
     { key: req.occurrence, runId: req.run, triggerTaskId: req.task, aiTokensToday: req.tokens,
       ai: async (c) => {

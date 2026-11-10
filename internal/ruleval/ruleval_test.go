@@ -46,6 +46,8 @@ func TestParseCondition(t *testing.T) {
 		`{"deadline":"set"}`, `{"start":"deferred"}`, `{"evening":true}`, `{"blocked":false}`, `{"assignee":"me"}`,
 		`{"origin":{"kind":"issue"}}`, `{"origin":"none"}`, `{"habit":true}`, `{"estimate":{"max_minutes":30}}`,
 		`{"tracked":{"min_minutes":60}}`, `{"tracked":"none"}`,
+		// is not (routine-conditions D2)
+		`{"project":{"not_in":["p"]}}`, `{"project":{"not_in":["p"],"descendants":true}}`, `{"section":{"not_in":["s"]}}`, `{"priority":{"not_in":[1]}}`,
 	}
 	for _, s := range ok {
 		if _, err := ParseCondition(json.RawMessage(s)); err != nil {
@@ -57,6 +59,8 @@ func TestParseCondition(t *testing.T) {
 		`{"project":{"in":[]}}`, `{"labels":{}}`, `{"origin":{"kind":"fax"}}`, `{"tracked":{"max_minutes":10}}`,
 		`{"estimate":{"min_minutes":1,"max_minutes":2}}`, `{"assignee":"bob"}`, `[]`,
 		`{"labels":{"any":["` + strings.Repeat("x", 65) + `"]}}`,
+		`{"project":{"in":["p"],"not_in":["q"]}}`, `{"project":{"not_in":[]}}`, `{"project":{"descendants":true}}`, `{"section":{"in":["s"],"not_in":["t"]}}`,
+		`{"section":{"not_in":[]}}`, `{"priority":{"not_in":[]}}`, `{"priority":{"not_in":[0]}}`, `{"priority":{"in":[1],"not_in":[2]}}`, `{"priority":{}}`,
 	}
 	for _, s := range bad {
 		if _, err := ParseCondition(json.RawMessage(s)); err == nil {

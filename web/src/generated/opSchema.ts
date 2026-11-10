@@ -575,6 +575,15 @@ export interface RuleFields {
    * whoever last turned it on, only inside that project.
    */
   project_id?: string | null
+  /**
+   * The workspace a personal routine works in (routine-conditions D1):
+   * its trigger fires only for that workspace's tasks, its steps see and
+   * change only that workspace's tasks and projects. Null is every
+   * workspace, what each routine made before this field reads as. Unlike a
+   * label's workspace_id, the default workspace is written as its id.
+   * Ignored on a shared project's routine, which its project bounds.
+   */
+  workspace_id?: string | null
   position?: number
   created_at?: number
   deleted_at?: number | null
@@ -1184,7 +1193,7 @@ export const OP_DEFAULTS = {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
   rule: {
-    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, project_id: null, position: 0, created_at: 0, deleted_at: null,
+    name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, project_id: null, workspace_id: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
   frame: {
     title: '', weekdays: '', start: '09:00', end: '10:00', color: '#64748b', source: '', from_date: null, until_date: null, position: 0, created_at: 0, deleted_at: null,

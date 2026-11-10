@@ -7310,5 +7310,20 @@
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": "{title}, {kind, select, note {note} task {tâche} other {projet}}, {ring, select, centre {au centre} direct {lien direct} other {à deux pas}}",
   "calendar frames and slots": "cadres et lots du calendrier",
   "Expand the row": "Déplier la ligne",
-  "Edit the title, open the details or expand the row. This device only.": "Modifier le titre, ouvrir les détails ou déplier la ligne. Cet appareil seulement."
+  "Edit the title, open the details or expand the row. This device only.": "Modifier le titre, ouvrir les détails ou déplier la ligne. Cet appareil seulement.",
+  "Choose a priority": "Choisir une priorité",
+  "Choose a section": "Choisir une section",
+  "Every workspace": "Tous les espaces de travail",
+  "every workspace": "tous les espaces de travail",
+  "Is": "Est",
+  "Is not": "N’est pas",
+  "This routine works only in its workspace. Nothing was written.": "Cette routine n’agit que dans son espace de travail. Rien n’a été écrit.",
+  "This routine’s workspace is gone. Choose another one in the routine.": "L’espace de travail de cette routine n’existe plus. Choisissez-en un autre dans la routine.",
+  "a removed workspace": "un espace de travail supprimé",
+  "in|workspace": "dans",
+  "not in section {sections}": "pas dans la section {sections}",
+  "not in {projects}": "pas dans {projects}",
+  "not priority {p}": "pas priorité {p}",
+  "{field} test": "Condition sur {field}",
+  "{name} ({workspace})": "{name} ({workspace})"
 }

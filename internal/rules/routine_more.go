@@ -241,6 +241,9 @@ func (st *runState) projectFromTemplate(s *ruleval.Step, in map[string]ruleval.V
 			color = templatelib.Palette[i%len(templatelib.Palette)]
 		}
 		args["color"] = color
+		if st.w.workspace != "" {
+			args["workspace_id"] = st.w.workspace
+		}
 		if icon := p.Icon; icon != "" {
 			args["icon"] = icon
 		} else if i == 0 && tpl.Icon != "" {

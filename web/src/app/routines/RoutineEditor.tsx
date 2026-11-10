@@ -16,13 +16,14 @@ import { useOnline } from '../../lib/online'
 import { useCatalogue, type Catalogue } from '../../lib/rules/catalogue'
 import { sharedCatalogue } from '../../lib/rules/shared'
 import {
-  draftError, draftOf, draftTypes, duplicateStep, findStep, flowingTypeAt, insertNewStep, insertStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
+  draftError, draftOf, draftTypes, draftWorkspace, duplicateStep, findStep, flowingTypeAt, insertNewStep, insertStep, moveStep, newId, NEW_ROUTINE, placeOf, removeStep, sameDraft, setInput, stepCount, stepNumber, storedOf,
   type RoutineDraft,
 } from '../../lib/rules/draft'
 import { errorText, fixFor, type Fix } from '../../lib/rules/fixes'
 import { planDraft, serverPreview, type Preview } from '../../lib/rules/preview'
 import { outputNames, stepName } from '../../lib/rules/sentence'
 import { createRule, updateRule } from '../../lib/rules/store'
+import { useWorkspaceState } from '../../lib/localData'
 import { contentStep, hasAI, isAIKind, MAX_STEPS, triggerOutput } from '../../lib/rules/steps'
 import { EncryptedRoutineNote } from './RoutinesDevice'
 import { roundEstimate } from '../../lib/rules/ai'
@@ -133,16 +134,16 @@ function useDraft(start: RoutineDraft) {
 }
 
 /** Server previews for the steps the device cannot plan (D4), debounced 400 ms. */
-function useServerPreview(draft: RoutineDraft, local: Map<string, Preview>, ok: boolean, taskId: string | undefined, online: boolean): Map<string, Preview> | null {
+function useServerPreview(draft: RoutineDraft, local: Map<string, Preview>, ok: boolean, taskId: string | undefined, online: boolean, workspace: string | null): Map<string, Preview> | null {
   const [res, setRes] = useState<Map<string, Preview> | null>(null)
   const needs = [...local.values()].some((p) => p.state === 'server')
-  const key = JSON.stringify([draft.trigger, draft.condition, draft.steps, taskId])
+  const key = JSON.stringify([draft.trigger, draft.condition, draft.steps, taskId, workspace])
   useEffect(() => {
     setRes(null)
     if (!online || !ok || !needs || !draft.steps.length) return
     let live = true
     const timer = setTimeout(() => {
-      api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}) }).then((r) => {
+      api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(workspace ? { workspace_id: workspace } : {}) }).then((r) => {
         if (!live) return
         setRes(new Map(r.steps.map((x) => [x.step_id, serverPreview(x)])))
       }, () => undefined)
@@ -210,10 +211,12 @@ type Pane = 'steps' | 'test' | 'history'
 const WIDE_QUERY = '(min-width: 64rem)'
 
 /** Test (D8): a logged test run for a saved, unchanged routine, the draft route otherwise; AI steps ask first (routines-ai-step D11). */
-function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, projectId, onStart, onAnnounce, onError }: {
+function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, projectId, workspace, onStart, onAnnounce, onError }: {
   draft: RoutineDraft; rule: Rule | undefined; dirty: boolean; online: boolean; blocked: boolean; withAI: boolean; estimate: number; taskId: string | undefined
   /** A shared routine's project: the draft is planned inside it (routines-shared D3). */
   projectId?: string
+  /** The draft's workspace (routine-conditions D1); null for every workspace. */
+  workspace: string | null
   onStart: () => void; onAnnounce: (text: string) => void; onError: (e: unknown) => void
 }) {
   const [testing, setTesting] = useState(false)
@@ -227,7 +230,7 @@ function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate,
     const ai = callAI ? { call_ai: true } : {}
     const req = rule && !dirty
       ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
-      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(projectId ? { project_id: projectId } : {}), ...ai })
+      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(projectId ? { project_id: projectId } : {}), ...(workspace && !projectId ? { workspace_id: workspace } : {}), ...ai })
     req.then((r) => {
       setResult(r)
       onAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
@@ -282,8 +285,11 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const { draft, edit: editDraft, undo, canUndo } = useDraft(start)
   const me = useMe() ?? ''
   const online = useOnline()
-  const names = useRoutineNames()
   const shared = useSharedRoutine(rule?.id, rule ? rule.project_id : project)
+  // A personal routine works in one workspace or every one (routine-conditions D1); a shared one in its project.
+  const workspaces = useWorkspaceState()
+  const workspace = shared ? null : draftWorkspace(draft, workspaces.current)
+  const names = useRoutineNames(workspace)
   const ownCatalogue = useCatalogue()
   // A shared routine cannot use personal steps (routines-shared D3).
   const catalogue = useMemo(() => (shared ? sharedCatalogue(ownCatalogue) : ownCatalogue), [shared?.projectId, ownCatalogue]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -318,7 +324,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const triggerType = triggerOutput(draft.trigger.kind, !!draft.condition)
   const data = usePreviewData(draft.condition, triggerType === 'task' && draft.trigger.kind !== 'manual', me)
   const local = useMemo(() => planDraft(draft, data), [draft, data])
-  const server = useServerPreview(draft, local, !error, data.triggerTask?.id, online)
+  const server = useServerPreview(draft, local, !error, data.triggerTask?.id, online, workspace)
   const previews = useMemo(() => {
     if (!server) return local
     const out = new Map(local)
@@ -402,8 +408,9 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     const snapshot = draft
     setSaving(true)
     const done = savedId
-      ? updateRule(savedId, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule?.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}) }).then(() => savedId)
-      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget, project_id: shared?.projectId ?? null })
+      ? updateRule(savedId, { name, trigger: draft.trigger, condition: draft.condition, ...stored, ...(hasAI(draft.steps) || rule?.ai_budget ? { ai_budget: draft.aiBudget ?? 0 } : {}),
+        ...(shared ? {} : { workspace_id: workspace }) }).then(() => savedId)
+      : createRule({ name, trigger: draft.trigger, condition: draft.condition, ...stored, ai_apply: draft.aiApply, ai_budget: draft.aiBudget, project_id: shared?.projectId ?? null, workspace_id: workspace })
     Promise.resolve(done).then((id) => {
       const created = !savedId
       setBaseline(snapshot)
@@ -418,7 +425,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const withAI = hasAI(draft.steps)
   const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
   const { test, testing, result, ask } = useRoutineTest({
-    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, projectId: shared?.projectId,
+    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, projectId: shared?.projectId, workspace,
     onStart: () => setPane('test'), onAnnounce: setAnnounce, onError: (e) => setSaveError(messageOf(e)),
   })
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -446,8 +453,9 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     <section className="space-y-2" aria-label={t('Steps of {name}', { name })} data-routine-steps>
       {draft.steps.length === 0 && <p className="text-meta text-muted">{t('Add the first step: what should happen?')}</p>}
       <CardColumn steps={draft.steps} state={state} events={events} onAdd={add.atEnd}>
-        <WhenCard trigger={draft.trigger} condition={draft.condition} ctx={ctx} me={me}
-          onTrigger={(tr) => edit((d) => ({ ...d, trigger: tr }))} onCondition={(c) => edit((d) => ({ ...d, condition: c }))} />
+        <WhenCard trigger={draft.trigger} condition={draft.condition} ctx={ctx} me={me} workspace={shared ? undefined : workspace}
+          onTrigger={(tr) => edit((d) => ({ ...d, trigger: tr }))} onCondition={(c) => edit((d) => ({ ...d, condition: c }))}
+          onWorkspace={(ws) => edit((d) => ({ ...d, workspace: ws }))} />
       </CardColumn>
       {withAI && <AISettings rule={rule} draft={draft} online={online} onDraft={edit} />}
     </section>

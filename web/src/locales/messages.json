@@ -3069,11 +3069,17 @@
   "Choose a person": [
     "web/src/app/ShareDirectory.tsx"
   ],
+  "Choose a priority": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "Choose a priority.": [
     "web/src/app/assistant/ChangeSetReview.tsx"
   ],
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Choose a section": [
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a slot": [
@@ -5907,6 +5913,9 @@
   "Every weekday": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
+  "Every workspace": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "Every year on {date}": [
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -8057,8 +8066,14 @@
   "Invites": [
     "web/src/app/WorkspacesSettings.tsx"
   ],
+  "Is": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "Is a subtask": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "Is not": [
+    "web/src/app/rules/RuleFields.tsx"
   ],
   "Issue connection added": [
     "web/src/app/auditFormat.ts"
@@ -10447,6 +10462,7 @@
   "No project": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/lib/pickerSources.ts"
   ],
@@ -18321,6 +18337,12 @@
   "This routine works on a task: open one, then run it.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This routine works only in its workspace. Nothing was written.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
+  "This routine’s workspace is gone. Choose another one in the routine.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This run already finished.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -20279,7 +20301,8 @@
   ],
   "Workspace": [
     "web/src/app/ImportScreen.tsx",
-    "web/src/app/filter/ConditionEditor.tsx"
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/routines/StepCard.tsx"
   ],
   "Workspace changed": [
     "web/src/app/auditFormat.ts"
@@ -20890,6 +20913,10 @@
   "a removed view": [
     "web/src/app/routines/words.tsx"
   ],
+  "a removed workspace": [
+    "web/src/app/routines/RoutinesView.tsx",
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "a repeating task": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -21446,6 +21473,9 @@
   "every month on {days} at {time}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "every workspace": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "exactly": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -21636,6 +21666,9 @@
   "interval must be from 1 to {n}": [
     "web/src/lib/recurrence.ts",
     "web/src/lib/testdata/recurrence-1.0.ts"
+  ],
+  "in|workspace": [
+    "web/src/app/routines/StepCard.tsx"
   ],
   "is": [
     "web/src/app/routines/words.tsx"
@@ -21948,6 +21981,12 @@
   "not created by this assistant": [
     "web/src/app/auditFormat.ts"
   ],
+  "not in section {sections}": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "not in {projects}": [
+    "web/src/lib/rules/summary.ts"
+  ],
   "not offered on a demo instance": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -21959,6 +21998,9 @@
   ],
   "not opened yet": [
     "web/src/app/PublicLinksSection.tsx"
+  ],
+  "not priority {p}": [
+    "web/src/lib/rules/summary.ts"
   ],
   "not run yet": [
     "web/src/app/routines/RoutinesView.tsx"
@@ -23171,6 +23213,9 @@
   "{field} on {date}": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "{field} test": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "{field} {date}": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -23967,6 +24012,9 @@
   ],
   "{name} ({n})": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "{name} ({workspace})": [
+    "web/src/app/routines/data.ts"
   ],
   "{name} Dark": [
     "web/src/app/themes/ThemeEditor.tsx"

@@ -294,6 +294,8 @@ func (s *Server) routineError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusConflict, "already_undone", err.Error())
 	case errors.Is(err, rules.ErrForbidden):
 		writeError(w, http.StatusForbidden, "forbidden", err.Error())
+	case errors.Is(err, rules.ErrWorkspaceGone):
+		writeError(w, http.StatusConflict, "workspace_gone", "the routine's workspace is gone: choose another one")
 	default:
 		s.internal(w, err)
 	}
@@ -436,6 +438,9 @@ func (s *Server) handleRoutineDraftTest(w http.ResponseWriter, r *http.Request) 
 	}
 	if d.ProjectID != "" {
 		body["project_id"] = jsonRaw(d.ProjectID)
+	}
+	if d.WorkspaceID != "" {
+		body["workspace_id"] = jsonRaw(d.WorkspaceID)
 	}
 	if err := s.checkRuleParts(r.Context(), uid, body, nil); err != nil {
 		s.ruleError(w, err)

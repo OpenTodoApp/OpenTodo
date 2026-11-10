@@ -574,9 +574,16 @@ var Schema = map[string]map[string]Field{
 		// project's scope like a task, its editors write it, and it runs as
 		// whoever last turned it on, only inside that project.
 		"project_id": {Kind: kNullableString, Default: `null`},
-		"position":   {Kind: kNumber, Default: `0`},
-		"created_at": {Kind: kNumber, Default: `0`},
-		"deleted_at": {Kind: kNullableNumber, Default: `null`},
+		// The workspace a personal routine works in (routine-conditions D1):
+		// its trigger fires only for that workspace's tasks, its steps see and
+		// change only that workspace's tasks and projects. Null is every
+		// workspace, what each routine made before this field reads as. Unlike a
+		// label's workspace_id, the default workspace is written as its id.
+		// Ignored on a shared project's routine, which its project bounds.
+		"workspace_id": {Kind: kNullableString, Default: `null`},
+		"position":     {Kind: kNumber, Default: `0`},
+		"created_at":   {Kind: kNumber, Default: `0`},
+		"deleted_at":   {Kind: kNullableNumber, Default: `null`},
 	},
 	// frame: a recurring background window on the Day and Week grid (OpenSpec
 	// change calendar-frames, design D1), such as "Deep work" on weekdays from
