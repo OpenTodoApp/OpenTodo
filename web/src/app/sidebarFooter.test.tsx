@@ -148,7 +148,7 @@ describe('Help and sign out from the account menu', () => {
 
 // sidebar-v2 D6: the running entry is a pill in the footer's one row, in place of the name.
 describe('the running pill', () => {
-  const rows = (root: ParentNode) => [...root.querySelector('[data-sidebar-footer]')!.children].filter((c) => !c.classList.contains('sr-only'))
+  const rows = (root: ParentNode) => [...root.querySelector('[data-sidebar-footer]')!.children].filter((c) => !c.classList.contains('sr-only') && !c.hasAttribute('data-brand-line'))
   const start = async () => {
     await setCurrentUserId('u1')
     const id = await createTask({ title: 'Write the report' })

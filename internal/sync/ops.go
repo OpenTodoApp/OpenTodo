@@ -918,6 +918,13 @@ var Schema = map[string]map[string]Field{
 		"upcoming_row_layout": {Kind: kString, Default: `""`},
 		// Upcoming's Nest subtasks: "nested" or flat, as today_subtasks.
 		"upcoming_subtasks": {Kind: kString, Default: `""`},
+		// Upcoming's later days (OpenSpec change sidebar-brand-and-row-grid,
+		// design D8): "full" lists every day in full; "" or "summary" (the
+		// default) lists the first three days with tasks in full and each later
+		// day as one closed bar with its count and first titles. Clients read an
+		// empty or unknown value as summarised and keep the stored value.
+		// Settings, never content.
+		"upcoming_later": {Kind: kString, Default: `""`},
 		// The Inbox's grouping of its top-level tasks (builtin-view-options D6):
 		// "none", "due", "priority" or "label"; empty, unknown or not-offered
 		// reads as "none".

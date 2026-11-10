@@ -3,7 +3,7 @@
 ### Requirement: Task panel proportions
 In the docked task panel and on the task page:
 - The task's checkbox SHALL be centred on the first line of its title, whether the title takes one line or more, and SHALL share its left edge with the facet lines' icons below it.
-- The panel's title SHALL be one type step smaller than the page's title.
+- The panel's title SHALL be set in the title step (16 px), smaller than the page's title.
 - Facet lines, section headings and subtask rows SHALL use the 32 px row step of the panel (44 px on a coarse pointer).
 - No element of the panel's head SHALL be wider than the panel's content column.
 
@@ -49,7 +49,7 @@ Choosing or typing a value SHALL write the estimate in minutes as one operation 
 
 #### Scenario: Arrow keys
 - **WHEN** the field holds `1h` and the user presses ↑ twice
-- **THEN** the field reads `1h 30` and Enter writes 90 minutes
+- **THEN** the field reads `1h 30m` and Enter writes 90 minutes
 
 ## MODIFIED Requirements
 

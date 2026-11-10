@@ -17,8 +17,7 @@ import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../lib/re
 import { formatInstant } from '../lib/dates'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
-import { WorkspaceControl } from './WorkspaceControl'
-import { InstanceMark, useInstanceName } from './InstanceBrand'
+import { useCurrentWorkspace, WorkspaceControl, WorkspaceMark } from './WorkspaceControl'
 import { buildProjectTree, collapseAllProjects, expandAllProjects, expandAncestorsOf, projectPath, rollUpCounts, siblingEdges, toggleCollapsedProject, visibleProjects, type ProjectNode, useCollapsedProjects } from '../lib/projects'
 import { flattenTree } from '../lib/tree'
 import type { Label, Project, Review, Task, User, View } from '../lib/types'
@@ -155,7 +154,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   collapsed?: boolean
   onToggleCollapse?: () => void
 }) {
-  const instanceLabel = useInstanceName()
+  const workspace = useCurrentWorkspace()
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
@@ -425,7 +424,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
     <div className="flex h-full flex-col" data-sidebar-collapsed={collapsed || undefined}>
       <div className={`shrink-0 pt-[max(0.75rem,var(--safe-top))] ${collapsed ? 'px-1.5' : 'px-3'}`}>
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
-        <SidebarHeader left={<WorkspaceControl route={route} />} rail={<InstanceMark size={24} />} railLabel={instanceLabel}
+        <SidebarHeader left={<WorkspaceControl route={route} />} rail={<WorkspaceMark workspace={workspace.workspace} size={24} />} railLabel={workspace.name}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
         <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primary.map((d) => <Fragment key={d.id}>{d.node}</Fragment>)}

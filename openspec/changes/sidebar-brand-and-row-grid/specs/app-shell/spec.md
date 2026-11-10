@@ -90,7 +90,7 @@ In `first` mode the primary destinations SHALL never exceed six and SHALL keep t
 
 #### Scenario: One workspace
 - **WHEN** an account that never created a workspace opens the app
-- **THEN** the control reads "OpenTodo · Personal" and opens the switcher with the one workspace, "New workspace" and "Manage workspaces"
+- **THEN** the control shows the picture "P" and "Personal" on one line and opens the switcher with the one workspace, "New workspace" and "Manage workspaces"
 
 #### Scenario: Groups follow the workspace
 - **WHEN** the user switches from "Personal" (4 projects, 2 labels, 1 filter) to "Work" (6 projects, no labels, no filters)

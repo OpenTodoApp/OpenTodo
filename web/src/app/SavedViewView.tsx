@@ -11,6 +11,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, u
 import { parse } from '../lib/filter'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
+import { listSlotsOff } from '../lib/rowSlots'
 import { setTaskCompleted } from '../lib/ops'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { GROUP_BY_OPTIONS, SORT_BY_OPTIONS, type View } from '../lib/types'
@@ -154,6 +155,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const rows = useMemo(() => shownGroups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [shownGroups])
   // The time column (rows-v2 D2): one fact of the whole view.
   const timeColumn = useMemo(() => hasTimeColumn(rows.map((r) => r.task)), [rows])
+  const slotsOff = useMemo(() => listSlotsOff(rows.map((r) => r.task)), [rows])
   const [selected, setSelected] = useState<string | null>(null)
   const openId = usePanelTaskId()
   const setOpenId = setPanelTaskId
@@ -274,7 +276,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                 labels={resolveLabels(tk.labels, labelMap)}
                 showProject={opts.groupBy !== 'project'}
-                timeColumn={timeColumn}
+                timeColumn={timeColumn} slotsOff={slotsOff}
                 hidden={display.hidden}
                 layout={display.rowLayout}
                 edge={shape === 'card' && boardColor.mode !== 'project' ? boardColor.hueOf(tk) : undefined}

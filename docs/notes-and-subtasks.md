@@ -11,7 +11,7 @@ order: 14
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, its notes and its properties."></picture>
 
-In the task panel, **Notes** sits under the title. Below the property lines are the **Subtasks** as a checklist, with an **Add subtask…** line under them, the attachments once there is one (attach from **Add** or the **⋯** menu, or paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box rests as one line at the bottom of the panel while Comments is shown and opens when you click it or press <kbd>Shift</kbd>+<kbd>C</kbd>. Activity starts with when the task was created and completed.
+In the task panel, **Notes** sits under the title. Below the property lines are the **Subtasks** (**2 of 5** done) with an **Add a subtask** line, the attachments once there is one (attach from **Add** or the **⋯** menu, or paste or drop files on the panel, see [Attachments](attachments.md)), and the **Comments**, **Activity** and **History** tabs. The comment box rests as one line at the bottom of the panel while Comments is shown and opens when you click it or press <kbd>Shift</kbd>+<kbd>C</kbd>. Activity starts with when the task was created and completed.
 
 ## Write notes
 

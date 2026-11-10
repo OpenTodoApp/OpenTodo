@@ -44,6 +44,13 @@ export function DisplayOptionsBody<V extends PanelValue = ViewDisplay>({ value, 
         {value.rowLayout !== undefined && (
           <Choice label={t('Rows')} items={ROW_LAYOUTS} value={value.rowLayout} labels={ROW_LAYOUT_LABEL} icons={ROW_LAYOUT_ICON} attr="row-layout" onChange={(r) => onChange({ rowLayout: r })} />
         )}
+        {value.laterInFull !== undefined && <OptionRow label={t('Later days')}>
+          <select className="ui-input w-full py-1 text-meta" aria-label={t('Later days')} value={value.laterInFull ? 'full' : 'summary'} data-display-later
+            onChange={(e) => onChange({ laterInFull: e.target.value === 'full' })}>
+            <option value="summary">{t('Summarised')}</option>
+            <option value="full">{t('In full')}</option>
+          </select>
+        </OptionRow>}
         {groupOptions.length > 0 && <OptionRow label={t('Group by')}>
           <select className="ui-input w-full py-1 text-meta" aria-label={t('Group by')} value={value.groupBy}
             onChange={(e) => onChange({ groupBy: e.target.value as ListGroupBy })}>
