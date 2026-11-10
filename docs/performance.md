@@ -228,6 +228,7 @@ benchmark reads them there; they are never sent anywhere.
 ```sh
 make perf            # builds the app, the server and the account, then runs every budget five times
 PERF_RUNS=1 make perf   # one run, for a quick look
+PERF_ONLY=complete-task PERF_PROFILES=phone make perf   # the browser session stops once it has that metric, and only it is judged
 ```
 
 It needs Playwright with Chromium (`npm i -g playwright && npx playwright install chromium`)

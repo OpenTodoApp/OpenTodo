@@ -38,6 +38,7 @@ import { createNoteWithUndo, deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
+import { loadLinkedReferences } from '../linkedRefsChunk'
 
 /** The page's filters on this device (never synced). */
 export const NOTE_FILTERS_KEY = 'opentodo.notes.filters'
@@ -167,6 +168,8 @@ export function NotesPage({ id }: { id?: string }) {
   const list = useRef<HTMLUListElement>(null)
   const index = useRef<NoteIndex | null>(null)
 
+  // A note opened from here paints its Linked references without waiting on their chunk (linkedRefsChunk.ts).
+  useEffect(() => { void loadLinkedReferences() }, [])
   // On a computer the note is docked beside the list; on a phone it is the page.
   const phonePage = !!id && !docks
   useDockedNote(id && docks ? id : null)

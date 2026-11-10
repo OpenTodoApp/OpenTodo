@@ -1,0 +1,1 @@
+- **Completing a task in a long list is fast again, and Linked references show at once.** In a 2,000-task list a completion took about four times as long since the floating selection bar and the Focus break tone; it is back under its budget. Opening a note from the Notes page paints its Linked references as soon as they are worked out, without waiting a third of a second.

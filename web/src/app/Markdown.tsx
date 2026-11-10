@@ -6,6 +6,7 @@
 import { lazy, Suspense, type ReactNode } from 'react'
 import { useEmbeddedImage } from '../lib/embeds'
 import { t } from '../lib/i18n'
+import { linkedReferencesLoaded, loadLinkedReferences, type LinkedReferencesProps } from './linkedRefsChunk'
 import { ImagePlaceholder, MarkdownView, type MarkdownEmbeds, type MarkdownProps } from './MarkdownView'
 
 export type { MarkdownProps }
@@ -21,10 +22,12 @@ function RefLink(props: { kind: 'task' | 'note' | 'project'; id: string; childre
 }
 
 // Linked references (note-links D5) below a task's notes, at the end of a note and in a
-// project's note area: the section and the link index are a chunk of their own.
-const LinkedReferences = lazy(() => import('./LinkedReferences'))
-export function LinkedRefs(props: { kind: 'task' | 'note' | 'project'; id: string; folded?: boolean }) {
-  return <Suspense fallback={null}><LinkedReferences {...props} /></Suspense>
+// project's note area: the section and the link index are a chunk of their own. Once the
+// chunk is in, the section renders without suspending (linkedRefsChunk.ts).
+const LinkedReferences = lazy(() => loadLinkedReferences().then((c) => ({ default: c })))
+export function LinkedRefs(props: LinkedReferencesProps) {
+  const Loaded = linkedReferencesLoaded()
+  return <Suspense fallback={null}>{Loaded ? <Loaded {...props} /> : <LinkedReferences {...props} />}</Suspense>
 }
 
 /** An attachment of the task shown in place, or a placeholder naming its state. */

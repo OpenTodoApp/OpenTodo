@@ -411,6 +411,9 @@ export function BulkDialogHost() {
 }
 
 
+/** The root's mark while a selection bar floats over the content (no-layout-jump; index.css). */
+const SELECTION_DOCK_ATTR = 'data-selection-docked'
+
 /** The app frame's left edge and width, followed as the window or the sidebar resizes; null outside the shell. */
 function useFrameBox(active: boolean): { left: number; width: number } | null {
   const [box, setBox] = useState<{ left: number; width: number } | null>(null)
@@ -457,6 +460,14 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
     root.setProperty('--selection-lift', '3.75rem')
     return () => { root.removeProperty('--selection-lift') }
   }, [shown, desktop])
+  // The room under the content and the add button stepping aside (index.css) read this mark on
+  // the root, set before paint: a `:has()` rule over the list restyled it on every change (issue 1179).
+  useLayoutEffect(() => {
+    if (!shown) return
+    const root = document.documentElement
+    root.setAttribute(SELECTION_DOCK_ATTR, '')
+    return () => root.removeAttribute(SELECTION_DOCK_ATTR)
+  }, [shown])
   const box = useFrameBox(shown)
   if (!shown) return null
   return (
