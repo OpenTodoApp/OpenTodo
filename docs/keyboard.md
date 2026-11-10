@@ -176,7 +176,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | Timeline: show the next week (or four) |
 | <kbd>t</kbd> | Timeline: back to today |
 
-### Day, Week, Month, Quarter, Plan and Year calendar
+### Calendar
 
 | Keys | What it does |
 | --- | --- |
