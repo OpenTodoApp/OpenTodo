@@ -19,7 +19,7 @@ import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/sur
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
-import { sharedGraph } from './shared-graph.mjs'
+import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -912,14 +912,18 @@ test('the modules the app shares reach their host only through the platform port
   assert.deepEqual(boundaryProblems(root), [])
 })
 
-test('the shared list holds the whole import graph of the sync path (node scripts/shared-graph.mjs)', () => {
+// The graph needs web's TypeScript: the Changed paths job has no npm install and
+// skips these two; the Web job runs them after npm ci.
+const graphSkip = hasTypeScript() ? false : 'needs web/node_modules (npm ci in web/); the Web job runs it'
+
+test('the shared list holds the whole import graph of the sync path (node scripts/shared-graph.mjs)', { skip: graphSkip }, () => {
   const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
   const graph = sharedGraph()
   assert.ok(graph.includes('web/src/lib/platform.ts') && graph.includes('web/src/lib/deviceStorage.ts'))
   assert.deepEqual(graph.filter((m) => !modules.includes(m)), [], `add these modules to ${SHARED_MODULES_FILE}`)
 })
 
-test('the import graph follows static, dynamic and type-only imports, and leaves packages and assets out', () => {
+test('the import graph follows static, dynamic and type-only imports, and leaves packages and assets out', { skip: graphSkip }, () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'graph-'))
   try {
     const lib = path.join(dir, 'web/src/lib')

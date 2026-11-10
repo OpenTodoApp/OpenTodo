@@ -6,7 +6,7 @@
 // generator (task 4.1) reuses sharedGraph; run directly, it prints the graph of the
 // sync path and the browser globals each module still names:
 //
-//   node scripts/shared-graph.mjs [entry.ts ...]
+//   node scripts/shared-graph.mjs [entry.ts ...]   (after npm ci in web/)
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -15,6 +15,18 @@ import { browserGlobals } from './shared-boundary.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 export const SYNC_PATH = ['web/src/lib/sync.ts', 'web/src/lib/ops.ts']
+
+const requireWeb = createRequire(path.join(root, 'web/package.json'))
+
+/** Whether web's TypeScript is installed (npm ci in web/). */
+export function hasTypeScript() {
+  try {
+    requireWeb.resolve('typescript')
+    return true
+  } catch {
+    return false
+  }
+}
 
 const EXTENSIONS = ['.ts', '.tsx', '/index.ts', '/index.tsx']
 
@@ -31,7 +43,7 @@ function resolve(fromFile, spec) {
 
 /** The repo-relative paths of every local module the entries reach, sorted. */
 export function sharedGraph(entries = SYNC_PATH, repo = root) {
-  const ts = createRequire(path.join(root, 'web/package.json'))('typescript')
+  const ts = requireWeb('typescript')
   const seen = new Set()
   const queue = entries.map((e) => path.join(repo, e))
   while (queue.length) {
