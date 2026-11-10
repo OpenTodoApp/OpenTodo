@@ -37,4 +37,5 @@ Every other writer takes the same path from step 5: the REST API and the `ot` co
 
 - A new synced field: declare it once in `internal/sync/ops.go` `Schema` and regenerate (see `AGENTS.md`, rule 3).
 - Logic that must match on both sides: [Add a shared contract](add-a-shared-contract.md).
+- Code the native app shares: a module listed in `mobile/app/shared-modules.json` asks its host for visibility, the network, the sync lock, the other tabs, preferences and the time zone through the platform port, `web/src/lib/platform.ts`, never through `window`, `document`, `navigator`, `localStorage`, `BroadcastChannel` or `indexedDB`. `make repo-check` refuses a browser global there.
 - Background work: one entry in `internal/tenant/jobs.go` ([Background work](../architecture.md#background-work)).

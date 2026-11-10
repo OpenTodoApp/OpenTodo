@@ -13,6 +13,7 @@ import { db, entityTables, getMeta, setMeta } from './db'
 import type { Entity, Note, Project, Task } from './types'
 import { t } from './i18n'
 import { readWorkspaceState, tasksIn } from './workspaces'
+import { platform } from './platform'
 
 /** Ids of every deleted project in a list. */
 export function deletedProjectIds(projects: Iterable<Pick<Project, 'id' | 'deleted_at'>>): Set<string> {
@@ -104,7 +105,7 @@ async function setPendingPurges(list: PurgeRequest[]): Promise<void> {
 }
 
 function isOffline(): boolean {
-  return typeof navigator !== 'undefined' && navigator.onLine === false
+  return !platform.network.online()
 }
 
 /**
