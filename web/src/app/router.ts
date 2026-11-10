@@ -86,14 +86,15 @@ const LOOP_MOVES: readonly string[] = ['catch', 'clarify', 'place', 'do', 'revie
  * phone. Screens with nothing to add a task to (Settings and its sub-pages, the
  * theme editor, Import, Help, the feeds, statistics, sign-in links) leave the
  * button out: there it would only cover the ends of rows and form fields. Every
- * view is listed, so a new one has to decide.
+ * view is listed, so a new one has to decide. The rituals that keep nothing else
+ * on screen, Focus and Close the day, leave it out too (no-layout-jump).
  */
 export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   inbox: true, today: true, upcoming: true, someday: true, anytime: true,
   day: true, week: true, month: true, plan: true, year: true,
   completed: true, assigned: true, project: true, task: true, label: true, labels: true,
   places: true, place: true, projects: true, filter: true, views: true, view: true,
-  triage: true, review: true, next: true, waiting: true, loop: true, focus: true, notes: true,
+  triage: true, review: true, next: true, waiting: true, loop: true, focus: false, notes: true,
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
@@ -102,6 +103,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
 
 /** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
 export function offersQuickAdd(r: Route): boolean {
+  if (r.view === 'review' && r.step === 'close') return false
   return VIEW_QUICK_ADD[r.view]
 }
 

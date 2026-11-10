@@ -4,9 +4,8 @@
 // like every other object menu. Moves and assignments go through the review (D6).
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
 import type { Step } from '../../lib/move'
-import { useBelowStickyHeader } from './useBelowStickyHeader'
 import { allCompleted, applyBulk, commonSharedProject, readTicked, reviewAssign, reviewMove, type BulkAction, type ReviewPlan, useTickedTasks } from '../../lib/bulk'
 import { useAllLabels, useLabelsLoaded, useLiveSections, useProjects, useMembershipMapOrLoading, useReviewRow, useUserPrefsRow } from '../../lib/localData'
 import { DAY_PARTS, dayPartName, dayPartOf, dayPartsOn, type DayPart } from '../../lib/dayParts'
@@ -17,7 +16,7 @@ import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
-import { Icon, Dialog, useFinePointer } from '../../ui'
+import { DESKTOP_HEADER_QUERY, Icon, Dialog, useFinePointer, useMediaQuery } from '../../ui'
 import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
@@ -395,7 +394,33 @@ export function BulkDialogHost() {
   )
 }
 
-/** "3 selected · Actions · Clear" above a list while tasks are ticked, kept in sight while the list scrolls. */
+
+/** The app frame's left edge and width, followed as the window or the sidebar resizes; null outside the shell. */
+function useFrameBox(active: boolean): { left: number; width: number } | null {
+  const [box, setBox] = useState<{ left: number; width: number } | null>(null)
+  useLayoutEffect(() => {
+    if (!active) return
+    const frame = document.querySelector<HTMLElement>('[data-app-frame]')
+    if (!frame) return
+    const measure = () => {
+      const r = frame.getBoundingClientRect()
+      setBox((b) => (b && b.left === r.left && b.width === r.width ? b : { left: r.left, width: r.width }))
+    }
+    measure()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    ro?.observe(frame)
+    window.addEventListener('resize', measure)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure) }
+  }, [active])
+  return box
+}
+
+/**
+ * "3 selected · Actions · Clear" while tasks are ticked (no-layout-jump, issue 1143): it
+ * floats over the bottom of the content, on a phone above the tab bar where the add
+ * button stands (the button steps aside while it shows), so it appearing or leaving
+ * never moves a row, and it stays in sight while the list scrolls.
+ */
 export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone }: {
   ids: readonly string[]
   onClear: () => void
@@ -405,22 +430,33 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
   /** Select mode on touch (phone-v2 D8): Done hides the checkboxes and keeps the ticks; the bar shows with nothing ticked. */
   onDone?: () => void
 }) {
-  const bar = useRef<HTMLDivElement>(null)
   const shown = ids.length > 0 || !!onDone
-  // Pinned below the page header, so it stays reachable anywhere in a long list (issue 518).
-  const top = useBelowStickyHeader(bar, shown)
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  // From 768 px a toast in the bottom corner rises above the bar (its lift is 0 there); on a
+  // phone its lift above the add button's place already clears the bar. The add button steps
+  // aside and the content keeps room under the bar by CSS (index.css).
+  useEffect(() => {
+    if (!shown || !desktop) return
+    const root = document.documentElement.style
+    root.setProperty('--selection-lift', '3.75rem')
+    return () => { root.removeProperty('--selection-lift') }
+  }, [shown, desktop])
+  const box = useFrameBox(shown)
   if (!shown) return null
   return (
-    <div ref={bar} style={{ top }} className="sticky z-10 mb-2 flex items-center gap-2 rounded-control bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
-      <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
-      {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-        trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
-      {ids.length > 0 && (
-        <Tooltip label={t('Clear the selection')} shortcut="Esc">
-          <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
-        </Tooltip>
-      )}
-      {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Close')}</button>}
+    <div data-selection-dock style={box ? { left: box.left, width: box.width } : undefined}
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
+      <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
+        <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
+        {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
+          trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
+        {ids.length > 0 && (
+          <Tooltip label={t('Clear the selection')} shortcut="Esc">
+            <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>
+          </Tooltip>
+        )}
+        {onDone && <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1 text-body font-medium" onClick={onDone} data-select-done>{t('Close')}</button>}
+      </div>
     </div>
   )
 }
