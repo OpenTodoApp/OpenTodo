@@ -650,6 +650,9 @@ type turnRequest struct {
 	// (assistant-skills D2); both optional.
 	Skill   string             `json:"skill,omitempty"`
 	Workday *assistant.Workday `json:"workday,omitempty"`
+	// OpenProposal is the open, unapplied proposal this turn amends
+	// (assistant-proposal-editing D3): at most 50 items, checked by the loop.
+	OpenProposal []assistant.Proposed `json:"open_proposal,omitempty"`
 }
 
 func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
@@ -748,7 +751,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	start := time.Now()
 	res := s.assistant.Loop.Run(tctx, prov, assistant.TurnInput{
-		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: s.visibleToAssistants(ctx, u.ID, in.Selected), Skill: skill, Workday: in.Workday,
+		UserID: u.ID, UserName: u.Name, Zone: zone, Messages: in.Messages, View: in.View, Selected: s.visibleToAssistants(ctx, u.ID, in.Selected), Skill: skill, Workday: in.Workday, Open: in.OpenProposal,
 	}, assistant.Events{
 		Text:   func(t string) { send("text", map[string]string{"text": t}) },
 		Status: func(t string) { send("status", map[string]string{"text": t}) },
@@ -825,6 +828,10 @@ func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.
 	}
 	if len(in.Messages) > turnMaxMessages {
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("a turn carries at most %d messages", turnMaxMessages))
+		return turnRequest{}, nil, nil, false
+	}
+	if len(in.OpenProposal) > assistant.MaxOpenProposal {
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("an open proposal holds at most %d items; apply or discard it first", assistant.MaxOpenProposal))
 		return turnRequest{}, nil, nil, false
 	}
 	if msg := validateTurn(in); msg != "" {

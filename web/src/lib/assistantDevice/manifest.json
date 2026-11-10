@@ -3566,5 +3566,66 @@
       "max_text": 500,
       "max_tokens": 4000
     }
+  },
+  "open_proposal": {
+    "note": "Open proposal: the user has not applied these changes yet, and this turn amends them. Your write tools add to it, and a write to an item in it changes that item; drop_from_proposal removes items the user no longer wants. Keep the items the user did not ask about. Its items, one per line:",
+    "max_items": 50,
+    "tool": {
+      "name": "drop_from_proposal",
+      "kind": "proposal",
+      "description": "Remove items from the open proposal by their ids, for example when the user no longer wants one of the proposed changes. Changes nothing in the app; the user reviews the amended proposal.",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Ids of items in the open proposal.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "strict_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Ids of items in the open proposal. (maxItems 50)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "strict_nullable_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "ids": {
+            "description": "Ids of items in the open proposal. (maxItems 50)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      }
+    }
   }
 }

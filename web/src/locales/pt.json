@@ -7361,5 +7361,17 @@
   "{n, plural, one {# project has no next action.} other {# projects have no next action.}}": "{n, plural, one {# projeto não tem próxima ação.} other {# projetos não têm próxima ação.}}",
   "{n, plural, one {# thing in the Inbox is waiting.} other {# things in the Inbox are waiting.}}": "{n, plural, one {# item espera na caixa de entrada.} other {# itens esperam na caixa de entrada.}}",
   "{n, plural, one {oldest in Inbox # day} other {oldest in Inbox # days}}": "{n, plural, one {o mais antigo na caixa # dia} other {o mais antigo na caixa # dias}}",
-  "{n} done this week": "{n} feitas nesta semana"
+  "{n} done this week": "{n} feitas nesta semana",
+  "(added this turn)": "(adicionado nesta vez)",
+  "(changed this turn)": "(alterado nesta vez)",
+  "After": "Depois",
+  "Before": "Antes",
+  "Before and after": "Antes e depois",
+  "Enter a time.": "Introduza uma hora.",
+  "In a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same": "No calendário de uma proposta: mover o item em foco um dia antes / depois (também Alt+← e Alt+→); arrastá-lo para um dia faz o mesmo",
+  "Moved “{title}” to {date}.": "«{title}» movida para {date}.",
+  "Removed this turn: {title}": "Removido nesta vez: {title}",
+  "added": "adicionado",
+  "changed": "alterado",
+  "proposed item in a calendar": "item proposto num calendário"
 }

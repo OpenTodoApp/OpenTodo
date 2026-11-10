@@ -61,6 +61,8 @@ export interface TurnRequest {
   /** A built-in skill id and the device's working day (assistant-skills D2). */
   skill?: string
   workday?: { startHour: number; endHour: number; dayLength: number }
+  /** The open, unapplied proposal this turn amends (assistant-proposal-editing D3), at most 50 items. */
+  open_proposal?: ProposedChange[]
 }
 
 /**
@@ -143,6 +145,8 @@ export interface ReviewItem {
   shared: boolean
   /** Edited before applying (assistant-generative-ui D6): the change holds the edited values. */
   edited?: boolean
+  /** What the latest turn did to this item of an open proposal (assistant-proposal-editing D3). */
+  turn?: 'added' | 'changed'
 }
 
 export interface Review {

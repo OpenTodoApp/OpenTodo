@@ -6,10 +6,18 @@
   "(10+ characters)": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "(added this turn)": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
+  ],
   "(archived)": [
     "web/src/lib/facets.ts"
   ],
   "(changed since proposed)": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
+  ],
+  "(changed this turn)": [
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
@@ -1379,6 +1387,9 @@
   "Advanced": [
     "web/src/app/themes/TokenList.tsx"
   ],
+  "After": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx"
+  ],
   "After its deadline": [
     "web/src/app/calendar/ReplanPreview.tsx"
   ],
@@ -2391,6 +2402,13 @@
   "Based on {name} by {author} ({licence})": [
     "web/src/lib/theme/custom.ts"
   ],
+  "Before": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx"
+  ],
+  "Before and after": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx"
+  ],
   "Before or after": [
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
@@ -2756,8 +2774,8 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/assistant/AssistantDevice.tsx",
     "web/src/app/assistant/AssistantSettings.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
@@ -3085,7 +3103,7 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a priority.": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ItemEditor.tsx"
   ],
   "Choose a project": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -3630,6 +3648,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/review/MonthlyLook.tsx",
@@ -4472,7 +4491,8 @@
   ],
   "Deadline": [
     "web/src/app/ParseChips.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
@@ -4836,6 +4856,7 @@
   "Description": [
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/ShareCapture.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/rules/proposal.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
@@ -4998,7 +5019,8 @@
     "web/src/lib/method/vocabulary.json"
   ],
   "Do on": [
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/app/task-list/RowSchedule.tsx"
   ],
@@ -5040,7 +5062,7 @@
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/UsersPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
@@ -5399,7 +5421,9 @@
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Edit {title}": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/CalendarBlock.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "Editing. Enter saves, Escape cancels, Shift+Enter opens the details.": [
     "web/src/app/task-list/InlineEditor.tsx"
@@ -5677,7 +5701,7 @@
     "web/src/ui/ColourField.tsx"
   ],
   "Enter a date.": [
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
     "web/src/lib/fields.ts"
   ],
   "Enter a duration instead": [
@@ -5704,8 +5728,11 @@
   "Enter a start and an end time": [
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Enter a time.": [
+    "web/src/app/assistant/ItemEditor.tsx"
+  ],
   "Enter a title.": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ItemEditor.tsx"
   ],
   "Enter a valid redirect address: the exact address, starting with https://, without wildcards.": [
     "web/src/lib/i18n/errors.ts"
@@ -5779,6 +5806,7 @@
   "Estimate": [
     "web/src/app/EstimateField.tsx",
     "web/src/app/ParseChips.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/review/BentoSlots.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -5813,6 +5841,7 @@
   ],
   "Evening": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/dayParts.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
@@ -6220,6 +6249,7 @@
     "web/src/app/review/charts.tsx"
   ],
   "Field": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Field names": [
@@ -7786,6 +7816,9 @@
   "In a number of days": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
+  "In a proposal’s calendar: move the focused item one day earlier / later (Alt+← and Alt+→ too); dragging it to a day does the same": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In a routine’s proposal: apply the ticked changes / close the review; Space toggles an item": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -7918,6 +7951,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/palette/index.ts",
@@ -8447,6 +8481,7 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/TokenSuggest.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
@@ -9012,6 +9047,7 @@
   ],
   "Location": [
     "web/src/app/TaskListView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -9780,6 +9816,7 @@
     "web/src/lib/undoActions.ts"
   ],
   "Moved to the Trash": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
   "Moved to the Trash.": [
@@ -9808,6 +9845,9 @@
   ],
   "Moved up: {step}": [
     "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "Moved “{title}” to {date}.": [
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "Moves": [
     "web/src/app/calendar/ReplanPreview.tsx"
@@ -9855,6 +9895,7 @@
     "web/src/app/TokensSection.tsx",
     "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/WorkspaceInviteScreen.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
@@ -11719,6 +11760,7 @@
   "Open": [
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/palette/addFromBar.ts",
@@ -12804,7 +12846,8 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -12857,7 +12900,7 @@
   "Priority {p}": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/TaskRow.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/lib/views.ts"
@@ -12922,6 +12965,7 @@
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -13697,6 +13741,9 @@
   "Removed label": [
     "web/src/app/RuleEditor.tsx"
   ],
+  "Removed this turn: {title}": [
+    "web/src/lib/assistantAmend.ts"
+  ],
   "Removed view": [
     "web/src/app/DashboardView.tsx"
   ],
@@ -13789,6 +13836,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Repeat": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
@@ -14716,6 +14764,7 @@
   ],
   "Section": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -15826,6 +15875,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TaskRow.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -15959,7 +16009,8 @@
   ],
   "Start": [
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/method/DailyCheckToast.tsx",
@@ -16128,6 +16179,7 @@
   ],
   "Status": [
     "web/src/app/RuleEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/themes/tokenNames.ts",
     "web/src/lib/settingsCopy.ts"
@@ -17749,7 +17801,7 @@
     "web/src/app/ToastActionHost.tsx"
   ],
   "The title is too long.": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ItemEditor.tsx"
   ],
   "The token is removed from the server and nothing is polled any more. The {n, plural, one {# task} other {# tasks}} it created stay as ordinary tasks.": [
     "web/src/app/IssuesPanel.tsx"
@@ -18661,6 +18713,7 @@
   "Time": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DigestCard.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
@@ -18787,7 +18840,8 @@
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
@@ -20999,6 +21053,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a label": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
   "a member": [
@@ -21011,10 +21066,12 @@
     "web/src/app/AgentAccessRow.tsx"
   ],
   "a place": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
   "a project": [
     "web/src/app/MemberInvitations.tsx",
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
   "a project cannot be its own parent": [
@@ -21052,6 +21109,7 @@
     "web/src/app/TaskRow.tsx"
   ],
   "a section": [
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
   "a section needs a name": [
@@ -21099,6 +21157,10 @@
   ],
   "add, new, project": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "added": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "address": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -21276,6 +21338,10 @@
     "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/routines/wordPicker.tsx"
+  ],
+  "changed": [
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx"
   ],
   "changed since proposed": [
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -21539,6 +21605,7 @@
   ],
   "edited": [
     "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/assistant/blocks/ProposalShapes.tsx",
     "web/src/app/task-detail/CommentsTab.tsx",
     "web/src/lib/activity.ts"
   ],
@@ -22398,6 +22465,9 @@
     "web/src/app/assistant/blocks/CalendarBlock.tsx"
   ],
   "proposed changes": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "proposed item in a calendar": [
     "web/src/lib/shortcuts.ts"
   ],
   "push notifications": [

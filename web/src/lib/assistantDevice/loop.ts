@@ -17,6 +17,7 @@ import { getNote, listNotes, searchNotes } from './readNotes'
 import { listFrames, listSlots, listTimeEntries } from './readTime'
 import { findFreeTime } from './readFreeTime'
 import { DISPLAY_TOOLS, runDisplay, type DisplayTurn } from './blocks'
+import { checkOpen, dropFromDraft } from './open'
 import type { DeviceSetup } from './settings'
 
 export interface DeviceTurnOptions {
@@ -179,13 +180,15 @@ export function finalise(draft: ProposedChange[], shared: (c: ProposedChange) =>
 export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) => void, signal: AbortSignal | undefined, opts: DeviceTurnOptions): Promise<void> {
   const now = opts.now ?? Date.now
   const skill = req.skill ? manifestSkill(req.skill) ?? null : null
-  const tools = manifest.tools.filter((t) => offeredTool(t, skill, req.view))
   const snap0 = await loadSnapshot()
+  // The open proposal, checked, seeds the draft and brings drop_from_proposal (assistant-proposal-editing D3).
+  const open = await checkOpen(req.open_proposal, snap0)
+  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(open.length ? [manifest.open_proposal.tool] : [])]
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
-  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null }, now()) + '\n' + manifest.device_note + '\n'
+  const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open }, now()) + '\n' + manifest.device_note + '\n'
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
-  let draft: ProposedChange[] = []
+  let draft: ProposedChange[] = [...open]
   const display: DisplayTurn = { shown: 0 }
   let input = 0
   let cached = 0
@@ -249,6 +252,14 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
             continue
           }
           onEvent({ type: 'status', text: statusFor(call.name, call.args) })
+          if (def?.kind === 'proposal') {
+            let args: Record<string, unknown> = {}
+            try { args = JSON.parse(call.args || '{}') as Record<string, unknown> } catch { /* invalid arguments below */ }
+            const res = dropFromDraft(draft, args && typeof args === 'object' ? args : {})
+            draft = res.draft
+            results.push({ id: call.id, content: res.content, isError: res.isError })
+            continue
+          }
           const res = await runTool(call, tools, draft, now())
           draft = res.draft
           results.push({ id: call.id, content: res.content, isError: res.isError })

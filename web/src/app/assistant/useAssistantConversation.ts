@@ -13,6 +13,7 @@ import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssista
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
 import { blockLabel, blockOf, followupsOf, type AssistantBlock } from '../../lib/assistantBlocks'
 import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
+import { amendReview } from '../../lib/assistantAmend'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
 import { t } from '../../lib/i18n'
 import type { ReviewResult } from './ChangeSetReview'
@@ -312,9 +313,11 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
    * A capture (a ramble or photos) is always reviewed: its proposal is never applied automatically (voice-ramble),
    * and so is a suggestion after adding a task (`review` in the prefill): the person did not type that turn.
    */
-  const offer = async (entry: AssistantThread, items: ProposedChange[], review = false) => {
-    const r = await reviewChangeSet(items)
-    if (r.items.length && !review && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
+  const offer = async (entry: AssistantThread, items: ProposedChange[], review = false, prior: Review | null = null) => {
+    const fresh = await reviewChangeSet(items)
+    // An amended open proposal marks what this turn changed, and is always reviewed (assistant-proposal-editing D3).
+    const r = prior ? amendReview(prior, fresh) : fresh
+    if (r.items.length && !review && !prior && (await getAutoApply()) && r.items.every((i) => i.state === 'ok') && autoApplicable(r.items.map((i) => i.change))) {
       const undo = await applyChanges(r.items.map((i) => i.change))
       const res: ReviewResult = { applied: r.items.length, total: r.items.length, undoId: undo?.id ?? null, auto: true }
       rv.setResult(res)
@@ -352,6 +355,10 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       composer.clearSelection()
     }
     setError(null)
+    // An open, unapplied proposal goes with a new question (not with Regenerate or Edit, which replace the answer it came with).
+    const from = redo?.base ?? thread
+    const open = (!redo || redo.cut >= (from?.messages.length ?? 0)) && rv.review?.items.length ? rv.review : null
+    const reopen = () => { if (open) rv.setReview(open) }
     rv.setReview(null)
     rv.setResult(null)
     live.reset()
@@ -373,7 +380,8 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       const req: TurnRequest = { messages: turnMessages(history, question, material ?? undefined, photos.length ? wireImages(photos) : undefined), timezone: zone, ...ctx,
         ...(selection ? { selected: selection } : {}),
         // The working day goes with every turn: plan-week and find_free_time read it (assistant-time-blocks D2).
-        workday: await workday(), ...(chosen ? { skill: chosen.id } : {}) }
+        workday: await workday(), ...(chosen ? { skill: chosen.id } : {}),
+        ...(open ? { open_proposal: open.items.map((i) => i.change) } : {}) }
       // Device mode runs the loop here and calls the provider directly; the server sees nothing (assistant-on-device D7).
       const setup = device.setup
       const run = status?.mode === 'device' && setup
@@ -401,6 +409,7 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       setError(imagesUnsupportedMessage(failedCode))
       live.setAnnounce(imagesUnsupportedMessage(failedCode))
       await persist({ ...current, updated_at: Date.now() })
+      reopen()
       return
     }
     photos.forEach(releasePhoto)
@@ -422,7 +431,9 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
       usage: { input: entry.usage.input + (answer.usage?.input ?? 0), output: entry.usage.output + (answer.usage?.output ?? 0) } }
     await persist(entry)
     const items = answer.stop === 'end_turn' ? streamed.proposal : null
-    if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0)
+    if (items && items.length) await offer(entry, items, mustReview || chosen?.id === 'capture' || photos.length > 0, open)
+    // A turn that failed or proposed nothing leaves the open proposal as it was.
+    else if (!items) reopen()
   }
 
   /** Edit puts the latest question back in the composer; sending it replaces that question and its answer. */
