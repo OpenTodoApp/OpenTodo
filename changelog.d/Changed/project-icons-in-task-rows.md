@@ -1,1 +1,0 @@
-- **Project icons in task rows.** The project marker in One line and Detailed rows matches the sidebar, with the colour dot as a fallback.
