@@ -45,7 +45,7 @@ What paid planners charge for, free.
 | [`calendar-slots`](openspec/changes/archive/2026-10-30-calendar-slots/) | **Shipped.** Several small tasks in one calendar block |  |
 | [`bento-daily-check`](openspec/changes/archive/2026-10-30-bento-daily-check/) | **Shipped.** A Large, a Medium and a Small task in the Daily check | [#597](https://github.com/OpenTodoApp/OpenTodo/issues/597) |
 | [`task-energy`](openspec/changes/archive/2026-10-30-task-energy/) | **Shipped.** An energy property (deep, medium, low) with a filter and quick-add token |  |
-| [`urgency-sort`](openspec/changes/urgency-sort/) | A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
+| [`urgency-sort`](openspec/changes/archive/2026-11-10-urgency-sort/) | **Shipped.** A deterministic urgency score sort, and sort by a custom field | [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404) |
 | [`calendar-clarity`](openspec/changes/archive/2026-10-30-calendar-clarity/) | **Shipped.** Deadlines on the calendar, add with the mouse, colour by label, filters, a project Calendar layout | [#554](https://github.com/OpenTodoApp/OpenTodo/issues/554), [#555](https://github.com/OpenTodoApp/OpenTodo/issues/555), [#556](https://github.com/OpenTodoApp/OpenTodo/issues/556) |
 
 ### [0.19 "Series and time"](https://github.com/OpenTodoApp/OpenTodo/milestone/3)
@@ -109,7 +109,7 @@ Longer horizons, and the household.
 | [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
 | [`simplified-chinese`](openspec/changes/simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
-| [`priority-names`](openspec/changes/priority-names/) | Rename the four priorities |  |
+| [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | **Shipped.** Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | **Postponed by the owner (2026-11-10).** Telegram as a notification channel |  |
 
 ### [1.0 "Trust"](https://github.com/OpenTodoApp/OpenTodo/milestone/6)
@@ -145,7 +145,7 @@ Multi-step routines with AI steps, built on Automations: every existing rule bec
 | [`routines-shared`](openspec/changes/archive/2026-11-01-routines-shared/) | **Shipped.** Routines that belong to a shared project and run as whoever turned them on | [#662](https://github.com/OpenTodoApp/OpenTodo/issues/662) |
 | `routines-shared-email` | Email project members in shared routines, with a stop link per member | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
 | `routines-shared-notify` | A "members" recipient for Notify me in shared routines, mutable per routine | [#741](https://github.com/OpenTodoApp/OpenTodo/issues/741) |
-| [`routine-conditions`](openspec/changes/routine-conditions/) | A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | [#1132](https://github.com/OpenTodoApp/OpenTodo/issues/1132), [#1134](https://github.com/OpenTodoApp/OpenTodo/issues/1134) |
+| [`routine-conditions`](openspec/changes/archive/2026-11-10-routine-conditions/) | **Shipped.** A routine works in one workspace or every workspace and never moves a task into another workspace; conditions get Is not and No project; another workspace's project is named with its workspace | [#1132](https://github.com/OpenTodoApp/OpenTodo/issues/1132), [#1134](https://github.com/OpenTodoApp/OpenTodo/issues/1134) |
 
 The five changes land in this order. Routines never fetch URLs or feeds: outbound requests stay with configured webhooks, delivery channels and the owner's SMTP server.
 
@@ -169,17 +169,17 @@ The assistant's answers show the app's own interface (`assistant-generative-ui`,
 | Change | What | Issues |
 | --- | --- | --- |
 | [`assistant-eval`](openspec/changes/assistant-eval/) | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | |
-| [`assistant-usage-cache`](openspec/changes/assistant-usage-cache/) | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | |
-| [`assistant-device-reads`](openspec/changes/assistant-device-reads/) | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | |
+| [`assistant-usage-cache`](openspec/changes/archive/2026-11-10-assistant-usage-cache/) | **Shipped.** Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | |
+| [`assistant-device-reads`](openspec/changes/archive/2026-11-10-assistant-device-reads/) | **Shipped.** The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | |
 | [`assistant-time-blocks`](openspec/changes/assistant-time-blocks/) | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | |
 | [`assistant-project-blocks`](openspec/changes/assistant-project-blocks/) | Board, timeline, activity, stats, task and habit blocks, offered by relevance | |
 | [`assistant-followups`](openspec/changes/assistant-followups/) | Up to three follow-up suggestions under an answer, sent with one tap | |
-| [`assistant-proposal-editing`](openspec/changes/assistant-proposal-editing/) | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | |
-| [`assistant-memory`](openspec/changes/assistant-memory/) | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | |
+| [`assistant-proposal-editing`](openspec/changes/archive/2026-11-10-assistant-proposal-editing/) | **Shipped.** Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | |
+| [`assistant-memory`](openspec/changes/archive/2026-11-10-assistant-memory/) | **Shipped.** The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | |
 | [`assistant-in-context`](openspec/changes/assistant-in-context/) | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | |
-| [`assistant-routine-blocks`](openspec/changes/assistant-routine-blocks/) | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
+| [`assistant-routine-blocks`](openspec/changes/archive/2026-11-10-assistant-routine-blocks/) | **Shipped.** Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | |
 | [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
-| [`mcp-blocks`](openspec/changes/mcp-blocks/) | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
+| [`mcp-blocks`](openspec/changes/archive/2026-11-10-mcp-blocks/) | **Shipped.** Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
 
 They land in waves:
 1. the evaluation suite, the usage accounting and the device reads;
@@ -195,12 +195,12 @@ These changes come from the owner's November review of the screens used every da
 
 | Change | What | Issues |
 | --- | --- | --- |
-| [`sidebar-brand-and-row-grid`](openspec/changes/sidebar-brand-and-row-grid/) | The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | |
-| [`when-picker`](openspec/changes/when-picker/) | The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
-| [`focus-redesign`](openspec/changes/focus-redesign/) | Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
-| [`close-the-day-redesign`](openspec/changes/close-the-day-redesign/) | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
-| [`task-progress`](openspec/changes/task-progress/) | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | [#1107](https://github.com/OpenTodoApp/OpenTodo/issues/1107) |
-| [`loop-guided-dashboard`](openspec/changes/loop-guided-dashboard/) | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
+| [`sidebar-brand-and-row-grid`](openspec/changes/archive/2026-11-10-sidebar-brand-and-row-grid/) | **Shipped.** The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | |
+| [`when-picker`](openspec/changes/archive/2026-11-10-when-picker/) | **Shipped.** The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
+| [`focus-redesign`](openspec/changes/archive/2026-11-10-focus-redesign/) | **Shipped.** Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
+| [`close-the-day-redesign`](openspec/changes/archive/2026-11-10-close-the-day-redesign/) | **Shipped.** Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
+| [`task-progress`](openspec/changes/archive/2026-11-10-task-progress/) | **Shipped.** A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | [#1107](https://github.com/OpenTodoApp/OpenTodo/issues/1107) |
+| [`loop-guided-dashboard`](openspec/changes/archive/2026-11-10-loop-guided-dashboard/) | **Shipped.** The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
 
@@ -390,7 +390,7 @@ Considered and set aside for now, so they are not forgotten: ~~a focus timer wit
 
 | # | Capability | Change name | Notes |
 | --- | --- | --- | --- |
-| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view. Follow-up [`row-click-modes`](openspec/changes/row-click-modes/): a click can expand the row, a double-click opens the page, and the side panel follows the selection in every list ([#1129](https://github.com/OpenTodoApp/OpenTodo/issues/1129), [#1116](https://github.com/OpenTodoApp/OpenTodo/issues/1116)) |
+| 1 | **Shipped.** **Expand a row in place**: open a task's details under its row without leaving the list | `row-expand` | The task page stays for the full view. Follow-up [`row-click-modes`](openspec/changes/archive/2026-11-10-row-click-modes/): a click can expand the row, a double-click opens the page, and the side panel follows the selection in every list ([#1129](https://github.com/OpenTodoApp/OpenTodo/issues/1129), [#1116](https://github.com/OpenTodoApp/OpenTodo/issues/1116)) |
 | 2 | **Shipped.** **Group mentions and a workspace filter**: mention `@Family` to reach everyone in a group, and narrow any view with `workspace:` | `group-mentions` | The follow-ups named by `workspaces`: mentions resolve against the workspace's groups; the filter term joins the query language and the builder |
 | 3 | **Shipped.** **Rich comments**: write comments with the notes editor | `rich-comments` | Without losing the plain-text API for scripts and assistants |
 | 4 | **Shipped.** **Shell completion for `ot`**: `ot completion bash`, `zsh` or `fish` | `ot-completion` | Commands, flags and fixed values from the description `ot schema` prints, plus project, label and view names |

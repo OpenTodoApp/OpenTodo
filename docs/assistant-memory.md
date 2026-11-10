@@ -3,7 +3,7 @@ title: What the assistant remembers
 summary: Memory holds short facts about you that the assistant keeps to, only the ones you confirm; what is sent with every message, where it never goes, and how to change it.
 audience: user
 section: Guides
-specs: []
+specs: [assistant-memory]
 screens: []
 order: 80
 ---

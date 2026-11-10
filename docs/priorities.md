@@ -3,7 +3,7 @@ title: Name your priorities
 summary: Call the four priority levels what they mean to you, such as Must, Should, Could and Won't, while p1 to p4 keep working.
 audience: user
 section: Guides
-specs: [labels, filter-queries, natural-language-capture, end-to-end-encryption]
+specs: [labels, priority-names, filter-queries, natural-language-capture, end-to-end-encryption]
 screens: [settings/priorities]
 order: 41
 ---

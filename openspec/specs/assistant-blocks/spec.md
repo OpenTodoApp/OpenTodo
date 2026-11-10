@@ -13,19 +13,31 @@ The in-app assistant SHALL be offered six display tools, identical on server and
 - **THEN** no op is written, no change set is proposed for it, and the answer shows the three tasks
 
 ### Requirement: Display tools are for the in-app assistant only
-Display tools SHALL be offered only to the in-app assistant. They SHALL never be offered to MCP clients, to routines' AI steps, or to an agent token. A skill SHALL offer only the display tools its definition lists.
+Display tools SHALL be offered only to the in-app assistant and, limited to `show_tasks`, `show_calendar` and `show_deadlines`, to routines' Ask AI steps that answer in text, at most four blocks per run, and to MCP clients that announce the MCP Apps extension while the owner's MCP switch is on (for an encrypted account only through `ot mcp --decrypt`). They SHALL never be offered to other MCP clients or to an agent token outside MCP. A skill SHALL offer only the display tools its definition lists.
 
 #### Scenario: Skill without display tools
 - **WHEN** a turn runs a skill whose definition lists no display tool
 - **THEN** the model is offered no display tool in that turn
 
 #### Scenario: Not offered to MCP
-- **WHEN** an MCP client lists the server's tools with an `agent` token
+- **WHEN** an MCP client that does not announce the Apps extension lists the server's tools with an `agent` token
 - **THEN** none of the display tools is listed
+
+#### Scenario: Offered to an Apps-capable client
+- **WHEN** an MCP client that announces the Apps extension lists tools
+- **THEN** `show_tasks`, `show_calendar` and `show_deadlines` are listed with the in-app schemas, and no other display tool
 
 #### Scenario: Same tools on the device
 - **WHEN** an encrypted account runs an on-device turn
 - **THEN** the device offers the same display tools with the same schemas as the server's assistant
+
+#### Scenario: A routine's AI step
+- **WHEN** a routine's Ask AI step answering in text runs
+- **THEN** it is offered `show_tasks`, `show_calendar` and `show_deadlines` and no other display tool
+
+#### Scenario: Other AI steps
+- **WHEN** a routine's Summarise step, or an Ask AI step answering in lines, runs
+- **THEN** it is offered no tool
 
 ### Requirement: Display tools are checked
 Before a block is shown, each id SHALL be checked: it names an entity of the expected kind that exists, is not deleted, is visible to the user and is not in a project kept away from AI assistants (the server checks synced data, the device its local data). Failing ids SHALL be left out and reported only as "not found". A call whose ids all fail, or whose arguments fail the schema, SHALL show nothing and return an error result. A tool result SHALL name the kind and count shown, never content.

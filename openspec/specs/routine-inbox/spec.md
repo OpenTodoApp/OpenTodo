@@ -6,11 +6,11 @@ The Inbox card "Routines since your last visit": which routine runs it shows and
 ## Requirements
 
 ### Requirement: Routines card in the Inbox
-The Inbox SHALL show, inside its list above the first task, a card "Routines since your last visit" when it has entries, listing at most five lines grouped per routine ("Groceries · 3 tasks created · Friday 17:00", "Weekly digest failed · Not available: outgoing email is not set up", "Sort inbox · proposal waiting · Review") and "See all runs". Its entries SHALL come from the server, which applies the rules of "What the card shows" so every device agrees. Offline the card SHALL show what was last fetched.
+The Inbox SHALL show, inside its list under the last task, a card "Routines since your last visit" when it has entries, listing at most five lines grouped per routine ("Groceries · 3 tasks created · Friday 17:00", "Weekly digest failed · Not available: outgoing email is not set up", "Sort inbox · proposal waiting · Review") and "See all runs". The card loads after the list, so it SHALL never move a task when it appears. Its entries SHALL come from the server, which applies the rules of "What the card shows" so every device agrees. Offline the card SHALL show what was last fetched.
 
 #### Scenario: Monday morning
 - **WHEN** the user opens the Inbox on Monday after "Morning sweep" ran on Saturday and Sunday and "Weekly digest" failed on Sunday
-- **THEN** the card reads "Morning sweep ran 2 times · 9 tasks changed" and "Weekly digest failed · …", each opening its runs
+- **THEN** the card under the tasks reads "Morning sweep ran 2 times · 9 tasks changed" and "Weekly digest failed · …", each opening its runs, and no task moved when it appeared
 
 #### Scenario: Nothing new
 - **WHEN** no run happened since the marker and nothing is waiting
@@ -66,3 +66,10 @@ The run log SHALL keep a failed run until the user's seen marker has passed it a
 #### Scenario: Away for six weeks
 - **WHEN** a run failed while the user did not open the app for six weeks
 - **THEN** the run is still listed when the user returns, and is removed 30 days after the card showed it
+
+### Requirement: Routine runs show their blocks
+A routine run whose AI step showed blocks SHALL store them with its result as kind and checked parameters only. The routine inbox card and the run's detail SHALL render them with the assistant's block renderers from this device's rows, live and offline, read-only except ticking a task.
+
+#### Scenario: Morning briefing
+- **WHEN** a scheduled routine's AI step shows today's calendar and three tasks
+- **THEN** the run in the routine inbox shows the day's agenda and the three task rows under its text
