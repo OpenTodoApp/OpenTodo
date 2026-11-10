@@ -3,8 +3,6 @@
 // read-write transaction writes the records it changed to SQLite, in one SQLite
 // transaction, from the first `complete` listener, before Dexie sees the commit.
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
-import FDBDatabase from 'fake-indexeddb/lib/FDBDatabase'
-import FDBObjectStore from 'fake-indexeddb/lib/FDBObjectStore'
 import { bulkLoad } from './fastIndexes'
 import { sql, type Param, type SqlDb } from './sqlite'
 
@@ -50,12 +48,20 @@ function flush(changes: Change[]) {
   state.writeMs += performance.now() - t0
 }
 
-// The patch reaches fake-indexeddb's prototypes, untyped.
-function patch() {
+// The patch reaches fake-indexeddb's prototypes, untyped, through a probe database: the
+// package's subpath modules can resolve to another build than its index under Metro.
+async function patch() {
   if (patched) return
   patched = true
-  const DB = FDBDatabase.prototype as any
-  const OS = FDBObjectStore.prototype as any
+  const probe = await new Promise<any>((resolve, reject) => {
+    const req = new IDBFactory().open('persist-probe')
+    req.onupgradeneeded = () => { req.result.createObjectStore('s') }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+  const DB = Object.getPrototypeOf(probe)
+  const OS = Object.getPrototypeOf(probe.transaction('s', 'readonly').objectStore('s'))
+  probe.close()
   const transaction = DB.transaction
   DB.transaction = function (this: any, ...a: any[]) {
     const t = transaction.apply(this, a)
@@ -109,8 +115,8 @@ export interface CandidateA {
 }
 
 /** Opens (or creates) the SQLite file and returns the memory engine with persistence on. */
-export function openCandidateA(file: string, opts: { bulk: boolean }): CandidateA {
-  patch()
+export async function openCandidateA(file: string, opts: { bulk: boolean }): Promise<CandidateA> {
+  await patch()
   const indexedDB = new IDBFactory()
   const db = sql().open(file)
   db.run('PRAGMA journal_mode = WAL')

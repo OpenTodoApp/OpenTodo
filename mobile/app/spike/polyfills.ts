@@ -10,6 +10,14 @@ const g = globalThis as Record<string, unknown>
 
 ;(g as { __spikeStart?: number }).__spikeStart ??= performance.now()
 
+// React Native shims setImmediate with queueMicrotask (Libraries/Core/setUpTimers.js).
+// Both engines schedule IndexedDB's "next task" with it, so a transaction committed
+// between two awaits of the code using it (Dexie: PrematureCommitError). A task has to
+// be a macrotask, after the microtasks: setTimeout, a task of the New Architecture's
+// event loop.
+g.setImmediate = (fn: (...a: unknown[]) => void, ...args: unknown[]) => setTimeout(() => fn(...args), 0)
+g.clearImmediate = (id: ReturnType<typeof setTimeout>) => clearTimeout(id)
+
 if (typeof g.DOMException !== 'function') {
   const codes: Record<string, number> = { IndexSizeError: 1, NotFoundError: 8, NotSupportedError: 9, InvalidStateError: 11, SyntaxError: 12, InvalidAccessError: 15, TimeoutError: 23, DataCloneError: 25 }
   g.DOMException = class DOMException extends Error {

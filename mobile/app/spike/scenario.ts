@@ -36,7 +36,7 @@ async function engine(candidate: Candidate): Promise<{ a: CandidateA | null }> {
   if (candidate !== 'B') {
     await installFastIndexes()
     setFastIndexes(candidate === 'A')
-    const a = openCandidateA(fileOf(candidate), { bulk: candidate === 'A' })
+    const a = await openCandidateA(fileOf(candidate), { bulk: candidate === 'A' })
     Dexie.dependencies.indexedDB = a.indexedDB as unknown as IDBFactory
     Dexie.dependencies.IDBKeyRange = a.IDBKeyRange as unknown as typeof IDBKeyRange
     return { a }

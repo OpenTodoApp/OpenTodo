@@ -49,10 +49,15 @@ export default function SpikeApp() {
     }
     const start = (globalThis as { __spikeStart?: number }).__spikeStart ?? 0
     void (async () => {
-      const step = await (await fetch(`${HOST}/next`)).json() as { candidate: Candidate; phase: 'seed' | 'measure'; run?: number }
+      const step = await (await fetch(`${HOST}/next`)).json() as { candidate: Candidate; phase: 'baseline' | 'seed' | 'measure'; run?: number }
       const fetched = performance.now()
       try {
-        if (step.phase === 'seed') {
+        if (step.phase === 'baseline') {
+          // The app with no database: what the process holds before either engine.
+          await draw([])
+          await new Promise((r) => setTimeout(r, 2000))
+          await post('/result', { phase: 'baseline', hermes: hermesStats() })
+        } else if (step.phase === 'seed') {
           setStatus(`Seeding ${step.candidate}`)
           const rows = await (await fetch(`${HOST}/rows.json`)).json() as Rows
           const r = await seed(step.candidate, rows)

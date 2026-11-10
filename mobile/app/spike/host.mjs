@@ -99,6 +99,8 @@ async function run(rowsFile, bundle, out, runs = 3) {
 
   const device = simctl('list', 'devices', 'booted')
   const save = () => writeFileSync(out, JSON.stringify({ device, results }, null, 2))
+  results.push(await launch({ phase: 'baseline' })); save()
+  log(`baseline ${JSON.stringify(results[0])}`)
   for (const candidate of ['A', 'A0', 'B']) {
     try {
       log(`${candidate}: seed`)
