@@ -1177,6 +1177,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 :root { --list-scroll-pad: 8rem; }
 /* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap. */
 :root { --add-room: 4.75rem; }
+/* While the selection bar floats over the bottom (no-layout-jump), the content keeps room
+   under its last row for it; adding room at the end never moves a row. */
+#content:has([data-selection-dock]) { padding-bottom: 5rem; }
+/* The phone's add button steps aside while the bar stands in its place: out of sight, out of the tab order and the accessibility tree. */
+[data-app-frame]:has([data-selection-dock]) ~ [data-add-button]:not([aria-expanded="true"]) { visibility: hidden; translate: 0 calc(100% + 6rem); }
 /* Completion feedback (task-list-presentation; motion-v2 D3). The op is written at
    once; the list keeps the row as a departing row (`data-departing`) for the moment:
    0-250 ms the check mark pops, 60-260 ms the strike draws and the text fades to half,

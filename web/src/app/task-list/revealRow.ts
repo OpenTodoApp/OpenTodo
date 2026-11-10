@@ -22,7 +22,7 @@ export function scrollParent(el: HTMLElement): HTMLElement | null {
 /**
  * How far down from the scroller's top the sticky elements pinned there reach
  * (viewport y), counting a stack: the page header, then what is pinned right
- * under it (the selection bar, a group header).
+ * under it (the quick add, a group header).
  */
 /** The elements that can be sticky in a scroller, found again at most every STICKY_TTL_MS. */
 const STICKY_TTL_MS = 1_000
@@ -101,7 +101,9 @@ function revealOnce(row: HTMLElement, opts: { first?: boolean }): void {
   }
   const r = row.getBoundingClientRect()
   const box = scroller.getBoundingClientRect()
-  const visibleBottom = box.bottom - GAP
+  // The selection bar floats over the bottom of the content (no-layout-jump): rows stay above it.
+  const bar = document.querySelector('[data-selection-bar]')?.getBoundingClientRect()
+  const visibleBottom = (bar && bar.height > 0 && bar.top < box.bottom ? bar.top : box.bottom) - GAP
   // What is pinned at the top never reaches past the scroller's middle: a row
   // below it needs no look at the pinned headers, which reads the style of
   // every element of the list (performance-10k: 80 ms a key at 2,000 rows).
