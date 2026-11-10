@@ -38,7 +38,7 @@ it('keeps the limits of the server', () => {
 })
 
 function fake(rounds: Partial<Round>[]) {
-  const seen: { req?: Request; results: ToolResult[][] } = { results: [] }
+  const seen: { req?: Request; results: ToolResult[][]; later?: string[] } = { results: [] }
   const provider: Provider = {
     start(req) {
       seen.req = req
@@ -46,6 +46,7 @@ function fake(rounds: Partial<Round>[]) {
       return {
         async next() { return { stop: 'end_turn', rawStop: '', toolCalls: [], input: 1, output: 1, ...rounds[i++] } },
         addToolResults(results) { seen.results.push(results) },
+        setTools(list) { seen.later = list.map((t) => t.name) },
       }
     },
   }
@@ -55,6 +56,7 @@ function fake(rounds: Partial<Round>[]) {
 it('sends the live items in order and plans remember without writing', async () => {
   await db.memories.bulkPut([row('m2', 'Mornings are for deep work', 2), row('m1', 'Anna is my manager', 1), row('gone', 'Old fact', 0, 5), row('x', '[Cannot decrypt]', 3)])
   const { provider, seen } = fake([
+    { stop: 'tool_use', toolCalls: [{ id: 'p', name: 'propose_changes', args: '{}' }] },
     { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'remember', args: '{"text":"Does not work on Fridays"}' }] },
     { stop: 'end_turn' },
   ])
@@ -64,7 +66,9 @@ it('sends the live items in order and plans remember without writing', async () 
   expect(seen.req!.system).toContain(`\n\n${manifest.memory.note}\n- Anna is my manager\n- Mornings are for deep work\n`)
   expect(seen.req!.system).not.toContain('Old fact')
   expect(seen.req!.system).not.toContain('Cannot decrypt')
-  expect(seen.req!.tools.map((t) => t.name)).toContain('remember')
+  // remember is a write: offered after propose_changes (assistant-lean-tools D1).
+  expect(seen.req!.tools.map((t) => t.name)).not.toContain('remember')
+  expect(seen.later).toContain('remember')
   const cs = events.find((e) => e.type === 'changeset') as Extract<TurnEvent, { type: 'changeset' }>
   expect(cs.items).toEqual([expect.objectContaining({ entity: 'memory', create: true, patch: { text: 'Does not work on Fridays', position: 5, created_at: 5 } })])
   expect(await db.memories.count()).toBe(4)

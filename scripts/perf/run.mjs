@@ -9,7 +9,8 @@
 // Env: PERF_BIN (default bin/opentodo), PERF_FIXTURE (a perfseed data directory, required;
 // with PERF_NOTES=1 the compacted notes fixture TestNotesBudgets leaves),
 // PERF_RUNS (default 5), PERF_PROFILES (default "desktop,phone"), PERF_REPORT (default
-// perf-report/web.json), CHROMIUM_PATH.
+// perf-report/web.json), PERF_ONLY (metric ids, comma-separated: the session stops once
+// it has them and only they are judged, for a quick look at one regression), CHROMIUM_PATH.
 //
 // The app's measurement points are performance.mark entries (web/src/lib/perfMarks.ts):
 // they never leave the browser, and this run checks that every request goes to the
@@ -34,6 +35,9 @@ if (!FIXTURE) throw new Error('PERF_FIXTURE: give a perfseed data directory (mak
 const RUNS = Number(process.env.PERF_RUNS ?? 5)
 const PROFILES = (process.env.PERF_PROFILES ?? 'desktop,phone').split(',').filter(Boolean)
 const REPORT = process.env.PERF_REPORT ?? 'perf-report/web.json'
+const ONLY = (process.env.PERF_ONLY ?? '').split(',').filter(Boolean)
+/** With PERF_ONLY, whether the session has every metric asked for and can stop. */
+const enough = (out) => ONLY.length > 0 && ONLY.every((id) => id in out)
 const summary = JSON.parse(readFileSync(join(FIXTURE, 'perfseed.json'), 'utf8'))
 const log = (s) => console.log('·', s)
 const debug = process.env.PERF_DEBUG ? (s) => console.log('  ', new Date().toISOString().slice(11, 23), s) : () => {}
@@ -199,12 +203,14 @@ async function session(browser, profileName) {
     // Cold start with the data local: a reload, to the Today list.
     await page.reload()
     out['cold-start'] = await markAfter(page, 'ot:list-ready', 0)
+    if (enough(out)) return out
     await page.waitForTimeout(1000) // the start-up sync settles
 
     debug('Open the 2,000-task project')
     // Open the 2,000-task project.
     let t0 = await go(page, `/project/${summary.bigProject}`)
     out['open-project'] = (await markAfter(page, 'ot:list-ready', t0)) - t0
+    if (enough(out)) return out
     await page.locator('[data-task-id]').nth(50).waitFor()
     // A long list draws its rows a step at a time after the first frame: the
     // interactions below run once all of them are in the document.
@@ -250,6 +256,7 @@ async function session(browser, profileName) {
     log(`${profileName} completions, interaction: ${completes.map(Math.round).join(', ')}; timer: ${completeFrames.map(Math.round).join(', ')}; cursor moves: ${moves.map(Math.round).join(', ')}`)
     out['complete-task'] = p95(completes)
     out['complete-task-frame'] = p95(completeFrames)
+    if (enough(out)) return out
 
     debug('A remote edit')
     // A remote edit (another device, through the API) painted here over the live channel,
@@ -362,9 +369,11 @@ async function notesSession(browser, profileName) {
       if (at !== null) keys.push(at - input)
     }
     out['notes-search'] = p95(keys)
+    if (enough(out)) return out
     // note-links D5: a note other notes link to, opened before anything built the link index, to its Linked references painted.
     const t1 = await go(page, `/notes/${summary.notes.linkedNote}`)
     out['note-references'] = (await markAfter(page, 'ot:note-references', t1, 30_000)) - t1
+    if (enough(out)) return out
     await cdp.send('HeapProfiler.collectGarbage')
     out['notes-js-heap'] = (await cdp.send('Runtime.getHeapUsage')).usedSize / 2 ** 20
     return out
@@ -400,7 +409,7 @@ try {
       for (const [k, v] of Object.entries(s)) (samples[k] ??= []).push(Math.round(v * 10) / 10)
       log(`${name} run ${i + 1}/${RUNS}: ${Object.entries(s).map(([k, v]) => `${k} ${Math.round(v * 10) / 10}`).join(', ')}`)
     }
-    const rep = evaluate(budgets, name, samples, (id) => isNotes(id) === NOTES)
+    const rep = evaluate(budgets, name, samples, (id) => isNotes(id) === NOTES && (!ONLY.length || ONLY.includes(id)))
     if (NOTES) rep.setting = `${name} (notes)`
     rep.reported = reported(samples)
     reports.push(rep)

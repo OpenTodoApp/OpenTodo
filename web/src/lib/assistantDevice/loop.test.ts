@@ -24,14 +24,20 @@ beforeEach(async () => {
 })
 
 /** A provider that plays back scripted rounds and records what it was sent. */
+/** The round in which the model asks for the write tools (assistant-lean-tools D1). */
+const PROPOSE = { stop: 'tool_use', toolCalls: [{ id: 'p', name: 'propose_changes', args: '{}' }] }
+
 function fake(rounds: (Partial<Round> & { text?: string })[]) {
-  const seen: { req?: Request; results: ToolResult[][] } = { results: [] }
+  const seen: { req?: Request; results: ToolResult[][]; offered: string[][] } = { results: [], offered: [] }
   const provider: Provider = {
     start(req) {
       seen.req = req
       let i = 0
+      let tools = req.tools
       const conv: Conversation = {
+        setTools(list) { tools = list },
         async next(onText) {
+          seen.offered.push(tools.map((t) => t.name))
           const r = rounds[i++]
           if (!r) throw new Error('no more rounds')
           if (r.text) onText(r.text)
@@ -106,15 +112,23 @@ describe('device loop', () => {
   it('reads, plans a change set and never writes', async () => {
     const { events, seen } = await run([
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'list_tasks', args: '{"view":"today","timezone":"UTC"}' }] },
+      PROPOSE,
       { stop: 'tool_use', toolCalls: [{ id: 'c2', name: 'schedule_tasks', args: '{"ids":["a","b"],"due":{"date":"2026-10-16"}}' }] },
       { stop: 'end_turn', text: 'I have proposed moving 2 tasks; review it below.' },
     ])
     expect(seen.req!.system).toContain(manifest.device_note)
-    expect(seen.req!.tools.map((t) => t.name)).toContain('schedule_tasks')
+    expect(seen.req!.system).toContain(manifest.lean.note)
+    // Write tools on request (assistant-lean-tools 1.1): none until propose_changes, then from the next round.
+    expect(seen.offered[0]).toContain('propose_changes')
+    expect(seen.offered[0]).not.toContain('schedule_tasks')
+    expect(seen.offered[0]).not.toContain('remember')
+    expect(seen.offered[1]).not.toContain('schedule_tasks')
+    expect(seen.offered[2]).toEqual(expect.arrayContaining(['schedule_tasks', 'remember', 'propose_changes']))
+    expect(JSON.parse(seen.results[1][0].content)).toEqual({ message: manifest.lean.result })
     const read = JSON.parse(seen.results[0][0].content)
     expect(read._notice).toBe(manifest.notice)
     expect(read.tasks[0].untrusted_text.title).toBe('Pay rent')
-    const planned = JSON.parse(seen.results[1][0].content)
+    const planned = JSON.parse(seen.results[2][0].content)
     expect(planned).toMatchObject({ proposed: true, changed: 2 })
     expect(events.map((e) => e.type)).toEqual(['status', 'status', 'text', 'usage', 'changeset', 'done'])
     const cs = events.find((e) => e.type === 'changeset') as Extract<TurnEvent, { type: 'changeset' }>
@@ -122,18 +136,30 @@ describe('device loop', () => {
       { entity: 'task', entityId: 'a', patch: { due: { date: '2026-10-16' } }, base: { due: { date: '2026-10-10' } } },
       { entity: 'task', entityId: 'b', patch: { due: { date: '2026-10-16' } }, base: { due: { date: '2026-10-11' } } },
     ])
-    expect(events.find((e) => e.type === 'usage')).toEqual({ type: 'usage', input: 30, output: 15, month_total: 0, cap: 0, own_key: true })
+    expect(events.find((e) => e.type === 'usage')).toEqual({ type: 'usage', input: 40, output: 20, month_total: 0, cap: 0, own_key: true })
     expect((await db.tasks.get('a'))!.due).toEqual({ date: '2026-10-10' })
+  })
+
+  it('a question reads only: no write tool in any round, and a write before propose_changes is refused', async () => {
+    const { events, seen } = await run([
+      { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'list_tasks', args: '{"view":"today","timezone":"UTC"}' }, { id: 'c2', name: 'complete_tasks', args: '{"ids":["a"]}' }] },
+      { stop: 'end_turn', text: 'Pay rent is overdue.' },
+    ], { messages: [{ role: 'user', text: 'what is due today?' }] })
+    const writes = new Set([...manifest.tools.filter((t) => t.kind === 'write').map((t) => t.name), 'remember'])
+    for (const names of seen.offered) expect(names.filter((n) => writes.has(n))).toEqual([])
+    expect(JSON.parse(seen.results[0][1].content)).toEqual({ error: 'not_offered', message: manifest.lean.not_offered })
+    expect(events.some((e) => e.type === 'changeset')).toBe(false)
   })
 
   it('reports tool errors to the model and keeps the proposal unchanged', async () => {
     const { events, seen } = await run([
+      PROPOSE,
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'update_tasks', args: '{"updates":[{"id":"a","location":null}]}' }, { id: 'c2', name: 'delete_everything', args: '{}' }] },
       { stop: 'end_turn' },
     ])
-    expect(JSON.parse(seen.results[0][0].content)).toMatchObject({ error: 'invalid_arguments' })
-    expect(seen.results[0][0].isError).toBe(true)
-    expect(JSON.parse(seen.results[0][1].content)).toMatchObject({ error: 'unknown_tool' })
+    expect(JSON.parse(seen.results[1][0].content)).toMatchObject({ error: 'invalid_arguments' })
+    expect(seen.results[1][0].isError).toBe(true)
+    expect(JSON.parse(seen.results[1][1].content)).toMatchObject({ error: 'unknown_tool' })
     expect(events.some((e) => e.type === 'changeset')).toBe(false)
   })
 
@@ -155,15 +181,17 @@ describe('device loop', () => {
   it('caps one proposal at the entity limit', async () => {
     const items = Array.from({ length: 50 }, (_, i) => ({ title: `T${i}` }))
     const { seen } = await run([
+      PROPOSE,
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'create_tasks', args: JSON.stringify({ items }) }] },
       { stop: 'tool_use', toolCalls: [{ id: 'c2', name: 'complete_tasks', args: '{"ids":["a"]}' }] },
       { stop: 'end_turn' },
     ])
-    expect(JSON.parse(seen.results[1][0].content)).toMatchObject({ error: 'proposal_full', limit: 50, in_proposal: 50 })
+    expect(JSON.parse(seen.results[2][0].content)).toMatchObject({ error: 'proposal_full', limit: 50, in_proposal: 50 })
   })
 
   it('lets a later call see what an earlier one planned', async () => {
     const { events } = await run([
+      PROPOSE,
       { stop: 'tool_use', toolCalls: [{ id: 'c1', name: 'create_tasks', args: '{"items":[{"id":"0b7c6f1e-2f43-4c55-9b7a-3f1f1e1a2b3c","title":"Draft"}]}' }] },
       { stop: 'tool_use', toolCalls: [{ id: 'c2', name: 'update_tasks', args: '{"updates":[{"id":"0b7c6f1e-2f43-4c55-9b7a-3f1f1e1a2b3c","priority":1}]}' }, { id: 'c3', name: 'trash_tasks', args: '{"ids":["0b7c6f1e-2f43-4c55-9b7a-3f1f1e1a2b3c"]}' }] },
       { stop: 'end_turn' },
@@ -181,7 +209,7 @@ describe('device loop', () => {
   })
 
   it('reports provider errors as stream errors', async () => {
-    const provider: Provider = { start: () => ({ next: async () => { const { ProviderError } = await import('./providers'); throw new ProviderError('provider_auth', 'the provider rejected the API key saved on this device', 401) }, addToolResults() {} }) }
+    const provider: Provider = { start: () => ({ next: async () => { const { ProviderError } = await import('./providers'); throw new ProviderError('provider_auth', 'the provider rejected the API key saved on this device', 401) }, addToolResults() {}, setTools() {} }) }
     const events: TurnEvent[] = []
     await runDeviceTurn({ messages: [{ role: 'user', text: 'hi' }], timezone: 'UTC' }, (e) => events.push(e), undefined, { setup: SETUP, userName: '', provider })
     expect(events.at(-1)).toEqual({ type: 'error', code: 'device_auth', message: 'the provider rejected the API key saved on this device' })
@@ -248,6 +276,8 @@ describe('display tools on the device (assistant-generative-ui 4.3)', () => {
     expect(seen.req!.tools.map((t) => t.name)).toEqual(expect.arrayContaining(['show_tasks', 'show_calendar', 'ask_choice', 'show_map', 'show_note', 'show_project']))
     expect(events.map((e) => e.type)).toEqual(['text', 'block', 'text', 'usage', 'done'])
     expect(events[1]).toEqual({ type: 'block', kind: 'tasks', ids: ['a', 'b'] })
+    // The round after the call starts a new paragraph (assistant-eval-gaps).
+    expect(events[2]).toEqual({ type: 'text', text: '\n\nStart with the rent.' })
     const result = seen.results[0][0]
     expect(JSON.parse(result.content)).toEqual({ shown: 'tasks', count: 2, not_found: 1 })
     expect(result.content).not.toContain('Pay rent')

@@ -6,7 +6,7 @@
 // Daily check), and after a session moves on to the next one. The running session
 // is the device-local row (lib/focus/state.ts); the engine that ends it on time runs
 // in the shell (BreakReminder), so leaving this screen keeps it running.
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { Button, EmptyState, IconButton, MenuItem, MenuSeparator, Notice, PageBody, PageHeader } from '../../ui'
 import { useReviewRow, useSubtasks, useUserPrefsRow } from '../../lib/localData'
 import { orderedFocusIds } from '../../lib/bento'
@@ -225,6 +225,14 @@ export function FocusView({ id }: { id?: string }) {
   }, [endKey])
   // Derived, not stored: on a fresh device the task may arrive with the first sync, and the notice then goes.
   const unavailable = !!tasks && target.unavailable
+  // The content column takes the break's tone (index.css): a mark on the root, set before paint,
+  // since a `:has()` on #content restyled every list on every change (issue 1179).
+  const resting = session?.phase === 'break'
+  useLayoutEffect(() => {
+    const root = document.documentElement
+    root.setAttribute('data-focus-stage', resting ? 'resting' : '')
+    return () => root.removeAttribute('data-focus-stage')
+  }, [resting])
 
   // Keys (design D7): the view's own `view` entries. The dispatcher keeps them out of
   // text fields; a focused button keeps its own Space and Enter; the panel's Esc wins while it is open.
@@ -259,7 +267,7 @@ export function FocusView({ id }: { id?: string }) {
   )
 
   return (
-    <PageBody width="list" data-focus className="focus-page" data-resting={session?.phase === 'break' || undefined}>
+    <PageBody width="list" data-focus className="focus-page" data-resting={resting || undefined}>
       <PageHeader title={t('Focus')} overflow={overflow} back={{ label: t('Back'), onClick: leave }} />
       <p className="sr-only" role="status" aria-live="polite" data-focus-live>{announce}</p>
       {(notice || unavailable) && <div className="mt-3"><Notice>{notice ?? t('That task is not available any more, so today’s focus is shown.')}</Notice></div>}

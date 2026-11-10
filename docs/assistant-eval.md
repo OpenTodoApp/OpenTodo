@@ -41,7 +41,7 @@ Models vary, so each scenario runs 3 times and passes when at least 2 runs pass.
 
 ## Cost
 
-There are 25 scenarios, and each turn uses about 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round). A full run is about 42 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
+There are 25 scenarios, and each turn uses about 10,000 to 20,000 tokens, mostly the instructions and tools (read from the provider's cache after the first round); a turn without a skill sends the write tools only after the model asks for them with `propose_changes`, so a question that only reads stays near the lower end. A full run is about 42 turns, so roughly 800,000 tokens. Most of that is cached input, which providers bill at about a tenth; check your provider's prices. Use `ASSISTANT_EVAL_ONLY` and `ASSISTANT_EVAL_RUNS=1` while you work on one behaviour.
 
 ## Scenarios
 

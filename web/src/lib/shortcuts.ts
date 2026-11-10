@@ -181,7 +181,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.close', keys: ['g Shift+D'], label: 'Close the day', description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
   // Notes (notes-overview D7): `g n` is Anytime, so the page takes `g e`.
-  { id: 'go.notes', keys: ['g e'], label: 'Notes', description: 'Go to Notes: every note, standalone and on tasks and projects, with search', section: 'go', scope: 'global' },
+  { id: 'go.notes', keys: ['g e'], label: 'Notes', description: 'Go to Notes: every note with search, and the sidebar shows your notes', section: 'go', scope: 'global' },
   { id: 'go.find', keys: ['g /'], label: 'Find in sidebar', description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
 
   // ---- tasks in a list

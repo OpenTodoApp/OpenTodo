@@ -28,9 +28,9 @@ beforeEach(async () => {
 const canonical = (b: AssistantBlock | FollowupsBlock) => Object.fromEntries(Object.entries(b).filter(([, v]) => !(Array.isArray(v) && v.length === 0)))
 
 describe('display vectors', () => {
-  for (const c of vectors.cases as { name: string; calls: { name: string; args: Record<string, unknown> }[]; blocks: unknown[]; results: Record<string, unknown>[] }[]) {
+  for (const c of vectors.cases as { name: string; chat?: boolean; text?: boolean; calls: { name: string; args: Record<string, unknown> }[]; blocks: unknown[]; results: Record<string, unknown>[] }[]) {
     it(c.name, async () => {
-      const turn: DisplayTurn = { shown: 0 }
+      const turn: DisplayTurn = { shown: 0, chat: c.chat, wrote: c.text }
       const blocks: unknown[] = []
       const results: Record<string, unknown>[] = []
       for (const call of c.calls) {

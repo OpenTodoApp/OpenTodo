@@ -34,6 +34,8 @@ export interface Request {
 export interface Conversation {
   next(onText: (delta: string) => void, signal?: AbortSignal): Promise<Round>
   addToolResults(results: ToolResult[]): void
+  /** Replaces the tools offered from the next call on (assistant-lean-tools D1). */
+  setTools(tools: ManifestTool[]): void
 }
 
 export interface Provider { start(req: Request): Conversation }
@@ -243,9 +245,13 @@ export function anthropicProvider(setup: DeviceSetup, f: Fetch = fetch): Provide
       const messages: { role: string; content: unknown }[] = alternate(req.messages).map((m) => ({ role: m.role, content: [{ type: 'text', text: m.text },
         ...(m.role === 'user' ? (m.images ?? []).map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.media_type, data: i.data } })) : [])] }))
       const images = hasImages(req.messages)
-      const strict = fitsAnthropicStrict(req.tools.map((t) => t.strict_schema))
-      const tools = req.tools.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict }))
+      const toolsOf = (list: ManifestTool[]) => {
+        const strict = fitsAnthropicStrict(list.map((t) => t.strict_schema))
+        return list.map((t) => ({ name: t.name, description: t.description, input_schema: t.strict_schema, strict }))
+      }
+      let tools = toolsOf(req.tools)
       return {
+        setTools(list) { tools = toolsOf(list) },
         async next(onText, signal) {
           const body: Record<string, unknown> = {
             model: setup.model, max_tokens: req.maxTokens, system: [{ type: 'text', text: req.system }], messages,
@@ -336,8 +342,10 @@ export function chatProvider(setup: DeviceSetup, f: Fetch = fetch): Provider {
         ? { role: m.role, content: [{ type: 'text', text: m.text }, ...m.images.map((i) => ({ type: 'image_url', image_url: { url: `data:${i.media_type};base64,${i.data}` } }))] }
         : { role: m.role, content: m.text }))]
       const images = hasImages(req.messages)
-      const tools = req.tools.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: setup.provider === 'gemini' ? t.strict_nullable_schema : t.input_schema } }))
+      const toolsOf = (list: ManifestTool[]) => list.map((t) => ({ type: 'function', function: { name: t.name, description: t.description, parameters: setup.provider === 'gemini' ? t.strict_nullable_schema : t.input_schema } }))
+      let tools = toolsOf(req.tools)
       return {
+        setTools(list) { tools = toolsOf(list) },
         async next(onText, signal) {
           const body: Record<string, unknown> = { model: setup.model, messages, stream: true, stream_options: { include_usage: true } }
           if (tools.length) { body.tools = tools; body.tool_choice = 'auto' }

@@ -135,6 +135,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.3 |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
+| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | In progress (12 of 12) |
 
 ## Assistant area
 
@@ -150,7 +151,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Shipped |
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Shipped |
-| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Planned |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | In progress (2 of 2) |
+| `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | In progress (5 of 6) |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped |
 
 ## UX polish (2026-11 feedback)

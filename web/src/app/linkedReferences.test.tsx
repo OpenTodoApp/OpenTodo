@@ -10,9 +10,13 @@ import { publishEncryption } from '../lib/e2ee'
 import { resetLinkIndex } from '../lib/noteLinks'
 import { createNote } from '../lib/noteOps'
 import { createProject, createTask, mutate, resetDeviceId } from '../lib/ops'
+import { act } from 'react'
+import { createRoot } from 'react-dom/client'
 import { click, render, waitFor } from '../ui/test-utils'
 import { readString } from '../lib/deviceStorage'
 import LinkedReferences, { REFERENCES_OPEN_KEY } from './LinkedReferences'
+import { linkedReferencesLoaded, loadLinkedReferences } from './linkedRefsChunk'
+import { LinkedRefs } from './Markdown'
 import { TaskListView } from './TaskListView'
 
 const fetchMock = vi.fn(async () => new Response('{}', { status: 404 }))
@@ -75,5 +79,28 @@ describe('Linked references', () => {
     expect(rows(r.container).sort()).toEqual([`note:${ids[0]}`, `task:${ids[1]}`, `note:${ids[2]}`].sort())
     expect(fetchMock).not.toHaveBeenCalled()
     await r.unmount()
+  })
+
+  // Issue 1179 (nightly metric note-references): a section that suspended on its chunk
+  // waited for React's reveal throttle, 300 ms after the note editor's fallback, before it
+  // painted. Once the chunk is in (the Notes page loads it), the section renders in the
+  // same commit as the note.
+  it('once its chunk is in, the section renders without suspending', async () => {
+    const trip = await createNote({ title: 'Trip' })
+    const ferry = await createTask({ title: 'Book ferry', description: `See [Trip](?note=${trip})` })
+    // The index built and held, as on the Notes page.
+    const held = await render(<LinkedReferences kind="note" id={trip} />)
+    await waitFor(() => rows(held.container).includes(`task:${ferry}`), 'the index built', 5000)
+    await loadLinkedReferences()
+    expect(linkedReferencesLoaded()).toBe(LinkedReferences)
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    // One synchronous commit: a suspended section would still be missing after it.
+    act(() => root.render(<LinkedRefs kind="note" id={trip} />))
+    expect(rows(host)).toEqual([`task:${ferry}`])
+    act(() => root.unmount())
+    host.remove()
+    await held.unmount()
   })
 })

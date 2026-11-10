@@ -1,0 +1,1 @@
+- **The assistant finds what you name.** Asking for "my errands" finds tasks labelled "errand", "what's in progress" shows that board column (project reads now name their sections, over MCP too), one task is named as a link instead of a block, and an answer always says something in words, with no sentence run into the next after a step.

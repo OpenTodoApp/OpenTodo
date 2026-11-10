@@ -7,7 +7,7 @@ import data from './manifest.json'
 export interface ManifestTool {
   name: string
   /** display: a block in the answer (assistant-generative-ui D1); it changes nothing. */
-  kind: 'read' | 'write' | 'display' | 'proposal' | 'memory'
+  kind: 'read' | 'write' | 'display' | 'proposal' | 'memory' | 'meta'
   description: string
   input_schema: Record<string, unknown>
   strict_schema: Record<string, unknown>
@@ -35,7 +35,7 @@ export interface Manifest {
   images_note: string
   views: Record<string, string>
   messages: { refusal: string; cut_off: string; round_limit: string; block_limit: string; not_found: string; choice_asked: string
-    followups_shown: string; followups_once: string; followups_choice: string }
+    followups_shown: string; followups_once: string; followups_choice: string; followups_no_text: string; one_task: string }
   limits: { max_rounds: number; max_output_tokens: number; max_entities: number; max_items: number; max_images: number; max_image_bytes: number; max_blocks: number; max_block_ids: number }
   default_anthropic_model: string
   anthropic_models: string[]
@@ -52,6 +52,8 @@ export interface Manifest {
   memory: { note: string; max_items: number; max_text: number; messages: { full: string; duplicate: string; invalid: string; proposed: string; unavailable: string }; tool: ManifestTool }
   /** A routine's AI step (routines-ai-step D7, assistant-routine-blocks D1): its instructions, the show note and tools, rounds and blocks. */
   routine: { system: string; show_note: string; tools: string[]; max_rounds: number; max_blocks: number }
+  /** Write tools on request (assistant-lean-tools D1): the note, propose_changes' result and the refusal of an early write. */
+  lean: { note: string; result: string; not_offered: string }
   /** Describe it on the device (routines-describe-it D5): the server's instructions, catalogue lines and tool. */
   routine_draft: {
     system: string

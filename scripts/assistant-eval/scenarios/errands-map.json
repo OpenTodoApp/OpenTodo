@@ -1,6 +1,7 @@
 {
   "name": "errands-map",
   "title": "Errands with places are shown on a map",
+  "fake": true,
   "seed": {
     "labels": [
       {
@@ -72,7 +73,10 @@
             ]
           }
         ],
-        "changeset": false
+        "changeset": false,
+        "text": [
+          "\\w"
+        ]
       }
     }
   ]

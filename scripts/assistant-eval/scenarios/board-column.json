@@ -1,6 +1,7 @@
 {
   "name": "board-column",
   "title": "What is in a stage of a project is shown as that board column",
+  "fake": true,
   "view": "project",
   "seed": {
     "projects": [

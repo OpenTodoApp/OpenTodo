@@ -49,7 +49,7 @@ const READERS: Record<string, (snap: Awaited<ReturnType<typeof loadSnapshot>>, a
 }
 
 /** Every manifest tool with a device implementation (a test checks both ways). */
-export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS]
+export const IMPLEMENTED = [...Object.keys(READERS), ...Object.keys(PLANNERS), ...DISPLAY_TOOLS, 'propose_changes']
 
 const clip = (s: string) => [...s.slice(0, 64)].filter((ch) => ch >= ' ' && ch !== '\u007f').join('')
 
@@ -128,6 +128,9 @@ async function runTool(call: ToolCall, tools: ManifestTool[], draft: ProposedCha
   }
 }
 
+/** propose_changes, the tool that brings the write tools (assistant-lean-tools D1). */
+const META_TOOL = 'propose_changes'
+
 /** Whether a turn offers the tool (displayOffered): every one without a skill; with one, its tools, the display tools its view suggests and the follow-ups. */
 export function offeredTool(t: ManifestTool, skill: ManifestSkill | null, view: string | undefined): boolean {
   if (!skill) return true
@@ -150,6 +153,29 @@ async function displayCall(call: ToolCall, turn: DisplayTurn, emit: Parameters<t
   } catch {
     return { content: JSON.stringify({ error: 'internal', message: 'the tool failed on this device' }), isError: true }
   }
+}
+
+/**
+ * A turn's text (answerText on the server, assistant-eval-gaps): a round's text after tool calls starts a new
+ * paragraph when the text so far did not end one, and the display state learns that the answer has words.
+ */
+export function answerText(emit: (t: string) => void, turn: DisplayTurn) {
+  let tail = ''
+  const out = (s: string) => {
+    tail = (tail + s).slice(-2)
+    emit(s)
+  }
+  const a = {
+    gap: false,
+    write: (s: string) => {
+      if (!s) return
+      const sep = a.gap && tail && !tail.endsWith('\n\n') ? (tail.endsWith('\n') ? '\n' : '\n\n') : ''
+      a.gap = false
+      out(sep + s)
+      turn.wrote = true
+    },
+  }
+  return a
 }
 
 /** One change per entity: later values win, the first base of each field is kept (finalise). */
@@ -189,14 +215,22 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   const openMemory = await checkOpenMemory(req.open_proposal)
   const open = [...(await checkOpen(openMemory.rest, snap0)), ...openMemory.memory]
   // remember is offered in turns without a skill, with the live items in the instructions (D2, D3).
-  const tools = [...manifest.tools.filter((t) => offeredTool(t, skill, req.view)), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
+  // A turn without a skill or an open proposal starts without the write tools; propose_changes
+  // brings them (and remember) from the next round (assistant-lean-tools D1).
+  let lean = !skill && !open.length
+  const offered = manifest.tools.filter((t) => offeredTool(t, skill, req.view))
+  const writes = [...offered.filter((t) => t.kind === 'write'), ...(skill ? [] : [manifest.memory.tool])]
+  let tools = lean
+    ? offered.filter((t) => t.kind !== 'write')
+    : [...offered.filter((t) => t.kind !== 'meta'), ...(skill ? [] : [manifest.memory.tool]), ...(open.length ? [manifest.open_proposal.tool] : [])]
   const selected = (req.selected ?? []).filter((id) => snap0.byId.has(id))
   const memory = await memoryTexts()
   const system = systemPrompt({ userName: opts.userName, zone: req.timezone, view: req.view, selected, skill, workday: req.workday ?? null, open, memory }, now()) + '\n' + manifest.device_note + '\n'
   const provider = opts.provider ?? providerFor(opts.setup, opts.fetch)
   const conv = provider.start({ system, messages: foldUntrusted(req.messages), tools, maxTokens: manifest.limits.max_output_tokens })
   let draft: ProposedChange[] = [...open]
-  const display: DisplayTurn = { shown: 0 }
+  const display: DisplayTurn = { shown: 0, chat: true }
+  const text = answerText((t) => onEvent({ type: 'text', text: t }), display)
   let input = 0
   let cached = 0
   let cacheWrite = 0
@@ -214,7 +248,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
   for (let round = 0; round < manifest.limits.max_rounds; round++) {
     let r
     try {
-      r = await conv.next((t) => onEvent({ type: 'text', text: t }), signal)
+      r = await conv.next(text.write, signal)
     } catch (err) {
       if (signal?.aborted) throw err
       // The panel words device failures itself: the key is this device's, and a block may need a reload.
@@ -247,6 +281,19 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
         if (!r.toolCalls.length) return failed('provider_error', 'the provider asked for a tool without naming one')
         const results = []
         for (const call of r.toolCalls) {
+          if (call.name === META_TOOL) {
+            if (lean) {
+              lean = false
+              tools = [...tools, ...writes]
+              conv.setTools(tools)
+            }
+            results.push({ id: call.id, content: JSON.stringify({ message: manifest.lean.result }), isError: false })
+            continue
+          }
+          if (lean && writes.some((t) => t.name === call.name)) {
+            results.push({ id: call.id, content: JSON.stringify({ error: 'not_offered', message: manifest.lean.not_offered }), isError: true })
+            continue
+          }
           const def = tools.find((t) => t.name === call.name)
           if (!def && DISPLAY_TOOLS.includes(call.name)) {
             results.push({ id: call.id, content: JSON.stringify({ error: 'unavailable', message: `the tool ${clip(call.name)} is not available in this turn; use only the tools listed` }), isError: true })
@@ -285,6 +332,7 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
           results.push({ id: call.id, content: res.content, isError: res.isError })
         }
         conv.addToolResults(results)
+        text.gap = true
         continue
       }
       default:
