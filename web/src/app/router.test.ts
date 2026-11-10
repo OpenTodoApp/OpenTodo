@@ -3,7 +3,7 @@
 // /focus/<id> parse and print back, and Esc on the Focus screen returns to the
 // last view shown before it.
 import { describe, expect, it } from 'vitest'
-import { navigate, parseRoute, routeBeforeFocus, routePath, setLeaveGuard } from './router'
+import { addressOf, navigate, NOTES_VIEW_KEY, parseRoute, routeBeforeFocus, routePath, setLeaveGuard } from './router'
 
 describe('focus routes', () => {
   it('parses and prints /focus and /focus/<task id>', () => {
@@ -62,5 +62,30 @@ describe('leave guard', () => {
     expect(asked).toBe(1)
     expect(location.pathname).toBe('/routines/r2')
     setLeaveGuard(null)
+  })
+})
+
+// The Notes page's Graph mode (OpenSpec change notes-graph-page, D1).
+describe('notes graph routes', () => {
+  it('parses and prints ?view=graph, and keeps it in the tracked address', () => {
+    localStorage.clear()
+    expect(parseRoute('/notes?view=graph')).toEqual({ view: 'notes', graph: true })
+    expect(parseRoute('/notes/n1?view=graph')).toEqual({ view: 'notes', id: 'n1', graph: true })
+    expect(parseRoute('/notes')).toEqual({ view: 'notes' })
+    expect(routePath({ view: 'notes', graph: true })).toBe('/notes?view=graph')
+    expect(routePath({ view: 'notes', id: 'n1', graph: true })).toBe('/notes/n1?view=graph')
+    expect(routePath({ view: 'notes', graph: false })).toBe('/notes')
+    expect(addressOf({ pathname: '/notes', search: '?view=graph&task=t1' })).toBe('/notes?view=graph')
+    expect(addressOf({ pathname: '/notes', search: '?new=1' })).toBe('/notes')
+  })
+
+  it('opens the mode last shown on the device when none is named', () => {
+    localStorage.clear()
+    expect(routePath({ view: 'notes' })).toBe('/notes')
+    localStorage.setItem(NOTES_VIEW_KEY, 'graph')
+    expect(routePath({ view: 'notes' })).toBe('/notes?view=graph')
+    expect(routePath({ view: 'notes', create: true })).toBe('/notes?new=1&view=graph')
+    expect(routePath({ view: 'notes', graph: false })).toBe('/notes')
+    localStorage.clear()
   })
 })

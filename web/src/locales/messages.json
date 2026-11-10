@@ -1974,6 +1974,9 @@
   "Arriving at {place}": [
     "web/src/app/LocationReminders.tsx"
   ],
+  "Arrow keys move between linked notes, Enter opens, Space centres, Backspace goes back, plus and minus zoom, 0 fits.": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "Arrows move by day and week, Page Up and Page Down by month.": [
     "web/src/app/datetime/DateField.tsx"
   ],
@@ -3288,6 +3291,9 @@
   ],
   "Clear the app": [
     "web/src/app/import/SwitchFromPicker.tsx"
+  ],
+  "Clear the centre": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
@@ -4849,6 +4855,9 @@
   ],
   "Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Depth": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Derived": [
     "web/src/ui/ColourField.tsx",
@@ -6414,6 +6423,9 @@
   "Find a member…": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Find a note": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Find a person…": [
     "web/src/app/TriageView.tsx"
   ],
@@ -6541,6 +6553,9 @@
   ],
   "First task": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Fit to view": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Five is plenty. Finish or drop one first.": [
     "web/src/app/objectives/ObjectiveCards.tsx",
@@ -7193,7 +7208,12 @@
     "web/src/app/task-list/ListGroups.tsx"
   ],
   "Graph": [
-    "web/src/app/connections/ConnectionsDialog.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/connections/ConnectionsDialog.tsx",
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Graph of notes": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
@@ -8929,6 +8949,7 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/connections/ConnectionsDialog.tsx",
     "web/src/app/menus/listMenu.tsx",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -10584,8 +10605,14 @@
   "No note": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "No note links to another yet.": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "No note matches these filters.": [
     "web/src/app/notes/NotesPage.tsx"
+  ],
+  "No note matches.": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "No notes": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -11118,6 +11145,9 @@
   ],
   "Notes on cards": [
     "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
+  "Notes without links": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Notes you write, and the notes of your tasks and projects, are listed here.": [
     "web/src/app/notes/NotesPage.tsx"
@@ -11662,6 +11692,9 @@
   "On the Notes page: start a new note": [
     "web/src/lib/shortcuts.ts"
   ],
+  "On the Notes page: switch between the list and the graph": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On the day at 09:00": [
     "web/src/app/DefaultRemindersSettings.tsx"
   ],
@@ -11921,6 +11954,9 @@
   ],
   "Open in Obsidian: {vault} › {path}": [
     "web/src/app/OriginChip.tsx"
+  ],
+  "Open in graph": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
   ],
   "Open in maps": [
     "web/src/app/locations/LocationEditor.tsx",
@@ -15404,6 +15440,12 @@
   "Show as": [
     "web/src/app/connections/ConnectionsDialog.tsx"
   ],
+  "Show as graph": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Show as list": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Show as table": [
     "web/src/app/review/charts.tsx"
   ],
@@ -15472,6 +15514,9 @@
   ],
   "Show more {older}": [
     "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Show notes as": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Show notes on cards": [
     "web/src/app/task-list/listExtras.tsx"
@@ -16781,6 +16826,9 @@
   ],
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
+  ],
+  "Tasks and projects without notes": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Tasks for today’s focus": [
     "web/src/lib/rules/sentence.ts"
@@ -19840,6 +19888,7 @@
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
+    "web/src/app/notes-graph/GraphView.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
@@ -21199,6 +21248,12 @@
   "Zoom": [
     "web/src/app/profile/PictureCropper.tsx"
   ],
+  "Zoom in": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
+  "Zoom out": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "[Cannot decrypt]": [
     "web/src/lib/e2ee.ts"
   ],
@@ -21957,6 +22012,9 @@
   ],
   "gitlab.com or the address of your own instance.": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "graph": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "green": [
     "web/src/lib/colourNames.ts"
@@ -23440,6 +23498,9 @@
   "{attempts, plural, one {# attempt} other {# attempts}}": [
     "web/src/app/WebhooksPanel.tsx"
   ],
+  "{at} of {n}: {title}": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
   ],
@@ -24905,6 +24966,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": [
     "web/src/app/connections/ConnectionsGraph.tsx"

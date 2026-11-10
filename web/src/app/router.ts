@@ -2,6 +2,7 @@
 // every extra kilobyte matters on a low-end phone.
 import { useMemo, useSyncExternalStore } from 'react'
 import { readCalendarMode } from '../lib/calendarMode'
+import { readString } from '../lib/deviceStorage'
 import { resettable } from '../lib/moduleState'
 import { displayTargetPath, parseDisplayOptions, parseDisplayTarget, serializeDisplayOptions, type DisplayOptions, type DisplayTarget } from './display/displayOptions'
 import { afterOverlayPops } from '../ui'
@@ -75,7 +76,8 @@ export type Route =
   // Focus (focus-mode D7): one task and a timer; /focus takes the first task of today's focus.
   | { view: 'focus'; id?: string }
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
-  | { view: 'notes'; id?: string; create?: boolean }
+  // `graph` (notes-graph-page D1): the Graph mode, ?view=graph; left out, the mode last shown on this device.
+  | { view: 'notes'; id?: string; create?: boolean; graph?: boolean }
 
 /** The Open Loops moves a Loop home address can open (lib/method's MoveId, kept here so the router stays small). */
 export type LoopMove = 'catch' | 'clarify' | 'place' | 'do' | 'review'
@@ -277,8 +279,10 @@ export function parseRoute(pathname: string): Route {
       return { view: 'stats' }
     case 'focus':
       return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
-    case 'notes':
-      return parts[1] ? { view: 'notes', id: safeDecode(parts[1]) } : { view: 'notes' }
+    case 'notes': {
+      const graph = new URLSearchParams(query).get('view') === 'graph' ? { graph: true } : {}
+      return parts[1] ? { view: 'notes', id: safeDecode(parts[1]), ...graph } : { view: 'notes', ...graph }
+    }
     default:
       return { view: 'inbox' }
   }
@@ -370,8 +374,10 @@ export function routePath(r: Route): string {
       return r.move ? `/loop/${r.move}` : '/loop'
     case 'focus':
       return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
-    case 'notes':
-      return r.id ? `/notes/${encodeURIComponent(r.id)}` : r.create ? '/notes?new=1' : '/notes'
+    case 'notes': {
+      const graph = r.graph ?? readString(NOTES_VIEW_KEY) === 'graph'
+      return r.id ? `/notes/${encodeURIComponent(r.id)}${graph ? '?view=graph' : ''}` : r.create ? `/notes?new=1${graph ? '&view=graph' : ''}` : graph ? '/notes?view=graph' : '/notes'
+    }
     case 'help':
       return `/help${r.page ? `/${encodeURIComponent(r.page)}` : ''}${r.q ? `?q=${encodeURIComponent(r.q)}` : ''}`
     default:
@@ -379,11 +385,16 @@ export function routePath(r: Route): string {
   }
 }
 
+/** The Notes page's mode last shown on this device (notes-graph-page D1), written by the page. */
+export const NOTES_VIEW_KEY = 'opentodo.notes.view'
+
 /**
  * The address the router tracks: the path, plus the query on display routes,
  * whose presentation options live there (display-mode D2).
  */
 export function addressOf(loc: Pick<Location, 'pathname' | 'search'>): string {
+  // The Notes page's Graph mode is its address (notes-graph-page D1); its other parameters are not.
+  if ((loc.pathname === '/notes' || loc.pathname.startsWith('/notes/')) && new URLSearchParams(loc.search).get('view') === 'graph') return `${loc.pathname}?view=graph`
   // A routine's page keeps ?run=<run> (routines-editor-page D1), so a reload shows the run.
   return loc.pathname === '/display' || loc.pathname.startsWith('/display/') || loc.pathname.startsWith('/routines/') ? `${loc.pathname}${loc.search}` : loc.pathname
 }
