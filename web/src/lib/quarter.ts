@@ -12,8 +12,6 @@ export interface Quarter {
   /** First and last ISO date of the quarter, inclusive. */
   from: string
   to: string
-  /** "Q4 2026": a number and a letter, the same in every language. */
-  title: string
 }
 
 /** The calendar quarter holding `anchor` (an ISO date). */
@@ -23,5 +21,5 @@ export function quarterOf(anchor: string): Quarter {
   const n = Math.floor((month - 1) / 3) + 1
   const first = (n - 1) * 3 + 1
   const months = [0, 1, 2].map((i) => `${year}-${String(first + i).padStart(2, '0')}`)
-  return { n, year, months, from: `${months[0]}-01`, to: monthEnd(months[2]), title: `Q${n} ${year}` }
+  return { n, year, months, from: `${months[0]}-01`, to: monthEnd(months[2]) }
 }

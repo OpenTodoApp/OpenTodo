@@ -273,11 +273,11 @@ export function PlanView({ date }: { date?: string }) {
 }
 
 /** One field, one Save: a custom Plan length, refused until it is a whole number in range. */
-function CustomSpanDialog({ span, onSave, onCancel }: { span: number; onSave: (n: number) => void; onCancel: () => void }) {
+export function CustomSpanDialog({ span, onSave, onCancel }: { span: number; onSave: (n: number) => void; onCancel: () => void }) {
   const [draft, setDraft] = useState(span)
   const [valid, setValid] = useState(true)
   return (
-    <Dialog title={t('Custom…')} onClose={onCancel} testId="plan-custom-span-dialog">
+    <Dialog title={t('Plan length')} onClose={onCancel} testId="plan-custom-span-dialog">
       <form className="space-y-3" data-plan-custom-form onSubmit={(e) => { e.preventDefault(); if (valid) onSave(draft) }}>
         <NumberInput label={t('Number of days')} value={draft} min={MIN_PLAN_DAYS} max={MAX_PLAN_DAYS} unit={t('Days')}
           onChange={(n) => { if (n !== null) setDraft(n) }} onValidityChange={setValid} />

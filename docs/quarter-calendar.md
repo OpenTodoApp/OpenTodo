@@ -13,7 +13,7 @@ The Calendar's range switch is **Day | Week | Month | Quarter | Plan | Year**. Q
 
 ## See the quarter
 
-**Quarter** (choose it in the range switch, or press <kbd>g</kbd> <kbd>q</kbd>) shows the three calendar months of the quarter holding that date: Q1 is January–March, Q2 April–June, Q3 July–September and Q4 October–December. The title reads "Q4 2026". It reads local rows only and works offline.
+**Quarter** (choose it in the range switch, or press <kbd>g</kbd> <kbd>q</kbd>) shows the three calendar months of the quarter holding that date: Q1 is January–March, Q2 April–June, Q3 July–September and Q4 October–December. The title is a translated `Q{n} {year}` (`T4` in French, Spanish, Italian and Portuguese). It reads local rows only and works offline.
 
 - Three compact month grids sit side by side on a wide screen, with the same density marks, over-capacity dots and event rings as [the Year](months-and-year.md#see-the-year): none for an empty day, then a short, a longer and a full bar for 1–2, 3–5 and 6 or more things planned.
 - It is read-only. Choose a day to open it in Day, or a month's name to open it in Month. On a phone each month is one touch target opening Month.

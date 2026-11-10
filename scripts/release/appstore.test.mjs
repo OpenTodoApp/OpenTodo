@@ -21,6 +21,7 @@ import {
   registerReport,
   setWhatToTest,
   token,
+  waitForProcessing,
   whatToTest,
 } from './appstore.mjs'
 
@@ -87,7 +88,7 @@ function fakeAsc(handlers) {
 const bundle = (id, identifier, seedId = 'TEAM123456') => ({ type: 'bundleIds', id, attributes: { identifier, seedId } })
 
 test('register adds what is missing, keeps what exists, and says what to do by hand', async () => {
-  const registered = { 'app.opentodo': bundle('B1', 'app.opentodo') }
+  const registered = { 'app.open-todo.ios': bundle('B1', 'app.open-todo.ios') }
   const caps = { B1: ['APP_GROUPS'] }
   let n = 1
   const { calls, call } = fakeAsc({
@@ -113,9 +114,9 @@ test('register adds what is missing, keeps what exists, and says what to do by h
   assert.deepEqual(
     first.rows.map((r) => [r.identifier, r.state]),
     [
-      ['app.opentodo', 'already registered'],
-      ['app.opentodo.widget', 'registered, APP_GROUPS turned on'],
-      ['app.opentodo.share', 'registered, APP_GROUPS turned on'],
+      ['app.open-todo.ios', 'already registered'],
+      ['app.open-todo.ios.widget', 'registered, APP_GROUPS turned on'],
+      ['app.open-todo.ios.share', 'registered, APP_GROUPS turned on'],
     ],
   )
   assert.equal(first.app, null)
@@ -133,9 +134,9 @@ test('register adds what is missing, keeps what exists, and says what to do by h
 test('an identifier held by another team names the fix', async () => {
   const { call } = fakeAsc({
     'GET /v1/bundleIds': () => [200, { data: [] }],
-    'POST /v1/bundleIds': () => [409, { errors: [{ status: '409', code: 'ENTITY_ERROR.ATTRIBUTE.INVALID', detail: "An App ID with Identifier 'app.opentodo' is not available. Please enter a different string." }] }],
+    'POST /v1/bundleIds': () => [409, { errors: [{ status: '409', code: 'ENTITY_ERROR.ATTRIBUTE.INVALID', detail: "An App ID with Identifier 'app.open-todo.ios' is not available. Please enter a different string." }] }],
   })
-  await assert.rejects(register(call), /app\.opentodo belongs to another Apple developer team .*is not available.*Pick a new prefix: change app\.opentodo in mobile\/ios\/project\.yml/)
+  await assert.rejects(register(call), /app\.open-todo\.ios belongs to another Apple developer team .*is not available.*Pick a new prefix: change app\.open-todo\.ios in mobile\/ios\/project\.yml/)
 })
 
 test('a key of another team is reported', async () => {
@@ -143,11 +144,11 @@ test('a key of another team is reported', async () => {
   const { call } = fakeAsc({
     'GET /v1/bundleIds': (u) => [200, { data: [bundle('B1', u.searchParams.get('filter[identifier]'), 'OTHERTEAM1')] }],
     'GET /v1/bundleIds/B1/bundleIdCapabilities': () => [200, { data: [{ attributes: { capabilityType: 'APP_GROUPS' } }] }],
-    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.opentodo', name: 'OpenTodo' } }] }],
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios', name: 'OpenTodo' } }] }],
   })
   const res = await register(call, { team: 'TEAM123456', log: (level, m) => warnings.push(`${level} ${m}`) })
   assert.equal(res.app.id, 'A1')
-  assert.match(warnings[0], /^warning app\.opentodo has team prefix OTHERTEAM1, but APPLE_TEAM_ID is TEAM123456/)
+  assert.match(warnings[0], /^warning app\.open-todo\.ios has team prefix OTHERTEAM1, but APPLE_TEAM_ID is TEAM123456/)
 })
 
 function signingAsc({ withGroup = true } = {}) {
@@ -187,14 +188,14 @@ test('sign makes a certificate and three profiles, and cleanup removes exactly t
   const dir = signingDir()
   const { call, deleted } = signingAsc()
   const res = await prepareSigning(call, { dir, team: 'TEAM123456', stamp: '42.1', log: () => {} })
-  assert.deepEqual(res.profiles, { 'app.opentodo': 'uuid-app.opentodo', 'app.opentodo.widget': 'uuid-app.opentodo.widget', 'app.opentodo.share': 'uuid-app.opentodo.share' })
+  assert.deepEqual(res.profiles, { 'app.open-todo.ios': 'uuid-app.open-todo.ios', 'app.open-todo.ios.widget': 'uuid-app.open-todo.ios.widget', 'app.open-todo.ios.share': 'uuid-app.open-todo.ios.share' })
   assert.equal(readFileSync(join(dir, 'distribution.cer'), 'utf8'), 'DER')
-  assert.ok(existsSync(join(dir, 'profiles', 'uuid-app.opentodo.share.mobileprovision')))
+  assert.ok(existsSync(join(dir, 'profiles', 'uuid-app.open-todo.ios.share.mobileprovision')))
   const options = readFileSync(join(dir, 'ExportOptions.plist'), 'utf8')
   assert.match(options, /<key>method<\/key>\n\t<string>app-store-connect<\/string>/)
   assert.match(options, /<key>signingStyle<\/key>\n\t<string>manual<\/string>/)
   assert.match(options, /<key>teamID<\/key>\n\t<string>TEAM123456<\/string>/)
-  assert.match(options, /<key>app\.opentodo\.widget<\/key>\n\t\t<string>uuid-app\.opentodo\.widget<\/string>/)
+  assert.match(options, /<key>app\.open-todo\.ios\.widget<\/key>\n\t\t<string>uuid-app\.open-todo\.ios\.widget<\/string>/)
   assert.match(options, /<key>manageAppVersionAndBuildNumber<\/key>\n\t<false\/>/, 'the build number is ours, not Xcode\'s')
   assert.deepEqual(JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8')), { certificateId: 'C1', profileIds: ['P1', 'P2', 'P3'] })
 
@@ -207,7 +208,7 @@ test('sign makes a certificate and three profiles, and cleanup removes exactly t
 test('a profile without the App Group stops the run with the steps, and cleanup still finds everything', async () => {
   const dir = signingDir()
   const { call, deleted } = signingAsc({ withGroup: false })
-  await assert.rejects(prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} }), /do not carry the App Group group\.app\.opentodo\. The API cannot assign one: at developer\.apple\.com → Identifiers → App Groups/)
+  await assert.rejects(prepareSigning(call, { dir, team: 'TEAM123456', log: () => {} }), /do not carry the App Group group\.app\.open-todo\. The API cannot assign one: at developer\.apple\.com → Identifiers → App Groups/)
   await cleanup(call, { dir, log: () => {} })
   assert.deepEqual(deleted, ['P1', 'P2', 'C1'])
 })
@@ -245,7 +246,7 @@ test('What to test waits for the build, then sets the English notes', async () =
   let looks = 0
   let patched = null
   const { call } = fakeAsc({
-    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.opentodo' } }] }],
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
     'GET /v1/builds': (u) => {
       assert.equal(u.searchParams.get('filter[version]'), '10200.1')
       assert.equal(u.searchParams.get('filter[preReleaseVersion.version]'), '1.2.0')
@@ -263,10 +264,37 @@ test('What to test waits for the build, then sets the English notes', async () =
 test('a build that never shows up only warns', async () => {
   const logs = []
   const { call } = fakeAsc({
-    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.opentodo' } }] }],
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
     'GET /v1/builds': () => [200, { data: [] }],
   })
   const ok = await setWhatToTest(call, { version: '1.2.0', build: '10200', text: 'Notes', attempts: 2, pause: async () => {}, log: (l, m) => logs.push(`${l} ${m}`) })
   assert.equal(ok, false)
   assert.match(logs[0], /^warning build 10200 of 1\.2\.0 did not appear in App Store Connect in time/)
+})
+
+test('the certificate outlives Apple\'s processing: wait for VALID, fail on INVALID', async () => {
+  const states = ['PROCESSING', 'PROCESSING', 'VALID']
+  let looks = 0
+  const { call } = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: looks === 0 ? (looks++, []) : [{ id: 'B1', attributes: { processingState: states[looks++ - 1] } }] }],
+  })
+  const logs = []
+  assert.equal(await waitForProcessing(call, { version: '1.2.0', build: '10200', pause: async () => {}, log: (l, m) => logs.push(`${l} ${m}`) }), 'VALID')
+  assert.equal(looks, 4, 'missing, processing twice, then valid')
+  assert.match(logs[0], /^notice Apple processed build 10200 of 1\.2\.0: valid/)
+
+  const refused = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: [{ id: 'B1', attributes: { processingState: 'INVALID' } }] }],
+  })
+  await assert.rejects(waitForProcessing(refused.call, { version: '1.2.0', build: '10200', pause: async () => {}, log: () => {} }), /Apple refused build 10200 of 1\.2\.0 \(INVALID\)/)
+
+  const slow = fakeAsc({
+    'GET /v1/apps': () => [200, { data: [{ id: 'A1', attributes: { bundleId: 'app.open-todo.ios' } }] }],
+    'GET /v1/builds': () => [200, { data: [{ id: 'B1', attributes: { processingState: 'PROCESSING' } }] }],
+  })
+  const warned = []
+  assert.equal(await waitForProcessing(slow.call, { version: '1.2.0', build: '10200', attempts: 3, pause: async () => {}, log: (l, m) => warned.push(l) }), null)
+  assert.deepEqual(warned, ['warning'])
 })

@@ -70,6 +70,8 @@ OpenTodo speaks plain HTTP on port 8080; the proxy terminates TLS. Two settings 
 
 Live updates use a server-sent event stream (`/api/v1/sync/events`): don't buffer it, and keep idle timeouts above 25 s. Details and troubleshooting: [Behind a reverse proxy](docker.md#behind-a-reverse-proxy).
 
+The proxy must pass the app's files through unchanged: installed apps check them against the release's signed file list ([Signed app code](../security/signed-app.md)). Turn off anything that rewrites HTML or JavaScript for this host: Cloudflare's Rocket Loader, Auto Minify and Email Address Obfuscation, nginx `sub_filter`, injected analytics. Check a deployment with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest verify https://todo.example.com/`. Rolling the server back to an older release leaves installed apps on the newer one; sync keeps working. [Signed updates](../signed-updates.md) explains what people see and what to do.
+
 **Caddy** (certificates are automatic):
 
 ```

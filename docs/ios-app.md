@@ -85,8 +85,8 @@ Running it in the simulator needs nothing more than Xcode. For your own iPhone y
 
 Reminders, Face ID, the certificate and local-network behaviour and the background refresh all work in that build. A free build stops launching after seven days; run it again from Xcode to renew it.
 
-**Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.opentodo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
+**Widget and share sheet included: a paid Apple Developer Program membership.** Add your account in Xcode ▸ Settings ▸ Accounts, select the team on all three targets, and keep **App Groups** on each of them with one group name — `group.app.open-todo`, or your own if the name is taken. Xcode registers it in the developer portal on the first signing attempt.
 
-Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.opentodo` prefix in `mobile/ios/project.yml` for all three targets and run `xcodegen generate`.
+Either way the first run on a device needs **Developer Mode** on (iPhone ▸ Settings ▸ Privacy & Security) and, for a free team, trusting the developer under Settings ▸ General ▸ VPN & Device Management. If Xcode reports that the bundle identifier is taken, change the `app.open-todo.ios` prefix in `mobile/ios/project.yml` for every target and run `xcodegen generate`.
 
 `mobile/README.md` describes the files, the bridge and the build settings; `openspec/changes/ios-shell` records the decisions and what was measured on the platform.

@@ -325,7 +325,7 @@
   "frequency": "rare",
   "core": false,
   "layoutCheck": "quarter",
-  "story": "Screens/Year"
+  "story": "Screens/Quarter"
  },
  {
   "id": "plan",

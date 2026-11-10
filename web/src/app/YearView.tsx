@@ -3,89 +3,41 @@
 // dot, for seeing a year at a glance and going from it to a month or a day. It reads
 // local rows only, writes nothing and works offline. One keyboard grid across the
 // months (D5); below 640 px a month is the touch target (D6). Loads on first use.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, PageBody, useMediaQuery } from '../ui'
-import { calendarTasks, eventsByDay } from '../lib/calendar'
 import { useOnline } from '../lib/online'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { CalendarStatus } from './calendar/CalendarStatus'
-import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, formatDateParts, monthName, viewedTask } from '../lib/dates'
+import { addDaysISO, formatDateParts, monthName } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { useGridPrefs } from '../lib/liveData'
-import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { useProjects } from '../lib/localData'
 import { addMonthsISO, monthEnd, monthGrid } from '../lib/month'
-import { planSeries } from '../lib/plan'
-import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
-import { yearCounts, type YearDay } from '../lib/yearView'
+import type { YearDay } from '../lib/yearView'
 import { MonthCells, tipText } from './calendar/MonthDensityCells'
+import { useRangeCounts, useRangeEvents } from './calendar/useRangeDensity'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { CalendarPageHeader, useCalendarChrome } from './calendar/useCalendarChrome'
-import { useCalendarProjectionsOn } from './calendar/projectionSwitches'
+import { CalendarPageHeader } from './calendar/useCalendarChrome'
 import { useCalendarGo } from './calendar/scope'
 import { focusHeading, pageHeading } from './pageFocus'
 import { useShortcutScope } from './shortcuts'
-import { useToday, useViewerZone } from './useViews'
+import { useToday } from './useViews'
 import { useResetOnChange } from '../lib/useResetOnChange'
 
 const NO_DAY: YearDay = { count: 0, minutes: 0, titles: [] }
-
-/**
- * The number of shown events per day of the year (calendar-events-all-views): the
- * enabled calendars while the Calendars toggle shows them; a mark of their own, never
- * part of the density.
- */
-function useYearEvents(year: string) {
-  const zone = useViewerZone()
-  const from = `${year}-01-01`, to = `${year}-12-31`
-  const feeds = useCalendarFeeds(from, to)
-  const counts = useMemo(() => {
-    const out = new Map<string, number>()
-    for (const [d, x] of eventsByDay(feeds.visibleEvents, from, to, zone)) out.set(d, x.allDay.length + x.timed.length)
-    return out
-  }, [feeds.visibleEvents, from, to, zone])
-  return { feeds, counts }
-}
-
-/** The counts of the shown year: the calendar's selection, the scope and filter, and the projections while they are shown. */
-function useYearCounts(year: string, today: string) {
-  const zone = useViewerZone()
-  const projects = useProjects()
-  const rawTasks = useLiveTasks() ?? NO_TASKS
-  const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
-  const chrome = useCalendarChrome(viewed, projects, { projections: true, colorBy: false })
-  const projectionsOn = useCalendarProjectionsOn()
-  const keeps = chrome.keeps
-  const from = `${year}-01-01`, to = `${year}-12-31`
-  const shown = useMemo(() => calendarTasks(viewed, projects, from, to), [viewed, projects, from, to])
-  const series = useMemo(() => (projectionsOn ? planSeries(rawTasks, projects).filter((s) => keeps(viewedMap.get(s.id) ?? s)) : []), [projectionsOn, rawTasks, projects, keeps, viewedMap])
-  // Slots count once toward a day's capacity, as in Month (calendar-slots D6).
-  const slotRows = useSlots()
-  const days = useMemo(() => {
-    const out: string[] = []
-    for (let d = from; d <= to; d = addDaysISO(d, 1)) out.push(d)
-    return out
-  }, [from, to])
-  const slotViews = useMemo(() => slotsByDate(slotRows, days, viewedMap), [slotRows, days, viewedMap])
-  const counts = useMemo(() => yearCounts({ tasks: shown, keeps, series, records: rawTasks, today, from, to, zone }), [shown, keeps, series, rawTasks, today, from, to, zone])
-  const extra = useCallback((d: string) => slotCapacity(slotViews.get(d)).extra, [slotViews])
-  return { chrome, counts, extra }
-}
 
 export default function YearView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
   const year = anchor.slice(0, 4)
+  const from = `${year}-01-01`, to = `${year}-12-31`
   const { resolved } = useDateTimeFormat()
   const prefs = useGridPrefs()
   const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('year'), [])
-  const { chrome, counts, extra } = useYearCounts(year, today)
-  const { feeds, counts: eventCounts } = useYearEvents(year)
+  const { chrome, counts, extra } = useRangeCounts(from, to, today)
+  const { feeds, counts: eventCounts } = useRangeEvents(from, to)
   const online = useOnline()
 
   const [focused, setFocused] = useState(anchor)

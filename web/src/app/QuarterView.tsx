@@ -4,84 +4,40 @@
 // local rows only, writes nothing and works offline. Loads on first use.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, PageBody, useMediaQuery } from '../ui'
-import { calendarTasks, eventsByDay } from '../lib/calendar'
 import { useOnline } from '../lib/online'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { CalendarStatus } from './calendar/CalendarStatus'
-import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, formatDateParts, monthName, viewedTask } from '../lib/dates'
+import { addDaysISO, formatDateParts, monthName } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { useGridPrefs } from '../lib/liveData'
-import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { useProjects } from '../lib/localData'
 import { addMonthsISO, monthEnd, monthGrid } from '../lib/month'
-import { planSeries } from '../lib/plan'
-import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
-import { yearCounts, type YearDay } from '../lib/yearView'
-import { quarterOf, type Quarter } from '../lib/quarter'
+import type { YearDay } from '../lib/yearView'
+import { quarterOf } from '../lib/quarter'
 import { MonthCells, tipText } from './calendar/MonthDensityCells'
+import { useRangeCounts, useRangeEvents } from './calendar/useRangeDensity'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { CalendarPageHeader, useCalendarChrome } from './calendar/useCalendarChrome'
-import { useCalendarProjectionsOn } from './calendar/projectionSwitches'
+import { CalendarPageHeader } from './calendar/useCalendarChrome'
 import { useCalendarGo } from './calendar/scope'
 import { focusHeading, pageHeading } from './pageFocus'
 import { useShortcutScope } from './shortcuts'
-import { useToday, useViewerZone } from './useViews'
+import { useToday } from './useViews'
 import { useResetOnChange } from '../lib/useResetOnChange'
 
 const NO_DAY: YearDay = { count: 0, minutes: 0, titles: [] }
-
-/** The shown events per day of the quarter: the enabled calendars while the toggle shows them. */
-function useQuarterEvents(quarter: Quarter) {
-  const zone = useViewerZone()
-  const from = quarter.from, to = quarter.to
-  const feeds = useCalendarFeeds(from, to)
-  const counts = useMemo(() => {
-    const out = new Map<string, number>()
-    for (const [d, x] of eventsByDay(feeds.visibleEvents, from, to, zone)) out.set(d, x.allDay.length + x.timed.length)
-    return out
-  }, [feeds.visibleEvents, from, to, zone])
-  return { feeds, counts }
-}
-
-/** The counts of the quarter: the calendar's selection, the scope and filter, and the projections while shown. */
-function useQuarterCounts(quarter: Quarter, today: string) {
-  const zone = useViewerZone()
-  const projects = useProjects()
-  const rawTasks = useLiveTasks() ?? NO_TASKS
-  const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
-  const chrome = useCalendarChrome(viewed, projects, { projections: true, colorBy: false })
-  const projectionsOn = useCalendarProjectionsOn()
-  const keeps = chrome.keeps
-  const from = quarter.from, to = quarter.to
-  const shown = useMemo(() => calendarTasks(viewed, projects, from, to), [viewed, projects, from, to])
-  const series = useMemo(() => (projectionsOn ? planSeries(rawTasks, projects).filter((s) => keeps(viewedMap.get(s.id) ?? s)) : []), [projectionsOn, rawTasks, projects, keeps, viewedMap])
-  // Slots count once toward a day's capacity, as in Month and Year (calendar-slots D6).
-  const slotRows = useSlots()
-  const days = useMemo(() => {
-    const out: string[] = []
-    for (let d = from; d <= to; d = addDaysISO(d, 1)) out.push(d)
-    return out
-  }, [from, to])
-  const slotViews = useMemo(() => slotsByDate(slotRows, days, viewedMap), [slotRows, days, viewedMap])
-  const counts = useMemo(() => yearCounts({ tasks: shown, keeps, series, records: rawTasks, today, from, to, zone }), [shown, keeps, series, rawTasks, today, from, to, zone])
-  const extra = useCallback((d: string) => slotCapacity(slotViews.get(d)).extra, [slotViews])
-  return { chrome, counts, extra }
-}
 
 export default function QuarterView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
   const quarter = useMemo(() => quarterOf(anchor), [anchor])
+  const title = t('Q{n} {year}', { n: quarter.n, year: quarter.year })
   const { resolved } = useDateTimeFormat()
   const prefs = useGridPrefs()
   const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('quarter'), [])
-  const { chrome, counts, extra } = useQuarterCounts(quarter, today)
-  const { feeds, counts: eventCounts } = useQuarterEvents(quarter)
+  const { chrome, counts, extra } = useRangeCounts(quarter.from, quarter.to, today)
+  const { feeds, counts: eventCounts } = useRangeEvents(quarter.from, quarter.to)
   const online = useOnline()
 
   const [focused, setFocused] = useState(anchor)
@@ -142,7 +98,7 @@ export default function QuarterView({ date }: { date?: string }) {
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="quarter">
-      <CalendarPageHeader chrome={chrome} title={quarter.title} meta={meta} overflow={chrome.overflow}
+      <CalendarPageHeader chrome={chrome} title={title} meta={meta} overflow={chrome.overflow}
         actions={<>
           <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>
@@ -152,7 +108,7 @@ export default function QuarterView({ date }: { date?: string }) {
           </span>
           <CalendarRangeSwitch mode="quarter" date={focused} />
         </>} />
-      <div ref={gridRef} data-quarter-grid={quarter.title} className="@container/quarter"
+      <div ref={gridRef} data-quarter-grid={title} className="@container/quarter"
         onClick={(e) => { const d = (e.target as Element).closest<HTMLElement>('[data-year-day]')?.dataset.yearDay; if (d) openDay(d) }}
         onPointerOver={(e) => { if (e.pointerType !== 'touch') showTip((e.target as Element).closest<HTMLElement>('[data-year-day]'), 400) }}
         onPointerLeave={() => { clearTimeout(hoverTimer.current); setTip(null) }}

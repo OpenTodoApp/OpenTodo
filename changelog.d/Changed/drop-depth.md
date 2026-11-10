@@ -1,1 +1,0 @@
-- **Drag a task to the level you want.** Between two rows of a project or the Inbox, a task now keeps its level while you drag straight up or down, and moving sideways by an indent nests it deeper or brings it out. The drop line starts at that level, so a top-level task can finally go between a long subtree and the next task (#1037).

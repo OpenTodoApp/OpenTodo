@@ -470,6 +470,9 @@
   "A project can have at most {n} fields.": [
     "web/src/lib/fields.ts"
   ],
+  "A proxy or the server changed the app's files.": [
+    "web/src/lib/appCodeCopy.ts"
+  ],
   "A reminder added when a task gets a date or a time": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -1762,6 +1765,9 @@
   "App": [
     "web/src/app/OAuthClients.tsx",
     "web/src/app/settingsSections.ts"
+  ],
+  "App code": [
+    "web/src/app/AppCodeRow.tsx"
   ],
   "App icon badge": [
     "web/src/app/settingsIndex.ts",
@@ -3778,6 +3784,7 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Copied.": [
+    "web/src/app/AppCodeRow.tsx",
     "web/src/lib/settingsCopy.ts"
   ],
   "Copied. Create a bookmark and paste it as the address.": [
@@ -3809,6 +3816,9 @@
   ],
   "Copy configuration": [
     "web/src/app/AssistantsPanel.tsx"
+  ],
+  "Copy diagnostics": [
+    "web/src/app/AppCodeRow.tsx"
   ],
   "Copy it now: it will not be shown again. Anyone with the link can open the page.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -4865,6 +4875,7 @@
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/DemoBanner.tsx",
+    "web/src/app/RefusedBanner.tsx",
     "web/src/app/ReminderToasts.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/Shell.tsx",
@@ -8017,6 +8028,12 @@
   ],
   "It is never shown again.": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "It isn't signed by OpenTodo.": [
+    "web/src/lib/appCodeCopy.ts"
+  ],
+  "It isn't signed with this app's key.": [
+    "web/src/lib/appCodeCopy.ts"
   ],
   "It may have been revoked or have expired. Ask whoever shared it for a new one.": [
     "web/src/app/PublicListScreen.tsx"
@@ -12372,6 +12389,9 @@
   "Plan from this frame": [
     "web/src/app/calendar/FrameBand.tsx"
   ],
+  "Plan length": [
+    "web/src/app/PlanView.tsx"
+  ],
   "Plan next week instead": [
     "web/src/app/objectives/ReviewObjectives.tsx"
   ],
@@ -12483,6 +12503,9 @@
     "web/src/app/focus/FocusSettings.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/app/themes/ThemePreview.tsx"
+  ],
+  "Preview build": [
+    "web/src/app/AppCodeRow.tsx"
   ],
   "Preview loading…": [
     "web/src/app/routines/StepCard.tsx"
@@ -13037,6 +13060,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "Q{n} {year}": [
+    "web/src/app/QuarterView.tsx",
     "web/src/lib/sectorNames.ts"
   ],
   "Radius": [
@@ -14558,6 +14582,9 @@
   "Selected row": [
     "web/src/app/themes/tokenNames.ts"
   ],
+  "Self-built": [
+    "web/src/app/AppCodeRow.tsx"
+  ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/assistant/AssistantComposer.tsx",
@@ -15298,6 +15325,9 @@
   "Sign-up is disabled on this server.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "Signed by OpenTodo": [
+    "web/src/app/AppCodeRow.tsx"
+  ],
   "Signed in": [
     "web/src/app/auditFormat.ts"
   ],
@@ -15311,6 +15341,9 @@
   ],
   "Signed out everywhere": [
     "web/src/app/auditFormat.ts"
+  ],
+  "Signed with this server's key": [
+    "web/src/app/AppCodeRow.tsx"
   ],
   "Signing in did not work. Please try again.": [
     "web/src/app/sso.ts"
@@ -16857,6 +16890,9 @@
   "The last four weeks": [
     "web/src/app/review/MonthlyLook.tsx"
   ],
+  "The last update didn't pass the check. It was installed: checks only report for now.": [
+    "web/src/lib/appCodeCopy.ts"
+  ],
   "The licence is set to unknown. Check the theme's licence before you share this file.": [
     "web/src/app/themes/ImportReport.tsx"
   ],
@@ -17286,6 +17322,12 @@
   ],
   "The server took too long to answer. Your changes stay on this device.": [
     "web/src/lib/http.ts"
+  ],
+  "The server went back to an older version.": [
+    "web/src/lib/appCodeCopy.ts"
+  ],
+  "The server's list of files couldn't be read.": [
+    "web/src/lib/appCodeCopy.ts"
   ],
   "The server’s assistant": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -18125,6 +18167,9 @@
   "This server requires single sign-on for your account. Use the \"Sign in with\" button instead.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "This server runs {version}": [
+    "web/src/app/AppCodeRow.tsx"
+  ],
   "This server uses single sign-on for every account.": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -18191,6 +18236,9 @@
   ],
   "This token or session is not allowed to do this: {detail}": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This update wasn't installed.": [
+    "web/src/lib/appCodeCopy.ts"
   ],
   "This upload would go over your attachment storage.": [
     "web/src/lib/i18n/errors.ts"
@@ -19309,6 +19357,9 @@
     "web/src/app/WorkspaceControl.tsx",
     "web/src/lib/shortcuts.ts"
   ],
+  "Updates are not signature-checked.": [
+    "web/src/app/AppCodeRow.tsx"
+  ],
   "Updates in {names}": [
     "web/src/app/WorkspaceControl.tsx"
   ],
@@ -19483,8 +19534,14 @@
     "web/src/app/AuthScreen.tsx",
     "web/src/app/RestoreSection.tsx"
   ],
+  "Verify key": [
+    "web/src/app/AppCodeRow.tsx"
+  ],
   "Verify your email address to use this": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "Version {version}": [
+    "web/src/app/AppCodeRow.tsx"
   ],
   "Version, documentation, website, feedback and support": [
     "web/src/app/settingsSections.ts"
@@ -19777,6 +19834,9 @@
   ],
   "What this device ran, without the text.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "What to do": [
+    "web/src/lib/appCodeCopy.ts"
   ],
   "What to do with “{title}”": [
     "web/src/app/objectives/ReviewObjectives.tsx"

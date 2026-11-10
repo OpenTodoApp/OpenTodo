@@ -8,7 +8,7 @@ Year mode (`web/src/app/YearView.tsx`) already draws compact month grids with a 
 
 ## Decisions
 
-**D1. Calendar quarters, not rolling 90 days.** The quarter is the calendar quarter of the anchor's month: Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec. `quarterOf(date)` returns the first month, the three month keys and `[from, to]`; the title is `Q<n> <year>`, which needs no translation. This matches the quarter that objectives and review intervals already use, and makes `[` / `]` and the month-name links unambiguous. A rolling quarter was rejected: it would show the same months in a different order on every day and could not be named.
+**D1. Calendar quarters, not rolling 90 days.** The quarter is the calendar quarter of the anchor's month: Q1 = Jan–Mar, Q2 = Apr–Jun, Q3 = Jul–Sep, Q4 = Oct–Dec. `quarterOf(date)` returns the first month, the three month keys, `[from, to]`, `n` and `year`; the view builds the title from the already-translated `Q{n} {year}` message (`T4` in French, Spanish, Italian and Portuguese). This matches the quarter that objectives and review intervals already use, and makes `[` / `]` and the month-name links unambiguous. A rolling quarter was rejected: it would show the same months in a different order on every day and could not be named.
 
 **D2. Reuse Year's density cell, extracted once.** `YearView.tsx`'s local `MonthCells` (and its step constants and `tipText`) move to `web/src/app/calendar/MonthDensityCells.tsx`, exported and used by both Year and Quarter. Quarter calls `yearCounts()` with the quarter's `from`/`to` and `useCalendarFeeds(from, to)` for the same range, then draws exactly three months in the Year grid's responsive columns. No new density algorithm, no new cell component, no new tooltip logic. A Month-style grid with task rows was rejected: three months of task rows would repeat Month's `Months shown: 3` choice and be unreadable at a quarter's scale.
 
@@ -39,5 +39,5 @@ Measured on the branch: entry **139.1 KB gzip** (budget 140 KB), first load **68
 
 - `screens.test.ts` parses the `Route` union out of `router.ts` and fails on a missing `ROUTE_SCREENS` entry; the change adds it in the same step.
 - `shortcuts.test.ts` fails on a `views: ['quarter']` entry without `VIEW_SCOPES.quarter` and on any chord collision; both are covered by tasks.
-- `i18n-check` fails when a new `msg()`/`t()` call is not in `messages.json` or a translation is missing; `Quarter`, `Custom…`, `Number of days`, `Save`, `Cancel` and `Next quarter` already exist and are translated, so only `Previous quarter` and the range error need catalog entries.
+- `i18n-check` fails when a new `msg()`/`t()` call is not in `messages.json` or a translation is missing; `Quarter`, `Q{n} {year}`, `Custom…`, `Number of days`, `Save`, `Cancel` and `Next quarter` already exist and are translated; `Previous quarter` and `Plan length` were added to all six catalogs.
 - `docs-check` fails on a stale generated `docs/keyboard.md` or a doc that names a screen id that is not declared; Quarter reuses the existing `calendar` screen id.

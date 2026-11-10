@@ -1,13 +1,13 @@
 {
   "name": "opentodo-web",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "predev": "npm run --silent help",
     "dev": "vite",
     "prebuild": "npm run --silent help",
-    "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && vite build",
+    "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && vite build && node scripts/app-manifest.mjs",
     "preview": "vite preview",
     "pretest": "npm run --silent help",
     "test": "vitest run",
@@ -71,9 +71,6 @@
     "typescript-eslint": "8.72.1",
     "vite": "8.3.5",
     "vite-plugin-pwa": "2.0.0",
-    "vitest": "5.0.5",
-    "workbox-core": "7.4.1",
-    "workbox-precaching": "7.4.1",
-    "workbox-routing": "7.4.1"
+    "vitest": "5.0.5"
   }
 }

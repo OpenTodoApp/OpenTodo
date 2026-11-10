@@ -2,7 +2,8 @@
 // the website, the source code, where to report a problem, the Discord server
 // (discord-community), the account on X (x-account-link), Buy Me a Coffee, and the
 // owner's welcome note on demand. Every link is a plain link opening a new tab;
-// the version comes from this server's status while online.
+// the version comes from this server's status while online. The App code row
+// says who signed the code this device runs (signed-web-app).
 import { useEffect, useState } from 'react'
 import { Badge, Icon, Notice, SettingRow, SettingsSection } from '../ui'
 import { api } from '../lib/api'
@@ -13,6 +14,7 @@ import { navigate } from './router'
 import { CoffeeButton, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeNote, X_URL } from './WelcomeDialog'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { shell, shellOutdated, type OpenTodoShell } from '../lib/shell'
+import { AppCodeRow } from './AppCodeRow'
 
 export const WEBSITE_URL = 'https://open-todo.app'
 export const DOCS_URL = 'https://open-todo.app/docs/'
@@ -62,6 +64,7 @@ export function AboutSection({ user }: { user: User }) {
     <>
       <SettingsSection {...cardCopy('about', { variant: version ? 'version' : 'plain', values: { version } })}>
         <ShellAppRow app={app} />
+        <AppCodeRow serverVersion={version} />
         <SettingRow id="about-help" {...rowCopy('about', 'help')}
           control={<button type="button" className="ui-btn ui-btn--secondary ui-btn--sm" onClick={() => navigate({ view: 'help' })} data-about-help>{t('Open Help')}</button>} />
         <SettingRow id="about-docs" {...rowCopy('about', 'docs')}

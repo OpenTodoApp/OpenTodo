@@ -105,6 +105,16 @@ While the relay is on, the server is trusted with content within those caps; see
 
 **Not verified by tests:** the cryptographic design itself has had no independent review. The vectors prove that three implementations agree, not that the construction is right.
 
+**Signed app code** ([Signed app code](signed-app.md), report-only for now). Installed apps check every update against the release's signed file list.
+- Shared vectors `internal/websign/testdata/manifest.vectors.json` (valid, unsigned, bad signature, unknown key, wrong domain string, mutated payload, two signatures during a rotation, the recovery key, version order), read by `TestVectors` (`internal/websign/vectors_test.go`) and `web/src/lib/appCode.test.ts`.
+- `internal/websign/sign` and `cmd/websign` tests: key round trips, a signing step that refuses changed, missing or unlisted files and a wrong version, and verifying over HTTP through a proxy that changes a file. `TestServerDoesNotLinkSign` keeps the signing code out of the server and `ot`.
+- `web/src/lib/appInstall.test.ts`: the worker's checks: first use and its modes, a valid update, a tampered chunk recorded while reporting and refused with refusal on, unsigned, unknown-key, bad-signature and older lists, a cut-off download that leaves the current set, offline, lazy chunks, a rotation, refusal that a later list cannot turn off, and the trust record surviving sign-out.
+- `web/src/lib/pagePolicy.test.ts` and `TestCSPFixture`: the page policy the worker writes equals the server's `cspBase` and keeps `script-src 'self'` whatever the server sends.
+- `TestServedAsBuilt` and `TestSecurityHeaders`: `/index.html` as built, the list never cached, `no-transform` on the app's files.
+- `scripts/e2e-signed.mjs` (`make e2e-signed`): Chromium against real servers signed with the test key.
+
+**Not verified yet:** refusal in a real browser and on hosting such as PikaPods and Cloudflare; that is the gate for turning it on.
+
 ## The route policy wrapper
 
 **Design.**

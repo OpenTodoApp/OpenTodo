@@ -11,13 +11,15 @@
 //   node scripts/release/appstore.mjs sign <dir>                    certificate, profiles, ExportOptions.plist
 //   node scripts/release/appstore.mjs cleanup <dir>                 revoke and delete what `sign` made
 //   node scripts/release/appstore.mjs notes <version> <build>       "What to test" from CHANGELOG.md
+//   node scripts/release/appstore.mjs processed <version> <build>   wait for Apple's processing (VALID)
 //   node scripts/release/appstore.mjs key-file <path>               ASC_KEY_P8 as a file for altool (mode 600)
 //
 // The key comes from ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 file's content), the team
 // from APPLE_TEAM_ID. Nothing is stored between runs: `sign` makes an Apple Distribution
 // certificate from a key generated on the runner (csr.pem in <dir>) and one App Store profile per
-// bundle ID, and `cleanup` revokes and deletes them. Builds already uploaded stay valid, because
-// Apple re-signs what it distributes.
+// bundle ID, and `cleanup` revokes and deletes them once Apple has processed the build (`processed`):
+// a certificate revoked while the build is processing makes Apple refuse it (ITMS-90035). Builds
+// processed stay valid, because Apple re-signs what it distributes.
 // Tests: node --test scripts/release/appstore.test.mjs (make repo-check).
 
 import { sign as cryptoSign } from 'node:crypto'
@@ -27,12 +29,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { releaseNotes } from './play-upload.mjs'
 
 export const API = 'https://api.appstoreconnect.apple.com'
-export const APP_GROUP = 'group.app.opentodo'
+export const APP_GROUP = 'group.app.open-todo'
 /** The app first: its record is the one App Store Connect knows the app by. */
 export const BUNDLE_IDS = [
-  { identifier: 'app.opentodo', name: 'OpenTodo' },
-  { identifier: 'app.opentodo.widget', name: 'OpenTodo Widget' },
-  { identifier: 'app.opentodo.share', name: 'OpenTodo Share' },
+  { identifier: 'app.open-todo.ios', name: 'OpenTodo' },
+  { identifier: 'app.open-todo.ios.widget', name: 'OpenTodo Widget' },
+  { identifier: 'app.open-todo.ios.share', name: 'OpenTodo Share' },
 ]
 /** What the entitlements of the three targets need (the .entitlements files in mobile/ios). */
 export const CAPABILITIES = ['APP_GROUPS']
@@ -136,8 +138,8 @@ export async function findApp(call) {
 function takenMessage(identifier, detail) {
   return (
     `${identifier} belongs to another Apple developer team (Apple: "${detail}"). ` +
-    `Pick a new prefix: change app.opentodo in mobile/ios/project.yml (bundleIdPrefix and the three PRODUCT_BUNDLE_IDENTIFIER values), ` +
-    `the App Group group.app.opentodo, and BUNDLE_IDS and APP_GROUP in scripts/release/appstore.mjs, then run "iOS register IDs" again.`
+    `Pick a new prefix: change ${BUNDLE_IDS[0].identifier} in mobile/ios/project.yml (bundleIdPrefix and every PRODUCT_BUNDLE_IDENTIFIER, then regenerate the Xcode project), ` +
+    `the App Group ${APP_GROUP}, and BUNDLE_IDS and APP_GROUP in scripts/release/appstore.mjs, then run "iOS register IDs" again.`
   )
 }
 
@@ -339,12 +341,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
  */
 export async function setWhatToTest(call, { version, build, text, attempts = 40, wait = 30_000, pause = sleep, log = defaultLog }) {
   const app = await findApp(call)
-  if (!app) throw new Error('no app record for app.opentodo')
+  if (!app) throw new Error(`no app record for ${BUNDLE_IDS[0].identifier}`)
   let found = null
   for (let i = 0; i < attempts && !found; i++) {
     if (i > 0) await pause(wait)
-    const res = await call(`looking for build ${build}`, 'GET', `/v1/builds?filter[app]=${app.id}&filter[version]=${encodeURIComponent(build)}&filter[preReleaseVersion.version]=${encodeURIComponent(version)}`)
-    found = res.data?.[0] ?? null
+    found = await findBuild(call, app.id, version, build)
   }
   if (!found) {
     log('warning', `build ${build} of ${version} did not appear in App Store Connect in time: set "What to test" in TestFlight by hand`)
@@ -361,6 +362,38 @@ export async function setWhatToTest(call, { version, build, text, attempts = 40,
   }
   log('notice', `build ${build} of ${version} is in TestFlight with its "What to test"`)
   return true
+}
+
+async function findBuild(call, appId, version, build) {
+  const res = await call(`looking for build ${build}`, 'GET', `/v1/builds?filter[app]=${appId}&filter[version]=${encodeURIComponent(build)}&filter[preReleaseVersion.version]=${encodeURIComponent(version)}`)
+  return res.data?.[0] ?? null
+}
+
+/**
+ * Waits until Apple has processed the uploaded build, and fails when Apple refused it. The
+ * certificate that signed the build must stay valid until then: Apple checks the signature while
+ * processing, and a certificate revoked before that turns the build into ITMS-90035 "Invalid
+ * Signature". So `cleanup` runs after this. Returns the final processingState, or null when
+ * processing outlasted the wait (a warning: the build may then be refused).
+ */
+export async function waitForProcessing(call, { version, build, attempts = 90, wait = 30_000, pause = sleep, log = defaultLog }) {
+  const app = await findApp(call)
+  if (!app) throw new Error(`no app record for ${BUNDLE_IDS[0].identifier}`)
+  let state = null
+  for (let i = 0; i < attempts; i++) {
+    if (i > 0) await pause(wait)
+    state = (await findBuild(call, app.id, version, build))?.attributes?.processingState ?? null
+    if (state && state !== 'PROCESSING') break
+  }
+  if (state === 'VALID') {
+    log('notice', `Apple processed build ${build} of ${version}: valid`)
+    return state
+  }
+  if (state === 'INVALID' || state === 'FAILED') {
+    throw new Error(`Apple refused build ${build} of ${version} (${state}); its email to the account holder names the reason`)
+  }
+  log('warning', `build ${build} of ${version} was still ${state ? state.toLowerCase() : 'missing'} after the wait; the certificate is revoked now, which can make Apple refuse it as an invalid signature`)
+  return null
 }
 
 function defaultLog(level, message) {
@@ -395,7 +428,7 @@ async function main(argv) {
     }
     case 'app-id': {
       const app = await findApp(call)
-      if (!app) throw new Error('there is no app record for app.opentodo yet: create it in App Store Connect → Apps → + → New App')
+      if (!app) throw new Error(`there is no app record for ${BUNDLE_IDS[0].identifier} yet: create it in App Store Connect → Apps → + → New App`)
       console.log(app.id)
       return
     }
@@ -409,7 +442,7 @@ async function main(argv) {
         return
       }
       const app = await findApp(call)
-      if (!app) throw new Error('there is no app record for app.opentodo yet: create it in App Store Connect → Apps → + → New App')
+      if (!app) throw new Error(`there is no app record for ${BUNDLE_IDS[0].identifier} yet: create it in App Store Connect → Apps → + → New App`)
       console.log(nextBuildNumber(v.code, await existingBuilds(call, app.id, v.version)))
       return
     }
@@ -425,8 +458,13 @@ async function main(argv) {
       await setWhatToTest(call, { version, build, text })
       return
     }
+    case 'processed': {
+      const [version, build] = args
+      await waitForProcessing(call, { version, build })
+      return
+    }
     default:
-      console.error('usage: node scripts/release/appstore.mjs register|version|build-number|app-id|sign|cleanup|notes …')
+      console.error('usage: node scripts/release/appstore.mjs register|version|build-number|app-id|sign|cleanup|notes|processed …')
       process.exit(2)
   }
 }

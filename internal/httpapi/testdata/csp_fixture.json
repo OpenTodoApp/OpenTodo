@@ -1,0 +1,4 @@
+{
+  "$comment": "The page's Content-Security-Policy without the assistant's provider origins: cspBase in internal/httpapi/assistant_device.go. The service worker writes this policy on every page it serves from the verified set and takes only the server's connect-src origins (OpenSpec change signed-web-app, design D7; web/src/lib/pagePolicy.ts). internal/httpapi/csp_fixture_test.go and web/src/lib/pagePolicy.test.ts keep the two equal.",
+  "base": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; connect-src 'self'"
+}
