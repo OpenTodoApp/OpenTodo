@@ -96,3 +96,13 @@ export const CompleteListNotice: StoryObj = {
     </div>
   ),
 }
+
+/** The one-time notice that memory items go with every turn (assistant-memory D4), for a consent before memory. */
+export const MemoryNotice: StoryObj = {
+  render: () => (
+    <div className="-m-4 w-full max-w-[28rem] border-l border-default bg-surface px-4 py-3">
+      <DisclosureNoticeView connected device={false} complete={false} memory onSeen={noop} onTurnOff={noop}
+        fields={['task titles and descriptions', 'notes', 'your memory items, with every message']} />
+    </div>
+  ),
+}

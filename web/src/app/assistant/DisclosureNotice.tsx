@@ -3,7 +3,8 @@
 // consent names an older, shorter list. It never asks for consent again and
 // pauses nothing. Review the list shows the full list in place, Turn off the
 // assistant withdraws the consent (as Settings does), and Got it records on the
-// server that this version was seen, so no device shows it again.
+// server that this version was seen, so no device shows it again. A consent
+// before memory hears once that memory items go with every turn (assistant-memory D4).
 import { useId, useState } from 'react'
 import { api } from '../../lib/api'
 import { disclosureField } from '../../lib/assistantDisclosure'
@@ -19,6 +20,9 @@ export interface DisclosureNoticeViewProps {
   fields: string[]
   /** The routines paragraph belongs to the server's assistant. */
   device: boolean
+  /** What to tell: that the list is complete, that memory is sent, or both (default: the list). */
+  complete?: boolean
+  memory?: boolean
   connected: boolean
   error?: string | null
   /** Start with the list open (stories). */
@@ -28,14 +32,15 @@ export interface DisclosureNoticeViewProps {
 }
 
 /** The notice without state (rendered to markup in tests and stories). */
-export function DisclosureNoticeView({ fields, device, connected, error, open: initial = false, onSeen, onTurnOff }: DisclosureNoticeViewProps) {
+export function DisclosureNoticeView({ fields, device, connected, error, open: initial = false, complete = true, memory = false, onSeen, onTurnOff }: DisclosureNoticeViewProps) {
   const [open, setOpen] = useState(initial)
   const listId = useId()
   const titleId = useId()
   return (
     <section className="space-y-2 rounded-card border border-default bg-sunken px-3 py-2 text-body text-default dark:bg-raised" aria-labelledby={titleId} data-disclosure-notice>
-      <h3 id={titleId} className="font-medium">{t('The list of what the assistant sends is now complete')}</h3>
-      <p>{t('It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.')}</p>
+      <h3 id={titleId} className="font-medium">{complete ? t('The list of what the assistant sends is now complete') : t('The assistant now remembers what you tell it')}</h3>
+      {complete && <p>{t('It now names everything the assistant could already read and send to the model provider, such as notes, tracked time, routines, calendar frames and attachment names. Nothing new is sent, and your consent still counts.')}</p>}
+      {memory && <p data-disclosure-memory>{t('Facts you keep in Memory are sent to the model provider with every message, as your stated preferences. You review each one before it is kept, and your consent still counts.')}</p>}
       {open && (
         <div id={listId} className="space-y-2" data-disclosure-notice-list>
           <ul className="list-disc space-y-0.5 pl-5">
@@ -64,7 +69,7 @@ export function DisclosureNoticeView({ fields, device, connected, error, open: i
  */
 export function DisclosureNotice({ status, connected, onStatus }: { status: AssistantStatus | null; connected: boolean; onStatus?: (s: AssistantStatus) => void }) {
   const [error, setError] = useState<string | null>(null)
-  if (!status?.disclosure_notice) return null
+  if (!status?.disclosure_notice && !status?.memory_notice) return null
   const run = async (call: () => Promise<AssistantStatus>, after?: () => unknown) => {
     setError(null)
     try {
@@ -78,6 +83,7 @@ export function DisclosureNotice({ status, connected, onStatus }: { status: Assi
   }
   return (
     <DisclosureNoticeView fields={status.fields} device={status.mode === 'device'} connected={connected} error={error}
+      complete={!!status.disclosure_notice} memory={!!status.memory_notice}
       onSeen={() => run(api.assistantDisclosureSeen)}
       // Withdrawing the consent is the off switch (Settings → Integrations → Assistant); a device announces its capabilities again.
       onTurnOff={() => run(() => api.setMyAssistant({ consent: false }), refreshCapabilities)} />

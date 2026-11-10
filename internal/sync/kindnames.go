@@ -45,6 +45,7 @@ var kindNames = map[kind]string{
 	kThemeDoc:        "theme_doc",
 	kSector:          "sector",
 	kObjectiveTitle:  "objective_title",
+	kMemoryText:      "memory_text",
 	kObjectivePeriod: "objective_period",
 	kRadius:          "radius",
 }

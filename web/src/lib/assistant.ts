@@ -267,6 +267,8 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
     switch (c.entity) {
       case 'project': return { title: t('New project: {name}', { name: String(p.name ?? '') }), lines: [] }
       case 'label': return { title: t('New label: {name}', { name: String(p.name ?? '') }), lines: [] }
+      // assistant-memory D2: a fact to remember, applied like any other item.
+      case 'memory': return { title: t('Remember: {text}', { text: String(p.text ?? '') }), lines: [] }
       case 'comment': {
         const task = names.tasks.get(String(p.task_id)) ?? t('a task')
         return { title: t('Comment on “{task}”', { task: clip(task, 50) }), lines: [clip(String(p.body ?? ''), 140)] }
@@ -353,7 +355,15 @@ export async function reviewChangeSet(changes: ProposedChange[]): Promise<Review
     }
   }
   const review: Review = { items: [], dropped: [] }
+  // Memory holds at most 20 live items (assistant-memory): new ones past the room are left out.
+  // lib/memory loads only with a memory item, keeping it out of the first load.
+  const mem = changes.some((c) => c.entity === 'memory' && c.create) ? await import('./memory') : null
+  let room = mem ? mem.MAX_MEMORY_ITEMS - (await mem.liveMemory()).length : 0
   for (const c of changes) {
+    if (c.entity === 'memory' && c.create && room-- <= 0) {
+      review.dropped.push(t('Memory holds 20 items, so “{text}” was left out. Remove one in Settings first.', { text: clip(String(c.patch.text ?? ''), 60) }))
+      continue
+    }
     const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
     if (!c.create && (!local || local.deleted_at)) {
       const { title } = describe(c, undefined, names)

@@ -77,6 +77,9 @@ const (
 	// KindObjective is a quarterly or weekly objective (OpenSpec change
 	// plan-objectives, D7), restored verbatim from an own export with its id.
 	KindObjective = "objective"
+	// KindMemory is a fact the assistant remembers (OpenSpec change
+	// assistant-memory, D1), restored verbatim from an own export with its id.
+	KindMemory = "memory"
 )
 
 // Due is a floating due date with an optional wall-clock time.

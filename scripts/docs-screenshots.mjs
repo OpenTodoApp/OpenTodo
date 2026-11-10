@@ -100,6 +100,11 @@ async function context(theme, opts = {}) {
   return c
 }
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
+/** Clears the assistant's Memory through its card (assistant-memory shots). */
+async function clearMemory(p) {
+  await p.locator('[data-memory-clear]').click(); await p.getByRole('alertdialog').getByRole('button', { name: 'Clear all' }).click()
+  await p.locator('[data-memory-text]').first().waitFor({ state: 'detached' })
+}
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const row = (p, title) => p.getByRole('button', { name: new RegExp('^' + esc(title)) }).first()
 const detail = (p) => p.locator('[data-detail-for]')
@@ -941,6 +946,21 @@ const shots = [
     const box = await group.boundingBox()
     return { x: Math.max(0, box.x - 24), y: Math.max(0, box.y - 24), width: box.width + 48, height: box.height + 48 }
   } },
+  // The assistant card's Memory (assistant-memory): three facts added there, cleared after each shot.
+  { name: 'assistant-memory', server: 'assistant', async run(p) {
+    await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())
+    const group = p.locator('[data-assistant-card-group="assistant-memory"]'); await group.waitFor(); await settle(p, 1500)
+    if (await group.locator('[data-memory-text]').count()) await clearMemory(p)
+    for (const text of ['Works Monday to Thursday', 'Mornings are for deep work; meetings after 14:00', 'Anna is my manager']) {
+      await group.locator('[data-memory-add]').click()
+      await group.locator('[data-memory-input]').fill(text); await group.locator('[data-memory-input]').press('Enter')
+      await group.locator('[data-memory-text]', { hasText: text }).waitFor()
+    }
+    await p.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur())
+    await group.evaluate((el) => el.scrollIntoView({ block: 'center' })); await p.mouse.move(2, 2); await settle(p, 600)
+    const box = await group.boundingBox()
+    return { x: Math.max(0, box.x - 24), y: box.y + 2, width: box.width + 48, height: box.height + 14 }
+  }, async after(p) { await clearMemory(p); await settle(p, 2500) } },
 ]
 
 // ------------------------------------------------------------------ run

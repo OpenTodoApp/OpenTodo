@@ -239,6 +239,8 @@ var consentFields = []string{
 	"your free time, worked out from your calendar events, frames, slots and timed tasks",
 	"tracked time and its notes",
 	"names of members and groups of shared projects and workspaces",
+	// assistant-memory D4: the person's own saved facts, with every turn.
+	"your memory items, with every message",
 	"your display name, today's date and your time zone",
 	"the messages you type",
 	"photos you add",
@@ -260,6 +262,7 @@ var deviceConsentFields = []string{
 	"calendar frames and slots",
 	"your free time, worked out from your calendar events, frames, slots and timed tasks",
 	"tracked time and its notes",
+	"your memory items, with every message",
 	"your display name, today's date and your time zone",
 	"the messages you type",
 	"photos you add",
@@ -324,6 +327,8 @@ func (s *Server) myAssistant(ctx context.Context, u *auth.User) (map[string]any,
 		"routines_consented": consent.RoutinesValid(route.Provider),
 		// disclosure_notice: tell once that the list is now complete (assistant-disclosure-notice D2).
 		"disclosure_notice": consent.NeedsNotice(),
+		// memory_notice: tell once that memory items are sent with every turn (assistant-memory D4).
+		"memory_notice":     consent.NeedsMemoryNotice(),
 		"allow_member_keys": set.AllowMemberKeys, "own_key_set": sec.Has(assistant.UserKey(u.ID, route.Provider)),
 		"server_own_key_set": sec.Has(assistant.UserKey(u.ID, set.DefaultProvider)),
 		"operator_key_set":   sec.Has(assistant.OperatorKey(set.DefaultProvider)) || set.DefaultProvider == assistant.Compatible,

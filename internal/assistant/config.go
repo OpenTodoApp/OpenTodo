@@ -73,7 +73,10 @@ const DefaultMonthlyCap = 500_000
 // (assistant-time-blocks) names the free time find_free_time returns: free
 // stretches worked out from data the list already named or the calendar the
 // person sees (event times, never titles), so earlier consents still count.
-const DisclosureVersion = 5
+// Version 6 (assistant-memory D4) names the memory items sent with every turn:
+// facts the person saved themselves, so earlier consents still count and the
+// person is told once (MemoryDisclosureVersion).
+const DisclosureVersion = 6
 
 // MinDisclosureVersion is the oldest disclosure a consent may name and still count.
 const MinDisclosureVersion = 1
@@ -83,6 +86,11 @@ const MinDisclosureVersion = 1
 // that names an older one keeps counting, but its person is told once that
 // the list is now complete (assistant-disclosure-notice D2).
 const CompleteDisclosureVersion = 4
+
+// MemoryDisclosureVersion is the first disclosure that names memory items
+// (assistant-memory D4). A consent that names an older one keeps counting, and
+// its person is told once that saved memory is sent with every turn.
+const MemoryDisclosureVersion = 6
 
 // ProviderSettings is one provider's owner configuration.
 type ProviderSettings struct {
@@ -516,6 +524,13 @@ type Consent struct {
 // its notice was not dismissed (assistant-disclosure-notice D2).
 func (c *Consent) NeedsNotice() bool {
 	return c.Current() && c.DisclosureVersion < CompleteDisclosureVersion && c.SeenVersion < CompleteDisclosureVersion
+}
+
+// NeedsMemoryNotice reports whether the person should be told once that memory
+// items are sent with every turn: a consent that still counts names a
+// disclosure before memory and its notice was not dismissed (assistant-memory D4).
+func (c *Consent) NeedsMemoryNotice() bool {
+	return c.Current() && c.DisclosureVersion < MemoryDisclosureVersion && c.SeenVersion < MemoryDisclosureVersion
 }
 
 // MarkDisclosureSeen records that the person saw the current disclosure's

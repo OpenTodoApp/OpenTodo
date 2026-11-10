@@ -53,6 +53,8 @@ type State struct {
 	Themes []opsync.Entity
 	// Objectives are quarterly and weekly objectives, deleted ones included (plan-objectives D7).
 	Objectives []opsync.Entity
+	// Memory is what the assistant remembers, deleted items included (assistant-memory D1).
+	Memory []opsync.Entity
 	// Notes are standalone notes, deleted ones included (notes-overview D9).
 	Notes []opsync.Entity
 	// Rules are the account's automation rules (automation-rules).
@@ -284,7 +286,7 @@ func sectionKey(projectID, name string) string {
 func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID func() string) *Plan {
 	pl := &planner{opts: opts, st: st, now: now.UnixMilli(), newID: newID, position: now.UnixMilli(), files: parsed.Files,
 		byKind: map[string]map[string]opsync.Entity{KindProject: {}, KindLabel: {}, KindTask: {},
-			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}, KindNote: {}, KindTheme: {}, KindObjective: {}},
+			KindSection: {}, KindReminder: {}, KindView: {}, KindRule: {}, KindUserPrefs: {}, KindAttachment: {}, KindTimeEntry: {}, KindPlace: {}, KindField: {}, KindReview: {}, KindProjectPrefs: {}, KindNote: {}, KindTheme: {}, KindObjective: {}, KindMemory: {}},
 		projectByName: map[string]string{}, labelByName: map[string]string{}, fingerprints: map[string]string{},
 		implicitProj: map[string]*implicit{}, implicitByID: map[string]*implicit{}, implicitLbl: map[string]*implicit{},
 		sectionByKey: map[string]string{}, implicitSec: map[string]*implicit{}, createdBySource: map[string]string{}}
@@ -292,7 +294,7 @@ func BuildPlan(parsed *Parsed, opts Options, st *State, now time.Time, newID fun
 		st.Remembered = map[string]string{}
 	}
 	for kind, list := range map[string][]opsync.Entity{KindProject: st.Projects, KindLabel: st.Labels, KindTask: st.Tasks,
-		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes, KindTheme: st.Themes, KindObjective: st.Objectives} {
+		KindSection: st.Sections, KindReminder: st.Reminders, KindView: st.Views, KindRule: st.Rules, KindUserPrefs: st.UserPrefs, KindAttachment: st.Attachments, KindTimeEntry: st.TimeEntries, KindPlace: st.Places, KindField: st.Fields, KindReview: st.Review, KindProjectPrefs: st.ProjectPrefs, KindNote: st.Notes, KindTheme: st.Themes, KindObjective: st.Objectives, KindMemory: st.Memory} {
 		for _, e := range list {
 			id := str(e, "id")
 			pl.byKind[kind][id] = e

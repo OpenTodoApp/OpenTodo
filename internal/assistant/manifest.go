@@ -103,6 +103,18 @@ type Manifest struct {
 	RoutineDraft DraftManifest `json:"routine_draft"`
 	// OpenProposal is how a turn amends an open proposal (assistant-proposal-editing D3).
 	OpenProposal OpenManifest `json:"open_proposal"`
+	// Memory is the memory items' note in the instructions, their limits and
+	// remember (assistant-memory D2, D3).
+	Memory MemoryManifest `json:"memory"`
+}
+
+// MemoryManifest is what a device needs to send memory and run remember.
+type MemoryManifest struct {
+	Note     string            `json:"note"`
+	MaxItems int               `json:"max_items"`
+	MaxText  int               `json:"max_text"`
+	Messages map[string]string `json:"messages"`
+	Tool     ManifestTool      `json:"tool"`
 }
 
 // OpenManifest is the open proposal's note in the instructions, its most items
@@ -159,6 +171,10 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 		RoutineDraft: draftManifest(), ViewDisplay: ViewDisplayTools(), AlwaysDisplay: AlwaysDisplayTools(),
 		OpenProposal: OpenManifest{Note: OpenProposalNote, MaxItems: MaxOpenProposal, Tool: ManifestTool{Name: DropTool.Name, Kind: "proposal", Description: DropTool.Description,
 			InputSchema: DropTool.Schema, Strict: strictSchema(DropTool.Schema, false), StrictNullable: strictSchema(DropTool.Schema, true)}},
+		Memory: MemoryManifest{Note: MemoryNote, MaxItems: MaxMemoryItems, MaxText: MaxMemoryText,
+			Messages: map[string]string{"full": MemoryFullMessage, "duplicate": MemoryDuplicateMessage, "invalid": MemoryInvalidMessage, "proposed": MemoryProposedNote, "unavailable": memoryUnavailableReason},
+			Tool: ManifestTool{Name: RememberTool.Name, Kind: "memory", Description: RememberTool.Description, InputSchema: RememberTool.Schema,
+				Strict: strictSchema(RememberTool.Schema, false), StrictNullable: strictSchema(RememberTool.Schema, true)}},
 	}
 	offered := map[string]bool{}
 	for _, t := range deviceTools {

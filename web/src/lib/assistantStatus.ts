@@ -21,6 +21,8 @@ export interface AssistantStatus {
   consent?: { accepted_at: number; disclosure_version: number; provider: string; routines_version?: number; seen_version?: number }
   /** assistant-disclosure-notice: tell once that the list is now complete (absent on older servers). */
   disclosure_notice?: boolean
+  /** Tell once that memory items are sent with every turn (assistant-memory D4). */
+  memory_notice?: boolean
   /** routines-ai-step D10: the consent covers routines' AI steps (absent on older servers). */
   routines_consented?: boolean
   disclosure_version: number

@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, MemoryItem, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -1110,6 +1110,22 @@ export interface ObjectiveFields {
 }
 
 /**
+ * memory: one fact the user told the in-app assistant to remember (OpenSpec
+ * change assistant-memory, design D1), such as "Does not work on Fridays".
+ * Personal like an objective, with ids unique on the server; sent with every
+ * assistant turn, never to MCP clients, agent tokens or routines. Devices keep
+ * at most 20 live items; the server does not count.
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface MemoryItemFields {
+  /** The fact, one line of 1 to 200 characters (ciphertext for an encrypted account). */
+  text?: string
+  position?: number
+  created_at?: number
+  deleted_at?: number | null
+}
+
+/**
  * review: when the user last finished a weekly review (OpenSpec change
  * `stats-and-review`, design D4). One row with the entityId "me"; like
  * user_prefs it resolves to the author's personal scope (the default branch of
@@ -1225,6 +1241,9 @@ export const OP_DEFAULTS = {
   objective: {
     title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Objective, 'id' | '_clock'>,
+  memory: {
+    text: '', position: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<MemoryItem, 'id' | '_clock'>,
   review: {
     completed_at: 0, daily_at: 0, monthly_at: 0, focus_date: '', focus: '', closed_at: 0, tomorrow_note: '', closed_day: '', carry_over: '', slots_date: '', slots: '', focus_slots: '',
   } satisfies Omit<Review, 'id' | '_clock'>,
@@ -1247,5 +1266,6 @@ export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   slot: ['title'],
   place: ['name', 'address', 'geo'],
   objective: ['title'],
+  memory: ['text'],
   review: ['tomorrow_note'],
 }
