@@ -1,4 +1,4 @@
-import { Button, Icon, PageHeader, Tooltip } from '../ui'
+import { Button, Icon, PageHeader, ProgressRing, ReadAs, Tooltip } from '../ui'
 import { openConnections, useConnected } from './signals'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { api } from '../lib/api'
@@ -37,7 +37,9 @@ import { projectFlowItem } from './menus/flowMenu'
 import { maintenanceItem, reviewEveryItem } from './menus/reviewMenu'
 import { inMaintenance } from '../lib/reviewCadence'
 import { useMethodMode, type MethodMode } from '../lib/method/mode'
-import { openTaskCount, useOpenTaskCount } from '../lib/liveTasks'
+import { openTaskCount, useLiveTasks, useOpenTaskCount } from '../lib/liveTasks'
+import { percentOf, projectProgressOf, shareOf } from '../lib/progress'
+import { projectFlowOf } from '../lib/flow'
 import { useProjectPrefsRow, useProjectViewMode, useShowCompletedPref } from '../lib/liveData'
 import { saveShowCompleted } from '../lib/sections'
 import { isReusable } from '../lib/reusable'
@@ -196,6 +198,10 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const targets = useMemo(() => moveTargets(project, projects), [projects, project])
   const subCount = useMemo(() => projects.filter((p) => p.parent_id === project.id && !p.deleted_at).length, [projects, project.id])
   const openTasks = useOpenTaskCount(project.id)
+  // The project's own progress beside its title (task-progress D4): the All projects rule, patched per write; an area never finishes, so it has none.
+  const liveTasks = useLiveTasks()
+  const share = liveTasks && projectFlowOf(project) !== 'area' ? shareOf(projectProgressOf(liveTasks).get(project.id)) : null
+  const percent = share === null ? null : percentOf(share)
   const pinned = useIsFavourite('project', project.id)
   // "Show completed tasks" (project-completed-section): a list-layout preference of this device.
   const listLayout = useProjectViewMode(project.id) === 'list'
@@ -267,6 +273,11 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // The list page waits for the membership (audit M12), so this row has its final content at first paint.
   const meta = (
     <span className="flex flex-wrap items-center gap-x-2">
+      {share !== null && (
+        <span data-project-progress="" className="inline-flex min-h-6 items-center gap-1.5 text-meta tabular-nums text-muted">
+          <ProgressRing value={share} /><ReadAs label={t('{n}% done', { n: percent })}>{`${percent}%`}</ReadAs>
+        </span>
+      )}
       {membership && (
         <button type="button" className="flex min-h-6 items-center gap-1 text-meta text-muted hover:text-default" onClick={() => setSharing(true)}>
           {/* Named by its content (WCAG 2.5.3 Label in Name): the member list is visually hidden, the initials and count are not read. */}
@@ -299,6 +310,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   // members and the public links open from Share in the project menu, and 44 px controls
   // there would make the bar grow when the membership arrives.
   const phoneMeta = [
+    percent === null ? '' : t('{n}% done', { n: percent }),
     membership ? `${membership.members.length} · ${roleName(role)}` : '',
     role === 'viewer' ? t('Read-only') : '',
     inMaintenance(project) ? t('In maintenance') : '',

@@ -8,7 +8,7 @@ import { type FormEvent, useRef, useState } from 'react'
 import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { Icon, Switch } from '../../ui'
+import { Icon, ReadAs, Switch } from '../../ui'
 import { taskFlowOf } from '../../lib/flow'
 import { flowUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
@@ -59,6 +59,8 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
               <span className="block h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
             </span>
           )}
+          {/* The share as a percentage after the bar (task-progress D3), in a fixed width so the bar never moves. */}
+          {items.length > 0 && <span className="w-9 shrink-0 text-right tabular-nums text-faint" data-subtask-percent><ReadAs label={t('{n}% done', { n: pct })}>{`${pct}%`}</ReadAs></span>}
         </div>
       )}
       <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')}>

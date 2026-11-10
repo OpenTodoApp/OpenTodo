@@ -5,8 +5,8 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import type { Project } from '../lib/types'
-import { click, key, render, waitFor } from '../ui/test-utils'
+import type { Project, Task } from '../lib/types'
+import { click, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { panelOccupant, resetPanel } from './panel'
 import { PanelHost } from './PanelHost'
 import { ProjectHeader } from './ProjectHeader'
@@ -78,6 +78,29 @@ describe('project header', () => {
     expect(r.container.querySelector('[data-project-maintenance]')!.textContent).toBe('In maintenance')
     await r.rerender(<ProjectHeader project={{ ...p('home', 'Home'), status: 'active' }} />)
     await waitFor(() => !r.container.querySelector('[data-project-maintenance]'), 'no maintenance note')
+    await r.unmount()
+  })
+
+  it('shows the project\'s progress beside its title, live, and none for an area (task-progress D4)', async () => {
+    const tk = (id: string, extra: Partial<Task> = {}): Task => ({ id, title: id, description: '', project_id: 'home', parent_id: null, priority: 4, due: null, labels: [], position: 0,
+      created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, recurrence: null, series_id: null, assignee_id: null, _clock: {}, ...extra } as Task)
+    await db.tasks.bulkPut([tk('a', { completed_at: 1 }), tk('b'), tk('c'), tk('d', { parent_id: 'b', completed_at: 1 }), tk('gone', { deleted_at: 1, completed_at: 1 })])
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    const progress = () => r.container.querySelector('[data-page-lead] [data-project-progress]')
+    await waitFor(() => visibleText(progress() ?? document.createElement('i')) === '50%', 'the progress')
+    expect(spokenText(progress()!)).toBe('50% done')
+    expect(progress()!.querySelector('svg[data-progress-ring]')).not.toBeNull()
+    await db.tasks.update('b', { completed_at: 2 })
+    await waitFor(() => visibleText(progress()!) === '75%', 'the progress after a write')
+    await r.rerender(<ProjectHeader project={{ ...p('home', 'Home'), flow_mode: 'area' }} />)
+    await waitFor(() => !progress(), 'no progress for an area')
+    await r.unmount()
+  })
+
+  it('shows no progress for a project without tasks', async () => {
+    const r = await render(<ProjectHeader project={p('home', 'Home')} />)
+    await waitFor(() => r.container.querySelector('[data-project-name]')?.textContent === 'Home', 'the header')
+    expect(r.container.querySelector('[data-project-progress]')).toBeNull()
     await r.unmount()
   })
 

@@ -10,7 +10,7 @@ import { t } from '../../../lib/i18n'
 import { resolveLabels } from '../../../lib/labels'
 import { useAllLabels, useAllProjects, useMembershipMap } from '../../../lib/localData'
 import { canEditTask, memberName, useMe } from '../../../lib/sharing'
-import { Icon } from '../../../ui'
+import { Icon, ProgressRing } from '../../../ui'
 import { act } from '../../actionError'
 import { useDateTimeFormat } from '../../DateTimePrefsProvider'
 import { Markdown } from '../../Markdown'
@@ -49,7 +49,7 @@ export default function TaskBlock({ block }: { block: Extract<AssistantBlock, { 
           // The subtasks as task rows (ticking is the rows' own completion), under the panel's heading and count.
           <section aria-label={t('Subtasks')} data-subtasks>
             <h3 className="mb-1 flex items-center gap-2 text-meta font-semibold text-muted">
-              <Icon name="list" className="text-faint" />{t('Subtasks')}<span className="font-normal text-faint">{t('{done} of {total}', { done, total: data.subtasks.length })}</span>
+              <Icon name="list" className="text-faint" />{t('Subtasks')}<span className="inline-flex items-center gap-1 font-normal text-faint" data-subtask-count><ProgressRing value={done / data.subtasks.length} size={12} className="" />{t('{done} of {total}', { done, total: data.subtasks.length })}</span>
             </h3>
             <ul className="-mx-3">
               {data.subtasks.map((s) => (

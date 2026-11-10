@@ -24547,7 +24547,9 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "{n}% done": [
-    "web/src/app/ProjectsTable.tsx"
+    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/ProjectsTable.tsx",
+    "web/src/app/task-detail/Subtasks.tsx"
   ],
   "{n}-day streak": [
     "web/src/lib/habits.ts"
