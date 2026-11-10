@@ -1,14 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState, type ReactNode } from 'react'
-import { NO_NOTE_FILTERS, type NoteEntry, type NoteFilters } from '../../lib/noteList'
-import { NoteFiltersSheet, NoteFilterControls } from './NoteFilters'
+import type { NoteEntry } from '../../lib/noteList'
+import type { NoteToken } from '../../lib/noteQuery'
+import { NoteSearchField } from './NoteSearchField'
 import { NoteMenu, NoteRow } from './NoteRow'
 import { GroupHeading, NewNoteRow, NotesEmpty } from './NotesPage'
 import { HEX, label, project } from '../stories/fixtures'
 
 // Core screen: Notes (`/notes`, OpenSpec change notes-overview task 4.11): the note
-// row, the empty state and the filter row (weekly in the inventory); the home with
-// Pinned and Recent and the New note row of the search field (notes-home).
+// row, the empty state and the search field (weekly in the inventory); the home with
+// Pinned and Recent and the New note row of the search field (notes-home); one-line
+// rows and the search chips (notes-space).
 const meta: Meta = { title: 'Screens/Notes' }
 export default meta
 
@@ -101,21 +103,26 @@ export const Empty: StoryObj = {
   render: () => <Column><NotesEmpty onNew={() => {}} /></Column>,
 }
 
-function Filters({ phone }: { phone?: boolean }) {
-  const [filters, setFilters] = useState<NoteFilters>({ ...NO_NOTE_FILTERS, source: 'note', projectId: home.id })
-  const props = { filters, onChange: setFilters, projects: [home, work], labels: [reference, ideas] }
+function Search({ text: initial = '', chips }: { text?: string; chips: NoteToken[] }) {
+  const [tokens, setTokens] = useState<NoteToken[]>(chips)
+  const [text, setText] = useState(initial)
+  const world = { projects: [home, work], labels: [reference, ideas], notes: [] }
   return (
     <Column>
-      <div className="flex flex-wrap items-center gap-2">
-        <input type="search" className="ui-input min-w-0 flex-[1_1_14rem]" aria-label="Search notes" placeholder="Search notes" />
-        {phone ? <NoteFiltersSheet {...props} /> : <NoteFilterControls {...props} />}
+      <div className="flex max-w-2xl">
+        <NoteSearchField text={text} onText={setText} tokens={tokens} onTokens={setTokens} projects={[home, work]} labels={[reference, ideas]} world={world}
+          inputRef={null} onListKey={() => {}} label="Search notes" />
       </div>
     </Column>
   )
 }
 
-/** The filter row on a computer: Source, Project and Label, two of them set. */
-export const FilterRow: StoryObj = { render: () => <Filters /> }
+/** The search field with tokens as chips (notes-space D6): a project, a label, a kind and an age, then words. */
+export const SearchChips: StoryObj = {
+  render: () => <Search text="tiles" chips={[{ key: 'in', id: home.id, name: home.name }, { key: 'label', id: reference.id, name: reference.name }, { key: 'kind', value: 'note' }, { key: 'changed', value: '<7d' }]} />,
+}
 
-/** On a phone the filters sit behind one Filters button. */
-export const FilterButton: StoryObj = { render: () => <Filters phone /> }
+/** A chip whose project was deleted reads struck out and matches nothing. */
+export const SearchChipGone: StoryObj = {
+  render: () => <Search chips={[{ key: 'in', id: 'p-gone', name: 'Old flat' }, { key: 'pinned' }]} />,
+}

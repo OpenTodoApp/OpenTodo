@@ -346,6 +346,13 @@ const shots = [
   }, async after(p) {
     for (const id of p.notesHome ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
   } },
+  // Search tokens (notes-space): a kind chip, then `in:` typed with the project suggestions open.
+  { name: 'note-tokens', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const field = p.locator('[data-note-search]'); await field.click()
+    await field.pressSequentially('kind:task in:', { delay: 15 })
+    await p.locator('[data-note-suggestions] [role="option"]').first().waitFor(); await p.mouse.move(900, 700); await settle(p, 500)
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())

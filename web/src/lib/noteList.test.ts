@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { filterEntries, homeGroups, isDefaultFilters, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, sameEntries, updatedOf, type NoteEntry } from './noteList'
+import { filterByTokens, tokensFromFilters } from './noteQuery'
+import { homeGroups, NO_NOTE_FILTERS, NoteIndex, noteEntries, NOTES_PAGE, sameEntries, updatedOf, type NoteEntry, type NoteFilters } from './noteList'
 import { LinkIndex, worldOf } from './noteLinks'
 import * as search from './noteSearch'
 import type { Note, Project, Task } from './types'
@@ -10,6 +11,11 @@ const c = (ts: number) => ({ ts, device: 'd' })
 const task = (id: string, over: Partial<Task> = {}): Task => ({ id, title: id, description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, _clock: {}, ...over } as Task)
 const project = (id: string, over: Partial<Project> = {}): Project => ({ id, name: id, color: '', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, _clock: {}, ...over } as Project)
 const note = (id: string, over: Partial<Note> = {}): Note => ({ id, title: id, description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, _clock: {}, ...over } as Note)
+
+
+/** The filters of an earlier version, as the chips they become (notes-space D6). */
+const filterEntries = (list: NoteEntry[], f: NoteFilters, linked?: ReadonlySet<string> | null) =>
+  filterByTokens(list, tokensFromFilters(f, { projects: [], labels: [], notes: [] }), { projects: [], pinnedIds: [], linked: linked ?? null, linkedWith: () => null, now: 0 }) ?? []
 
 describe('the notes list (D3)', () => {
   it('lists the three sources newest first, by the note fields only', () => {
@@ -137,12 +143,6 @@ describe('Pinned and Recent (D4)', () => {
     expect(g.pinned).toHaveLength(1)
     expect(g.recent).toHaveLength(NOTES_PAGE + 4)
     expect(g.recent.slice(0, NOTES_PAGE).some((e) => e.key === 'note:n0')).toBe(false)
-  })
-
-  it('the default state is no source, project or label', () => {
-    expect(isDefaultFilters(NO_NOTE_FILTERS)).toBe(true)
-    expect(isDefaultFilters({ ...NO_NOTE_FILTERS, source: 'unlinked' })).toBe(false)
-    expect(isDefaultFilters({ ...NO_NOTE_FILTERS, labelId: 'l' })).toBe(false)
   })
 })
 
