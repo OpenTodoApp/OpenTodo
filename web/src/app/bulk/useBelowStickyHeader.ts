@@ -1,8 +1,8 @@
-// The selection bar stays in sight while a long list scrolls (issue 518): it is
+// An element that stays in sight while a long list scrolls (the sticky quick add):
 // sticky, pinned just below the page's own sticky header, whose height depends
 // on the page (one row, a second row of tabs, a wrapped title). The offset is
 // measured from the header and follows its size; a header that does not stick
-// (a phone's day head scrolls away) leaves the bar at the very top.
+// (a phone's day head scrolls away) leaves the element at the very top.
 import { type RefObject, useLayoutEffect, useState } from 'react'
 
 /** The `top` (px) that keeps `el` below the sticky page header of its page. */

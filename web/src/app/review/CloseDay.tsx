@@ -146,15 +146,15 @@ export function CloseDay({ initialStep = 'done', initialDay }: { initialStep?: C
   const ready = !!summary && !!day && !closed
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
   const showReopen = reopenable && !!live && !closed
+  const reopen = showReopen && <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(live.today)} data-reopen-day>{t('Reopen the day')}</Button>
 
   return (
     <PageBody width="list">
+      {/* On a phone Reopen stands in the page, under the shell's bar and its one divider; in the header it drew a second (no-layout-jump). */}
       <PageHeader title={t('Close the day')} icon="moon" meta={meta} help="review/close"
-        actions={showReopen || (ready && desktop) ? <>
-          {showReopen && <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={() => reopenDayAction(live.today)} data-reopen-day>{t('Reopen the day')}</Button>}
-          {ready && desktop && <CloseProgress step={step} seen={seen} onStep={go} />}
-        </> : undefined}
+        actions={desktop && (showReopen || ready) ? <>{reopen}{ready && <CloseProgress step={step} seen={seen} onStep={go} />}</> : undefined}
         back={{ label: t('Today'), onClick: () => navigate({ view: 'today' }), hideFrom: 'lg' }} />
+      {!desktop && reopen && <div className="pt-2">{reopen}</div>}
       {closed && live ? (
         <DoneForToday figures={closed} onBack={() => navigate({ view: 'today' })}
           onReopen={reopenable ? () => { reopenDayAction(live.today); setClosed(null) } : undefined} />

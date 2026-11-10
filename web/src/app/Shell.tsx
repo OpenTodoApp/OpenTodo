@@ -5,7 +5,7 @@ import type { User } from '../lib/types'
 import { resolveStartView } from '../lib/views'
 import { describeRejected } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
-import { dismissRejected, useSyncStatus } from '../lib/sync'
+import { useSyncStatus } from '../lib/sync'
 import { canonicalPath, navigate, offersQuickAdd, parseRoute, useRoute } from './router'
 import { SIDEBAR_COLLAPSED_REM, SIDEBAR_DEFAULT_REM, SIDEBAR_MAX_REM, SIDEBAR_MIN_REM, setSidebarCollapsed, setSidebarWidth, toggleSidebarCollapsed, useSidebarLayout } from './sidebarLayout'
 import { FilterView } from './FilterView'
@@ -36,6 +36,7 @@ import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
 import { watchViewerZone } from '../lib/dates'
 import { ActionToasts } from './ActionToasts'
+import { showActionToast } from './bulk/toastStore'
 import { DailyCheckToast } from './method/DailyCheckToast'
 import { PanelBoundary } from './PanelBoundary'
 import { TemplateDialogHost } from './TemplateDialogs'
@@ -159,9 +160,12 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
-  const [notice, setNotice] = useState<string | null>(null)
-  // Changes the server refused after a role change (project-sharing).
+  // Changes the server refused after a role change (project-sharing): a toast, which never moves the page (app-shell "Notices are toasts").
   const { rejected } = useSyncStatus()
+  useEffect(() => {
+    if (!rejected) return
+    showActionToast(t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) }))
+  }, [rejected])
   // A travelling device: re-read the time zone whenever the app becomes visible
   // (absolute-datetimes), so zoned dues re-render in the new zone.
   useEffect(() => watchViewerZone(), [])
@@ -186,7 +190,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       else if (start.kind === 'display') navigate(parseRoute(start.path), { replace: true })
       else {
         if (start.view !== 'inbox') navigate({ view: start.view }, { replace: true })
-        if (start.removed) setNotice(t('Your start view was deleted, so the Inbox opened instead.'))
+        if (start.removed) showActionToast(t('Your start view was deleted, so the Inbox opened instead.'))
       }
     })
     return () => {
@@ -290,22 +294,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
         <PhoneBar onMenu={() => setSidebarOpen(true)} />
-        {notice && (
-          <div role="status" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{notice}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setNotice(null)}>{t('Dismiss')}</button>
-          </div>
-        )}
-        {rejected && (
-          <div role="alert" className="flex items-start gap-2 border-b border-warning bg-warning-soft px-4 py-2 text-body text-on-warning-soft md:px-6">
-            <p className="flex-1">{t('{rejected}. The server\'s values are shown again.', { rejected: describeRejected(rejected) })}</p>
-            <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={dismissRejected}>{t('Dismiss')}</button>
-          </div>
-        )}
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2). */}
+        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2);
+            the room under the selection bar is in index.css (no-layout-jump). */}
         <div ref={content} id="content" data-add-room={phoneChrome || undefined}
           className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
