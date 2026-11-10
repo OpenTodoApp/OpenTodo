@@ -1,0 +1,1 @@
+- **"Sign in with …" completes inside the iPhone app.** The provider's page opened in Safari and the app stayed signed out with an error, so where single sign-on is required members could not use the app. The sign-in now runs in the app, with the site named above it and a way back, as in the Android app; a login wall that asks again after the app is connected works the same way.
