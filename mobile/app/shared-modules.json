@@ -103,6 +103,8 @@
     "web/src/lib/rules/draft.ts",
     "web/src/lib/rules/index.ts",
     "web/src/lib/rules/match.ts",
+    "web/src/lib/rules/run/types.ts",
+    "web/src/lib/rules/stepData.ts",
     "web/src/lib/rules/steps.ts",
     "web/src/lib/sections.ts",
     "web/src/lib/sectorWrites.ts",
