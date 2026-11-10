@@ -58,7 +58,9 @@ function Settled({ part, children }: { part: string; children: ReactNode }) {
     let stop = false
     const tick = () => {
       if (stop) return
-      if (root.current?.querySelector(`[data-loop-part="${part}"] ${part === 'clarify' ? '[data-triage-card]' : '*'}`)) { (document.activeElement as HTMLElement | null)?.blur(); setDone(true); return }
+      const ready = root.current?.querySelector(`[data-loop-part="${part}"] ${part === 'clarify' ? '[data-triage-card]' : '*'}`)
+      // The triage card takes the focus once its task is on screen: wait for that, then rest without the ring.
+      if (ready && (part !== 'clarify' || document.activeElement === ready)) { (document.activeElement as HTMLElement | null)?.blur(); setDone(true); return }
       setTimeout(tick, 50)
     }
     tick()
