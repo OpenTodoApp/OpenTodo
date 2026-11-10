@@ -29,6 +29,13 @@ test('validation names what is wrong', () => {
   assert.deepEqual(validateScenario({ name: 'ok', title: 'Ok', turns: [{ say: 'hi', expect: {} }] }), [])
 })
 
+// assistant-in-context 1.3: a skill turn names its skill and the seed tasks it is about.
+test('a skill scenario names a skill and seed tasks', () => {
+  const p = validateScenario({ name: 'skill', title: 'x', skill: '', selected: ['nope'], seed: { tasks: [{ key: 'a', title: 'A' }] }, turns: [{ say: 'hi', expect: {} }] }, 's.json')
+  for (const want of ['skill: a built-in skill id', 'unknown seed key "nope"']) assert.ok(p.some((x) => x.includes(want)), `missing "${want}" in ${p.join(' | ')}`)
+  assert.deepEqual(validateScenario({ name: 'skill', title: 'x', skill: 'find-slot', selected: ['a'], seed: { tasks: [{ key: 'a', title: 'A' }] }, turns: [{ say: 'hi', expect: {} }] }), [])
+})
+
 test('the stream body parses into events', () => {
   const body = 'event: status\ndata: {"text":"Looking at Today…"}\n\nevent: text\ndata: {"text":"Hi"}\n\nevent: block\ndata: {"kind":"tasks","ids":["a"]}\n\nevent: done\ndata: {"stop_reason":"end_turn"}\n\n'
   const s = summarize(parseEvents(body))

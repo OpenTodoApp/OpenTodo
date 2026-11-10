@@ -933,6 +933,13 @@ const shots = [
     const main = await p.locator('main').boundingBox(); const top = await h.boundingBox()
     return { x: main.x, y: Math.max(0, top.y - 20), width: main.width, height: 560 }
   } },
+  // Brief me under Assistant in Today's menu (assistant-in-context), the menu open.
+  { name: 'assistant-in-context', server: 'assistant', async run(p) {
+    await go(p, assistantBase, '/today', () => p.getByRole('heading', { name: 'Today', level: 1 }).waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
+    const menu = p.getByRole('menu'); await p.locator('[data-assistant-brief]').waitFor(); await p.mouse.move(2, 2); await settle(p, 500)
+    return clipOf(p, menu, 16)
+  }, async after(p) { await p.keyboard.press('Escape') } },
   // The owner's switch for the on-device assistant of encrypted accounts (assistant-on-device), not saved.
   { name: 'assistant-device-owner', server: 'assistant', async run(p) {
     await go(p, assistantBase, '/settings/integrations/assistant', () => p.getByRole('heading', { name: 'Assistant', level: 1 }).waitFor())

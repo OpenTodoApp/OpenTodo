@@ -10,7 +10,7 @@ func TestPrompts(t *testing.T) {
 	f := newFixture(t)
 	r := f.call("u1", "prompts/list", nil)
 	list := r["result"].(map[string]any)["prompts"].([]any)
-	if len(list) != 6 || list[5].(map[string]any)["name"] != "capture" {
+	if len(list) != 10 || list[5].(map[string]any)["name"] != "capture" || list[9].(map[string]any)["name"] != "brief-today" {
 		t.Fatalf("prompts = %v", list)
 	}
 	first := list[0].(map[string]any)
