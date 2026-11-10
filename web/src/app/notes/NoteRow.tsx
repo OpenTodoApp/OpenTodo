@@ -40,7 +40,8 @@ export interface NoteRowProps {
 }
 
 /** The row grid (D5): icon, title, place, labels, time; the same tracks on every row, so the columns line up. */
-const GRID = 'grid grid-cols-[1.25rem_minmax(0,1fr)_minmax(0,6rem)_auto] @min-[40rem]/note:grid-cols-[1.25rem_minmax(0,1fr)_10rem_8rem_5rem]'
+// Narrow, the place is as wide as its name up to 5 rem (an empty one takes none), so the title keeps the room.
+const GRID = 'grid grid-cols-[1.25rem_minmax(0,1fr)_auto_auto] gap-x-2 @min-[40rem]/note:grid-cols-[1.25rem_minmax(0,1fr)_10rem_8rem_5rem] @min-[40rem]/note:gap-x-3'
 
 export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle, current, cursor, onOpen, menu }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
@@ -57,14 +58,14 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
         trigger.click()
       } : undefined}>
       <button type="button" data-note-open onClick={onOpen} aria-current={current || undefined}
-        className={`${GRID} min-w-0 flex-1 items-baseline gap-x-3 rounded-control px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
+        className={`${GRID} min-w-0 flex-1 items-baseline rounded-control px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
         <span className="flex h-5 w-5 items-center justify-center self-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>
         <span className="flex min-w-0 items-baseline gap-2" data-note-line>
           <span className={`user-text min-w-0 truncate text-body ${snippet?.length ? 'max-w-[60%] shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
           {entry.marker && <span className="shrink-0 text-meta text-faint" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
           {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted" data-note-snippet><Snippet segments={snippet} /></span> : null}
         </span>
-        <span className="flex min-w-0 items-center justify-end gap-1 text-meta text-faint @min-[40rem]/note:justify-start" data-note-place>
+        <span className="flex min-w-0 max-w-20 items-center justify-end gap-1 text-meta text-faint @min-[40rem]/note:max-w-none @min-[40rem]/note:justify-start" data-note-place>
           {project && <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />}
           <span className="truncate">{place}</span>
         </span>
