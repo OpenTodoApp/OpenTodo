@@ -189,7 +189,8 @@ async function runScenario(s, conf, runs) {
         messages.push({ role: 'user', text: t.say })
         let events
         try {
-          events = parseEvents(await api('POST', '/api/v1/assistant/turn', { messages, timezone: 'UTC', view: s.view ?? 'today' }, true))
+          events = parseEvents(await api('POST', '/api/v1/assistant/turn', { messages, timezone: 'UTC', view: s.view ?? 'today',
+            ...(s.skill ? { skill: s.skill } : {}), ...(s.selected ? { selected: s.selected.map((k) => ids[k]) } : {}) }, true))
         } catch (e) {
           events = [{ name: 'error', data: { code: 'eval', message: e.message } }]
         }

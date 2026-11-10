@@ -1,0 +1,43 @@
+{
+  "name": "brief-today",
+  "title": "Brief me shows the day's agenda and how the user is doing, and changes nothing",
+  "skill": "brief-today",
+  "seed": {
+    "tasks": [
+      {
+        "key": "late",
+        "title": "Pay the electricity bill",
+        "due": -2
+      },
+      {
+        "key": "call",
+        "title": "Call the landlord",
+        "due": 0,
+        "time": "14:00",
+        "estimate_minutes": 30
+      },
+      {
+        "key": "plan",
+        "title": "Plan the offsite",
+        "due": 0,
+        "priority": 1
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "Brief me",
+      "expect": {
+        "blocks": [
+          {
+            "kind": "calendar"
+          },
+          {
+            "kind": "stats"
+          }
+        ],
+        "changeset": false
+      }
+    }
+  ]
+}

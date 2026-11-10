@@ -7394,5 +7394,12 @@
   "The assistant forgets every item, on all your devices.": "L’assistant oublie chaque élément, sur tous vos appareils.",
   "The assistant now remembers what you tell it": "L’assistant retient désormais ce que vous lui dites",
   "Write one line of up to 200 characters.": "Écrivez une ligne de 200 caractères au plus.",
-  "your memory items, with every message": "vos éléments de mémoire, avec chaque message"
+  "your memory items, with every message": "vos éléments de mémoire, avec chaque message",
+  "Brief me": "Résumé du jour",
+  "Find a slot for “{title}”": "Trouver un créneau pour « {title} »",
+  "Find a slot": "Trouver un créneau",
+  "Rewrite this": "Reformuler",
+  "Rewrite “{title}”": "Reformuler « {title} »",
+  "What’s next in “{name}”?": "Quelle est la suite dans « {name} » ?",
+  "What’s next?": "Et ensuite ?"
 }

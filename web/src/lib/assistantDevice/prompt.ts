@@ -43,10 +43,10 @@ export function systemPrompt(p: PromptInput, now: number): string {
   const sk = p.skill
   if (sk) {
     b += `\n\nSkill: ${sk.name}\nThe user chose this skill. Follow these steps; the user's message below is the input to it.\n${sk.instructions}\n`
-    if (sk.id === 'plan-week') {
-      const w = p.workday ?? { startHour: 6, endHour: 22, dayLength: 480 }
-      b += workdayNote(w.startHour, w.endHour, w.dayLength) + '\n'
-    }
+    const w = p.workday ?? { startHour: 6, endHour: 22, dayLength: 480 }
+    if (sk.id === 'plan-week') b += workdayNote(w.startHour, w.endHour, w.dayLength) + '\n'
+    // assistant-in-context: the hours find_free_time searches within.
+    if (sk.id === 'find-slot') b += `Working day: from ${pad(w.startHour)}:00 to ${pad(w.endHour)}:00. Pass day_start_hour ${w.startHour} and day_end_hour ${w.endHour} to find_free_time.\n`
   }
   b += openSection(p.open ?? [])
   return b

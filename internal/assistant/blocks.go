@@ -208,6 +208,10 @@ var skillDisplay = map[string][]string{
 	"triage-inbox":    {"show_tasks", "ask_choice"},
 	"idea-to-project": {"show_project", "ask_choice"},
 	"capture":         {"ask_choice"},
+	// assistant-in-context.
+	"find-slot":    {"show_free_time"},
+	"project-next": {"show_board", "show_timeline", "show_tasks"},
+	"brief-today":  {"show_calendar", "show_deadlines", "show_stats"},
 }
 
 // alwaysDisplay are the display tools every turn offers, a skill's included (assistant-followups).
