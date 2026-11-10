@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import Dexie from 'dexie'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { useDatabase as databaseNamed } from '@shared/db'
+import { markLongPull, withDeferredActivity } from '@shared/activity'
 import { applyOps } from '@shared/ops'
 import type { Op } from '@shared/types'
 import { installFastIndexes, setFastIndexes } from './fastIndexes'
@@ -21,10 +22,14 @@ run('builds the rows', async () => {
   await db.open()
   const dump = JSON.parse(readFileSync(OPS!, 'utf8')) as { pages: { ops: Op[]; memberships: Record<string, unknown>[] }[] }
   const t0 = Date.now()
-  for (const [i, page] of dump.pages.entries()) {
-    await applyOps(page.ops)
-    if (i % 10 === 9) process.stderr.write(`rows: page ${i + 1} of ${dump.pages.length}, ${Date.now() - t0} ms\n`)
-  }
+  // As the sync exchange does: one deferred activity log for the whole pull, a long one.
+  await withDeferredActivity(async () => {
+    for (const [i, page] of dump.pages.entries()) {
+      if (i < dump.pages.length - 1) markLongPull()
+      await applyOps(page.ops)
+      if (i % 10 === 9) process.stderr.write(`rows: page ${i + 1} of ${dump.pages.length}, ${Date.now() - t0} ms\n`)
+    }
+  })
   const last = dump.pages.at(-1)
   if (last?.memberships.length) await db.table('memberships').bulkPut(last.memberships)
   const rows: Record<string, unknown[]> = {}

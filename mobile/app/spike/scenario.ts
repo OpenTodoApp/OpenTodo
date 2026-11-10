@@ -8,6 +8,7 @@ import { useDatabase as databaseNamed } from '@shared/db'
 import { todayList, withoutArchived } from '@shared/dayLists'
 import { logicalToday } from '@shared/dates'
 import { inboxTasks } from '@shared/inbox'
+import { withDeferredActivity } from '@shared/activity'
 import { applyOps } from '@shared/ops'
 import type { Op, Project, Task } from '@shared/types'
 import { openCandidateA, type CandidateA } from './candidateA'
@@ -15,7 +16,7 @@ import { openCandidateB } from './candidateB'
 import { installFastIndexes, setFastIndexes } from './fastIndexes'
 import { sql } from './sqlite'
 
-/** A: fake-indexeddb with the index fix (fastIndexes.ts); A0: as published; B: indexeddbshim. */
+/** A: fake-indexeddb with the index fix and the bulk start-up (fastIndexes.ts); A0: as published; B: indexeddbshim. */
 export type Candidate = 'A0' | 'A' | 'B'
 export type Rows = Record<string, Record<string, unknown>[]>
 
@@ -35,7 +36,7 @@ async function engine(candidate: Candidate): Promise<{ a: CandidateA | null }> {
   if (candidate !== 'B') {
     await installFastIndexes()
     setFastIndexes(candidate === 'A')
-    const a = openCandidateA(fileOf(candidate))
+    const a = openCandidateA(fileOf(candidate), { bulk: candidate === 'A' })
     Dexie.dependencies.indexedDB = a.indexedDB as unknown as IDBFactory
     Dexie.dependencies.IDBKeyRange = a.IDBKeyRange as unknown as typeof IDBKeyRange
     return { a }
@@ -89,7 +90,7 @@ export async function measure(candidate: Candidate, hooks: Hooks, startedAt: num
   const db = databaseNamed(DB_NAME)
   await db.open()
   const opened = performance.now()
-  if (a) out.loadedRecords = await a.load(db.backendDB())
+  if (a) { out.loadedRecords = await a.load(db.backendDB()); out.loadSteps = a.stats().load }
   const loaded = performance.now()
   const [tasks, projects] = await Promise.all([db.tasks.toArray(), db.projects.toArray()]) as [Task[], Project[]]
   const queried = performance.now()
@@ -102,6 +103,13 @@ export async function measure(candidate: Candidate, hooks: Hooks, startedAt: num
   out.open = { dexieOpenMs: ms(opened - t0), loadMs: ms(loaded - opened), queryMs: ms(queried - loaded), selectMs: ms(selected - queried), drawMs: ms(drawn - selected), totalMs: ms(drawn - t0) }
   out.tasks = tasks.length
   out.todayCount = today.length
+
+  // The activity log, read only by the activity views, after the first screen (A only).
+  if (a) {
+    const d0 = performance.now()
+    const n = await a.load(db.backendDB(), 'deferred')
+    out.deferredLoad = { records: n, ms: ms(performance.now() - d0), steps: a.stats().load }
+  }
 
   // Inbox: read again, select through the shared rule, draw.
   const i0 = performance.now()
@@ -118,7 +126,8 @@ export async function measure(candidate: Candidate, hooks: Hooks, startedAt: num
   const before = a?.stats()
   const stop = hooks.frames()
   const p0 = performance.now()
-  await applyOps(ops, { actor: 'spike-other' })
+  // As the sync exchange applies it: activity entries are written once, at its end.
+  await withDeferredActivity(() => applyOps(ops, { actor: 'spike-other' }))
   const p1 = performance.now()
   const longest = stop()
   const after = a?.stats()

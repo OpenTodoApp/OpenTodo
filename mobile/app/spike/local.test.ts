@@ -27,11 +27,11 @@ for (const candidate of (process.env.SPIKE_CANDIDATES ?? 'A,A0,B').split(',') as
   run(`candidate ${candidate}`, async () => {
     installSql(nodeSql(mkdtempSync(join(tmpdir(), `spike-${candidate}-`))))
     const rows = JSON.parse(readFileSync(ROWS!, 'utf8')) as Rows
-    console.log(JSON.stringify(await seed(candidate, rows)))
+    process.stderr.write(JSON.stringify(await seed(candidate, rows)) + "\n")
     for (let i = 0; i < 2; i++) {
       resetModuleState()
       const r = await measure(candidate, hooks, performance.now())
-      console.log(JSON.stringify(r))
+      process.stderr.write(JSON.stringify(r) + "\n")
       expect(r.pullApplied).toBe(true)
     }
   })

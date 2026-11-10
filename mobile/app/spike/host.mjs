@@ -97,25 +97,28 @@ async function run(rowsFile, bundle, out, runs = 3) {
     }
   }
 
+  const device = simctl('list', 'devices', 'booted')
+  const save = () => writeFileSync(out, JSON.stringify({ device, results }, null, 2))
   for (const candidate of ['A', 'A0', 'B']) {
     try {
       log(`${candidate}: seed`)
       const seed = await launch({ candidate, phase: 'seed' })
       log(`${candidate}: seed ${JSON.stringify(seed)}`)
-      results.push(seed)
+      results.push(seed); save()
       if (seed.error) continue
-      for (let i = 1; i <= runs; i++) {
+      // A0's pull takes minutes: one run shows it.
+      for (let i = 1; i <= (candidate === 'A0' ? 1 : runs); i++) {
         const m = await launch({ candidate, phase: 'measure', run: i })
         log(`${candidate}: run ${i} ${JSON.stringify(m)}`)
-        results.push(m)
+        results.push(m); save()
       }
     } catch (e) {
       log(`${candidate}: ${e.message}`)
-      results.push({ candidate, error: String(e.message) })
+      results.push({ candidate, error: String(e.message) }); save()
     }
   }
   server.close()
-  writeFileSync(out, JSON.stringify({ device: simctl('list', 'devices', 'booted'), results }, null, 2))
+  save()
   log(`results in ${out}`)
 }
 

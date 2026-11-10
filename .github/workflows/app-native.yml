@@ -131,7 +131,7 @@ jobs:
         continue-on-error: true
         timeout-minutes: 30
         working-directory: mobile/app
-        run: SPIKE_CANDIDATES=A,A0 SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js local 2>&1 | tee ../../dist/storage-spike/node-reference.txt
+        run: SPIKE_CANDIDATES=A SPIKE_ROWS="$RUNNER_TEMP/rows.json" npx jest -c spike/jest.config.js local 2>&1 | tee ../../dist/storage-spike/node-reference.txt
       - name: The spike's entry and Metro configuration instead of the app's
         working-directory: mobile/app
         run: |

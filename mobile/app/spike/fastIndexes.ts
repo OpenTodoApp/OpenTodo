@@ -22,13 +22,61 @@ function read(path: string, value: unknown): unknown {
   return v
 }
 
-function keyOf(path: string | string[], value: unknown): unknown {
-  if (Array.isArray(path)) {
-    const parts = path.map((p) => read(p, value))
-    return parts.some((p) => p === undefined || p === null || typeof p === 'boolean') ? undefined : parts
+const validKey = (k: unknown): boolean =>
+  (typeof k === 'number' && !Number.isNaN(k)) || typeof k === 'string' || (k instanceof Date && !Number.isNaN(k.getTime())) || (Array.isArray(k) && k.every(validKey))
+
+/** The record's key under a key path, or undefined when it has none (no entry in that index). */
+export function keyOf(path: string | string[], value: unknown): unknown {
+  const k = Array.isArray(path) ? path.map((p) => read(p, value)) : read(path, value)
+  return validKey(k) ? k : undefined
+}
+
+/** IndexedDB's key order for the keys this data has (numbers before strings, arrays by element). */
+export function cmpKeys(a: unknown, b: unknown): number {
+  const ta = Array.isArray(a) ? 3 : typeof a === 'string' ? 2 : a instanceof Date ? 1 : 0
+  const tb = Array.isArray(b) ? 3 : typeof b === 'string' ? 2 : b instanceof Date ? 1 : 0
+  if (ta !== tb) return ta - tb
+  if (ta === 3) {
+    const x = a as unknown[], y = b as unknown[]
+    for (let i = 0; i < Math.min(x.length, y.length); i++) {
+      const c = cmpKeys(x[i], y[i])
+      if (c !== 0) return c
+    }
+    return x.length - y.length
   }
-  const k = read(path, value)
-  return k === null || typeof k === 'boolean' ? undefined : k
+  const x = ta === 1 ? (a as Date).getTime() : a as number | string
+  const y = tb === 1 ? (b as Date).getTime() : b as number | string
+  return x < y ? -1 : x > y ? 1 : 0
+}
+
+/**
+ * Candidate A's start-up: puts a store's records straight into fake-indexeddb's trees,
+ * sorted and built in one pass, with every index, instead of one request per record.
+ */
+export function bulkLoad(idb: IDBDatabase, store: string, records: { key: unknown; value: unknown }[]): boolean {
+  const raw = (idb as any)._rawDatabase?.rawObjectStores?.get(store) as (RawStore & { keyGenerator: { setIfLarger(n: number): void } | null }) | undefined
+  if (!raw) return false
+  for (const r of records) if (raw.keyPath !== null) r.key = keyOf(raw.keyPath, r.value)
+  const list = records.filter((r) => r.key !== undefined).sort((x, y) => cmpKeys(x.key, y.key))
+  const build = (tree: any, sorted: unknown[]) => {
+    tree._root = tree._rebuild(sorted, undefined, false)
+    tree._numNodes = sorted.length
+    tree._numTombstones = 0
+  }
+  build(raw.records.records, list)
+  if (raw.keyGenerator) for (const r of list) if (typeof r.key === 'number') raw.keyGenerator.setIfLarger(r.key)
+  for (const ix of raw.rawIndexes.values()) {
+    const entries: { key: unknown; value: unknown }[] = []
+    for (const r of list) {
+      const k = keyOf(ix.keyPath, r.value)
+      if (k === undefined) continue
+      if (ix.multiEntry && Array.isArray(k)) for (const part of new Set(k)) entries.push({ key: part, value: r.key })
+      else entries.push({ key: k, value: r.key })
+    }
+    entries.sort((x, y) => cmpKeys(x.key, y.key) || cmpKeys(x.value, y.value))
+    build(ix.records.records, entries)
+  }
+  return true
 }
 
 /** Deletes the entries of `pk` under the old value's keys; false when one is not found. */

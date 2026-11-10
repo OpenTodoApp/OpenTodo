@@ -5,11 +5,12 @@
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import FDBDatabase from 'fake-indexeddb/lib/FDBDatabase'
 import FDBObjectStore from 'fake-indexeddb/lib/FDBObjectStore'
+import { bulkLoad } from './fastIndexes'
 import { sql, type Param, type SqlDb } from './sqlite'
 
 type Change = ['put', string, Param, string] | ['del', string, Param] | ['range', string, Param, Param, boolean, boolean] | ['clear', string]
 
-const state: { pending: WeakMap<object, Change[]>; sqlite: SqlDb | null; silent: boolean; writes: number; writeMs: number } = {
+const state: { pending: WeakMap<object, Change[]>; sqlite: SqlDb | null; silent: boolean; writes: number; writeMs: number; load?: Record<string, unknown> } = {
   pending: new WeakMap(), sqlite: null, silent: false, writes: 0, writeMs: 0,
 }
 let patched = false
@@ -101,14 +102,14 @@ function patch() {
 export interface CandidateA {
   indexedDB: IDBFactory
   IDBKeyRange: typeof IDBKeyRange
-  /** Loads every record of the SQLite file into the opened database; the count. */
-  load(idb: IDBDatabase): Promise<number>
+  /** Loads the records into the opened database; the count. With the bulk start-up, `start` is every store but the activity log, which `deferred` loads after the first screen. */
+  load(idb: IDBDatabase, part?: 'start' | 'deferred'): Promise<number>
   /** Records written to SQLite so far, and the time it took. */
-  stats(): { writes: number; writeMs: number }
+  stats(): { writes: number; writeMs: number; load?: Record<string, unknown> }
 }
 
 /** Opens (or creates) the SQLite file and returns the memory engine with persistence on. */
-export function openCandidateA(file: string): CandidateA {
+export function openCandidateA(file: string, opts: { bulk: boolean }): CandidateA {
   patch()
   const indexedDB = new IDBFactory()
   const db = sql().open(file)
@@ -119,10 +120,30 @@ export function openCandidateA(file: string): CandidateA {
   return {
     indexedDB,
     IDBKeyRange,
-    stats: () => ({ writes: state.writes, writeMs: Math.round(state.writeMs) }),
-    async load(idb) {
-      const rows = db.all('SELECT store, k, v FROM records') as { store: string; k: string | number; v: string }[]
+    stats: () => ({ writes: state.writes, writeMs: Math.round(state.writeMs), load: state.load }),
+    async load(idb, part = 'start') {
+      const t0 = performance.now()
+      const filter = opts.bulk ? (part === 'start' ? " WHERE store NOT IN ('activity')" : " WHERE store IN ('activity')") : part === 'start' ? '' : ' WHERE 0'
+      const rows = db.all(`SELECT store, k, v FROM records${filter}`) as { store: string; k: string | number; v: string }[]
+      const t1 = performance.now()
       if (rows.length === 0) return 0
+      if (opts.bulk) {
+        const byStore = new Map<string, { key: unknown; value: unknown }[]>()
+        for (const r of rows) {
+          const list = byStore.get(r.store) ?? []
+          if (list.length === 0) byStore.set(r.store, list)
+          list.push({ key: r.k, value: JSON.parse(r.v) })
+        }
+        const t2 = performance.now()
+        const perStore: Record<string, number> = {}
+        for (const [store, list] of byStore) {
+          const s = performance.now()
+          bulkLoad(idb, store, list)
+          perStore[store] = Math.round(performance.now() - s)
+        }
+        state.load = { part, selectMs: Math.round(t1 - t0), parseMs: Math.round(t2 - t1), buildMs: Math.round(performance.now() - t2), perStore }
+        return rows.length
+      }
       const names = [...new Set(rows.map((r) => r.store))].filter((s) => idb.objectStoreNames.contains(s))
       state.silent = true
       try {
