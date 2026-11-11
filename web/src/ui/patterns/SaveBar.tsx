@@ -22,6 +22,8 @@ export interface Draft<T> {
   invalid: boolean
   /** A field reports whether its value is valid (for example a NumberInput out of range). */
   setValid: (field: string, valid: boolean) => void
+  /** Counts the resets: a field that keeps its own text (NumberInput) takes it as its key, so Discard clears what it holds. */
+  epoch: number
 }
 
 /**
@@ -32,13 +34,14 @@ export function useDraft<T extends object>(saved: T): Draft<T> {
   const [base, setBase] = useState(saved)
   const [draft, setDraft] = useState(saved)
   const [bad, setBad] = useState<ReadonlySet<string>>(new Set())
+  const [epoch, setEpoch] = useState(0)
   if (!same(base, saved)) {
     // React's "adjust state while rendering" pattern: follow a new saved value.
     setBase(saved)
     if (same(draft, base)) setDraft(saved)
   }
   const set = useCallback((patch: Partial<T>) => setDraft((d) => ({ ...d, ...patch })), [])
-  const reset = useCallback(() => { setDraft(saved); setBad(new Set()) }, [saved])
+  const reset = useCallback(() => { setDraft(saved); setBad(new Set()); setEpoch((n) => n + 1) }, [saved])
   const setValid = useCallback((field: string, valid: boolean) => setBad((cur) => {
     if (valid === !cur.has(field)) return cur
     const next = new Set(cur)
@@ -46,8 +49,9 @@ export function useDraft<T extends object>(saved: T): Draft<T> {
     else next.add(field)
     return next
   }), [])
-  const dirty = useMemo(() => !same(draft, saved), [draft, saved])
-  return { draft, set, dirty, reset, invalid: bad.size > 0, setValid }
+  // Text typed into a field that is not a valid value yet is an unsaved change too.
+  const dirty = useMemo(() => !same(draft, saved) || bad.size > 0, [draft, saved, bad])
+  return { draft, set, dirty, reset, invalid: bad.size > 0, setValid, epoch }
 }
 
 export interface SaveBarProps {

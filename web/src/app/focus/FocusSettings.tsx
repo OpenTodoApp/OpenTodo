@@ -4,12 +4,14 @@
 // switches, the break reminder and the sound (Off, Short or Long, focus-end-alert); since focus-everywhere (D5, D6)
 // also the Countdown presets, the background noise and this device's volume. Each row writes one synced
 // `user_prefs` field after its bounds check; a value out of range is refused with
-// the allowed range and nothing is written.
-import { useState } from 'react'
-import { Button, Input, Select, SettingRow, SettingsSection, Switch } from '../../ui'
-import { autoStartValue, COUNTDOWN_BOUNDS, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, FOCUS_NOISES, FOCUS_SOUNDS, inBounds, MAX_PRESETS, modeName, presetInBounds, presetsValue, setFocusPref, setFocusSound, soundChoice, useFocusPrefs, useNoiseVolume, writeNoiseVolume, type FocusMode, type FocusNoise, type FocusNumberField, type FocusSound, type FocusPrefs } from '../../lib/focus/prefs'
+// the allowed range and nothing is written. settings-foundation D8: the lengths
+// belong together, so they are one form with the save bar; every other row saves at once.
+import { useCallback, useState } from 'react'
+import { Button, Input, NumberInput, Select, SettingRow, SettingsSection, Switch, useDraft, type Draft } from '../../ui'
+import { SettingsSaveBar } from '../SettingsSaveBar'
+import { autoStartValue, COUNTDOWN_BOUNDS, DEFAULT_BREAK_AFTER, FOCUS_BOUNDS, FOCUS_MODES, FOCUS_NOISES, FOCUS_SOUNDS, MAX_PRESETS, modeName, presetInBounds, presetsValue, setFocusPref, setFocusSound, soundChoice, useFocusPrefs, useNoiseVolume, writeNoiseVolume, type FocusMode, type FocusNoise, type FocusNumberField, type FocusSound, type FocusPrefs } from '../../lib/focus/prefs'
 import { msg, t, translatedMap } from '../../lib/i18n'
-import { act } from '../actionError'
+import { act, actionErrorMessage } from '../actionError'
 import { cardCopy, rowCopy } from '../../lib/settingsCopy'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
@@ -18,23 +20,22 @@ export function FocusSection() {
   return <FocusSettingsView prefs={prefs} />
 }
 
-/** A minutes (or count) field: commits a whole number inside its range on change, else shows the range. */
-function NumberRow({ field, label, value, unit = 'minutes', description }: { field: FocusNumberField; value: number; unit?: 'minutes' | 'sessions'; label: string; description?: string }) {
-  const [text, setText] = useState(String(value))
-  useResetOnChange([value], () => setText(String(value)))
+/** The lengths form (settings-foundation D8): the fields belong together, so they save with the save bar. */
+type Lengths = Record<FocusNumberField, number>
+const lengthsOf = (p: FocusPrefs): Lengths => ({
+  focus_work_minutes: p.workMinutes, focus_short_break_minutes: p.shortBreakMinutes, focus_long_break_minutes: p.longBreakMinutes,
+  focus_long_break_every: p.longBreakEvery, focus_break_after_minutes: p.breakAfterMinutes,
+})
+
+/** A minutes (or count) field of the lengths form, its range checked by NumberInput. */
+function NumberRow({ field, label, description, unit = 'minutes', form }: { field: FocusNumberField; label: string; description?: string; unit?: 'minutes' | 'sessions'; form: Draft<Lengths> }) {
   const [min, max] = FOCUS_BOUNDS[field]
-  const n = Number(text)
-  const valid = text.trim() !== '' && inBounds(field, n)
-  const id = `focus-${field}`
-  const range = unit === 'minutes' ? t('From {min} to {max} minutes', { min, max }) : t('From {min} to {max} sessions', { min, max })
+  const { setValid } = form
+  const valid = useCallback((ok: boolean) => setValid(field, ok), [setValid, field])
   return (
-    <SettingRow label={label} htmlFor={id} description={valid ? description : undefined} status={valid ? undefined : <span className="text-danger" role="alert" data-focus-range={field}>{range}</span>} control={
-      <Input id={id} type="number" inputMode="numeric" min={min} max={max} className="sm:w-24" value={text} aria-invalid={!valid || undefined}
-        onChange={(e) => {
-          setText(e.target.value)
-          const v = Number(e.target.value)
-          if (e.target.value.trim() !== '' && inBounds(field, v) && v !== value) act(setFocusPref({ field, value: v }))
-        }} />
+    <SettingRow label={label} description={description} control={
+      <NumberInput key={form.epoch} id={`focus-${field}`} label={label} hideLabel min={min} max={max} unit={unit === 'minutes' ? t('min') : t('sessions')}
+        value={form.draft[field]} onValidityChange={valid} onChange={(v) => form.set({ [field]: v ?? min } as Partial<Lengths>)} />
     } />
   )
 }
@@ -100,6 +101,24 @@ function NoiseRows({ noise }: { noise: FocusNoise }) {
 export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
   const setAuto = (breaks: boolean, work: boolean) => act(setFocusPref({ field: 'focus_auto_start', value: autoStartValue(breaks, work) }))
   const reminderOn = prefs.breakAfterMinutes > 0
+  const saved = lengthsOf(prefs)
+  const form = useDraft(saved)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const save = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      for (const field of Object.keys(saved) as FocusNumberField[]) {
+        if (field === 'focus_break_after_minutes' && !reminderOn) continue
+        if (form.draft[field] !== saved[field]) await setFocusPref({ field, value: form.draft[field] })
+      }
+    } catch (err) {
+      setError(actionErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
   return (
     // Copy: SETTINGS_COPY.focus; Learn more opens the focus guide (settings/focus).
     <SettingsSection {...cardCopy('focus')} testId="focus-settings">
@@ -108,16 +127,16 @@ export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
           {FOCUS_MODES.map((m) => <option key={m} value={m}>{modeName(m)}</option>)}
         </Select>
       } />
-      <NumberRow field="focus_work_minutes" {...rowCopy('focus', 'work')} value={prefs.workMinutes} />
-      <NumberRow field="focus_short_break_minutes" {...rowCopy('focus', 'shortBreak')} value={prefs.shortBreakMinutes} />
-      <NumberRow field="focus_long_break_minutes" {...rowCopy('focus', 'longBreak')} value={prefs.longBreakMinutes} />
-      <NumberRow field="focus_long_break_every" {...rowCopy('focus', 'longEvery')} value={prefs.longBreakEvery} unit="sessions" />
+      <NumberRow field="focus_work_minutes" {...rowCopy('focus', 'work')} form={form} />
+      <NumberRow field="focus_short_break_minutes" {...rowCopy('focus', 'shortBreak')} form={form} />
+      <NumberRow field="focus_long_break_minutes" {...rowCopy('focus', 'longBreak')} form={form} />
+      <NumberRow field="focus_long_break_every" {...rowCopy('focus', 'longEvery')} unit="sessions" form={form} />
       <SettingRow {...rowCopy('focus', 'autoBreaks')} control={<Switch checked={prefs.autoStartBreaks} onChange={(on) => setAuto(on, prefs.autoStartWork)} label={t('Start breaks automatically')} hideLabel />} />
       <SettingRow {...rowCopy('focus', 'autoWork')} control={<Switch checked={prefs.autoStartWork} onChange={(on) => setAuto(prefs.autoStartBreaks, on)} label={rowCopy('focus', 'autoWork').label} hideLabel />} />
       <SettingRow {...rowCopy('focus', 'reminder')} id="focus-break-reminder" control={
         <Switch checked={reminderOn} onChange={(on) => act(setFocusPref({ field: 'focus_break_after_minutes', value: on ? DEFAULT_BREAK_AFTER : 0 }))} label={t('Break reminder')} hideLabel />
       } />
-      {reminderOn && <NumberRow field="focus_break_after_minutes" {...rowCopy('focus', 'remindAfter')} value={prefs.breakAfterMinutes} />}
+      {reminderOn && <NumberRow field="focus_break_after_minutes" {...rowCopy('focus', 'remindAfter')} form={form} />}
       {!reminderOn && <p className="pb-3 text-meta text-muted" data-focus-reminder-off>{t('Off. When on, the reminder comes after {n} minutes of work.', { n: DEFAULT_BREAK_AFTER })}</p>}
       <SettingRow {...rowCopy('focus', 'sound')} htmlFor="focus-sound" control={
         <Select id="focus-sound" className="sm:w-40" value={soundChoice(prefs)} onChange={(e) => act(setFocusSound(e.target.value as FocusSound))}>
@@ -126,6 +145,8 @@ export function FocusSettingsView({ prefs }: { prefs: FocusPrefs }) {
       } />
       <PresetsRow presets={prefs.presets} />
       <NoiseRows noise={prefs.noise} />
+      {/* User preferences sync through the op log, so the lengths save offline too. */}
+      <SettingsSaveBar dirty={form.dirty} invalid={form.invalid} busy={saving} error={error} onDiscard={form.reset} onSave={() => void save()} />
     </SettingsSection>
   )
 }

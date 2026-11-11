@@ -39,6 +39,38 @@ describe('AuditPanel', () => {
     await unmount()
   })
 
+  it('Save bar on a form: the retention shows Save and Discard only once it changed (settings-foundation D8)', async () => {
+    api.updateAuditSettings.mockClear()
+    const { container, unmount } = await render(<AuditPanel />)
+    await waitFor(() => !!container.querySelector('[data-testid="audit-settings"] [data-number-input] input'), 'the settings')
+    const settingsCard = container.querySelector('[data-testid="audit-settings"]')!
+    expect(settingsCard.querySelector('[data-save-bar]')).toBeNull()
+    const field = settingsCard.querySelector<HTMLInputElement>('[data-number-input] input')!
+    expect(field.value).toBe('90')
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(field, '30')
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    const bar = settingsCard.querySelector('[data-save-bar]')!
+    await click([...bar.querySelectorAll('button')].find((b) => b.textContent === 'Save')!)
+    expect(api.updateAuditSettings).toHaveBeenCalledWith({ retentionDays: 30 })
+    await unmount()
+  })
+
+  it('Failed save: a refused address switch stays and says why under its row', async () => {
+    const { ApiError } = await import('../lib/api')
+    api.updateAuditSettings.mockRejectedValueOnce(new ApiError(500, 'internal', 'The audit store is read-only') as never)
+    api.getAuditSettings.mockResolvedValueOnce({ retentionDays: 90, logIp: false })
+    const { container, unmount } = await render(<AuditPanel />)
+    await waitFor(() => !!container.querySelector('[data-testid="audit-settings"] [role="switch"]'), 'the settings')
+    const toggle = container.querySelector('[data-testid="audit-settings"] [role="switch"]')!
+    await click(toggle)
+    await waitFor(() => !!container.querySelector('[data-audit-ip-error]'), 'the error')
+    expect(container.querySelector('[data-audit-ip-error]')!.textContent).toBe('The audit store is read-only')
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    await unmount()
+  })
+
   it('Owner filters and exports: filters show as chips that remove themselves, Export carries them, a line opens its details', async () => {
     api.listAudit.mockResolvedValue({ events: [{ id: 7, ts: Date.now() - 60_000, name: 'login.failed', outcome: 'failure', actorId: null, actorEmail: null,
       targetId: 'm', targetEmail: 'member@example.com', ip: '192.0.2.9', userAgent: '', details: { reason: 'wrong_password' } }], cursor: null } as never)

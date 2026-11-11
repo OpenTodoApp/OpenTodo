@@ -45,15 +45,24 @@ describe('the Focus card', () => {
     await r.unmount()
   })
 
-  it('Bounds: 0 and 400 are refused with the range and nothing is written; 50 is written', async () => {
+  it('Bounds: 0 and 400 are refused with the range and nothing is written; 50 is written with the save bar', async () => {
     const r = await render(<FocusSection />)
-    const input = document.getElementById('focus-focus_work_minutes') as HTMLInputElement
-    await typeInto(input, '0')
-    expect(document.querySelector('[data-focus-range="focus_work_minutes"]')?.textContent).toBe('From 1 to 180 minutes')
-    await typeInto(input, '400')
-    expect(document.querySelector('[data-focus-range="focus_work_minutes"]')).toBeTruthy()
+    const input = () => document.getElementById('focus-focus_work_minutes') as HTMLInputElement
+    const saveButton = () => [...document.querySelectorAll<HTMLButtonElement>('[data-save-bar] button')].find((b) => b.textContent === 'Save')
+    expect(document.querySelector('[data-save-bar]')).toBeNull()
+    await typeInto(input(), '0')
+    expect(input().closest('[data-number-input]')!.textContent).toContain('Between 1 and 180 min')
+    expect(saveButton()!.disabled).toBe(true)
+    await typeInto(input(), '400')
+    expect(input().getAttribute('aria-invalid')).toBe('true')
     expect(await db.outbox.count()).toBe(0)
-    await typeInto(input, '50')
+    // Discard puts the saved length back and hides the bar.
+    await click([...document.querySelectorAll<HTMLButtonElement>('[data-save-bar] button')].find((b) => b.textContent === 'Discard')!)
+    expect(document.querySelector('[data-save-bar]')).toBeNull()
+    expect(input().value).toBe('25')
+    await typeInto(input(), '50')
+    expect(await db.outbox.count()).toBe(0)
+    await click(saveButton()!)
     await waitFor(async () => (await db.userPrefs.get('me'))?.focus_work_minutes === 50, 'written')
     expect((await db.outbox.toArray()).map((o) => `${o.field}=${o.value}`)).toEqual(['focus_work_minutes=50'])
     await r.unmount()

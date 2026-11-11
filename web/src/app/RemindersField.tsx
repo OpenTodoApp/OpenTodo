@@ -1,5 +1,5 @@
-import { Icon, Menu } from '../ui'
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { Icon, Menu, NumberInput, Select } from '../ui'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useReminderRows } from '../lib/localData'
 import { addDaysISO, localDueOf, todayISO } from '../lib/dates'
 import { addReminder, deleteReminder, dismissReminder, rearmReminder, snoozeReminder, sortReminders, updateReminder, type ReminderInput } from '../lib/reminders'
@@ -207,17 +207,21 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
 }) {
   const [kind, setKind] = useState<TimeKind>((initial && !isLocationKind(initial.kind) ? initial.kind : undefined) ?? mode ?? 'relative')
   const startOffset = initial?.offset_minutes ?? -30
-  const [amount, setAmount] = useState(String(Math.abs(startOffset)))
+  const [amount, setAmount] = useState<number | null>(Math.abs(startOffset))
+  const [valid, setValid] = useState(true)
   const [unit, setUnit] = useState<'1' | '60' | '1440'>(Math.abs(startOffset) % 1440 === 0 && startOffset !== 0 ? '1440' : Math.abs(startOffset) % 60 === 0 && startOffset !== 0 ? '60' : '1')
   const [direction, setDirection] = useState<'before' | 'after'>(startOffset > 0 ? 'after' : 'before')
   const [moment, setMoment] = useState(initial?.fire_at ? toLocalParts(initial.fire_at) : defaultMoment(task))
   const [error, setError] = useState<string | null>(null)
+  const form = useRef<HTMLFormElement>(null)
+  // The amount takes focus when the offset fields appear.
+  const relative = kind !== 'absolute'
+  useEffect(() => { if (relative) form.current?.querySelector<HTMLInputElement>('[data-number-input] input')?.focus() }, [relative])
 
   const save = () => {
     if (kind !== 'absolute') {
-      const n = Number(amount)
-      if (!Number.isInteger(n) || n < 0) return setError(t('Enter a whole number.'))
-      const minutes = n * Number(unit)
+      if (!valid || amount === null) return setError(t('Enter a whole number.'))
+      const minutes = amount * Number(unit)
       onSave({ kind, offset_minutes: direction === 'before' ? -minutes : minutes })
     } else {
       const at = fromLocalParts(moment.date, moment.time)
@@ -228,29 +232,30 @@ function ReminderEditor({ task, initial, mode, onSave, onCancel }: {
 
   return (
     <form
+      ref={form}
       className="flex flex-wrap items-center gap-2"
       onSubmit={(e) => { e.preventDefault(); save() }}
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}
     >
       {initial && (
-        <select className="ui-input w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as TimeKind)}>
+        <Select className="w-auto py-1" aria-label={t('Reminder kind')} value={kind} onChange={(e) => setKind(e.target.value as TimeKind)}>
           <option value="relative">{t('Relative')}</option>
           {(task.deadline || initial.kind === 'deadline') && <option value="deadline">{t('Before the deadline')}</option>}
           <option value="absolute">{t('At a time')}</option>
-        </select>
+        </Select>
       )}
       {kind !== 'absolute' ? (
         <>
-          <input className="ui-input w-20 py-1" type="number" min={0} aria-label={t('Offset amount')} value={amount} autoFocus onChange={(e) => setAmount(e.target.value)} />
-          <select className="ui-input w-auto py-1" aria-label={t('Offset unit')} value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
+          <NumberInput label={t('Offset amount')} hideLabel min={0} max={99999} value={amount} onChange={setAmount} onValidityChange={setValid} />
+          <Select className="w-auto py-1" aria-label={t('Offset unit')} value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
             <option value="1">{t('minutes')}</option>
             <option value="60">{t('hours')}</option>
             <option value="1440">{t('days')}</option>
-          </select>
-          <select className="ui-input w-auto py-1" aria-label={t('Before or after')} value={direction} onChange={(e) => setDirection(e.target.value as 'before' | 'after')}>
+          </Select>
+          <Select className="w-auto py-1" aria-label={t('Before or after')} value={direction} onChange={(e) => setDirection(e.target.value as 'before' | 'after')}>
             <option value="before">{t('before')}</option>
             <option value="after">{t('after')}</option>
-          </select>
+          </Select>
           {kind === 'deadline' && <span className="text-body text-muted">{t('the deadline')}</span>}
         </>
       ) : (

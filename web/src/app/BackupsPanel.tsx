@@ -7,7 +7,7 @@ import { useOnline } from '../lib/online'
 import type { BackupDestination, BackupRun, BackupSecretFlags, BackupSecretUpdate, BackupSettings, BackupStatus } from '../lib/types'
 import { Button, StatusIndicator, toneForHue } from '../ui'
 import { Badge } from '../ui'
-import { Field, Input, Select } from '../ui'
+import { Field, Input, NumberInput, RadioGroup, Select } from '../ui'
 import { Icon, type IconName } from '../ui'
 import { Checkbox } from '../ui'
 import { ListRow } from '../ui'
@@ -120,7 +120,8 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
                 <span className={status.lastRun.status === 'failed' ? 'text-danger' : 'text-muted'}>{runSummary(status.lastRun)}</span>
               </p>
             )}
-            {!status.lastRun && !running && <p className="text-faint">{t('No backup has run yet.')}</p>}
+            {/* settings-foundation D5: no backup yet keeps the owner without a way back, so it warns. */}
+            {!status.lastRun && !running && <p data-testid="backups-none"><StatusIndicator tone="warn">{t('No backup has run yet.')}</StatusIndicator></p>}
           </div>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
@@ -149,14 +150,9 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
         <form onSubmit={submit} className="space-y-5 py-3" aria-label={t('Backup settings')}>
           <fieldset className="space-y-3" disabled={disabled}>
             <legend className="text-body font-medium text-default">{t('Destination')}</legend>
-            <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label={t('Destination type')}>
-              {(['local', 's3', 'webdav'] as BackupDestination[]).map((d) => (
-                <label key={d} className="flex items-center gap-1.5">
-                  <input type="radio" className="accent-(--ot-accent)" name="backup-destination" value={d} checked={draft.destination === d} onChange={() => set({ destination: d })} />
-                  {DESTINATION_LABEL[d]}
-                </label>
-              ))}
-            </div>
+            <RadioGroup variant="list" label={t('Destination type')} hideLabel name="backup-destination" value={draft.destination} disabled={disabled}
+              onChange={(destination) => set({ destination })}
+              options={(['local', 's3', 'webdav'] as BackupDestination[]).map((d) => ({ value: d, label: DESTINATION_LABEL[d] }))} />
 
             {draft.destination === 'local' && (
               <Field label={t('Folder')} description={t('Absolute path on the server. Empty: the backups folder inside the data directory.')}>
@@ -218,12 +214,11 @@ export function BackupsPanelView(p: BackupsPanelViewProps) {
 
           <fieldset className="flex flex-wrap items-end gap-3" disabled={disabled}>
             <legend className="mb-1 text-body font-medium text-default">{t('Retention')}</legend>
-            <Field label={t('Keep the last')}>
-              <Input className="w-24" name="retention-keep" type="number" min={1} value={draft.retention.keepLast} onChange={(e) => set({ retention: { ...draft.retention, keepLast: Number(e.target.value) } })} />
-            </Field>
-            <Field label={t('Delete older than (days, 0 = never)')}>
-              <Input className="w-24" name="retention-age" type="number" min={0} value={draft.retention.maxAgeDays} onChange={(e) => set({ retention: { ...draft.retention, maxAgeDays: Number(e.target.value) } })} />
-            </Field>
+            <NumberInput label={t('Keep the last')} min={1} max={1000} value={draft.retention.keepLast} disabled={disabled}
+              onChange={(v) => set({ retention: { ...draft.retention, keepLast: v ?? 1 } })} />
+            <NumberInput label={t('Delete older than')} unit={t('days')} min={1} max={3650} noLimit={t('Never')} disabled={disabled}
+              value={draft.retention.maxAgeDays === 0 ? null : draft.retention.maxAgeDays}
+              onChange={(v) => set({ retention: { ...draft.retention, maxAgeDays: v ?? 0 } })} />
             <Checkbox className="pb-2" name="compress" checked={draft.compress} onChange={(e) => set({ compress: e.target.checked })} label={t('Compress (gzip)')} />
           </fieldset>
 

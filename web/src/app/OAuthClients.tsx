@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Notice, SettingRow } from '../ui'
+import { Button, Field, Input, Notice, Select, SettingRow } from '../ui'
 import { SecretReveal } from './TokensSection'
 import { api, isNetworkError } from '../lib/api'
 import { describeAssistantsError, oauthClientApp, type McpOAuthClient, type McpOAuthPlatform, type McpOAuthTarget } from '../lib/assistants'
@@ -100,42 +100,31 @@ export function OAuthClients({ disabled }: { disabled: boolean }) {
 
       <div className="flex flex-wrap items-end gap-2">
         {platforms.length > 0 && (
-          <label className="text-meta text-muted">
-            <span className="mb-1 block">{t('App')}</span>
-            <select value={app} onChange={(e) => setApp(e.target.value)} disabled={disabled || busy}
-              className="rounded-control border border-default bg-surface px-2 py-1 text-body text-default" data-oauth-client-app>
+          <Field label={t('App')}>
+            <Select value={app} onChange={(e) => setApp(e.target.value)} disabled={disabled || busy} className="w-auto" data-oauth-client-app>
               {platforms.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               <option value={CUSTOM}>{t('Other app')}</option>
-            </select>
-          </label>
+            </Select>
+          </Field>
         )}
-        <label className="min-w-40 flex-1 text-meta text-muted">
-          <span className="mb-1 block">{t('Client name')}</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} disabled={disabled || busy} placeholder={platform?.name}
-            className="w-full rounded-control border border-default bg-surface px-2 py-1 text-body text-default" data-oauth-client-name />
-        </label>
-        <label className="text-meta text-muted">
-          <span className="mb-1 block">{t('What the assistant may do')}</span>
-          <select value={scope} onChange={(e) => setScope(e.target.value === 'agent' ? 'agent' : 'read')} disabled={disabled || busy}
-            className="rounded-control border border-default bg-surface px-2 py-1 text-body text-default" data-oauth-client-scope>
+        <Field label={t('Client name')} className="min-w-40 flex-1">
+          <Input value={name} onChange={(e) => setName(e.target.value)} disabled={disabled || busy} placeholder={platform?.name} data-oauth-client-name />
+        </Field>
+        <Field label={t('What the assistant may do')}>
+          <Select value={scope} onChange={(e) => setScope(e.target.value === 'agent' ? 'agent' : 'read')} disabled={disabled || busy} className="w-auto" data-oauth-client-scope>
             <option value="read">{t('Read only')}</option>
             <option value="agent">{t('Can make changes')}</option>
-          </select>
-        </label>
+          </Select>
+        </Field>
         <Button variant="primary" size="sm" disabled={disabled || busy} busy={busy} onClick={() => void create()} data-oauth-create>
           {t('Create client')}
         </Button>
       </div>
       {custom && (
-        <label className="block text-meta text-muted">
-          <span className="mb-1 block">{t('Redirect address')}</span>
-          <input value={redirect} onChange={(e) => setRedirect(e.target.value)} disabled={disabled || busy} type="url" inputMode="url"
-            spellCheck={false} autoComplete="off" aria-describedby="oauth-redirect-hint"
-            className="w-full rounded-control border border-default bg-surface px-2 py-1 font-mono text-body text-default" data-oauth-client-redirect />
-          <span id="oauth-redirect-hint" className="mt-1 block text-faint">
-            {t('The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.')}
-          </span>
-        </label>
+        <Field label={t('Redirect address')} description={t('The exact address the app returns to after you sign in, starting with https://. The app’s documentation names it.')}>
+          <Input value={redirect} onChange={(e) => setRedirect(e.target.value)} disabled={disabled || busy} type="url" inputMode="url"
+            spellCheck={false} autoComplete="off" className="font-mono" data-oauth-client-redirect />
+        </Field>
       )}
 
       {created && (

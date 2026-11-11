@@ -35,6 +35,25 @@ describe('Require single sign-on', () => {
     expect(onChange).toHaveBeenCalledWith({ ssoOnly: true })
   })
 
+  it('Save bar on a form: shown only with a changed form, Discard puts the saved values back (settings-foundation D8)', async () => {
+    const onChange = vi.fn()
+    const onSave = vi.fn()
+    const r = await render(<SsoPanelView configuring settings={settings} form={formFrom(settings)} online busy={false} error={null} notice={null} test={null}
+      onChange={onChange} onSave={onSave} onTest={() => {}} onRemoveSecret={() => {}} />)
+    expect(document.querySelector('[data-save-bar]')).toBeNull()
+    expect(button(document, 'Close')).toBeTruthy()
+    await r.unmount()
+    await render(<SsoPanelView configuring settings={settings} form={{ ...formFrom(settings), clientId: 'other' }} online busy={false} error="The issuer did not answer." notice={null} test={null}
+      onChange={onChange} onSave={onSave} onTest={() => {}} onRemoveSecret={() => {}} />)
+    const bar = document.querySelector<HTMLElement>('[data-save-bar]')!
+    expect(bar.textContent).toContain('The issuer did not answer.')
+    expect(button(document, 'Close')).toBeUndefined()
+    await click(button(bar, 'Save')!)
+    expect(onSave).toHaveBeenCalled()
+    await click(button(bar, 'Discard')!)
+    expect(onChange).toHaveBeenCalledWith(formFrom(settings))
+  })
+
   it('turns it off without asking', async () => {
     const onChange = await mount(true)
     await click(ssoOnlyBox())

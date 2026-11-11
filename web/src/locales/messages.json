@@ -662,6 +662,9 @@
   "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
   ],
+  "A workspace needs a name.": [
+    "web/src/app/WorkspaceGeneral.tsx"
+  ],
   "A year of done tasks": [
     "web/src/app/review/StatsView.tsx"
   ],
@@ -2772,7 +2775,6 @@
     "web/src/app/NewWorkspaceDialog.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OAuthConsent.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/PendingInvitations.tsx",
     "web/src/app/ReauthDialog.tsx",
@@ -3155,9 +3157,6 @@
   "Choose a value": [
     "web/src/lib/rules/fixes.ts"
   ],
-  "Choose a whole number from 1 to 20.": [
-    "web/src/app/ClosedListSettings.tsx"
-  ],
   "Choose a workspace": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -3350,6 +3349,7 @@
     "web/src/app/AppSignIn.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/OAuthConsent.tsx",
+    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PanelFrame.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/SsoPanel.tsx",
@@ -4676,7 +4676,7 @@
   "Delete location": [
     "web/src/app/locations/PlacesView.tsx"
   ],
-  "Delete older than (days, 0 = never)": [
+  "Delete older than": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Delete permanently": [
@@ -5004,10 +5004,14 @@
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Discard": [
+    "web/src/app/SettingsSaveBar.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
+  ],
+  "Discard unsaved changes?": [
+    "web/src/app/SettingsSaveBar.tsx"
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -6249,7 +6253,8 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/routines/RoutinesDevice.tsx",
-    "web/src/app/routines/RunHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/settingsStatus.ts"
   ],
   "Failed at step {n}": [
     "web/src/app/routines/RunHistory.tsx"
@@ -6864,9 +6869,6 @@
   ],
   "From {min} to {max} minutes": [
     "web/src/app/focus/FocusParts.tsx",
-    "web/src/app/focus/FocusSettings.tsx"
-  ],
-  "From {min} to {max} sessions": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
   "From {name}": [
@@ -7762,12 +7764,6 @@
   "In Google Cloud, create an OAuth client of type “Web application”, enable the CalDAV API, and add this authorized redirect address:": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
-  "In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "In MB; 0 means no total. Removing a file frees its space at once.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "In Microsoft Entra ID, register an app with the delegated permissions offline_access, User.Read, Calendars.ReadWrite and MailboxSettings.Read, and add this redirect address for the Web platform:": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -8631,6 +8627,9 @@
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Larger files are refused before they are sent.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -10078,6 +10077,7 @@
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Never": [
+    "web/src/app/BackupsPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -10397,6 +10397,9 @@
   ],
   "No backup has run yet.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "No backup yet": [
+    "web/src/app/settingsStatus.ts"
   ],
   "No bucket set": [
     "web/src/app/BackupsPanel.tsx"
@@ -10993,7 +10996,8 @@
     "web/src/lib/push.ts"
   ],
   "Not configured": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/settingsStatus.ts"
   ],
   "Not configured: nobody can reset a password or get an invitation by email.": [
     "web/src/lib/settingsCopy.ts"
@@ -13882,6 +13886,9 @@
   "Removes your tasks from this device after uploading pending changes": [
     "web/src/app/settingsIndex.ts"
   ],
+  "Removing a file frees its space at once.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Rename": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/ProjectHeader.tsx",
@@ -14594,8 +14601,6 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Save": [
-    "web/src/app/AttachmentSettingsPanel.tsx",
-    "web/src/app/BrandingPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -14607,16 +14612,12 @@
     "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
-    "web/src/app/SpeechServerPanel.tsx",
-    "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/locations/LocationEditor.tsx",
@@ -14675,9 +14676,6 @@
   "Save providers": [
     "web/src/app/locations/MapsSettings.tsx"
   ],
-  "Save retention": [
-    "web/src/app/AuditPanel.tsx"
-  ],
   "Save senders": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -14720,10 +14718,6 @@
     "web/src/app/views/SaveViewCard.tsx"
   ],
   "Saved.": [
-    "web/src/app/AttachmentSettingsPanel.tsx",
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/BrandingPanel.tsx",
-    "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Saved. Before your next message, the assistant asks you to accept what is sent to your provider.": [
@@ -19173,9 +19167,6 @@
   "Token name": [
     "web/src/app/TokensSection.tsx"
   ],
-  "Token scope": [
-    "web/src/app/TokensSection.tsx"
-  ],
   "Tomorrow": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/RuleEditor.tsx",
@@ -20730,6 +20721,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "Workspaces need a connection to your server. The lists below are from this device.": [
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "Workspaces, their members, groups and invite links": [
@@ -21046,6 +21038,9 @@
   ],
   "Your changes are kept as a draft on this device until you save or discard them.": [
     "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Your changes on this page are not saved.": [
+    "web/src/app/SettingsSaveBar.tsx"
   ],
   "Your choices": [
     "web/src/app/routines/Starters.tsx"
@@ -21684,6 +21679,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "days": [
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/BackupsPanel.tsx",
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
@@ -22228,6 +22225,9 @@
   ],
   "merged a duplicate": [
     "web/src/lib/activity.ts"
+  ],
+  "min": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "minutes": [
     "web/src/app/DefaultRemindersSettings.tsx",
@@ -22820,6 +22820,9 @@
   ],
   "server address": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "sessions": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "set by environment": [
     "web/src/app/SsoPanel.tsx"

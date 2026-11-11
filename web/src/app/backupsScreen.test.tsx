@@ -103,6 +103,11 @@ describe('Settings → Backups', () => {
     expect(render()).not.toContain('cannot be recovered')
   })
 
+  it('no backup yet is a warning (settings-foundation D5)', () => {
+    const none = render({ status: status({ lastRun: null }) })
+    expect(none).toMatch(/data-status="warn"[^>]*>(<span[^>]*>(<\/span>)?)*No backup has run yet\./)
+  })
+
   it('shows a run in progress, then failures with the destination error', () => {
     const running = render({ status: status({ running: { ...status().lastRun!, id: 'r2', status: 'running', finishedAt: null } }) })
     expect(running).toContain('Backup in progress')

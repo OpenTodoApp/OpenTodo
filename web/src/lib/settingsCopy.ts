@@ -860,8 +860,8 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/attachments',
     rows: {
       allow: { label: msg('Allow attachments'), description: msg('When off, nobody can add files or links; existing ones stay and can still be opened.') },
-      size: { label: msg('Size per file'), description: msg('In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.') },
-      quota: { label: msg('Total per account'), description: msg('In MB; 0 means no total. Removing a file frees its space at once.') },
+      size: { label: msg('Size per file'), description: msg('Larger files are refused before they are sent.') },
+      quota: { label: msg('Total per account'), description: msg('Removing a file frees its space at once.') },
     },
     notices: { offline: msg('You are offline. These settings need a connection to the server.') },
   },

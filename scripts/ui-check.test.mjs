@@ -70,7 +70,9 @@ test('a raw radio input in a screen is refused, RadioGroup and allowed files are
   assert.equal(rawRadioProblems('web/src/app/New.tsx', "  <input checked type='radio' />").length, 1)
   assert.deepEqual(rawRadioProblems('web/src/app/New.tsx', '<RadioGroup label="x" value="a" options={[]} onChange={f} />'), [])
   assert.deepEqual(rawRadioProblems('web/src/app/New.tsx', "t.matches('input[type=\"radio\"]')"), [])
-  assert.deepEqual(rawRadioProblems('web/src/app/QuickAddSettings.tsx', '<input type="radio" />'), [])
+  assert.deepEqual(rawRadioProblems('web/src/app/NewBoardDialog.tsx', '<input type="radio" />'), [])
+  // settings-foundation 3.5: the settings files left the list; a raw radio there fails again.
+  assert.equal(rawRadioProblems('web/src/app/QuickAddSettings.tsx', '<input type="radio" />').length, 1)
 })
 
 test('a raw "Priority {n}" message outside lib/priority.ts is refused (priority-names D3)', async () => {

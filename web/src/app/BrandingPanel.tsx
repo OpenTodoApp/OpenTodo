@@ -4,17 +4,19 @@
 // file the owner picked (PNG or JPEG, at most 2 MB); the server renders the
 // favicon, touch icon, app icons and sidebar sizes from it. Below them, the
 // server's default theme and themes (theme-instance-default D4), loaded lazily.
+// settings-foundation D8: the name is a field, saved with the save bar; the logo
+// and the themes apply when chosen, and a refused logo says why under its row.
 import { lazy, Suspense, useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
 import { api, isNetworkError } from '../lib/api'
 import { type Branding, logoUrl, setBranding, useBranding } from '../lib/branding'
 import { t } from '../lib/i18n'
 import { useOnline } from '../lib/online'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { Button, Input, Notice, SettingRow, SettingsSection, Skeleton } from '../ui'
+import { Button, Input, Notice, SettingRow, SettingsSection, Skeleton, useDraft } from '../ui'
 import { BrandMark } from '../ui'
 import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
-import { useResetOnChange } from '../lib/useResetOnChange'
+import { SettingsSaveBar } from './SettingsSaveBar'
 
 const BrandingThemes = lazy(() => import('./BrandingThemes'))
 
@@ -32,9 +34,14 @@ export function checkLogoFile(file: { type: string; size: number }): string | nu
 export interface BrandingViewProps {
   value: Branding | null
   online: boolean
+  /** A logo change is in flight. */
   busy: boolean
+  /** Why the last logo change failed, shown under the logo row. */
   error: string | null
-  saved: boolean
+  /** A name save is in flight. */
+  savingName?: boolean
+  /** Why the last name save failed, shown in the save bar. */
+  nameError?: string | null
   onSaveName: (name: string) => void
   onLogo: (file: File) => void
   onRemoveLogo: () => void
@@ -42,13 +49,13 @@ export interface BrandingViewProps {
   themes?: ReactNode
 }
 
-export function BrandingView({ value, online, busy, error, saved, onSaveName, onLogo, onRemoveLogo, themes }: BrandingViewProps) {
-  const [name, setName] = useState(value?.name ?? '')
+export function BrandingView({ value, online, busy, error, savingName, nameError, onSaveName, onLogo, onRemoveLogo, themes }: BrandingViewProps) {
+  const name = useDraft({ name: value?.name ?? '' })
   const [fileError, setFileError] = useState<string | null>(null)
-  useResetOnChange([value], () => setName(value?.name ?? ''))
   const disabled = !online || busy || !value
-  const dirty = !!value && name.trim() !== value.name
-  const tooLong = [...name.trim()].length > NAME_MAX
+  const typed = name.draft.name.trim()
+  const tooLong = [...typed].length > NAME_MAX
+  const changed = !!value && typed !== value.name
   const logo = value ? logoUrl(192, value) : undefined
   const choose = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -58,16 +65,19 @@ export function BrandingView({ value, online, busy, error, saved, onSaveName, on
     setFileError(problem)
     if (!problem) onLogo(file)
   }
+  const logoProblem = fileError ?? error
+  const nameRow = rowCopy('branding', 'name')
+  const nameProblem = <span className="text-danger" role="alert">{t('The name is at most {max} characters.', { max: NAME_MAX })}</span>
+  const logoRow = rowCopy('branding', 'logo')
   return (
     <SettingsSection {...cardCopy('branding')} testId="branding-panel">
       {!online && <div className="pb-3"><Notice>{noticeCopy('branding', 'offline')}</Notice></div>}
-      <SettingRow {...rowCopy('branding', 'name')} htmlFor="branding-name"
-        control={<form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (dirty && !tooLong) onSaveName(name.trim()) }}>
-          <Input id="branding-name" className="w-56 max-w-full" value={name} placeholder="OpenTodo" maxLength={NAME_MAX + 10} disabled={disabled}
-            onChange={(e) => setName(e.target.value)} autoComplete="off" />
-          <Button type="submit" variant="primary" size="sm" disabled={disabled || !dirty || tooLong} busy={busy}>{t('Save')}</Button>
-        </form>} />
-      <SettingRow {...rowCopy('branding', 'logo')}
+      <SettingRow label={nameRow.label} htmlFor="branding-name"
+        description={tooLong ? nameProblem : nameRow.description}
+        control={<Input id="branding-name" className="w-56 max-w-full" value={name.draft.name} placeholder="OpenTodo" maxLength={NAME_MAX + 10} disabled={!online || !value}
+          aria-invalid={tooLong || undefined} onChange={(e) => name.set({ name: e.target.value })} autoComplete="off" />} />
+      <SettingRow label={logoRow.label}
+        description={logoProblem ? <span className="text-danger" role="alert" data-branding-error>{logoProblem}</span> : logoRow.description}
         status={<span className="inline-flex items-center gap-2" data-branding-preview>
           {logo ? <img src={logo} width={32} height={32} alt={t('Current logo')} className="rounded-control" /> : <BrandMark size={32} variant="colour" />}
         </span>}
@@ -78,11 +88,9 @@ export function BrandingView({ value, online, busy, error, saved, onSaveName, on
           </label>
           {logo && <Button variant="danger" size="sm" disabled={disabled} busy={busy} onClick={onRemoveLogo} data-branding-remove>{t('Remove logo')}</Button>}
         </>} />
-      <div className="flex flex-wrap items-center gap-3 py-3 text-meta empty:hidden" data-branding-status>
-        {tooLong && <span className="text-danger" role="alert">{t('The name is at most {max} characters.', { max: NAME_MAX })}</span>}
-        {(fileError || error) && <span className="text-danger" role="alert">{fileError ?? error}</span>}
-        {saved && !dirty && !fileError && !error && <span className="text-muted" role="status">{t('Saved.')}</span>}
-      </div>
+      <SettingsSaveBar dirty={changed} invalid={tooLong} busy={savingName} error={nameError}
+        disabledReason={online ? undefined : noticeCopy('branding', 'offline')}
+        onDiscard={name.reset} onSave={() => onSaveName(typed)} />
       {themes}
     </SettingsSection>
   )
@@ -93,23 +101,22 @@ export function BrandingPanel() {
   const online = useOnline()
   const live = useBranding()
   const [value, setValue] = useState<Branding | null>(null)
-  const [saved, setSaved] = useState(false)
-  const { busy, error, setError, run: attempt } = useAction({ describe: messageOf, onStart: () => setSaved(false) })
+  const logo = useAction({ describe: messageOf })
+  const name = useAction({ describe: messageOf })
+  const { setError } = logo
   useEffect(() => {
     if (!online) return
     void api.brandingSettings().then(setValue, (err) => { if (!isNetworkError(err)) setError(messageOf(err)) })
   }, [online, setError])
-  const run = (fn: () => Promise<Branding>) => attempt(async () => {
-    const next = await fn()
+  const apply = (next: Branding) => {
     setValue(next)
     setBranding(next)
-    setSaved(true)
-  })
+  }
   return (
-    <BrandingView value={value ?? (online ? null : live)} online={online} busy={busy} error={error} saved={saved}
-      onSaveName={(name) => void run(() => api.putBrandingName(name))}
-      onLogo={(file) => void run(() => api.putBrandingLogo(file))}
-      onRemoveLogo={() => void run(() => api.deleteBrandingLogo())}
+    <BrandingView value={value ?? (online ? null : live)} online={online} busy={logo.busy} error={logo.error} savingName={name.busy} nameError={name.error}
+      onSaveName={(n) => void name.run(async () => apply(await api.putBrandingName(n)))}
+      onLogo={(file) => void logo.run(async () => apply(await api.putBrandingLogo(file)))}
+      onRemoveLogo={() => void logo.run(async () => apply(await api.deleteBrandingLogo()))}
       themes={<Suspense fallback={<Skeleton count={2} />}><BrandingThemes online={online} /></Suspense>} />
   )
 }
