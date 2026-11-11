@@ -179,6 +179,19 @@ The server cannot read an encrypted account's titles and notes. With encryption 
 - Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back (for a multi-day task, its start and due dates).
 - Calendar sync is refused on a public demo instance.
 
+## Tested servers
+
+Calendar sync is tested against an in-process CalDAV server and recorded Google responses. This table is what was run against the real service, following the [verification script](caldav-verification.md#calendar-sync):
+
+| Server | Connect | Task to event | Move or resize back | Delete back | Incremental sync |
+| --- | --- | --- | --- | --- | --- |
+| iCloud | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) |
+| Fastmail | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) |
+| Nextcloud 30 | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) |
+| Google Calendar | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) | not verified (2026-11-11) |
+
+"Not verified" means nobody has run that step against the real service yet; the guide does not claim it works there.
+
 ## What the server contacts
 
 Only the calendar servers people typed, under the same private-network rule as webhooks (a server on your own network needs **Allow private network targets** in **Settings → Integrations → Webhooks**), Google's sign-in and CalDAV addresses when a Google client is set up and someone connects Google, and Microsoft's sign-in (`login.microsoftonline.com`) and Microsoft Graph (`graph.microsoft.com`) when a Microsoft client is set up and someone connects Microsoft. Requests to Microsoft never follow redirects. Nothing is contacted while the owner switch is off. See also [Calendar apps (CalDAV)](caldav.md) for the other direction: OpenTodo as a CalDAV server for to-do apps.
