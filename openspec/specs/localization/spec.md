@@ -8,6 +8,10 @@ Lets each user read and operate the web app in their own language: the interface
 ### Requirement: Interface language preference
 Each user SHALL have an interface language preference whose value is `system` or the code of a shipped language. It SHALL default to `system`, which means the first of the browser's preferred languages that is shipped, else English. A client SHALL treat an unknown or missing value as `system` and SHALL leave the stored value unchanged.
 
+Chinese SHALL be resolved by script and region, not by the primary subtag alone. When Simplified Chinese is shipped, the tags `zh`, `zh-Hans`, `zh-CN` and `zh-SG`, and a `zh` tag whose script is `Hans`, SHALL resolve to `zh`. The tags `zh-Hant`, `zh-TW`, `zh-HK` and `zh-MO`, a `zh` tag whose script is `Hant`, and any other `zh` tag SHALL NOT resolve to `zh`. The browser's list SHALL be walked in order. A stored preference `zh` means Simplified Chinese on every device. Dates and numbers SHALL use the browser's own tag when that tag resolves to `zh`, and SHALL use `zh` otherwise.
+
+The preference SHALL be written as an operation on the user's personal data. It SHALL be editable offline and take effect at once on the editing device, SHALL converge by last-writer-wins, and SHALL be part of the JSON export like the date and time preferences.
+
 #### Scenario: New account on a German browser
 - **WHEN** a user whose browser prefers `de-CH` opens the app without ever choosing a language
 - **THEN** the interface is shown in German
@@ -19,6 +23,30 @@ Each user SHALL have an interface language preference whose value is `system` or
 #### Scenario: Unknown value from a newer client
 - **WHEN** a device receives a language code it does not ship
 - **THEN** it behaves as `system` and keeps the stored value unchanged
+
+#### Scenario: Simplified Chinese browser
+- **WHEN** a user whose browser prefers `zh-CN` opens the app without ever choosing a language, and Simplified Chinese is shipped
+- **THEN** the interface is Simplified Chinese and dates and numbers use the `zh-CN` locale
+
+#### Scenario: Traditional Chinese browser
+- **WHEN** the browser prefers only `zh-TW`, `zh-HK`, `zh-MO` or `zh-Hant`
+- **THEN** the interface is shown in English and no error is shown
+
+#### Scenario: Traditional tag ahead of a simplified tag
+- **WHEN** the browser prefers `zh-TW` and then `zh-CN`, and the account has not chosen a language
+- **THEN** the interface is Simplified Chinese
+
+#### Scenario: Chosen Chinese on an English browser
+- **WHEN** the user has chosen Simplified Chinese and the browser prefers `en-US`
+- **THEN** dates and numbers use the `zh` locale
+
+#### Scenario: Older client receives Chinese
+- **WHEN** a device running a release without Simplified Chinese receives `language: "zh"` from another device
+- **THEN** it behaves as `system` and keeps the stored value, and the newer device stays in Simplified Chinese
+
+#### Scenario: Chosen offline
+- **WHEN** the installed app is offline and the user picks 简体中文
+- **THEN** the interface switches to Simplified Chinese immediately and the change reaches the other devices on the next sync, converging by last-writer-wins
 
 ### Requirement: Language is personal, synced and offline
 The preference SHALL be written as an operation on the user's personal data, so it applies on every device of that user and never on another user's, SHALL be editable offline and take effect at once on the editing device, SHALL converge by last-writer-wins, and SHALL be part of the JSON export like the date and time preferences.
@@ -70,7 +98,7 @@ Only the catalog of the active language SHALL be loaded; English SHALL need no c
 - **THEN** the interface stays in its current language, the Language panel explains that the catalog could not be loaded, and the preference is still saved and applied when the catalog loads later
 
 ### Requirement: Plural and number forms follow the language
-Messages with a count SHALL use the active language's plural categories, and counts SHALL be written with the language's digit grouping. Dates follow `date-time-preferences`.
+Messages with a count SHALL use the active language's plural categories, and counts SHALL be written with the language's digit grouping. Dates follow `date-time-preferences`. Simplified Chinese SHALL use its only plural category, `other`, for every count.
 
 #### Scenario: Singular and plural
 - **WHEN** the language is German and a proposal has 1 change, then 2 changes
@@ -80,8 +108,12 @@ Messages with a count SHALL use the active language's plural categories, and cou
 - **WHEN** the language is French and a search placeholder names 10000 tasks
 - **THEN** the number is written as `10 000`
 
+#### Scenario: Chinese has no singular
+- **WHEN** the language is Simplified Chinese and a count is 1, then 2
+- **THEN** both counts use the same wording, the `other` category, and a catalog entry that also contains a `one` branch fails the translation check
+
 ### Requirement: Document language
-The document's `lang` attribute SHALL name the active language at first paint and whenever it changes, so browsers, screen readers and spell checkers use the right rules. The `dir` attribute SHALL NOT be changed by this capability.
+The document's `lang` attribute SHALL name the active language at first paint and whenever it changes, so browsers, screen readers and spell checkers use the right rules. The `dir` attribute SHALL NOT be changed by this capability. For Simplified Chinese the language named SHALL be `zh`.
 
 #### Scenario: Screen reader voice
 - **WHEN** the language is Italian and the page loads
@@ -90,6 +122,10 @@ The document's `lang` attribute SHALL name the active language at first paint an
 #### Scenario: Change without reload
 - **WHEN** the user switches from Italian to English
 - **THEN** the root element's `lang` becomes `en` at once
+
+#### Scenario: Simplified Chinese
+- **WHEN** the user switches the language to Simplified Chinese
+- **THEN** the root element's `lang` becomes `zh` at once and its `dir` stays `ltr`
 
 ### Requirement: Server errors translated by code
 When the server answers with its error envelope, the client SHALL show a translated message for every error code it knows and the server's own message verbatim for a code it does not know. Server messages are English and are not changed by this capability.
@@ -103,15 +139,21 @@ When the server answers with its error envelope, the client SHALL show a transla
 - **THEN** the client shows the server's message as received
 
 ### Requirement: Shipped languages and their catalogs
-English, German, French, Spanish, Italian and Portuguese SHALL be maintained in the repository and SHALL be complete in every release. A language SHALL be offered in Settings only when its catalog is complete. Shipped catalogs SHALL be written and reviewed by people; machine translation SHALL NOT be used for a shipped catalog. A community language follows the same rule.
+English, German, French, Spanish, Italian, Portuguese and Simplified Chinese (`zh`, shown as 简体中文) SHALL be maintained in the repository and SHALL be complete in every release. A language SHALL be offered in Settings only when its catalog is complete. The Simplified Chinese catalog MAY be drafted by machine translation and SHALL be reviewed afterwards by a person who reads Simplified Chinese. The other shipped catalogs SHALL be written and reviewed by people; machine translation SHALL NOT be used for them. A community language follows the same rule.
+
+Simplified Chinese SHALL be complete on the web app, the service worker's notification texts, the browser extension, the Android shell, server emails, the weekly digest and notification-channel messages.
 
 #### Scenario: Complete languages offered
 - **WHEN** the user opens the Language panel
-- **THEN** the six shipped languages are listed, each in its own name
+- **THEN** the seven shipped languages are listed, each in its own name, 简体中文 among them
 
 #### Scenario: Work-in-progress catalog
 - **WHEN** a catalog in the repository is incomplete
 - **THEN** it is not offered in Settings and the release check reports its missing messages
+
+#### Scenario: Simplified Chinese interface
+- **WHEN** the user picks 简体中文 and opens Today with an overdue task
+- **THEN** the headings, the row's due label, the quick-add placeholder and the row menu are in Simplified Chinese, the root element's `lang` is `zh`, and the task's title is as written
 
 ### Requirement: Translation checks
 The project's checks SHALL fail when a new user-facing string in the web app is not routed through the message layer (naming the file and line, with an allow-list for proper nouns, codes and samples), when a shipped catalog misses a message or holds one no longer used, when a message is malformed, or when a translation's placeholders differ from the source. The untranslated-string check SHALL also catch a prop value that reads as a phrase without any two-letter word (such as a placeholder "e.g. 45m, 1h30") and text assembled in a template literal under an object key a view shows (such as a group's `note`).
@@ -142,6 +184,10 @@ Settings → Preferences SHALL offer a Language panel with `System` (naming the 
 #### Scenario: System option names its result
 - **WHEN** the browser prefers Portuguese and the user opens the panel
 - **THEN** the first option reads `System (Português)`
+
+#### Scenario: System option on a Chinese browser
+- **WHEN** the browser prefers `zh-CN` and the user opens the panel
+- **THEN** the first option reads `System (简体中文)`
 
 ### Requirement: Help stays English, and says so
 The in-app Help and its contextual sections SHALL keep the English guide. When the active language is not English, Help SHALL start with a short note in the active language that the guide is in English.
@@ -198,3 +244,14 @@ When an action fails with a local refusal, the client SHALL translate the source
 
 - **WHEN** the client throws a sentence absent from the catalogue
 - **THEN** the toast shows that sentence unchanged
+
+### Requirement: News entries stay English, and the page says so
+What's new entries SHALL be the English text shipped with the version. The card's own chrome (its name, the version-notices switch, the disclosure, the empty line) SHALL follow the active language. When the active language is not English and there is at least one entry, the card SHALL start with a short note in the active language that the notes are in English.
+
+#### Scenario: News in French
+- **WHEN** the language is French and the user opens What's new on a client that has an entry
+- **THEN** the note at the top of the card is French, the switch and the disclosure are French, and the entry body is the English text
+
+#### Scenario: English has no note
+- **WHEN** the language is English and the user opens What's new
+- **THEN** no "these notes are in English" line is shown
