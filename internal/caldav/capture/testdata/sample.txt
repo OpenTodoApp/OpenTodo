@@ -1,0 +1,58 @@
+2026-11-11 10:00:01 I/okhttp.OkHttpClient: --> PROPFIND https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/ http/1.1
+2026-11-11 10:00:01 I/okhttp.OkHttpClient: <-- 207 Multi-Status https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/ (41ms)
+2026-11-11 10:00:02 I/okhttp.OkHttpClient: --> PUT https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/0b7e3c1a-aaaa-4bbb-8ccc-0123456789ab/3f1a2b4c-parent.ics http/1.1
+2026-11-11 10:00:02 I/okhttp.OkHttpClient: Content-Type: text/calendar; charset=utf-8
+2026-11-11 10:00:02 I/okhttp.OkHttpClient: If-None-Match: *
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:+//IDN bitfire.at//ical4android (org.tasks)
+BEGIN:VTODO
+DTSTAMP:20261111T090002Z
+UID:3f1a2b4c-parent
+CREATED:20261111T090000Z
+LAST-MODIFIED:20261111T090000Z
+SUMMARY:Call Dr. Rossi about Alice's test results
+DESCRIPTION:Ask about the biopsy\, and mention the allergy.\nPhone: +39 333 1234567
+LOCATION:Via Roma 12\, Milano
+GEO:45.4642;9.1900
+URL:https://clinic.example.org/patients/alice
+CATEGORIES:Health,Family
+ATTENDEE;CN="Alice Bianchi";PARTSTAT=NEEDS-ACTION:mailto:alice.bianchi@mail.example.net
+DUE;TZID=Europe/Rome:20261118T093000
+DTSTART;TZID=Europe/Rome:20261118T093000
+PRIORITY:1
+STATUS:NEEDS-ACTION
+X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS="Via Roma 12, Milano";X-TITLE=Studio Rossi:geo:45.4642,9.1900
+BEGIN:VALARM
+TRIGGER;RELATED=START:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Call Dr. Rossi about Alice's test results
+END:VALARM
+END:VTODO
+END:VCALENDAR
+2026-11-11 10:00:02 I/okhttp.OkHttpClient: --> END PUT (612-byte body)
+2026-11-11 10:00:02 I/okhttp.OkHttpClient: <-- 201 Created https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/0b7e3c1a-aaaa-4bbb-8ccc-0123456789ab/3f1a2b4c-parent.ics (18ms)
+2026-11-11 10:00:03 I/okhttp.OkHttpClient: --> PUT https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/0b7e3c1a-aaaa-4bbb-8ccc-0123456789ab/9d8e7f6a-child.ics http/1.1
+D/ical: BEGIN:VCALENDAR
+D/ical: VERSION:2.0
+D/ical: PRODID:+//IDN bitfire.at//ical4android (org.tasks)
+D/ical: BEGIN:VTODO
+D/ical: DTSTAMP:20261111T090003Z
+D/ical: UID:9d8e7f6a-child
+D/ical: SUMMARY:Bring the referral letter from the very long list of documents that Alice 
+D/ical:  needs for the appointment
+D/ical: RELATED-TO;RELTYPE=PARENT:3f1a2b4c-parent
+D/ical: CATEGORIES:Family
+D/ical: DUE;VALUE=DATE:20261117
+D/ical: END:VTODO
+D/ical: END:VCALENDAR
+2026-11-11 10:00:03 I/okhttp.OkHttpClient: <-- 201 Created (12ms)
+2026-11-11 10:00:04 I/okhttp.OkHttpClient: --> REPORT https://cal.alice-home.example.net/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/0b7e3c1a-aaaa-4bbb-8ccc-0123456789ab/ http/1.1
+2026-11-11 10:00:04 I/okhttp.OkHttpClient: <-- 207 Multi-Status (30ms)
+<d:response><d:href>/x.ics</d:href><c:calendar-data>BEGIN:VCALENDAR
+BEGIN:VTODO
+UID:served-by-the-server
+SUMMARY:Served text that is not a client request
+END:VTODO
+END:VCALENDAR</c:calendar-data></d:response>
+{"level":"debug","msg":"request","method":"PUT","url":"/dav/calendars/5f0c2a7e-1111-4222-8333-944455556666/inbox/9d8e7f6a-child.ics","body":"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VTODO\r\nUID:9d8e7f6a-child\r\nSUMMARY:Bring the referral letter\r\nDESCRIPTION:line one\\nline two\r\nRELATED-TO:3f1a2b4c-parent\r\nSTATUS:COMPLETED\r\nCOMPLETED:20261112T080000Z\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"}
