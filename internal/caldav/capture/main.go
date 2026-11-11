@@ -53,14 +53,14 @@ func run(in, outDir string, all bool, report io.Writer) error {
 	if len(bodies) == 0 {
 		return fmt.Errorf("%s: no calendar data found (use -all to keep bodies that are not PUT requests)", in)
 	}
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
+	if err := os.MkdirAll(outDir, 0o750); err != nil {
 		return err
 	}
 	s := newScrubber()
 	for i, b := range bodies {
 		name := fmt.Sprintf("%02d.ics", i+1)
 		out, summary := s.calendar(b.ics)
-		if err := os.WriteFile(filepath.Join(outDir, name), out, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(outDir, name), out, 0o600); err != nil {
 			return err
 		}
 		req := b.method
