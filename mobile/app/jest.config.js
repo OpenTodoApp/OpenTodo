@@ -5,7 +5,11 @@ module.exports = {
   preset: 'jest-expo',
   rootDir: __dirname,
   roots: ['<rootDir>/src', '<rootDir>/test'],
-  moduleNameMapper: { '^@shared/(.*)$': '<rootDir>/../../web/src/lib/$1' },
+  moduleNameMapper: {
+    '^@shared/(.*)$': '<rootDir>/../../web/src/lib/$1',
+    // As in Metro (metro.config.js): the web-only live-query hook is a stub here.
+    '^dexie-react-hooks$': '<rootDir>/src/stubs/dexie-react-hooks.ts',
+  },
   resolver: '<rootDir>/test/resolver.js',
   // Transform the shared library too (it lives outside this folder).
   transformIgnorePatterns: [

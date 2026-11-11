@@ -245,3 +245,17 @@ Reference-device results are to be recorded per release in `docs/performance/`.
 No release has a record yet, 1.0 included: its budgets were measured in CI only,
 and the first real-device record comes after 1.0
 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
+
+### The native app (trial)
+
+The React Native app in `mobile/app` (OpenSpec change `native-app-foundation`) has no budgets of its own here yet. Its numbers come from the nightly `app-perf` job: the same 10,000-task account on an iPhone 16 simulator on GitHub's macOS runner. The first runs (2026-11-11) against the targets of the change's design (D4):
+
+| Metric | Target | Measured (two runs) |
+| --- | --- | --- |
+| Cold start to Today drawn | 1,000 ms | 1,406–2,539 ms, of which 1.0–1.9 s passes before any JavaScript runs |
+| JavaScript start to Today drawn | | 329–622 ms, of which the database and Today take 125–206 ms |
+| Opening Inbox | 300 ms | 30–50 ms |
+| A 500-op sync page | 400 ms | 74–135 ms |
+| Longest frame while it applies | 50 ms | 18 ms |
+
+The full table, and what the cold-start number means on a simulator, is in the change's design.

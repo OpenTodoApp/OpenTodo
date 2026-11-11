@@ -472,11 +472,17 @@ class OpenTodoDB extends Dexie {
   }
 }
 
-export let db = watchVersionChange(new OpenTodoDB())
+/** The schema above on IndexedDB, or on the host's own storage (platform.database: the app's SQLite). */
+const openDatabase = (name?: string): OpenTodoDB => {
+  const declared = new OpenTodoDB(name)
+  return watchVersionChange(platform.database?.(declared) ?? declared)
+}
 
-/** Replace the database instance (tests use this to get an isolated store). */
+export let db = openDatabase()
+
+/** Replace the database instance (tests use this to get an isolated store; the app opens one per account). */
 export function useDatabase(name: string): OpenTodoDB {
-  db = watchVersionChange(new OpenTodoDB(name))
+  db = openDatabase(name)
   return db
 }
 

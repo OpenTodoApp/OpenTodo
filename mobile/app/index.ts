@@ -1,9 +1,7 @@
-// Start-up: the host for the shared library comes first, then the screens.
+// Start-up: the host for the shared library first (src/setup.ts: polyfills, Web Crypto,
+// the platform port with the SQLite database), then the screens.
+import './src/setup'
 import { registerRootComponent } from 'expo'
-import { installCrypto } from './src/crypto'
-import { installAppPlatform } from './src/host'
 import App from './src/App'
 
-installCrypto()
-installAppPlatform()
 registerRootComponent(App)

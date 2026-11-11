@@ -1,5 +1,6 @@
 // The app's platform port (design D3) over a fake React Native host.
 import { createPlatform, type Host } from '../src/platform'
+import { nodeSqlite } from './storage/nodeSqlite'
 
 function fakeHost(state = 'active') {
   const appState = new Set<(s: string) => void>()
@@ -19,6 +20,7 @@ function fakeHost(state = 'active') {
     storage: { getString: (k) => store.get(k), set: (k, v) => { store.set(k, v) }, remove: (k) => { store.delete(k) } },
     timeZone: () => zone,
     languages: () => ['it-IT', 'en-GB'],
+    sql: nodeSqlite(),
   }
   return {
     host,

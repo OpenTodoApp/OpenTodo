@@ -13,6 +13,13 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `react-native-quick-crypto`: `crypto.subtle` and `crypto.getRandomValues` for the shared encryption code (AES-GCM, PBKDF2, HKDF); Hermes has no Web Crypto.
 - `react-native-quick-base64`: required by `react-native-quick-crypto` (peer dependency).
 - `react-native-nitro-modules`: the native module bridge `react-native-mmkv` and `react-native-quick-crypto` are built on (peer dependency).
+- `@op-engineering/op-sqlite`: SQLite for the local database (design D4, task 4.3): the Dexie-subset adapter in `src/storage` runs every statement on the connection's own thread. 19.0.1, the newest release at least 14 days old, which the storage spike also ran.
+- `yjs`: the notes document model, which the shared `applyOps` loads to merge a pulled note (`web/src/lib/richtext.ts`); its `lib0` asks for a React Native crypto package, which Metro points at the app's Web Crypto (`src/stubs/webcrypto.ts`).
+- `dexie`: the local database's schema, which `web/src/lib/db.ts` declares on a Dexie instance, and the zones the adapter's transactions use (`src/storage/scope.ts`). Dexie never opens a database in the app; the adapter does.
+
+## Overrides
+
+- `expo-font` 58.0.10: Expo's own dependency, held at the version built against `expo-modules-core` 58.0.26. The lockfile had moved it to 58.0.11, which needs 58.0.28 and made the app abort at launch (dyld: a missing `ExpoModulesCore` symbol), seen by app-perf on 2026-11-11; `app-ios` only builds, so it did not catch it. Remove the override when `expo-modules-core` moves to 58.0.28 or later.
 
 ## Development
 
@@ -27,5 +34,5 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `eslint`: the lint (`npm run lint`).
 - `typescript-eslint`: ESLint's TypeScript parser.
 - `eslint-plugin-react-hooks`: the Rules of Hooks.
-- `dexie`: types only, for now: the shared modules' `import type` chains reach web's data layer (`db.ts`), so the type-check needs Dexie's types. It becomes a runtime dependency with the storage choice (task 4.3).
-- `yjs`: types only, for the same reason (the notes document model, reached through `import type`).
+- `fake-indexeddb`: IndexedDB in Node for the adapter's conformance suite (`test/storage`), which runs every scenario on Dexie, as the web does, and on the adapter. 6.2.6, the newest release at least 14 days old (web has 6.2.7).
+- `@babel/plugin-transform-async-to-generator`: async functions as generators driven by the global Promise (`babel.config.js`), so the adapter's transaction zone follows an `await` on Hermes (design D4). Already installed by Expo's preset; named here because `babel.config.js` loads it.

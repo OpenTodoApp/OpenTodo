@@ -61,7 +61,7 @@ The server already sends Web Push. Native push needs APNs and FCM credentials th
 ### D7. The go/no-go gate and the switch
 
 - **The gate** is a checklist in `RELEASING.md`, signed off by the owner in the release pull request:
-  - two weeks of the preview with testers;
+  - two weeks of the TestFlight build with testers;
   - no open data-loss or sync issue;
   - TestFlight's crash-free sessions at least 99.5% (Apple's own reporting, no telemetry of ours);
   - the nightly app budgets green;

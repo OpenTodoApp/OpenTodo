@@ -1,6 +1,6 @@
 ---
 title: Work on the native app
-summary: The React Native app in mobile/app, make app on Linux, the shared library behind @shared, and the CI lanes that build it.
+summary: The React Native app in mobile/app, make app on Linux, the shared library behind @shared, its SQLite database, and the CI lanes that build and measure it.
 audience: developer
 section: Contributing
 specs: []
@@ -35,6 +35,29 @@ The app imports `web/src/lib` as `@shared/*`, through Metro (`metro.config.js`),
 - **Vite forms.** `import.meta.glob` and `import.meta.env.MODE` are compiled by `babel/vite-import-meta.js`, so the shared i18n layer loads the same catalogs as the web app.
 - **Vectors.** The tests in `mobile/app/test/` run the shared vectors (hybrid clock, recurrence, quick add, project flows, encryption) on the app's runtime against the same modules the web app runs. A change that breaks one fails in both.
 
+## The local database
+
+The shared modules call their database through `web/src/lib/db.ts`'s tables (`db.tasks.where('project_id').equals(id).toArray()`, `db.transaction('rw', …)`), as on the web. On the web that is Dexie on IndexedDB. In the app it is an adapter on SQLite, `mobile/app/src/storage/`:
+
+- **How it is chosen.** `db.ts` declares its schema on a Dexie instance and asks the platform port for the database (`platform.database?.(declared)`). The web has no such member and opens the Dexie instance; the app answers with `sqliteDatabase(declared, op-sqlite)`. Nothing in the web's bundle changes.
+- **What it implements.** Exactly the part of Dexie the shared modules call. `node mobile/app/scripts/dexie-surface.mjs` lists it with the type checker (every property access in a module of `shared-modules.json` that resolves to a declaration in Dexie's types) into `src/storage/surface.json`. `make app` fails when the file is stale, and `test/storage/surface.test.ts` fails on a member the adapter lacks. A shared module that starts calling, say, `Collection.modify` fails `make app` until the adapter has it.
+- **Storage.** One SQLite table per store: the primary key, the row as JSON, and a generated column per key path an index names, holding the value only when IndexedDB would index it. Every Dexie index is a SQL index. A read is one `JSON.parse` of the whole result.
+- **Transactions.** A transaction is a SQLite transaction. Calls made inside it, across awaits, run on it; calls from outside wait until it ends, as IndexedDB queues them. The adapter tells them apart with Dexie's zones, which follow an `await` only because `babel.config.js` compiles async functions to generators. Keep that plugin.
+- **The phone's own indexes.** Today and Inbox ask SQLite for their candidates (`src/storage/lists.ts`) through indexes the web does not have (`PHONE_INDEXES` in `schema.ts`), then run the shared rules (`todayList`, `inboxTasks`, `isTaskVisible`, `tasksIn`) on them. They never read the whole tasks table.
+- **Per account.** `openAccount(server, userId)` opens the account's file; `forgetAccount()` empties every table at sign-out, as on the web, and deletes the file.
+
+The tests in `mobile/app/test/storage/` run without a phone:
+
+```sh
+cd mobile/app && npx jest test/storage
+```
+
+- `conformance.test.ts` runs each scenario twice on `db.ts`'s schema, on Dexie over `fake-indexeddb` (the web) and on the adapter over `node:sqlite` (the phone, with `node:sqlite` in place of op-sqlite, which is native), and expects the same results.
+- `shared.test.ts` does the same with the shared modules themselves: pulled pages through `applyOps`, and local edits through `createTask`, `updateTask` and the rest, then compares every table.
+- `lists.test.ts` checks that Today and Inbox from the indexes equal the web's lists over a generated account, and that SQLite uses the indexes.
+
+The performance run (`mobile/app/perf/`, the job `App builds / App performance`) measures the same on the iOS simulator with the 10,000-task `perfseed` account. On a computer, `perf/local.test.ts` runs the session over `node:sqlite` (the commands are at its top).
+
 ## Dependencies
 
 Every package is pinned exactly and has a line in `mobile/app/DEPENDENCIES.md` saying why; `make repo-check` fails otherwise. `mobile/app/.npmrc` installs only releases at least 14 days old. Dependabot proposes the app's updates once a week in one pull request.
@@ -46,5 +69,6 @@ Every package is pinned exactly and has a line in `mobile/app/DEPENDENCIES.md` s
 | `app-check` (Linux) | `mobile/app/`, a module in `shared-modules.json`, `web/src/generated/opSchema.ts`, `web/src/locales/`, the `Makefile` or the workflow changes | `make app` |
 | `App builds / App on iOS` (macOS) | a pull request that changes `mobile/app/`, nightly | `expo prebuild`, a Release simulator build without signing |
 | `App builds / App on Android` (Linux) | the same | `expo prebuild`, a debug build, the unit tests |
+| `App builds / App performance` (macOS) | nightly; by hand with `gh workflow run app-native.yml --ref <branch> -f perf=true` | the `perfseed` account on the simulator: cold start to Today, Inbox, a 500-op pull page, memory, and a write that survives the app being killed |
 
 A web-only pull request runs none of them, and a change to a shared module runs only `app-check`. Release tags do not wait for the app's builds: no release ships the app yet. The cases are in the path filter's test, `scripts/repo-checks.test.mjs`.
