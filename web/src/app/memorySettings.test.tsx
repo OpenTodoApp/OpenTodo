@@ -33,6 +33,8 @@ describe('Memory in Settings', () => {
     await type(input, 'Anna is my manager')
     await key(input, 'Enter')
     await waitFor(() => texts(container).length === 1, 'the item')
+    // The Add button comes back once the editor of the first item has closed.
+    await waitFor(() => !!container.querySelector('[data-memory-add]'), 'Add again')
     await click(container.querySelector('[data-memory-add]')!)
     const second = container.querySelector<HTMLInputElement>('[data-memory-input]')!
     await type(second, 'Does not work on Fridays')
