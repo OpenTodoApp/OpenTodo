@@ -36,7 +36,8 @@ describe('TwoFactorPanelView', () => {
   it('offers setup when off', () => {
     const html = panel({})
     expect(html).toContain('Two-factor authentication')
-    expect(html).toMatch(/data-status="off"[^>]*><span[^>]*><\/span><span[^>]*>Off<\/span>/)
+    // settings-foundation D5: two-factor off leaves no way back in after a stolen password, so it warns.
+    expect(html).toMatch(/data-status="warn"[^>]*><span[^>]*><\/span><span[^>]*>Off<\/span>/)
     expect(html).toContain('Set up two-factor authentication')
     expect(disabledButtons(html)).toBe(0)
     expect(html).not.toContain('Remembered browsers')

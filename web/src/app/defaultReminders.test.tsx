@@ -54,7 +54,7 @@ describe('Settings → Notifications → Default reminders', () => {
     await waitFor(() => !!dated())
     await choose(dated(), 'custom')
     const form = r.container.querySelector<HTMLFormElement>('[data-testid="default-reminder-custom"]')!
-    const amount = form.querySelector<HTMLInputElement>('input[type="number"]')!
+    const amount = form.querySelector<HTMLInputElement>('[data-number-input] input')!
     await type(amount, '5')
     await choose(form.querySelector<HTMLSelectElement>('select[aria-label="Offset unit"]')!, '1440')
     await click(form.querySelector<HTMLButtonElement>('button[type="submit"]')!)

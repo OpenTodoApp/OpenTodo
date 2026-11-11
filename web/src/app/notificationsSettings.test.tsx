@@ -86,6 +86,8 @@ describe('NotificationsView', () => {
     const html = view({ ...subscribed, enabled: false, permission: 'denied', subscription: null })
     expect(html).toContain('>Off<')
     expect(html).toContain('Permission: Blocked')
+    // settings-foundation D5: blocked keeps push from working: the warning tone, not danger.
+    expect(html).toMatch(/data-status="warn"[^>]*>(<span[^>]*>(<\/span>)?)*Permission: Blocked/)
     expect(html).toContain('blocked in your browser settings')
     expect(html).not.toContain('Last delivered')
   })

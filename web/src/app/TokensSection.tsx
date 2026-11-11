@@ -8,7 +8,7 @@ import { Icon } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
-import { Notice } from '../ui'
+import { Notice, RadioGroup } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -138,20 +138,8 @@ export function TokensView(p: TokensViewProps) {
               <Field label={t('Name')} description={t('Something you will recognise later, such as the device or script.')}>
                 <Input aria-label={t('Token name')} placeholder={t('e.g. laptop CLI')} value={p.name} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
               </Field>
-              <fieldset className="space-y-2">
-                <legend className="text-body font-medium text-default">{t('Access')}</legend>
-                <div role="radiogroup" aria-label={t('Token scope')} className="space-y-1">
-                  {SCOPES.map((o) => (
-                    <label key={o.scope} className={`flex cursor-pointer items-start gap-3 rounded-control border px-3 py-2 ${p.scope === o.scope ? 'border-accent bg-accent-soft' : 'border-default'}`}>
-                      <input type="radio" name="token-scope" value={o.scope} checked={p.scope === o.scope} onChange={() => p.onScopeChange(o.scope)} className="mt-1" data-token-scope={o.scope} />
-                      <span className="min-w-0">
-                        <span className="block text-body font-medium text-default">{o.label()}</span>
-                        <span className="block text-meta text-muted">{o.line()}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <RadioGroup label={t('Access')} variant="cards" name="token-scope" dataKey="token-scope" value={p.scope} onChange={p.onScopeChange}
+                options={SCOPES.map((o) => ({ value: o.scope, label: o.label(), description: o.line() }))} />
               {p.scope === 'admin' && (
                 <Notice tone="warning">
                   {t('An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.')}
