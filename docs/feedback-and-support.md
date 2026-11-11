@@ -3,7 +3,7 @@ title: Feedback and support
 summary: Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee.
 audience: user
 section: Reference
-specs: [first-run, settings-navigation, whats-new]
+specs: [feedback, first-run, settings-navigation, whats-new]
 screens: [settings/about]
 order: 80
 ---
@@ -15,7 +15,7 @@ OpenTodo is free and open source, made by one person in the open. These are the 
 
 [Open an issue on GitHub](https://github.com/OpenTodoApp/OpenTodo/issues). Say what you did, what you expected and what happened instead, and which version you run (the Help page shows it at the top). Every report is read. Before reporting a problem, the [troubleshooting guide](troubleshooting.md) may already have the fix.
 
-**Something isn't working** (in the account menu under Help, on the phone in the drawer's account row, and in **Settings → About → Feedback and problems**) opens a short form: write what happened, and a hello is welcome too. Below your words it adds a few lines the app already knows: the server's version, the page you were on, your browser's name, the language and whether you were offline. You can edit or delete those lines before you send. Nothing is sent by the app itself. **Open on GitHub** opens a new issue with your text, in your browser; **Send by email** opens a message to the project's feedback address when the project publishes one. When the text is too long for a link, it is copied instead, and the dialog says so so you can paste it.
+**Something isn't working** (in the account menu under Help, on the phone in the drawer's account row, and in **Settings → About → Feedback and problems**) opens a short form: write what happened, and a hello is welcome too. Below your words it adds a few lines the app already knows: the server's version, the page you were on, your browser's name, the language and whether you were offline. You can edit or delete those lines before you send. Nothing is sent by the app itself. **Open on GitHub** opens a new issue with your text, in your browser; **Send by email** opens a message to the project's feedback address, info@open-todo.app. When the text is too long for a link, it is copied instead, and the dialog says so so you can paste it.
 
 If you found a security problem, do not open a public issue: follow `SECURITY.md` in the repository instead.
 

@@ -306,11 +306,15 @@ The settings list SHALL start with a search field that filters sections and indi
 - **THEN** "Account › Passkeys" is listed and opens Account → Security at the passkeys row
 
 ### Requirement: About section
-Settings SHALL have an About section, visible to every account, that shows the server's version while online and a link to the in-app Help, the documentation on the website, the website, the issue tracker on GitHub, the OpenTodo Discord server, the OpenTodo account on X and the source code, a What's new card (OpenSpec `whats-new`), and a Buy Me a Coffee button. External links SHALL open in a new tab and load nothing into the app; they SHALL be shown offline too, since they are part of the client. The Discord row SHALL be found by the settings search under "discord", "community" and "chat". The X row SHALL be labelled Follow on X and SHALL be found under "x" and "twitter". The What's new card SHALL be found under "news", "changelog" and "what's new". For the owner it SHALL also offer to show the welcome note again.
+Settings SHALL have an About section, visible to every account, that shows the server's version while online and a link to the in-app Help, the documentation on the website, the website, the OpenTodo Discord server, the OpenTodo account on X and the source code, a What's new card (OpenSpec `whats-new`), and a Buy Me a Coffee button. The Feedback and problems row SHALL open the "Something isn't working" dialog (OpenSpec `feedback`) rather than the issue list directly. External links SHALL open in a new tab and load nothing into the app; they SHALL be shown offline too, since they are part of the client. The Discord row SHALL be found by the settings search under "discord", "community" and "chat". The X row SHALL be labelled Follow on X and SHALL be found under "x" and "twitter". The What's new card SHALL be found under "news", "changelog" and "what's new". The Feedback row SHALL be found under "feedback", "issue" and "bug". For the owner it SHALL also offer to show the welcome note again.
 
 #### Scenario: Member opens About
 - **WHEN** a member opens `/settings/about` while online
-- **THEN** the page shows "OpenTodo <version>", the What's new card, Open Help, the documentation, website, issue, Discord, Follow on X and GitHub links and the coffee button, and no welcome note row
+- **THEN** the page shows "OpenTodo <version>", the What's new card, Open Help, the documentation, website, Discord, Follow on X and GitHub links, the Feedback and problems row, and the coffee button, and no welcome note row
+
+#### Scenario: Feedback opens the dialog
+- **WHEN** anyone activates Feedback and problems in Settings → About, online or offline
+- **THEN** the "Something isn't working" dialog opens and the app has made no request
 
 #### Scenario: Searching for the community
 - **WHEN** anyone types "discord" or "community" in the settings search
@@ -323,6 +327,10 @@ Settings SHALL have an About section, visible to every account, that shows the s
 #### Scenario: Searching for the X account
 - **WHEN** anyone types "twitter" or "x" in the settings search
 - **THEN** the About section's Follow on X row is offered and opening it lands on that row
+
+#### Scenario: Searching for feedback
+- **WHEN** anyone types "bug" or "feedback" in the settings search
+- **THEN** the About section's Feedback and problems row is offered and opening it opens the dialog
 
 #### Scenario: Following on X
 - **WHEN** anyone activates Follow on X in Settings → About, online or offline
