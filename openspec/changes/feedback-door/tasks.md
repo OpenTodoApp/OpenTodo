@@ -17,4 +17,4 @@
 
 ## 5. Check
 
-- [ ] 5.1 `cd web && npm test && npm run build`. If the first load exceeds `web/bundle-budget.json`, raise it in the same change and record the reason. Then `make check`.
+- [x] 5.1 `cd web && npm test && npm run build`. If the first load exceeds `web/bundle-budget.json`, raise it in the same change and record the reason. Then `make check`. Passed on 2026-11-11 with TZ=UTC: `make web`, `go test ./...`, web `npm test` (767 files, 8,939 tests) and `npm run build`; `make check` passed except that its `npm run test:perf` step ran out of the default Node heap on the local machine, so it was rerun with `NODE_OPTIONS=--max-old-space-size=6144` (8 files, 22 tests passed) and the steps after it (`test-extension` to `repo-check`) were run on their own and passed. `make bundle-budget`: entry 143.3 of 143.4 KB gzip, entry with static imports 690.3 of 696 KB; no raise needed.

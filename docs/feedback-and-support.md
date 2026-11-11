@@ -3,7 +3,7 @@ title: Feedback and support
 summary: Where to report a problem or suggest an idea, where to talk to other people who use OpenTodo, how to star it on GitHub, and how to buy the maintainer a coffee.
 audience: user
 section: Reference
-specs: [first-run, settings-navigation]
+specs: [first-run, settings-navigation, whats-new]
 screens: [settings/about]
 order: 80
 ---

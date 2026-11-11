@@ -188,7 +188,7 @@ func signCmd(args []string, out io.Writer, getenv func(string) string) error {
 
 func verify(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("verify", flag.ContinueOnError)
-	requireSigned := fs.Bool("require-signed", false, "fail unless an official key signed the list")
+	requireSigned := fs.Bool("require-signed", false, "fail unless an official key (with -keys, one of those keys) signed the list")
 	keysFile := fs.String("keys", "", "trust the keys of this file (release-keys.json format) instead of the official ones")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -238,7 +238,13 @@ func verify(args []string, out io.Writer) error {
 	for _, p := range report.Problems {
 		fmt.Fprintln(out, "  "+p.String())
 	}
-	if !report.OK(*requireSigned) {
+	ok := report.OK(*requireSigned)
+	if *keysFile != "" && *requireSigned {
+		// -keys replaces the official keys, so a signature by one of its keys is what
+		// is required (Signer is set only when a trusted key's signature verifies).
+		ok = report.OK(false) && report.Signer != ""
+	}
+	if !ok {
 		return errors.New("the web app does not pass the check")
 	}
 	return nil

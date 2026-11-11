@@ -30,4 +30,4 @@
 
 - [x] 6.1 `docs/language.md` lists 简体中文. `docs/translating.md` gains a Simplified Chinese glossary column and names the reviewer. Add this change to the 0.21 table in `ROADMAP.md` beside `more-languages`. Verify `make docs-check`
 - [x] 6.2 CHANGELOG entry under Unreleased (Added: Simplified Chinese). Verify `make docs-check`
-- [ ] 6.3 `go test ./...`, then `cd web && npm test && npm run build`, then `make check` with TZ=UTC
+- [x] 6.3 `go test ./...`, then `cd web && npm test && npm run build`, then `make check` with TZ=UTC. Passed on 2026-11-11 with TZ=UTC: `make web`, `go test ./...`, web `npm test` (767 files, 8,939 tests) and `npm run build`; `make check` passed except that its `npm run test:perf` step ran out of the default Node heap on the local machine, so it was rerun with `NODE_OPTIONS=--max-old-space-size=6144` (8 files, 22 tests passed) and the steps after it (`test-extension` to `repo-check`) were run on their own and passed.

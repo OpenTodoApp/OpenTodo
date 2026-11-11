@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Browser end to end of the signed web app (OpenSpec change signed-web-app,
-// tasks 5.3 and 7.5): Chromium installs the app from a server and follows its
+// tasks 5.3, 5.7 and 7.5): Chromium installs the app from a server and follows its
 // updates, each signed with the test key (internal/websign/testdata). It checks
 // the trust record the service worker keeps:
 //
@@ -13,6 +13,18 @@
 //   6. v1.3.0 says refuse: true and turns refusal on;
 //   7. a tampered v1.4.0 is refused: v1.3.0 stays, and the page shows the cause.
 //
+// Then a second, new device rehearses the key rotation (task 5.7) with
+// throwaway keys made by `websign keygen` in the temporary directory; the test
+// key plays the release key A built into the worker:
+//
+//   8. v2.0.0 signed with A, listing A and the recovery key R, installs;
+//   9. planned rotation: v2.1.0 signed with A and B, listing A, B and R, passes;
+//  10. v2.2.0 signed with B only, listing B and R, passes;
+//  11. a v2.3.0 signed with the retired key A is recorded as unknown-key;
+//  12. lost key: v2.4.0 signed with R only, listing a new release key C and R, passes;
+//  13. v2.5.0 signed with C passes;
+//  14. a v2.6.0 signed with the lost key B is recorded as unknown-key.
+//
 // The server is a small static one with the routes of internal/web that matter
 // here (the page for navigations, /index.html as built, the list never cached),
 // so each version is a directory, not a binary. The web app is built once, into
@@ -24,6 +36,7 @@
 import { execFileSync, execSync } from 'node:child_process'
 import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -50,19 +63,32 @@ const websign = path.join(tmp, 'websign')
 execFileSync('go', ['build', '-o', websign, './cmd/websign'], { cwd: root, stdio: 'inherit' })
 const keys = [{ spki: publicSpki(readFileSync(KEY, 'utf8')), role: 'release' }]
 
+/** A throwaway key pair made with `websign keygen`, inside the temporary directory. */
+function keygen(name) {
+  const file = path.join(tmp, `${name}.pem`)
+  execFileSync(websign, ['keygen', '-out', file], { stdio: 'pipe' })
+  const spki = publicSpki(readFileSync(file, 'utf8'))
+  return { file, spki, fingerprint: createHash('sha256').update(Buffer.from(spki, 'base64')).digest('hex') }
+}
+const A = { file: KEY, spki: keys[0].spki, fingerprint: createHash('sha256').update(Buffer.from(keys[0].spki, 'base64')).digest('hex') }
+const B = keygen('key-b')
+const R = keygen('key-recovery')
+const C = keygen('key-c')
+const listing = (release, ...more) => [...release.map((k) => ({ spki: k.spki, role: 'release' })), ...more.map((k) => ({ spki: k.spki, role: 'recovery' }))]
+
 /**
  * A version of the app: its own sw.js bytes (so the browser installs a new
  * worker) and one chunk of its own (files unchanged since the installed version
  * are reused, not downloaded, so only a new file can arrive changed), its list, signed.
  */
-function release(name, { version, refuse = false, tamper = false }) {
+function release(name, { version, refuse = false, tamper = false, signers = [KEY], listed = keys }) {
   const dir = path.join(tmp, name)
   cpSync(build, dir, { recursive: true })
   appendFileSync(path.join(dir, 'sw.js'), `\n// ${name}\n`)
   const own = `assets/release-${name}.js`
   writeFileSync(path.join(dir, own), `/* ${name} */\n`)
-  writeFileSync(path.join(dir, 'app-manifest.json'), JSON.stringify(buildManifest(dir, { version, keys, refuse }), null, 2) + '\n')
-  execFileSync(websign, ['sign', '-key', KEY, '-version', version, dir], { stdio: 'pipe' })
+  writeFileSync(path.join(dir, 'app-manifest.json'), JSON.stringify(buildManifest(dir, { version, keys: listed, refuse }), null, 2) + '\n')
+  execFileSync(websign, ['sign', ...signers.flatMap((k) => ['-key', k]), '-version', version, dir], { stdio: 'pipe' })
   let changed = null
   if (tamper) {
     // One byte added to a chunk the app installs, after signing: what a rewriting proxy does.
@@ -78,6 +104,13 @@ const v3 = release('v3', { version: '1.2.0' })
 const v0 = release('v0', { version: '0.9.0' })
 const v4 = release('v4-refuse', { version: '1.3.0', refuse: true })
 const v5 = release('v5-tampered', { version: '1.4.0', tamper: true })
+const r1 = release('r1', { version: '2.0.0', listed: listing([A], R) })
+const r2 = release('r2-a-and-b', { version: '2.1.0', signers: [A.file, B.file], listed: listing([A, B], R) })
+const r3 = release('r3-b', { version: '2.2.0', signers: [B.file], listed: listing([B], R) })
+const r4 = release('r4-retired-a', { version: '2.3.0', listed: listing([A], R) })
+const r5 = release('r5-recovery', { version: '2.4.0', signers: [R.file], listed: listing([C], R) })
+const r6 = release('r6-c', { version: '2.5.0', signers: [C.file], listed: listing([C], R) })
+const r7 = release('r7-lost-b', { version: '2.6.0', signers: [B.file], listed: listing([B], R) })
 
 // The server: like internal/web for the paths the worker uses.
 const CSP = JSON.parse(readFileSync(path.join(root, 'internal/httpapi/testdata/csp_fixture.json'), 'utf8')).base
@@ -103,8 +136,8 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r))
 const origin = `http://127.0.0.1:${server.address().port}`
 
 const browser = await chromium.launch({ ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) })
-const context = await browser.newContext()
-const page = await context.newPage()
+let context = await browser.newContext()
+let page = await context.newPage()
 let failures = 0
 const check = (ok, what) => {
   if (ok) log('ok  ', what)
@@ -185,6 +218,48 @@ try {
   check(r.lastCheck?.refused === true && r.lastCheck?.cause === 'changed-file' && r.current?.version === '1.3.0', `tampered update refused, 1.3.0 kept (${JSON.stringify(r.lastCheck)})`)
   const banner = await page.waitForSelector('[data-update-banner="refused"]', { timeout: 15_000 }).then((el) => el.textContent()).catch(() => '')
   check(/This update wasn.t installed\. A proxy or the server changed the app.s files\./.test(banner) && banner.includes('What to do'), `the page names the cause: "${banner}"`)
+
+  // Key rotation, on a new device (task 5.7).
+  await context.close()
+  context = await browser.newContext()
+  page = await context.newPage()
+  const sameKeys = (got, want) => JSON.stringify([...(got ?? [])].sort()) === JSON.stringify(want.map((k) => k.spki).sort())
+
+  log('8. new device installs', r1.version, 'signed with A, listing A and R')
+  serving = r1
+  await page.goto(origin + '/', { waitUntil: 'load' })
+  r = await until('r1 installed', (x) => x.current?.version === '2.0.0')
+  check(r.mode === 'signed' && r.lastCheck?.passed === true && r.signer === A.fingerprint && sameKeys(r.keys, [A, R]), `signed with A, trusting A and R (${JSON.stringify(r.lastCheck)})`)
+
+  log('9. planned rotation:', r2.version, 'signed with A and B')
+  await serve(r2)
+  r = await until('r2 installed', (x) => x.current?.version === '2.1.0')
+  check(r.lastCheck?.passed === true && r.verified?.version === '2.1.0' && sameKeys(r.keys, [A, B, R]), `A and B both sign, B is now trusted (${JSON.stringify(r.lastCheck)})`)
+
+  log('10.', r3.version, 'signed with B only')
+  await serve(r3)
+  r = await until('r3 installed', (x) => x.current?.version === '2.2.0')
+  check(r.lastCheck?.passed === true && r.signer === B.fingerprint && sameKeys(r.keys, [B, R]), `B alone passes, A is retired (${JSON.stringify(r.lastCheck)})`)
+
+  log('11.', r4.version, 'signed with the retired key A')
+  await serve(r4)
+  r = await until('r4 recorded', (x) => x.lastCheck?.version === '2.3.0')
+  check(r.lastCheck?.passed === false && r.lastCheck?.cause === 'unknown-key' && r.verified?.version === '2.2.0' && sameKeys(r.keys, [B, R]), `the retired key is no longer trusted (${JSON.stringify(r.lastCheck)})`)
+
+  log('12. lost key:', r5.version, 'signed with the recovery key, listing C and R')
+  await serve(r5)
+  r = await until('r5 installed', (x) => x.verified?.version === '2.4.0')
+  check(r.lastCheck?.passed === true && r.signer === R.fingerprint && sameKeys(r.keys, [C, R]), `the recovery key moves the device to C (${JSON.stringify(r.lastCheck)})`)
+
+  log('13.', r6.version, 'signed with C')
+  await serve(r6)
+  r = await until('r6 installed', (x) => x.verified?.version === '2.5.0')
+  check(r.lastCheck?.passed === true && r.signer === C.fingerprint, `the new release key passes (${JSON.stringify(r.lastCheck)})`)
+
+  log('14.', r7.version, 'signed with the lost key B')
+  await serve(r7)
+  r = await until('r7 recorded', (x) => x.lastCheck?.version === '2.6.0')
+  check(r.lastCheck?.passed === false && r.lastCheck?.cause === 'unknown-key' && r.verified?.version === '2.5.0', `the lost key is no longer trusted (${JSON.stringify(r.lastCheck)})`)
 } catch (err) {
   failures++
   console.error('e2e-signed:', err)

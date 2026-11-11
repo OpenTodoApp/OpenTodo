@@ -2,7 +2,7 @@ module github.com/OpenTodoApp/opentodo
 
 go 1.26.0
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 // Multipath TCP stays off on every listener and dialer (Go turns it on for
 // Linux listeners by default): OpenTodo gains nothing from it, and it widens
