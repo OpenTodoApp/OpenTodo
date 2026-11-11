@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -85,13 +87,9 @@ func TestSubtaskThreeLevelsServed(t *testing.T) {
 	}
 }
 
-// TestSubtaskParentInAnotherCalendar pins today's behaviour of a RELATED-TO
-// naming a task of another calendar of the same account: the relation is
-// resolved anywhere in the app password's scope, so the task becomes that
-// task's subtask. The change's spec asks instead that such a relation be kept
-// in ical_extra with parent_id unchanged; that difference is recorded as a
-// finding of the verification run (tasks.md 2.3, 3.5) and fixed in its own
-// change, which turns this test around.
+// TestSubtaskParentInAnotherCalendar: a RELATED-TO naming a task of another
+// calendar of the same account is kept as client data and served back, and
+// parent_id is not changed: a subtask lives in its parent's project.
 func TestSubtaskParentInAnotherCalendar(t *testing.T) {
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Home"})
@@ -101,21 +99,38 @@ func TestSubtaskParentInAnotherCalendar(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	work := out["id"].(string)
 	c.must("PUT", c.cal(home)+"h1.ics", tasksOrgBody("h1", "Home parent", ""), 201, "If-None-Match", "*")
+	c.must("PUT", c.cal(work)+"w0.ics", tasksOrgBody("w0", "Work parent", ""), 201, "If-None-Match", "*")
 	c.must("PUT", c.cal(work)+"w1.ics", tasksOrgBody("w1", "Work child", "RELATED-TO;RELTYPE=PARENT:h1"), 201, "If-None-Match", "*")
 	got := e.task("w1")
-	if got["parent_id"] != "h1" {
-		t.Fatalf("cross-calendar parent: %v", got)
+	if got["parent_id"] != nil || got["project_id"] != work || !strings.Contains(asString(got["ical_extra"]), "RELATED-TO:h1") {
+		t.Fatalf("cross-calendar parent on create: %v", got)
 	}
-	t.Logf("cross-calendar RELATED-TO: parent_id=%v project_id=%v (spec: kept in ical_extra, parent_id unchanged)", got["parent_id"], got["project_id"])
+	_, ics := c.must("GET", c.cal(work)+"w1.ics", "", 200)
+	if strings.Count(ics, "RELATED-TO") != 1 || !strings.Contains(ics, "\r\nRELATED-TO:h1\r\n") {
+		t.Fatalf("the relation is not served back unchanged:\n%s", ics)
+	}
+	// Sent back as served: nothing changes.
+	c.must("PUT", c.cal(work)+"w1.ics", ics, 204)
+	if got := e.task("w1"); got["parent_id"] != nil || !strings.Contains(asString(got["ical_extra"]), "RELATED-TO:h1") {
+		t.Fatalf("round trip: %v", got)
+	}
+	// A subtask of this calendar keeps its parent when a client names one in another.
+	c.must("PUT", c.cal(work)+"w2.ics", tasksOrgBody("w2", "Work subtask", "RELATED-TO;RELTYPE=PARENT:w0"), 201, "If-None-Match", "*")
+	c.must("PUT", c.cal(work)+"w2.ics", tasksOrgBody("w2", "Work subtask", "RELATED-TO;RELTYPE=PARENT:h1"), 204)
+	if got := e.task("w2"); got["parent_id"] != "w0" || !strings.Contains(asString(got["ical_extra"]), "RELATED-TO:h1") {
+		t.Fatalf("subtask named under another calendar's task: %v", got)
+	}
+	if got := e.task("h1"); got["parent_id"] != nil || got["project_id"] != home {
+		t.Fatalf("the other calendar's task changed: %v", got)
+	}
 }
 
 // TestSubtaskParentMovedByClient: a client moves a parent by writing it into
 // another calendar under the same UID (DAVx⁵ uploads it there, then deletes
-// the old resource). The parent moves and the old resource's DELETE does not
-// delete it. Its subtasks keep their parent but stay where they were: the
-// change's spec asks that they move with it, as a move in the app does. Like
-// the cross-calendar parent above, this pins today's behaviour and is recorded
-// as a finding (tasks.md 2.3, 3.5) for its own change to turn around.
+// the old resource). The parent moves, the old resource's DELETE does not
+// delete it, and its subtasks move with it at every depth, keeping their
+// parents, as a move in the app does. The other calendar's sync-collection
+// reports them gone, and the new one serves them under their UIDs.
 func TestSubtaskParentMovedByClient(t *testing.T) {
 	e, c := davSetup(t)
 	resp, out := e.do("POST", "/api/v1/projects", map[string]any{"name": "Home"})
@@ -127,16 +142,54 @@ func TestSubtaskParentMovedByClient(t *testing.T) {
 	c.must("PUT", c.cal(home)+"m1.ics", tasksOrgBody("m1", "Parent", ""), 201, "If-None-Match", "*")
 	c.must("PUT", c.cal(home)+"m2.ics", tasksOrgBody("m2", "Child", "RELATED-TO;RELTYPE=PARENT:m1"), 201, "If-None-Match", "*")
 	c.must("PUT", c.cal(home)+"m3.ics", tasksOrgBody("m3", "Grandchild", "RELATED-TO;RELTYPE=PARENT:m2"), 201, "If-None-Match", "*")
+	c.must("PUT", c.cal(home)+"other.ics", tasksOrgBody("other", "Stays", ""), 201, "If-None-Match", "*")
+	_, body := c.must("REPORT", c.cal(home), fmt.Sprintf(syncReport, ""), 207, "Depth", "1")
+	tok := tokenRe.FindStringSubmatch(body)[1]
 	c.must("PUT", c.cal(work)+"m1.ics", tasksOrgBody("m1", "Parent", ""), 204, "If-None-Match", "*")
 	c.req("DELETE", c.cal(home)+"m1.ics", "")
-	want := map[string][2]any{"m1": {work, nil}, "m2": {home, "m1"}, "m3": {home, "m2"}}
+	want := map[string][2]any{"m1": {work, nil}, "m2": {work, "m1"}, "m3": {work, "m2"}, "other": {home, nil}}
 	for id, w := range want {
 		got := e.task(id)
 		if got["project_id"] != w[0] || got["parent_id"] != w[1] || got["deleted_at"] != nil {
 			t.Errorf("%s after the move: project %v parent %v deleted %v, want %v under %v", id, got["project_id"], got["parent_id"], got["deleted_at"], w[0], w[1])
 		}
 	}
-	t.Log("parent moved by a client: its subtasks stay in the old calendar (spec: they move with it)")
+	_, body = c.must("REPORT", c.cal(home), fmt.Sprintf(syncReport, tok), 207, "Depth", "1")
+	for _, id := range []string{"m1", "m2", "m3"} {
+		if !strings.Contains(body, "/"+id+".ics</d:href><d:status>HTTP/1.1 404") {
+			t.Errorf("the old calendar's sync does not report %s gone:\n%s", id, body)
+		}
+	}
+	_, ics := c.must("GET", c.cal(work)+"m3.ics", "", 200)
+	if !strings.Contains(ics, "\r\nRELATED-TO:m2\r\n") {
+		t.Fatalf("the moved grandchild is not served under its parent:\n%s", ics)
+	}
+}
+
+// TestSubtaskParentMovedAcrossSharing: into a calendar shared differently a
+// moved task is a copy plus a tombstone (copyMove); its subtasks are copied
+// with it under the copy, keeping their UIDs, and the originals tombstoned.
+func TestSubtaskParentMovedAcrossSharing(t *testing.T) {
+	se := newShareEnv(t)
+	se.alice.do("PUT", "/api/v1/settings/caldav", map[string]any{"enabled": true})
+	se.share(se.alice, "bob@example.com", "editor")
+	bc := newDavClient(se.bob, "bob@example.com", se.ids["bob"])
+	bc.must("PUT", bc.cal("inbox")+"s1.ics", tasksOrgBody("s1", "Parent", ""), 201, "If-None-Match", "*")
+	bc.must("PUT", bc.cal("inbox")+"s2.ics", tasksOrgBody("s2", "Child", "RELATED-TO;RELTYPE=PARENT:s1"), 201, "If-None-Match", "*")
+	bc.must("PUT", bc.cal(se.project)+"s1.ics", tasksOrgBody("s1", "Parent", ""), 204, "If-None-Match", "*")
+	for _, id := range []string{"s1", "s2"} {
+		if old, _ := se.bob.sync.Get(context.Background(), se.ids["bob"], "task", id); old == nil || !old.Deleted() {
+			t.Fatalf("original %s not tombstoned", id)
+		}
+	}
+	_, ics := bc.must("GET", bc.cal(se.project)+"s2.ics", "", 200)
+	if !strings.Contains(ics, "\r\nUID:s2\r\n") || !strings.Contains(ics, "\r\nRELATED-TO:s1\r\n") {
+		t.Fatalf("the copied subtask is not served under its UID and parent:\n%s", ics)
+	}
+	_, inbox := bc.must("PROPFIND", bc.cal("inbox"), propfindEtags, 207, "Depth", "1")
+	if strings.Contains(inbox, "s2.ics") {
+		t.Fatalf("the subtask stayed in the Inbox:\n%s", inbox)
+	}
 }
 
 func TestSubtaskWriteWithoutCredentials(t *testing.T) {
