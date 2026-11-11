@@ -94,7 +94,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `location-reminders` | Reminders when you arrive at or leave a place | In progress (16 of 18) |
 | `more-languages` | Dutch, and a kit for community languages | Planned |
-| `simplified-chinese` | Simplified Chinese (简体中文) | In progress (15 of 16) |
+| `simplified-chinese` | Simplified Chinese (简体中文) | Shipped |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 | `telegram-channel` | Telegram as a notification channel | Planned |
 
