@@ -397,6 +397,47 @@ describe('row positions and section counts', () => {
     expect(pos.get(b.id)).toEqual({ pos: 2, size: 2 })
   })
 
+  it('subtaskAdds marks nothing in a flat list (quick-subtask-add)', () => {
+    const parent = task({ title: 'Parent' })
+    const child = task({ title: 'Child', parent_id: parent.id })
+    const rows = listGroups(input({ view: 'today', tasks: [parent, child] })).flatMap((g) => g.rows)
+    expect(rows.every((r) => !r.subtaskAdds)).toBe(true)
+  })
+
+  it('subtaskAdds marks each parent\'s last visible descendant in a tree', () => {
+    const parent = task({ title: 'Parent' })
+    const a = task({ title: 'A', parent_id: parent.id })
+    const b = task({ title: 'B', parent_id: parent.id })
+    const other = task({ title: 'Other' })
+    const rows = listGroups(input({ tree: buildTaskTree([parent, a, b, other]) })).flatMap((g) => g.rows)
+    const byTitle = (t: string) => rows.find((r) => r.task.title === t)!
+    expect(byTitle('B').subtaskAdds?.map((m) => m.task.title)).toEqual(['Parent'])
+    expect(byTitle('B').subtaskAdds?.[0].depth).toBe(0)
+    expect(byTitle('A').subtaskAdds).toBeUndefined()
+    expect(byTitle('Parent').subtaskAdds).toBeUndefined()
+    expect(byTitle('Other').subtaskAdds).toBeUndefined()
+  })
+
+  it('subtaskAdds marks nothing while the subtasks are folded', () => {
+    const parent = task({ title: 'Parent' })
+    const a = task({ title: 'A', parent_id: parent.id })
+    const rows = listGroups(input({ tree: buildTaskTree([parent, a]), collapsed: new Set([parent.id]) })).flatMap((g) => g.rows)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].subtaskAdds).toBeUndefined()
+  })
+
+  it('subtaskAdds marks several parents ending at one row, innermost first', () => {
+    const gp = task({ title: 'Grandparent' })
+    const p = task({ title: 'Parent', parent_id: gp.id })
+    const c = task({ title: 'Child', parent_id: p.id })
+    const other = task({ title: 'Other' })
+    const rows = listGroups(input({ tree: buildTaskTree([gp, p, c, other]) })).flatMap((g) => g.rows)
+    const byTitle = (t: string) => rows.find((r) => r.task.title === t)!
+    // 'Other' ends both subtrees at once: Parent's line, then Grandparent's.
+    expect(byTitle('Child').subtaskAdds?.map((m) => m.task.title)).toEqual(['Parent', 'Grandparent'])
+    expect(byTitle('Other').subtaskAdds).toBeUndefined()
+  })
+
   it('completedBySection buckets completed tasks of the project, not skipped occurrences', () => {
     const s1 = section('s1', 'p', 1)
     const done = task({ project_id: 'p', section_id: 's1', completed_at: 1 })

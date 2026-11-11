@@ -21,7 +21,7 @@ import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
-import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
+import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions } from './TaskListRow'
 import type { BelowLine } from './belowLine'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
@@ -77,6 +77,10 @@ export interface RowContext {
   /** A task the open "Add task below" line added: the line moves under it. */
   onAddedBelow?: (anchor: string, id: string) => void
   onCloseSubtask: () => void
+  /** The parent whose list "Add a subtask" line is open (quick-subtask-add "Add-subtask line in lists"): one at a time. */
+  subtaskAddOpen: string | null
+  /** Opens a list "Add a subtask" line for the parent, closing the row's other add lines. */
+  openSubtaskAdd: (id: string) => void
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
   renderInline?: (task: Task) => ReactNode
@@ -209,6 +213,11 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
             </Suspense>
           </li>
         )}
+        {tree && r.subtaskAdds?.map((a) => !c.isReadOnly(a.task) && !a.task.completed_at && (
+          <li key={`subtask-add:${a.task.id}`}>
+            <SubtaskAddLine parent={a.task} depth={a.depth + 1} open={c.subtaskAddOpen === a.task.id} onOpen={() => c.openSubtaskAdd(a.task.id)} onClose={c.onCloseSubtask} />
+          </li>
+        ))}
       </Fragment>
     )
   }
@@ -222,7 +231,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
  * every row of a 2,000-row list again after each completion (list-rendering-at-scale
  * D6). `siblingPos` is written on the rows by SiblingAria, not drawn.
  */
-const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'addingBelow', 'onAddedBelow', 'onCloseSubtask',
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'addingBelow', 'onAddedBelow', 'onCloseSubtask', 'subtaskAddOpen', 'openSubtaskAdd',
   'progress', 'blocked', 'flow', 'habits', 'isReadOnly', 'projectMap', 'memberMap', 'siblingPos', 'renderInline'])
 
 const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
@@ -238,6 +247,8 @@ const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolea
  */
 function mayChange(a: RowContext, b: RowContext): ReadonlySet<string> | null {
   if (a.ticked !== b.ticked || !a.draggingId !== !b.draggingId || a.isReadOnly !== b.isReadOnly || a.projectMap !== b.projectMap || a.memberMap !== b.memberMap) return null
+  // An open "Add a subtask" line names a parent, not a row: every row's marks are compared.
+  if (a.subtaskAddOpen !== b.subtaskAddOpen) return null
   const ids = new Set<string>()
   for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.addingBelow?.at, b.addingBelow?.at, a.dropAt?.id, b.dropAt?.id]) if (x) ids.add(x)
   const maps: [object | undefined, object | undefined][] = [[a.progress, b.progress], [a.blocked, b.blocked], [a.flow, b.flow], [a.habits, b.habits]]
@@ -262,6 +273,9 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   const is = (x: unknown) => x === id
   if (is(a.selectedId) !== is(b.selectedId) || is(a.inlineId) !== is(b.inlineId) || is(a.expandedId) !== is(b.expandedId)) return false
   if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder) || is(a.addingBelow?.at) !== is(b.addingBelow?.at)) return false
+  // The row draws the open "Add a subtask" line only when one of its marks names the open parent.
+  const openFor = (c: RowContext) => (c.subtaskAddOpen && r.subtaskAdds?.some((m) => m.task.id === c.subtaskAddOpen) ? c.subtaskAddOpen : null)
+  if (openFor(a) !== openFor(b)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.depth : null) !== (is(b.dropAt?.id) ? b.dropAt!.depth : null)) return false
   if (a.ticked !== b.ticked && a.ticked.has(id) !== b.ticked.has(id)) return false
