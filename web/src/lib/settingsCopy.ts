@@ -231,7 +231,10 @@ export const SETTINGS_COPY = {
     description: msg('The language of the app on all your devices. Tasks are not translated.'),
     learnMore: 'settings/language',
     rows: { interface: { label: msg('Interface language') } },
-    notices: { failed: msg('This language could not be loaded; your choice applies once it can be.') },
+    notices: {
+      failed: msg('This language could not be loaded; your choice applies once it can be.'),
+      community: msg('Community translation, some text in English'),
+    },
   },
   'start-view': {
     title: msg('Start view'),

@@ -14,7 +14,7 @@ import { render, waitFor } from '../ui/test-utils'
 import { LanguageProvider } from './LanguageProvider'
 import { LanguageSection, LanguageView } from './PreferencesPanels'
 import { resolveLanguage, t } from '../lib/i18n'
-import { nativeName } from '../locales'
+import { SHIPPED, nativeName, type ShippedLanguage } from '../locales'
 
 function Tree() {
   useLanguageVersion()
@@ -89,6 +89,26 @@ describe('Language panel', () => {
     expect(options[0]).toBe('System (简体中文)')
     expect(options).toHaveLength(8)
     await view.unmount()
+  })
+
+  // more-languages D4: a community language follows the maintained ones and, once picked, says so.
+  const WITH_POLISH: readonly ShippedLanguage[] = [{ code: 'pl', name: 'Polski', community: true }, ...SHIPPED]
+
+  it('a community language is listed after the maintained ones', async () => {
+    const view = await render(<LanguageView value="system" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Polski'])
+    expect(view.container.querySelector('[data-language-community]')).toBeNull()
+    await view.unmount()
+  })
+
+  it('picking a community language shows the community caption', async () => {
+    const view = await render(<LanguageView value={'pl' as never} system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    expect(view.container.querySelector('[data-language-community]')?.textContent).toBe('Community translation, some text in English')
+    await view.unmount()
+    const maintained = await render(<LanguageView value="de" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    expect(maintained.container.querySelector('[data-language-community]')).toBeNull()
+    await maintained.unmount()
   })
 
   it('a catalog that could not be loaded is reported, and loading is announced', async () => {

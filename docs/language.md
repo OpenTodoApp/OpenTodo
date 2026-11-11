@@ -16,6 +16,7 @@ OpenTodo speaks **English**, **Deutsch**, **Français**, **Español**, **Italian
 - **System** uses the first language of your browser that the app has, and English otherwise. The option names the language it picked, for example *System (Deutsch)*.
 - Your choice belongs to your account: every device you sign in on switches to it after the next sync, also when you changed it offline.
 - The app switches at once, without a reload.
+- A **community translation** is listed after the others. Once you pick one, the setting says so; text it does not have yet is in English, and so are emails.
 
 ## What changes
 

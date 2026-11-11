@@ -79,7 +79,7 @@ android {
     lint {
         warningsAsErrors = false
         abortOnError = true
-        // Translations are checked by checkTranslations (six languages, every key).
+        // Translations are checked by checkTranslations (every maintained language, every key) and make i18n-check.
         disable += setOf("MissingTranslation", "GradleDependency", "OldTargetApi")
         // Accessibility (accessibility-aa D6): a missing description or label, a touch handler
         // without a click, a clickable view the keyboard cannot reach fail the build.
@@ -131,7 +131,7 @@ tasks.register("checkTranslations") {
         val res = file("src/main/res")
         val keys = { f: File -> Regex("""<string name="([^"]+)"""").findAll(f.readText()).map { it.groupValues[1] }.toSet() }
         val base = keys(File(res, "values/strings.xml"))
-        val langs = listOf("de", "es", "fr", "it", "pt")
+        val langs = listOf("de", "es", "fr", "it", "pt", "zh")
         val problems = langs.flatMap { lang ->
             val f = File(res, "values-$lang/strings.xml")
             if (!f.exists()) listOf("$lang: missing file") else (base - keys(f)).map { "$lang: missing $it" }

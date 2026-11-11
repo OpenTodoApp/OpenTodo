@@ -1,0 +1,35 @@
+name: Translation
+description: Offer a new language, or to review one.
+labels: [enhancement]
+body:
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: Its name in the language itself and its code, for example "Svenska (sv)".
+    validations:
+      required: true
+  - type: input
+    id: maintainer
+    attributes:
+      label: Maintainer
+      description: The GitHub name of a speaker of the language who reviews every entry, now and for later changes. Machine translation is not accepted.
+    validations:
+      required: true
+  - type: checkboxes
+    id: surfaces
+    attributes:
+      label: Surfaces
+      description: The web app's catalog is needed; the others show English until they are translated.
+      options:
+        - label: Web app
+        - label: Reminder notifications
+        - label: Emails and the weekly digest
+        - label: Notification channel messages
+        - label: Browser extension
+        - label: Android and iPhone apps
+        - label: Quick-add vocabulary (dates and times typed in the language)
+  - type: markdown
+    attributes:
+      value: |
+        `node scripts/i18n/new-language.mjs <code> "<Name>"` scaffolds every file and `make i18n-status` shows how far each one is. A catalog at least 90 % complete can ship as a community language. See [Translating OpenTodo](https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/translating.md#adding-a-language-step-by-step).

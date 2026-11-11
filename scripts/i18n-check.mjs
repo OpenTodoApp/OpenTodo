@@ -8,7 +8,11 @@
 // Also the iOS shell's String Catalog (scripts/i18n/shell.mjs) and the Obsidian
 // plugin's catalogues (scripts/i18n/obsidian.mjs).
 // A catalog that index.ts does not list is work in progress: it gets a summary line
-// ("pl: 412 of 1480") and never fails the check.
+// ("pl: 412 of 1480") and never fails the check. A community language
+// (`community: true`, OpenSpec change more-languages D4) may miss messages while it
+// is at least 90 % complete and has a maintainer in docs/translating.md; below that
+// it fails. A maintained language is also complete outside the web app: the Android
+// shell's strings, the iOS shell's catalog and mail.Languages.
 //
 //   node scripts/i18n-check.mjs            (exit 1 with one line per problem)
 import { readdirSync, readFileSync } from 'node:fs'
@@ -19,11 +23,47 @@ import { extract } from './i18n/extract.mjs'
 import { checkShellCatalog, readShellCatalog, shellCatalogPath } from './i18n/shell.mjs'
 import { checkObsidianCatalogs, checkObsidianSource, obsidianDir, obsidianMessages, readObsidianCatalogs } from './i18n/obsidian.mjs'
 import { repo, ts } from './i18n/source.mjs'
+import { androidSurface, shippedLanguages } from './i18n/status.mjs'
+
+/** The share of the web catalog a community language needs (design D4). */
+export const COMMUNITY_THRESHOLD = 0.9
 
 /** The shipped language codes, read from web/src/locales/index.ts. */
 export function shippedCodes(root = repo) {
-  const text = readFileSync(join(root, 'web/src/locales/index.ts'), 'utf8')
-  return [...text.matchAll(/\{ code: '([a-z]{2,3})'/g)].map((m) => m[1])
+  return shippedLanguages(root).map((l) => l.code)
+}
+
+/** The shipped codes marked `community: true`. */
+export function communityCodes(root = repo) {
+  return shippedLanguages(root).filter((l) => l.community).map((l) => l.code)
+}
+
+/** The codes in docs/translating.md's maintainer table (its uncommented rows). */
+export function maintainedInGuide(root = repo) {
+  const path = join(root, 'docs/translating.md')
+  if (!existsSync(path)) return []
+  const text = readFileSync(path, 'utf8')
+  const section = text.slice(text.indexOf('## Maintainers')).split(/\n## /)[0]
+  return [...section.matchAll(/^\|[^|\n]*\|([^|\n]*)\|/gm)].flatMap((m) => [...m[1].matchAll(/`([a-z]{2,3})`/g)].map((c) => c[1]))
+}
+
+/**
+ * A community catalog's coverage against the threshold: a failing problem below it,
+ * else summary lines naming the missing messages. `missing` are the ids it lacks.
+ */
+export function communityCoverage(lang, missing, total, { maintained = true, first = 5 } = {}) {
+  const done = total - missing.length
+  const pct = total ? (done / total) * 100 : 100
+  const shown = `${pct.toFixed(1)} % (${done} of ${total})`
+  const problems = []
+  const summary = []
+  if (done < COMMUNITY_THRESHOLD * total) problems.push(`${lang}: community catalog is ${shown} translated, below the ${COMMUNITY_THRESHOLD * 100} % a community language needs`)
+  if (!maintained) problems.push(`${lang}: community language without a maintainer in docs/translating.md`)
+  if (!problems.length) {
+    const more = missing.length > first ? `, and ${missing.length - first} more` : ''
+    summary.push(`${lang}: ${shown} (community)${missing.length ? `, missing ${missing.slice(0, first).map((m) => JSON.stringify(m)).join(', ')}${more}` : ''}`)
+  }
+  return { problems, summary }
 }
 
 /** The formatter's parser, compiled from web/src/lib/i18n/format.ts with the TypeScript API. */
@@ -86,31 +126,50 @@ export async function check(root = repo) {
     try { fmt.parseMessage(id.replace(/\|[\w-]+$/, '')) } catch (err) { problems.push(`source: malformed "${id}": ${err.message}`) }
   }
   const shipped = shippedCodes(root)
-  // The digest card offers SHIPPED, but the server validates the digest's
-  // language against mail.Languages. Keep the two lists equal across the
-  // web/Go boundary: a language shipped in the web app before its email
-  // templates would be offered in Settings and rejected by the digest PUT.
+  const community = communityCodes(root)
+  const maintained = shipped.filter((c) => !community.includes(c))
+  // The digest card offers the maintained languages, and the server validates the
+  // digest's language against mail.Languages: every maintained language has its
+  // email templates, and the server has none the web app does not list. A
+  // community language may have them or not; without them its emails are English.
   const mailPath = join(root, 'internal/mail/message.go')
   if (existsSync(mailPath)) {
     const mailText = readFileSync(mailPath, 'utf8')
     const mail = [...(/var Languages = \[\]string\{([^}]*)\}/.exec(mailText)?.[1] ?? '').matchAll(/"([a-z-]+)"/g)].map((m) => m[1])
-    if (mail.join() !== shipped.join()) problems.push(`mail.Languages (${mail}) differs from SHIPPED (${shipped})`)
+    for (const c of maintained) if (!mail.includes(c)) problems.push(`${c}: maintained in SHIPPED but missing from mail.Languages (${mail})`)
+    for (const c of mail) if (!shipped.includes(c)) problems.push(`${c}: in mail.Languages but not in SHIPPED (${shipped})`)
   }
+  const guide = maintainedInGuide(root)
   const summary = []
   const dir = join(root, 'web/src/locales')
   for (const file of readdirSync(dir).filter((f) => /^[a-z]{2,3}\.json$/.test(f))) {
     const lang = file.slice(0, -5)
     const catalog = JSON.parse(readFileSync(join(dir, file), 'utf8'))
     const found = checkCatalog(lang, catalog, messages, fmt)
-    if (shipped.includes(lang)) problems.push(...found)
+    if (community.includes(lang)) {
+      // Missing messages are shown in English; every other problem still fails.
+      problems.push(...found.filter((p) => !p.startsWith(`${lang}: missing "`)))
+      const c = communityCoverage(lang, messages.filter((m) => !(m in catalog)), messages.length, { maintained: guide.includes(lang) })
+      problems.push(...c.problems)
+      summary.push(...c.summary)
+    } else if (shipped.includes(lang)) problems.push(...found)
     else summary.push(`${lang}: ${messages.filter((m) => m in catalog).length} of ${messages.length} (work in progress, not offered)`)
   }
   for (const lang of shipped) {
     if (lang !== 'en' && !readdirSync(dir).includes(`${lang}.json`)) problems.push(`${lang}: listed in index.ts but web/src/locales/${lang}.json is missing`)
   }
+  // The Android shell's own strings: every maintained language has all of them.
+  if (existsSync(join(root, 'mobile/android/app/src/main/res/values/strings.xml'))) {
+    for (const lang of maintained.filter((c) => c !== 'en')) {
+      const a = androidSurface(root, lang)
+      if (!a) problems.push(`android ${lang}: mobile/android/app/src/main/res/values-${lang}/strings.xml is missing`)
+      else for (const k of a.missing) problems.push(`android ${lang}: missing "${k}"`)
+    }
+  }
   // The iOS shell's own screens (ios-shell): a String Catalog, not a web catalog.
+  // Maintained languages are required; a community language may be partly there.
   if (existsSync(shellCatalogPath(root))) {
-    problems.push(...checkShellCatalog(readShellCatalog(root), shipped.filter((c) => c !== 'en')))
+    problems.push(...checkShellCatalog(readShellCatalog(root), maintained.filter((c) => c !== 'en'), community))
   }
   // The Obsidian plugin's own strings (obsidian-plugin task 6.1): obsidian/locales/.
   if (existsSync(join(obsidianDir(root), 'src'))) {
