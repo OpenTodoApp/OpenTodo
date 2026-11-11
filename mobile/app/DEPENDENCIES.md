@@ -17,6 +17,10 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `yjs`: the notes document model, which the shared `applyOps` loads to merge a pulled note (`web/src/lib/richtext.ts`); its `lib0` asks for a React Native crypto package, which Metro points at the app's Web Crypto (`src/stubs/webcrypto.ts`).
 - `dexie`: the local database's schema, which `web/src/lib/db.ts` declares on a Dexie instance, and the zones the adapter's transactions use (`src/storage/scope.ts`). Dexie never opens a database in the app; the adapter does.
 
+## Overrides
+
+- `expo-font` 58.0.10: Expo's own dependency, held at the version built against `expo-modules-core` 58.0.26. The lockfile had moved it to 58.0.11, which needs 58.0.28 and made the app abort at launch (dyld: a missing `ExpoModulesCore` symbol), seen by app-perf on 2026-11-11; `app-ios` only builds, so it did not catch it. Remove the override when `expo-modules-core` moves to 58.0.28 or later.
+
 ## Development
 
 - `typescript`: the type-check (`npm run typecheck`), and the import graph of `scripts/shared-modules.mjs` (`scripts/shared-graph.mjs` uses the app's TypeScript when web's is not installed).

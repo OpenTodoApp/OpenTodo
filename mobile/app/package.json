@@ -39,5 +39,8 @@
     "jest-expo": "58.0.12",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1"
+  },
+  "overrides": {
+    "expo-font": "58.0.10"
   }
 }
