@@ -1,0 +1,1 @@
+- **A base URL with a path is refused at startup.** OpenTodo can't be served below a path such as `https://example.com/todo/`; such an `OPENTODO_BASE_URL` used to start and then fail behind the proxy, and now stops startup with a message saying to give OpenTodo its own subdomain or port.

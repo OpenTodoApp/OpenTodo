@@ -89,6 +89,18 @@ func TestLoadBaseURL(t *testing.T) {
 	if _, err := Load(); err == nil {
 		t.Fatal("relative base URL accepted")
 	}
+	// An origin only (#1207): a trailing slash is fine, a path, query or fragment is refused.
+	t.Setenv("OPENTODO_BASE_URL", "https://todo.example.com/")
+	if c, err := Load(); err != nil || c.Origin() != "https://todo.example.com" || c.BaseURL.Path != "" {
+		t.Fatalf("trailing slash: %v %+v", err, c)
+	}
+	for _, v := range []string{"https://example.test/absproxy/18082/", "https://example.com/todo", "https://todo.example.com/?x=1", "https://todo.example.com/#a"} {
+		t.Setenv("OPENTODO_BASE_URL", v)
+		_, err := Load()
+		if err == nil || !strings.Contains(err.Error(), "OPENTODO_BASE_URL") || !strings.Contains(err.Error(), "own subdomain or port") {
+			t.Fatalf("%s: err = %v", v, err)
+		}
+	}
 }
 
 func TestWebhooksAllowPrivateIsOptional(t *testing.T) {
