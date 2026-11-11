@@ -1,0 +1,1 @@
+- **Release binaries and the image are built with Go 1.27.4**, which fixes GO-2026-6859 (CVE-2026-97054: an HTTP/1 server that limits request bodies with `MaxBytesReader`, as OpenTodo does, could crash when a handler read the body while setting a response header).
