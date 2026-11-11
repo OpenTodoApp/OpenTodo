@@ -1,6 +1,6 @@
 // The shared modules the app reaches (OpenSpec change native-app-foundation D2): the
 // import graph (scripts/shared-graph.mjs) of the sync path the app will run and of
-// every @shared/* module the app's code and tests import. Prints the list; `--check`
+// every @shared/* module the app's code, tests and performance run import. Prints the list; `--check`
 // fails when mobile/app/shared-modules.json differs from it; `--write` rewrites the
 // file's list. A shared module that names a browser-only package (react-dom,
 // dexie-react-hooks, prosemirror-*, maplibre-gl) is reported. It does not fail yet:
@@ -32,6 +32,7 @@ function appFiles() {
   }
   walk(path.join(app, 'src'))
   walk(path.join(app, 'test'))
+  walk(path.join(app, 'perf'))
   return files
 }
 

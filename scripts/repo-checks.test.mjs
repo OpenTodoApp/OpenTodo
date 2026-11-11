@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os'
 import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/surfaceFreeze.mjs'
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
+import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
 import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
 import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
 
@@ -661,7 +662,7 @@ test('the official web app keys are published, and the test key is never one of 
 
 test('the Play upload runs only for final tags, after the release, with its secrets in the release environment', () => {
   const play = jobsOf(read('.github/workflows/ci.yml')).play
-  assert.match(play, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(play, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(play, /^ {4}environment: release$/m)
   assert.match(play, /node scripts\/release\/play-upload\.mjs "\$GITHUB_REF_NAME"/)
   assert.match(play, /::warning::PLAY_SERVICE_ACCOUNT_JSON or PLAY_UPLOAD_KEYSTORE_BASE64 is not set/)
@@ -678,7 +679,7 @@ test('the Play upload runs only for final tags, after the release, with its secr
 // job of its own, and never any signing material in the repository.
 test('the TestFlight upload runs for final tags after the release and by hand, with its secrets in the release environment', () => {
   const caller = jobsOf(read('.github/workflows/ci.yml'))['ios-testflight']
-  assert.match(caller, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\)$/m, 'final tags only')
+  assert.match(caller, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) && !contains\(github\.ref_name, '-'\) \}\}$/m, 'final tags only')
   assert.match(caller, /^ {4}uses: \.\/\.github\/workflows\/ios-testflight\.yml$/m)
   const flow = read('.github/workflows/ios-testflight.yml')
   assert.match(flow, /^ {2}workflow_call:$/m)
@@ -819,6 +820,55 @@ test('release preparation for 1.0 and later refuses a row checked more than 120 
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
+})
+
+// ---- The real-client verification tables (OpenSpec change caldav-verified, design D3) ---------
+
+// Every tree: both tables whole (no blank cell, a date on every "not verified",
+// a version or date on every row with a result). The release gate (no "not
+// verified" outside Mitra from 1.0 on) holds the tree once the change's runs are
+// done and it is archived; while it is open, the cells still to run are listed.
+test('the CalDAV and calendar sync verification tables are whole, and gated once caldav-verified is done', (t) => {
+  const { shape, gate } = verificationProblems(root, latestRelease(root))
+  assert.deepEqual(shape, [], 'docs/caldav-verification.md says what a cell holds')
+  if (existsSync(path.join(root, 'openspec/changes/caldav-verified'))) {
+    t.diagnostic(`caldav-verified is open: ${gate.length} cells still to run on real clients and servers`)
+    return
+  }
+  assert.deepEqual(gate, [], 'run docs/caldav-verification.md for each cell, or say "not supported by <client>" with the reason')
+})
+
+const sampleTable = (rows) => '# Guide\n\n| Client | Due forms | Alarms |\n| --- | --- | --- |\n' + rows.join('\n') + '\n\nAfter the table.\n'
+const caldavSpec = VERIFICATION_TABLES[0]
+
+test('the verification table check passes a whole table and gates it from 1.0', () => {
+  const pass = sampleTable([
+    '| Thunderbird 158.0.1 (Linux, 2026-10-22) | works | works both ways |',
+    '| DAVx⁵ 4.5 + jtx Board 2.9 (2026-11-20) | works | not supported by jtx Board: no alarms on tasks |',
+    '| Apple Reminders 18.1 (iOS, 2026-11-21) | defect #1300 | works |',
+    '| Mitra | not verified (2026-11-21) | not verified (2026-11-21) |',
+  ])
+  assert.deepEqual(tableProblems(pass, caldavSpec), [])
+  assert.deepEqual(gateProblems(pass, caldavSpec, '1.0.0'), [], 'Mitra is exempt, unsupported and defect cells are results')
+})
+
+test('the verification table check fails a blank cell, a row without a version and an unverified gated cell', () => {
+  const fail = sampleTable([
+    '| Thunderbird | works |  |',
+    '| DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified |',
+    '| Apple Reminders (iOS) | not verified (2026-10-21) | not verified (2026-10-21) |',
+  ])
+  assert.deepEqual(tableProblems(fail, caldavSpec), [
+    'docs/caldav.md:5 row "Thunderbird", column "Alarms": blank cell',
+    'docs/caldav.md:5 row "Thunderbird": names no client version or date',
+    'docs/caldav.md:6 row "DAVx⁵ + Tasks.org", column "Alarms": "not verified" needs the date of the last attempt',
+  ])
+  assert.deepEqual(gateProblems(fail, caldavSpec, '0.24.0'), [], 'before 1.0 nothing is gated')
+  const gate = gateProblems(fail, caldavSpec, '1.0.0')
+  assert.ok(gate.includes('docs/caldav.md: row "DAVx⁵ + Tasks.org", column "Due forms": not verified (a 1.0.0 release needs a result)'), gate.join('\n'))
+  assert.equal(gate.length, 4)
+  assert.deepEqual(tableProblems('# No table\n', caldavSpec), ['docs/caldav.md: no verification table (a "| Client | …" table)'])
+  assert.deepEqual(tableProblems(sampleTable(['| Thunderbird 158 | works |']), caldavSpec), ['docs/caldav.md:5 row "Thunderbird 158": 1 cells, the header has 2 columns'])
 })
 
 // ---- The v1 surface freeze (OpenSpec change stability-contract) ----------------------------------
@@ -1014,4 +1064,16 @@ test('the boundary check ignores comments, strings and properties of the same na
     'if (typeof BroadcastChannel !== "undefined") {}',
   ].join('\n')
   assert.deepEqual(browserGlobals(src), [{ global: 'BroadcastChannel', line: 4 }])
+})
+
+// A job after the release (1.4.0): GitHub skips a job whose needs chain holds a skipped job unless
+// its condition is explicit, and the app builds are skipped on tags, so every job that needs the
+// release states !cancelled() && !failure() instead of relying on the implicit success().
+test('every job after the release runs even when a job before it was skipped', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const after = Object.entries(jobs).filter(([, block]) => /^ {4}needs: \[release\]$/m.test(block))
+  assert.ok(after.length >= 4, 'the publish jobs after the release')
+  for (const [id, block] of after) {
+    assert.match(block, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && /m, `${id}: explicit condition`)
+  }
 })

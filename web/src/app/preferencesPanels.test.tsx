@@ -69,7 +69,7 @@ describe('Preferences rows', () => {
     await choose(select, '5')
     expect(onLimit).toHaveBeenLastCalledWith(5)
     await choose(select, 'custom')
-    const custom = container.querySelector('[data-today-limit-custom]') as HTMLInputElement
+    const custom = container.querySelector('[data-today-limit-custom] input') as HTMLInputElement
     await type(custom, '12')
     await key(custom, 'Enter')
     expect(onLimit).toHaveBeenLastCalledWith(12)
@@ -77,7 +77,8 @@ describe('Preferences rows', () => {
     await type(custom, '25')
     await key(custom, 'Enter')
     expect(onLimit).not.toHaveBeenCalled()
-    expect(container.querySelector('[data-today-limit-error]')!.textContent).toBe('Choose a whole number from 1 to 20.')
+    expect(custom.getAttribute('aria-invalid')).toBe('true')
+    expect(container.querySelector('[data-today-limit-custom]')!.textContent).toContain('Between 1 and 20')
     await click(container.querySelector('[data-today-done-switch] [role="switch"]')!)
     expect(onDone).toHaveBeenCalledWith(true)
     await unmount()
@@ -86,7 +87,7 @@ describe('Preferences rows', () => {
   it('Today limit: a stored custom value opens on Custom', async () => {
     const { container, unmount } = await render(<ClosedListView limit={12} done onLimit={() => {}} onDone={() => {}} />)
     expect((container.querySelector('[data-today-limit]') as HTMLSelectElement).value).toBe('custom')
-    expect((container.querySelector('[data-today-limit-custom]') as HTMLInputElement).value).toBe('12')
+    expect((container.querySelector('[data-today-limit-custom] input') as HTMLInputElement).value).toBe('12')
     await unmount()
   })
 

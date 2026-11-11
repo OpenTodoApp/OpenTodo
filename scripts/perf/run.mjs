@@ -84,7 +84,7 @@ function instrument() {
       for (const e of l.getEntries()) if (e.interactionId) window.__perf.events.push({ name: e.name, id: e.interactionId, start: e.startTime, duration: e.duration })
     }).observe({ type: 'event', durationThreshold: 16, buffered: true })
   } catch { /* no Event Timing: interaction() refuses to measure */ }
-  for (const type of ['keydown', 'pointerdown', 'click']) addEventListener(type, (e) => { if (type !== 'click' || !window.__perf.lastInput) window.__perf.lastInput = e.timeStamp }, true)
+  for (const type of ['keydown', 'pointerdown', 'click', 'wheel']) addEventListener(type, (e) => { if (type !== 'click' || !window.__perf.lastInput) window.__perf.lastInput = e.timeStamp }, true)
 }
 
 /** Waits, in the page, for a mark newer than `after` (ms on the page's clock) and returns its time. */
@@ -373,6 +373,21 @@ async function notesSession(browser, profileName) {
     // note-links D5: a note other notes link to, opened before anything built the link index, to its Linked references painted.
     const t1 = await go(page, `/notes/${summary.notes.linkedNote}`)
     out['note-references'] = (await markAfter(page, 'ot:note-references', t1, 30_000)) - t1
+    if (enough(out)) return out
+    // notes-graph-page D7: the Notes graph from its address to its first paint (the link index built above), then wheel zooms, each to its frame.
+    const t2 = await go(page, '/notes?view=graph')
+    out['notes-graph'] = (await markAfter(page, 'ot:notes-graph', t2, 60_000)) - t2
+    const area = await page.locator('[data-notes-graph-area]').boundingBox()
+    await page.mouse.move(area.x + area.width / 2, area.y + area.height / 2)
+    const frames = []
+    for (let i = 0; i < 12; i++) {
+      const before = await page.evaluate(() => performance.now())
+      await page.mouse.wheel(0, i % 2 ? 100 : -100)
+      const at = await markAfter(page, 'ot:notes-graph-frame', before, 10_000).catch(() => null)
+      const input = await page.evaluate(() => window.__perf.lastInput)
+      if (at !== null) frames.push(at - input)
+    }
+    out['notes-graph-frame'] = p95(frames)
     if (enough(out)) return out
     await cdp.send('HeapProfiler.collectGarbage')
     out['notes-js-heap'] = (await cdp.send('Runtime.getHeapUsage')).usedSize / 2 ** 20

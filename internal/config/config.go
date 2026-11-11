@@ -348,6 +348,12 @@ func (c *Config) loadServerVars() error {
 		if err != nil || u.Scheme == "" || u.Host == "" {
 			return fmt.Errorf("OPENTODO_BASE_URL must be an absolute URL, got %q", v)
 		}
+		// An origin only (self-hosting "Optional configuration only"): the app's assets,
+		// API and service worker live at the root, so a path prefix can't work (#1207).
+		if (u.Path != "" && u.Path != "/") || u.RawQuery != "" || u.Fragment != "" || u.User != nil {
+			return fmt.Errorf("OPENTODO_BASE_URL must be an origin such as https://todo.example.com, got %q: OpenTodo can't be served below a path, so give it its own subdomain or port (see the reverse proxy guide, docs/self-hosting/docker.md)", v)
+		}
+		u.Path = ""
 		c.BaseURL = u
 	}
 	if v := os.Getenv("OPENTODO_ALLOW_SIGNUP"); v != "" {

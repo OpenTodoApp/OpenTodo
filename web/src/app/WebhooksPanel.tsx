@@ -64,7 +64,7 @@ export interface WebhooksViewProps {
   onPolicyChange: (allow: boolean) => void
 }
 
-const TONE: Record<WebhookTone, HueName> = { ok: 'green', warn: 'orange', off: 'slate' }
+const TONE: Record<WebhookTone, HueName> = { ok: 'green', warn: 'orange', danger: 'red', off: 'slate' }
 const DELIVERY_TONE: Record<WebhookDelivery['status'], HueName> = { delivered: 'green', pending: 'slate', retry: 'orange', failed: 'red' }
 
 /** Pure rendering of the Webhooks section; all state lives in WebhooksPanel. */

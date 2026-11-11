@@ -130,8 +130,8 @@ describe('RemindersField', () => {
     const { container, unmount } = await render(<RemindersField task={(await db.tasks.get(id))!} />)
     await openAdd(container)
     await click(menuItem('Custom before the deadline')!)
-    await waitFor(() => !!container.querySelector('input[aria-label="Offset amount"]'), 'the custom offset form')
-    const amount = container.querySelector('input[aria-label="Offset amount"]') as HTMLInputElement
+    await waitFor(() => !!container.querySelector('[data-number-input] input'), 'the custom offset form')
+    const amount = container.querySelector('[data-number-input] input') as HTMLInputElement
     await type(amount, '2')
     const unit = container.querySelector('select[aria-label="Offset unit"]') as HTMLSelectElement
     await act(async () => { unit.value = '60'; unit.dispatchEvent(new Event('change', { bubbles: true })) })

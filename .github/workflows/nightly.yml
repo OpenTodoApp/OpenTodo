@@ -5,7 +5,8 @@ name: Nightly
 # reminders, digests, email polling, webhooks) and the sync hub, the fuzz
 # targets (scripts/fuzz.sh), the performance budgets (perf.yml), the
 # accessibility gate's full matrix (accessibility-aa) and the native app's iOS and
-# Android builds (app-native.yml, native-app-foundation D9). Also runs on demand.
+# Android builds and its performance run (app-native.yml, native-app-foundation D9).
+# Also runs on demand.
 # A failed night opens (or comments on) one issue labelled ci-nightly; the next
 # green night closes it, so a red nightly never goes unnoticed.
 on:
@@ -123,9 +124,12 @@ jobs:
 
   # The native app's iOS and Android builds on main (native-app-foundation D9): pull
   # requests build them only when mobile/app/ changes, so a shared-module change that
-  # breaks a native build shows up here.
+  # breaks a native build shows up here. Also app-perf: the perfseed account on the
+  # simulator against the budgets of design D4.
   app-native:
     uses: ./.github/workflows/app-native.yml
+    with:
+      perf: true
 
   # Opens or updates the ci-nightly issue when a nightly job fails, and closes it
   # when every job passes again. Only GITHUB_TOKEN, only on the default branch.

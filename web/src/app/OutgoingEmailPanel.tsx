@@ -1,5 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
-import { Button, Field, Input, Notice, Select, SettingRow, SettingsSection, StatusIndicator, toneForHue } from '../ui'
+import { Button, Field, Input, Notice, Select, SettingRow, SettingsSection, StatusIndicator } from '../ui'
 import { api, isNetworkError } from '../lib/api'
 import { formatInstant } from '../lib/dates'
 import { useOnline } from '../lib/online'
@@ -10,6 +10,7 @@ import type { SmtpSecurity, SmtpSettings, SmtpSettingsInput, SmtpStage, SmtpTest
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { SettingsSaveBar } from './SettingsSaveBar'
 
 // Settings → Server → Outgoing email (OpenSpec change outgoing-email, design D9):
 // the owner's SMTP settings. The card leads with its state; the form opens
@@ -97,6 +98,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
   const lockNote = (f: string) => (locked(f) ? t('Set by {variable}', { variable: SMTP_VARIABLE[f] }) : undefined)
   const disabled = p.offline || p.busy
   const last = p.test ?? (s?.lastTest ? { ...s.lastTest, to: undefined } : null)
+  const dirty = !!d && !!s && JSON.stringify(d) !== JSON.stringify(draftFrom(s))
   function submit(e: FormEvent) {
     e.preventDefault()
     p.onSave()
@@ -111,7 +113,7 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
             description={s.configured ? undefined : rowCopy('outgoing-email', 'server').description}
             status={(
               <span className="block space-y-1">
-                <StatusIndicator tone={toneForHue(s.configured ? 'green' : 'slate')}>{s.configured ? t('Configured') : t('Not configured')}</StatusIndicator>
+                <StatusIndicator tone={s.configured ? 'ok' : 'warn'}>{s.configured ? t('Configured') : t('Not configured')}</StatusIndicator>
                 {s.configured && <span className="block text-muted" data-smtp-summary>{t('{host}:{port} · from {from}', { host: s.host, port: s.port, from: s.from })}</span>}
                 {s.configured && last && (
                   <span className="block">
@@ -167,11 +169,11 @@ export function OutgoingEmailView(p: OutgoingEmailViewProps) {
               <Field label={t('From address')} description={lockNote('from') ?? t('For example: OpenTodo <todo@example.com>. Your mail provider may require an address it owns.')}>
                 <Input aria-label={t('From address')} value={d.from} readOnly={locked('from')} required onChange={(e) => p.onDraft({ ...d, from: e.target.value })} />
               </Field>
-              {p.error && <Notice tone="danger">{p.error}</Notice>}
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" onClick={() => p.onDraft(null)}>{t('Cancel')}</Button>
-                <Button variant="primary" type="submit" busy={p.busy} disabled={p.offline}>{t('Save')}</Button>
-              </div>
+              {/* settings-foundation D8: Save and Discard are in the save bar once something changed. */}
+              {!dirty && <div className="flex justify-end"><Button variant="ghost" onClick={() => p.onDraft(null)} data-smtp-close>{t('Close')}</Button></div>}
+              <SettingsSaveBar dirty={dirty} busy={p.busy} error={p.error}
+                disabledReason={p.offline ? noticeCopy('outgoing-email', 'offline') : undefined}
+                onDiscard={() => p.onDraft(null)} onSave={p.onSave} />
             </form>
           )}
         </>

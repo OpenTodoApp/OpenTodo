@@ -334,6 +334,31 @@ test('at the certificate limit, sign retires the oldest certificate of an earlie
   assert.deepEqual(removed, ['Pold1'])
 })
 
+test('after retiring a certificate, sign asks again while Apple still counts it (v1.4.2)', async () => {
+  const dir = signingDir()
+  let tries = 0
+  const waits = []
+  const profile = (id, name, cert, created) => ({ type: 'profiles', id, attributes: { name, createdDate: created }, relationships: { certificates: { data: [{ type: 'certificates', id: cert }] } } })
+  const { call } = fakeAsc({
+    'GET /v1/bundleIds': (u) => [200, { data: [bundle(`B-${u.searchParams.get('filter[identifier]')}`, u.searchParams.get('filter[identifier]'))] }],
+    'POST /v1/certificates': () => (++tries <= 3
+      ? [409, { errors: [{ code: 'ENTITY_ERROR', detail: 'You already have a current Distribution certificate or a pending certificate request.' }] }]
+      : [201, { data: { id: 'C9', attributes: { certificateContent: Buffer.from('DER').toString('base64') } } }]),
+    'GET /v1/profiles': () => [200, { data: [profile('Pold', 'OpenTodo CI app.open-todo.ios 3.1', 'Cold', '2026-11-01T10:00:00Z')] }],
+    'DELETE /v1/certificates/Cold': () => [204, null],
+    'DELETE /v1/profiles/Pold': () => [204, null],
+    'POST /v1/profiles': (_, body) => {
+      const identifier = body.data.relationships.bundleId.data.id.slice(2)
+      const xml = `<plist><string>${APP_GROUP}</string><string>${identifier}</string></plist>`
+      return [201, { data: { id: `N-${identifier}`, attributes: { uuid: `uuid-${identifier}`, profileContent: Buffer.from(xml).toString('base64') } } }]
+    },
+  })
+  const res = await prepareSigning(call, { dir, team: 'TEAM123456', log: () => {}, wait: async (ms) => { waits.push(ms) } })
+  assert.equal(res.certificateId, 'C9')
+  assert.equal(tries, 4, 'the first try, then three after retiring')
+  assert.deepEqual(waits, [20000, 40000], 'a growing pause between the tries after retiring')
+})
+
 test('at the certificate limit with no certificate of an earlier run, sign stops and says what to do', async () => {
   const dir = signingDir()
   const { call, calls } = fakeAsc({

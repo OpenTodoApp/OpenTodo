@@ -1,6 +1,6 @@
 ---
 title: Running on TrueNAS
-summary: Install on TrueNAS Community Edition with Install via YAML (or, once listed, from the Apps catalogue), the settings, dataset permissions, https, updates and backups.
+summary: Install on TrueNAS Community Edition from the Apps catalogue or with Install via YAML, the settings, dataset permissions, https, updates and backups.
 audience: admin
 specs: [self-hosting]
 screens: []
@@ -10,7 +10,7 @@ order: 23
 
 OpenTodo is one container with one data folder and no required settings. It runs on TrueNAS Community Edition 24.10 and later, which run apps with Docker.
 
-OpenTodo is not in the TrueNAS **Apps** catalogue yet: the app has been submitted to TrueNAS's community train ([truenas/apps#6240](https://github.com/truenas/apps/pull/6240)) but not accepted. Until it is, install it with **Install via YAML** as below.
+OpenTodo is in the TrueNAS **Apps** catalogue, in the community train ([truenas/apps#6240](https://github.com/truenas/apps/pull/6240), accepted on 26 October 2026): install it from there as described in [Install from the Apps catalogue](#install-from-the-apps-catalogue). **Install via YAML**, below, still works and lets you pick the release yourself.
 
 ## Install with Install via YAML
 
@@ -21,7 +21,7 @@ OpenTodo is not in the TrueNAS **Apps** catalogue yet: the app has been submitte
    ```yaml
    services:
      opentodo:
-       image: ghcr.io/opentodoapp/opentodo:1.3.0
+       image: ghcr.io/opentodoapp/opentodo:1.4.2
        user: "568:568"
        restart: unless-stopped
        ports:
@@ -62,6 +62,6 @@ On the server's address (`http://192.168.1.10:30536`) tasks, projects, sync, sha
 
 ## Updates and backups
 
-The app names one release (`1.3.0`), never a moving tag. With Install via YAML, change the tag in the app's YAML (**Edit**) to the new release and save; TrueNAS pulls it and restarts the app. From the catalogue, TrueNAS shows **Update** on the app when the catalogue has a new version (its maintainers bump it after each OpenTodo release). Migrations run on start and there are no down-migrations, so back up first.
+The app names one release (`1.4.2`), never a moving tag. With Install via YAML, change the tag in the app's YAML (**Edit**) to the new release and save; TrueNAS pulls it and restarts the app. From the catalogue, TrueNAS shows **Update** on the app when the catalogue has a new version (its maintainers bump it after each OpenTodo release). Migrations run on start and there are no down-migrations, so back up first.
 
 Everything OpenTodo stores is in its dataset (or ixVolume). Protect it with periodic **snapshots** and **replication** or a **Cloud Sync** task, or turn on scheduled backups in **Settings → Server → Backups** (written to `backups/` in the same folder, or to S3 or WebDAV). See [Backups](../backups.md).

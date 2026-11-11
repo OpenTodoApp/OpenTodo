@@ -48,6 +48,7 @@ describe('WebhooksView', () => {
     expect(html).toContain('https://n8n.example.com/webhook/plants')
     expect(html).toContain('Active')
     expect(html).toContain('Disabled after repeated failures')
+    expect(html).toMatch(/data-status="danger"[^>]*>(<span[^>]*>(<\/span>)?)*Disabled after repeated failures/)
     expect(html).toContain('Paused')
     expect(html).toContain('Garden')
     expect(html).toContain('All projects')
@@ -147,6 +148,11 @@ describe('webhook helpers', () => {
 
   it('describes status and errors', () => {
     expect(webhookStatus(hook({ consecutiveFailures: 3 })).label).toContain('3 failed')
+    // settings-foundation D5: failing now is the danger tone, paused on purpose the off tone.
+    expect(webhookStatus(hook({ consecutiveFailures: 3 })).tone).toBe('danger')
+    expect(webhookStatus(hook({ enabled: false, disabledReason: 'too_many_failures' })).tone).toBe('danger')
+    expect(webhookStatus(hook({ enabled: false })).tone).toBe('off')
+    expect(webhookStatus(hook({})).tone).toBe('ok')
     expect(describeWebhookError(new ApiError(400, 'private_target', 'x'))).toContain('owner')
     expect(describeWebhookError(new ApiError(409, 'limit_reached', 'x'))).toContain('20')
     expect(describeWebhookError(new TypeError('Failed to fetch'))).toContain('unreachable')

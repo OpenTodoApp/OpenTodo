@@ -10,7 +10,8 @@ import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy } from '../lib/settingsCopy'
 import type { SpeechSettings, SpeechSettingsInput } from '../lib/types'
 import { setSpeechService } from '../lib/voice/speechService'
-import { Button, Field, Input, Notice, SettingsSection } from '../ui'
+import { Button, Field, Input, Notice, SettingsSection, useDraft } from '../ui'
+import { SettingsSaveBar } from './SettingsSaveBar'
 
 const VARIABLE = { url: 'OPENTODO_STT_URL', model: 'OPENTODO_STT_MODEL', key: 'OPENTODO_STT_KEY_FILE' } as const
 
@@ -30,23 +31,28 @@ export interface SpeechServerViewProps {
 
 /** The form, without loading, for tests and stories. */
 export function SpeechServerView({ settings, onSave, onTest }: SpeechServerViewProps) {
-  const [url, setUrl] = useState(settings.url)
-  const [model, setModel] = useState(settings.model)
-  const [key, setKey] = useState('')
+  const form = useDraft({ url: settings.url, model: settings.model, key: '' })
+  const { url, model, key } = form.draft
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<SpeechTestResult | null>(null)
   const locked = (f: keyof typeof VARIABLE) => settings.locked.includes(f)
   const draft = (): SpeechSettingsInput => ({
     ...(locked('url') ? {} : { url }), ...(locked('model') ? {} : { model }), ...(locked('key') || !key ? {} : { key }),
   })
-  const save = async (e: FormEvent) => {
-    e.preventDefault()
+  const save = async (e?: FormEvent) => {
+    e?.preventDefault()
+    if (!form.dirty) return
+    setBusy(true)
     setError(null)
     try {
       await onSave(draft())
-      setKey('')
+      // The saved settings come back as new props; the typed key is never shown again.
+      form.set({ key: '' })
     } catch (err) {
       setError(failure(err))
+    } finally {
+      setBusy(false)
     }
   }
   const test = async () => {
@@ -57,23 +63,23 @@ export function SpeechServerView({ settings, onSave, onTest }: SpeechServerViewP
   return (
     <form className="mt-3 space-y-4" onSubmit={(e) => void save(e)} data-speech-server>
       <Field label={t('Service address')} description={note('url', t('For example http://stt.home.lan:8000 (Speaches or whisper.cpp).'))}>
-        <Input type="url" value={url} readOnly={locked('url')} placeholder={t('http://stt.home.lan:8000')} onChange={(e) => setUrl(e.target.value)} data-speech-field="url" />
+        <Input type="url" value={url} readOnly={locked('url')} placeholder={t('http://stt.home.lan:8000')} onChange={(e) => form.set({ url: e.target.value })} data-speech-field="url" />
       </Field>
       <Field label={t('Model')} description={note('model', t('For example Systran/faster-whisper-small.'))}>
-        <Input value={model} readOnly={locked('model')} onChange={(e) => setModel(e.target.value)} data-speech-field="model" />
+        <Input value={model} readOnly={locked('model')} onChange={(e) => form.set({ model: e.target.value })} data-speech-field="model" />
       </Field>
       <Field label={t('Key')} description={note('key', settings.keySet ? t('A key is set. Type a new one to replace it.') : t('Only if the service asks for one.'))}>
-        <Input type="password" autoComplete="off" value={key} readOnly={locked('key')} onChange={(e) => setKey(e.target.value)} data-speech-field="key" />
+        <Input type="password" autoComplete="off" value={key} readOnly={locked('key')} onChange={(e) => form.set({ key: e.target.value })} data-speech-field="key" />
       </Field>
       <p className="text-meta text-muted">{noticeCopy('speech-server', 'private')}</p>
-      {error && <Notice tone="danger">{error}</Notice>}
       {result && (result.ok
         ? <Notice tone="success"><span data-speech-test="ok">{result.text ? t('The service answered: “{text}”', { text: result.text }) : t('The service answered with no words, as expected for the silent sample.')}</span></Notice>
         : <Notice tone="danger"><span data-speech-test="failed">{result.error}</span></Notice>)}
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" type="submit" data-speech-save>{t('Save')}</Button>
         <Button variant="secondary" onClick={() => test()} data-speech-run-test>{t('Test')}</Button>
       </div>
+      {/* settings-foundation D8: the three fields save together with the save bar. */}
+      <SettingsSaveBar dirty={form.dirty} busy={busy} error={error} onDiscard={() => { form.reset(); setError(null) }} onSave={() => void save()} />
     </form>
   )
 }

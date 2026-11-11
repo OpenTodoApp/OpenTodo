@@ -1,1 +1,0 @@
-- **Comments tab read correctly on a narrow panel.** Shown as its icon and a count, the tab now includes the count in its spoken name when there are no comments too.

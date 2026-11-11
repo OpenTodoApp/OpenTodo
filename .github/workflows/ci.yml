@@ -1163,7 +1163,9 @@ jobs:
   # release never depends on it.
   play:
     name: Google Play (internal track)
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
+    # skip publishing; plain success() is false when any job in the needs chain was skipped (1.4.0).
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [release]
@@ -1219,7 +1221,9 @@ jobs:
   # on it.
   ios-testflight:
     name: iOS (TestFlight)
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
+    # skip publishing; plain success() is false when any job in the needs chain was skipped (1.4.0).
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
     needs: [release]
     uses: ./.github/workflows/ios-testflight.yml
     # A called workflow sees no secrets unless they are passed on: without this the tag's
@@ -1237,7 +1241,9 @@ jobs:
   claude-plugin:
     name: Claude Code plugin (publish)
     # Release candidates (v1.0.0-rc.1) are never published to the marketplace (release-candidates).
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
+    # skip publishing; plain success() is false when any job in the needs chain was skipped (1.4.0).
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [release]
@@ -1289,7 +1295,9 @@ jobs:
   obsidian-plugin:
     name: Obsidian plugin (publish)
     # Release candidates are never pushed: Obsidian installs the repository's latest version (release-candidates).
-    if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
+    # !cancelled() && !failure(): a skipped job upstream (the app builds skip on tags) must not
+    # skip publishing; plain success() is false when any job in the needs chain was skipped (1.4.0).
+    if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [release]

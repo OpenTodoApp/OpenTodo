@@ -1,0 +1,1 @@
+Your server's OpenTodo 1.4.2: the command palette lists each group once, and task rows show your projects' icons. Nothing changed in the Android app itself.

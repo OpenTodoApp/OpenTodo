@@ -27,7 +27,8 @@ describe('SpeechServerView', () => {
     await click(document.querySelector('[data-speech-run-test]')!)
     await waitFor(() => !!document.querySelector('[data-speech-test="failed"]'), 'the failed test')
     expect(document.querySelector('[data-speech-test="failed"]')?.textContent).toContain('private network')
-    await click(document.querySelector('[data-speech-save]')!)
+    // settings-foundation D8: Save is in the save bar, shown once a field changed.
+    await click([...document.querySelectorAll<HTMLButtonElement>('[data-save-bar] button')].find((b) => b.textContent === 'Save')!)
     await waitFor(() => onSave.mock.calls.length > 0, 'saved')
     expect(onSave).toHaveBeenCalledWith({ url: 'http://stt.home.lan:8000', model: 'Systran/faster-whisper-small' })
     await r.unmount()

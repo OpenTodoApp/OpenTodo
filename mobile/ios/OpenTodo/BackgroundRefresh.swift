@@ -109,6 +109,16 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
         webView?.stopLoading()
     }
 
+    /// The background run never leaves the server and never opens a browser: a login wall's
+    /// redirect is simply not followed, and the run ends without effect.
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard let url = action.request.url else { return decisionHandler(.cancel) }
+        let scheme = (url.scheme ?? "").lowercased()
+        let stays = scheme == "about" || scheme == "data" || scheme == "blob" || Origin.same(url, origin)
+        decisionHandler(stays ? .allow : .cancel)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         // A few seconds for the app's effects to publish, then done; the budget caps it.
         let token = run

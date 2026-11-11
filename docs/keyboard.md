@@ -102,7 +102,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>Shift+R</kbd> | Go to the Daily check: the Inbox, what is open from earlier, today's focus |
 | <kbd>g</kbd> then <kbd>Shift+D</kbd> | Close the day: how it went, carry over what is left, a line for tomorrow |
 | <kbd>g</kbd> then <kbd>Shift+F</kbd> | Go to Focus: one task, a timer, a break when you need one |
-| <kbd>g</kbd> then <kbd>e</kbd> | Go to Notes: every note, standalone and on tasks and projects, with search |
+| <kbd>g</kbd> then <kbd>e</kbd> | Go to Notes: every note with search, and the sidebar shows your notes |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
 ### Tasks in a list
@@ -312,6 +312,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
 | <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note |
+| <kbd>v</kbd> | On the Notes page: switch between the list and the graph |
 
 ### Routine editor
 

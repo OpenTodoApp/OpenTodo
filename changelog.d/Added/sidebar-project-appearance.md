@@ -1,1 +1,0 @@
-- Rename, recolour or change a project's icon from its sidebar menu, and choose appearance when adding projects and labels in the sidebar.

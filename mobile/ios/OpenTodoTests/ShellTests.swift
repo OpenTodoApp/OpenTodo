@@ -1,5 +1,6 @@
 import Network
 import UIKit
+import WebKit
 import XCTest
 @testable import OpenTodo
 
@@ -155,6 +156,193 @@ final class BridgeOnAServerTests: XCTestCase {
     }
 }
 
+/// The navigation rule of the web view (native-shells "Sign-in flows stay in the shell"),
+/// the cases of the Android app's SignInFlowTest.
+final class SignInFlowTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+    private var now = Date(timeIntervalSince1970: 1_000_000)
+    private lazy var flow = SignInFlow(server: server) { [unowned self] in self.now }
+
+    private func u(_ s: String) -> URL { URL(string: s)! }
+    private func link(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: false, hasGesture: true) }
+    private func redirect(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: true, hasGesture: false) }
+    private func script(_ s: String) -> SignInFlow.Decision { flow.decide(u(s), isRedirect: false, hasGesture: false) }
+
+    func testTheServerAlwaysStays() {
+        XCTAssertEqual(link("https://todo.example.com/today"), .stay)
+        XCTAssertEqual(link("https://TODO.example.com:443/?task=1"), .stay)
+        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
+        XCTAssertFalse(flow.inSignIn)
+    }
+
+    func testLinksToOtherSitesOpenTheBrowser() {
+        XCTAssertEqual(link("https://example.org/outside"), .browser)
+        XCTAssertEqual(script("https://example.org/outside"), .browser)
+        XCTAssertEqual(link("http://todo.example.com/"), .browser)
+        XCTAssertEqual(link("https://todo.example.com:8443/"), .browser)
+        XCTAssertEqual(link("mailto:someone@example.org"), .browser)
+        XCTAssertFalse(flow.inSignIn)
+    }
+
+    func testLoginWallChain() {
+        XCTAssertEqual(redirect("https://auth.example.com/login?rd=https://todo.example.com/"), .stay)
+        XCTAssertTrue(flow.inSignIn)
+        flow.started(u("https://auth.example.com/login?rd=https://todo.example.com/"))
+        XCTAssertEqual(link("https://auth.example.com/login"), .stay)
+        XCTAssertEqual(redirect("https://id.example.net/authorize?client_id=wall"), .stay)
+        flow.started(u("https://id.example.net/authorize?client_id=wall"))
+        XCTAssertEqual(script("https://auth.example.com/callback?code=1"), .stay)
+        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
+        flow.started(u("https://todo.example.com/"))
+        XCTAssertFalse(flow.inSignIn)
+        XCTAssertEqual(link("https://auth.example.com/settings"), .browser)
+    }
+
+    /// Issue #1188: OpenTodo's own single sign-on, a same-origin link to the start route, then the server's redirect.
+    func testSingleSignOn() {
+        XCTAssertEqual(link("https://todo.example.com/api/v1/auth/oidc/start"), .stay)
+        XCTAssertEqual(redirect("https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x"), .stay)
+        flow.started(u("https://sso.example.com/realms/home/protocol/openid-connect/auth?state=x"))
+        XCTAssertEqual(link("https://sso.example.com/realms/home/login-actions/authenticate"), .stay)
+        XCTAssertEqual(redirect("https://todo.example.com/api/v1/auth/oidc/callback?code=1&state=x"), .stay)
+        XCTAssertFalse(flow.inSignIn)
+    }
+
+    func testALinkOnTheSignInPageToAnotherSiteOpensTheBrowser() {
+        _ = redirect("https://auth.example.com/login")
+        flow.started(u("https://auth.example.com/login"))
+        XCTAssertEqual(link("https://example.org/privacy"), .browser)
+        XCTAssertTrue(flow.inSignIn)
+        XCTAssertEqual(link("https://auth.example.com/reset"), .stay)
+    }
+
+    func testARedirectFromAnotherSiteDoesNotStartAFlow() {
+        flow.started(u("https://example.org/page"))
+        XCTAssertEqual(redirect("https://evil.example.net/"), .browser)
+        XCTAssertFalse(flow.inSignIn)
+    }
+
+    func testTheFlowTimesOut() {
+        _ = redirect("https://auth.example.com/login")
+        flow.started(u("https://auth.example.com/login"))
+        now += SignInFlow.timeout - 1
+        XCTAssertEqual(link("https://auth.example.com/next"), .stay)
+        now += SignInFlow.timeout + 1
+        XCTAssertFalse(flow.inSignIn)
+        XCTAssertEqual(redirect("https://id.example.net/authorize"), .browser)
+        XCTAssertEqual(script("https://id.example.net/authorize"), .browser)
+        XCTAssertEqual(link("https://auth.example.com/login"), .stay)
+        XCTAssertEqual(redirect("https://auth.example.com/done"), .stay)
+        XCTAssertFalse(flow.inSignIn)
+        XCTAssertEqual(redirect("https://todo.example.com/"), .stay)
+        flow.started(u("https://todo.example.com/"))
+        XCTAssertEqual(link("https://auth.example.com/login"), .browser)
+    }
+
+    func testLeavingEndsTheFlow() {
+        _ = redirect("https://auth.example.com/login")
+        flow.started(u("https://auth.example.com/login"))
+        flow.end()
+        XCTAssertFalse(flow.inSignIn)
+        XCTAssertEqual(script("https://id.example.net/authorize"), .browser)
+        flow.started(u("https://todo.example.com/"))
+        XCTAssertEqual(redirect("https://auth.example.com/login"), .stay)
+    }
+
+    func testOrigins() {
+        XCTAssertEqual(SignInFlow.originOf(u("https://Todo.Example.com:443/a?b#c")), "https://todo.example.com:443")
+        XCTAssertNil(SignInFlow.originOf(u("about:blank")))
+        XCTAssertNil(SignInFlow.originOf(u("mailto:a@example.org")))
+        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com:8443/login")), "auth.example.com:8443")
+        XCTAssertEqual(SignInFlow.hostOf(u("https://auth.example.com/login")), "auth.example.com")
+    }
+}
+
+/// What the shell does with each navigation (issue #1188): before the fix the provider's
+/// page, reached by the start route's redirect, was handed to Safari.
+@MainActor
+final class ShellRouteTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+
+    private func route(_ s: String, _ flow: SignInFlow, main: Bool? = true, type: WKNavigationType = .other,
+                       provisional: Bool = false, onSignInPage: Bool = false) -> ShellController.Route {
+        ShellController.route(URL(string: s)!, mainFrame: main, type: type, provisional: provisional,
+                              onSignInPage: onSignInPage, flow: flow, server: server)
+    }
+
+    func testSingleSignOnStaysInTheWebView() {
+        let flow = SignInFlow(server: server)
+        XCTAssertEqual(route("https://todo.example.com/api/v1/auth/oidc/start", flow, type: .linkActivated), .allow)
+        // WebKit keeps the tap's type on the redirect that follows it.
+        XCTAssertEqual(route("https://sso.example.com/auth?state=x", flow, type: .linkActivated, provisional: true), .allow)
+        flow.started(URL(string: "https://sso.example.com/auth?state=x")!)
+        XCTAssertEqual(route("https://captcha.example.net/frame", flow, main: false), .allow)
+        XCTAssertEqual(route("https://sso.example.com/login-actions/authenticate", flow, type: .formSubmitted), .allow)
+        XCTAssertEqual(route("https://todo.example.com/api/v1/auth/oidc/callback?code=1", flow, type: .formSubmitted, provisional: true), .allow)
+        XCTAssertFalse(flow.inSignIn)
+    }
+
+    func testOutsideAFlowOtherSitesOpenTheBrowser() {
+        let flow = SignInFlow(server: server)
+        XCTAssertEqual(route("https://example.org/", flow, type: .linkActivated), .browser)
+        XCTAssertEqual(route("https://example.org/", flow, main: nil, type: .linkActivated), .browser)
+        XCTAssertEqual(route("https://example.org/frame", flow, main: false), .browser)
+        XCTAssertEqual(route("mailto:a@example.org", flow, type: .linkActivated), .browser)
+        XCTAssertEqual(route("about:blank", flow), .allow)
+    }
+
+    func testARefusedRedirectNeverOpensTheBrowser() {
+        let flow = SignInFlow(server: server)
+        flow.started(URL(string: "https://example.org/page")!)
+        XCTAssertEqual(route("https://evil.example.net/", flow, provisional: true), .refused)
+    }
+
+    func testBackLeavesTheSignInAndStepsOverItsPages() {
+        let flow = SignInFlow(server: server)
+        XCTAssertEqual(route("https://todo.example.com/today", flow, type: .backForward, onSignInPage: true), .leave)
+        XCTAssertEqual(route("https://sso.example.com/auth", flow, type: .backForward), .skipBack)
+        XCTAssertEqual(route("https://todo.example.com/today", flow, type: .backForward), .allow)
+    }
+}
+
+/// The whole round trip on real pages (issue #1188): the server's start route redirects
+/// to a provider on another origin, whose page sends the person back to the server's
+/// callback, which redirects to the app. The app's page then reports from inside the
+/// shell, with the bridge, so nothing went to Safari.
+@MainActor
+final class SignInOnAServerTests: XCTestCase {
+    func testSingleSignOnReturnsToTheApp() async throws {
+        let host = try XCTUnwrap(PageServer.networkAddress(), "this device has a network address besides loopback")
+        let server = try await PageServer.start(host: host)
+        defer { server.stop() }
+        let provider = try await PageServer.start(host: "127.0.0.1")
+        defer { provider.stop() }
+        let origin = try XCTUnwrap(URL(string: "http://\(host):\(server.port)"))
+        let providerOrigin = "http://127.0.0.1:\(provider.port)"
+        server.route("/api/v1/auth/oidc/start", .redirect("302 Found", to: "\(providerOrigin)/auth?state=x"))
+        server.route("/api/v1/auth/oidc/callback", .redirect("303 See Other", to: "/?signed=1"))
+        provider.route("/auth", PageServer.Response(body: """
+        <!doctype html><meta charset="utf-8"><title>provider</title>
+        <form id="f" method="get" action="\(origin.absoluteString)/api/v1/auth/oidc/callback"><input type="hidden" name="code" value="1"></form>
+        <script>setTimeout(function () { document.getElementById('f').submit() }, 200)</script>
+        """))
+
+        let shell = ShellController(origin: origin)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        shell.webView.frame = window.bounds
+        window.addSubview(shell.webView)
+        window.isHidden = false
+        defer { window.isHidden = true }
+        shell.open(path: "/api/v1/auth/oidc/start")
+        let report = try await server.report(timeout: 90)
+        XCTAssertEqual(report["search"], "?signed=1", "the callback's redirect reached the app: \(report)")
+        XCTAssertEqual(report["shell"], "object", "the page is the shell's, with the bridge: \(report)")
+        XCTAssertTrue(provider.paths.contains("/auth"), "the provider's page loaded in the web view: \(provider.paths)")
+        XCTAssertNil(shell.failure)
+        XCTAssertFalse(shell.flow.inSignIn)
+    }
+}
+
 /// A one-page HTTP server: `/` is a page whose script reports
 /// `typeof window.opentodoShell` and the message handler as `/report?…`.
 final class PageServer: @unchecked Sendable {
@@ -163,13 +351,25 @@ final class PageServer: @unchecked Sendable {
     var s = window.opentodoShell, w = window.webkit;
     fetch('/report?shell=' + typeof s + '&platform=' + encodeURIComponent(s ? s.platform : '') +
       '&handler=' + typeof (w && w.messageHandlers && w.messageHandlers.opentodoNative) +
-      '&origin=' + encodeURIComponent(location.origin));
+      '&origin=' + encodeURIComponent(location.origin) + '&search=' + encodeURIComponent(location.search));
     </script>
     """
+
+    /// An answer for a path other than `/` and `/report` (a redirect, another page).
+    struct Response {
+        var status = "200 OK"
+        var headers = ""
+        var body = ""
+        static func redirect(_ status: String, to location: String) -> Response {
+            Response(status: status, headers: "Location: \(location)\r\n")
+        }
+    }
 
     private let listener: NWListener
     /// Every field below is touched on this queue only.
     private let queue = DispatchQueue(label: "PageServer")
+    private var routes: [String: Response] = [:]
+    private var requested: [String] = []
     private var starting: CheckedContinuation<Void, Error>?
     private var reported: [String: String]?
     private var waiting: CheckedContinuation<[String: String], Error>?
@@ -214,6 +414,12 @@ final class PageServer: @unchecked Sendable {
 
     func stop() { listener.cancel() }
 
+    /// Answers `path` (without its query) with `response` from now on.
+    func route(_ path: String, _ response: Response) { queue.sync { routes[path] = response } }
+
+    /// The paths asked for so far, in order.
+    var paths: [String] { queue.sync { requested } }
+
     private func changed(_ state: NWListener.State) {
         guard let starting else { return }
         switch state {
@@ -256,8 +462,15 @@ final class PageServer: @unchecked Sendable {
     }
 
     private func answer(_ connection: NWConnection, _ target: String) {
-        var status = "404 Not Found", type = "text/plain", body = ""
-        if target == "/" {
+        var status = "404 Not Found", type = "text/plain", body = "", headers = ""
+        let path = String(target.split(separator: "?", maxSplits: 1).first ?? "")
+        requested.append(path)
+        if let route = routes[path] {
+            status = route.status
+            headers = route.headers
+            type = "text/html; charset=utf-8"
+            body = route.body
+        } else if target == "/" || target.hasPrefix("/?") {
             status = "200 OK"
             type = "text/html; charset=utf-8"
             body = Self.page
@@ -272,7 +485,7 @@ final class PageServer: @unchecked Sendable {
             }
         }
         let bytes = Data(body.utf8)
-        let head = "HTTP/1.1 \(status)\r\nContent-Type: \(type)\r\nContent-Length: \(bytes.count)\r\n"
+        let head = "HTTP/1.1 \(status)\r\n\(headers)Content-Type: \(type)\r\nContent-Length: \(bytes.count)\r\n"
             + "Cache-Control: no-store\r\nConnection: close\r\n\r\n"
         connection.send(content: Data(head.utf8) + bytes, completion: .contentProcessed { _ in connection.cancel() })
     }

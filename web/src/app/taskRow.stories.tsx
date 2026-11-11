@@ -20,6 +20,7 @@ export default meta
 
 const noop = () => {}
 const home = project({ id: 'p-home', name: 'Home', color: HEX.green })
+const workWithIcon = project({ id: 'p-work', name: 'Work', color: HEX.blue, icon: 'briefcase' })
 const errand = label('l-errand', 'errand', HEX.orange)
 const deepWork = label('l-deep', 'deep-work', HEX.violet)
 const base = { selected: false, showProject: false, onToggle: noop, onOpen: noop }
@@ -124,6 +125,18 @@ export const LabelsAndProject: StoryObj = {
       <TaskRow {...base} showProject project={home} task={task({ id: 't1', title: 'Fix the bike light', project_id: home.id, labels: [errand.id] })} labels={[errand]} />
       <TaskRow {...base} showProject project={home} task={task({ id: 't2', title: 'Read the sync protocol draft', project_id: home.id, due: { date: TOMORROW } })} labels={[deepWork, errand]} />
       <TaskRow {...base} showProject task={task({ id: 't3', title: 'Renew passport' })} labels={[errand]} />
+    </List>
+  ),
+}
+
+/** A project icon and the colour dot fallback in each row layout. */
+export const ProjectIcons: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} layout="line" showProject project={workWithIcon} task={task({ id: 't1', title: 'Prepare the demo', project_id: workWithIcon.id })} />
+      <TaskRow {...base} layout="line" showProject project={home} task={task({ id: 't2', title: 'Fix the bike light', project_id: home.id })} />
+      <TaskRow {...base} layout="detailed" showProject project={workWithIcon} task={task({ id: 't3', title: 'Review the demo', project_id: workWithIcon.id })} />
+      <TaskRow {...base} layout="detailed" showProject project={home} task={task({ id: 't4', title: 'Water the plants', project_id: home.id })} />
     </List>
   ),
 }

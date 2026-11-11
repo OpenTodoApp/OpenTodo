@@ -1,8 +1,9 @@
 # Artifact Hub repository metadata for oci://ghcr.io/opentodoapp/charts/opentodo.
 # .github/workflows/helm.yml pushes this file on every release as the artifacthub.io tag.
 # After adding the repository on artifacthub.io, uncomment repositoryID with the ID it shows
-# (Control Panel, the repository's menu) to earn the Verified publisher badge, and list the owners.
-# repositoryID: 00000000-0000-0000-0000-000000000000
+# (Control Panel, the repository's menu) to earn the Verified publisher badge. Owners are left
+# out on purpose: their email would be published with the chart.
+repositoryID: 470c76d2-da10-4629-a1a3-e2c158c17075
 # owners:
 #   - name: pixari
 #     email: <the email of the Artifact Hub account>

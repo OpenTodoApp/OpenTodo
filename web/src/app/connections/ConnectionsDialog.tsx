@@ -9,10 +9,12 @@ import { readString, writeString } from '../../lib/deviceStorage'
 import { layout, neighbourhood, NARROW, type Box, type GraphItem } from '../../lib/graphLayout'
 import { t } from '../../lib/i18n'
 import { projectName, useLinkIndex, type LinkIndex, type LinkKind, type Reference } from '../../lib/noteLinks'
-import { Dialog, Icon, SegmentedControl, useMediaQuery } from '../../ui'
+import { requestGraphCentre } from '../../lib/notesGraphPrefs'
+import { Dialog, Icon, IconButton, SegmentedControl, useMediaQuery } from '../../ui'
 import { ReferenceRow } from '../LinkedReferences'
 import { LINK_ICON } from '../LinkOption'
 import { openNote } from '../notes/openNote'
+import { navigate } from '../router'
 import { ConnectionsGraph } from './ConnectionsGraph'
 
 /** The per-device choice of Graph or List (D5). */
@@ -110,6 +112,12 @@ export default function ConnectionsDialog({ kind, id, onClose }: { kind: LinkKin
     onClose()
     openNote({ source: c.kind, id: c.id })
   }, [onClose])
+  // Open in graph (notes-graph-page D10): the Notes graph, centred on this item.
+  const openInGraph = () => {
+    requestGraphCentre(keyOf(centre))
+    onClose()
+    navigate({ view: 'notes', graph: true })
+  }
   const choose = (v: View) => {
     setChosen(v)
     writeString(CONNECTIONS_VIEW_KEY, v)
@@ -125,7 +133,7 @@ export default function ConnectionsDialog({ kind, id, onClose }: { kind: LinkKin
   }
 
   return (
-    <ConnectionsFrame kind={centre.kind} title={title} label={label} view={view} onView={choose} onClose={onClose}>
+    <ConnectionsFrame kind={centre.kind} title={title} label={label} view={view} onView={choose} onClose={onClose} onGraph={openInGraph}>
       <div onKeyDown={onBodyKey}>
         {view === 'graph'
           ? (
@@ -143,8 +151,8 @@ export default function ConnectionsDialog({ kind, id, onClose }: { kind: LinkKin
 }
 
 /** The dialog and its one header row: the centre's icon and title, Graph / List, Close (D3). */
-export function ConnectionsFrame({ kind, title, label, view, onView, onClose, children }: {
-  kind: LinkKind; title: string; label: string; view: View; onView: (v: View) => void; onClose: () => void; children: ReactNode
+export function ConnectionsFrame({ kind, title, label, view, onView, onClose, onGraph, children }: {
+  kind: LinkKind; title: string; label: string; view: View; onView: (v: View) => void; onClose: () => void; onGraph?: () => void; children: ReactNode
 }) {
   return (
     <Dialog size="graph" onClose={onClose} label={label} testId="connections"
@@ -155,8 +163,11 @@ export function ConnectionsFrame({ kind, title, label, view, onView, onClose, ch
         </span>
       )}
       actions={(
-        <SegmentedControl label={t('Show as')} value={view} onChange={onView} data-connections-view={view}
-          options={[{ id: 'graph', label: t('Graph') }, { id: 'list', label: t('List') }]} />
+        <>
+          <SegmentedControl label={t('Show as')} value={view} onChange={onView} data-connections-view={view}
+            options={[{ id: 'graph', label: t('Graph') }, { id: 'list', label: t('List') }]} />
+          {onGraph && <IconButton icon="waypoints" size="sm" label={t('Open in graph')} onClick={onGraph} data-connections-open-graph />}
+        </>
       )}>
       {children}
     </Dialog>

@@ -16,6 +16,7 @@
 		28E6935BE94290233F7E5404 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AF3DC74A2267EFDBC4C931 /* Bridge.swift */; };
 		36B6CDA8E9D3BC41A81D2810 /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */; };
 		3BC19BDB6D1E9CE0B9CDCAAA /* Origin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8407A0F4AD2F032D414F19A2 /* Origin.swift */; };
+		A1F3C5E7092B4D6F8A0C1E35 /* SignInFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E4D6F8193C5E7A9B1D2F46 /* SignInFlow.swift */; };
 		3FDFB7915FCF248E011B9902 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CF02FEF6607848477AEECD7 /* TodayWidget.swift */; };
 		405EE73A8C49116F83C05E74 /* ShellDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96393A759F2B87B27D9E7E0A /* ShellDataTests.swift */; };
 		4765AC84702C76D4DCAE3AA1 /* OpenTodoWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 54FD68501123AE1BE87BC42B /* OpenTodoWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -121,6 +122,7 @@
 		750F4C1ECA56E888998D2B8C /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		7DBFFA13DDE2752DC1E0D5A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8407A0F4AD2F032D414F19A2 /* Origin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Origin.swift; sourceTree = "<group>"; };
+		B2E4D6F8193C5E7A9B1D2F46 /* SignInFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInFlow.swift; sourceTree = "<group>"; };
 		8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeHost.swift; sourceTree = "<group>"; };
 		8D81052402DC912DF25E566D /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		957AC17D01C033216546B603 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 				9DB6E4B7A9C8F16AEB65C781 /* ShareInbox.swift */,
 				B38F2434289E6B5E5C230FE9 /* ShareMap.swift */,
 				2AA01546E9D89832E97D0CC8 /* ShellView.swift */,
+				B2E4D6F8193C5E7A9B1D2F46 /* SignInFlow.swift */,
 				30808D5A379DF00A50741685 /* Store.swift */,
 				0EBB2043E1AE8A8B6CCC2163 /* Version.swift */,
 				D76B6CC810FF847258BFE66C /* WidgetPublication.swift */,
@@ -502,6 +505,7 @@
 				DE806B63F2F96260D63F47E7 /* ShareInbox.swift in Sources */,
 				0E58586F44510D255B9507A3 /* ShareMap.swift in Sources */,
 				019924B697460063BC288DD1 /* ShellView.swift in Sources */,
+				A1F3C5E7092B4D6F8A0C1E35 /* SignInFlow.swift in Sources */,
 				EB5427342BA36950F7FA8CA6 /* Store.swift in Sources */,
 				9CC1ED807AF7798D89018403 /* Version.swift in Sources */,
 				F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */,

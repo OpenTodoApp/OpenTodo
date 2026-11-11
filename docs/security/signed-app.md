@@ -73,7 +73,28 @@ Setting it up (once, by the maintainer):
 - **Planned rotation.** Generate the new key offline with `go run ./cmd/websign keygen -out new-release.pem`. Add its public key to `release-keys.json` next to the old one, and sign the next release with both (`websign sign -key old.pem -key new.pem`, or both secrets in the job). Keep both signatures for six months, then remove the old key from the file and the environment.
 - **Lost or stolen release key.** Sign a release with the recovery key; its list names the new release key and the recovery key. Devices accept it because they trust the recovery key. Publish the change, and the fingerprints, loudly.
 - **Both keys lost.** Installed apps keep the last good version and every person starts over on their device ([Signed updates](../signed-updates.md#starting-over-on-this-device)).
-- The procedure is rehearsed with throwaway keys before it is needed; the record of the run goes here.
+
+### Rehearsal
+
+The rotation was rehearsed on 2026-11-11 with throwaway keys made by `websign keygen` (release key A, its successor B, recovery key R, and C, the release key that replaces a lost B), deleted afterwards.
+
+With the CLI against a real server: for each release, the web app's list was rewritten to name its keys, signed with `websign sign`, embedded in an `opentodo` binary and served from a throwaway data directory, then checked with `websign verify -require-signed -keys <the keys a device trusts after the previous release> http://127.0.0.1:18080/`.
+
+| Release | Signed with | Lists | Checked trusting | Result |
+| --- | --- | --- | --- | --- |
+| 1.0.0 | A | A, R | A, R | passes |
+| 1.1.0 | A and B | A, B, R | A, R | passes |
+| 1.2.0 | B | B, R | A, B, R | passes |
+| 1.2.0 | B | B, R | A, R (a device that skipped 1.1.0) | fails: not a trusted key |
+| 1.3.0 | A (retired) | A, R | B, R | fails: not a trusted key |
+| 1.4.0 | R (B lost) | C, R | B, R | passes |
+| 1.5.0 | C | C, R | C, R | passes |
+| 1.5.0 | C | C, R | B, R (a device that skipped 1.4.0) | fails: not a trusted key |
+| 1.6.0 | B (lost) | B, R | C, R | fails: not a trusted key |
+
+In a browser, `scripts/e2e-signed.mjs` (steps 8 to 14) runs the same sequence on one device and passes: the worker's trust record moves from A and R to A, B and R, then to B and R, and after the recovery release to C and R; the retired and the lost key are recorded as `unknown-key` and change nothing.
+
+What it shows: a device must install a release signed with both keys before the old key is dropped, which is why both signatures stay for six months. The run also found that `websign verify -require-signed -keys` still required an official key; it now requires one of the given keys.
 
 ## Your own key
 
@@ -97,4 +118,4 @@ Check any server with `go run github.com/OpenTodoApp/opentodo/cmd/websign@latest
 - `web/src/lib/appInstall.test.ts`: first use, valid updates, a tampered chunk recorded while reporting and refused with refusal on, unsigned, unknown-key and older lists, a cut-off download, offline, lazy chunks, rotation, refusal that cannot be turned off, and the trust record surviving sign-out.
 - `web/src/lib/pagePolicy.test.ts` and `TestCSPFixture`: the worker's page policy equals the server's.
 - `internal/web` `TestServedAsBuilt` and `TestSecurityHeaders`: `/index.html` unmodified, the list never cached, `no-transform`.
-- `scripts/e2e-signed.mjs` (`make e2e-signed`): a real browser against servers signed with the test key.
+- `scripts/e2e-signed.mjs` (`make e2e-signed`): a real browser against servers signed with the test key, then the key rotation with throwaway keys on a new device.

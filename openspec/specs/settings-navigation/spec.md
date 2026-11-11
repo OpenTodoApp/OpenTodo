@@ -33,11 +33,11 @@ Settings SHALL be split into sections at `/settings/<id>`: `account`, `workspace
 - **THEN** the page opens, and each row that needs the server shows that it needs a connection instead of stale or empty data
 
 ### Requirement: Settings overview
-There SHALL be no separate overview page. Below 1024 px wide the section list (profile card, search field, grouped sections with icon, name and one-line description, the free-software footer) SHALL be the whole screen, where each entry is a link at least 44 px tall that opens its section as a page. From 1024 px wide the list SHALL be a navigation pane of 228 px beside the page, separated from it by a hairline: the search field showing its `/` key, the group labels, and one 30 px row per section with its icon and name, the current one on the selected surface; the pane SHALL NOT repeat the profile card, the descriptions or the footer. Pressing `/` on a Settings page outside a text field SHALL focus the search field.
+There SHALL be no separate overview page. Below 1024 px wide the section list (profile card, search field, grouped sections with icon, name and one-line description, the free-software footer) SHALL be the whole screen, where each entry is a link at least 44 px tall that opens its section as a page, and that list SHALL NOT show a section's sub-pages. From 1024 px wide the list SHALL be a navigation pane of 228 px beside the page, separated from it by a hairline: the search field showing its `/` key, the group labels, and one 30 px row per section with its icon and name, the current one on the selected surface; the pane SHALL NOT repeat the profile card, the descriptions or the footer. From 1024 px, when the open section has more than one sub-page this viewer may see, those sub-pages SHALL be listed directly under that section as further 30 px rows, indented, each with its icon and its name, linking to `/settings/<section>/<page>`. The section row SHALL still open the section's overview. A section with no sub-pages, and a section this viewer sees as a single page, SHALL list no rows under it. A name that does not fit its row SHALL be truncated visually and the row's accessible name SHALL be the full name. The pane SHALL keep scrolling inside itself. Pressing `/` on a Settings page outside a text field SHALL focus the search field.
 
 #### Scenario: Phone overview
 - **WHEN** a member opens `/settings` on a 390 px wide screen
-- **THEN** they see the profile card, the search field, the groups You, App and Data with their sections as tappable rows, no Server group, and the footer line
+- **THEN** they see the profile card, the search field, the groups You, App and Data with their sections as tappable rows, no Server group, no sub-pages under any section, and the footer line
 
 #### Scenario: Opening a section
 - **WHEN** the user activates the Capture entry
@@ -45,18 +45,26 @@ There SHALL be no separate overview page. Below 1024 px wide the section list (p
 
 #### Scenario: Desktop list
 - **WHEN** the owner opens `/settings` on a 1280 px wide screen
-- **THEN** the list is the left column, the Account section is open beside it, and the address is `/settings/account`
+- **THEN** the list is the left column, the Account section is open beside it, Profile, Security, Recent activity, Invitations and End-to-end encryption are listed under Account, and the address is `/settings/account`
 
 #### Scenario: Navigation pane
 - **WHEN** a user opens `/settings/notifications` on a 1440 px wide screen
-- **THEN** the pane beside the page is 228 px wide with a hairline on its right, shows the search field with a `/` key, the group labels and one row per section with icon and name, marks Notifications on the selected surface, and shows no profile card, section descriptions or footer
+- **THEN** the pane beside the page is 228 px wide with a hairline on its right, shows the search field with a `/` key, the group labels and one row per section with icon and name, lists Push notifications, Delivery channels and Weekly digest under Notifications, marks Notifications on the selected surface, and shows no profile card, section descriptions or footer
+
+#### Scenario: A section without sub-pages
+- **WHEN** the owner opens `/settings/workspaces` on a 1280 px wide screen
+- **THEN** the pane lists Workspaces as a single row with nothing nested under it
+
+#### Scenario: One visible page
+- **WHEN** an admin opens `/settings/people` on a 1280 px wide screen
+- **THEN** the pane lists People as a single row with nothing nested under it, and the page is the users list itself
 
 #### Scenario: Slash focuses search
 - **WHEN** a keyboard user on `/settings/general` presses `/` while no text field has focus
 - **THEN** focus moves to the settings search field and no character is typed
 
 ### Requirement: Section page layout
-A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` (on a sub-page, `aria-current="true"`), and the page SHALL start with the section's name as a 22 px title and its one-line description as the lead line (on a sub-page, the page's name alone), followed by its sections with their own headings. The layout SHALL be the same for every section. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
+A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` when that section's overview is open and `aria-current="true"` when one of its sub-pages is open, and on a sub-page that sub-page's row SHALL be marked `aria-current="page"`. The page SHALL start with a page head: the section's or sub-page's name as a 22 px title (from 1024 px), then its lead line, which says in one sentence what the page is for, then its scope line when the page's settings do not apply to the viewer's account alone, then its status and primary action when it has them. The lead line and the scope line SHALL also be shown below 1024 px, where the title stays in the page header. The layout SHALL be the same for every section and sub-page. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
 
 #### Scenario: Desktop section
 - **WHEN** a user opens `/settings/data` on a 1200 px wide screen
@@ -64,7 +72,7 @@ A section page SHALL use the compact page header. From 1024 px wide the header S
 
 #### Scenario: Phone section
 - **WHEN** a user opens `/settings/data` on a 390 px wide screen
-- **THEN** the page header has a back action to the list and no section list is shown beside the content
+- **THEN** the page header has a back action to the list, no section list is shown beside the content, and the page starts with its lead line
 
 #### Scenario: Focus after navigation
 - **WHEN** a keyboard user activates the Notifications entry
@@ -73,6 +81,22 @@ A section page SHALL use the compact page header. From 1024 px wide the header S
 #### Scenario: Breadcrumb and title
 - **WHEN** a user opens `/settings/notifications` on a 1440 px wide screen
 - **THEN** the header reads "Settings › Notifications" after the sidebar toggle with Help at its right, "Settings" opens the list's first section, and the page starts with the 22 px title "Notifications" and the line saying what the section holds
+
+#### Scenario: Current sub-page in the pane
+- **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
+- **THEN** the Webhooks row under Integrations is marked `aria-current="page"` and the Integrations row is marked `aria-current="true"`
+
+#### Scenario: Sub-page lead line
+- **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
+- **THEN** the title "Webhooks" is followed by one line saying that webhooks send a signed request to an address when tasks and projects change, and no section heading below repeats "Webhooks"
+
+#### Scenario: Server scope
+- **WHEN** the owner opens `/settings/server/outgoing-email` on a 1280 px or a 390 px wide screen
+- **THEN** the page head says that the setting applies to everyone on this server, before any row
+
+#### Scenario: Device scope
+- **WHEN** a user opens `/settings/language/calendar`
+- **THEN** the page head says that these settings apply to this device only
 
 ### Requirement: Sections follow the user's role
 Each row SHALL be shown to the same roles as before. People (users, invitations, members, access policies, single sign-on) SHALL be listed to the owner and admins; access policies and single sign-on inside it, and the Server section (backups, attachments, outgoing email, audit log), SHALL be shown to the owner only. Opening a section the role does not see SHALL open the first visible section.
@@ -188,7 +212,7 @@ Addresses of earlier layouts SHALL open the section or sub-page that now holds t
 - **THEN** Language and region → Date and time is shown with the Date and time card focused, and the address reads `/settings/language/date-time`
 
 ### Requirement: Panel cards and rows
-Each Settings section SHALL appear as a flat section with the fixed anatomy of the design system: heading, one line of description, rows. Individual settings SHALL be rows with label and description on one side and the control on the other, divided by hairlines, state shown as a status dot with its word beside the label. A section's or row's description SHALL be one sentence of at most 90 characters in English (the "Settings copy" requirement); a section whose guide section says more SHALL end its line with a "Learn more" link that opens contextual help at the section's screen id beside the page, without a reload and without losing what the user entered. Below 640 px each row SHALL stack the control under its label. No row or section SHALL scroll sideways at 320 px wide. Native select controls SHALL be styled as the design-system select, and controls in a row SHALL use the small control size.
+Each Settings section SHALL appear as a flat section with the fixed anatomy of the design system: heading, one line of description, rows; a page with a single section SHALL show no heading for it. Individual settings SHALL be rows with label and description on one side and the control on the other, divided by hairlines, state shown as a status dot with its word beside the label. A state that keeps a feature from working or leaves people without a way back in (no backup has run, outgoing email not configured, two-factor off, a delivery failing) SHALL use the warning or danger tone; a feature simply switched off SHALL use the off tone. A section's or row's description SHALL be one sentence of at most 90 characters in English (the "Settings copy" requirement); a section whose guide section says more SHALL end its line with a "Learn more" link that opens contextual help at the section's screen id beside the page, without a reload and without losing what the user entered. Below 640 px each row SHALL stack its control under its label, except a row whose only control is a switch, which SHALL keep the switch at the end of the label's line. No row or section SHALL scroll sideways at 320 px wide. Native select controls SHALL be styled as the design-system select, and controls in a row SHALL use the small control size.
 
 #### Scenario: Wide row layout
 - **WHEN** a user opens `/settings/general` on a 1200 px wide screen
@@ -196,7 +220,11 @@ Each Settings section SHALL appear as a flat section with the fixed anatomy of t
 
 #### Scenario: Narrow row layout
 - **WHEN** the same section is opened on a 320 px wide screen
-- **THEN** every control sits below its label and the page has no horizontal scroll
+- **THEN** every control other than a switch sits below its label and the page has no horizontal scroll
+
+#### Scenario: Switch row on a phone
+- **WHEN** a user opens `/settings/general/keyboard` on a 390 px wide screen
+- **THEN** each switch sits at the end of its label's line, the description wraps under the label, and the switch keeps a 44 px touch target
 
 #### Scenario: One line per card
 - **WHEN** a user opens `/settings/account` on a 1200 px wide screen
@@ -213,6 +241,10 @@ Each Settings section SHALL appear as a flat section with the fixed anatomy of t
 #### Scenario: State as a dot
 - **WHEN** a user with push on for this device opens `/settings/notifications`
 - **THEN** the push row shows a green dot and the word "On" beside its label, not a coloured pill
+
+#### Scenario: Blocking state in the warning tone
+- **WHEN** the owner of a server without outgoing email opens `/settings/server/outgoing-email`
+- **THEN** the mail server row shows a warning dot with "Not configured", not the off tone
 
 ### Requirement: State-first panel summaries
 A panel whose feature has state SHALL lead with a summary of that state, taken only from data the app already holds or fetches for that panel, before any action. Examples: two-factor on or off with recovery codes left, the number of passkeys with each one's last use, push on or off for this device, and the last backup run with its outcome. A summary that needs the server SHALL show the panel's offline state instead of a guess.
@@ -274,19 +306,31 @@ The settings list SHALL start with a search field that filters sections and indi
 - **THEN** "Account › Passkeys" is listed and opens Account → Security at the passkeys row
 
 ### Requirement: About section
-Settings SHALL have an About section, visible to every account, that shows the server's version while online and a link to the in-app Help, the documentation on the website, the website, the issue tracker on GitHub, the OpenTodo Discord server, the OpenTodo account on X and the source code, and a Buy Me a Coffee button. External links SHALL open in a new tab and load nothing into the app; they SHALL be shown offline too, since they are part of the client. The Discord row SHALL be found by the settings search under "discord", "community" and "chat", and the X row under "x", "twitter" and "news". For the owner it SHALL also offer to show the welcome note again.
+Settings SHALL have an About section, visible to every account, that shows the server's version while online and a link to the in-app Help, the documentation on the website, the website, the OpenTodo Discord server, the OpenTodo account on X and the source code, a What's new card (OpenSpec `whats-new`), and a Buy Me a Coffee button. The Feedback and problems row SHALL open the "Something isn't working" dialog (OpenSpec `feedback`) rather than the issue list directly. External links SHALL open in a new tab and load nothing into the app; they SHALL be shown offline too, since they are part of the client. The Discord row SHALL be found by the settings search under "discord", "community" and "chat". The X row SHALL be labelled Follow on X and SHALL be found under "x" and "twitter". The What's new card SHALL be found under "news", "changelog" and "what's new". The Feedback row SHALL be found under "feedback", "issue" and "bug". For the owner it SHALL also offer to show the welcome note again.
 
 #### Scenario: Member opens About
 - **WHEN** a member opens `/settings/about` while online
-- **THEN** the page shows "OpenTodo <version>", Open Help, the documentation, website, issue, Discord, X and GitHub links and the coffee button, and no welcome note row
+- **THEN** the page shows "OpenTodo <version>", the What's new card, Open Help, the documentation, website, Discord, Follow on X and GitHub links, the Feedback and problems row, and the coffee button, and no welcome note row
+
+#### Scenario: Feedback opens the dialog
+- **WHEN** anyone activates Feedback and problems in Settings → About, online or offline
+- **THEN** the "Something isn't working" dialog opens and the app has made no request
 
 #### Scenario: Searching for the community
 - **WHEN** anyone types "discord" or "community" in the settings search
 - **THEN** the About section's Community row is offered and opening it lands on that row
 
 #### Scenario: Searching for the news
-- **WHEN** anyone types "twitter" or "news" in the settings search
-- **THEN** the About section's News and updates row is offered and opening it lands on that row
+- **WHEN** anyone types "news" or "changelog" in the settings search
+- **THEN** the What's new card is offered and opening it lands on that card
+
+#### Scenario: Searching for the X account
+- **WHEN** anyone types "twitter" or "x" in the settings search
+- **THEN** the About section's Follow on X row is offered and opening it lands on that row
+
+#### Scenario: Searching for feedback
+- **WHEN** anyone types "bug" or "feedback" in the settings search
+- **THEN** the About section's Feedback and problems row is offered and opening it opens the dialog
 
 #### Scenario: Following on X
 - **WHEN** anyone activates Follow on X in Settings → About, online or offline
@@ -492,7 +536,7 @@ A Settings card's action buttons SHALL name the action without a trailing ellips
 - **THEN** the End-to-end encryption card's button reads "Set up encryption"
 
 ### Requirement: Card tiers
-Each Settings page SHALL be one flat page: no section SHALL be drawn as a card surface (raised fill, card radius, elevation or border). Every section SHALL be drawn flat: heading, line and rows on the page surface, its rows divided by hairlines, separated from the next section by vertical space. The anatomy of a section (heading, one line, rows, Learn more) and of a row SHALL be the same on every page, and the settings anatomy test SHALL check it.
+Each Settings page SHALL be one flat page: no section SHALL be drawn as a card surface (raised fill, card radius, elevation or border). Every section SHALL be drawn flat: heading, line and rows on the page surface, its rows divided by hairlines, separated from the next section by vertical space. A section heading SHALL outrank its rows: it SHALL be at least the size and weight of a row label and drawn in the strong text colour, never in the muted colour. A page with exactly one section SHALL show no heading for that section, and that section's line SHALL be the page's lead line; no page SHALL show a section heading that repeats the page's title. The anatomy of a section (heading, one line, rows, Learn more) and of a row SHALL be the same on every page, and the settings anatomy test SHALL check it.
 
 #### Scenario: Account page tiers
 - **WHEN** a user opens `/settings/account` on a 1200 px wide screen in light and in dark
@@ -500,7 +544,7 @@ Each Settings page SHALL be one flat page: no section SHALL be drawn as a card s
 
 #### Scenario: Phone tiers
 - **WHEN** the same page is opened on a 390 px wide screen
-- **THEN** the sections stack in the same order, controls sit under their labels, and the page has no horizontal scroll
+- **THEN** the sections stack in the same order, controls other than switches sit under their labels, and the page has no horizontal scroll
 
 #### Scenario: Anatomy unchanged
 - **WHEN** the settings anatomy test runs over every panel
@@ -510,8 +554,16 @@ Each Settings page SHALL be one flat page: no section SHALL be drawn as a card s
 - **WHEN** a change draws a section on the Server page with the card surface
 - **THEN** the settings anatomy test fails naming the page and the section
 
+#### Scenario: One-section page
+- **WHEN** a user opens `/settings/server/backups`, whose page has the backups section and the restore section, and then `/settings/capture/voice`, whose page has one section
+- **THEN** Backups shows both section headings above their rows in the strong colour, and Voice capture shows its title, its lead line and its row with no section heading
+
+#### Scenario: Duplicate title fails the test
+- **WHEN** a page shows a section heading equal to its own title
+- **THEN** the settings anatomy test fails naming the page
+
 ### Requirement: Settings sub-pages
-A section whose content runs long SHALL be an overview of sub-pages, each at `/settings/<section>/<page>`: Account (Profile, Security, Recent activity, End-to-end encryption), Appearance (Theme and density, Sidebar, Task details), General (Start view and briefing, Keyboard, Focus timer, Maps), Language and region (Language, Date and time, Calendar grid), Notifications (Push notifications, Delivery channels, Weekly digest), Capture (Quick add, Voice capture, Bookmarklet and extension, Email to task), Integrations (Calendar apps (CalDAV), Calendar feeds, Issues, Webhooks, API tokens, Assistant, AI assistants (MCP)), People (Users and invitations, Access policies, Single sign-on) and Server (Backups, Attachments, Outgoing email, Branding, Maps, Automations, Speech to text, Audit log; on a hosted service Download your data, Branding, Maps, Automations and Audit log). The overview SHALL list one row per sub-page the viewer may see, at least 44 px tall, with its icon, its name and, where the server or the device can say it, its state in a word or a number ("On", "Off", "2", "None", "Two-factor off"), as flat rows between hairlines inside a navigation landmark named after the section. States SHALL load together when the overview opens and SHALL be left out offline or when the server refuses them. A section of which the viewer sees only one sub-page SHALL be that page, without an overview. An unknown or hidden sub-page id SHALL open the section's overview and replace the address. Sub-pages are client screens and open offline like sections.
+A section whose content runs long SHALL be an overview of sub-pages, each at `/settings/<section>/<page>`: Account (Profile, Security, Recent activity, End-to-end encryption), Appearance (Theme and density, Sidebar, Task details), General (Start view and briefing, Keyboard, Focus timer, Maps), Language and region (Language, Date and time, Calendar grid), Notifications (Push notifications, Delivery channels, Weekly digest), Capture (Quick add, Voice capture, Bookmarklet and extension, Email to task), Integrations (Calendar apps (CalDAV), Calendar feeds, Issues, Webhooks, API tokens, Assistant, AI assistants (MCP)), People (Users and invitations, Access policies, Single sign-on) and Server (Backups, Attachments, Outgoing email, Branding, Maps, Automations, Speech to text, Audit log; on a hosted service Download your data, Branding, Maps, Automations and Audit log). The overview SHALL list one row per sub-page the viewer may see, at least 44 px tall, with its icon, its name and, where the server or the device can say it, its state in a word or a number ("On", "Off", "2", "None", "Two-factor off"), as flat rows between hairlines inside a navigation landmark named after the section. A state that the sub-page shows in the warning or danger tone SHALL be shown in the same tone on the overview row. States SHALL load together when the overview opens and SHALL be left out offline or when the server refuses them. A section of which the viewer sees only one sub-page SHALL be that page, without an overview. An unknown or hidden sub-page id SHALL open the section's overview and replace the address. Sub-pages are client screens and open offline like sections.
 
 #### Scenario: Integrations overview
 - **WHEN** the owner with two webhooks and calendar feeds off opens `/settings/integrations`
@@ -519,7 +571,7 @@ A section whose content runs long SHALL be an overview of sub-pages, each at `/s
 
 #### Scenario: Opening a sub-page
 - **WHEN** the user activates the Webhooks row
-- **THEN** the address becomes `/settings/integrations/webhooks` and the page shows the Webhooks card with "Webhooks" as its heading
+- **THEN** the address becomes `/settings/integrations/webhooks` and the page shows the Webhooks settings with "Webhooks" as its title
 
 #### Scenario: Overview offline
 - **WHEN** a user opens `/settings/integrations` without a network connection
@@ -537,16 +589,24 @@ A section whose content runs long SHALL be an overview of sub-pages, each at `/s
 - **WHEN** a user opens `/settings/appearance`
 - **THEN** the page lists Theme and density, Sidebar and Task details, and Task details opens `/settings/appearance/task-details` with the "Open tasks" row
 
+#### Scenario: Warning on the overview
+- **WHEN** the owner of a server where no backup has run and outgoing email is not configured opens `/settings/server`
+- **THEN** the Backups and Outgoing email rows show their state with a warning dot, and the other rows keep the neutral style
+
 ### Requirement: Sub-page navigation
-From 1024 px a sub-page's header SHALL read as a breadcrumb "Settings › <section> › <page>", where the section links to its overview, and the navigation pane SHALL mark the section as the current item. Below 1024 px each level SHALL be its own page: the section list, the overview with a back action to the list, and the sub-page with a back action to its overview. Going back from a sub-page to its overview SHALL put focus on that sub-page's row; opening a sub-page SHALL put focus on its heading. The sub-page's Help link SHALL open the guide section of its main card.
+From 1024 px a sub-page's header SHALL read as a breadcrumb "Settings › <section> › <page>", where the section links to its overview, and the navigation pane SHALL mark that sub-page's row as the current page and the section row as the current section. Choosing a sub-page row SHALL open that sub-page. Choosing the section row SHALL open the overview, which keeps each sub-page's state in a word. Below 1024 px each level SHALL be its own page: the section list, the overview with a back action to the list, and the sub-page with a back action to its overview, and the section list SHALL NOT list sub-pages. Going back from a sub-page to its overview SHALL put focus on that sub-page's row; opening a sub-page SHALL put focus on its heading. The sub-page's Help link SHALL open the guide section of its main card.
 
 #### Scenario: Breadcrumb on a wide screen
 - **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
-- **THEN** the header reads "Settings › Integrations › Webhooks", "Integrations" opens `/settings/integrations`, the pane marks Integrations as current, and Help opens the webhooks guide section
+- **THEN** the header reads "Settings › Integrations › Webhooks", "Integrations" opens `/settings/integrations`, the pane marks the Webhooks row as the current page and Integrations as the current section, and Help opens the webhooks guide section
+
+#### Scenario: Between two sub-pages
+- **WHEN** a user on `/settings/integrations/webhooks` at 1280 px wide activates API tokens in the pane
+- **THEN** the address becomes `/settings/integrations/tokens` without opening the overview first, and focus is on the API tokens heading
 
 #### Scenario: Back on a phone
 - **WHEN** a user on a 390 px wide screen opens Capture, then Voice capture, then Back
-- **THEN** the overview of Capture is shown with focus on its Voice capture row, and Back again shows the section list
+- **THEN** the overview of Capture is shown with focus on its Voice capture row, and Back again shows the section list with no sub-pages listed
 
 ### Requirement: Settings page length
 No Settings page (a one-page section, an overview or a sub-page) SHALL be taller than about 1.5 screens at 1280×800 or at 390×844 for the owner of a server with every owner feature on, except pages whose length is a growing list of records (the audit log, recent activity) and single-feature set-up pages (the assistant and AI assistants for the owner). `scripts/ux-audit/settings-heights.mjs` SHALL measure every page at both sizes.
@@ -554,3 +614,26 @@ No Settings page (a one-page section, an overview or a sub-page) SHALL be taller
 #### Scenario: Measuring
 - **WHEN** a developer runs `node scripts/ux-audit/settings-heights.mjs` against a built server
 - **THEN** it prints the height of every section, overview and sub-page it reaches by following the list and the overview rows, in pixels and in screens, at 1280×800 and 390×844, and marks those taller than 1.5 screens
+
+### Requirement: Settings save behaviour
+Every Settings control SHALL follow one save rule. A single control (a switch, a select, a segmented control, a radio group) SHALL save when its value changes, with no Save button, and SHALL show the saved value in place. A form of several fields that belong together (for example the outgoing email server, single sign-on, attachment limits, the focus timer's lengths, a workspace's name and colour) SHALL show a save bar while it has unsaved changes, holding Save and Discard; the bar SHALL NOT be shown when nothing has changed. Leaving a page or closing a form with unsaved changes SHALL ask whether to discard them. A save that fails SHALL put back the last saved value, keep a form's draft, and say what went wrong next to the control or in the save bar. Settings are server or device state, not ops: a save that needs the server SHALL be disabled offline with the panel's offline note, and a device setting SHALL save offline.
+
+#### Scenario: A switch saves at once
+- **WHEN** the owner turns on Allow attachments on `/settings/server/attachments`
+- **THEN** the setting is saved without pressing a button, and the switch shows On after the server confirms
+
+#### Scenario: Save bar on a form
+- **WHEN** the owner changes the maximum file size on the same page
+- **THEN** a save bar with Save and Discard appears, Discard restores the saved size and hides the bar, and Save stores the size and hides the bar
+
+#### Scenario: Leaving with unsaved changes
+- **WHEN** the owner has edited the outgoing email host without saving and opens another settings page
+- **THEN** a dialog asks whether to discard the change, and Cancel keeps the page and the draft
+
+#### Scenario: Failed save
+- **WHEN** a switch's save is refused by the server
+- **THEN** the switch returns to its previous position and a message next to it says why
+
+#### Scenario: Offline
+- **WHEN** a user opens Attachments offline
+- **THEN** the switch and the fields are disabled with the offline note, while a device setting such as the calendar grid hours still saves

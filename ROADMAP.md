@@ -108,7 +108,7 @@ Longer horizons, and the household.
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
 | [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
-| [`simplified-chinese`](openspec/changes/simplified-chinese/) | Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
+| [`simplified-chinese`](openspec/changes/archive/2026-11-11-simplified-chinese/) | **Shipped.** Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | **Shipped.** Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | **Postponed by the owner (2026-11-10).** Telegram as a notification channel |  |
 
@@ -158,9 +158,11 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-links`](openspec/changes/note-links/) | Link notes, tasks and projects with `[[`; Linked references on each | |
 | [`notes-home`](openspec/changes/notes-home/) | The Notes page as a home: write from the search field, pinned notes, unlinked notes | |
 | [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
+| [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
+| [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
 
-The three changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
+The changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
 
 ### Assistant area
 
@@ -351,6 +353,7 @@ One visual language, built in a workbench: friendly and roomy like TickTick, Tod
 | 7 | **Shipped.** Motion: a completion moment that never delays the write, rows that make room when tasks move, overlays that enter and leave the same way, and a haptics switch | `motion-v2` | View transitions with no dependency (about 2 KB of CSS and helpers); one additive `user_prefs.haptics` field; reduced motion checked by `make ui-check` |
 | 8 | **Shipped.** Page rhythm: a lead line under larger titles, small group labels, centred standalone pages, Earlier instead of Overdue with its two actions, a due ladder for dates | `page-rhythm` | CSS and strings only; no op-log change |
 | 9 | **Shipped.** **Precision** (0.11.0): one line per task with its details in aligned columns, one content surface with a large title on Today and Upcoming and a compact header elsewhere, colour kept for state, the briefing sentence on the day pages, tasks as a page, the Inbox with its task beside it, Views with display options, All projects as a table with a health word, one palette for quick add and commands, a flat Settings page, and the phone, boards and timeline in the same look | `precision-tokens`, `precision-shell`, `precision-rows`, `precision-boards-timeline`, `precision-phone`, `precision-settings`, `precision-polish`, `briefing`, `briefing-links` and others | No migration; one additive `user_prefs.briefing` field. Every screen checked at 360 and 1280 px and with the browser's text size at 20 and 24 px |
+| 10 | **Shipped.** *Settings structure*, step 1: a lead line and scope on every settings page, headings that outrank their rows and no repeated titles, switches beside their labels on phones, states in the warning tone when they block, a radio group and a number input, and one save rule with a save bar | [`settings-foundation`](openspec/changes/archive/2026-11-11-settings-foundation/) | No op, route or stored setting changes; `settings-patterns` and `settings-architecture` follow |
 
 Related usability fixes, independent of the refresh: your own date and time format (`date-time-preferences`), a test notification that proves delivery (`push-test-delivery`) and restoring a backup from the web app (`backup-restore-web`).
 

@@ -154,6 +154,8 @@ which the database holds twice (the operation and the stored value). That is
 | `notes-page` Open the Notes page | ms | — | 400 | 1,200 | 1,200 | 1,200 | — |
 | `notes-search` A keystroke in the note search (95th percentile) | ms | — | 50 | 150 | 150 | 150 | — |
 | `note-references` Open a note other notes link to, before anything built the link index, to its Linked references painted | ms | — | 200 | 600 | — | — | — |
+| `notes-graph` Open the Notes graph (`/notes?view=graph`) to its first paint, the first visit on the device (the layout runs, nothing stored) | ms | — | 800 | 2,000 | — | — | — |
+| `notes-graph-frame` A mouse-wheel zoom of the graph to the frame that shows it (95th percentile) | ms | — | 50 | 150 | — | — | — |
 | `notes-js-heap` JavaScript heap after the notes session | MB | — | 170 | 170 | — | — | — |
 
 The report also gives, without a limit, the database size before compaction,
@@ -167,6 +169,8 @@ need it: a new device's first sync took 21 s on the computer and 46 s in the
 phone profile and left 17 MB on the device, after compaction (2.65 GB to 238 MB
 in 50 s, no write waiting more than 35 ms) and with the first copy downloading
 43 MB instead of 2 GB.
+
+The Notes graph is timed in the same session, after Linked references: `/notes?view=graph` is opened with nothing stored on the device (the layout runs in 8 ms slices), timed to the graph's first frame, then the mouse wheel zooms twelve times over its middle, each timed from the input to the frame that shows it.
 
 The note search is timed in the same session: the Notes page opens a second
 after the first sync ends, the search field is tapped and "kitchen" typed, one
@@ -241,3 +245,17 @@ Reference-device results are to be recorded per release in `docs/performance/`.
 No release has a record yet, 1.0 included: its budgets were measured in CI only,
 and the first real-device record comes after 1.0
 ([#990](https://github.com/OpenTodoApp/OpenTodo/issues/990)).
+
+### The native app (trial)
+
+The React Native app in `mobile/app` (OpenSpec change `native-app-foundation`) has no budgets of its own here yet. Its numbers come from the nightly `app-perf` job: the same 10,000-task account on an iPhone 16 simulator on GitHub's macOS runner. The first runs (2026-11-11) against the targets of the change's design (D4):
+
+| Metric | Target | Measured (two runs) |
+| --- | --- | --- |
+| Cold start to Today drawn | 1,000 ms | 1,406–2,539 ms, of which 1.0–1.9 s passes before any JavaScript runs |
+| JavaScript start to Today drawn | | 329–622 ms, of which the database and Today take 125–206 ms |
+| Opening Inbox | 300 ms | 30–50 ms |
+| A 500-op sync page | 400 ms | 74–135 ms |
+| Longest frame while it applies | 50 ms | 18 ms |
+
+The full table, and what the cold-start number means on a simulator, is in the change's design.

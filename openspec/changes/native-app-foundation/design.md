@@ -126,6 +126,113 @@ The first task is a measured spike on the iOS simulator with the `perfseed` 10,0
 
 The decision and the numbers are recorded in this design before `native-app-everyday` starts. The database is per account and per server, like the web app's, and is deleted at sign-out.
 
+#### As measured (task 2, 2026-11-10)
+
+**Decision: neither candidate meets the budgets. The app uses the fallback, a Dexie-subset adapter on SQLite (plan below).**
+
+How it was measured:
+- **Setup.** A Release simulator build (Hermes, New Architecture) of a throwaway entry, on the GitHub `macos-15` runner, with an iPhone 16 on iOS 26.2. The entry was `mobile/app/spike/`, dispatched as an `app-native.yml` job; the code is in the commits of this change's storage-spike pull request, last at `aebb6a9e4`, and is not merged.
+- **Data.** The `perfseed` 10,000-task account was pulled through `/api/v1/sync` as a new device would (109 pages, 108,840 ops). The pages were applied with the shared `applyOps` under the sync exchange's activity rule (`withDeferredActivity`, `markLongPull`). That leaves 19,962 local rows: 10,000 tasks, 6,100 activity entries, 2,000 comments, 1,000 time entries, 600 reminders, 150 sections, 60 projects and 40 labels.
+- **Cold start.** From `simctl launch` to the frame that shows Today. Today is Dexie's `tasks.toArray()` and `projects.toArray()`, then the shared `todayList(withoutArchived(…))`, drawn as a `FlatList` of 473–569 rows.
+- **Inbox.** A fresh read of both tables, then `inboxTasks`, drawn (279–283 rows).
+- **Pull page.** 500 remote ops on 100 open tasks (title, priority, position, description, due), applied through `applyOps` inside `withDeferredActivity`. The longest frame is the longest gap between `requestAnimationFrame` callbacks on the JS thread.
+- **Memory.** The resident size of the app process, sampled from the host every 50 ms.
+- **Runs.** Three cold runs per candidate after one seeding launch. The table gives the median, with the range in brackets.
+
+| Metric | Budget | A: fake-indexeddb + op-sqlite | A0: A without the index fix | B: indexeddbshim 16.1.0 on op-sqlite |
+|---|---|---|---|---|
+| Cold start to Today drawn | ≤ 1,000 ms | **4,331 ms** (4,275–4,909) | 12,059 ms (one run) | **10,576 ms** (4,563–24,922) |
+| … of which JS start to Today | | 2,782 ms (2,508–2,790) | 9,500 ms | 3,619 ms (2,964–3,812) |
+| … of which reading the store: open, load, `toArray` | | 2,365 ms (open 147, load 948, `toArray` 1,205) | 9,153 ms (load 7,871) | 3,258 ms (`toArray` 3,132) |
+| Opening Inbox | ≤ 300 ms | **1,314 ms** (1,210–1,329) | 1,028 ms | **2,844 ms** (2,722–2,996) |
+| 500-op pull page | ≤ 400 ms | **494 ms** (428–514) | 26,567 ms | **673 ms** (647–706) |
+| Longest JS-thread frame during the pull | ≤ 50 ms | **494 ms** (the whole apply) | 26,567 ms | **435 ms** (411–437) |
+| Resident memory, peak | ≤ 180 MB | 371 MB (+126 over the empty app) | 446 MB | 363 MB (+118) |
+| Seeding 19,962 rows (not budgeted) | | 6.5 s | 5.9 s | 15.9 s |
+
+- **Empty app.** The same build with no database: 245 MB peak resident memory and 12 MB Hermes heap.
+- **Simulator memory.** A simulator process carries the simulator's frameworks, so its absolute resident size is not a phone's. The 180 MB budget cannot be judged on the simulator. The increase over the empty app is the comparable number.
+- **Reference on the runner.** The same session in Node (V8) over `node:sqlite`, candidate A: cold path 569–603 ms, Inbox 221 ms, pull 224–302 ms. Hermes runs the same code 4–6 times slower.
+
+What the spike found besides the numbers (each holds for any Dexie on Hermes, so the app needs them whatever the storage):
+1. **Async functions.** Hermes runs native async functions on its own promise machinery, so Dexie loses a transaction's zone at the first `await`. Every read-write transaction with an `await` in it, `applyOps` included, failed with `PrematureCommitError`. A probe showed the same scope written as a promise chain worked. The fix is Babel's `@babel/plugin-transform-async-to-generator`, which turns async functions into generators driven by the global `Promise` that Dexie swaps inside a transaction. With it, every run passed.
+2. **setImmediate.** React Native shims `setImmediate` with `queueMicrotask`. An IndexedDB engine needs a real task there. `setTimeout` is one, but it is aligned to frames (about 17 ms per request: a seed took 336 s). The New Architecture's `nativeRuntimeScheduler` gives a task that runs at once.
+3. **Missing globals.** Hermes has no `structuredClone` and no `DOMException`. fake-indexeddb needs both, the second at load. lib0 (Yjs) asks for `isomorphic-webcrypto` under the `react-native` condition, and Metro has to point it at the app's Web Crypto.
+4. **fake-indexeddb 6.2.6.** An overwrite deletes the old index entries by scanning every entry of every index of the store (`RecordStore.deleteByValue`). That is A0's 26-second pull page. A fix that deletes by the old value's keys brings it to 494 ms. Loading through the IndexedDB API (A0's 7.9 s) had to give way to building the engine's trees directly (A's 0.95 s).
+5. **indexeddbshim 19.0.7.** The current version's browser builds cannot open a database: its `IDBVersionChangeEvent` throws in its own class check. 16.1.0 works.
+
+Why neither candidate can meet the budgets:
+- **The engine layer is the cost, not SQLite.** A spends 1.2 s in `toArray` of 10,000 tasks (each value is structured-cloned), on top of loading them. B spends 2.5–3.3 s turning SQL rows back into values (typeson). A screen that reads every task through an IndexedDB engine on Hermes is over budget before it draws.
+- **The pull page blocks the JS thread for its whole length** with either engine. No frame is drawn while it runs.
+
+**Fallback: a Dexie-subset adapter on SQLite.**
+- **What it is.** One module behind `db.ts`'s `Table` types, which the app installs in place of `new Dexie(…)`. The shared modules keep calling the same API and do not change. Web keeps Dexie on the browser's IndexedDB and is unchanged.
+- **Its surface.** The calls the sync path's graph makes (`shared-modules.json`): `get`, `bulkGet`, `put`, `bulkPut`, `delete`, `bulkDelete`, `clear`, `count`, `toArray`, `where(index).equals/anyOf/between/below/above`, `filter`, `sortBy`, `orderBy`, `limit`, `first`, `modify` and `transaction`. A test lists the methods the graph uses and fails on one the adapter lacks.
+- **Storage.** One SQLite table per store (op-sqlite). The primary key and each index of `db.ts`'s latest schema are columns, compound indexes are composite indexes, and the row is a JSON column. Migrations come from the same version list.
+- **Reads.**
+  - A `where()` on an index is a SQL query. There is no structured clone: each result is `JSON.parse` of its own row, so callers cannot share objects.
+  - The start path asks for what it draws. Today and Inbox each become one indexed query (the open tasks by `due`/`start`, and those with no `project_id`) of a few hundred rows, instead of all 10,000. op-sqlite's `executeRaw` returns arrays instead of objects. The spike read 13,862 rows in 439–521 ms, about 35 µs a row, so a few hundred rows cost about 20 ms.
+- **Writes.**
+  - A transaction is one SQLite transaction on op-sqlite's own thread (`transaction`/`executeBatch`, asynchronous). The JS thread only prepares the batch, so the pull page no longer blocks frames.
+  - The JS-side scope is a plain promise chain with no zones, which also removes finding 1 for the app's own data layer. The transform stays for any other Dexie use.
+- **Live queries.** `dexie-react-hooks` is not used. The adapter emits a change event per committed transaction, and the app's screens re-query (task 4.5).
+- **Tests.** Jest runs the adapter against the web's Dexie behaviour on the same suite: each method of the surface over `fake-indexeddb` and over the adapter on `node:sqlite`, with the same results.
+- **Re-measuring.** Before `native-app-everyday`, the cold start, Inbox and pull page are measured again with the adapter, by `app-perf` (task 5.2).
+- **The cold-start budget.** On this simulator, the empty app itself takes about 1.1–1.2 s from launch to its first JavaScript: cold start minus JS start, minus the spike's own 300–420 ms request to its host. That alone is more than the whole 1,000 ms budget. The budget is checked again with `app-perf`'s first numbers. If it is to change, that is done in the change that gives the reason, as the `performance-budgets` delta requires.
+- **Dependencies.** None were added by the spike, because no candidate was chosen. The adapter adds `@op-engineering/op-sqlite` (exact version, at least 14 days old, with its line in `DEPENDENCIES.md`) in task 4.3.
+
+#### The adapter, as built (task 4.3)
+
+**The surface, inventoried.** `mobile/app/scripts/dexie-surface.mjs` type-checks the modules of `shared-modules.json` and lists every property access, and every named import of `dexie`, that resolves to a declaration in Dexie's types (`src/storage/surface.json`, with the modules that call each). `make app` fails when the list is stale, and a Jest test fails on a member the adapter lacks. At 149 shared modules it is 42 members (the number of modules calling each in brackets):
+
+| Owner | Members | In the adapter |
+|---|---|---|
+| `Table` | `get` (32), `toArray` (16), `bulkGet` (11), `put` (11), `where` (11), `filter` (9), `bulkDelete` (7), `bulkPut` (7), `delete` (6), `clear` (5), `orderBy` (5), `bulkAdd` (4), `count` (3), `update` (3), `each` (2) | all |
+| `WhereClause` | `equals` (10), `anyOf` (6), `above` (1), `between` (1) | all; `between` takes compound bounds with `Dexie.minKey`/`maxKey` |
+| `Collection` | `toArray` (16), `primaryKeys` (5), `count` (4), `filter` (3), `limit` (3), `reverse` (3), `first` (2), `last` (1), `sortBy` (1) | all |
+| `Dexie` (the instance) | `transaction` (14), `name` (2), `close` (1), `on` (1), `version` (1) | all but `version`: `db.ts` declares the schema on its Dexie instance, and the adapter reads it from there; `on('versionchange')` never fires (one process) |
+| `Version` | `stores` (1) | read from the declared instance, as above |
+| `DexieConstructor` (static) | `currentTransaction`, `waitFor`, `minKey`, `maxKey` (1 each) | Dexie's own: `currentTransaction` is null in the adapter's transactions, which need no `waitFor` because they do not commit while they await |
+| `liveQuery`, `Observable.subscribe`, `Subscription.unsubscribe`, `PromiseExtended.finally` | 1 each | `liveQuery` is Dexie's and reads through the adapter once, but is not live: the adapter's `onChange` gives the stores each commit changed, and the app's screens read again (task 4.5). The adapter's promises have `finally` |
+
+Not used, so not built: `modify`, `add`, `hooks`, `offset`, `uniqueKeys`, `startsWith`, multi-entry and unique indexes (`schema.ts` refuses them), and upgrade functions in `db.ts`'s versions (refused at open).
+
+**How it is wired.** `db.ts` builds its `OpenTodoDB` as before and passes it to `platform.database?.(declared)`, a new optional member of the port; the web has none and opens the Dexie instance. The app's port answers `sqliteDatabase(declared, opSqlite())`. On the web this costs one optional call in `db.ts` (`make bundle-budget` below), and no web module changes otherwise. `mobile/app/src/setup.ts` installs the port before any shared module loads, because `db.ts` asks for its database when it loads; the file opens on first use.
+
+**Storage.** One table per store (`schema.ts`): `pk` (no type affinity, so a number key stays a number), `json` (the row), and one `VIRTUAL` generated column per key path an index names, `CASE json_type(…) WHEN 'integer'|'real'|'text' THEN json_extract(…) END`: the value only when IndexedDB would index it, so a query on it selects what Dexie's index holds (no booleans, nulls or missing values). Every Dexie index is a SQL index on its columns and `pk`; compound ones span several columns. SQLite's order of numbers before strings is IndexedDB's. A schema change is `ALTER TABLE ADD COLUMN` and `CREATE INDEX IF NOT EXISTS` from the latest declared version, at the first open after it; the file keeps the schema it was brought up to, so other opens read one row. Writes are one statement per call whatever the number of rows (`INSERT … SELECT … FROM json_each(?)` over one JSON array), reads one statement whose result is one JSON array (`group_concat`), parsed once. Values JSON cannot hold (a Blob, a CryptoKey, a Map, a non-finite number) are refused when written; a property set to `undefined` is dropped, where IndexedDB keeps it. The e2ee key (a CryptoKey) and attachment bytes (Blobs) therefore cannot live in this database; neither is on the app's path before `native-app-everyday`, which decides where they go (the Keychain for the key).
+
+**Transactions.** A transaction is one SQLite transaction (`BEGIN IMMEDIATE`). The shared modules call the database's tables inside `db.transaction(…, async () => …)`, not the transaction's, so the adapter needs to know which calls come from inside: it runs them on the open transaction, joins a transaction started inside another (as Dexie does), and makes every other call wait until the commit, as IndexedDB queues it. The scope is a zone, and the adapter uses Dexie's own (PSD, `src/storage/scope.ts`), which follows an `await` on Hermes only because async functions are compiled to generators driven by the global Promise (finding 1; `babel.config.js`, for the app and its Jest tests alike). A conformance test awaits a foreign promise inside a transaction and checks the calls after it are still inside. Unlike IndexedDB, the transaction does not commit while it awaits something else, so `Dexie.waitFor` is never needed.
+
+**The other findings applied.** `src/polyfills.ts` installs `setImmediate` on the runtime scheduler, `DOMException` and `structuredClone`; `metro.config.js` points `isomorphic-webcrypto` (lib0) at the app's Web Crypto and `dexie-react-hooks` at a stub that throws (the shared modules import it for the web's screens; the app never calls it); Dexie loads before Web Crypto.
+
+**Today and Inbox from an index.** The web's Today and Inbox read every task (`liveTasks`' snapshot) and run the shared rules on them. The phone asks for candidates instead (`src/storage/lists.ts`), through four phone-only compound indexes that the web's schema does not have (`PHONE_INDEXES`): `[completed_at+due.date]`, `[completed_at+deadline]`, `[completed_at+start]` and `[completed_at+project_id]`. `completed_at` is null for every open task, which SQLite reads as an equality, so each is one index range. Today's candidates are the union of open tasks with a do-on date up to two days ahead (a time in another zone can move it two days), a deadline up to today or a start date up to today; Inbox's are the open tasks without a project. Their parents are fetched up the tree, and the shared `isTaskVisible`, `tasksIn`, `withoutArchived`, `todayList` and `inboxTasks` decide. No shared selector changed. A Jest test compares both lists with the web's way over generated accounts in three viewer zones and two workspaces, and checks the query plans use the indexes.
+
+**The pull page.** Every statement runs on op-sqlite's connection thread, so the JS thread is free while SQLite works, and `applyOps`' few statements per page (one `bulkGet`, one `bulkPut` per table) are its yield points. In Node, with the SQL calls answered on the next task as op-sqlite answers them, the longest JS slice of a 500-op page was 3–4 ms (SQL 28–74 ms). At Hermes' 4–6 times that, a slice stays well under 50 ms, so the page needs no chunking of its own and `applyOps` is unchanged; the simulator's longest frame below confirms it.
+
+**Tests** (`mobile/app/test/storage/`, in `make app`). The conformance suite runs each scenario on `db.ts`'s schema twice, on Dexie over `fake-indexeddb` and on the adapter over `node:sqlite` (op-sqlite is native, and its Node build needs `better-sqlite3`, a compiled addon; `node:sqlite` runs the same SQL), and expects equal results: every member of the surface, compound ranges with `minKey`/`maxKey`, auto-increment keys after deletes and `clear`, invalid index keys, nested and failing transactions. The shared-modules suite does the same through the shared code: two seeds of 2,400 remote ops in pages of 500 with a retried page through `applyOps` under `withDeferredActivity`, and local edits through `createProject`, `createTask`, `updateTask`, `setTaskCompleted`, `createComment` and `deleteTask` with pinned ids and clock, then compares every table; `clearLocalData` empties them all. The shared vectors the app already runs (hybrid clock, recurrence, quick add, flows, encryption) do not touch the database.
+
+**Measured** (app-perf, 2026-11-11: a Release simulator build of `perf/index.ts` on `macos-15`, iPhone 16 on iOS 26.2, the perfseed account seeded from the rows a first sync leaves, three cold runs each, medians with the range). Two runs on two runners: run 42937087211, and run 42940084844 after the schema check at open was cut to one read. The second runner was slower throughout: launch to first JavaScript and seeding took 1.8 and 1.5 times as long, with the same app before JavaScript starts.
+
+| Metric | Budget | Spike, A (best) | Adapter, run …7211 | Adapter, run …4844 |
+|---|---|---|---|---|
+| Cold start to Today drawn | ≤ 1,000 ms | 4,331 ms | **1,406 ms** (1,368–1,410) | **2,539 ms** (2,509–3,287) |
+| … launch to first JavaScript (no app code yet) | | 1,549 ms (cold start minus JS start) | 1,062 ms (1,038–1,079) | 1,940 ms (1,887–2,410) |
+| … JavaScript start to Today drawn | | 2,782 ms | 329 ms (327–348) | 622 ms (600–877) |
+| … … the harness asking its host for the step | | 300–420 ms | not recorded | 155 ms (124–174) |
+| … … opening the database (db.ts's Dexie schema, the file) | | 147 ms + load 948 ms | 95 ms (95–101) | 153 ms (148–167) |
+| … … Today: the indexed query and the shared rules | | `toArray` 1,205 ms | 29 ms (23–48) | 55 ms (46–161) |
+| Opening Inbox | ≤ 300 ms | 1,314 ms | **30 ms** (15–33) | **50 ms** (48–67) |
+| 500-op pull page | ≤ 400 ms | 494 ms | **74 ms** (57–91) | **135 ms** (126–177) |
+| Longest JS-thread frame during the pull | ≤ 50 ms | 494 ms | **18.5 ms** (17.1–18.9) | **18.4 ms** (17.8–18.4) |
+| Resident memory, peak, over the empty app | ≤ 180 MB on a phone | +126 MB | +34 MB (279 against 244) | +30 MB (282 against 252) |
+| Seeding 19,962 rows (not budgeted) | | 6.5 s | 0.98 s | 1.50 s |
+| Kill after write (SIGKILL as soon as `createTask` resolved, then relaunch) | | | the task and its 12 queued ops were there | the same |
+
+- **Within budget:** Inbox, the pull page and its longest frame, with room to spare. The pull's longest frame (about 18 ms) is the JS work between `applyOps`' statements, as the Node measurement predicted, so pages need no slicing.
+- **Over budget: cold start.** The app's own work from JavaScript start to Today is 125–206 ms (opening, Today, drawing). Before any JavaScript runs, the simulator takes 1.0–1.9 s from `simctl launch` to the bundle's first line, and that alone is over 1,000 ms. The spike saw the same. Either the budget is judged on a phone, which `app-perf` cannot do, or it is restated as "JavaScript start to Today drawn", with the simulator's launch reported beside it. That decision belongs to the change that sets the app budgets (task 5.4), as the `performance-budgets` delta requires; until then app-perf reports both. Today counts 473 rows on the first run and 569 after it, because each run's pull page moves 100 tasks to today.
+- **Reference on a computer:** the same session in Node (V8) over `node:sqlite` took 40–64 ms from start to Today, 5–14 ms for Inbox and 37–65 ms for the pull page.
+
+
 ### D5. Sign-in through the system browser, with an authorization code and PKCE
 
 A native sign-in form would mean reimplementing password, second factor, passkeys and single sign-on. Native passkeys would also need an associated domain, which no self-hosted server can give our app. Instead:
@@ -193,7 +300,7 @@ The app uses Expo's continuous native generation: `npx expo prebuild` writes `io
 | `app-ios`: prebuild, simulator build, simulator tests (Maestro flows: sign in against a CI server, Today, complete) | macOS | a `mobile/app/` change on a pull request; nightly | ≤ 25 min |
 | `app-android`: prebuild, debug build, unit tests | Linux | a `mobile/app/` change on a pull request; nightly | ≤ 15 min |
 | `app-perf`: the `perfseed` account on the simulator, D4's three numbers | macOS | nightly | n/a |
-| TestFlight preview | macOS | `workflow_dispatch` and release tags | n/a |
+| TestFlight build (D10) | macOS | `workflow_dispatch` and release tags | n/a |
 
 Further rules:
 - A web-only pull request, one that touches no shared module the app imports, runs no app job. A change to a shared module runs only `app-check`, never a Mac build.
@@ -204,10 +311,15 @@ Further rules:
 
 ### D10. Distribution of the trial
 
-The trial ships as a separate App Store Connect app, "OpenTodo Preview" (bundle id `app.open-todo.preview`), so it installs next to the current app and testers can compare them side by side.
+The trial ships under the existing App Store record of the OpenTodo app (`app.open-todo.ios`), as version 2.0.0 on TestFlight only (owner decision, 2026-11-10). There is no separate "Preview" record: a tester who installs the TestFlight build gets it in place of the shell, and everyone else keeps the App Store version until `native-app-handover` ships it there.
 - `ios-testflight.yml` gains an input `app: shell | native`. The native path prebuilds and archives `mobile/app` and uploads with the same `release` environment key.
 - CI never submits for review.
-- The owner creates the app record once, because Apple's API cannot. The workflow registers the bundle id (`ios-register-ids.yml`).
+- The bundle id is already registered and the record exists, so neither needs an owner action.
+- On Android the app takes the shell's application id, `app.opentodo` (`mobile/android/app/build.gradle.kts`), so it is the next version of the same app there too.
+
+As built (task 4.3's pull request): `app.config.ts` has the name "OpenTodo", the slug `opentodo`, the bundle id `app.open-todo.ios`, the Android package `app.opentodo` and the version 2.0.0, so the prebuilt project is `OpenTodo.xcworkspace` (app-native.yml builds it). The TestFlight wiring is task 5.3, in a later pull request.
+
+Earlier plan, replaced by the decision above: a separate App Store Connect app, "OpenTodo Preview" (`app.open-todo.preview`), installed next to the current app so testers could compare them side by side.
 
 ### D11. Server compatibility
 
@@ -230,7 +342,7 @@ On the server screen, the app reads `GET /api/v1/version`.
 - **Web app:** the platform port moves existing code. It targets ≤ 150 B on the entry chunk and is reported by `make bundle-budget`.
 - **App:**
   - The download is about 25–35 MB (React Native with Hermes).
-  - The resident memory at 10,000 tasks is measured by `app-perf`, with a target under 180 MB including candidate A's store.
+  - The resident memory at 10,000 tasks is measured by `app-perf`, with a target under 180 MB including the local store (the SQLite adapter, D4). The simulator's absolute numbers include its own frameworks (the empty app: 245 MB), so the nightly job also reports the increase over the empty app.
   - Neither is part of the server or web budgets.
 
 ## Risks / Trade-offs
@@ -241,7 +353,7 @@ On the server screen, the app reads `GET /api/v1/version`.
 | **React Native upgrades.** | Expo SDK upgrades once or twice a year as a pull request of their own. `app-ios` and `app-android` catch breakage before a release. |
 | **The storage spike fails both candidates.** | The fallback is the Dexie-subset SQLite adapter. It is more code, but bounded by the API surface the shared modules use, which the boundary check lists. |
 | **The Mac build loop is slow without a local simulator.** | Most work happens in `app-check` (Linux) and on Expo's dev client against a server. The Mac runs are for integration. Screens are checked through simulator screenshots uploaded as artifacts. |
-| **App Store review of a second app.** | The preview goes to TestFlight only and is never submitted. When `native-app-handover` switches, the native app ships under the existing record and the preview record is retired. |
+| **App Store review of the 2.0.0 build.** | It goes to TestFlight only and is never submitted by CI. It uses the existing record (D10), so `native-app-handover` ships the same app to the App Store when its gate passes. |
 
 ## Migration Plan
 
@@ -249,7 +361,7 @@ On the server screen, the app reads `GET /api/v1/version`.
 2. The storage spike. Its decision is recorded here.
 3. App sign-in on the server, with its tests.
 4. `mobile/app` with sync and Today, plus the CI lanes.
-5. The preview in TestFlight.
+5. The 2.0.0 build in TestFlight (D10).
 
 Each step is reversible on its own, and nothing user-facing changes for web users at any point.
 

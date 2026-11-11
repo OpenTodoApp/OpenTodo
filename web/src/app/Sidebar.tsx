@@ -1,5 +1,8 @@
 import { useWorkspaceFilter } from './useWorkspaceFilter'
-import { Button, CatalogueIcon, Icon, type IconName, isCatalogueIcon, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { ProjectMark } from './ProjectMark'
+// ProjectHeader imports through this re-export to preserve the entry chunk split (see the bundle budget).
+export { ProjectMark } from './ProjectMark'
 import { keysOf, SHORTCUTS } from '../lib/shortcuts'
 import { useShortcutHints } from './shortcuts/hints'
 
@@ -7,7 +10,7 @@ import { useShortcutHints } from './shortcuts/hints'
 const GO_KEYS: Record<string, string> = Object.fromEntries(SHORTCUTS.filter((s) => s.id.startsWith('go.')).map((s) => [s.id.slice(3), s.keys[0]]))
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
-import { type FormEvent, Fragment, type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type FormEvent, Fragment, type KeyboardEvent, lazy, type ReactNode, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { orderDestinations, readAppearance, readSidebarCounts, type DestinationId, type Promotable } from '../lib/appearance'
 import { useAssistantStatus } from '../lib/assistantStatus'
 import { readCalendarMode } from '../lib/calendarMode'
@@ -54,6 +57,11 @@ import { StartGuideMoreItem, StartGuideMoreMenuItems } from './FirstDay'
 import { readString, writeString } from '../lib/deviceStorage'
 import { SidebarSchedule } from './calendar/SidebarSchedule'
 import { useResetOnChange } from '../lib/useResetOnChange'
+import { useShownSpace } from '../lib/sidebarSpace'
+import { SpaceSwitch } from './SpaceSwitch'
+
+/** The Notes space's groups (notes-space D1), loaded when the space is first shown. */
+const NotesSidebar = lazy(() => import('./notes/NotesSidebar'))
 
 
 /**
@@ -157,6 +165,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   onToggleCollapse?: () => void
 }) {
   const workspace = useCurrentWorkspace()
+  // The space follows the screen where it belongs to one, else stays as chosen (notes-space D3).
+  const space = useShownSpace(route.view)
   const hints = useShortcutHints()
   const assistant = useAssistantStatus()
   const moreAsMenu = useMediaQuery(MORE_MENU_QUERY)
@@ -253,7 +263,9 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   // sidebar already observes, in one pass.
   const views = useViews()
   const viewCounts = useViewCounts(views, today, labels, allProjects, openTasks)
-  const favourites = useFavourites()
+  // Pinned notes are the Notes space's Pinned group (notes-space D4); the Favourites group keeps the rest.
+  const allFavourites = useFavourites()
+  const favourites = useMemo(() => allFavourites.filter((f) => f.kind !== 'note'), [allFavourites])
   const [addingLabel, setAddingLabel] = useState(false)
   const [parentId, setParentId] = useState('')
 
@@ -389,7 +401,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
     // Day, Week, Month, Quarter, Plan and Year are one Calendar destination (ux-overhaul, planner-view).
     const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'quarter' || v === 'plan' || v === 'year'
     // A Loop home address with a move open (/loop/<move>) is still the Loop home.
-    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : JSON.stringify(r) === JSON.stringify(route)
+    // All notes and Graph: the Notes page's two modes, a note open beside them or not (notes-graph-page D1).
+    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? !!r.graph === !!route.graph : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
     const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : {})} />
@@ -430,15 +443,22 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         {/* The header row is the workspace control (sidebar-v2 D1, workspaces D6); search beside it, in the rail's footer when collapsed. */}
         <SidebarHeader left={<WorkspaceControl route={route} />} rail={<WorkspaceMark workspace={workspace.workspace} size={24} />} railLabel={workspace.name}
           collapsed={collapsed} onSearch={onSearch} searchLabel={t('Search and commands')} searchShortcut={keysOf('global.palette')} />
-        <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
+        <SpaceSwitch space={space} collapsed={collapsed} />
+        {space === 'notes' ? (
+          <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
+            {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}
+            {item({ view: 'notes', graph: true }, t('Graph'), 'waypoints') /* notes-graph-page D1: the page's Graph mode */}
+          </nav>
+        ) : <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>
           {primary.map((d) => <Fragment key={d.id}>{d.node}</Fragment>)}
           {moreAsMenu && rest.length > 0 && (
             <MoreMenu entries={rest} collapsed={collapsed} hints={hints}
               active={rest.some((m) => m.route.view === route.view)} extra={<StartGuideMoreMenuItems />} />
           )}
-        </nav>
+        </nav>}
       </div>
       <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
+      {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
           <input ref={findInput} className="ui-input py-1.5 text-body" type="search" placeholder={t('Find a project, label or view…')} aria-label={t('Find in the sidebar')}
@@ -560,6 +580,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )
         })}
       </SidebarGroup>}
+      </>}
       </div>
       {/* The day's schedule (sidebar-schedule, issue 536): pinned above the footer, outside the scroller; not in the rail or the phone drawer. */}
       {!collapsed && !drawer && <SidebarSchedule />}
@@ -602,7 +623,6 @@ function ProjectNameEditor({ project, drawer, onDone }: { project: Project; draw
     }} />
 }
 
-/** A project's mark: its icon in its colour, or the colour dot (project-organization "Project icon"). */
 /**
  * The sidebar's inline New project form, under the last project. It opens from the
  * + menu, often below the fold with a long list (GitHub issue 997), and on a phone that
@@ -646,13 +666,6 @@ function NewProjectForm({ projects, parentId, onParent, onDone }: { projects: Pr
   )
 }
 
-export function ProjectMark({ project, size = 'sm' }: { project: Pick<Project, 'color' | 'icon'>; size?: 'sm' | 'md' }) {
-  const dot = <span className={`inline-block shrink-0 rounded-full ${size === 'md' ? 'h-3 w-3' : 'h-2.5 w-2.5'}`} style={{ backgroundColor: project.color }} />
-  // A catalogue icon (icons-and-section-style); the dot while the catalogue loads and for a name this device does not know.
-  if (!project.icon || !isCatalogueIcon(project.icon)) return dot
-  return <span style={{ color: project.color }} className="flex items-center"><CatalogueIcon name={project.icon} size={size === 'md' ? 'md' : 'sm'} fallback={dot} /></span>
-}
-
 /** Unread activity count (activity-feed): others' changes since the project's activity was last seen. */
 function UnreadBadge({ n, label }: { n: number; label: string }) {
   const text = formatUnread(n)
@@ -682,8 +695,6 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     // Focus (focus-everywhere D1): after Statistics in every mode, promotable, no count.
     { id: 'focus', route: { view: 'focus' }, label: t('Focus'), icon: 'clock' },
-    // Notes (notes-overview, app-shell "Notes in the More group"): after Focus in every mode, promotable, no count, no marker.
-    { id: 'notes', route: { view: 'notes' }, label: t('Notes'), icon: 'notebook-pen' },
     ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },

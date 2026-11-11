@@ -7,6 +7,7 @@
 // code and is installed by default; the app installs its own at start-up, and a
 // test may install a fake (reset before each test).
 import { resettable } from './moduleState'
+import type Dexie from 'dexie'
 import type { OpenTodoShell } from './shell'
 
 export interface Channel {
@@ -50,6 +51,12 @@ export interface Platform {
   showLanguage(code: string): void
   /** The host's IndexedDB, if it has one (the service worker's share inbox lives there on the web). */
   indexedDB(): IDBFactory | undefined
+  /**
+   * The local database for the schema db.ts declares on `declared`, when the host keeps
+   * its own (the app: the Dexie subset on SQLite, native-app-foundation D4). Absent on
+   * the web, where `declared` itself opens on IndexedDB.
+   */
+  database?<D extends Dexie>(declared: D): D
   /** Asks the host to keep local data under storage pressure; whether it will. */
   persistStorage(): Promise<boolean>
   /** The bridge of a native shell around the web app (lib/shell.ts checks its shape), if any. */

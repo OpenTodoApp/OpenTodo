@@ -99,9 +99,6 @@
   "/data/backups": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "0 means unlimited. Usage resets on the first day of each month (UTC).": [
-    "web/src/app/assistant/AssistantSettings.tsx"
-  ],
   "1 day": [
     "web/src/app/WorkspaceInvites.tsx"
   ],
@@ -662,6 +659,9 @@
   ],
   "A workspace has its own projects, labels and views, and its own people. Projects stay private until you share them.": [
     "web/src/app/NewWorkspaceDialog.tsx"
+  ],
+  "A workspace needs a name.": [
+    "web/src/app/WorkspaceGeneral.tsx"
   ],
   "A year of done tasks": [
     "web/src/app/review/StatsView.tsx"
@@ -1446,14 +1446,13 @@
   ],
   "All labels": [
     "web/src/app/Sidebar.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All locations": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "All notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/Sidebar.tsx"
   ],
   "All occurrences": [
     "web/src/app/filter/ConditionEditor.tsx",
@@ -1468,7 +1467,6 @@
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "All runs": [
@@ -1976,6 +1974,9 @@
   ],
   "Arriving at {place}": [
     "web/src/app/LocationReminders.tsx"
+  ],
+  "Arrow keys move between linked notes, Enter opens, Space centres, Backspace goes back, plus and minus zoom, 0 fits.": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Arrows move by day and week, Page Up and Page Down by month.": [
     "web/src/app/datetime/DateField.tsx"
@@ -2774,7 +2775,6 @@
     "web/src/app/NewWorkspaceDialog.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/OAuthConsent.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/PendingInvitations.tsx",
     "web/src/app/PlanView.tsx",
@@ -3158,9 +3158,6 @@
   "Choose a value": [
     "web/src/lib/rules/fixes.ts"
   ],
-  "Choose a whole number from 1 to 20.": [
-    "web/src/app/ClosedListSettings.tsx"
-  ],
   "Choose a workspace": [
     "web/src/app/filter/ConditionEditor.tsx"
   ],
@@ -3289,14 +3286,14 @@
     "web/src/app/calendar/queryFilter.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
-  "Clear filters": [
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
   "Clear memory?": [
     "web/src/app/assistant/MemorySettings.tsx"
   ],
   "Clear the app": [
     "web/src/app/import/SwitchFromPicker.tsx"
+  ],
+  "Clear the centre": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Clear the dashboard selection": [
     "web/src/lib/shortcuts.ts"
@@ -3353,6 +3350,7 @@
     "web/src/app/AppSignIn.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/OAuthConsent.tsx",
+    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PanelFrame.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/SsoPanel.tsx",
@@ -4678,7 +4676,7 @@
   "Delete location": [
     "web/src/app/locations/PlacesView.tsx"
   ],
-  "Delete older than (days, 0 = never)": [
+  "Delete older than": [
     "web/src/app/BackupsPanel.tsx"
   ],
   "Delete permanently": [
@@ -4858,6 +4856,9 @@
   "Depending on the browser, your audio may be sent to the browser vendor’s speech service (for example Google for Chrome, Apple for Safari) and handled under their privacy policy.": [
     "web/src/app/VoiceSettings.tsx"
   ],
+  "Depth": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "Derived": [
     "web/src/ui/ColourField.tsx",
     "web/src/ui/TokenRow.tsx"
@@ -5003,10 +5004,14 @@
     "web/src/app/CalendarSyncPanel.tsx"
   ],
   "Discard": [
+    "web/src/app/SettingsSaveBar.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/themes/ThemeEditor.tsx",
     "web/src/ui/patterns/SaveBar.tsx"
+  ],
+  "Discard unsaved changes?": [
+    "web/src/app/SettingsSaveBar.tsx"
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
@@ -6248,7 +6253,8 @@
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/routines/RoutinesDevice.tsx",
-    "web/src/app/routines/RunHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/app/settingsStatus.ts"
   ],
   "Failed at step {n}": [
     "web/src/app/routines/RunHistory.tsx"
@@ -6396,11 +6402,7 @@
     "web/src/app/calendar/queryFilter.tsx"
   ],
   "Filters": [
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
-  "Filters ({n})": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/AuditPanel.tsx"
   ],
   "Filter…": [
     "web/src/app/calendar/useCalendarChrome.tsx",
@@ -6421,11 +6423,13 @@
   "Find a label…": [
     "web/src/app/LabelsView.tsx",
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "Find a member…": [
     "web/src/app/bulk/BulkActions.tsx"
+  ],
+  "Find a note": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Find a person…": [
     "web/src/app/TriageView.tsx"
@@ -6447,7 +6451,6 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "Find a routine…": [
@@ -6555,6 +6558,9 @@
   ],
   "First task": [
     "web/src/lib/shortcuts.ts"
+  ],
+  "Fit to view": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Five is plenty. Finish or drop one first.": [
     "web/src/app/objectives/ObjectiveCards.tsx",
@@ -6865,9 +6871,6 @@
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusSettings.tsx"
   ],
-  "From {min} to {max} sessions": [
-    "web/src/app/focus/FocusSettings.tsx"
-  ],
   "From {name}": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -7035,7 +7038,7 @@
   "Go to Notes": [
     "web/src/app/palette/registry.ts"
   ],
-  "Go to Notes: every note, standalone and on tasks and projects, with search": [
+  "Go to Notes: every note with search, and the sidebar shows your notes": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to Projects": [
@@ -7213,7 +7216,12 @@
     "web/src/app/task-list/ListGroups.tsx"
   ],
   "Graph": [
-    "web/src/app/connections/ConnectionsDialog.tsx"
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/connections/ConnectionsDialog.tsx",
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Graph of notes": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "Graphite": [
     "web/src/lib/colourNames.ts"
@@ -7762,12 +7770,6 @@
   "In Google Cloud, create an OAuth client of type “Web application”, enable the CalDAV API, and add this authorized redirect address:": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
-  "In MB, from 1 to {MAX_FILE_MB}. Larger files are refused before they are sent.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
-  "In MB; 0 means no total. Removing a file frees its space at once.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "In Microsoft Entra ID, register an app with the delegated permissions offline_access, User.Read, Calendars.ReadWrite and MailboxSettings.Read, and add this redirect address for the Web platform:": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -7973,6 +7975,12 @@
   "In the command bar: add what you typed as a task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the last 30 days": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
+  "In the last 7 days": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "In the morning": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -8044,6 +8052,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
@@ -8536,7 +8545,6 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -8649,6 +8657,9 @@
   ],
   "Large · 90 min or more": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Larger files are refused before they are sent.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Last 100 deliveries": [
     "web/src/app/WebhooksPanel.tsx"
@@ -8967,6 +8978,7 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/connections/ConnectionsDialog.tsx",
     "web/src/app/menus/listMenu.tsx",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -9695,6 +9707,9 @@
   "More properties": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
+  "More than 30 days ago": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "More theme actions": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -10092,6 +10107,7 @@
     "web/src/app/views/DisplayOptionsBody.tsx"
   ],
   "Never": [
+    "web/src/app/BackupsPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -10413,6 +10429,9 @@
   "No backup has run yet.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "No backup yet": [
+    "web/src/app/settingsStatus.ts"
+  ],
   "No bucket set": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -10551,9 +10570,6 @@
   "No label": [
     "web/src/lib/views.ts"
   ],
-  "No label matches.": [
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
   "No label named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
   ],
@@ -10623,8 +10639,14 @@
   "No note": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "No note links to another yet.": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "No note matches these filters.": [
     "web/src/app/notes/NotesPage.tsx"
+  ],
+  "No note matches.": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "No notes": [
     "web/src/app/task-detail/HistoryTab.tsx"
@@ -10705,8 +10727,7 @@
     "web/src/app/WorkspaceGroups.tsx"
   ],
   "No project matches.": [
-    "web/src/app/ProjectPickerField.tsx",
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/ProjectPickerField.tsx"
   ],
   "No project named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
@@ -11006,7 +11027,8 @@
     "web/src/lib/push.ts"
   ],
   "Not configured": [
-    "web/src/app/OutgoingEmailPanel.tsx"
+    "web/src/app/OutgoingEmailPanel.tsx",
+    "web/src/app/settingsStatus.ts"
   ],
   "Not configured: nobody can reset a password or get an invitation by email.": [
     "web/src/lib/settingsCopy.ts"
@@ -11132,11 +11154,11 @@
     "web/src/lib/noteOps.ts"
   ],
   "Notes": [
-    "web/src/app/AppearanceSection.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/LinkOption.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/SpaceSwitch.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
@@ -11158,6 +11180,9 @@
   ],
   "Notes on cards": [
     "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
+  "Notes without links": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Notes you write, and the notes of your tasks and projects, are listed here.": [
     "web/src/app/notes/NotesPage.tsx"
@@ -11703,6 +11728,9 @@
   "On the Notes page: start a new note": [
     "web/src/lib/shortcuts.ts"
   ],
+  "On the Notes page: switch between the list and the graph": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On the day at 09:00": [
     "web/src/app/DefaultRemindersSettings.tsx"
   ],
@@ -11962,6 +11990,9 @@
   ],
   "Open in Obsidian: {vault} › {path}": [
     "web/src/app/OriginChip.tsx"
+  ],
+  "Open in graph": [
+    "web/src/app/connections/ConnectionsDialog.tsx"
   ],
   "Open in maps": [
     "web/src/app/locations/LocationEditor.tsx",
@@ -12760,7 +12791,8 @@
     "web/src/app/focus/FocusSettings.tsx"
   ],
   "Pinned": [
-    "web/src/app/notes/NotesPage.tsx"
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/notes/NotesSidebar.tsx"
   ],
   "Placement mode for the selected task: arrows move the ghost, Enter places it, Esc cancels": [
     "web/src/lib/shortcuts.ts"
@@ -13104,7 +13136,6 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/palette/index.ts",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
@@ -13176,7 +13207,7 @@
     "web/src/app/notes/NoteRow.tsx"
   ],
   "Project notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Project outline": [
     "web/src/lib/assistantBlocks.ts"
@@ -13583,6 +13614,7 @@
   ],
   "Recent": [
     "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/ui/Combobox/useCombobox.ts"
   ],
@@ -13849,6 +13881,7 @@
     "web/src/app/ShareCapture.tsx",
     "web/src/app/ShareDialog.tsx",
     "web/src/app/WorkspaceMembers.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Composer.tsx",
     "web/src/app/task-detail/RotationEditor.tsx"
@@ -13894,6 +13927,9 @@
   ],
   "Removes your tasks from this device after uploading pending changes": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Removing a file frees its space at once.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Rename": [
     "web/src/app/LabelsView.tsx",
@@ -14607,8 +14643,6 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Save": [
-    "web/src/app/AttachmentSettingsPanel.tsx",
-    "web/src/app/BrandingPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncDialogs.tsx",
@@ -14620,17 +14654,13 @@
     "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
-    "web/src/app/OutgoingEmailPanel.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
     "web/src/app/SecurityPanel.tsx",
     "web/src/app/ShareCapture.tsx",
-    "web/src/app/SpeechServerPanel.tsx",
-    "web/src/app/SsoPanel.tsx",
     "web/src/app/WebhooksPanel.tsx",
-    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/locations/LocationEditor.tsx",
@@ -14689,9 +14719,6 @@
   "Save providers": [
     "web/src/app/locations/MapsSettings.tsx"
   ],
-  "Save retention": [
-    "web/src/app/AuditPanel.tsx"
-  ],
   "Save senders": [
     "web/src/app/EmailInboxPanel.tsx"
   ],
@@ -14734,10 +14761,6 @@
     "web/src/app/views/SaveViewCard.tsx"
   ],
   "Saved.": [
-    "web/src/app/AttachmentSettingsPanel.tsx",
-    "web/src/app/AuditPanel.tsx",
-    "web/src/app/BrandingPanel.tsx",
-    "web/src/app/SsoPanel.tsx",
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Saved. Before your next message, the assistant asks you to accept what is sent to your provider.": [
@@ -15454,6 +15477,12 @@
   "Show as": [
     "web/src/app/connections/ConnectionsDialog.tsx"
   ],
+  "Show as graph": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Show as list": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Show as table": [
     "web/src/app/review/charts.tsx"
   ],
@@ -15522,6 +15551,9 @@
   ],
   "Show more {older}": [
     "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Show notes as": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Show notes on cards": [
     "web/src/app/task-list/listExtras.tsx"
@@ -16121,12 +16153,14 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Source": [
-    "web/src/app/notes/NoteFilters.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Source code": [
     "web/src/app/SettingsView.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Space": [
+    "web/src/app/SpaceSwitch.tsx"
   ],
   "Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.": [
     "web/src/app/focus/FocusView.tsx"
@@ -16162,8 +16196,8 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
-  "Standalone only": [
-    "web/src/app/notes/NoteFilters.tsx"
+  "Standalone notes": [
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Star OpenTodo on GitHub": [
     "web/src/app/WelcomeDialog.tsx"
@@ -16554,6 +16588,9 @@
   "Suggested next steps": [
     "web/src/app/assistant/blocks/FollowupChips.tsx"
   ],
+  "Suggestions": [
+    "web/src/app/notes/NoteSearchField.tsx"
+  ],
   "Suggests projects or labels; Enter or Tab picks, #Home/Docs picks a sub-project": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -16762,7 +16799,7 @@
     "web/src/app/notes/NoteRow.tsx"
   ],
   "Task notes": [
-    "web/src/app/notes/NoteFilters.tsx"
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Task page": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -16817,6 +16854,7 @@
   "Tasks": [
     "web/src/app/LinkOption.tsx",
     "web/src/app/PublicListScreen.tsx",
+    "web/src/app/SpaceSwitch.tsx",
     "web/src/app/assistant/blocks/TasksBlock.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/palette/entries.ts",
@@ -16825,6 +16863,9 @@
   ],
   "Tasks and fields": [
     "web/src/app/FieldColumns.tsx"
+  ],
+  "Tasks and projects without notes": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Tasks for today’s focus": [
     "web/src/lib/rules/sentence.ts"
@@ -17681,7 +17722,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "The server answered {status}.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "The server can push to this device.": [
     "web/src/lib/push.ts"
@@ -18362,7 +18403,7 @@
     "web/src/lib/i18n/errors.ts"
   ],
   "This file is missing on the server.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "This file is not a VS Code colour theme: it has no colors.": [
     "web/src/lib/theme/vscode.ts"
@@ -19097,6 +19138,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/DailyCheck.tsx",
@@ -19167,9 +19209,6 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Token name": [
-    "web/src/app/TokensSection.tsx"
-  ],
-  "Token scope": [
     "web/src/app/TokensSection.tsx"
   ],
   "Tomorrow": [
@@ -19729,9 +19768,6 @@
   "Unlink {email}?": [
     "web/src/app/SsoPanel.tsx"
   ],
-  "Unlinked": [
-    "web/src/app/notes/NoteFilters.tsx"
-  ],
   "Unlock": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -19742,7 +19778,7 @@
     "web/src/lib/attachments.ts"
   ],
   "Unlock encryption on this device to open this file.": [
-    "web/src/lib/attachments.ts"
+    "web/src/lib/attachmentOpen.ts"
   ],
   "Unlock encryption on this device to publish this task.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -19887,8 +19923,11 @@
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
+    "web/src/app/notes-graph/GraphView.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
+    "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/notesSection.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
@@ -20027,6 +20066,9 @@
   ],
   "Usage": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Usage resets on the first day of each month (UTC).": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Usage this month": [
     "web/src/app/assistant/AssistantSettings.tsx"
@@ -20726,6 +20768,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "Workspaces need a connection to your server. The lists below are from this device.": [
+    "web/src/app/WorkspaceGeneral.tsx",
     "web/src/app/WorkspacesSettings.tsx"
   ],
   "Workspaces, their members, groups and invite links": [
@@ -20813,6 +20856,7 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/lib/logbook.ts"
   ],
   "Yesterday’s line": [
@@ -21042,6 +21086,9 @@
   "Your changes are kept as a draft on this device until you save or discard them.": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
+  "Your changes on this page are not saved.": [
+    "web/src/app/SettingsSaveBar.tsx"
+  ],
   "Your choices": [
     "web/src/app/routines/Starters.tsx"
   ],
@@ -21205,7 +21252,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Your start view was deleted, so the Inbox opened instead.": [
-    "web/src/app/Shell.tsx"
+    "web/src/app/startView.ts"
   ],
   "Your task feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"
@@ -21242,6 +21289,12 @@
   ],
   "Zoom": [
     "web/src/app/profile/PictureCropper.tsx"
+  ],
+  "Zoom in": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
+  "Zoom out": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "[Cannot decrypt]": [
     "web/src/lib/e2ee.ts"
@@ -21673,6 +21726,8 @@
     "web/src/lib/templateLibrary.ts"
   ],
   "days": [
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/BackupsPanel.tsx",
     "web/src/app/DefaultRemindersSettings.tsx",
     "web/src/app/RemindersField.tsx"
   ],
@@ -22002,6 +22057,9 @@
   "gitlab.com or the address of your own instance.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "graph": [
+    "web/src/app/notes-graph/GraphView.tsx"
+  ],
   "green": [
     "web/src/lib/colourNames.ts"
   ],
@@ -22214,6 +22272,9 @@
   ],
   "merged a duplicate": [
     "web/src/lib/activity.ts"
+  ],
+  "min": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "minutes": [
     "web/src/app/DefaultRemindersSettings.tsx",
@@ -22806,6 +22867,9 @@
   ],
   "server address": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "sessions": [
+    "web/src/app/focus/FocusSettings.tsx"
   ],
   "set by environment": [
     "web/src/app/SsoPanel.tsx"
@@ -23483,6 +23547,9 @@
   ],
   "{attempts, plural, one {# attempt} other {# attempts}}": [
     "web/src/app/WebhooksPanel.tsx"
+  ],
+  "{at} of {n}: {title}": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "{browser} on {os}": [
     "web/src/app/auditFormat.ts"
@@ -24952,6 +25019,9 @@
   ],
   "{title}, waits for {blockers}": [
     "web/src/app/TimelineView.tsx"
+  ],
+  "{title}, {kind, select, note {note} task {task} other {project}}, {n, plural, one {# link} other {# links}}": [
+    "web/src/app/notes-graph/GraphView.tsx"
   ],
   "{title}, {kind, select, note {note} task {task} other {project}}, {ring, select, centre {in the centre} direct {linked directly} other {two steps away}}": [
     "web/src/app/connections/ConnectionsGraph.tsx"

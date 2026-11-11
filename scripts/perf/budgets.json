@@ -48,6 +48,8 @@
     { "id": "notes-page", "name": "open the Notes page", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
     { "id": "notes-search", "name": "note search keystroke, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150, "device-android": 150, "device-ios": 150 } },
     { "id": "note-references", "name": "open a linked note to its Linked references (notes fixture)", "unit": "ms", "limits": { "desktop": 200, "phone": 600 } },
+    { "id": "notes-graph", "name": "open the Notes graph to its first paint (notes fixture)", "unit": "ms", "limits": { "desktop": 800, "phone": 2000 } },
+    { "id": "notes-graph-frame", "name": "a zoom of the Notes graph to its frame, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150 } },
     { "id": "notes-js-heap", "name": "JS heap after the notes session", "unit": "MB", "limits": { "desktop": 170, "phone": 170 } }
   ]
 }

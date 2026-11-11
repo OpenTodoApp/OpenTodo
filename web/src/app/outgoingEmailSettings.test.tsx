@@ -50,6 +50,8 @@ describe('Outgoing email panel', () => {
   it('says what it enables when not configured and offers Configure', () => {
     const html = view({ settings: off })
     expect(html).toContain('Not configured')
+    // settings-foundation D5: without outgoing email nobody can reset a password, so it warns.
+    expect(html).toMatch(/data-status="warn"[^>]*>(<span[^>]*>(<\/span>)?)*Not configured/)
     for (const t of ['reset a password', 'invitation by email']) expect(html).toContain(t)
     expect(html).toContain('>Configure<')
     expect(html).not.toContain('Send test email')
@@ -79,6 +81,30 @@ describe('Outgoing email panel', () => {
     expect(html).toContain('need a connection')
     expect(html).not.toContain('smtp.example.com')
     expect(html).not.toContain('data-smtp-form')
+  })
+
+  it('Leaving with unsaved changes: an edited host asks before another page opens; Cancel keeps the draft', async () => {
+    history.replaceState(null, '', '/settings/server/outgoing-email')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    serve({ 'GET /api/v1/settings/smtp': [200, off], 'PUT /api/v1/settings/smtp': [200, { ...off, configured: true, host: 'mail.example.com' }] })
+    const r = await render(<OutgoingEmailPanel />)
+    await waitFor(() => !!button(r.container, 'Configure'))
+    await click(button(r.container, 'Configure')!)
+    // Nothing changed yet: no save bar, only Close.
+    expect(r.container.querySelector('[data-save-bar]')).toBeNull()
+    expect(r.container.querySelector('[data-smtp-close]')).not.toBeNull()
+    await type(r.container.querySelector<HTMLInputElement>('input[aria-label="SMTP server"]')!, 'mail.example.com')
+    expect(r.container.querySelector('[data-save-bar]')).not.toBeNull()
+    const { navigate } = await import('./router')
+    navigate({ view: 'settings', section: 'server', page: 'backups' })
+    await waitFor(() => !!document.querySelector('[data-testid="confirm-dialog"]'), 'the question')
+    expect(location.pathname).toBe('/settings/server/outgoing-email')
+    await click(button(document.querySelector('[data-testid="confirm-dialog"]')!, 'Cancel')!)
+    expect(r.container.querySelector<HTMLInputElement>('input[aria-label="SMTP server"]')!.value).toBe('mail.example.com')
+    await click(button(r.container.querySelector('[data-save-bar]')!, 'Save')!)
+    await waitFor(() => calls.some((c) => c.key === 'PUT /api/v1/settings/smtp'), 'saved')
+    await waitFor(() => !r.container.querySelector('[data-save-bar]'), 'the bar gone')
+    await r.unmount()
   })
 
   it('runs a test and shows the outcome', async () => {
