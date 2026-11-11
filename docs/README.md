@@ -159,6 +159,7 @@ The same guides are published, with screenshots and search, at [open-todo.app/do
 | [Backups](backups.md) | Scheduled backups to disk, S3 or WebDAV, encryption, restore, archive format |
 | [Email to task](email.md) | Pointing OpenTodo at an IMAP mailbox, provider notes, protection |
 | [Calendar apps (CalDAV)](caldav.md) | Enabling CalDAV, app passwords, client setup, what maps to what |
+| [CalDAV verification script](caldav-verification.md) | The steps that verify a calendar app or server, capturing fixtures, sending results |
 
 The full list of environment variables is in the [configuration reference](self-hosting/configuration.md); security details are in [SECURITY.md](../SECURITY.md).
 
