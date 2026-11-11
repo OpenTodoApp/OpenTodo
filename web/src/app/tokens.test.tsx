@@ -20,9 +20,9 @@ const token = (over: Partial<ApiToken> = {}): ApiToken => ({ id: 't1', name: 'la
 
 describe('TokensView', () => {
   it('offers the scopes as described choices in the New token dialog, with full access preselected', () => {
-    expect(render()).not.toContain('aria-label="Token scope"')
+    expect(render()).not.toContain('data-token-scope')
     const html = render({ creating: true })
-    expect(html).toContain('aria-label="Token scope"')
+    expect(html).toContain('data-radio-group="cards"')
     expect(html).toMatch(/value="full" checked=""|checked="" value="full"/)
     for (const line of ['Everything you can do, except sign-in credentials and administration.', 'Reads everything you can; every change is refused.',
       'An AI assistant changes tasks only through its tools, while you and the owner allow it.', 'Full access plus credentials and administration. Keep it like a password.']) {

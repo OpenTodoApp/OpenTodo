@@ -89,6 +89,20 @@ func TestKeygenSignVerify(t *testing.T) {
 	if err := run([]string{"verify", "-keys", keys, dist}, &out, os.Getenv); err != nil || !strings.Contains(out.String(), "every file matches") {
 		t.Fatalf("signed verify: %v\n%s", err, out.String())
 	}
+	// -require-signed with -keys requires one of those keys, not an official one.
+	if err := run([]string{"verify", "-require-signed", "-keys", keys, dist}, &out, os.Getenv); err != nil {
+		t.Fatalf("signed by a -keys key failed -require-signed: %v\n%s", err, out.String())
+	}
+	if err := run([]string{"verify", "-require-signed", dist}, &out, os.Getenv); err == nil {
+		t.Fatal("a list signed by an unofficial key passed -require-signed without -keys")
+	}
+	other := filepath.Join(dir, "other.json")
+	if err := os.WriteFile(other, []byte(`{"refuse":false,"keys":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"verify", "-require-signed", "-keys", other, dist}, &out, os.Getenv); err == nil {
+		t.Fatal("a list signed by a key outside -keys passed -require-signed")
+	}
 
 	// Over HTTP, then with a proxy that changes the page.
 	srv := httptest.NewServer(http.FileServer(http.Dir(dist)))

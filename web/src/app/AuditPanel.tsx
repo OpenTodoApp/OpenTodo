@@ -11,7 +11,8 @@ import { Icon } from '../ui'
 import { Switch } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
-import { SettingRow, SettingsSection } from '../ui'
+import { NumberInput, SettingRow, SettingsSection, useDraft } from '../ui'
+import { SettingsSaveBar } from './SettingsSaveBar'
 import { AUDIT_EVENT_NAMES, type AuditEvent, type AuditFilters, type AuditSettings } from '../lib/types'
 import { AUDIT_LABELS, EMPTY_FORM, eventAccount, eventSummary, type FilterForm, shortAgent, toFilters } from './auditFormat'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -47,9 +48,8 @@ export function AuditPanel() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settings, setSettings] = useState<AuditSettings | null>(null)
-  const [retention, setRetention] = useState('')
-  const [notice, setNotice] = useState<string | null>(null)
   const [confirmErase, setConfirmErase] = useState(false)
+  const [ipError, setIpError] = useState<string | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const exportLink = useRef<HTMLAnchorElement>(null)
 
@@ -81,7 +81,6 @@ export function AuditPanel() {
     try {
       const s = await api.getAuditSettings()
       setSettings(s)
-      setRetention(String(s.retentionDays))
     } catch (err) {
       fail(err)
     }
@@ -127,24 +126,28 @@ export function AuditPanel() {
     }
   }
 
-  async function saveSettings(patch: Partial<AuditSettings>) {
-    setError(null)
-    setNotice(null)
+  /** Saves the settings; a refusal comes back as its message (a lost connection turns the page offline). */
+  async function saveSettings(patch: Partial<AuditSettings>): Promise<string | null> {
     try {
-      const s = await api.updateAuditSettings(patch)
-      setSettings(s)
-      setRetention(String(s.retentionDays))
-      setNotice(t('Saved.'))
+      setSettings(await api.updateAuditSettings(patch))
       await load(applied)
+      return null
     } catch (err) {
-      if (isNetworkError(err)) fail(err)
-      else setError((err as ApiError).message)
+      if (!isNetworkError(err)) return (err as ApiError).message
+      fail(err)
+      return null
     }
+  }
+
+  // settings-foundation D8: the switch saves when it changes; a refusal leaves it as it was and says why under its row.
+  async function saveAddresses(on: boolean) {
+    setIpError(null)
+    setIpError(await saveSettings({ logIp: on }))
   }
 
   function toggleAddresses(on: boolean) {
     if (!on) setConfirmErase(true)
-    else void saveSettings({ logIp: true })
+    else void saveAddresses(true)
   }
 
   function onTableKey(e: KeyboardEvent<HTMLDivElement>) {
@@ -186,20 +189,10 @@ export function AuditPanel() {
       </SettingsSection>
       {!offline && settings && (
         <SettingsSection {...cardCopy('audit-settings')} testId="audit-settings">
-          <SettingRow
-            {...rowCopy('audit', 'retention')}
-            control={
-              <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); void saveSettings({ retentionDays: Number(retention) }) }}>
-                <Field label={t('Days to keep audit events')} hideLabel>
-                  <Input className="w-28" type="number" min={7} max={3650} step={1} required value={retention} onChange={(e) => setRetention(e.target.value)} />
-                </Field>
-                <Button type="submit" variant="primary" size="md" disabled={retention === String(settings.retentionDays)}>{t('Save retention')}</Button>
-              </form>
-            }
-          />
-          <SettingRow {...rowCopy('audit', 'addresses')}
+          <RetentionRow days={settings.retentionDays} onSave={(retentionDays) => saveSettings({ retentionDays })} />
+          <SettingRow label={rowCopy('audit', 'addresses').label}
+            description={ipError ? <span className="text-danger" role="alert" data-audit-ip-error>{ipError}</span> : rowCopy('audit', 'addresses').description}
             control={<Switch checked={settings.logIp} onChange={toggleAddresses} label={t('Record client addresses (IP)')} hideLabel />} />
-          {notice && <Notice tone="success">{notice}</Notice>}
         </SettingsSection>
       )}
       {confirmErase && (
@@ -207,10 +200,33 @@ export function AuditPanel() {
           title={t('Turn off address logging?')}
           consequence={t('Every stored client address will be erased from the audit log. This cannot be undone.')}
           confirmLabel={t('Turn off and erase')}
-          onConfirm={() => { setConfirmErase(false); return saveSettings({ logIp: false }) }}
+          onConfirm={() => { setConfirmErase(false); return saveAddresses(false) }}
           onCancel={() => setConfirmErase(false)}
         />
       )}
+    </>
+  )
+}
+
+/** How long events are kept: a field with the save bar (settings-foundation D8). */
+function RetentionRow({ days, onSave }: { days: number; onSave: (days: number) => Promise<string | null> }) {
+  const d = useDraft({ days })
+  const { setValid } = d
+  const valid = useCallback((ok: boolean) => setValid('days', ok), [setValid])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <>
+      <SettingRow {...rowCopy('audit', 'retention')} control={
+        <NumberInput key={d.epoch} label={t('Days to keep audit events')} hideLabel unit={t('days')} min={7} max={3650}
+          value={d.draft.days} onValidityChange={valid} onChange={(v) => d.set({ days: v ?? 7 })} />
+      } />
+      <SettingsSaveBar dirty={d.dirty} invalid={d.invalid} busy={busy} error={error} onDiscard={d.reset}
+        onSave={() => {
+          setBusy(true)
+          setError(null)
+          void onSave(d.draft.days).then((problem) => { setBusy(false); setError(problem) })
+        }} />
     </>
   )
 }

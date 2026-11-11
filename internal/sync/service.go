@@ -795,10 +795,23 @@ func (s *Service) List(ctx context.Context, userID, entity string, includeDelete
 }
 
 // Match narrows ListWhere to the entities whose field holds one value (the
-// stored JSON text, such as a quoted id).
+// stored JSON text, such as a quoted id), or any of Values when it is set.
 type Match struct {
-	Field string
-	Value json.RawMessage
+	Field  string
+	Value  json.RawMessage
+	Values []json.RawMessage
+}
+
+// values are the stored values m accepts.
+func (m *Match) values() []json.RawMessage {
+	if len(m.Values) > 0 {
+		return m.Values
+	}
+	return []json.RawMessage{m.Value}
+}
+
+func (m *Match) holds(v json.RawMessage) bool {
+	return slices.ContainsFunc(m.values(), func(w json.RawMessage) bool { return bytes.Equal(v, w) })
 }
 
 // ListWhere is List narrowed by m (nil: every entity). The database finds the
@@ -829,8 +842,11 @@ func (s *Service) listEntities(ctx context.Context, userID, entity string, inclu
 	if m != nil {
 		// The field name is a schema field (checked above), written as a
 		// literal so a partial index on it (scope_fields_project) applies.
-		query += ` AND entity_id IN (SELECT entity_id FROM scope_fields WHERE scope_id IN (` + placeholders(len(scopes)) + `) AND entity = ? AND field = '` + m.Field + `' AND value = ?)`
-		args = append(append(args, anys(scopes)...), entity, string(m.Value))
+		query += ` AND entity_id IN (SELECT entity_id FROM scope_fields WHERE scope_id IN (` + placeholders(len(scopes)) + `) AND entity = ? AND field = '` + m.Field + `' AND value IN (` + placeholders(len(m.values())) + `))`
+		args = append(append(args, anys(scopes)...), entity)
+		for _, v := range m.values() {
+			args = append(args, string(v))
+		}
 	}
 	if ids != nil {
 		query += ` AND entity_id IN (` + placeholders(len(ids)) + `)`
@@ -895,7 +911,7 @@ func (s *Service) listEntities(ctx context.Context, userID, entity string, inclu
 		}
 		// The match was found in some scope; the record kept for an id held
 		// in two scopes must match too.
-		if m != nil && len(dups[id]) > 0 && !bytes.Equal(e[m.Field], m.Value) {
+		if m != nil && len(dups[id]) > 0 && !m.holds(e[m.Field]) {
 			continue
 		}
 		out = append(out, e)

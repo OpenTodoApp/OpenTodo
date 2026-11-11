@@ -1,7 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { Skeleton, StatusIndicator, toneForHue } from '../ui'
 import { Button } from '../ui'
-import { Notice } from '../ui'
+import { Notice, RadioGroup } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
 import { Switch } from '../ui'
 import { SecretReveal } from './TokensSection'
@@ -126,14 +126,8 @@ function ConnectSteps({ p, disabled }: { p: AssistantsViewProps; disabled: boole
         </div>
       </Step>
       <Step n={2} title={t('Token')}>
-        <div role="radiogroup" aria-label={t('What the assistant may do')} className="space-y-1">
-          {options.map((o) => (
-            <label key={o.scope} className={`flex cursor-pointer items-start gap-3 rounded-control border px-3 py-2 ${scope === o.scope ? 'border-accent bg-accent-soft' : 'border-default'}`}>
-              <input type="radio" name="mcp-token-scope" value={o.scope} checked={scope === o.scope} onChange={() => setChoice(o.scope)} className="mt-1" data-mcp-scope={o.scope} />
-              <span className="min-w-0"><span className="block text-body font-medium text-default">{o.label}</span><span className="block text-meta text-muted">{o.line}</span></span>
-            </label>
-          ))}
-        </div>
+        <RadioGroup label={t('What the assistant may do')} hideLabel variant="cards" name="mcp-token-scope" dataKey="mcp-scope"
+          value={scope} onChange={setChoice} options={options.map((o) => ({ value: o.scope, label: o.label, description: o.line }))} />
         {p.secret ? (
           <div className="space-y-2">
             <SecretReveal what={p.secretScope === 'agent' ? t('token for an assistant that can make changes') : t('read-only token')} secret={p.secret} />

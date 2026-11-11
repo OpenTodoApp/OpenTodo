@@ -127,7 +127,7 @@ A mention's excerpt follows the same rule.
 
 Every message SHALL carry a link into the app made of the server's address and the task's id.
 
-Messages SHALL be written in the language the user's app used when the channel was last saved (English, German, French, Spanish, Italian or Portuguese), and in English otherwise.
+Messages SHALL be written in the language the user's app used when the channel was last saved (English, German, French, Spanish, Italian, Portuguese or Simplified Chinese), and in English otherwise. That language is server state on the channel, outside the op log: changing it needs a connection, and the app shows the last loaded channel while offline.
 
 #### Scenario: Titles off
 - **WHEN** a reminder for "Call the plumber" fires on a channel with titles off
@@ -140,6 +140,14 @@ Messages SHALL be written in the language the user's app used when the channel w
 #### Scenario: German
 - **WHEN** a channel was saved from the app in German and a reminder fires with titles off
 - **THEN** the message reads "Eine Erinnerung ist fällig"
+
+#### Scenario: Simplified Chinese
+- **WHEN** a channel was saved from the app in Simplified Chinese and a reminder fires with titles off
+- **THEN** the message is that language's text for "A reminder is due", it is not the English sentence, and no request contains the task title
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user edits a channel's language
+- **THEN** the edit is not saved and the server keeps the language it had
 
 ### Requirement: Channel kinds and the webhook payload
 Each kind SHALL send its messages this way:

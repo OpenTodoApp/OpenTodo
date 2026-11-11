@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Section page layout
-A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` (on a sub-page, `aria-current="true"`). The page SHALL start with a page head: the section's or sub-page's name as a 22 px title (from 1024 px), then its lead line, which says in one sentence what the page is for, then its scope line when the page's settings do not apply to the viewer's account alone, then its status and primary action when it has them. The lead line and the scope line SHALL also be shown below 1024 px, where the title stays in the page header. The layout SHALL be the same for every section and sub-page. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
+A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` when that section's overview is open and `aria-current="true"` when one of its sub-pages is open, and on a sub-page that sub-page's row SHALL be marked `aria-current="page"`. The page SHALL start with a page head: the section's or sub-page's name as a 22 px title (from 1024 px), then its lead line, which says in one sentence what the page is for, then its scope line when the page's settings do not apply to the viewer's account alone, then its status and primary action when it has them. The lead line and the scope line SHALL also be shown below 1024 px, where the title stays in the page header. The layout SHALL be the same for every section and sub-page. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
 
 #### Scenario: Desktop section
 - **WHEN** a user opens `/settings/data` on a 1200 px wide screen
@@ -18,6 +18,10 @@ A section page SHALL use the compact page header. From 1024 px wide the header S
 #### Scenario: Breadcrumb and title
 - **WHEN** a user opens `/settings/notifications` on a 1440 px wide screen
 - **THEN** the header reads "Settings › Notifications" after the sidebar toggle with Help at its right, "Settings" opens the list's first section, and the page starts with the 22 px title "Notifications" and the line saying what the section holds
+
+#### Scenario: Current sub-page in the pane
+- **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
+- **THEN** the Webhooks row under Integrations is marked `aria-current="page"` and the Integrations row is marked `aria-current="true"`
 
 #### Scenario: Sub-page lead line
 - **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen

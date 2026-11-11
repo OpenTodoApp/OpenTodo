@@ -202,147 +202,6 @@ func (d *davRequest) multistatus(m *caldav.Multistatus) {
 	_, _ = d.w.Write(m.Bytes())
 }
 
-// davView is the user's data as CalDAV sees it, loaded once per request.
-type davView struct {
-	uid      string
-	scope    syncscope.Scope
-	projects map[string]opsync.Entity // live (not deleted) projects
-	roles    map[string]string        // shared project id -> role
-	tasks    []opsync.Entity          // live tasks
-	byID     map[string]opsync.Entity // live tasks by id
-	labels   map[string]string        // live label id -> name
-	byName   map[string]string        // lower-case label name -> id
-	modified map[string]int64
-	names    map[string]string // task id -> resource name (when not <id>.ics)
-	uids     map[string]string // task id -> UID (when not the id)
-	cursor   int64
-	// Indexes built once per request (server-query-costs): tasks per calendar in
-	// list order, by "calendar NUL resource name", and task id per stored UID.
-	byCal   map[string][]opsync.Entity
-	byRes   map[string]opsync.Entity
-	uidToID map[string]string
-	// The user's live reminders by task id, and each reminder's task, loaded
-	// once per request (caldav-interop D5): they are served as VALARMs.
-	reminders map[string][]opsync.Entity
-	remTask   map[string]string
-	// ws places calendars in workspaces (caldav_workspaces.go); inboxName is
-	// the Inbox's name in the user's language, read on first use.
-	ws        *davWorkspaces
-	inboxName string
-	// today is the server's calendar date; bySeries groups the tasks pointing
-	// at each series (occurrences.go, series-exceptions).
-	today    string
-	bySeries map[string][]opsync.Entity
-	// hasSplit is set with bySeries when a task continues a split series.
-	hasSplit bool
-}
-
-func (d *davRequest) load() (*davView, error) {
-	if d.view != nil {
-		return d.view, nil
-	}
-	ctx, uid := d.ctx(), d.user.ID
-	v := &davView{uid: uid, scope: d.scope, projects: map[string]opsync.Entity{}, roles: map[string]string{}, byID: map[string]opsync.Entity{},
-		labels: map[string]string{}, byName: map[string]string{}, names: map[string]string{}, uids: map[string]string{},
-		today: localToday(d.s.now())}
-	var err error
-	// The cursor is read first: anything written while the view loads moves the
-	// next token past it, so a client never misses a change.
-	if v.cursor, err = d.s.sync.Cursor(ctx, uid); err != nil {
-		return nil, err
-	}
-	projects, err := d.s.sync.List(ctx, uid, "project", false)
-	if err != nil {
-		return nil, err
-	}
-	for _, p := range projects {
-		v.projects[idOf(p["id"])] = p
-	}
-	ms, err := d.s.sync.Memberships(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-	for _, m := range ms {
-		v.roles[m.ProjectID] = m.Role
-	}
-	if v.tasks, err = d.s.sync.List(ctx, uid, "task", false); err != nil {
-		return nil, err
-	}
-	for _, t := range v.tasks {
-		v.byID[idOf(t["id"])] = t
-	}
-	labels, err := d.s.sync.List(ctx, uid, "label", false)
-	if err != nil {
-		return nil, err
-	}
-	reminders, err := d.s.sync.List(ctx, uid, "reminder", false)
-	if err != nil {
-		return nil, err
-	}
-	v.reminders, v.remTask = map[string][]opsync.Entity{}, map[string]string{}
-	for _, r := range reminders {
-		tid := idOf(r["task_id"])
-		v.remTask[idOf(r["id"])] = tid
-		// A location reminder is never a VALARM (location-reminders D6): it is
-		// not served, so a PUT without it never deletes it either.
-		if _, live := v.byID[tid]; live && isNullish(r["deleted_at"]) && !opsync.IsLocationKind(idOf(r["kind"])) {
-			v.reminders[tid] = append(v.reminders[tid], r)
-		}
-	}
-	for _, l := range labels {
-		id, name := idOf(l["id"]), idOf(l["name"])
-		v.labels[id] = name
-		if _, dup := v.byName[strings.ToLower(name)]; !dup {
-			v.byName[strings.ToLower(name)] = id
-		}
-	}
-	if v.modified, err = d.s.sync.Modified(ctx, uid, "task"); err != nil {
-		return nil, err
-	}
-	rows, err := d.s.sync.DB().QueryContext(ctx, `SELECT task_id, name, uid FROM caldav_resources WHERE user_id = ?`, uid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var id, name, u string
-		if err := rows.Scan(&id, &name, &u); err != nil {
-			return nil, err
-		}
-		if _, live := v.byID[id]; live {
-			v.names[id], v.uids[id] = name, u
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	if err := d.loadWorkspaces(ctx, v); err != nil {
-		return nil, err
-	}
-	v.index()
-	d.view = v
-	return v, nil
-}
-
-// index builds the per-request lookups so that finding a resource or a UID
-// does not scan every task (a multiget of n hrefs was n times the account).
-func (v *davView) index() {
-	v.byCal, v.byRes, v.uidToID = map[string][]opsync.Entity{}, map[string]opsync.Entity{}, map[string]string{}
-	for _, t := range v.tasks {
-		cal := v.calendarOf(t)
-		v.byCal[cal] = append(v.byCal[cal], t)
-		key := cal + "\x00" + v.resourceName(idOf(t["id"]))
-		if _, dup := v.byRes[key]; !dup {
-			v.byRes[key] = t
-		}
-	}
-	for id, u := range v.uids {
-		if prev, dup := v.uidToID[u]; !dup || id < prev {
-			v.uidToID[u] = id
-		}
-	}
-}
-
 // calendarVisible reports whether cal names a calendar of this user: the Inbox
 // or a live, non-archived project, in the request's scope.
 func (v *davView) calendarVisible(cal string) bool {
@@ -660,13 +519,20 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 	}
 	if !isInboxID(cal) {
 		m[pColor] = func() string { return caldav.Esc(idOf(v.projects[cal]["color"])) }
-		order := 1
-		for i, id := range v.calendarIDs() {
-			if id == cal {
-				order = i
+		m[pOrder] = func() string {
+			// The listing's order, worked out once per request rather than once
+			// per calendar listed.
+			if v.order == nil {
+				v.order = map[string]int{}
+				for i, id := range v.calendarIDs() {
+					v.order[id] = i
+				}
 			}
+			if i, ok := v.order[cal]; ok {
+				return strconv.Itoa(i)
+			}
+			return "1"
 		}
-		m[pOrder] = func() string { return strconv.Itoa(order) }
 	}
 	d.commonProps(m)
 	return m
@@ -731,7 +597,18 @@ func (d *davRequest) propfind() {
 	}
 	names, all := caldav.RequestedProps(body)
 	depth1 := d.r.Header.Get("Depth") != "0"
-	v, err := d.load()
+	// The home and a calendar's own properties need the projects but no task;
+	// the members of a calendar need its tasks, one resource only that task.
+	var v *davView
+	switch d.path.kind {
+	case kindHome, kindCalendar:
+		v, err = d.calendars()
+	default:
+		v, err = d.calendarView(d.path.calendar)
+	}
+	if err == nil && d.path.kind == kindCalendar && depth1 && v.calendarVisible(d.path.calendar) {
+		v, err = d.load()
+	}
 	if err != nil {
 		d.fail(err)
 		return
@@ -762,7 +639,11 @@ func (d *davRequest) propfind() {
 			}
 		}
 	case kindResource:
-		t := d.resource(v)
+		t, err := d.resource(v)
+		if err != nil {
+			d.fail(err)
+			return
+		}
 		if t == nil {
 			http.NotFound(d.w, d.r)
 			return
@@ -773,11 +654,14 @@ func (d *davRequest) propfind() {
 }
 
 // resource returns the task addressed by a resource path, or nil.
-func (d *davRequest) resource(v *davView) opsync.Entity {
+func (d *davRequest) resource(v *davView) (opsync.Entity, error) {
 	if d.path.kind != kindResource || !v.calendarVisible(d.path.calendar) {
-		return nil
+		return nil, nil
 	}
-	return v.find(d.path.calendar, d.path.name)
+	if err := d.findNames(v, d.path.calendar, []string{d.path.name}); err != nil {
+		return nil, err
+	}
+	return v.find(d.path.calendar, d.path.name), nil
 }
 
 // ---- GET / HEAD ----
@@ -788,12 +672,16 @@ func (d *davRequest) get() {
 		http.Error(d.w, "collections have no body; use PROPFIND or REPORT", http.StatusMethodNotAllowed)
 		return
 	}
-	v, err := d.load()
+	v, err := d.calendarView(d.path.calendar)
 	if err != nil {
 		d.fail(err)
 		return
 	}
-	t := d.resource(v)
+	t, err := d.resource(v)
+	if err != nil {
+		d.fail(err)
+		return
+	}
 	if t == nil {
 		http.NotFound(d.w, d.r)
 		return
@@ -823,7 +711,7 @@ func (d *davRequest) report() {
 		http.Error(d.w, "malformed REPORT body", http.StatusBadRequest)
 		return
 	}
-	v, err := d.load()
+	v, err := d.calendarView(d.path.calendar)
 	if err != nil {
 		d.fail(err)
 		return
@@ -841,6 +729,10 @@ func (d *davRequest) report() {
 	case body.Is(caldav.NSCalDAV, "calendar-multiget"):
 		d.multiget(v, body, names, all)
 	case body.Is(caldav.NSCalDAV, "calendar-query"):
+		if _, err := d.load(); err != nil {
+			d.fail(err)
+			return
+		}
 		d.query(v, body, names, all)
 	case body.Is(caldav.NSDAV, "sync-collection"):
 		d.syncCollection(v, body, names, all)
@@ -853,20 +745,37 @@ func (d *davRequest) multiget(v *davView, body *caldav.Node, names []caldav.Prop
 	uid, cal := d.user.ID, d.path.calendar
 	prefix := calendarHref(uid, cal)
 	m := caldav.NewMultistatus()
+	// hrefName is the resource name an href names in this calendar ("" when none).
+	hrefName := func(raw string) string {
+		u, err := url.Parse(raw)
+		if err != nil || !strings.HasPrefix(u.EscapedPath(), prefix) {
+			return ""
+		}
+		if name, err := url.PathUnescape(strings.TrimPrefix(u.EscapedPath(), prefix)); err == nil && !strings.Contains(name, "/") {
+			return name
+		}
+		return ""
+	}
+	var asked []string
+	for _, h := range body.Children {
+		if h.Is(caldav.NSDAV, "href") {
+			if name := hrefName(strings.TrimSpace(h.Text)); name != "" {
+				asked = append(asked, name)
+			}
+		}
+	}
+	if err := d.findNames(v, cal, asked); err != nil {
+		d.fail(err)
+		return
+	}
 	for _, h := range body.Children {
 		if !h.Is(caldav.NSDAV, "href") {
 			continue
 		}
 		raw := strings.TrimSpace(h.Text)
-		u, err := url.Parse(raw)
 		var t opsync.Entity
-		if err == nil {
-			p := u.EscapedPath()
-			if strings.HasPrefix(p, prefix) {
-				if name, err := url.PathUnescape(strings.TrimPrefix(p, prefix)); err == nil && !strings.Contains(name, "/") {
-					t = v.find(cal, name)
-				}
-			}
+		if name := hrefName(raw); name != "" {
+			t = v.find(cal, name)
 		}
 		if t == nil {
 			m.Status(raw, http.StatusNotFound)
@@ -911,6 +820,10 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 	m := caldav.NewMultistatus()
 	m.SyncToken(syncToken(v.cursor))
 	if tok == "" {
+		if _, err := d.load(); err != nil {
+			d.fail(err)
+			return
+		}
 		for _, t := range v.tasksIn(cal) {
 			respond(m, resourceHref(uid, cal, v.resourceName(idOf(t["id"]))), d.resourceProps(v, t), names, all)
 		}
@@ -936,31 +849,36 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 		candidates[id] = true
 	}
 	// A reminder change changes its task's VALARMs and ETag (caldav-interop).
-	for rid := range delta.Fields["reminder"] {
-		if tid, ok := v.remTask[rid]; ok {
-			candidates[tid] = true
-		} else if r, err := d.s.sync.Get(d.ctx(), uid, "reminder", rid); err == nil && r != nil {
-			candidates[idOf(r["task_id"])] = true
-		}
+	if err := d.reminderCandidates(v, delta.Fields["reminder"], candidates); err != nil {
+		d.fail(err)
+		return
 	}
 	// A renamed label changes CATEGORIES of every task that carries it.
-	if changed := delta.Fields["label"]; len(changed) > 0 {
-		for _, t := range v.tasks {
-			var labels []string
-			_ = json.Unmarshal(t["labels"], &labels)
-			for _, l := range labels {
-				if changed[l] != nil {
-					candidates[idOf(t["id"])] = true
-				}
-			}
-		}
+	byLabel, err := d.labelCandidates(v, delta.Fields["label"])
+	if err != nil {
+		d.fail(err)
+		return
 	}
-	ids := make([]string, 0, len(candidates))
+	ids := make([]string, 0, len(candidates)+len(byLabel))
 	for id := range candidates {
 		ids = append(ids, id)
 	}
+	for id := range byLabel {
+		if !candidates[id] {
+			ids = append(ids, id)
+		}
+	}
 	sort.Strings(ids)
+	// Only the changed tasks are read, unless they are most of the account.
+	if err := d.fetch(v, ids); err != nil {
+		d.fail(err)
+		return
+	}
 	for _, id := range ids {
+		// A task found by a label value must still carry a changed label.
+		if !candidates[id] && !carriesLabel(v.byID[id], delta.Fields["label"]) {
+			continue
+		}
 		if t, live := v.byID[id]; live && v.calendarOf(t) == cal {
 			respond(m, resourceHref(uid, cal, v.resourceName(id)), d.resourceProps(v, t), names, all)
 			continue

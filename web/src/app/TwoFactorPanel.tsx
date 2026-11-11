@@ -267,7 +267,7 @@ export function TwoFactorPanelView(p: TwoFactorPanelViewProps) {
       {st && (
         <SettingRow {...rowCopy('mfa', 'status')} status={
           <span className="flex flex-wrap items-center gap-2" data-testid="mfa-status">
-            <StatusIndicator tone={toneForHue(st.enrolled ? (few ? 'orange' : 'green') : 'slate')}>{st.enrolled ? t('On') : t('Off')}</StatusIndicator>
+            <StatusIndicator tone={st.enrolled && !few ? 'ok' : 'warn'}>{st.enrolled ? t('On') : t('Off')}</StatusIndicator>
             {st.enrolled && <span>{t('{recoveryCodesRemaining} of 10 recovery codes left', { recoveryCodesRemaining: st.recoveryCodesRemaining })}</span>}
             {st.required && <span className="text-muted">{t('Required by the server owner')}</span>}
           </span>

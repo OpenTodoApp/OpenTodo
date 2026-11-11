@@ -13,7 +13,7 @@ import { Field, Input } from '../ui'
 import { Icon } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { ListRow } from '../ui'
-import { Notice } from '../ui'
+import { Notice, RadioGroup } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { navigate } from './router'
 import { t } from '../lib/i18n'
@@ -71,14 +71,8 @@ export function RestoreSectionView(p: RestoreSectionViewProps) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-4 text-body text-default" role="radiogroup" aria-label={t('Restore from')}>
-        {(['destination', 'upload'] as RestoreSourceTab[]).map((item) => (
-          <label key={item} className="flex items-center gap-1.5">
-            <input type="radio" className="accent-(--ot-accent)" name="restore-source" value={item} checked={p.tab === item} disabled={p.offline} onChange={() => p.onTab(item)} />
-            {item === 'destination' ? t('From the backup destination') : t('Upload a file')}
-          </label>
-        ))}
-      </div>
+      <RadioGroup label={t('Restore from')} hideLabel variant="list" name="restore-source" value={p.tab} disabled={p.offline} onChange={p.onTab}
+        options={(['destination', 'upload'] as RestoreSourceTab[]).map((item) => ({ value: item, label: item === 'destination' ? t('From the backup destination') : t('Upload a file') }))} />
 
       {p.tab === 'destination' && (
         <div data-testid="restore-archives">

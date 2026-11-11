@@ -94,7 +94,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `location-reminders` | Reminders when you arrive at or leave a place | In progress (16 of 18) |
 | `more-languages` | Dutch, and a kit for community languages | Planned |
-| `simplified-chinese` | Simplified Chinese (简体中文) | In progress (15 of 16) |
+| `simplified-chinese` | Simplified Chinese (简体中文) | Shipped |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 | `telegram-channel` | Telegram as a notification channel | Planned |
 
@@ -108,7 +108,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `performance-10k` | Budgets and tests for 10,000 tasks, on phones too | Shipped in 1.3 |
 | `notes-compaction-at-scale` | A year of note history compacted in a minute without holding writes back; a new device downloads only the latest notes | Shipped in 0.22 |
 | `migration-everywhere` | A switch guide and checked importer for every competitor | Shipped in 0.22 |
-| `caldav-verified` | CalDAV verified on real clients | Planned |
+| `caldav-verified` | CalDAV verified on real clients | In progress (6 of 16) |
 | `docs-1-0` | Complete user, self-host and API docs and a contributor guide | Shipped in 0.23 |
 
 ## 1.1 "Routines"

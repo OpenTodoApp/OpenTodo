@@ -88,12 +88,6 @@ export function learnMoreProblems(file, text) {
 // mark takes the accent and whose group carries its label. The files below still
 // render their own and are moved one by one; the list only shrinks.
 export const RAW_RADIO_ALLOWED = new Set([
-  'web/src/app/QuickAddSettings.tsx',
-  'web/src/app/BackupsPanel.tsx',
-  'web/src/app/RestoreSection.tsx',
-  'web/src/app/AssistantsPanel.tsx',
-  'web/src/app/TokensSection.tsx',
-  'web/src/app/assistant/AssistantSettings.tsx',
   'web/src/app/NewBoardDialog.tsx',
   'web/src/app/task-detail/TaskPageDialog.tsx',
 ])

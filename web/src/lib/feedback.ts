@@ -4,11 +4,10 @@
 
 export const ISSUE_NEW_URL = 'https://github.com/OpenTodoApp/OpenTodo/issues/new'
 /**
- * The project's published feedback mailbox (design D4). Empty until the maintainer names a
- * mailbox that receives mail: until then the dialog offers only Open on GitHub, and no address is
- * invented here.
+ * The project's published feedback mailbox (design D4), named by the maintainer on
+ * 2026-11-11. The dialog offers Send by email with it, next to Open on GitHub.
  */
-export const FEEDBACK_EMAIL = ''
+export const FEEDBACK_EMAIL = 'info@open-todo.app'
 /** A link longer than this may be cut by a browser or mail program: the body is copied instead (D3). */
 export const URL_LIMIT = 1800
 const TITLE_LIMIT = 80

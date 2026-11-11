@@ -19,7 +19,7 @@ import { Button, Dialog, StatusIndicator, toneForHue } from '../../ui'
 import { Badge } from '../../ui'
 import { Field, Input, Select } from '../../ui'
 import { ConfirmDialog } from '../../ui'
-import { Notice } from '../../ui'
+import { Notice, NumberInput, RadioGroup } from '../../ui'
 import { SettingRow, SettingsSection } from '../../ui'
 import { Checkbox, Switch } from '../../ui'
 import { formatDate } from '../../lib/dates'
@@ -221,10 +221,10 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
         description={t('Needed for a model server on your own network (Ollama, LM Studio). Off, the compatible endpoint may only be a public address.')} />
       </FormGroup>
       <FormGroup title={t('Limits')}>
-      <Field label={t('Monthly tokens per person')} description={t('0 means unlimited. Usage resets on the first day of each month (UTC).')}>
-        <Input className="max-w-[12rem]" type="number" min={0} step={10000} value={d.monthly_token_cap_per_user} disabled={off}
-          onChange={(e) => set({ monthly_token_cap_per_user: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
-      </Field>
+      <NumberInput label={t('Monthly tokens per person')} description={t('Usage resets on the first day of each month (UTC).')}
+        min={1} max={1_000_000_000} step={10000} noLimit disabled={off}
+        value={d.monthly_token_cap_per_user > 0 ? d.monthly_token_cap_per_user : null}
+        onChange={(n) => set({ monthly_token_cap_per_user: n ?? 0 })} />
       <Checkbox checked={d.allow_member_keys} disabled={off} onChange={(e) => set({ allow_member_keys: e.target.checked })} label={t('Let members bring their own key')}
         description={t('Each person may then choose Anthropic, OpenAI or Google Gemini with their own key and model for their turns, instead of yours. The compatible endpoint is never offered to members, so no one but you decides which other host the server connects to.')} />
       {d.allow_member_keys && (
@@ -392,21 +392,13 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
     const ok = await p.onSaveOwn?.(input)
     if (ok) setD((cur) => ({ ...cur, key: '' }))
   }
-  const radio = 'mt-0.5 h-4 w-4 shrink-0 accent-(--ot-accent) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
   return (
-    <fieldset className="space-y-3 py-3 text-body" data-assistant-own>
-      <legend className="float-left mb-2 w-full text-body font-medium text-default">{t('Which assistant you use')}</legend>
-      <label className="clear-left flex items-start gap-2.5">
-        <input type="radio" name="assistant-own-mode" className={radio} checked={d.mode === 'server'} disabled={off} onChange={() => set({ mode: 'server' })} />
-        <span className="text-default">{t('The server’s assistant')}
-          <span className="block text-meta text-muted">{t('{provider}, set up by the server owner.', { provider: `${s.server_provider_label ?? s.provider_label}${s.server_model ? ` (${s.server_model})` : ''}` })}</span>
-        </span>
-      </label>
-      <label className="flex items-start gap-2.5">
-        <input type="radio" name="assistant-own-mode" className={radio} checked={d.mode === 'own'} disabled={off} onChange={() => set({ mode: 'own' })} />
-        <span className="text-default">{t('My own provider and key')}<span className="block text-meta text-muted">{t('Anthropic, OpenAI or Google Gemini, with an API key from your own account.')} {capNote}</span>
-        </span>
-      </label>
+    <div className="space-y-3 py-3 text-body" data-assistant-own>
+      <RadioGroup label={t('Which assistant you use')} variant="cards" name="assistant-own-mode" value={d.mode} disabled={off}
+        onChange={(mode) => set({ mode })} options={[
+          { value: 'server', label: t('The server’s assistant'), description: t('{provider}, set up by the server owner.', { provider: `${s.server_provider_label ?? s.provider_label}${s.server_model ? ` (${s.server_model})` : ''}` }) },
+          { value: 'own', label: t('My own provider and key'), description: <>{t('Anthropic, OpenAI or Google Gemini, with an API key from your own account.')} {capNote}</> },
+        ]} />
       {d.mode === 'own' && (
         <div className="space-y-3 pl-6">
           <Field label={t('Provider')}>
@@ -458,7 +450,7 @@ export function OwnProviderForm(p: UserViewProps & { status: AssistantStatus }) 
           </Notice>
         </div>
       )}
-    </fieldset>
+    </div>
   )
 }
 

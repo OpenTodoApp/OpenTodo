@@ -96,7 +96,7 @@ The server SHALL send only these kinds: `verify_signup`, `password_reset`, `invi
 - **THEN** no log line and no audit event contains the link or its secret
 
 ### Requirement: Message language
-A message SHALL be written in the first language of the `Accept-Language` header of the request that caused it that the server supports (`en`, `de`, `fr`, `es`, `it`, `pt`), else in English. Subject and body SHALL be translated together; the link and the server origin are not translated. For a verification message the language SHALL be the one captured at registration, so a resend uses the same language.
+A message SHALL be written in the first language of the `Accept-Language` header of the request that caused it that the server supports (`en`, `de`, `fr`, `es`, `it`, `pt`, `zh`), else in English. Subject and body SHALL be translated together; the link and the server origin are not translated. For a verification message the language SHALL be the one captured at registration, so a resend uses the same language. The language is chosen while handling that request and is not an operation.
 
 #### Scenario: German browser
 - **WHEN** a visitor whose browser sends `Accept-Language: de-CH, fr;q=0.8` requests a password reset
@@ -109,6 +109,14 @@ A message SHALL be written in the first language of the `Accept-Language` header
 #### Scenario: Invitation language follows the creator
 - **WHEN** an admin whose browser sends `Accept-Language: it` sends an invitation
 - **THEN** the invitee receives an Italian message
+
+#### Scenario: Simplified Chinese browser
+- **WHEN** a visitor whose browser sends `Accept-Language: zh-CN` requests a password reset
+- **THEN** subject and body are in Simplified Chinese and the link is unchanged
+
+#### Scenario: Traditional Chinese browser
+- **WHEN** the header is `zh-TW` or `zh-Hant`
+- **THEN** the message is in English
 
 ### Requirement: No task content for encrypted accounts
 A message addressed to an account with end-to-end encryption enabled SHALL contain no content field of any entity (titles, descriptions, names, queries, comment bodies), neither as plaintext nor as ciphertext. Any message kind that needs such content SHALL NOT be offered to such accounts. The message kinds of this change carry no content for any account.

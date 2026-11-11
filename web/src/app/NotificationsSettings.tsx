@@ -107,7 +107,8 @@ function PushNotificationsSettings() {
 
 const PERMISSION: Record<PushState['permission'], { label: string; hue: HueName }> = {
   granted: { get label() { return t('Allowed') }, hue: 'green' },
-  denied: { get label() { return t('Blocked') }, hue: 'red' },
+  // settings-foundation D5: blocked keeps push from working, so it warns (it is not failing).
+  denied: { get label() { return t('Blocked') }, hue: 'orange' },
   default: { get label() { return t('Not asked yet') }, hue: 'slate' },
   unsupported: { get label() { return t('Not supported') }, hue: 'slate' },
 }

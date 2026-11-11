@@ -25,16 +25,17 @@ export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
   { event: 'rule.fired', label: msg('Rule fired') },
 ]
 
-export type WebhookTone = 'ok' | 'warn' | 'off'
+export type WebhookTone = 'ok' | 'warn' | 'danger' | 'off'
 
 /** Status line for a webhook row: active, failing, paused by the user or disabled by the server. */
 export function webhookStatus(h: Webhook): { label: string; tone: WebhookTone } {
   if (!h.enabled) {
-    if (h.disabledReason === 'too_many_failures') return { label: t('Disabled after repeated failures'), tone: 'warn' }
+    // settings-foundation D5: failing deliveries are the danger tone; any other stop keeps it from working (warn).
+    if (h.disabledReason === 'too_many_failures') return { label: t('Disabled after repeated failures'), tone: 'danger' }
     if (h.disabledReason) return { label: t('Disabled: {reason}', { reason: h.disabledReason }), tone: 'warn' }
     return { label: t('Paused'), tone: 'off' }
   }
-  if (h.consecutiveFailures > 0) return { label: t('Active, {n} failed in a row', { n: h.consecutiveFailures }), tone: 'warn' }
+  if (h.consecutiveFailures > 0) return { label: t('Active, {n} failed in a row', { n: h.consecutiveFailures }), tone: 'danger' }
   return { label: t('Active'), tone: 'ok' }
 }
 

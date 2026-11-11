@@ -44,14 +44,8 @@ func (d *davRequest) loadWorkspaces(ctx context.Context, v *davView) error {
 			w.names[ws.ID] = ws.Name
 		}
 	}
-	p := &opsync.Partition{Default: w.def, Known: known, Projects: map[string]opsync.PartitionProject{}, Tasks: map[string]opsync.PartitionTask{}}
-	for id, pr := range v.projects {
-		p.Projects[id] = opsync.PartitionProject{WorkspaceID: idOf(pr["workspace_id"]), ParentID: idOf(pr["parent_id"])}
-	}
-	for _, t := range v.tasks {
-		p.Tasks[idOf(t["id"])] = opsync.PartitionTask{WorkspaceID: idOf(t["workspace_id"]), ProjectID: idOf(t["project_id"]), ParentID: idOf(t["parent_id"])}
-	}
-	w.part = p
+	// Projects and tasks join the partition as the view reads them (addProject, addTask).
+	w.part = &opsync.Partition{Default: w.def, Known: known, Projects: map[string]opsync.PartitionProject{}, Tasks: map[string]opsync.PartitionTask{}}
 	v.ws = w
 	return nil
 }
