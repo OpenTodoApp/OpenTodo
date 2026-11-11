@@ -159,7 +159,7 @@ jobs:
           xcrun simctl boot "$sim"
           xcrun simctl bootstatus "$sim" -b
           xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/OpenTodo.app
-          node perf/host.mjs run "$RUNNER_TEMP/rows.json" app.open-todo.ios ../../dist/app-perf/results.json 3
+          APP_PERF_OUT=../../dist/app-perf node perf/host.mjs run "$RUNNER_TEMP/rows.json" app.open-todo.ios ../../dist/app-perf/results.json 3
       - name: Summary
         if: always()
         run: |

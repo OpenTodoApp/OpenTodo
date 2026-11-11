@@ -14,9 +14,9 @@
 //     Prints the medians of the measured runs against the budgets (design D4), as
 //     Markdown for the job summary.
 import { execFileSync, spawn } from 'node:child_process'
-import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const [cmd, ...args] = process.argv.slice(2)
@@ -56,14 +56,32 @@ function simctl(...a) {
   return execFileSync('xcrun', ['simctl', ...a], { encoding: 'utf8' }).trim()
 }
 
-/** The app's last log lines on the simulator, for a step that failed. */
+/**
+ * Why the app ended, for a step that failed: the newest crash report of the app on this
+ * Mac (a fatal JS error in a Release build aborts with its message in the report), and
+ * the app's last log lines on the simulator.
+ */
 function appLog() {
+  const out = []
   try {
-    return execFileSync('xcrun', ['simctl', 'spawn', 'booted', 'log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'process == "OpenTodo"'], { encoding: 'utf8', maxBuffer: 64 << 20 })
-      .split('\n').filter((l) => /error|exception|fatal|abort|crash|JS|hermes/i.test(l)).slice(-40).join('\n')
+    const dir = join(homedir(), 'Library/Logs/DiagnosticReports')
+    const reports = readdirSync(dir).filter((f) => f.startsWith('OpenTodo')).map((f) => join(dir, f)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)
+    if (reports[0]) {
+      const text = readFileSync(reports[0], 'utf8')
+      copyFileSync(reports[0], join(process.env.APP_PERF_OUT ?? tmpdir(), `crash-${Date.now()}.ips`))
+      const reason = /"(?:reason|exception|type|signal|indicator)"\s*:\s*"[^"]*"|Unhandled JS Exception[^"\n]*|Termination Reason[^\n]*/g
+      out.push(`crash report ${reports[0]}: ${[...new Set(text.match(reason) ?? [])].slice(0, 12).join(' | ')}`)
+    } else out.push('no crash report')
   } catch (e) {
-    return `(no log: ${e.message})`
+    out.push(`(no crash report: ${e.message})`)
   }
+  try {
+    out.push(execFileSync('xcrun', ['simctl', 'spawn', 'booted', 'log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'processImagePath CONTAINS "OpenTodo"'], { encoding: 'utf8', maxBuffer: 64 << 20 })
+      .split('\n').slice(-30).join('\n'))
+  } catch (e) {
+    out.push(`(no log: ${e.message})`)
+  }
+  return out.join('\n')
 }
 
 function rss(pid) {
