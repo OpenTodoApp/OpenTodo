@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Button, Input, Select, SettingRow, SettingsSection } from '../ui'
+import { useEffect, useRef, useState } from 'react'
+import { Button, NumberInput, Select, SettingRow, SettingsSection } from '../ui'
 import { useUserPrefsRow } from '../lib/localData'
 import { offsetLabel } from '../lib/reminderTime'
 import { msg, t, translatedList } from '../lib/i18n'
@@ -79,21 +79,23 @@ export function DefaultRemindersView({ value, onChange }: { value: DefaultRemind
 function CustomOffset({ initial, onSave, onCancel }: { initial: number; onSave: (minutes: number) => void; onCancel: () => void }) {
   const abs = Math.abs(initial)
   const [unit, setUnit] = useState<'1' | '60' | '1440'>(abs !== 0 && abs % 1440 === 0 ? '1440' : abs !== 0 && abs % 60 === 0 ? '60' : '1')
-  const [amount, setAmount] = useState(String(abs / Number(unit)))
+  const [amount, setAmount] = useState<number | null>(abs / Number(unit))
+  const [valid, setValid] = useState(true)
+  const form = useRef<HTMLFormElement>(null)
+  useEffect(() => { form.current?.querySelector<HTMLInputElement>('[data-number-input] input')?.focus() }, [])
   const [direction, setDirection] = useState<'before' | 'after'>(initial > 0 ? 'after' : 'before')
   const [error, setError] = useState<string | null>(null)
   const save = () => {
-    const n = Number(amount)
-    if (!Number.isInteger(n) || n < 0) return setError(t('Enter a whole number.'))
-    const minutes = n * Number(unit)
+    if (!valid || amount === null) return setError(t('Enter a whole number.'))
+    const minutes = amount * Number(unit)
     if (minutes > MAX_DEFAULT_OFFSET) return setError(t('At most one year before or after.'))
     onSave(direction === 'before' ? -minutes : minutes)
   }
   return (
-    <form className="flex flex-wrap items-center gap-2 pb-3" data-testid="default-reminder-custom"
+    <form ref={form} className="flex flex-wrap items-center gap-2 pb-3" data-testid="default-reminder-custom"
       onSubmit={(e) => { e.preventDefault(); save() }}
       onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}>
-      <Input className="w-20 py-1" type="number" min={0} aria-label={t('Offset amount')} value={amount} autoFocus onChange={(e) => setAmount(e.target.value)} />
+      <NumberInput label={t('Offset amount')} hideLabel min={0} max={Math.floor(MAX_DEFAULT_OFFSET / Number(unit))} value={amount} onChange={setAmount} onValidityChange={setValid} />
       <Select className="w-auto py-1" aria-label={t('Offset unit')} value={unit} onChange={(e) => setUnit(e.target.value as '1' | '60' | '1440')}>
         <option value="1">{t('minutes')}</option>
         <option value="60">{t('hours')}</option>

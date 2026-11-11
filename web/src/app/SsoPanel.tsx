@@ -19,6 +19,7 @@ import type { LinkedIdentity, OidcSettings, OidcSettingsInput, OidcStatus, OidcT
 import { oidcErrorMessage, takeQueryParam } from './sso'
 import { t } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
+import { SettingsSaveBar } from './SettingsSaveBar'
 import { relativeTime } from '../lib/dates'
 
 // Settings → Single sign-on (owner) and Linked accounts (everyone), OpenSpec
@@ -95,7 +96,6 @@ export function SsoPanel() {
       onChange={(patch) => setForm({ ...form, ...patch })}
       onSave={() => void run(async () => {
         apply(await api.saveOidcSettings(saveInput(settings, form)))
-        setNotice(t('Saved.'))
       })}
       onTest={() => void run(async () => {
         setTest(await api.testOidc(form.issuer.trim() || undefined))
@@ -149,6 +149,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
   }, [open])
   const locked = (k: string) => s.managedBy[k] === 'env'
   const disabled = !p.online || p.busy
+  const dirty = JSON.stringify(f) !== JSON.stringify(formFrom(s))
   const name = f.displayName.trim() || 'SSO'
   const text = (key: keyof SsoForm, label: string, extra: { placeholder?: string; type?: string; hint?: string; inputRef?: React.Ref<HTMLInputElement> } = {}) => (
     <Field label={<>{label}{locked(key) && <Lock />}</>} description={extra.hint}>
@@ -205,7 +206,7 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
             {toggle('syncPictures', t('Use profile pictures from {name}', { name }),
               t('At sign-in the server fetches the picture the provider names and makes it the profile picture. A picture someone uploaded themselves is never replaced.'))}
           </div>
-          {p.error && <Notice tone="danger">{p.error}</Notice>}
+          {p.error && !dirty && <Notice tone="danger">{p.error}</Notice>}
           {p.notice && <Notice tone="success">{p.notice}</Notice>}
           {p.test && (
             <Notice tone="success">
@@ -219,11 +220,14 @@ export function SsoPanelView(p: SsoPanelViewProps & { configuring?: boolean }) {
               consequence={t('Once you save, members can sign in only with {name}: their passwords and passkeys stop working. If the provider is down, they cannot sign in until you turn this off. You keep your password at {path}.', { name, path: '/?owner=1' })}
               onConfirm={() => { p.onChange({ ssoOnly: true }); setConfirmSsoOnly(false) }} onCancel={() => setConfirmSsoOnly(false)} />
           )}
+          {/* settings-foundation D8: Save and Discard are in the save bar once something changed. */}
           <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="ghost" onClick={() => setOpen(false)}>{t('Close')}</Button>
+            {!dirty && <Button variant="ghost" onClick={() => setOpen(false)}>{t('Close')}</Button>}
             <Button variant="secondary" disabled={disabled || !f.issuer.trim()} onClick={p.onTest}>{t('Test connection')}</Button>
-            <Button variant="primary" disabled={disabled} onClick={p.onSave}>{t('Save')}</Button>
           </div>
+          <SettingsSaveBar dirty={dirty} busy={p.busy} error={p.error}
+            disabledReason={p.online ? undefined : noticeCopy('sso', 'offline')}
+            onDiscard={() => p.onChange(formFrom(s))} onSave={p.onSave} />
         </div>
       )}
       {!open && p.error && <Notice tone="danger">{p.error}</Notice>}

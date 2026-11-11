@@ -23,4 +23,5 @@ export const Off: StoryObj = { render: () => <SsoPanelView {...base} settings={o
 export const Configuring: StoryObj = { render: () => <SsoPanelView {...base} configuring test={{ ok: true, issuer: settings.issuer, authorizationHost: 'sso.example.com', tokenHost: 'sso.example.com', endSessionSupported: true }} /> }
 export const Offline: StoryObj = { render: () => <SsoPanelView {...base} online={false} /> }
 export const WithError: StoryObj = { render: () => <SsoPanelView {...base} configuring error="discovery failed: the issuer did not answer." /> }
-export const NoBaseUrl: StoryObj = { render: () => <SsoPanelView {...base} configuring settings={{ ...settings, baseUrlConfigured: false, ssoOnly: true }} /> }
+const noBase = { ...settings, baseUrlConfigured: false, ssoOnly: true }
+export const NoBaseUrl: StoryObj = { render: () => <SsoPanelView {...base} configuring settings={noBase} form={formFrom(noBase)} /> }

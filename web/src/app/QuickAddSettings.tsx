@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SettingRow, SettingsSection } from '../ui'
-import { Checkbox, Switch } from '../ui'
+import { Checkbox, RadioGroup, Switch } from '../ui'
 import {
   BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
@@ -66,18 +66,12 @@ export function AddPositionView({ value, onChange }: { value: AddPositionPref; o
   return (
     <SettingsSection {...cardCopy('add-position')}>
       <div id="add-position" tabIndex={-1} data-setting-row="add-position" className="py-3 outline-none focus-visible:rounded-control focus-visible:ring-2 focus-visible:ring-focus">
-        <fieldset>
-          <legend className="text-body font-medium text-default">{copy.label}</legend>
-          <p className="mt-0.5 text-meta text-muted">{copy.description}</p>
-          <div className="mt-2 flex flex-col gap-1.5 text-body text-default sm:flex-row sm:gap-5" data-testid="add-position">
-            {ADD_POSITIONS.map((p) => (
-              <label key={p} className="flex items-center gap-1.5 touch-target">
-                <input type="radio" className="accent-(--ot-accent)" name="add-position" value={p} checked={value === p} onChange={() => onChange(p)} />
-                {ADD_POSITION_LABEL[p]}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <p className="text-body font-medium text-default" aria-hidden="true">{copy.label}</p>
+        <p className="mt-0.5 text-meta text-muted">{copy.description}</p>
+        <div className="mt-2" data-testid="add-position">
+          <RadioGroup label={copy.label} hideLabel variant="list" name="add-position" value={value} onChange={onChange}
+            options={ADD_POSITIONS.map((p) => ({ value: p, label: ADD_POSITION_LABEL[p] }))} />
+        </div>
       </div>
     </SettingsSection>
   )
