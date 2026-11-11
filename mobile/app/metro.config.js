@@ -11,9 +11,17 @@ const app = __dirname
 const web = path.resolve(app, '../../web') + path.sep
 const entry = path.join(app, 'index.ts')
 
+// Packages the app replaces (src/stubs): the web-only live-query hook that shared
+// modules import for the web's screens, and lib0's React Native crypto (the app's own).
+const stubs = {
+  'dexie-react-hooks': path.join(app, 'src/stubs/dexie-react-hooks.ts'),
+  'isomorphic-webcrypto/src/react-native': path.join(app, 'src/stubs/webcrypto.ts'),
+}
+
 const config = getDefaultConfig(app)
 config.watchFolders = [path.join(web, 'src')]
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (stubs[moduleName]) return { type: 'sourceFile', filePath: stubs[moduleName] }
   if (moduleName.startsWith('@shared/')) {
     return context.resolveRequest(context, path.join(web, 'src/lib', moduleName.slice('@shared/'.length)), platform)
   }

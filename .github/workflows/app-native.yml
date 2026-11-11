@@ -9,7 +9,17 @@ name: App builds
 # builds → Run workflow builds any branch by hand.
 on:
   workflow_call:
+    inputs:
+      perf:
+        description: Also run app-perf (the perfseed account on the simulator)
+        type: boolean
+        default: false
   workflow_dispatch:
+    inputs:
+      perf:
+        description: Also run app-perf (the perfseed account on the simulator)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,9 +57,9 @@ jobs:
       - name: Simulator build (Release, unsigned)
         working-directory: mobile/app/ios
         run: |
-          xcodebuild build -quiet -workspace OpenTodoPreview.xcworkspace -scheme OpenTodoPreview -configuration Release \
+          xcodebuild build -quiet -workspace OpenTodo.xcworkspace -scheme OpenTodo -configuration Release \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO
-          app=build/Build/Products/Release-iphonesimulator/OpenTodoPreview.app
+          app=build/Build/Products/Release-iphonesimulator/OpenTodo.app
           test -f "$app/main.jsbundle" || { echo "::error::no JavaScript bundle in $app"; exit 1; }
           du -sh "$app"
 
@@ -84,3 +94,79 @@ jobs:
         run: |
           ./gradlew --no-daemon -PreactNativeArchitectures=x86_64 :app:assembleDebug :app:testDebugUnitTest
           ls -l app/build/outputs/apk/debug/
+
+  # The app's performance run (design D4, task 5.2's app-perf; the storage spike's harness):
+  # the perfseed 10,000-task account on the iOS simulator, on the app's own database (the
+  # Dexie-subset adapter on op-sqlite). A Release simulator build of the performance
+  # entry (perf/index.ts, never the app's), launched by perf/host.mjs with no database,
+  # to seed it, three times cold to measure, then to write a task and be killed
+  # (SIGKILL) right after, and once more to read it back. Uploads app-perf: results.json,
+  # the summary against the budgets and the reference run on the runner. It fails only
+  # when the harness or the kill-after-write check fails; the numbers are reported.
+  #   gh workflow run app-native.yml --ref <branch> -f perf=true
+  app-perf:
+    name: App performance (iOS simulator)
+    if: ${{ inputs.perf }}
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/app/package-lock.json
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Newest Xcode
+        run: scripts/release/ios-testflight.sh xcode
+      - run: npm ci --no-audit --no-fund
+        working-directory: mobile/app
+      - name: The 10,000-task account, pulled as a new device would, and its local rows
+        run: |
+          mkdir -p dist/app-perf
+          CGO_ENABLED=0 go build -trimpath -o bin/opentodo ./cmd/opentodo
+          go run ./cmd/perfseed -data "$RUNNER_TEMP/fixture"
+          node mobile/app/perf/host.mjs dump "$RUNNER_TEMP/fixture" bin/opentodo "$RUNNER_TEMP/ops.json"
+          cd mobile/app
+          PERF_OPS="$RUNNER_TEMP/ops.json" PERF_ROWS="$RUNNER_TEMP/rows.json" npx jest -c perf/jest.config.js local -t rows
+      - name: Reference run on the runner (Node, node:sqlite)
+        continue-on-error: true
+        timeout-minutes: 15
+        working-directory: mobile/app
+        run: PERF_ROWS="$RUNNER_TEMP/rows.json" npx jest -c perf/jest.config.js local -t session 2>&1 | tee ../../dist/app-perf/node-reference.txt
+      - name: Prebuild the performance entry (ios/ from app.config.ts, CocoaPods)
+        working-directory: mobile/app
+        env:
+          CI: "1"
+        run: |
+          npm pkg set main=perf/index.ts
+          npx expo prebuild --platform ios
+          # The host is plain HTTP on 127.0.0.1.
+          plutil -replace NSAppTransportSecurity -json '{"NSAllowsArbitraryLoads":true,"NSAllowsLocalNetworking":true}' ios/OpenTodo/Info.plist
+      - name: Simulator build (Release, unsigned)
+        working-directory: mobile/app/ios
+        run: |
+          xcodebuild build -quiet -workspace OpenTodo.xcworkspace -scheme OpenTodo -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO
+      - name: Measure on the simulator
+        working-directory: mobile/app
+        run: |
+          sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone 1[6-9]$/p' | head -1)
+          [ -n "$sim" ] || sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
+          echo "simulator: $sim"
+          xcrun simctl boot "$sim"
+          xcrun simctl bootstatus "$sim" -b
+          xcrun simctl install booted ios/build/Build/Products/Release-iphonesimulator/OpenTodo.app
+          APP_PERF_OUT=../../dist/app-perf node perf/host.mjs run "$RUNNER_TEMP/rows.json" app.open-todo.ios ../../dist/app-perf/results.json 3
+      - name: Summary
+        if: always()
+        run: |
+          node mobile/app/perf/host.mjs summary dist/app-perf/results.json > dist/app-perf/summary.md || true
+          cat dist/app-perf/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: app-perf
+          path: dist/app-perf

@@ -2,7 +2,7 @@
 
 ## Why
 
-After `native-app-foundation` and `native-app-everyday`, the preview app has the screens people use, but not what the current shells do outside the app:
+After `native-app-foundation` and `native-app-everyday`, the native app (on TestFlight as 2.0.0 under the existing record) has the screens people use, but not what the current shells do outside the app:
 
 - the widget;
 - the share sheet;
@@ -10,7 +10,7 @@ After `native-app-foundation` and `native-app-everyday`, the preview app has the
 - biometric unlock;
 - the iPad layout the current iPhone app already supports.
 
-Until it has them, replacing the shells would take features away. This change brings them over, applies a clear go/no-go gate on the preview, and then ships the native app under the existing App Store and Google Play records, retiring the web-view shells.
+Until it has them, replacing the shells would take features away. This change brings them over, applies a clear go/no-go gate on the TestFlight build, and then ships the native app to the App Store and Google Play under the records it already uses, retiring the web-view shells.
 
 ## What Changes
 
@@ -34,16 +34,16 @@ Until it has them, replacing the shells would take features away. This change br
   - Google Play and F-Droid.
   - The F-Droid build has no Google Play Services or Firebase dependency: notifications are local only, as today.
 - **Go/no-go gate.** The switch happens only when all of these hold:
-  - the preview has run at least two weeks with testers;
+  - the TestFlight build has run at least two weeks with testers;
   - there is no open data-loss or sync bug;
   - TestFlight's crash-free sessions are at least 99.5%;
   - the nightly app budgets pass;
   - the owner approves.
 - **Switch-over.**
-  - The native app ships under the existing records (`app.open-todo.ios` and the Android application id) as the next major mobile version.
+  - The native app ships under the existing records (`app.open-todo.ios` and the Android application id `app.opentodo`) as 2.0, the next major mobile version; it already uses both ids on TestFlight (`native-app-foundation` D10).
   - The server address the shell stored is read and prefilled, so people sign in once.
   - Local data comes back through the first sync.
-  - The preview record is retired, and `mobile/ios`'s web-view code and `mobile/android`'s shell are deleted.
+  - `mobile/ios`'s web-view code and `mobile/android`'s shell are deleted.
 
 ## Capabilities
 
