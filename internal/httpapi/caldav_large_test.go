@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/perfseed"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -29,15 +30,40 @@ const propfindEtags = `<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d
 const queryAll = `<?xml version="1.0" encoding="utf-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop>` +
 	`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VTODO"/></c:comp-filter></c:filter></c:calendar-query>`
 
-// knownOver are budgets the server does not meet yet, found by this test: each
-// CalDAV request loads the account's whole task list (davroutes load), about
-// 1.4 million allocations and 300 ms on 10,000 tasks before it encodes
-// anything. A budget named here is measured and printed but does not fail;
-// the fix removes its entry (tasks.md 2.2, 3.5).
-var knownOver = map[string]string{
-	"sync-collection time":                 "the per-request view loads every task of the account",
-	"sync-collection allocations vs 1,000": "the per-request view loads every task of the account",
-	"calendar home PROPFIND time":          "the per-request view loads every task of the account",
+// knownOver are budgets the server does not meet yet, with the reason: a
+// budget named here is measured and printed but does not fail, and its fix
+// removes the entry. The run that found the first three (every request loaded
+// the account's whole task list, about 1.49 million allocations and 250 ms on
+// 10,000 tasks) is tasks.md 2.2; the partial view fixed them (davroutes
+// narrow.go), and none is left.
+var knownOver = map[string]string{}
+
+// shareProjects shares n new, empty projects of the account with a second
+// member, as the 10,000-task fixture shares three (perfseed.SharedCount): each
+// shared project is one more scope every read of the request goes through, so
+// the account the large one is compared with shares as many. Membership is
+// never an op; the server adds it.
+func shareProjects(t *testing.T, e *env, uid, email string, n int) {
+	t.Helper()
+	ctx := context.Background()
+	a := auth.NewService(e.db, time.Hour, false)
+	owner, err := a.UserByEmail(ctx, email)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, secret, err := a.CreateInvitation(ctx, owner, "member@example.com", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	member, err := a.Register(ctx, "member@example.com", "Member", davPassword, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range n {
+		if _, err := e.sync.AddMember(ctx, uid, seedCalendar(t, e, uid, fmt.Sprintf("shared%d", i), 0), member.ID, opsync.RoleEditor); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 // seedCalendar adds a project of n open tasks to the account through the op log.
@@ -167,8 +193,10 @@ func TestCalDAVLargeAccountBudgets(t *testing.T) {
 	if raceDetector {
 		t.Skip("seeds the 10,000-task account: sequential, and too slow under the race detector (as internal/perfseed)")
 	}
-	// The 1,000-task account the incremental sync and the multiget are compared with.
+	// The 1,000-task account the incremental sync and the multiget are
+	// compared with, sharing as many projects as the large one.
 	se, sc := davSetup(t)
+	shareProjects(t, se, sc.uid, "owner@example.com", perfseed.SharedCount)
 	seedCalendar(t, se, sc.uid, "rest", 500)
 	smallLarge := seedCalendar(t, se, sc.uid, "large", 500)
 	smallSync := syncAfterOneChange(t, se, sc, smallLarge, "large-t0007")

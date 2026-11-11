@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 )
 
 // Read helpers for the CalDAV endpoint (OpenSpec change `caldav`, design D4).
@@ -89,6 +90,39 @@ func (s *Service) ChangedSince(ctx context.Context, userID string, cursor int64)
 	}
 	d.Cursor = max(top, ptop)
 	return d, nil
+}
+
+// ModifiedIDs is Modified for the given ids only, read through the primary
+// key, so serving a few resources of a large account reads only their rows
+// (caldav-verified, "Large-account budgets"). At most MaxListIDs ids.
+func (s *Service) ModifiedIDs(ctx context.Context, userID, entity string, ids []string) (map[string]int64, error) {
+	out := map[string]int64{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	if len(ids) > MaxListIDs {
+		return nil, fmt.Errorf("%w: %d ids, at most %d", ErrInvalidOp, len(ids), MaxListIDs)
+	}
+	acc, err := loadAccess(ctx, s.db, userID)
+	if err != nil {
+		return nil, err
+	}
+	scopes := acc.scopes()
+	rows, err := s.db.QueryContext(ctx, `SELECT entity_id, MAX(ts) FROM scope_fields WHERE scope_id IN (`+placeholders(len(scopes))+`) AND entity = ?
+		AND entity_id IN (`+placeholders(len(ids))+`) GROUP BY entity_id`, append(append(anys(scopes), entity), anys(ids)...)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var ts int64
+		if err := rows.Scan(&id, &ts); err != nil {
+			return nil, err
+		}
+		out[id] = ts
+	}
+	return out, rows.Err()
 }
 
 // Modified returns, for every entity of one kind the user can see, the

@@ -124,7 +124,10 @@ func (d *davRequest) put() {
 		d.precondition(http.StatusForbidden, "c", "max-resource-size")
 		return
 	}
-	v, err := d.load()
+	v, err := d.calendarView(d.path.calendar)
+	if err == nil {
+		err = d.rolesLoaded(v)
+	}
 	if err != nil {
 		d.fail(err)
 		return
@@ -138,7 +141,11 @@ func (d *davRequest) put() {
 		d.precondition(http.StatusForbidden, "d", "need-privileges")
 		return
 	}
-	existing := v.find(cal, d.path.name)
+	existing, err := d.resource(v)
+	if err != nil {
+		d.fail(err)
+		return
+	}
 	etag := ""
 	if existing != nil {
 		_, etag = v.encode(existing)
@@ -146,11 +153,10 @@ func (d *davRequest) put() {
 	if !d.checkPreconditions(etag) {
 		return
 	}
-	// The same UID in another calendar: the client moved the task here.
-	if existing == nil {
-		if other := v.taskByUID(in.UID); other != nil && v.calendarOf(other) != "" {
-			existing = other
-		}
+	existing, err = d.writeView(v, in, existing)
+	if err != nil {
+		d.fail(err)
+		return
 	}
 	var id string
 	var created bool
@@ -165,7 +171,9 @@ func (d *davRequest) put() {
 		return
 	}
 	d.view = nil
-	v, err = d.load()
+	if v, err = d.base(); err == nil {
+		err = d.fetch(v, []string{id})
+	}
 	if err != nil {
 		d.fail(err)
 		return
@@ -324,7 +332,7 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 		}
 	}
 	var line string
-	f["parent_id"], line = v.parentWrite(in, current)
+	f["parent_id"], line = v.parentWrite(in, current, d.path.calendar)
 	if line != "" && extra == "" {
 		extra = line
 	} else if line != "" {
@@ -407,23 +415,6 @@ func (d *davRequest) fields(v *davView, in *caldav.Inbound, current opsync.Entit
 	}
 	f["labels"] = mustJSON(labels)
 	return davFields{f: f, pre: extraOps, post: alarms.ops, touched: alarms.touched}, nil
-}
-
-// parentWrite is the parent_id an inbound VTODO writes, and the RELATED-TO
-// line kept as client data for a parent not known yet (the client may upload
-// it later, and the next PUT resolves it). A parent outside the app
-// password's scope was never served and is kept (sync-scope).
-func (v *davView) parentWrite(in *caldav.Inbound, current opsync.Entity) (json.RawMessage, string) {
-	if in.ParentUID != "" {
-		if p := v.taskByUID(in.ParentUID); p != nil {
-			return mustJSON(idOf(p["id"])), ""
-		}
-		return json.RawMessage("null"), caldav.Prop{Name: "RELATED-TO", Value: caldav.EscapeText(in.ParentUID)}.Line()
-	}
-	if p, ok := v.byID[idOf(current["parent_id"])]; ok && !v.inView(p) {
-		return current["parent_id"], ""
-	}
-	return json.RawMessage("null"), ""
 }
 
 func sameLabels(a, b json.RawMessage) bool {
@@ -598,6 +589,9 @@ func (d *davRequest) update(v *davView, cur opsync.Entity, in *caldav.Inbound) (
 	}
 	var extra []opsync.Op
 	extra = append(extra, extraOps...)
+	if moving {
+		extra = append(extra, v.subtreeMove(id, d.path.calendar, ts, d.op)...)
+	}
 	// Overrides and EXDATE changes become occurrence records (series-exceptions D10).
 	if keep || in.Rule == curRule {
 		extra = append(extra, d.occurrenceOps(v, cur, in, body, ts)...)
@@ -650,67 +644,27 @@ func (d *davRequest) recordMoveName(id string, moving bool, uid string) error {
 	return d.recordName(id, d.path.name, uid)
 }
 
-// copyMove moves a task into a calendar with another sharing scope: a copy is
-// created there under a new id (keeping the client's UID and resource name) and
-// the original is tombstoned.
-func (d *davRequest) copyMove(v *davView, cur opsync.Entity, in *caldav.Inbound) (string, error) {
-	id := ids.New()
-	ts := d.s.opTS()
-	df, err := d.fields(v, in, nil, id, ts)
-	if err != nil {
-		return "", err
-	}
-	f, extraOps := df.f, df.pre
-	f["project_id"] = projectValue(d.path.calendar)
-	if isInboxID(d.path.calendar) {
-		f["workspace_id"] = v.workspaceValue(d.path.calendar)
-	}
-	f["position"] = cur["position"]
-	f["created_at"] = cur["created_at"]
-	f["deleted_at"] = json.RawMessage("null")
-	f["completed_at"] = json.RawMessage("null")
-	if in.Completed {
-		c := d.s.now().UnixMilli()
-		if in.CompletedAt != nil {
-			c = *in.CompletedAt
-		}
-		f["completed_at"] = mustJSON(c)
-	}
-	f["recurrence"] = cur["recurrence"]
-	if in.RRULE == "" {
-		f["recurrence"] = json.RawMessage("null")
-	} else if in.Rule != "" && !opsync.SameJSON(mustJSON(in.Rule), cur["recurrence"]) {
-		f["recurrence"] = mustJSON(in.Rule)
-	}
-	if isNullish(f["recurrence"]) {
-		f["recurrence"] = json.RawMessage("null")
-	}
-	if est, ok := cur["estimate_minutes"]; ok && f["estimate_minutes"] == nil {
-		f["estimate_minutes"] = est
-	}
-	ops := extraOps
-	for field, val := range f {
-		ops = append(ops, d.op("task", id, field, val, ts))
-	}
-	ops = append(ops, df.post...)
-	ops = append(ops, d.op("task", idOf(cur["id"]), "deleted_at", mustJSON(d.s.now().UnixMilli()), ts))
-	if _, err := d.apply(ops); err != nil {
-		return "", err
-	}
-	return id, d.recordName(id, d.path.name, in.UID)
-}
-
 // ---- DELETE ----
 
 func (d *davRequest) delete() {
-	v, err := d.load()
+	v, err := d.calendarView(d.path.calendar)
+	if err == nil && d.path.kind == kindCalendar {
+		v, err = d.load()
+	}
+	if err == nil {
+		err = d.rolesLoaded(v)
+	}
 	if err != nil {
 		d.fail(err)
 		return
 	}
 	switch d.path.kind {
 	case kindResource:
-		t := d.resource(v)
+		t, err := d.resource(v)
+		if err != nil {
+			d.fail(err)
+			return
+		}
 		if t == nil {
 			http.NotFound(d.w, d.r)
 			return
@@ -861,7 +815,7 @@ func (d *davRequest) mkcalendar() {
 		http.Error(d.w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	v, err := d.load()
+	v, err := d.calendars()
 	if err != nil {
 		d.fail(err)
 		return
@@ -966,7 +920,7 @@ func (d *davRequest) proppatch() {
 		http.Error(d.w, "expected a DAV:propertyupdate body", http.StatusBadRequest)
 		return
 	}
-	v, err := d.load()
+	v, err := d.calendars()
 	if err != nil {
 		d.fail(err)
 		return
