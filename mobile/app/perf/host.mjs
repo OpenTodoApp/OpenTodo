@@ -56,6 +56,16 @@ function simctl(...a) {
   return execFileSync('xcrun', ['simctl', ...a], { encoding: 'utf8' }).trim()
 }
 
+/** The app's last log lines on the simulator, for a step that failed. */
+function appLog() {
+  try {
+    return execFileSync('xcrun', ['simctl', 'spawn', 'booted', 'log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'process == "OpenTodo"'], { encoding: 'utf8', maxBuffer: 64 << 20 })
+      .split('\n').filter((l) => /error|exception|fatal|abort|crash|JS|hermes/i.test(l)).slice(-40).join('\n')
+  } catch (e) {
+    return `(no log: ${e.message})`
+  }
+}
+
 function rss(pid) {
   try { return Number(execFileSync('ps', ['-o', 'rss=', '-p', String(pid)], { encoding: 'utf8' }).trim()) * 1024 } catch { return 0 }
 }
@@ -82,14 +92,21 @@ async function run(rowsFile, bundle, out, runs = 3) {
   async function launch(step, { kill = false } = {}) {
     instruction = step
     try { simctl('terminate', 'booted', bundle) } catch { /* not running */ }
+    let fail
     const result = new Promise((resolve, reject) => {
       waiter = resolve
-      setTimeout(() => reject(new Error(`no result for ${JSON.stringify(step)} in 20 min`)), 20 * 60_000)
+      fail = reject
+      setTimeout(() => reject(new Error(`no result for ${JSON.stringify(step)} in 10 min`)), 10 * 60_000)
     })
     const launchedAt = Date.now()
     const pid = Number(simctl('launch', 'booted', bundle).split(':').pop())
     let peak = 0
-    const sampler = setInterval(() => { peak = Math.max(peak, rss(pid)) }, 50)
+    // A process that is gone (a crash at start) fails the step at once, with its log.
+    const sampler = setInterval(() => {
+      const now = rss(pid)
+      if (now === 0) fail(new Error(`the app (pid ${pid}) ended without a result for ${JSON.stringify(step)}: ${appLog()}`))
+      peak = Math.max(peak, now)
+    }, 50)
     try {
       const r = await result
       if (kill) {
