@@ -24,7 +24,6 @@
   "+{n} min": "+{n} min",
   ", {n} repeating": ", {n} recorrentes",
   "/data/backups": "/data/backups",
-  "0 means unlimited. Usage resets on the first day of each month (UTC).": "0 significa ilimitado. O uso é zerado no primeiro dia de cada mês (UTC).",
   "1 day": "1 dia",
   "1 day before": "1 dia antes",
   "1 day before the deadline": "1 dia antes do prazo",
@@ -7447,5 +7446,6 @@
   "Removing a file frees its space at once.": "Remover um arquivo libera o espaço na hora.",
   "Your changes on this page are not saved.": "Suas alterações nesta página não foram salvas.",
   "min": "min",
-  "sessions": "sessões"
+  "sessions": "sessões",
+  "Usage resets on the first day of each month (UTC).": "O uso é zerado no primeiro dia de cada mês (UTC)."
 }

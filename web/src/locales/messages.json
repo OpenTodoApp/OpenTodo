@@ -99,9 +99,6 @@
   "/data/backups": [
     "web/src/app/BackupsPanel.tsx"
   ],
-  "0 means unlimited. Usage resets on the first day of each month (UTC).": [
-    "web/src/app/assistant/AssistantSettings.tsx"
-  ],
   "1 day": [
     "web/src/app/WorkspaceInvites.tsx"
   ],
@@ -20022,6 +20019,9 @@
   ],
   "Usage": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Usage resets on the first day of each month (UTC).": [
+    "web/src/app/assistant/AssistantSettings.tsx"
   ],
   "Usage this month": [
     "web/src/app/assistant/AssistantSettings.tsx"

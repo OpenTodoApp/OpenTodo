@@ -221,7 +221,7 @@ export function OwnerAssistantSettings(p: OwnerViewProps & { onCancel?: () => vo
         description={t('Needed for a model server on your own network (Ollama, LM Studio). Off, the compatible endpoint may only be a public address.')} />
       </FormGroup>
       <FormGroup title={t('Limits')}>
-      <NumberInput label={t('Monthly tokens per person')} description={t('0 means unlimited. Usage resets on the first day of each month (UTC).')}
+      <NumberInput label={t('Monthly tokens per person')} description={t('Usage resets on the first day of each month (UTC).')}
         min={1} max={1_000_000_000} step={10000} noLimit disabled={off}
         value={d.monthly_token_cap_per_user > 0 ? d.monthly_token_cap_per_user : null}
         onChange={(n) => set({ monthly_token_cap_per_user: n ?? 0 })} />

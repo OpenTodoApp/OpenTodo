@@ -32,7 +32,7 @@ There SHALL be no separate overview page. Below 1024 px wide the section list (p
 - **THEN** focus moves to the settings search field and no character is typed
 
 ### Requirement: Section page layout
-A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` when that section's overview is open and `aria-current="true"` when one of its sub-pages is open, and on a sub-page that sub-page's row SHALL be marked `aria-current="page"`. The page SHALL start with the section's name as a 22 px title and its one-line description as the lead line (on a sub-page, the page's name alone), followed by its sections with their own headings. The layout SHALL be the same for every section. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
+A section page SHALL use the compact page header. From 1024 px wide the header SHALL show a breadcrumb, a "Settings" link then the section's name as the page heading (on a sub-page, the section as a link then the page's name as the heading), with the sidebar toggle first and Help at the right; under it the navigation pane SHALL sit beside the page with the current section marked `aria-current="page"` when that section's overview is open and `aria-current="true"` when one of its sub-pages is open, and on a sub-page that sub-page's row SHALL be marked `aria-current="page"`. The page SHALL start with a page head: the section's or sub-page's name as a 22 px title (from 1024 px), then its lead line, which says in one sentence what the page is for, then its scope line when the page's settings do not apply to the viewer's account alone, then its status and primary action when it has them. The lead line and the scope line SHALL also be shown below 1024 px, where the title stays in the page header. The layout SHALL be the same for every section and sub-page. Below 1024 px the page header SHALL carry a back action to the level above. On navigation, focus SHALL move to the section heading. Every control SHALL stay reachable by keyboard.
 
 #### Scenario: Desktop section
 - **WHEN** a user opens `/settings/data` on a 1200 px wide screen
@@ -40,7 +40,7 @@ A section page SHALL use the compact page header. From 1024 px wide the header S
 
 #### Scenario: Phone section
 - **WHEN** a user opens `/settings/data` on a 390 px wide screen
-- **THEN** the page header has a back action to the list and no section list is shown beside the content
+- **THEN** the page header has a back action to the list, no section list is shown beside the content, and the page starts with its lead line
 
 #### Scenario: Focus after navigation
 - **WHEN** a keyboard user activates the Notifications entry
@@ -53,6 +53,18 @@ A section page SHALL use the compact page header. From 1024 px wide the header S
 #### Scenario: Current sub-page in the pane
 - **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
 - **THEN** the Webhooks row under Integrations is marked `aria-current="page"` and the Integrations row is marked `aria-current="true"`
+
+#### Scenario: Sub-page lead line
+- **WHEN** a user opens `/settings/integrations/webhooks` on a 1280 px wide screen
+- **THEN** the title "Webhooks" is followed by one line saying that webhooks send a signed request to an address when tasks and projects change, and no section heading below repeats "Webhooks"
+
+#### Scenario: Server scope
+- **WHEN** the owner opens `/settings/server/outgoing-email` on a 1280 px or a 390 px wide screen
+- **THEN** the page head says that the setting applies to everyone on this server, before any row
+
+#### Scenario: Device scope
+- **WHEN** a user opens `/settings/language/calendar`
+- **THEN** the page head says that these settings apply to this device only
 
 ### Requirement: Sub-page navigation
 From 1024 px a sub-page's header SHALL read as a breadcrumb "Settings › <section> › <page>", where the section links to its overview, and the navigation pane SHALL mark that sub-page's row as the current page and the section row as the current section. Choosing a sub-page row SHALL open that sub-page. Choosing the section row SHALL open the overview, which keeps each sub-page's state in a word. Below 1024 px each level SHALL be its own page: the section list, the overview with a back action to the list, and the sub-page with a back action to its overview, and the section list SHALL NOT list sub-pages. Going back from a sub-page to its overview SHALL put focus on that sub-page's row; opening a sub-page SHALL put focus on its heading. The sub-page's Help link SHALL open the guide section of its main card.

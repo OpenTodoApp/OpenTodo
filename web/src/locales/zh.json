@@ -24,7 +24,6 @@
   "+{n} min": "+{n} 分钟",
   ", {n} repeating": "，{n} 项重复",
   "/data/backups": "/data/backups",
-  "0 means unlimited. Usage resets on the first day of each month (UTC).": "0 表示无限制。用量会在每月第一天（UTC）重置。",
   "1 day": "1 天",
   "1 day before": "提前 1 天",
   "1 day before the deadline": "最后期限前 1 天",
@@ -7447,5 +7446,6 @@
   "Removing a file frees its space at once.": "移除文件会立即释放其空间。",
   "Your changes on this page are not saved.": "此页面上的更改尚未保存。",
   "min": "分钟",
-  "sessions": "轮"
+  "sessions": "轮",
+  "Usage resets on the first day of each month (UTC).": "用量会在每月第一天（UTC）重置。"
 }
