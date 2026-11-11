@@ -1,6 +1,6 @@
 ## 1. The address
 
-- [ ] 1.1 Set `FEEDBACK_EMAIL` beside `ISSUES_URL` to the mailbox the maintainer names. Do not invent one. Verify the constant is the address named in `docs/feedback-and-support.md`.
+- [x] 1.1 Set `FEEDBACK_EMAIL` beside `ISSUES_URL` to the mailbox the maintainer names. Do not invent one. Verify the constant is the address named in `docs/feedback-and-support.md`. The maintainer named info@open-todo.app on 2026-11-11; `FEEDBACK_EMAIL` and the guide both use it.
 
 ## 2. The dialog
 
