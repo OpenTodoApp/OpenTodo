@@ -54,7 +54,10 @@ export default function PerfApp() {
     const start = g.__perfStart ?? 0
     const jsStartedAt = g.__perfStartedAt
     void (async () => {
+      const asked = performance.now()
       const step = await (await fetch(`${HOST}/next`)).json() as Step
+      // The harness's own request for the step, inside JS start to Today: reported apart.
+      const instructionMs = Math.round(performance.now() - asked)
       try {
         setStatus(step.phase)
         let r: Record<string, unknown>
@@ -71,7 +74,7 @@ export default function PerfApp() {
         } else {
           r = await verify(step.id ?? '')
         }
-        await post('/result', { ...r, jsStartedAt, hermes: hermesStats() })
+        await post('/result', { ...r, jsStartedAt, instructionMs, hermes: hermesStats() })
         setStatus('Done')
       } catch (e) {
         const error = e instanceof Error ? `${e.name}: ${e.message}\n${e.stack ?? ''}` : String(e)

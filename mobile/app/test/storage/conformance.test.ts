@@ -229,6 +229,24 @@ describe('the SQLite adapter on its own', () => {
     expect(await sqliteDatabase(declared, sql).tasks.count()).toBe(0)
   })
 
+  it('brings an existing file up to a newer schema, indexing the rows it holds', async () => {
+    const sql = nodeSqlite()
+    const v1 = new Dexie('migrating')
+    v1.version(1).stores({ items: 'id' })
+    const first = sqliteDatabase(v1, sql)
+    await first.table('items').bulkPut([{ id: 'a', x: 2 }, { id: 'b', x: 1 }, { id: 'c' }])
+    first.close()
+    const v2 = new Dexie('migrating')
+    v2.version(1).stores({ items: 'id' })
+    v2.version(2).stores({ items: 'id, x', more: '++n' })
+    const again = sqliteDatabase(v2, sql)
+    expect(await again.table('items').orderBy('x').primaryKeys()).toEqual(['b', 'a'])
+    expect(await again.table('more').count()).toBe(0)
+    again.close()
+    // Unchanged: opened again without touching the schema.
+    expect(await sqliteDatabase(v2, sql).table('items').where('x').equals(2).primaryKeys()).toEqual(['a'])
+  })
+
   it('reports the stores each committed write changed', async () => {
     const db = sqlite()
     const seen: string[][] = []

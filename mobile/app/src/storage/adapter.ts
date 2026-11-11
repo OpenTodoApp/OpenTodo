@@ -28,6 +28,9 @@ type Row = Record<string, unknown>
 type Key = string | number
 type Change = (stores: ReadonlySet<string>) => void
 
+/** The schema the file was last brought up to (schema.ts's stores, as JSON). */
+const SCHEMA = quote('opentodo:schema')
+
 /** A value JSON keeps as it is: refuse the rest rather than store `{}` in its place. */
 function plain(this: unknown, _key: string, value: unknown): unknown {
   if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
@@ -144,9 +147,25 @@ class Database implements SqliteDatabase {
       // can take the last commits, never corrupt the file.
       await c.column('PRAGMA journal_mode = WAL')
       await c.run('PRAGMA synchronous = NORMAL')
-      for (const t of this.tables) {
-        const existing = new Set((await c.column(`SELECT name FROM pragma_table_xinfo(?)`, [t.name])) as string[])
-        for (const statement of ddl(t.store, existing)) await c.run(statement)
+      // The schema is brought up to the declared one only when it changed since the
+      // last open: a cold start reads one row instead of checking every table.
+      const declared = JSON.stringify(this.tables.map((t) => t.store))
+      const [stored] = await c.column(`SELECT sig FROM ${SCHEMA}`).catch(() => [null])
+      if (stored !== declared) {
+        await c.run('BEGIN IMMEDIATE')
+        try {
+          for (const t of this.tables) {
+            const existing = new Set((await c.column(`SELECT name FROM pragma_table_xinfo(?)`, [t.name])) as string[])
+            for (const statement of ddl(t.store, existing)) await c.run(statement)
+          }
+          await c.run(`CREATE TABLE IF NOT EXISTS ${SCHEMA} (sig TEXT NOT NULL)`)
+          await c.run(`DELETE FROM ${SCHEMA}`)
+          await c.run(`INSERT INTO ${SCHEMA} (sig) VALUES (?)`, [declared])
+          await c.run('COMMIT')
+        } catch (e) {
+          await c.run('ROLLBACK').catch(() => undefined)
+          throw e
+        }
       }
       return c
     })()
