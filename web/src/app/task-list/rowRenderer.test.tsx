@@ -25,7 +25,7 @@ function context(over: Partial<RowContext> = {}): RowContext {
   return {
     view: 'project', projectMap: new Map(), labelMap: LABELS, memberMap: new Map(), selectedId: null, progress: new Map(), blocked: new Map(),
     habits: new Map(), isReadOnly: readOnly, board: false, manual: true, treeView: true, dropAt: null, draggingId: null, ticked: NONE, showCheckbox: false,
-    fieldColumns: false, projectFieldDefs: FIELDS, siblingPos: new Map(), timeColumn: false, actions, addingUnder: null, onCloseSubtask: noop, ...over,
+    fieldColumns: false, projectFieldDefs: FIELDS, siblingPos: new Map(), timeColumn: false, actions, addingUnder: null, onCloseSubtask: noop, subtaskAddOpen: null, openSubtaskAdd: noop, ...over,
   }
 }
 

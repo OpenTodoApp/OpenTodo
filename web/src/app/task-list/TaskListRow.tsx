@@ -138,3 +138,24 @@ export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: 
   return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
     placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
 }
+
+/**
+ * The muted "Add a subtask" line at the end of a parent's visible subtasks
+ * (quick-subtask-add): a ghost that swaps to the same input `a` opens.
+ */
+export function SubtaskAddLine({ parent, depth, open, onOpen, onClose }: { parent: Task; depth: number; open: boolean; onOpen: () => void; onClose: () => void }) {
+  if (open) return <SubtaskInput parent={parent} depth={depth} onClose={onClose} />
+  return (
+    <button
+      type="button"
+      data-subtask-add-line
+      aria-label={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')}
+      className="flex min-h-8 w-full items-center gap-2 py-1 pr-2 text-left text-faint hover:text-default pointer-coarse:min-h-11"
+      style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}
+      onClick={onOpen}
+    >
+      <span className="text-faint">+</span>
+      <span className="text-meta">{t('Add a subtask')}</span>
+    </button>
+  )
+}

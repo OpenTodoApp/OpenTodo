@@ -1,7 +1,7 @@
 // Where a list draws its "Add task below" line (OpenSpec change add-below, GitHub
 // issue 1036): after the row and its visible subtasks, then after each task the line
 // added, at the row's own indent, so the line sits where the next task will appear.
-import { useCallback, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
 
@@ -53,7 +53,12 @@ export function useBelowLine(rows: readonly ListRow[], state: AddingBelow | null
 export function useAddLines(rows: readonly ListRow[], ui: { addingUnder: string | null; setAddingUnder: Dispatch<SetStateAction<string | null>>; addingBelow: AddingBelow | null; setAddingBelow: Dispatch<SetStateAction<AddingBelow | null>> }) {
   const { addingUnder, setAddingUnder, setAddingBelow } = ui
   const addingBelow = useBelowLine(rows, ui.addingBelow)
-  const onCloseSubtask = useCallback(() => { setAddingUnder(null); setAddingBelow(null) }, [setAddingUnder, setAddingBelow])
+  /** The parent whose list "Add a subtask" line is open (quick-subtask-add): one at a time, and it follows the parent's last visible subtask. */
+  const [subtaskAddOpen, setSubtaskAddOpen] = useState<string | null>(null)
+  const openSubtaskAdd = useCallback((id: string) => { setSubtaskAddOpen(id); setAddingUnder(null); setAddingBelow(null) }, [setAddingUnder, setAddingBelow])
+  // `a` and the row menu set addingUnder/addingBelow through `ui` directly: one inline add input at a time.
+  useEffect(() => { if (addingUnder || ui.addingBelow) setSubtaskAddOpen(null) }, [addingUnder, ui.addingBelow])
+  const onCloseSubtask = useCallback(() => { setAddingUnder(null); setAddingBelow(null); setSubtaskAddOpen(null) }, [setAddingUnder, setAddingBelow])
   const onAddedBelow = useCallback((anchor: string, id: string) => setAddingBelow((s) => (s && s.anchor === anchor ? { ...s, last: id } : s)), [setAddingBelow])
-  return { addingUnder, addingBelow, onAddedBelow, onCloseSubtask }
+  return { addingUnder, addingBelow, onAddedBelow, onCloseSubtask, subtaskAddOpen, openSubtaskAdd }
 }
