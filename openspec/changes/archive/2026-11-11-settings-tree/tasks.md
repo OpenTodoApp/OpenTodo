@@ -4,4 +4,4 @@
 
 ## 2. Check
 
-- [ ] 2.1 `cd web && npm test && npm run build`, then `make check`.
+- [x] 2.1 `cd web && npm test && npm run build`, then `make check`. Passed on 2026-11-11 with TZ=UTC: `make web`, `go test ./...`, web `npm test` (767 files, 8,939 tests) and `npm run build`; `make check` passed except that its `npm run test:perf` step ran out of the default Node heap on the local machine, so it was rerun with `NODE_OPTIONS=--max-old-space-size=6144` (8 files, 22 tests passed) and the steps after it (`test-extension` to `repo-check`) were run on their own and passed.
