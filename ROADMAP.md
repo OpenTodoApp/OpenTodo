@@ -161,6 +161,20 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
 | [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
+| [`notes-in-routines`](openspec/changes/notes-in-routines/) | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
+| [`note-attachments`](openspec/changes/note-attachments/) | Images and files in standalone notes | |
+| [`note-checklist-tasks`](openspec/changes/note-checklist-tasks/) | Turn checklist lines of a note into tasks, each line becoming a link to its task | |
+| [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
+| [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
+| [`notes-sort`](openspec/changes/notes-sort/) | Sort the Notes list by last change, creation or title | |
+| [`notes-bulk-actions`](openspec/changes/notes-bulk-actions/) | Select several notes to move, label, pin, trash or turn into tasks at once | |
+| [`note-markdown-source`](openspec/changes/note-markdown-source/) | Edit a note's Markdown source as plain text | |
+| [`note-outline`](openspec/changes/note-outline/) | An outline of a long note's headings | |
+| [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
+| [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
+| [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
+| [`note-webhooks`](openspec/changes/note-webhooks/) | Opt-in note events for webhooks | |
+| [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |
 
 The changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
 
