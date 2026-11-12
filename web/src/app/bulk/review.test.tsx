@@ -41,6 +41,20 @@ describe('bulk review', () => {
     await r.unmount()
   })
 
+  it('Enter right after the review appears applies it (#1236): focus moves from the dialog into the review', async () => {
+    const { home, ids, plan } = await sixIntoShared()
+    let closed = false
+    const r = await render(<BulkReview title="Move 6 tasks to Home" plan={plan} onClose={() => { closed = true }} />)
+    await waitFor(() => document.querySelectorAll('[data-bulk-review] input[type="checkbox"]').length === 6)
+    await waitFor(() => !!document.activeElement?.closest('[data-bulk-review]'))
+    await key(document.activeElement!, 'Enter')
+    await waitFor(() => closed)
+    expect(bulkToast()?.label).toBe('6 changes applied')
+    for (const id of ids) expect((await db.tasks.get(id))!.deleted_at).not.toBeNull()
+    expect((await db.tasks.filter((t) => t.project_id === home && !t.deleted_at).count())).toBe(6)
+    await r.unmount()
+  })
+
   it('Escape writes nothing', async () => {
     const { plan } = await sixIntoShared()
     let closed = false
