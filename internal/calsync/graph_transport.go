@@ -130,7 +130,7 @@ func (t *graphTransport) version(ctx context.Context, cal string) (version, erro
 	return version{ctag: "gv:" + v}, nil
 }
 
-func (t *graphTransport) changes(ctx context.Context, cal string, _ version, _ string) (*listing, error) {
+func (t *graphTransport) changes(ctx context.Context, cal string, _ version, _ string, _ []string) (*listing, error) {
 	if l := t.deltas[cal]; l != nil {
 		return l, nil
 	}

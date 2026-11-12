@@ -175,6 +175,7 @@ The server cannot read an encrypted account's titles and notes. With encryption 
 
 - Up to 3 calendar accounts per person; one calendar to write into and up to 10 shown per account.
 - Up to 200 events written or removed per check; the rest follows about 20 seconds later.
+- No answer from a calendar server is read past 4 MB, so a large calendar is read in pieces. A calendar's events (about two months back to thirteen months ahead) are asked for in one request; when the answer would be larger, the server asks for each half of that time instead, down to single days, and reads a day that is still too large event by event in batches of up to 50. When the list of changes is too large (the first sync of a calendar with years of history, for example), only the events OpenTodo wrote are read back, and the next checks read only what changed since. Only a single event over 4 MB stops the sync, with "The calendar server sent more than 4 MB at once". There is no setting for the limit.
 - Repeating tasks are written as their next occurrence, not as a series. Alarms, attendees and invitations are not written.
 - Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back (for a multi-day task, its start and due dates).
 - Calendar sync is refused on a public demo instance.

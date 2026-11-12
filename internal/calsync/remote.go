@@ -140,53 +140,174 @@ type object struct {
 	Data []byte
 }
 
-// multiget reads calendar objects by href, in batches.
+// Reads that fit (issue 1226): no answer may exceed MaxBody, so a read whose
+// answer would is split into smaller ones instead of failing. A single event
+// over MaxBody is still too_large.
+
+// multigetBody is a calendar-multiget of hrefs, with calendar-data or ETags only.
+func multigetBody(hrefs []string, data bool) string {
+	var b strings.Builder
+	b.WriteString(`<?xml version="1.0" encoding="utf-8"?><c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/>`)
+	if data {
+		b.WriteString(`<c:calendar-data/>`)
+	}
+	b.WriteString(`</d:prop>`)
+	for _, h := range hrefs {
+		p := h
+		if u, err := url.Parse(h); err == nil {
+			p = u.EscapedPath()
+		}
+		b.WriteString("<d:href>" + caldav.Esc(p) + "</d:href>")
+	}
+	b.WriteString(`</c:calendar-multiget>`)
+	return b.String()
+}
+
+// multigetEach reads hrefs in batches of MultigetBatch, halving a batch whose
+// answer is over MaxBody, and hands each response to fn.
+func (d *DAV) multigetEach(ctx context.Context, cal string, hrefs []string, data bool, fn func(Resource)) error {
+	for i := 0; i < len(hrefs); i += MultigetBatch {
+		if err := d.multigetBatch(ctx, cal, hrefs[i:min(i+MultigetBatch, len(hrefs))], data, fn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d *DAV) multigetBatch(ctx context.Context, cal string, hrefs []string, data bool, fn func(Resource)) error {
+	ms, err := d.Report(ctx, cal, "1", multigetBody(hrefs, data))
+	if reasonOf(err) == ReasonTooLarge && len(hrefs) > 1 {
+		half := len(hrefs) / 2
+		if err := d.multigetBatch(ctx, cal, hrefs[:half], data, fn); err != nil {
+			return err
+		}
+		return d.multigetBatch(ctx, cal, hrefs[half:], data, fn)
+	}
+	if err != nil {
+		return davError(err)
+	}
+	for _, r := range ms.Resources {
+		fn(r)
+	}
+	return nil
+}
+
+// multiget reads calendar objects by href.
 func (d *DAV) multiget(ctx context.Context, cal string, hrefs []string) (map[string]object, error) {
 	out := map[string]object{}
-	for i := 0; i < len(hrefs); i += MultigetBatch {
-		end := min(i+MultigetBatch, len(hrefs))
-		var b strings.Builder
-		b.WriteString(`<?xml version="1.0" encoding="utf-8"?><c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop>`)
-		for _, h := range hrefs[i:end] {
-			p := h
-			if u, err := url.Parse(h); err == nil {
-				p = u.EscapedPath()
-			}
-			b.WriteString("<d:href>" + caldav.Esc(p) + "</d:href>")
-		}
-		b.WriteString(`</c:calendar-multiget>`)
-		ms, err := d.Report(ctx, cal, "1", b.String())
-		if err != nil {
-			return nil, davError(err)
-		}
-		for _, r := range ms.Resources {
-			data := r.Text(caldav.NSCalDAV, "calendar-data")
-			if data == "" {
-				continue
-			}
+	err := d.multigetEach(ctx, cal, hrefs, true, func(r Resource) {
+		if data := r.Text(caldav.NSCalDAV, "calendar-data"); data != "" {
 			out[hrefKey(r.Href)] = object{Href: r.Href, ETag: r.Text(caldav.NSDAV, "getetag"), Data: []byte(data)}
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	return out, nil
 }
 
-// query reads every event of a calendar that touches the window.
-func (d *DAV) query(ctx context.Context, cal string, win calfeed.Window) ([]object, error) {
-	stamp := func(t time.Time) string { return t.UTC().Format("20060102T150405Z") }
-	body := `<?xml version="1.0" encoding="utf-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:getetag/><c:calendar-data/></d:prop>` +
-		`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"><c:time-range start="` + stamp(win.From) + `" end="` + stamp(win.To) +
-		`"/></c:comp-filter></c:comp-filter></c:filter></c:calendar-query>`
-	ms, err := d.Report(ctx, cal, "1", body)
+// knownListing is the listing of a calendar whose changes are too large for
+// one answer: the ETags of the events OpenTodo wrote (known), read back by
+// multiget, those the calendar no longer has as removed, and the calendar's
+// current sync token to continue from.
+func (d *DAV) knownListing(ctx context.Context, cal string, ver version, known []string) (*listing, error) {
+	l := newListing()
+	l.syncToken = ver.syncToken
+	err := d.multigetEach(ctx, cal, known, false, func(r Resource) {
+		k := hrefKey(r.Href)
+		switch etag := r.Text(caldav.NSDAV, "getetag"); {
+		case r.Status == http.StatusNotFound:
+			l.removed[k] = true
+		case etag != "":
+			l.changed[k], l.hrefs[k] = etag, r.Href
+		}
+	})
 	if err != nil {
-		return nil, davError(err)
+		return nil, err
 	}
-	var out []object
+	return l, nil
+}
+
+// query reads every event of a calendar that touches the window: in one
+// calendar-query when its answer fits, else the halves of the window down to
+// MinQuerySpan, and a piece that still does not fit by its ETags and
+// multiget. An event in several pieces is kept once.
+func (d *DAV) query(ctx context.Context, cal string, win calfeed.Window) ([]object, error) {
+	q := &windowRead{d: d, cal: cal, seen: map[string]bool{}}
+	if err := q.read(ctx, win); err != nil {
+		return nil, err
+	}
+	return q.out, nil
+}
+
+type windowRead struct {
+	d    *DAV
+	cal  string
+	seen map[string]bool
+	out  []object
+}
+
+func (q *windowRead) add(o object) {
+	if k := hrefKey(o.Href); !q.seen[k] {
+		q.seen[k] = true
+		q.out = append(q.out, o)
+	}
+}
+
+func (q *windowRead) read(ctx context.Context, win calfeed.Window) error {
+	ms, err := q.d.Report(ctx, q.cal, "1", queryBody(win, true))
+	if reasonOf(err) == ReasonTooLarge {
+		if span := win.To.Sub(win.From); span > MinQuerySpan {
+			mid := win.From.Add(span / 2)
+			if err := q.read(ctx, calfeed.Window{From: win.From, To: mid}); err != nil {
+				return err
+			}
+			return q.read(ctx, calfeed.Window{From: mid, To: win.To})
+		}
+		return q.byETag(ctx, win)
+	}
+	if err != nil {
+		return davError(err)
+	}
 	for _, r := range ms.Resources {
 		if data := r.Text(caldav.NSCalDAV, "calendar-data"); data != "" {
-			out = append(out, object{Href: r.Href, ETag: r.Text(caldav.NSDAV, "getetag"), Data: []byte(data)})
+			q.add(object{Href: r.Href, ETag: r.Text(caldav.NSDAV, "getetag"), Data: []byte(data)})
 		}
 	}
-	return out, nil
+	return nil
+}
+
+// byETag reads a piece of the window too large for one answer: its members
+// by ETag, then their data by multiget.
+func (q *windowRead) byETag(ctx context.Context, win calfeed.Window) error {
+	ms, err := q.d.Report(ctx, q.cal, "1", queryBody(win, false))
+	if err != nil {
+		return davError(err)
+	}
+	var hrefs []string
+	for _, r := range ms.Resources {
+		if hrefKey(r.Href) != hrefKey(q.cal) && !q.seen[hrefKey(r.Href)] {
+			hrefs = append(hrefs, r.Href)
+		}
+	}
+	return q.d.multigetEach(ctx, q.cal, hrefs, true, func(r Resource) {
+		if data := r.Text(caldav.NSCalDAV, "calendar-data"); data != "" {
+			q.add(object{Href: r.Href, ETag: r.Text(caldav.NSDAV, "getetag"), Data: []byte(data)})
+		}
+	})
+}
+
+// queryBody is a calendar-query of the events touching win, with
+// calendar-data or ETags only.
+func queryBody(win calfeed.Window, data bool) string {
+	stamp := func(t time.Time) string { return t.UTC().Format("20060102T150405Z") }
+	prop := `<d:getetag/>`
+	if data {
+		prop += `<c:calendar-data/>`
+	}
+	return `<?xml version="1.0" encoding="utf-8"?><c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop>` + prop + `</d:prop>` +
+		`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"><c:time-range start="` + stamp(win.From) + `" end="` + stamp(win.To) +
+		`"/></c:comp-filter></c:comp-filter></c:filter></c:calendar-query>`
 }
 
 // put writes a calendar object: create (If-None-Match: *) when etag is "*",

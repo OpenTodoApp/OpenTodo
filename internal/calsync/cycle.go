@@ -105,7 +105,12 @@ func (r *cycle) loadTasks(ctx context.Context) error {
 
 // pull applies what changed in the calendar to the linked tasks (design D8).
 func (r *cycle) pull(ctx context.Context) error {
-	l, err := r.tr.changes(ctx, r.target, r.ver, r.c.SyncToken)
+	known := make([]string, 0, len(r.byHref))
+	for _, link := range r.byHref {
+		known = append(known, link.Href)
+	}
+	sort.Strings(known)
+	l, err := r.tr.changes(ctx, r.target, r.ver, r.c.SyncToken, known)
 	if err != nil {
 		return err
 	}
