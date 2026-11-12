@@ -1,0 +1,1 @@
+- **Archived projects no longer send reminders.** An unfinished task's reminder still fired after its project was archived, in the app, by push, through notification channels and in the mobile app. It now waits like a reminder in the Trash: unarchive the project and it fires again, a missed one once, late.

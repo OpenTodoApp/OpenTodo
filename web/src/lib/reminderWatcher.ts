@@ -25,21 +25,22 @@ export interface DueReminder {
   task: Task
 }
 
-type ProjectLink = Pick<Project, 'id' | 'parent_id' | 'deleted_at'>
+export type ProjectLink = Pick<Project, 'id' | 'parent_id' | 'deleted_at'> & { archived?: boolean }
 
 /**
- * Whether a project, or any project above it, is in the Trash (OpenSpec
- * `reminders`). Unknown projects end the walk; a cycle from concurrent moves is
- * stopped by the seen set. Mirrors `projectTrashed` in internal/push.
+ * Whether a project, or any project above it, is in the Trash or archived: the
+ * reminders of its tasks wait (OpenSpec `reminders`). Unknown projects end the
+ * walk; a cycle from concurrent moves is stopped by the seen set. The server's
+ * twin is `projectQuiet` in internal/push; both read reminderProjects.vectors.json.
  */
-export function inTrashedProject(projectId: string | null | undefined, projects: Map<string, ProjectLink>): boolean {
+export function inQuietProject(projectId: string | null | undefined, projects: Map<string, ProjectLink>): boolean {
   const seen = new Set<string>()
   let id = projectId ?? null
   while (id && !seen.has(id)) {
     seen.add(id)
     const p = projects.get(id)
     if (!p) return false
-    if (p.deleted_at) return true
+    if (p.deleted_at || p.archived) return true
     id = p.parent_id ?? null
   }
   return false
@@ -47,9 +48,9 @@ export function inTrashedProject(projectId: string | null | undefined, projects:
 
 /**
  * The reminders due at `now`: fired, live, not dismissed for this firing, on an open
- * task outside any trashed project, and not already shown by the service worker
- * for the same firing time. Oldest first. A reminder skipped while its project is
- * trashed shows again once the project is restored.
+ * task outside any trashed or archived project, and not already shown by the service
+ * worker for the same firing time. Oldest first. A reminder skipped while its project
+ * is trashed or archived shows again once the project is restored or unarchived.
  */
 export function dueReminders(
   reminders: Reminder[],
@@ -62,7 +63,7 @@ export function dueReminders(
   for (const r of reminders) {
     const task = tasks.get(r.task_id)
     if (!isDue(r, task, now)) continue
-    if (inTrashedProject(task?.project_id, projects)) continue
+    if (inQuietProject(task?.project_id, projects)) continue
     const s = shown[r.id]
     if (s && s.by === 'sw' && s.fireAt === r.fire_at) continue
     out.push({ reminder: r, task: task as Task })
