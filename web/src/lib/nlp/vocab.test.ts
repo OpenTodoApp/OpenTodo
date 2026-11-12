@@ -1,5 +1,5 @@
 // The Go port of quick add (internal/quickadd, OpenSpec change
-// quick-add-recurrence D5) embeds the six vocabularies as JSON, folded with
+// quick-add-recurrence D5) embeds the bundled vocabularies as JSON, folded with
 // normalize() so Go can match plainly. This test fails when the file is stale.
 // Regenerate with: npm run nlp:vocab
 import { readFileSync, writeFileSync } from 'node:fs'

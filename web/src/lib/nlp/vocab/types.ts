@@ -82,6 +82,14 @@ export interface Vocabulary {
   timeWords: Record<string, string>
   am: string[]
   pm: string[]
+  /** "half" before an hour: half an hour before it, Dutch "om half 4" = 03:30 (more-languages D3). */
+  halfWords: string[]
+  /**
+   * Weekday abbreviations that are also ordinary words (Dutch "ma", "zo"): a weekday
+   * only after a before, every, next or this word, or before a day and month, a
+   * numeric date or a time (more-languages D3).
+   */
+  guardedAbbreviations: string[]
   // ---- recurrence phrases (OpenSpec change quick-add-recurrence, design D2) ----
   /** Words that start a recurrence phrase ("every", "jeden", "tous les"). */
   every: string[]

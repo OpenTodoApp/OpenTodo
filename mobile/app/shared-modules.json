@@ -80,6 +80,7 @@
     "web/src/lib/nlp/vocab/fr.ts",
     "web/src/lib/nlp/vocab/index.ts",
     "web/src/lib/nlp/vocab/it.ts",
+    "web/src/lib/nlp/vocab/nl.ts",
     "web/src/lib/nlp/vocab/pt.ts",
     "web/src/lib/nlp/vocab/types.ts",
     "web/src/lib/noteAppends.ts",

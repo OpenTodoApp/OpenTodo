@@ -61,6 +61,8 @@ export const fr: Vocabulary = {
   timeWords: { midi: '12:00', minuit: '00:00' },
   am: [],
   pm: [],
+  halfWords: [],
+  guardedAbbreviations: [],
   every: ['tous les', 'toutes les', 'chaque'],
   everyOne: { quotidiennement: 'day', hebdomadairement: 'week', mensuellement: 'month', annuellement: 'year' },
   weekdayAll: ['jour ouvré', 'jours ouvrés', 'jour ouvrable', 'jours ouvrables'],

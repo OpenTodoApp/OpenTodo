@@ -98,7 +98,7 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | --- | --- | --- | --- |
 | Deutsch, Français, Español, Italiano, Português | `de`, `fr`, `es`, `it`, `pt` | maintained | the project maintainers |
 | 简体中文 | `zh` | maintained | peilf |
-| Nederlands | `nl` | maintained, catalog in review in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
+| Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
 
 ## Writing a quick-add vocabulary
 
@@ -107,7 +107,7 @@ Quick add understands dates, times, repeats and reminders in a language only wit
 1. Fill `web/src/lib/nlp/vocab/<code>.ts` (the scaffold writes it empty, shaped like `en.ts`): lower-case words and phrases, the weekdays from Monday, the months from January, `dayMonthOrder` for a numeric date such as 3/4. Leave a list empty when the language has no such word.
 2. Add it to `VOCABULARIES` in `web/src/lib/nlp/vocab/index.ts`, run `npm run nlp:vocab` in `web/` to write the Go parser's copy (`internal/quickadd/vocab.json`), and add the code to `quickadd.Bundled` (`internal/quickadd/vocab.go`).
 3. Add cases to `web/src/lib/nlp/quickadd.vectors.json` with the language in `ctx.languages`: at least one per kind of phrase (a day word, a weekday, a month, a time, a repeat, a reminder, a deadline), and a title that contains one of the words and must stay a title. Both parsers run every case, so `npm test -- nlp` and `go test ./internal/quickadd/` must agree.
-4. Word a phrase as people type it and keep it short: a word that is also common in English is parsed only while the language is active.
+4. Word a phrase as people type it and keep it short: a word that is also common in English is parsed only while the language is active. Two lists cover ambiguities inside the language itself: `guardedAbbreviations` holds abbreviations that are also ordinary words (Dutch `ma`, "mum", and `zo`, "so"), which then count as a weekday only next to a date, and `halfWords` reads "half 4" as half past three where the language counts half hours that way (Dutch `om half 4`). `nl.ts` is a complete example of both.
 
 ## Glossary
 

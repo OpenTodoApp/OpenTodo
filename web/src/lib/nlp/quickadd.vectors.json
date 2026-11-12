@@ -1,5 +1,5 @@
 {
- "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). Every scenario of its spec deltas is a case.",
+ "comment": "Quick-add vectors shared by web/src/lib/nlp (nlp.test.ts) and internal/quickadd (vectors_test.go), OpenSpec changes quick-add-recurrence, quick-add-nth-weekday and time-tracking (spentMinutes) and day-parts (ctx.dayParts; dayPart and evening are compared when a case states them) and task-energy (ctx.energy; energy, \"\" for none, is compared when a case states it) and time-sectors (ctx.sectors and ctx.weekStart; sector, \"\" for none, is compared when a case states it) and quick-add-month-and-every-other (bare months, \"every other\") and quick-add-by-deadline (\"by\" words; deadline, \"\" for none, is compared when a case states it) and quick-add-weekday-recurrence (every other weekday, week intervals on a weekday, start phrases, connectors) and recurrence-1-0-compatible (a rule on one weekday whose due date falls on it is every N weeks). and more-languages (Dutch: half hours, 's middags, guarded weekday abbreviations, a weekday before a date). Every scenario of its spec deltas is a case.",
  "cases": [
   {
    "name": "Water plants every Monday",
@@ -7560,6 +7560,1527 @@
     "estimateMinutes": null,
     "spentMinutes": null,
     "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Water geven vandaag",
+   "line": "Water geven vandaag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Water geven",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Bellen vanavond",
+   "line": "Bellen vanavond",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bellen",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
+   }
+  },
+  {
+   "name": "Dutch: Huur betalen morgen",
+   "line": "Huur betalen morgen",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Huur betalen",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Feest overmorgen",
+   "line": "Feest overmorgen",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Feest",
+    "due": {
+     "date": "2026-10-11"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Sporten maandag",
+   "line": "Sporten maandag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sporten",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Boodschappen zaterdag",
+   "line": "Boodschappen zaterdag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Boodschappen",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Sporten op vr",
+   "line": "Sporten op vr",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sporten",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch abbreviation alone: Bel ma",
+   "line": "Bel ma",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bel ma",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch abbreviation with a time: Bel ma om 9 uur",
+   "line": "Bel ma om 9 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bel",
+    "due": {
+     "date": "2026-10-12",
+     "time": "09:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch abbreviation before a date: Vergadering ma 1 mrt",
+   "line": "Vergadering ma 1 mrt",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Vergadering",
+    "due": {
+     "date": "2027-03-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch abbreviation after en: Kaas en zo",
+   "line": "Kaas en zo",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Kaas en zo",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Verjaardag 3 maart",
+   "line": "Verjaardag 3 maart",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Verjaardag",
+    "due": {
+     "date": "2027-03-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Verjaardag 3-3",
+   "line": "Verjaardag 3-3",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Verjaardag",
+    "due": {
+     "date": "2027-03-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Belastingaangifte op 1 mei 2027",
+   "line": "Belastingaangifte op 1 mei 2027",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Belastingaangifte",
+    "due": {
+     "date": "2027-05-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Tandarts volgende woensdag om 15 uur",
+   "line": "Tandarts volgende woensdag om 15 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Tandarts",
+    "due": {
+     "date": "2026-10-14",
+     "time": "15:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Factuur volgende week",
+   "line": "Factuur volgende week",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Factuur",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Factuur volgende maand",
+   "line": "Factuur volgende maand",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Factuur",
+    "due": {
+     "date": "2026-11-01"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Mail over 3 dagen",
+   "line": "Mail over 3 dagen",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Mail",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Markt komende vrijdag",
+   "line": "Markt komende vrijdag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Markt",
+    "due": {
+     "date": "2026-10-16"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Mail over 2 uur",
+   "line": "Mail over 2 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Mail",
+    "due": {
+     "date": "2026-10-09",
+     "time": "12:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Lunch om 15:30",
+   "line": "Lunch om 15:30",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Lunch",
+    "due": {
+     "date": "2026-10-09",
+     "time": "15:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch half hour: Bellen morgen om half 4",
+   "line": "Bellen morgen om half 4",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bellen",
+    "due": {
+     "date": "2026-10-10",
+     "time": "03:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Bellen morgen om half 4 's middags",
+   "line": "Bellen morgen om half 4 's middags",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Bellen",
+    "due": {
+     "date": "2026-10-10",
+     "time": "15:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Taak om half 1 's middags",
+   "line": "Taak om half 1 's middags",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Taak",
+    "due": {
+     "date": "2026-10-09",
+     "time": "12:30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Etentje om 8 uur 's avonds",
+   "line": "Etentje om 8 uur 's avonds",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Etentje",
+    "due": {
+     "date": "2026-10-09",
+     "time": "20:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Wandelen om 7 uur 's ochtends",
+   "line": "Wandelen om 7 uur 's ochtends",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Wandelen",
+    "due": {
+     "date": "2026-10-09",
+     "time": "07:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Planten water geven elke dag",
+   "line": "Planten water geven elke dag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Planten water geven",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every day",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Sporten elke maandag",
+   "line": "Sporten elke maandag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Sporten",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Afval buiten zetten elke 2 weken",
+   "line": "Afval buiten zetten elke 2 weken",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Afval buiten zetten",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Filter vervangen elke 3 dagen na voltooiing",
+   "line": "Filter vervangen elke 3 dagen na voltooiing",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Filter vervangen",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 3 days after completion",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Stand-up op werkdagen om 9 uur",
+   "line": "Stand-up op werkdagen om 9 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stand-up",
+    "due": {
+     "date": "2026-10-09",
+     "time": "09:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Stand-up elke werkdag",
+   "line": "Stand-up elke werkdag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Stand-up",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every weekday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Teamoverleg elke eerste maandag",
+   "line": "Teamoverleg elke eerste maandag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Teamoverleg",
+    "due": {
+     "date": "2026-11-02"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 1st monday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Huur elke laatste vrijdag van de maand",
+   "line": "Huur elke laatste vrijdag van de maand",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Huur",
+    "due": {
+     "date": "2026-10-30"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last friday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Gras maaien om de week",
+   "line": "Gras maaien om de week",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Gras maaien",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 2 weeks",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Zwemmen elke ma en wo",
+   "line": "Zwemmen elke ma en wo",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Zwemmen",
+    "due": {
+     "date": "2026-10-12"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every monday, wednesday",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Vergadering elke dinsdag tot 31 dec",
+   "line": "Vergadering elke dinsdag tot 31 dec",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Vergadering",
+    "due": {
+     "date": "2026-10-13"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every tuesday until 2026-12-31",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Overleg morgen om 10 uur herinner me 30 minuten van tevoren",
+   "line": "Overleg morgen om 10 uur herinner me 30 minuten van tevoren",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Overleg",
+    "due": {
+     "date": "2026-10-10",
+     "time": "10:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "offset",
+      "minutes": -30
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dutch: Afspraak morgen herinner me om 9 uur",
+   "line": "Afspraak morgen herinner me om 9 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Afspraak",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [
+     {
+      "kind": "moment",
+      "date": null,
+      "time": "09:00"
+     }
+    ]
+   }
+  },
+  {
+   "name": "Dutch: Rapport uiterlijk vrijdag",
+   "line": "Rapport uiterlijk vrijdag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "Dutch: Rapport deadline vrijdag",
+   "line": "Rapport deadline vrijdag",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": "2026-10-16"
+   }
+  },
+  {
+   "name": "Dutch: Rapport uiterlijk vrijdag om 17 uur",
+   "line": "Rapport uiterlijk vrijdag om 17 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Rapport",
+    "due": {
+     "date": "2026-10-16",
+     "time": "17:00"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "deadline": ""
+   }
+  },
+  {
+   "name": "Dutch: Wereldreis ooit",
+   "line": "Wereldreis ooit",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Wereldreis",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch: Bellen morgen 's avonds",
+   "line": "Bellen morgen 's avonds",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Bellen",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": null,
+    "evening": true
+   }
+  },
+  {
+   "name": "Dutch: Hardlopen vanochtend",
+   "line": "Hardlopen vanochtend",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "dayParts": true
+   },
+   "expect": {
+    "title": "Hardlopen",
+    "due": {
+     "date": "2026-10-09"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "dayPart": "morning",
+    "evening": false
+   }
+  },
+  {
+   "name": "Dutch: Opruimen ergens volgende week",
+   "line": "Opruimen ergens volgende week",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ],
+    "sectors": true
+   },
+   "expect": {
+    "title": "Opruimen",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": [],
+    "sector": "2026-W42"
+   }
+  },
+  {
+   "name": "Dutch inactive: Fix the door over lunch",
+   "line": "Fix the door over lunch",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Fix the door over lunch",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Dutch inactive: Pick up the kids om 3 uur",
+   "line": "Pick up the kids om 3 uur",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pick up the kids om 3 uur",
+    "due": null,
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "English with Dutch active: Pay rent tomorrow",
+   "line": "Pay rent tomorrow",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "nl",
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Pay rent",
+    "due": {
+     "date": "2026-10-10"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
+    "reminders": []
+   }
+  },
+  {
+   "name": "Weekday before a date: Meeting Monday, March 3",
+   "line": "Meeting Monday, March 3",
+   "ctx": {
+    "today": "2026-10-09",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Meeting",
+    "due": {
+     "date": "2027-03-03"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": null,
     "reminders": []
    }
   }
