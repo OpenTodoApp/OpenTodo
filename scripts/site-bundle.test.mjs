@@ -148,7 +148,7 @@ test('method.json: the app\'s own words in every shipped language (open-loops-me
   const m = methodVocabulary()
   assert.equal(m.schema, 1)
   assert.equal(m.name, 'Open Loops')
-  assert.deepEqual(m.languages, ['en', 'de', 'fr', 'es', 'it', 'pt', 'zh'])
+  assert.deepEqual(m.languages, ['en', 'de', 'fr', 'es', 'it', 'pt', 'zh', 'nl'])
   assert.deepEqual(m.moves.map((x) => x.id), ['catch', 'clarify', 'place', 'do', 'review'])
   const it = JSON.parse(read('web/src/locales/it.json'))
   const vocabulary = JSON.parse(read('web/src/lib/method/vocabulary.json'))

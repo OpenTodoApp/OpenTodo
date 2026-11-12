@@ -165,7 +165,7 @@ More in [architecture](docs/architecture.md) and [the sync protocol](docs/sync.m
 1. **Star and share.** A star on GitHub helps other people find OpenTodo.
 2. **Leave feedback** in [Discussions](https://github.com/OpenTodoApp/OpenTodo/discussions) or on [Discord](https://discord.gg/mmSsuCRduD).
 3. **Report bugs** in [issues](https://github.com/OpenTodoApp/OpenTodo/issues).
-4. **Review a translation.** The app speaks seven languages; tell us where a word feels wrong ([translating](docs/translating.md)).
+4. **Review a translation.** The app speaks eight languages; tell us where a word feels wrong ([translating](docs/translating.md)).
 5. **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 6. **Answer questions** from other people in Discussions and on Discord.
 7. **Sponsor** on [GitHub Sponsors](https://github.com/sponsors/pixari) or [buy me a coffee](https://buymeacoffee.com/pixari).

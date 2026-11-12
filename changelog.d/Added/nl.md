@@ -1,0 +1,1 @@
+- **The app is available in Dutch (Nederlands).** Pick it in Settings → Language and region → Language; dates, reminder notifications, the browser extension, the Android app, the Obsidian plugin and the server's email messages follow along.

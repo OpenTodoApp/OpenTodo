@@ -1,0 +1,7 @@
+Je aanmelding bij OpenTodo
+
+Dit is een aanmeldbericht van OpenTodo.
+
+Iemand probeerde zich op {{.Origin}} aan te melden met {{.Email}}, maar dit adres heeft al een account. Om je aan te melden, ga je naar het adres van de server hierboven. Als je je wachtwoord bent vergeten, gebruik je „Wachtwoord vergeten?“ op het aanmeldscherm.
+
+Als jij dit niet was, kun je dit bericht negeren: er is niets veranderd.

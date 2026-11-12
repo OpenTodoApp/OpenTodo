@@ -1,0 +1,9 @@
+Bevestig je nieuwe OpenTodo-e-mailadres
+
+Dit is een e-mailbevestiging van OpenTodo.
+
+Iemand wil {{.Email}} als aanmeldadres van een account op {{.Origin}} gebruiken. Om dat te bevestigen, open je deze link terwijl je in dat account bent aangemeld:
+
+{{.Link}}
+
+De link vervalt over {{.Expiry}}. Als jij dit niet hebt aangevraagd, kun je dit bericht negeren: er verandert niets.
