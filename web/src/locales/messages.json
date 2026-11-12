@@ -10685,6 +10685,10 @@
   "No password is stored, for example after a restore. Reconnect.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "No priority": [
+    "web/src/app/filter/conditionText.ts",
+    "web/src/lib/priority.ts"
+  ],
   "No project": [
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
@@ -10905,6 +10909,9 @@
   ],
   "None yet. Make one with New view.": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "None|priority": [
+    "web/src/lib/priority.ts"
   ],
   "Normal text": [
     "web/src/lib/richtextEditor.ts"
@@ -13001,6 +13008,7 @@
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/app/views/DisplayPanel.tsx",
+    "web/src/lib/facets.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
@@ -13818,6 +13826,9 @@
   ],
   "Remove the passkey “{name}”?": [
     "web/src/app/SecurityPanel.tsx"
+  ],
+  "Remove the priority of {title}": [
+    "web/src/app/palette/registry.ts"
   ],
   "Remove the saved password": [
     "web/src/app/OutgoingEmailPanel.tsx"
@@ -15159,6 +15170,9 @@
     "web/src/app/ResetScreen.tsx"
   ],
   "Set a parent task": [
+    "web/src/app/task-detail/TaskFacts.tsx"
+  ],
+  "Set a priority": [
     "web/src/app/task-detail/TaskFacts.tsx"
   ],
   "Set a start": [
@@ -24371,6 +24385,9 @@
   ],
   "{n, plural, one {Planned for {name}} other {# tasks planned for {name}}}": [
     "web/src/lib/undoActions.ts"
+  ],
+  "{n, plural, one {Priority removed from # task} other {Priority removed from # tasks}}": [
+    "web/src/lib/bulk.ts"
   ],
   "{n, plural, one {Public: # active link. Open the public links} other {Public: # active links. Open the public links}}": [
     "web/src/app/ProjectHeader.tsx"

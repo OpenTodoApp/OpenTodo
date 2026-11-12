@@ -160,7 +160,7 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     expect(item('Priority 1')).toBeUndefined()
     expect(item('Tomorrow')).toBeUndefined()
     await act(async () => { item('Priority…')!.click() })
-    await waitFor(() => !!item('Priority 4'))
+    await waitFor(() => !!item('No priority'))
     expect(item('Move to project')).toBeUndefined()
     expect(document.activeElement).toBe(item('Priority 1'))
     await key(document.activeElement as HTMLElement, 'Escape')
