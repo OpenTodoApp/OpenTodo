@@ -221,6 +221,16 @@ These changes come from the owner's November review of the screens used every da
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
 
+### Habits area
+
+Habits get their own place: easy to start, forgiving on a bad day, connected to notes and the assistant, and invisible for anyone who turns them off. Planned on 2026-11-12 from the owner's feedback and a study of habit trackers and the research behind them.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`habits-home`](openspec/changes/habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
+
+They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
+
 ### Native app
 
 A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
