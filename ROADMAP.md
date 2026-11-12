@@ -228,6 +228,7 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 | Change | What | Issues |
 | --- | --- | --- |
 | [`habits-home`](openspec/changes/habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
+| [`habit-notes`](openspec/changes/habit-notes/) | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
 
 They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
 
