@@ -1,6 +1,6 @@
 ---
 title: Reminders reference
-summary: How relative, deadline and absolute reminders fire, web push and its privacy, snooze, shared projects and the Trash.
+summary: How relative, deadline and absolute reminders fire, web push and its privacy, snooze, shared projects, archived projects and the Trash.
 audience: user
 section: Reference
 specs: [reminders]
@@ -33,9 +33,9 @@ Reminders are personal. On a task in a shared project your reminders are yours a
 
 **Privacy.** A push payload carries only the reminder id, the task id and the firing time, encrypted end to end (RFC 8291) so the push service cannot read it. The device shows the title from its own copy of the task. Enable **Include task titles** if a device should be able to show the title before it has synced the task; the description is never sent.
 
-## Trash
+## Trash and archived projects
 
-A reminder does not fire, in the app or by push, while its task is deleted or while the task's project, or any project above it, is in the Trash. It is not marked as delivered either, so restoring the task or the project brings it back: a reminder whose time is still ahead fires on time, and one whose time passed while it was in the Trash is delivered once, late, on the next check (the same rule as for reminders that fell due while the server was down). Dismiss or snooze it if you no longer need it. Purging the task from the Trash removes its reminders.
+A reminder does not fire, in the app, by push, through a notification channel or as a notification the mobile app scheduled, while its task is deleted or while the task's project, or any project above it, is in the Trash or archived. It is not marked as delivered either, so restoring the task or the project, or unarchiving the project, brings it back: a reminder whose time is still ahead fires on time, and one whose time passed meanwhile is delivered once, late, on the next check (the same rule as for reminders that fell due while the server was down). Dismiss or snooze it if you no longer need it. Purging the task from the Trash removes its reminders.
 
 ## Done from a notification
 
