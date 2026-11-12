@@ -145,7 +145,7 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 	case agentCreateProject:
 		calls, refusal = agentSimpleCall("create_project", "project", body, map[string]bool{"name": true, "color": true, "parent_id": true}, map[string]string{"archived": "false"}, nil)
 	case agentCreateLabel:
-		calls, refusal = agentSimpleCall("create_label", "label", body, map[string]bool{"name": true, "color": true}, nil, nil)
+		calls, refusal = agentSimpleCall("create_label", "label", body, map[string]bool{"name": true, "color": true, "workspace_id": true}, nil, nil)
 	case agentCreateComment:
 		// mentions are accepted and dropped: assistant comments notify nobody.
 		delete(body, "mentions")
