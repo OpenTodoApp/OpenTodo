@@ -29,6 +29,9 @@ var workspaceProp = map[string]any{"type": "string", "description": "Only this w
 // workspaceIDProp is `workspace_id` on create_project, create_tasks and update_project.
 var workspaceIDProp = map[string]any{"type": []string{"string", "null"}, "description": "Workspace id (see list_workspaces), or null for the default workspace."}
 
+// labelWorkspaceProp is `workspace_id` on create_label, which takes a name too.
+var labelWorkspaceProp = map[string]any{"type": []string{"string", "null"}, "description": "Workspace id or exact name (see list_workspaces) to create the label in; null or absent for the default workspace."}
+
 type workspaceText struct {
 	Name    string   `json:"name"`
 	Members []string `json:"members,omitempty"`
@@ -108,6 +111,28 @@ func (snap *snapshot) partition() *opsync.Partition {
 	}
 	snap.part = p
 	return p
+}
+
+// labelWorkspace is the workspace a label is in: its workspace_id, or the
+// default workspace when that is null or names no workspace of the user.
+func (snap *snapshot) labelWorkspace(l opsync.Entity) string {
+	ws := rawStr(l, "workspace_id")
+	for _, w := range snap.workspaces {
+		if ws != "" && w.ID == ws {
+			return ws
+		}
+	}
+	return snap.defaultWorkspace()
+}
+
+// valueWorkspace is the workspace id a stored workspace_id value names (null:
+// the default workspace).
+func (snap *snapshot) valueWorkspace(v json.RawMessage) string {
+	var id string
+	if json.Unmarshal(v, &id) != nil || id == "" {
+		return snap.defaultWorkspace()
+	}
+	return id
 }
 
 // workspaceName is the name of a workspace id ("" when unknown).

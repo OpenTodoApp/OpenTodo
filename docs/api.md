@@ -558,7 +558,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 | `PATCH /api/v1/projects/{id}` | `name`, `color`, `icon` and `parent_id` (`null` clears them), `description` (the project's note, Markdown; editors may write it); or `archived` on its own (`true` archives the project with its sub-projects, `false` unarchives that project; owner or admin only; with any other field 400 `invalid_input`) |
 | `POST /api/v1/sections` | `name`, `project_id`, `color`, `icon`, `position` |
 | `PATCH /api/v1/sections/{id}` | `name`, `color`, `icon`, `position` |
-| `POST /api/v1/labels` | `name`, `color` (an existing label of that name is returned with 200) |
+| `POST /api/v1/labels` | `name`, `color`, `workspace_id` (a workspace id or exact name; absent or null for the default workspace; an existing label of that name in that workspace is returned with 200) |
 | `PATCH /api/v1/labels/{id}` | `name` (a name another label of the workspace has, ignoring case, is 400 `invalid`), `color`, `position` |
 | `POST /api/v1/tasks/{id}/comments` | `body`, `parent_id` (`mentions` is accepted and dropped: assistant comments notify nobody) |
 | `POST /api/v1/reminders` | `task_id`, `kind` (`relative`, `deadline` or `absolute`, the default), `offset_minutes` (0 or less: minutes before the due time, or before 09:00 on the deadline day) or, for `absolute`, `fire_at` (Unix milliseconds on a whole minute); `fire_at` of the others is computed in your time zone. Your own reminders only, at most 10 on a task |
@@ -910,6 +910,7 @@ curl -X PATCH -H "Authorization: Bearer $T" -d '{"fields":{"<cost>":"cheap"}}' $
 | `color` | string | CSS colour; picked from the palette when omitted on create |
 | `icon` | string or null | an icon name from the app's set, shown in the project's colour; null (the default) shows a colour dot. Clients that do not know the field ignore it |
 | `position` | number | sidebar order; defaults to the creation time |
+| `workspace_id` | string or null | the workspace the label belongs to, where it shows under Labels and in filters; null (the default) for the default workspace |
 | `group_by`, `sort_by`, `sort_dir`, `row_layout` | string | the label page's display options as the app stores them (`""` reads as the default); not checked by the API |
 | `manual_order` | string[] | the label page's own manual order (OpenSpec change `view-manual-order`): task ids placed by hand, at most 500 distinct ids; absent or `[]` until the app places a task; replaced as a whole on PATCH; ids are not checked |
 | `created_at`, `deleted_at` | unix ms (or null) | |
