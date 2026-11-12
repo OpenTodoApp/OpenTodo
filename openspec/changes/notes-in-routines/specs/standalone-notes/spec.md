@@ -8,7 +8,7 @@ CalDAV, the Markdown vault, webhooks, the activity feed and public task pages SH
 - **THEN** it receives the tasks as before and no entry for any note
 
 #### Scenario: Webhook
-- **WHEN** a note is created in a project with a webhook
+- **WHEN** a note is created in a project with a webhook that subscribes to no note event
 - **THEN** no webhook delivery is queued for it
 
 #### Scenario: Routine
