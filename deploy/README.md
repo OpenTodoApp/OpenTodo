@@ -8,7 +8,7 @@ One folder per platform, each with its template in that platform's own format. T
 | CasaOS / ZimaOS | [`casaos/`](casaos/) | `release` | Submitted: [IceWhaleTech/CasaOS-AppStore#1104](https://github.com/IceWhaleTech/CasaOS-AppStore/pull/1104); install as a custom app meanwhile |
 | Coolify | [`coolify/`](coolify/) | `stable` | Not yet submitted: Coolify lists services from 1,000 GitHub stars; paste it as Docker Compose meanwhile |
 | Cosmos Cloud | [`cosmos/`](cosmos/) | `stable` | Submitted: [azukaar/cosmos-servapps-official#329](https://github.com/azukaar/cosmos-servapps-official/pull/329); install as a custom compose meanwhile |
-| Dokploy | [`dokploy/`](dokploy/) | `release` | Submitted: [Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265); usable now as a templates base URL |
+| Dokploy | [`dokploy/`](dokploy/) | `release` | Listed in the template catalogue ([Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265)) |
 | Easypanel | [`easypanel/`](easypanel/) | `release` | Submitted: [easypanel-io/templates#1702](https://github.com/easypanel-io/templates/pull/1702); set up as an app service meanwhile |
 | Fly.io | [`fly/`](fly/) | `stable` | No store: `fly launch --copy-config` with the file from this repository |
 | Home Assistant add-on | [`homeassistant/`](homeassistant/) | `release` | Our own add-on repository, [`OpenTodoApp/opentodo-homeassistant-addons`](https://github.com/OpenTodoApp/opentodo-homeassistant-addons), published from `upstream/`; it builds its own image from the release |

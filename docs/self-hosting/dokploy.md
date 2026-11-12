@@ -1,6 +1,6 @@
 ---
 title: Running on Dokploy
-summary: Deploy from Dokploy's templates (or a templates base URL), the setup token, the generated http domain, https with your own domain, updates and backups.
+summary: Deploy from Dokploy's template catalogue (or a templates base URL), the setup token, the generated http domain, https with your own domain, updates and backups.
 audience: admin
 specs: [self-hosting]
 screens: []
@@ -12,9 +12,9 @@ OpenTodo is one container with one named volume and no required settings. The Do
 
 ## Install
 
-OpenTodo's template is submitted to Dokploy's catalogue ([Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265)). Once it is listed, create a service from a **Template** and pick **OpenTodo**. Until then, use one of these two ways:
+OpenTodo is in Dokploy's template catalogue: in a project, create a service from a **Template** and pick **OpenTodo**. Two other ways work too:
 
-- **Templates base URL.** In a project, create a service from a **Template**. Dokploy's template dialog accepts another base URL instead of `https://templates.dokploy.com`. Enter `https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/dokploy`, pick **OpenTodo** and create it.
+- **Templates base URL.** To use the template from OpenTodo's repository, for example before Dokploy's catalogue has the newest release: Dokploy's template dialog accepts another base URL instead of `https://templates.dokploy.com`. Enter `https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/deploy/dokploy`, pick **OpenTodo** and create it.
 - **By hand.** Choose **Create Service → Compose** and paste [`docker-compose.yml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/dokploy/blueprints/opentodo/docker-compose.yml) as the compose file. Under **Environment**, add the variables from [`template.toml`](https://github.com/OpenTodoApp/OpenTodo/blob/main/deploy/dokploy/blueprints/opentodo/template.toml), with at least 16 random letters and digits for `OPENTODO_SETUP_TOKEN`. Under **Domains**, add a domain for the service `opentodo` on port `8080`.
 
 Then click **Deploy**.
