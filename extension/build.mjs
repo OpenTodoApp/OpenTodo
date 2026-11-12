@@ -53,6 +53,18 @@ export function manifestFor(m, browser) {
   return out
 }
 
+/**
+ * A locale folder that is still a scaffold (scripts/i18n/new-language.mjs marks its
+ * English copies "TODO translate"): the packages leave it out, so the browser shows
+ * English instead of claiming a language it does not have yet (more-languages D5).
+ */
+export function workInProgressLocale(src, rel) {
+  const m = /^_locales[\\/]([^\\/]+)[\\/]messages\.json$/.exec(rel)
+  if (!m) return false
+  const msgs = JSON.parse(readFileSync(join(src, rel), 'utf8'))
+  return Object.values(msgs).some((e) => String(e?.description ?? '').startsWith('TODO translate'))
+}
+
 function files(dir, rel) {
   const p = join(dir, rel)
   if (!statSync(p).isDirectory()) return [rel]
@@ -121,7 +133,7 @@ export function build({ src = here, out = join(root, 'dist'), dev = false } = {}
     rmSync(dir, { recursive: true, force: true })
     const manifest = Buffer.from(JSON.stringify(manifestFor(m, browser), null, 2) + '\n')
     const entries = [{ name: 'manifest.json', data: manifest }]
-    for (const f of FILES.flatMap((f) => files(src, f))) entries.push({ name: f, data: readFileSync(join(src, f)) })
+    for (const f of FILES.flatMap((f) => files(src, f)).filter((f) => !workInProgressLocale(src, f))) entries.push({ name: f, data: readFileSync(join(src, f)) })
     for (const e of entries) {
       mkdirSync(dirname(join(dir, e.name)), { recursive: true })
       writeFileSync(join(dir, e.name), e.data)

@@ -3594,6 +3594,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Community translation, some text in English": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Compact": [
     "web/src/app/AppearanceSection.tsx"
   ],

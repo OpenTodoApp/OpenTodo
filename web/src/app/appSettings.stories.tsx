@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { PushState } from '../lib/push'
 import type { EmailInbox } from '../lib/types'
+import { SHIPPED } from '../locales'
 import { CalendarSettingsView } from './CalendarSettings'
 import { CaptureView } from './CaptureSettings'
 import { DateTimeView } from './DateTimeSettings'
@@ -44,6 +45,8 @@ export const Preferences: StoryObj = {
 }
 // Language (app-localization): System first, naming what it resolves to; the failure when a catalog cannot load.
 export const Language: StoryObj = { render: () => <LanguageView value="system" system="English" onChange={noop} /> }
+// A community language (more-languages D4): listed after the maintained ones, with its caption once picked.
+export const LanguageCommunity: StoryObj = { render: () => <LanguageView value={'pl' as never} system="English" languages={[...SHIPPED, { code: 'pl', name: 'Polski', community: true }]} onChange={noop} /> }
 export const LanguageUnavailable: StoryObj = { render: () => <LanguageView value="de" system="English" status="failed" onChange={noop} /> }
 // Date and time (date-time-preferences): a fixed day so the week strip is stable.
 const dayMonth = { date_format: 'day-month', time_format: '24h', week_start: 'sun' } as const
