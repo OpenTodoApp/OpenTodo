@@ -69,23 +69,11 @@ type Server struct {
 	largest   int
 }
 
-// Largest is the size of the largest answer body served.
+// Largest is the size of the largest multistatus answer served.
 func (s *Server) Largest() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.largest
-}
-
-// countingWriter keeps the size of an answer's body.
-type countingWriter struct {
-	http.ResponseWriter
-	n int
-}
-
-func (c *countingWriter) Write(p []byte) (int, error) {
-	n, err := c.ResponseWriter.Write(p)
-	c.n += n
-	return n, err
 }
 
 // New starts a server with one calendar "work" holding events.
@@ -189,16 +177,10 @@ func (s *Server) authorized(r *http.Request) bool {
 	return ok && u == s.User && p == s.Password
 }
 
-func (s *Server) serve(rw http.ResponseWriter, r *http.Request) {
+func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	s.Requests[r.Method]++
 	s.mu.Unlock()
-	w := &countingWriter{ResponseWriter: rw}
-	defer func() {
-		s.mu.Lock()
-		s.largest = max(s.largest, w.n)
-		s.mu.Unlock()
-	}()
 	if r.URL.Path == "/.well-known/caldav" {
 		http.Redirect(w, r, s.Prefix+"/", http.StatusMovedPermanently)
 		return
@@ -236,7 +218,9 @@ func (s *Server) serve(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func multistatus(w http.ResponseWriter, inner string) {
+// multistatus writes a 207 answer and keeps the largest size; callers hold s.mu.
+func (s *Server) multistatus(w http.ResponseWriter, inner string) {
+	s.largest = max(s.largest, len(inner))
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	w.WriteHeader(http.StatusMultiStatus)
 	fmt.Fprintf(w, `<?xml version="1.0" encoding="utf-8"?><d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:ic="http://apple.com/ns/ical/">%s</d:multistatus>`, inner)
@@ -251,11 +235,11 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no", http.StatusMethodNotAllowed)
 		return
 	}
-	multistatus(w, response(s.Prefix+"/", `<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
+	s.multistatus(w, response(s.Prefix+"/", `<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
 }
 
 func (s *Server) principal(w http.ResponseWriter, r *http.Request) {
-	multistatus(w, response(s.Prefix+"/principals/me/", `<c:calendar-home-set><d:href>`+s.Prefix+`/calendars/me/</d:href></c:calendar-home-set>`+
+	s.multistatus(w, response(s.Prefix+"/principals/me/", `<c:calendar-home-set><d:href>`+s.Prefix+`/calendars/me/</d:href></c:calendar-home-set>`+
 		`<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
 }
 
@@ -311,7 +295,7 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 			inner += response(s.Prefix+"/calendars/me/"+id+"/", s.calProps(id, s.cals[id]))
 		}
 	}
-	multistatus(w, inner)
+	s.multistatus(w, inner)
 }
 
 func (s *Server) collection(w http.ResponseWriter, r *http.Request, id string, c *Calendar, body []byte) {
@@ -325,7 +309,7 @@ func (s *Server) collection(w http.ResponseWriter, r *http.Request, id string, c
 				inner.WriteString(response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(c.objects[m].ETag)+`</d:getetag><d:resourcetype/>`))
 			}
 		}
-		multistatus(w, inner.String())
+		s.multistatus(w, inner.String())
 	case "REPORT":
 		s.report(w, base, c, body)
 	default:
@@ -441,7 +425,7 @@ func (s *Server) report(w http.ResponseWriter, base string, c *Calendar, body []
 		http.Error(w, "unsupported report", http.StatusForbidden)
 		return
 	}
-	multistatus(w, inner.String())
+	s.multistatus(w, inner.String())
 }
 
 func nodeText(n *caldav.Node) string {
@@ -488,7 +472,7 @@ func (s *Server) syncReport(w http.ResponseWriter, base string, c *Calendar, tok
 			}
 		}
 	}
-	multistatus(w, inner.String()+`<d:sync-token>`+s.token(c)+`</d:sync-token>`)
+	s.multistatus(w, inner.String()+`<d:sync-token>`+s.token(c)+`</d:sync-token>`)
 }
 
 func (s *Server) object(w http.ResponseWriter, r *http.Request, c *Calendar, id, member string, body []byte) {
