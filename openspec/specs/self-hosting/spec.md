@@ -39,11 +39,19 @@ The server SHALL apply embedded database migrations automatically at startup and
 - **THEN** it logs an error naming that file
 
 ### Requirement: Optional configuration only
-Every setting SHALL be an `OPENTODO_*` environment variable with a working default: `ADDR`, `DATA_DIR`, `BASE_URL`, `ALLOW_SIGNUP`, `SESSION_DAYS`, `LOG_LEVEL`. Invalid values SHALL stop startup with a clear message, except `OPENTODO_TRUSTED_PROXIES`, whose invalid entries are ignored with a warning (requirement "Lenient trusted proxies").
+Every setting SHALL be an `OPENTODO_*` environment variable with a working default: `ADDR`, `DATA_DIR`, `BASE_URL`, `ALLOW_SIGNUP`, `SESSION_DAYS`, `LOG_LEVEL`. Invalid values SHALL stop startup with a clear message, except `OPENTODO_TRUSTED_PROXIES`, whose invalid entries are ignored with a warning (requirement "Lenient trusted proxies"). `OPENTODO_BASE_URL` SHALL be an origin: a scheme, a host, an optional port and an empty path or `/`, with no query or fragment; any other value SHALL stop startup with a message that names the variable and says OpenTodo needs its own origin, because it cannot be served below a path.
 
 #### Scenario: Invalid value
 - **WHEN** `OPENTODO_SESSION_DAYS=abc` is set
 - **THEN** the process exits non-zero with a message naming the variable
+
+#### Scenario: Base URL with a path
+- **WHEN** `OPENTODO_BASE_URL=https://example.test/absproxy/18082/` is set
+- **THEN** the process exits non-zero with a message naming `OPENTODO_BASE_URL` and saying that OpenTodo needs its own origin, such as a subdomain or a port
+
+#### Scenario: Base URL with a trailing slash
+- **WHEN** `OPENTODO_BASE_URL=https://todo.example.com/` is set
+- **THEN** startup succeeds and the base URL is `https://todo.example.com`
 
 ### Requirement: Outgoing email from the environment
 Outgoing email SHALL be configured by the optional `OPENTODO_SMTP_HOST`, `_SECURITY`, `_USER`, `_PASSWORD` (or `_PASSWORD_FILE`) and `_FROM`; `HOST` and `FROM` are required together, `USER` and a password together, and each one set locks its field in Settings.
@@ -713,7 +721,7 @@ CI SHALL run in tiers. A pull request SHALL run the repository checks and, when 
 - **THEN** the push run runs every layout leg (Chromium and WebKit at each width, German and French), all six binaries and the workbench checks, and the image is published only if every one of them passed
 
 ### Requirement: Nightly failures are reported
-The nightly checks SHALL report their result on the default branch as a GitHub issue labelled `ci-nightly`: a failed or timed-out nightly job SHALL open that issue, or comment on it when it is already open, naming the run and the failed jobs; a night on which every job passes SHALL close it. The report SHALL use only the workflow's own token.
+The nightly checks SHALL report their result on the default branch as a GitHub issue labelled `ci-nightly`: a failed or timed-out nightly job SHALL open that issue, or comment on it when it is already open, naming the run and the failed jobs; a night on which every job passes SHALL close it. A first attempt whose only unsuccessful jobs never got a runner (GitHub gave them no hosted runner, so no step ran) SHALL NOT be reported; it SHALL be re-run once, failed and cancelled jobs only, and the re-run's result SHALL be reported as above. A job that failed on a runner SHALL never be re-run automatically, and a second attempt SHALL never be retried. The report and the retry SHALL use only the workflow's own token.
 
 #### Scenario: A nightly job fails
 - **WHEN** the race detector finds a data race in the nightly run and no `ci-nightly` issue is open
@@ -726,6 +734,14 @@ The nightly checks SHALL report their result on the default branch as a GitHub i
 #### Scenario: Green again
 - **WHEN** every nightly job passes while the `ci-nightly` issue is open
 - **THEN** the issue is closed with a link to the green run
+
+#### Scenario: No runner for a job
+- **WHEN** the iOS build of the first attempt is cancelled because GitHub never gave it a macOS runner and every other job passed
+- **THEN** no issue is opened or commented on, the run's cancelled jobs are re-run once, and the second attempt's alert opens, comments on or closes the issue by its own result
+
+#### Scenario: A real failure next to a missing runner
+- **WHEN** the race detector fails and the iOS build never got a runner in the same first attempt
+- **THEN** the issue is opened or commented on at once and the run is not re-run
 
 ### Requirement: The sync client is tested against the server
 CI SHALL run the web app's sync client code, unmocked, against the server binary built in the same run, with several simulated devices that each have their own local database and session. The tests SHALL cover at least convergence of two devices of one account, offline edits on two devices converging on the later edit on every device and the server, a device clock far ahead being refused and corrected without losing the change, a refused edit of a viewer being reported and undone on the device, and a device's offline queue reaching the server after reconnecting.
