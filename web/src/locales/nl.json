@@ -7448,5 +7448,6 @@
   "Usage resets on the first day of each month (UTC).": "Het gebruik begint op de eerste dag van elke maand (UTC) opnieuw.",
   "Your changes on this page are not saved.": "Je wijzigingen op deze pagina zijn niet opgeslagen.",
   "min": "min",
-  "sessions": "sessies"
+  "sessions": "sessies",
+  "iCalendar tasks (.ics)": "iCalendar-taken (.ics)"
 }
