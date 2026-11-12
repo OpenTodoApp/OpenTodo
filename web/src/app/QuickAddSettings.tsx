@@ -4,15 +4,12 @@ import { Checkbox, RadioGroup, Switch } from '../ui'
 import {
   BUNDLED_LANGUAGES, loadQuickAddSettings, type QuickAddSettings, resolveLanguages, saveQuickAddSettings,
 } from '../lib/nlp'
+import { languageName } from '../locales'
 import { t, msg, preferredLanguages, translatedMap } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
 import { useUserPrefsRow } from '../lib/localData'
 import { type AddPositionPref, readAddPosition, setAddPosition } from '../lib/userPrefs'
 import { act } from './actionError'
-
-const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
-}
 
 const ADD_POSITIONS: readonly AddPositionPref[] = ['bottom', 'top']
 const ADD_POSITION_LABEL = translatedMap<AddPositionPref>({ bottom: msg('At the bottom of the list'), top: msg('At the top of the list') })
@@ -46,7 +43,7 @@ export function QuickAddSettingsSection() {
           onChange={(e) => update({ ...s, languages: e.target.checked ? null : active.filter((c) => c !== 'en') })} />
         <div className="flex flex-wrap gap-x-5 gap-y-1 pl-6">
           {BUNDLED_LANGUAGES.map((code) => (
-            <Checkbox key={code} label={LANGUAGE_NAMES[code] ?? code} checked={active.includes(code)}
+            <Checkbox key={code} label={languageName(code)} checked={active.includes(code)}
               disabled={code === 'en' || followBrowser} onChange={(e) => toggleLanguage(code, e.target.checked)} />
           ))}
         </div>

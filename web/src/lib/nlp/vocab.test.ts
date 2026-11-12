@@ -5,7 +5,8 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { activeLanguages, normalize, VOCABULARIES } from './vocab'
+import { languageName, SHIPPED } from '../../locales'
+import { activeLanguages, BUNDLED_LANGUAGES, normalize, VOCABULARIES } from './vocab'
 
 const target = fileURLToPath(new URL('../../../../internal/quickadd/vocab.json', import.meta.url))
 
@@ -35,6 +36,14 @@ describe('quick-add vocabulary shared with the Go port', () => {
   it('has no Chinese vocabulary, so a zh preference still parses with English', () => {
     expect(VOCABULARIES).not.toHaveProperty('zh')
     expect(activeLanguages(['zh', 'zh-CN'])).toEqual(['en'])
+  })
+
+  it('every bundled language is shipped, so Settings shows its own name and never its code', () => {
+    for (const code of BUNDLED_LANGUAGES) {
+      expect(SHIPPED.map((l) => l.code), code).toContain(code)
+      expect(languageName(code), code).not.toBe(code)
+    }
+    expect(languageName('nl')).toBe('Nederlands')
   })
 
   it('internal/quickadd/vocab.json matches the vocabularies', () => {
