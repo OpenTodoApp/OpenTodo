@@ -43,6 +43,10 @@ const (
 	MaxRedirects     = 3
 	MaxCalendars     = 50
 	MaxReadCalendars = 10
+	// MinQuerySpan is the shortest piece a window is split into when its
+	// events do not fit in one answer of MaxBody; a piece that still does not
+	// is read by ETag and multiget (issue 1226).
+	MinQuerySpan = 24 * time.Hour
 )
 
 // Reasons stored on a connection (design D11).
