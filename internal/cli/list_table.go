@@ -56,7 +56,11 @@ func (a *App) renderTable(tasks []task, projects []project, all []task, today st
 		} else if t.Due != nil && t.Due.Date == today {
 			dueCell.style = styleBold
 		}
-		pr := plain(fmt.Sprintf("P%d", t.Priority))
+		// Level 4 is no priority (priority-none): an empty cell, as the app shows none.
+		pr := plain("")
+		if t.Priority >= 1 && t.Priority < 4 {
+			pr = plain(fmt.Sprintf("P%d", t.Priority))
+		}
 		if t.Priority == 1 {
 			pr.style = styleRed
 		}

@@ -32,7 +32,7 @@ describe('showing a level', () => {
     expect(priorityName(1)).toBe('Must')
     expect(priorityName(3)).toBe('Priority 3')
     expect(priorityShort(2)).toBe('Should')
-    expect(priorityShort(4)).toBe('P4')
+    expect(priorityShort(4)).toBe('None')
     expect(customPriorityName(3)).toBe('')
   })
 
@@ -45,14 +45,14 @@ describe('showing a level', () => {
   it('the shortcut sheet names the levels on the priority keys only, once one has a name', () => {
     expect(priorityKeysText('list.priority')).toBe('')
     setPriorityNames(['Must', '', '', ''])
-    expect(priorityKeysText('list.priority')).toBe(' — 1 Must, 2 Priority 2, 3 Priority 3, 4 Priority 4')
+    expect(priorityKeysText('list.priority')).toBe(' — 1 Must, 2 Priority 2, 3 Priority 3, 4 No priority')
     expect(priorityKeysText('list.complete')).toBe('')
   })
 
   it('the default follows the interface language', async () => {
     await applyLanguagePreference('de', ['en-US'])
     expect(defaultPriorityName(1)).toBe('Priorität 1')
-    expect(priorityName(4)).toBe('Priorität 4')
+    expect(priorityName(4)).toBe('Keine Priorität')
   })
 })
 

@@ -7,7 +7,7 @@ import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, 
 import { formatMinutes } from './duration'
 import { t } from './i18n'
 import type { Due, Label, Task } from './types'
-import { priorityShort } from './priority'
+import { isNoPriority, priorityShort } from './priority'
 import { dayPartOf, dayPartWord } from './dayParts'
 import { energyName, energyOf } from './energy'
 import { formatSpan, spanOf } from './span'
@@ -134,7 +134,8 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   else if (!due && !sector) when.unshift({ id: 'due', text: t('No date'), segment: 'due', empty: true })
 
   // How: priority, estimate, energy (task-energy), labels.
-  const how: FacetPart[] = [{ id: 'priority', text: priorityShort(task.priority) }]
+  // No priority (level 4, unnamed) is the faint placeholder the other unset parts use (priority-none).
+  const how: FacetPart[] = [isNoPriority(task.priority) ? { id: 'priority', text: t('Priority'), empty: true } : { id: 'priority', text: priorityShort(task.priority) }]
   if (task.estimate_minutes !== null) how.push({ id: 'estimate', text: formatMinutes(task.estimate_minutes) })
   else if (revealed.has('estimate')) how.push({ id: 'estimate', text: t('Estimate'), empty: true })
   const energy = energyOf(task)

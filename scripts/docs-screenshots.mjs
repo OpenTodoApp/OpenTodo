@@ -526,6 +526,8 @@ const shots = [
     await p.locator('main [data-display-trigger]').first().click(); await p.locator('[data-display-panel]').waitFor()
     await p.locator('[data-display-panel] select[aria-label="Group by"]').selectOption('priority')
     await p.keyboard.press('Escape'); await p.locator('[data-group-label]', { hasText: 'Must' }).first().waitFor()
+    // The demo's reminder toast would cover the last group.
+    await p.addStyleTag({ content: '[aria-label^="Reminder:"] { display: none !important }' })
     await p.mouse.move(700, 40); await p.locator('body').evaluate(() => (document.activeElement)?.blur()); await settle(p, 500)
   }, async after(p) {
     await p.locator('main [data-display-trigger]').first().click().catch(() => {})

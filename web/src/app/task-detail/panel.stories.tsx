@@ -89,13 +89,13 @@ function TabsArea({ count = 0 }: { count?: number }) {
   )
 }
 
-/** A task with nothing but a title: Where (Inbox), When "Not scheduled", How "P4" and Add. */
+/** A task with nothing but a title: Where (Inbox), When "Not scheduled", How the faint unset Priority (no priority) and Add. */
 export const EmptyTask: StoryObj = {
   render: () => (
     <Panel>
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
-        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
+        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'Priority', empty: true }]} />
         <section aria-label="Subtasks" className="flex items-center gap-2 px-1 text-faint">
           <Icon name="plus" size="xs" /><span className="text-body">Add a subtask</span>
         </section>
@@ -164,7 +164,7 @@ export const NotesEditing: StoryObj = {
     <Panel>
       <Header title="Call the bank" />
       <div className="min-w-0 space-y-4 p-4">
-        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'P4' }]} />
+        <Lines where={[{ id: 'project', text: 'Inbox' }]} when={[{ id: 'due', text: 'Not scheduled', empty: true }]} how={[{ id: 'priority', text: 'Priority', empty: true }]} />
         <Notes editing />
       </div>
     </Panel>

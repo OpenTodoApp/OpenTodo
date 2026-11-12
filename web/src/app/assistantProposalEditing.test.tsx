@@ -171,7 +171,7 @@ describe('before and after (1.4)', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
     await click(toggle)
     await waitFor(() => !!r.container.querySelector('[data-before-after] [data-after="priority"]'), 'the before and after view')
-    expect(r.container.querySelector('[data-before="priority"]')!.textContent).toBe('P4')
+    expect(r.container.querySelector('[data-before="priority"]')!.textContent).toBe('None')
     expect(r.container.querySelector('[data-after="priority"]')!.textContent).toBe('P1')
     expect(r.container.querySelector('[data-before="due"]')!.textContent).toBe('—')
     expect(toggle.getAttribute('aria-pressed')).toBe('true')

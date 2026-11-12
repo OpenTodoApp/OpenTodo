@@ -161,7 +161,7 @@ describe('project list with display options', () => {
     const other = task({ title: 'Other', priority: 4 })
     const base = projectInput([parent, child, other], {}, [s1])
     const grouped = listGroups({ ...base, display: { groupBy: 'priority', sortBy: 'position', sortDir: 'asc', rowLayout: 'line' } })
-    expect(grouped.map((g) => [g.heading, titles(g)])).toEqual([['Priority 2', ['Parent', 'Child']], ['Priority 4', ['Other']]])
+    expect(grouped.map((g) => [g.heading, titles(g)])).toEqual([['Priority 2', ['Parent', 'Child']], ['No priority', ['Other']]])
     expect(grouped[0].rows[1]).toMatchObject({ depth: 1, parent: parent.id })
     const flat = listGroups({ ...base, display: { groupBy: 'none', sortBy: 'title', sortDir: 'asc', rowLayout: 'line' } })
     expect(flat.map((g) => [g.key, titles(g)])).toEqual([['all', ['Other', 'Parent', 'Child']]])

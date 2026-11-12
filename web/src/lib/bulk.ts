@@ -15,7 +15,7 @@ import { descendants } from './tree'
 import type { Membership, Priority, Task } from './types'
 import { applyBatch } from './undo'
 import { t } from './i18n'
-import { priorityName } from './priority'
+import { isNoPriority, priorityName } from './priority'
 import { keepWorkspaceFor, type KeepWorkspace } from './workspaces'
 
 /** Changes merged by entity: a task reached twice (ticked and under a ticked parent) gets one patch. */
@@ -174,7 +174,9 @@ export function bulkLabel(a: BulkAction | { kind: 'reopen' }, n: number): string
   switch (a.kind) {
     case 'complete': return t('{n, plural, one {# task completed} other {# tasks completed}}', { n })
     case 'reopen': return t('{n, plural, one {# task reopened} other {# tasks reopened}}', { n })
-    case 'priority': return t('{n, plural, one {{p} set on # task} other {{p} set on # tasks}}', { n, p: priorityName(a.priority) })
+    case 'priority': return isNoPriority(a.priority)
+      ? t('{n, plural, one {Priority removed from # task} other {Priority removed from # tasks}}', { n })
+      : t('{n, plural, one {{p} set on # task} other {{p} set on # tasks}}', { n, p: priorityName(a.priority) })
     case 'due': return a.pick === null ? t('{n, plural, one {Date removed from # task} other {Date removed from # tasks}}', { n }) : t('{n, plural, one {# task rescheduled} other {# tasks rescheduled}}', { n })
     case 'label': return a.add ? t('{n, plural, one {Label added to # task} other {Label added to # tasks}}', { n }) : t('{n, plural, one {Label removed from # task} other {Label removed from # tasks}}', { n })
     case 'trash': return t('{n, plural, one {# task moved to the Trash} other {# tasks moved to the Trash}}', { n })

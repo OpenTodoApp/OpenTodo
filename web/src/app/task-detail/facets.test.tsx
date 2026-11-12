@@ -18,12 +18,12 @@ const visibleItems = (root: ParentNode) => root.querySelectorAll('[data-facets] 
 const lineText = (root: ParentNode, facet: string) => { const el = root.querySelector(`[data-facet="${facet}"]`); return el ? visibleText(el).replace(/\s+/g, ' ').trim() : '' }
 
 describe('facet lines', () => {
-  it('an empty task reads Where, When "Not scheduled" and How "P4", with Add: at most seven items', async () => {
+  it('an empty task reads Where, When "Not scheduled" and How a faint "Priority", with Add: at most seven items', async () => {
     const id = await createTask({ title: 'Blank' })
     const { container, unmount } = await open(id)
     expect(lineText(container, 'where')).toContain('Inbox')
     expect(lineText(container, 'when')).toContain('Not scheduled')
-    expect(lineText(container, 'how')).toContain('P4')
+    expect(lineText(container, 'how')).toContain('Priority')
     expect(container.querySelector('[data-facet="who"]')).toBeNull()
     const items = visibleItems(container)
     expect(items).toBe(4)
@@ -153,7 +153,7 @@ describe('Add menu', () => {
     await unmount()
   })
 
-  it('Add then Estimate with a value reads "P4 · 45m" on How, and Clear removes it', async () => {
+  it('Add then Estimate with a value reads "Priority · 45m" on How, and Clear removes it', async () => {
     const id = await createTask({ title: 'Blank' })
     const { container, row, add, editor, valueButton, unmount } = await open(id)
     await add('Estimate')
@@ -163,7 +163,7 @@ describe('Add menu', () => {
     await waitFor(async () => (await db.tasks.get(id))!.estimate_minutes === 45, 'the estimate saved')
     await key(editor()!, 'Escape')
     await waitFor(() => !editor() && !!row('estimate')?.textContent?.includes('45m'), 'the editor closed on the saved value')
-    expect(lineText(container, 'how')).toMatch(/P4\s*·\s*45m/)
+    expect(lineText(container, 'how')).toMatch(/Priority\s*·\s*45m/)
     await click(valueButton('estimate'))
     await waitFor(() => !!editor()?.querySelector('[data-facet-clear]'), 'the estimate editor')
     await click(editor()!.querySelector('[data-facet-clear]')!)
