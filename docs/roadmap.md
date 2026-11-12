@@ -181,6 +181,12 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `task-progress` | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | Shipped in 1.4 |
 | `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | Shipped in 1.4 |
 
+## Habits area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `habits-home` | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | Planned |
+
 ## Native app
 
 | Change | What | Status |
