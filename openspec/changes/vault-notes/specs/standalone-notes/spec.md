@@ -14,3 +14,7 @@ CalDAV, the activity feed and public task pages SHALL not include standalone not
 #### Scenario: Activity feed
 - **WHEN** a note is created in a shared project
 - **THEN** the project's activity feed shows no entry for it
+
+#### Scenario: Routine
+- **WHEN** a note is created and the user has a `note.created` routine and a `task.created` routine
+- **THEN** only the `note.created` routine fires
