@@ -106,7 +106,7 @@ describe('Today', () => {
     await show('today')
     await waitFor(() => titles().length === 2, 'rows')
     await keys('r g p')
-    await waitFor(() => headings().join() === 'Priority 1,Priority 4', 'priority groups')
+    await waitFor(() => headings().join() === 'Priority 1,No priority', 'priority groups')
     expect(bulkToast()?.label).toBe('Group by: Priority')
     await keys('r g t')
     await waitFor(() => headings().length === 0, 'time of day')
@@ -168,7 +168,7 @@ describe('the Inbox', () => {
     expect(options('Order by')[0]).toBe('Manual order')
     expect(panel()!.querySelector('[data-display-subtasks]')).toBeNull()
     await choose('Group by', 'priority')
-    await waitFor(() => headings().join() === 'Priority 2,Priority 4', 'priority groups')
+    await waitFor(() => headings().join() === 'Priority 2,No priority', 'priority groups')
     expect(titles()).toEqual(['Parent', 'Child', 'Loose'])
     expect((await prefs()).inbox_group_by).toBe('priority')
     // Reset here leaves Today alone.

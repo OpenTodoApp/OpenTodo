@@ -93,7 +93,7 @@ describe('words', () => {
     const d = describeChange({ entity: 'task', entityId: 't', patch: { due: due('2026-10-16'), completed_at: 5, priority: 1, project_id: 'g', labels: ['l1'] }, base: { due: due('2026-10-14'), priority: 4, project_id: null, labels: [] } },
       { title: 'Water plants' }, names)
     expect(d.title).toBe('Water plants')
-    expect(d.lines).toEqual(['Due Wed 14 Oct → Fri 16 Oct', 'Completed', 'Priority P4 → P1', 'Moved from Inbox to Garden', 'Labels: +errand'])
+    expect(d.lines).toEqual(['Due Wed 14 Oct → Fri 16 Oct', 'Completed', 'Priority None → P1', 'Moved from Inbox to Garden', 'Labels: +errand'])
     expect(describeChange({ entity: 'task', entityId: 'n', create: true, patch: { title: 'Buy seeds', project_id: 'g' } }, undefined, names).title).toBe('New task in Garden: Buy seeds')
   })
   it('compares values regardless of key order', () => {

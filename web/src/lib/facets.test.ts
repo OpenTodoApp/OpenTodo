@@ -19,11 +19,12 @@ beforeEach(() => {
 })
 
 describe('facetsOf', () => {
-  it('the empty task: Where the Inbox, When not scheduled, How P4, no Who', () => {
+  it('the empty task: Where the Inbox, When not scheduled, How a faint Priority (no priority), no Who', () => {
     const f = facetsOf(base, ctx())
     expect(texts(f.where)).toEqual(['Inbox'])
     expect(f.when).toEqual([expect.objectContaining({ id: 'due', text: 'Not scheduled', empty: true, segment: 'due' })])
-    expect(texts(f.how)).toEqual(['P4'])
+    expect(texts(f.how)).toEqual(['Priority'])
+    expect(f.how[0].empty).toBe(true)
     expect(f.who).toEqual([])
   })
 

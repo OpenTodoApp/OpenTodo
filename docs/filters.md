@@ -79,7 +79,7 @@ text     := word | '"' chars '"'
 | `@name` | tasks carrying the label with that name |
 | `#name` | tasks in the project with that name |
 | `##name` | tasks in that project or in any of its sub-projects, at any depth |
-| `p1` … `p4` | tasks with that priority (`p1` is the highest, `p4` the default) |
+| `p1` … `p4` | tasks with that priority (`p1` is the highest, `p4` the default, shown as no priority) |
 | `due <cmp> <date>` | tasks whose due date compares as asked; a task without a due date never matches |
 | `created <cmp> <date>` | tasks whose creation day, in your time zone, compares as asked |
 | `deadline <cmp> <date>` | tasks whose [deadline](tasks-and-projects.md#deadlines) compares as asked; a task without a deadline never matches. `deadline <= 3 days` includes deadlines that have passed |

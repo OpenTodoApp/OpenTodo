@@ -94,7 +94,7 @@ describe('FilterBuilder', () => {
     const inner = r.container.querySelector('[data-filter-group="or"]')!
     expect(inner.textContent).toContain('Label is call')
     const not = r.container.querySelector('[data-filter-chip][data-not]')!
-    expect(not.textContent).toContain('Priority is P4')
+    expect(not.textContent).toContain('No priority')
     await r.unmount()
   })
 

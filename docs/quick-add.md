@@ -49,7 +49,7 @@ On a phone, the add sheet shows plain chips for what it understood, and buttons 
 | --- | --- | --- |
 | `#name` | Project, including sub-projects. Case-insensitive; spaces, `-` and `_` are ignored. An exact name wins, otherwise a unique prefix; `#Home/Docs` picks *Docs* under *Home*. If nothing matches, or a prefix fits several projects, the token stays in the title and a grey chip says so. | `#work`, `#trav` (Travel), `#sideproject` (Side Project), `#Home/Docs` |
 | `@name` | Label, matched ignoring case. A name with no label yet creates one when you press Enter; its chip says *New label* until then. Use as many as you like. | `@call`, `@waiting-for` |
-| `p1`–`p4` | Priority, 1 highest, 4 default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
+| `p1`–`p4` | Priority, 1 highest, 4 [no priority](priorities.md#no-priority), the default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
 

@@ -48,7 +48,7 @@ describe('HistoryView', () => {
     await click(v.container.querySelector('[data-version] button[aria-expanded]')!)
     const prio = v.container.querySelector('[data-change="priority"]')!
     expect(prio.textContent).toContain('Priority')
-    expect(prio.querySelector('del')!.textContent).toBe('P4')
+    expect(prio.querySelector('del')!.textContent).toBe('None')
     expect(prio.querySelector('ins')!.textContent).toBe('P1')
     const proj = v.container.querySelector('[data-change="project_id"]')!
     expect(proj.textContent).toMatch(/Project\s*/)
