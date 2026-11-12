@@ -28,11 +28,15 @@ The user SHALL be able to add a subtask from an "Add subtask" input in the paren
 ## ADDED Requirements
 
 ### Requirement: Add-subtask line in lists
-In a list that renders subtasks as indented rows — a project's or the Inbox's tree, and Today and Upcoming with Nest subtasks on (subtasks "Nested display in lists" and "Flat display in cross-project and date views") — a task with at least one visible subtask SHALL show an "Add a subtask" line at child indent directly after its last visible subtask. The line SHALL be muted until used: a ghost row that becomes the same input `a` opens when clicked or activated, and returns to the ghost on Escape or when it loses focus empty. A task with no visible subtask — childless, or with its subtasks folded — SHALL show no line, nor SHALL a completed task, a read-only task or a departing row, matching the row menu's own rules; a viewer of a shared project SHALL see no line. When several parents' visible subtasks end at the same row, each SHALL get its line at its own indent, innermost first. The line is not a task row: it does not count in progress or row positions, is not a `j`/`k` cursor stop, and writes through the same `createSubtask` ops as the other ways to add, so a subtask added from it appears offline at once and converges per field.
+In a list that renders subtasks as indented rows — a project's or the Inbox's tree, and Today and Upcoming with Nest subtasks on (subtasks "Nested display in lists" and "Flat display in cross-project and date views") — a task with at least one visible subtask SHALL offer an "Add a subtask" line at child indent directly after its last visible subtask: shown while the task is the selected row, or while the pointer is over the subtree's last row or the line itself, and out of the list and the tab order otherwise. The line SHALL be muted until used: a ghost row that becomes the same input `a` opens when clicked or activated, and returns to the ghost on Escape or when it loses focus empty. A task with no visible subtask — childless, or with its subtasks folded — SHALL show no line, nor SHALL a completed task, a read-only task or a departing row, matching the row menu's own rules; a viewer of a shared project SHALL see no line, and the lines SHALL hide while a drag runs so drop zones stay one-line rows. When several parents' visible subtasks end at the same row, each SHALL get its line at its own indent, innermost first. The line is not a task row: it does not count in progress or row positions, is not a `j`/`k` cursor stop, and writes through the same `createSubtask` ops as the other ways to add, so a subtask added from it appears offline at once and converges per field.
 
 #### Scenario: Line under the last subtask
-- **WHEN** "Plan trip" has subtasks "Flights" and "Hotel" in a project
+- **WHEN** "Plan trip" has subtasks "Flights" and "Hotel" in a project, and "Plan trip" is the selected row
 - **THEN** a muted "Add a subtask" line shows indented under "Hotel", and clicking it opens the input focused
+
+#### Scenario: Line under the pointer
+- **WHEN** the pointer rests on "Hotel", the last visible subtask of "Plan trip"
+- **THEN** the muted "Add a subtask" line shows under it until the pointer leaves
 
 #### Scenario: First line, second entry
 - **WHEN** the user adds "Insurance" from the line and the input stays open
@@ -47,9 +51,9 @@ In a list that renders subtasks as indented rows — a project's or the Inbox's 
 - **THEN** its subtasks list shows no "Add a subtask" line
 
 #### Scenario: Stacked lines
-- **WHEN** "Plan trip" ends with "Hotel", which ends with its own subtask "Compare prices"
-- **THEN** the row after "Compare prices" shows Hotel's line, then "Plan trip"'s, each at its own indent
+- **WHEN** "Plan trip" ends with "Hotel", which ends with its own subtask "Compare prices", and the pointer rests on "Compare prices"
+- **THEN** the row after it shows Hotel's line, then "Plan trip"'s, each at its own indent
 
 #### Scenario: Escape returns the ghost
 - **WHEN** the input opened from the line is empty and the user presses Escape or clicks away
-- **THEN** the muted line returns and nothing was written
+- **THEN** the muted line returns, on Escape with its button focused, and nothing was written
