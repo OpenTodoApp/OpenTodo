@@ -186,6 +186,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | Change | What | Status |
 | --- | --- | --- |
 | `habits-home` | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | Planned |
+| `habit-notes` | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | Planned |
 
 ## Native app
 
