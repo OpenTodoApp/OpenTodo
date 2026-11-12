@@ -125,3 +125,56 @@ func TestMoveToInboxKeepsWorkspace(t *testing.T) {
 		t.Fatalf("Work inbox = %s", raw)
 	}
 }
+
+// create_label in a workspace (issue 1222): by id or name, the default one
+// without it, a name counted per workspace, and a task's label name resolved
+// to the label of the task's workspace.
+func TestCreateLabelInWorkspace(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	name := "VPC"
+	vpc, err := f.sync.CreateWorkspace(ctx, "u1", opsync.WorkspaceInput{Name: &name})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.put("u1", "project", "client", map[string]any{"name": "Client", "workspace_id": vpc.ID})
+	f.task("u1", "t-client", "Send the offer", map[string]any{"project_id": "client"})
+	labelID := func(out map[string]any) (string, string) {
+		r := out["results"].([]map[string]any)[0]
+		return r["id"].(string), r["status"].(string)
+	}
+	home, st := labelID(f.mustCall(agent("u1"), "create_label", map[string]any{"name": "Hofer", "client_request_id": "l1"}))
+	if st != "created" {
+		t.Fatalf("default label status = %s", st)
+	}
+	if l, _ := f.sync.Get(ctx, "u1", "label", home); l["workspace_id"] != nil && string(l["workspace_id"]) != "null" {
+		t.Fatalf("default label workspace_id = %s", l["workspace_id"])
+	}
+	// The same name in VPC, by the workspace's name: a new label there.
+	inVPC, st := labelID(f.mustCall(agent("u1"), "create_label", map[string]any{"name": "hofer", "workspace_id": "vpc", "client_request_id": "l2"}))
+	if st != "created" || inVPC == home {
+		t.Fatalf("VPC label = %s %s", inVPC, st)
+	}
+	if l, _ := f.sync.Get(ctx, "u1", "label", inVPC); string(l["workspace_id"]) != `"`+vpc.ID+`"` {
+		t.Fatalf("VPC label workspace_id = %s", l["workspace_id"])
+	}
+	// Again in VPC, by id: the existing one.
+	if again, st := labelID(f.mustCall(agent("u1"), "create_label", map[string]any{"name": "HOFER", "workspace_id": vpc.ID, "client_request_id": "l3"})); again != inVPC || st != "exists" {
+		t.Fatalf("again = %s %s", again, st)
+	}
+	// A task of the VPC workspace gets VPC's label for the name, a task of
+	// the default workspace the default one.
+	f.mustCall(agent("u1"), "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "t-client", "labels": []string{"Hofer"}}}})
+	if got := string(f.get("u1", "t-client")["labels"]); got != `["`+inVPC+`"]` {
+		t.Fatalf("VPC task labels = %s, want the VPC label", got)
+	}
+	out := f.mustCall(agent("u1"), "create_tasks", map[string]any{"items": []any{map[string]any{"title": "Home errand", "labels": []string{"hofer"}}}, "client_request_id": "t1"})
+	tid := out["results"].([]map[string]any)[0]["id"].(string)
+	if got := string(f.get("u1", tid)["labels"]); got != `["`+home+`"]` {
+		t.Fatalf("default task labels = %s, want the default label", got)
+	}
+	// A workspace that is not the user's is refused.
+	if _, err := f.call(agent("u1"), "create_label", map[string]any{"name": "X", "workspace_id": "Acme", "client_request_id": "l4"}); !isArgErr(err) {
+		t.Fatalf("unknown workspace: %v", err)
+	}
+}
