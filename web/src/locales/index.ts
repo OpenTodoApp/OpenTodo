@@ -15,6 +15,7 @@ export const SHIPPED = [
   { code: 'it', name: 'Italiano' },
   { code: 'pt', name: 'Português' },
   { code: 'zh', name: '简体中文' },
+  { code: 'nl', name: 'Nederlands' },
 ] as const satisfies readonly ShippedLanguage[]
 
 /** One entry of SHIPPED. */

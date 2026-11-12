@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Dit bericht is verstuurd door de routine „{{.Routine}}“ van een project waarvan je lid bent in OpenTodo op {{.Origin}}.
+
+Bekijk deze uitvoering:
+
+{{.Link}}
+
+Je ontvangt dit bericht omdat de routine een stap „Mail de projectleden“ heeft en je lid bent met het bevestigde adres {{.Email}}. Om geen e-mails meer van deze routine te ontvangen, open je:
+
+{{.Stop}}
