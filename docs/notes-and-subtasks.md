@@ -19,19 +19,20 @@ The notes field formats as you type: `- ` starts a bullet list, `[ ] ` a checkli
 
 ## Break a task into subtasks
 
-Big tasks are easier as a few small steps:
+Big tasks are easier as a few small steps. To add one:
 
 - open the task and type in **Add subtask**,
-- choose **Add subtask** in its menu, or
-- select the task in the list and press <kbd>a</kbd> — or type in the **Add a subtask** line under its last subtask.
+- choose **Add subtask** in its menu,
+- select the task in the list and press <kbd>a</kbd>, or
+- type in the **Add a subtask** line under a task's last subtask.
 
-Subtasks appear indented under their parent, which shows a ring and its progress (**1/3**). Nest them; each level counts its own.
+Subtasks appear indented under their parent, which shows a ring and its progress (**1/3**). You can nest subtasks; each level counts its own.
 
-To add several at once, paste a list (up to 100 lines) into **Add subtask** and confirm **Add 3 subtasks**. Markers such as `-` and `1.` are removed as in [quick add](quick-add.md#paste-a-list); dates and projects are not read, and one **Undo** removes them all.
+To add several at once, paste a list (up to 100 lines) into the empty **Add subtask** line and confirm **Add 3 subtasks**. Markers such as `-` and `1.` are removed as in [quick add](quick-add.md#paste-a-list), but dates and projects are not read. One **Undo** removes them all.
 
-To make an existing task a subtask, select it and press <kbd>Tab</kbd> to move it under the task above; <kbd>Shift</kbd>+<kbd>Tab</kbd> moves it back out, and the panel's **Parent task** does the same. Use <kbd>←</kbd> and <kbd>→</kbd> to fold and unfold a parent's subtasks.
+To turn an existing task into a subtask, select it and press <kbd>Tab</kbd>: it moves under the task above it. <kbd>Shift</kbd>+<kbd>Tab</kbd> moves it back out. You can also pick a **Parent task** in the panel. Use <kbd>←</kbd> and <kbd>→</kbd> to fold and unfold a parent's subtasks.
 
-Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent; press <kbd>Enter</kbd> for yes.
+Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.
 
 ## Wait for another task
 

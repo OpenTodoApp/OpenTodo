@@ -9,7 +9,8 @@ import type { Progress } from '../../lib/subtasks'
 import type { Task } from '../../lib/types'
 import { noteKeys } from '../../lib/taskDelta'
 import { render } from '../../ui/test-utils'
-import { useRowRenderer, type RowContext } from './ListGroups'
+import { rowRenderer, useRowRenderer, type RowContext } from './ListGroups'
+import { markGhost } from '../motion'
 import type { RowActions } from './TaskListRow'
 
 const task = (id: string): Task => ({ id, title: id, notes: '', project_id: null, section_id: null, parent_id: null, position: 1, priority: 4, due: null, deadline: null, start: null, labels: [], completed_at: null, deleted_at: null, created_at: 1, updated_at: 1, assignee_id: null } as unknown as Task)
@@ -25,7 +26,7 @@ function context(over: Partial<RowContext> = {}): RowContext {
   return {
     view: 'project', projectMap: new Map(), labelMap: LABELS, memberMap: new Map(), selectedId: null, progress: new Map(), blocked: new Map(),
     habits: new Map(), isReadOnly: readOnly, board: false, manual: true, treeView: true, dropAt: null, draggingId: null, ticked: NONE, showCheckbox: false,
-    fieldColumns: false, projectFieldDefs: FIELDS, siblingPos: new Map(), timeColumn: false, actions, addingUnder: null, onCloseSubtask: noop, subtaskAddOpen: null, openSubtaskAdd: noop, ...over,
+    fieldColumns: false, projectFieldDefs: FIELDS, siblingPos: new Map(), timeColumn: false, actions, addingUnder: null, onCloseSubtask: noop, subtaskAddOpen: null, openSubtaskAdd: noop, subtaskAddEnds: new Map(), ...over,
   }
 }
 
@@ -77,6 +78,36 @@ describe('useRowRenderer', () => {
     expect(now[2]).toBe(was[2])
     expect(looked.filter((id) => id !== 'b')).toEqual([])
     await r.unmount()
+  })
+
+  it('makes again the row an "Add a subtask" line turns on for when its parent is selected', async () => {
+    // The line shows for the selected parent but lives on the row its subtree ends at
+    // (quick-subtask-add): the ending row reads differently, the others are kept.
+    const parent = task('p'), last = task('l')
+    const marked: ListRow = { ...flatRow(last), parent: 'p', depth: 1, subtaskAdds: [{ task: parent, depth: 0 }] }
+    const markedRows = [flatRow(parent), marked, flatRow(task('o'))]
+    const ends = new Map([['p', 'l']])
+    const out: ReactNode[][] = []
+    const r = await render(<Probe c={context({ subtaskAddEnds: ends })} rows={markedRows} out={out} />)
+    await r.rerender(<Probe c={context({ selectedId: 'p', subtaskAddEnds: ends })} rows={markedRows} out={out} />)
+    const [first, second] = out.slice(-2)
+    // The parent re-draws as the selected row, the ending row for the line it now shows.
+    expect(second[0]).not.toBe(first[0])
+    expect(second[1]).not.toBe(first[1])
+    expect(second[2]).toBe(first[2])
+    await r.unmount()
+  })
+
+  it('draws no "Add a subtask" line on a departing row or while a drag runs', async () => {
+    const parent = task('p'), last = task('l')
+    const marked: ListRow = { ...flatRow(last), parent: 'p', depth: 1, subtaskAdds: [{ task: parent, depth: 0 }] }
+    const r1 = await render(<ul>{rowRenderer(context({ draggingId: 'x' }))(marked)}</ul>)
+    expect(document.querySelector('[data-subtask-adds]')).toBeNull()
+    await r1.unmount()
+    const ghost = { ...marked, task: markGhost(task('g')) }
+    const r2 = await render(<ul>{rowRenderer(context())(ghost)}</ul>)
+    expect(document.querySelector('[data-subtask-adds]')).toBeNull()
+    await r2.unmount()
   })
 
   it('makes every row again when a list-wide field changes', async () => {

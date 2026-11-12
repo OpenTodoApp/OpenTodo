@@ -1,7 +1,7 @@
 // Where a list draws its "Add task below" line (OpenSpec change add-below, GitHub
 // issue 1036): after the row and its visible subtasks, then after each task the line
 // added, at the row's own indent, so the line sits where the next task will appear.
-import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { ListRow } from '../../lib/listGroups'
 import type { Task } from '../../lib/types'
 
@@ -58,7 +58,16 @@ export function useAddLines(rows: readonly ListRow[], ui: { addingUnder: string 
   const openSubtaskAdd = useCallback((id: string) => { setSubtaskAddOpen(id); setAddingUnder(null); setAddingBelow(null) }, [setAddingUnder, setAddingBelow])
   // `a` and the row menu set addingUnder/addingBelow through `ui` directly: one inline add input at a time.
   useEffect(() => { if (addingUnder || ui.addingBelow) setSubtaskAddOpen(null) }, [addingUnder, ui.addingBelow])
+  /** Each marked parent's ending row: where its line is drawn (the renderer's marks by parent). */
+  const subtaskAddEnds = useMemo(() => {
+    const ends = new Map<string, string>()
+    for (const r of rows) for (const a of r.subtaskAdds ?? []) ends.set(a.task.id, r.task.id)
+    return ends
+  }, [rows])
+  // The open line's mark left the rows (the parent folded or its subtask list went away): the line is
+  // gone, so the input does not come back focused when the mark does.
+  useEffect(() => { if (subtaskAddOpen && !subtaskAddEnds.has(subtaskAddOpen)) setSubtaskAddOpen(null) }, [subtaskAddEnds, subtaskAddOpen])
   const onCloseSubtask = useCallback(() => { setAddingUnder(null); setAddingBelow(null); setSubtaskAddOpen(null) }, [setAddingUnder, setAddingBelow])
   const onAddedBelow = useCallback((anchor: string, id: string) => setAddingBelow((s) => (s && s.anchor === anchor ? { ...s, last: id } : s)), [setAddingBelow])
-  return { addingUnder, addingBelow, onAddedBelow, onCloseSubtask, subtaskAddOpen, openSubtaskAdd }
+  return { addingUnder, addingBelow, onAddedBelow, onCloseSubtask, subtaskAddOpen, openSubtaskAdd, subtaskAddEnds }
 }

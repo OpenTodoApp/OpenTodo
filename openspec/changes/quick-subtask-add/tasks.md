@@ -13,3 +13,8 @@
 
 - [x] 3.1 No new strings expected ("Add a subtask"/"Add subtask" exist): run `node scripts/i18n/extract.mjs --write` if any appear and `make i18n-check`
 - [x] 3.2 `cd web && npm test && npm run build`, `make bundle-budget`, `make openspec-validate`; add `changelog.d/Added/quick-subtask-add.md`
+
+## 4. Review follow-ups
+
+- [x] 4.1 Show the line only for the selected parent and under the pointer, not under every expanded parent: the marks render in one hidden `<li>` per ending row, revealed by selection, hover or focus (`index.css`), and `subtaskAddEnds` (parent → ending row) keeps the row cache's `mayChange` to a lookup per row
+- [x] 4.2 Lay the line out like a row ("+" in the child's checkbox slot, the label at the title column, time column aware), draw none on a departing row or while a drag runs, hand focus back to the line's button on Escape, clear `subtaskAddOpen` when the parent's marks leave the rows, and cover the viewer case with a test

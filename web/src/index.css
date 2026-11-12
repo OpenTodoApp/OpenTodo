@@ -1139,6 +1139,21 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 .row-selected { background-color: var(--ot-selected-row); }
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
 .row-hover:hover { background-color: var(--ot-hover); }
+/* The "Add a subtask" line under a parent's last visible subtask (quick-subtask-add,
+   GitHub issue 1191): out of the list and the tab order until the parent is the
+   selected row, or the pointer is over the subtree's last row or the line itself. */
+li[data-subtask-adds] { display: none; }
+li[data-subtask-adds]:has(> [data-line-selected]),
+li[data-subtask-adds]:hover,
+li[data-subtask-adds]:focus-within { display: block; }
+/* Inside the stack, the selected parent's line shows; a pointer or focus in it shows them all. */
+li[data-subtask-adds] > [data-subtask-add-line]:not([data-line-selected]) { display: none; }
+li[data-subtask-adds]:hover > [data-subtask-add-line],
+li[data-subtask-adds]:focus-within > [data-subtask-add-line] { display: block; }
+@media (hover: hover) {
+  li:hover + li[data-subtask-adds] { display: block; }
+  li:hover + li[data-subtask-adds] > [data-subtask-add-line] { display: block; }
+}
 /* A touch hold armed (task-row-context-menu "Touch: hold and release"): the pressed
    row tints while the hold counts, so holding reads as feedback before the menu opens
    on release. A plain attribute, so it survives the row's re-renders mid-hold. */
