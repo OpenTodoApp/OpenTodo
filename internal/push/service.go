@@ -297,7 +297,7 @@ const scanPage = 500
 
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
 	var out []dueReminder
-	trashed := map[string]bool{} // "<user>\x00<project>" -> in the Trash (this pass)
+	quiet := map[string]bool{} // "<user>\x00<project>" -> in the Trash or archived (this pass)
 	var after *dueReminder
 	for {
 		cands, err := s.candidates(ctx, nowMs, scanPage, after)
@@ -306,7 +306,7 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 		}
 		for i := range cands {
 			d := cands[i]
-			ok, closed, err := s.eligible(ctx, &d, trashed)
+			ok, closed, err := s.eligible(ctx, &d, quiet)
 			if err != nil {
 				return nil, err
 			}
@@ -365,9 +365,9 @@ func (s *Service) candidates(ctx context.Context, maxFireMs int64, limit int, af
 
 // eligible reports whether a candidate fires: only reminders on an open task
 // the user can still see, and not while the task's project or any ancestor
-// project is in the Trash. It fills in the title that may be pushed. closed
+// project is in the Trash or archived. It fills in the title that may be pushed. closed
 // reports a completed task: its reminder never fires for this firing time.
-func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[string]bool) (ok, closed bool, err error) {
+func (s *Service) eligible(ctx context.Context, d *dueReminder, quiet map[string]bool) (ok, closed bool, err error) {
 	t, err := s.sync.Get(ctx, d.UserID, "task", d.TaskID)
 	if err != nil {
 		return false, false, err
@@ -380,13 +380,14 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, trashed map[stri
 	if !opsync.IsNull(t["completed_at"]) {
 		return false, true, nil
 	}
-	inTrash, err := s.projectTrashed(ctx, d.UserID, jsonString(t["project_id"]), trashed)
+	waits, err := s.inQuietProject(ctx, d.UserID, jsonString(t["project_id"]), quiet)
 	if err != nil {
 		return false, false, err
 	}
-	if inTrash {
-		// Not recorded as delivered: once the project is restored the
-		// reminder is delivered on the next pass (OpenSpec `reminders`).
+	if waits {
+		// Not recorded as delivered: once the project is restored or
+		// unarchived the reminder is delivered on the next pass (OpenSpec
+		// `reminders`).
 		return false, false, nil
 	}
 	// An end-to-end encrypted title (OpenSpec `e2ee`) is never pushed, not even
@@ -408,9 +409,9 @@ func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
 	if err != nil {
 		return time.Time{}, false, err
 	}
-	trashed := map[string]bool{}
+	quiet := map[string]bool{}
 	for _, d := range cands {
-		ok, _, err := s.eligible(ctx, &d, trashed)
+		ok, _, err := s.eligible(ctx, &d, quiet)
 		if err != nil {
 			return time.Time{}, false, err
 		}
@@ -419,43 +420,6 @@ func (s *Service) NextDue(ctx context.Context) (time.Time, bool, error) {
 		}
 	}
 	return time.Time{}, false, nil
-}
-
-// maxProjectDepth bounds the ancestor walk; the seen set already stops cycles.
-const maxProjectDepth = 64
-
-// projectTrashed reports whether project id, or any project above it through
-// parent_id, carries a tombstone in the user's view. A project the user cannot
-// see ends the walk. Results are cached for one pass in cache.
-func (s *Service) projectTrashed(ctx context.Context, userID, id string, cache map[string]bool) (bool, error) {
-	var path []string
-	seen := map[string]bool{}
-	result := false
-	for depth := 0; id != "" && !seen[id] && depth < maxProjectDepth; depth++ {
-		key := userID + "\x00" + id
-		if v, ok := cache[key]; ok {
-			result = v
-			break
-		}
-		seen[id] = true
-		path = append(path, key)
-		p, err := s.sync.Get(ctx, userID, "project", id)
-		if err != nil {
-			return false, err
-		}
-		if p == nil {
-			break
-		}
-		if p.Deleted() {
-			result = true
-			break
-		}
-		id = jsonString(p["parent_id"])
-	}
-	for _, k := range path {
-		cache[k] = result
-	}
-	return result, nil
 }
 
 func jsonString(raw json.RawMessage) string {

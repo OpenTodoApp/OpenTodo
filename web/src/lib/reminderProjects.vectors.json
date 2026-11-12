@@ -1,0 +1,31 @@
+{
+  "about": "Whether a task's reminders wait because its project, or a project above it, is in the Trash or archived (OpenSpec reminders). Read by internal/push/quiet_test.go and web/src/lib/reminderWatcher.test.ts.",
+  "projects": [
+    { "id": "live", "parent_id": null, "deleted_at": null, "archived": false },
+    { "id": "trashed", "parent_id": null, "deleted_at": 1700000000000, "archived": false },
+    { "id": "archived", "parent_id": null, "deleted_at": null, "archived": true },
+    { "id": "under-archived", "parent_id": "archived", "deleted_at": null, "archived": false },
+    { "id": "under-trashed", "parent_id": "trashed", "deleted_at": null, "archived": false },
+    { "id": "deep", "parent_id": "under-archived", "deleted_at": null, "archived": false },
+    { "id": "under-live", "parent_id": "live", "deleted_at": null, "archived": false },
+    { "id": "orphan", "parent_id": "missing", "deleted_at": null, "archived": false },
+    { "id": "cycle-a", "parent_id": "cycle-b", "deleted_at": null, "archived": false },
+    { "id": "cycle-b", "parent_id": "cycle-a", "deleted_at": null, "archived": false },
+    { "id": "archived-in-cycle", "parent_id": "cycle-c", "deleted_at": null, "archived": false },
+    { "id": "cycle-c", "parent_id": "archived-in-cycle", "deleted_at": null, "archived": true }
+  ],
+  "cases": [
+    { "name": "no project (the Inbox)", "project_id": null, "quiet": false },
+    { "name": "a live project", "project_id": "live", "quiet": false },
+    { "name": "a project in the Trash", "project_id": "trashed", "quiet": true },
+    { "name": "an archived project", "project_id": "archived", "quiet": true },
+    { "name": "a live sub-project of an archived project", "project_id": "under-archived", "quiet": true },
+    { "name": "a live sub-project of a trashed project", "project_id": "under-trashed", "quiet": true },
+    { "name": "two levels below an archived project", "project_id": "deep", "quiet": true },
+    { "name": "a live sub-project of a live project", "project_id": "under-live", "quiet": false },
+    { "name": "an unknown project", "project_id": "missing", "quiet": false },
+    { "name": "a live project under an unknown parent", "project_id": "orphan", "quiet": false },
+    { "name": "a cycle of live projects", "project_id": "cycle-a", "quiet": false },
+    { "name": "a cycle with an archived project in it", "project_id": "archived-in-cycle", "quiet": true }
+  ]
+}

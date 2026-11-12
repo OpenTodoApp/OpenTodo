@@ -11,6 +11,7 @@ import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
+import { inQuietProject, type ProjectLink } from './reminderWatcher'
 import { currentUserId } from './sharing'
 import type { Reminder, Task } from './types'
 
@@ -23,15 +24,20 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const WIDGET_MAX = 50
 const DEBOUNCE_MS = 500
 
-/** The reminders the shell should schedule: live, not dismissed, firing in the next 7 days. */
-export function shellReminders(reminders: readonly Reminder[], tasks: readonly Task[], now: number, opts: { titles: boolean; encrypted: boolean }): ShellReminder[] {
+/**
+ * The reminders the shell should schedule: live, not dismissed, firing in the next 7
+ * days, on an open task outside any trashed or archived project (OpenSpec `reminders`).
+ */
+export function shellReminders(reminders: readonly Reminder[], tasks: readonly Task[], now: number, opts: { titles: boolean; encrypted: boolean }, projects: readonly ProjectLink[] = []): ShellReminder[] {
   const byId = new Map(tasks.map((task) => [task.id, task]))
+  const projectById = new Map(projects.map((p) => [p.id, p]))
   const out: ShellReminder[] = []
   for (const r of reminders) {
     if (r.deleted_at || r.fire_at == null || r.fire_at < now || r.fire_at > now + WEEK_MS) continue
     if (r.dismissed_at != null && r.dismissed_at >= r.fire_at) continue
     const task = byId.get(r.task_id)
     if (!task || task.deleted_at || task.completed_at) continue
+    if (inQuietProject(task.project_id, projectById)) continue
     const item: ShellReminder = { id: r.id, taskId: r.task_id, fireAt: r.fire_at }
     if (opts.titles && !opts.encrypted && task.title) item.title = task.title
     out.push(item)
@@ -89,8 +95,8 @@ async function publishReminders(now = Date.now()): Promise<ShellPermission | nul
   const enc = encryptionSnapshot()
   const on = await shellNotificationsEnabled()
   if (!on || (enc.enabled && !enc.unlocked)) return scheduleReminders([])
-  const [reminders, tasks, titles] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), getMeta<boolean>(META_INCLUDE, false)])
-  return scheduleReminders(shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled }))
+  const [reminders, tasks, projects, titles] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), getMeta<boolean>(META_INCLUDE, false)])
+  return scheduleReminders(shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled }, projects))
 }
 
 /** Computes and hands over the widgets' Today list now. */
@@ -118,8 +124,8 @@ export function startShellPublishers(): () => void {
       if (has('geofences')) void publishGeofences().catch(() => undefined)
     }, DEBOUNCE_MS)
   }
-  // Any change to tasks, reminders, places (a linked place's pin) or the meta table (the switches, the titles option).
-  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
+  // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin) or the meta table (the switches, the titles option).
+  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), db.places.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
   const offEnc = onEncryptionChange(run)
   // The day rolls over at the logical day start even when nothing changes.
   const tick = setInterval(run, 15 * 60 * 1000)
