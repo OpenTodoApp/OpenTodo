@@ -128,7 +128,7 @@ func (snap *snapshot) noteLabels(a args) (json.RawMessage, bool, error) {
 	if !a.present("label_ids") {
 		return nil, false, nil
 	}
-	lids, err := snap.labelIDsFor("", a["label_ids"])
+	lids, err := snap.labelIDsFor("", a["label_ids"], "")
 	if err != nil {
 		return nil, false, err
 	}

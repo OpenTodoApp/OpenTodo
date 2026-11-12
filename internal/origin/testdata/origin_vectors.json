@@ -255,6 +255,16 @@
       "label": "Microsoft To Do"
     },
     {
+      "name": "import from an iCalendar file reads as the format, never the UID",
+      "origin": {
+        "kind": "import",
+        "provider": "ics",
+        "id": "b2c1e0a4-1111-4c5e-9a1f-000000000001"
+      },
+      "valid": true,
+      "label": "iCalendar"
+    },
+    {
       "name": "import from an unknown profile reads as its provider",
       "origin": {
         "kind": "import",

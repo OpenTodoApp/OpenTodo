@@ -9,7 +9,7 @@ order: 60
 ---
 # Import formats
 
-OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, and the JSON exports of other task managers. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), run [`ot import`](cli.md#import), or drive the same endpoints from a script; see [API](#api) below.
+OpenTodo imports tasks, projects, sections, recurrence rules and reminders from files: its own JSON export (for moving between instances or recovering), CSV from a spreadsheet or a script, the JSON exports of other task managers, and iCalendar (`.ics`) files of tasks such as a Nextcloud Tasks export. Open **Settings → Data → Import data** in the web app (or press `g` then `Shift+I`), run [`ot import`](cli.md#import), or drive the same endpoints from a script; see [API](#api) below.
 
 Every import works in two steps:
 
@@ -34,6 +34,7 @@ The format is detected from the content, in this order; the preview shows what w
 | `anydo-json` | `categories` and `tasks` arrays, tasks with `categoryId` and `status` | Any.do's data request, see [Any.do](#anydo-anydo-json) |
 | `super-productivity-json` | top-level (or `data`-level) `task` and `project` objects, each with `ids` and `entities` | Super Productivity's backup, see [Super Productivity](#super-productivity-super-productivity-json) |
 | `vikunja-export` | a ZIP with `VERSION` and a `data.json` array of projects with `id`, `title`, `tasks` and `hex_color` (or that `data.json` alone) | Vikunja's data export, see [Vikunja](#vikunja-vikunja-export) |
+| `ics` | a file that starts with `BEGIN:VCALENDAR` | an iCalendar file of tasks (Nextcloud Tasks, Thunderbird, Tasks.org), see [iCalendar](#icalendar-ics) |
 | `json-items` | top-level `items` and `projects` arrays | "projects / sections / items" backups |
 | `json-lists` | a top-level `lists` array | lists of tasks; each list becomes a project |
 | `json-generic` | a top-level array of objects, or a `tasks` array | a generic task list |
@@ -312,6 +313,30 @@ Any.do sends your data as JSON when you ask for it (see the [Any.do guide](switc
 | shared members, attachments, the daily plan | dropped with a warning |
 | `globalTaskId` | the task's origin, `{kind: "import", provider: "anydo", id: <globalTaskId>}` |
 
+### iCalendar (`ics`)
+
+An iCalendar file (RFC 5545) holds tasks as `VTODO` components. Nextcloud Tasks saves a list as one with **Download** in the list's menu (Nextcloud Calendar's **Export** gives the same file); Thunderbird, Evolution and Tasks.org save the same format. Each task is read with the same mapping as a task sent over [CalDAV](caldav.md), so a list reads the same whether you import it or sync it.
+
+| iCalendar | Becomes |
+| --- | --- |
+| `X-WR-CALNAME` | one project of that name for the whole file; without it the tasks go to your Inbox or the target project |
+| `SUMMARY`, `DESCRIPTION` | the title and the description |
+| `RELATED-TO;RELTYPE=PARENT` (or `RELATED-TO` without `RELTYPE`) | a subtask of the task with that `UID`, wherever that task is in the file; a parent that is not in the file makes it a top-level task, with a warning |
+| `RELATED-TO;RELTYPE=DEPENDS-ON` | blocked by that task |
+| `PRIORITY` 1–3 / 4–6 / 7–9 / 0 | p1 / p2 / p3 / p4 |
+| `DUE` | the due date, with its time in the import's time zone when it has one |
+| `DTSTART` and a different `DUE` | the due date (`DTSTART`) and the deadline (the date of `DUE`), as over CalDAV |
+| `DTSTART` alone | the start date |
+| `STATUS:COMPLETED` or `CANCELLED`, `COMPLETED` | completed at that time |
+| `CREATED` | created at |
+| `CATEGORIES` | labels |
+| `RRULE` | a recurrence rule, when the [rule grammar](#recurrence) can express it; otherwise dropped with a warning |
+| `ESTIMATED-DURATION` | the estimate |
+| `VALARM` with `ACTION:DISPLAY` | a reminder: before or after the due time, or at a fixed time; email and sound alarms, repeating alarms and location alarms are dropped with a warning |
+| `UID` | the task's origin, `{kind: "import", provider: "ics", id: <UID>}`; importing the same file again skips the tasks it already created |
+
+Only tasks are imported: events (`VEVENT`) and journal entries are counted in a note. Changes to single occurrences of a repeating task (`RECURRENCE-ID`) and skipped occurrences (`EXDATE`) are dropped with a warning; the series itself is imported. `PERCENT-COMPLETE` below 100, `LOCATION`, `URL`, `CLASS` and other properties are not kept. A task that cannot be read, for example one without a `UID` or cut off before its `END:VTODO`, is one row in error with the reason; the rest of the file still imports.
+
 ### Super Productivity (`super-productivity-json`)
 
 Super Productivity saves all its data as one JSON file from **Settings → Sync & Backup → Export data** (see the [Super Productivity guide](switch/super-productivity.md)). Backups from version 14 on hold the data under `data`; older ones at the top level. Verified against backups of Super Productivity 19.3.1.
@@ -527,7 +552,7 @@ A relative reminder fires at the due time plus its offset, with a date-only due 
 
 ### Origins
 
-Tasks from Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders and Any.do keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field. The task panel, its history and the command palette read it as **Imported from Todoist** (or the app it came from), and `ot list` as `Todoist`; the source id is the importer's key for duplicates and is never shown. A row shows no origin for an import, except a Trello card's link as its icon. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
+Tasks from Todoist, TickTick, Things, Linear, Google Tasks, Trello, Asana, Microsoft To Do, Apple Reminders, Any.do and iCalendar files keep where they came from as their [origin](capture.md#where-a-task-came-from), written in the import's operations like every other field. The task panel, its history and the command palette read it as **Imported from Todoist** (or the app it came from, **Imported from iCalendar** for an `.ics` file), and `ot list` as `Todoist`; the source id is the importer's key for duplicates and is never shown. A row shows no origin for an import, except a Trello card's link as its icon. Tasks from a generic CSV or JSON file get none, and the preview has no origin column. Duplicate detection still uses the importer's own memory (below), not the origin.
 
 ## Duplicates
 

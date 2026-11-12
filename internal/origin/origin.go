@@ -249,6 +249,7 @@ var importApps = map[string]string{
 	"apple-reminders":    "Apple Reminders",
 	"asana":              "Asana",
 	"google-tasks":       "Google Tasks",
+	"ics":                "iCalendar",
 	"microsoft-todo":     "Microsoft To Do",
 	"notion":             "Notion",
 	"omnifocus":          "OmniFocus",

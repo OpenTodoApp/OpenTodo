@@ -1,0 +1,9 @@
+{{.Inviter}} heeft je uitgenodigd voor OpenTodo
+
+Dit is een uitnodiging voor OpenTodo.
+
+{{.Inviter}} heeft {{.Email}} uitgenodigd voor de OpenTodo-server op {{.Origin}}. Om je account aan te maken, open je deze link:
+
+{{.Link}}
+
+De link vervalt over {{.Expiry}}. Als je {{.Inviter}} niet kent, kun je dit bericht negeren.
