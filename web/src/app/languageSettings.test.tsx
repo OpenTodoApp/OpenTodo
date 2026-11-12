@@ -97,7 +97,7 @@ describe('Language panel', () => {
   it('a community language is listed after the maintained ones', async () => {
     const view = await render(<LanguageView value="system" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Polski'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Polski'])
     expect(view.container.querySelector('[data-language-community]')).toBeNull()
     await view.unmount()
   })
