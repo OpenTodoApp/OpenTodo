@@ -1,0 +1,80 @@
+{
+  "format": "ics",
+  "notes": [],
+  "totals": {
+    "rows": 4,
+    "create": 4,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 4,
+    "newProjects": 0,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 2,
+    "reminders": 4,
+    "deadlines": 1,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 8,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "ics:weekly-review",
+      "kind": "task",
+      "title": "Weekly review",
+      "outcome": "create",
+      "warnings": [
+        "changes to single occurrences (RECURRENCE-ID) are not imported"
+      ]
+    },
+    {
+      "row": 2,
+      "sourceId": "ics:water-plants",
+      "kind": "task",
+      "title": "Water the plants",
+      "outcome": "create",
+      "warnings": [
+        "skipped occurrences (EXDATE) are not imported"
+      ]
+    },
+    {
+      "row": 3,
+      "sourceId": "ics:every-hour",
+      "kind": "task",
+      "title": "Stretch",
+      "outcome": "create",
+      "warnings": [
+        "repeat rule \"FREQ=HOURLY\" cannot be imported"
+      ]
+    },
+    {
+      "row": 4,
+      "sourceId": "ics:tax-return",
+      "kind": "task",
+      "title": "Tax return",
+      "outcome": "create",
+      "warnings": [
+        "1 alarm(s) dropped (only display alarms with one trigger on the task's dates are imported)"
+      ]
+    }
+  ],
+  "fields": [
+    "task id-0001: title=\"Weekly review\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-20\",\"time\":\"08:00\"} recurrence=\"every friday\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"weekly-review\"} labels=[]",
+    "task id-0003: title=\"Water the plants\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-16\"} recurrence=\"every 3 days\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"water-plants\"} labels=[]",
+    "task id-0004: title=\"Stretch\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-11-16\",\"time\":\"10:00\"} origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"every-hour\"} labels=[]",
+    "task id-0005: title=\"Tax return\" description=\"\" priority=4 created_at=1791979200000 due={\"date\":\"2026-12-01\"} deadline=\"2026-12-15\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"tax-return\"} labels=[]",
+    "reminder id-0002: task_id=\"id-0001\" kind=\"relative\" offset_minutes=-15 fire_at=1795160700000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0006: task_id=\"id-0005\" kind=\"relative\" offset_minutes=0 fire_at=1796115600000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0007: task_id=\"id-0005\" kind=\"absolute\" offset_minutes=null fire_at=1797206400000 created_at=1791979200000 delivered_at=null dismissed_at=null",
+    "reminder id-0008: task_id=\"id-0005\" kind=\"absolute\" offset_minutes=null fire_at=1796889600000 created_at=1791979200000 delivered_at=null dismissed_at=null"
+  ]
+}

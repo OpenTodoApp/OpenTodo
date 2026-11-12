@@ -47,6 +47,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'super-productivity-json': msg('Super Productivity (backup JSON)'),
   'omnifocus-csv': msg('OmniFocus (CSV)'),
   'notion-csv': msg('Notion (Markdown and CSV export)'),
+  ics: msg('iCalendar tasks (.ics)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),
@@ -191,7 +192,7 @@ export function ImportView(p: ImportViewProps) {
 
       <section className="space-y-3">
         <label className="block text-body font-medium" htmlFor="import-file">{t('File')}</label>
-        <input id="import-file" type="file" accept=".json,.csv,.txt,.zip,.sqlite,.sqlite3,application/json,text/csv,application/zip,application/x-zip-compressed,application/vnd.sqlite3,application/x-sqlite3" disabled={disabled}
+        <input id="import-file" type="file" accept=".json,.csv,.txt,.zip,.sqlite,.sqlite3,.ics,application/json,text/csv,text/calendar,application/zip,application/x-zip-compressed,application/vnd.sqlite3,application/x-sqlite3" disabled={disabled}
           className="block w-full text-body file:mr-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-body"
           onChange={(e) => p.onPickFile(e.target.files?.[0] ?? null)} />
 

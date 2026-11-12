@@ -1,0 +1,101 @@
+{
+  "format": "ics",
+  "notes": [
+    "1 VEVENT component(s) not imported (only tasks, VTODO, are)"
+  ],
+  "totals": {
+    "rows": 7,
+    "create": 7,
+    "update": 0,
+    "skip": 0,
+    "error": 0,
+    "possibleDuplicates": 0,
+    "warnings": 1,
+    "newProjects": 1,
+    "newLabels": 3,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 10,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "sourceId": "ics:calendar:groceries",
+      "kind": "project",
+      "title": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 1,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000002",
+      "kind": "task",
+      "title": "Buy flour",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 2,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000001",
+      "kind": "task",
+      "title": "Bake a cake",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000003",
+      "kind": "task",
+      "title": "Buy eggs",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 4,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000004",
+      "kind": "task",
+      "title": "Grandchild step",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 5,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000005",
+      "kind": "task",
+      "title": "Return the bottles",
+      "project": "Groceries",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "ics:b2c1e0a4-1111-4c5e-9a1f-000000000006",
+      "kind": "task",
+      "title": "Orphan subtask",
+      "project": "Groceries",
+      "outcome": "create",
+      "warnings": [
+        "parent \"not-in-this-file\" not found; imported as a top-level task"
+      ]
+    }
+  ],
+  "fields": [
+    "label id-0003: name=\"Baking\" created_at=1791979200000",
+    "label id-0004: name=\"Weekend\" created_at=1791979200000",
+    "label id-0009: name=\"Errands\" created_at=1791979200000",
+    "project id-0001: name=\"Groceries\" archived=false created_at=1791979200000",
+    "task id-0005: title=\"Buy flour\" description=\"\" priority=4 created_at=1793523600000 project_id=\"id-0001\" parent_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000002\"} labels=[]",
+    "task id-0002: title=\"Bake a cake\" description=\"For Sunday, with the good chocolate.\\nAsk Anna for the recipe.\" priority=1 created_at=1793523300000 project_id=\"id-0001\" due={\"date\":\"2026-11-22\",\"time\":\"15:00\"} origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000001\"} labels=[\"id-0003\",\"id-0004\"]",
+    "task id-0006: title=\"Buy eggs\" description=\"\" priority=2 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0002\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000003\"} labels=[]",
+    "task id-0007: title=\"Grandchild step\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" parent_id=\"id-0006\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000004\"} labels=[]",
+    "task id-0008: title=\"Return the bottles\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000005\"} completed_at=1793527200000 labels=[\"id-0009\"]",
+    "task id-0010: title=\"Orphan subtask\" description=\"\" priority=4 created_at=1791979200000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"b2c1e0a4-1111-4c5e-9a1f-000000000006\"} labels=[]"
+  ]
+}
