@@ -22056,6 +22056,9 @@
   "https://…/basic.ics": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "iCalendar tasks (.ics)": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "iPhone or iPad": [
     "web/src/app/SecurityPanel.tsx"
   ],

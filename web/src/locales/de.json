@@ -7447,5 +7447,6 @@
   "Your changes on this page are not saved.": "Deine Änderungen auf dieser Seite sind nicht gespeichert.",
   "min": "Min.",
   "sessions": "Einheiten",
-  "Usage resets on the first day of each month (UTC).": "Die Nutzung wird am ersten Tag jedes Monats zurückgesetzt (UTC)."
+  "Usage resets on the first day of each month (UTC).": "Die Nutzung wird am ersten Tag jedes Monats zurückgesetzt (UTC).",
+  "iCalendar tasks (.ics)": "iCalendar-Aufgaben (.ics)"
 }

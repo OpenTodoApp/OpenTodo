@@ -7447,5 +7447,6 @@
   "Your changes on this page are not saved.": "此页面上的更改尚未保存。",
   "min": "分钟",
   "sessions": "轮",
-  "Usage resets on the first day of each month (UTC).": "用量会在每月第一天（UTC）重置。"
+  "Usage resets on the first day of each month (UTC).": "用量会在每月第一天（UTC）重置。",
+  "iCalendar tasks (.ics)": "iCalendar 任务（.ics）"
 }

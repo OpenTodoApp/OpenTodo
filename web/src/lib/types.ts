@@ -2022,6 +2022,7 @@ export type ImportFormat =
   | 'super-productivity-json'
   | 'tududi-db'
   | 'vikunja-export'
+  | 'ics'
 export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv',
   'google-tasks-json', 'trello-json', 'asana-csv', 'microsoft-todo-json', 'apple-reminders-json', 'anydo-json',
@@ -2030,6 +2031,7 @@ export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'super-productivity-json',
   'omnifocus-csv',
   'notion-csv',
+  'ics',
   'json-items', 'json-lists', 'json-generic', 'csv',
 ]
 

@@ -1,0 +1,82 @@
+{
+  "format": "ics",
+  "notes": [
+    "1 VJOURNAL component(s) not imported (only tasks, VTODO, are)"
+  ],
+  "totals": {
+    "rows": 6,
+    "create": 2,
+    "update": 0,
+    "skip": 0,
+    "error": 4,
+    "possibleDuplicates": 0,
+    "warnings": 0,
+    "newProjects": 0,
+    "newLabels": 0,
+    "newSections": 0,
+    "recurring": 0,
+    "reminders": 0,
+    "deadlines": 0,
+    "attachments": 0,
+    "fields": 0,
+    "timeEntries": 0,
+    "places": 0,
+    "notes": 0,
+    "entities": 2,
+    "written": 0,
+    "ops": 0
+  },
+  "viewHints": null,
+  "rows": [
+    {
+      "row": 1,
+      "sourceId": "ics:line:1",
+      "kind": "task",
+      "title": "No UID here",
+      "outcome": "error",
+      "reason": "invalid calendar object resource: VTODO without UID"
+    },
+    {
+      "row": 2,
+      "sourceId": "ics:good-1",
+      "kind": "task",
+      "title": "Read a book",
+      "outcome": "create"
+    },
+    {
+      "row": 3,
+      "sourceId": "ics:bad-estimate",
+      "kind": "task",
+      "title": "Too long",
+      "outcome": "error",
+      "reason": "invalid calendar data value: ESTIMATED-DURATION \"P30D\""
+    },
+    {
+      "row": 4,
+      "sourceId": "ics:cut-off",
+      "kind": "task",
+      "title": "Cut off",
+      "outcome": "error",
+      "reason": "the task is cut off before END:VTODO"
+    },
+    {
+      "row": 5,
+      "sourceId": "ics:good-2",
+      "kind": "task",
+      "title": "Call the plumber",
+      "outcome": "create"
+    },
+    {
+      "row": 6,
+      "sourceId": "ics:no-title",
+      "kind": "task",
+      "title": "",
+      "outcome": "error",
+      "reason": "the task has no title (SUMMARY)"
+    }
+  ],
+  "fields": [
+    "task id-0001: title=\"Read a book\" description=\"\" priority=4 created_at=1791979200000 start=\"2026-12-01\" origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"good-1\"} labels=[]",
+    "task id-0002: title=\"Call the plumber\" description=\"\" priority=3 created_at=1791979200000 origin={\"kind\":\"import\",\"provider\":\"ics\",\"id\":\"good-2\"} labels=[]"
+  ]
+}
