@@ -8,7 +8,9 @@ name: Nightly
 # Android builds and its performance run (app-native.yml, native-app-foundation D9).
 # Also runs on demand.
 # A failed night opens (or comments on) one issue labelled ci-nightly; the next
-# green night closes it, so a red nightly never goes unnoticed.
+# green night closes it, so a red nightly never goes unnoticed. A night whose only
+# failures are jobs GitHub never gave a runner (a hosted macOS shortage) is re-run
+# once by nightly-retry.yml before it is reported.
 on:
   schedule:
     - cron: "23 3 * * *"
@@ -141,6 +143,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      actions: read
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -149,4 +152,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RESULTS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: ./scripts/nightly-alert.sh

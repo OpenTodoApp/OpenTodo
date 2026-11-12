@@ -6,6 +6,8 @@
 # Environment:
 #   RESULTS  the workflow's `needs` context as JSON ({"job":{"result":"failure"},...})
 #   RUN_URL  link to the run
+#   RUN_ID, RUN_ATTEMPT  the run and its attempt (a first attempt that failed only
+#            for want of a runner is retried, see scripts/nightly-retry.sh)
 #   GH_TOKEN token for the gh CLI (issues: write)
 #   DRY_RUN  when set, print the gh commands instead of running them
 set -euo pipefail
@@ -29,6 +31,12 @@ failed=$(node -e '
 open=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)
 
 if [ -n "$failed" ]; then
+  # A first attempt whose only failures are jobs that never got a runner is re-run
+  # once by nightly-retry.yml; the retry's own alert reports its result.
+  if [ "${RUN_ATTEMPT:-1}" = 1 ] && [ -n "${RUN_ID:-}" ] && "$(dirname "$0")/nightly-retry.sh" check "$RUN_ID" 1; then
+    echo "nightly: only jobs without a runner failed; retrying once before reporting"
+    exit 0
+  fi
   body=$(printf 'The nightly run failed: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$(printf '%s\n' "$failed" | sed -e 's/^  /  - /' -e t -e 's/^/- /')")
   if [ -n "$open" ]; then
     gh_ issue comment "$open" --body "$body"

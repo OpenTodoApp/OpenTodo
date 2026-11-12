@@ -431,6 +431,14 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   for (const id of Object.keys(jobsOf(nightly))) {
     if (id !== 'alert') assert.ok(needsOf(alert).includes(id), `the nightly alert must need ${id}`)
   }
+  // A first attempt that failed only for want of a runner is retried once, not reported.
+  assert.match(alert, /^ {6}actions: read$/m, 'the nightly alert reads the run\'s jobs')
+  assert.match(alert, /RUN_ATTEMPT: \$\{\{ github\.run_attempt \}\}/)
+  const retry = read('.github/workflows/nightly-retry.yml')
+  assert.match(retry, /^ {2}workflow_run:\n {4}workflows: \[Nightly\]\n {4}types: \[completed\]$/m)
+  assert.match(retry, /github\.event\.workflow_run\.run_attempt == 1/, 'a second attempt is never retried')
+  assert.match(retry, /^ {6}actions: write$/m)
+  assert.match(retry, /scripts\/nightly-retry\.sh check "\$RUN_ID" 1; then\n\s+scripts\/nightly-retry\.sh rerun "\$RUN_ID"/, 'only a run without a real failure is re-run')
 })
 
 test('the sync client contract tests run against the built server', () => {
