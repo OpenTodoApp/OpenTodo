@@ -19,6 +19,8 @@ helm install opentodo oci://ghcr.io/opentodoapp/charts/opentodo \
   --namespace opentodo --create-namespace
 ```
 
+The chart is also listed on [Artifact Hub](https://artifacthub.io/packages/helm/opentodo/opentodo), with its values and versions.
+
 Until then, install it from a clone of the repository: `helm install opentodo ./deploy/helm/opentodo --namespace opentodo --create-namespace`.
 
 The chart's version is the OpenTodo release it installs: chart `0.7.0` runs `ghcr.io/opentodoapp/opentodo:0.7.0`. Pick a version with `--version`.
