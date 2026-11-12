@@ -1,8 +1,9 @@
 // Moves and assignments are reviewed first (bulk-edit D6): a move can change who
 // sees a task, an assignment tells someone. The assistant's review renders the
 // changes; Enter applies the checked ones as one undoable batch, Escape discards.
-import { Dialog } from '../../ui'
-import { useEffect, useState } from 'react'
+// The review arrives after the dialog opened, so focus moves into it then (#1236).
+import { Dialog, focusArrived } from '../../ui'
+import { useEffect, useRef, useState } from 'react'
 import { reviewChangeSet, type Review } from '../../lib/assistant'
 import type { ReviewPlan } from '../../lib/bulk'
 import { applyBatch } from '../../lib/undo'
@@ -13,7 +14,10 @@ import { t } from '../../lib/i18n'
 export function BulkReview({ title, plan, onClose, onApplied }: { title: string; plan: ReviewPlan; onClose: () => void; onApplied?: () => void }) {
   const [review, setReview] = useState<Review | null>(null)
   const [busy, setBusy] = useState(false)
+  const body = useRef<HTMLDivElement>(null)
+  const ready = review !== null
   useEffect(() => { void reviewChangeSet(plan.items).then(setReview) }, [plan])
+  useEffect(() => { if (ready) focusArrived(body.current) }, [ready])
   const apply = async () => {
     if (!review) return
     setBusy(true)
@@ -27,7 +31,7 @@ export function BulkReview({ title, plan, onClose, onApplied }: { title: string;
   }
   return (
     <Dialog title={title} onClose={onClose} size="md" testId="bulk-review">
-      <div data-bulk-review>
+      <div ref={body} data-bulk-review>
         {review ? (
           <ChangeSetReview review={review} result={null} busy={busy}
             onToggle={(i, checked) => setReview({ ...review, items: review.items.map((it, j) => (j === i ? { ...it, checked } : it)) })}

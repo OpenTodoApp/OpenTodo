@@ -160,6 +160,18 @@ export function focusInto(panel: HTMLElement) {
   ;(first ?? panel).focus({ preventScroll: true })
 }
 
+/**
+ * Content that arrives after its overlay opened (a review still being prepared on open):
+ * while focus rests on the overlay itself, it moves to the content's first control, as
+ * it would have on open, so the content's own keys (Enter applies) reach it.
+ */
+export function focusArrived(content: HTMLElement | null) {
+  const panel = content?.closest<HTMLElement>('[data-overlay]')
+  if (!content || !panel || document.activeElement !== panel) return
+  const first = content.querySelector<HTMLElement>('[autofocus], [data-autofocus]') ?? content.querySelector<HTMLElement>(FOCUSABLE)
+  first?.focus({ preventScroll: true })
+}
+
 /** Keeps Tab and Shift+Tab inside `panel`. */
 export function trapTab(e: KeyboardEvent | React.KeyboardEvent, panel: HTMLElement) {
   if (e.key !== 'Tab') return

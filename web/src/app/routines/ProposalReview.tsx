@@ -2,7 +2,8 @@
 // D3): a sheet with one row per item (a tick, what it changes from old to
 // new, "Written by AI" on text the AI wrote), all ticked; Apply writes the
 // ticked items on the server (which re-checks each against the current data)
-// with one Undo, Dismiss discards the proposal. Enter applies, Esc closes.
+// with one Undo, Dismiss discards the proposal. Enter applies, Esc closes. The
+// proposal arrives after the sheet opened, so focus moves into it then (#1236).
 // Apply and Dismiss need a connection. Loaded with the routines chunk.
 // An encrypted account's proposal is one envelope: this device opens it with
 // the account key, re-checks the ticked items on its own copy and sends them
@@ -16,7 +17,7 @@ import { useOnline } from '../../lib/online'
 import { appliedText, describeItem, type ProposalNames } from '../../lib/rules/proposal'
 import type { RoutineProposal, RoutineProposalApplied } from '../../lib/types'
 import type { ProposalBody } from '../../lib/rules/deviceProposal'
-import { Badge, Button, Dialog, Notice, Skeleton } from '../../ui'
+import { Badge, Button, Dialog, Notice, Skeleton, focusArrived } from '../../ui'
 import { showBulkToast, updateBulkToast } from '../bulk/toastStore'
 import { useRoutineNames } from './data'
 
@@ -30,6 +31,8 @@ export function ProposalView({ proposal, names, online, busy, error, onApply, on
   const ticked = items.filter((i) => !off.has(i.key)).map((i) => i.key)
   const toggle = (key: string, on: boolean) => setOff((s) => { const n = new Set(s); if (on) n.delete(key); else n.add(key); return n })
   const apply = () => { if (online && !busy && ticked.length) onApply(ticked) }
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => { focusArrived(root.current) }, [])
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && (e.target as HTMLElement).tagName !== 'BUTTON') { e.preventDefault(); apply() }
   }
@@ -37,7 +40,7 @@ export function ProposalView({ proposal, names, online, busy, error, onApply, on
     return <Notice tone="info">{proposal.encrypted && proposal.state === 'waiting' ? t('This proposal is encrypted: open it on one of your devices that runs your routines.') : t('This proposal was already applied, dismissed or expired.')}</Notice>
   }
   return (
-    <div className="space-y-3" onKeyDown={keys} data-proposal-review>
+    <div ref={root} className="space-y-3" onKeyDown={keys} data-proposal-review>
       <p className="text-meta text-muted">
         {t('{checked} of {count} selected · nothing changes until you apply · waits until {when}', { checked: ticked.length, count: items.length, when: formatInstant(proposal.expires_at, 'datetime') })}
       </p>
