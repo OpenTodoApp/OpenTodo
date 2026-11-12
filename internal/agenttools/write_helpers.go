@@ -250,8 +250,10 @@ func checkPatch(prefix, entity, id string, patch map[string]json.RawMessage) err
 	return nil
 }
 
-// labelIDsFor resolves label names (case-insensitive) or ids.
-func (snap *snapshot) labelIDsFor(prefix string, raw json.RawMessage) ([]string, error) {
+// labelIDsFor resolves label names (case-insensitive) or ids. A name several
+// labels share resolves to the one in workspace ws when there is one (labels
+// of the same name in two workspaces, issue 1222); ws "" prefers none.
+func (snap *snapshot) labelIDsFor(prefix string, raw json.RawMessage, ws string) ([]string, error) {
 	var names []string
 	if json.Unmarshal(raw, &names) != nil || names == nil {
 		return nil, argErr(prefix + "labels: must be an array of strings")
@@ -270,8 +272,13 @@ func (snap *snapshot) labelIDsFor(prefix string, raw json.RawMessage) ([]string,
 			// placeholder and must never match by accident.
 			for _, l := range snap.labelList {
 				if name := plainOrEmpty(l, "name"); name != "" && strings.EqualFold(strings.TrimSpace(n), name) {
-					id = str(l, "id")
-					break
+					if id == "" {
+						id = str(l, "id")
+					}
+					if ws != "" && snap.labelWorkspace(l) == ws {
+						id = str(l, "id")
+						break
+					}
 				}
 			}
 		}
