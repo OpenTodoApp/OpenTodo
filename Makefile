@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
+.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check i18n-status repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
@@ -405,9 +405,17 @@ web-lint:
 ## Translation catalogs (app-localization): every shipped catalog complete, no stale
 ## or malformed entries, placeholders as in the source; script tests included.
 ## The iOS shell's String Catalog is checked the same way (ios-shell).
+## A community language (more-languages D4) fails below 90 %; a maintained one is
+## also complete in the Android shell's strings and mail.Languages.
 i18n-check:
-	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs scripts/i18n/shell.test.mjs scripts/i18n/obsidian.test.mjs
+	node --test scripts/i18n/extract.test.mjs scripts/i18n/untranslated.test.mjs scripts/i18n-check.test.mjs scripts/i18n/shell.test.mjs scripts/i18n/obsidian.test.mjs scripts/i18n/status.test.mjs scripts/i18n/new-language.test.mjs
 	node scripts/i18n-check.mjs
+
+## How far every language is on every surface (more-languages D5): translated / total
+## and the first missing keys. Read-only, not part of `make check`. A new language
+## starts with `node scripts/i18n/new-language.mjs <code> "<Name>"`.
+i18n-status:
+	node scripts/i18n/status.mjs
 
 docker:
 	docker build --build-arg VERSION=$(VERSION) -t opentodo:$(VERSION) .

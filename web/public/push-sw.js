@@ -30,8 +30,11 @@
   // cannot load the catalogs, so it keeps its few texts here; each entry is pinned
   // to the app catalog's translation of the English text by src/lib/pushWorker.test.ts.
   // A missing preferences row or "system" means English: the worker cannot know
-  // which language the browser resolves to when no window is open.
-  const TEXT = {
+  // which language the browser resolves to when no window is open. A text missing
+  // from a language's entry is English (more-languages D4: a community or
+  // work-in-progress language may have an empty entry, `scripts/i18n/new-language.mjs`
+  // adds one).
+  const OWN_TEXT = {
     en: { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
     de: { reminder: 'Erinnerung', due: 'Fällig {date}', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
     fr: { reminder: 'Rappel', due: 'Échéance {date}', generic: 'Vous avez un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
@@ -40,7 +43,10 @@
     pt: { reminder: 'Lembrete', due: 'Vence {date}', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
     zh: { reminder: '提醒', due: '{date} 截止', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
   }
-  self.__opentodoText = TEXT
+  self.__opentodoText = OWN_TEXT
+  const TEXT = {}
+  for (const l of Object.keys(OWN_TEXT)) TEXT[l] = Object.assign({}, OWN_TEXT.en, OWN_TEXT[l])
+  self.__opentodoTextOf = (prefs) => TEXT[languageOf(prefs)]
 
   /** A text without its catalog context ("Done|task" is shown as "Done"). */
   function plain(s) {

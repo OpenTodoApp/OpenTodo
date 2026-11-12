@@ -12,6 +12,7 @@ import { setUserPref, type DateTimePrefs } from './userPrefs'
 import { applyReminderAction, handleShellUrl } from './shellActions'
 import { occurrenceId } from './ids'
 import source from '../../public/push-sw.js?raw'
+import { MAINTAINED } from '../locales'
 
 const HOUR = 3_600_000
 
@@ -352,11 +353,13 @@ describe('Done on a reminder notification (reminder-done-action)', () => {
 
 describe('service worker texts in the stored language (app-localization D9)', () => {
   const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
-  function workerText(): Record<string, Record<keyof typeof KEYS, string>> {
+  type Texts = Partial<Record<keyof typeof KEYS, string>>
+  function worker(code = source): Record<string, unknown> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }
-    new Function('self', 'fetch', 'indexedDB', source)(self, async () => ({ ok: true }), globalThis.indexedDB)
-    return self.__opentodoText as Record<string, Record<keyof typeof KEYS, string>>
+    new Function('self', 'fetch', 'indexedDB', code)(self, async () => ({ ok: true }), globalThis.indexedDB)
+    return self
   }
+  const workerText = () => worker().__opentodoText as Record<string, Texts>
 
   it('every worker text is the catalog’s translation of the same English message', async () => {
     const text = workerText()
@@ -366,8 +369,19 @@ describe('service worker texts in the stored language (app-localization D9)', ()
         continue
       }
       const catalog = (await import(`../locales/${lang}.json`)).default as Record<string, string>
-      for (const [key, english] of Object.entries(KEYS)) expect(entries[key as keyof typeof KEYS], `${lang}.${key}`).toBe(catalog[english])
+      for (const key of Object.keys(entries)) expect(entries[key as keyof typeof KEYS], `${lang}.${key}`).toBe(catalog[KEYS[key as keyof typeof KEYS]])
     }
+  })
+
+  it('every maintained language has every text (more-languages D6)', () => {
+    const text = workerText()
+    for (const { code } of MAINTAINED) expect(Object.keys(text[code] ?? {}).sort(), code).toEqual(Object.keys(KEYS).sort())
+  })
+
+  it('a language with an empty entry shows English (more-languages D4)', () => {
+    const self = worker(source.replace('const OWN_TEXT = {', 'const OWN_TEXT = {\n    sv: {},'))
+    const of = self.__opentodoTextOf as (prefs: { language: string }) => Texts
+    expect(of({ language: 'sv' })).toEqual(KEYS)
   })
 
   it('a pushed reminder is German when the synced language is German', async () => {

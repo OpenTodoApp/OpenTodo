@@ -38,7 +38,7 @@ test('the shortcut registry contributes descriptions, titles, states and quick-a
 })
 
 test('the service worker contributes its English texts only', () => {
-  const src = "const TEXT = { en: { snooze: 'Snooze 10 min' }, de: { snooze: '10 Min. später' } }"
+  const src = "const OWN_TEXT = { en: { snooze: 'Snooze 10 min' }, de: { snooze: '10 Min. später' } }"
   assert.deepEqual(ids(workerMessages('push-sw.js', src)), ['Snooze 10 min'])
 })
 

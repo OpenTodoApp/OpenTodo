@@ -65,6 +65,21 @@ test('Two packages: the same files, one manifest each', () => {
   }
 })
 
+test('a scaffolded locale still marked TODO translate is left out of the packages', () => {
+  const dir = copy()
+  try {
+    const en = JSON.parse(readFileSync(join(here, '_locales/en/messages.json'), 'utf8'))
+    const scaffold = Object.fromEntries(Object.entries(en).map(([k, e]) => [k, { ...e, description: `TODO translate. ${e.description ?? ''}`.trim() }]))
+    cpSync(join(dir, 'src/_locales/en'), join(dir, 'src/_locales/sv'), { recursive: true })
+    writeFileSync(join(dir, 'src/_locales/sv/messages.json'), JSON.stringify(scaffold, null, 2))
+    const [chrome] = build({ src: join(dir, 'src'), out: join(dir, 'dist') }).map((z) => unzip(readFileSync(z)))
+    assert.ok(!chrome.has('_locales/sv/messages.json'))
+    assert.ok(chrome.has('_locales/de/messages.json'))
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('the build repeats byte for byte', () => {
   const entries = [{ name: 'a.txt', data: Buffer.from('hello') }]
   assert.deepEqual(zip(entries), zip(entries))

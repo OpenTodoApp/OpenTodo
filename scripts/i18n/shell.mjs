@@ -27,9 +27,10 @@ export function specifiers(value) {
 
 /**
  * Problems of the shell catalog against the languages the web app ships.
- * `langs` are the codes to require (the shipped ones without the source language).
+ * `langs` are the codes to require (the maintained ones without the source language);
+ * `optional` are community languages, which may be translated in part.
  */
-export function checkShellCatalog(catalog, langs) {
+export function checkShellCatalog(catalog, langs, optional = []) {
   const problems = []
   const source = catalog.sourceLanguage ?? 'en'
   const strings = catalog.strings ?? {}
@@ -48,7 +49,7 @@ export function checkShellCatalog(catalog, langs) {
       }
     }
     for (const lang of Object.keys(localizations)) {
-      if (lang !== source && !langs.includes(lang)) problems.push(`shell ${lang}: "${key}" is translated into a language the web app does not ship`)
+      if (lang !== source && !langs.includes(lang) && !optional.includes(lang)) problems.push(`shell ${lang}: "${key}" is translated into a language the web app does not ship`)
     }
   }
   return problems

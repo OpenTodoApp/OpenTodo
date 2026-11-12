@@ -203,7 +203,8 @@ describe('the days', () => {
     await setUpcomingEventsShown(true)
     await createTask({ title: 'Write the report', due: { date: TOMORROW } })
     const r = await openUpcoming()
-    await waitFor(() => !!document.querySelector('[data-calendars-status]'))
+    // The status reads "unavailable" until the cached events have loaded: wait for them.
+    await waitFor(() => !!document.querySelector('[data-calendars-status="stale"]'), 'the cached events')
     expect(document.querySelector('[data-calendars-status]')!.textContent).toBe('Calendars as of 07:40')
     await r.unmount()
   })
