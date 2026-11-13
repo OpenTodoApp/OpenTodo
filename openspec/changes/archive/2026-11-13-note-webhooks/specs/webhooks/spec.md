@@ -67,4 +67,4 @@ A note event's `data.note` SHALL carry `id`, `title`, `description` (the note's 
 
 #### Scenario: A routine's note
 - **WHEN** a routine creates a note and the user's webhook subscribes to `note.created`
-- **THEN** the delivery's `source` is `rule` and its `device` is `rule:<rule-id>`
+- **THEN** the delivery's `source` is `rule`, as for a routine's task (`device` is sent only for `source` `device`)

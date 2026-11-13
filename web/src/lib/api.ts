@@ -443,7 +443,7 @@ export const api = {
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/invites/${encodeURIComponent(id)}`),
   // Public links (OpenSpec `public-links`): managed by the project's owner and admins; the link is returned once.
   listPublicLinks: (projectId: string) => request<{ links: PublicLink[] }>('GET', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links`),
-  createPublicLink: (projectId: string, input: { rights: 'view' | 'tick'; name?: string; expiresInDays?: number }) =>
+  createPublicLink: (projectId: string, input: { rights: 'view' | 'tick'; name?: string; layout?: 'list' | 'board'; expiresInDays?: number }) =>
     request<PublicLink & { link: string }>('POST', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links`, input),
   revokePublicLink: (projectId: string, id: string) =>
     request<void>('DELETE', `/api/v1/projects/${encodeURIComponent(projectId)}/public-links/${encodeURIComponent(id)}`),

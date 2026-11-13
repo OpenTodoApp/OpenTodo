@@ -1,4 +1,5 @@
 import { Skeleton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
+import { useEncryption } from '../lib/e2ee'
 import { Tooltip } from '../ui'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { Button } from '../ui'
@@ -40,6 +41,8 @@ export const emptyDraft = (): WebhookDraft => ({ id: null, url: '', events: ['ta
 
 export interface WebhooksViewProps {
   isOwner: boolean
+  /** An encrypted account: note titles and text arrive encrypted (note-webhooks D4). */
+  encrypted?: boolean
   /** False while offline or while the server is unreachable: actions are disabled. */
   connected: boolean
   webhooks: Webhook[] | null
@@ -172,7 +175,19 @@ export function WebhooksView(p: WebhooksViewProps) {
               <fieldset>
                 <legend className="mb-2 text-body font-medium text-default">{t('Events')}</legend>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {WEBHOOK_EVENTS.map(({ event, label }) => (
+                  {WEBHOOK_EVENTS.filter(({ event }) => !event.startsWith('note.')).map(({ event, label }) => (
+                    <Checkbox key={event} checked={draft.events.includes(event)} disabled={disabled}
+                      onChange={() => p.onDraftChange({ ...draft, events: toggleEvent(draft.events, event) })}
+                      label={label} description={event} />
+                  ))}
+                </div>
+              </fieldset>
+              {/* Notes (note-webhooks D4): their own group; an encrypted account's titles and text arrive encrypted. */}
+              <fieldset data-webhook-note-events>
+                <legend className="mb-2 text-body font-medium text-default">{t('Notes')}</legend>
+                {p.encrypted && <p className="mb-2 text-meta text-muted" data-webhook-note-encrypted>{t('Titles and text arrive encrypted.')}</p>}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {WEBHOOK_EVENTS.filter(({ event }) => event.startsWith('note.')).map(({ event, label }) => (
                     <Checkbox key={event} checked={draft.events.includes(event)} disabled={disabled}
                       onChange={() => p.onDraftChange({ ...draft, events: toggleEvent(draft.events, event) })}
                       label={label} description={event} />
@@ -206,6 +221,7 @@ export function WebhooksView(p: WebhooksViewProps) {
 
 /** Settings → Webhooks: per-user webhooks plus the owner's private-network policy. */
 export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
+  const { enabled: encrypted } = useEncryption()
   const online = useOnline()
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null)
   const [unreachable, setUnreachable] = useState(false)
@@ -309,7 +325,7 @@ export function WebhooksPanel({ isOwner }: { isOwner: boolean }) {
   }
   return (
     <>
-      <WebhooksView {...props} />
+      <WebhooksView {...props} encrypted={encrypted} />
       {deleting && (
         <ConfirmDialog title={t('Delete this webhook?')} confirmLabel={t('Delete webhook')}
           consequence={<>{t.rich('Nothing more is sent to <span>{url}</span>, and its delivery log is deleted too.', { url: deleting.url, span: (chunks) => <span className="user-text font-mono text-meta">{chunks}</span> })}</>}

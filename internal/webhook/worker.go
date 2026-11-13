@@ -80,6 +80,10 @@ type result struct {
 // outcomes and returns how many it handled. Deliveries of disabled webhooks
 // stay queued until the webhook is enabled again.
 func (s *Service) ProcessDue(ctx context.Context) int {
+	// Held note events that are due join the queue first (note-webhooks D2).
+	if err := s.releaseHeld(ctx); err != nil {
+		s.log.Error("webhooks: release held note events", "err", err)
+	}
 	rows, err := s.db.QueryContext(ctx, `SELECT d.id, d.webhook_id, d.event, d.payload, d.attempts, w.url, w.secret
 		FROM webhook_deliveries d JOIN webhooks w ON w.id = d.webhook_id
 		WHERE d.status IN ('pending','retry') AND d.next_attempt_at <= ? AND w.enabled = 1

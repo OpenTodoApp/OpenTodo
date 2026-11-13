@@ -7638,5 +7638,8 @@
   "Drop files to attach them to this note": "Rilascia i file per allegarli a questa nota",
   "Or paste or drop files on the note": "Oppure incolla o rilascia i file nella nota",
   "“{name}” is removed from this note. You can undo right after.": "«{name}» viene rimosso da questa nota. Puoi annullare subito dopo.",
-  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "«{name}» è mostrato nella nota «{note}» e viene rimosso anche da lì. Puoi annullare subito dopo."
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "«{name}» è mostrato nella nota «{note}» e viene rimosso anche da lì. Puoi annullare subito dopo.",
+  "Note deleted": "Nota eliminata",
+  "Note updated": "Nota aggiornata",
+  "Titles and text arrive encrypted.": "Titoli e testo arrivano cifrati."
 }

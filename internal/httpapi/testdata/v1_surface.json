@@ -5721,6 +5721,7 @@
         "links[].expiresAt": "number|null",
         "links[].id": "string",
         "links[].lastUsedAt": "number|null",
+        "links[].layout": "string",
         "links[].name": "string|null",
         "links[].projectId": "string",
         "links[].rights": "string"
@@ -5732,6 +5733,7 @@
     "GET /api/v1/public/{token}": {
       "policy": "public",
       "response": {
+        "layout": "string",
         "projectColor": "string",
         "projectName": "string",
         "rights": "string",
@@ -9684,6 +9686,7 @@
       "policy": "signed-in.recent",
       "request": {
         "expiresInDays": "number|null?",
+        "layout": "string",
         "name": "string",
         "rights": "string"
       },
@@ -9694,6 +9697,7 @@
         "expiresAt": "number|null",
         "id": "string",
         "lastUsedAt": "any",
+        "layout": "string",
         "link": "string",
         "name": "string|null",
         "projectId": "string",

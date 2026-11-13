@@ -68,6 +68,7 @@ func (s *Server) handleCreatePublicLink(w http.ResponseWriter, r *http.Request) 
 	var in struct {
 		Rights        string `json:"rights"`
 		Name          string `json:"name"`
+		Layout        string `json:"layout"`
 		ExpiresInDays *int   `json:"expiresInDays"`
 	}
 	if err := readJSON(r, &in); err != nil {
@@ -86,6 +87,9 @@ func (s *Server) handleCreatePublicLink(w http.ResponseWriter, r *http.Request) 
 	case in.Rights != "view" && in.Rights != "tick":
 		writeError(w, http.StatusBadRequest, "invalid_input", "rights: must be view or tick")
 		return
+	case in.Layout != "" && in.Layout != auth.PublicLayoutList && in.Layout != auth.PublicLayoutBoard:
+		writeError(w, http.StatusBadRequest, "invalid_input", "layout: must be list or board")
+		return
 	case len([]rune(strings.TrimSpace(in.Name))) > 60 || strings.ContainsAny(in.Name, "\r\n"):
 		writeError(w, http.StatusBadRequest, "invalid_input", "name: at most 60 characters on one line")
 		return
@@ -98,7 +102,7 @@ func (s *Server) handleCreatePublicLink(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many public links created, try again later")
 		return
 	}
-	l, secret, err := s.auth.CreatePublicLink(r.Context(), u, r.PathValue("id"), in.Rights, in.Name, days)
+	l, secret, err := s.auth.CreatePublicLink(r.Context(), u, r.PathValue("id"), in.Rights, in.Name, in.Layout, days)
 	if errors.Is(err, auth.ErrInvalidPublicLink) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "rights, name or expiresInDays is not valid")
 		return
@@ -108,9 +112,13 @@ func (s *Server) handleCreatePublicLink(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	l.CreatedByName = u.Name
-	writeJSON(w, http.StatusCreated, map[string]any{"id": l.ID, "projectId": l.ProjectID, "rights": l.Rights, "name": l.Name,
+	name := ""
+	if l.Name != nil {
+		name = *l.Name
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"id": l.ID, "projectId": l.ProjectID, "rights": l.Rights, "name": l.Name, "layout": l.Layout,
 		"createdBy": l.CreatedBy, "createdByName": l.CreatedByName, "createdAt": l.CreatedAt, "expiresAt": l.ExpiresAt,
-		"lastUsedAt": nil, "link": s.publicOrigin(r) + "/public/" + secret})
+		"lastUsedAt": nil, "link": s.publicOrigin(r) + auth.PublicLinkPath(name, secret)})
 }
 
 func (s *Server) handleListPublicLinks(w http.ResponseWriter, r *http.Request) {
@@ -255,7 +263,7 @@ func (s *Server) handlePublicList(w http.ResponseWriter, r *http.Request) {
 	var name, color string
 	_ = json.Unmarshal(pp.Project["name"], &name)
 	_ = json.Unmarshal(pp.Project["color"], &color)
-	writeJSON(w, http.StatusOK, map[string]any{"projectName": name, "projectColor": color, "rights": l.Rights,
+	writeJSON(w, http.StatusOK, map[string]any{"projectName": name, "projectColor": color, "rights": l.Rights, "layout": l.Layout,
 		"sections": sections, "tasks": tasks, "serverTime": s.now().UnixMilli()})
 }
 

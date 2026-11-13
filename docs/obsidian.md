@@ -51,7 +51,7 @@ Call the plumber tomorrow 9am p2 [opentodo:: https://todo.example.com/?task=8c2a
 
 A line that already carries an `[opentodo:: …]` link (or a vault `🆔`) is not sent again; the notice offers **Open in OpenTodo** instead. Ticking a sent line in Obsidian does not complete the task: the line is a capture, not a copy.
 
-The task's origin is the note, `obsidian://open?vault=…&file=…`, so its chip opens the note in Obsidian (see [Capturing pages](capture.md)). When you rename or move the note in Obsidian on this device, the plugin updates the origin of every task linked from its lines. After a rename made elsewhere (another device, a file-sync service, the file manager), run **OpenTodo: Fix task links in this note**.
+The task's origin is the note, `obsidian://open?vault=…&file=…`, so its chip opens the note in Obsidian (see [Capturing pages](capture.md)). A link written elsewhere may also point at a heading or block, `file=Plan%23%5Eabc123`; the chip then reads as the note and opens it at that place. When you rename or move the note in Obsidian on this device, the plugin updates the origin of every task linked from its lines. After a rename made elsewhere (another device, a file-sync service, the file manager), run **OpenTodo: Fix task links in this note**.
 
 ## Offline
 

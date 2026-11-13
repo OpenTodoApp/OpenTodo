@@ -7638,5 +7638,8 @@
   "Drop files to attach them to this note": "拖放文件以附加到这条笔记",
   "Or paste or drop files on the note": "或将文件粘贴或拖放到笔记中",
   "“{name}” is removed from this note. You can undo right after.": "“{name}”将从这条笔记中移除。之后可以立即撤销。",
-  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "“{name}”显示在笔记“{note}”中，也会从中移除。之后可以立即撤销。"
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "“{name}”显示在笔记“{note}”中，也会从中移除。之后可以立即撤销。",
+  "Note deleted": "笔记已删除",
+  "Note updated": "笔记已更新",
+  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。"
 }

@@ -7638,5 +7638,8 @@
   "Drop files to attach them to this note": "Zet bestanden neer om ze aan deze notitie toe te voegen",
   "Or paste or drop files on the note": "Of plak of zet bestanden neer op de notitie",
   "“{name}” is removed from this note. You can undo right after.": "‘{name}’ wordt uit deze notitie verwijderd. Je kunt het direct daarna ongedaan maken.",
-  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "‘{name}’ staat in de notitie ‘{note}’ en wordt daar ook uit verwijderd. Je kunt het direct daarna ongedaan maken."
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "‘{name}’ staat in de notitie ‘{note}’ en wordt daar ook uit verwijderd. Je kunt het direct daarna ongedaan maken.",
+  "Note deleted": "Notitie verwijderd",
+  "Note updated": "Notitie bijgewerkt",
+  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan."
 }
