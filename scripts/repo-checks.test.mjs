@@ -1104,3 +1104,13 @@ test("the service worker lets the server's own pages through", () => {
   // The address the server registers for the app's sign-in is the one denied here.
   assert.match(read('internal/httpapi/app_sign_in.go'), /appSignInPath\s+= "\/app\/sign-in"/)
 })
+
+// shell-repairs D8: iOS ends the app at the first Face ID prompt when the usage text is
+// missing, so the key must be in the Info.plist the app ships and in the project file
+// that generates it, with a translation catalog.
+test('the iOS app carries its Face ID usage text', () => {
+  assert.match(read('mobile/ios/OpenTodo/Info.plist'), /<key>NSFaceIDUsageDescription<\/key>\s*<string>[^<]+<\/string>/)
+  assert.match(read('mobile/ios/project.yml'), /^\s+NSFaceIDUsageDescription: \S/m)
+  const catalog = JSON.parse(read('mobile/ios/OpenTodo/InfoPlist.xcstrings'))
+  assert.ok(catalog.strings?.NSFaceIDUsageDescription, 'InfoPlist.xcstrings translates NSFaceIDUsageDescription')
+})

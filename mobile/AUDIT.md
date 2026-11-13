@@ -22,6 +22,8 @@ Both shells only fire reminders the web app handed them while it ran.
 
 ### Broken
 
+Fixed by `shell-repairs`, apart from the share extension; each still needs its check on a phone.
+
 | Finding | Where |
 | --- | --- |
 | **Downloads do nothing** in both shells: recovery key, two-factor codes, exports, attachments. | no `setDownloadListener`, no `WKDownloadDelegate` |

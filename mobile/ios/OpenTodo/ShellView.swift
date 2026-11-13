@@ -25,6 +25,8 @@ final class ShellController: NSObject, ObservableObject {
     private var provisional = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
+    /// Receives the files the web app saves (shell-repairs D3); made with the first one.
+    private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
 
     init(origin: URL) {
@@ -38,7 +40,7 @@ final class ShellController: NSObject, ObservableObject {
         let bridge = Bridge(origin: origin, actions: BridgeHost(interactive: true))
         bridge.install(into: config.userContentController,
                        app: Version.app,
-                       capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true))
+                       capabilities: Bridge.capabilities(biometric: BiometricKeyStore.available, share: true, haptics: Haptics.available))
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
@@ -63,13 +65,29 @@ final class ShellController: NSObject, ObservableObject {
         #endif
     }
 
-    /// The theme's bar colour behind the page: the status bar area, the first frame and the overscroll.
+    /// The theme's bar colour behind the page: the status bar area, the first frame and the
+    /// overscroll; and the icons on it (shell-repairs D7).
     func apply(_ bars: SystemBars) {
+        StatusBar.show(lightIcons: bars.lightIcons)
         let color = bars.color
         webView.isOpaque = false
         webView.backgroundColor = color
         webView.scrollView.backgroundColor = color
         webView.underPageBackgroundColor = color
+    }
+
+    /// Hands a download WebKit started to the saver, which asks where the file goes.
+    private func save(_ download: WKDownload) {
+        let saver = self.saver ?? DownloadSaver { [weak self] in self?.topViewController() }
+        self.saver = saver
+        saver.take(download)
+    }
+
+    /// The controller on top of the web view's window, for the export sheet.
+    private func topViewController() -> UIViewController? {
+        var top = webView.window?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed { top = presented }
+        return top
     }
 
     @objc private func pulledToRefresh() {
@@ -191,6 +209,14 @@ extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { return decisionHandler(.cancel) }
+        // A file the web app saves (an anchor with `download`): from the server or its own
+        // object URLs it becomes a download; from anywhere else nothing is saved, and an
+        // address of another site goes on as any link to it does.
+        if action.shouldPerformDownload {
+            if Downloads.saves(action: url, server: origin, shouldPerformDownload: true) { return decisionHandler(.download) }
+            let scheme = (url.scheme ?? "").lowercased()
+            if scheme == "blob" || scheme == "data" { return decisionHandler(.cancel) }
+        }
         let mainFrame = action.targetFrame.map { $0.isMainFrame }
         switch Self.route(url, mainFrame: mainFrame, type: action.navigationType, provisional: provisional && mainFrame == true,
                           onSignInPage: foreignHost != nil, flow: flow, server: origin) {
@@ -214,6 +240,28 @@ extension ShellController: WKNavigationDelegate {
             decisionHandler(.cancel)
             leaveSignIn()
         }
+    }
+
+    /// An answer of the server that is a file (an export, an attachment) is saved; every
+    /// other answer is shown as before.
+    func webView(_ webView: WKWebView, decidePolicyFor response: WKNavigationResponse,
+                 decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        guard let url = response.response.url,
+              Downloads.saves(response: url, server: origin, isAttachment: Downloads.isAttachment(response.response),
+                              canShowMIMEType: response.canShowMIMEType)
+        else { return decisionHandler(.allow) }
+        decisionHandler(.download)
+    }
+
+    func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) {
+        save(download)
+    }
+
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        // The navigation ended as a file: the page that shows stays, and is not a redirect's start.
+        provisional = false
+        refresher.endRefreshing()
+        save(download)
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

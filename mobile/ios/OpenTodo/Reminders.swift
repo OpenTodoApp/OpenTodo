@@ -36,11 +36,13 @@ final class Reminders {
     }
 
     func registerCategory() {
-        // `.foreground`: a local notification cannot change a task by itself, so Snooze and
-        // Dismiss open the shell where the web app performs them (design D3).
+        // `.foreground`: a local notification cannot change a task by itself, so Done, Snooze
+        // and Dismiss open the shell where the web app performs them (ios-shell D3,
+        // shell-repairs D6). The identifiers are `Notifications.actions`.
+        let done = UNNotificationAction(identifier: "done", title: String(localized: "Done"), options: [.foreground])
         let snooze = UNNotificationAction(identifier: "snooze", title: String(localized: "Snooze 10 min"), options: [.foreground])
         let dismiss = UNNotificationAction(identifier: "dismiss", title: String(localized: "Dismiss"), options: [.foreground])
-        let category = UNNotificationCategory(identifier: Self.categoryIdentifier, actions: [snooze, dismiss], intentIdentifiers: [])
+        let category = UNNotificationCategory(identifier: Self.categoryIdentifier, actions: [done, snooze, dismiss], intentIdentifiers: [])
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 

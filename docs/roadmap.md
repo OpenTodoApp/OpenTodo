@@ -195,7 +195,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | Planned |
+| `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | In progress (7 of 18) |
 
 ## Native app
 

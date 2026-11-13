@@ -130,7 +130,7 @@ Storage, the schedule, the widget data and the key are in the app's container an
 
 `window.opentodoShell` exists only on pages of the configured server's origin. The web side is `web/src/lib/shell.ts`; a method the shell does not list in `capabilities` is never called, and without the bridge the web app behaves as in a browser.
 
-The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
+The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links`, `haptics` on an iPhone and — with Face ID or Touch ID enrolled — `biometric`. It does not list `files`: WebKit downloads what the web app saves, from the page or the server, and the shell opens the export sheet.
 
 | Member | Capability | Shape | Notes |
 | --- | --- | --- | --- |
@@ -146,6 +146,8 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `biometricRead()` | `biometric` | `→ Promise<string \| null>` | the key after the prompt; `null` when cancelled, never stored or invalidated |
 | `biometricForget()` | `biometric` | `void` | deletes the stored key |
 | `openExternal(url)` | `links` | `void` | http(s), `mailto:` and `tel:` in the system browser or app; with `obsidian-links` also an Obsidian note link of exactly the form `obsidian://open?vault=…&file=…` (no other Obsidian action, no other custom scheme) |
+| `saveFile(json)` | `files` (Android, visible app) | `→ Promise<"more" \| "saved" \| "cancelled" \| "failed">` | one chunk of a file made in the page, `{id, name, type, data, last}` with `data` base64 (256 KB before encoding), in order; `more` until the chunk with `last`, which opens the system's save dialog; a new `id` discards an unfinished file. Files from the server need no bridge: the shell fetches a same-origin download itself and opens the same dialog |
+| `haptic(kind)` | `haptics` (visible app; iPhone only on iOS) | `void` | `tick` or `success`, the platform's own feedback, no permission; any other kind is ignored |
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 

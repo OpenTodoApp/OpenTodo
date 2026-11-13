@@ -2,6 +2,7 @@ package app.opentodo
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.webkit.WebView
@@ -16,7 +17,8 @@ import org.json.JSONObject
  * script, both restricted to the configured origin, so no other page sees
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
- * so it offers only reminders, widgets and geofences (and never asks for a permission).
+ * so it offers only reminders, widgets and geofences (and never asks for a permission,
+ * saves a file or gives haptic feedback).
  */
 class Bridge(private val context: Context, private val origin: String, private val host: Host?) {
     interface Host {
@@ -33,6 +35,13 @@ class Bridge(private val context: Context, private val origin: String, private v
         fun requestLocationPermission(done: (Boolean) -> Unit) = done(false)
         /** "Allow all the time" (Android 10+; on 11+ the system sends the user to the setting). */
         fun requestBackgroundLocation(done: (Boolean) -> Unit) = done(false)
+        /**
+         * shell-repairs D2: one chunk of a file the page saves ([FileSave]); done gets `more`,
+         * or after the last chunk `saved`, `cancelled` or `failed`. The default saves nothing.
+         */
+        fun saveFile(json: String, done: (String) -> Unit) = done(FileSave.FAILED)
+        /** shell-repairs D5: the platform's feedback for a `HapticFeedbackConstants` value (main thread). */
+        fun haptic(constant: Int) {}
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -47,7 +56,7 @@ class Bridge(private val context: Context, private val origin: String, private v
         val caps = mutableListOf("reminders", "widgets")
         if (!play) caps += "geofences"
         if (host != null) {
-            caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone")
+            caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
             if (BiometricKeyStore.available(context)) caps += "biometric"
         }
         return caps
@@ -86,6 +95,9 @@ class Bridge(private val context: Context, private val origin: String, private v
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
             "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
+            "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
+            // An unknown kind is ignored, and so is every kind without a screen.
+            "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT)?.let { c -> main.post { host.haptic(c) } }
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -175,7 +187,9 @@ class Bridge(private val context: Context, private val origin: String, private v
                 biometricForget: function () { send('biometricForget', []) },
                 openExternal: function (url) { send('openExternal', [String(url)]) },
                 setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
-                requestMicrophone: function () { return call('requestMicrophone', []) }
+                requestMicrophone: function () { return call('requestMicrophone', []) },
+                saveFile: function (json) { return call('saveFile', [String(json)]) },
+                haptic: function (kind) { send('haptic', [String(kind)]) }
               });
             })();
         """.trimIndent()

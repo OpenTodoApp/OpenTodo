@@ -30,6 +30,31 @@ struct SystemBars: Equatable {
     }
 }
 
+/// Haptic feedback through the bridge (shell-repairs D5, capability `haptics`): WebKit has
+/// no `navigator.vibrate`, so the web app names a kind and the shell plays the platform's
+/// own feedback. The kinds are pinned by the shared bridge fixture haptics.json.
+enum Haptics {
+    enum Kind: String, CaseIterable {
+        /// A light tap: a toggle, a step of a drag.
+        case tick
+        /// A task was completed.
+        case success
+    }
+
+    /// The kind of a handed-over name; any other name is ignored.
+    static func kind(_ name: String) -> Kind? { Kind(rawValue: name) }
+
+    /// Only an iPhone has the engine; an iPad would show a switch that does nothing.
+    @MainActor static var available: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+
+    @MainActor static func play(_ kind: Kind) {
+        switch kind {
+        case .tick: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        }
+    }
+}
+
 /// What the bridge needs from the app: prompts, the biometric store, the system browser.
 @MainActor
 protocol BridgeActions: AnyObject {
@@ -41,6 +66,7 @@ protocol BridgeActions: AnyObject {
     func bridgedBiometricForget()
     func bridgedOpenExternal(_ url: String)
     func bridgedSetSystemBars(_ json: String)
+    func bridgedHaptic(_ kind: String)
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -62,10 +88,14 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         self.actions = actions
     }
 
-    /// The capabilities this shell offers, in the contract's names.
-    static func capabilities(biometric: Bool, share: Bool) -> [String] {
+    /// The capabilities this shell offers, in the contract's names. `share`: the shell has
+    /// a screen (the background run has none, so it lists nothing a person would see or
+    /// feel); `haptics`: the device can play them. No `files`: WebKit downloads what the
+    /// web app saves (shell-repairs D3).
+    static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
         if share { caps += ["share", "links", "obsidian-links", "system-bars"] }
+        if share && haptics { caps.append("haptics") }
         if biometric { caps.append("biometric") }
         return caps
     }
@@ -127,6 +157,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case "setSystemBars":
             actions.bridgedSetSystemBars(string(0))
+            reply(nil, nil)
+        case "haptic":
+            actions.bridgedHaptic(string(0))
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -225,7 +258,8 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             biometricRead: function () { return call('biometricRead') },
             biometricForget: function () { call('biometricForget') },
             openExternal: function (url) { call('openExternal', [String(url)]) },
-            setSystemBars: function (json) { call('setSystemBars', [String(json)]) }
+            setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
+            haptic: function (kind) { call('haptic', [String(kind)]) }
           });
         })();
         """
