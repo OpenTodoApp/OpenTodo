@@ -219,10 +219,11 @@ func TestProfile_json_items(t *testing.T) {
 		t.Fatalf("client = %+v", client)
 	}
 	deck := rowBySource(t, p, "item:1")
-	if deck.Title != "Kickoff deck" || deck.Description != "Ten slides" || deck.ProjectSourceID != "project:201" || deck.SectionName != "Backlog" ||
+	// Its comment joins the end of its notes (todoist-api-import D3).
+	if deck.Title != "Kickoff deck" || deck.Description != "Ten slides\n\n**Comments**\n\nSee the brief" || deck.ProjectSourceID != "project:201" || deck.SectionName != "Backlog" ||
 		deck.Priority != 1 || *deck.Due != (Due{Date: "2026-10-15"}) || !reflect.DeepEqual(deck.Labels, []string{"call"}) || deck.Completed ||
 		deck.CreatedAt != time.Date(2026, 9, 30, 12, 0, 0, 0, time.UTC).UnixMilli() ||
-		!reflect.DeepEqual(deck.Warnings, []string{"comments dropped (not supported)"}) ||
+		len(deck.Warnings) != 0 ||
 		!reflect.DeepEqual(deck.Reminders, []Reminder{{Offset: -30}, {Absolute: true, At: time.Date(2026, 10, 14, 15, 0, 0, 0, time.UTC).UnixMilli()}}) {
 		t.Fatalf("deck = %+v", deck)
 	}

@@ -2122,6 +2122,10 @@
       "400",
       "listed"
     ],
+    "upstream_failed": [
+      "502",
+      "listed"
+    ],
     "user_not_found": [
       "404",
       "listed"
@@ -8592,6 +8596,12 @@
       "statuses": [
         "200"
       ]
+    },
+    "POST /api/v1/import/todoist": {
+      "policy": "signed-in.full-tokens",
+      "request": {
+        "token": "string"
+      }
     },
     "POST /api/v1/invitations": {
       "policy": "admins-only.credential.recent",

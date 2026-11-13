@@ -64,7 +64,9 @@ export const STEPS: StepKind[] = [
     inputs: [inp('text', ['text', 'lines'], 'text', C), inp('title', ['text'], 'text', { ...C, max: 500 }), inp('project', ['project'], 'project'), inp('section', [], 'id'),
       inp('due', ['date'], 'date'), inp('priority', ['number'], 'number', { max: 4 }), inp('labels', [], 'ids'), en('energy', ['deep', 'medium', 'low']),
       // parent: subtasks of a task (routines-dynamic-data D5); the project comes from it.
-      inp('parent', ['task'], '')] },
+      inp('parent', ['task'], ''),
+      // link_back: each task's note starts with a link to the note its lines came from (note-checklist-tasks D4).
+      inp('link_back', [], 'bool')] },
   { kind: 'change_tasks', group: 'tasks', output: 'tasks', content: false, tool: 'update_tasks',
     inputs: [inp('tasks', ['tasks'], '', R), inp('set', [], 'actions', R)] },
   { kind: 'add_comment', group: 'tasks', output: 'none', content: true, tool: 'add_comment',
@@ -375,7 +377,48 @@ export function parseSteps(raw: unknown): RoutineStep[] {
   const steps = parseList(raw, 0, { ids: new Set(), count: 0, ai: 0 })
   if (!steps.length) fail('', '', 'invalid_step', 'a routine needs at least one step')
   checkRefs(steps, new Set(), false)
+  checkLinkBack(steps)
   return steps
+}
+
+/** Link back to the note needs text or lines from a Get note text step (note-checklist-tasks D4; steps_parse.go checkLinkBack). */
+function checkLinkBack(steps: RoutineStep[]): void {
+  walkSteps(steps, (s) => {
+    const a = s.in?.link_back
+    if (s.kind === 'create_tasks' && a && 'literal' in a && a.literal === true && !noteSource(steps, s.id)) {
+      fail(s.id, 'link_back', 'invalid_step', 'create_tasks: link_back needs text or lines from a Get note text step')
+    }
+  })
+}
+
+/**
+ * The id of the Get note text step whose text a step's text, lines or list come from,
+ * through text and list steps and a Repeat's item; '' when none (steps_parse.go NoteSource).
+ */
+export function noteSource(steps: RoutineStep[], id: string): string {
+  const byId = new Map<string, RoutineStep>()
+  const repeatOf = new Map<string, RoutineStep>()
+  const index = (list: RoutineStep[] | undefined, repeat: RoutineStep | null) => {
+    for (const s of list ?? []) {
+      byId.set(s.id, s)
+      if (repeat) repeatOf.set(s.id, repeat)
+      index(s.then, repeat)
+      index(s.otherwise, repeat)
+      if (s.kind === 'repeat') index(s.do, s)
+    }
+  }
+  index(steps, null)
+  let cur = byId.get(id)
+  for (let hops = 0; cur && hops < 64; hops++) {
+    const name = ['text', 'lines', 'list', 'title'].find((n) => { const a = cur!.in?.[n]; return !!a && 'ref' in a })
+    if (!name) return ''
+    const ref = (cur.in![name] as { ref: string }).ref
+    if (ref === 'trigger') return ''
+    if (ref === 'item') { cur = repeatOf.get(cur.id); continue }
+    cur = byId.get(ref)
+    if (cur?.kind === 'note_text') return cur.id
+  }
+  return ''
 }
 
 const TYPE_NAMES: Record<StepType, string> = { text: 'Text', task: 'Task', tasks: 'Tasks', note: 'Note', notes: 'Notes', project: 'Project', date: 'Date', number: 'Number', lines: 'Lines', none: 'no output' }

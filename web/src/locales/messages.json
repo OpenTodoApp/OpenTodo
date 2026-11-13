@@ -910,6 +910,9 @@
     "web/src/app/ThemeRow.tsx",
     "web/src/app/themes/YourThemes.tsx"
   ],
+  "Actions for {notes}": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
   "Actions for {tasks}": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
@@ -1275,7 +1278,8 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Add to all, or remove from all…": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "Add to focus": [
     "web/src/app/focus/FocusPicker.tsx",
@@ -3118,6 +3122,9 @@
   ],
   "Check your operating system's notification settings for this browser, and any do-not-disturb mode.": [
     "web/src/lib/push.ts"
+  ],
+  "Check-list lines to subtasks (a task's note) or tasks": [
+    "web/src/lib/richtextEditor.ts"
   ],
   "Checkbox": [
     "web/src/lib/fields.ts"
@@ -6422,6 +6429,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Fetch from Todoist": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Fetching more…": [
     "web/src/app/AuditPanel.tsx"
   ],
@@ -6584,6 +6594,7 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/routines/words.tsx"
   ],
   "Find a routine…": [
@@ -8095,7 +8106,7 @@
   "In a table: next / previous cell; Tab in the last cell adds a row": [
     "web/src/lib/shortcuts.ts"
   ],
-  "In a task's notes: make the check-list line a subtask (Ctrl+Z takes it back)": [
+  "In a task's notes: make the check-list lines a subtask each; in a project or standalone note: a task each, read like quick add (Ctrl+Z takes them back)": [
     "web/src/lib/shortcuts.ts"
   ],
   "In days": [
@@ -8772,6 +8783,7 @@
     "web/src/app/calendar/PlanPanel.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/method/MethodListView.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/review/DailyCheck.tsx",
@@ -9127,6 +9139,9 @@
   "Link address": [
     "web/src/app/LinkDialog.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Link back to the note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Link copied": [
     "web/src/app/task-detail/TaskHead.tsx",
@@ -9540,8 +9555,8 @@
   "Make subtask": [
     "web/src/app/editorCommands.ts"
   ],
-  "Make the check-list line a subtask": [
-    "web/src/lib/richtextEditor.ts"
+  "Make tasks": [
+    "web/src/app/editorCommands.ts"
   ],
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -9963,6 +9978,7 @@
   "Move": [
     "web/src/app/TriageView.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/ui/MoveHandle.tsx"
   ],
   "Move all to today": [
@@ -10057,7 +10073,8 @@
     "web/src/app/ProjectHeader.tsx"
   ],
   "Move to Trash": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "Move to a project": [
     "web/src/app/TriageView.tsx"
@@ -10069,7 +10086,8 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Move to project": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "Move to section": [
     "web/src/app/bulk/BulkActions.tsx"
@@ -10136,6 +10154,12 @@
   ],
   "Move {name} up": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Move {notes} to the Trash?": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
+  "Move {notes} to {project}": [
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "Move {tasks} to a project": [
     "web/src/app/palette/registry.ts"
@@ -10669,6 +10693,9 @@
   ],
   "No backup has run yet.": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "No backup needed: in Todoist, open Settings → Integrations → Developer and copy the API token. It is used once to read your projects, tasks and comments, and never stored.": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "No backup yet": [
     "web/src/app/settingsStatus.ts"
@@ -11994,13 +12021,19 @@
   "On the Notes page: focus the search field, which finds notes by every word": [
     "web/src/lib/shortcuts.ts"
   ],
-  "On the Notes page: pin or unpin the focused note": [
+  "On the Notes page: move the ticked notes to a project": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Notes page: pin or unpin the focused note, or the ticked notes": [
     "web/src/lib/shortcuts.ts"
   ],
   "On the Notes page: start a new note": [
     "web/src/lib/shortcuts.ts"
   ],
   "On the Notes page: switch between the list and the graph": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears)": [
     "web/src/lib/shortcuts.ts"
   ],
   "On the day at 09:00": [
@@ -12547,6 +12580,9 @@
   "Options, one per line": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "Or import with a Todoist API token": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Or paste or drop files on the task": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -13066,6 +13102,7 @@
   "Pin": [
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
@@ -15318,6 +15355,9 @@
   "Select a task to see its details here.": [
     "web/src/app/sidePanel.tsx"
   ],
+  "Select notes": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
   "Select tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -15778,7 +15818,8 @@
     "web/src/app/TaskListView.tsx"
   ],
   "Show Trash": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "Show a local notification": [
     "web/src/app/NotificationsSettings.tsx"
@@ -17888,6 +17929,9 @@
   "The ones where…": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "The other service could not be reached. Try again.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "The owner cannot leave the project. Transfer ownership to another member first.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -18460,7 +18504,8 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "There are no labels yet": [
-    "web/src/app/bulk/BulkActions.tsx"
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx"
   ],
   "There is no account for this identity yet, and this server does not create accounts automatically. Ask the owner for access.": [
     "web/src/app/sso.ts"
@@ -19795,6 +19840,9 @@
     "web/src/app/notes/NoteRow.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Turn into tasks": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
   "Turn it off in How you work": [
     "web/src/app/habits/HabitSection.tsx"
   ],
@@ -20202,6 +20250,7 @@
   "Unpin": [
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/notes/NoteRow.tsx"
   ],
   "Unpin note": [
@@ -20310,6 +20359,7 @@
     "web/src/app/NotesEditor.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/notes-graph/GraphView.tsx",
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
@@ -21361,6 +21411,9 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/lib/frames.ts"
   ],
+  "You can restore them from the Trash.": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
   "You can view this project but not add tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -22117,6 +22170,9 @@
   "convert, task, todo": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "copied into {project}": [
+    "web/src/app/notes/NoteBulkActions.tsx"
+  ],
   "created the project": [
     "web/src/lib/activity.ts"
   ],
@@ -22442,6 +22498,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "focused note": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "focused standalone note": [
     "web/src/lib/shortcuts.ts"
   ],
   "focused step": [
@@ -22947,6 +23006,9 @@
     "web/src/lib/assistantDisclosure.ts",
     "web/src/lib/history.ts"
   ],
+  "notes ticked": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "notes, search, look up, journal, reference": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -22990,7 +23052,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/history.ts"
   ],
-  "on a check-list line": [
+  "on a check-list line or a selection of them": [
     "web/src/lib/shortcuts.ts"
   ],
   "on or after": [
@@ -24279,8 +24341,14 @@
   "{km} km": [
     "web/src/app/LocationReminders.tsx"
   ],
+  "{label} added to {notes}": [
+    "web/src/lib/noteBulk.ts"
+  ],
   "{label} backup, {instant}, {kind}": [
     "web/src/app/BackupsPanel.tsx"
+  ],
+  "{label} removed from {notes}": [
+    "web/src/lib/noteBulk.ts"
   ],
   "{mapped, plural, one {# colour was taken from the file} other {# colours were taken from the file}}; {derived, plural, one {# follows} other {# follow}} from them.": [
     "web/src/app/themes/ImportReport.tsx"
@@ -24492,6 +24560,9 @@
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "{n, plural, one {# line was left: at most 50 at once.} other {# lines were left: at most 50 at once.}}": [
+    "web/src/app/NotesEditor.tsx"
+  ],
   "{n, plural, one {# line} other {# lines}}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -24562,8 +24633,13 @@
   "{n, plural, one {# note matches now} other {# notes match now}}": [
     "web/src/app/routines/StepCard.tsx"
   ],
+  "{n, plural, one {# note turned into a task} other {# notes turned into tasks}}": [
+    "web/src/lib/noteBulk.ts"
+  ],
   "{n, plural, one {# note} other {# notes}}": [
+    "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/notes/NotesPage.tsx",
+    "web/src/lib/noteBulk.ts",
     "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}": [
@@ -25200,6 +25276,21 @@
   ],
   "{name}: {n, plural, one {# item written} other {# items written}}": [
     "web/src/app/palette/routineCommand.ts"
+  ],
+  "{notes} moved out of their projects": [
+    "web/src/lib/noteBulk.ts"
+  ],
+  "{notes} moved to the Trash": [
+    "web/src/lib/noteBulk.ts"
+  ],
+  "{notes} moved to {project}": [
+    "web/src/lib/noteBulk.ts"
+  ],
+  "{notes} pinned": [
+    "web/src/lib/noteBulk.ts"
+  ],
+  "{notes} unpinned": [
+    "web/src/lib/noteBulk.ts"
   ],
   "{n} applied, {m, plural, one {# skipped because it changed} other {# skipped because they changed}}": [
     "web/src/lib/rules/proposal.ts"

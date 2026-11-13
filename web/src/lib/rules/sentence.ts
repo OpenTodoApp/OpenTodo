@@ -7,7 +7,7 @@
 import { msg, t } from '../i18n'
 import type { RoutineStep, RoutineStepType } from '../types'
 import { pickModeOf, type PickMode } from './draft'
-import { stepKind, STEPS, type StepKind } from './steps'
+import { noteSource, stepKind, STEPS, type StepKind } from './steps'
 
 interface KindText {
   name: string
@@ -91,7 +91,7 @@ const INPUT_LABEL: Record<string, string> = {
   on: msg('Favourite'), template: msg('Template'), start: msg('Start'), of: msg('Of'), lines: msg('Lines'), separator: msg('Separator'), find: msg('Find'),
   with: msg('Replace with'), case: msg('Match case'), list: msg('List'), where: msg('Test'), by: msg('Order'), direction: msg('Direction'), n: msg('How many'),
   from: msg('From'), value: msg('Value'), is: msg('Test'), reason: msg('Reason'), period: msg('Period'), webhook_id: msg('Webhook'), subject: msg('Subject'),
-  date: msg('Date'), only: msg('Only'),
+  date: msg('Date'), only: msg('Only'), link_back: msg('Link back to the note'),
   words: msg('Words'), within_days: msg('Changed in the last days'), unchanged_days: msg('Not changed for days'), add_labels: msg('Add labels'),
   remove_labels: msg('Remove labels'), pin: msg('Pin'), trash: msg('Move to the Trash'), no_project: msg('No project'), note: msg('Note'), notes: msg('Notes'), field: msg('Read'),
   instruction: msg('Instruction'), context: msg('Using'), context2: msg('Also using'), context3: msg('And using'), answer: msg('Answer as'), length: msg('Length'),
@@ -146,13 +146,14 @@ export function extraInputs(step: RoutineStep): string[] {
   return (stepKind(step.kind)?.inputs ?? []).map((d) => d.name).filter((n) => !shown.has(n) && !!step.in && n in step.in)
 }
 
-/** Optional inputs a card's menu offers to add. */
-export function addableInputs(step: RoutineStep): string[] {
+/** Optional inputs a card's menu offers to add; Link back to the note only when the step's text comes from a note (note-checklist-tasks). */
+export function addableInputs(step: RoutineStep, steps?: RoutineStep[]): string[] {
   const k = stepKind(step.kind)
   if (!k) return []
   const shown = new Set(sentenceSlots(step))
   const exclusive = new Set((k.oneOf ?? []).flat())
-  return k.inputs.map((d) => d.name).filter((n) => !shown.has(n) && !exclusive.has(n) && !(step.in && n in step.in))
+  return k.inputs.map((d) => d.name).filter((n) => !shown.has(n) && !exclusive.has(n) && !(step.in && n in step.in)
+    && (n !== 'link_back' || (!!steps && !!noteSource(steps, step.id))))
 }
 
 /** Lower-case words a search matches for a kind, in the user's language and in English. */

@@ -32,5 +32,7 @@
   {"lang": "pt", "text": "toda segunda-feira", "ref": "2026-09-19", "rule": "every monday"},
   {"lang": "", "text": "2026-11-03", "ref": "2026-09-19", "date": "2026-11-03"},
   {"lang": "de", "text": "irgendwann bald", "ref": "2026-09-19", "error": true},
-  {"lang": "en", "text": "31 Feb", "ref": "2026-09-19", "error": true}
+  {"lang": "en", "text": "31 Feb", "ref": "2026-09-19", "error": true},
+  {"lang": "en", "text": "every last Sunday in March", "ref": "2026-11-13", "rule": "every last sunday of march"},
+  {"lang": "en", "text": "every 4th Thursday of November", "ref": "2026-11-13", "rule": "every 4th thursday of november"}
 ]

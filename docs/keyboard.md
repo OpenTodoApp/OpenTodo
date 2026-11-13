@@ -304,7 +304,9 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
-| <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note |
+| <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note, or the ticked notes |
+| <kbd>x</kbd> / <kbd>Space</kbd> | Focused standalone note: on the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears) |
+| <kbd>m</kbd> | Notes ticked: on the Notes page: move the ticked notes to a project |
 | <kbd>v</kbd> | On the Notes page: switch between the list and the graph |
 
 ### Habits
@@ -375,7 +377,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Ctrl+B</kbd> / <kbd>Ctrl+I</kbd> / <kbd>Ctrl+Shift+X</kbd> / <kbd>Ctrl+E</kbd> / <kbd>Ctrl+K</kbd> | In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac) |
 | <kbd>Ctrl+Alt+1</kbd> / <kbd>Ctrl+Alt+2</kbd> / <kbd>Ctrl+Alt+3</kbd> / <kbd>Ctrl+Alt+0</kbd> | In the notes and comments: heading 1–3 / normal text |
 | <kbd>Ctrl+Shift+8</kbd> / <kbd>Ctrl+Shift+7</kbd> / <kbd>Ctrl+Shift+9</kbd> | In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent |
-| <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | On a check-list line: in a task's notes: make the check-list line a subtask (Ctrl+Z takes it back) |
+| <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | On a check-list line or a selection of them: in a task's notes: make the check-list lines a subtask each; in a project or standalone note: a task each, read like quick add (Ctrl+Z takes them back) |
 | <kbd>Ctrl+Shift+O</kbd> / <kbd>⌘+Shift+O</kbd> | In a note with three or more headings: in the notes: go to the outline of the headings; ↑ / ↓ move, Home / End jump, Enter goes to the heading, Esc returns to the note |
 | <kbd>Ctrl+Shift+M</kbd> / <kbd>⌘+Shift+M</kbd> | In the notes: show the note's Markdown source as plain text, or back to rich text |
 | <kbd>/</kbd> | At the start of a line or after a space: in the notes and comments: the command menu (headings, lists, table, quote, code, link, image, date, mention); ↑ / ↓ move, Enter applies, Esc closes |

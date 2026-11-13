@@ -514,7 +514,7 @@ func checkUseCase(t *testing.T, h *harness, c ucCase, seed ucSeed, before map[st
 			}
 		} else {
 			x := map[string]any{"title": now["title"]}
-			for _, k := range []string{"project_id", "parent_id", "due"} {
+			for _, k := range []string{"project_id", "parent_id", "due", "description"} {
 				if now[k] != "" {
 					x[k] = now[k]
 				}

@@ -149,3 +149,17 @@ function SortMenu() {
 
 /** Sort in the header's menu (notes-sort D1): Title checked, its arrow, the heading named after the order. */
 export const SortOrder: StoryObj = { render: () => <SortMenu /> }
+
+/** Ticking notes (notes-bulk-actions D2): checkboxes in the kind icon's slot, two notes ticked, a task note not tickable. */
+export const Ticked: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl space-y-0.5">
+        <NoteRow entry={entry({ key: 'note:a', source: 'note', title: 'Agenda 3 Nov', text: 'Budget, rota' })} labels={[]} updated="2 h ago" onOpen={() => {}} tick={{ ticked: true, shown: true, onTick: () => {} }} />
+        <NoteRow entry={entry({ key: 'note:b', source: 'note', title: 'Agenda 4 Nov', text: 'Hiring' })} labels={[reference]} updated="1 d ago" onOpen={() => {}} tick={{ ticked: true, shown: true, onTick: () => {} }} />
+        <NoteRow entry={entry({ key: 'task:c', source: 'task', title: 'Call the plumber', text: 'the boiler', projectId: home.id })} project={home} labels={[]} updated="2 d ago" onOpen={() => {}} />
+        <NoteRow entry={entry({ key: 'note:d', source: 'note', title: 'Agenda 5 Nov', text: 'Launch plan' })} labels={[]} updated="3 d ago" onOpen={() => {}} tick={{ ticked: false, shown: true, onTick: () => {} }} />
+      </ul>
+    </Column>
+  ),
+}

@@ -404,7 +404,7 @@ export const SHORTCUTS: { keys: string; label: string }[] = translatedList([
   { keys: 'Mod-Shift-7', label: msg('Numbered list') },
   { keys: 'Mod-Shift-9', label: msg('Check list') },
   { keys: 'Mod-Enter', label: msg('Check / uncheck item') },
-  { keys: 'Mod-Shift-Enter', label: msg('Make the check-list line a subtask') },
+  { keys: 'Mod-Shift-Enter', label: msg('Check-list lines to subtasks (a task\'s note) or tasks') },
   { keys: 'Mod-Shift-o', label: msg('Outline of the headings (3 or more)') },
   { keys: 'Mod-Shift-m', label: msg('Markdown source of the note (again: rich text)') },
   { keys: '/', label: msg('Command menu: headings, lists, table, quote, code, image, date, mention') },

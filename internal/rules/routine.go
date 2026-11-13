@@ -194,6 +194,8 @@ type runState struct {
 	aiTexts  []string
 	// blocks are what the Ask AI steps showed (assistant-routine-blocks D1).
 	blocks []RunBlock
+	// noteLinks is the link to the note each Get note text step read last, by step id (note-checklist-tasks D4).
+	noteLinks map[string]string
 }
 
 // sideEffect is a notification, a delivery or an email queued after commit.

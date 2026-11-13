@@ -4,7 +4,7 @@ import { nameId } from '../../ids'
 import { compile, membersFrom, parse as parseQuery, type FilterContext } from '../../filter'
 import type { Label, Project, Section, Task, FieldDef, RoutineStep } from '../../types'
 import { cutText, filterLines, inFindScope, joinLines, replaceText, sortLines, sortTasks, splitLines, take, valueLen } from '../stepData'
-import { dateLiteral } from '../steps'
+import { dateLiteral, noteSource } from '../steps'
 import { resolveDate } from '../stepData'
 import { isNull, parseStepActions, planActions, type PlanContext } from './actions'
 import { PER_CALL } from './tools'
@@ -178,9 +178,12 @@ function createTasks(st: RunState, s: RoutineStep, inputs: Inputs, at: number): 
       if (title !== null) { lines = [title]; parse = false }
     }
   }
+  // Link back to the note (note-checklist-tasks D4): the link the source step read in this run, or this iteration.
+  const link = st.litBool(s, 'link_back') ? st.noteLinks.get(noteSource(st.r.steps, s.id)) ?? '' : ''
   const items: Record<string, unknown>[] = []
   for (const line of lines) {
     const item: Record<string, unknown> = { ...base }
+    if (link) item.description = link
     if (parse) quickAddLine(st, line, item)
     else item.title = line
     // A routine of one workspace creates in its Inbox (routine-conditions D1).
@@ -316,9 +319,18 @@ function noteText(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
   const of = st.entityIn(s, inputs, 'of')
   const row = of?.type === 'project' ? st.liveProject(of.id ?? '') : of?.type === 'note' ? st.liveNote(of.id ?? '') : st.liveTask(of?.id ?? '')
   if (!row) throw fail('not_found', `${of?.type ?? 'task'} ${of?.id ?? ''} not found`)
+  const kind = of?.type === 'project' ? 'project' : of?.type === 'note' ? 'note' : 'task'
+  const title = str(row, kind === 'project' ? 'name' : 'title')
+  st.noteLinks.set(s.id, noteLinkLine(kind, of?.id ?? '', title))
   // field: a standalone note's title instead of its text (notes-in-routines D1).
-  if (st.litStr(s, 'field') === 'title') return textOut(str(row, of?.type === 'project' ? 'name' : 'title'))
+  if (st.litStr(s, 'field') === 'title') return textOut(title)
   return textOut(str(row, 'description'))
+}
+
+/** A link to a task, project or note in the form of note-links (routine_steps.go NoteLinkLine). */
+export function noteLinkLine(kind: 'task' | 'project' | 'note', id: string, title: string): string {
+  const esc = (title.trim() || 'Note').replace(/[\\[\]]/g, (c) => `\\${c}`)
+  return `[${esc}](?${kind}=${id})`
 }
 
 function appendNote(st: RunState, s: RoutineStep, inputs: Inputs, at: number): ExecResult {

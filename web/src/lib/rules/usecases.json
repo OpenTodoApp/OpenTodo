@@ -209,6 +209,23 @@
       "expect": {"created": [{"title": "book room", "project_id": "work"}, {"title": "send agenda", "project_id": "work"}]}
     },
     {
+      "row": 46,
+      "name": "Checkboxes link back (note-checklist-tasks): the open checkboxes of the note become tasks, each linked to the note",
+      "projects": [{"id": "work", "name": "Work"}],
+      "tasks": [{"id": "m1", "title": "Planning meeting [Q4]", "project_id": "work", "description": "- [ ] book room\n- notes\n- [ ] send agenda"}],
+      "trigger": {"kind": "manual"}, "run_on": "m1",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}, "only": {"literal": "open_checkboxes"}}},
+        {"id": "c", "kind": "project_of", "in": {"task": {"ref": "trigger"}}},
+        {"id": "d", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"ref": "c"}, "link_back": {"literal": true}}}
+      ],
+      "expect": {"created": [
+        {"title": "book room", "project_id": "work", "description": "[Planning meeting \\[Q4\\]](?task=m1)"},
+        {"title": "send agenda", "project_id": "work", "description": "[Planning meeting \\[Q4\\]](?task=m1)"}
+      ]}
+    },
+    {
       "row": 17,
       "name": "When I complete a task in Clients, create a follow-up in Admin due in 3 days",
       "projects": [{"id": "clients", "name": "Clients"}, {"id": "admin", "name": "Admin"}],

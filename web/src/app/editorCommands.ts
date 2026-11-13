@@ -18,7 +18,7 @@ import type { IconName } from '../ui'
 
 /** What a command may use besides the editor. */
 export interface CommandEnv {
-  /** The notes of a task: Make subtask is offered. */
+  /** The notes of a task: Make subtask is offered (elsewhere Make tasks, with `makeSubtask`). */
   notes: boolean
   /** Members to mention (a shared project). */
   members: boolean
@@ -133,6 +133,12 @@ export function editorCommands(): EditorCommand[] {
     {
       id: 'subtask', label: t('Make subtask'), icon: 'corner-down-right', keywords: 'task',
       available: (view, env) => env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
+      run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
+    },
+    {
+      // In a project or standalone note the same command makes tasks (note-checklist-tasks D1).
+      id: 'tasks', label: t('Make tasks'), icon: 'circle-check-big', keywords: 'task todo action',
+      available: (view, env) => !env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
       run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
     },
     { id: 'markdown', label: t('Markdown'), icon: 'code', keywords: 'source md plain text', available: (_v, env) => !!env.source, run: (_v, env) => env.source?.() },
