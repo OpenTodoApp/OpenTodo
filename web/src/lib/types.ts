@@ -1378,6 +1378,8 @@ export interface CalendarConnection {
   include_date_only: boolean
   /** The part of the account written to the calendar (sync-scope); absent from older servers: all. */
   scope?: SyncScope
+  /** Projects matched to calendars of the connection (calsync-project-calendars); empty or absent: one calendar. */
+  project_calendars?: Record<string, string>
   enabled: boolean
   state: 'off' | 'choose_calendar' | 'pending' | 'ok' | 'failed' | 'reconnect' | 'stopped'
   next_sync_at: number
@@ -1422,6 +1424,8 @@ export interface CalendarConnectionPatch {
   enabled?: boolean
   password?: string
   scope?: SyncScope
+  /** Replaces the project-to-calendar matches; {} is one calendar again. */
+  project_calendars?: Record<string, string>
 }
 
 /**

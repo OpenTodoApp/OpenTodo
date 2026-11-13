@@ -1,0 +1,1 @@
+- Calendar sync can write each project into a calendar of its own: choose **A calendar per project** under **Write to** in a connection's **Calendars**; a sub-project follows its parent, and moving a task to another project moves its event (calsync-project-calendars, #1160).
