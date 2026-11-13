@@ -10,10 +10,15 @@
     "obsidian://open?vault=R%26D%20%232%20%D0%97%D0%B0%D0%BC%D0%B5%D1%82%D0%BA%D0%B8&file=%D0%98%D0%B4%D0%B5%D0%B8%2F%D0%9F%D0%BB%D0%B0%D0%BD",
     "obsidian://open?vault=Notes&file=Projects%2FPlan.md",
     "obsidian://open?vault=Notes&file=Boards%2FRoadmap.canvas",
+    "obsidian://open?vault=Notes&file=Projects%2FPlan%23%5Eabc123",
+    "obsidian://open?vault=Notes&file=Inbox%23Next%20steps",
+    "obsidian://open?vault=Notes&file=Plan%23%5Eabc123",
     "obsidian://open?vault=Notes&file=Private%2Fdiary",
     "obsidian://open?vault=Notes&file=a"
   ],
   "refused": [
+    "obsidian://open?vault=Notes&file=Inbox%23",
+    "obsidian://open?vault=Notes&file=%23Heading",
     "obsidian://new?vault=Notes&name=x",
     "obsidian://search?vault=Notes&query=x",
     "obsidian://adv-uri?vault=Notes&filepath=a.md",

@@ -1,0 +1,1 @@
+- An Obsidian origin can link to a heading or block of its note (`file=Plan%23%5Eabc123`): the chip reads as the note, opens it at that place, and `origin:` search finds it by the note's path (obsidian-anchors, #1287).

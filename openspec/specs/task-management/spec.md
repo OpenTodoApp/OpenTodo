@@ -312,7 +312,7 @@ A task SHALL have an optional `origin`: where it came from, as one value `{kind,
 - **THEN** that client shows the chip with the note's path and no link, and after sync every device still holds the same `obsidian` origin and the new title
 
 ### Requirement: Origin validation
-The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host, `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` (with `.md` appended when it has no extension); an `obsidian` origin SHALL carry no `provider`. Every other kind SHALL keep the `http(s)` rule, so an `obsidian:` URL on any other kind is refused. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
+The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host, `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` without its anchor (with `.md` appended when it has no extension). A `#` in the decoded `file` starts a heading or block anchor (`Plan#Next steps`, `Plan#^abc123`): Obsidian names no note with `#`, so the note is the part before it, and neither the note nor the anchor SHALL be empty; an `obsidian` origin SHALL carry no `provider`. Every other kind SHALL keep the `http(s)` rule, so an `obsidian:` URL on any other kind is refused. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
 
 #### Scenario: Provider shape
 - **WHEN** a client submits `origin: {kind: "issue", provider: "My Tracker", id: "1"}`
@@ -349,6 +349,11 @@ The sync and API write paths SHALL accept an origin only when `kind` is from the
 #### Scenario: Obsidian scheme on another kind
 - **WHEN** a client submits `origin: {kind: "url", url: "obsidian://open?vault=Notes&file=a"}`
 - **THEN** the write is rejected as invalid
+
+#### Scenario: Link to a block or heading
+- **WHEN** a client submits `origin: {kind: "obsidian", id: "Projects/Plan.md", url: "obsidian://open?vault=Notes&file=Projects%2FPlan%23%5Eabc123"}`
+- **THEN** it is accepted, the chip reads "Plan" and opens the note at block `^abc123`, and `origin:` search finds it by `Projects/Plan.md`
+- **AND** `file=Inbox%23` (an empty anchor) or `file=%23Heading` (no note) is refused
 
 ### Requirement: Origin lengths and required members
 An origin's `url` SHALL be at most 2048, `id` at most 512 and `title` at most 500 characters; `kind: "url"` SHALL carry a `url`, `kind: "obsidian"` SHALL carry both an `id` and a `url`, and the other kinds SHALL carry an `id`. An encrypted account's ciphertext string SHALL be accepted in place of the object, bounded only by the value limit.

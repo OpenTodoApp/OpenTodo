@@ -350,6 +350,60 @@
       "tooltip": "Open in Obsidian: Notes › Boards/Roadmap.canvas"
     },
     {
+      "name": "block anchor (obsidian-anchors)",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Projects/Plan.md",
+        "url": "obsidian://open?vault=Notes&file=Projects%2FPlan%23%5Eabc123"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Plan",
+      "tooltip": "Open in Obsidian: Notes › Projects/Plan.md"
+    },
+    {
+      "name": "heading anchor",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Inbox.md",
+        "url": "obsidian://open?vault=Notes&file=Inbox%23Next%20steps"
+      },
+      "valid": true,
+      "link": true,
+      "label": "Inbox",
+      "tooltip": "Open in Obsidian: Notes › Inbox.md"
+    },
+    {
+      "name": "anchor kept in the id",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Plan#^abc123.md",
+        "url": "obsidian://open?vault=Notes&file=Plan%23%5Eabc123"
+      },
+      "valid": false,
+      "link": true
+    },
+    {
+      "name": "empty anchor",
+      "origin": {
+        "kind": "obsidian",
+        "id": "Inbox.md",
+        "url": "obsidian://open?vault=Notes&file=Inbox%23"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
+      "name": "anchor without a note",
+      "origin": {
+        "kind": "obsidian",
+        "id": ".md",
+        "url": "obsidian://open?vault=Notes&file=%23Heading"
+      },
+      "valid": false,
+      "link": false
+    },
+    {
       "name": "new note action",
       "origin": {
         "kind": "obsidian",

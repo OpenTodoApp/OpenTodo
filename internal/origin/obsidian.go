@@ -65,7 +65,8 @@ func decodeValue(raw string) (string, bool) {
 // ParseObsidianURL reads an Obsidian note link of the one accepted shape:
 // scheme obsidian, action open, no path, fragment, port or user information,
 // and a query of exactly `vault` (1 to MaxVault characters) and `file` (1 to
-// MaxFile characters, not starting with "/"), once each, at most MaxURL bytes
+// MaxFile characters, not starting with "/", an anchor after "#" never
+// empty), once each, at most MaxURL bytes
 // in all.
 func ParseObsidianURL(raw string) (ObsidianLink, bool) {
 	if len(raw) > MaxURL || !strings.HasPrefix(raw, obsidianPrefix) {
@@ -98,6 +99,9 @@ func ParseObsidianURL(raw string) (ObsidianLink, bool) {
 			if n < 1 || n > MaxFile || strings.HasPrefix(v, "/") {
 				return ObsidianLink{}, false
 			}
+			if note, anchor, has := strings.Cut(v, "#"); has && (note == "" || anchor == "") {
+				return ObsidianLink{}, false
+			}
 			l.File = v
 		default:
 			return ObsidianLink{}, false
@@ -106,14 +110,23 @@ func ParseObsidianURL(raw string) (ObsidianLink, bool) {
 	return l, true
 }
 
-// NotePath is the note's vault-relative path the link opens: File, with ".md"
+// Note is File without its anchor (OpenSpec change obsidian-anchors):
+// Obsidian names no note with "#", so a "#" in file starts a heading
+// ("Note#Heading") or block ("Note#^abc123") the link opens the note at.
+func (l ObsidianLink) Note() string {
+	note, _, _ := strings.Cut(l.File, "#")
+	return note
+}
+
+// NotePath is the note's vault-relative path the link opens: Note, with ".md"
 // added when its last segment has no extension.
 func (l ObsidianLink) NotePath() string {
-	last := l.File[strings.LastIndexByte(l.File, '/')+1:]
+	note := l.Note()
+	last := note[strings.LastIndexByte(note, '/')+1:]
 	if strings.LastIndexByte(last, '.') > 0 {
-		return l.File
+		return note
 	}
-	return l.File + ".md"
+	return note + ".md"
 }
 
 // ValidObsidianURL reports whether raw is a valid Obsidian note link whose
@@ -121,7 +134,7 @@ func (l ObsidianLink) NotePath() string {
 // a crafted origin cannot show one note and open another.
 func ValidObsidianURL(raw, id string) bool {
 	l, ok := ParseObsidianURL(raw)
-	return ok && id != "" && (id == l.NotePath() || id == l.File+".md")
+	return ok && id != "" && (id == l.NotePath() || id == l.Note()+".md")
 }
 
 // NoteName is the last segment of a vault-relative path without ".md", the
