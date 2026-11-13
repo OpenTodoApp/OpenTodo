@@ -12,6 +12,11 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `expo-secure-store`: the Keychain and the Keystore, where the account's tokens live (design D5), never in MMKV. 58.0.2, the SDK's version.
 - `expo-haptics`: the tap you feel when a task is completed (design D7). 58.0.7, the SDK's version.
 - `react-native-safe-area-context`: the screen's safe area (the notch, the home indicator, Android's edge-to-edge bars) for the app's own layouts. 5.10.1, the SDK's version.
+- `react-native-screens`: the platform's navigation containers (UINavigationController, fragments) under the native stack: edge-swipe back, large titles, sheets with detents (design D7). 4.30.1, the SDK's line.
+- `@react-navigation/native`: the navigation state and container the stack and the tabs share.
+- `@react-navigation/native-stack`: each tab's stack and the capture sheet, drawn by `react-native-screens`.
+- `react-native-bottom-tabs`: the platform's own tab bar (UITabBarController, Material bottom navigation), with the badge, the search role and iOS 26's bottom accessory (design D7).
+- `@bottom-tabs/react-navigation`: `react-native-bottom-tabs` as a React Navigation navigator.
 - `@react-native-community/netinfo`: the network state for the platform port (`network`).
 - `react-native-mmkv`: the platform port's small preferences store (`prefs`), synchronous like `localStorage`.
 - `react-native-quick-crypto`: `crypto.subtle` and `crypto.getRandomValues` for the shared encryption code (AES-GCM, PBKDF2, HKDF); Hermes has no Web Crypto.
@@ -38,5 +43,6 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `eslint`: the lint (`npm run lint`).
 - `typescript-eslint`: ESLint's TypeScript parser.
 - `eslint-plugin-react-hooks`: the Rules of Hooks.
+- `@testing-library/react-native`: renders the app's screens and navigation in Jest (native-app-everyday D9).
 - `fake-indexeddb`: IndexedDB in Node for the adapter's conformance suite (`test/storage`), which runs every scenario on Dexie, as the web does, and on the adapter. 6.2.6, the newest release at least 14 days old (web has 6.2.7).
 - `@babel/plugin-transform-async-to-generator`: async functions as generators driven by the global Promise (`babel.config.js`), so the adapter's transaction zone follows an `await` on Hermes (design D4). Already installed by Expo's preset; named here because `babel.config.js` loads it.

@@ -13,6 +13,6 @@ module.exports = {
   resolver: '<rootDir>/test/resolver.js',
   // Transform the shared library too (it lives outside this folder).
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|react-native-.*|@react-native/.*))',
+    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|react-native-.*|@react-native/.*|@react-navigation/.*|@bottom-tabs/.*|sf-symbols-typescript|color|color-convert|color-string|color-name|use-latest-callback|nanoid|query-string|decode-uri-component|split-on-first|filter-obj))',
   ],
 }

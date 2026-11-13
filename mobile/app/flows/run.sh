@@ -48,7 +48,7 @@ rm -f "$jar"
 [ -n "$TOKEN" ] || { echo "no API token from $API" >&2; exit 1; }
 
 mkdir -p "$OUT"
-[ $# -gt 0 ] || set -- sign-in.yaml today.yaml
+[ $# -gt 0 ] || set -- sign-in.yaml today.yaml tabs.yaml
 for flow in "$@"; do
   maestro test --format junit --output "$OUT/${flow%.yaml}.xml" --debug-output "$OUT/${flow%.yaml}" --flatten-debug-output \
     -e APP_ID="$app" -e SERVER="$SERVER" -e ACCOUNT_EMAIL="$ACCOUNT_EMAIL" -e ACCOUNT_PASSWORD="$ACCOUNT_PASSWORD" -e ACCOUNT_NAME="$ACCOUNT_NAME" \

@@ -10,10 +10,13 @@ appId: ${APP_ID}
 - launchApp
 - assertVisible:
     id: today-list
+# Just after a start the tab bar may not take its first tap yet.
 - tapOn:
-    id: account
+    id: tab-browse
+    retryTapIfNoChange: true
 - assertVisible: ${ACCOUNT_NAME}
-- tapOn: Sign out
+- tapOn:
+    id: sign-out
 - assertVisible:
     id: server-address
 - takeScreenshot: server

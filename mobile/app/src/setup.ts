@@ -5,6 +5,7 @@
 // Dexie loads before Web Crypto: at load it reads the engine's own promise from
 // crypto.subtle (design D4, the storage spike), which must be Hermes' and not
 // react-native-quick-crypto's.
+import './devWarnings'
 import 'dexie'
 import { installCrypto } from './crypto'
 import { installAppPlatform } from './host'

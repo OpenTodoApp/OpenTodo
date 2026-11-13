@@ -47,7 +47,7 @@ const config: ExpoConfig = {
     package: 'app.opentodo',
   },
   // The Keychain is read without Face ID, so the plugin's usage text is not needed.
-  plugins: [['expo-secure-store', { faceIDPermission: false }], 'expo-web-browser'],
+  plugins: [['expo-secure-store', { faceIDPermission: false }], 'expo-web-browser', 'react-native-bottom-tabs'],
 }
 
 export default withLocalHttp(config)

@@ -1,0 +1,39 @@
+# The tabs (native-app-everyday 1.1): five destinations with their own stacks, capture
+# from the add button in the tab's context, and the Inbox count on its tab.
+appId: ${APP_ID}
+---
+- runFlow: steps/sign-in.yaml
+- tapOn:
+    id: add
+- assertVisible:
+    id: capture-title
+- inputText: Buy lemons
+- pressKey: Enter
+- runFlow: steps/close-sheet.yaml
+- assertVisible: Buy lemons
+- takeScreenshot: today
+- tapOn:
+    id: tab-inbox
+- tapOn:
+    id: add
+- inputText: An idea for later
+- pressKey: Enter
+- runFlow: steps/close-sheet.yaml
+- assertVisible: An idea for later
+- takeScreenshot: inbox
+- tapOn:
+    id: tab-upcoming
+- assertVisible:
+    id: upcoming
+- tapOn:
+    id: tab-search
+- assertVisible:
+    id: search
+- tapOn:
+    id: tab-browse
+- assertVisible: ${ACCOUNT_NAME}
+- takeScreenshot: browse
+# Each tab keeps its place: Inbox still shows its list.
+- tapOn:
+    id: tab-inbox
+- assertVisible: An idea for later

@@ -1,0 +1,15 @@
+# Closes the sheet on top: the back gesture on Android, a swipe down on iOS.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          start: 50%, 30%
+          end: 50%, 95%

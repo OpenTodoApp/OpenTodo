@@ -2,15 +2,16 @@
 // on this phone if there is one, otherwise the server screen and sign-in. A grant that
 // ends on the server (revoked in the sessions list, signed out everywhere) brings the
 // app back to the server screen with nothing of the account left. Signed in, the app
-// syncs and shows Today (tasks 4.5 and 4.6).
+// syncs and shows its tabs (native-app-everyday).
 import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { bootLanguage } from '@shared/i18n'
 import { platform } from '@shared/platform'
 import { restore, sendSignOuts, signOut, type SignedIn } from './auth/account'
 import { accountDeps, signInDeps } from './auth/native'
+import RootNavigation from './navigation/Root'
 import ServerScreen from './screens/ServerScreen'
-import TodayScreen from './screens/TodayScreen'
 import { startAccountSync } from './sync'
 import { useColors } from './theme'
 
@@ -21,7 +22,8 @@ export default function App() {
   const deps = useMemo(() => accountDeps(() => setSigned(null)), [])
 
   useEffect(() => {
-    void restore(deps).then(setSigned, () => setSigned(null))
+    // The device's language first, so the first screen is drawn in it.
+    void bootLanguage().then(() => restore(deps)).then(setSigned, () => setSigned(null))
     // A sign-out made offline reaches its server at the next start or reconnection.
     const send = () => { void sendSignOuts(deps).catch(() => undefined) }
     send()
@@ -36,7 +38,7 @@ export default function App() {
   if (!signed) return <ServerScreen account={deps} onSignedIn={setSigned} sheet={signInDeps} />
   return (
     <SafeAreaProvider>
-      <TodayScreen onSignOut={() => { void signOut(signed, deps).finally(() => setSigned(null)) }} signed={signed} />
+      <RootNavigation onSignOut={() => { void signOut(signed, deps).finally(() => setSigned(null)) }} signed={signed} />
     </SafeAreaProvider>
   )
 }
