@@ -7,7 +7,7 @@ import { closeHistory, undoDepth } from 'prosemirror-history'
 import type { Command } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
-import { queueFiles, isImage } from '../lib/attachments'
+import { noteParent, queueFiles, isImage } from '../lib/attachments'
 import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
@@ -71,7 +71,7 @@ function usage(doc: Y.Doc, pm: import('prosemirror-model').Node): number {
 
 /**
  * Whose note the editor edits: a task's, a project's (OpenSpec change project-notes,
- * D3) or a standalone note's (notes-overview D7: no mentions, images or Make subtask).
+ * D3) or a standalone note's (notes-overview D7: no mentions or Make subtask; images since note-attachments).
  */
 export interface NoteTarget {
   entity: 'task' | 'project' | 'note'
@@ -257,6 +257,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const [linkAsk, setLinkAsk] = useState<{ current: string; answer: (href: string | null) => void } | null>(null)
   const askLink = (current: string) => new Promise<string | null>((answer) => setLinkAsk({ current, answer }))
   const isTask = entity === 'task'
+  const imageParent = imageParentOf(entity, taskId)
   // People, then the workspace's groups (group-mentions D4); a standalone note has nobody to notify.
   const targets = useMentionTargets(isTask ? note.project_id : null)
   const members = entity === 'note' ? NO_TARGETS : targets
@@ -283,7 +284,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const coarse = useMediaQuery('(pointer: coarse)')
   const env: CommandEnv = {
     notes: isTask, members: members.length > 0, askLink, notify: (m) => chrome.notify(m),
-    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask: readOnly ? undefined : makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
+    pickImage: imageParent && !readOnly ? () => picker.current?.click() : undefined, makeSubtask: readOnly ? undefined : makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
   }
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
   const envRef = useLatest(env)
@@ -359,9 +360,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       // A read-only note's headings take focus from the outline (note-outline D3).
       decorations: (state) => (readOnly ? headingStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
-      nodeViews: { ...imageViews(entity === 'task' ? taskId : null), ...refViews },
+      nodeViews: { ...imageViews(imageParent), ...refViews },
       clipboardTextParser: (text) => markdownSlice(text),
-      ...(entity === 'task' && !readOnly ? imageHandlers(taskId) : {}),
+      ...(imageParent && !readOnly ? imageHandlers(imageParent) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {
         // A click on a check item's box (left of its text) toggles it.
         if (node.type.name !== 'list_item' || node.attrs.checked === null || readOnly) return false
@@ -469,7 +470,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       <div ref={host} className="notes-host" data-notes-editing={editing || undefined} hidden={source.on} />
       {source.element}
       {chrome.overlays}
-      {isTask && !readOnly && <ImagePicker picker={picker} onFiles={(files) => { if (view.current) void embedImages(view.current, taskId, files) }} />}
+      {imageParent && !readOnly && <ImagePicker picker={picker} onFiles={(files) => { if (view.current) void embedImages(view.current, imageParent, files) }} />}
       <NoteStatus size={sizeNote} error={error} />
       {linkAsk && <LinkAsk ask={linkAsk} onDone={() => setLinkAsk(null)} />}
     </NotesCorner>
@@ -512,4 +513,9 @@ function LinkAsk({ ask, onDone }: { ask: { current: string; answer: (href: strin
 /** Markdown beside the Formatting toggle on a fine pointer (note-markdown-source D4): the source, or back to rich text. */
 function SourceButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
+}
+
+/** Images belong to the task or the standalone note (note-attachments); a project's notes have none. */
+function imageParentOf(entity: 'task' | 'project' | 'note', id: string): string | null {
+  return entity === 'task' ? id : entity === 'note' ? noteParent(id) : null
 }

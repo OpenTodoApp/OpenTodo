@@ -1,6 +1,6 @@
 ---
 title: Attachments
-summary: Add files and links to tasks and comments, offline included; limits, who can see and remove them, encryption and where the files live.
+summary: Add files and links to tasks, comments and notes, offline included; limits, who can see and remove them, encryption and where the files live.
 audience: user
 section: Guides
 specs: [attachments]
@@ -11,28 +11,28 @@ order: 35
 
 <picture><source srcset="images/task-detail-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/task-detail-light.webp" alt="A project list with the task panel open on the right, showing the task's title, notes and properties; attachments are added further down the panel."></picture>
 
-A task, or a comment on it, can carry files and links: a receipt, a photo of a whiteboard, a PDF, the link to a design. Open a task and use **Attachments** below its subtasks, or the paperclip in the comment box.
+A task, a comment on it, or a [note](notes.md) can carry files and links: a receipt, a photo of a whiteboard, a PDF, the link to a design. Open a task and use **Attachments** below its subtasks, the paperclip in the comment box, or **Attach files…** in a note's menu.
 
 ## Add a file or a link
 
 - **Pick, paste or drop.** Choose **Attach › Choose files…** to pick files, paste an image or a file into the task panel, or drop files onto it (a drop zone appears while you drag).
 - **In the text.** An image pasted into the notes or a comment is attached and shown in place ([details](formatting.md#images)).
 - **Links.** Choose **Attach › Add a link…** and paste an `http` or `https` address. A link is stored as a link: the server never downloads it.
-- **Offline.** Adding a file without a connection works: the attachment appears at once, marked "waiting to upload", and uploads after the next sync. Other devices show it as "uploading" until the file has arrived on the server.
+- **Offline.** A file added without a connection appears at once, marked "waiting to upload", and uploads after the next sync; other devices show "uploading" until it arrives.
 
-Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, plain text, audio and video); everything else, and every file of an encrypted account, is downloaded instead. You can rename your own attachments and remove them; a removal can be undone from the notice that follows.
+Images show a thumbnail; other files show their name, type and size. **Open** shows the file in a new tab when the browser can display it safely (images, PDF, text, audio, video); anything else, and every encrypted file, is downloaded. You can rename and remove your own attachments; the notice that follows undoes a removal.
 
 ## Who sees and changes them
 
-Attachments belong to their task: everyone who can see the task can see its attachments, viewers of a shared project included, and anyone who can comment can attach files. Only the person who added an attachment can rename it. The author, a project admin and the owner can remove it.
+Attachments belong to their task or note: everyone who can see it can see its attachments, viewers of a shared project included, and anyone who can comment can attach files. Only the person who added an attachment can rename it. The author, a project admin and the owner can remove it.
 
 ## Limits
 
-The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file stays on the server for the Trash retention period (30 days unless changed), then is deleted. Until then any device can undo the removal, if your total still has room. Purging a task from the Trash deletes its files immediately.
+The server owner sets a size limit per file (25 MB unless changed) and a total per account (1 GB unless changed) in **Settings → Server → Attachments**, and can turn attachments off. **Settings → Data** shows how much of your total you use. Removing an attachment frees your total at once; the file stays on the server for the Trash retention period (30 days unless changed), then is deleted. Until then any device can undo the removal, if your total still has room. Purging a task or a note from the Trash deletes its files immediately. A note turned into a task or moved to another project keeps its files without uploading them again; encrypted files stay with the original in the Trash when the project is shared.
 
 ## Encryption
 
-On an account with [end-to-end encryption](e2ee.md), the file name, its type, a link's address and the file's bytes are encrypted on your device before they leave it. The server stores and serves only the encrypted bytes and never holds a key. Turning encryption on or off re-uploads existing files in the new form as part of the switch, and replaces each of your links with a copy in the new form.
+On an account with [end-to-end encryption](e2ee.md), the file name, its type, a link's address and the file's bytes are encrypted on your device before they leave it. The server stores and serves only the encrypted bytes and never holds a key. Turning encryption on or off re-uploads existing files and links in the new form.
 
 ## Privacy and safety
 

@@ -2155,9 +2155,11 @@
         "created_at": "number",
         "deleted_at": "nullable_number",
         "encrypted": "bool",
+        "file_id": "nullable_string",
         "id": "string",
         "mime": "string",
         "name": "string",
+        "note_id": "nullable_string",
         "sha256": "string",
         "size": "number",
         "task_id": "id",
@@ -3234,8 +3236,10 @@
       "created_at": "number",
       "deleted_at": "nullable_number",
       "encrypted": "bool",
+      "file_id": "nullable_string",
       "mime": "string",
       "name": "string",
+      "note_id": "nullable_string",
       "sha256": "string",
       "size": "number",
       "task_id": "id",
@@ -5359,6 +5363,15 @@
         "title": "string",
         "workspace_id": "nullable_string"
       }
+    },
+    "GET /api/v1/notes/{id}/attachments": {
+      "policy": "signed-in",
+      "response": {
+        "attachments": "array"
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "GET /api/v1/notes/{id}/history": {
       "policy": "signed-in",
@@ -9363,6 +9376,20 @@
         "entity": "string",
         "entity_id": "string"
       }
+    },
+    "POST /api/v1/notes/{id}/attachments": {
+      "policy": "signed-in",
+      "request": {
+        "name": "string",
+        "url": "string"
+      },
+      "response": {
+        "uploaded": "boolean"
+      },
+      "statuses": [
+        "200",
+        "201"
+      ]
     },
     "POST /api/v1/notes/{id}/to-task": {
       "policy": "signed-in",

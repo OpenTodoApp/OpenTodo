@@ -442,8 +442,11 @@ const byCreated = (a: Attachment, b: Attachment) => a.created_at - b.created_at 
 
 /** The live attachments of a task itself (not of its comments), oldest first. */
 export function useTaskAttachments(taskId: string): Attachment[] {
+  // A standalone note's (note-attachments): `note:<id>`; no index, attachments are few.
+  const note = taskId.startsWith('note:') ? taskId.slice(5) : null
   return useLiveQuery(
-    async () => (await db.attachments.where('task_id').equals(taskId).toArray()).filter((a) => !a.deleted_at && !a.comment_id).sort(byCreated),
+    async () => (note ? await db.attachments.filter((a) => a.note_id === note).toArray() : await db.attachments.where('task_id').equals(taskId).toArray())
+      .filter((a) => !a.deleted_at && !a.comment_id && (note || !a.note_id)).sort(byCreated),
     [taskId], NO_ATTACHMENTS,
   )
 }

@@ -97,11 +97,14 @@ func projectMembership(p string) bool {
 	return len(parts) >= 2 && (parts[1] == "members" || parts[1] == "transfer" || parts[1] == "grants" || parts[1] == "member-invitations")
 }
 
-// taskAttachments matches /api/v1/tasks/{id}/attachments (OpenSpec `attachments`).
+// taskAttachments matches /api/v1/tasks/{id}/attachments (OpenSpec `attachments`)
+// and /api/v1/notes/{id}/attachments (note-attachments).
 func taskAttachments(p string) bool {
 	rest, ok := strings.CutPrefix(p, "/api/v1/tasks/")
 	if !ok {
-		return false
+		if rest, ok = strings.CutPrefix(p, "/api/v1/notes/"); !ok {
+			return false
+		}
 	}
 	parts := strings.Split(rest, "/")
 	return len(parts) >= 2 && parts[1] == "attachments"

@@ -90,6 +90,24 @@ async function sha256Hex(blob: Blob): Promise<string> {
 }
 
 /** One planned file: its ops and the bytes to keep for upload. */
+/**
+ * What an attachment belongs to (note-attachments D1): a task id, or
+ * `note:<id>` for a standalone note. Ids never hold a colon.
+ */
+export type AttachParent = string
+export const noteParent = (noteId: string): AttachParent => `note:${noteId}`
+/** The standalone note of a parent key, or null for a task. */
+export const parentNote = (parent: AttachParent): string | null => (parent.startsWith('note:') ? parent.slice(5) : null)
+/** The parent key of an attachment row. */
+export const parentOf = (a: Pick<Attachment, 'task_id' | 'note_id'>): AttachParent => (a.note_id ? noteParent(a.note_id) : a.task_id)
+/** The fields that name a parent on a new row: a note's rows carry no task_id. */
+export function parentFields(parent: AttachParent): { task_id?: string; note_id?: string } {
+  const note = parentNote(parent)
+  return note ? { note_id: note } : { task_id: parent }
+}
+/** The id an attachment's bytes are stored and encrypted under: its own, or the original's for a copy (D3). */
+export const fileKeyOf = (a: Pick<Attachment, 'id' | 'file_id'>): string => a.file_id || a.id
+
 export interface PlannedFile {
   change: Change
   blob: AttachmentBlob
@@ -100,7 +118,7 @@ export interface PlannedFile {
  * anything, so a caller can put them in one batch with its own changes (a
  * comment and its files, a shared task and its files).
  */
-export async function planFiles(taskId: string, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
+export async function planFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null; /** For a task in the same batch, not stored yet. */ projectId?: string | null } = {}): Promise<PlannedFile[]> {
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add files.'))
   const l = await limits()
@@ -128,7 +146,7 @@ export async function planFiles(taskId: string, files: File[], opts: { commentId
     out.push({
       // task_id and author_id first: they place and authorize the row.
       change: { entity: 'attachment', entityId: id, patch: {
-        task_id: taskId, author_id: author, comment_id: opts.commentId ?? null, name, mime: file.type || 'application/octet-stream',
+        ...parentFields(taskId), author_id: author, comment_id: opts.commentId ?? null, name, mime: file.type || 'application/octet-stream',
         size: stored.size, sha256, url: null, encrypted: !!key, created_at: now + i, uploaded_at: null, deleted_at: null,
       } },
       blob: { id, blob: stored, name, size: stored.size },
@@ -159,7 +177,7 @@ export async function commitFiles(planned: PlannedFile[], before: Change[] = [])
 }
 
 /** Attach files to a task (or one of the user's comments on it). Returns the new ids. */
-export async function queueFiles(taskId: string, files: File[], opts: { commentId?: string | null } = {}): Promise<string[]> {
+export async function queueFiles(taskId: AttachParent, files: File[], opts: { commentId?: string | null } = {}): Promise<string[]> {
   return commitFiles(await planFiles(taskId, files, opts))
 }
 
@@ -179,23 +197,24 @@ export function parseLink(text: string): URL | null {
 }
 
 /** Attach a link. Returns its id. */
-export async function queueLink(taskId: string, url: string, name?: string, commentId?: string | null): Promise<string> {
+export async function queueLink(taskId: AttachParent, url: string, name?: string, commentId?: string | null): Promise<string> {
   const u = parseLink(url)
   if (!u) throw new AttachmentError('invalid', t('Links start with http:// or https://.'))
   const author = await currentUserId()
   if (!author) throw new AttachmentError('signed_out', t('Sign in to add links.'))
   const id = uuid()
   await mutateMany([{ entity: 'attachment', entityId: id, patch: {
-    task_id: taskId, author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
+    ...parentFields(taskId), author_id: author, comment_id: commentId ?? null, name: cleanName(name?.trim() || u.hostname),
     mime: 'text/uri-list', size: 0, sha256: '', url: u.href, encrypted: false, created_at: Date.now(), uploaded_at: null, deleted_at: null,
   } }])
   return id
 }
 
-/** True when files on this task are encrypted: an encrypted account's personal task. */
-async function encryptsTask(taskId: string, projectId?: string | null): Promise<boolean> {
+/** True when files on this task or note are encrypted: an encrypted account's personal one. */
+async function encryptsTask(taskId: AttachParent, projectId?: string | null): Promise<boolean> {
   if (!(await isEnabled())) return false
-  const project = projectId !== undefined ? projectId : (await db.tasks.get(taskId))?.project_id
+  const note = parentNote(taskId)
+  const project = projectId !== undefined ? projectId : note ? (await db.notes.get(note))?.project_id : (await db.tasks.get(taskId))?.project_id
   return !project || !(await membershipMap()).has(project)
 }
 
@@ -349,7 +368,8 @@ async function uploadPass(): Promise<void> {
     let res
     try {
       setProgress(b.id, 0)
-      res = await api.uploadAttachment(b.id, b.blob, (f) => setProgress(b.id, f))
+      // A copy shares the original's stored file (note-attachments D3): it sends no bytes.
+      res = await api.uploadAttachment(b.id, row.file_id ? new Blob([]) : b.blob, (f) => setProgress(b.id, f))
     } catch (err) {
       if (isNetworkError(err)) return
       throw err
@@ -380,7 +400,7 @@ export async function attachmentCounts(): Promise<Map<string, number>> {
   const rows = await db.attachments.filter((a) => !a.deleted_at).toArray()
   const commentIds = [...new Set(rows.map((a) => a.comment_id).filter((c): c is string => !!c))]
   const deadComments = new Set((await db.comments.bulkGet(commentIds)).filter((c) => !c || c.deleted_at).map((c, i) => c?.id ?? commentIds[i]))
-  for (const a of rows) if (!a.comment_id || !deadComments.has(a.comment_id)) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
+  for (const a of rows) if (!a.note_id && (!a.comment_id || !deadComments.has(a.comment_id))) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
   return out
 }
 
@@ -396,8 +416,8 @@ async function filesToMigrate(mode: FileMigrationMode): Promise<Attachment[]> {
   const rows = await db.attachments.filter((a) => !a.deleted_at && !a.url && a.author_id === me && a.encrypted !== (mode === 'encrypt')).toArray()
   const out: Attachment[] = []
   for (const a of rows) {
-    const task = await db.tasks.get(a.task_id)
-    if (task && (!task.project_id || !memberships.has(task.project_id))) out.push(a)
+    const owner = a.note_id ? await db.notes.get(a.note_id) : await db.tasks.get(a.task_id)
+    if (owner && !owner.deleted_at && (!owner.project_id || !memberships.has(owner.project_id))) out.push(a)
   }
   return out.sort((a, b) => a.created_at - b.created_at || (a.id < b.id ? -1 : 1))
 }
@@ -446,12 +466,12 @@ async function migrateFiles(mode: FileMigrationMode): Promise<void> {
     for (const a of list) {
       const bytes = await storedBytes(a)
       const id = uuid()
-      const plain = a.encrypted ? (bytes.size ? await decryptFile(key, a.id, bytes, a.mime) : bytes) : bytes
+      const plain = a.encrypted ? (bytes.size ? await decryptFile(key, fileKeyOf(a), bytes, a.mime) : bytes) : bytes
       const stored = mode === 'encrypt' ? await encryptFile(key, id, plain) : plain
       await db.attachmentBlobs.put({ id, blob: stored, name: a.name, size: stored.size })
       await mutateMany([
         { entity: 'attachment', entityId: id, patch: {
-          task_id: a.task_id, author_id: a.author_id, comment_id: a.comment_id, name: a.name, mime: a.mime, size: stored.size,
+          ...parentFields(parentOf(a)), author_id: a.author_id, comment_id: a.comment_id, name: a.name, mime: a.mime, size: stored.size,
           sha256: await sha256Hex(stored), url: null, encrypted: mode === 'encrypt', created_at: a.created_at, uploaded_at: null, deleted_at: null,
         } },
         { entity: 'attachment', entityId: a.id, patch: { deleted_at: Date.now() } },

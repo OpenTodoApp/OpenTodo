@@ -2,7 +2,7 @@
 // as a download for a type the browser should not render. Web only: it opens
 // pages and object URLs, so the native app, which shares lib/attachments.ts
 // (native-app-foundation D2), does not import it.
-import { AttachmentError, contentUrl, isInlineType, linkHref } from './attachments'
+import { AttachmentError, contentUrl, fileKeyOf, isInlineType, linkHref } from './attachments'
 import { decryptFile } from './crypto'
 import { db } from './db'
 import { currentKey } from './e2ee'
@@ -32,7 +32,7 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
       if (!res.ok) throw new AttachmentError('invalid', res.status === 404 ? t('This file is missing on the server.') : t('The server answered {status}.', { status: res.status }))
       envelope = await res.blob()
     }
-    openBlob(await decryptFile(key, a.id, envelope, a.mime), a, opts.download)
+    openBlob(await decryptFile(key, fileKeyOf(a), envelope, a.mime), a, opts.download)
     return
   }
   if (local) {

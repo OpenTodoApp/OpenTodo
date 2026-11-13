@@ -1,0 +1,1 @@
+- **Files and images in notes.** Paste, drop or pick images in a standalone note, and attach files and links from its menu; they are listed below the text, work offline and follow the same limits as task attachments. Turning a note into a task, or moving it to a shared project, takes its files along without uploading them again. REST: `GET|POST /api/v1/notes/{id}/attachments`.

@@ -26,11 +26,11 @@ Anyone who may read the note may attach (viewers included, as for tasks); only t
 
 ### D3. Moving a note across scopes
 
-A note moved into a differently shared project is copied and the original deleted (`standalone-notes` "Notes follow their project"). The copy batch creates new attachment rows with the same `sha256`, size and type pointing at the same stored file, so no bytes are copied and no upload is needed. The file store keys files by attachment id today; the copy writes a hard link or a reference row in `internal/blobs` (implementation choice) so the original's purge does not delete the copy's bytes. Quota counts the copy for the note's new author once.
+A note moved into a differently shared project is copied and the original deleted (`standalone-notes` "Notes follow their project"). The copy batch creates new attachment rows with the same `sha256`, size and type that name the original's stored file in a new immutable field `attachment.file_id`, so no bytes are copied and no upload is needed. The file store keeps keying files by attachment id: the content route and the export serve `file_id`'s file, a purge or the orphan sweep deletes a file only when no row has it as its id or `file_id`, and the quota counts a shared file once. The server accepts `file_id` only from an author who can see that attachment, for a file of its own (not a copy) with the same digest, and lets the device write the copy's `uploaded_at` only when that file is stored; a copy made before the original's upload is marked uploaded with it. Encrypted bytes are encrypted under the original's id, which a copy decrypts with. An encrypted file is not copied into a shared project (its members could not read it) and stays with the original in the Trash.
 
 ### D4. Conversions
 
-**Turn into task** writes, in its batch, new attachment rows on the task for each of the note's live attachments (same file, as D3) and removes the note's rows; embeds in the text are rewritten to the new ids. **Move note to a new note** does the reverse for attachments the task's note embeds; other task attachments stay on the task. One Undo reverses both.
+**Turn into task** writes, in its batch, new attachment rows on the task for each of the note's live attachments (same file, as D3) and removes the note's rows; embeds in the text are rewritten to the new ids, and the new entity's document is rebuilt from that text. **Move note to a new note** does the reverse for attachments the task's note embeds; other task attachments stay on the task. One Undo reverses both.
 
 ### D5. Editor and view
 
@@ -38,7 +38,7 @@ The image command, paste and drop are enabled in the standalone note editor; the
 
 ### Data model
 
-Additive field `attachment.note_id` in `internal/sync/ops.go` Schema (documented in its comment); regenerated `opSchema.ts`, `contentfields.go` unchanged (not content). Older clients keep the field and ignore rows whose task they do not have.
+Additive fields `attachment.note_id` and `attachment.file_id` in `internal/sync/ops.go` Schema (documented in its comment); regenerated `opSchema.ts`, `contentfields.go` unchanged (not content). Older clients keep the field and ignore rows whose task they do not have.
 
 ### Size
 
