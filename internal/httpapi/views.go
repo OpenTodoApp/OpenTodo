@@ -31,7 +31,9 @@ var (
 	viewLayouts = []string{"list", "board"}
 	// viewRowLayouts: one line or detailed rows; "" follows the account's choice (row-layouts D1).
 	viewRowLayouts = []string{"", "line", "detailed"}
-	viewEnumSets   = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts}
+	// viewSubtasks: Nest subtasks in the List layout, or the flat list (GitHub issue 1108).
+	viewSubtasks = []string{"", "nested"}
+	viewEnumSets = map[string][]string{"kind": viewKinds, "group_by": viewGroupBy, "sort_dir": viewSortDir, "layout": viewLayouts, "row_layout": viewRowLayouts, "subtasks": viewSubtasks}
 	// viewRowProps are the row properties a view can hide (views-and-display D3).
 	viewRowProps = []string{"date", "project", "labels", "estimate", "assignee", "deadline", "start", "origin", "energy"}
 	// viewDefaults are written on create for every field the caller leaves out.

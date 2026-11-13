@@ -44,6 +44,9 @@ type ProfileInfo struct {
 	// EmailManagedBy names the sign-in provider of an account that signs in only
 	// through single sign-on; such an account cannot change its email here.
 	EmailManagedBy string `json:"emailManagedBy,omitempty"`
+	// EmailVerified reports that the holder of the address opened a link sent
+	// to it; an unverified address can be confirmed with a link (#1194).
+	EmailVerified bool `json:"emailVerified"`
 }
 
 // Profile reads the account's profile data; pending changes past their link's
@@ -52,9 +55,9 @@ func (s *Service) Profile(ctx context.Context, u *User) (*ProfileInfo, error) {
 	var p ProfileInfo
 	var pending sql.NullString
 	var sentAt sql.NullInt64
-	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(p.avatar_version, 0), 0), p.pending_email, p.pending_email_sent_at FROM users u
+	err := s.db.QueryRowContext(ctx, `SELECT COALESCE(MAX(p.avatar_version, 0), 0), p.pending_email, p.pending_email_sent_at, u.email_verified_at IS NOT NULL FROM users u
 		LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = ?`, u.ID).
-		Scan(&p.AvatarVersion, &pending, &sentAt)
+		Scan(&p.AvatarVersion, &pending, &sentAt, &p.EmailVerified)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -128,14 +131,22 @@ func (s *Service) SetName(ctx context.Context, userID, name string) (*User, erro
 }
 
 // checkNewEmail normalizes and validates a new address for u and checks that no
-// other account uses it.
-func (s *Service) checkNewEmail(ctx context.Context, q rowQuerier, u *User, email string) (string, error) {
+// other account uses it. With confirmSame, the account's own address is accepted
+// while it is unverified, so a link can confirm it (confirm-current-email).
+func (s *Service) checkNewEmail(ctx context.Context, q rowQuerier, u *User, email string, confirmSame bool) (string, error) {
 	email = normalizeEmail(email)
 	if addr, err := mail.ParseAddress(email); err != nil || addr.Name != "" || addr.Address != email || len(email) > 320 {
 		return "", ErrInvalidEmail
 	}
 	if email == normalizeEmail(u.Email) {
-		return "", ErrSameEmail
+		var verified bool
+		if err := q.QueryRowContext(ctx, "SELECT email_verified_at IS NOT NULL FROM users WHERE id = ?", u.ID).Scan(&verified); err != nil {
+			return "", err
+		}
+		if !confirmSame || verified {
+			return "", ErrSameEmail
+		}
+		return email, nil
 	}
 	var n int
 	if err := q.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE email = ? AND id <> ?", email, u.ID).Scan(&n); err != nil {
@@ -162,7 +173,7 @@ func (s *Service) RequestEmailChange(ctx context.Context, u *User, email string)
 		return "", "", err
 	}
 	defer tx.Rollback()
-	if normalized, err = s.checkNewEmail(ctx, tx, u, email); err != nil {
+	if normalized, err = s.checkNewEmail(ctx, tx, u, email, true); err != nil {
 		return "", "", err
 	}
 	now := s.clock()
@@ -222,7 +233,7 @@ func (s *Service) ConfirmEmailChange(ctx context.Context, u *User, secret string
 	if owner != u.ID {
 		return nil, ErrForbidden
 	}
-	if _, err := s.checkNewEmail(ctx, tx, u, email); err != nil {
+	if _, err := s.checkNewEmail(ctx, tx, u, email, true); err != nil {
 		return nil, err
 	}
 	out, err := s.applyEmailTx(ctx, tx, u.ID, email, true)
@@ -245,7 +256,7 @@ func (s *Service) ChangeEmailNow(ctx context.Context, u *User, email string) (*U
 		return nil, err
 	}
 	defer tx.Rollback()
-	email, err = s.checkNewEmail(ctx, tx, u, email)
+	email, err = s.checkNewEmail(ctx, tx, u, email, false)
 	if err != nil {
 		return nil, err
 	}

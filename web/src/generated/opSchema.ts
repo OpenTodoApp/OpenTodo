@@ -393,6 +393,12 @@ export interface ViewFields {
    * not user text, so not content; missing reads as off.
    */
   card_notes?: boolean
+  /**
+   * Nest subtasks in the List layout (GitHub issue 1108): "nested" shows a
+   * match under its parent when both match, as Today's option does; "" or
+   * any other value is the flat list.
+   */
+  subtasks?: string
   created_at?: number
   deleted_at?: number | null
   /** Workspace of the view, null for the default (OpenSpec change workspaces). */
@@ -1216,7 +1222,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
   } satisfies Omit<Label, 'id' | '_clock'>,
   view: {
-    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
+    name: '', query: '', kind: 'list', group_by: 'project', sort_by: 'due', sort_dir: 'asc', pinned: false, position: 0, color: '#64748b', panels: [], on_drop: null, layout: 'list', show_completed: false, hidden_props: [], row_layout: '', card_notes: false, subtasks: '', created_at: 0, deleted_at: null, workspace_id: null, icon: null, manual_order: [],
   } satisfies Omit<View, 'id' | '_clock'>,
   reminder: {
     task_id: '', kind: 'relative', offset_minutes: null, fire_at: null, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null, radius_m: null,

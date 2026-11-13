@@ -824,6 +824,7 @@
           "name": "required"
         },
         "flags": {
+          "limit-to": "string_list",
           "scope": "string"
         },
         "output": {
@@ -2490,6 +2491,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -3546,6 +3548,7 @@
       "show_completed": "bool",
       "sort_by": "string",
       "sort_dir": "string",
+      "subtasks": "string",
       "workspace_id": "nullable_string"
     }
   },
@@ -3608,6 +3611,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -3626,6 +3630,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -4985,6 +4990,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -6701,6 +6707,7 @@
         "views[].show_completed": "bool",
         "views[].sort_by": "string",
         "views[].sort_dir": "string",
+        "views[].subtasks": "string",
         "views[].workspace_id": "nullable_string"
       }
     },
@@ -6728,6 +6735,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -7184,6 +7192,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -7608,6 +7617,7 @@
         "show_completed": "bool?",
         "sort_by": "string?",
         "sort_dir": "string?",
+        "subtasks": "string?",
         "workspace_id": "nullable_string?"
       },
       "response": {
@@ -7632,6 +7642,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -8792,6 +8803,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -8813,6 +8825,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",
@@ -10672,6 +10685,7 @@
         "show_completed": "bool?",
         "sort_by": "string?",
         "sort_dir": "string?",
+        "subtasks": "string?",
         "workspace_id": "nullable_string?"
       },
       "response": {
@@ -10696,6 +10710,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -11059,6 +11074,7 @@
         "avatarVersion": "number",
         "emailByLink": "boolean",
         "emailManagedBy": "string",
+        "emailVerified": "boolean",
         "pendingEmail": "string",
         "user": "object|null",
         "user.createdAt": "number",

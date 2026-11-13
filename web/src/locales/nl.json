@@ -5731,6 +5731,8 @@
   "Waiting for a slot": "Wacht op een blok",
   "Waiting for an answer": "Wacht op antwoord",
   "Waiting for confirmation: {email}": "Wacht op bevestiging: {email}",
+  "This address is not confirmed yet.": "Dit adres is nog niet bevestigd.",
+  "Send a confirmation link": "Bevestigingslink sturen",
   "Waiting for one of your devices": "Wacht op een van je apparaten",
   "Waiting for the first poll": "Wacht op de eerste opvraging",
   "Waiting for the first refresh": "Wacht op de eerste verversing",

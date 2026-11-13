@@ -232,10 +232,12 @@ export function nearestFlowing(d: RoutineDraft, id: string, def: StepInput, type
  * Fills a step's empty main input with the nearest flowing value that fits
  * (routines-dynamic-data D3): the loop's item inside a Repeat, else the step
  * above or an earlier one, else the trigger. Never a task chosen by hand.
+ * A step without a main input fills its optional Tasks (Send a webhook), so its
+ * delivery names the task that triggered or the tasks found (GitHub issue 1194).
  */
 export function wireStep(d: RoutineDraft, id: string, types: Record<string, RoutineStepType>): RoutineDraft {
   const step = findStep(d.steps, id)
-  const def = step ? mainInput(step.kind) : undefined
+  const def = step ? mainInput(step.kind) ?? stepKind(step.kind)?.inputs.find((i) => i.name === 'tasks' && i.accepts.includes('tasks')) : undefined
   if (!step || !def || step.in?.[def.name]) return d
   const f = nearestFlowing(d, id, def, types)
   return f ? { ...d, steps: setInput(d.steps, id, def.name, { ref: f.ref }) } : d

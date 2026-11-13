@@ -15037,6 +15037,9 @@
     "web/src/app/assistant/AssistantComposer.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Send a confirmation link": [
+    "web/src/app/profile/ProfileSection.tsx"
+  ],
   "Send a message to another service when tasks change": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -18186,6 +18189,9 @@
   ],
   "This address already has an account": [
     "web/src/app/EmailScreens.tsx"
+  ],
+  "This address is not confirmed yet.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "This address is on a private network. The server owner can allow private targets.": [
     "web/src/lib/i18n/errors.ts"

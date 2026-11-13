@@ -1,0 +1,1 @@
+- An account whose address was never confirmed, such as an owner created with the setup token, can confirm it: Profile shows **Send a confirmation link**, which sends the usual 24-hour link to the current address. A routine's Email me step needs a verified address (confirm-current-email, #1194).

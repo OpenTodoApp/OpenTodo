@@ -528,6 +528,8 @@ export interface View extends ViewFields {
   hidden_props?: string[]
   /** The view's row layout (row-layouts D1): 'line' or 'detailed'; '' or absent follows the account's. */
   row_layout?: string
+  /** List layout only: 'nested' shows a match under its matching parent (GitHub issue 1108); else the flat list. */
+  subtasks?: string
   created_at: number
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
@@ -1186,6 +1188,8 @@ export interface Profile {
   emailManagedBy?: string
   /** Whether an email change waits for a link (otherwise it applies at once). */
   emailByLink: boolean
+  /** Whether the address was confirmed by a link; absent from older servers (confirm-current-email). */
+  emailVerified?: boolean
 }
 
 /**

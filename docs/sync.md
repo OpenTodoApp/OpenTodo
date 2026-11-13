@@ -97,6 +97,7 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | view | `kind`, `group_by`, `sort_by`, `sort_dir` | string (enumeration, see "Saved views") |
 | view | `pinned` | boolean |
 | view, project_prefs | `card_notes` | boolean: the board's notes preview (OpenSpec change `board-polish`): cards show two lines of their notes as plain text; missing reads as `false` |
+| view | `subtasks` | string: `"nested"` nests matching subtasks under their matching parent in the list layout; `""` or missing is the flat list |
 | view | `panels` | array of strings (view ids) |
 | view | `on_drop` | null or an on-drop rule object (see "Saved views") |
 | view | `icon` | null or a name from the icon catalogue (not content; any string is accepted so a newer catalogue stays additive, and a name a client does not know shows the default icon) |

@@ -35,7 +35,7 @@ import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields, useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
-import { readJSON, writeJSON } from '../../lib/deviceStorage'
+import { useCollapsedRows } from './collapsedRows'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
@@ -46,16 +46,6 @@ export type ListRoute = Extract<Route, ListScope>
 /** Whether any task of the list has `id` as its parent. */
 function taskHasChildren(tasks: readonly Task[], id: string): boolean {
   return tasks.some((task) => task.parent_id === id)
-}
-
-const COLLAPSE_KEY = 'opentodo.collapsed'
-
-function loadCollapsed(): Set<string> {
-  return new Set(readJSON<string[]>(COLLAPSE_KEY, [], (v) => (Array.isArray(v) ? v as string[] : null)))
-}
-
-function saveCollapsed(set: Set<string>) {
-  writeJSON(COLLAPSE_KEY, [...set]) // per-device convenience only; losing it is harmless
 }
 
 /** Views that offer the duration filter, each with its own per-device setting. */
@@ -85,22 +75,6 @@ function useDurationFilter(route: ListRoute) {
     saveDurationFilter(filterKey, kind)
   }, [filterKey])
   return { filterKey, duration, chooseDuration }
-}
-
-/** Collapsed tree rows (and the open Blocked group), per device. */
-function useCollapsedRows() {
-  const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
-  const toggleCollapsed = useCallback((id: string, force?: boolean) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      const want = force ?? !next.has(id)
-      if (want) next.add(id)
-      else next.delete(id)
-      saveCollapsed(next)
-      return next
-    })
-  }, [])
-  return { collapsed, toggleCollapsed }
 }
 
 /** Sections, layout and columns of a project (OpenSpec `board-view`, custom-fields); per-device preferences. */

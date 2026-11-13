@@ -5694,6 +5694,8 @@
   "Waiting for a slot": "等待时段",
   "Waiting for an answer": "等待回复",
   "Waiting for confirmation: {email}": "等待确认：{email}",
+  "This address is not confirmed yet.": "此地址尚未确认。",
+  "Send a confirmation link": "发送确认链接",
   "Waiting for one of your devices": "正在等待你的某台设备响应",
   "Waiting for the first poll": "等待首次轮询",
   "Waiting for the first refresh": "等待首次刷新",
