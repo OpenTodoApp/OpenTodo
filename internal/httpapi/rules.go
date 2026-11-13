@@ -182,8 +182,16 @@ func (s *Server) checkRuleParts(ctx context.Context, uid string, body map[string
 			return invalidRule("%s", err.Error())
 		}
 		cond := !isNullish(fieldOf(body, existing, "condition"))
-		if err := s.checkSteps(ctx, uid, raw, ruleval.TriggerOutput(trig.Kind, cond), &ref); err != nil {
+		if err := s.checkSteps(ctx, uid, raw, ruleval.TriggerOutput(trig, cond), &ref); err != nil {
 			return err
+		}
+	}
+	// A note trigger takes project and labels conditions and steps only (notes-in-routines D2, D3).
+	if body["trigger"] != nil || body["condition"] != nil || body["steps"] != nil || body["actions"] != nil {
+		if trig, err := ruleval.ParseTrigger(fieldOf(body, existing, "trigger")); err == nil {
+			if err := ruleval.CheckNoteTrigger(trig, fieldOf(body, existing, "condition"), !isNullish(fieldOf(body, existing, "steps"))); err != nil {
+				return invalidRule("%s", err.Error())
+			}
 		}
 	}
 	if raw, has := body["actions"]; has && !isNullish(raw) {
@@ -244,6 +252,10 @@ type refs struct {
 	views       []string
 	webhooks    []string
 	moveTargets []string
+	// notes a step names and the projects Change notes moves notes into
+	// ("" for out of any project), notes-in-routines D7.
+	notes     []string
+	noteMoves []string
 	// shared is a shared routine's project (routines-shared D3).
 	shared string
 }
@@ -325,6 +337,13 @@ func (s *Server) resolveRuleRefs(ctx context.Context, uid string, ref refs) erro
 			return invalidRule("task %s does not exist", id)
 		}
 	}
+	for _, id := range ref.notes {
+		if e, err := live("note", id); err != nil {
+			return err
+		} else if e == nil {
+			return invalidRule("note %s does not exist", id)
+		}
+	}
 	for _, id := range ref.views {
 		if e, err := live("view", id); err != nil {
 			return err
@@ -398,7 +417,7 @@ func (s *Server) handleRuleTest(w http.ResponseWriter, r *http.Request) {
 	}
 	// The rule's answer, and each step's plan (routines-engine D8): a rule is
 	// read as its one Change tasks step.
-	res, err := s.rules.TestRule(r.Context(), uid, r.PathValue("id"), in.TaskID)
+	res, err := s.rules.TestRule(r.Context(), uid, r.PathValue("id"), in.TaskID, "")
 	if err != nil && !errors.Is(err, rules.ErrInvalidDraft) {
 		s.routineError(w, err)
 		return

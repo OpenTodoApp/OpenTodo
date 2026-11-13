@@ -78,6 +78,10 @@ func (e *Engine) process(ctx context.Context, ev Event) error {
 		if w == nil {
 			continue // a shared routine's project is in the Trash
 		}
+		if ruleval.IsNoteKind(ev.Kind) {
+			e.processNote(ctx, w, r, ev)
+			continue
+		}
 		if ev.Kind == ruleval.Schedule {
 			if r.isRoutine() {
 				e.routineRun(ctx, w, r, ev.Occurrence, 2, "")
@@ -124,7 +128,7 @@ func triggered(r *rule, ev Event) bool {
 		return false
 	}
 	switch ev.Kind {
-	case ruleval.LabelAdded, ruleval.LabelRemoved:
+	case ruleval.LabelAdded, ruleval.LabelRemoved, ruleval.NoteLabelAdded:
 		return r.Trigger.LabelID == ev.LabelID
 	}
 	return true
@@ -414,7 +418,13 @@ func (w *world) openDescendants(id string) []string {
 
 // routineRun runs a routine for a queued occurrence (routines-engine D5).
 func (e *Engine) routineRun(ctx context.Context, w *world, r *rule, key string, depth int, taskID string) {
-	if _, err := e.runRoutine(ctx, w, r, runOpts{key: key, depth: depth, taskID: taskID, trigger: e.triggerValue(ctx, w, r, taskID)}); err != nil {
+	e.routineRunOn(ctx, w, r, key, depth, e.triggerValue(ctx, w, r, taskID), taskID)
+}
+
+// routineRunOn runs a routine occurrence with its trigger's output; subject is
+// the task id, or the note's subject (notes-in-routines), the run log keeps.
+func (e *Engine) routineRunOn(ctx context.Context, w *world, r *rule, key string, depth int, trigger ruleval.Value, subject string) {
+	if _, err := e.runRoutine(ctx, w, r, runOpts{key: key, depth: depth, taskID: subject, trigger: trigger}); err != nil {
 		e.Log.Error("rules: routine", "rule", r.ID, "err", err)
 	}
 }

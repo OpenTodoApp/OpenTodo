@@ -124,6 +124,9 @@
   "1 month before": [
     "web/src/lib/relativeDoOn.ts"
   ],
+  "1 note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "1 passkey": [
     "web/src/app/SecurityPanel.tsx"
   ],
@@ -442,6 +445,9 @@
   "A new link is on its way; the earlier one no longer works.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "A new note with a title and a text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A new project": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -456,6 +462,18 @@
   ],
   "A newer version of OpenTodo is required to read your data.": [
     "web/src/app/App.tsx"
+  ],
+  "A note becomes a task": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "A note gets a label": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
+  "A note is created": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
+  "A note is edited": [
+    "web/src/app/rules/RuleFields.tsx"
   ],
   "A notice on any screen after a long stretch of work without a break.": [
     "web/src/lib/settingsCopy.ts"
@@ -583,6 +601,9 @@
   ],
   "A specific date": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "A specific note…": [
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "A specific task…": [
     "web/src/app/routines/wordPicker.tsx"
@@ -1159,7 +1180,8 @@
   "Add labels": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
-    "web/src/app/task-detail/TaskFacts.tsx"
+    "web/src/app/task-detail/TaskFacts.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Add labels to {title}": [
     "web/src/app/palette/registry.ts"
@@ -1637,8 +1659,14 @@
   "Alternative text": [
     "web/src/app/editorImage.tsx"
   ],
+  "Always the same note, chosen by hand": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Always the same task, chosen by hand": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Always this note, whatever the routine finds": [
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Always this task, whatever the routine finds": [
     "web/src/app/routines/wordPicker.tsx"
@@ -2918,6 +2946,9 @@
   "Change name": [
     "web/src/app/profile/ProfileSection.tsx"
   ],
+  "Change notes": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Change passphrase": [
     "web/src/app/EncryptionPanel.tsx"
   ],
@@ -2960,6 +2991,9 @@
   "Change {name}, {value}, {state}": [
     "web/src/ui/ColourField.tsx"
   ],
+  "Change {notes}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Change {tasks}: {set}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -2968,6 +3002,9 @@
   ],
   "Changed from {date} on": [
     "web/src/lib/seriesSplitActions.ts"
+  ],
+  "Changed in the last days": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Changed past occurrences too": [
     "web/src/lib/seriesPastActions.ts"
@@ -4174,6 +4211,9 @@
   "Create new recovery codes?": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Create note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Create owner account": [
     "web/src/app/AuthScreen.tsx"
   ],
@@ -4218,6 +4258,9 @@
   ],
   "Create the light counterpart": [
     "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "Create the note {title} with {text} in {project}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Create the project {name}": [
     "web/src/lib/rules/proposal.ts",
@@ -6492,6 +6535,10 @@
   "Find a note": [
     "web/src/app/notes/NotesPage.tsx"
   ],
+  "Find a note…": [
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/wordPicker.tsx"
+  ],
   "Find a person…": [
     "web/src/app/TriageView.tsx"
   ],
@@ -6567,6 +6614,15 @@
   "Find in the sidebar": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/palette/registry.ts"
+  ],
+  "Find notes": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find notes in {project}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find notes…": [
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Find or create a project…": [
     "web/src/app/task-detail/Facets.tsx"
@@ -6979,6 +7035,9 @@
   "Generated on this device; plays only while you work.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Get a specific note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Get a specific task": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -7013,6 +7072,9 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Get the project of {task}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the specific note {note}": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Get the specific task {task}": [
@@ -8716,6 +8778,9 @@
   "Labels, one per line": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "Labels, project, pin, Trash": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Labels: {labels}": [
     "web/src/lib/assistant.ts"
   ],
@@ -9951,6 +10016,9 @@
   "Move to section": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "Move to the Trash": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Move to the Trash, then the next task": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -10840,7 +10908,8 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
-    "web/src/lib/pickerSources.ts"
+    "web/src/lib/pickerSources.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "No project is shared with this group.": [
     "web/src/app/WorkspaceGroups.tsx"
@@ -10878,6 +10947,9 @@
   ],
   "No review finished yet": [
     "web/src/app/review/ReviewView.tsx"
+  ],
+  "No routine runs on a note yet.": [
+    "web/src/app/palette/routineCommand.ts"
   ],
   "No routines yet": [
     "web/src/app/routines/RoutinesView.tsx"
@@ -11140,7 +11212,8 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Not changed for days": [
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Not checked": [
     "web/src/app/NotificationsSettings.tsx"
@@ -11264,7 +11337,8 @@
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
-    "web/src/lib/assistantBlocks.ts"
+    "web/src/lib/assistantBlocks.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Note actions": [
     "web/src/app/notes/NoteRow.tsx"
@@ -11289,12 +11363,16 @@
     "web/src/app/quickadd/SheetBar.tsx",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Notes and subtasks": [
     "web/src/app/focus/FocusParts.tsx"
   ],
   "Notes and text": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Notes by project, labels, last change or words": [
     "web/src/lib/rules/sentence.ts"
   ],
   "Notes edited": [
@@ -12004,6 +12082,9 @@
   "Only editors of {project} can change this routine.": [
     "web/src/app/routines/SharedRoutine.tsx"
   ],
+  "Only for notes that": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
   "Only for project": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -12045,6 +12126,9 @@
     "web/src/app/MembersPanel.tsx"
   ],
   "Only when I run it": [
+    "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Only when I run it on a note": [
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Only when you run it": [
@@ -12921,7 +13005,8 @@
   "Pin": [
     "web/src/app/SavedViewView.tsx",
     "web/src/app/ViewsView.tsx",
-    "web/src/app/notes/NoteRow.tsx"
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Pin note": [
     "web/src/app/palette/registry.ts"
@@ -13697,7 +13782,8 @@
     "web/src/app/UsersPanel.tsx"
   ],
   "Read": [
-    "web/src/app/task-detail/TaskPageDialog.tsx"
+    "web/src/app/task-detail/TaskPageDialog.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Read 10 minutes": [
     "web/src/app/habits/HabitsScreen.tsx"
@@ -13963,7 +14049,8 @@
   ],
   "Remove labels": [
     "web/src/app/RuleEditor.tsx",
-    "web/src/app/rules/RuleFields.tsx"
+    "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Remove link": [
     "web/src/app/LinkDialog.tsx"
@@ -14702,10 +14789,14 @@
   "Run of {name}": [
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "Run routine on this note…": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Run routine: {name}": [
     "web/src/app/palette/routineCommand.ts"
   ],
   "Run routine…": [
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/palette/routineCommand.ts"
   ],
@@ -14724,6 +14815,10 @@
   "Running": [
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "Running a routine needs a connection.": [
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/palette/routineCommand.ts"
   ],
   "Running since {when}": [
     "web/src/lib/backups.ts"
@@ -17711,7 +17806,7 @@
   "The note leaves the task; Undo puts it back": [
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
-  "The note of a task or a project": [
+  "The note of a task, a project or a note": [
     "web/src/lib/rules/sentence.ts"
   ],
   "The offline service worker is not active yet. Reload the page; on iPhone and iPad, install the app to the Home Screen first.": [
@@ -17768,7 +17863,7 @@
   "The position is not available right now.": [
     "web/src/app/locations/LocationEditor.tsx"
   ],
-  "The project a task is in": [
+  "The project a task or a note is in": [
     "web/src/lib/rules/sentence.ts"
   ],
   "The provider answers, but this model does not support tool use, which the assistant needs. Choose another model.": [
@@ -18868,6 +18963,9 @@
   "This routine reads text, so it runs on one of your devices. When it is due, a device with Run my routines turned on must be online and unlocked.": [
     "web/src/app/routines/RoutinesDevice.tsx"
   ],
+  "This routine works on a note: open one, then run it.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This routine works on a task: open one, then run it.": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -19613,7 +19711,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Turn into task": [
-    "web/src/app/notes/NoteRow.tsx"
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Turn it off in How you work": [
     "web/src/app/habits/HabitSection.tsx"
@@ -19724,6 +19823,9 @@
   ],
   "Turn this off to start or stop timers: Apply without asking only adds and sets fields": [
     "web/src/lib/rules/ai.ts"
+  ],
+  "Turn {note} into a task": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Turned away from the colour for errors": [
     "web/src/ui/AccentPicker.tsx"
@@ -20131,6 +20233,9 @@
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
+    "web/src/app/routines/wordPicker.tsx",
+    "web/src/app/routines/words.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
@@ -20142,6 +20247,7 @@
   ],
   "Untitled routine": [
     "web/src/app/RelaySettings.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesDevice.tsx",
@@ -20897,6 +21003,9 @@
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Words": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Work": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/routines/Starters.tsx",
@@ -21521,6 +21630,9 @@
   "a comment needs some text": [
     "web/src/lib/comments.ts"
   ],
+  "a deleted note": [
+    "web/src/app/routines/words.tsx"
+  ],
   "a deleted task": [
     "web/src/app/routines/words.tsx"
   ],
@@ -21687,6 +21799,9 @@
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
+  "any note": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "any of {labels}": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -21838,6 +21953,9 @@
   "choose a label": [
     "web/src/app/routines/Starters.tsx"
   ],
+  "choose a note": [
+    "web/src/app/routines/words.tsx"
+  ],
   "choose a number": [
     "web/src/app/routines/words.tsx"
   ],
@@ -21865,6 +21983,9 @@
   ],
   "choose when": [
     "web/src/app/routines/StepCard.tsx"
+  ],
+  "choose which notes": [
+    "web/src/app/routines/words.tsx"
   ],
   "choose which tasks": [
     "web/src/app/routines/words.tsx"
@@ -21910,6 +22031,9 @@
   ],
   "contains “{text}”": [
     "web/src/app/routines/words.tsx"
+  ],
+  "convert, task, todo": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "created the project": [
     "web/src/lib/activity.ts"
@@ -22073,6 +22197,9 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "each line": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "each note": [
     "web/src/lib/rules/sentence.ts"
   ],
   "each task": [
@@ -22419,6 +22546,9 @@
   "labels": [
     "web/src/lib/activityRuns.ts"
   ],
+  "last change": [
+    "web/src/app/routines/words.tsx"
+  ],
   "last month": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -22559,6 +22689,9 @@
   "new account": [
     "web/src/app/auditFormat.ts"
   ],
+  "new note, write, journal, add": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "next month": [
     "web/src/app/filter/conditionText.ts"
   ],
@@ -22609,6 +22742,9 @@
   ],
   "no limit": [
     "web/src/app/assistant/AssistantSettings.tsx"
+  ],
+  "no note": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "no origin": [
     "web/src/lib/rules/summary.ts"
@@ -22729,6 +22865,9 @@
     "web/src/lib/assistantDisclosure.ts",
     "web/src/lib/history.ts"
   ],
+  "notes, search, look up, journal, reference": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "nothing tracked": [
     "web/src/lib/rules/summary.ts"
   ],
@@ -22797,6 +22936,9 @@
     "web/src/lib/ops.ts"
   ],
   "only when I run it": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "only when I run it on a note": [
     "web/src/lib/rules/summary.ts"
   ],
   "on|comment": [
@@ -23133,6 +23275,9 @@
   "someone": [
     "web/src/app/routines/SharedRoutine.tsx"
   ],
+  "specific note, fixed note, always": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "specific task, fixed task, always": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -23190,6 +23335,9 @@
   "the assistant is not set up for you on this server": [
     "web/src/lib/rules/catalogue.ts"
   ],
+  "the changed notes": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the changed tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -23245,6 +23393,9 @@
   "the matching lines": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the matching notes": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the matching tasks": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -23267,7 +23418,13 @@
   "the names, types and links of attachments (never the files)": [
     "web/src/lib/assistantDisclosure.ts"
   ],
+  "the new note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the new project": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the new task": [
     "web/src/lib/rules/sentence.ts"
   ],
   "the new tasks": [
@@ -23276,11 +23433,21 @@
   "the new text": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "the note text": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "the note that triggered": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the note you run it on": [
+    "web/src/app/routines/words.tsx"
+  ],
   "the notes": [
-    "web/src/lib/activity.ts"
+    "web/src/lib/activity.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "the ones": [
     "web/src/lib/rules/sentence.ts"
@@ -23310,6 +23477,12 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "the picked lines": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the picked note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the picked notes": [
     "web/src/lib/rules/sentence.ts"
   ],
   "the picked task": [
@@ -23589,6 +23762,9 @@
   "upcoming": [
     "web/src/app/habits/habitText.ts"
   ],
+  "update, edit, label, move, pin, trash": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "update, edit, set, move, complete, label": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -23656,6 +23832,15 @@
   "weekday ordinal must be 1st to 4th or last": [
     "web/src/lib/recurrence.ts",
     "web/src/lib/testdata/recurrence-1.0.ts"
+  ],
+  "when a note gets the label {label}": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "when a note is created": [
+    "web/src/lib/rules/summary.ts"
+  ],
+  "when a note is edited": [
+    "web/src/lib/rules/summary.ts"
   ],
   "when a task is assigned to me": [
     "web/src/lib/rules/summary.ts"
@@ -24294,8 +24479,12 @@
   "{n, plural, one {# not due yet} other {# not due yet}}": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
+  "{n, plural, one {# note matches now} other {# notes match now}}": [
+    "web/src/app/routines/StepCard.tsx"
+  ],
   "{n, plural, one {# note} other {# notes}}": [
-    "web/src/app/notes/NotesPage.tsx"
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/lib/rules/sentence.ts"
   ],
   "{n, plural, one {# open task and its subtasks are copied; completed work, comments and reminders are not.} other {# open tasks and their subtasks are copied; completed work, comments and reminders are not.}}": [
     "web/src/app/TemplateDialogs.tsx"

@@ -20,7 +20,7 @@ import { pickerNames, type RoutineNames } from './data'
 export const ENUM_LABEL = translatedMap<string>({
   deep: msg('Deep'), medium: msg('Medium'), low: msg('Low'), due: msg('date'), deadline: msg('deadline'), priority: msg('priority'), created: msg('creation'),
   title: msg('title'), text: msg('text'), asc: msg('ascending'), desc: msg('descending'), start: msg('the start'), end: msg('the end'),
-  lines: msg('lines'), short: msg('short'),
+  lines: msg('lines'), short: msg('short'), changed: msg('last change'),
 })
 export const PERIOD_LABEL = translatedMap<string>({ today: msg('today'), this_week: msg('this week'), last_week: msg('last week'), this_month: msg('this month') })
 const COMPARE_LABEL = translatedMap<string>({
@@ -38,12 +38,12 @@ export interface WordContext {
 
 /** The name of a reference ("the lines", "the trigger's task", "each task"). */
 export function refName(ref: string, ctx: WordContext, at: string): string {
-  if (ref === 'trigger' && ctx.draft.trigger.kind === 'manual') return t('the task you run it on')
-  if (ref === 'trigger') return triggerOutputName(triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition))
+  if (ref === 'trigger' && ctx.draft.trigger.kind === 'manual') return ctx.draft.trigger.on === 'note' ? t('the note you run it on') : t('the task you run it on')
+  if (ref === 'trigger') return triggerOutputName(triggerOutput(ctx.draft.trigger, !!ctx.draft.condition))
   if (ref === 'item') {
     const rep = enclosingRepeat(ctx.draft.steps, at)
     const list = rep ? ctx.draft.steps.length && findList(ctx, rep) : ''
-    return itemName(list === 'tasks' ? 'task' : list === 'lines' ? 'text' : '')
+    return itemName(list === 'tasks' ? 'task' : list === 'lines' ? 'text' : list === 'notes' ? 'note' : '')
   }
   return ctx.outputs.get(ref) ?? t('a removed step')
 }
@@ -59,7 +59,7 @@ function findList(ctx: WordContext, repeatId: string): RoutineStepType | '' {
   const rep = find(ctx.draft.steps)
   const a = rep?.in?.list
   if (!a || !('ref' in a)) return ''
-  return a.ref === 'trigger' ? triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition) : ctx.types[a.ref] ?? ''
+  return a.ref === 'trigger' ? triggerOutput(ctx.draft.trigger, !!ctx.draft.condition) : ctx.types[a.ref] ?? ''
 }
 
 /** A text literal with its {id} placeholders shown as «names». */
@@ -107,6 +107,14 @@ export function wordValue(step: RoutineStep, def: StepInput, ctx: WordContext): 
     }
     case 'project': return { shown: n.projectName((v as { project: string }).project) || t('a removed project'), chip: false }
     case 'task': return { shown: n.title((v as { task: string }).task) || t('a deleted task'), chip: false }
+    case 'note': {
+      const note = n.notes?.find((x) => x.id === (v as { note: string }).note)
+      return { shown: note ? note.title || t('Untitled note') : t('a deleted note'), chip: false }
+    }
+    case 'labels': {
+      const ids = [...((v as { any?: string[] }).any ?? []), ...((v as { all?: string[] }).all ?? [])]
+      return { shown: formatList(ids.map((id) => n.labels.find((l) => l.id === id)?.name ?? t('a removed label'))), chip: false }
+    }
     case 'lines': return { shown: Array.isArray(v) ? clip(formatList(v as string[])) : '', chip: false }
     case 'bool': return { shown: v === true ? t('yes') : t('no'), chip: false }
     case 'enum': return { shown: ENUM_LABEL[String(v)] ?? String(v), chip: false }
@@ -147,7 +155,9 @@ export function wordPlaceholder(def: StepInput): string {
     case 'text': return t('write a text')
     case 'number': return t('choose a number')
     case 'date': return t('choose a date')
-    case 'ids': return t('choose labels')
+    case 'ids':
+    case 'labels': return t('choose labels')
+    case 'note': return t('choose a note')
     case 'condition':
     case 'where': return t('choose what matches')
     case 'actions': return t('choose the changes')
@@ -155,6 +165,7 @@ export function wordPlaceholder(def: StepInput): string {
     case 'period': return t('choose a period')
   }
   if (def.accepts.includes('task') || def.accepts.includes('tasks')) return t('choose which tasks')
+  if (def.accepts.includes('note') || def.accepts.includes('notes')) return t('choose which notes')
   if (def.accepts.length) return t('choose a value')
   return t('choose')
 }
@@ -267,7 +278,7 @@ export function LiteralPicker({ step, def, ctx, onSet, me }: { step: RoutineStep
     case 'where': {
       const w = (v ?? {}) as Record<string, unknown>
       const listArg = step.in?.list
-      const listType = listArg && 'ref' in listArg ? (listArg.ref === 'trigger' ? triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition) : ctx.types[listArg.ref]) : undefined
+      const listType = listArg && 'ref' in listArg ? (listArg.ref === 'trigger' ? triggerOutput(ctx.draft.trigger, !!ctx.draft.condition) : ctx.types[listArg.ref]) : undefined
       if (listType === 'lines') {
         return <Field label={t('Keep lines that contain')}><Input autoFocus defaultValue={String(w.contains ?? '')} onChange={(e) => onSet(e.target.value ? { literal: { contains: e.target.value } } : undefined)} /></Field>
       }

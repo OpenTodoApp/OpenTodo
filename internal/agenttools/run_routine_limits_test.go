@@ -16,6 +16,7 @@ type fakeRuns struct {
 	writes int
 	calls  int
 	caps   []int
+	notes  []string
 }
 
 func (f *fakeRuns) Check(context.Context, string, map[string]json.RawMessage, opsync.Entity) ([]ruleval.StepWarning, error) {
@@ -31,8 +32,9 @@ func (f *fakeRuns) State(context.Context, string) (map[string]string, map[string
 func (f *fakeRuns) RunAs(context.Context, string, []string) map[string]map[string]string {
 	return nil
 }
-func (f *fakeRuns) RunNow(_ context.Context, _, _, _ string, test bool, maxWrites int) (map[string]any, int, error) {
+func (f *fakeRuns) RunNow(_ context.Context, _, _, _, noteID string, test bool, maxWrites int) (map[string]any, int, error) {
 	f.calls++
+	f.notes = append(f.notes, noteID)
 	f.caps = append(f.caps, maxWrites)
 	if test {
 		return map[string]any{"test": true}, 0, nil
@@ -41,6 +43,23 @@ func (f *fakeRuns) RunNow(_ context.Context, _, _, _ string, test bool, maxWrite
 		return map[string]any{"run": map[string]any{"outcome": "failed"}}, 0, nil
 	}
 	return map[string]any{"run": map[string]any{"outcome": "applied"}}, f.writes, nil
+}
+
+// "Run on a note" (notes-in-routines): run_routine passes note_id; with a
+// task_id too it is refused before anything runs.
+func TestRunRoutineOnANote(t *testing.T) {
+	f := newFixture(t)
+	runs := &fakeRuns{writes: 1}
+	f.reg.SetRoutines(runs)
+	f.put("u1", "rule", "r1", map[string]any{"name": "Checkboxes", "enabled": false, "trigger": map[string]any{"kind": "manual", "on": "note"}, "deleted_at": nil})
+	c := agent("u1")
+	f.mustCall(c, "run_routine", map[string]any{"routine": "r1", "note_id": "n1"})
+	if len(runs.notes) != 1 || runs.notes[0] != "n1" {
+		t.Fatalf("notes %v", runs.notes)
+	}
+	if _, err := f.call(c, "run_routine", map[string]any{"routine": "r1", "note_id": "n1", "task_id": "t1"}); err == nil || runs.calls != 1 {
+		t.Fatalf("both ids: %v, %d runs", err, runs.calls)
+	}
 }
 
 // run_routine runs only within what is left of the token's daily items: the

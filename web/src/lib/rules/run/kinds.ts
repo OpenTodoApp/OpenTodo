@@ -9,6 +9,7 @@ import { resolveDate } from '../stepData'
 import { isNull, parseStepActions, planActions, type PlanContext } from './actions'
 import { PER_CALL } from './tools'
 import { aiStep } from './ai'
+import { filterNotes, noteStep, sortNotes, writableNote } from './notes'
 import { clearNote, dateStep, emailStep, notifyStep, projectFromTemplate, projectOf, quickAddLine, ruleFiredNotice, setFocus, trackedTime, webhookStep } from './more'
 import { Ended, fail, none, num, str, tasksVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
 import type { Change, Row } from './types'
@@ -41,6 +42,8 @@ export async function exec(st: RunState, s: RoutineStep, inputs: Inputs, at: num
     case 'find_project': return findProject(st, s, inputs)
     case 'create_project': case 'update_project': case 'create_sections': case 'create_labels': case 'favourite':
       return projectStep(st, s, inputs, at)
+    case 'find_notes': case 'get_note': case 'create_note': case 'change_notes': case 'note_to_task':
+      return noteStep(st, s, inputs, at)
     case 'note_text': return noteText(st, s, inputs)
     case 'append_to_note': return appendNote(st, s, inputs, at)
     case 'clear_note': return clearNote(st, s, inputs)
@@ -311,8 +314,10 @@ function projectStep(st: RunState, s: RoutineStep, inputs: Inputs, at: number): 
 
 function noteText(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
   const of = st.entityIn(s, inputs, 'of')
-  const row = of?.type === 'project' ? st.liveProject(of.id ?? '') : st.liveTask(of?.id ?? '')
+  const row = of?.type === 'project' ? st.liveProject(of.id ?? '') : of?.type === 'note' ? st.liveNote(of.id ?? '') : st.liveTask(of?.id ?? '')
   if (!row) throw fail('not_found', `${of?.type ?? 'task'} ${of?.id ?? ''} not found`)
+  // field: a standalone note's title instead of its text (notes-in-routines D1).
+  if (st.litStr(s, 'field') === 'title') return textOut(str(row, of?.type === 'project' ? 'name' : 'title'))
   return textOut(str(row, 'description'))
 }
 
@@ -325,6 +330,13 @@ function appendNote(st: RunState, s: RoutineStep, inputs: Inputs, at: number): E
     return [none(), '']
   }
   const aid = ('r' + ids2('routine-append', st.runId, String(at), String(st.seq)).slice(0, 20)).replaceAll('-', '')
+  if (of?.type === 'note') {
+    const n = st.liveNote(of.id ?? '')
+    if (!n) throw fail('not_found', `note ${of.id ?? ''} not found`)
+    writableNote(st, n)
+    st.tool('append_to_note', { note_id: of.id, text, append_id: aid })
+    return [none(), '']
+  }
   st.tool('append_to_note', { task_id: of?.id ?? '', text, append_id: aid })
   return [none(), '']
 }
@@ -338,6 +350,7 @@ function listStep(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
       const from = st.litStr(s, 'from') ?? ''
       if (from === 'all') return [list, '']
       if (list.type === 'lines') return [{ type: 'lines', lines: take(list.lines ?? [], Math.trunc(n), from === 'end') }, '']
+      if (list.type === 'notes') return [{ type: 'notes', ids: take(list.ids ?? [], Math.trunc(n), from === 'end') }, '']
       return [tasksVal(take(list.ids ?? [], Math.trunc(n), from === 'end')), '']
     }
     case 'filter': {
@@ -349,6 +362,7 @@ function listStep(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
         return [{ type: 'lines', lines: filterLines(list.lines ?? [], String(where[keys[0]]), keys[0] === 'not_contains') }, '']
       }
       if (single) throw fail('type_mismatch', 'filter: contains filters lines; use a condition for tasks')
+      if (list.type === 'notes') return [filterNotes(st, list, where), '']
       const out = (list.ids ?? []).filter((id) => { const t = st.tasks.get(id); return !!t && st.matchCond(where, t) })
       return [tasksVal(out), '']
     }
@@ -356,6 +370,7 @@ function listStep(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
       const by = st.litStr(s, 'by') ?? ''
       const desc = st.litStr(s, 'direction') === 'desc'
       if (list.type === 'lines') return [{ type: 'lines', lines: sortLines(list.lines ?? [], desc) }, '']
+      if (list.type === 'notes') return [sortNotes(st, list, by, desc), '']
       const rows = (list.ids ?? []).map((id) => {
         const t = st.tasks.get(id)
         const due = t?.due as { date?: string } | null | undefined

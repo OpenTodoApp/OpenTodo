@@ -18,6 +18,9 @@ const (
 	TNumber  Type = "number"
 	TLines   Type = "lines"
 	TNone    Type = "none"
+	// TNote is a standalone note and TNotes a list of them (notes-in-routines D1).
+	TNote  Type = "note"
+	TNotes Type = "notes"
 )
 
 // Lit is the literal shape an input accepts.
@@ -31,6 +34,8 @@ const (
 	LitDate      Lit = "date"      // YYYY-MM-DD, "today", "tomorrow" or {"in_days": n}
 	LitProject   Lit = "project"   // {"project": id}
 	LitTask      Lit = "task"      // {"task": id}
+	LitNote      Lit = "note"      // {"note": id}
+	LitLabels    Lit = "labels"    // {any|all|none: [ids]}, as the labels predicate
 	LitLines     Lit = "lines"     // a list of strings
 	LitBool      Lit = "bool"      // true or false
 	LitEnum      Lit = "enum"      // one of Input.Enum
@@ -103,8 +108,10 @@ type StepKind struct {
 }
 
 var (
-	anyList = []Type{TTasks, TLines}
-	textIn  = []Type{TText}
+	anyList = []Type{TTasks, TLines, TNotes}
+	// noteOf is what Get note text, Add to a note and Clear a note read.
+	noteOf = []Type{TTask, TProject, TNote}
+	textIn = []Type{TText}
 	// aiContext is what an Ask AI step may read (routines-ai-step D1).
 	aiContext = []Type{TText, TLines, TTasks, TProject}
 )
@@ -166,9 +173,10 @@ var Steps = []StepKind{
 	// Projects
 	{Kind: "find_project", Group: GroupProjects, Out: TProject, Content: true,
 		Inputs: []Input{req(content(bound(in("name", textIn, LitText), 120)))}},
-	// project_of: the project of a task; the Inbox for a task without one (routines-dynamic-data D5).
+	// project_of: the project of a task or a standalone note; the Inbox for
+	// one without (routines-dynamic-data D5, notes-in-routines).
 	{Kind: "project_of", Group: GroupProjects, Out: TProject,
-		Inputs: []Input{req(in("task", []Type{TTask}, LitNone))}},
+		Inputs: []Input{req(in("task", []Type{TTask, TNote}, LitNone))}},
 	{Kind: "create_project", Group: GroupProjects, Out: TProject, Content: true, Tool: "create_project",
 		Inputs: []Input{req(content(bound(in("name", textIn, LitText), 120))), in("parent", []Type{TProject}, LitProject), in("color", nil, LitID), in("icon", nil, LitID)}},
 	{Kind: "update_project", Group: GroupProjects, Out: TProject, Tool: "update_project",
@@ -182,12 +190,26 @@ var Steps = []StepKind{
 	{Kind: "project_from_template", Group: GroupProjects, Out: TProject, Content: true,
 		Inputs: []Input{req(in("template", nil, LitID)), req(in("start", []Type{TDate}, LitDate)), content(bound(in("name", textIn, LitText), 120))}},
 	// Notes and text
+	// Standalone notes (notes-in-routines D1, D5): find, get, create, change, turn into a task.
+	{Kind: "find_notes", Group: GroupText, Out: TNotes,
+		Inputs: []Input{in("project", []Type{TProject}, LitProject), in("labels", nil, LitLabels), bound(in("within_days", nil, LitNumber), MaxDays),
+			bound(in("unchanged_days", nil, LitNumber), MaxDays), content(bound(in("words", nil, LitText), 200)), bound(in("limit", nil, LitNumber), MaxListItems)}},
+	{Kind: "get_note", Group: GroupText, Out: TNote,
+		Inputs: []Input{req(in("note", []Type{TNote}, LitNote))}},
+	{Kind: "create_note", Group: GroupText, Out: TNote, Content: true, Tool: "create_note",
+		Inputs: []Input{content(bound(in("title", textIn, LitText), 500)), content(in("text", textIn, LitText)), in("project", []Type{TProject}, LitProject), in("labels", nil, LitIDs)}},
+	{Kind: "change_notes", Group: GroupText, Out: TNotes, Tool: "update_note",
+		Inputs: []Input{req(in("notes", []Type{TNotes}, LitNone)), in("project", []Type{TProject}, LitProject), in("no_project", nil, LitBool),
+			in("add_labels", nil, LitIDs), in("remove_labels", nil, LitIDs), in("pin", nil, LitBool), in("trash", nil, LitBool)}},
+	{Kind: "note_to_task", Group: GroupText, Out: TTask, Content: true, Tool: "note_to_task",
+		Inputs: []Input{req(in("note", []Type{TNote}, LitNone))}},
+	// field: the note's text (the default) or a standalone note's title.
 	{Kind: "note_text", Group: GroupText, Out: TText, Content: true,
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject))}},
+		Inputs: []Input{req(in("of", noteOf, LitProject)), enum("field", "text", "title")}},
 	{Kind: "append_to_note", Group: GroupText, Out: TNone, Content: true, Tool: "append_to_note",
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject)), req(content(in("text", textIn, LitText)))}},
+		Inputs: []Input{req(in("of", noteOf, LitProject)), req(content(in("text", textIn, LitText)))}},
 	{Kind: "clear_note", Group: GroupText, Out: TNone, Content: true,
-		Inputs: []Input{req(in("of", []Type{TTask, TProject}, LitProject))}},
+		Inputs: []Input{req(in("of", noteOf, LitProject))}},
 	{Kind: "split_lines", Group: GroupText, Out: TLines, Content: true,
 		Inputs: []Input{req(in("text", textIn, LitText)), enum("only", "open_checkboxes")}},
 	{Kind: "join", Group: GroupText, Out: TText, Content: true,
@@ -200,13 +222,13 @@ var Steps = []StepKind{
 	{Kind: "filter", Group: GroupLogic, Out: TNone, SameAs: "list",
 		Inputs: []Input{req(in("list", anyList, LitNone)), req(in("where", nil, LitWhere))}},
 	{Kind: "sort", Group: GroupLogic, Out: TNone, SameAs: "list",
-		Inputs: []Input{req(in("list", anyList, LitNone)), req(enum("by", "due", "deadline", "priority", "created", "title", "text")), enum("direction", "asc", "desc")}},
+		Inputs: []Input{req(in("list", anyList, LitNone)), req(enum("by", "due", "deadline", "priority", "created", "title", "text", "changed")), enum("direction", "asc", "desc")}},
 	{Kind: "take", Group: GroupLogic, Out: TNone, SameAs: "list",
 		Inputs: []Input{req(in("list", anyList, LitNone)), bound(in("n", nil, LitNumber), MaxListItems), enum("from", "start", "end", "all")}},
 	{Kind: "count", Group: GroupLogic, Out: TNumber,
 		Inputs: []Input{req(in("list", anyList, LitNone))}},
 	{Kind: "if", Group: GroupLogic, Out: TNone, Blocks: []string{"then", "otherwise"},
-		Inputs: []Input{req(in("value", []Type{TNumber, TText, TDate, TTasks, TLines, TTask, TProject}, LitNone)), req(in("is", nil, LitCompare))}},
+		Inputs: []Input{req(in("value", []Type{TNumber, TText, TDate, TTasks, TLines, TTask, TProject, TNotes, TNote}, LitNone)), req(in("is", nil, LitCompare))}},
 	{Kind: "repeat", Group: GroupLogic, Out: TNone, Blocks: []string{"do"},
 		Inputs: []Input{req(in("list", anyList, LitNone))}},
 	{Kind: "stop", Group: GroupLogic, Out: TNone,
@@ -269,10 +291,14 @@ func (k *StepKind) input(name string) (*Input, bool) {
 }
 
 // TriggerOutput is the type the reference "trigger" has (design D3): the task
-// for event, due and overdue triggers and for a manual run; for a schedule the
+// for event, due and overdue triggers and for a manual run; the note for a note
+// trigger and a manual run on a note (notes-in-routines D2); for a schedule the
 // matching open tasks when the routine has a condition, the firing day otherwise.
-func TriggerOutput(kind string, hasCondition bool) Type {
-	if kind == Schedule {
+func TriggerOutput(t Trigger, hasCondition bool) Type {
+	if t.IsNote() {
+		return TNote
+	}
+	if t.Kind == Schedule {
 		if hasCondition {
 			return TTasks
 		}

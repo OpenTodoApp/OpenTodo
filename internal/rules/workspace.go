@@ -70,6 +70,7 @@ func (w *world) inWorkspace(ws string) *world {
 	b.tasks, b.parent, b.projectRows, b.elsewhere = map[string]opsync.Entity{}, map[string]string{}, map[string]opsync.Entity{}, map[string]bool{}
 	b.sections, b.sectionName = map[string]string{}, map[string]string{}
 	b.tracked, b.trackedOcc, b.changed = nil, nil, nil
+	b.notes, b.noteDates, b.noteMs = nil, nil, nil
 	for id, p := range w.projectRows {
 		if part.Project(id) == ws {
 			b.projectRows[id], b.parent[id] = p, w.parent[id]
@@ -161,6 +162,11 @@ func (st *runState) outsideWorkspace() string {
 		case "comment", "time_entry":
 			if id := strOf(c.Patch["task_id"]); id != "" && !inTask(id) {
 				return c.Entity
+			}
+		case "note":
+			// Only the workspace's notes (notes-in-routines D7).
+			if _, ok := st.w.notes[c.EntityID]; !ok && !created["note\x00"+c.EntityID] || other(c.Patch) {
+				return "note"
 			}
 		}
 	}

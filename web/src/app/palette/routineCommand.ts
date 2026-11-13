@@ -18,7 +18,7 @@ import type { Step } from './entries'
 /** Whether a routine reads the trigger's task (its run needs one). */
 export function readsTask(rule: Pick<Rule, 'trigger' | 'condition' | 'actions' | 'steps'>): boolean {
   const kind = rule.trigger?.kind ?? ''
-  if (triggerOutput(kind, !!rule.condition) !== 'task') return false
+  if (triggerOutput(rule.trigger ?? kind, !!rule.condition) !== 'task') return false
   let read: ReturnType<typeof readRoutine>
   try {
     read = readRoutine(rule.actions, rule.steps ?? null)
@@ -54,21 +54,27 @@ export function runsOnDevice(rule: Pick<Rule, 'trigger' | 'condition' | 'actions
     const read = readRoutine(rule.actions, rule.steps ?? null)
     if (!read) return false
     if (hasAI(read.steps)) return true
-    const trigger = triggerOutput(rule.trigger?.kind ?? '', !!rule.condition)
+    const trigger = triggerOutput(rule.trigger ?? '', !!rule.condition)
     return contentStep(read.steps, trigger, checkTypes(read.steps, trigger)) !== ''
   } catch {
     return false
   }
 }
 
-/** Runs a routine now and shows the outcome. */
-export async function runRoutineNow(rule: Rule, task: Task | undefined): Promise<void> {
+/** Whether a routine runs on a standalone note: a manual routine on a note (notes-in-routines D2). */
+export function runsOnNote(rule: Pick<Rule, 'trigger'>): boolean {
+  return rule.trigger?.kind === 'manual' && rule.trigger.on === 'note'
+}
+
+/** Runs a routine now and shows the outcome; a note routine runs on noteId. */
+export async function runRoutineNow(rule: Rule, task: Task | undefined, noteId?: string): Promise<void> {
   const name = rule.name || t('Untitled routine')
   if (!online()) {
     showBulkToast(t('{name}: needs a connection', { name }), null)
     return
   }
   const taskId = readsTask(rule) ? task?.id : undefined
+  const note = noteId && runsOnNote(rule) ? { note_id: noteId } : {}
   const onDevice = runsOnDevice(rule)
   if (onDevice && !encryptionSnapshot().unlocked) {
     showBulkToast(t('{name}: unlock this device to run it', { name }), null)
@@ -76,8 +82,8 @@ export async function runRoutineNow(rule: Rule, task: Task | undefined): Promise
   }
   try {
     const res = onDevice
-      ? await import('../../lib/rules/deviceRun').then(async (m) => m.runNowOnDevice(rule.id, uuid(), taskId, await getDeviceId()))
-      : await api.runRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}) })
+      ? await import('../../lib/rules/deviceRun').then(async (m) => m.runNowOnDevice(rule.id, uuid(), taskId, await getDeviceId(), note.note_id))
+      : await api.runRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...note })
     const runId = res.run.run_id
     showBulkToast(runSummary(name, res.run), null, {
       action: { label: t('View run'), run: () => navigate({ view: 'rules', id: rule.id, run: runId }) },
@@ -92,6 +98,21 @@ export async function runRoutineNow(rule: Rule, task: Task | undefined): Promise
   }
 }
 
+/** The picker "Run routine on this note…" opens: the manual routines that take a note. */
+export function runRoutineOnNoteStep(noteId: string): Step {
+  return { kind: 'picker', picker: {
+    title: t('Run routine…'), placeholder: t('Find a routine…'), emptyText: online() ? t('No routine runs on a note yet.') : t('Running a routine needs a connection.'),
+    source: async (query: string) => {
+      if (!online()) return { items: [] }
+      const q = query.trim().toLowerCase()
+      return { items: (await listRules()).filter((r) => runsOnNote(r) && (!q || (r.name ?? '').toLowerCase().includes(q))) }
+    },
+    getKey: (r: Rule) => r.id,
+    getLabel: (r: Rule) => r.name || t('Untitled routine'),
+    onPick: (r: Rule) => { void runRoutineNow(r, undefined, noteId) },
+  } }
+}
+
 /** The picker "Run routine…" opens. */
 export function runRoutineStep(task: Task | undefined): Step {
   const triggerText = (r: Rule) => ((r.trigger?.kind as string) === 'manual' ? t('Only when you run it') : t('Also runs by itself'))
@@ -99,7 +120,7 @@ export function runRoutineStep(task: Task | undefined): Step {
     title: t('Run routine…'), placeholder: t('Find a routine…'), emptyText: t('No routines yet.'),
     source: async (query: string) => {
       const q = query.trim().toLowerCase()
-      const list = (await listRules()).filter((r) => !q || (r.name ?? '').toLowerCase().includes(q))
+      const list = (await listRules()).filter((r) => !runsOnNote(r) && (!q || (r.name ?? '').toLowerCase().includes(q)))
       return { items: list }
     },
     getKey: (r: Rule) => r.id,
