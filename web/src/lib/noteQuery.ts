@@ -15,6 +15,8 @@ export type NoteToken =
   | { key: 'linked'; id: string; name: string }
   | { key: 'orphan' }
   | { key: 'pinned' }
+  /** Templates only (note-templates). */
+  | { key: 'template' }
   | { key: 'changed'; value: string }
 
 export type TokenKey = NoteToken['key']
@@ -29,7 +31,7 @@ export interface TokenWorld {
 /** The written form of each key, in the order suggestions offer them. */
 export const KEY_WORDS: readonly { word: string; key: TokenKey }[] = [
   { word: 'in:', key: 'in' }, { word: 'label:', key: 'label' }, { word: 'kind:', key: 'kind' }, { word: 'linked:', key: 'linked' },
-  { word: 'changed:', key: 'changed' }, { word: 'pinned', key: 'pinned' }, { word: 'orphan', key: 'orphan' },
+  { word: 'changed:', key: 'changed' }, { word: 'pinned', key: 'pinned' }, { word: 'orphan', key: 'orphan' }, { word: 'template', key: 'template' },
 ]
 
 const KINDS: Record<string, NoteSource> = { note: 'note', notes: 'note', standalone: 'note', task: 'task', tasks: 'task', project: 'project', projects: 'project' }
@@ -50,6 +52,7 @@ export function keyOf(raw: string): { key: TokenKey; value: string } | null {
   }
   const w = raw.toLowerCase()
   if (w === 'pinned') return { key: 'pinned', value: '' }
+  if (w === 'template' || w === 'templates') return { key: 'template', value: '' }
   if (w === 'orphan' || w === 'unlinked') return { key: 'orphan', value: '' }
   return null
 }
@@ -77,7 +80,7 @@ export function tokenOf(raw: string, w: TokenWorld): NoteToken | null {
   const k = keyOf(raw)
   if (!k) return null
   switch (k.key) {
-    case 'pinned': case 'orphan': return { key: k.key }
+    case 'pinned': case 'orphan': case 'template': return { key: k.key }
     case 'kind': { const value = KINDS[k.value.toLowerCase()]; return value ? { key: 'kind', value } : null }
     case 'changed': { const value = changedValue(k.value); return value ? { key: 'changed', value } : null }
     case 'in': { const p = byName(w.projects, (p) => p.name, k.value); return p ? { key: 'in', id: p.id, name: p.name } : null }
@@ -144,7 +147,7 @@ export function sameToken(a: NoteToken, b: NoteToken): boolean {
 
 /** The segment being typed at the end of the text, when it is the start of a token: what to suggest. */
 export type Typing =
-  | { kind: 'value'; key: Exclude<TokenKey, 'pinned' | 'orphan'>; value: string; raw: string }
+  | { kind: 'value'; key: Exclude<TokenKey, 'pinned' | 'orphan' | 'template'>; value: string; raw: string }
   | { kind: 'key'; words: string[]; raw: string }
 
 export function typingOf(text: string): Typing | null {
@@ -152,7 +155,7 @@ export function typingOf(text: string): Typing | null {
   const last = segments(text).at(-1)
   if (!last) return null
   const k = keyOf(last.raw)
-  if (k && k.key !== 'pinned' && k.key !== 'orphan') return { kind: 'value', key: k.key, value: k.value, raw: last.raw }
+  if (k && k.key !== 'pinned' && k.key !== 'orphan' && k.key !== 'template') return { kind: 'value', key: k.key, value: k.value, raw: last.raw }
   const w = last.raw.toLowerCase()
   if (w.length < 2 || !/^[a-z]+$/.test(w)) return null
   const words = KEY_WORDS.map((x) => x.word).filter((x) => x.startsWith(w) && x !== w)
@@ -223,6 +226,7 @@ export function compileTokens(tokens: readonly NoteToken[], ctx: MatchContext): 
       case 'label': add('label', (e) => e.labels.includes(t.id)); break
       case 'kind': add('kind', (e) => e.source === t.value); break
       case 'pinned': { const ids = new Set(ctx.pinnedIds); add('pinned', (e) => e.source === 'note' && ids.has(e.id)); break }
+      case 'template': add('template', (e) => e.source === 'note' && !!e.template); break
       case 'orphan': {
         const linked = ctx.linked
         if (!linked) return null
@@ -295,7 +299,7 @@ export function parseStoredTokens(v: unknown): NoteToken[] | null {
     if ((x.key === 'in' || x.key === 'label' || x.key === 'linked') && s('id')) out.push({ key: x.key, id: s('id')!, name: s('name') ?? '' })
     else if (x.key === 'kind' && KIND_VALUES.includes(x.value as NoteSource)) out.push({ key: 'kind', value: x.value as NoteSource })
     else if (x.key === 'changed' && s('value') && changedValue(s('value')!)) out.push({ key: 'changed', value: changedValue(s('value')!)! })
-    else if (x.key === 'orphan' || x.key === 'pinned') out.push({ key: x.key })
+    else if (x.key === 'orphan' || x.key === 'pinned' || x.key === 'template') out.push({ key: x.key })
   }
   return out
 }

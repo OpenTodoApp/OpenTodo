@@ -92,6 +92,8 @@ export interface RunWorld {
    * routine reads notes.
    */
   notes?: Row[]
+  /** The built-in note templates (note_from_template); loaded lazily by the caller. */
+  noteTemplates?: readonly { slug: string; title: Record<string, string>; body: Record<string, string> }[]
   noteChanged?: Record<string, string>
   noteMs?: Record<string, number>
   encrypted: boolean

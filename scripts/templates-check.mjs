@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseYaml, YAML_TEMPLATE } from './deploy/yaml.mjs'
 import { checkRoutineLibrary, ROUTINES_DIR } from './routine-templates.mjs'
+import { checkNoteLibrary, NOTES_DIR } from './note-templates.mjs'
 
 const here = fileURLToPath(import.meta.url)
 export const repoRoot = resolve(dirname(here), '..')
@@ -281,7 +282,8 @@ export function checkLibrary(root = repoRoot, opts = {}) {
   for (const name of readdirSync(dir).sort()) {
     const p = join(dir, name)
     // templates/routines/ holds the routine templates (routines-starters), checked by routine-templates.mjs.
-    if (!statSync(p).isDirectory() || name === ROUTINES_DIR) continue
+    // templates/notes/ holds the note templates (note-templates D4), checked by note-templates.mjs.
+    if (!statSync(p).isDirectory() || name === ROUTINES_DIR || name === NOTES_DIR) continue
     const tpl = readTemplate(p, { root, icons, sectionStyle, languages })
     problems.push(...tpl.problems)
     warnings.push(...tpl.warnings)
@@ -295,11 +297,13 @@ export function checkLibrary(root = repoRoot, opts = {}) {
     if (titles.has(key)) problems.push(`${tpl.slug}/template.yaml: title: "${title}" is also the title of ${titles.get(key)}`)
     else titles.set(key, tpl.slug)
   }
-  return { templates, problems, warnings }
+  const { notes, problems: noteProblems } = checkNoteLibrary(dir, { icons, languages })
+  problems.push(...noteProblems)
+  return { templates, notes, problems, warnings }
 }
 
 if (process.argv[1] === here) {
-  const { templates, problems, warnings } = checkLibrary()
+  const { templates, notes, problems, warnings } = checkLibrary()
   const routines = checkRoutineLibrary()
   problems.push(...routines.problems)
   warnings.push(...routines.warnings)
@@ -308,5 +312,5 @@ if (process.argv[1] === here) {
     console.error(`templates: ${problems.length} problem(s)\n${problems.map((p) => `  - ${p}`).join('\n')}`)
     process.exit(1)
   }
-  console.log(`templates: ${templates.length} valid template(s), ${routines.routines.length} valid routine template(s)${warnings.length ? `, ${warnings.length} warning(s)` : ''}`)
+  console.log(`templates: ${templates.length} valid template(s), ${notes.length} note template(s), ${routines.routines.length} valid routine template(s)${warnings.length ? `, ${warnings.length} warning(s)` : ''}`)
 }

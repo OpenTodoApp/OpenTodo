@@ -27,6 +27,8 @@ export interface NoteEntry {
   created?: number
   /** A completed task or an archived project. */
   marker?: 'completed' | 'archived'
+  /** A standalone note marked as a template (note-templates). */
+  template?: boolean
 }
 
 /** How many rows a page shows, and how many Show more adds. */
@@ -77,7 +79,7 @@ export function noteEntries(tasks: readonly Task[], projects: readonly Project[]
   for (const n of notes) {
     if (n.deleted_at) continue
     out.push({ key: `note:${n.id}`, source: 'note', id: n.id, title: n.title ?? '', text: noteText(n), projectId: n.project_id ?? null,
-      labels: n.labels ?? [], updated: updatedOf(n._clock, STANDALONE_FIELDS) || n.created_at || 0, created: n.created_at })
+      labels: n.labels ?? [], updated: updatedOf(n._clock, STANDALONE_FIELDS) || n.created_at || 0, created: n.created_at, ...(n.template ? { template: true } : {}) })
   }
   return out.sort(byRecency)
 }
@@ -93,7 +95,7 @@ export function sameEntries(a: readonly NoteEntry[], b: readonly NoteEntry[]): b
   for (let i = 0; i < a.length; i++) {
     const x = a[i]
     const y = b[i]
-    if (x.key !== y.key || x.title !== y.title || x.text !== y.text || x.updated !== y.updated || x.created !== y.created || x.marker !== y.marker
+    if (x.key !== y.key || x.title !== y.title || x.text !== y.text || x.updated !== y.updated || x.created !== y.created || x.marker !== y.marker || x.template !== y.template
       || x.projectId !== y.projectId || x.labels.length !== y.labels.length || x.labels.some((l, j) => l !== y.labels[j])) return false
   }
   return true

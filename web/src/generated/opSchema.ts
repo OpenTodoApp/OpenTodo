@@ -349,6 +349,11 @@ export interface NoteFields {
    * a note with a project follows its project, as task.workspace_id.
    */
   workspace_id?: string | null
+  /**
+   * A template (note-templates D1): the note is offered under From
+   * template… and New note copies it; otherwise a note like any other.
+   */
+  template?: boolean
 }
 
 /**
@@ -1263,7 +1268,7 @@ export const OP_DEFAULTS = {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
   note: {
-    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, appends: {},
+    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, template: false, appends: {},
   } satisfies Omit<Note, 'id' | '_clock'>,
   label: {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],

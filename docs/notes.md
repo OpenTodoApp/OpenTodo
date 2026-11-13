@@ -27,7 +27,7 @@ Narrow the list with tokens such as `in:Renovation` or `@errand`: see [Narrow no
 
 ## Writing a note
 
-**New note** (or `q` on the page) creates a standalone note, and so does typing a title in the search field and pressing <kbd>Enter</kbd> when no note matches. Give it a title, write with the same formatting as task notes, and choose a project and labels below it if you like. A note without a title reads "Untitled note". Notes save on your device as you type and sync like everything else, offline included. On a computer, resize the note beside the list by its left edge: drag it, click it (widest, then back), or focus it and press ← or →; each device keeps its own width.
+**New note** (or `q` on the page) creates a standalone note, and so does typing a title in the search field and pressing <kbd>Enter</kbd> when no note matches. Give it a title, write with the same formatting as task notes, and choose a project and labels below it. A note without a title reads "Untitled note". See [Note templates](note-templates.md). Notes save on your device as you type and sync like everything else, offline included. On a computer, resize the note beside the list by its left edge: drag it, click it (widest, then back), or focus it and press ← or →; each device keeps its own width.
 
 There are no folders: projects and labels organise notes. A note in a shared project is shared with that project: editors can change it and viewers can read it. A single note cannot be shared on its own. Moving a note into a project that is shared differently makes a copy there and removes the original, as for tasks.
 
