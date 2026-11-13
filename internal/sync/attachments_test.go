@@ -213,3 +213,116 @@ func TestOrphanSweep(t *testing.T) {
 		t.Fatalf("sweep = %d, %v, removed %v", n, err, blobs.removed)
 	}
 }
+
+// note-attachments 1.2: "Attach to a note offline", "Two parents" and "Viewer of a shared note".
+func TestNoteAttachments(t *testing.T) {
+	f := newSharing(t)
+	noteOps := func(id, author string, extra ...Op) []Op {
+		ops := f.attachmentOps(id, "x", author, 10, extra...)
+		out := []Op{}
+		for _, op := range ops {
+			if op.Field != "task_id" {
+				out = append(out, op)
+			}
+		}
+		return out
+	}
+	// A note and its photo in one batch (offline, then synced).
+	ops := append([]Op{f.op("note", "n1", "title", `"Whiteboard"`), f.op("note", "n1", "project_id", `"p"`)},
+		noteOps("a1", "alice", f.op("attachment", "a1", "note_id", `"n1"`))...)
+	if res := f.apply("alice", "A", ops...); len(res.Rejected) != 0 {
+		t.Fatalf("attach: %+v", res.Rejected)
+	}
+	// Both parents, or none, are refused.
+	two := append(f.attachmentOps("a2", "t1", "alice", 10), f.op("attachment", "a2", "note_id", `"n1"`))
+	if res := f.apply("alice", "A", two...); len(res.Rejected) == 0 {
+		t.Fatal("two parents accepted")
+	}
+	if res := f.apply("alice", "A", noteOps("a3", "alice")...); len(res.Rejected) == 0 {
+		t.Fatal("no parent accepted")
+	}
+	// Sharing the project takes the note's attachment along; a viewer may attach, not remove another's.
+	f.add("alice", "carol", RoleViewer)
+	if got := f.field("carol", "attachment", "a1", "note_id"); got != `"n1"` {
+		t.Fatalf("carol sees %s", got)
+	}
+	if res := f.apply("carol", "C", noteOps("a4", "carol", f.op("attachment", "a4", "note_id", `"n1"`))...); len(res.Rejected) != 0 {
+		t.Fatalf("viewer attach: %+v", res.Rejected)
+	}
+	if res := f.apply("carol", "C", f.op("attachment", "a1", "deleted_at", `5`)); len(res.Rejected) != 1 {
+		t.Fatalf("viewer removed alice's: %+v", res)
+	}
+	if res := f.apply("alice", "A", f.op("attachment", "a1", "note_id", `"other"`)); len(res.Rejected) != 1 {
+		t.Fatalf("parent changed: %+v", res)
+	}
+}
+
+// note-attachments 1.4: a copy shares the original's file; the file stays
+// while any row names it ("Original purged"), and a copy is checked.
+func TestSharedFileCopies(t *testing.T) {
+	f := newSharing(t)
+	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
+	f.s.now = func() time.Time { return now }
+	blobs := &fakeBlobs{files: map[string]time.Time{"a1": now}}
+	f.s.SetBlobStore(blobs)
+	note := func(id, att, file, sha string, extra ...Op) []Op {
+		ops := []Op{f.op("note", id, "title", `"Trip"`)}
+		for _, op := range f.attachmentOps(att, "x", "alice", 10, extra...) {
+			switch op.Field {
+			case "task_id":
+			case "sha256":
+				ops = append(ops, f.op("attachment", att, "sha256", mustJSON(sha)))
+			default:
+				ops = append(ops, op)
+			}
+		}
+		ops = append(ops, f.op("attachment", att, "note_id", mustJSON(id)))
+		if file != "" {
+			ops = append(ops, f.op("attachment", att, "file_id", mustJSON(file)))
+		}
+		return ops
+	}
+	if res := f.apply("alice", "A", note("n1", "a1", "", "abc")...); len(res.Rejected) != 0 {
+		t.Fatalf("original: %+v", res.Rejected)
+	}
+	// Not uploaded yet: a copy may not claim it is.
+	if res := f.apply("alice", "A", note("n2", "c0", "a1", "abc", f.op("attachment", "c0", "uploaded_at", `5`))...); len(res.Rejected) == 0 {
+		t.Fatal("copy claimed an unstored file")
+	}
+	f.apply("alice", "server", Op{ID: "up1", Entity: "attachment", EntityID: "a1", Field: "uploaded_at", Value: []byte(`5`), TS: f.ts + 100, Device: "server"})
+	if res := f.apply("alice", "A", note("n2", "c1", "a1", "abc", f.op("attachment", "c1", "uploaded_at", `5`))...); len(res.Rejected) != 0 {
+		t.Fatalf("copy: %+v", res.Rejected)
+	}
+	// Another digest, a copy of a copy, or someone else's file are refused.
+	for name, ops := range map[string][]Op{
+		"digest":    note("n3", "c2", "a1", "zzz"),
+		"chain":     note("n3", "c3", "c1", "abc"),
+		"elsewhere": nil,
+	} {
+		if ops == nil {
+			ops = []Op{f.op("note", "n9", "title", `"Bob"`)}
+			for _, op := range note("n9", "c4", "a1", "abc") {
+				if op.Field != "author_id" {
+					ops = append(ops, op)
+				}
+			}
+			ops = append(ops, f.op("attachment", "c4", "author_id", `"bob"`))
+			if res := f.apply("bob", "B", ops...); len(res.Rejected) == 0 {
+				t.Fatalf("%s accepted", name)
+			}
+			continue
+		}
+		if res := f.apply("alice", "A", ops...); len(res.Rejected) == 0 {
+			t.Fatalf("%s accepted", name)
+		}
+	}
+	// Purging the original's note keeps the file for the copy; purging the copy removes it.
+	f.apply("alice", "A", f.op("note", "n1", "deleted_at", `8000`))
+	if _, err := f.s.Purge(f.ctx, "alice", "note", []string{"n1"}); err != nil || slices.Contains(blobs.removed, "a1") {
+		t.Fatalf("original purged: %v, removed %v", err, blobs.removed)
+	}
+	f.apply("alice", "A", f.op("note", "n2", "deleted_at", `9000`))
+	if _, err := f.s.Purge(f.ctx, "alice", "note", []string{"n2"}); err != nil || !slices.Contains(blobs.removed, "a1") {
+		t.Fatalf("copy purged: %v, removed %v", err, blobs.removed)
+	}
+}
