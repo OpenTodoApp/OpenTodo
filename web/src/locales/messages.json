@@ -17803,6 +17803,9 @@
   "The file could not be read: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "The file could not be saved.": [
+    "web/src/main.tsx"
+  ],
   "The file includes {file}, which was not read: the importer reads one file and never fetches another.": [
     "web/src/app/themes/ImportReport.tsx"
   ],

@@ -237,7 +237,19 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 
 They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
 
+### Shells that feel native
+
+The phone apps stay web-view shells and are made to feel like apps, in the order of [`mobile/AUDIT.md`](mobile/AUDIT.md).
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`shell-repairs`](openspec/changes/shell-repairs/) | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | |
+
+Then reminders on at first run, push, first paint, touch and motion, each its own change.
+
 ### Native app
+
+**Paused (2026-11-13).** The phone apps stay web-view shells, made to feel native ([`mobile/AUDIT.md`](mobile/AUDIT.md)). The work below is kept, not scheduled.
 
 A phone app drawn with the platform's own views, replacing the web-view shells that testers found disappointing. It is built with React Native in `mobile/app/`, runs the web app's shared sync, encryption and parsing code, and is built and published by CI without Xcode. Its CI runs only when the app or a shared module it imports changes, so the web app's pipeline stays as fast as it is.
 

@@ -4801,6 +4801,7 @@
   "The card shows only runs that failed or wait for you.": "Die Karte zeigt nur Läufe, die fehlgeschlagen sind oder auf dich warten.",
   "The change applies at once. You may be asked for your password first.": "Die Änderung gilt sofort. Eventuell wirst du zuerst nach deinem Passwort gefragt.",
   "The change could not be saved.": "Die Änderung konnte nicht gespeichert werden.",
+  "The file could not be saved.": "Die Datei konnte nicht gespeichert werden.",
   "The chosen model does not read photos. Remove them to send the message.": "Das gewählte Modell liest keine Fotos. Entferne sie, um die Nachricht zu senden.",
   "The chosen model does not read photos. Your message and photos are still in the field: remove the photos to send the text.": "Das gewählte Modell liest keine Fotos. Deine Nachricht und die Fotos stehen noch im Feld: Entferne die Fotos, um den Text zu senden.",
   "The code is not valid. Check that your device’s clock is set automatically and try again.": "Der Code ist ungültig. Prüfe, ob die Uhr deines Geräts automatisch gestellt wird, und versuche es erneut.",

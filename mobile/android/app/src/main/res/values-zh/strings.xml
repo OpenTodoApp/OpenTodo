@@ -49,4 +49,5 @@
     <string name="setup_web_page">这个地址返回的是网页，而不像 OpenTodo 服务器。如果服务器位于登录页之后，请在这里登录；否则请检查地址。</string>
     <string name="setup_sign_in">在这里登录</string>
     <string name="error_sign_in">你的服务器位于登录页之后，而且登录没有在应用中继续。请在这里重新登录。</string>
+    <string name="save_failed">文件无法保存。</string>
 </resources>

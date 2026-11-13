@@ -7,6 +7,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.nio.file.Files
+import java.util.Base64
 
 /**
  * The bridge contract with the web app (native-shells "The bridge is optional"): the
@@ -92,6 +94,63 @@ class BridgeFixtureTest {
         }
         val refused = f.getJSONArray("refused")
         for (i in 0 until refused.length()) assertEquals(refused.getString(i), null, SystemBars.parse(refused.getString(i)))
+    }
+
+    /** shell-repairs D2: the chunks the web app hands saveFile make the file, with its name and type; a malformed call fails. */
+    @Test fun saveFile() {
+        val f = fixture("save-file.json")
+        assertEquals("saveFile", f.getString("method"))
+        val calls = f.getJSONArray("calls")
+        val want = f.getJSONObject("expect")
+        val answers = want.getJSONArray("answers")
+        assertEquals(calls.length(), answers.length())
+        val dir = Files.createTempDirectory("opentodo-save-fixture").toFile()
+        try {
+            val save = FileSave(dir)
+            for (i in 0 until calls.length()) {
+                val step = save.accept(calls.getString(i))
+                if (i < calls.length() - 1) {
+                    assertEquals("call $i", FileSave.Step.More, step)
+                    assertEquals("call $i", FileSave.MORE, answers.getString(i))
+                    continue
+                }
+                // The last answer is the save dialog's: here the file it would be given.
+                assertEquals(FileSave.SAVED, answers.getString(i))
+                assertTrue("call $i gives the whole file", step is FileSave.Step.Whole)
+                val whole = step as FileSave.Step.Whole
+                assertEquals(want.getString("name"), whole.name)
+                assertEquals(want.getString("type"), whole.type)
+                assertEquals(want.getString("bytes"), Base64.getEncoder().encodeToString(whole.file.readBytes()))
+            }
+            val refused = f.getJSONArray("refused")
+            assertTrue(refused.length() >= 1)
+            for (i in 0 until refused.length()) {
+                assertEquals(refused.getString(i), null, FileSave.parse(refused.getString(i)))
+                assertEquals(refused.getString(i), FileSave.Step.Failed, FileSave(dir).accept(refused.getString(i)))
+            }
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    /** shell-repairs D5: every kind the web app hands haptic has its feedback; an unknown one has none. */
+    @Test fun haptics() {
+        val f = fixture("haptics.json")
+        assertEquals("haptic", f.getString("method"))
+        val kinds = f.getJSONArray("kinds")
+        assertTrue(kinds.length() >= 2)
+        for (sdk in listOf(26, 30, 36)) {
+            for (i in 0 until kinds.length()) assertNotNull(kinds.getString(i), Haptic.constant(kinds.getString(i), sdk))
+            assertEquals(null, Haptic.constant(f.getString("unknown"), sdk))
+        }
+    }
+
+    /** The page side offers both methods: saveFile answers through the promise channel, haptic is sent only. */
+    @Test fun thePageScriptHasTheNewMethods() {
+        val script = Bridge.script("1.0.0", listOf("reminders", "files", "haptics"))
+        assertTrue(script, script.contains("saveFile: function (json) { return call('saveFile', [String(json)]) }"))
+        assertTrue(script, script.contains("haptic: function (kind) { send('haptic', [String(kind)]) }"))
+        assertTrue(script, script.contains("\"files\"") && script.contains("\"haptics\""))
     }
 
     @Test fun addressesTheWebAppReads() {

@@ -6,7 +6,7 @@ import { completeUndoable, doOnUndoable, dueUndoable, moveUndoable, parkUndoable
 import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
-import { markCompleted, tick, withListTransition } from './motion'
+import { markCompleted, withListTransition, success } from './motion'
 
 /**
  * Completes or reopens a task. A completion is written at once; just before, the list
@@ -15,7 +15,7 @@ import { markCompleted, tick, withListTransition } from './motion'
 export async function completeWithUndo(id: string, completed: boolean): Promise<void> {
   if (completed) {
     markCompleted(id)
-    tick()
+    success()
   }
   const r = await completeUndoable(id, completed)
   if (r.entry) showUndoToast(r.label, r.entry.id)

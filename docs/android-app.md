@@ -113,6 +113,18 @@ A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **
 - Sign-out, locking an encrypted account and **Change server** remove every watched place.
 - **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
 
+## Saving files
+
+Whatever the app saves opens Android's save dialog, where you choose the folder: the recovery key and recovery codes, an export, a theme, an attachment. Close the dialog and nothing is saved. Files the app makes on the phone (the recovery key, recovery codes, themes, decrypted attachments) need a server on the same release as the app or newer; exports and attachments from the server save with any server.
+
+## Back
+
+Back closes what is open (a dialog, a sheet, a task), then goes back through the app, and leaves the app only from the screen it started on.
+
+## Haptic feedback
+
+Completing a task and picking up a row give a short tap, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+
 ## Sharing
 
 The app appears in Android's share menu for links, text, photos and files, also on phones without Google Play services. See [Capturing pages](capture.md#from-the-android-app).

@@ -49,4 +49,5 @@
     <string name="setup_web_page">This address answers with a web page, not like an OpenTodo server. If your server is behind a login page, sign in to it here; otherwise check the address.</string>
     <string name="setup_sign_in">Sign in here</string>
     <string name="error_sign_in">Your server is behind a login page, and signing in didn\'t continue in the app. Sign in again here.</string>
+    <string name="save_failed">The file could not be saved.</string>
 </resources>

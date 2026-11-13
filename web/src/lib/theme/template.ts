@@ -129,10 +129,5 @@ export function themeTemplate(doc: ThemeDocument, resolution: { tokens: Record<s
 
 /** Offers the template as a download from a Blob URL (made on the device, no server round trip). */
 export function downloadTemplate(text: string, name: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = templateFileName(name)
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  void import('../saveFile').then((m) => m.saveFile(new Blob([text], { type: 'application/json' }), templateFileName(name)))
 }
