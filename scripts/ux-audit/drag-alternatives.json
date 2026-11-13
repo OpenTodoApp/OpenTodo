@@ -107,6 +107,7 @@
   ] }
  ],
  "notDrags": [
-  { "file": "web/src/app/shortcuts/Spotlight.tsx", "contains": "if (e.target === e.currentTarget) { e.preventDefault(); cancel() }", "reason": "A press on the spotlight's backdrop closes it; nothing is dragged." }
+  { "file": "web/src/app/shortcuts/Spotlight.tsx", "contains": "if (e.target === e.currentTarget) { e.preventDefault(); cancel() }", "reason": "A press on the spotlight's backdrop closes it; nothing is dragged." },
+  { "file": "web/src/app/habits/HabitRow.tsx", "contains": "{down}", "reason": "A long press on a habit's check button logs the tiny version; nothing moves, and the button's menu and Shift+Space do the same with one tap or key (habits-home)." }
  ]
 }

@@ -29,3 +29,5 @@ web/src/ui/AccentPicker.tsx: #rrggbb
 web/src/ui/ColourField.tsx: #rrggbb
 # The Microsoft client's tenant (outlook-calendar-sync D2): Microsoft's tenant name as its placeholder, a code.
 web/src/app/CalendarSyncDialogs.tsx: common
+# New habit (habits-home): a sample repeat rule; rules are English in every language.
+web/src/app/habits/HabitForm.tsx: every weekday

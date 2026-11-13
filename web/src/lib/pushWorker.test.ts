@@ -93,6 +93,19 @@ describe('service worker reminder handlers', () => {
     expect(await checkReminders(now)).toEqual([])
   })
 
+  it('a habit with a tiny version names it in the body (habits-home "Reminder text")', async () => {
+    const now = Date.now()
+    const taskId = await createTask({ title: 'Read', due: { date: '2026-10-11', time: '21:00' }, recurrence: 'every day' })
+    await db.tasks.update(taskId, { habit: true, habit_tiny: 'one page' })
+    const reminderId = await addReminder(taskId, { kind: 'absolute', fire_at: now - 1000 })
+    db.close()
+    await db.open()
+    const sw = loadWorker()
+    await dispatch(sw, 'push', pushEvent({ type: 'reminder', reminderId, taskId, fireAt: now - 1000 }))
+    expect(sw.shown[0].title).toBe('Read')
+    expect(sw.shown[0].options.body).toBe('One page is enough')
+  })
+
   it('push while the app is focused goes to the app only', async () => {
     const { taskId, reminderId, now } = await setup()
     const sw = loadWorker({ windows: [{ focused: true }] })
@@ -352,7 +365,7 @@ describe('Done on a reminder notification (reminder-done-action)', () => {
 })
 
 describe('service worker texts in the stored language (app-localization D9)', () => {
-  const KEYS = { reminder: 'Reminder', due: 'Due {date}', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
+  const KEYS = { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' } as const
   type Texts = Partial<Record<keyof typeof KEYS, string>>
   function worker(code = source): Record<string, unknown> {
     const self: Record<string, unknown> = { addEventListener: () => undefined }

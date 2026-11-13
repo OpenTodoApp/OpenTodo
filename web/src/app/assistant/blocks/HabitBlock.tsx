@@ -25,7 +25,7 @@ export default function HabitBlock({ block }: { block: Extract<AssistantBlock, {
         <Icon name="repeat" size="sm" className="shrink-0 text-muted" />
         <span className="min-w-0 flex-1 truncate text-body font-semibold user-text">{series.title || t('Untitled')}</span>
         {stats && (
-          <ToneText icon="flame" tone={stats.atRisk ? 'warning' : 'default'} className="shrink-0" data-testid="habit-streak" label={streakLabel(stats)}>
+          <ToneText icon="flame" tone={stats.overdue ? 'warning' : 'default'} className="shrink-0" data-testid="habit-streak" label={streakLabel(stats)}>
             {t('{n, plural, one {# day} other {# days}}', { n: stats.current })}
           </ToneText>
         )}

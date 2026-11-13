@@ -2,6 +2,8 @@
 // change task-full-page): Copy link, Help, the parent and recurring task, time
 // tracking, Focus, the task page, Duplicate, Attach, Remove origin, the
 // assistant's Rewrite this, Find a slot and Break this down, and Delete. The page has no Expand: it already is the page.
+import { useHabitsEnabled } from '../../lib/habitPrefs'
+import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
 import { openHelp } from '../../lib/helpRequest'
 import { duplicateTask } from '../../lib/templates'
@@ -20,6 +22,7 @@ import type { TaskDetailModel } from './useTaskDetail'
 export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailModel; page: boolean; readOnly: boolean; onOpen?: (id: string) => void }) {
   const { task, parent, series } = m
   const connected = useConnected('task', task?.id)
+  const habits = useHabitsEnabled()
   if (!task) return null
   const done = !!task.completed_at
   return (
@@ -38,6 +41,10 @@ export function TaskActionsMenu({ m, page, readOnly, onOpen }: { m: TaskDetailMo
       {m.canPublish && <MenuItem label={m.pageStatus ? t('Task page…') : t('Publish task page…')} icon="globe"
         description={m.online ? t('A page anyone with the link can open, reply to and tick') : t('Task pages need a connection')}
         disabled={!m.online} onSelect={() => m.setPageDialog(true)} data-publish-page />}
+      {/* Make it a habit (habits-home D9): while Habits is on, for a task that is not one yet. */}
+      {habits && !readOnly && !done && !task.deleted_at && !task.habit && !task.series_id && (
+        <MenuItem label={t('Make it a habit')} icon="leaf" onSelect={() => openHabitForm({ taskId: task.id })} data-make-habit />
+      )}
       {!readOnly && <MenuItem label={t('Duplicate')} icon="copy" shortcut={keysOf('list.duplicate')} onSelect={() => void duplicateTask(task.id).then((id) => onOpen?.(id))} />}
       {!readOnly && <MenuItem label={t('Attach')} icon="paperclip" description={t('Or paste or drop files on the task')} onSelect={() => requestAttach(task.id)} />}
       {!readOnly && <MenuItem label={t('Add a link…')} icon="link" onSelect={() => requestAttach(task.id, 'link')} />}

@@ -228,7 +228,7 @@ const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expande
 
 const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
 const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolean =>
-  a === b || (!!a && !!b && a.current === b.current && a.best === b.best && a.pending === b.pending && a.atRisk === b.atRisk)
+  a === b || (!!a && !!b && a.current === b.current && a.best === b.best && a.pending === b.pending && a.overdue === b.overdue && a.kept === b.kept && a.keptOf === b.keptOf && a.strength === b.strength && a.atRisk === b.atRisk && a.backOnTrack === b.backOnTrack)
 
 /**
  * The rows that may read differently from `b` than from `a` (incremental-list-updates D3),
