@@ -16,7 +16,7 @@ import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
 import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
+import { Button, Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { LinkedRefs, Markdown } from '../Markdown'
@@ -153,11 +153,21 @@ function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
     if (rule) void import('../palette/routineCommand').then((m) => m.runRoutineNow(rule, undefined, note.id))
   }
   const routines = rules.map((r) => ({ id: r.id, name: r.name }))
+  // An open template shows the word Template and Use template first (note-templates).
+  const applyTemplate = () => void import('./TemplatePicker').then((m) => m.makeFromTemplate({ kind: 'note', note })).then((id) => { if (id) { focusBodyOnOpen(id); navigate({ view: 'notes', id }) } })
   return (
-    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
+    <>
+    {note.template && (
+      <>
+        <span className="text-meta text-faint" data-note-template>{t('Template')}</span>
+        <Button size="sm" variant="primary" onClick={applyTemplate} data-note-use-template>{t('Use template')}</Button>
+      </>
+    )}
+    <NoteMenu template={!!note.template} onTemplate={editable ? () => act(mutate('note', note.id, { template: !note.template })) : undefined} pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
       onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
+    </>
   )
 }
 

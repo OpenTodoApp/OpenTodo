@@ -517,6 +517,12 @@ func collectNoteRefs(st *ruleval.Step, ref *refs, lit func(string) json.RawMessa
 		ref.notes = append(ref.notes, n["note"])
 	}
 	switch st.Kind {
+	case "note_from_template":
+		// A user template is a note the routine must reach (note-templates D5).
+		var id string
+		if json.Unmarshal(lit("template"), &id) == nil && id != "" && !strings.HasPrefix(id, "builtin:") {
+			ref.notes = append(ref.notes, id)
+		}
 	case "find_notes":
 		var l ruleval.LabelsPred
 		if json.Unmarshal(lit("labels"), &l) == nil {

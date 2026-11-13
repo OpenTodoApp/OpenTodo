@@ -10,11 +10,11 @@ import type { LibraryTemplate, Row, RunEnv, RunWorld } from './types'
 
 const WEEK_START: Record<string, number> = { sun: 0, sat: 6 }
 
-function usesTemplates(steps: readonly RoutineStep[]): boolean {
-  return steps.some((s) => s.kind === 'project_from_template' || usesTemplates([...(s.then ?? []), ...(s.otherwise ?? []), ...(s.do ?? [])]))
+function usesTemplates(steps: readonly RoutineStep[], kind = 'project_from_template'): boolean {
+  return steps.some((s) => s.kind === kind || usesTemplates([...(s.then ?? []), ...(s.otherwise ?? []), ...(s.do ?? [])], kind))
 }
 
-const NOTE_KINDS = ['find_notes', 'get_note', 'create_note', 'change_notes', 'note_to_task', 'note_text', 'append_to_note', 'clear_note', 'sort', 'filter']
+const NOTE_KINDS = ['find_notes', 'get_note', 'create_note', 'note_from_template', 'change_notes', 'note_to_task', 'note_text', 'append_to_note', 'clear_note', 'sort', 'filter']
 
 /** Whether a routine reads standalone notes (notes-in-routines): load them only then. */
 function usesNotes(steps: readonly RoutineStep[]): boolean {
@@ -79,9 +79,11 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
   const offset = -new Date(now).getTimezoneOffset()
   const rows = (x: unknown[]) => x as unknown as Row[]
   let templates: LibraryTemplate[] | undefined
-  if (usesTemplates(o.steps)) {
-    const lib = (await import('../../../generated/templates.json')).default as unknown as { templates: LibraryTemplate[] }
+  let noteTemplates: RunWorld['noteTemplates']
+  if (usesTemplates(o.steps) || usesTemplates(o.steps, 'note_from_template')) {
+    const lib = (await import('../../../generated/templates.json')).default as unknown as { templates: LibraryTemplate[]; notes?: RunWorld['noteTemplates'] }
     templates = lib.templates
+    noteTemplates = lib.notes
   }
   let notes: Row[] | undefined
   const noteMs: Record<string, number> = {}
@@ -95,7 +97,7 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
     userId: me ?? '', today: logicalDate(now, offset, dayStart), now, weekStart: WEEK_START[String(p.week_start)] ?? 1, offset, dayStart,
     tasks: rows(tasks), projects: rows(projects), labels: rows(labels), sections: rows(sections), views: rows(views), fields: rows(fields),
     timeEntries: rows(timeEntries), prefs: p, memberships, project: o.project || undefined, changed: changedDates(rows(tasks), offset, dayStart), encrypted: o.encrypted,
-    env: o.env, templates, notes, noteChanged, noteMs,
+    env: o.env, templates, noteTemplates, notes, noteChanged, noteMs,
   }
   if (!o.workspace || o.project) return world
   const scoped = inWorkspace(world, o.workspace, workspaces)

@@ -274,3 +274,33 @@ func TestNoteRoutinesEncrypted(t *testing.T) {
 		t.Fatalf("text: %+v", res.Run)
 	}
 }
+
+// note-templates 5.1: "Monday meeting note" from a user template, and
+// "Template in the Trash".
+func TestNoteFromTemplateStep(t *testing.T) {
+	h, _, _ := routineHarness(t)
+	h.project("alice", "work", "Work", "")
+	h.write("alice", "laptop", "label", "meeting", map[string]any{"name": "meeting", "created_at": 1, "deleted_at": nil})
+	h.note("alice", "tpl", "Stand-up {{date}}", "## Yesterday\n## Today", map[string]any{"project_id": "work", "template": true, "labels": []string{"meeting"}})
+	h.routine("alice", "mm", "Monday meeting note", `{"kind":"schedule","at":"09:00","weekdays":[1]}`, "", `[
+		{"id":"a","kind":"note_from_template","in":{"template":{"literal":"tpl"},"date":{"literal":"2026-11-16"}}},
+		{"id":"b","kind":"append_to_note","in":{"of":{"ref":"a"},"text":{"literal":"Agenda: budget"}}}]`)
+	res := h.runNow("alice", "mm", "", false)
+	if res.Run.Outcome != OutcomeApplied {
+		t.Fatalf("run %+v %v", res.Run, statuses(res))
+	}
+	var made opsync.Entity
+	for _, n := range h.notes("alice") {
+		if strOf(n["title"]) == "Stand-up 11/16/2026" {
+			made = n
+		}
+	}
+	if made == nil || strOf(made["project_id"]) != "work" || boolOf(made, "template") || len(appendedOf(made)) != 1 {
+		t.Fatalf("made %v", made)
+	}
+	h.write("alice", "phone", "note", "tpl", map[string]any{"deleted_at": 5})
+	res = h.runNow("alice", "mm", "", false)
+	if res.Run.Outcome != OutcomeFailed || res.Run.Reason != "The template is in the Trash" || res.Run.Writes != 0 {
+		t.Fatalf("trashed: %+v %v", res.Run, statuses(res))
+	}
+}

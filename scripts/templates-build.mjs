@@ -13,6 +13,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkLibrary, repoRoot } from './templates-check.mjs'
 import { compileRoutines } from './routine-templates.mjs'
+import { compileNotes } from './note-templates.mjs'
 
 export const SCHEMA = 1
 export const OUT = 'web/src/generated/templates.json'
@@ -89,12 +90,13 @@ export function compileTemplate({ slug, src, overlays }) {
 
 /** The whole library, or the problems that stop it. Categories in a fixed order, then English title. */
 export function compileLibrary(root = repoRoot, opts = {}) {
-  const { templates, problems, warnings } = checkLibrary(root, opts)
+  const { templates, notes, problems, warnings } = checkLibrary(root, opts)
   if (problems.length) return { library: null, problems, warnings }
   const ORDER = ['personal', 'home', 'work', 'study', 'method']
   const entries = templates.map(compileTemplate)
     .sort((a, b) => ORDER.indexOf(a.category) - ORDER.indexOf(b.category) || a.text.title.en.localeCompare(b.text.title.en))
-  const library = { schema: SCHEMA, templates: entries }
+  // Note templates (note-templates D4): never written to an account until used.
+  const library = { schema: SCHEMA, templates: entries, notes: compileNotes(notes ?? []) }
   const size = gzipSync(serialise(library)).length
   if (size > BUDGET_GZIP_BYTES) problems.push(`templates: the compiled library is ${size} bytes gzipped, over the budget of ${BUDGET_GZIP_BYTES}; split or trim templates`)
   return { library: problems.length ? null : library, problems, warnings }

@@ -16,6 +16,8 @@ import { inputLabel } from '../../lib/rules/sentence'
 import { placeholders, textLiteral, triggerOutput, type StepInput } from '../../lib/rules/steps'
 import type { Note, RoutineArg, RoutineStep, RoutineStepType, Task } from '../../lib/types'
 import { Button, Field, Input, WordButton } from '../../ui'
+import { builtinNoteTemplatesNow } from './noteTemplatesNow'
+import { builtinText } from '../../lib/noteTemplates'
 import { ChoicePopover, InlineText, Inspector, type Choice } from './pickers'
 import { chipOptions, ComparePicker, DatePicker, ENUM_LABEL, LiteralPicker, PERIOD_LABEL, textValue, wordPlaceholder, wordValue, type ChipOption, type WordContext } from './words'
 
@@ -97,6 +99,12 @@ function literalChoices(step: RoutineStep, def: StepInput, ctx: WordContext, act
         run: () => { const next = ids.includes(l.id) ? ids.filter((x) => x !== l.id) : [...ids, l.id]; act.onSet(next.length ? { literal: next } : undefined) } }))
     }
     case 'id': {
+      if (def.name === 'template' && step.kind === 'note_from_template') {
+        // A note template: the user's, then the built-in ones (note-templates D5).
+        const mine = (n.notes ?? []).filter((x) => x.template).map((x) => ({ key: `nt:${x.id}`, label: x.title || t('Untitled note'), group: t('Your templates'), selected: v === x.id, run: pick(x.id) }))
+        const lib = builtinNoteTemplatesNow().map((b) => ({ key: `bt:${b.slug}`, label: builtinText(b).title, group: t('Built-in'), selected: v === `builtin:${b.slug}`, run: pick(`builtin:${b.slug}`) }))
+        return [...mine, ...lib]
+      }
       if (def.name === 'view') return n.views.map((x) => ({ key: `v:${x.id}`, label: x.name, group: t('Saved views'), selected: v === x.id, run: pick(x.id) }))
       if (def.name === 'webhook_id') return (n.webhooks ?? []).filter((w) => w.enabled !== false).map((w) => ({ key: `w:${w.id}`, label: w.url, group: t('Webhooks'), selected: v === w.id, run: pick(w.id) }))
       if (def.name === 'section') {
@@ -153,7 +161,8 @@ function noteChoices(step: RoutineStep, def: StepInput, notes: readonly Note[], 
 const takesNote = (def: StepInput) => def.literal === 'note' || def.accepts.includes('note') || def.accepts.includes('notes')
 
 /** Whether an input has a small field under its list. */
-const hasFooter = (def: StepInput): boolean =>
+const hasFooter = (def: StepInput, kind = ''): boolean => !(kind === 'note_from_template' && def.name === 'template') && hasFooterOf(def)
+const hasFooterOf = (def: StepInput): boolean =>
   def.literal === 'number' || def.literal === 'lines' || def.literal === 'date' || def.literal === 'compare' || def.literal === 'where' || (def.literal === 'id' && def.name !== 'view' && def.name !== 'webhook_id' && def.name !== 'section')
 
 /** A small field under the list for a number, a date, a test or a text to match. */
@@ -240,7 +249,7 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef, o
       )}
       {mode === 'choice' && (
         <ChoicePopover open={open} onClose={close} anchor={anchor} label={label} choices={choices} multiple={def.literal === 'ids'}
-          placeholder={specific ? (takesNote(def) ? t('Find a note…') : t('Find a task…')) : undefined} footer={specific || !hasFooter(def) ? undefined : <Footer step={step} def={def} ctx={ctx} onSet={onSet} />} />
+          placeholder={specific ? (takesNote(def) ? t('Find a note…') : t('Find a task…')) : undefined} footer={specific || !hasFooter(def, step.kind) ? undefined : <Footer step={step} def={def} ctx={ctx} onSet={onSet} />} />
       )}
       {mode === 'inspector' && (
         <Inspector open={open} onClose={close} stepId={step.id} title={label}>

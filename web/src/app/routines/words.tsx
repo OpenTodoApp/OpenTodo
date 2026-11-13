@@ -4,6 +4,8 @@
 // outputs (nearest first, "Needs conversion" below a divider), the Combobox for
 // projects, labels, views, tasks and webhooks, fields for text, numbers and
 // dates, the rule condition and action controls.
+import { builtinNoteTemplatesNow } from './noteTemplatesNow'
+import { builtinText } from '../../lib/noteTemplates'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useEncryption } from '../../lib/e2ee'
 import { formatList, msg, t, translatedMap } from '../../lib/i18n'
@@ -122,6 +124,11 @@ export function wordValue(step: RoutineStep, def: StepInput, ctx: WordContext): 
     case 'id': {
       const id = String(v)
       if (def.name === 'view') return { shown: n.views.find((x) => x.id === id)?.name ?? t('a removed view'), chip: false }
+      if (def.name === 'template' && step.kind === 'note_from_template') {
+        const b = id.startsWith('builtin:') ? builtinNoteTemplatesNow().find((x) => x.slug === id.slice(8)) : undefined
+        const own = n.notes?.find((x) => x.id === id)
+        return { shown: b ? builtinText(b).title : own ? own.title || t('Untitled note') : id.startsWith('builtin:') ? id.slice(8) : t('a deleted template'), chip: false }
+      }
       if (def.name === 'webhook_id') return { shown: n.webhooks?.find((w) => w.id === id)?.url ?? t('a webhook'), chip: false }
       if (def.name === 'section') return { shown: n.sections.find((x) => x.id === id)?.name ?? t('a removed section'), chip: false }
       return { shown: id, chip: false }
