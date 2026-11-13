@@ -5572,6 +5572,8 @@
   "Waiting for a slot": "Wartet auf einen Platz",
   "Waiting for an answer": "Wartet auf Antwort",
   "Waiting for confirmation: {email}": "Wartet auf Bestätigung: {email}",
+  "This address is not confirmed yet.": "Diese Adresse ist noch nicht bestätigt.",
+  "Send a confirmation link": "Bestätigungslink senden",
   "Waiting for one of your devices": "Wartet auf eines deiner Geräte",
   "Waiting for the first poll": "Wartet auf die erste Abfrage",
   "Waiting for the first refresh": "Warten auf die erste Aktualisierung",

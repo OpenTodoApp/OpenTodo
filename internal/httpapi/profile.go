@@ -124,6 +124,11 @@ func (s *Server) handleChangeEmail(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, "email_failed", "the confirmation could not be sent; nothing changed, try again")
 		return
 	}
+	// Confirming the current address (confirm-current-email) has no old address to tell.
+	if strings.EqualFold(email, strings.TrimSpace(u.Email)) {
+		s.writeProfile(w, r, u)
+		return
+	}
 	// The old address hears about it; a failure there does not undo the request.
 	notice := mail.Message{Kind: mail.KindEmailChangeNotice, To: u.Email, Lang: lang, Origin: origin, UserID: u.ID, ActorID: u.ID}
 	if err := s.mail.Send(send, notice); err != nil {
