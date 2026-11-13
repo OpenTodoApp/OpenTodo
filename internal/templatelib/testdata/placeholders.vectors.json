@@ -1,0 +1,34 @@
+{
+  "about": "Note template placeholders (OpenSpec change note-templates, design D3): internal/templatelib Fill and web/src/lib/noteTemplates.ts fillTemplate give these titles and texts.",
+  "fill": [
+    {"name": "a meeting note, day-month", "title": "Meeting {{date}}", "text": "## Attendees\n\n## Notes\n\n## Actions\n- [ ] ",
+      "context": {"date": "2026-11-12", "time": "09:05", "order": "DM", "hour12": false, "lang": "en"},
+      "want_title": "Meeting 12/11/2026", "want_text": "## Attendees\n\n## Notes\n\n## Actions\n- [ ] "},
+    {"name": "month-day, 12-hour clock, the weekday and the title in the text", "title": "{{weekday}} log", "text": "# {{title}}\nStarted at {{time}} on {{date}}.",
+      "context": {"date": "2026-11-13", "time": "13:30", "order": "MD", "hour12": true, "lang": "en"},
+      "want_title": "Friday log", "want_text": "# Friday log\nStarted at 1:30 PM on 11/13/2026."},
+    {"name": "iso and midnight", "title": "Journal {{date}}", "text": "{{time}}",
+      "context": {"date": "2026-11-12", "time": "00:15", "order": "YMD", "hour12": true, "lang": "zh"},
+      "want_title": "Journal 2026-11-12", "want_text": "12:15 AM"},
+    {"name": "other braces are kept", "title": "Notes", "text": "{{ date }} {{name}} ```\n{{#each}}\n``` {{date}}",
+      "context": {"date": "2026-11-12", "time": "10:00", "order": "DM", "hour12": false, "lang": "en"},
+      "want_title": "Notes", "want_text": "{{ date }} {{name}} ```\n{{#each}}\n``` 12/11/2026"},
+    {"name": "weekdays in every language", "title": "{{weekday}}", "text": "{{weekday}}",
+      "context": {"date": "2026-11-16", "time": "10:00", "order": "DM", "hour12": false, "lang": "it"},
+      "want_title": "lunedì", "want_text": "lunedì"},
+    {"name": "German", "title": "{{weekday}}, {{date}}", "text": "",
+      "context": {"date": "2026-11-15", "time": "10:00", "order": "DM", "hour12": false, "lang": "de"},
+      "want_title": "Sonntag, 15/11/2026", "want_text": ""},
+    {"name": "Chinese", "title": "{{weekday}}", "text": "{{title}}",
+      "context": {"date": "2026-11-14", "time": "10:00", "order": "YMD", "hour12": false, "lang": "zh"},
+      "want_title": "星期六", "want_text": "星期六"},
+    {"name": "{{title}} in the title is nothing", "title": "{{title}} Standup {{date}}", "text": "",
+      "context": {"date": "2026-11-16", "time": "10:00", "order": "DM", "hour12": false, "lang": "en"},
+      "want_title": "Standup 16/11/2026", "want_text": ""}
+  ],
+  "order": [
+    {"date_format": "day-month", "lang": "en", "order": "DM"}, {"date_format": "month-day", "lang": "it", "order": "MD"},
+    {"date_format": "iso", "lang": "en", "order": "YMD"}, {"date_format": "system", "lang": "en", "order": "MD"},
+    {"date_format": "system", "lang": "zh", "order": "YMD"}, {"date_format": "system", "lang": "fr", "order": "DM"}
+  ]
+}

@@ -2224,6 +2224,7 @@
         "notes_doc": "doc",
         "position": "number",
         "project_id": "nullable_string",
+        "template": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       },
@@ -3302,6 +3303,7 @@
       "notes_doc": "doc",
       "position": "number",
       "project_id": "nullable_string",
+      "template": "bool",
       "title": "string",
       "workspace_id": "nullable_string"
     },
@@ -5335,6 +5337,7 @@
         "notes[].notes_doc": "doc",
         "notes[].position": "number",
         "notes[].project_id": "nullable_string",
+        "notes[].template": "bool",
         "notes[].title": "string",
         "notes[].workspace_id": "nullable_string"
       }
@@ -5352,6 +5355,7 @@
         "notes_doc": "doc",
         "position": "number",
         "project_id": "nullable_string",
+        "template": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }
@@ -7257,6 +7261,7 @@
         "notes_doc": "doc?",
         "position": "number?",
         "project_id": "nullable_string?",
+        "template": "bool?",
         "title": "string?",
         "workspace_id": "nullable_string?"
       },
@@ -7271,6 +7276,7 @@
         "notes_doc": "doc",
         "position": "number",
         "project_id": "nullable_string",
+        "template": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }
@@ -9325,6 +9331,7 @@
         "notes_doc": "doc?",
         "position": "number?",
         "project_id": "nullable_string?",
+        "template": "bool?",
         "title": "string?",
         "workspace_id": "nullable_string?"
       },
@@ -9339,6 +9346,7 @@
         "notes_doc": "doc",
         "position": "number",
         "project_id": "nullable_string",
+        "template": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }

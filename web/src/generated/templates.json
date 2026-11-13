@@ -1966,5 +1966,187 @@
     "labels": 1
    }
   }
+ ],
+ "notes": [
+  {
+   "slug": "daily",
+   "icon": "sun",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "title": {
+    "en": "{{weekday}} {{date}}",
+    "de": "{{weekday}} {{date}}",
+    "es": "{{weekday}} {{date}}",
+    "fr": "{{weekday}} {{date}}",
+    "it": "{{weekday}} {{date}}",
+    "nl": "{{weekday}} {{date}}",
+    "pt": "{{weekday}} {{date}}",
+    "zh": "{{weekday}} {{date}}"
+   },
+   "summary": {
+    "en": "One page for the day: the plan, notes as they come and how it went.",
+    "de": "Eine Seite für den Tag: der Plan, Notizen, wie sie kommen, und wie es lief.",
+    "es": "Una página para el día: el plan, las notas según llegan y cómo fue.",
+    "fr": "Une page pour la journée : le plan, les notes au fil de l’eau et le bilan.",
+    "it": "Una pagina per la giornata: il piano, gli appunti man mano e com’è andata.",
+    "nl": "Eén pagina voor de dag: het plan, aantekeningen zoals ze komen en hoe het ging.",
+    "pt": "Uma página para o dia: o plano, notas à medida que surgem e como correu.",
+    "zh": "一天一页：计划、随手记录，以及这一天过得如何。"
+   },
+   "body": {
+    "en": "## Plan\n- [ ] \n\n## Notes\n\n## How it went\n",
+    "de": "## Plan\n- [ ] \n\n## Notizen\n\n## Wie es lief\n",
+    "es": "## Plan\n- [ ] \n\n## Notas\n\n## Cómo fue\n",
+    "fr": "## Plan\n- [ ] \n\n## Notes\n\n## Le bilan\n",
+    "it": "## Piano\n- [ ] \n\n## Appunti\n\n## Com’è andata\n",
+    "nl": "## Plan\n- [ ] \n\n## Aantekeningen\n\n## Hoe het ging\n",
+    "pt": "## Plano\n- [ ] \n\n## Notas\n\n## Como correu\n",
+    "zh": "## 计划\n- [ ] \n\n## 记录\n\n## 今天如何\n"
+   }
+  },
+  {
+   "slug": "one-on-one",
+   "icon": "message-circle",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "title": {
+    "en": "1:1 {{date}}",
+    "de": "1:1 {{date}}",
+    "es": "1:1 {{date}}",
+    "fr": "1:1 {{date}}",
+    "it": "1:1 {{date}}",
+    "nl": "1:1 {{date}}",
+    "pt": "1:1 {{date}}",
+    "zh": "一对一 {{date}}"
+   },
+   "summary": {
+    "en": "A one-to-one: how things are going, what is in the way and what comes next.",
+    "de": "Ein Einzelgespräch: wie es läuft, was im Weg steht und was als Nächstes kommt.",
+    "es": "Una reunión individual: cómo va todo, qué lo frena y qué viene después.",
+    "fr": "Un tête-à-tête : comment ça va, ce qui bloque et la suite.",
+    "it": "Un incontro uno a uno: come va, cosa blocca e cosa viene dopo.",
+    "nl": "Een één-op-één: hoe het gaat, wat in de weg zit en wat er volgt.",
+    "pt": "Uma conversa a dois: como vão as coisas, o que está a travar e o que vem a seguir.",
+    "zh": "一对一面谈：近况、阻碍和下一步。"
+   },
+   "body": {
+    "en": "## How are things\n\n## What is in the way\n\n## Feedback\n\n## Next steps\n- [ ] ",
+    "de": "## Wie läuft es\n\n## Was im Weg steht\n\n## Feedback\n\n## Nächste Schritte\n- [ ] ",
+    "es": "## Cómo va todo\n\n## Qué lo frena\n\n## Comentarios\n\n## Próximos pasos\n- [ ] ",
+    "fr": "## Comment ça va\n\n## Ce qui bloque\n\n## Retours\n\n## Prochaines étapes\n- [ ] ",
+    "it": "## Come va\n\n## Cosa blocca\n\n## Feedback\n\n## Prossimi passi\n- [ ] ",
+    "nl": "## Hoe gaat het\n\n## Wat zit in de weg\n\n## Feedback\n\n## Volgende stappen\n- [ ] ",
+    "pt": "## Como vão as coisas\n\n## O que está a travar\n\n## Feedback\n\n## Próximos passos\n- [ ] ",
+    "zh": "## 近况\n\n## 阻碍\n\n## 反馈\n\n## 下一步\n- [ ] "
+   }
+  },
+  {
+   "slug": "meeting",
+   "icon": "users",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "title": {
+    "en": "Meeting {{date}}",
+    "de": "Besprechung {{date}}",
+    "es": "Reunión {{date}}",
+    "fr": "Réunion {{date}}",
+    "it": "Riunione {{date}}",
+    "nl": "Vergadering {{date}}",
+    "pt": "Reunião {{date}}",
+    "zh": "会议 {{date}}"
+   },
+   "summary": {
+    "en": "Attendees, agenda, notes and the actions that come out of a meeting.",
+    "de": "Teilnehmende, Agenda, Notizen und die Aufgaben, die aus einer Besprechung entstehen.",
+    "es": "Asistentes, orden del día, notas y las acciones que salen de una reunión.",
+    "fr": "Participants, ordre du jour, notes et les actions qui sortent d’une réunion.",
+    "it": "Partecipanti, ordine del giorno, appunti e le azioni che nascono da una riunione.",
+    "nl": "Aanwezigen, agenda, aantekeningen en de acties die uit een vergadering komen.",
+    "pt": "Participantes, agenda, notas e as ações que saem de uma reunião.",
+    "zh": "参会人、议程、记录，以及会议产生的行动项。"
+   },
+   "body": {
+    "en": "## Attendees\n\n## Agenda\n\n## Notes\n\n## Actions\n- [ ] ",
+    "de": "## Teilnehmende\n\n## Agenda\n\n## Notizen\n\n## Aufgaben\n- [ ] ",
+    "es": "## Asistentes\n\n## Orden del día\n\n## Notas\n\n## Acciones\n- [ ] ",
+    "fr": "## Participants\n\n## Ordre du jour\n\n## Notes\n\n## Actions\n- [ ] ",
+    "it": "## Partecipanti\n\n## Ordine del giorno\n\n## Appunti\n\n## Azioni\n- [ ] ",
+    "nl": "## Aanwezigen\n\n## Agenda\n\n## Aantekeningen\n\n## Acties\n- [ ] ",
+    "pt": "## Participantes\n\n## Agenda\n\n## Notas\n\n## Ações\n- [ ] ",
+    "zh": "## 参会人\n\n## 议程\n\n## 记录\n\n## 行动项\n- [ ] "
+   }
+  },
+  {
+   "slug": "trip",
+   "icon": "plane",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "title": {
+    "en": "Trip",
+    "de": "Reise",
+    "es": "Viaje",
+    "fr": "Voyage",
+    "it": "Viaggio",
+    "nl": "Reis",
+    "pt": "Viagem",
+    "zh": "旅行"
+   },
+   "summary": {
+    "en": "Where you go, how you get there, where you sleep and what to pack.",
+    "de": "Wohin, wie du hinkommst, wo du schläfst und was du einpackst.",
+    "es": "Adónde vas, cómo llegas, dónde duermes y qué llevar.",
+    "fr": "Où tu vas, comment tu y vas, où tu dors et quoi emporter.",
+    "it": "Dove vai, come ci arrivi, dove dormi e cosa portare.",
+    "nl": "Waar je heen gaat, hoe je er komt, waar je slaapt en wat je inpakt.",
+    "pt": "Para onde vais, como chegas, onde dormes e o que levar.",
+    "zh": "去哪里、怎么去、住哪里、带什么。"
+   },
+   "body": {
+    "en": "## Dates\n\n## Getting there\n\n## Where to stay\n\n## To pack\n- [ ] \n\n## Ideas\n",
+    "de": "## Daten\n\n## Anreise\n\n## Unterkunft\n\n## Einpacken\n- [ ] \n\n## Ideen\n",
+    "es": "## Fechas\n\n## Cómo llegar\n\n## Alojamiento\n\n## Qué llevar\n- [ ] \n\n## Ideas\n",
+    "fr": "## Dates\n\n## Le trajet\n\n## Logement\n\n## À emporter\n- [ ] \n\n## Idées\n",
+    "it": "## Date\n\n## Come arrivare\n\n## Dove dormire\n\n## Da portare\n- [ ] \n\n## Idee\n",
+    "nl": "## Data\n\n## Erheen\n\n## Overnachten\n\n## Inpakken\n- [ ] \n\n## Ideeën\n",
+    "pt": "## Datas\n\n## Como chegar\n\n## Onde ficar\n\n## Para levar\n- [ ] \n\n## Ideias\n",
+    "zh": "## 日期\n\n## 交通\n\n## 住宿\n\n## 行李\n- [ ] \n\n## 想法\n"
+   }
+  },
+  {
+   "slug": "weekly-review",
+   "icon": "calendar-check",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "title": {
+    "en": "Weekly review",
+    "de": "Wochenrückblick",
+    "es": "Revisión semanal",
+    "fr": "Revue de la semaine",
+    "it": "Revisione settimanale",
+    "nl": "Weekoverzicht",
+    "pt": "Revisão semanal",
+    "zh": "每周回顾"
+   },
+   "summary": {
+    "en": "Look back at the week, clear what is open and choose what matters next week.",
+    "de": "Auf die Woche zurückschauen, Offenes klären und wählen, was nächste Woche zählt.",
+    "es": "Mira atrás a la semana, aclara lo pendiente y elige lo que importa la próxima.",
+    "fr": "Revenir sur la semaine, régler ce qui reste ouvert et choisir ce qui compte la semaine prochaine.",
+    "it": "Guarda indietro alla settimana, chiarisci ciò che è aperto e scegli cosa conta la prossima.",
+    "nl": "Terugkijken op de week, openstaande zaken ophelderen en kiezen wat volgende week telt.",
+    "pt": "Olha para trás na semana, esclarece o que está em aberto e escolhe o que importa na próxima.",
+    "zh": "回顾这一周，理清未完成的事，选出下周的重点。"
+   },
+   "body": {
+    "en": "## What went well\n\n## What did not\n\n## Still open\n\n## Next week\n- [ ] ",
+    "de": "## Was gut lief\n\n## Was nicht\n\n## Noch offen\n\n## Nächste Woche\n- [ ] ",
+    "es": "## Qué fue bien\n\n## Qué no\n\n## Aún pendiente\n\n## La próxima semana\n- [ ] ",
+    "fr": "## Ce qui a marché\n\n## Ce qui n’a pas marché\n\n## Encore ouvert\n\n## La semaine prochaine\n- [ ] ",
+    "it": "## Cosa è andato bene\n\n## Cosa no\n\n## Ancora aperto\n\n## La prossima settimana\n- [ ] ",
+    "nl": "## Wat ging goed\n\n## Wat niet\n\n## Nog open\n\n## Volgende week\n- [ ] ",
+    "pt": "## O que correu bem\n\n## O que não correu\n\n## Ainda em aberto\n\n## Próxima semana\n- [ ] ",
+    "zh": "## 顺利的事\n\n## 不顺的事\n\n## 仍未完成\n\n## 下周\n- [ ] "
+   }
+  }
  ]
 }

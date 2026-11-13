@@ -166,7 +166,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-in-routines`](openspec/changes/notes-in-routines/) | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
 | [`note-attachments`](openspec/changes/note-attachments/) | Images and files in standalone notes | |
 | [`note-checklist-tasks`](openspec/changes/archive/2026-11-13-note-checklist-tasks/) | **Shipped.** Turn checklist lines of a note into tasks, each line becoming a link to its task | |
-| [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
+| [`unlinked-mentions`](openspec/changes/archive/2026-11-13-unlinked-mentions/) | **Shipped.** Unlinked mentions below Linked references, linked in one step | |
 | [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
 | [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
 | [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |

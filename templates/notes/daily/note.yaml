@@ -1,0 +1,6 @@
+title: "{{weekday}} {{date}}"
+summary: "One page for the day: the plan, notes as they come and how it went."
+icon: sun
+author: OpenTodo
+reviewed: 2026-11-13
+body: "## Plan\n- [ ] \n\n## Notes\n\n## How it went\n"

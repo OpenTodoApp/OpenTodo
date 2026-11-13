@@ -13,6 +13,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/notesearch"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/templatelib"
 )
 
 // Standalone notes in routines (OpenSpec change notes-in-routines): the note
@@ -241,6 +242,8 @@ func (st *runState) noteStep(s *ruleval.Step, in map[string]ruleval.Value, at in
 		return ruleval.Value{Type: ruleval.TNote, ID: id}, "", nil
 	case "create_note":
 		return st.createNote(s, in, at)
+	case "note_from_template":
+		return st.noteFromTemplate(s, in, at)
 	case "change_notes":
 		return st.changeNotes(s, in, at)
 	case "note_to_task":
@@ -315,14 +318,20 @@ func (st *runState) findNotes(s *ruleval.Step, in map[string]ruleval.Value) (rul
 func (st *runState) createNote(s *ruleval.Step, in map[string]ruleval.Value, at int) (ruleval.Value, string, error) {
 	title, _ := st.textIn(s, in, "title")
 	text, _ := st.textIn(s, in, "text")
-	id := ids2("routine-note", st.r.ID, st.runID, strconv.Itoa(at), strconv.Itoa(st.seq))
-	args := map[string]any{"title": title, "description": text, "id": id}
 	pid := ""
 	if v, ok := st.entityIn(s, in, "project"); ok && v.ID != "" {
 		pid = v.ID
 	}
-	if l, ok := lit[[]string](s, "labels"); ok && st.w.project == "" {
-		args["label_ids"] = l
+	labels, _ := lit[[]string](s, "labels")
+	return st.writeNote(title, text, pid, labels, at)
+}
+
+// writeNote plans a new note through create_note.
+func (st *runState) writeNote(title, text, pid string, labels []string, at int) (ruleval.Value, string, error) {
+	id := ids2("routine-note", st.r.ID, st.runID, strconv.Itoa(at), strconv.Itoa(st.seq))
+	args := map[string]any{"title": title, "description": text, "id": id}
+	if labels != nil && st.w.project == "" {
+		args["label_ids"] = labels
 	}
 	if st.w.project != "" {
 		pid = st.w.project
@@ -516,4 +525,57 @@ func (st *runState) filterNotes(list ruleval.Value, c *ruleval.Condition) ruleva
 		}
 	}
 	return notesVal(out)
+}
+
+// ErrCodeTemplateMissing: a routine's note template is in the Trash or out of
+// its reach (note-templates D5).
+const ErrCodeTemplateMissing = "template_missing"
+
+// noteFromTemplate creates a note from a user template or a built-in one,
+// its placeholders filled with the step's date (the run's day by default),
+// the person's date and time preferences and language (note-templates D5).
+func (st *runState) noteFromTemplate(s *ruleval.Step, in map[string]ruleval.Value, at int) (ruleval.Value, string, error) {
+	ref, _ := lit[string](s, "template")
+	lang := st.lang()
+	var title, body, pid string
+	var labels []string
+	if slug, ok := strings.CutPrefix(ref, "builtin:"); ok {
+		b, found := templatelib.FindNote(slug)
+		if !found {
+			return none(), "", failf(ErrCodeTemplateMissing, "The template %s does not exist", slug)
+		}
+		title, body = b.Title.Pick(lang), b.Body.Pick(lang)
+	} else {
+		n, ok := st.liveNote(ref)
+		if !ok || !boolOf(n, "template") {
+			return none(), "", failf(ErrCodeTemplateMissing, "The template is in the Trash")
+		}
+		title, body, pid, labels = str(n, "title"), str(n, "description"), str(n, "project_id"), listOf(n["labels"])
+	}
+	if t, ok := st.textIn(s, in, "title"); ok && strings.TrimSpace(t) != "" {
+		title = t
+	}
+	if v, ok := st.entityIn(s, in, "project"); ok && v.ID != "" {
+		pid = v.ID
+	}
+	if l, ok := lit[[]string](s, "labels"); ok {
+		labels = l
+	}
+	day := st.w.today
+	if v, ok := in["date"]; ok {
+		day = v.Date
+	} else if a, ok := s.In["date"]; ok {
+		if d, ok := ruleval.DateLiteral(a.Lit); ok {
+			day = d.Resolve(st.w.today)
+		}
+	}
+	prefs := st.prefs()
+	clock := st.e.now().Add(time.Duration(st.w.offset) * time.Minute).UTC().Format("15:04")
+	c := templatelib.FillContext{Date: day, Time: clock, Order: templatelib.Order(str(prefs, "date_format"), lang),
+		Hour12: templatelib.Hour12(str(prefs, "time_format"), lang), Lang: lang}
+	title, body = templatelib.Fill(title, body, c)
+	if labels == nil {
+		labels = []string{}
+	}
+	return st.writeNote(title, body, pid, labels, at)
 }

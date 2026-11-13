@@ -383,6 +383,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
   // notes-home: pin or unpin the focused note, handled by the list itself.
+  { id: 'notes.from-template', keys: ['Shift+Q'], description: 'On the Notes page: start a new note from a template', section: 'notes', scope: 'view', views: ['notes'] },
   { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note, or the ticked notes', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
   // notes-bulk-actions D2, D3: the task lists' ticking keys on standalone notes, handled by the list itself; `m` moves the ticked notes.
   { id: 'notes.tick', keys: ['x', 'Space'], description: 'On the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears)', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused standalone note' },

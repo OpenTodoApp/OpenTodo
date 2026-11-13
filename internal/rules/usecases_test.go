@@ -218,7 +218,7 @@ func runUseCase(t *testing.T, f ucFile, c ucCase) {
 		want = OutcomeApplied
 	}
 	if res.Run.Outcome != want {
-		t.Fatalf("outcome %s, want %s: %v", res.Run.Outcome, want, statuses(res))
+		t.Fatalf("outcome %s, want %s: %v %s", res.Run.Outcome, want, statuses(res), res.Run.Reason)
 	}
 	checkUseCase(t, h, c, seed, before, res, sink, deliveries, mailer)
 	checkUseCaseProjects(t, h, c, seed)

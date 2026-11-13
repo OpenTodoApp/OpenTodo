@@ -234,3 +234,29 @@ test('the repository routine starters are valid, tested and their compiled files
   // The project template check leaves templates/routines/ to the routine check.
   assert.ok(!checkLibrary().templates.some((t) => t.slug === 'routines'))
 })
+
+// note-templates 4.1: note templates in templates/notes/<slug>/.
+function noteLib(files) {
+  const root = mkdtempSync(join(tmpdir(), 'tpl-notes-'))
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(join(root, 'templates', 'notes', path.split('/')[0]), { recursive: true })
+    writeFileSync(join(root, 'templates', 'notes', path), text)
+  }
+  return checkLibrary(repoRoot, { dir: join(root, 'templates'), icons: ICONS, sectionStyle: false, languages: ['de', 'fr'] })
+}
+const NOTE = 'title: "Trip {{date}}"\nsummary: "Where to go."\nicon: plane\nauthor: OpenTodo\nreviewed: 2026-11-13\nbody: "## Dates\\n\\n## To pack\\n"\n'
+
+test('a valid note template passes and compiles under notes', () => {
+  const res = noteLib({ 'trip/note.yaml': NOTE, 'trip/de.yaml': 'title: "Reise {{date}}"\nbody: "## Daten\\n"\n' })
+  assert.deepEqual(res.problems, [])
+  assert.deepEqual(res.notes.map((n) => n.slug), ['trip'])
+})
+
+test('"Unknown placeholder" and "A translation drops a placeholder" name the file and path', () => {
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE.replace('## Dates', '{{destination}}') }), /^notes\/trip\/note\.yaml: body: unknown placeholder \{\{destination\}\}$/)
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE, 'trip/fr.yaml': 'title: "Voyage"\n' }), /^notes\/trip\/fr\.yaml: title: drops the placeholder \{\{date\}\}/)
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE, 'trip/fr.yaml': 'icon: plane\n' }), /notes\/trip\/fr\.yaml: icon: is not in the English file/)
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE.replace('icon: plane', 'icon: rocket') }), /notes\/trip\/note\.yaml: icon:/)
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE.replace('Where to go.', 'Write to me@example.org') }), /summary: holds an e-mail address/)
+  expectProblem(noteLib({ 'trip/note.yaml': NOTE, 'other/note.yaml': NOTE }), /notes\/trip\/note\.yaml: title: .* is also the title of notes\/other/)
+})

@@ -142,13 +142,13 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Shipped |
 | `note-attachments` | Images and files in standalone notes | Planned |
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Shipped |
-| `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |
+| `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Shipped |
 | `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
 | `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |
 | `note-outline` | An outline of a long note's headings | Shipped |
-| `note-templates` | Start a note from a template, with built-in ones and a routine step | Planned |
+| `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped |
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Planned |
 | `note-public-links` | A read-only public link for one note | Planned |
 | `note-webhooks` | Opt-in note events for webhooks | Shipped |

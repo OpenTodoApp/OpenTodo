@@ -1,0 +1,3 @@
+title: "{{weekday}} {{date}}"
+summary: "Uma página para o dia: o plano, notas à medida que surgem e como correu."
+body: "## Plano\n- [ ] \n\n## Notas\n\n## Como correu\n"
