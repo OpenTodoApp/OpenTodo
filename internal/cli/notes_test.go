@@ -105,6 +105,13 @@ func TestNotesListAndSearch(t *testing.T) {
 	if out := h.mustRun("notes", "list", "--search", "quote", "--json"); !strings.Contains(out, "3fa10001") || strings.Contains(out, "fixs0001") {
 		t.Fatalf("--search: %s", out)
 	}
+	// note-search-operators "CLI with OR" and "Old query unchanged".
+	if out := h.mustRun("notes", "search", "quote OR sink", "--json"); !strings.Contains(out, "3fa10001") || !strings.Contains(out, "fixs0001") {
+		t.Fatalf("OR: %s", out)
+	}
+	if a, b := h.mustRun("notes", "search", "plumber", "--json"), h.mustRun("notes", "search", "plumber OR", "--json"); a != b {
+		t.Fatalf("a query without operators changed:\n%s\n%s", a, b)
+	}
 }
 
 // Scenario "Show as Markdown": the checklist, then the pending append.

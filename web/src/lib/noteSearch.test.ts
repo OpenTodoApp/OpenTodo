@@ -1,20 +1,21 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import vectors from '../../../internal/notesearch/testdata/vectors.json'
-import { matchNote, matchPrepared, normalizeText, parseQuery, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
+import { matchNote, matchPrepared, normalizeText, parseQuery, parseSearch, prepareNote, rankNotes, snippet, snippetPlain, stripMarkdown } from './noteSearch'
 
 describe('note search (shared vectors.json with internal/notesearch)', () => {
   it('has the same cases as the Go test', () => {
     // internal/notesearch/notesearch_test.go TestVectorCounts pins the same counts.
-    const counts = [vectors.normalize, vectors.strip, vectors.query, vectors.match, vectors.rank, vectors.snippet].map((v) => v.length)
-    expect(counts).toEqual([12, 19, 9, 11, 3, 11])
+    const counts = [vectors.normalize, vectors.strip, vectors.query, vectors.groups, vectors.match, vectors.rank, vectors.snippet].map((v) => v.length)
+    expect(counts).toEqual([12, 19, 10, 10, 18, 4, 13])
   })
   for (const c of vectors.normalize) it(`normalize: ${c.name}`, () => expect(normalizeText(c.in)).toBe(c.out))
   for (const c of vectors.strip) it(`strip: ${c.name}`, () => expect(stripMarkdown(c.in)).toBe(c.out))
   for (const c of vectors.query) it(`query: ${c.name}`, () => expect(parseQuery(c.in)).toEqual(c.out))
+  for (const c of vectors.groups) it(`groups: ${c.name}`, () => expect(parseSearch(c.in)).toEqual(c.out))
   for (const c of vectors.match)
     it(`match: ${c.name}`, () => {
-      expect(matchNote(c, parseQuery(c.query))).toEqual({ matched: c.matched, titleMatch: c.title_match, bodyWords: c.body_words })
+      expect(matchNote(c, parseSearch(c.query))).toEqual({ matched: c.matched, titleMatch: c.title_match, bodyWords: c.body_words })
     })
   for (const c of vectors.rank)
     it(`rank: ${c.name}`, () => {

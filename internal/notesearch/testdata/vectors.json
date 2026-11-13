@@ -1,5 +1,5 @@
 {
-  "comment": "Note search (OpenSpec notes-overview D4). Read by internal/notesearch/notesearch_test.go and web/src/lib/noteSearch.test.ts. Written by hand: add the case you fix first.",
+  "comment": "Note search (OpenSpec notes-overview D4). Read by internal/notesearch/notesearch_test.go and web/src/lib/noteSearch.test.ts. Written by hand: add the case you fix first. Operators (note-search-operators): groups, OR, title: and text: cases.",
   "normalize": [
     { "name": "accents and case", "in": "Café Müller", "out": "cafe muller" },
     { "name": "capital accents", "in": "ÀÉÎÕÜ", "out": "aeiou" },
@@ -44,7 +44,20 @@
     { "name": "repeats dropped", "in": "ferry FERRY", "out": ["ferry"] },
     { "name": "empty quotes", "in": "\"\" x", "out": ["x"] },
     { "name": "empty", "in": "", "out": [] },
-    { "name": "spaces only", "in": "   ", "out": [] }
+    { "name": "spaces only", "in": "   ", "out": [] },
+    { "name": "operators: highlight terms leave out title: terms and OR", "in": "ferry OR train title:wifi text:\"oat milk\"", "out": ["ferry", "train", "oat milk"] }
+  ],
+  "groups": [
+    { "name": "no operators: one group per term", "in": "\"oat milk\" fresh", "out": [[{ "text": "oat milk", "field": "any" }], [{ "text": "fresh", "field": "any" }]] },
+    { "name": "OR joins its neighbours", "in": "lisbon ferry OR train", "out": [[{ "text": "lisbon", "field": "any" }], [{ "text": "ferry", "field": "any" }, { "text": "train", "field": "any" }]] },
+    { "name": "OR with a phrase", "in": "\"oat milk\" OR soya", "out": [[{ "text": "oat milk", "field": "any" }, { "text": "soya", "field": "any" }]] },
+    { "name": "OR at the edges and doubled is ignored", "in": "OR ferry OR OR train OR", "out": [[{ "text": "ferry", "field": "any" }, { "text": "train", "field": "any" }]] },
+    { "name": "lower-case or is a word", "in": "ferry or train", "out": [[{ "text": "ferry", "field": "any" }], [{ "text": "or", "field": "any" }], [{ "text": "train", "field": "any" }]] },
+    { "name": "quoted OR is a word", "in": "\"OR\" train", "out": [[{ "text": "or", "field": "any" }], [{ "text": "train", "field": "any" }]] },
+    { "name": "title: and text: prefixes", "in": "title:wifi text:\"oat milk\"", "out": [[{ "text": "wifi", "field": "title" }], [{ "text": "oat milk", "field": "text" }]] },
+    { "name": "a prefix without a value is a word", "in": "title: ferry", "out": [[{ "text": "title:", "field": "any" }], [{ "text": "ferry", "field": "any" }]] },
+    { "name": "prefixes inside OR", "in": "title:passport OR title:visa", "out": [[{ "text": "passport", "field": "title" }, { "text": "visa", "field": "title" }]] },
+    { "name": "repeated groups dropped", "in": "ferry FERRY ferry OR train ferry OR train", "out": [[{ "text": "ferry", "field": "any" }], [{ "text": "ferry", "field": "any" }, { "text": "train", "field": "any" }]] }
   ],
   "match": [
     { "name": "every word", "title": "Trip", "text": "the ferry leaves at 7", "query": "ferry 7", "matched": true, "title_match": false, "body_words": 2 },
@@ -57,7 +70,14 @@
     { "name": "words in title and text", "title": "Oat", "text": "milk", "query": "oat milk", "matched": true, "title_match": true, "body_words": 1 },
     { "name": "link targets are not searched", "title": "Docs", "text": "[docs](https://example.com)", "query": "example", "matched": false, "title_match": false, "body_words": 0 },
     { "name": "substring of a word", "title": "Trip", "text": "ferryboat", "query": "boat", "matched": true, "title_match": false, "body_words": 1 },
-    { "name": "empty query matches nothing", "title": "Trip", "text": "ferry", "query": "", "matched": false, "title_match": false, "body_words": 0 }
+    { "name": "empty query matches nothing", "title": "Trip", "text": "ferry", "query": "", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "either word", "title": "Trip", "text": "the ferry leaves", "query": "ferry OR train", "matched": true, "title_match": false, "body_words": 1 },
+    { "name": "either word, neither there", "title": "Garden", "text": "tomatoes", "query": "ferry OR train", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "OR with other words", "title": "Commute", "text": "train at 8", "query": "lisbon ferry OR train", "matched": false, "title_match": false, "body_words": 1 },
+    { "name": "title only", "title": "Router", "text": "the wifi password", "query": "title:wifi", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "title only, in the title", "title": "Wi-Fi wifi", "text": "home-5G", "query": "title:wifi", "matched": true, "title_match": true, "body_words": 0 },
+    { "name": "text only with a phrase, the title does not count", "title": "Oat milk brands", "text": "which to buy", "query": "text:\"oat milk\"", "matched": false, "title_match": false, "body_words": 0 },
+    { "name": "text only with a phrase, in the text", "title": "Groceries", "text": "**oat** milk, bread", "query": "text:\"oat milk\"", "matched": true, "title_match": false, "body_words": 1 }
   ],
   "rank": [
     {
@@ -86,7 +106,8 @@
       "query": "  ",
       "notes": [{ "key": "k1", "title": "A", "text": "milk", "updated": 3 }],
       "keys": []
-    }
+    },
+    { "name": "a text: match is never a title match", "query": "text:ferry", "notes": [{ "key": "a", "title": "Ferry", "text": "ferry times", "updated": 1 }, { "key": "b", "title": "Trip", "text": "the ferry, the ferry", "updated": 5 }], "keys": ["b", "a"] }
   ],
   "snippet": [
     { "name": "short text fits", "text": "the ferry leaves at 7", "query": "ferry", "segments": [{ "text": "the ", "mark": false }, { "text": "ferry", "mark": true }, { "text": " leaves at 7", "mark": false }] },
@@ -124,6 +145,8 @@
     },
     { "name": "title-only match shows the start", "text": "eggs and bread", "query": "groceries", "segments": [{ "text": "eggs and bread", "mark": false }] },
     { "name": "title-only match on a long text", "text": "one two three four five six", "query": "groceries", "max": 10, "segments": [{ "text": "one two…", "mark": false }] },
-    { "name": "empty text", "text": "", "query": "ferry", "segments": [] }
+    { "name": "empty text", "text": "", "query": "ferry", "segments": [] },
+    { "name": "a title: term is not highlighted", "text": "the wifi password is on the router", "query": "title:wifi router", "segments": [{ "text": "the wifi password is on the ", "mark": false }, { "text": "router", "mark": true }] },
+    { "name": "text: phrase highlighted", "text": "buy **oat** milk and bread", "query": "text:\"oat milk\"", "segments": [{ "text": "buy ", "mark": false }, { "text": "oat milk", "mark": true }, { "text": " and bread", "mark": false }] }
   ]
 }
