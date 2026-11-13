@@ -3,7 +3,7 @@
 // by id. Pure functions over the rows the page holds, so they work offline and over
 // an encrypted account's decrypted copy; nothing here reads IndexedDB or the network.
 // Client-only (D8): the server's note search takes its own project and label parameters.
-import { dateLocaleOf, instantToLocalDue } from './dates'
+import { formatDateRange, instantToLocalDue } from './dates'
 import type { NoteEntry, NoteFilters, NoteSource } from './noteList'
 import { normalizeText } from './noteSearch'
 
@@ -91,11 +91,10 @@ export function monthRange(today: string, offset: 0 | -1): string {
 }
 
 /** A range's days in words ("1–31 Oct 2026" in the app's language), the written form for an open end. */
-export function rangeText(value: string, locale?: string): string {
+export function rangeText(value: string): string {
   const [a, b] = value.split('..')
   if (!a || !b) return value
-  const f = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
-  return f.formatRange(new Date(`${a}T00:00:00Z`), new Date(`${b}T00:00:00Z`))
+  return formatDateRange(a, b, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 const byName = <T extends { id: string; deleted_at?: number | null }>(rows: readonly T[], name: (r: T) => string, value: string): T | undefined => {
@@ -305,7 +304,7 @@ export function chipText(t: NoteToken, w: TokenWorld): { key: string; value: str
     case 'label': return { key: '@', value: current(w.labels, t.id, (l) => l.name, t.name) }
     case 'linked': return { key: 'linked:', value: current(w.notes, t.id, (n) => n.title ?? '', t.name) }
     case 'kind': return { key: 'kind:', value: t.value }
-    case 'changed': return { key: 'changed:', value: t.value.includes('..') ? rangeText(t.value, dateLocaleOf()) : t.value }
+    case 'changed': return { key: 'changed:', value: t.value.includes('..') ? rangeText(t.value) : t.value }
     default: return { key: t.key, value: '' }
   }
 }
