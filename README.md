@@ -119,6 +119,10 @@ The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the lat
 
 Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.26+ and Node 22+).
 
+### On your phone
+
+Any phone can [install the web app](docs/install-phone.md) from the browser. There is also an app for [iPhone and iPad](docs/ios-app.md) in the App Store and one for [Android](docs/android-app.md). A new [native app](docs/app.md) is in testing.
+
 ### Configuration
 
 Nothing is required. Every setting is an optional environment variable with a safe default: see the [configuration reference](docs/self-hosting/configuration.md). To add people, keep sign-up closed and send invitation links ([managing users](docs/self-hosting/docker.md#managing-users)).
