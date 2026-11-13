@@ -107,7 +107,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, path: p, scope: ap.Scope}
+	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, path: p, scope: ap.Scope, events: ap.Events}
 	switch r.Method {
 	case http.MethodOptions:
 		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR")
@@ -181,6 +181,8 @@ type davRequest struct {
 	// outside it are not listed and answer 404, so nothing in them is read or
 	// written.
 	scope syncscope.Scope
+	// events: the app password shows tasks as events (caldav-events).
+	events bool
 }
 
 func (d *davRequest) ctx() context.Context { return d.r.Context() }
@@ -331,6 +333,9 @@ func (v *davView) anyByUID(uid string) opsync.Entity {
 
 // encode renders a task as calendar data and its ETag.
 func (v *davView) encode(t opsync.Entity) ([]byte, string) {
+	if v.events {
+		return v.encodeEvent(t)
+	}
 	id := idOf(t["id"])
 	ct := caldav.Task{
 		UID: v.uidOf(id), Title: idOf(t["title"]), Description: idOf(t["description"]),
@@ -508,10 +513,15 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 			}
 			return caldav.Esc(v.ws.displayName(v.ws.part.Project(cal), idOf(v.projects[cal]["name"])))
 		},
-		pOwner:           func() string { return caldav.Href(principalHref(uid)) },
-		pPrivileges:      func() string { return calendarPrivileges(cal, v.role(cal)) },
-		pReports:         func() string { return reportSet },
-		pComponentSet:    func() string { return `<c:comp name="VTODO"/>` },
+		pOwner:      func() string { return caldav.Href(principalHref(uid)) },
+		pPrivileges: func() string { return calendarPrivileges(cal, v.role(cal)) },
+		pReports:    func() string { return reportSet },
+		pComponentSet: func() string {
+			if v.events {
+				return `<c:comp name="VEVENT"/>`
+			}
+			return `<c:comp name="VTODO"/>`
+		},
 		pSupportedData:   func() string { return `<c:calendar-data content-type="text/calendar" version="2.0"/>` },
 		pMaxResourceSize: func() string { return strconv.Itoa(caldav.MaxBodyBytes) },
 		pCTag:            func() string { return caldav.Esc(tok) },
@@ -904,4 +914,12 @@ func (d *davRequest) storedName(id string) (string, error) {
 		return "", err
 	}
 	return name, nil
+}
+
+// origin is the server's public address for links in events, "" without a request.
+func (d *davRequest) origin() string {
+	if d.r == nil || d.s.PublicOrigin == nil {
+		return ""
+	}
+	return d.s.PublicOrigin(d.r)
 }

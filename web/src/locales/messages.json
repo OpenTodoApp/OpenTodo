@@ -5911,6 +5911,7 @@
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Events": [
+    "web/src/app/CaldavPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
@@ -7843,6 +7844,9 @@
   "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In Reminders and to-do apps: tick tasks off there.": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -7939,6 +7943,9 @@
   ],
   "In the afternoon": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "In the calendar: dated tasks as events, multi-day tasks over their days.": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "In the command bar's Add mode: add the task and open it": [
     "web/src/lib/shortcuts.ts"
@@ -15580,6 +15587,9 @@
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
+  "Show tasks as": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "Show tasks assigned to others": [
     "web/src/app/TaskListView.tsx"
   ],
@@ -19111,6 +19121,9 @@
   ],
   "To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.": [
     "web/src/app/assistant/assistantHints.tsx"
+  ],
+  "To-dos": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
     "web/src/app/AppearanceSection.tsx",

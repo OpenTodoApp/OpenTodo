@@ -100,4 +100,19 @@ describe('caldav API client', () => {
     expect(calls[1][2]).toEqual({ enabled: true })
     expect(calls[3][2]).toEqual({ name: 'iPhone' })
   })
+
+  it('offers To-dos or Events for a new password and labels an events password (caldav-events)', async () => {
+    const form = render({ creating: true })
+    expect(form).toContain('Show tasks as')
+    expect(form).toMatch(/value="todos" checked=""|checked="" value="todos"/)
+    expect(render({ creating: true, newEvents: true })).toMatch(/value="events" checked=""|checked="" value="events"/)
+    expect(render({ passwords: [pw({ events: true })] })).toContain('Events')
+    const calls: unknown[] = []
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+      calls.push(JSON.parse(String(init?.body)))
+      return new Response(JSON.stringify({ appPassword: pw(), secret: 'otap_x' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    })
+    await api.createAppPassword('Calendar', undefined, true)
+    expect(calls).toEqual([{ name: 'Calendar', events: true }])
+  })
 })
