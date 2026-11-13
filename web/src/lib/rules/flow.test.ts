@@ -39,6 +39,16 @@ describe('flowing data (routines-dynamic-data D3)', () => {
     expect(flowingTypeAt(d0, { parent: 'b', block: 'do', index: -1 }, draftTypes(d0))).toBe('task')
   })
 
+  it('a Send a webhook step takes the task that triggered, or the tasks found above it (GitHub issue 1194)', () => {
+    const due = draft([], { kind: 'due.reached' })
+    expect(insertNewStep(due, { parent: '', block: '', index: -1 }, 'webhook', 'a', {}).steps[0].in?.tasks).toEqual({ ref: 'trigger' })
+    let d = draft([])
+    d = insertNewStep(d, { parent: '', block: '', index: -1 }, 'find_tasks', 'a', draftTypes(d))
+    d = insertNewStep(d, { parent: '', block: '', index: -1 }, 'webhook', 'b', draftTypes(d))
+    expect(d.steps[1].in?.tasks).toEqual({ ref: 'a' })
+    expect(insertNewStep(draft([]), { parent: '', block: '', index: -1 }, 'webhook', 'a', {}).steps[0].in?.tasks).toBeUndefined()
+  })
+
   it('an event routine\'s first step reads the task that triggered; a manual one\'s is never wired by itself', () => {
     const ev = draft([], { kind: 'label.added', label_id: 'l1' })
     expect(insertNewStep(ev, { parent: '', block: '', index: -1 }, 'add_comment', 'a', {}).steps[0].in?.task).toEqual({ ref: 'trigger' })
