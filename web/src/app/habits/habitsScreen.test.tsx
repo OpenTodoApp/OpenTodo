@@ -184,6 +184,20 @@ describe('habits-polish', () => {
     await r.unmount()
   })
 
+  it('A task made a habit on its own page stays on its task page', async () => {
+    const run = await createTask({ title: 'Run', due: { date: '2026-11-11' }, recurrence: 'every day' })
+    await setHabitsOn(true)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    navigate({ view: 'task', id: run })
+    await waitFor(() => !!document.querySelector(`[data-detail-for="${run}"]`), 'the task page')
+    await updateTask(run, { habit: true })
+    await waitFor(async () => !!(await db.tasks.get(run))?.habit, 'a habit')
+    // The page never swaps for the habit page (it would within a few renders).
+    await expect(waitFor(() => !!document.querySelector(`[data-habit-page="${run}"]`), 'the habit page', 1500)).rejects.toThrow()
+    expect(document.querySelector(`[data-detail-for="${run}"]`)).toBeTruthy()
+    await r.unmount()
+  })
+
   it('Edit saves in one batch with the colour; "?" explains Tiny version and After', async () => {
     const read = await habit('Read', 'every day', '2026-11-11')
     const r = await render(<HabitFormDialog req={{ taskId: read }} task={(await db.tasks.get(read))!} />)

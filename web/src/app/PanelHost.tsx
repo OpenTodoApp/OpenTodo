@@ -68,7 +68,11 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   }, [taskId, task])
   // An open habit series opens its own page instead (habits-polish D3).
   const habitsOn = useHabitsEnabled()
-  const habit = !!task && habitsOn && !!task.habit && !task.series_id && !task.deleted_at
+  // Only a task that was a habit when it opened: one made a habit in the panel stays there.
+  const [openedAs, setOpenedAs] = useState<{ id: string; habit: boolean } | null>(null)
+  if (task && taskId && openedAs?.id !== taskId) setOpenedAs({ id: taskId, habit: !!task.habit })
+  const wasHabit = openedAs?.id === taskId ? openedAs.habit : !!task?.habit
+  const habit = !!task && habitsOn && wasHabit && !!task.habit && !task.series_id && !task.deleted_at
   useEffect(() => {
     if (habit && taskId) { closePanel(); navigate({ view: 'habits', id: taskId }) }
   }, [habit, taskId])

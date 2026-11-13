@@ -4,7 +4,7 @@
 // Edit opens the lean habit form; everything a habit leaves out (project, labels,
 // reminders, notes) is one step away in Open as a task. Rendered from the device's
 // rows only, offline too.
-import { lazy, Suspense, useMemo } from 'react'
+import { useMemo } from 'react'
 import { graduate, resume } from '../../lib/habitActions'
 import { habitRowsOf, habitStats, isGraduated, keptDays, type HabitStats } from '../../lib/habits'
 import { useHabitsChoice } from '../../lib/habitPrefs'
@@ -17,6 +17,7 @@ import { trashUndoable } from '../../lib/undoActions'
 import { Button, PageBody, PageHeader, Skeleton } from '../../ui'
 import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
+import { HabitHistory } from '../HabitHistory'
 import { ActionMenu, type ActionItem } from '../menus/ActionMenu'
 import { navigate } from '../router'
 import { useToday } from '../useViews'
@@ -26,7 +27,6 @@ import { habitHue } from './habitText'
 import { checkStateOf, type CheckState } from './HabitRow'
 import { checkInWithUndo, pickDay } from './habitUndo'
 
-const HabitHistory = lazy(() => import('../HabitHistory').then((m) => ({ default: m.HabitHistory })))
 
 type Undoable = Promise<{ entry: { id: string } | null; label: string } | null>
 const undo = (p: Undoable) => act(p.then((r) => { if (r?.entry) showUndoToast(r.label, r.entry.id) }))
@@ -117,9 +117,7 @@ export function HabitPage({ id }: { id: string }) {
           )}
           {stats && <Numbers stats={stats} />}
           {stats?.backOnTrack && <p className="text-meta text-hue" data-habit-status>{t('Back on track')}</p>}
-          <Suspense fallback={null}>
-            <HabitHistory series={task} records={rows} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))} />
-          </Suspense>
+          <HabitHistory series={task} records={rows} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))} />
         </div>
       </div>
     </PageBody>
