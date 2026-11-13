@@ -149,6 +149,41 @@ func TestProfileEmailByLink(t *testing.T) {
 	}
 }
 
+// An owner whose address was never verified confirms it with a link to itself,
+// without a change notice; then the same request is refused (confirm-current-email).
+func TestProfileConfirmCurrentEmail(t *testing.T) {
+	e, srv := mailEnv(t, false)
+	e.configureMail(srv)
+	if _, err := e.db.Exec("UPDATE users SET email_verified_at = NULL WHERE email = 'owner@example.com'"); err != nil {
+		t.Fatal(err)
+	}
+	resp, out := e.do("GET", "/api/v1/me/profile", nil)
+	e.mustStatus(resp, 200, out)
+	if out["emailVerified"] != false {
+		t.Fatalf("profile = %v", out)
+	}
+	before := len(srv.Messages())
+	resp, out = e.do("POST", "/api/v1/me/email", map[string]string{"email": "owner@example.com"})
+	e.mustStatus(resp, 200, out)
+	msgs := srv.Messages()[before:]
+	if len(msgs) != 1 || msgs[0].To[0] != "owner@example.com" {
+		t.Fatalf("messages = %+v", msgs)
+	}
+	link := regexp.MustCompile(`https?://\S+/confirm-email/(\S+)`).FindStringSubmatch(mailBody(t, msgs[0]))
+	if link == nil {
+		t.Fatalf("no link in %q", mailBody(t, msgs[0]))
+	}
+	resp, out = e.do("POST", "/api/v1/me/email/confirm", map[string]string{"token": link[1]})
+	e.mustStatus(resp, 200, out)
+	if out["emailVerified"] != true || out["user"].(map[string]any)["email"] != "owner@example.com" {
+		t.Fatalf("confirmed = %v", out)
+	}
+	resp, out = e.do("POST", "/api/v1/me/email", map[string]string{"email": "owner@example.com"})
+	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
+		t.Fatalf("verified same = %d %v", resp.StatusCode, out)
+	}
+}
+
 // avatarPNG encodes a w×h PNG.
 func avatarPNG(t *testing.T, w, h int) []byte {
 	t.Helper()
