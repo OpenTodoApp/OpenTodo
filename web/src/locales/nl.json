@@ -7633,5 +7633,8 @@
   "when a note gets the label {label}": "wanneer een notitie het label {label} krijgt",
   "when a note is created": "wanneer een notitie wordt gemaakt",
   "when a note is edited": "wanneer een notitie wordt bewerkt",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# notitie past nu} other {# notities passen nu}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# notitie past nu} other {# notities passen nu}}",
+  "Note deleted": "Notitie verwijderd",
+  "Note updated": "Notitie bijgewerkt",
+  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan."
 }

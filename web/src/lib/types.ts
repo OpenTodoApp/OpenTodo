@@ -1716,6 +1716,7 @@ export interface ProjectInvitePreview extends InvitationPreview {
 export type WebhookEvent =
   | 'task.created' | 'task.updated' | 'task.completed' | 'task.reopened' | 'task.deleted'
   | 'comment.created' | 'comment.updated' | 'comment.deleted'
+  | 'note.created' | 'note.updated' | 'note.deleted'
   | 'project.created' | 'project.updated' | 'project.archived' | 'project.deleted'
   | 'import.completed' | 'import.undone' | 'rule.fired'
 
