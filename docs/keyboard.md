@@ -367,6 +367,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Ctrl+Alt+1</kbd> / <kbd>Ctrl+Alt+2</kbd> / <kbd>Ctrl+Alt+3</kbd> / <kbd>Ctrl+Alt+0</kbd> | In the notes and comments: heading 1–3 / normal text |
 | <kbd>Ctrl+Shift+8</kbd> / <kbd>Ctrl+Shift+7</kbd> / <kbd>Ctrl+Shift+9</kbd> | In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent |
 | <kbd>Ctrl+Shift+Enter</kbd> / <kbd>⌘+Shift+Enter</kbd> | On a check-list line: in a task's notes: make the check-list line a subtask (Ctrl+Z takes it back) |
+| <kbd>Ctrl+Shift+O</kbd> / <kbd>⌘+Shift+O</kbd> | In a note with three or more headings: in the notes: go to the outline of the headings; ↑ / ↓ move, Home / End jump, Enter goes to the heading, Esc returns to the note |
 | <kbd>/</kbd> | At the start of a line or after a space: in the notes and comments: the command menu (headings, lists, table, quote, code, link, image, date, mention); ↑ / ↓ move, Enter applies, Esc closes |
 | <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | In a table: in a table: next / previous cell; Tab in the last cell adds a row |
 | <kbd>-</kbd> · <kbd>1.</kbd> · <kbd>#</kbd> · <kbd>[</kbd> then <kbd>]</kbd> · <kbd>&gt;</kbd> · <kbd>```</kbd> · <kbd>**x**</kbd> | Typed in the notes: markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes |

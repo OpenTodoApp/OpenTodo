@@ -955,6 +955,23 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .formatting-toggle[aria-pressed="true"] { @apply bg-selected text-strong; }
 .notes-frame[data-formatting] .notes-editor > :first-child,
 .notes-frame[data-formatting] .editor-toolbar { padding-inline-end: 2.25rem; }
+/* A note's outline (note-outline D2): the Outline button beside the Formatting toggle,
+   or a column in the start margin, sticky inside the note's scroller and never a
+   scroller of its own; the room around the note makes space for it. */
+.note-outline-button { @apply absolute end-0 top-0 z-10; }
+.notes-frame[data-formatting] > .note-outline-button { @apply end-8; }
+.notes-frame[data-outline="menu"] .notes-editor > :first-child,
+.notes-frame[data-outline="menu"] .editor-toolbar { padding-inline-end: 2.25rem; }
+.notes-frame[data-outline="menu"][data-formatting] .notes-editor > :first-child,
+.notes-frame[data-outline="menu"][data-formatting] .editor-toolbar { padding-inline-end: 4.5rem; }
+.note-outline { @apply absolute inset-y-0 w-48; inset-inline-end: calc(100% + 1.5rem); }
+.note-outline__list { @apply sticky top-4 space-y-px border-s border-soft; }
+.note-outline__item { @apply flex min-h-7 w-full items-center rounded-e-control py-1 pe-2 text-left text-meta outline-none transition-colors duration-(--duration-ui)
+  hover:bg-hover hover:text-default focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus; }
+.note-outline__item[aria-current="location"] { box-shadow: inset 2px 0 0 var(--ot-accent); }
+.note-column { @apply mx-auto w-full max-w-[40rem]; }
+.note-column:has(.notes-frame[data-outline="column"]) { max-width: 53.5rem; padding-inline-start: 13.5rem; }
+[data-task-notes-block]:has(.notes-frame[data-outline="column"]) { padding-inline-start: 13.5rem; }
 }
 
 /* Surfaces (OpenSpec change surfaces-v2): structure felt through soft fills and

@@ -93,6 +93,9 @@
   "+{n} min": [
     "web/src/app/focus/FocusView.tsx"
   ],
+  "+{n} more": [
+    "web/src/app/editor/NoteOutline.tsx"
+  ],
   ", {n} repeating": [
     "web/src/app/TemplateDialogs.tsx"
   ],
@@ -7970,6 +7973,9 @@
   "In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the notes: go to the outline of the headings; ↑ / ↓ move, Home / End jump, Enter goes to the heading, Esc returns to the note": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In the query of New view: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -12384,7 +12390,11 @@
     "web/src/app/auditFormat.ts"
   ],
   "Outline": [
-    "web/src/app/assistant/ChangeSetReview.tsx"
+    "web/src/app/assistant/ChangeSetReview.tsx",
+    "web/src/app/editor/NoteOutline.tsx"
+  ],
+  "Outline of the headings (3 or more)": [
+    "web/src/lib/richtextEditor.ts"
   ],
   "Outlook was not connected: Microsoft did not complete the sign-in. Try again.": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -19909,6 +19919,9 @@
     "web/src/lib/useFlow.ts",
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Untitled heading": [
+    "web/src/app/editor/NoteOutline.tsx"
+  ],
   "Untitled location": [
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx"
@@ -22113,6 +22126,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "in a comment": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "in a note with three or more headings": [
     "web/src/lib/shortcuts.ts"
   ],
   "in a saved view": [
