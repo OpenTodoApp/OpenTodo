@@ -434,6 +434,10 @@ var Schema = map[string]map[string]Field{
 		// D4): each card shows two lines of its notes as plain text. A setting,
 		// not user text, so not content; missing reads as off.
 		"card_notes": {Kind: kBool, Default: `false`},
+		// Nest subtasks in the List layout (GitHub issue 1108): "nested" shows a
+		// match under its parent when both match, as Today's option does; "" or
+		// any other value is the flat list.
+		"subtasks":   {Kind: kString, Default: `""`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
