@@ -45,7 +45,7 @@ func SpanStart(span bool, start, dueDate string) string {
 // FeedOptions tune the feed.
 type FeedOptions struct {
 	Now time.Time
-	// BaseURL, when set, gives each event a link to its day in the app.
+	// BaseURL, when set, gives each event a link to its task in the app.
 	BaseURL string
 	// Encrypted accounts show the placeholder title and no notes or labels.
 	Encrypted bool
@@ -102,6 +102,21 @@ func WriteEvent(t FeedTask, opts FeedOptions) []byte {
 	return cal.Encode()
 }
 
+// TaskURL is the address of a task's page in the app (GitHub issue 1231): an
+// event links to its task, not to the day.
+func TaskURL(baseURL, taskID string) string {
+	return baseURL + "/task/" + taskID
+}
+
+// EventNotes is the DESCRIPTION of a task's event: its notes, none for an
+// encrypted account or encrypted notes.
+func EventNotes(t FeedTask, encrypted bool) string {
+	if encrypted || e2ee.IsCiphertext(t.Description) {
+		return ""
+	}
+	return t.Description
+}
+
 // EventTitle is the SUMMARY of a task's event: its title, or the neutral
 // placeholder for an encrypted account or an encrypted title.
 func EventTitle(t FeedTask, encrypted bool) string {
@@ -126,8 +141,8 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 	add(ev, "DTSTAMP", stamp)
 	add(ev, "LAST-MODIFIED", stamp)
 	add(ev, "SUMMARY", caldav.EscapeText(EventTitle(t, opts.Encrypted)))
-	if t.Description != "" && !opts.Encrypted && !e2ee.IsCiphertext(t.Description) {
-		add(ev, "DESCRIPTION", caldav.EscapeText(t.Description))
+	if notes := EventNotes(t, opts.Encrypted); notes != "" {
+		add(ev, "DESCRIPTION", caldav.EscapeText(notes))
 	}
 	start, end := eventTimes(t)
 	ev.Props = append(ev.Props, start, end)
@@ -161,7 +176,7 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 		add(ev, "X-OPENTODO-PRIORITY", strconv.Itoa(t.Priority))
 	}
 	if opts.BaseURL != "" {
-		add(ev, "URL", opts.BaseURL+"/day/"+t.Date)
+		add(ev, "URL", TaskURL(opts.BaseURL, t.ID))
 	}
 	return ev
 }
