@@ -167,7 +167,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
 | [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
 | [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
-| [`notes-bulk-actions`](openspec/changes/notes-bulk-actions/) | Select several notes to move, label, pin, trash or turn into tasks at once | |
+| [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |
 | [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
 | [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
