@@ -80,6 +80,8 @@ Phones, Apple, Obsidian and voice.
 | [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
 | [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
+| [`view-project-drops`](openspec/changes/view-project-drops/) | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
+| [`app-links`](openspec/changes/app-links/) | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
 | [`voice-ramble`](openspec/changes/archive/2026-10-31-voice-ramble/) | **Shipped.** Speak a brain dump or drop a photo of notes; review the proposed tasks | [#608](https://github.com/OpenTodoApp/OpenTodo/issues/608) |
@@ -167,7 +169,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
 | [`note-search-operators`](openspec/changes/archive/2026-11-13-note-search-operators/) | **Shipped.** `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
 | [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
-| [`notes-bulk-actions`](openspec/changes/notes-bulk-actions/) | Select several notes to move, label, pin, trash or turn into tasks at once | |
+| [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |
 | [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
 | [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |

@@ -31,7 +31,7 @@ import type { SnippetSegment } from '../../lib/noteSearch'
 import { readJSON, readString, writeJSON, writeString } from '../../lib/deviceStorage'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { keysOf } from '../../lib/shortcuts'
-import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuGroup, MenuItem, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuGroup, MenuItem, MenuSeparator, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
 import type { ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -44,6 +44,7 @@ import { NoteSearchField } from './NoteSearchField'
 import { focusBodyOnOpen, NotePage, NotePanel } from './NoteEditor'
 import { createNoteWithUndo, deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
+import { useNoteBulk } from './NoteBulkActions'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
@@ -312,6 +313,8 @@ export function NotesPage({ id }: { id?: string }) {
   const recent: Row[] = useMemo(() => (groups && grouped ? groups.recent.map((entry) => ({ entry })) : rows), [groups, grouped, rows])
   const recentShown = recent.slice(0, limit)
   const shown = [...pinnedRows, ...recentShown]
+  // Ticking standalone notes the user may write (notes-bulk-actions D1, D2); none in Graph mode.
+  const bulk = useNoteBulk({ rows: shown.map((r) => r.entry), enabled: !graphMode, projects, labels, memberships, favourites: prefs?.favourites })
   // The cursor starts on the first match, else on New note; the arrows in the field move it.
   const at = typed ? Math.min(cursor ?? (shown.length > 0 ? 1 : 0), shown.length) : -1
   useNotesMarks(entries.length > 0, query, rows)
@@ -374,19 +377,15 @@ export function NotesPage({ id }: { id?: string }) {
   const rowsOf = () => [...(list.current?.querySelectorAll<HTMLButtonElement>('[data-note-open]') ?? [])]
   const focusRow = (i: number) => rowsOf()[i]?.focus()
   const onListKey = (e: KeyboardEvent<HTMLUListElement>) => {
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
     const all = rowsOf()
     const at = all.indexOf(document.activeElement as HTMLButtonElement)
     if (at < 0) return
+    // The selection's keys first (notes-bulk-actions D3).
+    if (bulk.onListKey(e, all, at)) return
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
     if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); all[at].click(); return }
-    if (e.key === 'p') {
-      const key = all[at].closest('[data-note-key]')?.getAttribute('data-note-key') ?? ''
-      if (!key.startsWith('note:')) return
-      e.preventDefault()
-      e.stopPropagation()
-      togglePin(key.slice(5))
-      return
-    }
+    const rowKey = all[at].closest('[data-note-key]')?.getAttribute('data-note-key') ?? ''
+    if (e.key === 'p' && rowKey.startsWith('note:')) { e.preventDefault(); e.stopPropagation(); togglePin(rowKey.slice(5)); return }
     const step = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0
     if (!step) return
     e.preventDefault()
@@ -442,14 +441,14 @@ export function NotesPage({ id }: { id?: string }) {
         labels={entry.labels.map((l) => labelById.get(l)).filter((l) => !!l && !l.deleted_at) as NonNullable<ReturnType<typeof labelById.get>>[]}
         updated={entry.updated ? relativeLabel(entry.updated, now, (ms) => dt.formatInstant(ms, 'date')) : ''}
         updatedTitle={entry.updated ? dt.formatInstant(entry.updated, 'datetime') : undefined}
-        onOpen={() => openNote(entry)}
+        onOpen={() => openNote(entry)} tick={bulk.tickOf(entry.key)}
         menu={standalone ? <NoteMenu pinned={pinned} onPin={() => togglePin(entry.id)} pinKey={keysOf('notes.pin')}
           onTurnIntoTask={editable ? () => void turnNoteIntoTask(entry.id) : undefined} onDelete={editable ? () => void deleteNote(entry.id) : undefined} /> : undefined} />
     )
   }
 
   // The header's menu: Sort in List mode, the graph's display choices (D2) in Graph mode, which ignores the order.
-  const overflow = !graphMode ? <NotesSortItems sort={sort} onSort={changeSort} /> : (
+  const overflow = !graphMode ? <>{bulk.selectItem}<MenuSeparator /><NotesSortItems sort={sort} onSort={changeSort} /></> : (
     <>
       <MenuItem label={t('Notes without links')} checked={show.orphans} onSelect={() => graphShow.set({ ...show, orphans: !show.orphans })} data-notes-graph-show="orphans" />
       <MenuItem label={t('Tasks and projects without notes')} checked={show.secondary} onSelect={() => graphShow.set({ ...show, secondary: !show.secondary })} data-notes-graph-show="secondary" />
@@ -487,6 +486,7 @@ export function NotesPage({ id }: { id?: string }) {
           )}
         </>
       )}
+      {!graphMode && bulk.bar}
     </PageBody>
   )
 }

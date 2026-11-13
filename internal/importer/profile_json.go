@@ -513,10 +513,15 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 		}
 		out.Rows = append(out.Rows, row)
 	}
-	comments := map[string]bool{}
+	// A task's comments join the end of its notes, oldest first, so nothing of
+	// a Todoist account is lost (todoist-api-import D3); deleted ones are skipped.
+	comments := map[string][]string{}
 	for _, n := range asList(firstVal(top, "notes", "comments")) {
-		if o := asObj(n); o != nil {
-			comments[o.str("item_id", "task_id")] = true
+		if o := asObj(n); o != nil && !o.boolean("is_deleted") {
+			if text := strings.TrimSpace(o.str("content", "text")); text != "" {
+				id := o.str("item_id", "task_id")
+				comments[id] = append(comments[id], text)
+			}
 		}
 	}
 	reminders := map[string]any{}
@@ -576,8 +581,8 @@ func (itemsProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			row.CompletedAt = ts
 		}
 		row.CreatedAt = o.timestamp(&row, "added_at", loc, "added_at", "date_added", "created_at")
-		if comments[id] {
-			row.warn("comments dropped (not supported)")
+		if c := comments[id]; len(c) > 0 {
+			row.Description = strings.TrimSpace(row.Description + "\n\n**Comments**\n\n" + strings.Join(c, "\n\n"))
 		}
 		o.commonWarnings(&row)
 		out.Rows = append(out.Rows, row)

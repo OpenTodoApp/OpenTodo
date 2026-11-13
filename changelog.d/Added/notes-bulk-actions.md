@@ -1,0 +1,1 @@
+- **Act on several notes.** Tick standalone notes on the Notes page with the task lists' keys (`x`, `Shift+↓`, `Ctrl+A`, `Ctrl`/`Shift`+click) or **Select notes**, then **Move to project** (`m`, reviewed when notes would move into a shared project), **Labels** (`Shift+L`), **Pin** (`p`), **Turn into tasks** or **Move to Trash**, each saved as one change with one Undo.
