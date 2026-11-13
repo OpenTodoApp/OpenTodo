@@ -1085,3 +1085,22 @@ test('every job after the release runs even when a job before it was skipped', (
     assert.match(block, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && /m, `${id}: explicit condition`)
   }
 })
+
+// The service worker answers a navigation with the app shell unless the address is on
+// its denylist. An address the server answers itself with a redirect or a page of its
+// own (the OAuth authorize step, the OpenTodo app's sign-in, a task page) must be on it:
+// otherwise the browser shows the web app and the flow stops, but only in a browser
+// that has opened the web app before, which no first test run is.
+test("the service worker lets the server's own pages through", () => {
+  const line = read('web/src/sw.ts').split('\n').find((l) => l.startsWith('const NAVIGATION_DENYLIST = '))
+  assert.ok(line, 'NAVIGATION_DENYLIST in web/src/sw.ts')
+  const denied = [...line.matchAll(/\/((?:\\\/|[^/])+)\/(?=[,\]])/g)].map((m) => new RegExp(m[1]))
+  const reachesServer = (p) => denied.some((re) => re.test(p))
+  // Every browser navigation the server registers outside /api/ and the app's own routes.
+  for (const p of ['/app/sign-in', '/oauth/authorize', '/oauth/token', '/t/abc', '/.well-known/oauth-authorization-server', '/mcp', '/healthz', '/api/v1/health']) {
+    assert.ok(reachesServer(p), `${p} must reach the server, not the app shell`)
+  }
+  for (const p of ['/', '/inbox', '/app', '/app/sign-in-help', '/today']) assert.ok(!reachesServer(p), `${p} is the web app's`)
+  // The address the server registers for the app's sign-in is the one denied here.
+  assert.match(read('internal/httpapi/app_sign_in.go'), /appSignInPath\s+= "\/app\/sign-in"/)
+})
