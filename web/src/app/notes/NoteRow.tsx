@@ -72,6 +72,7 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
           : <span className="flex h-5 w-5 items-center justify-center self-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>}
         <span className="flex min-w-0 items-baseline gap-2" data-note-line>
           <span className={`user-text min-w-0 truncate text-body ${snippet?.length ? 'max-w-[60%] shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
+          {entry.template && <span className="shrink-0 text-meta text-faint" data-note-template>{t('Template')}</span>}
           {entry.marker && <span className="shrink-0 text-meta text-faint" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
           {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted" data-note-snippet><Snippet segments={snippet} /></span> : null}
         </span>
@@ -95,8 +96,11 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
  * personal, so a viewer of a shared project has it too), then Turn into task and
  * Delete for a note the user may change.
  */
-export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, pinKey, label = t('Note actions') }: {
+export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, template, onTemplate, pinKey, label = t('Note actions') }: {
   pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
+  /** Whether the note is a template, and Use as template / Stop using as template (note-templates); absent for a viewer. */
+  template?: boolean
+  onTemplate?: () => void
   /** The manual routines that run on a note (notes-in-routines): Run routine… lists them. */
   routines?: readonly { id: string; name: string }[]
   onRunRoutine?: (id: string) => void
@@ -113,6 +117,7 @@ export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelet
       triggerProps={{ 'data-note-menu': '' }}>
       <MenuItem label={pinned ? t('Unpin') : t('Pin')} icon={pinned ? 'pin-off' : 'pin'} shortcut={pinKey} onSelect={onPin} data-note-pin={pinned ? 'unpin' : 'pin'} />
       {onConnections && <MenuItem label={t('Show connections')} icon="waypoints" onSelect={onConnections} data-show-connections />}
+      {onTemplate && <MenuItem label={template ? t('Stop using as template') : t('Use as template')} icon="copy" onSelect={onTemplate} data-note-template-toggle={template ? 'off' : 'on'} />}
       {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
       {onRunRoutine && !!routines?.length && (
         <MenuGroup label={t('Run routine…')}>

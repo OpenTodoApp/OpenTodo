@@ -241,6 +241,21 @@ cd web && npx vitest run src/lib/rules/starters   # the device's type check, in 
 
 Commit the regenerated files with the starter. To propose one, follow "Propose a template" with `templates/routines/<slug>/routine.yaml`.
 
+## Note templates
+
+A note template is a skeleton a new note starts from (OpenSpec `note-templates`). It lives in `templates/notes/<slug>/note.yaml`; the app lists it under **From template…** on the Notes page, after the user's own templates, and never writes it to an account until it is used.
+
+```yaml
+title: "Book notes {{date}}"            # at most 60 characters, unique among note templates
+summary: "What a book says, what you keep from it and what to do next."   # one sentence, at most 160
+icon: book-open                          # an icon from the app's catalogue
+author: Your Name
+reviewed: 2026-11-13
+body: "## The book\n\n## Quotes\n\n## What I keep\n\n## To do\n- [ ] "   # Markdown, at most 8 KB
+```
+
+The title and body may use `{{date}}`, `{{weekday}}`, `{{time}}` and `{{title}}`, filled when the note is made; any other `{{name}}` fails the check. A translation file `<language>.yaml` holds only `title`, `summary` and `body`, and keeps every placeholder the English text uses. No e-mail addresses or phone numbers, and links only with https. `make templates-check` names the template, the file and the path of every problem; `make templates` compiles the note templates into the library under `notes`.
+
 ## Licence
 
 Templates are content, not code: everything in this folder is licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/), like the website's content. By opening a pull request that adds or changes a template you confirm that you wrote it, or may license it under CC BY 4.0, and that `author` names you or the person who wrote it.

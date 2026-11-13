@@ -184,7 +184,18 @@ describe('changed: ranges and field prefixes', () => {
 
   it('title: and text: are offered like the keys and stay words', () => {
     expect(typingOf('ti')).toEqual({ kind: 'key', words: ['title:'], raw: 'ti' })
-    expect(typingOf('te')).toEqual({ kind: 'key', words: ['text:'], raw: 'te' })
+    // te also offers the template token (note-templates).
+    expect(typingOf('te')).toEqual({ kind: 'key', words: ['template', 'text:'], raw: 'te' })
     expect(commitTokens('title:wifi ', W)).toEqual({ text: 'title:wifi ', tokens: [] })
+  })
+})
+
+describe('the template token (note-templates)', () => {
+  it('"Only templates": keeps the templates and combines with the other keys', () => {
+    const list = [...ENTRIES, e('note:meet', { template: true, labels: ['errand'] }), e('note:retro', { template: true })]
+    expect(tok('template')).toEqual({ key: 'template' })
+    expect(filterByTokens(list, [tok('template')], ctx())!.map((x) => x.key)).toEqual(['note:meet', 'note:retro'])
+    expect(filterByTokens(list, [tok('template'), tok('@errand')], ctx())!.map((x) => x.key)).toEqual(['note:meet'])
+    expect(parseStoredTokens([{ key: 'template' }])).toEqual([{ key: 'template' }])
   })
 })

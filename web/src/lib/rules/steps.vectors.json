@@ -756,6 +756,25 @@
       "content": "b"
     },
     {
+      "name": "a note from a template outputs a note (note-templates)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "note_from_template", "in": {"template": {"literal": "builtin:meeting"}, "date": {"literal": "today"}}},
+        {"id": "b", "kind": "append_to_note", "in": {"of": {"ref": "a"}, "text": {"literal": "Agenda"}}}
+      ],
+      "types": {"a": "note", "b": "none"},
+      "content": "a"
+    },
+    {
+      "name": "a note from a template: Tasks are not a title",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"condition": {"literal": {}}}},
+        {"id": "b", "kind": "note_from_template", "in": {"template": {"literal": "t1"}, "title": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "title", "code": "type_mismatch", "message": "note_from_template: title expects Text, got Tasks"}
+    },
+    {
       "name": "find notes: labels need any, all or none",
       "trigger": "date",
       "steps": [{"id": "a", "kind": "find_notes", "in": {"labels": {"literal": {}}}}],

@@ -1,0 +1,3 @@
+title: "{{weekday}} {{date}}"
+summary: "Eén pagina voor de dag: het plan, aantekeningen zoals ze komen en hoe het ging."
+body: "## Plan\n- [ ] \n\n## Aantekeningen\n\n## Hoe het ging\n"
