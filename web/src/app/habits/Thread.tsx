@@ -16,7 +16,7 @@ import { t } from '../../lib/i18n'
 import { DayMenu } from './DayMenu'
 import { threadDayLabel } from './habitText'
 
-const STEP = 20
+const STEP = 24
 const R = 5
 
 type Link = 'solid' | 'dotted' | 'thin' | null
@@ -89,7 +89,7 @@ export function Thread({ days, today, onPick, label }: {
           const editable = !!onPick && editableDay(d, today)
           return editable ? (
             <DayMenu key={d.date} cell={d} label={name} onPick={(c) => onPick!(d.date, c)}
-              triggerClassName="h-5 w-5 rounded-chip focus-visible:outline-2 focus-visible:outline-focus" />
+              triggerClassName="h-6 w-6 rounded-chip focus-visible:outline-2 focus-visible:outline-focus" />
           ) : (
             <span key={d.date} role="img" aria-label={name} data-day={d.date} data-state={d.state} aria-current={d.today ? 'date' : undefined} style={{ width: STEP }} />
           )
