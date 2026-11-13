@@ -14,12 +14,21 @@ appId: ${APP_ID}
 - takeScreenshot: today
 - tapOn:
     id: tab-inbox
+- assertVisible:
+    id: inbox-list
 - tapOn:
     id: add
+- assertVisible:
+    id: capture-title
 - inputText: An idea for later
 - pressKey: Enter
 - runFlow: steps/close-sheet.yaml
 - assertVisible: An idea for later
+# Captured from the Inbox, it has no date (the same title from Today would be due today).
+- runScript:
+    file: scripts/assert-undated.js
+    env:
+      TITLE: An idea for later
 - takeScreenshot: inbox
 - tapOn:
     id: tab-upcoming

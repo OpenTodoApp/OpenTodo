@@ -2,46 +2,29 @@
 // Upcoming rule over the phone's database, with one row of chrome under the title: the
 // week strip, whose days jump to their section.
 import { useRef } from 'react'
-import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View, type SectionList } from 'react-native'
 import { addDaysISO, formatDateHeading, formatDateParts } from '@shared/dates'
 import type { Task } from '@shared/types'
 import { useLive } from '../data/useLive'
 import { useToday } from '../data/useToday'
-import { upcomingDays, type UpcomingDay } from '../storage/lists'
+import { upcomingDays } from '../storage/lists'
 import { useColors } from '../theme'
-import { listStyles, TaskRow, useComplete, useSyncNote } from '../ui/TaskList'
-
-type Section = { date: string; data: Task[] }
+import TaskSections, { type TaskSection } from '../ui/TaskSections'
 
 export default function UpcomingScreen() {
-  const c = useColors()
   const today = useToday()
   const days = useLive(() => upcomingDays(today), ['tasks', 'projects'], [today])
-  const complete = useComplete()
-  const note = useSyncNote()
-  const list = useRef<SectionList<Task, Section>>(null)
-  const sections: Section[] = (days ?? []).map((d: UpcomingDay) => ({ date: d.date, data: d.tasks }))
+  const list = useRef<SectionList<Task, TaskSection>>(null)
+  const sections = days?.map((d): TaskSection => ({ key: d.date, title: formatDateHeading(d.date, today), data: d.tasks }))
   const jump = (date: string) => {
-    const index = sections.findIndex((s) => s.date >= date)
+    const index = (sections ?? []).findIndex((s) => s.key >= date)
     if (index >= 0) list.current?.scrollToLocation({ sectionIndex: index, itemIndex: 0, viewOffset: 0 })
   }
   return (
-    <SectionList
-      contentInsetAdjustmentBehavior="automatic"
-      ItemSeparatorComponent={() => <View style={[listStyles.separator, { backgroundColor: c.field }]} />}
-      keyExtractor={(task) => task.id}
-      ListEmptyComponent={days === undefined ? <ActivityIndicator color={c.muted} style={listStyles.waiting} /> : undefined}
-      ListFooterComponent={note ? <Text accessibilityLiveRegion="polite" style={[listStyles.note, { color: c.muted }]} testID="sync-note">{note}</Text> : undefined}
-      ListHeaderComponent={<WeekStrip busy={new Set(sections.map((s) => s.date))} onDay={jump} today={today} />}
-      onScrollToIndexFailed={() => undefined}
-      ref={list}
-      renderItem={({ item }) => <TaskRow c={c} onComplete={complete} task={item} />}
-      renderSectionHeader={({ section }) => (
-        <Text accessibilityRole="header" style={[styles.day, { backgroundColor: c.bg, color: c.muted }]}>{formatDateHeading(section.date, today)}</Text>
-      )}
+    <TaskSections
+      header={<WeekStrip busy={new Set((sections ?? []).map((s) => s.key))} onDay={jump} today={today} />}
+      listRef={list}
       sections={sections}
-      stickySectionHeadersEnabled
-      style={{ backgroundColor: c.bg }}
       testID="upcoming"
     />
   )
@@ -75,5 +58,4 @@ const styles = StyleSheet.create({
   stripDay: { alignItems: 'center', flex: 1, gap: 2, minHeight: 44, justifyContent: 'center' },
   weekday: { fontSize: 12 },
   number: { fontSize: 17 },
-  day: { fontSize: 13, fontWeight: '600', paddingHorizontal: 20, paddingBottom: 6, paddingTop: 16, textTransform: 'uppercase' },
 })

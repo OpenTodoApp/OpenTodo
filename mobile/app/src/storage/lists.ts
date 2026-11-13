@@ -14,8 +14,9 @@
 // - The parents of the candidates, up the tree: the Inbox rule and the workspace of a
 //   subtask look at them.
 import { addDaysISO } from '@shared/dates'
-import { groupUpcoming, todayList, upcomingList, withoutArchived, type TodayAssigneeFilter } from '@shared/dayLists'
+import { groupToday, groupUpcoming, todayList, upcomingList, withoutArchived, type TodayAssigneeFilter, type TodayGroups } from '@shared/dayLists'
 import { db } from '@shared/db'
+import { blockedMap, blockersOf } from '@shared/dependencies'
 import { inboxTasks } from '@shared/inbox'
 import { deletedProjectIds, isTaskVisible } from '@shared/trash'
 import type { Project, Task } from '@shared/types'
@@ -60,6 +61,22 @@ export async function todayTasks(today: string, hide?: TodayAssigneeFilter | nul
   ) as unknown as Task[]
   const { list, projects } = await visible(candidates)
   return todayList(withoutArchived(list, projects), today, hide)
+}
+
+/**
+ * Today in its groups (the shared groupToday): Earlier, the day, This Evening, and the
+ * tasks that wait for another one. The blockers are read by id, so a task blocked by one
+ * that is not in Today is still known as blocked, and pass the same visibility rules as
+ * the lists.
+ */
+export async function todayGroups(today: string, hide?: TodayAssigneeFilter | null): Promise<TodayGroups> {
+  const list = await todayTasks(today, hide)
+  const have = new Set(list.map((task) => task.id))
+  const missing = [...new Set(list.flatMap(blockersOf))].filter((id) => !have.has(id))
+  const found = missing.length ? (await db.tasks.bulkGet(missing)).filter((task): task is Task => !!task) : []
+  // A blocker the lists do not show (a deleted or archived project, another workspace) blocks nothing, as on the web.
+  const shown = await visible(found)
+  return groupToday(list, today, blockedMap([...list, ...withoutArchived(shown.list, shown.projects)]))
 }
 
 /** The Inbox: the shared inboxTasks over the open tasks without a project. */

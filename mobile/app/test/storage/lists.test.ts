@@ -9,7 +9,8 @@
 // candidates through the phone's indexes, not by scanning the table.
 import { DatabaseSync } from 'node:sqlite'
 import { refreshViewerZone } from '@shared/dates'
-import { groupUpcoming, todayList, upcomingList, withoutArchived } from '@shared/dayLists'
+import { groupToday, groupUpcoming, todayList, upcomingList, withoutArchived } from '@shared/dayLists'
+import { blockedMap } from '@shared/dependencies'
 import { db, useDatabase as openDatabaseNamed } from '@shared/db'
 import { inboxTasks } from '@shared/inbox'
 import { resetModuleState } from '@shared/moduleState'
@@ -18,7 +19,7 @@ import { visibleTaskSets } from '@shared/trash'
 import type { Project, Task } from '@shared/types'
 import { CURRENT_WORKSPACE_KEY } from '@shared/workspaces'
 import { sqliteDatabase } from '../../src/storage/adapter'
-import { inboxList, todayTasks, upcomingDays } from '../../src/storage/lists'
+import { inboxList, todayGroups, todayTasks, upcomingDays } from '../../src/storage/lists'
 import { nodeSqlite } from './nodeSqlite'
 
 const TODAY = '2026-11-10'
@@ -59,6 +60,8 @@ function account(seed: number) {
       sector: r() < 0.05 ? '2026-W46' : undefined,
       completed_at: r() < 0.25 ? 100 + i : null, deleted_at: r() < 0.05 ? 1 : null,
       assignee_id: null, section_id: null,
+      // This Evening, and a task that waits for another one (which may be anywhere in the account).
+      evening: r() < 0.1, blocked_by: i > 20 && r() < 0.1 ? [`t${Math.floor(r() * i)}`] : undefined,
     } as Partial<Task>)
   }
   return { projects, tasks }
@@ -79,7 +82,8 @@ async function webLists() {
   const [{ here }, projects] = await Promise.all([visibleTaskSets(), db.projects.toArray()])
   const all = withoutArchived(here, projects)
   const upcoming = groupUpcoming(upcomingList(all, TODAY), TODAY).filter((d) => d.date > TODAY && d.date <= day(14))
-  return { today: todayList(all, TODAY), inbox: inboxTasks(all, here), upcoming }
+  const today = todayList(all, TODAY)
+  return { today, inbox: inboxTasks(all, here), upcoming, groups: groupToday(today, TODAY, blockedMap(all)) }
 }
 
 const ids = (list: Task[]) => list.map((t) => t.id)
@@ -95,6 +99,12 @@ describe('Today and Inbox from the index', () => {
     expect(want.inbox.length).toBeGreaterThan(50)
     expect(ids(await todayTasks(TODAY))).toEqual(ids(want.today))
     expect(ids(await inboxList())).toEqual(ids(want.inbox))
+    // Today's groups: what was due earlier, the day, the evening and the blocked tasks.
+    const groups = await todayGroups(TODAY)
+    expect(want.groups.overdue.length).toBeGreaterThan(10)
+    expect(want.groups.evening.length).toBeGreaterThan(0)
+    expect(want.groups.blocked.length).toBeGreaterThan(0)
+    for (const key of ['overdue', 'day', 'evening', 'blocked'] as const) expect(ids(groups[key])).toEqual(ids(want.groups[key]))
     // Upcoming: the same days, each with the same tasks in the same order.
     const upcoming = await upcomingDays(TODAY)
     expect(want.upcoming.flatMap((d) => d.tasks).length).toBeGreaterThan(20)

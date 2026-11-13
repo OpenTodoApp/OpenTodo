@@ -1,11 +1,18 @@
-# Closes the sheet on top: the back gesture on Android, a swipe down on iOS.
+# Closes the sheet on top: the keyboard first, then the back gesture on Android or a
+# swipe down on iOS.
 appId: ${APP_ID}
 ---
+- hideKeyboard
 - runFlow:
     when:
       platform: Android
     commands:
-      - back
+      - runFlow:
+          when:
+            visible:
+              id: capture-title
+          commands:
+            - back
 - runFlow:
     when:
       platform: iOS
@@ -13,3 +20,8 @@ appId: ${APP_ID}
       - swipe:
           start: 50%, 30%
           end: 50%, 95%
+- assertNotVisible:
+    id: capture-title
+# The sheet slides away: wait, or the next tap lands on it.
+- waitForAnimationToEnd:
+    timeout: 3000

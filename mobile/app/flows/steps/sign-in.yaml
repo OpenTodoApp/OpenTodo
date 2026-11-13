@@ -29,7 +29,8 @@ appId: ${APP_ID}
       - inputText: ${ACCOUNT_EMAIL}
       - tapOn: Password
       - inputText: ${ACCOUNT_PASSWORD}
-      - tapOn: Sign in
+      # Return submits the form; the keyboard may cover the button.
+      - pressKey: Enter
       # iOS offers to keep the password.
       - runFlow:
           when:
