@@ -20,4 +20,4 @@ CalDAV serves tasks as to-dos (VTODO). Apple's Calendar and most calendar apps p
 
 ## Impact
 
-`internal/store/migrations` (a column on app passwords, `show_as`), `internal/httpapi/davroutes` (component set, reports and GET serve VEVENTs in event mode; PUT of a VEVENT over a served event maps with `calsync.EventOps`), `internal/calfeed` (`WriteEvent` reused), Settings → CalDAV app password dialog, docs (`docs/caldav.md`). No new route, no environment variable.
+`internal/store/migrations` (the marker table `app_password_events`), `internal/httpapi/davroutes` (component set, reports and GET serve VEVENTs in event mode; PUT of a VEVENT over a served event changes only the title, notes and timing), `internal/calfeed` (`WriteEvent` reused), Settings → CalDAV app password dialog, docs (`docs/caldav.md`). No new route, no environment variable.

@@ -52,6 +52,8 @@ func (s *Server) handleCreateAppPassword(w http.ResponseWriter, r *http.Request)
 	var in struct {
 		Name  string           `json:"name"`
 		Scope *syncscope.Scope `json:"scope"`
+		// Events shows the calendars as events, not to-dos (caldav-events).
+		Events bool `json:"events"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -66,7 +68,7 @@ func (s *Server) handleCreateAppPassword(w http.ResponseWriter, r *http.Request)
 	if s.refuseIfEncrypted(w, r, "CalDAV is not available for accounts with end-to-end encryption") {
 		return
 	}
-	p, plain, err := s.auth.CreateScopedAppPassword(r.Context(), userFrom(r.Context()).ID, in.Name, scope)
+	p, plain, err := s.auth.CreateAppPasswordAs(r.Context(), userFrom(r.Context()).ID, in.Name, scope, in.Events)
 	if err != nil {
 		s.internal(w, err)
 		return

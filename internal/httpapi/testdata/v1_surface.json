@@ -4007,6 +4007,7 @@
       "response": {
         "appPasswords": "array",
         "appPasswords[].createdAt": "number",
+        "appPasswords[].events": "boolean",
         "appPasswords[].id": "string",
         "appPasswords[].lastUsedAt": "number|null",
         "appPasswords[].name": "string",
@@ -6919,6 +6920,7 @@
       "response": {
         "appPassword": "object|null",
         "appPassword.createdAt": "number",
+        "appPassword.events": "boolean",
         "appPassword.id": "string",
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
@@ -7742,6 +7744,7 @@
     "POST /api/v1/app-passwords": {
       "policy": "signed-in.credential.recent",
       "request": {
+        "events": "boolean",
         "name": "string",
         "scope": "object|null?",
         "scope.inboxes": "array",
@@ -7752,6 +7755,7 @@
       "response": {
         "appPassword": "object|null",
         "appPassword.createdAt": "number",
+        "appPassword.events": "boolean",
         "appPassword.id": "string",
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
