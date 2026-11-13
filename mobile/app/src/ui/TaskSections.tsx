@@ -3,11 +3,11 @@
 // under the rows. A section without a title has no heading. A task completed a moment
 // ago stays in its place until its grace period ends (ui/RowActions).
 import { useNavigation, type NavigationProp } from '@react-navigation/native'
-import { useRef, type ReactElement, type Ref } from 'react'
-import { ActivityIndicator, SectionList, StyleSheet, Text, View } from 'react-native'
+import { useCallback, useRef, useState, type ReactElement, type Ref } from 'react'
+import { ActivityIndicator, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native'
 import { formatClock } from '@shared/dates'
 import { t } from '@shared/i18n'
-import { useSyncStatus } from '@shared/sync'
+import { syncNow, useSyncStatus } from '@shared/sync'
 import type { Task } from '@shared/types'
 import { useColors } from '../theme'
 import { useRowActions, withLingering } from './RowActions'
@@ -40,6 +40,12 @@ export default function TaskSections({ sections, header, listRef, testID }: Prop
   const previous = useRef<TaskSection[]>([])
   const shown = sections && withLingering(sections, previous.current, actions.lingering)
   if (shown) previous.current = shown
+  // Pull to sync (D3): the system's refresh control, shown until the exchange ends.
+  const [pulling, setPulling] = useState(false)
+  const pull = useCallback(() => {
+    setPulling(true)
+    void syncNow().catch(() => undefined).finally(() => setPulling(false))
+  }, [])
   return (
     <SectionList
       contentInsetAdjustmentBehavior="automatic"
@@ -50,6 +56,7 @@ export default function TaskSections({ sections, header, listRef, testID }: Prop
       ListHeaderComponent={header}
       onScrollToIndexFailed={() => undefined}
       ref={listRef}
+      refreshControl={<RefreshControl onRefresh={pull} refreshing={pulling} tintColor={c.muted} />}
       renderItem={({ item }) => (
         <TaskRow
           c={c}

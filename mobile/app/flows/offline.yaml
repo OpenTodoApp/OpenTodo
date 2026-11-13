@@ -1,0 +1,39 @@
+# Offline (native-app-everyday 2.4): without a network the app keeps working, a task
+# completed there is completed, the list says it is offline, and the change reaches the
+# server when the network is back. Android only: Maestro cannot take the iOS simulator
+# offline.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow: steps/sign-in.yaml
+      - runScript:
+          file: scripts/create-task.js
+          env:
+            TITLE: Water the plants
+      - extendedWaitUntil:
+          visible: Water the plants
+          timeout: 20000
+      - setAirplaneMode: enabled
+      - tapOn:
+          id: complete-Water the plants
+      - extendedWaitUntil:
+          notVisible: Water the plants
+          timeout: 15000
+      - extendedWaitUntil:
+          visible:
+            id: sync-note
+          timeout: 30000
+      - takeScreenshot: offline
+      - setAirplaneMode: disabled
+      # Pull to sync, then the server has the completion.
+      - swipe:
+          start: 50%, 30%
+          end: 50%, 70%
+      - runScript: scripts/assert-completed.js
+      - extendedWaitUntil:
+          notVisible:
+            id: sync-note
+          timeout: 30000
