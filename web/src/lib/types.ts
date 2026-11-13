@@ -2477,6 +2477,8 @@ export interface PublicLink {
   projectId: string
   rights: 'view' | 'tick'
   name: string | null
+  /** A list, or a board with a column per section (public-link-board); absent from older servers: list. */
+  layout?: 'list' | 'board'
   createdBy: string
   createdByName?: string
   createdAt: number
@@ -2562,6 +2564,8 @@ export interface PublicList {
   projectName: string
   projectColor: string
   rights: 'view' | 'tick'
+  /** Absent from older servers: list (public-link-board). */
+  layout?: 'list' | 'board'
   sections: { id: string; name: string; position: number }[]
   tasks: { id: string; title: string; due: Due | null; priority: Priority; section_id: string | null; parent_id: string | null; position: number; completed_at: number | null }[]
   serverTime: number
