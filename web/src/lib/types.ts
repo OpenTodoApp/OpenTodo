@@ -1186,6 +1186,8 @@ export interface Profile {
   emailManagedBy?: string
   /** Whether an email change waits for a link (otherwise it applies at once). */
   emailByLink: boolean
+  /** Whether the address was confirmed by a link; absent from older servers (confirm-current-email). */
+  emailVerified?: boolean
 }
 
 /**

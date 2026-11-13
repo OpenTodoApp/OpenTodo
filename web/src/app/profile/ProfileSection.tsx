@@ -94,6 +94,10 @@ export function ProfileSection({ user }: { user: User }) {
   const cancelPending = async () => {
     try { update(await api.cancelEmailChange()) } catch (err) { setError(message(err)) }
   }
+  // An unverified address gets the change link sent to itself (confirm-current-email).
+  const confirmCurrent = async () => {
+    try { update(await api.changeEmail(me.email)) } catch (err) { setError(message(err)) }
+  }
   return (
     <SettingsSection {...cardCopy('profile')} testId="profile-card">
       {!online && <Notice tone="info">{noticeCopy('profile', 'offline')}</Notice>}
@@ -108,6 +112,11 @@ export function ProfileSection({ user }: { user: User }) {
       <SettingRow {...rowCopy('profile', 'email', { variant: emailVariant, values: { provider: managed ?? '' } })} id="profile-email"
         status={<span className="user-text" data-profile-value="email">{me.email}</span>}
         control={managed ? undefined : <Button variant="secondary" size="sm" disabled={!online} onClick={() => setEditing('email')} data-profile-edit="email">{t('Change email')}</Button>} />
+      {!managed && profile.emailByLink && profile.emailVerified === false && !profile.pendingEmail && (
+        <Notice tone="info" action={<Button variant="secondary" size="sm" disabled={!online} onClick={() => void confirmCurrent()} data-profile-confirm-email>{t('Send a confirmation link')}</Button>}>
+          <span data-profile-unconfirmed>{noticeCopy('profile', 'unconfirmed')}</span>
+        </Notice>
+      )}
       {profile.pendingEmail && (
         <Notice tone="info" action={<Button variant="ghost" size="sm" disabled={!online} onClick={() => void cancelPending()} data-profile-cancel-email>{t('Cancel change')}</Button>}>
           <span data-profile-pending>{noticeCopy('profile', 'pending', { values: { email: profile.pendingEmail } })}</span>

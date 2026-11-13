@@ -158,3 +158,31 @@ func TestAvatarVersion(t *testing.T) {
 		t.Fatalf("avatar events = %d", n)
 	}
 }
+
+// An unverified address can be confirmed with a link to itself; a verified one
+// is refused as before (confirm-current-email, GitHub issue 1194).
+func TestConfirmCurrentEmail(t *testing.T) {
+	ctx := context.Background()
+	s, db := newService(t, false)
+	owner := mustOwner(t, s)
+	if _, err := db.Exec("UPDATE users SET email_verified_at = NULL WHERE id = ?", owner.ID); err != nil {
+		t.Fatal(err)
+	}
+	if p, err := s.Profile(ctx, owner); err != nil || p.EmailVerified {
+		t.Fatalf("profile before = %+v, %v", p, err)
+	}
+	secret, email, err := s.RequestEmailChange(ctx, owner, " "+strings.ToUpper(owner.Email))
+	if err != nil || email != owner.Email {
+		t.Fatalf("request = %q, %v", email, err)
+	}
+	u, err := s.ConfirmEmailChange(ctx, owner, secret)
+	if err != nil || u.Email != owner.Email {
+		t.Fatalf("confirm = %+v, %v", u, err)
+	}
+	if p, err := s.Profile(ctx, u); err != nil || !p.EmailVerified || p.PendingEmail != "" {
+		t.Fatalf("profile after = %+v, %v", p, err)
+	}
+	if _, _, err := s.RequestEmailChange(ctx, u, u.Email); !errors.Is(err, ErrSameEmail) {
+		t.Fatalf("verified same = %v", err)
+	}
+}

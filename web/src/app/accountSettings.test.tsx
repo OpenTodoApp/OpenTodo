@@ -112,6 +112,30 @@ describe('ProfileSection', () => {
     await r.unmount()
   })
 
+  it('Email: an unconfirmed address offers a confirmation link to itself (confirm-current-email)', async () => {
+    calls.profile.mockResolvedValue(prof({ emailVerified: false }))
+    calls.changeEmail.mockResolvedValueOnce(prof({ emailVerified: false, pendingEmail: 'raffa@example.com' }))
+    const r = await render(<ProfileSection user={me} />)
+    await waitFor(() => !!document.querySelector('[data-profile-confirm-email]'), 'the confirm action')
+    expect(document.querySelector('[data-profile-unconfirmed]')?.textContent).toBe('This address is not confirmed yet.')
+    await click(document.querySelector('[data-profile-confirm-email]')!)
+    await waitFor(() => !!document.querySelector('[data-profile-pending]'), 'the link was sent')
+    expect(calls.changeEmail).toHaveBeenCalledWith('raffa@example.com')
+    expect(document.querySelector('[data-profile-confirm-email]')).toBeNull()
+    await r.unmount()
+  })
+
+  it('Email: a confirmed address, or one from an older server, shows no confirm action', async () => {
+    for (const over of [{ emailVerified: true }, {}, { emailVerified: false, emailByLink: false }]) {
+      calls.profile.mockResolvedValue(prof(over))
+      const r = await render(<ProfileSection user={me} />)
+      await waitFor(() => calls.profile.mock.calls.length > 0 && !!edit('email'), 'the profile loaded')
+      expect(document.querySelector('[data-profile-confirm-email]')).toBeNull()
+      await r.unmount()
+      localStorage.clear()
+    }
+  })
+
   it('Email: pending shows the address waiting and can be cancelled; a refusal stays in the dialog', async () => {
     calls.profile.mockResolvedValue(prof())
     calls.changeEmail.mockRejectedValueOnce(new ApiError(409, 'email_taken', 'another account uses this email'))
