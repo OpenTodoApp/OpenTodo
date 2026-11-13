@@ -77,6 +77,8 @@ export class RunState {
   readonly aiTexts: string[] = []
   /** What the Ask AI steps showed, at most four (assistant-routine-blocks D1). */
   readonly blocks: RunBlock[] = []
+  /** The link to the note each Get note text step read last, by step id (note-checklist-tasks D4). */
+  readonly noteLinks = new Map<string, string>()
   readonly test: boolean
   readonly start: number
   deadline: number

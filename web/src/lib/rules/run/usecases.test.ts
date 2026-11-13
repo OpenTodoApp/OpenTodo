@@ -123,7 +123,7 @@ describe('routine use cases on the device planner (shared with internal/rules)',
           for (const [k, v] of Object.entries(now)) if (JSON.stringify(old[k]) !== JSON.stringify(v)) (changed[id] ??= {})[k] = v
         } else {
           const x: Record<string, unknown> = { title: now.title }
-          for (const k of ['project_id', 'parent_id', 'due']) if (now[k] !== '') x[k] = now[k]
+          for (const k of ['project_id', 'parent_id', 'due', 'description']) if (now[k] !== '') x[k] = now[k]
           created.push(x)
         }
         const a = Object.entries(t).filter(([f, v]) => f.startsWith('appends.') && typeof v === 'string' && v).map(([, v]) => (v as string).trim()).sort()

@@ -477,9 +477,17 @@ func (st *runState) createTasks(s *ruleval.Step, in map[string]ruleval.Value, at
 	} else if title, ok := st.textIn(s, in, "title"); ok {
 		lines, parse = []string{title}, false
 	}
+	// Link back to the note (note-checklist-tasks D4): the link the source step read in this run, or this iteration.
+	link := ""
+	if on, _ := lit[bool](s, "link_back"); on {
+		link = st.noteLinks[ruleval.NoteSource(st.r.Steps, s.ID)]
+	}
 	var items []map[string]any
 	for _, line := range lines {
 		item := map[string]any{}
+		if link != "" {
+			item["description"] = link
+		}
 		for k, v := range base {
 			item[k] = v
 		}
@@ -747,14 +755,33 @@ func (st *runState) noteText(s *ruleval.Step, in map[string]ruleval.Value) (rule
 	if !ok {
 		return none(), "", failf(ErrCodeNotFound, "%s %s not found", of.Type, of.ID)
 	}
+	kind, title := "task", str(row, "title")
+	switch of.Type {
+	case ruleval.TProject:
+		kind, title = "project", str(row, "name")
+	case ruleval.TNote:
+		kind = "note"
+	}
+	if st.noteLinks == nil {
+		st.noteLinks = map[string]string{}
+	}
+	st.noteLinks[s.ID] = NoteLinkLine(kind, of.ID, title)
 	// field: a standalone note's title instead of its text (notes-in-routines D1).
 	if field, _ := lit[string](s, "field"); field == "title" {
-		if of.Type == ruleval.TProject {
-			return st.textOut(str(row, "name"))
-		}
-		return st.textOut(str(row, "title"))
+		return st.textOut(title)
 	}
 	return st.textOut(str(row, "description"))
+}
+
+// NoteLinkLine is a link to a task, project or note in the form of note-links, the
+// first line of a task made with Link back to the note (note-checklist-tasks D4).
+func NoteLinkLine(kind, id, title string) string {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		title = "Note"
+	}
+	esc := strings.NewReplacer(`\`, `\\`, `[`, `\[`, `]`, `\]`).Replace(title)
+	return "[" + esc + "](?" + kind + "=" + id + ")"
 }
 
 func (st *runState) appendNote(s *ruleval.Step, in map[string]ruleval.Value, at int) (ruleval.Value, string, error) {
