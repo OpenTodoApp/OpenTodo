@@ -9,7 +9,7 @@ order: 22
 ---
 # The Android app
 
-The OpenTodo app for Android opens your own OpenTodo server, like the [installed web app](install-phone.md), and adds what only a phone app can do: reminders on time without a push service, sharing files from other apps, home-screen widgets and fingerprint unlock. It needs Android 8.0 or later and an OpenTodo server; it talks to nothing else.
+The OpenTodo app for Android opens your own OpenTodo server, like the [installed web app](install-phone.md), and adds what only a phone app can do: reminders on time without a push service, sharing files from other apps, home-screen widgets and fingerprint unlock. It needs Android 8.0 or later with Android System WebView 111 or later, and an OpenTodo server; it talks to nothing else. The app shows your server through the phone's system WebView; on a phone whose WebView is older and cannot be updated (some devices without Google Play services), the app says so, and a browser with its own engine, such as Firefox, works instead.
 
 ## Install the app
 
