@@ -61,7 +61,7 @@ var everyWords = map[string][]string{
 
 var englishWeekdays = []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
 
-// diacritics folds the accented letters of the six vocabularies (no Unicode
+// diacritics folds the accented letters of the bundled vocabularies (no Unicode
 // normalisation dependency; the vocabularies are written in these scripts only).
 var diacritics = strings.NewReplacer(
 	"à", "a", "á", "a", "â", "a", "ã", "a", "ä", "a", "å", "a", "ç", "c",

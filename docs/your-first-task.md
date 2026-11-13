@@ -41,7 +41,7 @@ Call the dentist tomorrow at 9am
 
 As you type, small chips appear under the box to show what OpenTodo understood: a date chip for "tomorrow at 9am", and below them the title that will be saved. If a word was picked up by mistake ("May" as in the name, not the month), click the **×** on its chip and it stays part of the title.
 
-The same line can also set a project with `#`, a label with `@`, a priority from `p1` (highest) to `p4`, and how long it will take with `+`, like `+15m`. The [quick add reference](quick-add.md) lists everything it understands, in six languages.
+The same line can also set a project with `#`, a label with `@`, a priority from `p1` (highest) to `p4`, and how long it will take with `+`, like `+15m`. The [quick add reference](quick-add.md) lists everything it understands, in seven languages.
 
 To change the date later, open the task (click it, or select it and press <kbd>Enter</kbd>) and use **Due** in the panel that opens.
 

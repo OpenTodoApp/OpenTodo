@@ -10,12 +10,9 @@ import { useEncryption } from '../lib/e2ee'
 import { loadVoiceSettings, onVoiceSettingsChange, type Recognizer, saveVoiceSettings, type VoiceSettings } from '../lib/voice/settings'
 import { canRecord, useSpeechService } from '../lib/voice/speechService'
 import { isSupported } from '../lib/voice/support'
+import { languageName } from '../locales'
 import { t, preferredLanguages } from '../lib/i18n'
 import { cardCopy, rowCopy, SETTINGS_COPY } from '../lib/settingsCopy'
-
-const LANGUAGE_NAMES: Record<string, string> = {
-  en: 'English', de: 'Deutsch', fr: 'Français', it: 'Italiano', es: 'Español', pt: 'Português',
-}
 
 /** The privacy statement shown before voice capture can be switched on (spec "Privacy contract"). */
 export function VoicePrivacyStatement() {
@@ -113,8 +110,8 @@ export function VoiceSettingsSection() {
       {supported && s.enabled && (
         <SettingRow {...rowCopy('voice-settings', 'lang')} htmlFor="voice-lang" control={
           <Select id="voice-lang" className="sm:w-56" value={s.lang ?? ''} onChange={(e) => update({ ...s, lang: e.target.value || null })}>
-            <option value="">{t('Follow quick add ({language})', { language: LANGUAGE_NAMES[followed] ?? followed })}</option>
-            {BUNDLED_LANGUAGES.map((code) => <option key={code} value={code}>{LANGUAGE_NAMES[code] ?? code}</option>)}
+            <option value="">{t('Follow quick add ({language})', { language: languageName(followed) })}</option>
+            {BUNDLED_LANGUAGES.map((code) => <option key={code} value={code}>{languageName(code)}</option>)}
           </Select>
         } />
       )}

@@ -6,6 +6,7 @@ import {
 import vectors from './zoned.vectors.json'
 import { dayInZone } from './stats'
 import type { Due } from './types'
+import { applyLanguagePreference } from './i18n'
 
 const LA = 'America/Los_Angeles'
 const BERLIN = 'Europe/Berlin'
@@ -76,6 +77,21 @@ describe('display in the viewer zone', () => {
   it('describeDue labels the local date and time', () => {
     expect(describeDue(berlin9, '2026-10-11', LA)).toEqual({ label: 'Today 00:00', day: 'Today', tone: 'today', time: '00:00' })
     expect(describeDue({ date: '2026-10-12', time: '02:00', tz: 'Asia/Tokyo' }, '2026-10-11', BERLIN)).toEqual({ label: 'Today 19:00', day: 'Today', tone: 'today', time: '19:00' })
+  })
+
+  it('describeDue says Vandaag, Morgen, the weekday and the date in Dutch (more-languages 3.5)', async () => {
+    await applyLanguagePreference('nl', ['en-US'])
+    try {
+      setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+      const day = (date: string) => describeDue({ date }, '2026-10-09', BERLIN)?.day
+      expect(day('2026-10-09')).toBe('Vandaag')
+      expect(day('2026-10-10')).toBe('Morgen')
+      expect(day('2026-10-12')).toMatch(/^ma/)
+      expect(day('2026-11-03')).toMatch(/^3 nov/)
+      expect(describeDue({ date: '2026-10-10', time: '15:30' }, '2026-10-09', BERLIN)?.label).toBe('Morgen 15:30')
+    } finally {
+      await applyLanguagePreference('en', ['en-US'])
+    }
   })
 
   it('floating dues resolve in the given zone', () => {

@@ -970,5 +970,172 @@
     ],
     "am": [],
     "pm": []
+  },
+  "nl": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "vandaag": 0,
+      "vanavond": 0,
+      "morgen": 1,
+      "overmorgen": 2
+    },
+    "weekdays": [
+      [
+        "maandag",
+        "ma"
+      ],
+      [
+        "dinsdag",
+        "di"
+      ],
+      [
+        "woensdag",
+        "wo"
+      ],
+      [
+        "donderdag",
+        "do"
+      ],
+      [
+        "vrijdag",
+        "vr"
+      ],
+      [
+        "zaterdag",
+        "za"
+      ],
+      [
+        "zondag",
+        "zo"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "januari"
+        ],
+        "abbr": [
+          "jan"
+        ]
+      },
+      {
+        "names": [
+          "februari"
+        ],
+        "abbr": [
+          "feb"
+        ]
+      },
+      {
+        "names": [
+          "maart"
+        ],
+        "abbr": [
+          "mrt",
+          "mar"
+        ]
+      },
+      {
+        "names": [
+          "april"
+        ],
+        "abbr": [
+          "apr"
+        ]
+      },
+      {
+        "names": [
+          "mei"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "juni"
+        ],
+        "abbr": [
+          "jun"
+        ]
+      },
+      {
+        "names": [
+          "juli"
+        ],
+        "abbr": [
+          "jul"
+        ]
+      },
+      {
+        "names": [
+          "augustus"
+        ],
+        "abbr": [
+          "aug"
+        ]
+      },
+      {
+        "names": [
+          "september"
+        ],
+        "abbr": [
+          "sep",
+          "sept"
+        ]
+      },
+      {
+        "names": [
+          "oktober"
+        ],
+        "abbr": [
+          "okt"
+        ]
+      },
+      {
+        "names": [
+          "november"
+        ],
+        "abbr": [
+          "nov"
+        ]
+      },
+      {
+        "names": [
+          "december"
+        ],
+        "abbr": [
+          "dec"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "dag",
+        "dagen"
+      ],
+      "week": [
+        "week",
+        "weken"
+      ],
+      "month": [
+        "maand",
+        "maanden"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "om"
+    ],
+    "hourWords": [
+      "uur"
+    ],
+    "am": [
+      "'s ochtends",
+      "'s morgens",
+      "'s nachts"
+    ],
+    "pm": [
+      "'s middags",
+      "'s avonds"
+    ]
   }
 }

@@ -52,7 +52,7 @@ The parser SHALL recognise relative day words, weekday names with an optional "n
 - **THEN** the task is due `2027-02-03`
 
 ### Requirement: Multi-language vocabulary
-Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish and Portuguese, available with no network. The active set SHALL be the interface language (OpenSpec `localization`) when not `system`, then the browser's bundled preferred languages, with English always active, overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form.
+Date, time, recurrence and reminder vocabulary SHALL be bundled for English, German, French, Italian, Spanish, Portuguese and Dutch, available with no network. A community language (OpenSpec `localization` "Community languages") MAY have no vocabulary. The active set SHALL be the interface language (OpenSpec `localization`) when not `system`, then the browser's bundled preferred languages, with English always active, overridable in Settings on the device. Attribute tokens (`#`, `@`, `p1`–`p4`, `+`) SHALL be language-independent. The stored rule SHALL always be the canonical English form.
 
 #### Scenario: German phrase
 - **WHEN** the browser language is `de` and the user enters `Zahnarzt nächsten Mittwoch um 15 Uhr`
@@ -85,6 +85,34 @@ Date, time, recurrence and reminder vocabulary SHALL be bundled for English, Ger
 #### Scenario: Reminder in each language
 - **WHEN** the user enters `rappelle-moi 30 min avant`, `ricordamelo 30 minuti prima`, `recuérdame 30 minutos antes` or `lembre-me 30 minutos antes` after a timed task, with that language active
 - **THEN** a relative reminder with offset −30 minutes is created in every case
+
+#### Scenario: Dutch phrase
+- **WHEN** Dutch is active, today is Friday 2026-10-09 and the user enters `Tandarts volgende woensdag om 15 uur`
+- **THEN** the task is due `{date: "2026-10-14", time: "15:00"}` with title `Tandarts`
+
+#### Scenario: Dutch half hour
+- **WHEN** Dutch is active and the user enters `Bellen morgen om half 4 's middags`
+- **THEN** the task is due tomorrow at `15:30` with title `Bellen`
+
+#### Scenario: Dutch recurrence and reminder
+- **WHEN** Dutch is active and the user enters `Filter vervangen elke 3 dagen na voltooiing`, then `Overleg morgen om 10 uur herinner me 30 minuten van tevoren`
+- **THEN** the first rule is `every 3 days after completion` with title `Filter vervangen`, and the second task has a relative reminder with offset −30 minutes
+
+#### Scenario: Dutch abbreviation needs a date context
+- **WHEN** Dutch is active and the user enters `Bel ma`, then `Bel ma om 9 uur`
+- **THEN** the first task has no due date and the title `Bel ma`, and the second is due next Monday at `09:00` with the title `Bel`
+
+#### Scenario: Weekday before a date
+- **WHEN** Dutch is active and the user enters `Vergadering ma 1 mrt`, or English is active and the user enters `Meeting Monday, March 3`
+- **THEN** the task is due on that date (1 March, 3 March) with the title `Vergadering` or `Meeting`
+
+#### Scenario: Dutch words inactive
+- **WHEN** only English is active and the user enters `Fix the door over lunch`
+- **THEN** no attribute is parsed and the title is `Fix the door over lunch`
+
+#### Scenario: Same result in Go
+- **WHEN** the shared vectors' Dutch rows run through the server's quick-add parser
+- **THEN** every row produces the same title, due, recurrence and reminder as the web parser
 
 ### Requirement: Live preview chips
 While the user types, the client SHALL show each recognised attribute (due, project, label, priority, estimate, recurrence, reminder) and the title as it will be saved, and SHALL tint each recognised span inside the field itself in that attribute's soft colour, aligned with the typed text, so the preview explains and the field shows where. The preview and the tints SHALL update on every keystroke and be announced without stealing focus; the tints SHALL be decorative, so assistive technology reads the field's text and the preview only. A dismissed token SHALL lose its tint. Under the high-contrast presentation the tint SHALL be a one-pixel underline in the attribute's colour. A link to the quick add guide SHALL appear beside the chips during the first three uses on a device and in the input's tooltip afterwards; no shortcut badge SHALL be printed unless shortcut hints are on. The same field, parsing and tints SHALL be used by every quick add: the list's line, the phone's sheet, the capture screen and the command bar's Add mode. The preview SHALL take the form of its place: one dismissible chip per attribute under the list's line, the capture screen and the title editors; one field row per attribute in the command bar's Add mode (`command-palette` "Add mode"); and one neutral dismissible chip per attribute in the phone's sheet ("Quick add tools on a phone"). Every form SHALL offer the same dismissal and SHALL produce the same task for the same line.
