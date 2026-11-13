@@ -78,4 +78,20 @@ describe('project note', () => {
     if (desc) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', desc)
     await r.unmount()
   })
+
+  // note-outline "Read-only": a viewer's rendered note has the Outline button too.
+  it('a viewer chooses a heading in the outline: focus moves to it and the note stays read-only', async () => {
+    const p = await createProject({ name: 'Brief' })
+    await updateProject(p, { description: '# Goals\n\nShip it\n\n## Budget\n\nSmall\n\n## Team\n\nFour people' })
+    await db.memberships.put({ projectId: p, role: 'viewer', ownerId: 'someone', members: [] })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => !!r.container.querySelector('[data-project-note] [data-outline-open]'))
+    await click(r.container.querySelector('[data-project-note] [data-outline-open]')!)
+    await waitFor(() => document.querySelectorAll('[data-outline-item]').length === 3)
+    await click(document.querySelectorAll<HTMLElement>('[data-outline-item]')[2])
+    await waitFor(() => document.activeElement?.textContent === 'Team')
+    expect(document.activeElement!.getAttribute('data-heading-level')).toBe('2')
+    expect(r.container.querySelector('[data-project-note] [role="textbox"]')).toBeNull()
+    await r.unmount()
+  })
 })

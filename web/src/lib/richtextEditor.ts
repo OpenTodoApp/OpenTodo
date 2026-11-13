@@ -405,6 +405,7 @@ export const SHORTCUTS: { keys: string; label: string }[] = translatedList([
   { keys: 'Mod-Shift-9', label: msg('Check list') },
   { keys: 'Mod-Enter', label: msg('Check / uncheck item') },
   { keys: 'Mod-Shift-Enter', label: msg('Make the check-list line a subtask') },
+  { keys: 'Mod-Shift-o', label: msg('Outline of the headings (3 or more)') },
   { keys: '/', label: msg('Command menu: headings, lists, table, quote, code, image, date, mention') },
   { keys: '@', label: msg('Mention a member') },
   { keys: '> ', label: msg('Block quote (``` and Enter: code block)') },
@@ -480,6 +481,8 @@ export interface EditorHooks {
   makeSubtask?: Command
   /** Called after an undo with the history depth before it (Make subtask reverts its task). */
   onUndo?: (depthBefore: number) => void
+  /** Mod-Shift-o: to the note's outline (note-outline D4); false when the note has none. */
+  outline?: () => boolean
 }
 
 const isEmpty = (doc: PMNode) => doc.childCount === 1 && doc.firstChild?.type === schema.nodes.paragraph && doc.firstChild.content.size === 0
@@ -597,6 +600,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
       'Mod-Shift-8': wrapInList(nodes.bullet_list), 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
       'Mod-Enter': toggleCheck,
       'Mod-Shift-Enter': hooks.makeSubtask ?? (() => false),
+      'Mod-Shift-o': () => hooks.outline?.() ?? false,
       Enter: chainCommands(newlineInCode, fenceOnEnter, splitListItem(nodes.list_item)),
       Tab: chainCommands(tableTab(notify), sinkListItem(nodes.list_item)),
       'Shift-Tab': chainCommands(tableShiftTab, liftListItem(nodes.list_item)),

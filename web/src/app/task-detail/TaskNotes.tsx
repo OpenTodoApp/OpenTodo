@@ -13,12 +13,12 @@ import { useResetOnChange } from '../../lib/useResetOnChange'
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
 /** The notes editor with its loading and failure fallbacks, then what links to the task (note-links). */
-export function TaskNotes({ task, readOnly }: { task: Task; readOnly: boolean }) {
+export function TaskNotes({ task, readOnly, outline }: { task: Task; readOnly: boolean; outline?: 'auto' | 'menu' }) {
   return (
     <>
       <NotesBoundary task={task} readOnly={readOnly}>
         <Suspense fallback={<NotesPreview text={task.description} />}>
-          <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} />
+          <NotesEditor key={task.id} note={{ ...task, entity: 'task' }} readOnly={readOnly} outline={outline} />
         </Suspense>
       </NotesBoundary>
       <LinkedRefs kind="task" id={task.id} />
