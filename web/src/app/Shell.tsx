@@ -25,6 +25,7 @@ import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
 import { FramesHost } from './calendar/framesRequest'
 import { FocusPickerHost } from './focus/focusRequest'
+import { useConsentPending } from './OAuthConsentHost'
 import { WelcomeDialog } from './WelcomeDialog'
 import { ArchivePrompt } from './ArchivePrompt'
 import { notificationsOpen, sidebarFind } from './signals'
@@ -220,6 +221,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
 
   const palette = useCommandBar()
   const [showHelp, setShowHelp] = useState(false)
+  const consentPending = useConsentPending()
   // Phone navigation (app-shell): the tab bar and the add button hide while a sheet or the panel is open, and on the task page (its own bar).
   const [addOpen, setAddOpen] = useState(false)
   useEffect(() => { const off = onQuickAddSheetRequest(() => setAddOpen(true)); void handleShellUrl(requestQuickAddSheet); return off }, []) // and a native shell's address actions (native-shells)
@@ -379,10 +381,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {connections && <PanelBoundary><connections.Dialog key={`${connections.kind}:${connections.id}`} kind={connections.kind} id={connections.id} onClose={closeConnections} /></PanelBoundary>}
       {assistantLoaded && <PanelBoundary><Suspense fallback={null}><AssistantRoot name={user.name} onPage={route.view === 'ask'} context={() => ({ view: route.view, projectId: route.view === 'project' ? route.id : undefined })} /></Suspense></PanelBoundary>}
       <CommandBar palette={palette} user={user} showShortcuts={() => setShowHelp(true)} />
-      {/* The owner's one-time thank-you on a new server (welcome-note). */}
-      <WelcomeDialog user={user} /><FeedbackHost />
+      {/* The owner's one-time thank-you on a new server (welcome-note); after a consent or app sign-in confirmation that is waiting, never on top of it. */}
+      {!consentPending && <WelcomeDialog user={user} />}<FeedbackHost />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
-      <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
+      {!consentPending && <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>}
       {habitForm && <PanelBoundary><Suspense fallback={null}><HabitFormHost /></Suspense></PanelBoundary>}
       {/* The g … spotlight (shortcut-spotlight): shown after a hesitation, never focused. */}
       <Spotlight />
