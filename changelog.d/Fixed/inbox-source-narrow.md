@@ -1,0 +1,1 @@
+- An Inbox task's title is no longer cut to a few letters on a landscape phone or a tablet: the source line beside it ("From a calendar app · 5 d ago") takes at most 40 % of the row and 16 rem (#1258).
