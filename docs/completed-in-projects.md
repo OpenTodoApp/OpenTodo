@@ -3,7 +3,7 @@ title: Completed tasks in a project
 summary: Keep a project's completed tasks at the end of its list in a Completed group, for lists you tick off and reuse such as groceries.
 audience: user
 section: Guides
-specs: [task-list-presentation]
+specs: [task-list-presentation, sections-and-boards]
 screens: []
 order: 18
 ---
@@ -25,10 +25,14 @@ The project's completed tasks now stay at the end of the list in a **Completed**
 
 A section whose tasks are all done no longer offers its own "n completed" while the Completed group is on, because the group already holds those tasks.
 
+## On a board
+
+The board's **Project** menu has the same choice. The board then ends with a folded **Completed** column. Drop a card on it, or press <kbd>Shift</kbd>+<kbd>→</kbd> into it, to complete the task; drag a completed card onto a section to reopen it there.
+
 ## Good to know
 
 - A [reusable list](reusable-lists.md) always keeps its ticked items, in a **Got it** group on every device, so it has no **Show completed tasks** choice.
 
-- The setting is per project and per device, like the board layout, and it is not synced. Turn it on separately on your phone and your computer.
-- It applies to the list layout. The board and the timeline keep showing open tasks only.
+- The setting is per project and per device, for both layouts, and is not synced.
+- The timeline keeps showing open tasks only.
 - Every completed task, from every project, is still in **Completed** in the sidebar. See [Built-in views](built-in-views.md).

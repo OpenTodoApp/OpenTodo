@@ -118,7 +118,15 @@ export interface ListColumn {
   cards: Task[]
   /** Folded to a strip on this device (board-polish D1): its section is collapsed; the cards stay for the count. */
   folded?: boolean
+  /** The board's Completed column (board-completed-column): the project's completed tasks, newest first. */
+  completed?: boolean
 }
+
+/**
+ * The key of a board's Completed column (board-completed-column D2). In the project's
+ * per-device section fold state it marks the column as unfolded: folded by default.
+ */
+export const COMPLETED_COLUMN = '@completed'
 
 /** Top-level tasks of a sectioned project with their tree nodes. */
 export interface SectionBucket {
@@ -352,10 +360,13 @@ export function sectionBuckets(projectId: string | null, tree: Tree<Task> | null
 }
 
 /** Board columns; "No section" is a column only while it has open tasks (sections-and-boards). */
-export function boardColumns(buckets: SectionBucket[] | null, collapsed: readonly string[] = []): ListColumn[] {
+export function boardColumns(buckets: SectionBucket[] | null, collapsed: readonly string[] = [], completed?: readonly Task[] | null): ListColumn[] {
   const folded = new Set(collapsed)
-  return (buckets ?? []).filter((g) => g.key !== '' || g.tasks.length > 0)
+  const cols: ListColumn[] = (buckets ?? []).filter((g) => g.key !== '' || g.tasks.length > 0)
     .map((g) => ({ key: g.key, section: g.section, cards: g.tasks, ...(folded.has(g.key) ? { folded: true } : {}) }))
+  // With "Show completed tasks" on, the Completed column ends the board, folded unless opened (board-completed-column D2).
+  if (completed) cols.push({ key: COMPLETED_COLUMN, section: null, cards: [...completed], completed: true, ...(folded.has(COMPLETED_COLUMN) ? {} : { folded: true }) })
+  return cols
 }
 
 export interface GroupInput {
