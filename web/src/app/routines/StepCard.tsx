@@ -54,6 +54,8 @@ export interface CardState {
   adding: ListPlace | null
   /** The open step catalogue, rendered at that place. */
   addPanel: ReactNode
+  /** The routine's steps, for inputs that depend on other steps (Link back to the note). */
+  steps?: RoutineStep[]
 }
 
 /** The id of the open step catalogue, for its opener's aria-controls. */
@@ -257,7 +259,7 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
       { kind: 'action', id: 'below', label: t('Add step below'), icon: 'plus', onSelect: () => events.addBelow(step.id) },
       { kind: 'action', id: 'duplicate', label: t('Duplicate'), icon: 'copy', onSelect: () => events.duplicate(step.id) },
     ] },
-    ...(addableInputs(step).length ? [{ items: addableInputs(step).map((name) => ({
+    ...(addableInputs(step, state.steps).length ? [{ items: addableInputs(step, state.steps).map((name) => ({
       kind: 'action' as const, id: `add-${name}`, label: t('Add {input}', { input: inputLabel(name, step.kind).toLocaleLowerCase() }), icon: 'plus' as const,
       onSelect: () => {
         const arg = defaultArg(step, name)

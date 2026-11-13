@@ -442,7 +442,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     else if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey && canUndo && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) { e.preventDefault(); undo() }
   }
 
-  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers, leave: leaveCard, adding: add.adding, addPanel: add.panel }
+  const state: CardState = { ctx, catalogue, previews, online, error: shownError, me, openers, leave: leaveCard, adding: add.adding, addPanel: add.panel, steps: draft.steps }
   const name = draft.name.trim() || (saved ? t('Untitled routine') : t('New routine'))
 
   const actions = (

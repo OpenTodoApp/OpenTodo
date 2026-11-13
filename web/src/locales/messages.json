@@ -3105,6 +3105,9 @@
   "Check your operating system's notification settings for this browser, and any do-not-disturb mode.": [
     "web/src/lib/push.ts"
   ],
+  "Check-list lines to subtasks (a task's note) or tasks": [
+    "web/src/lib/richtextEditor.ts"
+  ],
   "Checkbox": [
     "web/src/lib/fields.ts"
   ],
@@ -8061,7 +8064,7 @@
   "In a table: next / previous cell; Tab in the last cell adds a row": [
     "web/src/lib/shortcuts.ts"
   ],
-  "In a task's notes: make the check-list line a subtask (Ctrl+Z takes it back)": [
+  "In a task's notes: make the check-list lines a subtask each; in a project or standalone note: a task each, read like quick add (Ctrl+Z takes them back)": [
     "web/src/lib/shortcuts.ts"
   ],
   "In days": [
@@ -9091,6 +9094,9 @@
     "web/src/app/LinkDialog.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
+  "Link back to the note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Link copied": [
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -9498,8 +9504,8 @@
   "Make subtask": [
     "web/src/app/editorCommands.ts"
   ],
-  "Make the check-list line a subtask": [
-    "web/src/lib/richtextEditor.ts"
+  "Make tasks": [
+    "web/src/app/editorCommands.ts"
   ],
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
@@ -22923,7 +22929,7 @@
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/lib/history.ts"
   ],
-  "on a check-list line": [
+  "on a check-list line or a selection of them": [
     "web/src/lib/shortcuts.ts"
   ],
   "on or after": [
@@ -24426,6 +24432,9 @@
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/templates/TemplateLibrary.tsx"
+  ],
+  "{n, plural, one {# line was left: at most 50 at once.} other {# lines were left: at most 50 at once.}}": [
+    "web/src/app/NotesEditor.tsx"
   ],
   "{n, plural, one {# line} other {# lines}}": [
     "web/src/lib/rules/sentence.ts"
