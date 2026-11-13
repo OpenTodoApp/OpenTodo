@@ -4,7 +4,7 @@
 // concurrent edits like any note edit; one Undo writes the earlier text back as the
 // projection, which folds into the document as a history restore does.
 import { Fragment, Slice } from 'prosemirror-model'
-import { db } from './db'
+import { db, tableOf } from './db'
 import { t } from './i18n'
 import { matchTitle, mentionRange } from './noteMentions'
 import { hrefOf, type LinkKind } from './noteLinks'
@@ -12,8 +12,6 @@ import { foldNote, getDeviceId } from './ops'
 import { activeBody, decodeDoc, encodeDoc, renderMarkdown, toModel } from './richtext'
 import { modelToPm, pmToModel, schema, writeBody } from './richtextEditor'
 import { applyBatch } from './undo'
-
-const tableOf = (kind: LinkKind) => (kind === 'task' ? db.tasks : kind === 'project' ? db.projects : db.notes)
 
 /**
  * Links the first plain mention of `title` in the source `kind:id` to `target`; the Undo
