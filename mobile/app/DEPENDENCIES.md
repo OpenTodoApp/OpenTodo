@@ -10,6 +10,8 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `expo-localization`: the device's time zone for the platform port (`timeZone`).
 - `expo-web-browser`: the system's authentication sheet for sign-in (design D5): `ASWebAuthenticationSession` on iOS and a Custom Tab on Android, which share the browser's cookies and passkeys. 58.0.7, the SDK's version.
 - `expo-secure-store`: the Keychain and the Keystore, where the account's tokens live (design D5), never in MMKV. 58.0.2, the SDK's version.
+- `expo-haptics`: the tap you feel when a task is completed (design D7). 58.0.7, the SDK's version.
+- `react-native-safe-area-context`: the screen's safe area (the notch, the home indicator, Android's edge-to-edge bars) for the app's own layouts. 5.10.1, the SDK's version.
 - `@react-native-community/netinfo`: the network state for the platform port (`network`).
 - `react-native-mmkv`: the platform port's small preferences store (`prefs`), synchronous like `localStorage`.
 - `react-native-quick-crypto`: `crypto.subtle` and `crypto.getRandomValues` for the shared encryption code (AES-GCM, PBKDF2, HKDF); Hermes has no Web Crypto.

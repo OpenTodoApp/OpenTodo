@@ -76,6 +76,8 @@ export interface Session {
   readonly server: string
   /** fetch for a path of the server (`/api/v1/…`), with the access token; a 401 is retried once after a refresh. */
   fetch(path: string, init?: RequestInit): Promise<Response>
+  /** An access token that works now (refreshed when due, or always with `renew`); null when the grant is gone. */
+  access(renew?: boolean): Promise<string | null>
   tokens(): Tokens
 }
 
@@ -119,9 +121,15 @@ export function createSession(o: SessionOptions): Session {
   return {
     server: o.server,
     tokens: () => tokens,
+    async access(renew = false) {
+      if (ended) return null
+      const due = renew || refreshing !== null || now() >= tokens.expiresAt - EARLY_MS
+      return (due ? await refresh() : tokens)?.access ?? null
+    },
     async fetch(path, init) {
       let current: Tokens | null = tokens
-      if (refreshing || now() >= tokens.expiresAt - EARLY_MS) current = await refresh()
+      if (ended) current = null
+      else if (refreshing || now() >= tokens.expiresAt - EARLY_MS) current = await refresh()
       if (!current) return new Response(null, { status: 401 })
       const res = await send(path, init, current.access)
       if (res.status !== 401) return res

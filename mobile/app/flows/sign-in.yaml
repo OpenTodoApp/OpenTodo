@@ -1,62 +1,19 @@
 # Sign-in through the system's authentication sheet (native-app-foundation 4.4): the
-# server's address, the server's own sign-in page in the sheet, the confirmation, the
-# app holding the account across a restart, and sign-out. flows/run.sh passes APP_ID,
-# SERVER, ACCOUNT_EMAIL, ACCOUNT_PASSWORD and ACCOUNT_NAME.
+# app holds the account across a restart, and signing out returns to the server screen.
+# flows/run.sh passes APP_ID, SERVER and the account.
 appId: ${APP_ID}
 ---
-- launchApp:
-    clearState: true
-    clearKeychain: true
-- tapOn:
-    id: server-address
-- inputText: ${SERVER}
-- takeScreenshot: server
-- tapOn:
-    id: server-continue
-# iOS asks before an app opens a sign-in sheet.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn: Continue
-# The sheet shows the server's sign-in page, or the confirmation at once when this
-# browser is signed in already; both have a "Sign in" button.
-- extendedWaitUntil:
-    visible: Sign in
-    timeout: 30000
-- runFlow:
-    when:
-      visible: Password
-    commands:
-      - tapOn: Email
-      - inputText: ${ACCOUNT_EMAIL}
-      - tapOn: Password
-      - inputText: ${ACCOUNT_PASSWORD}
-      - tapOn: Sign in
-      # iOS offers to keep the password.
-      - runFlow:
-          when:
-            platform: iOS
-          commands:
-            - tapOn:
-                text: Not Now
-                optional: true
-- extendedWaitUntil:
-    visible: Only confirm if you started signing in from the app just now.
-    timeout: 30000
-- takeScreenshot: confirmation
-- tapOn: Sign in
-- extendedWaitUntil:
-    visible:
-      id: account-name
-    timeout: 30000
-- assertVisible: ${ACCOUNT_NAME}
-- takeScreenshot: signed-in
+- runFlow: steps/sign-in.yaml
+- takeScreenshot: today-empty
 # The account is kept: a restart opens it without the server screen.
 - stopApp
 - launchApp
-- assertVisible: ${ACCOUNT_NAME}
+- assertVisible:
+    id: today-list
 - tapOn:
-    id: sign-out
+    id: account
+- assertVisible: ${ACCOUNT_NAME}
+- tapOn: Sign out
 - assertVisible:
     id: server-address
+- takeScreenshot: server

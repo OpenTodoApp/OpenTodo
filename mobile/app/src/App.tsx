@@ -1,14 +1,17 @@
 // The app's root (OpenSpec change native-app-foundation, task 4.4): the account kept
 // on this phone if there is one, otherwise the server screen and sign-in. A grant that
 // ends on the server (revoked in the sessions list, signed out everywhere) brings the
-// app back to the server screen with nothing of the account left.
+// app back to the server screen with nothing of the account left. Signed in, the app
+// syncs and shows Today (tasks 4.5 and 4.6).
 import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { platform } from '@shared/platform'
 import { restore, sendSignOuts, signOut, type SignedIn } from './auth/account'
 import { accountDeps, signInDeps } from './auth/native'
-import AccountScreen from './screens/AccountScreen'
 import ServerScreen from './screens/ServerScreen'
+import TodayScreen from './screens/TodayScreen'
+import { startAccountSync } from './sync'
 import { useColors } from './theme'
 
 export default function App() {
@@ -25,7 +28,15 @@ export default function App() {
     return platform.network.onOnline(send)
   }, [deps])
 
+  // Sync runs while an account is signed in; sign-out and an ended grant stop it (src/auth/native.ts).
+  const session = signed?.session
+  useEffect(() => { if (session) startAccountSync(session) }, [session])
+
   if (signed === undefined) return <View style={{ flex: 1, backgroundColor: c.bg }} />
   if (!signed) return <ServerScreen account={deps} onSignedIn={setSigned} sheet={signInDeps} />
-  return <AccountScreen onSignOut={() => signOut(signed, deps).finally(() => setSigned(null))} signed={signed} />
+  return (
+    <SafeAreaProvider>
+      <TodayScreen onSignOut={() => { void signOut(signed, deps).finally(() => setSigned(null)) }} signed={signed} />
+    </SafeAreaProvider>
+  )
 }

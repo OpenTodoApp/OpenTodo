@@ -220,6 +220,19 @@ describe('the session', () => {
     expect(ended).toHaveLength(1)
   })
 
+  it('hands out a token that works now: the current one, a refreshed one when due or asked, none once ended', async () => {
+    const s = fakeServer()
+    const { it: sess, clock } = session(s)
+    expect(await sess.access()).toBe('access-1')
+    expect(await sess.access(true)).toBe('access-2')
+    clock.now = 2 * 3_600_000
+    expect(await sess.access()).toBe('access-3')
+    s.revoke()
+    expect(await sess.access(true)).toBeNull()
+    expect(await sess.access()).toBeNull()
+    expect(s.paths().filter((p) => p === '/api/v1/app/token')).toHaveLength(3)
+  })
+
   it('keeps the tokens when the refresh gets no answer', async () => {
     const s = fakeServer()
     const { it: sess, ended, clock } = session(s)

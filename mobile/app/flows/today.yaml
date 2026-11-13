@@ -1,0 +1,28 @@
+# Sync and Today end to end (native-app-foundation 4.5 and 4.6): a task made and then
+# renamed through the REST API appears in the app without interaction, and a task
+# completed in the app is completed on the server. The scripts call the server from the
+# machine that runs Maestro (API, TOKEN).
+appId: ${APP_ID}
+---
+- runFlow: steps/sign-in.yaml
+- runScript:
+    file: scripts/create-task.js
+    env:
+      TITLE: Water the plants
+- extendedWaitUntil:
+    visible: Water the plants
+    timeout: 20000
+- runScript:
+    file: scripts/rename-task.js
+    env:
+      TITLE: Water the lemon tree
+- extendedWaitUntil:
+    visible: Water the lemon tree
+    timeout: 20000
+- takeScreenshot: today
+- tapOn:
+    id: complete-Water the lemon tree
+- extendedWaitUntil:
+    notVisible: Water the lemon tree
+    timeout: 10000
+- runScript: scripts/assert-completed.js

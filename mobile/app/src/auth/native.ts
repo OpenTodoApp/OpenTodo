@@ -7,6 +7,7 @@ import * as WebBrowser from 'expo-web-browser'
 import { Platform } from 'react-native'
 import { clearPrefs } from '../host'
 import { forgetAccount, openAccount } from '../storage/account'
+import { stopAccountSync } from '../sync'
 import type { AccountDeps, Secrets } from './account'
 import type { SignInDeps } from './signIn'
 
@@ -26,5 +27,7 @@ export const signInDeps: SignInDeps = {
 }
 
 export function accountDeps(onEnded: () => void): AccountDeps {
-  return { secrets, database: { open: openAccount, forget: forgetAccount }, clearPrefs, onEnded }
+  // Sync stops, and its running exchange with it, before the data goes.
+  const forget = () => stopAccountSync().then(forgetAccount)
+  return { secrets, database: { open: openAccount, forget }, clearPrefs, onEnded }
 }

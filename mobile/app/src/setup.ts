@@ -9,7 +9,9 @@ import 'dexie'
 import { installCrypto } from './crypto'
 import { installAppPlatform } from './host'
 import { installPolyfills } from './polyfills'
+import { installNetwork } from './sync'
 
 installPolyfills()
 installCrypto()
 installAppPlatform()
+installNetwork()

@@ -5,8 +5,9 @@
 #
 # With OT_SERVER_BIN (a server binary with the web app built in), a throwaway server is
 # started on a new data directory and an account is registered; otherwise SERVER names a
-# running one that has the account. The app must be installed on the booted simulator or
-# emulator. Maestro's report, its log and each flow's screenshots (the named ones, and the screen at a failure) go to OUT
+# running one that has the account, and API the same server as this machine reaches it.
+# The app must be installed on the booted simulator or emulator. Maestro's report, its
+# log and each flow's screenshots (the named ones, and the screen at a failure) go to OUT
 # (default: flows/out), in a folder per flow.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -33,12 +34,23 @@ if [ -n "${OT_SERVER_BIN:-}" ]; then
   curl -sf -X POST "http://127.0.0.1:$PORT/api/v1/auth/register" -H 'Content-Type: application/json' \
     -d "{\"email\":\"$ACCOUNT_EMAIL\",\"name\":\"$ACCOUNT_NAME\",\"password\":\"$ACCOUNT_PASSWORD\"}" > /dev/null
   SERVER=http://$host:$PORT
+  API=http://127.0.0.1:$PORT
 fi
 : "${SERVER:?set OT_SERVER_BIN or SERVER}"
+: "${API:?set API to the address of the server from this machine}"
+
+# An API token for the flows' scripts (the REST side of the sync checks).
+jar=$(mktemp)
+curl -sf -c "$jar" -X POST "$API/api/v1/auth/login" -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$ACCOUNT_EMAIL\",\"password\":\"$ACCOUNT_PASSWORD\"}" > /dev/null
+TOKEN=$(curl -sf -b "$jar" -X POST "$API/api/v1/tokens" -H 'Content-Type: application/json' -d '{"name":"app flows"}' | sed -n 's/.*"secret":"\([^"]*\)".*/\1/p')
+rm -f "$jar"
+[ -n "$TOKEN" ] || { echo "no API token from $API" >&2; exit 1; }
 
 mkdir -p "$OUT"
-[ $# -gt 0 ] || set -- sign-in.yaml
+[ $# -gt 0 ] || set -- sign-in.yaml today.yaml
 for flow in "$@"; do
   maestro test --format junit --output "$OUT/${flow%.yaml}.xml" --debug-output "$OUT/${flow%.yaml}" --flatten-debug-output \
-    -e APP_ID="$app" -e SERVER="$SERVER" -e ACCOUNT_EMAIL="$ACCOUNT_EMAIL" -e ACCOUNT_PASSWORD="$ACCOUNT_PASSWORD" -e ACCOUNT_NAME="$ACCOUNT_NAME" "$flow"
+    -e APP_ID="$app" -e SERVER="$SERVER" -e ACCOUNT_EMAIL="$ACCOUNT_EMAIL" -e ACCOUNT_PASSWORD="$ACCOUNT_PASSWORD" -e ACCOUNT_NAME="$ACCOUNT_NAME" \
+    -e API="$API" -e TOKEN="$TOKEN" "$flow"
 done
