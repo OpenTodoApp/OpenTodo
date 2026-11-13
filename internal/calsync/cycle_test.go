@@ -261,3 +261,50 @@ func TestMissingTargetStops(t *testing.T) {
 		t.Fatalf("state = %s %q", got.State(), got.StoppedReason)
 	}
 }
+
+// Notes reach the event, also when they are added or changed after it was
+// written, and the event links to its task (GitHub issue 1231).
+func TestNotesChangeRewritesEventWithTaskLink(t *testing.T) {
+	forBothServers(t, func(t *testing.T, h *harness) {
+		h.w.BaseURL = "https://todo.example"
+		h.task("alice", "t1", map[string]any{"title": "Trip", "start": "2026-11-03", "span": true, "due": map[string]string{"date": "2026-11-05"}})
+		c := h.connect(true)
+		if n := h.cycle(c); n.Written != 1 {
+			t.Fatalf("first cycle = %+v", n)
+		}
+		body := h.srv.Get("work", "t1.ics")
+		if !strings.Contains(body, "URL:https://todo.example/task/t1") || strings.Contains(body, "DESCRIPTION") {
+			t.Fatalf("first event:\n%s", body)
+		}
+		h.edit("alice", "t1", map[string]any{"description": "Pack the tent"})
+		if n := h.cycle(h.conn(c.ID)); n.Written != 1 {
+			t.Fatalf("after the notes changed = %+v", n)
+		}
+		if body := h.srv.Get("work", "t1.ics"); !strings.Contains(body, "DESCRIPTION:Pack the tent") || !strings.Contains(body, "DTSTART;VALUE=DATE:20261103") {
+			t.Fatalf("rewritten event:\n%s", body)
+		}
+		// Nothing changed since: nothing is written, and the event is not read back as a change.
+		puts := h.srv.Count("PUT")
+		if n := h.cycle(h.conn(c.ID)); n.Written != 0 || n.Moved != 0 || n.Renamed != 0 || h.srv.Count("PUT") != puts {
+			t.Fatalf("third cycle = %+v", n)
+		}
+	})
+}
+
+// A link stored before the body hash existed is written again once, then left alone.
+func TestLinkWithoutBodyIsRewrittenOnce(t *testing.T) {
+	forBothServers(t, func(t *testing.T, h *harness) {
+		h.task("alice", "t1", map[string]any{"title": "Write report", "description": "Outline", "due": map[string]string{"date": "2026-11-03", "time": "09:00"}})
+		c := h.connect(false)
+		h.cycle(c)
+		if _, err := h.w.Store.db.Exec(`UPDATE calsync_links SET snapshot = json_remove(snapshot, '$.body')`); err != nil {
+			t.Fatal(err)
+		}
+		if n := h.cycle(h.conn(c.ID)); n.Written != 1 {
+			t.Fatalf("upgrade cycle = %+v", n)
+		}
+		if n := h.cycle(h.conn(c.ID)); n.Written != 0 {
+			t.Fatalf("after the upgrade = %+v", n)
+		}
+	})
+}

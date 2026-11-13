@@ -34,6 +34,20 @@ func (s Snapshot) SameTimes(o Snapshot) bool {
 	return s.Date == o.Date && s.Time == o.Time && s.TZ == o.TZ && s.AllDay == o.AllDay && s.Minutes == o.Minutes && s.Start == o.Start
 }
 
+// BodyHash is the hash of what a task's event shows beyond its snapshot: its
+// notes (none when encrypted) and, with a base URL, its link (bodyVersion
+// changes when the written form does, so every event is written again once).
+func BodyHash(t calfeed.FeedTask, encrypted bool, baseURL string) string {
+	link := ""
+	if baseURL != "" {
+		link = calfeed.TaskURL(baseURL, t.ID)
+	}
+	return hash16(bodyVersion + "\x00" + calfeed.EventNotes(t, encrypted) + "\x00" + link)
+}
+
+// bodyVersion names the written form of an event's notes and link.
+const bodyVersion = "task-link-1"
+
 // TaskSnapshot is the event a task should have: a span is all-day from its
 // start to its due date whatever its due time (multi-day-tasks D7).
 func TaskSnapshot(t calfeed.FeedTask, encrypted bool) Snapshot {
