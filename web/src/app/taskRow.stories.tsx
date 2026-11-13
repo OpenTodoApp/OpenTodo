@@ -459,6 +459,24 @@ export const ImportedOrigins: StoryObj = {
 }
 
 /**
+ * The Inbox's source line at a tablet or landscape phone width (GitHub issue 1258): from 40 to
+ * 48 rem the source is the second line, as on a phone; from 48 rem it sits beside the title,
+ * at most 16 rem wide, so a long title keeps most of the row.
+ */
+export const InboxSourceWidths: StoryObj = {
+  render: () => {
+    const mail = { kind: 'issue' as const, provider: 'github', id: 'opentodoapp/a-long-repository-name#1258', url: 'https://github.com/opentodoapp/a-long-repository-name/issues/1258' }
+    const rows = (w: string) => (
+      <ul key={w} style={{ width: w }} className="space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">
+        <TaskRow {...base} onExpand={noop} source task={task({ id: `sw-${w}-1`, title: 'Kassenbon für die Steuer einscannen und ablegen', created_at: Date.now() - 5 * 86_400_000, origin: mail })} />
+        <TaskRow {...base} onExpand={noop} source task={task({ id: `sw-${w}-2`, title: 'Call the dentist', created_at: Date.now() - 3 * 86_400_000, origin: mail })} />
+      </ul>
+    )
+    return <div className="space-y-4">{['44rem', '56rem'].map(rows)}</div>
+  },
+}
+
+/**
  * A project after a Todoist import (GitHub issue 945): the import's id shows nowhere,
  * and the date and label cells line up down the list whether a row ends with an
  * origin (an issue, a page, a Trello card's icon) or with nothing. The list takes the
