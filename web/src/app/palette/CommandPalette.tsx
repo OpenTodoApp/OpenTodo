@@ -8,6 +8,7 @@
 // Search, except in Add when the bar was opened in Add. One shell for every mode
 // (palette-quick-add D4-D6): a card near the top, the field, the results with their
 // keycaps, and a footer that names the keys.
+import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
@@ -96,6 +97,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const agentExclusions = useAgentExclusions()
   const reviewEvery = useReviewEvery()
   const missedBlocks = useMissedBlocks().length
+  const habitsOn = useHabitsEnabled()
   // Today's earlier tasks, once per data change: ctx follows the text typed, and this
   // read every task on each keystroke (list-rendering-at-scale D6).
   const hideOthers = useMemo(() => (memberships ? todayAssigneeFilter(prefs, [...memberships.values()], user?.id ?? null) : null), [prefs, memberships, user])
@@ -126,10 +128,11 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       earlier,
       dayParts: dayPartsOn(prefs),
       timeSectors: timeSectorsOn(prefs),
+      habits: habitsOn,
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier, habitsOn])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const entities = usePaletteEntities(user, today, projects, labels, views, tasks)

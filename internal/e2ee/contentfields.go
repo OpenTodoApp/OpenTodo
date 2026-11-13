@@ -9,7 +9,7 @@ package e2ee
 // scheduling, ordering and structure keep working everywhere (design D2).
 var ContentFields = map[string][]string{
 	"project":    {"name", "description", "notes_doc"},
-	"task":       {"title", "description", "ical_extra", "notes_doc", "origin", "location"},
+	"task":       {"title", "description", "ical_extra", "notes_doc", "habit_tiny", "habit_anchor", "origin", "location"},
 	"section":    {"name"},
 	"field":      {"name", "options"},
 	"note":       {"title", "notes_doc", "description"},

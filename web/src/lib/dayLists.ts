@@ -6,16 +6,19 @@ import { blockedMap } from './dependencies'
 import { placedPart } from './dayParts'
 import { compareDueThenPriority } from './ordering'
 import type { Project, Task } from './types'
+import { isGraduated } from './habits'
 import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 
 /**
  * The tasks the cross-project views consider: tasks of archived projects stay
- * out, except in the archived project's own list (`keepProject`).
+ * out, except in the archived project's own list (`keepProject`), and graduated
+ * habits stay out of every list (habits-home D7).
  */
 export function withoutArchived(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], keepProject?: string): Task[] {
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  if (hidden.size === 0) return [...tasks]
-  return tasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject)
+  // A graduated habit is in no list (habits-home D7) whatever its project.
+  if (hidden.size === 0) return tasks.some(isGraduated) ? tasks.filter((t) => !isGraduated(t)) : [...tasks]
+  return tasks.filter((t) => !isGraduated(t) && (!t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject))
 }
 
 /**

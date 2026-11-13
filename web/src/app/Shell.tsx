@@ -1,3 +1,5 @@
+import { useHabitsEnabled } from '../lib/habitPrefs'
+import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
@@ -97,6 +99,9 @@ const NotesPage = lazy(() => import('./notes/NotesPage'))
 const LoopHome = lazy(() => import('./method/LoopHome').then((m) => ({ default: m.LoopHome })))
 // The start guide (lean-chrome D5): its own chunk; it opens over the Inbox once per account, or from Settings.
 const FirstRunGuide = lazy(() => import('./FirstRun').then((m) => ({ default: m.FirstRunGuide })))
+// Habits (habits-home D9): the screen and the New habit form load on first use.
+const HabitsScreen = lazy(() => import('./habits/HabitsScreen'))
+const HabitFormHost = lazy(() => import('./habits/HabitForm'))
 // Calendar, Settings and Import are not on the Inbox's first screen: each loads on first visit.
 const CalendarView = lazy(() => import('./CalendarView').then((m) => ({ default: m.CalendarView })))
 const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
@@ -229,6 +234,9 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // cheat sheet, the sidebar toggle and the assistant.
   useShortcutDispatcher()
   const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
+  // Off means off (habits-home D2): `g Shift+H` does nothing unless Habits is on.
+  const habitsOn = useHabitsEnabled()
+  const habitForm = useHabitForm()
   useShortcutScope('global', {
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }), 'go.projects': go({ view: 'projects' }),
@@ -237,6 +245,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
     'go.focus': go({ view: 'focus' }), 'go.notes': go({ view: 'notes' }), 'go.close': go({ view: 'review', step: 'close' }),
+    'go.habits': () => (habitsOn ? navigate({ view: 'habits' }) : false),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -328,6 +337,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><WaitingView /></Suspense>
           ) : route.view === 'loop' ? (
             <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
+          ) : route.view === 'habits' ? (
+            <Suspense fallback={null}><HabitsScreen /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (
@@ -372,6 +383,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <WelcomeDialog user={user} /><FeedbackHost />
       {/* The start guide after it (first-run "Three-step first run"); never a row of the list. */}
       <PanelBoundary><Suspense fallback={null}><FirstRunGuide user={user} /></Suspense></PanelBoundary>
+      {habitForm && <PanelBoundary><Suspense fallback={null}><HabitFormHost /></Suspense></PanelBoundary>}
       {/* The g … spotlight (shortcut-spotlight): shown after a hesitation, never focused. */}
       <Spotlight />
       <ReminderToasts />

@@ -4,6 +4,7 @@
 // tree positions assistive technology announces. TaskListView only wires these to
 // the live data; tests call them directly.
 import { nextWaiting, waitingTimeSensitive } from './closedList'
+import { isGraduated } from './habits'
 import { formatDateHeading, formatTime, type ResolvedDateTime } from './dates'
 import type { Projection } from './occurrences'
 import { inboxTasks, isInboxTask, isPlaced, type InboxParentOf } from './inbox'
@@ -207,7 +208,7 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   const keepProject = scope.view === 'project' ? scope.id : undefined
   // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
-  const shown = (task: Task) => !task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject // inbox-rule-ok: as above
+  const shown = (task: Task) => !isGraduated(task) && (!task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject) // inbox-rule-ok: as above
   const byDone = (a: Task, b: Task) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
   switch (scope.view) {
     case 'inbox': {

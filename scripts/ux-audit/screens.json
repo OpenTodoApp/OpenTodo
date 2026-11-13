@@ -512,6 +512,17 @@
   "story": "Screens/Statistics charts"
  },
  {
+  "id": "habits",
+  "route": "habits",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "daily",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "Shown only while Habits is on, and the layout seed has no habit; the screen's stories are in the visual baselines",
+  "story": "Screens/Habits"
+ },
+ {
   "id": "completed",
   "route": "completed",
   "kind": "screen",

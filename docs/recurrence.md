@@ -389,9 +389,11 @@ way. A completion through the REST API, CalDAV or an assistant writes the
 record whole too, with `skipped: false`, so the later of a skip and a completion
 of the same day wins.
 
-Skipped a day by mistake? Set the task's date back to that day and complete it:
-the completion writes the same record with `skipped: false`, so the day reads as
-done. The history grid itself is read-only.
+Skipped a day by mistake? While [Habits](habits.md) is on, choose the day in the
+thread or the month grid and pick **Done**, **Tiny version**, **Skipped** or
+**Clear**: the first three write that date's record (the same derived id) without
+moving the series, and Clear tombstones it so the day reads as missed. Two devices
+editing the same day converge on the state written last.
 
 The REST API behaves the same: `PATCH /api/v1/tasks/{id}` with a non-null
 `completed_at` on a recurring task records the occurrence and moves the task (see
@@ -438,6 +440,26 @@ The rules:
   without adding to it. Unscheduled days (Tuesday for `every mon, wed, fri`)
   are never missed.
 - The **best** streak is the longest such run in the habit's history.
+- A day logged as the habit's **tiny version** (the record's `tiny` field) counts
+  as done for the streaks and every number below, and the grid shows it half filled.
+- **Kept** is the number of done days (tiny included) among the last seven
+  scheduled days before the current occurrence, shown as "N of M", M being seven or
+  fewer for a young habit. Seven scheduled days, not seven calendar days: a weekly
+  habit reads its last seven sessions.
+- **Strength** is an exponential moving average over the scheduled days, oldest
+  first, from 0: `s = s × (1 − a) + a × v`, `v` 1 for a done day and 0 for a missed
+  one, skipped days leaving it unchanged, the current day counted once it is done.
+  `a = 1 − 0.5^(√f / 13)`, `f` being the rule's scheduled days per day (over the 364
+  days up to the current occurrence: 1 for `every day`, 3/7 for three a week), so
+  one miss after 60 kept days costs about five points and the score means the same
+  for daily and weekly habits. It is shown rounded, 0 to 100.
+- **At risk**: the two latest scheduled days before the current occurrence were both
+  missed. **Back on track**: the latest one is done after two or more missed.
+- A **graduated** habit (`habit_graduated_at` set, and its rule's `until` set to the
+  last scheduled day before graduating) is in no list, projection, reminder or Today
+  limit. **Resume** starts a new piece of its [lineage](#this-and-following) on the
+  logical today, so the days in between are outside every piece's range and read as
+  unscheduled.
 
 Catching up after being overdue leaves missed days, because that is what
 happened: `every day` due Monday and completed on Wednesday records Monday and
@@ -451,8 +473,9 @@ for a habit is the day you are living in. A habit due on the 14th and done at
 (the record's day is always the occurrence's due date), counts in the streak,
 and the 15th is pending and not at risk until 04:00 on the 16th.
 
-The month grid marks each day as done (check mark), skipped (dash), missed
-(dashed outline), pending (circle) or upcoming, with the date and state as each
+The month grid marks each day as done (check mark), the tiny version (half
+filled), skipped (dash), missed (dashed outline, never a danger colour), pending
+(circle) or upcoming, with the date and state as each
 day's accessible name ("6 October, skipped"). Arrow keys move by a day or a
 week, Home and End jump to the month's first and last day, and Page Up and Page
 Down change the month.

@@ -329,6 +329,11 @@ func PlanActOn(id string, row Entity, date string, action OccurrenceAction, task
 	}
 	plan := ActPlan{RecordID: OccurrenceID(id, date)}
 	state := actionFields(action, now)
+	// A habit's full completion writes tiny false (habits-home D5); the field is
+	// never copied from the series.
+	if action.Kind == "complete" && string(row["habit"]) == "true" {
+		state["tiny"] = json.RawMessage("false")
+	}
 	for _, r := range RecordsOf(id, tasks) {
 		if r.ID == plan.RecordID {
 			plan.Existed, plan.Record = true, state

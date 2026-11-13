@@ -217,6 +217,39 @@ async function plainSetup() {
   const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
 }
 
+// ------------------------------------------------------------------ habits
+// The habits of the Habits scenes (habits-home), created once on the plain instance
+// and trashed after the last of the two shots, so other plain scenes have none.
+let habitIds = null
+let habitShots = 0
+async function habitsScene(ctx, remove = false) {
+  const api = async (method, path, body) => {
+    const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  if (remove) { for (const id of habitIds ?? []) await api('DELETE', `/api/v1/tasks/${id}`); habitIds = null; return null }
+  if (habitIds) return habitIds
+  const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
+  const make = async (title, recurrence, fields, kept) => {
+    const t = await api('POST', '/api/v1/tasks', { title, recurrence, due: { date: day(-kept.length - 1) }, ...fields })
+    await api('PATCH', `/api/v1/tasks/${t.id}`, { habit: true })
+    // Each kept day: the series stands on it, then its occurrence is completed there.
+    for (const n of kept) {
+      await api('PATCH', `/api/v1/tasks/${t.id}`, { due: { date: day(n) } })
+      await api('POST', `/api/v1/tasks/${t.id}/occurrences/${day(n)}/complete`, {})
+    }
+    await api('PATCH', `/api/v1/tasks/${t.id}`, { due: { date: day(0) } })
+    return t.id
+  }
+  habitIds = [
+    await make('Run', 'every day', { day_part: 'morning' }, [-13, -12, -10, -9, -8, -6, -5, -4, -2, -1]),
+    await make('Stretch', 'every day', { day_part: 'afternoon' }, [-6, -5, -4, -3, -1]),
+    await make('Read', 'every day', { evening: true }, [-20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+  ]
+  return habitIds
+}
+
 // ------------------------------------------------------------------ reusable list
 // The Groceries list of the reusable-list scenes, created once on the plain instance
 // (or deleted with `remove`): four aisle sections, open items and two ticked off.
@@ -614,6 +647,19 @@ const shots = [
     await editor.getByRole('tab', { name: /^Reminders/ }).click(); await editor.locator('[data-location-chip]').first().waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // Habits (habits-home): the Habits screen, and a habit's page with its numbers and month.
+  { name: 'habits', server: P, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-habit-row]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots === 2) await habitsScene(ctx, true) } },
+  { name: 'habit-page', server: P, async run(p, { ctx }) {
+    const [, , read] = await habitsScene(ctx)
+    await go(p, plainBase, `/task/${read}`, () => p.getByRole('button', { name: /every day/ }).first().waitFor())
+    await p.getByRole('button', { name: /every day/ }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await editor.locator('[data-habit-streak]').waitFor()
+    const section = editor.locator('[data-habit]'); await section.scrollIntoViewIfNeeded(); await settle(p, 400)
+    return clipOf(p, section, 16)
+  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots === 2) await habitsScene(ctx, true) } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)

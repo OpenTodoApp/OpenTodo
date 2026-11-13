@@ -107,7 +107,8 @@ export function nextFree(rule: Rule, due: string | null, today: string, complete
  */
 export function occurrencesInRange(series: Task, records: readonly Task[], today: string, from: string, to: string, zone?: string): { projections: Projection[]; capped: boolean } {
   const rule = seriesRule(series)
-  if (!rule || !series.due) return { projections: [], capped: false }
+  // A graduated habit projects nothing (habits-home D7).
+  if (!rule || !series.due || series.habit_graduated_at != null) return { projections: [], capped: false }
   const base = series.due
   const dueOn = (date: string): Due => (base.time ? { date, time: base.time, ...(base.tz ? { tz: base.tz } : {}) } : { date })
   const b = seriesBudget(series, records, base.date, today)

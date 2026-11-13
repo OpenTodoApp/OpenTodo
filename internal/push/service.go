@@ -18,6 +18,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/textutil"
 	"github.com/OpenTodoApp/opentodo/internal/webhook"
@@ -377,7 +378,9 @@ func (s *Service) eligible(ctx context.Context, d *dueReminder, quiet map[string
 		// brings the reminder back (OpenSpec `reminders`).
 		return false, false, nil
 	}
-	if !opsync.IsNull(t["completed_at"]) {
+	// A graduated habit fires no reminder (habits-home D7); Resume continues it as
+	// a new piece with its own copies of the reminders.
+	if !opsync.IsNull(t["completed_at"]) || !recurrence.Available(t["habit_graduated_at"]) {
 		return false, true, nil
 	}
 	waits, err := s.inQuietProject(ctx, d.UserID, jsonString(t["project_id"]), quiet)
