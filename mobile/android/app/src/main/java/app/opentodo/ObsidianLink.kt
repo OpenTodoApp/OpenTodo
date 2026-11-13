@@ -34,17 +34,11 @@ object ObsidianLink {
             val n = value.codePointCount(0, value.length)
             when (name) {
                 "vault" -> if (n < 1 || n > MAX_VAULT) return false
-                "file" -> if (n < 1 || n > MAX_FILE || value.startsWith("/") || badAnchor(value)) return false
+                "file" -> if (n < 1 || n > MAX_FILE || value.startsWith("/")) return false
                 else -> return false
             }
         }
         return true
-    }
-
-    /** A "#" starts a heading or block anchor (obsidian-anchors): neither the note nor the anchor may be empty. */
-    private fun badAnchor(file: String): Boolean {
-        val at = file.indexOf('#')
-        return at == 0 || (at > 0 && at == file.length - 1)
     }
 
     /** Percent-decodes one value: only the allowed characters, well-formed escapes, valid UTF-8, no control characters. */

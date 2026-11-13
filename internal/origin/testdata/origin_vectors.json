@@ -374,34 +374,36 @@
       "tooltip": "Open in Obsidian: Notes › Inbox.md"
     },
     {
-      "name": "anchor kept in the id",
+      "name": "a # in the note name: the whole file is the note",
       "origin": {
         "kind": "obsidian",
         "id": "Plan#^abc123.md",
         "url": "obsidian://open?vault=Notes&file=Plan%23%5Eabc123"
       },
-      "valid": false,
-      "link": true
+      "valid": true,
+      "link": true,
+      "label": "Plan#^abc123",
+      "tooltip": "Open in Obsidian: Notes › Plan#^abc123.md"
     },
     {
-      "name": "empty anchor",
+      "name": "empty anchor: no anchored reading",
       "origin": {
         "kind": "obsidian",
         "id": "Inbox.md",
         "url": "obsidian://open?vault=Notes&file=Inbox%23"
       },
       "valid": false,
-      "link": false
+      "link": true
     },
     {
-      "name": "anchor without a note",
+      "name": "anchor without a note: no anchored reading",
       "origin": {
         "kind": "obsidian",
         "id": ".md",
         "url": "obsidian://open?vault=Notes&file=%23Heading"
       },
       "valid": false,
-      "link": false
+      "link": true
     },
     {
       "name": "new note action",

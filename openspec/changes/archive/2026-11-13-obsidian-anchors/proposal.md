@@ -4,8 +4,8 @@ Obsidian's own `open` action opens a note at a heading or block when `file` carr
 
 ## What Changes
 
-- A `#` in an Obsidian link's decoded `file` starts an anchor; the note is the part before it. `id` is the note's path without the anchor; the URL keeps it. Neither side may be empty. Still `open` only, still exactly `vault` and `file`.
-- Go (`internal/origin`), TypeScript (`web/src/lib/taskOrigin.ts`) and the Android and iOS shells' link checks, pinned by new shared vectors.
+- A `#` with text on both sides in an Obsidian link's decoded `file` can start an anchor: `id` may be the path of the part before it, and the URL keeps the anchor. A note whose name has a `#` stays valid with the whole file as `id`, as the Obsidian plugin writes it. Still `open` only, still exactly `vault` and `file`.
+- Go (`internal/origin`) and TypeScript (`web/src/lib/taskOrigin.ts`), pinned by new shared vectors. The shells check only the link's shape, which is unchanged.
 
 ## Capabilities
 

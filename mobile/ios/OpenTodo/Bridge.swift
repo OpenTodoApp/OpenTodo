@@ -163,10 +163,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             let n = value.unicodeScalars.count
             switch String(decoding: name, as: UTF8.self) {
             case "vault": if n < 1 || n > 255 { return false }
-            case "file":
-                if n < 1 || n > 1024 || value.hasPrefix("/") { return false }
-                // A "#" starts a heading or block anchor (obsidian-anchors): neither side may be empty.
-                if let at = value.firstIndex(of: "#"), at == value.startIndex || value.index(after: at) == value.endIndex { return false }
+            case "file": if n < 1 || n > 1024 || value.hasPrefix("/") { return false }
             default: return false
             }
         }
