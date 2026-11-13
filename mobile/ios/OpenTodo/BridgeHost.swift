@@ -36,6 +36,12 @@ final class BridgeHost: BridgeActions {
         NotificationCenter.default.post(name: SystemBars.changed, object: nil, userInfo: ["json": json])
     }
 
+    /// shell-repairs D5: only with a screen, and only a kind the contract names.
+    func bridgedHaptic(_ kind: String) {
+        guard interactive, let kind = Haptics.kind(kind) else { return }
+        Haptics.play(kind)
+    }
+
     func bridgedOpenExternal(_ url: String) {
         guard interactive, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)

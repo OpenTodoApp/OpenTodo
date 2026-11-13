@@ -1,5 +1,7 @@
 # Proposal
 
+> **Paused (2026-11-13).** The owner decided to stay with the web-view shells and make them feel native instead; the audit and plan are in [`mobile/AUDIT.md`](../../../mobile/AUDIT.md). The code in `mobile/app/` and the app sign-in on the server stay as they are. Nothing here is scheduled; open tasks stay open until the work resumes or the change is withdrawn.
+
 ## Why
 
 `native-app-foundation` gives the app sync, storage and sign-in. This change gives it the screens people use many times a day. It designs them for a phone from the start rather than porting the web app's layouts.

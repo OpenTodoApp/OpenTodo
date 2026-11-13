@@ -25,12 +25,7 @@ export function themeFileText(doc: ThemeDocument): string {
 
 /** Offers the theme as a download from a Blob URL (no server round trip). */
 export function downloadTheme(doc: ThemeDocument): void {
-  const url = URL.createObjectURL(new Blob([themeFileText(doc)], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = themeFileName(doc.name)
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  void import('../saveFile').then((m) => m.saveFile(new Blob([themeFileText(doc)], { type: 'application/json' }), themeFileName(doc.name)))
 }
 
 export type ThemeFileResult = { ok: true; doc: ThemeDocument } | { ok: false; message: string; line?: number }

@@ -41,11 +41,7 @@ export function ServerArchivePanel() {
     setError(null)
     try {
       const { blob, filename } = await api.downloadServerArchive()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = filename
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+      await (await import('../lib/saveFile')).saveFile(blob, filename)
     } catch (err) {
       setError(archiveErrorMessage(err))
     } finally {

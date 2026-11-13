@@ -1,3 +1,4 @@
+import UIKit
 import UserNotifications
 import XCTest
 @testable import OpenTodo
@@ -77,6 +78,13 @@ final class VersionTests: XCTestCase {
 
 /// What App Store review reads from the bundle (ios-distribution D7).
 final class StoreReadinessTests: XCTestCase {
+    /// shell-repairs D8: without the text iOS refuses the Face ID prompt, and unlocking an
+    /// encrypted account with the stored key fails.
+    func testTheFaceIDTextIsDeclared() throws {
+        let text = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "NSFaceIDUsageDescription") as? String)
+        XCTAssertFalse(text.trimmingCharacters(in: .whitespaces).isEmpty)
+    }
+
     func testExportComplianceIsDeclared() {
         XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption") as? Bool, false)
     }
@@ -231,8 +239,73 @@ final class BridgeTests: XCTestCase {
     }
 
     func testCapabilitiesFollowTheDevice() {
-        XCTAssertEqual(Bridge.capabilities(biometric: false, share: true), ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars"])
+        XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
+    }
+
+    /// shell-repairs D5, D3: haptics only with a screen and an engine; never `files`, since
+    /// WebKit downloads what the web app saves.
+    func testHapticsNeedAScreenAndFilesAreNeverListed() {
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true, haptics: true).contains("haptics"))
+        XCTAssertFalse(Bridge.capabilities(biometric: false, share: true, haptics: false).contains("haptics"))
+        XCTAssertEqual(Bridge.capabilities(biometric: false, share: false), ["reminders", "widgets"])
+        XCTAssertFalse(Bridge.capabilities(biometric: true, share: false, haptics: true).contains("haptics"))
+        for share in [true, false] {
+            XCTAssertFalse(Bridge.capabilities(biometric: true, share: share).contains("files"))
+        }
+    }
+
+    func testThePageScriptOffersHaptic() throws {
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: ["haptics"])
+        XCTAssertTrue(script.contains("haptic: function (kind) { call('haptic', [String(kind)]) }"))
+        XCTAssertFalse(script.contains("saveFile"))
+    }
+
+    /// shell-repairs D5: the kinds the web app hands over (the shared bridge fixture, with
+    /// the Android tests) are played, and any other kind is ignored.
+    func testHapticKindsFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/haptics.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["method"] as? String, "haptic")
+        let kinds = try XCTUnwrap(fixture["kinds"] as? [String])
+        XCTAssertEqual(Set(kinds), Set(Haptics.Kind.allCases.map(\.rawValue)))
+        for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
+        let unknown = try XCTUnwrap(fixture["unknown"] as? String)
+        XCTAssertNil(Haptics.kind(unknown), unknown)
+    }
+
+    func testHapticKinds() {
+        XCTAssertEqual(Haptics.kind("tick"), .tick)
+        XCTAssertEqual(Haptics.kind("success"), .success)
+        for other in ["", "warning", "Tick", "tick ", "error"] { XCTAssertNil(Haptics.kind(other), other) }
+    }
+
+    /// shell-repairs D7: the remembered bars decide the status bar icons, and nothing
+    /// remembered leaves them to the system.
+    func testTheStatusBarStyleFollowsTheStoredBars() {
+        XCTAssertEqual(StatusBar.style(lightIcons: true), .lightContent)
+        XCTAssertEqual(StatusBar.style(lightIcons: false), .darkContent)
+        XCTAssertEqual(StatusBar.style(lightIcons: nil), .default)
+        XCTAssertEqual(StatusBar.style(stored: "{\"color\":\"#101014\",\"dark\":true}"), .lightContent)
+        XCTAssertEqual(StatusBar.style(stored: "{\"color\":\"#ffffff\",\"dark\":false}"), .darkContent)
+        XCTAssertEqual(StatusBar.style(stored: nil), .default)
+        XCTAssertEqual(StatusBar.style(stored: "{\"color\":\"red\",\"dark\":true}"), .default)
+    }
+
+    /// A new choice reaches the style the root controller answers; forgetting the server clears it.
+    func testAHandOverChangesTheStyleTheRootAnswers() {
+        defer { StatusBar.show(lightIcons: nil) }
+        StatusBar.show(lightIcons: true)
+        XCTAssertEqual(StatusBar.current, .lightContent)
+        XCTAssertEqual(StatusBarController(content: UIViewController()).preferredStatusBarStyle, .lightContent)
+        StatusBar.show(lightIcons: false)
+        XCTAssertEqual(StatusBar.current, .darkContent)
+        StatusBar.show(lightIcons: nil)
+        XCTAssertEqual(StatusBar.current, .default)
     }
 
     func testSafeExternalAllowsOnlyOpenableSchemes() {
@@ -339,7 +412,34 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.pendingPath, "/?task=abc")
     }
 
-    func testAReminderLinkKeepsOnlyTheTwoActions() {
+    /// shell-repairs D6: Done, Snooze and Dismiss build the addresses of the shared bridge
+    /// fixture (the Android app's too), which the web app reads.
+    func testReminderActionsBuildTheFixturesAddresses() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/actions.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let cases = try XCTUnwrap(fixture["reminderActions"] as? [[String: String]])
+        // Plain ids only: Android writes a space as "+", this shell as "%20"; the web app reads both.
+        let plain = cases.filter { $0["id"] == "abc" }
+        XCTAssertEqual(Set(plain.compactMap { $0["action"] }), Set(Notifications.actions))
+        let model = AppModel()
+        for c in plain {
+            let id = try XCTUnwrap(c["id"])
+            model.show(reminder: id, action: c["action"])
+            XCTAssertEqual(model.pendingPath, c["path"])
+        }
+    }
+
+    func testDoneOpensTheReminderWithDone() {
+        let model = AppModel()
+        model.show(reminder: "abc", action: "done")
+        XCTAssertEqual(model.pendingPath, "/?reminder=abc&action=done")
+        model.handle(url: URL(string: "opentodo://reminder/r1?action=done")!)
+        XCTAssertEqual(model.pendingPath, "/?reminder=r1&action=done")
+    }
+
+    func testAReminderLinkKeepsOnlyTheKnownActions() {
         let model = AppModel()
         model.handle(url: URL(string: "opentodo://reminder/r1?action=snooze")!)
         XCTAssertEqual(model.pendingPath, "/?reminder=r1&action=snooze")
@@ -450,6 +550,13 @@ final class NotificationRouteTests: XCTestCase {
         XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: "dismiss"), .reminder("r1", action: "dismiss"))
     }
 
+    /// shell-repairs D6: the third button, first in the notification.
+    func testDoneGoesToTheReminder() {
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: "done"), .reminder("r1", action: "done"))
+        XCTAssertEqual(Notifications.actions, ["done", "snooze", "dismiss"])
+        XCTAssertEqual(Notifications.route(reminder: "r1", task: "t1", action: "complete"), .app)
+    }
+
     func testTheTestNotificationOnlyOpensTheApp() {
         for action in [UNNotificationDefaultActionIdentifier, "snooze", "dismiss"] {
             XCTAssertEqual(Notifications.route(reminder: Notifications.testReminder, task: "", action: action), .app, action)
@@ -479,5 +586,63 @@ final class VersionNormalizeTests: XCTestCase {
         XCTAssertEqual(Version.normalize("1.2.3"), "1.2.3")
         XCTAssertEqual(Version.normalize(nil), "0.0.0-dev")
         XCTAssertEqual(Version.normalize(" "), "0.0.0-dev")
+    }
+}
+
+/// Saving files (shell-repairs D3, native-shells "Saving files"): what becomes a download.
+final class DownloadsTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+    private func u(_ s: String) -> URL { URL(string: s)! }
+
+    func testAFileOfTheServerIsSaved() {
+        XCTAssertTrue(Downloads.saves(action: u("https://todo.example.com/api/v1/export"), server: server, shouldPerformDownload: true))
+        XCTAssertTrue(Downloads.saves(action: u("https://Todo.Example.com:443/api/v1/export?format=json"), server: server, shouldPerformDownload: true))
+        XCTAssertTrue(Downloads.saves(response: u("https://todo.example.com/api/v1/export"), server: server, isAttachment: true, canShowMIMEType: true))
+        XCTAssertTrue(Downloads.saves(response: u("https://todo.example.com/api/v1/archive"), server: server, isAttachment: false, canShowMIMEType: false))
+    }
+
+    func testAFileThePageMadeIsSaved() {
+        let blob = u("blob:https://todo.example.com/6f1c2a50-0b0f-4d4e-9a53-2f5a8d0f6c11")
+        XCTAssertTrue(Downloads.fromServer(blob, server: server))
+        XCTAssertTrue(Downloads.saves(action: blob, server: server, shouldPerformDownload: true))
+        let local = u("http://localhost:8080")
+        XCTAssertTrue(Downloads.saves(action: u("blob:http://localhost:8080/6f1c2a50"), server: local, shouldPerformDownload: true))
+        XCTAssertFalse(Downloads.saves(action: u("blob:http://localhost:8081/6f1c2a50"), server: local, shouldPerformDownload: true))
+    }
+
+    func testNothingIsSavedFromAnotherSite() {
+        for address in ["https://evil.example.com/file.zip", "http://todo.example.com/file.zip", "https://todo.example.com:8443/file.zip",
+                        "https://todo.example.com.evil.example/file.zip", "blob:https://evil.example.com/6f1c2a50",
+                        "blob:null/6f1c2a50", "data:text/plain;base64,aGk=", "file:///etc/passwd", "about:blank"] {
+            XCTAssertFalse(Downloads.saves(action: u(address), server: server, shouldPerformDownload: true), address)
+            XCTAssertFalse(Downloads.saves(response: u(address), server: server, isAttachment: true, canShowMIMEType: false), address)
+        }
+    }
+
+    func testAPageNavigationIsNotADownload() {
+        XCTAssertFalse(Downloads.saves(action: u("https://todo.example.com/today"), server: server, shouldPerformDownload: false))
+        XCTAssertFalse(Downloads.saves(action: u("blob:https://todo.example.com/6f1c2a50"), server: server, shouldPerformDownload: false))
+        XCTAssertFalse(Downloads.saves(response: u("https://todo.example.com/today"), server: server, isAttachment: false, canShowMIMEType: true))
+    }
+
+    func testAnAttachmentIsReadFromTheHeader() {
+        let url = u("https://todo.example.com/api/v1/export")
+        func response(_ headers: [String: String]) -> URLResponse {
+            HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: headers)!
+        }
+        XCTAssertTrue(Downloads.isAttachment(response(["Content-Disposition": "attachment; filename=\"opentodo.json\""])))
+        XCTAssertTrue(Downloads.isAttachment(response(["content-disposition": " Attachment"])))
+        XCTAssertFalse(Downloads.isAttachment(response(["Content-Disposition": "inline; filename=\"a.png\""])))
+        XCTAssertFalse(Downloads.isAttachment(response([:])))
+        XCTAssertFalse(Downloads.isAttachment(URLResponse(url: url, mimeType: "text/plain", expectedContentLength: 2, textEncodingName: nil)))
+    }
+
+    func testTheNameIsItsLastPathComponent() {
+        XCTAssertEqual(Downloads.fileName("opentodo-recovery-key.txt"), "opentodo-recovery-key.txt")
+        XCTAssertEqual(Downloads.fileName("../../Library/Cookies/Cookies.binarycookies"), "Cookies.binarycookies")
+        XCTAssertEqual(Downloads.fileName("/etc/passwd"), "passwd")
+        XCTAssertEqual(Downloads.fileName("a\\b\\export.json"), "export.json")
+        XCTAssertEqual(Downloads.fileName("exports/"), "exports")
+        for empty in ["", " ", "/", "..", ".", "a/..", "../"] { XCTAssertEqual(Downloads.fileName(empty), "download", empty) }
     }
 }

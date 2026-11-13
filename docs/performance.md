@@ -272,7 +272,7 @@ and the first real-device record comes after 1.0
 
 ### The native app: first runs
 
-The nightly `app-perf` job measures the React Native app in `mobile/app` against
+The `app-perf` job (nightly until the native app was paused on 2026-11-13, now run by hand) measures the React Native app in `mobile/app` against
 [its budgets](#the-native-app) on an iPhone 16 simulator on GitHub's macOS runner,
 and fails when one is exceeded. The first runs (2026-11-11):
 

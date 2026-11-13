@@ -44,12 +44,15 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
 
 /** Open bytes held on this device; types the browser should not render are downloaded. */
 function openBlob(blob: Blob, a: Attachment, download?: boolean) {
+  if (download || !isInlineType(a.mime)) {
+    void import('./saveFile').then((m) => m.saveFile(blob, a.name))
+    return
+  }
   const href = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = href
   link.target = '_blank'
   link.rel = 'noopener'
-  if (download || !isInlineType(a.mime)) link.download = a.name
   link.click()
   setTimeout(() => URL.revokeObjectURL(href), 60_000)
 }

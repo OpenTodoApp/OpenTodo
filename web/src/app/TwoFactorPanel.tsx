@@ -107,14 +107,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}
       onCopy={() => void copyText(text).then(() => setCopied(true), () => setCopied(false))}
-      onDownload={() => {
-        const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'opentodo-recovery-codes.txt'
-        a.click()
-        setTimeout(() => URL.revokeObjectURL(url), 1000)
-      }}
+      onDownload={() => void import('../lib/saveFile').then((m) => m.saveFile(new Blob([text], { type: 'text/plain' }), 'opentodo-recovery-codes.txt'))}
     />
   )
 }

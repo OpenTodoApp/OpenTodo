@@ -1,0 +1,24 @@
+{
+  "description": "Saving a file made in the page (shell-repairs D2): each entry of calls is one saveFile argument, in order. The shell appends the decoded chunks of one id to a file, answers \"more\" until the chunk with last, then opens the save dialog with the name and type and answers saved, cancelled or failed. A new id discards an unfinished file; a malformed call answers failed.",
+  "method": "saveFile",
+  "calls": [
+    "{\"id\":\"f-1\",\"name\":\"opentodo-recovery-key.txt\",\"type\":\"text/plain\",\"data\":\"T3BlblRvZG8gcmVjb3Zlcnkga2V5CgrD\",\"last\":false}",
+    "{\"id\":\"f-1\",\"name\":\"opentodo-recovery-key.txt\",\"type\":\"text/plain\",\"data\":\"pGxwaGEtYnLDpHZvLWNow6RybGllCg==\",\"last\":true}"
+  ],
+  "expect": {
+    "name": "opentodo-recovery-key.txt",
+    "type": "text/plain",
+    "bytes": "T3BlblRvZG8gcmVjb3Zlcnkga2V5CgrDpGxwaGEtYnLDpHZvLWNow6RybGllCg==",
+    "answers": [
+      "more",
+      "saved"
+    ]
+  },
+  "refused": [
+    "not json",
+    "{}",
+    "{\"id\":\"\",\"name\":\"a\",\"type\":\"\",\"data\":\"\",\"last\":true}",
+    "{\"id\":\"x\",\"name\":\"a\",\"type\":\"\",\"data\":\"***\",\"last\":true}",
+    "{\"id\":\"x\",\"name\":\"a\",\"type\":\"\",\"data\":\"\",\"last\":\"yes\"}"
+  ]
+}

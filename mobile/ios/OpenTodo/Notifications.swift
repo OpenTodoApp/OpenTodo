@@ -1,8 +1,8 @@
 import UserNotifications
 
 /// What a reminder's actions and taps do (ios-shell design D3). A local notification cannot
-/// change anything by itself: the web app owns every op, so Snooze, Dismiss and the tap all
-/// open the shell on a path the web app already understands, which is also why the two
+/// change anything by itself: the web app owns every op, so Done, Snooze, Dismiss and the tap
+/// all open the shell on a path the web app already understands, which is also why the
 /// actions are `.foreground` — a background launch would have no web app to talk to.
 @MainActor
 final class Notifications: NSObject, UNUserNotificationCenterDelegate {
@@ -19,15 +19,18 @@ final class Notifications: NSObject, UNUserNotificationCenterDelegate {
     /// The reminder id the test notification carries (`Reminders.test()`); it names no reminder.
     nonisolated static let testReminder = "test"
 
+    /// The notification's buttons, in the order shown; each is also the `action` of the
+    /// address the web app reads (`web/src/lib/shellActions.ts`, bridge fixture actions.json).
+    nonisolated static let actions = ["done", "snooze", "dismiss"]
+
     nonisolated static func route(reminder: String?, task: String?, action: String) -> Route {
         let task = task.flatMap { $0.isEmpty ? nil : $0 }
         guard let reminder, !reminder.isEmpty, reminder != testReminder else {
             return task.map(Route.task) ?? .app
         }
         switch action {
-        case "snooze", "dismiss": return .reminder(reminder, action: action)
         case UNNotificationDefaultActionIdentifier: return task.map(Route.task) ?? .app
-        default: return .app
+        default: return actions.contains(action) ? .reminder(reminder, action: action) : .app
         }
     }
 

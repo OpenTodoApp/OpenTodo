@@ -49,4 +49,5 @@
     <string name="setup_web_page">Esta dirección responde con una página web, no como un servidor OpenTodo. Si tu servidor está detrás de una página de inicio de sesión, inicia sesión aquí; si no, revisa la dirección.</string>
     <string name="setup_sign_in">Iniciar sesión aquí</string>
     <string name="error_sign_in">Tu servidor está detrás de una página de inicio de sesión y el inicio de sesión no continuó en la app. Vuelve a iniciar sesión aquí.</string>
+    <string name="save_failed">No se pudo guardar el archivo.</string>
 </resources>

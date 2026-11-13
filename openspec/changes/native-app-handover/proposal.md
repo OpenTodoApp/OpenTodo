@@ -1,5 +1,7 @@
 # Proposal
 
+> **Paused (2026-11-13).** The owner decided to stay with the web-view shells and make them feel native instead; the audit and plan are in [`mobile/AUDIT.md`](../../../mobile/AUDIT.md). The code in `mobile/app/` and the app sign-in on the server stay as they are. Nothing here is scheduled; open tasks stay open until the work resumes or the change is withdrawn.
+
 ## Why
 
 After `native-app-foundation` and `native-app-everyday`, the native app (on TestFlight as 2.0.0 under the existing record) has the screens people use, but not what the current shells do outside the app:

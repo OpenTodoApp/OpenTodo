@@ -10,7 +10,9 @@ import android.view.View
 import android.webkit.WebView
 import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
+import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.Espresso.pressBackUnconditionally
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -24,6 +26,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 import java.net.ServerSocket
 
 /** Task 4.3: the web view, and the bridge on the configured origin only (native-shells D5). */
@@ -69,7 +72,7 @@ class BridgeTest {
         assertEquals("1", web.js("window.opentodoShell.bridge"))
         assertEquals("\"android\"", web.js("window.opentodoShell.platform"))
         val caps = web.js("window.opentodoShell.capabilities.join(',')")
-        for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone")) assertTrue("capability $c in $caps", caps.contains(c))
+        for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
@@ -123,6 +126,68 @@ class BridgeTest {
         web.waitForJs("location.pathname", "\"/b\"")
         pressBack()
         web.waitForJs("location.pathname", "\"/\"")
+    }
+
+    /** shell-repairs D4: Back that left the app still goes back in it when the app is shown again. */
+    @Test fun backStillGoesBackAfterLeavingTheApp() {
+        val (scenario, web) = open()
+        // The first screen: Back sends the app to the background and keeps the activity.
+        pressBackUnconditionally()
+        waitUntil("the app in the background") { scenario.state == Lifecycle.State.CREATED }
+        shell("am start -n ${context.packageName}/${MainActivity::class.java.name}")
+        waitUntil("the app shown again") { scenario.state == Lifecycle.State.RESUMED }
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { web.loadUrl(server.origin + "/b") }
+        server.waitForPath("/b")
+        web.waitForJs("location.pathname", "\"/b\"")
+        pressBack()
+        web.waitForJs("location.pathname", "\"/\"")
+        assertEquals(Lifecycle.State.RESUMED, scenario.state)
+    }
+
+    /** shell-repairs D2: a file the page saves goes through the save dialog; its answer reaches the page. */
+    @Test fun aSavedFileIsWrittenWhereTheDialogSays() {
+        val target = File(context.cacheDir, "bridge-test-saved.txt").apply { delete() }
+        Intents.init()
+        try {
+            intending(hasAction(Intent.ACTION_CREATE_DOCUMENT))
+                .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, Intent().setData(Uri.fromFile(target))))
+            val (_, web) = open()
+            web.waitForJs("typeof window.opentodoShell", "\"object\"")
+            web.js(
+                "window.__a = null; window.__b = null;" +
+                    "window.opentodoShell.saveFile(JSON.stringify({id:'t',name:'../a.txt',type:'text/plain',data:'aGk=',last:false}))" +
+                    ".then(function (r) { window.__a = r; return window.opentodoShell.saveFile(JSON.stringify({id:'t',name:'../a.txt',type:'text/plain',data:'IQ==',last:true})) })" +
+                    ".then(function (r) { window.__b = r }); 0",
+            )
+            web.waitForJs("window.__b", "\"saved\"")
+            assertEquals("\"more\"", web.js("window.__a"))
+            assertEquals("hi!", target.readText())
+            val asked = Intents.getIntents().single { it.action == Intent.ACTION_CREATE_DOCUMENT }
+            assertEquals("a.txt", asked.getStringExtra(Intent.EXTRA_TITLE))
+            assertEquals("text/plain", asked.type)
+            waitUntil("the cache copy gone") { FileSaver.dir(context).listFiles().isNullOrEmpty() }
+        } finally {
+            Intents.release()
+            target.delete()
+        }
+    }
+
+    @Test fun aCancelledOrMalformedSaveSaysSoAndKeepsNothing() {
+        Intents.init()
+        try {
+            intending(hasAction(Intent.ACTION_CREATE_DOCUMENT)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null))
+            val (_, web) = open()
+            web.waitForJs("typeof window.opentodoShell", "\"object\"")
+            web.js("window.__c = null; window.opentodoShell.saveFile(JSON.stringify({id:'c',name:'a.txt',type:'text/plain',data:'aGk=',last:true})).then(function (r) { window.__c = r }); 0")
+            web.waitForJs("window.__c", "\"cancelled\"")
+            web.js("window.__m = null; window.opentodoShell.saveFile('not json').then(function (r) { window.__m = r }); 0")
+            web.waitForJs("window.__m", "\"failed\"")
+            // An unknown kind of haptic feedback is ignored, and a known one needs nothing.
+            web.js("window.opentodoShell.haptic('warning'); window.opentodoShell.haptic('tick'); 0")
+            waitUntil("the cache copy gone") { FileSaver.dir(context).listFiles().isNullOrEmpty() }
+        } finally {
+            Intents.release()
+        }
     }
 
     @Test fun anUnreachableServerShowsTheOfflineScreen() {

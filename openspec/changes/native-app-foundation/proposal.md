@@ -1,5 +1,7 @@
 # Proposal
 
+> **Paused (2026-11-13).** The owner decided to stay with the web-view shells and make them feel native instead; the audit and plan are in [`mobile/AUDIT.md`](../../../mobile/AUDIT.md). The code in `mobile/app/` and the app sign-in on the server stay as they are. Nothing here is scheduled; open tasks stay open until the work resumes or the change is withdrawn.
+
 ## Why
 
 The iPhone app (`ios-shell`, `ios-distribution`) is the web app inside a web view. People who tried it are disappointed. Scrolling, navigation, sheets, the keyboard and gestures all behave like a website. On a phone that is the difference between an app people keep and one they delete, and a second disappointment would cost more than the first. The Android app is the same kind of shell and has the same ceiling.

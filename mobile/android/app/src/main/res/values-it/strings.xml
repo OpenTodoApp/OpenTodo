@@ -49,4 +49,5 @@
     <string name="setup_web_page">Questo indirizzo risponde con una pagina web, non come un server OpenTodo. Se il server è dietro una pagina di accesso, accedi qui; altrimenti controlla l’indirizzo.</string>
     <string name="setup_sign_in">Accedi qui</string>
     <string name="error_sign_in">Il server è dietro una pagina di accesso e l’accesso non è proseguito nell’app. Accedi di nuovo qui.</string>
+    <string name="save_failed">Non è stato possibile salvare il file.</string>
 </resources>

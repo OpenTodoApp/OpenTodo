@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7E3B9A52C1D04F86B2A5E913 /* Downloads.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D0A71C3E9B24F6881A3C0D7 /* Downloads.swift */; };
+		C92F6B14D8A34E7085B1F3A6 /* StatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C8E1F03B7D4926958E2D61 /* StatusBar.swift */; };
+		F6D2B8E4A1C7439E80B5D7C2 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E17A3C59B0F2486D9C4E8B25 /* InfoPlist.xcstrings */; };
 		019924B697460063BC288DD1 /* ShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AA01546E9D89832E97D0CC8 /* ShellView.swift */; };
 		0E58586F44510D255B9507A3 /* ShareMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38F2434289E6B5E5C230FE9 /* ShareMap.swift */; };
 		129207436EC529C5267F6E59 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D81052402DC912DF25E566D /* JSON.swift */; };
@@ -100,6 +103,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5D0A71C3E9B24F6881A3C0D7 /* Downloads.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Downloads.swift; sourceTree = "<group>"; };
+		A4C8E1F03B7D4926958E2D61 /* StatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBar.swift; sourceTree = "<group>"; };
+		E17A3C59B0F2486D9C4E8B25 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		0284DCAD743970B2CB3CCC0F /* OpenTodoShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OpenTodoShare.entitlements; sourceTree = "<group>"; };
 		0EBB2043E1AE8A8B6CCC2163 /* Version.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Version.swift; sourceTree = "<group>"; };
 		10E9CB49DE30DDBDD4134946 /* OpenTodoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenTodoApp.swift; sourceTree = "<group>"; };
@@ -231,8 +237,10 @@
 				C788B365C57DC492692D8E10 /* BiometricKeyStore.swift */,
 				16AF3DC74A2267EFDBC4C931 /* Bridge.swift */,
 				8794599E4D0E39C2DCF26C16 /* BridgeHost.swift */,
+				5D0A71C3E9B24F6881A3C0D7 /* Downloads.swift */,
 				361FC4E75D8FDF99A05140B8 /* HealthCheck.swift */,
 				219379B0310AFB0EB86C6A8D /* Info.plist */,
+				E17A3C59B0F2486D9C4E8B25 /* InfoPlist.xcstrings */,
 				8D81052402DC912DF25E566D /* JSON.swift */,
 				5132F5C96551EA51999C089B /* Notifications.swift */,
 				F44BDB908FFA6D9D6BFDEFF7 /* OpenTodo.entitlements */,
@@ -248,6 +256,7 @@
 				B38F2434289E6B5E5C230FE9 /* ShareMap.swift */,
 				2AA01546E9D89832E97D0CC8 /* ShellView.swift */,
 				B2E4D6F8193C5E7A9B1D2F46 /* SignInFlow.swift */,
+				A4C8E1F03B7D4926958E2D61 /* StatusBar.swift */,
 				30808D5A379DF00A50741685 /* Store.swift */,
 				0EBB2043E1AE8A8B6CCC2163 /* Version.swift */,
 				D76B6CC810FF847258BFE66C /* WidgetPublication.swift */,
@@ -421,6 +430,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				49BDEDE91D605613D757ED93 /* Assets.xcassets in Resources */,
+				F6D2B8E4A1C7439E80B5D7C2 /* InfoPlist.xcstrings in Resources */,
 				E8272D009EC5D29F2FDC49DC /* Localizable.xcstrings in Resources */,
 				D02A9017D75C70840990A6F9 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -492,6 +502,7 @@
 				560C61BD4251D7BB58A71EC1 /* BiometricKeyStore.swift in Sources */,
 				28E6935BE94290233F7E5404 /* Bridge.swift in Sources */,
 				1AF4F45D1A7A4F8E955EC260 /* BridgeHost.swift in Sources */,
+				7E3B9A52C1D04F86B2A5E913 /* Downloads.swift in Sources */,
 				D49CB798F6CA86EB222544EE /* HealthCheck.swift in Sources */,
 				129207436EC529C5267F6E59 /* JSON.swift in Sources */,
 				A1D5DEAFEAAE605447031B36 /* Notifications.swift in Sources */,
@@ -506,6 +517,7 @@
 				0E58586F44510D255B9507A3 /* ShareMap.swift in Sources */,
 				019924B697460063BC288DD1 /* ShellView.swift in Sources */,
 				A1F3C5E7092B4D6F8A0C1E35 /* SignInFlow.swift in Sources */,
+				C92F6B14D8A34E7085B1F3A6 /* StatusBar.swift in Sources */,
 				EB5427342BA36950F7FA8CA6 /* Store.swift in Sources */,
 				9CC1ED807AF7798D89018403 /* Version.swift in Sources */,
 				F2E95D1D34C7A76BED542BDD /* WidgetPublication.swift in Sources */,

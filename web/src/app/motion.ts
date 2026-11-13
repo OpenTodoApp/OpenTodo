@@ -7,6 +7,7 @@ import { flushSync } from 'react-dom'
 import { useCallback, useSyncExternalStore } from 'react'
 import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
 import { resettable } from '../lib/moduleState'
+import { has, shellHaptic, type ShellHaptic } from '../lib/shell'
 import { createSignal } from '../lib/store'
 
 /** A duration token in milliseconds, or the fallback when the stylesheet has none (tests). */
@@ -306,20 +307,36 @@ function watchHaptics(): void {
   watchHapticsPref((on) => { hapticsOn = on })
 }
 
-/** Whether this device can vibrate at all (the Appearance switch shows only then). */
+const browserVibrates = () => typeof navigator !== 'undefined' && 'vibrate' in navigator && typeof navigator.vibrate === 'function'
+
+/** Whether this device can give feedback at all: a shell with `haptics`, or a browser that vibrates (the Appearance switch shows only then). */
 export function canVibrate(): boolean {
-  return typeof navigator !== 'undefined' && 'vibrate' in navigator && typeof navigator.vibrate === 'function'
+  return has('haptics') || browserVibrates()
 }
 
-/** A short tick (10 ms) when a task completes or a long press lifts one, unless haptics are off. */
-export function tick(): void {
+/** The shell's own feedback (shell-repairs D5), else the browser's 10 ms vibration. */
+function play(kind: ShellHaptic): void {
+  if (!shellHaptic(kind) && browserVibrates()) navigator.vibrate(10)
+}
+
+function haptic(kind: ShellHaptic): void {
   if (!canVibrate()) return
   watchHaptics()
   if (hapticsOn === null) {
-    void readHapticsPref().then((on) => { hapticsOn = on; if (on) navigator.vibrate(10) }, () => {})
+    void readHapticsPref().then((on) => { hapticsOn = on; if (on) play(kind) }, () => {})
     return
   }
-  if (hapticsOn) navigator.vibrate(10)
+  if (hapticsOn) play(kind)
+}
+
+/** A short tick when a long press lifts a row or a drag snaps, unless haptics are off. */
+export function tick(): void {
+  haptic('tick')
+}
+
+/** The feedback of a completed task, unless haptics are off. */
+export function success(): void {
+  haptic('success')
 }
 
 /** Tests: forget the cached preference. */

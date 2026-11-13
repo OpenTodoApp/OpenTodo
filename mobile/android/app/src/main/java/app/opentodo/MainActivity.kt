@@ -68,6 +68,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var permissionDone: ((Boolean) -> Unit)? = null
     private val io = Executors.newSingleThreadExecutor()
+    /** Files the app saves (shell-repairs D2): the bridge's chunks, the server's downloads, the save dialog. */
+    private val saver = FileSaver(this)
 
     private val setup = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         if (r.resultCode == RESULT_OK) start() else finish()
@@ -119,6 +121,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         findViewById<View>(R.id.site_close).setOnClickListener { backToServer() }
         // The last bars the app asked for, before the page draws (theme-engine D8).
         SystemBars.parse(Prefs(this).systemBars)?.let { setSystemBars(it) }
+        saver.clearStale()
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
@@ -131,7 +134,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                     // (the wall answered the first page), back leaves the app as usual.
                     siteBar.visibility == View.VISIBLE && serverInHistory() -> backToServer()
                     siteBar.visibility != View.VISIBLE && web.canGoBack() -> web.goBack()
-                    else -> { isEnabled = false; onBackPressedDispatcher.onBackPressed() }
+                    // The first screen: to the background, as the system does for a launcher
+                    // activity. The callback stays on, so Back works again when the app is
+                    // shown again (shell-repairs D4).
+                    else -> moveTaskToBack(true)
                 }
             }
         })
@@ -159,6 +165,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         webMic?.let { try { it.deny() } catch (e: IllegalStateException) { /* already answered */ } }
         webMic = null
         io.shutdown()
+        saver.close()
         if (::web.isInitialized) web.destroy()
         super.onDestroy()
     }
@@ -187,6 +194,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             }
             web.webViewClient = Client()
             web.webChromeClient = Chrome()
+            // A download: a file of the server is fetched and saved; another site's is a foreign link.
+            web.setDownloadListener { url, userAgent, disposition, mimeType, _ ->
+                saver.download(url, origin, userAgent, disposition, mimeType) { if (Bridge.safeExternal(it)) openExternal(it) }
+            }
             Bridge(this, server, this).install(web)
             HiddenRun.schedulePeriodic(this)
         }
@@ -565,6 +576,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         val controller = WindowCompat.getInsetsController(window, window.decorView)
         controller.isAppearanceLightStatusBars = !bars.lightIcons
         controller.isAppearanceLightNavigationBars = !bars.lightIcons
+    }
+
+    override fun saveFile(json: String, done: (String) -> Unit) = saver.chunk(json, done)
+
+    /** On the web view, so it follows the phone's touch-feedback setting and needs no permission. */
+    override fun haptic(constant: Int) {
+        if (::web.isInitialized) web.performHapticFeedback(constant)
     }
 
     override fun openExternal(url: String) {

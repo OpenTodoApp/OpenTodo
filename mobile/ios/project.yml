@@ -39,6 +39,9 @@ targets:
         # input; without these two the system kills the app on the first request.
         NSMicrophoneUsageDescription: Record a voice note and send it to the server for transcription.
         NSCameraUsageDescription: Take a photo to attach to a task or a note.
+        # Unlocking an encrypted account with the key in the keychain (BiometricKeyStore):
+        # without it iOS refuses the Face ID prompt. Translated in OpenTodo/InfoPlist.xcstrings.
+        NSFaceIDUsageDescription: OpenTodo uses Face ID to unlock your encrypted tasks on this iPhone.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UIApplicationShortcutItems:

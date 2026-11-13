@@ -9,6 +9,8 @@ order: 8
 ---
 # Work on the native app
 
+> The native app is paused since 2026-11-13 ([why](../../mobile/AUDIT.md)). Its nightly builds are off; the checks below still run when its code or a shared module changes.
+
 `mobile/app/` is the phone app in progress (OpenSpec change `native-app-foundation`): React Native with Expo, drawn with the system's own views, and sharing sync, ops, encryption, dates, recurrence and quick add with the web app. It is not the iPhone or Android shell in `mobile/ios` and `mobile/android`, which load the web app.
 
 ## Without a Mac
@@ -67,8 +69,8 @@ Every package is pinned exactly and has a line in `mobile/app/DEPENDENCIES.md` s
 | Job | Runs when | What |
 | --- | --- | --- |
 | `app-check` (Linux) | `mobile/app/`, a module in `shared-modules.json`, `web/src/generated/opSchema.ts`, `web/src/locales/`, the `Makefile` or the workflow changes | `make app` |
-| `App builds / App on iOS` (macOS) | a pull request that changes `mobile/app/`, nightly | `expo prebuild`, a Release simulator build without signing |
+| `App builds / App on iOS` (macOS) | a pull request that changes `mobile/app/` | `expo prebuild`, a Release simulator build without signing |
 | `App builds / App on Android` (Linux) | the same | `expo prebuild`, a debug build, the unit tests |
-| `App builds / App performance` (macOS) | nightly; by hand with `gh workflow run app-native.yml --ref <branch> -f perf=true` | the `perfseed` account on the simulator: cold start to Today, Inbox, a 500-op pull page, memory, and a write that survives the app being killed |
+| `App builds / App performance` (macOS) | by hand with `gh workflow run app-native.yml --ref <branch> -f perf=true` | the `perfseed` account on the simulator: cold start to Today, Inbox, a 500-op pull page, memory, and a write that survives the app being killed |
 
 A web-only pull request runs none of them, and a change to a shared module runs only `app-check`. Release tags do not wait for the app's builds: no release ships the app yet. The cases are in the path filter's test, `scripts/repo-checks.test.mjs`.
