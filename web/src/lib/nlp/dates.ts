@@ -211,7 +211,7 @@ function guardedAt(tokens: readonly Token[], i: number, v: Vocabulary): boolean 
 }
 
 /** Month index (1–12) of a token; abbreviations only when `allowAbbr`. */
-function monthAt(tokens: readonly Token[], i: number, v: Vocabulary, allowAbbr: boolean): number {
+export function monthAt(tokens: readonly Token[], i: number, v: Vocabulary, allowAbbr: boolean): number {
   for (let m = 0; m < 12; m++) {
     const mv = v.months[m]
     if (phraseAt(tokens, i, mv.names, `${v.code}:mn${m}`) > 0) return m + 1

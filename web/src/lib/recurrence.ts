@@ -22,7 +22,8 @@ export type Rule =
   | Ends & { kind: 'lastDay'; afterCompletion: false }
   /** The ordinal-th Monday-to-Friday day of the month (1–4, or -1 for the last). */
   | Ends & { kind: 'workday'; ordinal: number; afterCompletion: false }
-  | Ends & { kind: 'nthWeekday'; ordinal: number; weekday: number; afterCompletion: false }
+  /** With `month` (1–12) a yearly rule, `every last sunday of march` (yearly-weekday-of-month); without, monthly. */
+  | Ends & { kind: 'nthWeekday'; ordinal: number; weekday: number; month?: number; afterCompletion: false }
 
 interface Ends {
   /** YYYY-MM-DD or null. */
@@ -38,6 +39,11 @@ const WEEKDAY_ALIASES: Record<string, number> = {
   monday: 1, mon: 1, tuesday: 2, tue: 2, wednesday: 3, wed: 3, thursday: 4, thu: 4, friday: 5, fri: 5, saturday: 6, sat: 6, sunday: 7, sun: 7,
 }
 const WORD_ORDINALS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, last: -1 }
+const MONTH_NAMES = ['', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+const MONTH_ALIASES: Record<string, number> = { sept: 9 }
+MONTH_NAMES.forEach((name, m) => {
+  if (m) MONTH_ALIASES[name] = MONTH_ALIASES[name.slice(0, 3)] = m
+})
 const UNITS: Unit[] = ['day', 'week', 'month', 'year']
 
 export function ordinalSuffix(n: number): string {
@@ -148,6 +154,12 @@ function parseOrThrow(input: string): Rule {
       if (ordinal > 4) throw new RuleError(t('weekday ordinal must be 1st to 4th or last'))
       rule = { kind: 'nthWeekday', ordinal, weekday: WEEKDAY_ALIASES[next], afterCompletion: false, ...ends }
       i += 2
+      // `of <month>` (or `in <month>`) makes it yearly (yearly-weekday-of-month D1).
+      const monthWord = peek(1) ?? ''
+      if ((peek() === 'of' || peek() === 'in') && has(MONTH_ALIASES, monthWord)) {
+        rule.month = MONTH_ALIASES[monthWord]
+        i += 2
+      }
     } else {
       if (num === null) throw new RuleError(t('expected a weekday after "{word}"', { word: tok }))
       rule = { kind: 'monthDay', monthDay: num, afterCompletion: false, ...ends }
@@ -200,6 +212,7 @@ export function canonicalOf(r: Rule): string {
       break
     case 'nthWeekday':
       s += `${r.ordinal < 0 ? 'last' : `${r.ordinal}${ordinalSuffix(r.ordinal)}`} ${WEEKDAY_NAMES[r.weekday]}`
+      if (r.month) s += ` of ${MONTH_NAMES[r.month]}`
       break
   }
   if (r.afterCompletion) s += ' after completion'
@@ -365,6 +378,10 @@ function firstAfter(r: Rule, z: number): number {
       return z + 7
     default: {
       const [y, m] = civilFromDays(z)
+      if (r.kind === 'nthWeekday' && r.month) {
+        const c = nthWeekdayOf(y, r.month, r.ordinal, r.weekday)
+        return c > z ? c : nthWeekdayOf(y + 1, r.month, r.ordinal, r.weekday)
+      }
       const c = inMonth(r, y, m)
       if (c > z) return c
       return m === 12 ? inMonth(r, y + 1, 1) : inMonth(r, y, m + 1)

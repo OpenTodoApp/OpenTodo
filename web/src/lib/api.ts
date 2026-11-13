@@ -661,6 +661,8 @@ export const api = {
     upload<ImportPreview>('/api/v1/import/preview', file, filename, options),
   startImport: (file: Blob, filename: string, options: ImportOptions) =>
     upload<{ job: ImportJob }>('/api/v1/import', file, filename, options),
+  /** Todoist's sync answer for an API token (todoist-api-import), imported like a file. */
+  fetchTodoist: (token: string) => request<Record<string, unknown>>('POST', '/api/v1/import/todoist', { token }),
   listImportJobs: () => request<{ jobs: ImportJob[] }>('GET', '/api/v1/import/jobs'),
   getImportJob: (id: string) => request<{ job: ImportJob }>('GET', `/api/v1/import/jobs/${encodeURIComponent(id)}`),
   undoImport: (id: string) => request<{ job: ImportJob }>('POST', `/api/v1/import/jobs/${encodeURIComponent(id)}/undo`),
