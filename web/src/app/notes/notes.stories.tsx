@@ -149,3 +149,18 @@ function SortMenu() {
 
 /** Sort in the header's menu (notes-sort D1): Title checked, its arrow, the heading named after the order. */
 export const SortOrder: StoryObj = { render: () => <SortMenu /> }
+
+/** Templates (note-templates): a template's row says Template; the template chip in the search field. */
+export const Templates: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl space-y-0.5">
+        <NoteRow entry={entry({ key: 'n3', source: 'note', title: 'Meeting {{date}}', text: '## Attendees\n## Notes\n## Actions', projectId: work.id, template: true })}
+          project={work} labels={[]} updated="2 d ago" onOpen={() => {}} menu={<NoteMenu pinned={false} template onTemplate={() => {}} onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+        <NoteRow entry={entry({ key: 'n4', source: 'note', title: 'Weekly review 12/11/2026', text: '## What went well', projectId: home.id })}
+          project={home} labels={[]} updated="1 h ago" onOpen={() => {}} menu={<NoteMenu pinned={false} onTemplate={() => {}} onPin={() => {}} onTurnIntoTask={() => {}} onDelete={() => {}} />} />
+      </ul>
+      <div className="mt-4"><Search chips={[{ key: 'template' }]} /></div>
+    </Column>
+  ),
+}

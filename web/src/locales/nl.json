@@ -7590,5 +7590,18 @@
   "when a note gets the label {label}": "wanneer een notitie het label {label} krijgt",
   "when a note is created": "wanneer een notitie wordt gemaakt",
   "when a note is edited": "wanneer een notitie wordt bewerkt",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# notitie past nu} other {# notities passen nu}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# notitie past nu} other {# notities passen nu}}",
+  "A new note from one of your templates or a built-in one": "Een nieuwe notitie uit een van je sjablonen of een meegeleverd sjabloon",
+  "Create a note from a template": "Notitie maken uit een sjabloon",
+  "Create a note from the template {template} in {project}": "Een notitie uit het sjabloon {template} in {project} maken",
+  "Find a template…": "Een sjabloon zoeken…",
+  "From template…": "Uit sjabloon…",
+  "No templates yet.": "Nog geen sjablonen.",
+  "On the Notes page: start a new note from a template": "Op de pagina Notities: een nieuwe notitie uit een sjabloon beginnen",
+  "Stop using as template": "Niet meer als sjabloon gebruiken",
+  "Use as template": "Als sjabloon gebruiken",
+  "Use template": "Sjabloon gebruiken",
+  "Your templates": "Je sjablonen",
+  "a deleted template": "een verwijderd sjabloon",
+  "template, meeting, journal, new note": "sjabloon, vergadering, dagboek, nieuwe notitie"
 }

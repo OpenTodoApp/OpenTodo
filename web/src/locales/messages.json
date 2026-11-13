@@ -445,6 +445,9 @@
   "A new link is on its way; the earlier one no longer works.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "A new note from one of your templates or a built-in one": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "A new note with a title and a text": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -2642,7 +2645,9 @@
     "web/src/app/themes/previewData.ts"
   ],
   "Built-in": [
-    "web/src/app/PreferencesPanels.tsx"
+    "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/notes/TemplatePicker.tsx",
+    "web/src/app/routines/wordPicker.tsx"
   ],
   "Bullet list": [
     "web/src/app/EditorChrome.tsx",
@@ -4140,6 +4145,12 @@
   ],
   "Create a new address?": [
     "web/src/app/EmailInboxPanel.tsx"
+  ],
+  "Create a note from a template": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Create a note from the template {template} in {project}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Create a password reset link for {name}?": [
     "web/src/app/UsersPanel.tsx"
@@ -6587,6 +6598,9 @@
     "web/src/app/routines/wordPicker.tsx",
     "web/src/app/task-detail/Facets.tsx"
   ],
+  "Find a template…": [
+    "web/src/app/notes/TemplatePicker.tsx"
+  ],
   "Find a view…": [
     "web/src/app/routines/words.tsx"
   ],
@@ -6968,6 +6982,10 @@
   ],
   "From email ({via})": [
     "web/src/lib/taskSource.ts"
+  ],
+  "From template…": [
+    "web/src/app/notes/NotesPage.tsx",
+    "web/src/app/notes/TemplatePicker.tsx"
   ],
   "From the backup destination": [
     "web/src/app/RestoreSection.tsx"
@@ -11066,6 +11084,9 @@
   "No template matches. Try another word, or upload a template file.": [
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "No templates yet.": [
+    "web/src/app/notes/TemplatePicker.tsx"
+  ],
   "No thanks": [
     "web/src/app/method/MethodModeChooser.tsx"
   ],
@@ -11961,6 +11982,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "On the Notes page: start a new note": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Notes page: start a new note from a template": [
     "web/src/lib/shortcuts.ts"
   ],
   "On the Notes page: switch between the list and the graph": [
@@ -16765,6 +16789,9 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Stop using as template": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
   "Stopped": [
     "web/src/app/CalendarSyncPanel.tsx",
     "web/src/app/IssuesPanel.tsx",
@@ -17221,13 +17248,16 @@
     "web/src/app/FeedbackDialog.tsx"
   ],
   "Template": [
+    "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Template file": [
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Templates": [
-    "web/src/app/TemplateDialogs.tsx"
+    "web/src/app/TemplateDialogs.tsx",
+    "web/src/app/notes/TemplatePicker.tsx"
   ],
   "Tenant": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -20253,6 +20283,7 @@
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/notes/NotesSidebar.tsx",
+    "web/src/app/notes/TemplatePicker.tsx",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/wordPicker.tsx",
@@ -20420,6 +20451,9 @@
   "Use an app code instead": [
     "web/src/app/ReauthDialog.tsx"
   ],
+  "Use as template": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
   "Use for dark": [
     "web/src/app/themes/YourThemes.tsx"
   ],
@@ -20453,6 +20487,9 @@
   ],
   "Use profile pictures from {name}": [
     "web/src/app/SsoPanel.tsx"
+  ],
+  "Use template": [
+    "web/src/app/notes/NoteEditor.tsx"
   ],
   "Use the keyboard": [
     "web/src/app/help/HelpView.tsx"
@@ -21603,6 +21640,10 @@
   "Your tasks, your server.": [
     "web/src/app/AuthScreen.tsx"
   ],
+  "Your templates": [
+    "web/src/app/notes/TemplatePicker.tsx",
+    "web/src/app/routines/wordPicker.tsx"
+  ],
   "Your themes": [
     "web/src/app/themes/YourThemes.tsx"
   ],
@@ -21655,6 +21696,9 @@
     "web/src/app/routines/words.tsx"
   ],
   "a deleted task": [
+    "web/src/app/routines/words.tsx"
+  ],
+  "a deleted template": [
     "web/src/app/routines/words.tsx"
   ],
   "a label": [
@@ -23333,6 +23377,9 @@
     "web/src/app/palette/registry.ts"
   ],
   "template, checklist, copy": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "template, meeting, journal, new note": [
     "web/src/lib/rules/sentence.ts"
   ],
   "text": [

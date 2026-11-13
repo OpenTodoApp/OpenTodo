@@ -28,7 +28,7 @@ const MaxAutoItems = 20
 var autoKinds = map[string]string{
 	"create_project": AutoProjects, "update_project": AutoProjects, "create_sections": AutoProjects, "favourite": AutoProjects,
 	"project_from_template": AutoProjects, "append_to_note": AutoNotes, "clear_note": AutoNotes, "set_focus": AutoFocus,
-	"create_note": AutoNotes, "change_notes": AutoNotes, "note_to_task": AutoNotes,
+	"create_note": AutoNotes, "note_from_template": AutoNotes, "change_notes": AutoNotes, "note_to_task": AutoNotes,
 	"start_timer": AutoTimers, "stop_timer": AutoTimers, "email_members": AutoEmailMembers,
 }
 

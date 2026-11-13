@@ -304,6 +304,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
+| <kbd>Shift+Q</kbd> | On the Notes page: start a new note from a template |
 | <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note |
 | <kbd>v</kbd> | On the Notes page: switch between the list and the graph |
 

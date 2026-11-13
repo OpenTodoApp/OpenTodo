@@ -200,6 +200,11 @@ var Steps = []StepKind{
 		Inputs: []Input{req(in("note", []Type{TNote}, LitNote))}},
 	{Kind: "create_note", Group: GroupText, Out: TNote, Content: true, Tool: "create_note",
 		Inputs: []Input{content(bound(in("title", textIn, LitText), 500)), content(in("text", textIn, LitText)), in("project", []Type{TProject}, LitProject), in("labels", nil, LitIDs)}},
+	// note_from_template (note-templates D5): a user template by its note id,
+	// or a built-in one as "builtin:<slug>"; placeholders filled with the date.
+	{Kind: "note_from_template", Group: GroupText, Out: TNote, Content: true, Tool: "create_note",
+		Inputs: []Input{req(in("template", nil, LitID)), content(bound(in("title", textIn, LitText), 500)), in("project", []Type{TProject}, LitProject),
+			in("labels", nil, LitIDs), in("date", []Type{TDate}, LitDate)}},
 	{Kind: "change_notes", Group: GroupText, Out: TNotes, Tool: "update_note",
 		Inputs: []Input{req(in("notes", []Type{TNotes}, LitNone)), in("project", []Type{TProject}, LitProject), in("no_project", nil, LitBool),
 			in("add_labels", nil, LitIDs), in("remove_labels", nil, LitIDs), in("pin", nil, LitBool), in("trash", nil, LitBool)}},

@@ -32,7 +32,7 @@ import { readJSON, readString, writeJSON, writeString } from '../../lib/deviceSt
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { keysOf } from '../../lib/shortcuts'
 import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuGroup, MenuItem, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { useDateTimeFormat } from '../DateTimePrefsProvider'
@@ -44,6 +44,8 @@ import { NoteSearchField } from './NoteSearchField'
 import { focusBodyOnOpen, NotePage, NotePanel } from './NoteEditor'
 import { createNoteWithUndo, deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
+import { TemplatePicker } from './TemplatePicker'
+import { mutate } from '../../lib/ops'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
@@ -230,12 +232,24 @@ export function NotesModeSwitch({ mode, onChange, compact }: { mode: NotesMode; 
  * Help, and the search row under them. `viewSwitch` is the place for the List | Graph
  * toggle of notes-graph-page, among the actions; `overflow` holds the graph's display choices.
  */
-export function NotesHeader({ count, desktop, onNew, viewSwitch, overflow, children }: { count: number; desktop: boolean; onNew: () => void; viewSwitch?: ReactNode; overflow?: ReactNode; children: ReactNode }) {
+export function NotesHeader({ count, desktop, onNew, onFromTemplate, templateAnchor, viewSwitch, overflow, children }: {
+  count: number; desktop: boolean; onNew: () => void
+  /** The split part of New note: From template… (note-templates). */
+  onFromTemplate?: () => void; templateAnchor?: RefObject<HTMLButtonElement | null>
+  viewSwitch?: ReactNode; overflow?: ReactNode; children: ReactNode
+}) {
+  const newNote = desktop && (
+    <span className="inline-flex items-center" data-note-new-split>
+      <Button size="sm" variant="ghost" onClick={onNew} data-note-new><Icon name="plus" />{t('New note')}</Button>
+      {onFromTemplate && <IconButton ref={templateAnchor} size="sm" icon="chevron-down" label={t('From template…')} shortcut={keysOf('notes.from-template')}
+        aria-haspopup="dialog" onClick={onFromTemplate} data-note-from-template />}
+    </span>
+  )
   return (
     <PageHeader title={t('Notes')} help="notes" barActions
       meta={t('{n, plural, one {# note} other {# notes}}', { n: count })}
       // On a phone the floating + starts a note (the one add of the screen); the header keeps the title, count and Help.
-      actions={desktop || viewSwitch ? <>{viewSwitch}{desktop && <Button size="sm" variant="ghost" onClick={onNew} data-note-new><Icon name="plus" />{t('New note')}</Button>}</> : undefined}
+      actions={desktop || viewSwitch ? <>{viewSwitch}{newNote}</> : undefined}
       overflow={overflow}>
       {children}
     </PageHeader>
@@ -341,6 +355,7 @@ export function NotesPage({ id }: { id?: string }) {
     navigate({ view: 'notes', id: created })
   }
   const newNote = () => act(startNote())
+  const fromTemplate = useFromTemplate(() => placeOfNew().project_id)
   // New note "<text>": titled with the words, in the chips' project and labels (D3), one Undo, the caret in its body.
   const createFromSearch = async () => {
     const title = [...typed].slice(0, TITLE_MAX).join('')
@@ -362,6 +377,7 @@ export function NotesPage({ id }: { id?: string }) {
 
   useShortcutScope('view', {
     'notes.new': () => newNote(),
+    'notes.from-template': fromTemplate.open,
     'notes.search': () => { search.current?.focus() },
     'notes.view-mode': () => switchMode(graphMode ? 'list' : 'graph'),
   }, { view: 'notes', enabled: !phonePage })
@@ -444,24 +460,21 @@ export function NotesPage({ id }: { id?: string }) {
         updatedTitle={entry.updated ? dt.formatInstant(entry.updated, 'datetime') : undefined}
         onOpen={() => openNote(entry)}
         menu={standalone ? <NoteMenu pinned={pinned} onPin={() => togglePin(entry.id)} pinKey={keysOf('notes.pin')}
+          template={!!entry.template} onTemplate={editable ? () => act(mutate('note', entry.id, { template: !entry.template })) : undefined}
           onTurnIntoTask={editable ? () => void turnNoteIntoTask(entry.id) : undefined} onDelete={editable ? () => void deleteNote(entry.id) : undefined} /> : undefined} />
     )
   }
 
   // The header's menu: Sort in List mode, the graph's display choices (D2) in Graph mode, which ignores the order.
-  const overflow = !graphMode ? <NotesSortItems sort={sort} onSort={changeSort} /> : (
-    <>
-      <MenuItem label={t('Notes without links')} checked={show.orphans} onSelect={() => graphShow.set({ ...show, orphans: !show.orphans })} data-notes-graph-show="orphans" />
-      <MenuItem label={t('Tasks and projects without notes')} checked={show.secondary} onSelect={() => graphShow.set({ ...show, secondary: !show.secondary })} data-notes-graph-show="secondary" />
-    </>
-  )
+  const overflow = !graphMode ? <NotesSortItems sort={sort} onSort={changeSort} /> : <GraphShowItems show={show} />
 
   return (
     <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'flex h-full flex-col' : undefined} data-notes-mode={mode}>
-      <NotesHeader count={entries.length} desktop={desktop} onNew={newNote} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
+      <NotesHeader count={entries.length} desktop={desktop} onNew={newNote} onFromTemplate={fromTemplate.open} templateAnchor={fromTemplate.anchor} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
         <NoteSearchField text={text} onText={changeText} tokens={tokens} onTokens={changeTokens} projects={projects} labels={labels} world={world}
           inputRef={search} onListKey={onFieldKey} label={graphMode ? t('Find a note') : t('Search notes')} shortcut={keysOf('notes.search')} />
       </NotesHeader>
+      {fromTemplate.picker}
       {entries.length === 0 && !typed && tokens.length === 0 ? <NotesEmpty onNew={newNote} /> : graphMode ? (
         <Suspense fallback={<div className="notes-graph" data-notes-graph />}>
           <NotesGraph entries={entries} topic={topic} topicKey={JSON.stringify(tokens)} matches={matches} openId={id} handle={graph} />
@@ -492,3 +505,22 @@ export function NotesPage({ id }: { id?: string }) {
 }
 
 export default NotesPage
+
+/** From template… (note-templates): the split part of New note, and Shift+Q; the new note opens with the caret in its body. */
+function useFromTemplate(projectOf: () => string | null | undefined) {
+  const anchor = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const created = (id: string) => { focusBodyOnOpen(id); navigate({ view: 'notes', id }) }
+  const picker = <TemplatePicker open={open} anchor={anchor} projectId={projectOf() ?? null} onClose={() => setOpen(false)} onCreated={created} />
+  return { anchor, open: () => setOpen(true), picker }
+}
+
+/** The graph's display choices (notes-graph D2), in the header's menu in Graph mode. */
+function GraphShowItems({ show }: { show: ReturnType<typeof graphShow.use> }) {
+  return (
+    <>
+      <MenuItem label={t('Notes without links')} checked={show.orphans} onSelect={() => graphShow.set({ ...show, orphans: !show.orphans })} data-notes-graph-show="orphans" />
+      <MenuItem label={t('Tasks and projects without notes')} checked={show.secondary} onSelect={() => graphShow.set({ ...show, secondary: !show.secondary })} data-notes-graph-show="secondary" />
+    </>
+  )
+}

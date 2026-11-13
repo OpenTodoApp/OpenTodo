@@ -76,6 +76,7 @@
       "notes_doc",
       "position",
       "project_id",
+      "template",
       "title",
       "workspace_id"
     ],

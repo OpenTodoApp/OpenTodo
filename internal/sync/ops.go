@@ -393,6 +393,9 @@ var Schema = map[string]map[string]Field{
 		// The workspace of a note without a project, or null for the default;
 		// a note with a project follows its project, as task.workspace_id.
 		"workspace_id": {Kind: kNullableString, Default: `null`},
+		// A template (note-templates D1): the note is offered under From
+		// template… and New note copies it; otherwise a note like any other.
+		"template": {Kind: kBool, Default: `false`},
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {

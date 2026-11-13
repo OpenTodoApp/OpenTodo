@@ -7590,5 +7590,18 @@
   "when a note gets the label {label}": "cuando una nota recibe la etiqueta {label}",
   "when a note is created": "cuando se crea una nota",
   "when a note is edited": "cuando se edita una nota",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}",
+  "A new note from one of your templates or a built-in one": "Una nota nueva a partir de una de tus plantillas o de una incluida",
+  "Create a note from a template": "Crear una nota desde una plantilla",
+  "Create a note from the template {template} in {project}": "Crear una nota desde la plantilla {template} en {project}",
+  "Find a template…": "Buscar una plantilla…",
+  "From template…": "Desde plantilla…",
+  "No templates yet.": "Aún no hay plantillas.",
+  "On the Notes page: start a new note from a template": "En la página de notas: empezar una nota nueva desde una plantilla",
+  "Stop using as template": "Dejar de usar como plantilla",
+  "Use as template": "Usar como plantilla",
+  "Use template": "Usar plantilla",
+  "Your templates": "Tus plantillas",
+  "a deleted template": "una plantilla eliminada",
+  "template, meeting, journal, new note": "plantilla, reunión, diario, nota nueva"
 }

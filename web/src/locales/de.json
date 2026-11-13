@@ -7590,5 +7590,18 @@
   "when a note gets the label {label}": "wenn eine Notiz das Label {label} bekommt",
   "when a note is created": "wenn eine Notiz erstellt wird",
   "when a note is edited": "wenn eine Notiz bearbeitet wird",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# Notiz passt jetzt} other {# Notizen passen jetzt}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# Notiz passt jetzt} other {# Notizen passen jetzt}}",
+  "A new note from one of your templates or a built-in one": "Eine neue Notiz aus einer deiner Vorlagen oder einer mitgelieferten",
+  "Create a note from a template": "Notiz aus einer Vorlage erstellen",
+  "Create a note from the template {template} in {project}": "Eine Notiz aus der Vorlage {template} in {project} erstellen",
+  "Find a template…": "Vorlage suchen…",
+  "From template…": "Aus Vorlage…",
+  "No templates yet.": "Noch keine Vorlagen.",
+  "On the Notes page: start a new note from a template": "Auf der Notizenseite: eine neue Notiz aus einer Vorlage beginnen",
+  "Stop using as template": "Nicht mehr als Vorlage verwenden",
+  "Use as template": "Als Vorlage verwenden",
+  "Use template": "Vorlage verwenden",
+  "Your templates": "Deine Vorlagen",
+  "a deleted template": "eine gelöschte Vorlage",
+  "template, meeting, journal, new note": "Vorlage, Besprechung, Journal, neue Notiz"
 }
