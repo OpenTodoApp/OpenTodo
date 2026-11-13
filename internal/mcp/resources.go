@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"net/url"
 	"strings"
 
@@ -98,6 +99,10 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 	if err != nil || u.Scheme != "opentodo" {
 		return nil, notFound(p.URI)
 	}
+	// A workspace-limited token reads only workspace content (token-workspaces D4).
+	if opsync.Reached(ctx) && !reachResources[u.Host] {
+		return nil, notFound(p.URI)
+	}
 	loc, err := agenttools.ParseZone(u.Query().Get("tz"), "tz")
 	if err != nil {
 		var ae *agenttools.ArgError
@@ -158,3 +163,7 @@ func (s *Server) readResource(ctx context.Context, userID string, params json.Ra
 	}
 	return map[string]any{"contents": []resourceContent{{URI: p.URI, MimeType: jsonMime, Text: string(text)}}}, nil
 }
+
+// reachResources are the resource kinds (the URI's host) a workspace-limited
+// token may read; they read through the sync service with the reach.
+var reachResources = map[string]bool{"projects": true, "workspaces": true, "views": true, "tasks": true, "notes": true, "time-entries": true}

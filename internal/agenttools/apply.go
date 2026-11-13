@@ -30,6 +30,7 @@ func (r *Registry) Apply(ctx context.Context, c Caller, cs ChangeSet) (opsync.Ap
 	}
 	var ops []opsync.Op
 	for _, ch := range cs {
+		placeInReach(ctx, ch)
 		fields := make([]string, 0, len(ch.Patch))
 		for f := range ch.Patch {
 			fields = append(fields, f)
