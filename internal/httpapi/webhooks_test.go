@@ -123,6 +123,8 @@ func TestWebhookValidation400(t *testing.T) {
 		{map[string]any{"events": []string{"task.created"}}, "url"},
 		{map[string]any{"url": "https://example.com/" + strings.Repeat("a", 2100), "events": []string{"task.created"}}, "url"},
 		{map[string]any{"url": "https://93.184.216.34/h", "events": []string{"task.exploded"}}, "events"},
+		// note-webhooks "Unknown note event".
+		{map[string]any{"url": "https://93.184.216.34/h", "events": []string{"note.trashed"}}, "events"},
 		{map[string]any{"url": "https://93.184.216.34/h", "events": []string{}}, "events"},
 		{map[string]any{"url": "https://93.184.216.34/h"}, "events"},
 		{map[string]any{"url": "https://93.184.216.34/h", "events": "task.created"}, "events"},
@@ -469,5 +471,14 @@ func TestWebhookEndToEnd(t *testing.T) {
 	rcv.mu.Unlock()
 	if fmt.Sprint(upd["changes"]) != "map[priority:map[from:4 to:1]]" || upd["source"] != "server" {
 		t.Fatalf("update payload = %v", upd)
+	}
+}
+
+// note-webhooks "Subscribe to note events".
+func TestWebhookNoteEvents(t *testing.T) {
+	e := ownerEnv(t)
+	hook := e.createHook(map[string]any{"url": "https://93.184.216.34/h", "events": []string{"note.created", "note.updated"}})
+	if ev := hook["events"].([]any); len(ev) != 2 || ev[0] != "note.created" || ev[1] != "note.updated" {
+		t.Fatalf("events %v", ev)
 	}
 }

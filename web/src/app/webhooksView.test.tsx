@@ -38,3 +38,25 @@ describe('webhook row menu', () => {
     await r.unmount()
   })
 })
+
+// note-webhooks 2.1: the Notes group of the event picker, and its line on an encrypted account.
+describe('note events in the picker', () => {
+  const draft = { id: null, url: '', events: ['task.completed' as const], projectId: null, enabled: true }
+  it('lists the note events in their own group; choosing one adds it to the draft', async () => {
+    const onDraftChange = vi.fn()
+    const r = await render(<WebhooksView {...props({ draft, onDraftChange })} />)
+    const group = document.querySelector('[data-webhook-note-events]')!
+    expect(group.querySelector('legend')!.textContent).toBe('Notes')
+    expect([...group.querySelectorAll('input[type="checkbox"]')]).toHaveLength(3)
+    expect(group.querySelector('[data-webhook-note-encrypted]')).toBeNull()
+    await click(group.querySelector('input[type="checkbox"]')!)
+    expect(onDraftChange).toHaveBeenCalledWith(expect.objectContaining({ events: ['task.completed', 'note.created'] }))
+    await r.unmount()
+  })
+
+  it('says titles and text arrive encrypted on an encrypted account', async () => {
+    const r = await render(<WebhooksView {...props({ draft, encrypted: true })} />)
+    expect(document.querySelector('[data-webhook-note-encrypted]')!.textContent).toContain('encrypted')
+    await r.unmount()
+  })
+})
