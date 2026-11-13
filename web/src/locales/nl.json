@@ -678,6 +678,7 @@
   "Automations": "Automatiseringen",
   "Automations are off on this server.": "Automatiseringen staan uit op deze server.",
   "Available now": "Nu uitvoerbaar",
+  "A–Z": "A–Z",
   "Back": "Terug",
   "Back to Appearance": "Terug naar Uiterlijk",
   "Back to Today": "Terug naar Vandaag",
@@ -2430,6 +2431,7 @@
   "Last 4 weeks": "Laatste 4 weken",
   "Last 7 days": "Laatste 7 dagen",
   "Last action": "Laatste actie",
+  "Last changed": "Laatst gewijzigd",
   "Last compacted": "Laatst opgeruimd",
   "Last day": "Laatste dag",
   "Last delivered {ago}": "Laatst afgeleverd {ago}",
@@ -2868,6 +2870,7 @@
   "New view cleared": "Nieuwe weergave gewist",
   "New webhook": "Nieuwe webhook",
   "New workspace": "Nieuwe werkruimte",
+  "Newest": "Nieuwste",
   "News, guides, comparisons and what is new in each release.": "Nieuws, handleidingen, vergelijkingen en wat elke release nieuw brengt.",
   "Next": "Volgende",
   "Next action": "Volgende actie",
@@ -3249,6 +3252,8 @@
   "Older changes": "Oudere wijzigingen",
   "Older note versions are kept one per day (UTC).": "Oudere notitieversies blijven één per dag bewaard (UTC).",
   "Older updates could not be loaded.": "Oudere updates konden niet worden geladen.",
+  "Oldest": "Oudste",
+  "Oldest changed": "Langst niet gewijzigd",
   "Oldest in Inbox": "Oudste in Inbox",
   "OmniFocus (CSV)": "OmniFocus (CSV)",
   "On": "Aan",
@@ -6005,6 +6010,7 @@
   "Your zone": "Je zone",
   "Yours alone. Share its projects by email, or create a workspace for a team.": "Alleen van jou. Deel zijn projecten via e-mail of maak een werkruimte voor een team.",
   "Zoom": "Zoom",
+  "Z–A": "Z–A",
   "[Cannot decrypt]": "[Kan niet ontsleutelen]",
   "a Gemini model id": "een Gemini-model-id",
   "a Markdown vault": "een Markdown-vault",
@@ -7457,6 +7463,5 @@
   "Usage resets on the first day of each month (UTC).": "Het gebruik begint op de eerste dag van elke maand (UTC) opnieuw.",
   "Your changes on this page are not saved.": "Je wijzigingen op deze pagina zijn niet opgeslagen.",
   "min": "min",
-  "sessions": "sessies",
-  "iCalendar tasks (.ics)": "iCalendar-taken (.ics)"
+  "sessions": "sessies"
 }

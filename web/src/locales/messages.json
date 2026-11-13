@@ -2301,6 +2301,9 @@
   "Available now": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "A–Z": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Back": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/LabelsView.tsx",
@@ -4210,6 +4213,7 @@
   "Created": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -8650,6 +8654,9 @@
     "web/src/app/ToastActionHost.tsx",
     "web/src/app/bulk/UndoToast.tsx"
   ],
+  "Last changed": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Last compacted": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -10253,6 +10260,9 @@
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "Newest": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "News, guides, comparisons and what is new in each release.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -11614,6 +11624,12 @@
   ],
   "Older updates could not be loaded.": [
     "web/src/app/FeedView.tsx"
+  ],
+  "Oldest": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Oldest changed": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Oldest in Inbox": [
     "web/src/app/method/loop/PulseDetails.tsx"
@@ -16105,6 +16121,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Sort": [
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Sort direction": [
@@ -19044,6 +19061,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -21274,6 +21292,9 @@
   ],
   "Zoom out": [
     "web/src/app/notes-graph/GraphView.tsx"
+  ],
+  "Z–A": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "[Cannot decrypt]": [
     "web/src/lib/e2ee.ts"

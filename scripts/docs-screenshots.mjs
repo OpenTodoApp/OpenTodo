@@ -353,6 +353,15 @@ const shots = [
     await field.pressSequentially('kind:task in:', { delay: 15 })
     await p.locator('[data-note-suggestions] [role="option"]').first().waitFor(); await p.mouse.move(900, 700); await settle(p, 500)
   } },
+  // Sort (notes-sort): the header's menu open on Sort with Title checked, the list A to Z behind it.
+  { name: 'notes-sort', server: D, async run(p) {
+    await p.addInitScript(() => { try { localStorage.setItem('ot.notes.sort', '{"by":"title","reversed":false}') } catch { /* no storage */ } })
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
+    await p.locator('[data-notes-sort="title"]').waitFor(); await p.mouse.move(900, 700); await settle(p, 400)
+  }, async after(p) {
+    await p.keyboard.press('Escape'); await p.evaluate(() => localStorage.removeItem('ot.notes.sort'))
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
