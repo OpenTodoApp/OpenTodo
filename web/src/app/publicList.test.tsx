@@ -73,6 +73,26 @@ describe('public page', () => {
     await r.unmount()
   })
 
+  it('shows a board link as a column per section, tasks without one first (public-link-board)', async () => {
+    current = list({ layout: 'board' })
+    const r = await render(<PublicListScreen token="party-groceries-otl_abc" />)
+    await waitFor(() => r.container.querySelector('[data-public-board]') !== null)
+    const columns = [...r.container.querySelectorAll('[data-public-column]')]
+    expect(columns.map((c) => c.querySelector('h2')!.textContent)).toEqual(['No section', 'Fruit'])
+    expect([...columns[1].querySelectorAll('[data-public-task]')].map((x) => x.textContent)).toEqual(['Apples', 'Green ones'])
+    await click(columns[0].querySelector<HTMLInputElement>('input[type="checkbox"]')!)
+    await waitFor(() => calls.some((c) => c.startsWith('POST /api/v1/public/party-groceries-otl_abc/tick')))
+    await r.unmount()
+  })
+
+  it('shows a list link, and one from an older server, as a list', async () => {
+    current = list({ layout: undefined })
+    const r = await render(<PublicListScreen token="otl_abc" />)
+    await waitFor(() => r.container.querySelectorAll('[data-public-task]').length === 4)
+    expect(r.container.querySelector('[data-public-board]')).toBeNull()
+    await r.unmount()
+  })
+
   it('has no checkboxes on a view link', async () => {
     current = list({ rights: 'view' })
     const r = await render(<PublicListScreen token="otl_view" />)

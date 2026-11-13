@@ -1,0 +1,3 @@
+title: "{{weekday}} {{date}}"
+summary: "Una pagina per la giornata: il piano, gli appunti man mano e com’è andata."
+body: "## Piano\n- [ ] \n\n## Appunti\n\n## Com’è andata\n"

@@ -1,0 +1,1 @@
+- On a phone, a swipe right from the left edge opens the menu, and the iPhone app no longer goes back through page history on that swipe (edge-swipe-menu, #1232).

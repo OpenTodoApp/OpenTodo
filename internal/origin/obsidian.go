@@ -106,14 +106,31 @@ func ParseObsidianURL(raw string) (ObsidianLink, bool) {
 	return l, true
 }
 
+// path is a vault-relative note path: file, with ".md" added when its last
+// segment has no extension.
+func path(file string) string {
+	last := file[strings.LastIndexByte(file, '/')+1:]
+	if strings.LastIndexByte(last, '.') > 0 {
+		return file
+	}
+	return file + ".md"
+}
+
 // NotePath is the note's vault-relative path the link opens: File, with ".md"
 // added when its last segment has no extension.
-func (l ObsidianLink) NotePath() string {
-	last := l.File[strings.LastIndexByte(l.File, '/')+1:]
-	if strings.LastIndexByte(last, '.') > 0 {
-		return l.File
+func (l ObsidianLink) NotePath() string { return path(l.File) }
+
+// AnchoredPath is the path of the note a link opens at a heading or block
+// (OpenSpec change obsidian-anchors): the part of File before its first "#",
+// when both that part and the anchor after it are non-empty. Obsidian's own
+// open action reads `file=Note%23%5Eabc` as note "Note" at block "^abc"; a note
+// whose name itself has a "#" keeps the whole File as its path.
+func (l ObsidianLink) AnchoredPath() (string, bool) {
+	note, anchor, has := strings.Cut(l.File, "#")
+	if !has || note == "" || anchor == "" {
+		return "", false
 	}
-	return l.File + ".md"
+	return path(note), true
 }
 
 // ValidObsidianURL reports whether raw is a valid Obsidian note link whose
@@ -121,7 +138,14 @@ func (l ObsidianLink) NotePath() string {
 // a crafted origin cannot show one note and open another.
 func ValidObsidianURL(raw, id string) bool {
 	l, ok := ParseObsidianURL(raw)
-	return ok && id != "" && (id == l.NotePath() || id == l.File+".md")
+	if !ok || id == "" {
+		return false
+	}
+	if id == l.NotePath() || id == l.File+".md" {
+		return true
+	}
+	at, anchored := l.AnchoredPath()
+	return anchored && id == at
 }
 
 // NoteName is the last segment of a vault-relative path without ".md", the

@@ -220,3 +220,23 @@ func TestBodyVersionCheck(t *testing.T) {
 		t.Fatalf("plain text %q", text)
 	}
 }
+
+// note-templates 1.1: the template mark converges by last-writer-wins and a
+// viewer of the note's project cannot change it.
+func TestNoteTemplateMark(t *testing.T) {
+	f := newSharing(t)
+	f.apply("alice", "A", f.op("note", "n1", "title", `"Retro"`), f.op("note", "n1", "project_id", `"p"`))
+	f.add("alice", "carol", RoleViewer)
+	early := f.op("note", "n1", "template", `true`)
+	late := f.op("note", "n1", "template", `false`)
+	late.TS = early.TS + 10
+	f.apply("alice", "B", late)
+	f.apply("alice", "A", early)
+	if got := f.field("alice", "note", "n1", "template"); got != `false` {
+		t.Fatalf("template = %s, want the later false", got)
+	}
+	res := f.apply("carol", "C", f.op("note", "n1", "template", `true`))
+	if len(res.Rejected) != 1 || res.Rejected[0].Reason != ReasonForbidden {
+		t.Fatalf("viewer: %+v", res)
+	}
+}

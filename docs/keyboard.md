@@ -304,6 +304,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
+| <kbd>Shift+Q</kbd> | On the Notes page: start a new note from a template |
 | <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note, or the ticked notes |
 | <kbd>x</kbd> / <kbd>Space</kbd> | Focused standalone note: on the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears) |
 | <kbd>m</kbd> | Notes ticked: on the Notes page: move the ticked notes to a project |

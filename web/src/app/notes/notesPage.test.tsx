@@ -614,3 +614,38 @@ describe('sorting the list', () => {
     expect(sortItem('title')).toBeNull()
   })
 })
+
+describe('templates (note-templates)', () => {
+  // The sort tests end in Graph mode; these start on the list.
+  beforeEach(() => navigate({ view: 'notes' }))
+  it('"Mark offline": Use as template marks the note at once; the row says Template', async () => {
+    const id = await createNote({ title: 'Meeting {{date}}', description: '## Notes' })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 1, 'one row')
+    await click(container.querySelector(`[data-note-key="note:${id}"] [data-note-menu]`)!)
+    await waitFor(() => !!menuItem('Use as template'), 'the menu')
+    await click(menuItem('Use as template')!)
+    await waitFor(async () => (await db.notes.get(id))?.template === true, 'marked')
+    await waitFor(() => !!container.querySelector(`[data-note-key="note:${id}"] [data-note-template]`), 'the Template word')
+  })
+
+  it('"Use from the open template": a new note opens and the template stays', async () => {
+    const id = await createNote({ title: '1:1', description: '## How are things' })
+    await mutate('note', id, { template: true })
+    const { container } = await render(<NotePanel id={id} />)
+    await waitFor(() => !!container.querySelector('[data-note-use-template]'), 'Use template')
+    await click(container.querySelector('[data-note-use-template]')!)
+    await waitFor(async () => (await db.notes.toArray()).filter((n) => !n.deleted_at).length === 2, 'the copy')
+    const copy = (await db.notes.toArray()).find((n) => n.id !== id)!
+    expect(copy.title).toBe('1:1')
+    expect(copy.template ?? false).toBe(false)
+    expect((await db.notes.get(id))!.template).toBe(true)
+  })
+
+  it('"Keyboard": Shift+Q opens From template… with its field focused', async () => {
+    await page()
+    await act(async () => { document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Q', shiftKey: true, bubbles: true })) })
+    await waitFor(() => !!document.querySelector('[data-template-picker] input'), 'the picker')
+    await waitFor(() => document.activeElement === document.querySelector('[data-template-picker] input'), 'focused')
+  })
+})

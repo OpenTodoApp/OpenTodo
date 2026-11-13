@@ -24,6 +24,8 @@ const EventPing = "ping"
 var Events = []string{
 	"task.created", "task.updated", "task.completed", "task.reopened", "task.deleted",
 	"comment.created", "comment.updated", "comment.deleted",
+	// Standalone notes (note-webhooks): held until the note is quiet, notes.go.
+	"note.created", "note.updated", "note.deleted",
 	"project.created", "project.updated", "project.archived", "project.deleted",
 	importer.EventCompleted, importer.EventUndone, EventRuleFired,
 }

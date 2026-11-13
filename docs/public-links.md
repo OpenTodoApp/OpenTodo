@@ -19,8 +19,11 @@ A public link shows a project's list to anyone who has the link, with no account
 2. Under **Share with a public link**, optionally give the link a name (like "Group chat"), and choose:
    - **View only**: people can see the list.
    - **Can tick items**: people can also tick tasks off, and untick a mis-tap.
-3. Choose when it expires (never, or after 1 to 90 days), then select **Create public link**.
-4. Select **Copy link** and paste it wherever you like. It is shown only once.
+3. Under **Show as**, choose **List**, or **Board** for a column per section.
+4. Choose when it expires (never, or after 1 to 90 days), then select **Create public link**.
+5. Select **Copy link** and paste it wherever you like. It is shown only once.
+
+A named link carries its name at the front of the address, like `/public/group-chat-otl_…`, so you can tell links apart. The long part after the name is what opens the list.
 
 ## What people see
 

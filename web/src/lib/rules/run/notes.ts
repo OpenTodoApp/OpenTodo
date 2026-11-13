@@ -10,6 +10,9 @@ import { ids2 } from './kinds'
 import { roleIn } from './tools'
 import { fail, isDeleted, none, num, str, taskVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
 import type { Row } from './types'
+import { fillTemplate, placeholderHour12, placeholderOrder } from '../../noteTemplateFill'
+import { dateLiteral } from '../steps'
+import { resolveDate } from '../stepData'
 
 const MAX_LIST_ITEMS = 500
 
@@ -42,6 +45,7 @@ export function noteStep(st: RunState, s: RoutineStep, inputs: Inputs, at: numbe
       return [{ type: 'note', id: v!.id }, '']
     }
     case 'create_note': return createNote(st, s, inputs, at)
+    case 'note_from_template': return noteFromTemplate(st, s, inputs, at)
     case 'change_notes': return changeNotes(st, s, inputs, at)
     case 'note_to_task': return noteToTask(st, inputs)
   }
@@ -76,12 +80,48 @@ function findNotes(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
 }
 
 function createNote(st: RunState, s: RoutineStep, inputs: Inputs, at: number): ExecResult {
-  const title = st.textIn(s, inputs, 'title') ?? ''
-  const text = st.textIn(s, inputs, 'text') ?? ''
+  return writeNote(st, st.textIn(s, inputs, 'title') ?? '', st.textIn(s, inputs, 'text') ?? '', st.entityIn(s, inputs, 'project')?.id ?? '', st.litStrings(s, 'labels'), at)
+}
+
+/** A note from a user template or a built-in one, placeholders filled with the step's date (note-templates D5). */
+function noteFromTemplate(st: RunState, s: RoutineStep, inputs: Inputs, at: number): ExecResult {
+  const ref = st.litStr(s, 'template') ?? ''
+  const lang = typeof st.prefs.language === 'string' && st.prefs.language !== 'system' && st.prefs.language ? st.prefs.language : 'en'
+  let title = ''
+  let body = ''
+  let pid = ''
+  let labels: string[] | undefined
+  if (ref.startsWith('builtin:')) {
+    const b = st.w.noteTemplates?.find((x) => x.slug === ref.slice(8))
+    if (!b) throw fail('template_missing', `The template ${ref.slice(8)} does not exist`)
+    title = b.title[lang] ?? b.title.en
+    body = b.body[lang] ?? b.body.en
+  } else {
+    const n = st.liveNote(ref)
+    if (!n || n.template !== true) throw fail('template_missing', 'The template is in the Trash')
+    title = str(n, 'title'); body = str(n, 'description'); pid = str(n, 'project_id'); labels = listOf(n, 'labels')
+  }
+  const own = st.textIn(s, inputs, 'title')
+  if (own && own.trim()) title = own
+  const project = st.entityIn(s, inputs, 'project')?.id
+  if (project) pid = project
+  labels = st.litStrings(s, 'labels') ?? labels ?? []
+  let day = st.w.today
+  const dv = inputs.get('date')
+  if (dv?.date) day = dv.date
+  else {
+    const d = dateLiteral(st.lit(s, 'date'))
+    if (d) day = resolveDate(d, st.w.today)
+  }
+  const clock = new Date(st.w.now + st.w.offset * 60_000).toISOString().slice(11, 16)
+  const filled = fillTemplate(title, body, { date: day, time: clock, order: placeholderOrder(str(st.prefs, 'date_format'), lang), hour12: placeholderHour12(str(st.prefs, 'time_format'), lang), lang })
+  return writeNote(st, filled.title, filled.text, pid, labels, at)
+}
+
+function writeNote(st: RunState, title: string, text: string, projectId: string, labels: string[] | undefined, at: number): ExecResult {
   const id = ids2('routine-note', st.r.id, st.runId, String(at), String(st.seq))
   const args: Record<string, unknown> = { title, description: text, id }
-  let pid = st.entityIn(s, inputs, 'project')?.id ?? ''
-  const labels = st.litStrings(s, 'labels')
+  let pid = projectId
   if (labels && !st.w.project) args.label_ids = labels
   if (st.w.project) pid = st.w.project
   if (pid) args.project_id = pid

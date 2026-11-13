@@ -5,8 +5,10 @@ import (
 	"crypto/subtle"
 	"database/sql"
 	"errors"
+	"net/url"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
@@ -20,6 +22,17 @@ import (
 
 // PublicLinkSecretPrefix marks public link secrets.
 const PublicLinkSecretPrefix = "otl_"
+
+// publicLinkSecretLen is the length of every secret: the prefix and 32 random
+// bytes in unpadded base64url.
+const publicLinkSecretLen = len(PublicLinkSecretPrefix) + 43
+
+// Public link layouts (public-link-board): a list, or a board with a column per
+// section.
+const (
+	PublicLayoutList  = "list"
+	PublicLayoutBoard = "board"
+)
 
 // MaxPublicLinkDays is the longest expiry; 0 means no expiry.
 const MaxPublicLinkDays = 90
@@ -37,7 +50,9 @@ type PublicLink struct {
 	ProjectID string  `json:"projectId"`
 	Rights    string  `json:"rights"`
 	Name      *string `json:"name"`
-	CreatedBy string  `json:"createdBy"`
+	// Layout is "list" or "board" (public-link-board).
+	Layout    string `json:"layout"`
+	CreatedBy string `json:"createdBy"`
 	// CreatedByName is the creator's display name (lists only).
 	CreatedByName string `json:"createdByName,omitempty"`
 	CreatedAt     int64  `json:"createdAt"`
@@ -54,10 +69,17 @@ type ResolvedPublicLink struct {
 
 // CreatePublicLink mints a link for projectID (the caller checked that creator
 // manages the project). rights is view or tick; name is optional (at most 60
-// characters); expiresInDays 1–90, or 0 for no expiry. The secret is
-// returned once; the row and its audit event commit together.
-func (s *Service) CreatePublicLink(ctx context.Context, creator *User, projectID, rights, name string, expiresInDays int) (*PublicLink, string, error) {
+// characters); layout is list, board or "" for list; expiresInDays 1–90, or 0
+// for no expiry. The secret is returned once; the row and its audit event
+// commit together.
+func (s *Service) CreatePublicLink(ctx context.Context, creator *User, projectID, rights, name, layout string, expiresInDays int) (*PublicLink, string, error) {
 	if rights != "view" && rights != "tick" {
+		return nil, "", ErrInvalidPublicLink
+	}
+	if layout == "" {
+		layout = PublicLayoutList
+	}
+	if layout != PublicLayoutList && layout != PublicLayoutBoard {
 		return nil, "", ErrInvalidPublicLink
 	}
 	name = strings.TrimSpace(name)
@@ -68,7 +90,7 @@ func (s *Service) CreatePublicLink(ctx context.Context, creator *User, projectID
 		return nil, "", ErrInvalidPublicLink
 	}
 	now := s.clock()
-	l := &PublicLink{ID: ids.New(), ProjectID: projectID, Rights: rights, CreatedBy: creator.ID, CreatedAt: now.UnixMilli()}
+	l := &PublicLink{ID: ids.New(), ProjectID: projectID, Rights: rights, Layout: layout, CreatedBy: creator.ID, CreatedAt: now.UnixMilli()}
 	if name != "" {
 		l.Name = &name
 	}
@@ -86,6 +108,11 @@ func (s *Service) CreatePublicLink(ctx context.Context, creator *User, projectID
 		l.ID, hashToken(secret), projectID, creator.ID, rights, l.Name, l.CreatedAt, l.ExpiresAt); err != nil {
 		return nil, "", err
 	}
+	if layout == PublicLayoutBoard {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO public_link_layouts(link_id, layout) VALUES(?,?)`, l.ID, layout); err != nil {
+			return nil, "", err
+		}
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.PublicLinkCreated(creator.ID, l.ID, projectID, rights)); err != nil {
 		return nil, "", err
 	}
@@ -97,8 +124,8 @@ func (s *Service) CreatePublicLink(ctx context.Context, creator *User, projectID
 
 // ListPublicLinks returns the active links of a project, newest first.
 func (s *Service) ListPublicLinks(ctx context.Context, projectID string) ([]PublicLink, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id, p.project_id, p.rights, p.name, p.created_by, u.name, p.created_at, p.expires_at, p.last_used_at
-		FROM public_links p JOIN users u ON u.id = p.created_by
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id, p.project_id, p.rights, p.name, COALESCE(pl.layout, 'list'), p.created_by, u.name, p.created_at, p.expires_at, p.last_used_at
+		FROM public_links p JOIN users u ON u.id = p.created_by LEFT JOIN public_link_layouts pl ON pl.link_id = p.id
 		WHERE p.project_id = ? AND p.revoked_at IS NULL AND (p.expires_at IS NULL OR p.expires_at > ?) ORDER BY p.created_at DESC, p.id DESC`, projectID, s.clock().UnixMilli())
 	if err != nil {
 		return nil, err
@@ -107,7 +134,7 @@ func (s *Service) ListPublicLinks(ctx context.Context, projectID string) ([]Publ
 	out := []PublicLink{}
 	for rows.Next() {
 		var l PublicLink
-		if err := rows.Scan(&l.ID, &l.ProjectID, &l.Rights, &l.Name, &l.CreatedBy, &l.CreatedByName, &l.CreatedAt, &l.ExpiresAt, &l.LastUsedAt); err != nil {
+		if err := rows.Scan(&l.ID, &l.ProjectID, &l.Rights, &l.Name, &l.Layout, &l.CreatedBy, &l.CreatedByName, &l.CreatedAt, &l.ExpiresAt, &l.LastUsedAt); err != nil {
 			return nil, err
 		}
 		l.CreatedByName = displayName(l.CreatedByName)
@@ -145,9 +172,13 @@ func (s *Service) RevokePublicLink(ctx context.Context, actorID, projectID, id s
 }
 
 // LookupPublicLink resolves a secret to its active link; every failure is
-// ErrPublicLinkInvalid.
+// ErrPublicLinkInvalid. The secret may follow the link's readable name and a
+// hyphen, as PublicLinkPath writes it (public-link-board).
 func (s *Service) LookupPublicLink(ctx context.Context, secret string) (*ResolvedPublicLink, error) {
 	secret = strings.TrimSpace(secret)
+	if n := len(secret); n > publicLinkSecretLen && secret[n-publicLinkSecretLen-1] == '-' {
+		secret = secret[n-publicLinkSecretLen:]
+	}
 	if !strings.HasPrefix(secret, PublicLinkSecretPrefix) || len(secret) > 128 {
 		return nil, ErrPublicLinkInvalid
 	}
@@ -155,10 +186,10 @@ func (s *Service) LookupPublicLink(ctx context.Context, secret string) (*Resolve
 	var l ResolvedPublicLink
 	var stored string
 	var deactivated sql.NullInt64
-	err := s.db.QueryRowContext(ctx, `SELECT p.id, p.token_hash, p.project_id, p.rights, p.name, p.created_by, p.created_at, p.expires_at, p.last_used_at, st.deactivated_at
-		FROM public_links p LEFT JOIN user_status st ON st.user_id = p.created_by
+	err := s.db.QueryRowContext(ctx, `SELECT p.id, p.token_hash, p.project_id, p.rights, p.name, COALESCE(pl.layout, 'list'), p.created_by, p.created_at, p.expires_at, p.last_used_at, st.deactivated_at
+		FROM public_links p LEFT JOIN user_status st ON st.user_id = p.created_by LEFT JOIN public_link_layouts pl ON pl.link_id = p.id
 		WHERE p.token_hash = ? AND p.revoked_at IS NULL AND (p.expires_at IS NULL OR p.expires_at > ?)`, want, s.clock().UnixMilli()).
-		Scan(&l.ID, &stored, &l.ProjectID, &l.Rights, &l.Name, &l.CreatedBy, &l.CreatedAt, &l.ExpiresAt, &l.LastUsedAt, &deactivated)
+		Scan(&l.ID, &stored, &l.ProjectID, &l.Rights, &l.Name, &l.Layout, &l.CreatedBy, &l.CreatedAt, &l.ExpiresAt, &l.LastUsedAt, &deactivated)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrPublicLinkInvalid
 	}
@@ -208,4 +239,35 @@ func (s *Service) PublicLinkNames(ctx context.Context, ids []string) (map[string
 		out[id] = PublicLinkInfo{Name: name, ProjectID: project}
 	}
 	return out, rows.Err()
+}
+
+// PublicLinkPath is the path of a link's page: the secret, after the link's
+// name in lower case with every run of other characters as one hyphen (at most
+// 40 characters) when the name has letters or digits (public-link-board, GitHub
+// issue 1292), so "Party groceries" reads /public/party-groceries-otl_…. The
+// name only helps people tell links apart; the secret alone opens the page.
+func PublicLinkPath(name, secret string) string {
+	var b strings.Builder
+	n, gap := 0, false
+	for _, r := range strings.ToLower(name) {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			gap = b.Len() > 0
+			continue
+		}
+		if n >= 40 {
+			break
+		}
+		if gap {
+			b.WriteByte('-')
+			n++
+			gap = false
+		}
+		b.WriteRune(r)
+		n++
+	}
+	slug := strings.TrimRight(b.String(), "-")
+	if slug == "" {
+		return "/public/" + secret
+	}
+	return "/public/" + url.PathEscape(slug) + "-" + secret
 }

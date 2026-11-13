@@ -94,6 +94,9 @@ export const STEPS: StepKind[] = [
   { kind: 'get_note', group: 'text', output: 'note', content: false, inputs: [inp('note', ['note'], 'note', R)] },
   { kind: 'create_note', group: 'text', output: 'note', content: true, tool: 'create_note',
     inputs: [inp('title', ['text'], 'text', { ...C, max: 500 }), inp('text', ['text'], 'text', C), inp('project', ['project'], 'project'), inp('labels', [], 'ids')] },
+  // note_from_template (note-templates D5): a user template by its note id, or a built-in one as "builtin:<slug>".
+  { kind: 'note_from_template', group: 'text', output: 'note', content: true, tool: 'create_note',
+    inputs: [inp('template', [], 'id', R), inp('title', ['text'], 'text', { ...C, max: 500 }), inp('project', ['project'], 'project'), inp('labels', [], 'ids'), inp('date', ['date'], 'date')] },
   { kind: 'change_notes', group: 'text', output: 'notes', content: false, tool: 'update_note',
     inputs: [inp('notes', ['notes'], '', R), inp('project', ['project'], 'project'), inp('no_project', [], 'bool'),
       inp('add_labels', [], 'ids'), inp('remove_labels', [], 'ids'), inp('pin', [], 'bool'), inp('trash', [], 'bool')] },
@@ -547,7 +550,7 @@ export const MAX_AUTO_ITEMS = 20
 
 const AUTO_KINDS: Record<string, string> = {
   create_project: 'projects', update_project: 'projects', create_sections: 'projects', favourite: 'projects', project_from_template: 'projects',
-  append_to_note: 'notes', clear_note: 'notes', create_note: 'notes', change_notes: 'notes', note_to_task: 'notes', set_focus: 'focus', start_timer: 'timers', stop_timer: 'timers', email_members: 'email_members',
+  append_to_note: 'notes', clear_note: 'notes', create_note: 'notes', note_from_template: 'notes', change_notes: 'notes', note_to_task: 'notes', set_focus: 'focus', start_timer: 'timers', stop_timer: 'timers', email_members: 'email_members',
 }
 
 /**
