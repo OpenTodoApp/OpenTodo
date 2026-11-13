@@ -140,9 +140,9 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
 | `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Shipped |
 | `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Shipped |
-| `note-attachments` | Images and files in standalone notes | Planned |
+| `note-attachments` | Images and files in standalone notes | Shipped |
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Shipped |
-| `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |
+| `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Shipped |
 | `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Shipped |
 | `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped |

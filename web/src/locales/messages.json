@@ -976,6 +976,7 @@
     "web/src/app/LinkDialog.tsx"
   ],
   "Add a link…": [
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -2292,6 +2293,9 @@
   ],
   "Attach files": [
     "web/src/app/task-detail/Composer.tsx"
+  ],
+  "Attach files…": [
+    "web/src/app/notes/NoteRow.tsx"
   ],
   "Attached files": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -5373,6 +5377,9 @@
   "Drop": [
     "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
+  "Drop files to attach them to this note": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -9155,6 +9162,7 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
@@ -9196,6 +9204,10 @@
   ],
   "Linked references": [
     "web/src/app/LinkedReferences.tsx"
+  ],
+  "Linked {title}": [
+    "web/src/app/UnlinkedMentions.tsx",
+    "web/src/lib/noteMentionLink.ts"
   ],
   "Linked. You can now sign in with the provider.": [
     "web/src/app/SsoPanel.tsx"
@@ -12625,6 +12637,10 @@
   "Or import with a Todoist API token": [
     "web/src/app/ImportScreen.tsx"
   ],
+  "Or paste or drop files on the note": [
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
   "Or paste or drop files on the task": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -15945,6 +15961,7 @@
   ],
   "Show more": [
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/wordPicker.tsx",
@@ -20250,6 +20267,9 @@
   "Unlink {email}?": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Unlinked mentions": [
+    "web/src/app/UnlinkedMentions.tsx"
+  ],
   "Unlock": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -20412,6 +20432,7 @@
   "Untitled note": [
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/notes-graph/GraphView.tsx",
     "web/src/app/notes/NoteBulkActions.tsx",
@@ -20424,6 +20445,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/wordPicker.tsx",
     "web/src/app/routines/words.tsx",
+    "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
@@ -25778,7 +25800,13 @@
   "“{name}” (read-only)": [
     "web/src/app/auditFormat.ts"
   ],
+  "“{name}” is removed from this note. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
   "“{name}” is removed from this task. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": [

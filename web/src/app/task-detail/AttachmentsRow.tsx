@@ -4,7 +4,7 @@
 // Enter opens, Delete removes, F2 renames.
 import { type KeyboardEvent, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AttachmentError, contentUrl, formatBytes, isImage, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
+  AttachmentError, contentUrl, formatBytes, isImage, parentNote, parseLink, queueFiles, queueLink, removeAttachment, renameAttachment,
   retryUpload, stateOf, useAttachmentLimits, useUploadProgress, type AttachmentState,
 } from '../../lib/attachments'
 import { openAttachment } from '../../lib/attachmentOpen'
@@ -53,8 +53,11 @@ const STATE_TEXT = translatedMap<AttachmentState>({
   link: '', available: '', uploading: msg('Uploading'), waiting: msg('Waiting'), pending: msg('Uploading on another device'),
 })
 
-export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
+export function AttachmentsRow({ taskId, userId, role, dropTarget, note }: {
+  /** The task's id, or `note:<id>` for a standalone note (note-attachments). */
   taskId: string
+  /** For a standalone note: its title and text, which the removal confirmation names. */
+  note?: { title: string; description?: string }
   userId?: string
   /** The user's role in the task's project ('owner' for personal tasks). */
   role: ProjectRole
@@ -64,8 +67,10 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
   const demo = useDemo()
   const limits = useAttachmentLimits()
   const rows = useTaskAttachments(taskId)
-  const task = useTask(taskId)
-  const embedded = embeddedIds(task?.description ?? '')
+  const noteId = parentNote(taskId)
+  const task = useTask(noteId ? null : taskId)
+  const owner = noteId ? note : task
+  const embedded = embeddedIds(owner?.description ?? '')
   const blobs = useAttachmentBlobs(rows)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(0)
@@ -208,7 +213,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       )}
       {canAdd && dragging && (
         <p role="status" data-drop-zone className="mb-2 rounded-control border-2 border-dashed border-accent bg-accent-soft px-3 py-4 text-center text-meta text-accent">
-          {t('Drop files to attach them to this task')}
+          {noteId ? t('Drop files to attach them to this note') : t('Drop files to attach them to this task')}
         </p>
       )}
       {canAdd && (
@@ -220,7 +225,7 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
           {!linking && rows.length > 0 && (
             <Menu kind="menu" label={t('Attach')} align="start" width="sm:w-64" trigger={<span className="inline-flex items-center gap-1.5"><Icon name="paperclip" size="sm" />{t('Attach')}</span>}
               triggerClassName="ui-btn ui-btn--ghost ui-btn--sm -mx-2 text-muted">
-              <MenuItem label={t('Choose files…')} icon="upload" description={t('Or paste or drop files on the task')} onSelect={() => picker.current?.click()} />
+              <MenuItem label={t('Choose files…')} icon="upload" description={noteId ? t('Or paste or drop files on the note') : t('Or paste or drop files on the task')} onSelect={() => picker.current?.click()} />
               <MenuItem label={t('Add a link…')} icon="link" onSelect={() => setLinking(true)} />
             </Menu>
           )}
@@ -231,8 +236,10 @@ export function AttachmentsRow({ taskId, userId, role, dropTarget }: {
       {removing && (
         <ConfirmDialog title={t('Remove attachment?')} consequence={embedded.includes(removing.id)
           // The task's notes show it (editor-everywhere D5): say so before it becomes "Removed image" there.
-          ? t('“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.', { name: removing.name, task: task?.title ?? '' })
-          : t('“{name}” is removed from this task. You can undo right after.', { name: removing.name })}
+          ? (noteId ? t('“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.', { name: removing.name, note: owner?.title || t('Untitled note') })
+            : t('“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.', { name: removing.name, task: task?.title ?? '' }))
+          : noteId ? t('“{name}” is removed from this note. You can undo right after.', { name: removing.name })
+            : t('“{name}” is removed from this task. You can undo right after.', { name: removing.name })}
           confirmLabel={t('Remove')} onConfirm={() => remove(removing)} onCancel={() => setRemoving(null)} />
       )}
     </section>

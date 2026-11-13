@@ -23,6 +23,10 @@ At the end of a note, below a task's notes and as one folded line in a project's
 
 The graph button at the end of the heading shows the item's connections two steps out: [See an item's connections](note-connections.md).
 
+## Unlinked mentions
+
+Under Linked references, the folded line **Unlinked mentions** counts the notes that name the item's title without linking to it: the whole title as words, ignoring case, accents and formatting, but not inside code or the text of a link. Titles shorter than three letters, and untitled notes, are never matched. Open the line to see each note with the mention highlighted, and choose **Link** to turn that mention into a link; <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes it back. A note you may only read shows no Link. Like Linked references, mentions are found on your device, offline and with encryption included.
+
 ## Links in Markdown
 
 A link is stored as Markdown: `[Trip](?note=<id>)`, `[Call the plumber](?task=<id>)` or `[Renovation](?project=<id>)`, with the title it had when the note was last edited. The API, exports, calendar apps and the command line see that text, and a script or an assistant that writes it makes a link ([Notes, tasks and scripts](notes-to-tasks.md)). Older versions of the app show a link as its text and keep it when they edit the note. An address ending in `?note=<id>` or `?project=<id>` opens that note or project, as `?task=<id>` opens a task.

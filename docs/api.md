@@ -1608,6 +1608,7 @@ Attachments (OpenSpec `attachments`) are files or links on a task or one of its 
 | --- | --- |
 | `POST /api/v1/tasks/{id}/attachments` | Multipart `file` (and optional `comment_id`): stores the file and creates the attachment in one request. JSON `{"url": "https://…", "name"?: "…"}`: a link attachment. `201` with the attachment. Honours `Idempotency-Key` (a retry answers `200` with `Idempotent-Replayed: true`) |
 | `GET /api/v1/tasks/{id}/attachments` | The task's attachments that are not removed, oldest first, each with `uploaded` |
+| `POST /api/v1/notes/{id}/attachments`, `GET /api/v1/notes/{id}/attachments` | The same for a standalone note: its attachments carry `note_id` instead of `task_id` (no `comment_id`). A note's copy (moved to another project, or turned into a task) names the original's stored file in `file_id` and serves its bytes |
 | `PUT /api/v1/attachments/{id}/content` | The raw bytes of an attachment you created (from a device that queued it offline); `204`. The bytes must match the attachment's `size` and `sha256` |
 | `GET /api/v1/attachments/{id}/content` | The file, with ranges and `If-None-Match`. `?download=1` forces a download |
 | `PATCH /api/v1/attachments/{id}` | `{"name": "…"}`: rename (author only) |

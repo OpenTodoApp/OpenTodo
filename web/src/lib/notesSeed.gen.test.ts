@@ -8,7 +8,9 @@
 //
 // Links (note-links D5): the second block of each standalone note (even n) links to
 // the next two standalone notes and to the task of the next task note; the first
-// 200 task notes (odd n) link to the standalone note before them. Ids are the ones
+// 200 task notes (odd n) link to the standalone note before them. Unlinked mentions
+// (unlinked-mentions 3.1): standalone notes 2 to 80 name "Note 1" in plain text, so the
+// note the note-references metric opens has 40 mentions. Ids are the ones
 // cmd/perfseed gives (internal/perfseed gen.id, the same name-based id as ids.ts).
 import { appendFileSync, writeFileSync } from 'node:fs'
 import { it } from 'vitest'
@@ -52,6 +54,9 @@ function linksLine(n: number): string | null {
   return (n - 1) / 2 < LINKED_TASK_NOTES ? `See [Note ${n}](?note=${pid('note', n - 1)}).` : null
 }
 
+/** The plain mention of the linked note's title (perfseed titles note 0 "Note 1"). */
+const MENTION = 'Mentions Note 1 in passing.'
+
 const WORDS = 'plan review draft call email order fix update check write send book pay renew clean prepare share sort archive measure paint repair buy return schedule test ship kitchen garden budget invoice report slides garage server backup laptop printer passport meeting client project release roadmap ticket feature library migration window door shelf'.split(' ')
 
 it.runIf(!!out)('writes the notes fixture', () => {
@@ -67,6 +72,7 @@ it.runIf(!!out)('writes the notes fixture', () => {
     const lines: string[] = [`# Note ${n + 1}`]
     const links = linksLine(n)
     if (links) lines.push(links)
+    if (n % 2 === 0 && n >= 2 && n <= 80) lines.push(MENTION)
     // Edits leave the heading and the links block alone.
     const kept = lines.length
     let buf = ''

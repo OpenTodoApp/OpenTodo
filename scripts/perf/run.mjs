@@ -373,6 +373,8 @@ async function notesSession(browser, profileName) {
     // note-links D5: a note other notes link to, opened before anything built the link index, to its Linked references painted.
     const t1 = await go(page, `/notes/${summary.notes.linkedNote}`)
     out['note-references'] = (await markAfter(page, 'ot:note-references', t1, 30_000)) - t1
+    // unlinked-mentions 3.1: its 40 plain mentions are counted after Linked references paint.
+    await markAfter(page, 'ot:note-mentions', t1, 30_000)
     if (enough(out)) return out
     // notes-graph-page D7: the Notes graph from its address to its first paint (the link index built above), then wheel zooms, each to its frame.
     const t2 = await go(page, '/notes?view=graph')
