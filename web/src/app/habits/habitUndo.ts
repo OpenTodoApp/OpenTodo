@@ -3,13 +3,13 @@
 // use, so the Today strip adds almost nothing to the first load.
 import type { DayChoice } from '../../lib/habitActions'
 import { showUndoToast } from '../bulk/toastStore'
-import { tick } from '../motion'
+import { success } from '../motion'
 
 /** Check in (or the tiny version) with the Undo toast and the haptic tick. */
 export async function checkInWithUndo(seriesId: string, tiny: boolean): Promise<void> {
   const { checkIn } = await import('../../lib/habitActions')
   const r = await checkIn(seriesId, tiny)
-  if (r?.entry) { tick(); showUndoToast(r.label, r.entry.id) }
+  if (r?.entry) { success(); showUndoToast(r.label, r.entry.id) }
 }
 
 /** Set a past day with the Undo toast. */

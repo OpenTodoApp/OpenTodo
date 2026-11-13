@@ -10,7 +10,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { forgetShellData, setSystemBars, type OpenTodoShell, type ShellGeofencePayload } from './shell'
+import { forgetShellData, setSystemBars, shellHaptic, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './originOpen'
@@ -242,6 +243,38 @@ function systemBars() {
   }
 }
 
+/**
+ * shell-repairs D2: the calls of `saveFile` for one small file in two chunks (the
+ * real chunker with a small chunk size), with the file the shell must assemble and
+ * what it answers. A shell saves under the name's last path segment.
+ */
+function saveFileCalls() {
+  const body = 'OpenTodo recovery key\n\nälpha-brävo-chärlie\n'
+  const bytes = new TextEncoder().encode(body)
+  const calls = fileChunks(bytes, 'f-1', 'opentodo-recovery-key.txt', 'text/plain', 24).map((c) => JSON.stringify(c))
+  return {
+    description: 'Saving a file made in the page (shell-repairs D2): each entry of calls is one saveFile argument, in order. The shell appends the decoded chunks of one id to a file, answers "more" until the chunk with last, then opens the save dialog with the name and type and answers saved, cancelled or failed. A new id discards an unfinished file; a malformed call answers failed.',
+    method: 'saveFile' as const,
+    calls,
+    expect: { name: 'opentodo-recovery-key.txt', type: 'text/plain', bytes: btoa(String.fromCharCode(...bytes)), answers: [...calls.slice(1).map(() => 'more'), 'saved'] },
+    refused: ['not json', '{}', '{"id":"","name":"a","type":"","data":"","last":true}', '{"id":"x","name":"a","type":"","data":"***","last":true}', '{"id":"x","name":"a","type":"","data":"","last":"yes"}'],
+  }
+}
+
+/** shell-repairs D5: the kinds `haptic` is called with, captured from the real call, and one a shell must ignore. */
+function haptics() {
+  const kinds: string[] = []
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.5.0', capabilities: ['haptics'], haptic: (kind) => void kinds.push(kind) }
+  for (const k of ['tick', 'success'] satisfies ShellHaptic[]) shellHaptic(k)
+  delete window.opentodoShell
+  return {
+    description: 'Haptic feedback (shell-repairs D5): the kinds the web app hands haptic. A shell plays its own feedback for each and ignores a kind it does not know, without an error.',
+    method: 'haptic' as const,
+    kinds,
+    unknown: 'warning',
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -250,7 +283,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

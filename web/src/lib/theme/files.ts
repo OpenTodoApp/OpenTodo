@@ -3,6 +3,7 @@
 // such a file of at most 64 KB, read, migrated and validated on the device, as a
 // draft with a new id and a free name. An invalid file says what is wrong and
 // where ("Line 12: canvas is not a colour"); nothing is uploaded or written.
+import { saveFile } from '../saveFile'
 import { t } from '../i18n'
 import { MAX_THEME_BYTES, THEME_FORMAT, validateTheme, type ThemeDocument, type ThemeError } from './format'
 import { newThemeId, uniqueName } from './custom'
@@ -25,12 +26,7 @@ export function themeFileText(doc: ThemeDocument): string {
 
 /** Offers the theme as a download from a Blob URL (no server round trip). */
 export function downloadTheme(doc: ThemeDocument): void {
-  const url = URL.createObjectURL(new Blob([themeFileText(doc)], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = themeFileName(doc.name)
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  void saveFile(new Blob([themeFileText(doc)], { type: 'application/json' }), themeFileName(doc.name))
 }
 
 export type ThemeFileResult = { ok: true; doc: ThemeDocument } | { ok: false; message: string; line?: number }

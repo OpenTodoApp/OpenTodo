@@ -1,0 +1,9 @@
+{
+  "description": "Haptic feedback (shell-repairs D5): the kinds the web app hands haptic. A shell plays its own feedback for each and ignores a kind it does not know, without an error.",
+  "method": "haptic",
+  "kinds": [
+    "tick",
+    "success"
+  ],
+  "unknown": "warning"
+}

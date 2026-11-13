@@ -4788,6 +4788,7 @@
   "The card shows only runs that failed or wait for you.": "La tarjeta solo muestra las ejecuciones que fallaron o que te esperan.",
   "The change applies at once. You may be asked for your password first.": "El cambio se aplica al momento. Puede que antes te pidamos la contraseña.",
   "The change could not be saved.": "No se pudo guardar el cambio.",
+  "The file could not be saved.": "No se pudo guardar el archivo.",
   "The chosen model does not read photos. Remove them to send the message.": "El modelo elegido no lee fotos. Quítalas para enviar el mensaje.",
   "The chosen model does not read photos. Your message and photos are still in the field: remove the photos to send the text.": "El modelo elegido no lee fotos. Tu mensaje y las fotos siguen en el campo: quita las fotos para enviar el texto.",
   "The code is not valid. Check that your device’s clock is set automatically and try again.": "El código no es válido. Comprueba que el reloj de tu dispositivo se ajusta automáticamente y vuelve a intentarlo.",

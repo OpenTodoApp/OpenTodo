@@ -36,7 +36,7 @@ Only pages the sign-in leads through stay in the app; a link to another site on 
 
 ## Reminders
 
-Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Snooze 10 min** and **Dismiss** on the notification. Both open the app, which then moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone.
+Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Done**, **Snooze 10 min** and **Dismiss** on the notification. Each opens the app, which then completes the task or moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone.
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 
@@ -60,7 +60,15 @@ Version 1.2.0 of the app never filled the widget, never scheduled reminders and 
 
 ## Theme colours
 
-The area behind the page (under the status bar before the page draws, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons follow the phone's light or dark appearance.
+The area behind the page (under the status bar before the page draws, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons turn light or dark with the theme, so they stay readable when the app's theme differs from the phone's appearance.
+
+## Saving files
+
+Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
+
+## Haptic feedback
+
+Completing a task gives the phone's success tap and picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
 
 ## Face ID unlock
 

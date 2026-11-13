@@ -2,6 +2,7 @@
 // can take their data away"): on a hosted service the owner downloads the whole
 // server as one backup archive, the format `opentodo restore` reads, so moving
 // to a self-hosted server takes one download.
+import { saveFile } from '../lib/saveFile'
 import { useState } from 'react'
 import { api, ApiError, isNetworkError } from '../lib/api'
 import { useOnline } from '../lib/online'
@@ -41,11 +42,7 @@ export function ServerArchivePanel() {
     setError(null)
     try {
       const { blob, filename } = await api.downloadServerArchive()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = filename
-      a.click()
-      setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+      await saveFile(blob, filename)
     } catch (err) {
       setError(archiveErrorMessage(err))
     } finally {

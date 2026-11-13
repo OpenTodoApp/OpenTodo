@@ -4881,6 +4881,7 @@
   "The card shows only runs that failed or wait for you.": "卡片仅显示失败或等待你确认的运行记录。",
   "The change applies at once. You may be asked for your password first.": "更改将立即生效。系统可能会先要求你输入密码。",
   "The change could not be saved.": "更改无法保存。",
+  "The file could not be saved.": "文件无法保存。",
   "The chosen model does not read photos. Remove them to send the message.": "所选模型不支持读取图片。请移除图片后再发送消息。",
   "The chosen model does not read photos. Your message and photos are still in the field: remove the photos to send the text.": "所选模型不支持读取图片。你的消息和图片仍在输入框中：请移除图片以发送文字。",
   "The code is not valid. Check that your device’s clock is set automatically and try again.": "验证码无效。请检查你设备的时钟是否已设为自动同步并重试。",

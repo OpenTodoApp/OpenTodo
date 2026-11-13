@@ -1,3 +1,4 @@
+import { saveFile } from '../lib/saveFile'
 import { type FormEvent, type ReactNode, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Button, Dialog, StatusIndicator } from '../ui'
 import { Field, Input } from '../ui'
@@ -265,11 +266,7 @@ export function LostKeysConfirm({ busy, onConfirm, onCancel }: { busy: boolean; 
 
 function download(text: string) {
   const blob = new Blob([`${t('OpenTodo recovery key')}\n\n${text}\n\n${t('Keep it secret. With it, anyone who can sign in to your account can read your encrypted tasks.')}\n`], { type: 'text/plain' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'opentodo-recovery-key.txt'
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  void saveFile(blob, 'opentodo-recovery-key.txt')
 }
 
 export function EncryptionPanel() {
