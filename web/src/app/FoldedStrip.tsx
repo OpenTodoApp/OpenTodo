@@ -5,18 +5,20 @@
 // so a folded column takes drops before this loads. Loaded with the first fold.
 import type { ReactNode } from 'react'
 import { Tooltip } from '../ui'
+import { t } from '../lib/i18n'
 
 export default function FoldedStrip({ id, name, label, count, mark, onUnfold }: {
   /** The column key, for tests and stories. */
   id: string
   name: string
-  /** "Done, 12 open tasks, folded". */
-  label: string
+  /** "Done, 12 open tasks, folded"; absent for the Completed column, whose label is drawn here (board-completed-column). */
+  label?: string
   count: number
   /** The section's icon or colour dot. */
   mark?: ReactNode
   onUnfold: () => void
 }) {
+  label ??= t('{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded', { name, n: count })
   return (
     <Tooltip label={name} side="right">
       <button type="button" aria-expanded={false} aria-label={label} onClick={onUnfold} data-column-strip={id}

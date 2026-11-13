@@ -204,7 +204,20 @@ export function useListModel(route: ListRoute, userId?: string) {
     (prev, changes, tasks) => patchTreeParts(prev, changes, (id) => taskHasChildren(tasks, id)))).current
   const { split, tree, buckets } = partsOf.get(tasks, treeView, board, today, projectId, sections)
   const laterTasks = split?.later ?? NO_TASKS
-  const columns = useMemo(() => boardColumns(buckets, collapsedSections), [buckets, collapsedSections])
+  // Sections with only completed tasks keep a header with "n completed" and Show
+  // (task-list-presentation "Empty groups").
+  const doneOf = useRef(new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)).current
+  const doneBySection = doneOf.get(allTasks, projectId, layout.sectionMap)
+  // With "Show completed tasks" on (project-completed-section), the list layout
+  // keeps them in one Completed group at the end, newest first, closed by default.
+  const showCompletedPref = useShowCompletedPref(projectId)
+  // A reusable list always ends with its ticked items, "Got it", on every device (reusable-lists D7).
+  const reusable = !!projectId && isReusable(projectMap.get(projectId))
+  const showCompleted = !!projectId && (showCompletedPref || reusable) && !board && !layout.timeline
+  const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
+  // The board shows them in a Completed column at its end (board-completed-column), not in a reusable list.
+  const boardDone = useMemo(() => (board && !!projectId && showCompletedPref && !reusable ? completedNewestFirst(doneBySection) : null), [board, projectId, showCompletedPref, reusable, doneBySection])
+  const columns = useMemo(() => boardColumns(buckets, collapsedSections, boardDone), [buckets, collapsedSections, boardDone])
 
   // A project's, label's or built-in view's display options (list-display-options, builtin-view-options): personal and synced.
   const prefsRow = useProjectPrefsRow(projectId)
@@ -279,17 +292,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     }
   }, [rows, timeColumn])
   const slotsOff = useUnusedSlots(board ? undefined : rowTasks, { omitLabel: route.view === 'label' ? route.id : undefined, dateShown })
-  // Sections with only completed tasks keep a header with "n completed" and Show
-  // (task-list-presentation "Empty groups").
-  const doneOf = useRef(new Derived<Map<string, Task[]>, [string | null, Map<string, Section>]>(completedBySection, patchCompletedBySection)).current
-  const doneBySection = doneOf.get(allTasks, projectId, layout.sectionMap)
-  // With "Show completed tasks" on (project-completed-section), the list layout
-  // keeps them in one Completed group at the end, newest first, closed by default.
-  const showCompletedPref = useShowCompletedPref(projectId)
-  // A reusable list always ends with its ticked items, "Got it", on every device (reusable-lists D7).
-  const reusable = !!projectId && isReusable(projectMap.get(projectId))
-  const showCompleted = !!projectId && (showCompletedPref || reusable) && !board && !layout.timeline
-  const completedTasks = useMemo(() => (showCompleted ? completedNewestFirst(doneBySection) : NO_TASKS), [showCompleted, doneBySection])
+
   const completedOpen = !!projectId && collapsed.has(completedOpenKey(projectId))
 
   // A place's list (task-locations): undefined while loading, null when it does not exist.

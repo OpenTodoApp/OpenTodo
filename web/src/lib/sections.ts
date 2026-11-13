@@ -102,12 +102,17 @@ export async function moveTaskToSection(id: string, sectionId: string | null): P
     const s = await db.sections.get(sectionId)
     if (!s || s.deleted_at || s.project_id !== task.project_id) throw new Error(t('section is not in the task’s project'))
   }
+  await mutate('task', id, { section_id: sectionId, position: await endOfSection(task, sectionId) })
+}
+
+/** The position after the last open task of a section ('' or null = "No section") of the task's project. */
+export async function endOfSection(task: Task, sectionId: string | null): Promise<number> {
   const map = await sectionMap(task.project_id)
   const column = task.project_id
     ? await db.tasks.where('project_id').equals(task.project_id)
-      .filter((tk) => !tk.deleted_at && !tk.completed_at && tk.id !== id && effectiveSection(tk, map) === sectionId).toArray()
+      .filter((tk) => !tk.deleted_at && !tk.completed_at && tk.id !== task.id && effectiveSection(tk, map) === sectionId).toArray()
     : []
-  await mutate('task', id, { section_id: sectionId, position: positionAtEnd(column) })
+  return positionAtEnd(column)
 }
 
 async function sectionMap(projectId: string | null): Promise<Map<string, Section>> {

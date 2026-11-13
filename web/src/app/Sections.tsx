@@ -97,9 +97,11 @@ export function SectionMark({ section }: { section: Pick<Section, 'color' | 'ico
   return dot
 }
 
-export function SectionHeader({ section, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal, onFold }: {
+export function SectionHeader({ section, name: heading, count, layout, editable, first, last, collapsed, onToggleCollapse, onAdd, completed = 0, revealed = false, onReveal, onFold }: {
   /** null: the "No section" heading. */
   section: Section | null
+  /** A column that is not a section names itself (the board's Completed column). */
+  name?: string
   count: number
   layout: 'list' | 'board'
   /** Editors and above (project-sharing roles); viewers get no menu or quick add. */
@@ -118,7 +120,7 @@ export function SectionHeader({ section, count, layout, editable, first, last, c
 }) {
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section?.name ?? '')
-  const title = section ? section.name || t('Untitled section') : t('No section')
+  const title = heading ?? (section ? section.name || t('Untitled section') : t('No section'))
   const hue = section?.color ? hueFor(section.color) : undefined
 
   async function commit() {
