@@ -900,6 +900,8 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 /* Linked references (note-links D5): a calm section at the end, rows without boxes. */
 .linked-refs { @apply mt-6 space-y-1; }
 .linked-refs[data-folded] { @apply -mx-2 mt-0 mb-3; }
+/* Unlinked mentions (unlinked-mentions D4): right under Linked references, the same calm line. */
+.linked-refs + .linked-refs--mentions { @apply mt-1; }
 .linked-refs__head { @apply flex items-center gap-1.5 px-2 text-meta font-medium text-muted; }
 .linked-refs__toggle { @apply -mx-0 min-h-8 rounded-control hover:bg-sunken hover:text-default dark:hover:bg-raised; }
 .linked-ref { @apply block min-w-0 space-y-0.5 rounded-control px-2 py-1.5 no-underline transition-colors duration-(--duration-ui) ease-calm hover:bg-sunken focus-visible:outline-2 focus-visible:outline-focus dark:hover:bg-raised; }

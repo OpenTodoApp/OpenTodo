@@ -5,11 +5,14 @@ import type { Reference } from '../../lib/noteLinks'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
 import { ReferencesSection } from '../LinkedReferences'
+import { MentionsSection } from '../UnlinkedMentions'
+import type { Mention } from '../../lib/noteMentions'
 import { LinkOption, linkGroupLabel } from '../LinkOption'
 import { RefChip } from '../RefChip'
 
 // Links between notes, tasks and projects (OpenSpec change note-links): the link as
-// it reads in a note (live, done, unreachable), the `[[` picker and Linked references.
+// it reads in a note (live, done, unreachable), the `[[` picker and Linked references;
+// Unlinked mentions under them (unlinked-mentions).
 const meta: Meta = { title: 'Screens/Note links' }
 export default meta
 
@@ -71,4 +74,21 @@ export const LinkedReferences: StoryObj = {
 /** In a project's note area: one folded line with the count. */
 export const LinkedReferencesFolded: StoryObj = {
   render: () => <Column><div className="max-w-xl"><ReferencesSection target="project:p1" refs={refs} folded project={() => null} /></div></Column>,
+}
+
+const mentions: Mention[] = [
+  { kind: 'note', id: 'n4', title: 'Lisbon ideas', projectId: null, updated: 3, snippet: [{ text: 'Ask Ana about the ', mark: false }, { text: 'trip to Lisbon', mark: true }, { text: ' ferry', mark: false }] },
+  { kind: 'task', id: 't5', title: 'Book flights', projectId: 'p1', updated: 2, snippet: [{ text: 'Cheapest on Tuesday for the ', mark: false }, { text: 'Trip to Lisbon', mark: true }] },
+]
+
+/** Under Linked references: the notes that name the item without linking it, each with Link (a viewer's row without it). */
+export const UnlinkedMentions: StoryObj = {
+  render: () => (
+    <Column>
+      <div className="max-w-xl">
+        <ReferencesSection target="note:n3" refs={refs.slice(0, 1)} folded={false} project={() => 'Renovation'} />
+        <MentionsSection target="note:n3" mentions={mentions} folded={false} open project={(m) => (m.projectId ? 'Travel' : null)} onLink={(m) => (m.kind === 'note' ? () => {} : undefined)} />
+      </div>
+    </Column>
+  ),
 }
