@@ -152,6 +152,7 @@
   "unknown_skill",
   "unsupported_format",
   "unsupported_protocol_version",
+  "upstream_failed",
   "user_not_found",
   "verification_invalid",
   "workspace_gone",

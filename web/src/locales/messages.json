@@ -6400,6 +6400,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Fetch from Todoist": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "Fetching more…": [
     "web/src/app/AuditPanel.tsx"
   ],
@@ -10633,6 +10636,9 @@
   "No backup has run yet.": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "No backup needed: in Todoist, open Settings → Integrations → Developer and copy the API token. It is used once to read your projects, tasks and comments, and never stored.": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "No backup yet": [
     "web/src/app/settingsStatus.ts"
   ],
@@ -12506,6 +12512,9 @@
   ],
   "Options, one per line": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Or import with a Todoist API token": [
+    "web/src/app/ImportScreen.tsx"
   ],
   "Or paste or drop files on the task": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -17838,6 +17847,9 @@
   ],
   "The ones where…": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "The other service could not be reached. Try again.": [
+    "web/src/lib/i18n/errors.ts"
   ],
   "The owner cannot leave the project. Transfer ownership to another member first.": [
     "web/src/lib/i18n/errors.ts"
