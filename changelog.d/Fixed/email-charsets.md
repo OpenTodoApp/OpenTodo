@@ -1,0 +1,1 @@
+- Email to task decodes Central European, Cyrillic, Greek, Turkish and Baltic mail (windows-1250, ISO-8859-2, windows-1251, KOI8-R and the others of their families), so Czech, Polish or Russian text no longer turns into `�` ([#1309](https://github.com/OpenTodoApp/OpenTodo/issues/1309)).
