@@ -73,6 +73,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | Planned |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
+| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
 | `voice-ramble` | Speak a brain dump or drop a photo of notes; review the proposed tasks | Shipped in 0.20 |
@@ -143,7 +144,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |
 | `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
 | `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
-| `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Planned |
+| `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |
 | `note-outline` | An outline of a long note's headings | Shipped |
 | `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped |

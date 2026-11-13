@@ -41,6 +41,7 @@ is stored as `every 2nd tuesday`.
 | last day | `every last day` | The last day of each month. |
 | ordinal weekday of the month | `every first weekday`, `every 2nd weekday`, `every last weekday` | 1st/first to 4th/fourth or last Monday–Friday of each month. |
 | ordinal weekday | `every 2nd tuesday`, `every first monday`, `every last friday` | 1st/first to 4th/fourth or last of that weekday in each month. |
+| ordinal weekday of a month | `every last sunday of march`, `every 4th thursday of november`, `every 2nd monday in oct` | That weekday once a year, in that month ("of" or "in", full month names or three letters). Stored as `every last sunday of march`; a 1.0 device cannot read it ([older devices](#rules-older-devices-read)). |
 
 `every 2nd` is the 2nd day of each month; `every 2nd tuesday` is the second Tuesday;
 `every 2nd weekday` is the second Monday–Friday. Weekends are not counted: in

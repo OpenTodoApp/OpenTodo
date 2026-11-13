@@ -71,6 +71,8 @@ When an id already exists in the account the row is skipped (`exists`), unless t
 
 ### Todoist (`todoist-csv`, `todoist-backup`)
 
+**Without a backup:** Todoist's backups need Premium, but every account can create an API token. Choose **Switch from: Todoist**, then **Or import with a Todoist API token**: in Todoist open Settings → Integrations → Developer, copy the token, paste it and choose **Fetch from Todoist**. OpenTodo asks Todoist once for your projects, sections, labels, tasks and their comments (`POST /api/v1/import/todoist`) and previews the answer like a file (`json-items`), with the same options and Undo. The token is used for that one request and never stored. Comments join the end of their task's notes; completed tasks are not part of Todoist's answer and are not imported this way.
+
 Todoist exports one project as CSV from the project's menu, and keeps backups of every project as a ZIP in its settings (Backups). The backup is the better choice: its file names carry the project names (`Work [2203306141].csv`), so projects keep their names. A single CSV does not name its project, so its tasks go to the target project.
 
 | Todoist | Becomes |

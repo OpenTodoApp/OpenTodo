@@ -9083,6 +9083,96 @@
     "recurrence": null,
     "reminders": []
    }
+  },
+  {
+   "name": "Change the clocks every last Sunday in March",
+   "line": "Change the clocks every last Sunday in March",
+   "ctx": {
+    "today": "2026-11-13",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Change the clocks",
+    "due": {
+     "date": "2027-03-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last sunday of march",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Thanksgiving every 4th Thursday of November",
+   "line": "Thanksgiving every 4th Thursday of November",
+   "ctx": {
+    "today": "2026-11-13",
+    "now": "10:00",
+    "languages": [
+     "en"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Thanksgiving",
+    "due": {
+     "date": "2026-11-26"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every 4th thursday of november",
+    "reminders": []
+   }
+  },
+  {
+   "name": "Uhren umstellen jeden letzten Sonntag im März",
+   "line": "Uhren umstellen jeden letzten Sonntag im März",
+   "ctx": {
+    "today": "2026-11-13",
+    "now": "10:00",
+    "languages": [
+     "de"
+    ],
+    "projects": [
+     {
+      "id": "p-home",
+      "name": "Home"
+     }
+    ]
+   },
+   "expect": {
+    "title": "Uhren umstellen",
+    "due": {
+     "date": "2027-03-28"
+    },
+    "projectId": null,
+    "labels": [],
+    "priority": null,
+    "estimateMinutes": null,
+    "spentMinutes": null,
+    "recurrence": "every last sunday of march",
+    "reminders": []
+   }
   }
  ]
 }

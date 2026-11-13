@@ -384,7 +384,10 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
   // notes-home: pin or unpin the focused note, handled by the list itself.
   { id: 'notes.from-template', keys: ['Shift+Q'], description: 'On the Notes page: start a new note from a template', section: 'notes', scope: 'view', views: ['notes'] },
-  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
+  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note, or the ticked notes', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
+  // notes-bulk-actions D2, D3: the task lists' ticking keys on standalone notes, handled by the list itself; `m` moves the ticked notes.
+  { id: 'notes.tick', keys: ['x', 'Space'], description: 'On the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears)', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused standalone note' },
+  { id: 'notes.move', keys: ['m'], description: 'On the Notes page: move the ticked notes to a project', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'notes ticked' },
   // notes-graph-page D1: the List | Graph switch (the project's layout key). The graph's own keys are local to it, as the Connections dialog's are, and listed in its help.
   { id: 'notes.view-mode', keys: ['v'], description: 'On the Notes page: switch between the list and the graph', section: 'notes', scope: 'view', views: ['notes'] },
   // ---- Habits (habits-home D9): handled by the focused habit row itself.
