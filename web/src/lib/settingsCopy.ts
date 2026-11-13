@@ -57,6 +57,7 @@ export const SETTINGS_COPY = {
     notices: {
       offline: msg('Changing your profile needs a connection.'),
       pending: msg('Waiting for confirmation: {email}'),
+      unconfirmed: msg('This address is not confirmed yet.'),
     },
   },
   'how-you-work': {
