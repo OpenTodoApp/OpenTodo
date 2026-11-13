@@ -67,10 +67,44 @@ func (e *Engine) triggerValue(ctx context.Context, w *world, r *rule, taskID str
 		}
 		return tasksVal(ids)
 	}
+	if r.Trigger.IsNote() {
+		id, _ := subjectNote(taskID)
+		return ruleval.Value{Type: ruleval.TNote, ID: id}
+	}
 	if taskID == "" {
 		return ruleval.Value{Type: ruleval.TTask}
 	}
 	return taskVal(taskID)
+}
+
+// checkSubject checks a manual run's or a test's task or note against the
+// routine's trigger and returns the subject the run log keeps: a note
+// routine needs a live note of its world, a task routine whose steps read the
+// trigger a live task (notes-in-routines).
+func (e *Engine) checkSubject(ctx context.Context, w *world, r *rule, taskID, noteID string) (string, error) {
+	if r.Trigger.IsNote() {
+		if taskID != "" || (noteID == "" && readsTrigger(r.Steps)) {
+			return "", ErrNoteRequired
+		}
+		if noteID == "" {
+			return "", nil
+		}
+		if n, ok := e.worldNotes(ctx, w)[noteID]; !ok || !opsync.IsNull(n["deleted_at"]) {
+			return "", ErrNotFound
+		}
+		return noteSubject(noteID), nil
+	}
+	if noteID != "" {
+		return "", ErrTaskRequired
+	}
+	if taskID != "" {
+		if t, ok := w.tasks[taskID]; !ok || !opsync.IsNull(t["deleted_at"]) {
+			return "", ErrNotFound
+		}
+	} else if readsTrigger(r.Steps) && r.triggerType() == ruleval.TTask {
+		return "", ErrTaskRequired
+	}
+	return taskID, nil
 }
 
 // findRule returns one of the user's live rules this server can read.
@@ -178,12 +212,9 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 	if w, err = e.worldOf(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
-	if req.TaskID != "" {
-		if t, ok := w.tasks[req.TaskID]; !ok || !opsync.IsNull(t["deleted_at"]) {
-			return Result{}, ErrNotFound
-		}
-	} else if readsTrigger(r.Steps) && r.triggerType() == ruleval.TTask {
-		return Result{}, ErrTaskRequired
+	subject, err := e.checkSubject(ctx, w, r, req.TaskID, req.NoteID)
+	if err != nil {
+		return Result{}, err
 	}
 	if !req.Test {
 		if limit := e.limits.check(uid, e.now()); limit == limitMinute || limit == limitDay {
@@ -198,7 +229,7 @@ func (e *Engine) RunNow(ctx context.Context, uid string, req RunRequest) (Result
 		source = SourceTest
 	}
 	return e.runRoutine(ctx, w, r, runOpts{key: key, runID: req.RunID, source: source, depth: 2, test: req.Test,
-		trigger: e.triggerValue(ctx, w, r, req.TaskID), taskID: req.TaskID, callAI: req.CallAI, device: req.Device, session: req.Session, maxWrites: req.MaxWrites})
+		trigger: e.triggerValue(ctx, w, r, subject), taskID: subject, callAI: req.CallAI, device: req.Device, session: req.Session, maxWrites: req.MaxWrites})
 }
 
 // Draft is an unsaved routine (POST /api/v1/rules/test).
@@ -208,6 +239,8 @@ type Draft struct {
 	Actions   json.RawMessage `json:"actions"`
 	Steps     json.RawMessage `json:"steps"`
 	TaskID    string          `json:"task_id"`
+	// NoteID is the note a note routine's test runs on (notes-in-routines).
+	NoteID string `json:"note_id"`
 	// CallAI runs the AI steps for real (Test after the estimate,
 	// routines-ai-step D11); the live preview never does.
 	CallAI bool `json:"call_ai"`
@@ -219,14 +252,14 @@ type Draft struct {
 
 // TestRule plans a saved rule's steps on a task (when its steps read one) and
 // writes nothing: no run is logged (design D8).
-func (e *Engine) TestRule(ctx context.Context, uid, ruleID, taskID string) (Result, error) {
+func (e *Engine) TestRule(ctx context.Context, uid, ruleID, taskID, noteID string) (Result, error) {
 	r, err := e.findRule(ctx, uid, ruleID)
 	if err != nil {
 		return Result{}, err
 	}
 	row, _ := e.Sync.Get(ctx, uid, "rule", r.ID)
 	r.asSteps(row["actions"])
-	return e.testRule(ctx, uid, r, taskID, false)
+	return e.testRule(ctx, uid, r, taskID, noteID, false)
 }
 
 // TestDraft plans an unsaved routine and writes nothing.
@@ -247,10 +280,10 @@ func (e *Engine) TestDraft(ctx context.Context, uid string, d Draft) (Result, er
 		}
 	}
 	r.asSteps(d.Actions)
-	return e.testRule(ctx, uid, &r, d.TaskID, d.CallAI)
+	return e.testRule(ctx, uid, &r, d.TaskID, d.NoteID, d.CallAI)
 }
 
-func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID string, callAI bool) (Result, error) {
+func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID, noteID string, callAI bool) (Result, error) {
 	w, err := e.load(ctx, uid)
 	if err != nil {
 		return Result{}, err
@@ -258,15 +291,12 @@ func (e *Engine) testRule(ctx context.Context, uid string, r *rule, taskID strin
 	if w, err = e.worldOf(ctx, uid, r, w); err != nil {
 		return Result{}, err
 	}
-	if taskID != "" {
-		if _, ok := w.tasks[taskID]; !ok {
-			return Result{}, ErrNotFound
-		}
-	} else if readsTrigger(r.Steps) && r.triggerType() == ruleval.TTask {
-		return Result{}, ErrTaskRequired
+	subject, err := e.checkSubject(ctx, w, r, taskID, noteID)
+	if err != nil {
+		return Result{}, err
 	}
 	return e.runRoutine(ctx, w, r, runOpts{key: "test", runID: "test", source: SourceTest, depth: 2, dry: true,
-		trigger: e.triggerValue(ctx, w, r, taskID), taskID: taskID, callAI: callAI})
+		trigger: e.triggerValue(ctx, w, r, subject), taskID: subject, callAI: callAI})
 }
 
 func orNull(v json.RawMessage) json.RawMessage {

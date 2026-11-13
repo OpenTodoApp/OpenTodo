@@ -44,6 +44,7 @@ import type { DescribedDraft } from './routineNav'
 import { RunDetailBody, RunsList } from './RunHistory'
 import { SharedRoutineLine, useSharedRoutine } from './SharedRoutine'
 import { ADD_PANEL_ID, CardColumn, sentenceText, WhenCard, type CardEvents, type CardState } from './StepCard'
+import { ChoicePopover } from './pickers'
 import { refName } from './words'
 
 /** A rule draft (a board conversion) as a routine draft: one Change tasks card. */
@@ -134,16 +135,16 @@ function useDraft(start: RoutineDraft) {
 }
 
 /** Server previews for the steps the device cannot plan (D4), debounced 400 ms. */
-function useServerPreview(draft: RoutineDraft, local: Map<string, Preview>, ok: boolean, taskId: string | undefined, online: boolean, workspace: string | null): Map<string, Preview> | null {
+function useServerPreview(draft: RoutineDraft, local: Map<string, Preview>, ok: boolean, taskId: string | undefined, online: boolean, workspace: string | null, noteId?: string): Map<string, Preview> | null {
   const [res, setRes] = useState<Map<string, Preview> | null>(null)
   const needs = [...local.values()].some((p) => p.state === 'server')
-  const key = JSON.stringify([draft.trigger, draft.condition, draft.steps, taskId, workspace])
+  const key = JSON.stringify([draft.trigger, draft.condition, draft.steps, taskId, workspace, noteId])
   useEffect(() => {
     setRes(null)
     if (!online || !ok || !needs || !draft.steps.length) return
     let live = true
     const timer = setTimeout(() => {
-      api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(workspace ? { workspace_id: workspace } : {}) }).then((r) => {
+      api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(noteId ? { note_id: noteId } : {}), ...(workspace ? { workspace_id: workspace } : {}) }).then((r) => {
         if (!live) return
         setRes(new Map(r.steps.map((x) => [x.step_id, serverPreview(x)])))
       }, () => undefined)
@@ -211,8 +212,10 @@ type Pane = 'steps' | 'test' | 'history'
 const WIDE_QUERY = '(min-width: 64rem)'
 
 /** Test (D8): a logged test run for a saved, unchanged routine, the draft route otherwise; AI steps ask first (routines-ai-step D11). */
-function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, projectId, workspace, onStart, onAnnounce, onError }: {
+function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate, taskId, noteId, projectId, workspace, onStart, onAnnounce, onError }: {
   draft: RoutineDraft; rule: Rule | undefined; dirty: boolean; online: boolean; blocked: boolean; withAI: boolean; estimate: number; taskId: string | undefined
+  /** A note routine's sample note: the newest one (notes-in-routines). */
+  noteId?: string
   /** A shared routine's project: the draft is planned inside it (routines-shared D3). */
   projectId?: string
   /** The draft's workspace (routine-conditions D1); null for every workspace. */
@@ -229,8 +232,8 @@ function useRoutineTest({ draft, rule, dirty, online, blocked, withAI, estimate,
     onStart()
     const ai = callAI ? { call_ai: true } : {}
     const req = rule && !dirty
-      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...ai })
-      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(projectId ? { project_id: projectId } : {}), ...(workspace && !projectId ? { workspace_id: workspace } : {}), ...ai })
+      ? api.testRoutine(rule.id, { run_id: uuid(), ...(taskId ? { task_id: taskId } : {}), ...(noteId ? { note_id: noteId } : {}), ...ai })
+      : api.testRoutineDraft({ trigger: draft.trigger, condition: draft.condition, steps: draft.steps, ...(taskId ? { task_id: taskId } : {}), ...(noteId ? { note_id: noteId } : {}), ...(projectId ? { project_id: projectId } : {}), ...(workspace && !projectId ? { workspace_id: workspace } : {}), ...ai })
     req.then((r) => {
       setResult(r)
       onAnnounce(r.run.outcome === 'failed' ? t('Test failed at step {n}, nothing was written', { n: r.run.failed_step + 1 }) : t('{n, plural, one {Test finished: would write # item, nothing was written} other {Test finished: would write # items, nothing was written}}', { n: r.writes }))
@@ -321,10 +324,14 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const outputs = useMemo(() => outputNames(draft.steps, valueNamer(names), types), [draft.steps, names, types])
   const ctx = useMemo(() => ({ draft, types, outputs, names }), [draft, types, outputs, names])
   const error = useMemo(() => draftError(draft), [draft])
-  const triggerType = triggerOutput(draft.trigger.kind, !!draft.condition)
+  const triggerType = triggerOutput(draft.trigger, !!draft.condition)
+  const runRef = useRef<HTMLButtonElement>(null)
+  const [pickNote, setPickNote] = useState(false)
   const data = usePreviewData(draft.condition, triggerType === 'task' && draft.trigger.kind !== 'manual', me)
   const local = useMemo(() => planDraft(draft, data), [draft, data])
-  const server = useServerPreview(draft, local, !error, data.triggerTask?.id, online, workspace)
+  // A note routine is previewed and tested on the newest note (notes-in-routines).
+  const sampleNote = triggerType === 'note' ? [...(names.notes ?? [])].sort((a, b) => b.created_at - a.created_at)[0]?.id : undefined
+  const server = useServerPreview(draft, local, !error, triggerType === 'task' ? data.triggerTask?.id : undefined, online, workspace, sampleNote)
   const previews = useMemo(() => {
     if (!server) return local
     const out = new Map(local)
@@ -425,7 +432,7 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
   const withAI = hasAI(draft.steps)
   const estimate = [...previews.values()].reduce((n, p) => n + (p.state === 'ai' ? p.estimate : 0), 0)
   const { test, testing, result, ask } = useRoutineTest({
-    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, projectId: shared?.projectId, workspace,
+    draft, rule, dirty, online, blocked: !!blocked, withAI, estimate, taskId: triggerType === 'task' ? data.triggerTask?.id : undefined, noteId: sampleNote, projectId: shared?.projectId, workspace,
     onStart: () => setPane('test'), onAnnounce: setAnnounce, onError: (e) => setSaveError(messageOf(e)),
   })
   const keys = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -442,7 +449,11 @@ export function RoutineEditor({ rule, draft: initial, project, dropped, describe
     <>
       <Button variant="secondary" size="sm" icon="list-checks" onClick={test} busy={testing} disabled={!online || !!blocked || !draft.steps.length}
         data-routine-test>{t('Test')}</Button>
-      {saved && !readOnly && <Button variant="ghost" size="sm" icon="zap" disabled={!online || !rule} onClick={() => { if (rule) void runRoutineNow(rule, undefined) }} data-routine-run>{t('Run now')}</Button>}
+      {saved && !readOnly && <Button ref={runRef} variant="ghost" size="sm" icon="zap" disabled={!online || !rule} aria-haspopup={triggerType === 'note' ? 'listbox' : undefined}
+        onClick={() => { if (!rule) return; if (triggerType === 'note') setPickNote(true); else void runRoutineNow(rule, undefined) }} data-routine-run>{t('Run now')}</Button>}
+      {/* Run now on a note routine asks for the note with the note picker (notes-in-routines). */}
+      <ChoicePopover open={pickNote} onClose={() => setPickNote(false)} anchor={runRef} label={t('Run now')} placeholder={t('Find a note…')}
+        choices={(names.notes ?? []).map((n) => ({ key: n.id, label: n.title || t('Untitled note'), run: () => { setPickNote(false); if (rule) void runRoutineNow(rule, undefined, n.id) } }))} />
       <Button variant="primary" size="sm" onClick={save} busy={saving} disabled={readOnly} data-routine-save>{t('Save')}</Button>
     </>
   )
@@ -621,7 +632,7 @@ function EncryptedScheduleNote({ draft }: { draft: RoutineDraft }) {
   if (!encrypted) return null
   let step = ''
   try {
-    step = contentStep(draft.steps, triggerOutput(draft.trigger.kind, !!draft.condition), draftTypes(draft))
+    step = contentStep(draft.steps, triggerOutput(draft.trigger, !!draft.condition), draftTypes(draft))
   } catch {
     step = ''
   }

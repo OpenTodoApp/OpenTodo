@@ -187,7 +187,7 @@ export interface Flowing { ref: string; type: RoutineStepType }
 function repeatListType(d: RoutineDraft, repeatId: string, types: Record<string, RoutineStepType>): RoutineStepType | '' {
   const arg = findStep(d.steps, repeatId)?.in?.list
   if (!arg || !('ref' in arg)) return ''
-  if (arg.ref === 'trigger') return triggerOutput(d.trigger.kind, !!d.condition)
+  if (arg.ref === 'trigger') return triggerOutput(d.trigger, !!d.condition)
   if (arg.ref === 'item') {
     const outer = enclosingRepeat(d.steps, repeatId)
     return outer ? (repeatListType(d, outer, types) === 'tasks' ? 'task' : '') : ''
@@ -207,13 +207,14 @@ export function flowingTo(d: RoutineDraft, id: string, types: Record<string, Rou
   const rep = enclosingRepeat(d.steps, id)
   if (rep) {
     const list = repeatListType(d, rep, types)
-    if (list === 'tasks' || list === 'lines') out.push({ ref: 'item', type: list === 'tasks' ? 'task' : 'text' })
+    if (list === 'tasks' || list === 'lines' || list === 'notes') out.push({ ref: 'item', type: list === 'tasks' ? 'task' : list === 'notes' ? 'note' : 'text' })
   }
   for (const v of visibleBefore(d.steps, id)) {
     const type = types[v.id]
     if (type && type !== 'none') out.push({ ref: v.id, type })
   }
-  if (d.trigger.kind !== 'manual' || manualTrigger) out.push({ ref: 'trigger', type: triggerOutput(d.trigger.kind, !!d.condition) })
+  // A manual routine on a note flows its note (notes-in-routines: built with no note chosen by hand).
+  if (d.trigger.kind !== 'manual' || manualTrigger || d.trigger.on === 'note') out.push({ ref: 'trigger', type: triggerOutput(d.trigger, !!d.condition) })
   return out
 }
 
@@ -368,7 +369,7 @@ export function draftError(d: RoutineDraft): StepError | null {
   if (!d.steps.length) return null
   if (stepCount(d.steps) > MAX_STEPS) return { step: '', input: '', code: 'too_many_steps', message: `a routine may hold at most ${MAX_STEPS} steps` }
   try {
-    checkTypes(parseSteps(d.steps), triggerOutput(d.trigger.kind, !!d.condition))
+    checkTypes(parseSteps(d.steps), triggerOutput(d.trigger, !!d.condition))
     return null
   } catch (e) {
     return stepError(e) ?? { step: '', input: '', code: 'invalid_step', message: String(e) }
@@ -378,13 +379,13 @@ export function draftError(d: RoutineDraft): StepError | null {
 /** Every step's output type, read as far as the draft checks (types of later steps stay unknown). */
 export function draftTypes(d: RoutineDraft): Record<string, RoutineStepType> {
   try {
-    return checkTypes(parseSteps(d.steps), triggerOutput(d.trigger.kind, !!d.condition))
+    return checkTypes(parseSteps(d.steps), triggerOutput(d.trigger, !!d.condition))
   } catch {
     // A partial draft: type each prefix that checks.
     const out: Record<string, RoutineStepType> = {}
     for (let i = 1; i <= d.steps.length; i++) {
       try {
-        Object.assign(out, checkTypes(parseSteps(d.steps.slice(0, i)), triggerOutput(d.trigger.kind, !!d.condition)))
+        Object.assign(out, checkTypes(parseSteps(d.steps.slice(0, i)), triggerOutput(d.trigger, !!d.condition)))
       } catch {
         const k = stepKind(d.steps[i - 1].kind)
         if (k && !k.sameAs && !(d.steps[i - 1].id in out)) out[d.steps[i - 1].id] = k.output

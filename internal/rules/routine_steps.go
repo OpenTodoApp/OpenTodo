@@ -98,6 +98,8 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.findProject(s, in)
 	case "create_project", "update_project", "create_sections", "create_labels", "favourite":
 		return st.projectStep(s, in, at)
+	case "find_notes", "get_note", "create_note", "change_notes", "note_to_task":
+		return st.noteStep(s, in, at)
 	case "note_text":
 		return st.noteText(s, in)
 	case "append_to_note":
@@ -406,6 +408,9 @@ func (st *runState) lay(cs ...agenttools.Change) {
 			st.tasks[c.EntityID] = mergeRow(st.tasks[c.EntityID], c.EntityID, c.Patch)
 		case "project":
 			st.projects[c.EntityID] = mergeRow(st.projects[c.EntityID], c.EntityID, c.Patch)
+		case "note":
+			notes := st.allNotes()
+			notes[c.EntityID] = mergeRow(notes[c.EntityID], c.EntityID, c.Patch)
 		}
 	}
 }
@@ -731,13 +736,23 @@ func (st *runState) noteText(s *ruleval.Step, in map[string]ruleval.Value) (rule
 	of, _ := st.entityIn(s, in, "of")
 	var row opsync.Entity
 	var ok bool
-	if of.Type == ruleval.TProject {
+	switch of.Type {
+	case ruleval.TProject:
 		row, ok = st.liveProject(of.ID)
-	} else {
+	case ruleval.TNote:
+		row, ok = st.liveNote(of.ID)
+	default:
 		row, ok = st.liveTask(of.ID)
 	}
 	if !ok {
 		return none(), "", failf(ErrCodeNotFound, "%s %s not found", of.Type, of.ID)
+	}
+	// field: a standalone note's title instead of its text (notes-in-routines D1).
+	if field, _ := lit[string](s, "field"); field == "title" {
+		if of.Type == ruleval.TProject {
+			return st.textOut(str(row, "name"))
+		}
+		return st.textOut(str(row, "title"))
 	}
 	return st.textOut(str(row, "description"))
 }
@@ -754,7 +769,18 @@ func (st *runState) appendNote(s *ruleval.Step, in map[string]ruleval.Value, at 
 	}
 	aid := "r" + ids2("routine-append", st.runID, strconv.Itoa(at), strconv.Itoa(st.seq))[:20]
 	aid = strings.ReplaceAll(aid, "-", "")
-	_, err := st.tool("append_to_note", map[string]any{"task_id": of.ID, "text": text, "append_id": aid})
+	key := "task_id"
+	if of.Type == ruleval.TNote {
+		n, ok := st.liveNote(of.ID)
+		if !ok {
+			return none(), "", failf(ErrCodeNotFound, "note %s not found", of.ID)
+		}
+		if err := st.writableNote(n); err != nil {
+			return none(), "", err
+		}
+		key = "note_id"
+	}
+	_, err := st.tool("append_to_note", map[string]any{key: of.ID, "text": text, "append_id": aid})
 	return none(), "", err
 }
 
@@ -775,6 +801,9 @@ func (st *runState) listStep(s *ruleval.Step, in map[string]ruleval.Value) (rule
 		if list.Type == ruleval.TLines {
 			return ruleval.Value{Type: ruleval.TLines, Lines: ruleval.Take(list.Lines, int(n), from == "end")}, "", nil
 		}
+		if list.Type == ruleval.TNotes {
+			return notesVal(ruleval.Take(list.IDs, int(n), from == "end")), "", nil
+		}
 		return tasksVal(ruleval.Take(list.IDs, int(n), from == "end")), "", nil
 	case "filter":
 		w, err := ruleval.ParseWhere(s.In["where"].Lit)
@@ -793,6 +822,9 @@ func (st *runState) listStep(s *ruleval.Step, in map[string]ruleval.Value) (rule
 		if w.Condition == nil {
 			return none(), "", failf(ErrCodeTypeMismatch, "filter: contains filters lines; use a condition for tasks")
 		}
+		if list.Type == ruleval.TNotes {
+			return st.filterNotes(list, w.Condition), "", nil
+		}
 		var out []string
 		for _, id := range list.IDs {
 			if t, ok := st.tasks[id]; ok && st.matchCond(w.Condition, t) {
@@ -805,6 +837,9 @@ func (st *runState) listStep(s *ruleval.Step, in map[string]ruleval.Value) (rule
 		dir, _ := lit[string](s, "direction")
 		if list.Type == ruleval.TLines {
 			return ruleval.Value{Type: ruleval.TLines, Lines: ruleval.SortLines(list.Lines, dir == "desc")}, "", nil
+		}
+		if list.Type == ruleval.TNotes {
+			return st.sortNotes(list, by, dir == "desc"), "", nil
 		}
 		rows := make([]ruleval.SortTask, 0, len(list.IDs))
 		for _, id := range list.IDs {

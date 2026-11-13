@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	"github.com/OpenTodoApp/opentodo/internal/ruleval"
 )
 
 // Run log bounds (spec "Run log"): failed runs are kept longer (routines-engine D10).
@@ -60,10 +61,13 @@ const PausedRunaway = "runaway"
 // Event is one queued trigger occurrence: a task event from a committed batch,
 // or a time trigger the scheduler found (RuleID and Occurrence set).
 type Event struct {
-	ID         int64
-	UserID     string
-	RuleID     string
-	TaskID     string
+	ID     int64
+	UserID string
+	RuleID string
+	TaskID string
+	// NoteID is a note event's standalone note (notes-in-routines), kept in
+	// the task_id column as "note:<id>".
+	NoteID     string
 	Kind       string
 	LabelID    string
 	ProjectID  string
@@ -79,24 +83,26 @@ type Event struct {
 
 // Run is one row of a rule's run log (ids, counts and codes, never content).
 type Run struct {
-	ID            int64           `json:"id"`
-	RunID         string          `json:"run_id"`
-	RuleID        string          `json:"rule_id"`
-	OccurrenceKey string          `json:"occurrence"`
-	TaskID        string          `json:"task_id,omitempty"`
-	At            int64           `json:"at"`
-	Outcome       string          `json:"outcome"`
-	Reason        string          `json:"reason,omitempty"`
-	Changes       json.RawMessage `json:"changes"`
-	Depth         int             `json:"depth"`
-	Source        string          `json:"source"`
-	RunAs         string          `json:"run_as"`
-	Test          bool            `json:"test"`
-	StepsCount    int             `json:"steps_count"`
-	Writes        int             `json:"writes"`
-	DurationMs    int64           `json:"duration_ms"`
-	UndoneAt      *int64          `json:"undone_at"`
-	FailedStep    int             `json:"failed_step"`
+	ID            int64  `json:"id"`
+	RunID         string `json:"run_id"`
+	RuleID        string `json:"rule_id"`
+	OccurrenceKey string `json:"occurrence"`
+	TaskID        string `json:"task_id,omitempty"`
+	// NoteID is the standalone note a note routine ran on (notes-in-routines).
+	NoteID     string          `json:"note_id,omitempty"`
+	At         int64           `json:"at"`
+	Outcome    string          `json:"outcome"`
+	Reason     string          `json:"reason,omitempty"`
+	Changes    json.RawMessage `json:"changes"`
+	Depth      int             `json:"depth"`
+	Source     string          `json:"source"`
+	RunAs      string          `json:"run_as"`
+	Test       bool            `json:"test"`
+	StepsCount int             `json:"steps_count"`
+	Writes     int             `json:"writes"`
+	DurationMs int64           `json:"duration_ms"`
+	UndoneAt   *int64          `json:"undone_at"`
+	FailedStep int             `json:"failed_step"`
 	// Tokens are the run's AI tokens; AIAuto marks an AI result applied
 	// without asking; Proposal is the run's proposal (routines-ai-step).
 	Tokens   int64     `json:"tokens"`
@@ -155,8 +161,19 @@ func (s *Store) Enqueue(ctx context.Context, events []Event) error {
 		if e.Depth < 1 {
 			e.Depth = 1
 		}
+		subject := e.TaskID
+		if e.NoteID != "" {
+			subject = noteSubject(e.NoteID)
+		}
+		if e.Kind == ruleval.NoteEdited {
+			// One wait per note: a newer edit replaces the older one (D2).
+			if _, err := tx.ExecContext(ctx, `DELETE FROM rule_events WHERE kind = ? AND user_id = ? AND task_id = ? AND for_project = ?`,
+				e.Kind, e.UserID, subject, e.ForProject); err != nil {
+				return err
+			}
+		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO rule_events (user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at, for_project)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, e.UserID, e.RuleID, e.TaskID, e.Kind, e.LabelID, e.ProjectID, e.SectionID, e.Origin, e.Occurrence, e.Depth, now, e.ForProject); err != nil {
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, e.UserID, e.RuleID, subject, e.Kind, e.LabelID, e.ProjectID, e.SectionID, e.Origin, e.Occurrence, e.Depth, now, e.ForProject); err != nil {
 			return err
 		}
 	}
@@ -167,7 +184,7 @@ func (s *Store) Enqueue(ctx context.Context, events []Event) error {
 // keep the order of their batches).
 func (s *Store) Take(ctx context.Context, limit int) ([]Event, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT id, user_id, rule_id, task_id, kind, label_id, project_id, section_id, origin, occurrence, depth, created_at, for_project
-		FROM rule_events ORDER BY id LIMIT ?`, limit)
+		FROM rule_events WHERE kind != ? OR created_at <= ? ORDER BY id LIMIT ?`, ruleval.NoteEdited, s.now().Add(-NoteEditQuiet).UnixMilli(), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +195,7 @@ func (s *Store) Take(ctx context.Context, limit int) ([]Event, error) {
 		if err := rows.Scan(&e.ID, &e.UserID, &e.RuleID, &e.TaskID, &e.Kind, &e.LabelID, &e.ProjectID, &e.SectionID, &e.Origin, &e.Occurrence, &e.Depth, &e.CreatedAt, &e.ForProject); err != nil {
 			return nil, err
 		}
+		e.TaskID, e.NoteID = splitSubject(e.TaskID)
 		out = append(out, e)
 	}
 	return out, rows.Err()
@@ -192,8 +210,17 @@ func (s *Store) Done(ctx context.Context, id int64) error {
 // Pending counts the queued events (tests, the status line).
 func (s *Store) Pending(ctx context.Context) (int, error) {
 	var n int
-	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rule_events`).Scan(&n)
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM rule_events WHERE kind != ? OR created_at <= ?`, ruleval.NoteEdited, s.now().Add(-NoteEditQuiet).UnixMilli()).Scan(&n)
 	return n, err
+}
+
+// NextNoteEdit is when the oldest waiting note.edited event is due (D2).
+func (s *Store) NextNoteEdit(ctx context.Context) (time.Time, bool, error) {
+	var at sql.NullInt64
+	if err := s.db.QueryRowContext(ctx, `SELECT MIN(created_at) FROM rule_events WHERE kind = ?`, ruleval.NoteEdited).Scan(&at); err != nil || !at.Valid {
+		return time.Time{}, false, err
+	}
+	return time.UnixMilli(at.Int64).Add(NoteEditQuiet), true, nil
 }
 
 // Claim records a run's key with outcome pending. It reports false, and
@@ -271,6 +298,7 @@ func scanRuns(rows *sql.Rows) ([]Run, error) {
 			return nil, err
 		}
 		r.Changes = json.RawMessage(changes)
+		r.TaskID, r.NoteID = splitSubject(r.TaskID)
 		r.Blocks = blocksOf(blocks)
 		if undone.Valid {
 			r.UndoneAt = &undone.Int64

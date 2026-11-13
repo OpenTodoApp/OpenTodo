@@ -570,6 +570,7 @@
           "ref": "required"
         },
         "flags": {
+          "note": "string",
           "task": "string",
           "test": "bool"
         },
@@ -1918,6 +1919,10 @@
       "400",
       "listed"
     ],
+    "note_required": [
+      "400",
+      "listed"
+    ],
     "oidc_disabled": [
       "404",
       "listed"
@@ -2975,6 +2980,7 @@
     },
     "run_routine": {
       "arguments": {
+        "note_id": "string?",
         "routine": "string",
         "task_id": "string?",
         "test": "boolean?"
@@ -5195,6 +5201,7 @@
         "runs[].failed_step": "number",
         "runs[].id": "number",
         "runs[].kind": "string",
+        "runs[].note_id": "string",
         "runs[].occurrence": "string",
         "runs[].outcome": "string",
         "runs[].project_id": "string",
@@ -5847,6 +5854,7 @@
         "runs[].duration_ms": "number",
         "runs[].failed_step": "number",
         "runs[].id": "number",
+        "runs[].note_id": "string",
         "runs[].occurrence": "string",
         "runs[].outcome": "string",
         "runs[].project_id": "string",
@@ -5948,6 +5956,7 @@
         "duration_ms": "number",
         "failed_step": "number",
         "id": "number",
+        "note_id": "string",
         "occurrence": "string",
         "outcome": "string",
         "project_id": "string",
@@ -8984,6 +8993,7 @@
         "device_run.at": "number",
         "device_run.auto": "boolean",
         "device_run.budget": "number",
+        "device_run.note": "string",
         "device_run.occurrence": "string",
         "device_run.op": "string",
         "device_run.rev": "string",
@@ -9007,6 +9017,7 @@
         "run.duration_ms": "number",
         "run.failed_step": "number",
         "run.id": "number",
+        "run.note_id": "string",
         "run.occurrence": "string",
         "run.outcome": "string",
         "run.project_id": "string",
@@ -9153,6 +9164,7 @@
         "run.duration_ms": "number",
         "run.failed_step": "number",
         "run.id": "number",
+        "run.note_id": "string",
         "run.occurrence": "string",
         "run.outcome": "string",
         "run.project_id": "string",
@@ -9814,6 +9826,7 @@
         "actions": "string",
         "call_ai": "boolean",
         "condition": "string",
+        "note_id": "string",
         "project_id": "string",
         "steps": "string",
         "task_id": "string",
@@ -9825,6 +9838,7 @@
         "device_run.at": "number",
         "device_run.auto": "boolean",
         "device_run.budget": "number",
+        "device_run.note": "string",
         "device_run.occurrence": "string",
         "device_run.op": "string",
         "device_run.rev": "string",
@@ -9848,6 +9862,7 @@
         "run.duration_ms": "number",
         "run.failed_step": "number",
         "run.id": "number",
+        "run.note_id": "string",
         "run.occurrence": "string",
         "run.outcome": "string",
         "run.project_id": "string",
@@ -9963,6 +9978,7 @@
       "request": {
         "call_ai": "boolean",
         "device": "string",
+        "note_id": "string",
         "run_id": "string",
         "task_id": "string",
         "test": "boolean"
@@ -9972,6 +9988,7 @@
         "device_run.at": "number",
         "device_run.auto": "boolean",
         "device_run.budget": "number",
+        "device_run.note": "string",
         "device_run.occurrence": "string",
         "device_run.op": "string",
         "device_run.rev": "string",
@@ -9995,6 +10012,7 @@
         "run.duration_ms": "number",
         "run.failed_step": "number",
         "run.id": "number",
+        "run.note_id": "string",
         "run.occurrence": "string",
         "run.outcome": "string",
         "run.project_id": "string",

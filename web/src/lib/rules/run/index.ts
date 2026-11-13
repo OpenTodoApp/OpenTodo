@@ -42,10 +42,13 @@ export function triggerValue(st: RunState, taskId?: string): StepValue {
   return taskId ? { type: 'task', id: taskId } : { type: 'task' }
 }
 
+const NOTE_TRIGGERS = ['note.created', 'note.edited', 'note.label.added']
+
 /** Plans one occurrence of a routine; nothing is written. */
 export async function planRoutine(world: RunWorld, rule: RunRoutine, opts: RunOptions): Promise<RunPlan> {
   const st = new RunState(world, rule, opts)
-  st.trigger = triggerValue(st, opts.triggerTaskId)
+  const onNote = NOTE_TRIGGERS.includes(rule.trigger.kind) || (rule.trigger.kind === 'manual' && rule.trigger.on === 'note')
+  st.trigger = onNote ? { type: 'note', id: opts.triggerNoteId } : triggerValue(st, opts.triggerTaskId)
   const { failed, err } = await st.plan()
   const changes = mergeChanges(st.overlay)
   const base: RunPlan = {

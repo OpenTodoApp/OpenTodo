@@ -14,14 +14,22 @@ function usesTemplates(steps: readonly RoutineStep[]): boolean {
   return steps.some((s) => s.kind === 'project_from_template' || usesTemplates([...(s.then ?? []), ...(s.otherwise ?? []), ...(s.do ?? [])]))
 }
 
-/** The newest field change of each row, as a logical date (the condition `unchanged`). */
-function changedDates(rows: readonly Row[], offset: number, dayStart: string): Record<string, string> {
+const NOTE_KINDS = ['find_notes', 'get_note', 'create_note', 'change_notes', 'note_to_task', 'note_text', 'append_to_note', 'clear_note', 'sort', 'filter']
+
+/** Whether a routine reads standalone notes (notes-in-routines): load them only then. */
+function usesNotes(steps: readonly RoutineStep[]): boolean {
+  return steps.some((s) => NOTE_KINDS.includes(s.kind) || usesNotes([...(s.then ?? []), ...(s.otherwise ?? []), ...(s.do ?? [])]))
+}
+
+/** The newest field change of each row, as a logical date (the condition `unchanged`) and its time. */
+function changedDates(rows: readonly Row[], offset: number, dayStart: string, ms?: Record<string, number>): Record<string, string> {
   const out: Record<string, string> = {}
   for (const r of rows) {
     const clock = (r._clock ?? {}) as Record<string, { ts: number }>
     let ts = 0
     for (const c of Object.values(clock)) if (c && c.ts > ts) ts = c.ts
     if (ts) out[r.id as string] = logicalDate(ts, offset, dayStart)
+    if (ts && ms) ms[r.id as string] = ts
   }
   return out
 }
@@ -35,6 +43,8 @@ export interface LoadOptions {
   project?: string
   /** A routine's workspace (routine-conditions D1): the world holds only its rows. */
   workspace?: string
+  /** The routine's trigger outputs a note: load the notes (notes-in-routines). */
+  notes?: boolean
 }
 
 /**
@@ -52,7 +62,9 @@ export function inWorkspace(w: RunWorld, ws: string, workspaces: readonly Pick<W
   const elsewhere = new Set(w.projects.filter((p) => !kept.has(String(p.id))).map((p) => String(p.id)))
   const tasks = w.tasks.filter((t) => part.task(String(t.id)) === ws)
   const sections = w.sections.filter((s) => kept.has(String(s.project_id)))
-  return { ...w, tasks, projects, sections, workspace: ws, workspaceName: own.name, workspaceDefault: !!own.default, elsewhere }
+  // A note follows its project, or keeps its own workspace (notes-in-routines D7).
+  const notes = w.notes?.filter((n) => (n.project_id && w.projects.some((p) => p.id === n.project_id) ? part.project(String(n.project_id)) : part.own(n.workspace_id as string | null)) === ws)
+  return { ...w, tasks, projects, sections, notes, workspace: ws, workspaceName: own.name, workspaceDefault: !!own.default, elsewhere }
 }
 
 /** Reads this device's rows for a run. */
@@ -71,11 +83,19 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
     const lib = (await import('../../../generated/templates.json')).default as unknown as { templates: LibraryTemplate[] }
     templates = lib.templates
   }
+  let notes: Row[] | undefined
+  const noteMs: Record<string, number> = {}
+  let noteChanged: Record<string, string> | undefined
+  if (o.notes || usesNotes(o.steps)) {
+    notes = rows(await db.notes.toArray())
+    if (o.project) notes = notes.filter((n) => n.project_id === o.project)
+    noteChanged = changedDates(notes, offset, dayStart, noteMs)
+  }
   const world: RunWorld = {
     userId: me ?? '', today: logicalDate(now, offset, dayStart), now, weekStart: WEEK_START[String(p.week_start)] ?? 1, offset, dayStart,
     tasks: rows(tasks), projects: rows(projects), labels: rows(labels), sections: rows(sections), views: rows(views), fields: rows(fields),
     timeEntries: rows(timeEntries), prefs: p, memberships, project: o.project || undefined, changed: changedDates(rows(tasks), offset, dayStart), encrypted: o.encrypted,
-    env: o.env, templates,
+    env: o.env, templates, notes, noteChanged, noteMs,
   }
   if (!o.workspace || o.project) return world
   const scoped = inWorkspace(world, o.workspace, workspaces)

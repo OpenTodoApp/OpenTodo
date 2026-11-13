@@ -30,4 +30,6 @@ A deleted note goes to the [Trash](trash-and-history.md) with tasks and projects
 
 Links between notes are Markdown: `[Trip](?note=<id>)`, `[Call the plumber](?task=<id>)` or `[Renovation](?project=<id>)`, so a script or an assistant links by writing that text. `ot notes links <ref>` lists what a note links to and the notes that link to it, worked out on your machine (it needs `ot encryption unlock` on an encrypted account). On an account without end-to-end encryption, the assistant tools `get_note` and `get_task` return the same as `links` and `linked_from`; on an encrypted account they return neither, because the server cannot read the notes.
 
-Notes are not sent to calendar apps over CalDAV, to webhooks, to the activity feed, to automations or to the Markdown vault.
+[Routines](routines.md#notes-in-routines) can turn notes into tasks for you: when a note gets the label todo, or the open checkboxes of a note you run a routine on.
+
+Notes are not sent to calendar apps over CalDAV, to webhooks, to the activity feed or to the Markdown vault.

@@ -441,3 +441,39 @@ describe('editor fixes and errors (routines-dynamic-data D3, D7)', () => {
     await e.unmount()
   })
 })
+
+describe('notes in routines in the editor (notes-in-routines)', () => {
+  it('row 43, Checkboxes to tasks: the first steps read the note you run it on, with no note chosen by hand', async () => {
+    const c = caseOf(43)
+    const e = await open(c, [])
+    await add('note_text', 'note text')
+    expect(byKind('note_text').getAttribute('aria-label')).toContain('the note you run it on')
+    await add('split_lines', 'split')
+    expect(byKind('split_lines').getAttribute('aria-label')).toContain('the note text')
+    await click(byKind('note_text').querySelector('[data-word="Of"]')!)
+    await waitFor(() => options().length > 0, 'the list next to the word')
+    const labels = options().map((o) => o.textContent)
+    expect(labels).toContain('Find notes…')
+    expect(labels).toContain('A specific note…')
+    await key(document.querySelector<HTMLElement>('[data-word-choices] input')!, 'Escape')
+    await waitFor(() => options().length === 0, 'the list closed')
+    const steps = await e.saved()
+    expect(canonical(steps)).toEqual(canonical(c.steps.slice(0, 1).concat([{ id: 'b', kind: 'split_lines', in: { text: { ref: 'a' } } }])))
+    expect(editorText()).not.toContain('choose a note')
+    await e.unmount()
+  })
+
+  it('"Live count": Find notes counts the matching notes from local data', async () => {
+    const now = Date.now()
+    const old = now - 120 * 86_400_000
+    const clock = (ts: number) => ({ title: { ts, device: 'd' } })
+    await db.projects.put({ id: 'ref', name: 'Reference', created_at: 1, deleted_at: null, position: 1 } as never)
+    for (const [id, ts] of [['n1', old], ['n2', old], ['n3', now]] as const) {
+      await db.notes.put({ id, title: id, description: '', project_id: 'ref', labels: [], position: 1, created_at: ts, deleted_at: null, _clock: clock(ts) } as never)
+    }
+    const c = caseOf(44)
+    const e = await open(c, [c.steps[0]])
+    await waitFor(() => /2 notes match now/.test(byKind('find_notes').textContent ?? ''), 'the live count')
+    await e.unmount()
+  })
+})

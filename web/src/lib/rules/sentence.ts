@@ -29,16 +29,22 @@ const TEXT: Record<string, KindText> = {
   // A task chosen by hand: found by search only, never suggested (routines-dynamic-data D4).
   get_task: { name: msg('Get a specific task'), description: msg('Always the same task, chosen by hand'), synonyms: msg('specific task, fixed task, always'), sentence: msg('Get the specific task {task}'), output: msg('the task') },
   find_project: { name: msg('Find a project'), description: msg('A project by its name'), synonyms: msg('project, search, look up'), sentence: msg('Find the project named {name}'), output: msg('the project') },
-  project_of: { name: msg('Get the project of a task'), description: msg('The project a task is in'), synonyms: msg('project, where, belongs, container'), sentence: msg('Get the project of {task}'), output: msg('the task’s project') },
+  project_of: { name: msg('Get the project of a task'), description: msg('The project a task or a note is in'), synonyms: msg('project, where, belongs, container'), sentence: msg('Get the project of {task}'), output: msg('the task’s project') },
   create_project: { name: msg('Create a project'), description: msg('A new project'), synonyms: msg('add, new, project'), sentence: msg('Create the project {name}'), output: msg('the new project') },
   update_project: { name: msg('Update a project'), description: msg('Rename, colour, icon or archive a project'), synonyms: msg('rename, archive, edit, colour, icon'), sentence: msg('Update the project {project}'), output: msg('the project') },
   create_sections: { name: msg('Create sections'), description: msg('Sections in a project, one per line'), synonyms: msg('section, add, columns'), sentence: msg('Create sections {names} in {project}'), output: '' },
   create_labels: { name: msg('Create labels'), description: msg('Labels, one per line'), synonyms: msg('label, tag, add'), sentence: msg('Create labels {names}'), output: '' },
   favourite: { name: msg('Favourite a project'), description: msg('Add a project to Favourites or remove it'), synonyms: msg('favorite, star, pin, sidebar'), sentence: msg('Favourite {project}: {on}'), output: '' },
   project_from_template: { name: msg('Project from a template'), description: msg('A new project from a template, with dates from a start'), synonyms: msg('template, checklist, copy'), sentence: msg('Create a project from the template {template} starting {start}'), output: msg('the new project') },
-  note_text: { name: msg('Get note text'), description: msg('The note of a task or a project'), synonyms: msg('note, read, notes, description'), sentence: msg('Get the note text of {of}'), output: msg('the note text') },
+  note_text: { name: msg('Get note text'), description: msg('The note of a task, a project or a note'), synonyms: msg('note, read, notes, description'), sentence: msg('Get the note text of {of}'), output: msg('the note text') },
   append_to_note: { name: msg('Add to a note'), description: msg('Text at the end of a note'), synonyms: msg('append, note, write'), sentence: msg('Add {text} to the note of {of}'), output: '' },
   clear_note: { name: msg('Clear a note'), description: msg('Empty the note of a task or a project'), synonyms: msg('empty, erase, note, reset'), sentence: msg('Clear the note of {of}'), output: '' },
+  // Standalone notes (notes-in-routines).
+  find_notes: { name: msg('Find notes'), description: msg('Notes by project, labels, last change or words'), synonyms: msg('notes, search, look up, journal, reference'), sentence: msg('Find notes in {project}'), output: msg('the notes') },
+  get_note: { name: msg('Get a specific note'), description: msg('Always the same note, chosen by hand'), synonyms: msg('specific note, fixed note, always'), sentence: msg('Get the specific note {note}'), output: msg('the note') },
+  create_note: { name: msg('Create note'), description: msg('A new note with a title and a text'), synonyms: msg('new note, write, journal, add'), sentence: msg('Create the note {title} with {text} in {project}'), output: msg('the new note') },
+  change_notes: { name: msg('Change notes'), description: msg('Labels, project, pin, Trash'), synonyms: msg('update, edit, label, move, pin, trash'), sentence: msg('Change {notes}'), output: msg('the changed notes') },
+  note_to_task: { name: msg('Turn into task'), description: msg('A note becomes a task'), synonyms: msg('convert, task, todo'), sentence: msg('Turn {note} into a task'), output: msg('the new task') },
   split_lines: { name: msg('Split into lines'), description: msg('A text as a list of its lines'), synonyms: msg('lines, list, split, break'), sentence: msg('Split {text} into lines'), output: msg('the lines') },
   join: { name: msg('Join'), description: msg('A list as one text'), synonyms: msg('combine, merge, concatenate, text'), sentence: msg('Join {lines} into one text'), output: msg('the joined text') },
   format: { name: msg('Format text'), description: msg('A text with values of earlier steps'), synonyms: msg('text, template, write, message'), sentence: msg('Write the text {template}'), output: msg('the text') },
@@ -86,6 +92,8 @@ const INPUT_LABEL: Record<string, string> = {
   with: msg('Replace with'), case: msg('Match case'), list: msg('List'), where: msg('Test'), by: msg('Order'), direction: msg('Direction'), n: msg('How many'),
   from: msg('From'), value: msg('Value'), is: msg('Test'), reason: msg('Reason'), period: msg('Period'), webhook_id: msg('Webhook'), subject: msg('Subject'),
   date: msg('Date'), only: msg('Only'),
+  words: msg('Words'), within_days: msg('Changed in the last days'), unchanged_days: msg('Not changed for days'), add_labels: msg('Add labels'),
+  remove_labels: msg('Remove labels'), pin: msg('Pin'), trash: msg('Move to the Trash'), no_project: msg('No project'), note: msg('Note'), notes: msg('Notes'), field: msg('Read'),
   instruction: msg('Instruction'), context: msg('Using'), context2: msg('Also using'), context3: msg('And using'), answer: msg('Answer as'), length: msg('Length'),
 }
 
@@ -165,7 +173,7 @@ export function searchKinds(query: string, kinds: readonly string[] = STEPS.map(
   })
 }
 
-const TRIGGER_OUTPUT: Partial<Record<RoutineStepType, string>> = { task: msg('the task that triggered'), tasks: msg('the matching tasks'), date: msg('the date') }
+const TRIGGER_OUTPUT: Partial<Record<RoutineStepType, string>> = { task: msg('the task that triggered'), tasks: msg('the matching tasks'), date: msg('the date'), note: msg('the note that triggered') }
 
 /** The name of the trigger's output. */
 export const triggerOutputName = (type: RoutineStepType): string => (TRIGGER_OUTPUT[type] ? t(TRIGGER_OUTPUT[type]!) : t('the trigger'))
@@ -180,16 +188,17 @@ export const PICK_MENU: Record<PickMode, string> = {
 
 /** The name of a Pick step's output, by its mode and its list's type ("the picked task", "the matching lines"). */
 function pickOutput(s: RoutineStep, type: RoutineStepType | undefined): string | undefined {
-  if ((s.kind !== 'take' && s.kind !== 'filter') || (type !== 'tasks' && type !== 'lines')) return undefined
+  if ((s.kind !== 'take' && s.kind !== 'filter') || (type !== 'tasks' && type !== 'lines' && type !== 'notes')) return undefined
   const mode = pickModeOf(s)
   const lines = type === 'lines'
+  if (type === 'notes') return mode === 'where' ? msg('the matching notes') : mode === 'first' || mode === 'last' ? msg('the picked note') : msg('the picked notes')
   if (mode === 'where') return lines ? msg('the matching lines') : msg('the matching tasks')
   if (mode === 'first' || mode === 'last') return lines ? msg('the picked line') : msg('the picked task')
   return lines ? msg('the picked lines') : msg('the picked tasks')
 }
 
 /** The current item of a Repeat ("each task", "each line"). */
-export const itemName = (type: RoutineStepType | ''): string => (type === 'task' ? t('each task') : type === 'text' ? t('each line') : t('each item'))
+export const itemName = (type: RoutineStepType | ''): string => (type === 'task' ? t('each task') : type === 'text' ? t('each line') : type === 'note' ? t('each note') : t('each item'))
 
 /**
  * The names of every step's output (D2): the kind's output name, numbered when
@@ -225,6 +234,8 @@ export function countText(type: RoutineStepType, n: number): string {
     case 'lines': return t('{n, plural, one {# line} other {# lines}}', { n })
     case 'task': return n ? t('1 task') : t('no task')
     case 'project': return n ? t('1 project') : t('no project')
+    case 'notes': return t('{n, plural, one {# note} other {# notes}}', { n })
+    case 'note': return n ? t('1 note') : t('no note')
     default: return String(n)
   }
 }
@@ -232,5 +243,6 @@ export function countText(type: RoutineStepType, n: number): string {
 /** A type's name in a sentence ("Text", "Tasks"). */
 const TYPE_NAME: Record<RoutineStepType, string> = {
   text: msg('Text'), task: msg('Task'), tasks: msg('Tasks'), project: msg('Project'), date: msg('Date'), number: msg('Number'), lines: msg('Lines'), none: msg('no output'),
+  note: msg('Note'), notes: msg('Notes'),
 }
 export const typeLabel = (type: RoutineStepType): string => t(TYPE_NAME[type])

@@ -27,7 +27,10 @@ export function triggerText(tr: RuleTrigger | null | undefined, names: RuleNames
       : t('when a task is moved to {project}', { project: nameOf(names.projects, tr.project_id) })
     case 'due.reached': return t('when a task is due')
     case 'overdue': return t('when a task’s date passes')
-    case 'manual': return t('only when I run it')
+    case 'manual': return tr.on === 'note' ? t('only when I run it on a note') : t('only when I run it')
+    case 'note.created': return t('when a note is created')
+    case 'note.edited': return t('when a note is edited')
+    case 'note.label.added': return t('when a note gets the label {label}', { label: nameOf(names.labels, tr.label_id) })
     case 'schedule': {
       if (tr.month_days?.length) {
         const nums = tr.month_days.filter((d): d is number => typeof d === 'number').sort((a, b) => a - b).map(String)

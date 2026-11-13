@@ -126,3 +126,32 @@ func TestRoutineProject(t *testing.T) {
 		t.Fatalf("unknown project: exit %d %q", code, errb)
 	}
 }
+
+// "Run from the CLI" and "Ambiguous title" (notes-in-routines): --note takes a
+// note by title as ot notes does; an ambiguous one fails before anything is sent.
+func TestRoutineRunOnNote(t *testing.T) {
+	h := newHarness(t)
+	h.loginAdmin()
+	h.apiJSON("POST", "/api/v1/projects", map[string]any{"name": "Work"})
+	h.apiJSON("POST", "/api/v1/notes", map[string]any{"title": "Planning meeting", "description": "- [ ] book room\n- [x] done\n- [ ] send agenda"})
+	h.apiJSON("POST", "/api/v1/notes", map[string]any{"title": "Planning retro", "description": ""})
+	file := writeTemp(t, "checkboxes.yaml", `name: Checkboxes to tasks
+trigger: {kind: manual, on: note}
+steps:
+  - {id: a, kind: note_text, in: {of: {ref: trigger}}}
+  - {id: b, kind: split_lines, in: {text: {ref: a}, only: {literal: open_checkboxes}}}
+  - {id: c, kind: create_tasks, in: {text: {ref: b}, project: {literal: {project: Work}}}}
+`)
+	h.mustRun("routine", "create", "--file", file)
+	h.requestLog()
+	code, _, errb := h.run("routine", "run", "Checkboxes to tasks", "--note", "Planning")
+	if code != ExitUsage || !strings.Contains(errb, "ambiguous") || len(writesIn(h.requestLog())) != 0 {
+		t.Fatalf("ambiguous: exit %d %q", code, errb)
+	}
+	if code, _, _ := h.run("routine", "run", "Checkboxes to tasks", "--note", "x", "--task", "y"); code != ExitUsage {
+		t.Fatalf("both: exit %d", code)
+	}
+	if out := h.mustRun("routine", "run", "Checkboxes to tasks", "--note", "Planning meeting"); !strings.Contains(out, "applied, wrote 2 items") {
+		t.Fatalf("run %q", out)
+	}
+}

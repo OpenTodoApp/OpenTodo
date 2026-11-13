@@ -201,6 +201,11 @@ func StepAvailable(s *Step, env Env) Availability {
 		if _, has := s.In["energy"]; has && !env.Energy {
 			return unavailable(ReasonEnergyOff)
 		}
+	case "change_notes":
+		// Pinning is personal (notes-in-routines D7).
+		if _, pin := s.In["pin"]; pin && env.Shared {
+			return unavailable(ReasonNotInShared)
+		}
 	}
 	return a
 }
