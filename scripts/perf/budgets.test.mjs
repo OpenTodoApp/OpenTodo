@@ -84,7 +84,7 @@ test("the native app's run is judged against its budgets", () => {
   const good = report({ device: '    iPhone 16 (X) (Booted)', results }, budgets)
   assert.deepEqual(good.failures, [])
   assert.match(good.text, /native app: JavaScript start to the Today list \| ≤ 800 ms \| 350 \(within\)/)
-  assert.match(good.text, /native app: memory over the empty app after the session \| ≤ 60 MB \| 35 \(within\)/)
+  assert.match(good.text, /native app: memory over the empty app after the session \| ≤ 100 MB \| 35 \(within\)/)
   // A slow Inbox fails the run, naming the metric; a metric the run lost fails too.
   const slow = report({ device: '', results: [results[0], run({ inbox: { totalMs: 900 } })] }, budgets)
   assert.deepEqual(slow.failures, ['native app: open Inbox, app-simulator, 900 ms, budget 300 ms'])
