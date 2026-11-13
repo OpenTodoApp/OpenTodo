@@ -4,6 +4,7 @@ import {
   createContext, forwardRef, useContext, useId,
   type AriaAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes,
 } from 'react'
+import { FieldHint } from './FieldHint'
 
 interface FieldContext {
   id: string
@@ -18,18 +19,25 @@ export interface FieldProps {
   error?: ReactNode
   /** Visually hide the label (it stays the control's accessible name). */
   hideLabel?: boolean
+  /** A one-line explanation behind a "?" after the label (FieldHint). */
+  hint?: string
   className?: string
   children: ReactNode
 }
 
-export function Field({ label, description, error, hideLabel, className, children }: FieldProps) {
+export function Field({ label, description, error, hideLabel, hint, className, children }: FieldProps) {
   const id = useId()
   const descId = description ? `${id}-desc` : undefined
   const errId = error ? `${id}-err` : undefined
   const describedBy = [descId, errId].filter(Boolean).join(' ') || undefined
   return (
     <div className={`space-y-1.5${className ? ` ${className}` : ''}`}>
-      <label htmlFor={id} className={hideLabel ? 'sr-only' : 'block text-body font-medium text-default'}>{label}</label>
+      {hint && !hideLabel ? (
+        <div className="flex flex-wrap items-center gap-x-1">
+          <label htmlFor={id} className="text-body font-medium text-default">{label}</label>
+          <FieldHint text={hint} />
+        </div>
+      ) : <label htmlFor={id} className={hideLabel ? 'sr-only' : 'block text-body font-medium text-default'}>{label}</label>}
       <Ctx.Provider value={{ id, describedBy, invalid: !!error }}>{children}</Ctx.Provider>
       {description && <p id={descId} className="text-meta text-muted">{description}</p>}
       {error && <p id={errId} className="text-meta text-danger">{error}</p>}

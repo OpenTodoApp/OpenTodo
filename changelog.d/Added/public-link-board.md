@@ -1,0 +1,1 @@
+- Public links can show the project as a **Board**, a column per section: choose **Show as** when you create the link. A named link now carries its name at the front of the address, like `/public/party-groceries-otl_…`, so links are easy to tell apart (public-link-board, #1281, #1292).

@@ -73,6 +73,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | Planned |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
+| `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Planned |
 | `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
@@ -150,7 +151,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-templates` | Start a note from a template, with built-in ones and a routine step | Planned |
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Planned |
 | `note-public-links` | A read-only public link for one note | Planned |
-| `note-webhooks` | Opt-in note events for webhooks | Planned |
+| `note-webhooks` | Opt-in note events for webhooks | Shipped |
 | `vault-notes` | Standalone notes as Markdown files in `ot vault` | Planned |
 
 ## Assistant area

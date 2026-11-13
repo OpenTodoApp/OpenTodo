@@ -1,3 +1,4 @@
+import { watchEdgeSwipe } from './edgeSwipe'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, usePageBar, useOverlayDepth } from '../ui'
@@ -166,6 +167,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
+  // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
+  const drawerClosed = useRef(drawer.closed)
+  drawerClosed.current = drawer.closed
+  useEffect(() => watchEdgeSwipe(() => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]')), [])
   // Changes the server refused after a role change (project-sharing): a toast, which never moves the page (app-shell "Notices are toasts").
   const { rejected } = useSyncStatus()
   useEffect(() => {
@@ -328,7 +333,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'trash' ? (
             <TrashView />
           ) : route.view === 'task' ? (
-            <TaskPage id={route.id} user={user} />
+            <TaskPage id={route.id} user={user} asTask={route.asTask} />
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
               {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
@@ -340,7 +345,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'loop' ? (
             <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'habits' ? (
-            <Suspense fallback={null}><HabitsScreen /></Suspense>
+            <Suspense fallback={null}><HabitsScreen id={route.id} /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (

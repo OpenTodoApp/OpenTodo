@@ -1,6 +1,6 @@
 // The Habits screen (OpenSpec change habits-home, design D9): every open habit by
 // part of the day (Morning, Afternoon, This Evening, then Any time), ordered by time
-// and title, then a folded Graduated group. One title row of chrome; rendered from
+// and title, then a folded Graduated group; /habits/<id> is a habit's page (habits-polish D3). One title row of chrome; rendered from
 // the device's rows only, offline too. While Habits is not on, the address says so.
 import { useMemo, useState } from 'react'
 import { continuedIds, habitRowsOf, habitStats, isGraduated, isOpenHabit, keptDays } from '../../lib/habits'
@@ -17,6 +17,7 @@ import { navigate } from '../router'
 import { useToday } from '../useViews'
 import { openHabitForm } from './habitFormStore'
 import { habitHue } from './habitText'
+import { HabitPage } from './HabitPage'
 import { HabitRow } from './HabitRow'
 
 type Group = 'morning' | 'afternoon' | 'evening' | 'any'
@@ -51,7 +52,7 @@ export function HabitsOff() {
   )
 }
 
-export default function HabitsScreen() {
+export default function HabitsScreen({ id }: { id?: string } = {}) {
   const on = useHabitsEnabled()
   const tasks = useLiveTasks()
   const projects = useProjects()
@@ -72,6 +73,7 @@ export default function HabitsScreen() {
     }
   }, [tasks])
   if (!on) return tasks === undefined ? null : <HabitsOff />
+  if (id) return <HabitPage key={id} id={id} />
   const hue = (x: Task) => habitHue(x, x.project_id ? colours.get(x.project_id) : null)
   return (
     <PageBody width="form" data-habits-page>

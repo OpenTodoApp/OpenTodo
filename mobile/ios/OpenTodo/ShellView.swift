@@ -46,7 +46,9 @@ final class ShellController: NSObject, ObservableObject {
         super.init()
         webView.navigationDelegate = self
         webView.uiDelegate = self
-        webView.allowsBackForwardNavigationGestures = true
+        // No history back gesture (edge-swipe-menu, GitHub issue 1232): in an app an edge swipe
+        // opens the menu, which the page does itself; screens have their own back buttons.
+        webView.allowsBackForwardNavigationGestures = false
         // The page reaches every edge and pads itself by env(safe-area-inset-*) (viewport-fit=cover).
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.

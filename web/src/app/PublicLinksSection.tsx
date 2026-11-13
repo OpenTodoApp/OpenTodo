@@ -42,6 +42,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
   const [links, setLinks] = useState<PublicLink[] | null>(null)
   const [unreachable, setUnreachable] = useState(false)
   const [rights, setRights] = useState<PublicLink['rights']>('view')
+  const [layout, setLayout] = useState<'list' | 'board'>('list')
   const [name, setName] = useState('')
   const [days, setDays] = useState<number | null>(null)
   const [created, setCreated] = useState<string | null>(null)
@@ -72,7 +73,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
   async function create(e: FormEvent) {
     e.preventDefault()
     await run(async () => {
-      const res = await api.createPublicLink(projectId, { rights, ...(name.trim() ? { name: name.trim() } : {}), ...(days ? { expiresInDays: days } : {}) })
+      const res = await api.createPublicLink(projectId, { rights, ...(name.trim() ? { name: name.trim() } : {}), ...(layout === 'board' ? { layout } : {}), ...(days ? { expiresInDays: days } : {}) })
       setCreated(res.link)
       setCopied(false)
       setName('')
@@ -100,7 +101,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
       <h3 id="public-links-heading" className="text-body font-medium text-default">{t('Share with a public link')}</h3>
       <p className="mt-1 text-meta text-muted">{t('Anyone with the link sees this project\'s open tasks without an account: no notes, labels or names. Use it for a shopping list in a group chat.')}</p>
       {offline && <div className="mt-2"><Notice tone="warning">{t('You are offline. Public links live on the server, so creating and revoking them needs a connection.')}</Notice></div>}
-      <form onSubmit={(e) => void create(e)} className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+      <form onSubmit={(e) => void create(e)} className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
         <Field label={t('Name (optional)')}>
           <Input value={name} maxLength={60} placeholder={t('Group chat')} onChange={(e) => setName(e.target.value)} disabled={disabled} />
         </Field>
@@ -110,12 +111,18 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
             <option value="tick">{t('Can tick items')}</option>
           </Select>
         </Field>
+        <Field label={t('Show as')}>
+          <Select value={layout} onChange={(e) => setLayout(e.target.value as 'list' | 'board')} disabled={disabled} data-public-layout>
+            <option value="list">{t('List')}</option>
+            <option value="board">{t('Board')}</option>
+          </Select>
+        </Field>
         <Field label={t('Expires')}>
           <Select value={days ?? ''} onChange={(e) => setDays(e.target.value ? Number(e.target.value) : null)} disabled={disabled}>
             {EXPIRY.map((d) => <option key={d ?? 'never'} value={d ?? ''}>{d === null ? t('Never') : t('{n, plural, one {# day} other {# days}}', { n: d })}</option>)}
           </Select>
         </Field>
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-4">
           <Button type="submit" variant="primary" size="sm" busy={busy} disabled={offline}>{t('Create public link')}</Button>
         </div>
       </form>
@@ -136,7 +143,7 @@ export function PublicLinksSection({ projectId, focus = false, onChange }: {
               <span className="min-w-0 flex-1">
                 <span className="user-text block truncate text-body text-default">{l.name || t('Unnamed link')}</span>
                 <span className="block text-meta text-muted">
-                  {rightsText(l.rights)} · {l.expiresAt ? t('expires {instant}', { instant: formatInstant(l.expiresAt, 'date') }) : t('no expiry')} · {l.lastUsedAt ? t('opened {instant}', { instant: formatInstant(l.lastUsedAt, 'datetime') }) : t('not opened yet')}
+                  {rightsText(l.rights)}{l.layout === 'board' ? ` · ${t('Board')}` : ''} · {l.expiresAt ? t('expires {instant}', { instant: formatInstant(l.expiresAt, 'date') }) : t('no expiry')} · {l.lastUsedAt ? t('opened {instant}', { instant: formatInstant(l.lastUsedAt, 'datetime') }) : t('not opened yet')}
                 </span>
               </span>
               <Button size="sm" variant="ghost" disabled={disabled} aria-label={(l.name ? t('Revoke {name}', { name: l.name }) : t('Revoke the unnamed link'))} onClick={() => setRevoking(l)}>{t('Revoke')}</Button>

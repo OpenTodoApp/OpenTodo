@@ -90,6 +90,11 @@ func (h *harness) feedTasks(ctx context.Context, userID string, scope syncscope.
 		ft := calfeed.FeedTask{ID: id, Title: str(t["title"]), Description: str(t["description"]), Date: due.Date, Time: due.Time, TZ: due.TZ, Modified: mod[id]}
 		_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
 		ft.Start = calfeed.SpanStart(string(t["span"]) == "true", str(t["start"]), due.Date)
+		if p := str(t["project_id"]); p != "" {
+			ft.Places = []string{p}
+		} else {
+			ft.Places = []string{"inbox"}
+		}
 		out = append(out, ft)
 	}
 	return out, nil

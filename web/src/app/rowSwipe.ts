@@ -22,6 +22,8 @@ export const SWIPE = {
   max: 120,
   /** The return, in ms (the ui duration token). */
   returnMs: 120,
+  /** A press this close to the left edge belongs to the menu's edge swipe, never to a row (edge-swipe-menu). */
+  edge: 20,
 } as const
 
 export type SwipeDir = 'right' | 'left'
@@ -66,7 +68,7 @@ export interface SwipeHandlers {
  * click is swallowed so a swipe never also opens the task.
  */
 export function beginSwipe(e: { pointerId: number; pointerType: string; clientX: number; clientY: number }, h: SwipeHandlers): () => void {
-  if (e.pointerType === 'mouse') return () => undefined
+  if (e.pointerType === 'mouse' || e.clientX < SWIPE.edge) return () => undefined
   const x0 = e.clientX
   const y0 = e.clientY
   let state: 'pending' | 'swipe' | 'scroll' = 'pending'

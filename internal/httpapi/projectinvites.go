@@ -324,9 +324,10 @@ func (s *Server) registerWithProjectInvite(w http.ResponseWriter, r *http.Reques
 // redactPath keeps link secrets out of the request log: a path segment that
 // carries an invitation, project invite, sign-up verification, reset or
 // routine email stop secret is replaced, and so is a task page's secret, which is the segment after /t/ or
-// /api/v1/pages/ (task-pages).
+// /api/v1/pages/ (task-pages), and a public link's, the segment after /public/ or
+// /api/v1/public/, which may start with the link's name (public-link-board).
 func redactPath(p string) string {
-	for _, prefix := range []string{"/t/", "/api/v1/pages/"} {
+	for _, prefix := range []string{"/t/", "/api/v1/pages/", "/public/", "/api/v1/public/"} {
 		if rest, ok := strings.CutPrefix(p, prefix); ok && rest != "" {
 			_, tail, _ := strings.Cut(rest, "/")
 			if tail != "" {

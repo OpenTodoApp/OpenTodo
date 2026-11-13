@@ -1,0 +1,1 @@
+- **Note events for webhooks.** A webhook can subscribe to `note.created`, `note.updated` and `note.deleted` (a new Notes group in its events): a note's events wait until it has been unchanged for 5 minutes (at most 30), so one sitting of writing is one delivery with the final text; `note.deleted` is sent at once. Opt-in: existing webhooks receive nothing new.
