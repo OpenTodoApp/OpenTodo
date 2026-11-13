@@ -269,7 +269,8 @@ export function planCompletion(
   return {
     kind: 'roll', recordId, next,
     changes: [
-      { entity: 'task', entityId: recordId, patch: { ...recordFields(at, date, now, today), completed_at: now } },
+      // A habit's full completion says it is not the tiny version (habits-home D5), so a concurrent tiny log converges.
+      { entity: 'task', entityId: recordId, patch: { ...recordFields(at, date, now, today), completed_at: now, ...(series.habit ? { tiny: false } : {}) } },
       { entity: 'task', entityId: series.id, patch: withTurn(moveDates(at, next, today), at, members) },
     ],
   }

@@ -2,7 +2,9 @@
 // for calendar sync tests (OpenSpec change calendar-two-way): well-known
 // discovery, a principal, a calendar home, PROPFIND, calendar-query,
 // calendar-multiget, sync-collection (unless turned off), and conditional PUT,
-// GET and DELETE. It is never linked into the server.
+// GET and DELETE. A calendar-query keeps the events whose DTSTART date falls
+// in its time-range (inclusive, by date) and every repeating one, and sends
+// calendar-data only when asked for. It is never linked into the server.
 package calsynctest
 
 import (
@@ -64,6 +66,14 @@ type Server struct {
 	seq       int
 	Requests  map[string]int
 	etagCount int
+	largest   int
+}
+
+// Largest is the size of the largest multistatus answer served.
+func (s *Server) Largest() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.largest
 }
 
 // New starts a server with one calendar "work" holding events.
@@ -208,7 +218,9 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func multistatus(w http.ResponseWriter, inner string) {
+// multistatus writes a 207 answer and keeps the largest size; callers hold s.mu.
+func (s *Server) multistatus(w http.ResponseWriter, inner string) {
+	s.largest = max(s.largest, len(inner))
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	w.WriteHeader(http.StatusMultiStatus)
 	fmt.Fprintf(w, `<?xml version="1.0" encoding="utf-8"?><d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:ic="http://apple.com/ns/ical/">%s</d:multistatus>`, inner)
@@ -223,11 +235,11 @@ func (s *Server) root(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no", http.StatusMethodNotAllowed)
 		return
 	}
-	multistatus(w, response(s.Prefix+"/", `<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
+	s.multistatus(w, response(s.Prefix+"/", `<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
 }
 
 func (s *Server) principal(w http.ResponseWriter, r *http.Request) {
-	multistatus(w, response(s.Prefix+"/principals/me/", `<c:calendar-home-set><d:href>`+s.Prefix+`/calendars/me/</d:href></c:calendar-home-set>`+
+	s.multistatus(w, response(s.Prefix+"/principals/me/", `<c:calendar-home-set><d:href>`+s.Prefix+`/calendars/me/</d:href></c:calendar-home-set>`+
 		`<d:current-user-principal><d:href>`+s.Prefix+`/principals/me/</d:href></d:current-user-principal>`))
 }
 
@@ -283,20 +295,21 @@ func (s *Server) home(w http.ResponseWriter, r *http.Request) {
 			inner += response(s.Prefix+"/calendars/me/"+id+"/", s.calProps(id, s.cals[id]))
 		}
 	}
-	multistatus(w, inner)
+	s.multistatus(w, inner)
 }
 
 func (s *Server) collection(w http.ResponseWriter, r *http.Request, id string, c *Calendar, body []byte) {
 	base := s.Prefix + "/calendars/me/" + id + "/"
 	switch r.Method {
 	case "PROPFIND":
-		inner := response(base, s.calProps(id, c))
+		var inner strings.Builder
+		inner.WriteString(response(base, s.calProps(id, c)))
 		if r.Header.Get("Depth") == "1" {
 			for _, m := range sortedMembers(c) {
-				inner += response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(c.objects[m].ETag)+`</d:getetag><d:resourcetype/>`)
+				inner.WriteString(response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(c.objects[m].ETag)+`</d:getetag><d:resourcetype/>`))
 			}
 		}
-		multistatus(w, inner)
+		s.multistatus(w, inner.String())
 	case "REPORT":
 		s.report(w, base, c, body)
 	default:
@@ -313,8 +326,67 @@ func sortedMembers(c *Calendar) []string {
 	return out
 }
 
-func objectProps(o *Object) string {
-	return `<d:getetag>` + caldav.Esc(o.ETag) + `</d:getetag><c:calendar-data>` + caldav.Esc(o.Data) + `</c:calendar-data>`
+func objectProps(o *Object, data bool) string {
+	p := `<d:getetag>` + caldav.Esc(o.ETag) + `</d:getetag>`
+	if data {
+		p += `<c:calendar-data>` + caldav.Esc(o.Data) + `</c:calendar-data>`
+	}
+	return p
+}
+
+// wantsData reports whether a report asks for calendar-data.
+func wantsData(root *caldav.Node) bool {
+	prop := root.Child(caldav.NSDAV, "prop")
+	return prop != nil && prop.Child(caldav.NSCalDAV, "calendar-data") != nil
+}
+
+// timeRange is the start and end dates (YYYYMMDD) of a calendar-query's
+// time-range, "" when it has none.
+func timeRange(n *caldav.Node) (string, string) {
+	if n == nil {
+		return "", ""
+	}
+	if n.Is(caldav.NSCalDAV, "time-range") {
+		var from, to string
+		for _, a := range n.Attrs {
+			switch a.Name.Local {
+			case "start":
+				from = a.Value
+			case "end":
+				to = a.Value
+			}
+		}
+		return datePart(from), datePart(to)
+	}
+	for _, c := range n.Children {
+		if f, t := timeRange(c); f != "" || t != "" {
+			return f, t
+		}
+	}
+	return "", ""
+}
+
+func datePart(v string) string {
+	if len(v) >= 8 {
+		return v[:8]
+	}
+	return v
+}
+
+// inRange reports whether an object's DTSTART date is in [from, to]; a
+// repeating event always is.
+func inRange(data, from, to string) bool {
+	if from == "" && to == "" || strings.Contains(data, "\nRRULE:") {
+		return true
+	}
+	for _, line := range strings.Split(data, "\n") {
+		if strings.HasPrefix(line, "DTSTART") {
+			_, v, _ := strings.Cut(line, ":")
+			d := datePart(strings.TrimSpace(v))
+			return (from == "" || d >= from) && (to == "" || d <= to)
+		}
+	}
+	return true
 }
 
 func (s *Server) report(w http.ResponseWriter, base string, c *Calendar, body []byte) {
@@ -323,11 +395,15 @@ func (s *Server) report(w http.ResponseWriter, base string, c *Calendar, body []
 		http.Error(w, "bad xml", http.StatusBadRequest)
 		return
 	}
-	inner := ""
+	var inner strings.Builder
+	data := wantsData(root)
 	switch {
 	case root.Is(caldav.NSCalDAV, "calendar-query"):
+		from, to := timeRange(root.Child(caldav.NSCalDAV, "filter"))
 		for _, m := range sortedMembers(c) {
-			inner += response(base+url.PathEscape(m), objectProps(c.objects[m]))
+			if o := c.objects[m]; inRange(o.Data, from, to) {
+				inner.WriteString(response(base+url.PathEscape(m), objectProps(o, data)))
+			}
 		}
 	case root.Is(caldav.NSCalDAV, "calendar-multiget"):
 		for _, h := range root.Children {
@@ -337,9 +413,9 @@ func (s *Server) report(w http.ResponseWriter, base string, c *Calendar, body []
 			p, _ := url.PathUnescape(strings.TrimSpace(h.Text))
 			m := strings.TrimPrefix(p, base)
 			if o := c.objects[m]; o != nil {
-				inner += response(base+url.PathEscape(m), objectProps(o))
+				inner.WriteString(response(base+url.PathEscape(m), objectProps(o, data)))
 			} else {
-				inner += `<d:response><d:href>` + caldav.Esc(strings.TrimSpace(h.Text)) + `</d:href><d:status>HTTP/1.1 404 Not Found</d:status></d:response>`
+				inner.WriteString(`<d:response><d:href>` + caldav.Esc(strings.TrimSpace(h.Text)) + `</d:href><d:status>HTTP/1.1 404 Not Found</d:status></d:response>`)
 			}
 		}
 	case root.Is(caldav.NSDAV, "sync-collection") && !s.NoSyncToken:
@@ -349,7 +425,7 @@ func (s *Server) report(w http.ResponseWriter, base string, c *Calendar, body []
 		http.Error(w, "unsupported report", http.StatusForbidden)
 		return
 	}
-	multistatus(w, inner)
+	s.multistatus(w, inner.String())
 }
 
 func nodeText(n *caldav.Node) string {
@@ -371,10 +447,10 @@ func (s *Server) syncReport(w http.ResponseWriter, base string, c *Calendar, tok
 		}
 		since = n
 	}
-	inner := ""
+	var inner strings.Builder
 	if since < 0 {
 		for _, m := range sortedMembers(c) {
-			inner += response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(c.objects[m].ETag)+`</d:getetag>`)
+			inner.WriteString(response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(c.objects[m].ETag)+`</d:getetag>`))
 		}
 	} else {
 		last := map[string]bool{}
@@ -390,13 +466,13 @@ func (s *Server) syncReport(w http.ResponseWriter, base string, c *Calendar, tok
 		}
 		for _, m := range order {
 			if o := c.objects[m]; o != nil {
-				inner += response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(o.ETag)+`</d:getetag>`)
+				inner.WriteString(response(base+url.PathEscape(m), `<d:getetag>`+caldav.Esc(o.ETag)+`</d:getetag>`))
 			} else {
-				inner += `<d:response><d:href>` + caldav.Esc(base+url.PathEscape(m)) + `</d:href><d:status>HTTP/1.1 404 Not Found</d:status></d:response>`
+				inner.WriteString(`<d:response><d:href>` + caldav.Esc(base+url.PathEscape(m)) + `</d:href><d:status>HTTP/1.1 404 Not Found</d:status></d:response>`)
 			}
 		}
 	}
-	multistatus(w, inner+`<d:sync-token>`+s.token(c)+`</d:sync-token>`)
+	s.multistatus(w, inner.String()+`<d:sync-token>`+s.token(c)+`</d:sync-token>`)
 }
 
 func (s *Server) object(w http.ResponseWriter, r *http.Request, c *Calendar, id, member string, body []byte) {

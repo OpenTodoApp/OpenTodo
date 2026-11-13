@@ -61,6 +61,8 @@ export const pt: Vocabulary = {
   timeWords: { 'meio-dia': '12:00', 'meia-noite': '00:00' },
   am: [],
   pm: [],
+  halfWords: [],
+  guardedAbbreviations: [],
   every: ['toda', 'todo', 'todas as', 'todos os', 'cada'],
   everyOne: { diariamente: 'day', semanalmente: 'week', mensalmente: 'month', anualmente: 'year' },
   weekdayAll: ['dia útil', 'dias úteis'],

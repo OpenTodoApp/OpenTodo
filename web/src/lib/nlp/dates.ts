@@ -181,13 +181,37 @@ export function lookupAt<T>(tokens: readonly Token[], i: number, map: Record<str
 
 export function weekdayAt(tokens: readonly Token[], i: number, v: Vocabulary): number {
   for (let wd = 0; wd < 7; wd++) {
-    if (phraseAt(tokens, i, v.weekdays[wd], `${v.code}:wd${wd}`) > 0) return wd
+    if (phraseAt(tokens, i, v.weekdays[wd], `${v.code}:wd${wd}`) > 0) return guardedAt(tokens, i, v) ? -1 : wd
   }
   return -1
 }
 
+/**
+ * A guarded weekday abbreviation (Dutch "ma", "zo", OpenSpec change more-languages
+ * D3) without a date context: it is a weekday only after a word such as "op",
+ * "elke" or "volgende", or before a day and month ("ma 3 mrt"), a numeric date or
+ * a time ("ma om 9 uur", "ma 9:00"), so "Bel ma" stays a title.
+ */
+function guardedAt(tokens: readonly Token[], i: number, v: Vocabulary): boolean {
+  const t = tokens[i]
+  if (!v.guardedAbbreviations.length || !phraseAt(tokens, i, v.guardedAbbreviations, `${v.code}:guard`)) return false
+  const lead = [...v.before, ...v.every, ...v.nextBefore, ...v.thisBefore]
+  if (i > 0 && phraseAt(tokens, i - 1, lead, `${v.code}:guardlead`) === 1) return false
+  // The next weekday of a list: "elke ma en wo", "op ma, wo".
+  if (i > 0 && /,$/.test(tokens[i - 1].text) && weekdayAt(tokens, i - 1, v) >= 0) return false
+  if (i > 1 && phraseAt(tokens, i - 1, v.andWords, `${v.code}:and`) === 1 && weekdayAt(tokens, i - 2, v) >= 0) return false
+  const next = tokens[i + 1]
+  if (!next || next.quoted || /[,;]$/.test(t.text)) return true
+  if (dayNumber(next) && monthAt(tokens, i + 2, v, true)) return false
+  if (NUMERIC_RE.test(next.norm) || HM_RE.test(next.norm)) return false
+  const at = phraseAt(tokens, i + 1, v.atWords, `${v.code}:at`)
+  if (!at) return true
+  const k = i + 1 + at + phraseAt(tokens, i + 1 + at, v.halfWords, `${v.code}:half`)
+  return !/^\d{1,2}([:.]\d{2})?$/.test(tokens[k]?.norm ?? '')
+}
+
 /** Month index (1–12) of a token; abbreviations only when `allowAbbr`. */
-function monthAt(tokens: readonly Token[], i: number, v: Vocabulary, allowAbbr: boolean): number {
+export function monthAt(tokens: readonly Token[], i: number, v: Vocabulary, allowAbbr: boolean): number {
   for (let m = 0; m < 12; m++) {
     const mv = v.months[m]
     if (phraseAt(tokens, i, mv.names, `${v.code}:mn${m}`) > 0) return m + 1
@@ -316,8 +340,11 @@ export function matchDateAt(tokens: readonly Token[], i: number, ctx: DateContex
     // Optional leading preposition / article ("on", "am", "le"), only with a phrase after it.
     const pre = phraseAt(tokens, i, v.before, `${v.code}:before`)
     for (const j of pre ? [i + pre, i] : [i]) {
-      const wrap = (m: { date: string; n: number } | null): DateMatch | null => (m ? { date: m.date, from: i, to: j + m.n } : null)
-      consider(wrap(weekdayPhraseAt(tokens, j, v, ctx)))
+      const wrap = (m: { date: string; n: number } | null, skip = 0): DateMatch | null => (m ? { date: m.date, from: i, to: j + skip + m.n } : null)
+      const wdp = weekdayPhraseAt(tokens, j, v, ctx)
+      consider(wrap(wdp))
+      // A weekday alone before a full date names that date ("ma 1 mrt", "Monday, March 3").
+      if (wdp?.n === 1) consider(wrap(fullDateAt(tokens, j + 1, v, ctx), 1))
       consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
       consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
       consider(wrap(inPeriodAt(tokens, j, v, ctx)))
@@ -513,6 +540,12 @@ function monthDayAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: Dat
   return null
 }
 
+/** A day and month ("1 mrt", "March 3", with a year or not) or a numeric date at j; a month alone is not one. */
+function fullDateAt(tokens: readonly Token[], j: number, v: Vocabulary, ctx: DateContext): { date: string; n: number } | null {
+  const md = monthDayAt(tokens, j, v, ctx)
+  return md && md.n > 1 ? md : numericDateAt(tokens, j, ctx)
+}
+
 function resolveMonthDay(today: string, year: number, month: number, day: number): string | null {
   if (year) return isValidDate(year, month, day) ? toISO(year, month, day) : null
   return nextOccurrence(today, month, day)
@@ -594,9 +627,29 @@ const HH_RE = /^(\d{1,2})h(\d{2})?$/
 const H_RE = /^(\d{1,2})$/
 
 function meridiem(tokens: readonly Token[], k: number, v: Vocabulary): { n: number; pm: boolean } | null {
-  if (phraseAt(tokens, k, v.pm, `${v.code}:pm`)) return { n: 1, pm: true }
-  if (phraseAt(tokens, k, v.am, `${v.code}:am`)) return { n: 1, pm: false }
-  return null
+  const pm = phraseAt(tokens, k, v.pm, `${v.code}:pm`)
+  if (pm) return { n: pm, pm: true }
+  const am = phraseAt(tokens, k, v.am, `${v.code}:am`)
+  return am ? { n: am, pm: false } : null
+}
+
+/**
+ * "half 4" (Dutch "om half 4", more-languages D3): half an hour before the hour,
+ * 03:30, or 15:30 with a pm word after it ("'s middags"). Only after an "at"
+ * word or before an am or pm word.
+ */
+function halfAt(tokens: readonly Token[], j: number, v: Vocabulary, afterAt: boolean): { time: string; n: number } | null {
+  const half = phraseAt(tokens, j, v.halfWords, `${v.code}:half`)
+  const t = tokens[j + half]
+  if (!half || !t || t.quoted || !H_RE.test(t.norm)) return null
+  const h = Number(t.norm)
+  const ampm = meridiem(tokens, j + half + 1, v)
+  if (ampm) {
+    if (h < 1 || h > 12) return null
+    return { time: clock(to24(h === 1 ? 12 : h - 1, ampm.pm), 30), n: half + 1 + ampm.n }
+  }
+  if (!afterAt || h < 1 || h > 24) return null
+  return { time: clock(h - 1, 30), n: half + 1 }
 }
 
 function to24(h: number, pm: boolean): number {
@@ -607,6 +660,8 @@ function to24(h: number, pm: boolean): number {
 function clockAt(tokens: readonly Token[], j: number, v: Vocabulary, o: { afterAt: boolean; hourSuffix: boolean }): { time: string; n: number } | null {
   const t = tokens[j]
   if (!t || t.quoted) return null
+  const half = halfAt(tokens, j, v, o.afterAt)
+  if (half) return half
   const s = t.norm
   let m: RegExpExecArray | null
   const hourWord = (k: number) => phraseAt(tokens, k, v.hourWords, `${v.code}:hw`)
@@ -649,6 +704,9 @@ function clockAt(tokens: readonly Token[], j: number, v: Vocabulary, o: { afterA
       return { time: clock(to24(h, ampm.pm), 0), n: 1 + ampm.n }
     }
     const hw = hourWord(j + 1)
+    // "3 uur 's middags": an am or pm word after the hour word.
+    const late = hw ? meridiem(tokens, j + 1 + hw, v) : null
+    if (late && h >= 1 && h <= 12) return { time: clock(to24(h, late.pm), 0), n: 1 + hw + late.n }
     if ((!o.afterAt && !hw) || h > 23) return null
     return { time: clock(h, 0), n: 1 + hw }
   }

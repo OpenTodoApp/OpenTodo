@@ -47,7 +47,7 @@ describe('the Priorities card', () => {
     const order = [...document.querySelectorAll<HTMLElement>('input, button:not([data-learn-more])')]
     expect(order.map((el) => el.dataset.priorityName ?? (el.hasAttribute('data-priority-names-reset') ? 'reset' : '?'))).toEqual(['1', '2', '3', '4', 'reset'])
     for (const n of [1, 2, 3, 4]) {
-      expect(document.querySelector(`label[for="priority-name-${n}"]`)?.textContent).toBe(`Priority ${n}`)
+      expect(document.querySelector(`label[for="priority-name-${n}"]`)?.textContent).toBe(n === 4 ? 'No priority' : `Priority ${n}`)
       expect(field(n).maxLength).toBe(24)
     }
     await r.unmount()
@@ -63,7 +63,7 @@ describe('the Priorities card', () => {
     expect((await db.userPrefs.get('me'))?.priority_name_1).toBe('Must')
     // The space typed after a word stays in the field while the stored name is trimmed.
     expect(field(1).value).toBe('Must ')
-    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Must|Should|Priority 3|Priority 4', 'shown')
+    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Must|Should|Priority 3|No priority', 'shown')
     expect(priorityAccessibleName(1)).toBe('Must, priority 1')
     expect((await db.tasks.get('t1'))?.priority).toBe(1)
     expect((await db.outbox.toArray()).every((o) => o.entity === 'user_prefs')).toBe(true)
@@ -74,7 +74,7 @@ describe('the Priorities card', () => {
       return [1, 2, 3, 4].every((n) => row?.[`priority_name_${n}` as 'priority_name_1'] === '')
     }, 'reset')
     await waitFor(() => field(1).value === '' && field(2).value === '', 'fields cleared')
-    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Priority 1|Priority 2|Priority 3|Priority 4', 'defaults')
+    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Priority 1|Priority 2|Priority 3|No priority', 'defaults')
     await r.unmount()
   })
 
@@ -83,9 +83,9 @@ describe('the Priorities card', () => {
     act(() => publishEncryption({ enabled: true, unlocked: false }))
     const r = await render(<DateTimePrefsProvider><Probe /></DateTimePrefsProvider>)
     await waitFor(() => !!document.querySelector('[data-probe]'), 'probe')
-    expect(document.querySelector('[data-probe]')?.textContent).toBe('Priority 1|Priority 2|Priority 3|Priority 4')
+    expect(document.querySelector('[data-probe]')?.textContent).toBe('Priority 1|Priority 2|Priority 3|No priority')
     act(() => publishEncryption({ unlocked: true }))
-    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Must|Priority 2|Priority 3|Priority 4', 'unlocked')
+    await waitFor(() => document.querySelector('[data-probe]')?.textContent === 'Must|Priority 2|Priority 3|No priority', 'unlocked')
     act(() => publishEncryption({ enabled: false, unlocked: false }))
     await r.unmount()
   })

@@ -9,9 +9,13 @@ order: 41
 ---
 # Name your priorities
 
-<picture><source srcset="images/priorities-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/priorities-light.webp" alt="The Home renovation project grouped by priority, with the groups named Must, Should and Priority 4."></picture>
+<picture><source srcset="images/priorities-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/priorities-light.webp" alt="The Home renovation project grouped by priority, with the groups named Must, Should and No priority."></picture>
 
-The four priorities are called **Priority 1** to **Priority 4** until you give them your own words: *Must*, *Should*, *Could*, *Won't*, or *Today*, *This week*, *Soon*, *Whenever*.
+The four priorities are called **Priority 1** to **Priority 3** and **No priority** until you give them your own words: *Must*, *Should*, *Could*, *Won't*, or *Today*, *This week*, *Soon*, *Whenever*.
+
+## No priority
+
+Every task starts at the fourth level, and while that level has no name of yours it reads as **No priority**: the task panel shows a faint **Priority**, rows show no priority mark, and the priority picker offers **None**. To take a priority away, choose **None** (or press `4` with the task selected). The task keeps the number 4, so `p4` in quick add and filters, the API and the command-line client work as before; in `ot`'s table the priority column stays empty for it. Give the fourth level a name, such as *Whenever*, and that name shows instead.
 
 ## Rename a level
 

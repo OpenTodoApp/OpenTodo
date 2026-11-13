@@ -18,7 +18,7 @@ node -e 'const m=require("./deploy/dokploy/blueprints/opentodo/meta.json");proce
 
 `node scripts/deploy-check.mjs` (part of `make check`) fails when the copies drift. It also checks Dokploy's rules, the release tag and `meta.json` `version` (both the latest release in `CHANGELOG.md`), the port, the volume, the variables and the empty base URL (`scripts/deploy/dokploy.mjs`; tests in `scripts/deploy/dokploy.test.mjs`).
 
-**Status: Submitted: [Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265).**
+**Status: Listed** since 2026-10-31 ([Dokploy/templates#1265](https://github.com/Dokploy/templates/pull/1265)); 1.4.2 in [#1315](https://github.com/Dokploy/templates/pull/1315).
 
 ## Why the base URL starts empty
 

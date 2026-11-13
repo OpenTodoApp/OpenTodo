@@ -38,6 +38,18 @@ describe('reminders handed to the shell', () => {
     expect(shellReminders(rs, tasks, NOW, { titles: false, encrypted: false })[0].title).toBeUndefined()
   })
 
+  it('none for tasks in a trashed or archived project, or below one (#1234)', () => {
+    const projects = [
+      { id: 'archived', parent_id: null, deleted_at: null, archived: true },
+      { id: 'child', parent_id: 'archived', deleted_at: null, archived: false },
+      { id: 'trashed', parent_id: null, deleted_at: NOW - HOUR, archived: false },
+      { id: 'live', parent_id: null, deleted_at: null, archived: false },
+    ]
+    const ts = [task('a', { project_id: 'archived' }), task('b', { project_id: 'child' }), task('c', { project_id: 'trashed' }), task('d', { project_id: 'live' })]
+    const rs = ['a', 'b', 'c', 'd'].map((id) => reminder(`r-${id}`, id, NOW + HOUR))
+    expect(shellReminders(rs, ts, NOW, { titles: false, encrypted: false }, projects).map((r) => r.id)).toEqual(['r-d'])
+  })
+
   it('a snoozed reminder that was dismissed before is scheduled again', () => {
     const r = reminder('r1', 'a', NOW + 10 * 60 * 1000, { dismissed_at: NOW - HOUR })
     expect(shellReminders([r], tasks, NOW, { titles: false, encrypted: false })).toHaveLength(1)

@@ -4,7 +4,7 @@ import { fieldValueText, type DateExpr, type FieldValueExpr } from '../../lib/fi
 import { formatMinutes, type Leaf } from '../../lib/filter/builder'
 import type { Cmp, Keyword } from '../../lib/filter/parse'
 import { msg, t, translatedMap } from '../../lib/i18n'
-import { priorityShort } from '../../lib/priority'
+import { isNoPriority, priorityShort } from '../../lib/priority'
 import { energyName } from '../../lib/energy'
 import { SECTOR_WORDS, type SectorWord } from '../../lib/sectors'
 import { sectorWordName } from '../../lib/sectorNames'
@@ -112,7 +112,7 @@ export function conditionText(leaf: Leaf): string {
   switch (leaf.kind) {
     case 'label': return t('Label is {name}', { name: leaf.name })
     case 'project': return leaf.descendants ? t('Project is {name} or a sub-project', { name: leaf.name }) : t('Project is {name}', { name: leaf.name })
-    case 'priority': return t('Priority is {name}', { name: priorityShort(leaf.value) })
+    case 'priority': return isNoPriority(leaf.value) ? t('No priority') : t('Priority is {name}', { name: priorityShort(leaf.value) })
     case 'date': return dateText(DATE_FIELD_NAME[leaf.field], leaf.op, leaf.date)
     case 'keyword': return KEYWORD_NAME[leaf.keyword]
     case 'search': return t('Title or notes contain {text}', { text: leaf.text })

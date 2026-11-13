@@ -469,3 +469,16 @@ func TestGraphCalendarMissingAndReadOnly(t *testing.T) {
 }
 
 func calfeedWindowFrom(now time.Time) int64 { return calfeed.StoreWindow(now).From.UnixMilli() }
+
+// A Microsoft event has no URL property: the task's link ends its text, after the notes (GitHub issue 1231).
+func TestGraphBodyEndsWithTaskLink(t *testing.T) {
+	task := calfeed.FeedTask{ID: "t1", Title: "Trip", Description: "Pack the tent", Date: "2026-11-05"}
+	body := graphBody(task, calfeed.FeedOptions{BaseURL: "https://todo.example"}, "")["body"].(map[string]string)
+	if body["content"] != "Pack the tent\n\nhttps://todo.example/task/t1" {
+		t.Fatalf("content = %q", body["content"])
+	}
+	body = graphBody(task, calfeed.FeedOptions{BaseURL: "https://todo.example", Encrypted: true}, "")["body"].(map[string]string)
+	if body["content"] != "https://todo.example/task/t1" {
+		t.Fatalf("encrypted content = %q", body["content"])
+	}
+}

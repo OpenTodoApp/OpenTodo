@@ -22,7 +22,12 @@ export const TRIGGER_LABEL = translatedMap<RuleTriggerKind>({
   overdue: msg('A task’s date passes'),
   schedule: msg('On a schedule'),
   manual: msg('Only when I run it'),
+  'note.created': msg('A note is created'),
+  'note.edited': msg('A note is edited'),
+  'note.label.added': msg('A note gets a label'),
 })
+/** A manual routine that runs on a note (notes-in-routines D2): a choice of its own in the trigger list. */
+export const MANUAL_NOTE_LABEL = msg('Only when I run it on a note')
 const DUE_LABEL = translatedMap({ today: msg('Today'), tomorrow: msg('Tomorrow'), 'next-week': msg('Next week'), clear: msg('No date') })
 const START_LABEL = translatedMap({ someday: msg('Someday'), clear: msg('Clear the start') })
 const STATE_LABEL = translatedMap({ complete: msg('Complete'), reopen: msg('Reopen') })
@@ -64,7 +69,7 @@ export const triggerOf = (kind: RuleTriggerKind): RuleTrigger => (kind === 'sche
 
 /** Whether a trigger kind takes members beyond its kind (a time and days, a label, a project). */
 export const triggerHasDetails = (kind: RuleTriggerKind): boolean =>
-  kind === 'schedule' || kind === 'label.added' || kind === 'label.removed' || kind === 'task.moved'
+  kind === 'schedule' || kind === 'label.added' || kind === 'label.removed' || kind === 'task.moved' || kind === 'note.label.added'
 
 /** The members a trigger's kind takes: a schedule's time and days, a label, a project and section. */
 export function TriggerDetails({ value, onChange, names, sharedProjects }: { value: RuleTrigger; onChange: (v: RuleTrigger) => void; names: Names; sharedProjects: Set<string> }) {
@@ -73,7 +78,7 @@ export function TriggerDetails({ value, onChange, names, sharedProjects }: { val
   const monthly = monthDays.length > 0
   return (
     <>
-      {(value.kind === 'label.added' || value.kind === 'label.removed') && (
+      {(value.kind === 'label.added' || value.kind === 'label.removed' || value.kind === 'note.label.added') && (
         <LabelSelect value={value.label_id} labels={names.labels} onChange={(id) => onChange({ kind: value.kind, label_id: id })} />
       )}
       {value.kind === 'task.moved' && (
@@ -221,13 +226,17 @@ function sectionChoices(names: Names, project: string): { id: string; label: str
 }
 
 /** The condition: every predicate set must hold. */
-export function ConditionFields({ value, onChange, names }: { value: RuleCondition; onChange: (v: RuleCondition) => void; names: Names }) {
+export function ConditionFields({ value, onChange, names, notes }: {
+  value: RuleCondition; onChange: (v: RuleCondition) => void; names: Names
+  /** A note trigger's condition: project and labels only (notes-in-routines D3). */
+  notes?: boolean
+}) {
   const set = <K extends keyof RuleCondition>(key: K, v: RuleCondition[K] | undefined) => onChange(withPredicate(value, key, v))
   const project = value.project && value.project !== 'none' && !listOf(value.project).not ? listOf(value.project).ids[0] ?? '' : ''
   const pick = (v: string, map: Record<string, RuleCondition[keyof RuleCondition] | undefined>) => map[v]
   return (
     <fieldset className="min-w-0" data-rule-condition>
-      <legend className="mb-2 text-meta font-medium text-muted">{t('Only for tasks that')}</legend>
+      <legend className="mb-2 text-meta font-medium text-muted">{notes ? t('Only for notes that') : t('Only for tasks that')}</legend>
       <div className={conditionGrid}>
         <ListPredicate label={t('Project')} value={value.project} noneLabel={t('No project')} extra={{ descendants: true }} onChange={(v) => set('project', v)}>
           {(ids, pick) => (
@@ -235,20 +244,21 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
               className="w-full" onChange={(id) => pick(id ? [id] : [])} />
           )}
         </ListPredicate>
-        <ListPredicate label={t('Section')} value={value.section} noneLabel={t('No section')} onChange={(v) => set('section', v)}>
+        {!notes && <ListPredicate label={t('Section')} value={value.section} noneLabel={t('No section')} onChange={(v) => set('section', v)}>
           {(ids, pick) => (
             <select className="ui-input w-full" aria-label={t('Section')} value={ids[0] ?? ''} onChange={(e) => pick(e.target.value ? [e.target.value] : [])}>
               <option value="" disabled>{t('Choose a section')}</option>
               {sectionChoices(names, project).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           )}
-        </ListPredicate>
+        </ListPredicate>}
         <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have every label')}</span>
         <LabelsField title={t('Have every label')} titleHidden ids={value.labels?.all ?? []} labels={names.labels}
           onChange={(ids) => set('labels', ids.length || value.labels?.none?.length ? { ...value.labels, all: ids } : undefined)} />
         <span className={`${cellLabel} self-start pt-2`} aria-hidden="true">{t('Have none of the labels')}</span>
         <LabelsField title={t('Have none of the labels')} titleHidden ids={value.labels?.none ?? []} labels={names.labels}
           onChange={(ids) => set('labels', ids.length || value.labels?.all?.length ? { ...value.labels, none: ids } : undefined)} />
+        {!notes && <>
         <ListPredicate label={t('Priority')} value={value.priority} onChange={(v) => set('priority', v as RuleCondition['priority'])}>
           {(ids, pick) => (
             <select className="ui-input w-full" aria-label={t('Priority')} value={ids.join(',')} onChange={(e) => pick(e.target.value ? e.target.value.split(',').map(Number) : [])}>
@@ -283,6 +293,7 @@ export function ConditionFields({ value, onChange, names }: { value: RuleConditi
           <Input type="number" min={1} max={365} placeholder={t('Any')} value={value.unchanged?.days ?? ''} data-rule-unchanged
             onChange={(e) => { const n = Math.round(Number(e.target.value)); set('unchanged', e.target.value && n >= 1 ? { days: Math.min(365, n) } : undefined) }} />
         </label>
+        </>}
       </div>
     </fieldset>
   )

@@ -1,6 +1,6 @@
 ---
 title: Quick add syntax
-summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, six languages and voice capture.
+summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, seven languages and voice capture.
 audience: user
 section: Reference
 specs: [natural-language-capture, voice-capture, manual-ordering, task-list-presentation]
@@ -49,7 +49,7 @@ On a phone, the add sheet shows plain chips for what it understood, and buttons 
 | --- | --- | --- |
 | `#name` | Project, including sub-projects. Case-insensitive; spaces, `-` and `_` are ignored. An exact name wins, otherwise a unique prefix; `#Home/Docs` picks *Docs* under *Home*. If nothing matches, or a prefix fits several projects, the token stays in the title and a grey chip says so. | `#work`, `#trav` (Travel), `#sideproject` (Side Project), `#Home/Docs` |
 | `@name` | Label, matched ignoring case. A name with no label yet creates one when you press Enter; its chip says *New label* until then. Use as many as you like. | `@call`, `@waiting-for` |
-| `p1`–`p4` | Priority, 1 highest, 4 default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
+| `p1`–`p4` | Priority, 1 highest, 4 [no priority](priorities.md#no-priority), the default. Typing `p` after a space lists the four levels with [your names for them](priorities.md); only the number is read. | `p1`, `P3` |
 | `+duration` | Estimate in minutes, from 1 minute to 7 days (10080 minutes). Shown on the task row. | `+30`, `+30m`, `+45min`, `+2h`, `+1h30`, `+1.5h` |
 | `spent/estimate` | Time already spent and an estimate (see [Time spent](#time-spent)). | `30m/2h`, `1h/1h30`, `45min/2h` |
 
@@ -61,7 +61,7 @@ Without the `+`, `45min` and `2h` also work, except that `2h` is left alone when
 
 ### Time spent
 
-`Draft the offer 30m/2h` creates the task with a two-hour estimate and one closed [time entry](time-tracking.md) of 30 minutes ending now, in the same step; the preview shows a **Spent 30 min** chip beside the estimate, and the row reads `30m / 2h`. Both parts need a unit (`h`, `m`, `min`), so `Pay rent 30/12` stays a date, and `Réunion 15h` with French active is still a meeting at 15:00. `+30m` remains an estimate only. Units are not translated: the token works the same in all six languages. Backspace on the chip keeps the text in the title, like every token.
+`Draft the offer 30m/2h` creates the task with a two-hour estimate and one closed [time entry](time-tracking.md) of 30 minutes ending now, in the same step; the preview shows a **Spent 30 min** chip beside the estimate, and the row reads `30m / 2h`. Both parts need a unit (`h`, `m`, `min`), so `Pay rent 30/12` stays a date, and `Réunion 15h` with French active is still a meeting at 15:00. `+30m` remains an estimate only. Units are not translated: the token works the same in all seven languages. Backspace on the chip keeps the text in the title, like every token.
 
 ## Dates and times
 
@@ -85,7 +85,7 @@ Words like `on` and `due` in front of a date are removed with it (`Pay bill on F
 
 **Deadlines.** Put `deadline` right before a date to set the task's [deadline](tasks-and-projects.md#deadlines) instead of its due date: `Send report deadline friday` → *Send report*, no due date, deadline Friday, shown as its own chip with an hourglass. Combine both: `Send report tomorrow deadline friday` is planned for tomorrow and due by Friday. A deadline has no time, so a time right after it stays in the title. Without a date after it the word is just text (`Review deadline policy`).
 
-`by` before a date sets the deadline too: `Install winter tires by March 31` → *Install winter tires*, no due date, deadline 31 March, and `Pay tax tomorrow by friday` is planned for tomorrow with a deadline on Friday. `on` and `due` still set the due date. `by` before a time is a due time (`Call back by 5pm` → today at 17:00), and so is `by` before a date with a time (`Pay tax by friday 5pm` is due Friday at 17:00), since a deadline has no time. A [repeating](recurrence.md) line keeps its rule (`Water plants every monday by friday` repeats every Monday, with a deadline on Friday). German, Italian and Portuguese have a `by` word as well; French and Spanish `pour` and `para` mean "for" and still set the due date. Each language has its own words:
+`by` before a date sets the deadline too: `Install winter tires by March 31` → *Install winter tires*, no due date, deadline 31 March, and `Pay tax tomorrow by friday` is planned for tomorrow with a deadline on Friday. `on` and `due` still set the due date. `by` before a time is a due time (`Call back by 5pm` → today at 17:00), and so is `by` before a date with a time (`Pay tax by friday 5pm` is due Friday at 17:00), since a deadline has no time. A [repeating](recurrence.md) line keeps its rule (`Water plants every monday by friday` repeats every Monday, with a deadline on Friday). German, Italian, Portuguese and Dutch have a `by` word as well; French and Spanish `pour` and `para` mean "for" and still set the due date. Each language has its own words:
 
 | Language | Deadline word | `by` word |
 | --- | --- | --- |
@@ -95,6 +95,7 @@ Words like `on` and `due` in front of a date are removed with it (`Pay bill on F
 | Italian | `scadenza` | `entro` |
 | Spanish | `fecha límite`, `plazo` | |
 | Portuguese | `prazo` | `até` |
+| Dutch | `deadline` | `uiterlijk` |
 
 **Someday and tonight.** `someday` parks the task in [Someday](tasks-and-projects.md#when-a-task-starts): `Learn to sail someday @hobby` → *Learn to sail*, parked. If the line also has a date, the word stays in the title (`Plan someday trip friday` is due Friday). `tonight` and `this evening` make the task due today and mark it for **This Evening**, a group below the day's tasks in Today; a time still sets the due time (`Call Ana tonight at 8pm`). Before this, `tonight` only meant today; the date is the same, the task now also shows the moon. Each gets its own chip.
 
@@ -106,6 +107,7 @@ Words like `on` and `due` in front of a date are removed with it (`Pay bill on F
 | Italian | `prima o poi` | `stasera` |
 | Spanish | `algún día` | `esta noche` |
 | Portuguese | `algum dia` | `hoje à noite` |
+| Dutch | `ooit` | `vanavond` |
 
 **Energy.** With **Energy levels** on ([Set up](method/set-up.md#energy-levels)), `~deep`, `~medium` and `~low`, or any start of them (`~d`, `~me`, `~L`), set the task's energy, in every language and in any letter case: `Draft the strategy #Work ~deep +2h` → *Draft the strategy*, in Work, 2 hours, Deep. The chip reads "Deep energy"; typing `~` suggests the three, and on a phone the lightning tool under the line starts one. The last one on the line wins. `~` followed by anything else stays in the title (`Dinner for ~6 people`), and with Energy levels off the token is not read.
 
@@ -119,6 +121,7 @@ Words like `on` and `due` in front of a date are removed with it (`Pay bill on F
 | Italian | `questa settimana` | `nel corso della prossima settimana` | `questo mese` | `nel corso del prossimo mese` | `questo trimestre` | `il prossimo trimestre` |
 | Spanish | `esta semana` | `en algún momento de la próxima semana` | `este mes` | `en algún momento del próximo mes` | `este trimestre` | `el próximo trimestre` |
 | Portuguese | `esta semana` | `em algum momento da próxima semana` | `este mês` | `em algum momento do próximo mês` | `este trimestre` | `no próximo trimestre` |
+| Dutch | `deze week` | `ergens volgende week` | `deze maand` | `ergens volgende maand` | `dit kwartaal` | `volgend kwartaal` |
 
 Every "this" phrase also has its "sometime" form (`sometime this month`, `irgendwann diese Woche`, …).
 
@@ -132,6 +135,7 @@ Every "this" phrase also has its "sometime" form (`sometime this month`, `irgend
 | Italian | `stamattina`, `stamani`, `questa mattina`, `oggi pomeriggio`, `questo pomeriggio` | `mattina`, `pomeriggio`, `sera` |
 | Spanish | `esta mañana`, `esta tarde` | `por la mañana`, `por la tarde`, `por la noche` |
 | Portuguese | `esta manhã`, `hoje de manhã`, `esta tarde`, `hoje à tarde` | `de manhã`, `à tarde`, `à noite` |
+| Dutch | `vanochtend`, `vanmorgen`, `vanmiddag` | `ochtend`, `middag`, `avond`, `'s ochtends`, `'s middags`, `'s avonds` |
 
 When a line has two dates, the first one counts and the second stays in the title. The same goes for a second time, deadline, project, priority or estimate.
 
@@ -141,7 +145,7 @@ When a line has two dates, the first one counts and the second stays in the titl
 
 ## Languages
 
-Vocabulary is bundled for **English, German, French, Italian, Spanish and Portuguese**. The active languages are the [interface language](language.md) when you picked one, then your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. With the interface language on **System** the order is your browser's, as before. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
+Vocabulary is bundled for **English, German, French, Italian, Spanish, Portuguese and Dutch**. The active languages are the [interface language](language.md) when you picked one, then your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. With the interface language on **System** the order is your browser's, as before. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
 
 | | Examples |
 | --- | --- |
@@ -150,10 +154,11 @@ Vocabulary is bundled for **English, German, French, Italian, Spanish and Portug
 | Italian | `oggi`, `domani alle 15`, `dopodomani`, `lunedì prossimo`, `prossimo sabato`, `tra 3 giorni`, `fra una settimana`, `il 3 febbraio`, `mezzogiorno` |
 | Spanish | `hoy`, `mañana a las 15:00`, `pasado mañana`, `el próximo lunes`, `martes que viene`, `en 3 días`, `dentro de 2 semanas`, `3 de febrero` |
 | Portuguese | `hoje`, `amanhã às 15h`, `depois de amanhã`, `próxima segunda`, `sábado que vem`, `daqui a 3 dias`, `em 2 semanas`, `3 de fevereiro` |
+| Dutch | `vandaag`, `morgen om 15 uur`, `overmorgen`, `op vrijdag`, `volgende woensdag`, `komende vrijdag`, `over 3 dagen`, `volgende week`, `3 maart`, `ma 1 mrt`, `om 15:30`, `om half 4`, `om 8 uur 's avonds` |
 
 Ordinal weekdays work in every language, with the ordinal words or a number with its suffix (`2nd`, `2.`, `2º`, `2e`): `am zweiten Montag`, `dritten Freitag im November`, `le 2e lundi de novembre`, `secondo lunedì`, `tercer viernes de noviembre`, `segunda segunda-feira`, `última sexta`. In Portuguese, `segunda` and `quarta` count as *second* and *fourth* only right before a weekday; alone they are Monday and Wednesday.
 
-Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter German abbreviations need their dot (`Mi.`, `Do.`) so ordinary words like *do* and *so* are not mistaken for weekdays.
+Accents are optional (`manana`, `nachsten`, `fevrier` work too). Two-letter German abbreviations need their dot (`Mi.`, `Do.`) so ordinary words like *do* and *so* are not mistaken for weekdays. Two-letter Dutch abbreviations (`ma`, `di`, `wo`, `do`, `vr`, `za`, `zo`) count only next to a date: after `op`, `elke` or `volgende`, or before a day and month or a time (`op ma`, `ma 1 mrt`, `ma om 9 uur`), so `Bel ma` stays *Bel ma*. A weekday right before a full date names that date in every language (`Monday, March 3`). In Dutch, `half 4` is half past three: `om half 4` is 03:30 and `om half 4 's middags` 15:30; `'s ochtends`, `'s middags`, `'s avonds` and `'s nachts` after a time work like *am* and *pm* (`om 8 uur 's avonds` is 20:00).
 
 ## Views and defaults
 
@@ -238,19 +243,19 @@ OpenTodo's code never records, stores or sends audio: the Web Speech API hands i
 
 A rule and reminders can be typed in the same line. Each gets its own chip and is removed from the title.
 
-| English | Deutsch | Français | Italiano | Español | Português |
-| --- | --- | --- | --- | --- | --- |
-| `every Monday` | `jeden Montag` | `tous les lundis` | `ogni lunedì` | `cada lunes` | `toda segunda-feira` |
-| `every 3 days after completion` | `alle 3 Tage nach Erledigung` | `tous les 3 jours après achèvement` | `ogni 3 giorni dopo il completamento` | `cada 3 días después de completar` | `todo 3 dias após a conclusão` |
-| `daily`, `weekly`, `monthly`, `yearly` | `täglich`, `wöchentlich`, `monatlich`, `jährlich` | `quotidiennement`, `hebdomadairement`, `mensuellement`, `annuellement` | `quotidianamente`, `settimanalmente`, `mensilmente`, `annualmente` | `diariamente`, `semanalmente`, `mensualmente`, `anualmente` | `diariamente`, `semanalmente`, `mensalmente`, `anualmente` |
-| `every other Friday`, `every other week` | `jeden zweiten Freitag`, `jede zweite Woche`, `alle zwei Tage` | `un vendredi sur deux`, `une semaine sur deux`, `tous les deux jours` | `ogni due venerdì`, `ogni due settimane`, `a settimane alterne` | `cada dos viernes`, `cada dos semanas` | `a cada duas sextas`, `a cada duas semanas` |
-| `every 2 weeks on Saturday` | `alle 2 Wochen am Samstag` | `toutes les 2 semaines le samedi` | `ogni 2 settimane il sabato` | `cada 2 semanas los sábados` | `cada 2 semanas aos sábados` |
-| `and repeat every Monday`, `and then every Monday` | `und dann jeden Montag`, `wiederholen jeden Montag` | `et répéter tous les lundis`, `puis tous les lundis` | `e poi ogni lunedì`, `ripeti ogni lunedì` | `y repetir cada lunes`, `luego cada lunes` | `e repetir toda segunda-feira`, `depois toda segunda-feira` |
-| `every day starting tomorrow`, `every Monday from 16 Nov` | `jeden Tag ab morgen` | `tous les jours à partir de demain` | `ogni giorno a partire da domani`, `da domani` | `cada día a partir de mañana`, `desde mañana` | `todo dia a partir de amanhã`, `desde amanhã` |
-| `remind me 30 min before` | `erinnere mich 30 Minuten vorher` | `rappelle-moi 30 min avant` | `ricordamelo 30 minuti prima` | `recuérdame 30 minutos antes` | `lembre-me 30 minutos antes` |
-| `remind me at 9` | `erinnere mich um 9 Uhr` | `rappelle-moi à 9h` | `ricordamelo alle 9` | `recuérdame a las 9` | `lembre-me às 9` |
+| English | Deutsch | Français | Italiano | Español | Português | Nederlands |
+| --- | --- | --- | --- | --- | --- | --- |
+| `every Monday` | `jeden Montag` | `tous les lundis` | `ogni lunedì` | `cada lunes` | `toda segunda-feira` | `elke maandag` |
+| `every 3 days after completion` | `alle 3 Tage nach Erledigung` | `tous les 3 jours après achèvement` | `ogni 3 giorni dopo il completamento` | `cada 3 días después de completar` | `todo 3 dias após a conclusão` | `elke 3 dagen na voltooiing` |
+| `daily`, `weekly`, `monthly`, `yearly` | `täglich`, `wöchentlich`, `monatlich`, `jährlich` | `quotidiennement`, `hebdomadairement`, `mensuellement`, `annuellement` | `quotidianamente`, `settimanalmente`, `mensilmente`, `annualmente` | `diariamente`, `semanalmente`, `mensualmente`, `anualmente` | `diariamente`, `semanalmente`, `mensalmente`, `anualmente` | `dagelijks`, `wekelijks`, `maandelijks`, `jaarlijks` |
+| `every other Friday`, `every other week` | `jeden zweiten Freitag`, `jede zweite Woche`, `alle zwei Tage` | `un vendredi sur deux`, `une semaine sur deux`, `tous les deux jours` | `ogni due venerdì`, `ogni due settimane`, `a settimane alterne` | `cada dos viernes`, `cada dos semanas` | `a cada duas sextas`, `a cada duas semanas` | `om de vrijdag`, `om de week`, `tweewekelijks` |
+| `every 2 weeks on Saturday` | `alle 2 Wochen am Samstag` | `toutes les 2 semaines le samedi` | `ogni 2 settimane il sabato` | `cada 2 semanas los sábados` | `cada 2 semanas aos sábados` | `elke 2 weken op zaterdag` |
+| `and repeat every Monday`, `and then every Monday` | `und dann jeden Montag`, `wiederholen jeden Montag` | `et répéter tous les lundis`, `puis tous les lundis` | `e poi ogni lunedì`, `ripeti ogni lunedì` | `y repetir cada lunes`, `luego cada lunes` | `e repetir toda segunda-feira`, `depois toda segunda-feira` | `en dan elke maandag`, `herhaal elke maandag` |
+| `every day starting tomorrow`, `every Monday from 16 Nov` | `jeden Tag ab morgen` | `tous les jours à partir de demain` | `ogni giorno a partire da domani`, `da domani` | `cada día a partir de mañana`, `desde mañana` | `todo dia a partir de amanhã`, `desde amanhã` | `elke dag vanaf morgen` |
+| `remind me 30 min before` | `erinnere mich 30 Minuten vorher` | `rappelle-moi 30 min avant` | `ricordamelo 30 minuti prima` | `recuérdame 30 minutos antes` | `lembre-me 30 minutos antes` | `herinner me 30 minuten van tevoren` |
+| `remind me at 9` | `erinnere mich um 9 Uhr` | `rappelle-moi à 9h` | `ricordamelo alle 9` | `recuérdame a las 9` | `lembre-me às 9` | `herinner me om 9 uur` |
 
-Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, `every first weekday` (`jeden ersten Werktag`, `chaque premier jour ouvré`, `ogni primo giorno feriale`, `cada primer día laborable`, `todo primeiro dia útil`), with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts. After a monthly rule, `of the month` is accepted and changes nothing (`every 2nd monday of the month`, `jeden zweiten Montag im Monat`, `tous les 2e lundis du mois`, `ogni secondo lunedì del mese`, `cada segundo lunes del mes`, `toda segunda segunda-feira do mês` are all `every 2nd monday`). A bare number before a weekday is a count, not an ordinal: `every 2 Mondays` (`alle 2 Montage`, `cada 2 lunes`) is not a rule and stays as typed, with no date.
+Rules cover the whole [rule grammar](recurrence.md): weekday lists (`every mon, wed and fri`), `every weekday`, `every 15th`, `every 2nd Tuesday`, `every last Friday`, `every last day`, `every first weekday` (`jeden ersten Werktag`, `chaque premier jour ouvré`, `ogni primo giorno feriale`, `cada primer día laborable`, `todo primeiro dia útil`; in Dutch also `elke werkdag` and `op werkdagen` for every weekday), with `after completion`, `until 31 Dec` or `for 10 times` at the end. The stored rule is always the English canonical form, whatever language you typed. A phrase the grammar cannot express, such as `every 3 hours`, stays in the title; only the first rule of a line counts. After a monthly rule, `of the month` is accepted and changes nothing (`every 2nd monday of the month`, `jeden zweiten Montag im Monat`, `tous les 2e lundis du mois`, `ogni secondo lunedì del mese`, `cada segundo lunes del mes`, `toda segunda segunda-feira do mês` are all `every 2nd monday`). A bare number before a weekday is a count, not an ordinal: `every 2 Mondays` (`alle 2 Montage`, `cada 2 lunes`) is not a rule and stays as typed, with no date.
 
 **Every other.** `every other day`, `week`, `month` or `year` repeats every 2 of them. `every other Friday` is the same as typing `every 2 weeks on Friday`: the series stays on Fridays whatever date the task starts on. When the task is due on a Friday, the rule is stored as `every 2 weeks`, which means the same and which [older devices](recurrence.md#rules-older-devices-read) read; otherwise it is stored as `every 2 weeks on friday`. In German, `jeden zweiten Freitag` is every other Friday, while `jeden zweiten Freitag im Monat` stays the second Friday of each month; in the other languages `every second Friday` (`ogni secondo venerdì`, `cada segundo viernes`) is the second Friday of the month.
 

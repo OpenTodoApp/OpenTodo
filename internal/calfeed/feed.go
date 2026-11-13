@@ -12,7 +12,10 @@ import (
 
 // FeedTask is one task as the feed renders it.
 type FeedTask struct {
-	ID          string
+	ID string
+	// UID is the event's UID when it is not the task's id (a CalDAV client's
+	// own UID, caldav-events); "" uses ID.
+	UID         string
 	Title       string
 	Description string
 	Date        string  // due date, YYYY-MM-DD
@@ -29,6 +32,11 @@ type FeedTask struct {
 	Labels   []string
 	Priority int
 	Modified int64 // Unix ms, for DTSTAMP and LAST-MODIFIED
+	// Places is where the task is, nearest first: its CalDAV calendar id (a
+	// project id or an Inbox's) and then the project's ancestors; calendar sync
+	// writes its event to the calendar matched to the first matched place
+	// (calsync-project-calendars).
+	Places []string
 }
 
 // SpanStart is a task's first day when it is drawn as a span (OpenSpec change
@@ -45,7 +53,7 @@ func SpanStart(span bool, start, dueDate string) string {
 // FeedOptions tune the feed.
 type FeedOptions struct {
 	Now time.Time
-	// BaseURL, when set, gives each event a link to its day in the app.
+	// BaseURL, when set, gives each event a link to its task in the app.
 	BaseURL string
 	// Encrypted accounts show the placeholder title and no notes or labels.
 	Encrypted bool
@@ -102,6 +110,21 @@ func WriteEvent(t FeedTask, opts FeedOptions) []byte {
 	return cal.Encode()
 }
 
+// TaskURL is the address of a task's page in the app (GitHub issue 1231): an
+// event links to its task, not to the day.
+func TaskURL(baseURL, taskID string) string {
+	return baseURL + "/task/" + taskID
+}
+
+// EventNotes is the DESCRIPTION of a task's event: its notes, none for an
+// encrypted account or encrypted notes.
+func EventNotes(t FeedTask, encrypted bool) string {
+	if encrypted || e2ee.IsCiphertext(t.Description) {
+		return ""
+	}
+	return t.Description
+}
+
 // EventTitle is the SUMMARY of a task's event: its title, or the neutral
 // placeholder for an encrypted account or an encrypted title.
 func EventTitle(t FeedTask, encrypted bool) string {
@@ -118,7 +141,11 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 		c.Props = append(c.Props, caldav.Prop{Name: name, Value: value})
 	}
 	ev := &caldav.Component{Name: "VEVENT"}
-	add(ev, "UID", t.ID)
+	uid := t.ID
+	if t.UID != "" {
+		uid = t.UID
+	}
+	add(ev, "UID", uid)
 	stamp := time.UnixMilli(t.Modified).UTC().Format("20060102T150405Z")
 	if t.Modified <= 0 {
 		stamp = opts.Now.UTC().Format("20060102T150405Z")
@@ -126,8 +153,8 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 	add(ev, "DTSTAMP", stamp)
 	add(ev, "LAST-MODIFIED", stamp)
 	add(ev, "SUMMARY", caldav.EscapeText(EventTitle(t, opts.Encrypted)))
-	if t.Description != "" && !opts.Encrypted && !e2ee.IsCiphertext(t.Description) {
-		add(ev, "DESCRIPTION", caldav.EscapeText(t.Description))
+	if notes := EventNotes(t, opts.Encrypted); notes != "" {
+		add(ev, "DESCRIPTION", caldav.EscapeText(notes))
 	}
 	start, end := eventTimes(t)
 	ev.Props = append(ev.Props, start, end)
@@ -161,7 +188,7 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 		add(ev, "X-OPENTODO-PRIORITY", strconv.Itoa(t.Priority))
 	}
 	if opts.BaseURL != "" {
-		add(ev, "URL", opts.BaseURL+"/day/"+t.Date)
+		add(ev, "URL", TaskURL(opts.BaseURL, t.ID))
 	}
 	return ev
 }

@@ -4,13 +4,15 @@ import type { NoteEntry } from '../../lib/noteList'
 import type { NoteToken } from '../../lib/noteQuery'
 import { NoteSearchField } from './NoteSearchField'
 import { NoteMenu, NoteRow } from './NoteRow'
-import { GroupHeading, NewNoteRow, NotesEmpty } from './NotesPage'
+import { GroupHeading, NewNoteRow, NotesEmpty, NotesSortItems, sortHeading } from './NotesPage'
+import { pickNoteSort, type NoteSort } from '../../lib/noteSort'
+import { Icon, Menu } from '../../ui'
 import { HEX, label, project } from '../stories/fixtures'
 
 // Core screen: Notes (`/notes`, OpenSpec change notes-overview task 4.11): the note
 // row, the empty state and the search field (weekly in the inventory); the home with
 // Pinned and Recent and the New note row of the search field (notes-home); one-line
-// rows and the search chips (notes-space).
+// rows and the search chips (notes-space); the header menu's Sort (notes-sort).
 const meta: Meta = { title: 'Screens/Notes' }
 export default meta
 
@@ -125,4 +127,39 @@ export const SearchChips: StoryObj = {
 /** A chip whose project was deleted reads struck out and matches nothing. */
 export const SearchChipGone: StoryObj = {
   render: () => <Search chips={[{ key: 'in', id: 'p-gone', name: 'Old flat' }, { key: 'pinned' }]} />,
+}
+
+function SortMenu() {
+  const [sort, setSort] = useState<NoteSort>({ by: 'title', reversed: false })
+  return (
+    <Column>
+      <div className="flex max-w-2xl justify-end" style={{ minHeight: 220 }}>
+        <Menu kind="menu" label="More actions" open trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
+          <NotesSortItems sort={sort} onSort={(by) => setSort(pickNoteSort(sort, by))} />
+        </Menu>
+      </div>
+      <ul className="max-w-2xl space-y-0.5">
+        <GroupHeading title={sortHeading(sort)} count={2} testId="recent" />
+        <NoteRow entry={entry({ key: 'n6', source: 'note', title: 'Week 2', text: 'Retro notes' })} labels={[]} updated="9 Oct" onOpen={() => {}} />
+        <NoteRow entry={entry({ key: 'n7', source: 'note', title: 'Week 10', text: 'Planning' })} labels={[]} updated="just now" onOpen={() => {}} />
+      </ul>
+    </Column>
+  )
+}
+
+/** Sort in the header's menu (notes-sort D1): Title checked, its arrow, the heading named after the order. */
+export const SortOrder: StoryObj = { render: () => <SortMenu /> }
+
+/** Ticking notes (notes-bulk-actions D2): checkboxes in the kind icon's slot, two notes ticked, a task note not tickable. */
+export const Ticked: StoryObj = {
+  render: () => (
+    <Column>
+      <ul className="max-w-2xl space-y-0.5">
+        <NoteRow entry={entry({ key: 'note:a', source: 'note', title: 'Agenda 3 Nov', text: 'Budget, rota' })} labels={[]} updated="2 h ago" onOpen={() => {}} tick={{ ticked: true, shown: true, onTick: () => {} }} />
+        <NoteRow entry={entry({ key: 'note:b', source: 'note', title: 'Agenda 4 Nov', text: 'Hiring' })} labels={[reference]} updated="1 d ago" onOpen={() => {}} tick={{ ticked: true, shown: true, onTick: () => {} }} />
+        <NoteRow entry={entry({ key: 'task:c', source: 'task', title: 'Call the plumber', text: 'the boiler', projectId: home.id })} project={home} labels={[]} updated="2 d ago" onOpen={() => {}} />
+        <NoteRow entry={entry({ key: 'note:d', source: 'note', title: 'Agenda 5 Nov', text: 'Launch plan' })} labels={[]} updated="3 d ago" onOpen={() => {}} tick={{ ticked: false, shown: true, onTick: () => {} }} />
+      </ul>
+    </Column>
+  ),
 }

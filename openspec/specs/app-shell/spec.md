@@ -448,7 +448,7 @@ The notification bell in the sidebar footer SHALL show a dot in the accent colou
 - **THEN** the bell shows "3" in a small accent count, never in red, and reading the first one from the list changes it to "2"
 
 ### Requirement: Favourites group
-The Favourites group SHALL list the user's pinned projects, labels, saved filters and standalone notes in the user's order, each project, label and filter with the icon or colour and the live open-task count its own group shows, and each note with the note icon, its title ("Untitled note" when empty) and no count, opening the same destination (a note docked or as a page). Items SHALL be reorderable from their menus and by keyboard, and unpinnable from their menus. The group SHALL reflect pins, order and renames from the user's other devices after sync, and SHALL render from local data so it is correct offline.
+The Favourites group of the Tasks space SHALL list the user's pinned projects, labels and saved filters in the user's order, each with the icon or colour and the live open-task count its own group shows, opening the same destination. Pinned standalone notes SHALL be listed in the Notes space's Pinned group instead (see "Sidebar spaces"), and the favourites list SHALL keep their entries unchanged. Items SHALL be reorderable from their menus and by keyboard, and unpinnable from their menus. The group SHALL reflect pins, order and renames from the user's other devices after sync, and SHALL render from local data so it is correct offline.
 
 #### Scenario: Mixed kinds in order
 - **WHEN** the user pins "Website launch" (project, 5 open), "Deep work" (filter, 4 matches) and "errand" (label, 3 open) and moves "Deep work" to the top
@@ -464,7 +464,7 @@ The Favourites group SHALL list the user's pinned projects, labels, saved filter
 
 #### Scenario: Pinned note
 - **WHEN** the user pins the note "Wi-Fi" and renames it "Home Wi-Fi" on another device
-- **THEN** the group shows "Home Wi-Fi" with the note icon and no count after sync, and activating it opens the note
+- **THEN** the Tasks space's Favourites group does not list it, the Notes space's Pinned group shows "Home Wi-Fi" after sync, and the favourites list still holds the note for other clients
 
 ### Requirement: Sidebar header row
 The top of the sidebar SHALL be one header row holding the workspace control on the left (the current workspace's picture and name, see "Workspace picture") and the search and commands button on the right. The instance's mark and name SHALL be in the brand line at the sidebar's end, not in the header (see "Brand line in the sidebar footer"). The header row SHALL keep its left part a slot holding the workspace control, while the search button and everything below the row stay unchanged. On the icon rail the row SHALL show the workspace's picture alone, centred, with the workspace's name as its tooltip and accessible name. The workspace's name SHALL be set in the interface typeface at the body size with the strong text tone. The header row SHALL be rendered from local data only and SHALL look the same offline.
@@ -644,21 +644,6 @@ The More group SHALL list Focus after Statistics, in every "How you work" mode, 
 - **WHEN** the same user switches to Open Loops first
 - **THEN** Focus is back in the More group, the six primary destinations are unchanged, and the promotion is kept for a later switch back
 
-### Requirement: Notes in the More group
-The More group SHALL list Notes after Focus, in every "How you work" mode, opening `/notes`. Notes SHALL be promotable to the primary destinations through the sidebar destinations preference, except in Open Loops first, where it stays in More so the six primary destinations are unchanged. It SHALL show no count and no marker. The entry is navigation only and reads no server data, so it works offline.
-
-#### Scenario: Listed in More
-- **WHEN** the user opens the More group, in any mode
-- **THEN** Notes is listed after Focus and opens the Notes page
-
-#### Scenario: Promoted
-- **WHEN** a Companion user turns on "Show in sidebar" for Notes in Settings → Appearance
-- **THEN** Notes appears among the primary destinations on every device after sync and leaves the More group
-
-#### Scenario: Open Loops first
-- **WHEN** the same user switches to Open Loops first
-- **THEN** Notes is back in the More group, the six primary destinations are unchanged, and the promotion is kept for a later switch back
-
 ### Requirement: No floating add button on Settings
 Below 768 px the shell SHALL hide the floating add button while Settings is open, because Settings has no quick-add action and the button would cover the chevrons at the end of its rows. The tab bar SHALL stay. The button SHALL return on the next view that offers quick add, and SHALL remain available while a quick-add sheet opened from another view is open.
 
@@ -794,3 +779,42 @@ The sidebar SHALL end with one quiet line under the footer row: the instance's m
 #### Scenario: Unread news
 - **WHEN** a new What's new entry has arrived that the user has not opened
 - **THEN** the line carries the accent dot and its accessible name says there is something new, and the dot goes once the user has opened What's new
+
+### Requirement: Sidebar spaces
+The sidebar SHALL have two spaces, Tasks and Notes, chosen with a two-option control under the workspace control, which is not a destination and does not count against the six primary destinations. In the Tasks space the sidebar SHALL be as "Sidebar structure" describes. In the Notes space the primary destinations and the groups SHALL be replaced by **All notes** (opening `/notes`), a **Pinned** group listing the user's pinned standalone notes of the current workspace in the favourites order, and a **Recent** group listing the five most recently changed standalone notes that are not pinned; each note row SHALL show the note icon and the title ("Untitled note" when empty) and open the note. The workspace control, search, the schedule and the footer SHALL be the same in both spaces. Choosing a space SHALL open its home (Tasks: the device's start view; Notes: `/notes`); choosing the space already shown SHALL do nothing. The space SHALL be kept on the device only, never synced; when storage is unavailable it SHALL hold for the visit. Opening the Notes page or a note, by any means, SHALL show the Notes space; opening a task, a project, a label, a view or any other task screen SHALL show the Tasks space; Settings, Help, Import, the theme editor, the Assistant page and the Trash SHALL keep the space as it was. In the icon rail the control SHALL be two icons named in their tooltips; in the phone drawer it SHALL be at the top, under the workspace control; the phone tab bar SHALL be the same in both spaces. The Notes space reads local data only, so it works offline, and its rows follow pins, renames and new notes from other devices after sync.
+
+#### Scenario: Switch to Notes
+- **WHEN** the user in Today selects Notes in the sidebar's control
+- **THEN** the Notes page opens, the sidebar shows All notes, Pinned and Recent instead of the task destinations and projects, and the workspace control and footer stay where they were
+
+#### Scenario: Back to Tasks
+- **WHEN** the user whose start view is Today selects Tasks while a note is open
+- **THEN** Today opens and the sidebar shows the task destinations and groups as before
+
+#### Scenario: A link to a task
+- **WHEN** the user in the Notes space follows a link in a note to a task
+- **THEN** the task opens and the sidebar shows the Tasks space; Back returns to the note and the Notes space
+
+#### Scenario: A note from the palette
+- **WHEN** the user in the Tasks space opens a note from the search and command palette
+- **THEN** the note opens and the sidebar shows the Notes space
+
+#### Scenario: Settings keeps the space
+- **WHEN** the user in the Notes space opens Settings
+- **THEN** the sidebar still shows the Notes space
+
+#### Scenario: Remembered on the device
+- **WHEN** the user leaves the app in the Notes space on a laptop and reloads it at `/settings`
+- **THEN** the sidebar shows the Notes space on the laptop, and the user's phone keeps its own space
+
+#### Scenario: Pinned and recent
+- **WHEN** the user has pinned "Wi-Fi" and "Packing list" and edited "Trip" a minute ago
+- **THEN** the Notes space lists "Wi-Fi" and "Packing list" under Pinned in the pinned order and "Trip" first under Recent, and a pin made on another device appears after sync
+
+#### Scenario: Phone drawer
+- **WHEN** the user on a 390 px phone opens the drawer
+- **THEN** the control is at the top of the drawer under the workspace control, and the tab bar below the page reads Inbox, Today, Upcoming and Search in both spaces
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user switches to Notes
+- **THEN** the Notes space and the Notes page show from local data with no request

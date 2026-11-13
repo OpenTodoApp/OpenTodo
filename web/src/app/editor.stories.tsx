@@ -8,6 +8,7 @@ import { EditorToolbar, useEditorChrome } from './EditorChrome'
 import type { CommandEnv } from './editorCommands'
 import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
+import { IconButton } from '../ui'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
 // a note with a quote, a table, an image whose attachment is gone and a mention;
@@ -55,8 +56,11 @@ function DesktopNote({ state }: { state: 'rest' | 'focused' | 'pressed' | 'row-f
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per story
   return (
-    <div ref={frame} className="notes-frame max-w-md space-y-1" data-formatting>
-      <FormattingToggle className="ui-reveal" pressed={pressed} onToggle={setPressed} controls="story-formatting" data-notes-formatting="" />
+    <div ref={frame} className="notes-frame max-w-md space-y-1" data-formatting data-corner style={{ '--notes-corner': '4.5rem' } as React.CSSProperties}>
+      <div className="notes-corner">
+        <IconButton icon="code" size="sm" label="Markdown" aria-pressed={false} className="ui-reveal source-toggle" data-notes-source-toggle="" />
+        <FormattingToggle className="ui-reveal" pressed={pressed} onToggle={setPressed} controls="story-formatting" data-notes-formatting="" />
+      </div>
       <EditorToolbar id="story-formatting" view={view} env={env} visible={false} always={pressed} onMenu={() => {}} />
       <div ref={host} className="notes-host" />
       {!ready && <span data-story-pending />}
@@ -107,3 +111,17 @@ export const DesktopToggleAtRest: StoryObj = { render: () => <DesktopNote state=
 export const DesktopToggleFocused: StoryObj = { render: () => <DesktopNote state="focused" /> }
 export const DesktopTogglePressed: StoryObj = { render: () => <DesktopNote state="pressed" /> }
 export const DesktopToolbarFocus: StoryObj = { render: () => <DesktopNote state="row-focus" /> }
+
+/** The Markdown source of a note (note-markdown-source D1): plain monospace text in the note's place, Markdown pressed. */
+function SourceNote({ readOnly = false }: { readOnly?: boolean }) {
+  return (
+    <div className="max-w-md bg-canvas p-4">
+      <div className="notes-frame space-y-1" data-corner data-source style={{ '--notes-corner': '2.25rem' } as React.CSSProperties}>
+        <div className="notes-corner"><IconButton icon="code" size="sm" label="Markdown" aria-pressed className="ui-reveal source-toggle" /></div>
+        <textarea className="notes-source" readOnly={readOnly} rows={9} aria-label="Markdown source of the note" defaultValue={'## Hallway\n\n- [ ] Pick the paint colour\n- [x] Book the painter\n\n> Measure twice, paint once.\n\nAsk **Bob** about Saturday.'} />
+      </div>
+    </div>
+  )
+}
+export const SourceMode: StoryObj = { render: () => <SourceNote /> }
+export const SourceModeReadOnly: StoryObj = { render: () => <SourceNote readOnly /> }

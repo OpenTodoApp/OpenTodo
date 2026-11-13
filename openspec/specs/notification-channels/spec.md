@@ -127,7 +127,7 @@ A mention's excerpt follows the same rule.
 
 Every message SHALL carry a link into the app made of the server's address and the task's id.
 
-Messages SHALL be written in the language the user's app used when the channel was last saved (English, German, French, Spanish, Italian, Portuguese or Simplified Chinese), and in English otherwise. That language is server state on the channel, outside the op log: changing it needs a connection, and the app shows the last loaded channel while offline.
+Messages SHALL be written in the language the user's app used when the channel was last saved when that language is maintained (OpenSpec `localization` "Shipped languages and their catalogs"), and in English otherwise. That language is server state on the channel, outside the op log: changing it needs a connection, and the app shows the last loaded channel while offline.
 
 #### Scenario: Titles off
 - **WHEN** a reminder for "Call the plumber" fires on a channel with titles off
@@ -140,6 +140,10 @@ Messages SHALL be written in the language the user's app used when the channel w
 #### Scenario: German
 - **WHEN** a channel was saved from the app in German and a reminder fires with titles off
 - **THEN** the message reads "Eine Erinnerung ist fällig"
+
+#### Scenario: Dutch
+- **WHEN** a channel was saved from the app in Dutch and a reminder fires with titles off
+- **THEN** the message is the Dutch text for "A reminder is due", never the English one
 
 #### Scenario: Simplified Chinese
 - **WHEN** a channel was saved from the app in Simplified Chinese and a reminder fires with titles off

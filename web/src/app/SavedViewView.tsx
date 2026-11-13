@@ -46,10 +46,14 @@ import { BOARD_COLOR_BY_KEY } from '../lib/colorBy'
 import { useColorBy } from './calendar/colorByControls'
 import { useFoldedGroups, ViewResults } from './views/ViewResults'
 import type { ViewDisplay } from './views/DisplayPanel'
+import type { Task } from '../lib/types'
 import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { UrgencyChip, UrgencyContext } from './useUrgency'
+import { projectHue } from './projectHue'
+import { useCollapsedRows } from './task-list/collapsedRows'
+import { nestGroup, type NestedRow } from '../lib/viewNest'
 
 function parseError(src: string): string | null {
   if (!src.trim()) return t('The query must not be empty')
@@ -72,6 +76,7 @@ export function displayPatch(patch: Partial<ViewDisplay>): ViewPatch {
   if (patch.hidden !== undefined) out.hidden_props = [...patch.hidden]
   if (patch.rowLayout !== undefined) out.row_layout = patch.rowLayout
   if (patch.cardNotes !== undefined) out.card_notes = patch.cardNotes
+  if (patch.subtasks !== undefined) out.subtasks = patch.subtasks ? 'nested' : ''
   return out
 }
 
@@ -84,6 +89,26 @@ export function SavedViewRoute({ id }: { id: string }) {
   return view.kind === 'dashboard' ? <DashboardView key={id} dashboard={view} data={data} /> : <SavedViewView key={id} view={view} data={data} />
 }
 
+/**
+ * The view's groups, each group's matches as a tree with Nest subtasks (GitHub issue
+ * 1108), and each nested row's depth and fold by row key; folded rows are per device.
+ */
+function useNestedResults(result: ReturnType<typeof runView>, nest: boolean) {
+  const { collapsed, toggleCollapsed } = useCollapsedRows()
+  const out = useMemo(() => {
+    const plain = result.ok ? result.groups : []
+    const rows = new Map<string, NestedRow>()
+    if (!nest) return { resultGroups: plain, nested: rows }
+    const groups = plain.map((g) => {
+      const n = nestGroup(g.tasks, (id) => collapsed.has(id))
+      for (const [id, r] of n.rows) rows.set(`${g.key}:${id}`, r)
+      return { ...g, tasks: n.tasks }
+    })
+    return { resultGroups: groups, nested: rows }
+  }, [result, nest, collapsed])
+  return { ...out, toggleCollapsed }
+}
+
 export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const { projects, labels, tasks, ctx } = data
   const opts = viewOptions(view)
@@ -91,7 +116,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const account = useAccountRowLayout()
   // Colour by on boards (calendar-clarity): the device's one choice for every board.
   const boardColor = useColorBy(BOARD_COLOR_BY_KEY)
-  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes }
+  const display: ViewDisplay = { layout: shown.layout, groupBy: opts.groupBy, sortBy: opts.sortBy, sortDir: opts.sortDir, showCompleted: shown.showCompleted, hidden: shown.hidden, rowLayout: rowLayoutOf(view.row_layout, account), cardNotes: shown.cardNotes,
+    ...(shown.layout === 'list' ? { subtasks: shown.nested } : {}) }
   const result = useMemo(() => runView(view, ctx), [view, ctx])
   // The view's rows are on screen (performance-10k D4): once per view opened.
   useEffect(() => { perfMark(LIST_READY, { view: 'view' }) }, [view.id])
@@ -150,7 +176,8 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   }
 
   // ---- results and keyboard navigation (a task can appear under several labels) ----
-  const resultGroups = useMemo(() => (result.ok ? result.groups : []), [result])
+  const nest = display.subtasks === true
+  const { resultGroups, nested, toggleCollapsed } = useNestedResults(result, nest)
   // Groups collapsed or folded on this device (board-polish D1) keep their tasks off screen and out of the keyboard's rows.
   const { groups, shown: shownGroups } = useFoldedGroups(`view:${view.id}`, resultGroups)
   const rows = useMemo(() => shownGroups.flatMap((g) => g.tasks.map((item) => ({ key: `${g.key}:${item.id}`, task: item }))), [shownGroups])
@@ -167,13 +194,16 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
   const bulk = useBulkList(bulkTasks)
   // The view's own manual order (view-manual-order): drag within a group and Alt+arrows, with Undo.
   const host = useMemo<OrderHost>(() => ({ entity: 'view', id: view.id }), [view.id])
+  // With Nest subtasks, the view's order moves top-level rows; a subtask keeps its place under its parent.
+  const topLevel = (key: string, tasks: Task[]) => (nest ? tasks.filter((tk) => !nested.get(`${key}:${tk.id}`)?.depth) : tasks)
   const moveBy = (r: KeyRow, step: ViewStep) => {
+    if (nested.get(r.key)?.depth) return Promise.resolve(false)
     const group = groups.find((g) => g.key === groupOfKey(r.key))
-    return stepInView(host, bulkTasks, group?.tasks ?? [], r.task.id, step)
+    return stepInView(host, bulkTasks, group ? topLevel(group.key, group.tasks) : [], r.task.id, step)
   }
   // The row menu's Reorder items (accessibility-aa D3): the same step as Alt+arrows, from a pointer.
-  const latestRows = useRef({ rows, groups, selected })
-  latestRows.current = { rows, groups, selected }
+  const latestRows = useRef({ rows, groups, selected, topLevel })
+  latestRows.current = { rows, groups, selected, topLevel }
   const listReorder = useMemo<ListReorder>(() => {
     const rowOf = (id: string) => {
       const { rows: rs, selected: sel } = latestRows.current
@@ -184,11 +214,12 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
       move: (id, step) => {
         const r = rowOf(id)
         const group = r && groupOf(r)
-        if (r) act(stepInView(host, latestRows.current.rows.map((x) => x.task), group?.tasks ?? [], id, step))
+        if (r) act(stepInView(host, latestRows.current.rows.map((x) => x.task), group ? latestRows.current.topLevel(group.key, group.tasks) : [], id, step))
       },
       edges: async (id) => {
         const r = rowOf(id)
-        const tasks = (r && groupOf(r)?.tasks) ?? []
+        const g = r && groupOf(r)
+        const tasks = g ? latestRows.current.topLevel(g.key, g.tasks) : []
         const i = tasks.findIndex((tk) => tk.id === id)
         return i < 0 ? null : { first: i === 0, last: i === tasks.length - 1 }
       },
@@ -271,7 +302,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
-            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
+            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} hueOf={opts.groupBy === 'project' ? (key) => projectHue(projectMap.get(key)) : undefined} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
               <TaskRow
                 key={key}
                 shape={shape}
@@ -290,7 +321,11 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 blockedBy={blocked.get(tk.id)}
                 waitsFor={flow.waitsFor(tk.id)}
                 habit={habits.get(tk.id)}
-                breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
+                breadcrumb={tk.parent_id && !nested.get(key)?.depth ? breadcrumbOf(tk, taskMap) : null}
+                depth={nested.get(key)?.depth ?? 0}
+                hasChildren={nested.get(key)?.hasChildren}
+                collapsed={nested.get(key)?.collapsed}
+                onToggleCollapse={nested.get(key)?.hasChildren ? () => toggleCollapsed(tk.id) : undefined}
                 onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
                 onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }}
                 onOpenPage={() => openTaskPage(tk.id)}

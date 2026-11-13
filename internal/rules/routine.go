@@ -51,6 +51,9 @@ const (
 // Manual run refusals.
 var (
 	ErrTaskRequired = errors.New("this routine reads the trigger's task: give task_id")
+	// ErrNoteRequired: a routine whose trigger outputs a note run without
+	// note_id, or with a task_id (notes-in-routines).
+	ErrNoteRequired = errors.New("this routine runs on a note: give note_id")
 	ErrRateLimited  = errors.New("too many runs in the last minute")
 	ErrPausedRule   = errors.New("the server paused this routine: turn it on again first")
 	ErrOff          = errors.New("automations are turned off on this server")
@@ -78,7 +81,7 @@ func (r *rule) isRoutine() bool { return len(r.Steps) > 0 }
 
 // triggerType is the type of the reference "trigger" for this rule.
 func (r *rule) triggerType() ruleval.Type {
-	return ruleval.TriggerOutput(r.Trigger.Kind, r.HasCondition)
+	return ruleval.TriggerOutput(r.Trigger, r.HasCondition)
 }
 
 // readsTrigger reports whether any step refers to the trigger's output.
@@ -131,6 +134,9 @@ type RunRequest struct {
 	// RunID is the client's UUID: a repeated request answers the first run.
 	RunID  string
 	TaskID string
+	// NoteID is the standalone note of a routine whose trigger outputs a
+	// note (notes-in-routines); at most one of TaskID and NoteID.
+	NoteID string
 	Test   bool
 	// Source is manual or mcp.
 	Source string
@@ -166,7 +172,10 @@ type runState struct {
 	// tasks and projects are the rows with the planned changes laid over.
 	tasks    map[string]opsync.Entity
 	projects map[string]opsync.Entity
-	overlay  agenttools.ChangeSet
+	// notes are the standalone notes with the planned changes laid over,
+	// read when a step first needs them (notes-in-routines).
+	notes   map[string]opsync.Entity
+	overlay agenttools.ChangeSet
 	// completing marks planned completions (the write rolls a series forward).
 	completing map[string]bool
 	sides      []sideEffect
@@ -185,6 +194,8 @@ type runState struct {
 	aiTexts  []string
 	// blocks are what the Ask AI steps showed (assistant-routine-blocks D1).
 	blocks []RunBlock
+	// noteLinks is the link to the note each Get note text step read last, by step id (note-checklist-tasks D4).
+	noteLinks map[string]string
 }
 
 // sideEffect is a notification, a delivery or an email queued after commit.
@@ -329,9 +340,9 @@ func appendIDs(list []string, more ...string) []string {
 
 func idsOf(v ruleval.Value) []string {
 	switch v.Type {
-	case ruleval.TTasks:
+	case ruleval.TTasks, ruleval.TNotes:
 		return v.IDs
-	case ruleval.TTask, ruleval.TProject:
+	case ruleval.TTask, ruleval.TProject, ruleval.TNote:
 		if v.ID != "" {
 			return []string{v.ID}
 		}
@@ -416,7 +427,9 @@ func inputDef(k *ruleval.StepKind, name string) *ruleval.Input {
 	return &ruleval.Input{}
 }
 
-func isList(t ruleval.Type) bool { return t == ruleval.TTasks || t == ruleval.TLines }
+func isList(t ruleval.Type) bool {
+	return t == ruleval.TTasks || t == ruleval.TLines || t == ruleval.TNotes
+}
 
 func acceptsType(def *ruleval.Input, t ruleval.Type) bool {
 	for _, a := range def.Accepts {
@@ -439,6 +452,10 @@ func elements(v ruleval.Value) []ruleval.Value {
 		for _, l := range v.Lines {
 			out = append(out, ruleval.Value{Type: ruleval.TText, Text: l})
 		}
+	case ruleval.TNotes:
+		for _, id := range v.IDs {
+			out = append(out, ruleval.Value{Type: ruleval.TNote, ID: id})
+		}
 	}
 	return out
 }
@@ -456,12 +473,18 @@ func collect(single ruleval.Type, outs []ruleval.Value) ruleval.Value {
 			v.Type, v.Lines = ruleval.TLines, append(v.Lines, o.Text)
 		case ruleval.TLines:
 			v.Type, v.Lines = ruleval.TLines, append(v.Lines, o.Lines...)
+		case ruleval.TNote:
+			v.Type, v.IDs = ruleval.TNotes, append(v.IDs, o.ID)
+		case ruleval.TNotes:
+			v.Type, v.IDs = ruleval.TNotes, append(v.IDs, o.IDs...)
 		}
 	}
 	if v.Type == "" {
 		switch single {
 		case ruleval.TTask, ruleval.TTasks:
 			v.Type, v.IDs = ruleval.TTasks, []string{}
+		case ruleval.TNote, ruleval.TNotes:
+			v.Type, v.IDs = ruleval.TNotes, []string{}
 		case ruleval.TText, ruleval.TLines:
 			v.Type, v.Lines = ruleval.TLines, []string{}
 		default:
@@ -547,6 +570,14 @@ func (st *runState) preview(v ruleval.Value) any {
 		return out
 	case ruleval.TProject:
 		return map[string]string{"id": v.ID, "name": str(st.projects[v.ID], "name")}
+	case ruleval.TNote:
+		return map[string]string{"id": v.ID, "title": str(st.note(v.ID), "title")}
+	case ruleval.TNotes:
+		out := []map[string]string{}
+		for _, id := range v.IDs {
+			out = append(out, map[string]string{"id": id, "title": str(st.note(id), "title")})
+		}
+		return out
 	}
 	return nil
 }
@@ -596,6 +627,14 @@ func (st *runState) render(v ruleval.Value) string {
 		return strings.Join(titles, "\n")
 	case ruleval.TProject:
 		return str(st.projects[v.ID], "name")
+	case ruleval.TNote:
+		return str(st.note(v.ID), "title")
+	case ruleval.TNotes:
+		titles := make([]string, 0, len(v.IDs))
+		for _, id := range v.IDs {
+			titles = append(titles, str(st.note(id), "title"))
+		}
+		return strings.Join(titles, "\n")
 	}
 	return ""
 }

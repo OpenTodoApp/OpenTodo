@@ -29,42 +29,12 @@ func (s *Server) FeedTasksIn(r *http.Request, uid string, scope syncscope.Scope)
 	}
 	var out []calfeed.FeedTask
 	for _, t := range v.tasks {
-		if !isNullish(t["completed_at"]) {
+		if !isNullish(t["completed_at"]) || v.calendarOf(t) == "" {
 			continue
 		}
-		if v.calendarOf(t) == "" {
-			continue
+		if ft, ok := v.feedTask(t); ok {
+			out = append(out, ft)
 		}
-		var due struct {
-			Date string  `json:"date"`
-			Time *string `json:"time"`
-			TZ   *string `json:"tz"`
-		}
-		if json.Unmarshal(t["due"], &due) != nil || due.Date == "" {
-			continue
-		}
-		id := idOf(t["id"])
-		ft := calfeed.FeedTask{ID: id, Title: idOf(t["title"]), Description: idOf(t["description"]), Date: due.Date, Time: due.Time, TZ: due.TZ, Modified: v.modified[id]}
-		_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
-		_ = json.Unmarshal(t["priority"], &ft.Priority)
-		ft.Start = spanStart(t, due.Date)
-		var rule string
-		if json.Unmarshal(t["recurrence"], &rule) == nil && rule != "" {
-			if parsed, err := recurrence.Parse(rule); err == nil {
-				ft.RRULE = parsed.RRULE()
-				if ft.Start != "" {
-					ft.RRULE, ft.RDates = spanRecurrence(parsed, ft.Start, due.Date, v.today)
-				}
-			}
-		}
-		var labels []string
-		_ = json.Unmarshal(t["labels"], &labels)
-		for _, l := range labels {
-			if name, ok := v.labels[l]; ok && name != "" {
-				ft.Labels = append(ft.Labels, name)
-			}
-		}
-		out = append(out, ft)
 	}
 	return out, nil
 }
@@ -97,4 +67,61 @@ func spanRecurrence(rule recurrence.Rule, start, dueDate, today string) (string,
 		firsts[i] = recurrence.AddDays(d, -days)
 	}
 	return "", firsts
+}
+
+// feedTask is a dated task as the feed and an event calendar write it; false
+// for a task without a due date.
+func (v *davView) feedTask(t opsync.Entity) (calfeed.FeedTask, bool) {
+	var due struct {
+		Date string  `json:"date"`
+		Time *string `json:"time"`
+		TZ   *string `json:"tz"`
+	}
+	if json.Unmarshal(t["due"], &due) != nil || due.Date == "" {
+		return calfeed.FeedTask{}, false
+	}
+	id := idOf(t["id"])
+	ft := calfeed.FeedTask{ID: id, Title: idOf(t["title"]), Description: idOf(t["description"]), Date: due.Date, Time: due.Time, TZ: due.TZ, Modified: v.modified[id]}
+	_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
+	_ = json.Unmarshal(t["priority"], &ft.Priority)
+	ft.Start = spanStart(t, due.Date)
+	ft.Places = v.placesOf(t)
+	var rule string
+	if json.Unmarshal(t["recurrence"], &rule) == nil && rule != "" {
+		if parsed, err := recurrence.Parse(rule); err == nil {
+			ft.RRULE = parsed.RRULE()
+			if ft.Start != "" {
+				ft.RRULE, ft.RDates = spanRecurrence(parsed, ft.Start, due.Date, v.today)
+			}
+		}
+	}
+	var labels []string
+	_ = json.Unmarshal(t["labels"], &labels)
+	for _, l := range labels {
+		if name, ok := v.labels[l]; ok && name != "" {
+			ft.Labels = append(ft.Labels, name)
+		}
+	}
+	return ft, true
+}
+
+// placesOf is a task's calendar id and then its project's ancestors, nearest
+// first (calsync-project-calendars).
+func (v *davView) placesOf(t opsync.Entity) []string {
+	cal := v.calendarOf(t)
+	if cal == "" {
+		return nil
+	}
+	out := []string{cal}
+	seen := map[string]bool{cal: true}
+	for p := v.projects[cal]; p != nil; {
+		parent := idOf(p["parent_id"])
+		if parent == "" || seen[parent] {
+			break
+		}
+		seen[parent] = true
+		out = append(out, parent)
+		p = v.projects[parent]
+	}
+	return out
 }

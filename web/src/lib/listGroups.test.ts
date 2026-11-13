@@ -597,7 +597,7 @@ describe('built-in view options (builtin-view-options)', () => {
     const late = task({ title: 'Late', due: { date: '2026-10-13' } })
     const a = task({ title: 'A', due: { date: TODAY }, priority: 2, labels: ['l2', 'l1'] })
     const b = task({ title: 'B', due: { date: TODAY }, evening: true })
-    expect(shape(listGroups(today([a, b], { display: d('today', { groupBy: 'priority' }) })))).toEqual([['day:p2', 'Priority 2', ['A']], ['day:p4', 'Priority 4', ['B']]])
+    expect(shape(listGroups(today([a, b], { display: d('today', { groupBy: 'priority' }) })))).toEqual([['day:p2', 'Priority 2', ['A']], ['day:p4', 'No priority', ['B']]])
     const byLabel = listGroups(today([a, b], { labels: [l1, l2], display: d('today', { groupBy: 'label' }) }))
     expect(shape(byLabel)).toEqual([['day:l1', 'Calls', ['A']], ['day:none', 'No label', ['B']]])
     expect(byLabel[0].named).toBe(true)
@@ -662,7 +662,7 @@ describe('built-in view options (builtin-view-options)', () => {
     setPriorityNames(['Must', 'Should', '', ''])
     const tasks = [task({ title: 'D', priority: 4 }), task({ title: 'B', priority: 2 }), task({ title: 'C', priority: 3 }), task({ title: 'A', priority: 1 })]
     const g = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { groupBy: 'priority' }) }))
-    expect(g.map((x) => [x.key, x.heading])).toEqual([['p1', 'Must'], ['p2', 'Should'], ['p3', 'Priority 3'], ['p4', 'Priority 4']])
+    expect(g.map((x) => [x.key, x.heading])).toEqual([['p1', 'Must'], ['p2', 'Should'], ['p3', 'Priority 3'], ['p4', 'No priority']])
     expect(tasks.map((x) => x.priority)).toEqual([4, 2, 3, 1])
   })
 
@@ -674,7 +674,7 @@ describe('built-in view options (builtin-view-options)', () => {
     const g = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { groupBy: 'priority' }) }))
     expect(g.map((x) => [x.key, x.heading, x.rows.map((r) => [r.task.title, r.depth])])).toEqual([
       ['p2', 'Priority 2', [['Parent p2', 0], ['Sub p4', 1]]],
-      ['p4', 'Priority 4', [['Other p4', 0]]],
+      ['p4', 'No priority', [['Other p4', 0]]],
     ])
     // Ordered by title, descending: top-level tasks only.
     const byTitle = listGroups(input({ view: 'inbox', tasks, tree: buildTaskTree(tasks), display: d('inbox', { sortBy: 'title', sortDir: 'desc' }) }))

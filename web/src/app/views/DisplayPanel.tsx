@@ -29,6 +29,8 @@ export interface ViewDisplay {
   rowLayout?: RowLayout
   /** The Board layout's notes preview (board-polish D4); off by default. */
   cardNotes?: boolean
+  /** Nest subtasks, offered only while the layout is List (GitHub issue 1108). */
+  subtasks?: boolean
 }
 
 /** What the panel shows: a part without a value (layout, completed tasks, row properties) is left out. */
@@ -43,7 +45,7 @@ export interface PanelValue {
   rowLayout?: RowLayout
   /** Notes on cards, offered only while the layout is Board (board-polish D4). */
   cardNotes?: boolean
-  /** Nest subtasks on Today and Upcoming (builtin-view-options D5). */
+  /** Nest subtasks on Today, Upcoming and a saved view's List layout (builtin-view-options D5). */
   subtasks?: boolean
   /** Upcoming's Later days: In full, else Summarised (sidebar-brand-and-row-grid D8). */
   laterInFull?: boolean

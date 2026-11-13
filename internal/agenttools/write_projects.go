@@ -77,7 +77,7 @@ func (r *Registry) planCreateProject(ctx context.Context, c Caller, a args, over
 }
 
 func (r *Registry) planCreateLabel(ctx context.Context, c Caller, a args, overlay ChangeSet) (Plan, error) {
-	if err := a.only("", "name", "color", "client_request_id", "id"); err != nil {
+	if err := a.only("", "name", "color", "workspace_id", "client_request_id", "id"); err != nil {
 		return Plan{}, err
 	}
 	name, _, err := a.contentText(c, "name", true, 100)
@@ -105,14 +105,28 @@ func (r *Registry) planCreateLabel(ctx context.Context, c Caller, a args, overla
 	if id == "" {
 		id = entityID(seed, 0)
 	}
+	// The label's workspace (issue 1222): workspace_id by id or name, the
+	// default workspace without it. A label of the same name counts only in
+	// that workspace.
+	wsValue, hasWS, err := snap.workspaceValue(a)
+	if err != nil {
+		return Plan{}, err
+	}
+	ws := snap.defaultWorkspace()
+	if hasWS {
+		ws = snap.valueWorkspace(wsValue)
+	}
 	for _, l := range snap.labelList {
 		lid := str(l, "id")
-		if lid == id || strings.EqualFold(plainOrEmpty(l, "name"), name) {
+		if lid == id || (strings.EqualFold(plainOrEmpty(l, "name"), name) && snap.labelWorkspace(l) == ws) {
 			return Plan{Result: result("create_label", []map[string]any{{"id": lid, "status": "exists"}}, 0)}, nil
 		}
 	}
 	now := stamp()
 	patch := map[string]json.RawMessage{"name": raw(name), "color": color, "position": raw(now), "created_at": raw(now), "deleted_at": nullRaw}
+	if hasWS {
+		patch["workspace_id"] = wsValue
+	}
 	if err := checkPatch("", "label", id, patch); err != nil {
 		return Plan{}, err
 	}

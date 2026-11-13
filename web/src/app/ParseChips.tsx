@@ -10,7 +10,7 @@ import type { Due } from '../lib/types'
 import { Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
 import { energyChipLabel, isEnergy } from '../lib/energy'
-import { priorityShort } from '../lib/priority'
+import { isNoPriority, priorityName, priorityShort } from '../lib/priority'
 
 // Chip colours come from palette hues (design-system tokens), so both themes follow.
 export const CHIP_HUE: Record<Chip['kind'], HueName> = {
@@ -83,7 +83,8 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
     case 'label':
       return `@${findLabel(String(chip.value), labels)?.name ?? String(chip.value)}`
     case 'priority':
-      return priorityShort(chip.value as number)
+      // A `p4` chip reads "No priority", not "None" (priority-none).
+      return isNoPriority(chip.value as number) ? priorityName(4) : priorityShort(chip.value as number)
     case 'estimate':
       return formatMinutes(chip.value as number)
     case 'energy':

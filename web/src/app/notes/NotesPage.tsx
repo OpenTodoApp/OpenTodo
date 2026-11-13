@@ -25,12 +25,13 @@ import { useLiveTasks, NO_TASKS } from '../../lib/liveTasks'
 import { homeGroups, NO_NOTE_FILTERS, NOTES_PAGE, NoteIndex, noteEntries, sameEntries, type NoteEntry, type NoteFilters } from '../../lib/noteList'
 import { filterByTokens, parseStoredTokens, replaceTyping, tokensFromFilters, typingOf, type NoteToken, type TokenWorld } from '../../lib/noteQuery'
 import { createNote } from '../../lib/noteOps'
+import { NOTE_SORTS, pickNoteSort, readNoteSort, sortNotes, writeNoteSort, type NoteSort, type NoteSortBy } from '../../lib/noteSort'
 import { useNoteRows } from '../../lib/noteRows'
 import type { SnippetSegment } from '../../lib/noteSearch'
 import { readJSON, readString, writeJSON, writeString } from '../../lib/deviceStorage'
 import { canEditTasks, roleOf } from '../../lib/sharing'
 import { keysOf } from '../../lib/shortcuts'
-import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuItem, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, EmptyState, Icon, IconButton, ListGroupHeader, MenuGroup, MenuItem, MenuSeparator, PageBody, PageHeader, Tooltip, useMediaQuery } from '../../ui'
 import type { ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -43,6 +44,7 @@ import { NoteSearchField } from './NoteSearchField'
 import { focusBodyOnOpen, NotePage, NotePanel } from './NoteEditor'
 import { createNoteWithUndo, deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
+import { useNoteBulk } from './NoteBulkActions'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
@@ -171,6 +173,37 @@ function useNotesMarks(listed: boolean, query: string, rows: unknown) {
 
 type NotesMode = 'list' | 'graph'
 
+/** The heading over the sorted notes: the order's name (notes-sort D3). */
+export function sortHeading(sort: NoteSort): string {
+  if (sort.by === 'created') return sort.reversed ? t('Oldest') : t('Newest')
+  if (sort.by === 'title') return sort.reversed ? t('Z–A') : t('A–Z')
+  return sort.reversed ? t('Oldest changed') : t('Recent')
+}
+
+/** The list's order on this device (notes-sort D3), and picking one; storage refused, it holds for the visit. */
+function useNoteSort(): [NoteSort, (by: NoteSortBy) => void] {
+  const [sort, setSort] = useState<NoteSort>(readNoteSort)
+  const pick = (by: NoteSortBy) => {
+    const next = pickNoteSort(sort, by)
+    setSort(next)
+    writeNoteSort(next)
+  }
+  return [sort, pick]
+}
+
+/** Sort in the header's menu (notes-sort D1): three orders, the checked one with its direction's arrow. */
+export function NotesSortItems({ sort, onSort }: { sort: NoteSort; onSort: (by: NoteSortBy) => void }) {
+  const label: Record<NoteSortBy, string> = { changed: t('Last changed'), created: t('Created'), title: t('Title') }
+  return (
+    <MenuGroup label={t('Sort')}>
+      {NOTE_SORTS.map((by) => (
+        <MenuItem key={by} label={label[by]} radio checked={sort.by === by} onSelect={() => onSort(by)} data-notes-sort={by}
+          marker={sort.by === by ? <span className="text-muted" data-notes-sort-arrow={sort.reversed ? 'up' : 'down'}><Icon name={sort.reversed ? 'arrow-up' : 'arrow-down'} /></span> : undefined} />
+      ))}
+    </MenuGroup>
+  )
+}
+
 /** List | Graph in the header (notes-graph-page D1): two buttons on a computer, the other mode's icon on a phone. */
 export function NotesModeSwitch({ mode, onChange, compact }: { mode: NotesMode; onChange: (m: NotesMode) => void; compact: boolean }) {
   const label = { list: t('List'), graph: t('Graph') }
@@ -228,6 +261,7 @@ export function NotesPage({ id }: { id?: string }) {
   const [tokens, setTokens] = useState<NoteToken[]>(readNoteTokens)
   const [text, setText] = useState('')
   const [limit, setLimit] = useState(NOTES_PAGE)
+  const [sort, pickSort] = useNoteSort()
   // The list cursor while the search field holds words: an index over the rows, New note first; null is the default (D3).
   const [cursor, setCursor] = useState<number | null>(null)
   const search = useRef<HTMLInputElement>(null)
@@ -252,6 +286,8 @@ export function NotesPage({ id }: { id?: string }) {
   }), [entries, tokens, projects, pinnedIds, linked, links])
   const pending = filtered === null
   const kept = useMemo(() => filtered ?? [], [filtered])
+  // The list without words in the chosen order; search results keep their ranking (notes-sort D3).
+  const sorted = useMemo(() => (sort.by === 'changed' && !sort.reversed ? kept : sortNotes(kept, sort, currentLanguage())), [kept, sort])
   // The token being typed is not a word yet: the search waits for it (D6).
   const typing = typingOf(text)
   const query = typing?.kind === 'value' ? replaceTyping(text, typing, '') : text
@@ -262,19 +298,23 @@ export function NotesPage({ id }: { id?: string }) {
   // Dropped when the account locks (D4).
   useEffect(() => onEncryptionChange(() => { const s = encryptionSnapshot(); if (s.enabled && !s.unlocked) index.current?.clear() }), [])
   const rows = useMemo<Row[]>(() => {
-    if (!query.trim()) return kept.map((entry) => ({ entry }))
+    if (!query.trim()) return sorted.map((entry) => ({ entry }))
     index.current ??= new NoteIndex(currentLanguage())
     // Snippets for the rows shown (list-rendering-at-scale: one per hit took most of a keystroke).
     return index.current.search(kept, query, undefined, limit).map((r) => ({ entry: r.note, snippet: r.snippet }))
-  }, [kept, query, limit])
+  }, [kept, sorted, query, limit])
   const typed = query.trim()
   // With no words and no chip: Pinned, then Recent (D4); without pins, one list as before.
-  const groups = useMemo(() => (!typed && tokens.length === 0 ? homeGroups(kept, pinnedIds) : null), [typed, tokens.length, kept, pinnedIds])
+  const groups = useMemo(() => (!typed && tokens.length === 0 ? homeGroups(sorted, pinnedIds) : null), [typed, tokens.length, sorted, pinnedIds])
   const pinnedRows: Row[] = useMemo(() => (groups ? groups.pinned.map((entry) => ({ entry })) : []), [groups])
   const grouped = pinnedRows.length > 0
+  // The heading names the order: over Recent beside Pinned, or alone once the order is not the default.
+  const sortNamed = !typed && (grouped || sort.by !== 'changed' || sort.reversed)
   const recent: Row[] = useMemo(() => (groups && grouped ? groups.recent.map((entry) => ({ entry })) : rows), [groups, grouped, rows])
   const recentShown = recent.slice(0, limit)
   const shown = [...pinnedRows, ...recentShown]
+  // Ticking standalone notes the user may write (notes-bulk-actions D1, D2); none in Graph mode.
+  const bulk = useNoteBulk({ rows: shown.map((r) => r.entry), enabled: !graphMode, projects, labels, memberships, favourites: prefs?.favourites })
   // The cursor starts on the first match, else on New note; the arrows in the field move it.
   const at = typed ? Math.min(cursor ?? (shown.length > 0 ? 1 : 0), shown.length) : -1
   useNotesMarks(entries.length > 0, query, rows)
@@ -291,6 +331,7 @@ export function NotesPage({ id }: { id?: string }) {
     writeJSON(NOTE_TOKENS_KEY, next) // storage refused: the chips hold for this visit
   }
   const changeText = (next: string) => { setText(next); setLimit(NOTES_PAGE); setCursor(null) }
+  const changeSort = (by: NoteSortBy) => { pickSort(by); setLimit(NOTES_PAGE) }
 
   // A new note takes the project of the first `in:` chip the user may write in, and the labels of the label chips (D6).
   const placeOfNew = () => {
@@ -336,19 +377,15 @@ export function NotesPage({ id }: { id?: string }) {
   const rowsOf = () => [...(list.current?.querySelectorAll<HTMLButtonElement>('[data-note-open]') ?? [])]
   const focusRow = (i: number) => rowsOf()[i]?.focus()
   const onListKey = (e: KeyboardEvent<HTMLUListElement>) => {
-    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
     const all = rowsOf()
     const at = all.indexOf(document.activeElement as HTMLButtonElement)
     if (at < 0) return
+    // The selection's keys first (notes-bulk-actions D3).
+    if (bulk.onListKey(e, all, at)) return
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
     if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); all[at].click(); return }
-    if (e.key === 'p') {
-      const key = all[at].closest('[data-note-key]')?.getAttribute('data-note-key') ?? ''
-      if (!key.startsWith('note:')) return
-      e.preventDefault()
-      e.stopPropagation()
-      togglePin(key.slice(5))
-      return
-    }
+    const rowKey = all[at].closest('[data-note-key]')?.getAttribute('data-note-key') ?? ''
+    if (e.key === 'p' && rowKey.startsWith('note:')) { e.preventDefault(); e.stopPropagation(); togglePin(rowKey.slice(5)); return }
     const step = e.key === 'j' || e.key === 'ArrowDown' ? 1 : e.key === 'k' || e.key === 'ArrowUp' ? -1 : 0
     if (!step) return
     e.preventDefault()
@@ -404,19 +441,19 @@ export function NotesPage({ id }: { id?: string }) {
         labels={entry.labels.map((l) => labelById.get(l)).filter((l) => !!l && !l.deleted_at) as NonNullable<ReturnType<typeof labelById.get>>[]}
         updated={entry.updated ? relativeLabel(entry.updated, now, (ms) => dt.formatInstant(ms, 'date')) : ''}
         updatedTitle={entry.updated ? dt.formatInstant(entry.updated, 'datetime') : undefined}
-        onOpen={() => openNote(entry)}
+        onOpen={() => openNote(entry)} tick={bulk.tickOf(entry.key)}
         menu={standalone ? <NoteMenu pinned={pinned} onPin={() => togglePin(entry.id)} pinKey={keysOf('notes.pin')}
           onTurnIntoTask={editable ? () => void turnNoteIntoTask(entry.id) : undefined} onDelete={editable ? () => void deleteNote(entry.id) : undefined} /> : undefined} />
     )
   }
 
-  // The graph's display choices (D2) in the header's menu, only in Graph mode.
-  const overflow = graphMode ? (
+  // The header's menu: Sort in List mode, the graph's display choices (D2) in Graph mode, which ignores the order.
+  const overflow = !graphMode ? <>{bulk.selectItem}<MenuSeparator /><NotesSortItems sort={sort} onSort={changeSort} /></> : (
     <>
       <MenuItem label={t('Notes without links')} checked={show.orphans} onSelect={() => graphShow.set({ ...show, orphans: !show.orphans })} data-notes-graph-show="orphans" />
       <MenuItem label={t('Tasks and projects without notes')} checked={show.secondary} onSelect={() => graphShow.set({ ...show, secondary: !show.secondary })} data-notes-graph-show="secondary" />
     </>
-  ) : undefined
+  )
 
   return (
     <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'flex h-full flex-col' : undefined} data-notes-mode={mode}>
@@ -434,7 +471,7 @@ export function NotesPage({ id }: { id?: string }) {
             {typed && <NewNoteRow text={typed} cursor={at === 0} onCreate={() => act(createFromSearch())} />}
             {grouped && <GroupHeading title={t('Pinned')} count={pinnedRows.length} testId="pinned" />}
             {pinnedRows.map((r) => renderRow(r, false))}
-            {grouped && <GroupHeading title={t('Recent')} count={recent.length} testId="recent" />}
+            {sortNamed && <GroupHeading title={sortHeading(sort)} count={recent.length} testId="recent" />}
             {recentShown.map((r, i) => renderRow(r, typed ? i + 1 === at : false))}
           </ul>
           {/* While typing, New note "<text>" is the answer to an empty search: no sentence under it. */}
@@ -449,6 +486,7 @@ export function NotesPage({ id }: { id?: string }) {
           )}
         </>
       )}
+      {!graphMode && bulk.bar}
     </PageBody>
   )
 }

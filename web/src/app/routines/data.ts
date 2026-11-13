@@ -11,7 +11,10 @@ import { Partition, type WorkspaceState } from '../../lib/workspaces'
 import { matchesCondition, type MatchTask } from '../../lib/rules/match'
 import type { PreviewData } from '../../lib/rules/preview'
 import { inFindScope, projectScope } from '../../lib/rules/stepData'
-import type { Label, Project, RoutineStep, RuleCondition, Section, Task, View, Webhook } from '../../lib/types'
+import type { Label, Note, Project, RoutineStep, RuleCondition, Section, Task, View, Webhook } from '../../lib/types'
+import { useNoteRows } from '../../lib/noteRows'
+import { matchNote, parseQuery } from '../../lib/noteSearch'
+import { addDays } from '../../lib/rules/match'
 
 /** A task as the matcher reads it. */
 export function matchTaskOf(task: Task): MatchTask {
@@ -38,6 +41,8 @@ export interface RoutineNames {
   views: readonly View[]
   webhooks: readonly Webhook[] | null
   tasks: readonly Task[]
+  /** The current workspace's standalone notes, for "A specific note…" (notes-in-routines). */
+  notes?: readonly Note[]
   /** A task's title from local data ('' when this device has no such task). */
   title: (id: string) => string
   projectName: (id: string) => string
@@ -98,13 +103,15 @@ export function useRoutineNames(workspace?: string | null): RoutineNames {
   const sections = useLiveSections()
   const views = useViewRows()
   const tasks = useAllTaskRows()
+  const notes = useNoteRows()
   const [webhooks, setWebhooks] = useState<Webhook[] | null>(null)
   useEffect(() => { api.listWebhooks().then((r) => setWebhooks(r.webhooks), () => setWebhooks(null)) }, [])
   return useMemo(() => {
     const byTask = new Map(tasks.filter((x) => !x.deleted_at).map((x) => [x.id, x.title]))
     const byProject = new Map(projects.map((p) => [p.id, p.name]))
-    return { labels, projects, pickLabels, pickProjects, sections, views: views.filter((v) => !v.deleted_at), webhooks, tasks, title: (id) => byTask.get(id) ?? '', projectName: (id) => byProject.get(id) ?? '' }
-  }, [labels, projects, pickLabels, pickProjects, sections, views, tasks, webhooks])
+    return { labels, projects, pickLabels, pickProjects, sections, views: views.filter((v) => !v.deleted_at), webhooks, tasks, notes: notes.filter((n) => !n.deleted_at),
+      title: (id) => byTask.get(id) ?? '', projectName: (id) => byProject.get(id) ?? '' }
+  }, [labels, projects, pickLabels, pickProjects, sections, views, tasks, notes, webhooks])
 }
 
 /** The matcher's context for a user now. */
@@ -123,6 +130,39 @@ function matchContext(projects: readonly Project[], open: readonly Task[], me: s
 export function lastChangedDay(task: Pick<Task, '_clock'> | undefined): string {
   const ts = Math.max(0, ...Object.values(task?._clock ?? {}).map((c) => c.ts))
   return ts > 0 ? logicalDay(ts) : ''
+}
+
+/**
+ * How many notes a Find notes step matches now on this device, offline
+ * included (notes-in-routines "Live count"): project with its sub-projects,
+ * labels, change window and words, as the step reads them.
+ */
+export function useNotesMatchCount(step: RoutineStep): number {
+  const notes = useNoteRows()
+  const projects = useProjects()
+  return useMemo(() => {
+    const lit = (n: string) => { const a = step.in?.[n]; return a && 'literal' in a ? a.literal : undefined }
+    const project = (lit('project') as { project?: string } | undefined)?.project
+    const cond: RuleCondition = {}
+    if (project) cond.project = { in: [project], descendants: true }
+    const labels = lit('labels') as RuleCondition['labels'] | undefined
+    if (labels) cond.labels = labels
+    const unchanged = lit('unchanged_days')
+    if (typeof unchanged === 'number') cond.unchanged = { days: unchanged }
+    const within = lit('within_days')
+    const words = typeof lit('words') === 'string' ? (lit('words') as string) : ''
+    const terms = parseQuery(words)
+    const ctx = { ...matchContext(projects, [], ''), open: () => true, changed: (id: string) => lastChangedDay(notes.find((n) => n.id === id)) }
+    const today = logicalToday()
+    return notes.filter((n) => {
+      if (n.deleted_at) return false
+      const mt = { id: n.id, project_id: n.project_id ?? null, section_id: null, labels: n.labels ?? [], priority: 4, dueDate: null, deadline: null, start: null,
+        evening: false, blocked_by: [], assignee_id: null, origin: null, habit: false, estimate_minutes: null } satisfies MatchTask
+      if (!matchesCondition(cond, mt, ctx)) return false
+      if (typeof within === 'number') { const d = lastChangedDay(n); if (!d || d <= addDays(today, -within)) return false }
+      return !words.trim() || matchNote({ title: n.title ?? '', text: n.description ?? '' }, terms).matched
+    }).length
+  }, [notes, projects, step])
 }
 
 /** How many open tasks a condition matches now on this device. */

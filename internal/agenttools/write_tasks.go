@@ -114,7 +114,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 			return Plan{}, argErr(p + err.Error())
 		}
 		if it.present("labels") {
-			lids, err := snap.labelIDsFor(p, it["labels"])
+			lids, err := snap.labelIDsFor(p, it["labels"], snap.newTaskWorkspace(pid, patch))
 			if err != nil {
 				return Plan{}, err
 			}
@@ -219,7 +219,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			patch["estimate_minutes"] = it["estimate_minutes"]
 		}
 		if it.present("labels") {
-			lids, err := snap.labelIDsFor(p, it["labels"])
+			lids, err := snap.labelIDsFor(p, it["labels"], snap.partition().Task(id))
 			if err != nil {
 				return Plan{}, err
 			}
@@ -658,6 +658,18 @@ func overlayCreated(cs ChangeSet, id string) bool {
 		}
 	}
 	return false
+}
+
+// newTaskWorkspace is the workspace a new task lands in: its project's, else
+// the workspace_id of its patch, else the default workspace.
+func (snap *snapshot) newTaskWorkspace(pid string, patch map[string]json.RawMessage) string {
+	if pid != "" {
+		return snap.partition().Project(pid)
+	}
+	if v, ok := patch["workspace_id"]; ok {
+		return snap.valueWorkspace(v)
+	}
+	return snap.defaultWorkspace()
 }
 
 // copyPlainFields copies priority, due and the estimate as given, and the

@@ -7,8 +7,6 @@ package sync
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -294,6 +292,26 @@ var Schema = map[string]map[string]Field{
 		// skip rather than a completion. Additive booleans, not content.
 		"habit":   {Kind: kBool, Default: `false`},
 		"skipped": {Kind: kBool, Default: `false`},
+		// The habit's tiny version and anchor (OpenSpec change habits-home,
+		// design D5): the two-minute version that still counts ("One page") and
+		// the moment it follows ("After dinner"). User-written text, so content;
+		// additive. Records copy them with the series' other fields, harmlessly.
+		"habit_tiny":   {Kind: kString, Default: `""`, Content: true},
+		"habit_anchor": {Kind: kString, Default: `""`, Content: true},
+		// When the habit was graduated (habits-home D7), Unix ms, or null: a
+		// graduated habit is in no list, projection, reminder or Today limit and
+		// keeps its records; Resume continues it as a new piece of its lineage.
+		// Not content; additive.
+		"habit_graduated_at": {Kind: kNullableNumber, Default: `null`},
+		// The habit's own colour (OpenSpec change habits-polish, design D5): a
+		// palette hex such as "#22c55e", or "" for automatic (the project's
+		// colour, else one picked from the id). Not content, like project
+		// colours; additive.
+		"habit_color": {Kind: kString, Default: `""`},
+		// An occurrence record logged as the habit's tiny version (habits-home
+		// D5): set in the completion batch, never copied from the series; a
+		// full completion writes false. Not content; additive.
+		"tiny": {Kind: kBool, Default: `false`},
 		// Account id of whoever completed the task, or null (OpenSpec change
 		// completed-date-filters, design D5); additive. Written beside
 		// completed_at; ApplyStrict fills it in for server-side completions.
@@ -434,6 +452,10 @@ var Schema = map[string]map[string]Field{
 		// D4): each card shows two lines of its notes as plain text. A setting,
 		// not user text, so not content; missing reads as off.
 		"card_notes": {Kind: kBool, Default: `false`},
+		// Nest subtasks in the List layout (GitHub issue 1108): "nested" shows a
+		// match under its parent when both match, as Today's option does; "" or
+		// any other value is the flat list.
+		"subtasks":   {Kind: kString, Default: `""`},
 		"created_at": {Kind: kNumber, Default: `0`},
 		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 		// Workspace of the view, null for the default (OpenSpec change workspaces).
@@ -890,6 +912,12 @@ var Schema = map[string]map[string]Field{
 		// clients read an empty or unknown value as off and keep the stored
 		// value. Objectives stay in the export, REST, the CLI and MCP either way.
 		"objectives": {Kind: kString, Default: `""`},
+		// Habits (OpenSpec change habits-home, design D1): "" not decided, "on"
+		// or "off". Not decided keeps the quiet ways in and reads as on while the
+		// device holds an open habit; off hides every habit control and writes
+		// nothing on a task. Clients read an unknown value as not decided and
+		// keep it. Habits stay in the export, REST, the CLI and MCP either way.
+		"habits": {Kind: kString, Default: `""`},
 		// Full task titles (OpenSpec change full-task-titles, design D1): "on"
 		// shows every task title in list rows, on board cards and in Today in
 		// full, wrapped onto as many lines as it takes, instead of cutting it
@@ -1031,63 +1059,3 @@ var Schema = map[string]map[string]Field{
 
 // Plural maps REST collection names to entity names.
 var Plural = map[string]string{"projects": "project", "tasks": "task", "labels": "label", "views": "view", "reminders": "reminder", "sections": "section", "fields": "field", "rules": "rule", "frames": "frame", "slots": "slot", "notes": "note", "objectives": "objective"}
-
-// ErrInvalidOp wraps every validation failure.
-var ErrInvalidOp = errors.New("invalid op")
-
-// Validate checks structure, schema membership and value type of an op.
-func Validate(op Op) error {
-	if op.ID == "" || len(op.ID) > MaxIDLen || op.EntityID == "" || len(op.EntityID) > MaxIDLen {
-		return fmt.Errorf("%w: id and entityId are required (max %d chars)", ErrInvalidOp, MaxIDLen)
-	}
-	if !ValidEntityID(op.EntityID) {
-		return fmt.Errorf("%w: entityId may only contain letters, digits and . _ : @ + = ~ -", ErrInvalidOp)
-	}
-	if op.Device == "" || len(op.Device) > MaxIDLen {
-		return fmt.Errorf("%w: device is required", ErrInvalidOp)
-	}
-	if op.TS <= 0 {
-		return fmt.Errorf("%w: ts must be a positive unix millisecond timestamp", ErrInvalidOp)
-	}
-	if _, ok := Schema[op.Entity]; !ok {
-		return fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, op.Entity)
-	}
-	k, ok := fieldKind(op.Entity, op.Field)
-	if !ok {
-		return fmt.Errorf("%w: unknown field %q for %s", ErrInvalidOp, op.Field, op.Entity)
-	}
-	limit := MaxValueBytes
-	if k == kDoc {
-		// The JSON string adds its quotes; the envelope length is checked by checkKind.
-		limit = MaxDocBytes + 2
-	}
-	if len(op.Value) == 0 || len(op.Value) > limit {
-		return fmt.Errorf("%w: value for %s.%s missing or too large", ErrInvalidOp, op.Entity, op.Field)
-	}
-	if !json.Valid(op.Value) {
-		return fmt.Errorf("%w: value for %s.%s is not valid JSON", ErrInvalidOp, op.Entity, op.Field)
-	}
-	if err := checkKind(k, op.Value); err != nil {
-		return fmt.Errorf("%w: %s.%s %v", ErrInvalidOp, op.Entity, op.Field, err)
-	}
-	if err := checkIDListOp(op, k); err != nil {
-		return err
-	}
-	if op.Entity == "attachment" {
-		if err := checkAttachment(op.Field, op.Value); err != nil {
-			return fmt.Errorf("%w: attachment.%s %v", ErrInvalidOp, op.Field, err)
-		}
-	}
-	if op.Entity == "slot" {
-		if err := checkSlot(op.Field, op.Value); err != nil {
-			return fmt.Errorf("%w: slot.%s %v", ErrInvalidOp, op.Field, err)
-		}
-	}
-	return nil
-}
-
-// Wins reports whether (ts, device) beats the existing (ets, edevice).
-// Ties on timestamp are broken by device id so every replica picks the same winner.
-func Wins(ts int64, device string, ets int64, edevice string) bool {
-	return ts > ets || (ts == ets && device > edevice)
-}

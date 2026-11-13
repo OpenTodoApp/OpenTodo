@@ -107,12 +107,21 @@ func (st *runState) clearNote(s *ruleval.Step, in map[string]ruleval.Value) (rul
 	of, _ := st.entityIn(s, in, "of")
 	entity := "task"
 	row, ok := st.liveTask(of.ID)
-	if of.Type == ruleval.TProject {
+	switch of.Type {
+	case ruleval.TProject:
 		entity = "project"
 		row, ok = st.liveProject(of.ID)
+	case ruleval.TNote:
+		entity = "note"
+		row, ok = st.liveNote(of.ID)
 	}
 	if !ok {
 		return none(), "", failf(ErrCodeNotFound, "%s %s not found", entity, of.ID)
+	}
+	if entity == "note" {
+		if err := st.writableNote(row); err != nil {
+			return none(), "", err
+		}
 	}
 	patch := map[string]json.RawMessage{}
 	if str(row, "description") != "" || str(row, "notes_doc") != "" {
@@ -174,8 +183,11 @@ func (st *runState) setFocus(s *ruleval.Step, in map[string]ruleval.Value) (rule
 func (st *runState) projectOf(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
 	v, _ := st.entityIn(s, in, "task")
 	t, ok := st.liveTask(v.ID)
+	if v.Type == ruleval.TNote {
+		t, ok = st.liveNote(v.ID)
+	}
 	if !ok {
-		return none(), "", failf(ErrCodeNotFound, "task %s not found", v.ID)
+		return none(), "", failf(ErrCodeNotFound, "%s %s not found", v.Type, v.ID)
 	}
 	return ruleval.Value{Type: ruleval.TProject, ID: str(t, "project_id")}, "", nil
 }

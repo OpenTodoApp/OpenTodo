@@ -1,3 +1,4 @@
+import type { Task } from '../lib/types'
 import { Icon, ToastRegion } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { getTask, touchReminders } from '../lib/localData'
@@ -85,7 +86,7 @@ export function ReminderToasts() {
             <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
               <p className="line-clamp-2 user-text text-body font-medium">{d.task.title || t('Untitled')}</p>
-              <p className="text-meta text-muted">{t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
+              <p className="text-meta text-muted">{tinyText(d.task) ?? t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
             </button>
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
@@ -102,6 +103,12 @@ export function ReminderToasts() {
   )
 }
 
+/** A habit's reminder names its tiny version (habits-home D5): "One page is enough". */
+function tinyText(task: Task): string | null {
+  const tiny = task.habit ? task.habit_tiny?.trim() : ''
+  return tiny ? t('{tiny} is enough', { tiny: tiny.charAt(0).toUpperCase() + tiny.slice(1) }) : null
+}
+
 /** Hidden tab, permission granted, no push on this device: show a local system notification once per firing. */
 async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promise<void> {
   if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return
@@ -113,7 +120,7 @@ async function notifyIfHidden(list: DueReminder[], notified: Set<string>): Promi
     if (notified.has(key)) continue
     notified.add(key)
     const options: NotificationOptions = {
-      body: t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
+      body: tinyText(d.task) ?? t('Reminder'), tag: `reminder:${d.reminder.id}`, icon: '/pwa-192.png',
       data: { reminderId: d.reminder.id, taskId: d.task.id, fireAt: d.reminder.fire_at },
     }
     try {

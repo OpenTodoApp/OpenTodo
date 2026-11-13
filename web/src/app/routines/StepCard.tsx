@@ -17,8 +17,9 @@ import { stepKind } from '../../lib/rules/steps'
 import { RULE_TRIGGERS, type RoutineArg, type RoutineStep, type RuleCondition, type RuleTrigger, type RuleTriggerKind } from '../../lib/types'
 import { Badge, Button, DataChip, Icon, WordButton } from '../../ui'
 import { ActionMenu, type ActionGroup } from '../menus/ActionMenu'
-import { ConditionFields, TRIGGER_LABEL, TriggerDetails, triggerHasDetails, triggerOf } from '../rules/RuleFields'
-import { pickerNames, useMatchCount } from './data'
+import { ConditionFields, MANUAL_NOTE_LABEL, TRIGGER_LABEL, TriggerDetails, triggerHasDetails, triggerOf } from '../rules/RuleFields'
+import { isNoteTrigger } from '../../lib/rules/steps'
+import { pickerNames, useMatchCount, useNotesMatchCount } from './data'
 import { useWorkspaceState } from '../../lib/localData'
 import { inputDefs, wordValue, type WordContext } from './words'
 import { InputWord } from './wordPicker'
@@ -53,6 +54,8 @@ export interface CardState {
   adding: ListPlace | null
   /** The open step catalogue, rendered at that place. */
   addPanel: ReactNode
+  /** The routine's steps, for inputs that depend on other steps (Link back to the note). */
+  steps?: RoutineStep[]
 }
 
 /** The id of the open step catalogue, for its opener's aria-controls. */
@@ -256,7 +259,7 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
       { kind: 'action', id: 'below', label: t('Add step below'), icon: 'plus', onSelect: () => events.addBelow(step.id) },
       { kind: 'action', id: 'duplicate', label: t('Duplicate'), icon: 'copy', onSelect: () => events.duplicate(step.id) },
     ] },
-    ...(addableInputs(step).length ? [{ items: addableInputs(step).map((name) => ({
+    ...(addableInputs(step, state.steps).length ? [{ items: addableInputs(step, state.steps).map((name) => ({
       kind: 'action' as const, id: `add-${name}`, label: t('Add {input}', { input: inputLabel(name, step.kind).toLocaleLowerCase() }), icon: 'plus' as const,
       onSelect: () => {
         const arg = defaultArg(step, name)
@@ -292,6 +295,7 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
         </p>
       )}
       {isPick(step.kind) && <PickOrder step={step} state={state} events={events} />}
+      {step.kind === 'find_notes' && <NotesCount step={step} />}
       <OutputLine step={step} state={state} />
       <PreviewBlock p={state.previews.get(step.id)} ctx={state.ctx} online={state.online} />
       {k?.blocks?.includes('then') && <Lane title={t('Then')} steps={step.then ?? []} parent={step.id} block="then" state={state} events={events} depth={depth} />}
@@ -299,6 +303,12 @@ export function StepCard({ step, index, total, state, events, depth = 0 }: {
       {k?.blocks?.includes('do') && <Lane title={t('For each item')} steps={step.do ?? []} parent={step.id} block="do" state={state} events={events} depth={depth} />}
     </section>
   )
+}
+
+/** The live count of a Find notes step, from local data, offline included. */
+function NotesCount({ step }: { step: RoutineStep }) {
+  const n = useNotesMatchCount(step)
+  return <p className="text-meta text-muted" data-notes-count>{t('{n, plural, one {# note matches now} other {# notes match now}}', { n })}</p>
 }
 
 /** A default value for an optional input added from the menu. */
@@ -345,14 +355,20 @@ export function WhenCard({ trigger, condition, ctx, me, workspace, onTrigger, on
   const count = useMatchCount(condition, me)
   const shared = new Set<string>()
   const back = (to: RefObject<HTMLButtonElement | null>) => { setOpen(''); requestAnimationFrame(() => to.current?.focus()) }
-  const choose = (kind: RuleTriggerKind) => {
-    if (kind !== trigger.kind) onTrigger(triggerOf(kind))
+  const onNote = isNoteTrigger(trigger)
+  const choose = (kind: RuleTriggerKind, on?: 'note') => {
+    if (kind !== trigger.kind || on !== trigger.on) onTrigger(on ? { kind, on } : triggerOf(kind))
     toDetails.current = triggerHasDetails(kind)
   }
-  const choices: Choice[] = RULE_TRIGGERS.map((k) => ({
-    key: k, label: TRIGGER_LABEL[k], selected: k === trigger.kind, run: () => choose(k),
-    secondary: k === trigger.kind && triggerHasDetails(k) ? t('Change the details') : undefined,
-  }))
+  const choices: Choice[] = RULE_TRIGGERS.flatMap((k) => {
+    const one: Choice = {
+      key: k, label: TRIGGER_LABEL[k], selected: k === trigger.kind && !(k === 'manual' && trigger.on === 'note'), run: () => choose(k),
+      secondary: k === trigger.kind && triggerHasDetails(k) ? t('Change the details') : undefined,
+    }
+    // A manual routine on a note sits next to the one on a task (notes-in-routines D2).
+    if (k !== 'manual') return [one]
+    return [one, { key: 'manual:note', label: t(MANUAL_NOTE_LABEL), selected: trigger.kind === 'manual' && trigger.on === 'note', run: () => choose('manual', 'note') }]
+  })
   // A pick closes the list once (the list and its combobox may both report it).
   const listOpen = useRef(false)
   const openList = () => { listOpen.current = true; setOpen('trigger') }
@@ -377,12 +393,12 @@ export function WhenCard({ trigger, condition, ctx, me, workspace, onTrigger, on
         {trigger.kind !== 'manual' && (
           <>
             <span> {t('if')} </span>
-            <WordButton ref={condRef} label={t('Condition')} value={cond} placeholder={t('any task')} action={t('change')}
+            <WordButton ref={condRef} label={t('Condition')} value={cond} placeholder={onNote ? t('any note') : t('any task')} action={t('change')}
               haspopup="dialog" expanded={open === 'condition'} onClick={() => setOpen('condition')} />
           </>
         )}
       </p>
-      {trigger.kind !== 'manual' && (
+      {trigger.kind !== 'manual' && !onNote && (
         <p className="text-meta text-muted" data-rule-count>{t('{n, plural, one {# open task matches now} other {# open tasks match now}}', { n: count })}</p>
       )}
       <ChoicePopover open={open === 'trigger'} onClose={closeList} anchor={triggerRef} label={t('When')} choices={choices} />
@@ -393,7 +409,7 @@ export function WhenCard({ trigger, condition, ctx, me, workspace, onTrigger, on
       {/* The condition rows: inside this card from 1024 px, a bottom sheet below, as on a step's card. */}
       <div data-card-inspector="when" />
       <Inspector open={open === 'condition'} onClose={() => back(condRef)} stepId="when" title={t('Condition')}>
-        <ConditionFields value={condition ?? {}} onChange={(c) => onCondition(Object.keys(c).length ? c : null)} names={picker} />
+        <ConditionFields value={condition ?? {}} onChange={(c) => onCondition(Object.keys(c).length ? c : null)} names={picker} notes={onNote} />
       </Inspector>
     </section>
   )

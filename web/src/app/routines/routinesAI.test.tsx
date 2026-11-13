@@ -14,10 +14,10 @@ import { inboxLines } from '../../lib/rules/inbox'
 import { describeItem } from '../../lib/rules/proposal'
 import { createRule } from '../../lib/rules/store'
 import type { RoutineAIUsage, RoutineInboxRun, RoutineProposal, RoutineStep } from '../../lib/types'
-import { click, mockFetch, render, waitFor } from '../../ui/test-utils'
+import { click, key, mockFetch, render, waitFor } from '../../ui/test-utils'
 import { UserAssistantSettings } from '../assistant/AssistantSettings'
 import { RoutineEditor } from './RoutineEditor'
-import { ProposalView } from './ProposalReview'
+import { ProposalReview, ProposalView } from './ProposalReview'
 
 let n = 0
 let requests: { method: string; path: string; body?: Record<string, unknown> }[] = []
@@ -133,6 +133,32 @@ describe('Reviewing a proposal', () => {
     await click(boxes[8])
     await click(document.querySelector<HTMLButtonElement>('[data-proposal-apply]')!)
     expect(applied).toEqual([proposal.list!.slice(0, 7).map((i) => i.key)])
+    await r.unmount()
+  })
+
+  it('Enter right after the proposal loads applies it (#1236): focus moves from the sheet into the proposal', async () => {
+    const sent: string[][] = []
+    let release = () => {}
+    const loaded = new Promise<void>((r) => { release = r })
+    mockFetch((method, path, init) => {
+      if (method === 'GET' && path === '/api/v1/me/rules/proposals/p1') return proposal
+      if (method === 'POST' && path === '/api/v1/me/rules/proposals/p1/apply') {
+        sent.push((JSON.parse(String(init?.body)) as { items: string[] }).items)
+        return { state: 'applied', rule_id: 'r1', run_id: 'run1', applied: 9, skipped: 0, changed: 0, refused: 0 }
+      }
+      return undefined
+    })
+    // The proposal arrives only once the sheet has opened with focus on itself.
+    const answer = globalThis.fetch
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => { await loaded; return answer(input, init) })
+    let closed = false
+    const r = await render(<ProposalReview proposalId="p1" ruleName="Tidy" onClose={() => { closed = true }} />)
+    await waitFor(() => document.activeElement === document.querySelector('[data-testid="proposal-review"]'), 'focus on the sheet')
+    release()
+    await waitFor(() => !!document.activeElement?.closest('[data-proposal-review]'), 'focus in the proposal')
+    await key(document.activeElement!, 'Enter')
+    await waitFor(() => closed)
+    expect(sent).toEqual([proposal.list!.map((i) => i.key)])
     await r.unmount()
   })
 

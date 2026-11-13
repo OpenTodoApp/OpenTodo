@@ -95,9 +95,11 @@ export interface SortTask {
   deadline?: string
   priority?: number
   created_at?: number
+  /** A note's last change (notes-in-routines: Sort by last change). */
+  changed_at?: number
 }
 
-/** Tasks ordered by due, deadline, priority, created or title; undated last either way, ties kept. */
+/** Tasks ordered by due, deadline, priority, created or title, notes by title, created or changed; undated last either way, ties kept. */
 export function sortTasks(tasks: readonly SortTask[], by: string, desc: boolean): SortTask[] {
   const dir = desc ? -1 : 1
   const date = (a = '', b = '') => (a === b ? 0 : !a ? 1 : !b ? -1 : dir * (a < b ? -1 : 1))
@@ -108,6 +110,7 @@ export function sortTasks(tasks: readonly SortTask[], by: string, desc: boolean)
       case 'deadline': return date(a.deadline, b.deadline)
       case 'priority': return num(a.priority || 4, b.priority || 4)
       case 'created': return num(a.created_at ?? 0, b.created_at ?? 0)
+      case 'changed': return num(a.changed_at ?? 0, b.changed_at ?? 0)
       case 'title': return dir * compareCodePoints((a.title ?? '').toLowerCase(), (b.title ?? '').toLowerCase())
     }
     return 0
@@ -136,9 +139,11 @@ export interface StepValue {
 
 export function valueLen(v: StepValue): number {
   switch (v.type) {
-    case 'tasks': return v.ids?.length ?? 0
+    case 'tasks':
+    case 'notes': return v.ids?.length ?? 0
     case 'lines': return v.lines?.length ?? 0
     case 'task':
+    case 'note':
     case 'project': return v.id ? 1 : 0
     case 'text': return (v.text ?? '').trim() ? 1 : 0
     case 'none': return 0
@@ -161,7 +166,7 @@ export function holds(v: StepValue, is: Record<string, unknown>): boolean {
   const cmp = (a: number | string, b: number | string) => (a === b ? 0 : a < b ? -1 : 1)
   let order: number
   if (v.type === 'number' && typeof x === 'number') order = cmp(v.number ?? 0, x)
-  else if ((v.type === 'tasks' || v.type === 'lines') && typeof x === 'number') order = cmp(valueLen(v), x)
+  else if ((v.type === 'tasks' || v.type === 'lines' || v.type === 'notes') && typeof x === 'number') order = cmp(valueLen(v), x)
   else if (v.type === 'date' && typeof x === 'string' && DATE.test(x)) order = compareCodePoints(v.date ?? '', x)
   else if (v.type === 'text' && typeof x === 'string' && (op === '=' || op === '!=')) order = compareCodePoints(v.text ?? '', x)
   else return false

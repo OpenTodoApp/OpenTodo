@@ -1,0 +1,5 @@
+OpenTodo-testbericht
+
+Dit is een testbericht van de OpenTodo-server op {{.Origin}}.
+
+Het versturen van e-mail werkt: wachtwoorden opnieuw instellen, aanmeldingen bevestigen en uitnodigingen kunnen nu per e-mail worden verstuurd. Je hoeft niets te doen.

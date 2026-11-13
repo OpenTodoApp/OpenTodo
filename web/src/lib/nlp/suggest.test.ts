@@ -1,6 +1,7 @@
 // Token suggestions (OpenSpec change smart-title-tokens, design D1 and D2).
 import { describe, expect, it } from 'vitest'
 import { matchProject } from './attributes'
+import { parse } from './parse'
 import { findLabel } from './quickadd'
 import { energySuggestions, hasExact, insertToken, labelSuggestions, PRIORITY_SUGGESTIONS, projectSuggestions, tokenAtCaret } from './suggest'
 
@@ -96,5 +97,30 @@ describe('insertToken', () => {
   it('replaces the typed token with the picked one and a space, caret after it', () => {
     const at = tokenAtCaret('Paint the hall #ren', 19)!
     expect(insertToken('Paint the hall #ren', at, '#Homerenovation')).toEqual({ value: 'Paint the hall #Homerenovation ', caret: 31 })
+  })
+})
+
+// Dutch (OpenSpec change more-languages, task 2.3): suggestions fold Dutch names,
+// and a #token or @token next to Dutch date words is suggested and explained the same.
+describe('Dutch lines', () => {
+  const nlProjects = [{ id: 'p-verb', name: 'Verbouwing' }, { id: 'p-tuin', name: 'Tuin' }, { id: 'p-tuinhuis', name: 'Tuinhuis' }, { id: 'p-een', name: 'Één keer per jaar' }]
+  const nlLabels = [{ id: 'l-bel', name: 'bellen' }, { id: 'l-bood', name: 'boodschappen' }]
+  const nl = (line: string) => parse(line, { today: '2026-10-09', languages: ['nl'], projects: nlProjects })
+
+  it('suggests Dutch project and label names, accents folded, and the token resolves', () => {
+    const line = 'Tegels kiezen morgen om half 4 #verb'
+    const at = tokenAtCaret(line, line.length)!
+    expect(at).toEqual({ kind: 'project', start: 31, end: 36, query: 'verb' })
+    const [s] = projectSuggestions(at.query, nlProjects)
+    expect(s.token).toBe('#Verbouwing')
+    expect(nl(insertToken(line, at, s.token).value)).toMatchObject({ projectId: 'p-verb', title: 'Tegels kiezen', due: { date: '2026-10-10', time: '03:30' } })
+    expect(projectSuggestions('een', nlProjects).map((x) => x.project.id)).toEqual(['p-een'])
+    expect(labelSuggestions('bo', nlLabels).map((x) => x.token)).toEqual(['@boodschappen'])
+  })
+
+  it('explains an unmatched #token while the Dutch date words still parse', () => {
+    expect(nl('Snoeien elke zaterdag #tuinn')).toMatchObject({ recurrence: 'every saturday', unmatched: [{ span: { start: 22, end: 28, text: '#tuinn' }, reason: 'none' }] })
+    expect(nl('Snoeien op vr #tuin').unmatched).toEqual([])
+    expect(nl('Snoeien op vr #tui').unmatched).toEqual([expect.objectContaining({ reason: 'ambiguous', count: 2 })])
   })
 })

@@ -163,10 +163,57 @@ func lookupAt[T any](tokens []token, i int, m map[string]T) (int, T, bool) {
 func weekdayAt(tokens []token, i int, v *Vocab) int {
 	for wd := 0; wd < 7; wd++ {
 		if phraseAt(tokens, i, v.Weekdays[wd]) > 0 {
+			if guardedAt(tokens, i, v) {
+				return -1
+			}
 			return wd
 		}
 	}
 	return -1
+}
+
+var clockNumRE = regexp.MustCompile(`^\d{1,2}([:.]\d{2})?$`)
+
+// guardedAt reports a guarded weekday abbreviation (Dutch "ma", "zo",
+// more-languages D3) without a date context: it is a weekday only after a
+// before, every, next or this word, as the next weekday of a list, or before a
+// day and month ("ma 3 mrt"), a numeric date or a time ("ma om 9 uur"), so
+// "Bel ma" stays a title.
+func guardedAt(tokens []token, i int, v *Vocab) bool {
+	if len(v.GuardedAbbreviations) == 0 || phraseAt(tokens, i, v.GuardedAbbreviations) == 0 {
+		return false
+	}
+	lead := append(append(append(append([]string{}, v.Before...), v.Every...), v.NextBefore...), v.ThisBefore...)
+	if i > 0 && phraseAt(tokens, i-1, lead) == 1 {
+		return false
+	}
+	if i > 0 && strings.HasSuffix(tokens[i-1].text, ",") && weekdayAt(tokens, i-1, v) >= 0 {
+		return false
+	}
+	if i > 1 && phraseAt(tokens, i-1, v.AndWords) == 1 && weekdayAt(tokens, i-2, v) >= 0 {
+		return false
+	}
+	next := tok(tokens, i+1)
+	if next == nil || strings.HasSuffix(tokens[i].text, ",") || strings.HasSuffix(tokens[i].text, ";") {
+		return true
+	}
+	if dayNumber(next) > 0 && monthAt(tokens, i+2, v, true) > 0 {
+		return false
+	}
+	if m := numericRE.FindStringSubmatch(next.norm); m != nil && (m[4] == "" || m[4] == m[2]) {
+		return false
+	}
+	if hmRE.MatchString(next.norm) {
+		return false
+	}
+	at := phraseAt(tokens, i+1, v.AtWords)
+	if at == 0 {
+		return true
+	}
+	k := i + 1 + at
+	k += phraseAt(tokens, k, v.HalfWords)
+	t := tok(tokens, k)
+	return t == nil || !clockNumRE.MatchString(t.norm)
 }
 
 func monthAt(tokens []token, i int, v *Vocab, allowAbbr bool) int {
@@ -350,7 +397,14 @@ func matchDateAt(tokens []token, i int, ctx *dateCtx) *dateMatch {
 				}
 				return &dateMatch{date: date, from: i, to: j + n}
 			}
-			consider(wrap(weekdayPhraseAt(tokens, j, v, ctx)))
+			wdDate, wdN, wdOK := weekdayPhraseAt(tokens, j, v, ctx)
+			consider(wrap(wdDate, wdN, wdOK))
+			// A weekday alone before a full date names that date ("ma 1 mrt", "Monday, March 3").
+			if wdOK && wdN == 1 {
+				if date, n, ok := fullDateAt(tokens, j+1, v, ctx); ok {
+					consider(wrap(date, 1+n, true))
+				}
+			}
 			consider(wrap(ordinalWeekdayAt(tokens, j, v, ctx)))
 			consider(wrap(nextPeriodAt(tokens, j, v, ctx)))
 			consider(wrap(inPeriodAt(tokens, j, v, ctx)))
@@ -562,6 +616,15 @@ func monthTextBefore(tokens []token, i int, ctx *dateCtx) bool {
 	return false
 }
 
+// fullDateAt reads a day and month ("1 mrt", "March 3", with a year or not) or
+// a numeric date at j; a month alone is not one.
+func fullDateAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int, bool) {
+	if date, n, ok := monthDayAt(tokens, j, v, ctx); ok && n > 1 {
+		return date, n, true
+	}
+	return numericDateAt(tokens, j, ctx)
+}
+
 func monthDayAt(tokens []token, j int, v *Vocab, ctx *dateCtx) (string, int, bool) {
 	if d1 := dayNumber(tok(tokens, j)); d1 > 0 {
 		k := j + 1
@@ -711,13 +774,39 @@ var (
 )
 
 func meridiem(tokens []token, k int, v *Vocab) (n int, pm, ok bool) {
-	if phraseAt(tokens, k, v.Pm) > 0 {
-		return 1, true, true
+	if n := phraseAt(tokens, k, v.Pm); n > 0 {
+		return n, true, true
 	}
-	if phraseAt(tokens, k, v.Am) > 0 {
-		return 1, false, true
+	if n := phraseAt(tokens, k, v.Am); n > 0 {
+		return n, false, true
 	}
 	return 0, false, false
+}
+
+// halfAt reads "half 4" (Dutch "om half 4", more-languages D3): half an hour
+// before the hour, 03:30, or 15:30 with a pm word after it ("'s middags"). Only
+// after an "at" word or before an am or pm word.
+func halfAt(tokens []token, j int, v *Vocab, afterAt bool) (string, int, bool) {
+	half := phraseAt(tokens, j, v.HalfWords)
+	t := tok(tokens, j+half)
+	if half == 0 || t == nil || !hRE.MatchString(t.norm) {
+		return "", 0, false
+	}
+	h, _ := strconv.Atoi(t.norm)
+	if an, pm, ok := meridiem(tokens, j+half+1, v); ok {
+		if h < 1 || h > 12 {
+			return "", 0, false
+		}
+		base := h - 1
+		if h == 1 {
+			base = 12
+		}
+		return clock(to24(base, pm), 30), half + 1 + an, true
+	}
+	if !afterAt || h < 1 || h > 24 {
+		return "", 0, false
+	}
+	return clock(h-1, 30), half + 1, true
 }
 
 func to24(h int, pm bool) int {
@@ -737,6 +826,9 @@ func clockAt(tokens []token, j int, v *Vocab, afterAt, hourSuffix bool) (string,
 	t := tok(tokens, j)
 	if t == nil {
 		return "", 0, false
+	}
+	if t, n, ok := halfAt(tokens, j, v, afterAt); ok {
+		return t, n, true
 	}
 	s := t.norm
 	atoi := func(x string) int { n, _ := strconv.Atoi(x); return n }
@@ -801,6 +893,12 @@ func clockAt(tokens []token, j int, v *Vocab, afterAt, hourSuffix bool) (string,
 			return clock(to24(h, pm), 0), 1 + an, true
 		}
 		hw := hourWord(j + 1)
+		// "3 uur 's middags": an am or pm word after the hour word.
+		if hw > 0 && h >= 1 && h <= 12 {
+			if an, pm, ok := meridiem(tokens, j+1+hw, v); ok {
+				return clock(to24(h, pm), 0), 1 + hw + an, true
+			}
+		}
 		if (!afterAt && hw == 0) || h > 23 {
 			return "", 0, false
 		}

@@ -218,6 +218,12 @@ func (e *Engine) NextDue(ctx context.Context) (time.Time, bool, error) {
 	if err != nil {
 		return time.Time{}, false, err
 	}
+	// A note.edited event waits for its quiet time (notes-in-routines D2).
+	if quiet, ok, err := e.Store.NextNoteEdit(ctx); err != nil {
+		return time.Time{}, false, err
+	} else if ok && (!waiting || quiet.Before(miss)) {
+		miss, waiting = quiet, true
+	}
 	if timed == 0 && !changed {
 		if waiting {
 			return miss, true, nil

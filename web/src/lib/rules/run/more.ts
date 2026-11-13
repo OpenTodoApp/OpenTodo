@@ -12,7 +12,7 @@ import { dateLiteral } from '../steps'
 import { periodRange, resolveDate } from '../stepData'
 import { isNull } from './actions'
 import { ids2 } from './kinds'
-import { PER_CALL } from './tools'
+import { PER_CALL, roleIn } from './tools'
 import { fail, none, str, tasksVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
 import type { LibraryTask, LibraryTemplate, Row } from './types'
 
@@ -64,9 +64,10 @@ export function quickAddLine(st: RunState, line: string, item: Record<string, un
 /** Empties a task's or project's note: the Markdown, the document and pending appends. */
 export function clearNote(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
   const of = st.entityIn(s, inputs, 'of')
-  const entity = of?.type === 'project' ? 'project' : 'task'
-  const row = entity === 'project' ? st.liveProject(of?.id ?? '') : st.liveTask(of?.id ?? '')
+  const entity = of?.type === 'project' ? 'project' : of?.type === 'note' ? 'note' : 'task'
+  const row = entity === 'project' ? st.liveProject(of?.id ?? '') : entity === 'note' ? st.liveNote(of?.id ?? '') : st.liveTask(of?.id ?? '')
   if (!row) throw fail('not_found', `${entity} ${of?.id ?? ''} not found`)
+  if (entity === 'note' && roleIn(st.snapshot(), str(row, 'project_id')) === 'viewer') throw fail('forbidden', `the note ${of?.id ?? ''} is in a project where you can only view`)
   const patch: Record<string, unknown> = {}
   if (str(row, 'description') || str(row, 'notes_doc')) { patch.description = ''; patch.notes_doc = '' }
   for (const [f, v] of Object.entries(row)) if (f.startsWith('appends.') && v !== '') patch[f] = ''
@@ -91,8 +92,8 @@ export function setFocus(st: RunState, s: RoutineStep, inputs: Inputs): ExecResu
 /** The project of a task; the Inbox (an empty id) for a task without one. */
 export function projectOf(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
   const v = st.entityIn(s, inputs, 'task')
-  const t = st.liveTask(v?.id ?? '')
-  if (!t) throw fail('not_found', `task ${v?.id ?? ''} not found`)
+  const t = v?.type === 'note' ? st.liveNote(v.id ?? '') : st.liveTask(v?.id ?? '')
+  if (!t) throw fail('not_found', `${v?.type ?? 'task'} ${v?.id ?? ''} not found`)
   return [{ type: 'project', id: str(t, 'project_id') }, '']
 }
 

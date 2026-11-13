@@ -149,10 +149,11 @@ func init() {
 	}, plan: (*Registry).planCreateProject})
 
 	register(tool{def: func(Caller) Definition {
-		return writeDef("create_label", "Create a label", "Create a label. When a label with the same name exists, its id is returned and nothing changes.",
+		return writeDef("create_label", "Create a label", "Create a label. When a label with the same name exists in the same workspace, its id is returned and nothing changes.",
 			object([]string{"name"}, map[string]any{
 				"name":              map[string]any{"type": "string", "minLength": 1, "maxLength": 100, "description": "Label name."},
 				"color":             map[string]any{"type": "string", "description": "Colour as #rrggbb, optional."},
+				"workspace_id":      labelWorkspaceProp,
 				"client_request_id": requestIDProp,
 				"id":                chosenIDProp,
 			}), false, true, []string{"name"}, true)

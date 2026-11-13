@@ -81,18 +81,24 @@ export interface Converted {
   label: string
 }
 
-/** Turns a standalone note into a task in one batch (D6). */
-export async function noteToTask(noteId: string, now = Date.now()): Promise<Converted> {
+/** The changes that turn a standalone note into a task (D6): the task, then the note's tombstone. */
+export async function planNoteToTask(noteId: string, now = Date.now()): Promise<ProposedChange[]> {
   const note = await liveNote(noteId)
-  const { id, change } = await planTask({
+  const { change } = await planTask({
     title: note.title.trim() || t('Untitled note'), description: note.description ?? '', project_id: note.project_id, labels: note.labels ?? [],
   })
   if (note.notes_doc) change.patch.notes_doc = note.notes_doc
   // Without a project the task stays in the note's workspace, not the current one.
   if (!note.project_id) change.patch.workspace_id = note.workspace_id ?? null
+  return [{ ...change, create: true }, tombstone('note', noteId, now)]
+}
+
+/** Turns a standalone note into a task in one batch (D6). */
+export async function noteToTask(noteId: string, now = Date.now()): Promise<Converted> {
+  const changes = await planNoteToTask(noteId, now)
   const label = t('Turned into a task')
-  const entry = await undoable([{ ...change, create: true }, tombstone('note', noteId, now)], label)
-  return { id, entry, label }
+  const entry = await undoable(changes, label)
+  return { id: changes[0].entityId, entry, label }
 }
 
 /** The task's document with the content of its visible body deleted, or null when it has none this device can read. */

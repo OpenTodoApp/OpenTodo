@@ -93,6 +93,9 @@ type Code struct {
 	Scope       string
 	Challenge   string
 	ExpiresAt   int64
+	// Workspaces limits the authorization to these workspaces (token-workspaces
+	// D5); nil means every workspace.
+	Workspaces []string
 }
 
 // Grant is one person's authorization of one client (design D6).
@@ -106,6 +109,9 @@ type Grant struct {
 	RefreshExpiresAt int64
 	RevokedAt        int64
 	CreatedAt        int64
+	// Workspaces limits every access token of the grant (token-workspaces D5);
+	// nil means every workspace.
+	Workspaces []string
 }
 
 // Revoked reports whether the grant was revoked.
@@ -334,6 +340,11 @@ func (s *Store) CreateCode(ctx context.Context, c Code) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	for _, ws := range c.Workspaces {
+		if _, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO mcp_oauth_code_workspaces(code_hash,workspace_id) VALUES(?,?)`, HashSecret(plain), ws); err != nil {
+			return "", err
+		}
+	}
 	_, _ = s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_code WHERE expires_at < ?`, s.now().Add(-time.Hour).UnixMilli())
 	return plain, nil
 }
@@ -350,6 +361,13 @@ func (s *Store) ConsumeCode(ctx context.Context, plain string) (Code, error) {
 		}
 		return Code{}, err
 	}
+	ws, err := s.idList(ctx, `DELETE FROM mcp_oauth_code_workspaces WHERE code_hash = ? RETURNING workspace_id`, HashSecret(plain))
+	if err != nil {
+		return Code{}, err
+	}
+	if len(ws) > 0 {
+		c.Workspaces = ws
+	}
 	if c.ExpiresAt < s.now().UnixMilli() {
 		return Code{}, ErrExpired
 	}
@@ -362,22 +380,37 @@ func (s *Store) ConsumeCode(ctx context.Context, plain string) (Code, error) {
 // exchange with a usable one; unlike a refresh, a re-authorization is a
 // deliberate act and may rotate (design D6). One statement, so two exchanges
 // racing for the same person and client cannot both insert.
-func (s *Store) UpsertGrant(ctx context.Context, clientID, userID, scope string) (Grant, string, error) {
+func (s *Store) UpsertGrant(ctx context.Context, clientID, userID, scope string, workspaces []string) (Grant, string, error) {
 	if !ValidScope(scope) {
 		return Grant{}, "", ErrInvalidScope
 	}
 	now := s.now()
 	plain := ids.Secret(32)
+	if workspaces != nil {
+		plain = limitedRefreshPrefix + plain
+	}
 	refreshAt := now.Add(RefreshTTL).UnixMilli()
 	if _, err := s.db.ExecContext(ctx, `INSERT INTO mcp_oauth_grant(id,client_id,user_id,scope,refresh_hash,access_expires_at,refresh_expires_at,created_at)
 		VALUES(?,?,?,?,?,0,?,?)
 		ON CONFLICT(client_id,user_id) DO UPDATE SET scope = excluded.scope, revoked_at = 0,
 			refresh_hash = excluded.refresh_hash, refresh_expires_at = excluded.refresh_expires_at`,
-		ids.New(), clientID, userID, scope, HashSecret(plain), refreshAt, now.UnixMilli()); err != nil {
+		ids.New(), clientID, userID, scope, refreshHash(plain), refreshAt, now.UnixMilli()); err != nil {
 		return Grant{}, "", err
 	}
 	g, err := s.grantFor(ctx, clientID, userID)
 	if err != nil {
+		return Grant{}, "", err
+	}
+	// The consent page's choice replaces the earlier one.
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM mcp_oauth_grant_workspaces WHERE grant_id = ?`, g.ID); err != nil {
+		return Grant{}, "", err
+	}
+	for _, ws := range workspaces {
+		if _, err := s.db.ExecContext(ctx, `INSERT OR IGNORE INTO mcp_oauth_grant_workspaces(grant_id,workspace_id) VALUES(?,?)`, g.ID, ws); err != nil {
+			return Grant{}, "", err
+		}
+	}
+	if g, err = s.withWorkspaces(ctx, g); err != nil {
 		return Grant{}, "", err
 	}
 	// A deliberate authorization starts a new token family: the tokens the
@@ -392,14 +425,14 @@ func (s *Store) UpsertGrant(ctx context.Context, clientID, userID, scope string)
 func (s *Store) grantFor(ctx context.Context, clientID, userID string) (Grant, error) {
 	row := s.db.QueryRowContext(ctx, `SELECT id,client_id,user_id,scope,token_id,access_expires_at,refresh_expires_at,COALESCE(revoked_at,0),created_at
 		FROM mcp_oauth_grant WHERE client_id = ? AND user_id = ?`, clientID, userID)
-	return scanGrant(row)
+	return s.scanGrantWS(ctx, row)
 }
 
 // GrantByRefresh resolves a plain refresh token.
 func (s *Store) GrantByRefresh(ctx context.Context, plain string) (Grant, error) {
 	row := s.db.QueryRowContext(ctx, `SELECT id,client_id,user_id,scope,token_id,access_expires_at,refresh_expires_at,COALESCE(revoked_at,0),created_at
-		FROM mcp_oauth_grant WHERE refresh_hash = ?`, HashSecret(plain))
-	return scanGrant(row)
+		FROM mcp_oauth_grant WHERE refresh_hash = ?`, refreshHash(plain))
+	return s.scanGrantWS(ctx, row)
 }
 
 // GrantByUsedRefresh resolves a refresh token that a rotating grant already
@@ -410,8 +443,8 @@ func (s *Store) GrantByUsedRefresh(ctx context.Context, plain string) (Grant, er
 		return Grant{}, ErrNotFound
 	}
 	row := s.db.QueryRowContext(ctx, `SELECT g.id,g.client_id,g.user_id,g.scope,g.token_id,g.access_expires_at,g.refresh_expires_at,COALESCE(g.revoked_at,0),g.created_at
-		FROM mcp_oauth_refresh_used u JOIN mcp_oauth_grant g ON g.id = u.grant_id WHERE u.refresh_hash = ?`, HashSecret(plain))
-	return scanGrant(row)
+		FROM mcp_oauth_refresh_used u JOIN mcp_oauth_grant g ON g.id = u.grant_id WHERE u.refresh_hash = ?`, refreshHash(plain))
+	return s.scanGrantWS(ctx, row)
 }
 
 // RotateRefresh replaces the grant's refresh token plain with a new one and
@@ -438,6 +471,9 @@ var (
 func (s *Store) rotate(ctx context.Context, t grantTables, grantID, plain string) (string, error) {
 	now := s.now()
 	next := ids.Secret(32)
+	if strings.HasPrefix(plain, limitedRefreshPrefix) {
+		next = limitedRefreshPrefix + next // a limited grant stays one (token-workspaces D5)
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
@@ -445,7 +481,7 @@ func (s *Store) rotate(ctx context.Context, t grantTables, grantID, plain string
 	defer tx.Rollback()
 	res, err := tx.ExecContext(ctx, `UPDATE `+t.grant+` SET refresh_hash = ?, refresh_expires_at = ?
 		WHERE id = ? AND refresh_hash = ? AND `+t.revoked+` = 0`,
-		HashSecret(next), now.Add(RefreshTTL).UnixMilli(), grantID, HashSecret(plain))
+		refreshHash(next), now.Add(RefreshTTL).UnixMilli(), grantID, refreshHash(plain))
 	if err != nil {
 		return "", err
 	}
@@ -465,7 +501,7 @@ func (s *Store) rotate(ctx context.Context, t grantTables, grantID, plain string
 		return "", ErrReused
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO `+t.used+`(refresh_hash,grant_id,used_at) VALUES(?,?,?)
-		ON CONFLICT(refresh_hash) DO NOTHING`, HashSecret(plain), grantID, now.UnixMilli()); err != nil {
+		ON CONFLICT(refresh_hash) DO NOTHING`, refreshHash(plain), grantID, now.UnixMilli()); err != nil {
 		return "", err
 	}
 	// A used token older than RefreshTTL would have expired unrotated, so it
@@ -484,7 +520,7 @@ func (s *Store) GrantByToken(ctx context.Context, tokenID string) (Grant, error)
 	}
 	row := s.db.QueryRowContext(ctx, `SELECT id,client_id,user_id,scope,token_id,access_expires_at,refresh_expires_at,COALESCE(revoked_at,0),created_at
 		FROM mcp_oauth_grant WHERE token_id = ?`, tokenID)
-	return scanGrant(row)
+	return s.scanGrantWS(ctx, row)
 }
 
 // SwapGrantToken records the access token an exchange or a refresh minted,
@@ -532,7 +568,7 @@ func (s *Store) RevokeGrant(ctx context.Context, grantID string) (string, error)
 func (s *Store) GrantByID(ctx context.Context, id string) (Grant, error) {
 	row := s.db.QueryRowContext(ctx, `SELECT id,client_id,user_id,scope,token_id,access_expires_at,refresh_expires_at,COALESCE(revoked_at,0),created_at
 		FROM mcp_oauth_grant WHERE id = ?`, id)
-	return scanGrant(row)
+	return s.scanGrantWS(ctx, row)
 }
 
 // Live reports whether a grant may still be used, and why not when it may not.
@@ -623,4 +659,57 @@ func boolInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// limitedRefreshPrefix starts the refresh token of a grant limited to
+// workspaces (token-workspaces D5).
+const limitedRefreshPrefix = "otwr_"
+
+// refreshHash is the stored hash of a refresh token: a limited grant's is
+// derived differently, so a binary from before the limit, which would mint an
+// unlimited access token, finds no grant to refresh.
+func refreshHash(plain string) string {
+	if strings.HasPrefix(plain, limitedRefreshPrefix) {
+		return HashSecret("token-workspaces\x00" + plain)
+	}
+	return HashSecret(plain)
+}
+
+// scanGrantWS is scanGrant with the grant's workspaces.
+func (s *Store) scanGrantWS(ctx context.Context, row interface{ Scan(...any) error }) (Grant, error) {
+	g, err := scanGrant(row)
+	if err != nil {
+		return g, err
+	}
+	return s.withWorkspaces(ctx, g)
+}
+
+// withWorkspaces reads a grant's workspaces; none leaves Workspaces nil.
+func (s *Store) withWorkspaces(ctx context.Context, g Grant) (Grant, error) {
+	ws, err := s.idList(ctx, `SELECT workspace_id FROM mcp_oauth_grant_workspaces WHERE grant_id = ? ORDER BY rowid`, g.ID)
+	if err != nil {
+		return g, err
+	}
+	if len(ws) > 0 {
+		g.Workspaces = ws
+	}
+	return g, nil
+}
+
+// idList runs a query returning one id column.
+func (s *Store) idList(ctx context.Context, query string, args ...any) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }

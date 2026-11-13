@@ -227,7 +227,7 @@ describe('runView', () => {
 
   it('groups by priority 1 to 4 and by label in label order (a task under each of its labels)', () => {
     const p = runView(view({ id: 'v', query: '@work', group_by: 'priority' }), CTX)
-    expect(p.ok && p.groups.map((g) => g.heading)).toEqual(['Priority 1', 'Priority 2', 'Priority 3', 'Priority 4'])
+    expect(p.ok && p.groups.map((g) => g.heading)).toEqual(['Priority 1', 'Priority 2', 'Priority 3', 'No priority'])
     const l = runView(view({ id: 'v', query: '@work | @waiting', group_by: 'label' }), CTX)
     expect(l.ok && l.groups.map((g) => g.heading)).toEqual(['work', 'waiting', 'errand'])
     expect(l.ok && ids(l.groups[2].tasks)).toEqual(['today-p4'])
@@ -429,12 +429,12 @@ describe('runView', () => {
 
 describe('display options (views-and-display)', () => {
   it('a view without the fields reads as a list of open matches showing every property', () => {
-    expect(displayOptions(view({ id: 'v', query: '@work' }))).toEqual({ layout: 'list', showCompleted: false, hidden: [], cardNotes: false })
+    expect(displayOptions(view({ id: 'v', query: '@work' }))).toEqual({ layout: 'list', showCompleted: false, hidden: [], cardNotes: false, nested: false })
   })
 
   it('unknown values from a newer client fall back without being rewritten', () => {
     const v = view({ id: 'v', query: '@work', layout: 'gallery', hidden_props: ['mood', 'estimate', 'date'], show_completed: 'yes' as never })
-    expect(displayOptions(v)).toEqual({ layout: 'list', showCompleted: false, hidden: ['date', 'estimate'], cardNotes: false })
+    expect(displayOptions(v)).toEqual({ layout: 'list', showCompleted: false, hidden: ['date', 'estimate'], cardNotes: false, nested: false })
     expect(v.layout).toBe('gallery')
   })
 

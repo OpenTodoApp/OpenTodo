@@ -93,6 +93,20 @@ func (s *Server) checkSharedRefs(ctx context.Context, uid, pid string, ref refs)
 			return errOutsideProject("it names a task of another project")
 		}
 	}
+	for _, id := range ref.notes {
+		n, err := s.sync.Get(ctx, uid, "note", id)
+		if err != nil {
+			return err
+		}
+		if n != nil && idOf(n["project_id"]) != pid {
+			return errOutsideProject("it names a note of another project")
+		}
+	}
+	for _, target := range ref.noteMoves {
+		if target != pid && target != "?" {
+			return errOutsideProject("it moves notes out of it")
+		}
+	}
 	if ref.webhook != "" {
 		return invalidRule("a shared routine cannot send a webhook: webhooks are personal")
 	}

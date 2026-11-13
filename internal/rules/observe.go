@@ -51,7 +51,7 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 	depth := depthOf(ctx)
 	var events []Event
 	for _, c := range changes {
-		if c.Entity != "task" || c.Origin == importDevice || c.UserID == "" {
+		if (c.Entity != "task" && c.Entity != "note") || c.Origin == importDevice || c.UserID == "" {
 			continue
 		}
 		// A shared project's routines fire on any member's batch (routines-shared D3).
@@ -60,7 +60,7 @@ func (e *Engine) Observe(ctx context.Context, changes []opsync.Change) {
 		if len(kinds) == 0 {
 			continue
 		}
-		for _, ev := range Derive(c) {
+		for _, ev := range derive(c) {
 			if kinds[ev.Kind] {
 				ev.UserID, ev.Origin, ev.Depth = c.UserID, c.Origin, depth
 				events = append(events, ev)

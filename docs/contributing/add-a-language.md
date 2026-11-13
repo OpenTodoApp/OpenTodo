@@ -9,18 +9,27 @@ order: 5
 ---
 # Add a language
 
-The app ships in seven languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted.** How messages are written is in [Translating OpenTodo](../translating.md).
+The app ships in eight languages. A new one is a catalog plus a handful of small tables, and a speaker of the language who reviews it. **Machine translation is not accepted.** How messages are written is in [Translating OpenTodo](../translating.md).
 
 ## Before you start
 
-Open an issue or a discussion naming the language and who will review it. Until it is listed, a catalog can sit in the repository unfinished: the check only prints how far it is ("pl: 412 of 3550").
+Open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) naming the language and who will review it. Until it is listed, a catalog can sit in the repository unfinished: the check only prints how far it is ("pl: 412 of 3550").
+
+## Scaffold it
+
+```sh
+node scripts/i18n/new-language.mjs sv "Svenska"   # every file below that can start empty
+make i18n-status                                   # translated / total per language and surface
+```
+
+The scaffold refuses a code that is not two or three lowercase letters or that already exists, and never lists the language, so Settings does not offer it until you do. The steps are in [Translating OpenTodo](../translating.md#adding-a-language-step-by-step); a catalog that is at least 90 % done can ship as a [community language](../translating.md#community-languages).
 
 ## The files
 
 | What | Where |
 | --- | --- |
 | The interface catalog | `web/src/locales/<code>.json`: every key of `web/src/locales/messages.json`, translated |
-| The language list | `{ code, name }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself |
+| The language list | `{ code, name }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself, and `community: true` for a community language |
 | Browser tags that pick it | `web/src/lib/i18n/locale.ts`, only when the language has script or region variants (as Chinese does) |
 | Notification texts of the service worker | the table in `web/public/push-sw.js` |
 | The browser extension | `extension/_locales/<code>/messages.json` |
@@ -28,15 +37,17 @@ Open an issue or a discussion naming the language and who will review it. Until 
 | The Android app | `mobile/android/app/src/main/res/values-<code>/strings.xml` |
 | Emails | `internal/mail/templates/*.<code>.txt`, and `<code>` in `mail.Languages` |
 | Delivery channel messages | the rows in `internal/channels/messages.go` |
-| The docs | the glossary column in [Translating OpenTodo](../translating.md#glossary), and the list in [Language](../language.md) |
+| The docs | the reviewer in the [maintainer table](../translating.md#maintainers), the glossary column in [Translating OpenTodo](../translating.md#glossary), and the list in [Language](../language.md) |
 
-Quick add understands dates and priorities in a language only with a vocabulary in `web/src/lib/nlp/vocab/`. That is a separate contribution; without it, quick add keeps English.
+A maintained language needs every row. A community language needs the catalog, the list entry and a maintainer; the other surfaces show English until they are translated.
+
+Quick add understands dates and priorities in a language only with a vocabulary in `web/src/lib/nlp/vocab/` ([Writing a quick-add vocabulary](../translating.md#writing-a-quick-add-vocabulary)). That is a separate contribution; without it, quick add keeps English.
 
 ## Check it
 
 ```sh
 node scripts/i18n/extract.mjs --write   # after any change to English messages
-make i18n-check                          # complete catalogs, placeholders, plurals, Settings paths
+make i18n-check                          # complete catalogs, placeholders, plurals, Settings paths, the Android strings
 cd web && npm test -- i18n
 go test ./internal/mail/... ./internal/channels/...
 ```

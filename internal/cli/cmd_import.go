@@ -59,7 +59,7 @@ type importPreview struct {
 // importFormats are the server's import formats (internal/importer
 // ProfileNames; a test keeps the two equal), listed in --format's help.
 var importFormats = []string{"opentodo", "tududi-db", "things-db", "vikunja-export", "super-productivity-json",
-	"google-tasks-json", "trello-json", "microsoft-todo-json", "apple-reminders-json", "anydo-json",
+	"google-tasks-json", "trello-json", "microsoft-todo-json", "apple-reminders-json", "anydo-json", "ics",
 	"json-items", "json-lists", "json-generic", "todoist-csv", "todoist-backup", "ticktick-csv", "linear-csv",
 	"omnifocus-csv", "asana-csv", "csv", "notion-csv"}
 

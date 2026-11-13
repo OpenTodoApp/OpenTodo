@@ -6,7 +6,7 @@ Defines how data enters OpenTodo from files: the accepted formats and their fiel
 ## Requirements
 
 ### Requirement: Accepted import formats
-The server SHALL import the app's own JSON export (`opentodo-export` version 1 and later), CSV with the documented column mapping, and JSON exports of other task managers through named importer profiles. It SHALL also import the export files of these named apps: `todoist-csv`, `todoist-backup`, `ticktick-csv`, `linear-csv`, `things-db`, `google-tasks-json`, `trello-json`, `asana-csv`, `microsoft-todo-json`, `apple-reminders-json`, `anydo-json`, `omnifocus-csv`, `vikunja-export`, `notion-csv`, `super-productivity-json` and `tududi-db`. All of them SHALL be documented in `docs/import.md`. The format SHALL be detected from the file content, and the detected format SHALL be shown and overridable before anything is written. A named format SHALL be detected only on a signature distinctive of that app's file, never on a product name alone, so that no file of one format is read as another, and the generic JSON and CSV profiles keep every file they accepted before. A bare CSV file SHALL never be detected as `notion-csv`, but the user MAY choose that format for it.
+The server SHALL import the app's own JSON export (`opentodo-export` version 1 and later), CSV with the documented column mapping, and JSON exports of other task managers through named importer profiles. It SHALL also import the export files of these named apps: `todoist-csv`, `todoist-backup`, `ticktick-csv`, `linear-csv`, `things-db`, `google-tasks-json`, `trello-json`, `asana-csv`, `microsoft-todo-json`, `apple-reminders-json`, `anydo-json`, `omnifocus-csv`, `vikunja-export`, `notion-csv`, `super-productivity-json`, `tududi-db` and `ics` (an iCalendar file of tasks). All of them SHALL be documented in `docs/import.md`. The format SHALL be detected from the file content, and the detected format SHALL be shown and overridable before anything is written. A named format SHALL be detected only on a signature distinctive of that app's file, never on a product name alone, so that no file of one format is read as another, and the generic JSON and CSV profiles keep every file they accepted before. A bare CSV file SHALL never be detected as `notion-csv`, but the user MAY choose that format for it.
 
 #### Scenario: Own export is detected
 - **WHEN** a file whose top-level document carries `"format":"opentodo-export"` is uploaded for preview
@@ -39,6 +39,10 @@ The server SHALL import the app's own JSON export (`opentodo-export` version 1 a
 #### Scenario: A bare CSV is not taken for Notion
 - **WHEN** a CSV file with a `Name` and a `Status` column, not inside a Notion export ZIP, is uploaded for preview
 - **THEN** it is reported as `csv` or as the generic profile it matched before, and `notion-csv` is offered in the format menu
+
+#### Scenario: An iCalendar file is detected
+- **WHEN** a file that starts with `BEGIN:VCALENDAR` (after white space and a byte order mark) is uploaded for preview without choosing a format
+- **THEN** the preview reports the format `ics`, and every other fixture kept with the tests is still reported in the format it was reported in before
 
 ### Requirement: Field mapping
 Imported rows SHALL map onto the existing entities: projects by case-insensitive name (reusing a live match), subtasks to `parent_id`, labels to `labels`, priority to 1–4 (default 4), due dates to floating `{date, time?}`, completion to `completed_at`, creation to `created_at`, `http(s)` attachment references to link attachments, and recurrence, reminders and sections as below. Parts the model cannot hold SHALL be dropped with a per-row warning, never silently.
@@ -909,3 +913,49 @@ Within the file size and row limits, the server SHALL refuse a CSV file in which
 
 - **WHEN** an export from a supported app within the size and row limits is imported
 - **THEN** it imports as before
+
+### Requirement: iCalendar task files
+The server SHALL import an iCalendar file (RFC 5545) as the format `ics`, reading each `VTODO` with the same mapping as a `VTODO` sent over CalDAV: `SUMMARY` and `DESCRIPTION` as the title and the description, `PRIORITY` with the CalDAV priority table, `DUE`, `DTSTART` and their shapes as the due date, its time and the deadline (a `DTSTART` alone as the start date), `STATUS:COMPLETED` or `CANCELLED` or a `COMPLETED` time as completion at that time, `CREATED` as the creation time, `CATEGORIES` as labels, an `RRULE` the rule grammar can express as the task's repeat rule, `ESTIMATED-DURATION` as the estimate, OpenTodo's own `X-OPENTODO-START`, `X-OPENTODO-EVENING` and `X-OPENTODO-ENERGY` properties, and each display `VALARM` as a reminder. A zoned or UTC time SHALL become the wall time in the import's time zone. A `RELATED-TO` with `RELTYPE=PARENT` or without `RELTYPE` SHALL make the task a subtask of the task with that `UID` in the same file, wherever that task appears in the file, and `RELTYPE=DEPENDS-ON` SHALL make it blocked by that task. A file with `X-WR-CALNAME` SHALL become one project of that name (a live project of that name is reused); a file without it SHALL go to the Inbox or the chosen target project. Each task SHALL carry the origin `{kind: "import", provider: "ics", id: <UID>}`, read as "iCalendar". A `VTODO` the mapping cannot read (no `UID`, a value the mapping refuses, a component cut off before its `END`) SHALL be one row in error with the reason, and the rest of the file SHALL still import; components other than `VTODO` and `VTIMEZONE` SHALL be reported in a file note and not imported; a repeat rule, an alarm, a skipped occurrence (`EXDATE`) or a changed occurrence (`RECURRENCE-ID`) the model cannot hold SHALL be dropped with a row warning. The import screen SHALL list the format as "iCalendar tasks (.ics)" and its file picker SHALL accept `.ics` files. Like every import, the job writes ordinary operations with device `import`: devices that were offline receive the tasks on their next sync and converge under last-writer-wins, and the whole import can be undone.
+
+#### Scenario: Nextcloud list with subtasks
+- **WHEN** a Nextcloud Tasks export with `X-WR-CALNAME:Groceries`, a task "Bake a cake" and two tasks with `RELATED-TO;RELTYPE=PARENT:<cake UID>`, one of them before the parent in the file, is imported
+- **THEN** a project "Groceries" holds "Bake a cake" with the two tasks as its subtasks, each task's origin is `{kind: "import", provider: "ics", id: <its UID>}`, and a second preview of the same file reports every task as `skip` with reason `already_imported`
+
+#### Scenario: RELATED-TO without RELTYPE
+- **WHEN** a `VTODO` has `RELATED-TO:<UID>` with no `RELTYPE` and the file holds a `VTODO` with that `UID`
+- **THEN** the task is imported as a subtask of that task
+
+#### Scenario: Repeating task with an alarm
+- **WHEN** a `VTODO` with `DUE;TZID=Europe/Berlin:20261120T090000`, `RRULE:FREQ=WEEKLY;BYDAY=FR` and a `VALARM` with `TRIGGER:-PT15M` is imported with the time zone `Europe/Berlin`
+- **THEN** the task is due 2026-11-20 at 09:00, repeats every Friday, and has a reminder 15 minutes before its due time
+
+#### Scenario: Completed task
+- **WHEN** a `VTODO` with `STATUS:COMPLETED` and `COMPLETED:20261101T100000Z` is imported
+- **THEN** the task is created completed at that instant
+
+#### Scenario: Malformed component is skipped and reported
+- **WHEN** a file holds three `VTODO`s and one of them has no `UID`
+- **THEN** the preview lists that component as an `error` row with the reason, the other two as `create`, and the import creates the two
+
+#### Scenario: Events are not imported
+- **WHEN** a file holds `VTODO`s and two `VEVENT`s
+- **THEN** the `VTODO`s are imported and a file note says that 2 VEVENT components are not imported
+
+#### Scenario: Preview requires authentication
+- **WHEN** an `.ics` file is sent to the preview route without a session or token
+- **THEN** the server answers 401 and reads nothing, as for every other format
+
+#### Scenario: A file that is not a calendar
+- **WHEN** a file is uploaded with the format `ics` forced but holds no `BEGIN:VCALENDAR`
+- **THEN** the preview is refused with a 400 `invalid_file` error saying the file is not an iCalendar file
+
+### Requirement: Import from Todoist with an API token
+The import screen SHALL offer, with Switch from: Todoist, a field for a Todoist API token. `POST /api/v1/import/todoist` with `{token}` SHALL make one request to Todoist's sync endpoint for the projects, sections, labels, tasks and comments, through the outbound policy without private-network targets or redirects, and answer Todoist's JSON, which the import previews and runs like an uploaded `json-items` file with the same options, limits and Undo. The token SHALL be used for that request only and never stored or logged. A token Todoist refuses SHALL answer 400 `invalid_token`, an answer over the import limit 413 `too_large`, an unreachable Todoist 502 `upstream_failed`, more than 10 requests an hour 429 `rate_limited`; demo instances and `read` or `agent` tokens SHALL be refused. A task's comments SHALL join the end of its notes.
+
+#### Scenario: A free Todoist account
+- **WHEN** a person without Todoist Premium pastes their API token and chooses Fetch from Todoist
+- **THEN** the preview shows their projects, sections, labels and tasks with repeats, priorities and comments in the notes, and starting the import creates them with Undo, and the token is stored nowhere
+
+#### Scenario: A wrong token
+- **WHEN** the token is mistyped
+- **THEN** the screen says Todoist did not accept it, and nothing is imported

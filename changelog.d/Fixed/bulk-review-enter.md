@@ -1,0 +1,1 @@
+- **Enter applies a move or assignment review, and a routine's proposal, right after it opens.** The review arrives a moment after its dialog, and focus stayed on the dialog itself, so Enter did nothing until you tabbed into it.

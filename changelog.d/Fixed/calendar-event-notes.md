@@ -1,0 +1,1 @@
+- Calendar sync keeps an event's notes up to date: notes added or changed after the event was written now reach the calendar, and the event links to its task instead of its day. Existing events are written again once after the update (calendar-event-notes, #1231).

@@ -23,7 +23,7 @@ export type Route =
   | { view: 'completed' }
   | { view: 'assigned' }
   | { view: 'project'; id: string }
-  | { view: 'task'; id: string }
+  | { view: 'task'; id: string; asTask?: boolean }
   | { view: 'label'; id: string }
   | { view: 'labels' }
   // Saved locations (task-locations, the `place` entity): /locations, and /location/<id> lists the open tasks linked to one.
@@ -68,6 +68,8 @@ export type Route =
   // Weekly review and Statistics (stats-and-review).
   | { view: 'review'; step?: string }
   | { view: 'stats' }
+  // Habits (habits-home D9): the habits screen, while Habits is on.
+  | { view: 'habits'; id?: string }
   // Open Loops (open-loops-method): the derived Next and Waiting views.
   | { view: 'next' }
   | { view: 'waiting' }
@@ -100,7 +102,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
-  trash: false, feed: false, ask: false, display: false, stats: false,
+  trash: false, feed: false, ask: false, display: false, stats: false, habits: false,
 }
 
 /** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
@@ -237,7 +239,9 @@ export function parseRoute(pathname: string): Route {
       return parts[1] ? { view: 'project', id: parts[1] } : { view: 'inbox' }
     case 'task':
       // The expanded task page (ux-overhaul, app-shell "Panel width and expansion").
-      return parts[1] ? { view: 'task', id: parts[1] } : { view: 'inbox' }
+      // ?as=task: a habit's full task page, from its habit page's menu (habits-polish D3).
+      if (!parts[1]) return { view: 'inbox' }
+      return new URLSearchParams(query).get('as') === 'task' ? { view: 'task', id: parts[1], asTask: true } : { view: 'task', id: parts[1] }
     case 'invite':
       // /invite/p/<token> is a project invite link (project-invite-links).
       if (parts[1] === 'p') return parts[2] ? { view: 'project-invite', token: safeDecode(parts[2]) } : { view: 'inbox' }
@@ -277,6 +281,9 @@ export function parseRoute(pathname: string): Route {
       return LOOP_MOVES.includes(parts[1]) ? { view: 'loop', move: parts[1] as LoopMove } : { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
+    case 'habits':
+      // /habits/<id>: a habit's own page (habits-polish D3).
+      return parts[1] && /^[\w-]{1,64}$/.test(parts[1]) ? { view: 'habits', id: parts[1] } : { view: 'habits' }
     case 'focus':
       return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
     case 'notes': {
@@ -313,9 +320,10 @@ function safeDecode(s: string): string {
 
 export function routePath(r: Route): string {
   switch (r.view) {
+    case 'task':
+      return `/task/${r.id}${r.asTask ? '?as=task' : ''}`
     case 'project':
     case 'label':
-    case 'task':
       return `/${r.view}/${r.id}`
     case 'view':
       return `/views/${r.id}`
@@ -374,6 +382,8 @@ export function routePath(r: Route): string {
       return r.move ? `/loop/${r.move}` : '/loop'
     case 'focus':
       return r.id ? `/focus/${encodeURIComponent(r.id)}` : '/focus'
+    case 'habits':
+      return r.id ? `/habits/${r.id}` : '/habits'
     case 'notes': {
       const graph = r.graph ?? readString(NOTES_VIEW_KEY) === 'graph'
       return r.id ? `/notes/${encodeURIComponent(r.id)}${graph ? '?view=graph' : ''}` : r.create ? `/notes?new=1${graph ? '&view=graph' : ''}` : graph ? '/notes?view=graph' : '/notes'

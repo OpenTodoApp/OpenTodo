@@ -746,7 +746,7 @@ For an end-to-end encrypted account the `location` argument of `create_tasks` an
 - **THEN** no tool names a rule, and a `create_rule` call is answered with an unknown-tool error
 
 ### Requirement: Workspaces in tools
-`tools/list` SHALL advertise a read tool `list_workspaces` (the caller's workspaces with id, name, role, default flag, and the member and group names of the caller's own workspaces, marked as untrusted text), and `list_projects`, `list_tasks` and `search_tasks` SHALL accept an optional `workspace` argument (id or exact name; absent means every workspace) and SHALL carry each project's `workspace_id` and workspace name in results. `create_project` SHALL accept an optional `workspace_id` (default: the account's default workspace), `create_tasks` SHALL accept it for tasks without a project, and `update_project` SHALL accept it only from the project's owner. The resource `opentodo://workspaces` SHALL list the same as `list_workspaces`. A `workspace` the caller does not belong to SHALL answer the invalid-argument error; writes stay under the write permission gate, limits and audit as every other write.
+`tools/list` SHALL advertise a read tool `list_workspaces` (the caller's workspaces with id, name, role, default flag, and the member and group names of the caller's own workspaces, marked as untrusted text), and `list_projects`, `list_tasks` and `search_tasks` SHALL accept an optional `workspace` argument (id or exact name; absent means every workspace) and SHALL carry each project's `workspace_id` and workspace name in results. `create_project` SHALL accept an optional `workspace_id` (default: the account's default workspace), `create_tasks` SHALL accept it for tasks without a project, and `update_project` SHALL accept it only from the project's owner. `create_label` SHALL accept an optional `workspace_id`, a workspace id or exact name (default: the account's default workspace), create the label there, and return an existing label only when one of the same name (ignoring case) is in that workspace; the agent route `POST /api/v1/labels` SHALL pass `workspace_id` on to it. A label name in `create_tasks` and `update_tasks` that labels of several workspaces share SHALL resolve to the label in the task's workspace when there is one. The resource `opentodo://workspaces` SHALL list the same as `list_workspaces`. A `workspace` the caller does not belong to SHALL answer the invalid-argument error; writes stay under the write permission gate, limits and audit as every other write.
 
 #### Scenario: Projects of one workspace
 - **WHEN** an assistant calls `list_projects` with `workspace: "Work"`
@@ -759,6 +759,14 @@ For an end-to-end encrypted account the `location` argument of `create_tasks` an
 #### Scenario: Create in a workspace
 - **WHEN** an assistant with an `agent` token calls `create_project` with `workspace_id` of "Work" while the switches allow writes
 - **THEN** the project is created in Work through the operation log, attributed and audited like any agent write, and devices in Work show it after sync
+
+#### Scenario: A label in a workspace
+- **WHEN** an assistant with an `agent` token calls `create_label` with `name: "hofer"` and `workspace_id: "VPC"` while the default workspace already has a label "Hofer"
+- **THEN** a new label "hofer" is created in VPC through the operation log, it appears under VPC's Labels and in its filters after sync, and tagging a VPC task with "Hofer" by name uses it
+
+#### Scenario: A label in a workspace that is not the caller's
+- **WHEN** an assistant calls `create_label` with `workspace_id: "Acme"` and the account has no such workspace
+- **THEN** the response is a JSON-RPC `-32602` error and nothing is written
 
 #### Scenario: Read token
 - **WHEN** a `read` token calls `tools/list`
@@ -1332,3 +1340,29 @@ A block SHALL offer ticking its tasks only when the caller passes the write gate
 #### Scenario: Agent token with both switches on
 - **WHEN** a client with an `agent` token, the owner's writes switch and the user's switch on, ticks a task in a block
 - **THEN** the task is completed through the op log like any MCP write
+
+### Requirement: Running a routine on a note
+`run_routine` SHALL accept an optional `note_id`, the standalone note given to a routine whose trigger outputs a Note, with the refusals of `POST /api/v1/rules/{id}/run` (`note_required`, both ids `invalid_input`), under the same write permission gate, limits, audit and device rules. `create_routine` and `update_routine` SHALL accept the note triggers and note steps, validated exactly as the routines routes do. `list_routines` and `get_routine` SHALL describe note triggers and steps in their sentences. On an encrypted account a note's title or text literal SHALL be accepted only as a ciphertext envelope or through the device relay.
+
+#### Scenario: Run on a note
+- **WHEN** an assistant with an `agent` token calls `run_routine` with "Checkboxes to tasks" and a `note_id`, while writes are allowed
+- **THEN** the routine runs on that note with source `mcp`, writes with device `rule:<rule-id>` and is audited as `agent.write` with the counts
+
+#### Scenario: Gate closed
+- **WHEN** the user's "Allow AI assistants to make changes" is off and an assistant calls `run_routine` with a `note_id`
+- **THEN** the tool is not listed and the call is refused with the gate's error, and nothing runs
+
+#### Scenario: Missing note
+- **WHEN** an assistant runs a `note.label.added` routine without `note_id`
+- **THEN** the call answers `note_required` and nothing runs
+
+### Requirement: A token's workspaces in MCP
+Over MCP, a token limited to chosen workspaces SHALL see and change only those workspaces through every tool and resource, as the REST routes do: `list_workspaces` SHALL list only them, a tool naming an item outside SHALL answer not found, new items SHALL land in the first chosen workspace, and tools over account-wide records (frames, slots, objectives, memories, reviews, routines) SHALL answer `token_restricted`. The OAuth consent page SHALL offer **All workspaces** (the default) or chosen workspaces, and every access token of the grant SHALL carry that choice, also after a refresh.
+
+#### Scenario: An assistant for work
+- **WHEN** an assistant connected with a token limited to Work calls `list_projects` and then `create_tasks` without a project
+- **THEN** it sees only Work's projects and the task lands in Work's Inbox
+
+#### Scenario: Consent with a choice
+- **WHEN** a person connects Gemini and, on the consent page, chooses only Work
+- **THEN** the minted access token and every refreshed one are limited to Work

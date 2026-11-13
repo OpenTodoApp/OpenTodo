@@ -1,0 +1,9 @@
+{{.Inviter}} heeft je uitgenodigd voor een gedeeld project
+
+Dit is een uitnodiging voor een gedeeld project in OpenTodo.
+
+{{.Inviter}} heeft {{.Email}} uitgenodigd om als {{.Role}} deel te nemen aan een project op de OpenTodo-server op {{.Origin}}. Om deel te nemen, open je deze link:
+
+{{.Link}}
+
+De link vervalt over {{.Expiry}}. Als je {{.Inviter}} niet kent, kun je dit bericht negeren.

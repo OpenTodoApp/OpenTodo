@@ -12,8 +12,23 @@ const read = (lang) => JSON.parse(readFileSync(new URL(`${lang}/messages.json`, 
 const en = read('en')
 const langs = readdirSync(dir)
 
-test('the six shipped languages are there', () => {
-  assert.deepEqual([...langs].sort(), ['de', 'en', 'es', 'fr', 'it', 'pt', 'zh'])
+// The web app's maintained languages (web/src/locales/index.ts, entries without
+// `community: true`) each have a folder (more-languages D6). Another folder is a
+// community or work-in-progress language, which the build leaves out while it is
+// marked "TODO translate" (scripts/i18n/new-language.mjs).
+const index = readFileSync(new URL('../web/src/locales/index.ts', import.meta.url), 'utf8')
+const maintained = [...index.matchAll(/\{ code: '([a-z]{2,3})'[^}]*\}/g)].filter((m) => !m[0].includes('community: true')).map((m) => m[1])
+
+test('every maintained language is there', () => {
+  assert.ok(maintained.length >= 7, maintained.join())
+  for (const code of maintained) assert.ok(langs.includes(code), `extension/_locales/${code} is missing`)
+})
+
+test('a maintained language is translated, not a scaffold', () => {
+  for (const code of maintained.filter((c) => c !== 'en')) {
+    const todo = Object.entries(read(code)).filter(([, e]) => String(e.description ?? '').startsWith('TODO translate'))
+    assert.deepEqual(todo.map(([k]) => k), [], `${code} still has TODO translate entries`)
+  }
 })
 
 for (const lang of langs) {

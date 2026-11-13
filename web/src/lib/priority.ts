@@ -1,7 +1,9 @@
 // The names of the four priority levels (OpenSpec change priority-names, design
 // D2, D3): `user_prefs.priority_name_1` … `_4`, each the person's own word for
-// the level or "" for the default ("Priority 1" in the interface language). The
-// stored priority of a task stays the number; only the label changes. Like the
+// the level or "" for the default ("Priority 1" in the interface language; level 4,
+// the default of every task, reads as no priority: "No priority", "None" in a
+// picker, priority-none D1). The stored priority of a task stays the number; only
+// the label changes. Like the
 // date format, DateTimePrefsProvider publishes the names as a module snapshot
 // during render (setPriorityNames) and bumps the resolved date-time version, so
 // every list, row and menu that follows the date format follows the names too.
@@ -47,19 +49,24 @@ export function customPriorityName(n: number): string {
   return names[n - 1] ?? ''
 }
 
-/** A level's default name, "Priority 1" in the interface language. */
+/** A level's default name, "Priority 1" in the interface language; level 4 is "No priority" (priority-none). */
 export function defaultPriorityName(n: number): string {
-  return t('Priority {n}', { n })
+  return n === 4 ? t('No priority') : t('Priority {n}', { n })
 }
 
-/** A level as a word: the person's name, else "Priority 1". */
+/** Whether a level reads as no priority: level 4 while the person has not named it (priority-none). */
+export function isNoPriority(n: number): boolean {
+  return n === 4 && !customPriorityName(4)
+}
+
+/** A level as a word: the person's name, else "Priority 1" (level 4: "No priority"). */
 export function priorityName(n: number): string {
   return customPriorityName(n) || defaultPriorityName(n)
 }
 
-/** A level where today's text is the short "P1" (row facts, chips, menus): the person's name, else "P1". */
+/** A level where today's text is the short "P1" (row facts, chips, menus): the person's name, else "P1" (level 4: "None"). */
 export function priorityShort(n: number): string {
-  return customPriorityName(n) || `P${n}`
+  return customPriorityName(n) || (n === 4 ? t('None', { context: 'priority' }) : `P${n}`)
 }
 
 /**
@@ -71,7 +78,7 @@ export function priorityKeysText(id: string): string {
   return id.endsWith('.priority') && names.some(Boolean) ? ` — ${[1, 2, 3, 4].map((n) => `${n} ${priorityName(n)}`).join(', ')}` : ''
 }
 
-/** What a screen reader hears: "Must, priority 1" for a named level, so the number is never lost; else "Priority 1". */
+/** What a screen reader hears: "Must, priority 1" for a named level, so the number is never lost; else "Priority 1" or "No priority". */
 export function priorityAccessibleName(n: number): string {
   const name = customPriorityName(n)
   return name ? t('{name}, priority {n}', { name, n }) : defaultPriorityName(n)

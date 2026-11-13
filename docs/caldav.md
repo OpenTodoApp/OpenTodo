@@ -35,6 +35,16 @@ An app password syncs every list by default. To keep work lists off a personal p
 
 The calendar app sees only the lists in the choice: the others are not listed, and asking for them answers as for a list that does not exist, so nothing in them is read or changed. After a change, the calendar app drops the lists that left the choice and picks up the new ones on its next sync. A list the calendar app creates goes into the first chosen workspace; with only projects chosen, creating a list is refused. A task moved to a list outside the choice disappears from the calendar app at its next sync.
 
+### Tasks as events in your calendar
+
+By default the lists are to-do lists, which Apple's Calendar and most calendar apps show in a reminders list, where a multi-day task is a single tick-off. To see your dated tasks in the calendar itself, choose **Show tasks as: Events** when you create the app password (it stays that way; create another password to change it). The same lists, one per project and the Inbox, are then calendars of events, written the way [Calendar sync](calendar-sync.md#what-syncs) writes them:
+
+- an open task with a due date is an event: a timed task lasts its estimate (30 minutes without one), a date-only task is all-day, and a multi-day task is one all-day event over its days;
+- the notes are the event's description and the event links to the task;
+- a repeating task is its next occurrence; tasks without a date and completed tasks are not shown.
+
+Moving or resizing an event moves the task (its date, time, start and estimate), renaming it renames the task, and editing the description edits the notes. Labels, priority, reminders and the repeat rule are not in the event, so an edit never changes them. Deleting an event removes the task's date and keeps the task. A new event in one of the calendars becomes a task. Ticking tasks off happens in OpenTodo or in a to-do app, since events cannot be completed.
+
 Accounts with two-factor authentication or in SSO-only mode use app passwords like everyone else: creating one requires a recent sign-in (the same step-up check as API tokens). Failed sign-ins are limited to 10 a minute per address; after that the endpoint answers 429 for a minute.
 
 ## Client setup
@@ -180,6 +190,7 @@ Thunderbird and todoman were run against a real server with the scenario below (
 | todoman 4.7.0 + vdirsyncer 0.21.0 (2026-10-22) | works; times are rewritten in UTC (same instant) | works | works | kept (not shown) | kept (todoman has no alarms) | the next occurrence arrives as a new task; the done one keeps no rule | works | works | works (etags, no sync token) | not verified (2026-10-31) | not verified (2026-11-11) |
 | DAVx⁵ + Tasks.org | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) | not verified (2026-11-11) |
 | DAVx⁵ + jtx Board | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) | not verified (2026-11-11) |
+| Tasks CalDAV Sync 1.6.1 (Obsidian 1.15 plugin, Linux, OpenTodo 1.3.0, 2026-11-13) | works; the plugin writes dates only and keeps the time of a task that has one | works: ⏳ (`DTSTART`) and a different 📅 (`DUE`) become the due date and the deadline | not verified (2026-11-13) | not verified (2026-11-13) | not verified (2026-11-13) | completing a weekly task in OpenTodo works, but the plugin then replaces the series with a new task (its issue 179) | not verified (2026-11-13) | works: the task goes to the Trash and the plugin sees the removal | not verified (2026-11-13) | not verified (2026-11-13) | not verified (2026-11-13) |
 | Mitra | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-21) | not verified (2026-10-31) | not verified (2026-11-11) |
 
 "Not verified" means the behaviour has not been tried on that client yet; the guide does not claim it works there. Each column is one block of the [verification script](caldav-verification.md), which also says how to send a run's results and fixtures. Testers are welcome: see issue #9.

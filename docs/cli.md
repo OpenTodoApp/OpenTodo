@@ -178,7 +178,7 @@ ot edit bins --no-rotate                             # stop taking turns
 | `--blocked-by <ref>` | Repeatable: a task this one waits for, by id or unique id prefix (an ambiguous prefix exits 1 listing the candidates, before any write). With `ot edit` the list is replaced; `none` clears it |
 | `--location <where>` | A saved location's name (case-insensitive) or id, sent with its current name, address and coordinates; or `lat,lon`; `none` (edit) clears it. An unknown name exits 1 before any write |
 | `--remind <phrase>` | `ot add` only, repeatable: a reminder without the reminder word, either an offset (`"30 min before"`, `"1 day before"`, `"2 hours after"`) or a moment (`"at 9"`, `"tomorrow at 9"`, `"20 Oct at 9"`). It is resolved like a quick-add reminder: relative to the task's due time (09:00 for a date-only due), or absolute in your local time zone when the task has no due date. An offset on an undated task waits for a due date, and the command says so |
-| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in six languages, and `~deep`, `~medium`, `~low` while your account has Energy levels on. Explicit flags win over what the line says; an unknown `#name` stays in the title |
+| `--natural` | `ot add` only: read the title like the app's [quick add](quick-add.md): dates and times, `#project`, `@label`, `p1`–`p4`, `+30m`, `30m/2h` (time spent and an estimate), `every …` rules and `remind me …` reminders, in seven languages, and `~deep`, `~medium`, `~low` while your account has Energy levels on. Explicit flags win over what the line says; an unknown `#name` stays in the title |
 | `--done` | `ot add` only: [log a win](today-limit.md#log-a-win), a task created already completed now by you in the one request, so it counts in Completed and your statistics like any completion. `--repeat` and `--remind` are usage errors with it (a win does not repeat or remind), and with `--natural` a rule or reminder phrase in the title is left out |
 | `--lang <codes>` | Languages for `--natural` and `--remind`, e.g. `de,en`. Default: the language of `LC_ALL`, `LC_MESSAGES` or `LANG`; English is always active |
 | `--no-default-reminder` | `ot add` and `ot edit`: add no [default reminder](default-reminders.md). Without it, a command that sets a due date asks the server for your default reminder (`?default_reminder=true`); `--remind` (or a `remind me …` phrase with `--natural`) also leaves it out, since you chose your own. With an `agent` token the server always applies your defaults |
@@ -302,6 +302,7 @@ ot routine list
 ot routine show Groceries                 # trigger, condition and steps as numbered sentences
 ot routine run Groceries --test           # plan every step, write nothing
 ot routine run "Waiting follow-up" --task 3f2a…
+ot routine run "Checkboxes to tasks" --note "Planning meeting"   # a routine on a note, by id or title
 ot routine runs Groceries --failed --limit 10
 ot routine create --file groceries.yaml
 ot routine create --project Household --file chores.yaml   # a routine of a (shared) project
@@ -311,7 +312,7 @@ ot routine undo Groceries <run-id>
 ot routine rm Groceries --yes
 ```
 
-A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
+A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views, webhooks and standalone notes (`note: Journal`, a note's title) may be written by name (`project: Errands`), and a note trigger's `label_id` by the label's name; the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
 
 ```yaml
 name: Groceries
@@ -391,11 +392,12 @@ It exits 1 with `audit_chain_broken` and names the first broken event when an ev
 
 ## Tokens and export
 
-`--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, sections, labels, comments, reminders and time entries (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
+`--limit-to <workspace>` (a name or id, repeatable) limits the token to those workspaces ([token-workspaces](api.md#token-scopes)): it reads and changes only them, and routes over the whole account refuse it. `--scope` is `full` (the default), `read` or `agent`; anything else exits with code 2 before a request is sent. Creating a token is a [credential route](api.md#token-scopes): `ot token create` needs an `admin` token in the profile (the token `ot login` stores is `full`, so run `ot login` again to mint a new one, or create it in Settings → Integrations → API tokens). An `admin` token can only be created in the web app, from a recently confirmed session; with it, scripts can also manage second factors, other tokens, app passwords, accounts and server secrets. A `full` token gets exit 5 (`insufficient_scope`) on those routes. An `agent` token is for an [AI assistant](mcp.md#letting-an-assistant-make-changes): it reads everything and can create and edit tasks, projects, sections, labels, comments, reminders and time entries (through the MCP write tools or `ot`, see [Using ot from an agent](#using-ot-from-an-agent)), and only while both assistant switches are on (the owner's and yours, in Settings → Integrations → AI assistants).
 
 ```bash
 ot token list                           # with each token's scope
 ot token create backup-script           # prints the secret once, with a notice on stderr
+ot token create work-assistant --scope agent --limit-to Work   # reaches only the workspace Work
 ot token create reporting --scope read  # read-only: refused on every change
 ot token create desk-assistant --scope agent   # for an AI assistant that may make changes
 ot token revoke backup-script --yes     # by name, id or id prefix

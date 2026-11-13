@@ -95,7 +95,7 @@ export async function runOnDevice(req: RoutineRunRequest, onStart: (name: string
   const prefs = await db.userPrefs.get('me')
   let world: Awaited<ReturnType<typeof loadRunWorld>>
   try {
-    world = await loadRunWorld({ steps, encrypted: true, project: rule.project_id || undefined, workspace: rule.workspace_id || undefined,
+    world = await loadRunWorld({ steps, encrypted: true, project: rule.project_id || undefined, workspace: rule.workspace_id || undefined, notes: !!req.note,
       env: { ai, aiConsent: ai, energy: (prefs as { energy?: string } | undefined)?.energy === 'on' } })
   } catch (err) {
     if (!(err instanceof WorkspaceGone)) throw err
@@ -103,7 +103,7 @@ export async function runOnDevice(req: RoutineRunRequest, onStart: (name: string
     return { name, outcome: 'failed', writes: 0 }
   }
   const plan = await planRoutine(world, { id: rule.id, name, steps, trigger: (rule.trigger ?? { kind: 'manual' }) as RunRoutineTrigger, condition: rule.condition ?? null, aiBudget: req.budget },
-    { key: req.occurrence, runId: req.run, triggerTaskId: req.task, aiTokensToday: req.tokens,
+    { key: req.occurrence, runId: req.run, triggerTaskId: req.task, triggerNoteId: req.note, aiTokensToday: req.tokens,
       ai: async (c) => {
         try {
           return await completeOnDevice(c)
@@ -151,8 +151,8 @@ export async function runOnDevice(req: RoutineRunRequest, onStart: (name: string
 type RunRoutineTrigger = Parameters<typeof planRoutine>[1]['trigger']
 
 /** Run now on this device (D7): the server records the run for this device, which plans and commits it here. */
-export async function runNowOnDevice(ruleId: string, runId: string, taskId: string | undefined, device: string): Promise<{ run: { run_id: string; outcome: string; writes: number }; local: DeviceRunOutcome | null }> {
-  const res = await api.runRoutine(ruleId, { run_id: runId, ...(taskId ? { task_id: taskId } : {}), device })
+export async function runNowOnDevice(ruleId: string, runId: string, taskId: string | undefined, device: string, noteId?: string): Promise<{ run: { run_id: string; outcome: string; writes: number }; local: DeviceRunOutcome | null }> {
+  const res = await api.runRoutine(ruleId, { run_id: runId, ...(taskId ? { task_id: taskId } : {}), ...(noteId ? { note_id: noteId } : {}), device })
   if (!res.device_run) return { run: res.run, local: null }
   const local = await runOnDevice(res.device_run)
   return { run: { run_id: res.run.run_id, outcome: local.outcome, writes: local.writes }, local }

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useDatabase } from './db'
 import { createTask, resetDeviceId, setTaskCompleted } from './ops'
 import { addReminder, dismissReminder, snoozeReminder } from './reminders'
-import { checkReminders, markShown, startReminderWatcher, type DueReminder } from './reminderWatcher'
+import { checkReminders, inQuietProject, markShown, startReminderWatcher, type DueReminder, type ProjectLink } from './reminderWatcher'
+import vectors from './reminderProjects.vectors.json'
 
 let n = 0
 beforeEach(() => {
@@ -87,6 +88,34 @@ describe('reminder watcher', () => {
     const { deleteTask } = await import('./ops')
     await deleteTask(t)
     expect(await checkReminders(now)).toEqual([])
+  })
+
+  it('the quiet-project rule matches the server (reminderProjects.vectors.json)', () => {
+    const projects = new Map<string, ProjectLink>(vectors.projects.map((p) => [p.id, p]))
+    expect(vectors.cases.length).toBeGreaterThanOrEqual(10)
+    for (const c of vectors.cases) expect(inQuietProject(c.project_id, projects), c.name).toBe(c.quiet)
+  })
+
+  it('skips tasks in an archived project or under an archived ancestor, and shows them after unarchiving (#1234)', async () => {
+    const now = Date.now()
+    const { archiveProject, createProject, mutate } = await import('./ops')
+    const work = await createProject({ name: 'Work' })
+    const home = await createProject({ name: 'Home' })
+    const garden = await createProject({ name: 'Garden', parent_id: home })
+    const a = await createTask({ title: 'In Work', project_id: work })
+    const b = await createTask({ title: 'In Garden', project_id: garden })
+    const c = await createTask({ title: 'In the Inbox' })
+    await addReminder(a, { kind: 'absolute', fire_at: now - 1000 })
+    await addReminder(b, { kind: 'absolute', fire_at: now - 1000 })
+    await addReminder(c, { kind: 'absolute', fire_at: now - 1000 })
+    await archiveProject(work)
+    // Only the parent archived (another writer, or unarchiving the child alone): the child's tasks wait too.
+    await mutate('project', home, { archived: true })
+    expect((await checkReminders(now)).map((d) => d.task.title)).toEqual(['In the Inbox'])
+    // Unarchived: the reminders whose time passed meanwhile show.
+    await mutate('project', work, { archived: false })
+    await mutate('project', home, { archived: false })
+    expect((await checkReminders(now + 60_000)).map((d) => d.task.title).sort()).toEqual(['In Garden', 'In Work', 'In the Inbox'])
   })
 
   it('skips tasks in a trashed project or under a trashed ancestor, and shows them after a restore', async () => {

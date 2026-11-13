@@ -23,6 +23,9 @@
     <string name="reminder_text">任务提醒</string>
     <string name="action_snooze">延后 10 分钟</string>
     <string name="action_dismiss">忽略</string>
+    <string name="action_done">完成</string>
+    <string name="location_arrived">你已到达此提醒的地点</string>
+    <string name="location_left">你已离开此提醒的地点</string>
     <string name="test_title">通知可以正常使用</string>
     <string name="test_text">提醒会像这样显示。</string>
     <string name="biometric_enable_title">用指纹或面容解锁</string>

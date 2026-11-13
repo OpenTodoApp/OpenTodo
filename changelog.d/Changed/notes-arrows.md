@@ -1,0 +1,1 @@
+- Notes and comments draw `->` as an arrow at rest, as task titles do; while you type it stays two characters so the cursor never lands inside it. The saved text is still `->` (#1278).

@@ -3,7 +3,7 @@ import { useUserPrefsRow } from '../lib/localData'
 import { dayPartsOn, setDayParts } from '../lib/dayParts'
 import { briefingHidden, readLanguage, setBriefingShown, setUserPref } from '../lib/userPrefs'
 import type { LanguagePref } from '../lib/types'
-import { SHIPPED, nativeName } from '../locales'
+import { SHIPPED, isCommunity, nativeName, panelOrder, type ShippedLanguage } from '../locales'
 import { Notice } from '../ui'
 import { useLanguageStatus, type LanguageStatus } from './LanguageProvider'
 import { Select } from '../ui'
@@ -33,21 +33,26 @@ export function LanguageSection() {
 }
 
 /** Presentational part of the Language panel, rendered without effects for tests and stories. */
-export function LanguageView({ value, system, status = 'ready', onChange }: {
+export function LanguageView({ value, system, status = 'ready', onChange, languages = SHIPPED }: {
   value: LanguagePref
   /** The language `System` resolves to, in its own name. */
   system: string
   status?: LanguageStatus
   onChange: (v: LanguagePref) => void
+  /** The languages offered (SHIPPED; a fixture in tests and stories). */
+  languages?: readonly ShippedLanguage[]
 }) {
+  // more-languages D4: community languages follow the maintained ones; the chosen one says so.
+  const community = value !== 'system' && isCommunity(value, languages)
   return (
     <SettingsSection {...cardCopy('language')}>
       <SettingRow {...rowCopy('language', 'interface')} htmlFor="language-select" control={
         <Select id="language-select" className="sm:w-56" value={value} onChange={(e) => onChange(e.target.value as LanguagePref)}>
           <option value="system">{t('System ({language})', { language: system })}</option>
-          {SHIPPED.map((l) => <option key={l.code} value={l.code} lang={l.code}>{l.name}</option>)}
+          {panelOrder(languages).map((l) => <option key={l.code} value={l.code} lang={l.code}>{l.name}</option>)}
         </Select>
       } />
+      {community && <p className="pt-2 text-meta text-muted" data-language-community>{noticeCopy('language', 'community')}</p>}
       {status === 'loading' && <p className="pt-2 text-meta text-muted" role="status" data-language-status="loading">{t('Loading the language…')}</p>}
       {status === 'failed' && (
         <div className="pt-2" data-language-status="failed">

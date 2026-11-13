@@ -23,7 +23,7 @@ func newNameResolver(ctx context.Context, c *client) *nameResolver {
 	return &nameResolver{ctx: ctx, c: c, lists: map[string][]named{}, loaded: map[string]bool{}}
 }
 
-// load reads one collection once: projects, sections, labels, views, webhooks.
+// load reads one collection once: projects, sections, labels, views, webhooks, notes.
 func (n *nameResolver) load(kind string) []named {
 	if n.loaded[kind] || n.err != nil {
 		return n.lists[kind]
@@ -41,6 +41,9 @@ func (n *nameResolver) load(kind string) []named {
 		name, _ := row["name"].(string)
 		if name == "" {
 			name, _ = row["url"].(string) // a webhook is named by its address
+		}
+		if name == "" {
+			name, _ = row["title"].(string) // a note is named by its title (notes-in-routines)
 		}
 		if del, ok := row["deleted_at"]; ok && del != nil {
 			continue
@@ -161,6 +164,13 @@ func (n *nameResolver) steps(steps []any) {
 			}
 			switch name {
 			case "labels":
+				if m, ok := lit.(map[string]any); ok {
+					// Find notes' labels: any, all or none (notes-in-routines).
+					n.condition(map[string]any{"labels": m})
+					continue
+				}
+				arg["literal"] = n.ids("labels", "label", lit)
+			case "add_labels", "remove_labels":
 				arg["literal"] = n.ids("labels", "label", lit)
 			case "view":
 				arg["literal"] = n.id("views", "saved view", lit)
@@ -178,7 +188,7 @@ func (n *nameResolver) steps(steps []any) {
 				}
 			default:
 				if m, ok := lit.(map[string]any); ok {
-					n.fields(m, map[string][2]string{"project": {"projects", "project"}})
+					n.fields(m, map[string][2]string{"project": {"projects", "project"}, "note": {"notes", "note"}})
 				}
 			}
 		}

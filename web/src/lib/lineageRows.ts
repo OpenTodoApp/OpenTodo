@@ -16,12 +16,24 @@ export async function lineageRows(seriesId: string, scanned?: Task[]): Promise<T
 }
 
 /**
- * The one scan of the tasks lineageRows reads, for several series at once:
- * every record and piece, and the series themselves. Pass it to lineageRows
- * for each of them (performance-10k: a pull touching many series scanned the
- * whole table once per series).
+ * The rows lineageRows reads, for several series at once: the series themselves, every
+ * piece of a split series, and the occurrence records of all of those. Read by index
+ * (`series_id`, `split_from.series`), never the whole tasks table: completing a
+ * repeating task in a 10,000-task account read every task (performance-10k; the native
+ * app's budget, native-app-foundation). Pass the result to lineageRows for each series.
  */
-export function lineageScan(seriesIds: Iterable<string>): Promise<Task[]> {
+export async function lineageScan(seriesIds: Iterable<string>): Promise<Task[]> {
   const ids = new Set(seriesIds)
-  return db.tasks.filter((tk) => tk.series_id != null || !!tk.split_from || ids.has(tk.id)).toArray()
+  // Pieces are rare (a series changed "from this occurrence on"); any of them may belong
+  // to an asked series' lineage, so the records of every piece and every root are read too.
+  const pieces = await db.tasks.where('split_from.series').above('').toArray()
+  const lineage = new Set(ids)
+  for (const p of pieces) {
+    lineage.add(p.id)
+    if (p.split_from) lineage.add(p.split_from.series)
+  }
+  const [records, asked] = await Promise.all([db.tasks.where('series_id').anyOf([...lineage]).toArray(), db.tasks.bulkGet([...ids])])
+  const rows = new Map<string, Task>()
+  for (const tk of [...asked, ...pieces, ...records]) if (tk) rows.set(tk.id, tk)
+  return [...rows.values()]
 }

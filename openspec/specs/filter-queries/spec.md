@@ -165,7 +165,7 @@ The builder only reads and writes the query text. It works offline like the rest
 
 #### Scenario: Typing updates the builder
 - **WHEN** the user types `(@errand | @call) & !p4` into the input
-- **THEN** the builder shows "All of these" containing an "Any of these" group with "Label is errand" and "Label is call", and the condition "Priority is P4" marked Not
+- **THEN** the builder shows "All of these" containing an "Any of these" group with "Label is errand" and "Label is call", and the condition "No priority" marked Not
 
 #### Scenario: Not on a group
 - **WHEN** the user sets Not on a group holding "Label is waiting" and "Someday"

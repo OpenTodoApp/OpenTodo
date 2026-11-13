@@ -23,12 +23,13 @@ describe('routine use cases (shared with internal/rules)', () => {
   for (const c of cases) {
     it(`${c.row}: ${c.name}`, () => {
       const steps = parseSteps(c.steps)
-      expect(() => checkTypes(steps, triggerOutput(c.trigger.kind, !!c.condition))).not.toThrow()
+      expect(() => checkTypes(steps, triggerOutput(c.trigger, !!c.condition))).not.toThrow()
       if (!c.editor) return
       walk(steps, (s) => {
         expect(s.kind).not.toBe('get_task')
+        expect(s.kind).not.toBe('get_note')
         for (const a of Object.values(s.in ?? {})) {
-          if ('literal' in a) expect(a.literal && typeof a.literal === 'object' && 'task' in (a.literal as object)).toBe(false)
+          if ('literal' in a) expect(a.literal && typeof a.literal === 'object' && ('task' in (a.literal as object) || 'note' in (a.literal as object))).toBe(false)
         }
       })
     })

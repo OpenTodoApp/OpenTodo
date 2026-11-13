@@ -1818,6 +1818,11 @@
           "description": "the trigger's task (id) for a routine whose steps read it"
         },
         {
+          "name": "note",
+          "type": "string",
+          "description": "the standalone note (id or title) a routine on a note runs on; not with --task"
+        },
+        {
           "name": "test",
           "type": "bool",
           "description": "plan every step and log a test run; nothing is written"
@@ -2573,6 +2578,11 @@
           ],
           "default": "full",
           "description": "token scope: full, read or agent"
+        },
+        {
+          "name": "limit-to",
+          "type": "string_list",
+          "description": "limit the token to this workspace (name or id), repeatable"
         }
       ],
       "writes": true,

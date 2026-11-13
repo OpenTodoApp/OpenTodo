@@ -368,8 +368,8 @@ export const api = {
   readNotification: (id: string) => request<void>('POST', `/api/v1/notifications/${encodeURIComponent(id)}/read`),
   listTokens: () => request<{ tokens: ApiToken[] }>('GET', '/api/v1/tokens'),
   /** scope `read` tokens are refused on every write route (mcp-server). */
-  createToken: (name: string, scope?: TokenScope) =>
-    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', scope ? { name, scope } : { name }),
+  createToken: (name: string, scope?: TokenScope, workspaces?: string[]) =>
+    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', { name, ...(scope ? { scope } : {}), ...(workspaces ? { workspaces } : {}) }),
   // AI assistants (mcp-server): status for everyone, the toggle for the owner.
   getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
@@ -384,7 +384,7 @@ export const api = {
   deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
   /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
   getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),
-  answerMcpConsent: (query: string, allow: boolean) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow }),
+  answerMcpConsent: (query: string, allow: boolean, workspaces?: string[]) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow, ...(workspaces ? { workspaces } : {}) }),
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),
@@ -405,8 +405,8 @@ export const api = {
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
-  createAppPassword: (name: string, scope?: SyncScope) =>
-    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', scope ? { name, scope } : { name }),
+  createAppPassword: (name: string, scope?: SyncScope, events = false) =>
+    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name, ...(scope ? { scope } : {}), ...(events ? { events: true } : {}) }),
   setAppPasswordScope: (id: string, scope: SyncScope) =>
     request<{ appPassword: AppPassword }>('PATCH', `/api/v1/app-passwords/${encodeURIComponent(id)}`, { scope }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),
@@ -583,7 +583,7 @@ export const api = {
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
   /** Routines (routines-engine): run one now, undo one of its runs. */
-  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; note_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
     request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean; device_run?: RoutineRunRequest }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
   /** Device runs of an encrypted account (routines-ai-step D8): the result as ciphertext, or the failure. */
   commitDeviceRun: (runId: string, body: DeviceCommit) =>
@@ -598,9 +598,9 @@ export const api = {
   routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
   /** Describe it (routines-describe-it): the assistant drafts a routine from one sentence; nothing is saved. */
   draftRoutine: (text: string) => request<DraftAnswer>('POST', '/api/v1/assistant/routine-draft', { text }),
-  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean; project_id?: string; workspace_id?: string }) =>
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; note_id?: string; call_ai?: boolean; project_id?: string; workspace_id?: string }) =>
     request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
-  testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
+  testRoutine: (id: string, body: { run_id: string; task_id?: string; note_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
   routineRun: (id: string, runId: string) => request<RoutineRun>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`),
   routineRuns: (q: { rule?: string; outcome?: string; source?: string; before?: number; limit?: number } = {}) => {
@@ -661,6 +661,8 @@ export const api = {
     upload<ImportPreview>('/api/v1/import/preview', file, filename, options),
   startImport: (file: Blob, filename: string, options: ImportOptions) =>
     upload<{ job: ImportJob }>('/api/v1/import', file, filename, options),
+  /** Todoist's sync answer for an API token (todoist-api-import), imported like a file. */
+  fetchTodoist: (token: string) => request<Record<string, unknown>>('POST', '/api/v1/import/todoist', { token }),
   listImportJobs: () => request<{ jobs: ImportJob[] }>('GET', '/api/v1/import/jobs'),
   getImportJob: (id: string) => request<{ job: ImportJob }>('GET', `/api/v1/import/jobs/${encodeURIComponent(id)}`),
   undoImport: (id: string) => request<{ job: ImportJob }>('POST', `/api/v1/import/jobs/${encodeURIComponent(id)}/undo`),

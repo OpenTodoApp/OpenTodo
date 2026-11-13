@@ -127,6 +127,8 @@ export interface DisplayOptions {
   hidden: RowProperty[]
   /** Cards show two lines of their notes (board-polish D4). */
   cardNotes: boolean
+  /** The List layout nests subtasks under matching parents (GitHub issue 1108). */
+  nested: boolean
 }
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -148,13 +150,15 @@ export function viewOptions(v: Pick<View, 'kind' | 'group_by' | 'sort_by' | 'sor
 }
 
 /** The display options of a view; a row written before views-and-display (no fields) shows everything as before. */
-export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props' | 'card_notes'>>): DisplayOptions {
+export function displayOptions(v: Partial<Pick<View, 'layout' | 'show_completed' | 'hidden_props' | 'card_notes' | 'subtasks'>>): DisplayOptions {
   const hidden = Array.isArray(v.hidden_props) ? v.hidden_props : []
   return {
     layout: pick(v.layout, VIEW_LAYOUTS, 'list'),
     showCompleted: v.show_completed === true,
     // The Board layout's notes preview (board-polish D4): only an exact true turns it on.
     cardNotes: v.card_notes === true,
+    // Nest subtasks (GitHub issue 1108): only the exact value nests.
+    nested: v.subtasks === 'nested',
     hidden: ROW_PROPERTIES.filter((p) => hidden.includes(p)),
   }
 }
@@ -231,7 +235,7 @@ export async function createView(input: NewView): Promise<string> {
   return id
 }
 
-export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout' | 'icon' | 'card_notes'>>
+export type ViewPatch = Partial<Pick<View, 'name' | 'query' | 'group_by' | 'sort_by' | 'sort_dir' | 'color' | 'position' | 'layout' | 'show_completed' | 'hidden_props' | 'row_layout' | 'icon' | 'card_notes' | 'subtasks'>>
 
 /** Edit a view: one op per changed field. The kind is fixed at creation; panels go through setPanels. */
 export async function updateView(id: string, patch: ViewPatch): Promise<void> {
@@ -432,7 +436,8 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   if (!ast) return { ok: false, error: t('This view has no query') }
   if (withCompleted && !mentionsState(ast)) ast = withCompletedTasks(ast)
   const ctx = filterScope(ast, given)
-  // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
+  // Like the Filter view and the other cross-project views, tasks of archived projects stay out,
+  // and so does a graduated habit (habits-home D7).
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
   let compiled: ReturnType<typeof compile>
   try {
@@ -442,7 +447,7 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
     return { ok: false, error: (e as Error).message }
   }
   const { test, warnings } = compiled
-  return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
+  return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && task.habit_graduated_at == null && test(task) }
 }
 
 const TITLE_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' })

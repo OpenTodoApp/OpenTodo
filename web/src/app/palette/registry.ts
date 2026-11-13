@@ -3,6 +3,7 @@
 // running through the same function as the button, key or menu item it stands for.
 // Object commands (project, saved view, label, section) are built from the menus'
 // own item lists, so the two cannot drift; a guard test checks it.
+import { openHabitForm } from '../habits/habitFormStore'
 import { createLabel } from '../../lib/labels'
 import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
@@ -38,7 +39,7 @@ import { keysOf } from '../../lib/shortcuts'
 import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
-import { customPriorityName } from '../../lib/priority'
+import { customPriorityName, isNoPriority } from '../../lib/priority'
 import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
 import { dayPartUndoable, sectorUndoable } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
@@ -83,6 +84,8 @@ export interface PaletteContext {
   dayParts?: boolean
   /** The account's Time sectors switch (time-sectors D6): "Set time sector…" is offered while it is on. */
   timeSectors?: boolean
+  /** Habits is on (habits-home D2): Go to Habits, New habit and Make it a habit are offered. */
+  habits?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
   /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
@@ -211,7 +214,7 @@ export function commands(ctx: PaletteContext): Command[] {
     const n = t('{n, plural, one {# task} other {# tasks}}', { n: ticked.length })
     out.push(
       { id: 'sel:complete', label: t('Complete {tasks}', { tasks: n }), icon: 'check', shortcut: keysOf('list.complete'), run: () => runBulk(ticked, { kind: 'complete' }) },
-      ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: t('Set priority {p} on {tasks}', { p: customPriorityName(p) || p, tasks: n }), keywords: `p${p} priority ${p}`, icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
+      ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `sel:p${p}`, label: isNoPriority(p) ? t('Remove the priority of {title}', { title: n }) : t('Set priority {p} on {tasks}', { p: customPriorityName(p) || p, tasks: n }), keywords: `p${p} priority ${p}${p === 4 ? ' none clear' : ''}`, icon: 'flag', shortcut: String(p), run: () => runBulk(ticked, { kind: 'priority', priority: p }) })),
       { id: 'sel:today', label: t('Reschedule {tasks} to today', { tasks: n }), icon: 'calendar-check', run: () => runBulk(ticked, { kind: 'due', pick: 'today' }) },
       { id: 'sel:tomorrow', label: t('Reschedule {tasks} to tomorrow', { tasks: n }), icon: 'calendar-days', run: () => runBulk(ticked, { kind: 'due', pick: 'tomorrow' }) },
       { id: 'sel:next-week', label: t('Reschedule {tasks} to next week', { tasks: n }), icon: 'calendar-range', run: () => runBulk(ticked, { kind: 'due', pick: 'next-week' }) },
@@ -239,7 +242,7 @@ export function commands(ctx: PaletteContext): Command[] {
     if (writable) {
       out.push(
         { id: 'task:complete', label: tk.completed_at ? t('Reopen {title}', { title }) : t('Complete {title}', { title }), icon: 'check', shortcut: keysOf('list.complete'), keywords: 'done finish', run: () => list.toggleComplete(tk.id, !tk.completed_at) },
-        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: t('Set priority {p} on {title}', { p: customPriorityName(p) || p, title }), keywords: `p${p} priority ${p}`, icon: 'flag', shortcut: String(p), run: () => updateTask(tk.id, { priority: p }) })),
+        ...([1, 2, 3, 4] as const).map((p): Command => ({ id: `task:p${p}`, label: isNoPriority(p) ? t('Remove the priority of {title}', { title }) : t('Set priority {p} on {title}', { p: customPriorityName(p) || p, title }), keywords: `p${p} priority ${p}${p === 4 ? ' none clear' : ''}`, icon: 'flag', shortcut: String(p), run: () => updateTask(tk.id, { priority: p }) })),
         { id: 'task:estimate', label: t('Edit the estimate of {title}', { title }), icon: 'clock', shortcut: keysOf('list.estimate'), run: () => { estimateFocus.request(tk.id); list.open(tk.id) } },
         { id: 'task:deadline', label: t('Set the deadline of {title}', { title }), icon: 'hourglass', shortcut: keysOf('list.deadline'), run: () => { deadlineFocus.request(tk.id); list.open(tk.id) } },
         { id: 'task:blocked-by', label: t('Choose what {title} waits for', { title }), icon: 'lock', shortcut: keysOf('list.blocked-by'), keywords: 'blocked by depends dependency', run: () => { blockedByFocus.request(tk.id); list.open(tk.id) } },
@@ -346,6 +349,9 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push({ id: n.pinned ? 'note:unpin' : 'note:pin', label: n.pinned ? t('Unpin note') : t('Pin note'), icon: n.pinned ? 'pin-off' : 'pin',
       keywords: 'pin favourite favorite sidebar notes', run: () => setFavourite('note', n.id, !n.pinned) })
     if (connectedNow('note', n.id)) out.push(connectionsCommand('note', n.id, null))
+    // Run routine… on the open note (notes-in-routines): the manual routines that take a note.
+    out.push({ id: 'note:run-routine', label: t('Run routine on this note…'), icon: 'zap', keywords: 'routine rule automation run now note',
+      run: async () => (await import('./routineCommand')).runRoutineOnNoteStep(n.id) })
   }
   if (ctx.section) {
     const s = ctx.section
@@ -404,6 +410,10 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    ...(ctx.habits ? [
+      { id: 'go:habits', label: t('Go to Habits'), icon: 'leaf' as const, shortcut: keysOf('go.habits'), keywords: 'habits streak routine daily tracker', run: () => navigate({ view: 'habits' }) },
+      { id: 'habit:new', label: t('New habit'), icon: 'leaf' as const, keywords: 'habit create start tracker daily', run: () => openHabitForm() },
+    ] : []),
     // Today's closed list (today-closed-list D5, D6): no default keys.
     { id: 'today:log-win', label: t('Log a win'), icon: 'party-popper', keywords: 'done today completed logged win record unplanned',
       // After the box has closed, so the bar opens again in Add with "Log as done" on.

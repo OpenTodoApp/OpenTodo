@@ -128,7 +128,7 @@ func (snap *snapshot) noteLabels(a args) (json.RawMessage, bool, error) {
 	if !a.present("label_ids") {
 		return nil, false, nil
 	}
-	lids, err := snap.labelIDsFor("", a["label_ids"])
+	lids, err := snap.labelIDsFor("", a["label_ids"], "")
 	if err != nil {
 		return nil, false, err
 	}
@@ -391,10 +391,12 @@ func (r *Registry) planTrashNote(ctx context.Context, c Caller, a args, overlay 
 	if len(missing) > 0 {
 		return Plan{}, notFound("note", missing)
 	}
-	// Only the token's own creations, like trash_tasks (mcp-write-tools D6).
+	// Only the token's own creations, like trash_tasks (mcp-write-tools D6);
+	// a routine acts as its run-as person and trashes any of their notes
+	// (notes-in-routines D4).
 	var foreign []string
 	for _, id := range list {
-		if overlayCreated(overlay, id) {
+		if overlayCreated(overlay, id) || c.Scope == ScopeRoutine {
 			continue
 		}
 		dev, err := r.sync.CreatedBy(ctx, c.UserID, "note", id)

@@ -172,6 +172,7 @@ func collectStepRefs(st *ruleval.Step, ref *refs) {
 	if json.Unmarshal(lit("task"), &t) == nil && t["task"] != "" {
 		ref.tasks = append(ref.tasks, t["task"])
 	}
+	collectNoteRefs(st, ref, lit)
 	var labels []string
 	if json.Unmarshal(lit("labels"), &labels) == nil {
 		ref.label(labels...)
@@ -281,6 +282,8 @@ func (s *Server) routineError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusNotFound, "not_found", "routine, run or task not found")
 	case errors.Is(err, rules.ErrTaskRequired):
 		writeError(w, http.StatusBadRequest, "task_required", err.Error())
+	case errors.Is(err, rules.ErrNoteRequired):
+		writeError(w, http.StatusBadRequest, "note_required", err.Error())
 	case errors.Is(err, rules.ErrInvalidDraft):
 		writeError(w, http.StatusBadRequest, "invalid_input", "the routine is not valid")
 	case errors.Is(err, rules.ErrRateLimited):
@@ -305,6 +308,8 @@ func (s *Server) handleRoutineRun(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		RunID  string `json:"run_id"`
 		TaskID string `json:"task_id"`
+		// NoteID: the standalone note of a note routine (notes-in-routines).
+		NoteID string `json:"note_id"`
 		Test   bool   `json:"test"`
 		// CallAI: a test runs its AI steps for real (routines-ai-step D11).
 		CallAI bool `json:"call_ai"`
@@ -312,15 +317,15 @@ func (s *Server) handleRoutineRun(w http.ResponseWriter, r *http.Request) {
 		// (routines-ai-step D7); only from that device's session.
 		Device string `json:"device"`
 	}
-	if err := readJSON(r, &in); err != nil || in.RunID == "" || len(in.RunID) > 64 || len(in.Device) > 128 {
-		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "test"?: bool, "call_ai"?: bool, "device"?: string}`)
+	if err := readJSON(r, &in); err != nil || in.RunID == "" || len(in.RunID) > 64 || len(in.Device) > 128 || (in.TaskID != "" && in.NoteID != "") {
+		badBodyWith(w, err, "invalid_input", `body must be {"run_id": string, "task_id"?: string, "note_id"?: string (not both), "test"?: bool, "call_ai"?: bool, "device"?: string}`)
 		return
 	}
 	if s.rules == nil {
 		writeError(w, http.StatusNotFound, "not_found", "rule not found")
 		return
 	}
-	req := rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, Test: in.Test, CallAI: in.CallAI}
+	req := rules.RunRequest{RuleID: r.PathValue("id"), RunID: in.RunID, TaskID: in.TaskID, NoteID: in.NoteID, Test: in.Test, CallAI: in.CallAI}
 	if in.Device != "" {
 		sess := sessionFrom(r.Context())
 		if sess == nil {
@@ -502,4 +507,38 @@ func (s *Server) handleRoutineDismiss(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// collectNoteRefs adds the notes, labels and move targets a note step names
+// (notes-in-routines D7).
+func collectNoteRefs(st *ruleval.Step, ref *refs, lit func(string) json.RawMessage) {
+	var n map[string]string
+	if json.Unmarshal(lit("note"), &n) == nil && n["note"] != "" {
+		ref.notes = append(ref.notes, n["note"])
+	}
+	switch st.Kind {
+	case "find_notes":
+		var l ruleval.LabelsPred
+		if json.Unmarshal(lit("labels"), &l) == nil {
+			ref.label(l.Any...)
+			ref.label(l.All...)
+			ref.label(l.None...)
+		}
+	case "change_notes":
+		for _, name := range []string{"add_labels", "remove_labels"} {
+			var ids []string
+			if json.Unmarshal(lit(name), &ids) == nil {
+				ref.label(ids...)
+			}
+		}
+		var p map[string]string
+		if json.Unmarshal(lit("project"), &p) == nil && p["project"] != "" {
+			ref.noteMoves = append(ref.noteMoves, p["project"])
+		} else if a, ok := st.In["project"]; ok && a.IsRef() {
+			ref.noteMoves = append(ref.noteMoves, "?")
+		}
+		if _, ok := st.In["no_project"]; ok {
+			ref.noteMoves = append(ref.noteMoves, "")
+		}
+	}
 }

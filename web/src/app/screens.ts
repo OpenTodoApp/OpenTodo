@@ -48,6 +48,7 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   display: 'display',
   review: 'review',
   stats: 'stats',
+  habits: 'habits',
   next: 'next',
   waiting: 'waiting',
   loop: 'loop',

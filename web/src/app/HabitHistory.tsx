@@ -1,6 +1,7 @@
-// The month history of a habit (OpenSpec change habits, design D4): a read-only
-// grid of one month's days, derived on the device from the series and its
-// occurrence records (lib/habits.ts), so it renders offline and needs no request.
+// The month history of a habit (OpenSpec change habits, design D4): a grid of one
+// month's days, derived on the device from the series and its occurrence records
+// (lib/habits.ts), so it renders offline and needs no request. While Habits is on a
+// past scheduled day opens Done, Tiny, Skipped and Clear (habits-home D6).
 // Colours come from the design tokens and every state also differs by glyph or
 // border, with the date and state in each cell's accessible name.
 //
@@ -10,24 +11,28 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
 import { addDaysISO, logicalToday, weekday, monthName } from '../lib/dates'
-import { monthGrid, type DayState } from '../lib/habits'
+import { editableDay, monthGrid, type DayState } from '../lib/habits'
+import type { DayChoice } from '../lib/habitActions'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { t, msg, translatedMap } from '../lib/i18n'
+import { t } from '../lib/i18n'
+import { DayMenu } from './habits/DayMenu'
+import { dayLabel } from './habits/habitText'
+export { dayLabel }
 
 const CELL: Record<DayState, string> = {
   // The check is drawn in the surface colour: white in light, near-black on the brighter dark-mode green.
   done: 'bg-success text-surface',
+  // Half filled (habits-home D8): the tiny version counts as done.
+  tiny: 'border border-success bg-[linear-gradient(90deg,var(--color-success-soft)_50%,transparent_50%)] text-default',
   skipped: 'border border-input bg-sunken text-muted',
-  missed: 'border border-dashed border-danger bg-danger-soft text-on-danger-soft',
+  // No danger colour for a missed day (habits-home "Forgiving measure"): a dashed outline.
+  missed: 'border border-dashed border-strong bg-surface text-muted',
   pending: 'bg-accent-soft text-on-accent-soft',
   upcoming: 'border border-default bg-surface text-muted',
   blank: 'text-faint',
 }
 const GLYPH: Partial<Record<DayState, IconName>> = { done: 'check', skipped: 'minus', pending: 'circle' }
-const STATE_TEXT = translatedMap<DayState>({
-  done: msg('done'), skipped: msg('skipped'), missed: msg('missed'), pending: msg('due, not done yet'), upcoming: msg('upcoming'), blank: msg('not scheduled'),
-})
 
 function monthOf(iso: string): { year: number; month: number } {
   const [y, m] = iso.split('-').map(Number)
@@ -47,13 +52,13 @@ function shiftMonth(iso: string, n: number): string {
 const monthNameOf = (year: number, month: number, withYear: boolean) =>
   monthName(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`, 'long', withYear)
 
-/** "6 October, skipped": the cell's accessible name. */
-export function dayLabel(iso: string, state: DayState): string {
-  const { year, month } = monthOf(iso)
-  return `${Number(iso.slice(8, 10))} ${monthNameOf(year, month, false)}, ${STATE_TEXT[state]}`
-}
-
-export function HabitHistory({ series, records, today = logicalToday() }: { series: Task; records: readonly Task[]; today?: string }) {
+export function HabitHistory({ series, records, today = logicalToday(), onPick }: {
+  series: Task
+  records: readonly Task[]
+  today?: string
+  /** Set a past day (habits-home D6); omitted while Habits is not on, which keeps the grid read-only. */
+  onPick?: (date: string, choice: DayChoice) => void
+}) {
   const dt = useDateTimeFormat()
   const [focus, setFocus] = useState(today)
   const moved = useRef(false)
@@ -127,11 +132,16 @@ export function HabitHistory({ series, records, today = logicalToday() }: { seri
                 aria-selected={c.date === focus}
                 tabIndex={c.date === focus ? 0 : -1}
                 onClick={() => setFocus(c.date)}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && e.currentTarget.querySelector('button')) { e.preventDefault(); e.currentTarget.querySelector('button')!.click() }
+                }}
                 className={`flex h-6 w-6 items-center justify-center rounded-chip focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus
                   ${CELL[c.state]} ${c.today ? 'ring-1 ring-focus' : ''}`}
               >
-                {/* A glyph for done, skipped and pending; the day number elsewhere, for orientation. */}
-                {GLYPH[c.state] ? <Icon name={GLYPH[c.state]!} size="xs" /> : <span aria-hidden="true" className="text-hint tabular-nums">{Number(c.date.slice(8))}</span>}
+                {onPick && editableDay(c, today)
+                  ? <DayMenu cell={c} label={dayLabel(c.date, c.state)} onPick={(choice) => onPick(c.date, choice)}
+                    trigger={<Glyph state={c.state} date={c.date} />} triggerClassName="flex h-6 w-6 items-center justify-center rounded-chip" />
+                  : <Glyph state={c.state} date={c.date} />}
               </span>
             ) : <span key={`blank-${w}-${i}`} role="gridcell" aria-hidden="true" className="h-6 w-6" />)}
           </div>
@@ -139,4 +149,9 @@ export function HabitHistory({ series, records, today = logicalToday() }: { seri
       </div>
     </div>
   )
+}
+
+/** A glyph for done, skipped and pending; the day number elsewhere, for orientation. */
+function Glyph({ state, date }: { state: DayState; date: string }) {
+  return GLYPH[state] ? <Icon name={GLYPH[state]!} size="xs" /> : <span aria-hidden="true" className="text-hint tabular-nums">{Number(date.slice(8))}</span>
 }

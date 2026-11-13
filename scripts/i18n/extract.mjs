@@ -62,12 +62,12 @@ export function shortcutMessages(file, text) {
   return out
 }
 
-/** The service worker's English texts: the `en` entry of its TEXT table. */
+/** The service worker's English texts: the `en` entry of its OWN_TEXT table. */
 export function workerMessages(file, text) {
   const sf = parse(file, text)
   const out = []
   const visit = (n) => {
-    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'TEXT' && n.initializer && ts.isObjectLiteralExpression(n.initializer)) {
+    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === 'OWN_TEXT' && n.initializer && ts.isObjectLiteralExpression(n.initializer)) {
       const en = n.initializer.properties.find((p) => ts.isPropertyAssignment(p) && p.name.getText(sf) === 'en')
       if (en && ts.isObjectLiteralExpression(en.initializer)) {
         for (const p of en.initializer.properties) {

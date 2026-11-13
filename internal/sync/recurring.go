@@ -113,6 +113,11 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	}
 	record = recordFields(at, id, date, date, int64(NumberOf(completedAt)))
 	record["created_at"], record["completed_at"] = completedAt, completedAt
+	// A habit's full completion is not its tiny version (habits-home D5): the
+	// record says so, so a concurrent tiny log converges by last-writer-wins.
+	if string(merged["habit"]) == "true" {
+		record["tiny"] = json.RawMessage("false")
+	}
 	delete(body, "completed_at")
 	// Who completed it belongs to the occurrence (completed-date-filters D5).
 	if by, has := body["completed_by"]; has {

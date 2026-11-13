@@ -18,8 +18,10 @@ type transport interface {
 	// A missing calendar is ReasonCalendarMissing.
 	version(ctx context.Context, cal string) (version, error)
 	// changes lists what changed in cal since the stored cursor (the
-	// connection's sync token for WebDAV).
-	changes(ctx context.Context, cal string, ver version, token string) (*listing, error)
+	// connection's sync token for WebDAV); known are the addresses of the
+	// events OpenTodo wrote there, read back on their own when the listing
+	// would be too large for one answer.
+	changes(ctx context.Context, cal string, ver version, token string, known []string) (*listing, error)
 	// fetch reads events by address, by key.
 	fetch(ctx context.Context, cal string, hrefs []string) (map[string]remote, error)
 	// window reads every event of cal that touches win.
@@ -73,8 +75,18 @@ func (t davTransport) version(ctx context.Context, cal string) (version, error) 
 }
 
 // changes uses sync-collection when the server has sync tokens (from the
-// stored token, or from the start), else the ETags.
-func (t davTransport) changes(ctx context.Context, cal string, ver version, token string) (*listing, error) {
+// stored token, or from the start), else the ETags. A listing too large for
+// one answer is replaced by the known events read back by multiget, from the
+// calendar's current sync token on (issue 1226).
+func (t davTransport) changes(ctx context.Context, cal string, ver version, token string, known []string) (*listing, error) {
+	l, err := t.list(ctx, cal, ver, token)
+	if reasonOf(err) == ReasonTooLarge {
+		return t.d.knownListing(ctx, cal, ver, known)
+	}
+	return l, err
+}
+
+func (t davTransport) list(ctx context.Context, cal string, ver version, token string) (*listing, error) {
 	if ver.syncToken != "" {
 		l, ok, err := t.d.syncCollection(ctx, cal, token)
 		if err != nil {

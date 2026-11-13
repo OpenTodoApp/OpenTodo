@@ -18,7 +18,7 @@ import type { IconName } from '../ui'
 
 /** What a command may use besides the editor. */
 export interface CommandEnv {
-  /** The notes of a task: Make subtask is offered. */
+  /** The notes of a task: Make subtask is offered (elsewhere Make tasks, with `makeSubtask`). */
   notes: boolean
   /** Members to mention (a shared project). */
   members: boolean
@@ -29,6 +29,8 @@ export interface CommandEnv {
   notify: (message: string) => void
   /** The `[[` picker and Link to… (notes only, never read-only; note-links D3). */
   linkTo?: LinkPickerEnv
+  /** The note's Markdown source (notes only; note-markdown-source D4). */
+  source?: () => void
 }
 
 /** What the link picker reads and does (the notes editor supplies it). */
@@ -133,6 +135,13 @@ export function editorCommands(): EditorCommand[] {
       available: (view, env) => env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
       run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
     },
+    {
+      // In a project or standalone note the same command makes tasks (note-checklist-tasks D1).
+      id: 'tasks', label: t('Make tasks'), icon: 'circle-check-big', keywords: 'task todo action',
+      available: (view, env) => !env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
+      run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
+    },
+    { id: 'markdown', label: t('Markdown'), icon: 'code', keywords: 'source md plain text', available: (_v, env) => !!env.source, run: (_v, env) => env.source?.() },
     { id: 'bold', label: t('Bold'), icon: 'bold', available: () => false, run: exec(toggleMark(marks.strong)) },
     { id: 'italic', label: t('Italic'), icon: 'italic', available: () => false, run: exec(toggleMark(marks.em)) },
     { id: 'strike', label: t('Strikethrough'), icon: 'strikethrough', keywords: 'strike', run: exec(toggleMark(marks.strike)) },

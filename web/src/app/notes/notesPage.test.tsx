@@ -20,6 +20,7 @@ import { act } from 'react'
 import { click, flush, key, minWidthPx, render, type, waitFor } from '../../ui/test-utils'
 import { noteViewOf } from '../NotesEditor'
 import { panelOccupant, resetPanel } from '../panel'
+import { navigate } from '../router'
 import { ProjectNote } from '../ProjectNote'
 import { NOTE_FILTERS_KEY, NOTE_TOKENS_KEY, NotesPage } from './NotesPage'
 import { NotePanel } from './NoteEditor'
@@ -431,6 +432,19 @@ describe('pinned notes', () => {
     expect(container.querySelector('[data-note-menu]')).toBeNull()
   })
 
+  it('"Run on this note" and "Offline" (notes-in-routines): the menu lists the routines that run on a note', async () => {
+    const id = await createNote({ title: 'Planning meeting' })
+    await mutate('rule', 'r1', { name: 'Checkboxes to tasks', enabled: false, trigger: { kind: 'manual', on: 'note' }, condition: null, actions: null,
+      steps: [{ id: 'a', kind: 'note_text', in: { of: { ref: 'trigger' } } }], position: 1, created_at: 1, deleted_at: null })
+    await mutate('rule', 'r2', { name: 'On a task', enabled: false, trigger: { kind: 'manual' }, condition: null, actions: null,
+      steps: [{ id: 'a', kind: 'notify', in: { text: { literal: 'x' } } }], position: 2, created_at: 1, deleted_at: null })
+    const { container } = await render(<NotePanel id={id} />)
+    await waitFor(() => !!container.querySelector('[data-note-menu]'), 'the note menu')
+    await click(container.querySelector('[data-note-menu]')!)
+    await waitFor(() => !!document.querySelector('[data-note-run-routine]'), 'the routines')
+    expect([...document.querySelectorAll('[data-note-run-routine]')].map((x) => x.getAttribute('data-note-run-routine'))).toEqual(['r1'])
+  })
+
   it("the open note's own menu pins it", async () => {
     const id = await createNote({ title: 'Wi-Fi' })
     const { container } = await render(<NotePanel id={id} />)
@@ -496,5 +510,107 @@ describe('the row (notes-space D5)', () => {
     await type(container.querySelector<HTMLInputElement>('[data-note-search]')!, 'ferry')
     await waitFor(() => !!container.querySelector('[data-note-snippet] mark'), 'the snippet')
     expect(container.querySelector('[data-note-snippet]')!.parentElement!.querySelector('[data-note-title]')!.textContent).toBe('Trip')
+  })
+})
+
+// The sort order (notes-sort, tasks 1.2 and 2.1).
+describe('sorting the list', () => {
+  const moreActions = () => document.querySelector<HTMLButtonElement>('[data-page-header] button[aria-label="More actions"]')!
+  const sortItem = (by: string) => document.querySelector<HTMLElement>(`[data-notes-sort="${by}"]`)
+  async function pick(by: string) {
+    await click(moreActions())
+    await waitFor(() => !!sortItem(by), 'the Sort items')
+    await click(sortItem(by)!)
+    await waitFor(() => !document.querySelector('[role="menu"]'), 'the menu closed')
+  }
+  async function writeOne(title: string) {
+    await mutateMany([await planNote({ title, description: title })])
+  }
+
+  it('By title and Reverse, picked with the keyboard; the order holds after a reload', async () => {
+    for (const title of ['Week 10', 'Wi-Fi', 'Week 2', '']) await writeOne(title)
+    const { container, unmount } = await page()
+    await waitFor(() => rows(container).length === 4, 'four rows')
+    expect(groupTitles(container)).toEqual([])
+    await click(moreActions())
+    await waitFor(() => !!sortItem('title'), 'the menu')
+    expect(sortItem('changed')!.getAttribute('role')).toBe('menuitemradio')
+    expect(sortItem('changed')!.getAttribute('aria-checked')).toBe('true')
+    await key(document.activeElement!, 'End')
+    expect(document.activeElement).toBe(sortItem('title'))
+    await click(document.activeElement!) // Enter on a native button activates it
+    await waitFor(() => groupTitles(container)[0] === 'A–Z', 'A–Z')
+    expect(titles(container)).toEqual(['Week 2', 'Week 10', 'Wi-Fi', 'Untitled note'])
+    await pick('title')
+    await waitFor(() => groupTitles(container)[0] === 'Z–A', 'Z–A')
+    expect(titles(container)).toEqual(['Wi-Fi', 'Week 10', 'Week 2', 'Untitled note'])
+    await click(moreActions())
+    await waitFor(() => !!sortItem('title'), 'the menu')
+    expect(sortItem('title')!.querySelector('[data-notes-sort-arrow]')!.getAttribute('data-notes-sort-arrow')).toBe('up')
+    expect(sortItem('changed')!.querySelector('[data-notes-sort-arrow]')).toBeNull()
+    await key(document.activeElement!, 'Escape')
+    await unmount()
+    const again = await page()
+    await waitFor(() => groupTitles(again.container)[0] === 'Z–A', 'remembered')
+  })
+
+  it('Pinned keeps its order and the rest follow under A–Z', async () => {
+    const wifi = await createNote({ title: 'Wi-Fi' })
+    const packing = await createNote({ title: 'Packing list' })
+    await createNote({ title: 'Zebra' })
+    await createNote({ title: 'Apples' })
+    await pin('note', wifi)
+    await pin('note', packing)
+    const { container } = await page()
+    await waitFor(() => groupTitles(container).length === 2, 'the groups')
+    await pick('title')
+    await waitFor(() => groupTitles(container)[1] === 'A–Z', 'A–Z')
+    expect(groupTitles(container)).toEqual(['Pinned', 'A–Z'])
+    expect(titles(container)).toEqual(['Wi-Fi', 'Packing list', 'Apples', 'Zebra'])
+  })
+
+  it('Search ranks: words keep the search ranking, clearing them lists A to Z again', async () => {
+    await writeOne('Ferry times')
+    await mutateMany([await planNote({ title: 'Alpha', description: 'about the ferry' })])
+    await writeOne('Beta')
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 3, 'three rows')
+    await pick('title')
+    await waitFor(() => titles(container)[0] === 'Alpha', 'A to Z')
+    await type(search(container), 'ferry')
+    await waitFor(() => rows(container).length === 2, 'two results')
+    expect(titles(container)).toEqual(['Ferry times', 'Alpha'])
+    expect(groupTitles(container)).toEqual([])
+    await type(search(container), '')
+    await waitFor(() => rows(container).length === 3, 'the list again')
+    expect(titles(container)).toEqual(['Alpha', 'Beta', 'Ferry times'])
+  })
+
+  it('Chips keep the sort: Created with "in: Renovation" lists newest created first', async () => {
+    const reno = await createProject({ name: 'Renovation' })
+    const created = Date.now()
+    const first = await planNote({ title: 'First', project_id: reno }, created - 2000)
+    await mutateMany([first])
+    await mutateMany([await planNote({ title: 'Second', project_id: reno }, created - 1000)])
+    await createNote({ title: 'Elsewhere' })
+    // The first note is edited last: Last changed lists it first.
+    await mutate('note', first.entityId, { description: 'edited' })
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'in', id: reno, name: 'Renovation' }]))
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 2, 'the project notes')
+    expect(titles(container)).toEqual(['First', 'Second'])
+    await pick('created')
+    await waitFor(() => titles(container)[0] === 'Second', 'newest created first')
+    expect(groupTitles(container)).toEqual(['Newest'])
+  })
+
+  it('Graph mode keeps the graph items in the menu, without Sort', async () => {
+    await createNote({ title: 'One' })
+    const { container } = await page()
+    await act(async () => navigate({ view: 'notes', graph: true }))
+    await waitFor(() => container.querySelector('[data-page="notes"]')?.getAttribute('data-notes-mode') === 'graph', 'Graph mode')
+    await click(moreActions())
+    await waitFor(() => !!document.querySelector('[data-notes-graph-show]'), 'the graph items')
+    expect(sortItem('title')).toBeNull()
   })
 })

@@ -1,4 +1,4 @@
-import { ConfirmDialog, PageBody, PageHeader } from '../ui'
+import { Button, ConfirmDialog, PageBody, PageHeader } from '../ui'
 import { Skeleton } from '../ui'
 import { requestTemplateDialog } from './TemplateDialogs'
 import { ProjectPickerField } from './ProjectPickerField'
@@ -47,6 +47,7 @@ const FORMAT_LABELS = translatedMap<ImportFormat>({
   'super-productivity-json': msg('Super Productivity (backup JSON)'),
   'omnifocus-csv': msg('OmniFocus (CSV)'),
   'notion-csv': msg('Notion (Markdown and CSV export)'),
+  ics: msg('iCalendar tasks (.ics)'),
   'json-items': msg('JSON: projects / sections / items'),
   'json-lists': msg('JSON: lists of tasks'),
   'json-generic': msg('JSON: task list'),
@@ -99,8 +100,29 @@ export const DEFAULT_OPTIONS: Required<Omit<ImportOptions, 'format' | 'targetPro
   timeZone: 'UTC', sections: 'section', duplicates: 'skip', errors: 'skip_rows', existing: 'skip',
 }
 
+/**
+ * Importing with a Todoist API token instead of a backup, which needs Premium
+ * (todoist-api-import): the token is sent once for the fetch and never kept.
+ */
+function TodoistToken({ disabled, onFetch }: { disabled: boolean; onFetch: (token: string) => void }) {
+  const [token, setToken] = useState('')
+  return (
+    <form className="space-y-2 rounded-control border border-default p-3" data-todoist-token
+      onSubmit={(e) => { e.preventDefault(); if (token.trim()) onFetch(token.trim()) }}>
+      <label className="block text-body font-medium" htmlFor="todoist-token">{t('Or import with a Todoist API token')}</label>
+      <p className="text-meta text-muted">{t('No backup needed: in Todoist, open Settings → Integrations → Developer and copy the API token. It is used once to read your projects, tasks and comments, and never stored.')}</p>
+      <div className="flex gap-2">
+        <input id="todoist-token" type="password" autoComplete="off" className="ui-input min-w-0 flex-1" value={token} disabled={disabled} onChange={(e) => setToken(e.target.value)} />
+        <Button type="submit" variant="secondary" disabled={disabled || !token.trim()} data-todoist-fetch>{t('Fetch from Todoist')}</Button>
+      </div>
+    </form>
+  )
+}
+
 export interface ImportViewProps {
   offline: boolean
+  /** Fetches the account from Todoist with an API token and previews it like a file (todoist-api-import). */
+  onTodoistToken?: (token: string) => void
   fileName: string | null
   format: ImportFormat | ''
   options: typeof DEFAULT_OPTIONS & { targetProject: string }
@@ -188,10 +210,11 @@ export function ImportView(p: ImportViewProps) {
       )}
 
       <SwitchFromPicker value={p.switchFrom} onChange={p.onSwitchFrom} disabled={p.offline} encrypted={p.encrypted} />
+      {p.switchFrom === 'todoist' && p.onTodoistToken && <TodoistToken disabled={disabled} onFetch={p.onTodoistToken} />}
 
       <section className="space-y-3">
         <label className="block text-body font-medium" htmlFor="import-file">{t('File')}</label>
-        <input id="import-file" type="file" accept=".json,.csv,.txt,.zip,.sqlite,.sqlite3,application/json,text/csv,application/zip,application/x-zip-compressed,application/vnd.sqlite3,application/x-sqlite3" disabled={disabled}
+        <input id="import-file" type="file" accept=".json,.csv,.txt,.zip,.sqlite,.sqlite3,.ics,application/json,text/csv,text/calendar,application/zip,application/x-zip-compressed,application/vnd.sqlite3,application/x-sqlite3" disabled={disabled}
           className="block w-full text-body file:mr-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1.5 file:text-body"
           onChange={(e) => p.onPickFile(e.target.files?.[0] ?? null)} />
 
@@ -520,6 +543,17 @@ export function ImportScreen() {
       error={error}
       job={job}
       jobs={jobs}
+      onTodoistToken={(token) => void run(async () => {
+        const data = await api.fetchTodoist(token)
+        const f = new File([JSON.stringify(data)], 'todoist.json', { type: 'application/json' })
+        setFile(f)
+        setFormat('json-items')
+        setColumns({})
+        setDetected(null)
+        setPreview(null)
+        setJob(null)
+        await runPreview(f, {}, 'json-items')
+      })}
       onPickFile={(f) => {
         setFile(f)
         setColumns({})

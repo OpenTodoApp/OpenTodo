@@ -1,6 +1,7 @@
 // The task list's data (OpenSpec change web-component-structure): live reads from
 // lib/liveData and the shared task snapshot, turned into rows and groups by the
 // pure functions of lib/listGroups. One hook, so TaskListView only renders.
+import { useHabitsEnabled } from '../../lib/habitPrefs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePlace } from '../../lib/locations'
 import { liveBlocked } from '../../lib/dependencies'
@@ -35,7 +36,7 @@ import { useSlotted } from '../../lib/slots'
 import type { Route } from '../router'
 import { useApplicableFields, useFieldDefs } from '../useFields'
 import { useToday, useViewerZone } from '../useViews'
-import { readJSON, writeJSON } from '../../lib/deviceStorage'
+import { useCollapsedRows } from './collapsedRows'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 import { useUpcomingGroups } from './upcomingProjections'
 import { isReusable } from '../../lib/reusable'
@@ -46,16 +47,6 @@ export type ListRoute = Extract<Route, ListScope>
 /** Whether any task of the list has `id` as its parent. */
 function taskHasChildren(tasks: readonly Task[], id: string): boolean {
   return tasks.some((task) => task.parent_id === id)
-}
-
-const COLLAPSE_KEY = 'opentodo.collapsed'
-
-function loadCollapsed(): Set<string> {
-  return new Set(readJSON<string[]>(COLLAPSE_KEY, [], (v) => (Array.isArray(v) ? v as string[] : null)))
-}
-
-function saveCollapsed(set: Set<string>) {
-  writeJSON(COLLAPSE_KEY, [...set]) // per-device convenience only; losing it is harmless
 }
 
 /** Views that offer the duration filter, each with its own per-device setting. */
@@ -85,22 +76,6 @@ function useDurationFilter(route: ListRoute) {
     saveDurationFilter(filterKey, kind)
   }, [filterKey])
   return { filterKey, duration, chooseDuration }
-}
-
-/** Collapsed tree rows (and the open Blocked group), per device. */
-function useCollapsedRows() {
-  const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed)
-  const toggleCollapsed = useCallback((id: string, force?: boolean) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      const want = force ?? !next.has(id)
-      if (want) next.add(id)
-      else next.delete(id)
-      saveCollapsed(next)
-      return next
-    })
-  }, [])
-  return { collapsed, toggleCollapsed }
 }
 
 /** Sections, layout and columns of a project (OpenSpec `board-view`, custom-fields); per-device preferences. */
@@ -133,6 +108,8 @@ function useStableDisplay(d: ListDisplay | undefined): ListDisplay | undefined {
     ? { groupBy, sortBy, sortDir, rowLayout, ...(subtasks !== undefined ? { subtasks } : {}), ...(laterInFull !== undefined ? { laterInFull } : {}) }
     : undefined), [groupBy, sortBy, sortDir, rowLayout, subtasks, laterInFull])
 }
+
+const NO_HABITS: Map<string, HabitStats> = new Map()
 
 export function useListModel(route: ListRoute, userId?: string) {
   const allFieldDefs = useFieldDefs()
@@ -167,7 +144,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const held = useMemo(() => flow.held(blocked), [flow, blocked])
   // Streaks of habits (OpenSpec habits D5): once per list, from the rows it holds.
   const habitsOf = useRef(new Derived<Map<string, HabitStats>, [string]>(habitStatsMap, patchHabitStats)).current
-  const habits = habitsOf.get(allTasks, today)
+  // Off means off (habits-home D2): no streak chip while Habits is not on.
+  const habitsOn = useHabitsEnabled()
+  const allHabits = habitsOf.get(allTasks, today)
+  const habits = habitsOn ? allHabits : NO_HABITS
 
   const filter = useDurationFilter(route)
   const { duration, filterKey } = filter
@@ -198,10 +178,13 @@ export function useListModel(route: ListRoute, userId?: string) {
   // Upcoming's query filter (calendar-clarity D4), under the duration filter; per device, on local rows.
   const upcoming = useQueryFilter(UPCOMING_FILTER_KEY, allTasks)
   const queryTest = route.view === 'upcoming' ? upcoming.test : null
+  // While Habits is on, Today's habits are in its strip, not among its rows (habits-home D3).
+  const todayHabits = habitsOn && route.view === 'today'
   const tasks = useMemo(() => {
-    const byDuration = !duration || !filterKey ? viewTasks : viewTasks.filter(durationPredicate(duration))
+    const own = todayHabits ? viewTasks.filter((x) => !x.habit) : viewTasks
+    const byDuration = !duration || !filterKey ? own : own.filter(durationPredicate(duration))
     return queryTest ? byDuration.filter(queryTest) : byDuration
-  }, [viewTasks, duration, filterKey, queryTest])
+  }, [viewTasks, duration, filterKey, queryTest, todayHabits])
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
@@ -261,7 +244,11 @@ export function useListModel(route: ListRoute, userId?: string) {
     return { limit: closed.fill.limit, waiting: closed.fill.waiting.filter((id) => shown.has(id)).map((id) => taskMap.get(id)!).filter(Boolean), now: waitingNow }
   }, [closed.fill, tasks, taskMap, waitingNow])
   // Done today stays Today's own: Upcoming looks ahead (upcoming-start-with-today D3).
-  const doneToday = route.view === 'today' ? closed.doneToday ?? undefined : undefined
+  // A habit done today stays a filled chip in the strip, so it is not listed again (habits-home D3).
+  const doneToday = useMemo(() => {
+    const done = route.view === 'today' ? closed.doneToday ?? undefined : undefined
+    return done && todayHabits ? done.filter((x) => !(x.series_id && taskMap.get(x.series_id)?.habit)) : done
+  }, [route.view, closed.doneToday, todayHabits, taskMap])
   // A write keeps every group and row it did not change (list-rendering-at-scale D6).
   const keptGroups = useRef<ListGroup[] | null>(null)
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
@@ -322,6 +309,8 @@ export function useListModel(route: ListRoute, userId?: string) {
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
     showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: route.view === 'upcoming' ? upcoming : null,
+    /** Habits is on and this is Today (habits-home D3): the strip lists its habits. */
+    todayHabits,
   }
 }
 

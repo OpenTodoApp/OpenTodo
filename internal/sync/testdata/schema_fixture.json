@@ -199,6 +199,10 @@
       "evening",
       "flow_mode",
       "habit",
+      "habit_anchor",
+      "habit_color",
+      "habit_graduated_at",
+      "habit_tiny",
       "ical_extra",
       "labels",
       "location",
@@ -220,6 +224,7 @@
       "span",
       "split_from",
       "start",
+      "tiny",
       "title",
       "workspace_id"
     ],
@@ -267,6 +272,7 @@
       "focus_work_minutes",
       "formatting_toggle",
       "full_titles",
+      "habits",
       "haptics",
       "inbox_group_by",
       "inbox_row_layout",
@@ -338,6 +344,7 @@
       "show_completed",
       "sort_by",
       "sort_dir",
+      "subtasks",
       "workspace_id"
     ]
   },
@@ -408,6 +415,8 @@
     ],
     "task": [
       "description",
+      "habit_anchor",
+      "habit_tiny",
       "ical_extra",
       "location",
       "notes_doc",

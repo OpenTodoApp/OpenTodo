@@ -4,8 +4,15 @@
 import { followingOccurrence, parseRule, type Rule } from '../recurrence'
 import { parseRule as parse10 } from './recurrence-1.0'
 
-/** The one form newer than 1.0: every N weeks on <weekdays>, with its end. */
+/** A form newer than 1.0: every N weeks on <weekdays>, with its end. */
 const WEEKS_ON = /^every ([0-9]+) weeks on ([a-z, ]+?)((?: until | for ).*)?$/
+
+/**
+ * The other form newer than 1.0, a weekday of one month every year
+ * (yearly-weekday-of-month): 1.0's only yearly rule repeats on the same date,
+ * which falls on another weekday from year to year, so no 1.0 rule gives these dates.
+ */
+const WEEKDAY_OF_MONTH = /^every (?:[1-4](?:st|nd|rd|th)|last) [a-z]+ of [a-z]+(?: until .*| for .*)?$/
 
 /**
  * Null when `rule`, stored for a task due on `due`, is fine: 1.0 reads it, or no rule
@@ -16,6 +23,7 @@ export function check10(rule: string, due: string | null | undefined): string | 
   if (parse10(rule).ok) return null
   const r = parseRule(rule)
   if (!r.ok) return `"${rule}" is not a rule: ${r.error}`
+  if (WEEKDAY_OF_MONTH.test(r.canonical)) return null
   const m = WEEKS_ON.exec(r.canonical)
   if (!m) return `"${rule}" is not readable by 1.0 and not a form this check knows`
   const end = m[3] ?? ''

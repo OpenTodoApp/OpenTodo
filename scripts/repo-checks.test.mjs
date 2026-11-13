@@ -431,6 +431,14 @@ test('browser end-to-end checks run in CI and the race detector nightly', () => 
   for (const id of Object.keys(jobsOf(nightly))) {
     if (id !== 'alert') assert.ok(needsOf(alert).includes(id), `the nightly alert must need ${id}`)
   }
+  // A first attempt that failed only for want of a runner is retried once, not reported.
+  assert.match(alert, /^ {6}actions: read$/m, 'the nightly alert reads the run\'s jobs')
+  assert.match(alert, /RUN_ATTEMPT: \$\{\{ github\.run_attempt \}\}/)
+  const retry = read('.github/workflows/nightly-retry.yml')
+  assert.match(retry, /^ {2}workflow_run:\n {4}workflows: \[Nightly\]\n {4}types: \[completed\]$/m)
+  assert.match(retry, /github\.event\.workflow_run\.run_attempt == 1/, 'a second attempt is never retried')
+  assert.match(retry, /^ {6}actions: write$/m)
+  assert.match(retry, /scripts\/nightly-retry\.sh check "\$RUN_ID" 1; then\n\s+scripts\/nightly-retry\.sh rerun "\$RUN_ID"/, 'only a run without a real failure is re-run')
 })
 
 test('the sync client contract tests run against the built server', () => {
@@ -1076,4 +1084,23 @@ test('every job after the release runs even when a job before it was skipped', (
   for (const [id, block] of after) {
     assert.match(block, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && /m, `${id}: explicit condition`)
   }
+})
+
+// The service worker answers a navigation with the app shell unless the address is on
+// its denylist. An address the server answers itself with a redirect or a page of its
+// own (the OAuth authorize step, the OpenTodo app's sign-in, a task page) must be on it:
+// otherwise the browser shows the web app and the flow stops, but only in a browser
+// that has opened the web app before, which no first test run is.
+test("the service worker lets the server's own pages through", () => {
+  const line = read('web/src/sw.ts').split('\n').find((l) => l.startsWith('const NAVIGATION_DENYLIST = '))
+  assert.ok(line, 'NAVIGATION_DENYLIST in web/src/sw.ts')
+  const denied = [...line.matchAll(/\/((?:\\\/|[^/])+)\/(?=[,\]])/g)].map((m) => new RegExp(m[1]))
+  const reachesServer = (p) => denied.some((re) => re.test(p))
+  // Every browser navigation the server registers outside /api/ and the app's own routes.
+  for (const p of ['/app/sign-in', '/oauth/authorize', '/oauth/token', '/t/abc', '/.well-known/oauth-authorization-server', '/mcp', '/healthz', '/api/v1/health']) {
+    assert.ok(reachesServer(p), `${p} must reach the server, not the app shell`)
+  }
+  for (const p of ['/', '/inbox', '/app', '/app/sign-in-help', '/today']) assert.ok(!reachesServer(p), `${p} is the web app's`)
+  // The address the server registers for the app's sign-in is the one denied here.
+  assert.match(read('internal/httpapi/app_sign_in.go'), /appSignInPath\s+= "\/app\/sign-in"/)
 })

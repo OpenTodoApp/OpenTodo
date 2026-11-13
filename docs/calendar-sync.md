@@ -19,7 +19,7 @@ The server owner turns calendar sync on under **Settings → Integrations → Ca
 
 | In OpenTodo | In your calendar |
 | --- | --- |
-| An open task due at 09:00 with an estimate of 45 minutes | An event from 09:00 to 09:45, titled like the task, with the notes as its description |
+| An open task due at 09:00 with an estimate of 45 minutes | An event from 09:00 to 09:45, titled like the task, with the notes as its description and a link to the task |
 | A task due at a time without an estimate | A 30-minute event |
 | A task due on a day without a time | An all-day event, only with **Include tasks without a time** on |
 | A multi-day task, from its start date to its due date | One all-day event over those days, whatever **Include tasks without a time** says; a due time is not shown |
@@ -62,6 +62,10 @@ A calendar of its own for tasks ("OpenTodo") keeps them easy to hide or recolour
 A connection writes all your dated tasks by default. To keep work tasks out of a personal calendar, open the connection's **Calendars** and under **Tasks from** choose **Only these** or **All except these**, then the workspaces, projects and Inboxes. A workspace stands for all its projects and its Inbox; a project for itself and its sub-projects; an Inbox for the tasks without a project in that workspace. With two connections, one per workspace, each calendar gets its own tasks.
 
 At the next check after a change, the events OpenTodo wrote for tasks that left the choice are removed, and the tasks themselves stay as they are. Your own events are never removed. Changes you make in the calendar to an event of a task outside the choice are not applied to the task. Events never create tasks, so there is no question of where a new one would land.
+
+### A calendar per project
+
+To keep Work, Home and Trip in calendars of their own, open the connection's **Calendars**, choose **A calendar per project** under **Write to**, and pick a calendar for each project. A sub-project follows its parent unless it has a calendar of its own, and tasks without a matched project go to the calendar above. OpenTodo never creates calendars: make them in the calendar app first, then choose **Check now** so they show up. Moving a task to another project in OpenTodo moves its event at the next check. Moving an event to another calendar in the calendar app is read like deleting it from its calendar.
 
 ## Connect Google Calendar
 
@@ -175,6 +179,7 @@ The server cannot read an encrypted account's titles and notes. With encryption 
 
 - Up to 3 calendar accounts per person; one calendar to write into and up to 10 shown per account.
 - Up to 200 events written or removed per check; the rest follows about 20 seconds later.
+- No answer from a calendar server is read past 4 MB, so a large calendar is read in pieces. A calendar's events (about two months back to thirteen months ahead) are asked for in one request; when the answer would be larger, the server asks for each half of that time instead, down to single days, and reads a day that is still too large event by event in batches of up to 50. When the list of changes is too large (the first sync of a calendar with years of history, for example), only the events OpenTodo wrote are read back, and the next checks read only what changed since. Only a single event over 4 MB stops the sync, with "The calendar server sent more than 4 MB at once". There is no setting for the limit.
 - Repeating tasks are written as their next occurrence, not as a series. Alarms, attendees and invitations are not written.
 - Moving an event of a task you may only view in a shared project is undone: the next check writes the task's time back (for a multi-day task, its start and due dates).
 - Calendar sync is refused on a public demo instance.

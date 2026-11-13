@@ -378,7 +378,7 @@ export const EveryMetadata: StoryObj = {
   render: () => (
     <List>
       <TaskRow {...base} showProject project={work} labels={[errand, call, homeLabel]} progress={{ done: 1, total: 3 }} tracked={35} blockedBy={1}
-        habit={{ current: 6, best: 9, pending: true, atRisk: false } as HabitStats} assignee="Jo"
+        habit={{ current: 6, best: 9, pending: true, overdue: false, kept: 6, keptOf: 7, strength: 80, atRisk: false, backOnTrack: false } as HabitStats} assignee="Jo"
         task={task({ id: 't-counts', title: 'Prepare the quarterly report', project_id: work.id, due: { date: TOMORROW }, recurrence: 'every week', deadline: '2026-10-30', start: '2026-10-01', estimate_minutes: 60, labels: [errand.id, call.id, homeLabel.id], description: 'Three charts.', assignee_id: 'u-jo', origin: { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' } })} />
     </List>
   ),
@@ -455,6 +455,23 @@ export const ImportedOrigins: StoryObj = {
         <TaskRow {...base} onExpand={noop} source task={task({ id: 'im-4', title: 'Unterlagen für die Steuererklärung zusammensuchen', created_at: Date.now() - 19 * 3600_000, origin: todoist('b3e8862820356c2e:1') })} />
       </List>
     )
+  },
+}
+
+/**
+ * The Inbox's source line at a tablet or landscape phone width (GitHub issue 1258): beside the
+ * title, at most 16 rem and 40 % of the row, cut with an ellipsis, so a long title keeps most of it.
+ */
+export const InboxSourceWidths: StoryObj = {
+  render: () => {
+    const mail = { kind: 'issue' as const, provider: 'github', id: 'opentodoapp/a-long-repository-name#1258', url: 'https://github.com/opentodoapp/a-long-repository-name/issues/1258' }
+    const rows = (w: string) => (
+      <ul key={w} style={{ width: w }} className="space-y-0.5 rounded-card border border-default bg-surface p-2 shadow-1">
+        <TaskRow {...base} onExpand={noop} source task={task({ id: `sw-${w}-1`, title: 'Kassenbon für die Steuer einscannen und ablegen', created_at: Date.now() - 5 * 86_400_000, origin: mail })} />
+        <TaskRow {...base} onExpand={noop} source task={task({ id: `sw-${w}-2`, title: 'Call the dentist', created_at: Date.now() - 3 * 86_400_000, origin: mail })} />
+      </ul>
+    )
+    return <div className="space-y-4">{['44rem', '56rem'].map(rows)}</div>
   },
 }
 

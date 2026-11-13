@@ -80,6 +80,8 @@ Phones, Apple, Obsidian and voice.
 | [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
 | [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
+| [`view-project-drops`](openspec/changes/view-project-drops/) | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
+| [`app-links`](openspec/changes/app-links/) | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
 | [`voice-ramble`](openspec/changes/archive/2026-10-31-voice-ramble/) | **Shipped.** Speak a brain dump or drop a photo of notes; review the proposed tasks | [#608](https://github.com/OpenTodoApp/OpenTodo/issues/608) |
@@ -107,7 +109,7 @@ Longer horizons, and the household.
 | [`reusable-lists`](openspec/changes/archive/2026-11-02-reusable-lists/) | **Shipped.** Grocery mode: adding an existing item reopens it | [#581](https://github.com/OpenTodoApp/OpenTodo/issues/581) |
 | [`chore-rotation`](openspec/changes/archive/2026-11-02-chore-rotation/) | **Shipped.** Recurring tasks that rotate between members of a group | [#582](https://github.com/OpenTodoApp/OpenTodo/issues/582) |
 | [`location-reminders`](openspec/changes/location-reminders/) | **Shipped on Android; iOS follows.** Reminders when you arrive at or leave a place |  |
-| [`more-languages`](openspec/changes/more-languages/) | Dutch, and a kit for community languages |  |
+| [`more-languages`](openspec/changes/archive/2026-11-12-more-languages/) | **Shipped.** Dutch, quick add in Dutch, and a kit for community languages | [#584](https://github.com/OpenTodoApp/OpenTodo/issues/584) |
 | [`simplified-chinese`](openspec/changes/archive/2026-11-11-simplified-chinese/) | **Shipped.** Simplified Chinese (简体中文) | [#883](https://github.com/OpenTodoApp/OpenTodo/issues/883) |
 | [`priority-names`](openspec/changes/archive/2026-11-10-priority-names/) | **Shipped.** Rename the four priorities |  |
 | [`telegram-channel`](openspec/changes/telegram-channel/) | **Postponed by the owner (2026-11-10).** Telegram as a notification channel |  |
@@ -161,6 +163,20 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
 | [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
+| [`notes-in-routines`](openspec/changes/notes-in-routines/) | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
+| [`note-attachments`](openspec/changes/note-attachments/) | Images and files in standalone notes | |
+| [`note-checklist-tasks`](openspec/changes/archive/2026-11-13-note-checklist-tasks/) | **Shipped.** Turn checklist lines of a note into tasks, each line becoming a link to its task | |
+| [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
+| [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
+| [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
+| [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
+| [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |
+| [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
+| [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
+| [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
+| [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
+| [`note-webhooks`](openspec/changes/note-webhooks/) | Opt-in note events for webhooks | |
+| [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |
 
 The changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.
 
@@ -206,6 +222,19 @@ These changes come from the owner's November review of the screens used every da
 | [`loop-guided-dashboard`](openspec/changes/archive/2026-11-10-loop-guided-dashboard/) | **Shipped.** The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
+
+### Habits area
+
+Habits get their own place: easy to start, forgiving on a bad day, connected to notes and the assistant, and invisible for anyone who turns them off. Planned on 2026-11-12 from the owner's feedback and a study of habit trackers and the research behind them.
+
+| Change | What | Issues |
+| --- | --- | --- |
+| [`habits-home`](openspec/changes/habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
+| [`habit-notes`](openspec/changes/habit-notes/) | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
+| [`habits-assistant`](openspec/changes/habits-assistant/) | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | |
+| [`habit-targets`](openspec/changes/habit-targets/) | Times per week or month, and daily amounts that add up exactly across devices | |
+
+They land in this order; each ships on its own. Every number stays derived from the records that already sync, and the server computes the same numbers from the same vectors.
 
 ### Native app
 

@@ -31,6 +31,16 @@ function render(p: Partial<ImportViewProps> = {}) {
 }
 
 describe('ImportView', () => {
+  it('offers a Todoist API token when switching from Todoist (todoist-api-import)', () => {
+    const noop = () => {}
+    expect(render({ switchFrom: 'todoist' })).not.toContain('data-todoist-token')
+    const html = render({ switchFrom: 'todoist', onTodoistToken: noop })
+    expect(html).toContain('data-todoist-token')
+    expect(html).toContain('Settings → Integrations → Developer')
+    expect(html).toMatch(/<input id="todoist-token" type="password"/)
+    expect(render({ switchFrom: 'things', onTodoistToken: noop })).not.toContain('data-todoist-token')
+  })
+
   it('explains the offline state, disables the picker and keeps the last job list', () => {
     const html = render({ offline: true, jobs: [job({ status: 'done' }), job({ id: 'j2', status: 'undone' })] })
     expect(html).toContain('You are offline')
@@ -114,7 +124,7 @@ describe('import route', () => {
     const html = render()
     for (const label of ['Todoist backup (ZIP)', 'Todoist project (CSV)', 'Things 3 database', 'TickTick backup (CSV)', 'Linear export (CSV)',
       'Google Tasks (Takeout JSON)', 'Trello board (JSON)', 'Asana project (CSV)', 'Microsoft To Do (JSON from the PowerShell script)',
-      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)', 'Notion (Markdown and CSV export)', 'OmniFocus (CSV)', 'Super Productivity (backup JSON)', 'Tududi (database)', 'Vikunja (export ZIP)']) {
+      'Apple Reminders (JSON from the Shortcut)', 'Any.do (JSON from a data request)', 'Notion (Markdown and CSV export)', 'OmniFocus (CSV)', 'Super Productivity (backup JSON)', 'Tududi (database)', 'Vikunja (export ZIP)', 'iCalendar tasks (.ics)']) {
       expect(html).toContain(label)
     }
     const preview: ImportPreview = {

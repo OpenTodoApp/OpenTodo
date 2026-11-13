@@ -73,6 +73,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `focus-live-activity` | Focus as a Live Activity and in the Dynamic Island | Planned |
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
+| `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Planned |
+| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
 | `voice-ramble` | Speak a brain dump or drop a photo of notes; review the proposed tasks | Shipped in 0.20 |
@@ -93,7 +95,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `reusable-lists` | Grocery mode: adding an existing item reopens it | Shipped in 0.21 |
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `location-reminders` | Reminders when you arrive at or leave a place | In progress (16 of 18) |
-| `more-languages` | Dutch, and a kit for community languages | Planned |
+| `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped |
 | `simplified-chinese` | Simplified Chinese (简体中文) | Shipped |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 | `telegram-channel` | Telegram as a notification channel | Planned |
@@ -134,9 +136,23 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.4 |
-| `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | In progress (12 of 12) |
+| `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | Shipped |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
-| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | In progress (12 of 12) |
+| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Shipped |
+| `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Shipped |
+| `note-attachments` | Images and files in standalone notes | Planned |
+| `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Shipped |
+| `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |
+| `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
+| `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
+| `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped |
+| `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |
+| `note-outline` | An outline of a long note's headings | Shipped |
+| `note-templates` | Start a note from a template, with built-in ones and a routine step | Planned |
+| `daily-notes` | One note per day, opened from Today, that routines can add to | Planned |
+| `note-public-links` | A read-only public link for one note | Planned |
+| `note-webhooks` | Opt-in note events for webhooks | Planned |
+| `vault-notes` | Standalone notes as Markdown files in `ot vault` | Planned |
 
 ## Assistant area
 
@@ -152,7 +168,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Shipped in 1.4 |
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Shipped in 1.4 |
-| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | In progress (2 of 2) |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Shipped |
 | `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | In progress (5 of 6) |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped in 1.4 |
 
@@ -167,11 +183,20 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `task-progress` | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | Shipped in 1.4 |
 | `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | Shipped in 1.4 |
 
+## Habits area
+
+| Change | What | Status |
+| --- | --- | --- |
+| `habits-home` | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | Shipped |
+| `habit-notes` | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | Planned |
+| `habits-assistant` | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | Planned |
+| `habit-targets` | Times per week or month, and daily amounts that add up exactly across devices | Planned |
+
 ## Native app
 
 | Change | What | Status |
 | --- | --- | --- |
-| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (14 of 21) |
+| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (15 of 21) |
 | `native-app-everyday` | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | Planned |
 | `native-app-handover` | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | Planned |
 

@@ -21,7 +21,7 @@ To save it, press <kbd>s</kbd> in the results or choose **Save as view**, type a
 
 ## Conditions and display options
 
-Under a view's header (**Views › name**), the toolbar shows its conditions in words, such as **Label is waiting**. The funnel opens the filter panel to change them (<kbd>/</kbd> jumps to the query). **Display options** sets **List** or **Board**, the grouping and order, whether completed tasks are listed, and which properties rows show; each choice is saved to the view and syncs. [Filter queries](filters.md#saving-views) has every option.
+Under a view's header (**Views › name**), the toolbar shows its conditions in words, such as **Label is waiting**. The funnel opens the filter panel to change them (<kbd>/</kbd> jumps to the query). **Display options** sets **List** or **Board**, the grouping and order, completed tasks, the properties rows show and, in a list, [Nest subtasks](arrange-built-in-views.md#nest-subtasks); each choice syncs with the view. [Filter queries](filters.md#saving-views) has every option.
 
 The **All** link next to **Views** (or <kbd>g</kbd> <kbd>v</kbd>) opens the list of all your saved views and boards to rename, reorder, pin or delete them.
 

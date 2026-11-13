@@ -673,7 +673,7 @@ The Add control SHALL list the properties that have no value under the headings 
 
 #### Scenario: Add an estimate
 - **WHEN** the user opens Add, picks Estimate under How, types `1h30` and presses Enter
-- **THEN** the How line reads "P4 · 1 h 30" and focus is on the new part
+- **THEN** the How line reads "Priority · 1 h 30", Priority in the faint tone of an unset part, and focus is on the new part
 
 #### Scenario: Cancel leaves no trace
 - **WHEN** the user picks Deadline from Add and presses Escape without a date
@@ -1007,7 +1007,7 @@ The task page SHALL show the task's properties in a facts column of labelled row
 
 #### Scenario: More properties
 - **WHEN** the user taps "More properties" on that card
-- **THEN** Start, Repeat, Priority 4, Estimate, Blocked by, Location, Parent task and Labels are added in place, the unset ones as actions, and "More properties" is gone
+- **THEN** Start, Repeat, Priority, Estimate, Blocked by, Location, Parent task and Labels are added in place, the unset ones as actions, and "More properties" is gone
 
 #### Scenario: Set a deadline from its row
 - **WHEN** the user activates "Set a deadline" on a task's page
@@ -1253,3 +1253,14 @@ Choosing or typing a value SHALL write the estimate in minutes as one operation 
 #### Scenario: Arrow keys
 - **WHEN** the field holds `1h` and the user presses ↑ twice
 - **THEN** the field reads `1h 30m` and Enter writes 90 minutes
+
+### Requirement: A note for an engine too old for the app
+Before the app's code runs, the page SHALL check for the CSS the interface needs (oklch and color-mix colours, container queries: Chrome and Android System WebView 111, Safari 16.4, Firefox 128). When it is missing, the page SHALL show a note instead of the app, in the browser's language when it is a shipped language and in English otherwise, naming the minimum versions and the engine version it found, and saying that on Android a browser with its own engine works where the system WebView cannot be updated. A current engine SHALL see no change.
+
+#### Scenario: An old Android WebView
+- **WHEN** the Android app opens a server on a phone whose system WebView reports Chrome 83 and the language is Chinese
+- **THEN** the screen shows the note in Chinese with the minimum versions and "Chrome 83.0.4103.106", not a blank page
+
+#### Scenario: A current browser
+- **WHEN** a browser with the needed CSS opens the app
+- **THEN** no note is shown and the app starts as before

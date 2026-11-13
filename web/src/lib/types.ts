@@ -528,6 +528,8 @@ export interface View extends ViewFields {
   hidden_props?: string[]
   /** The view's row layout (row-layouts D1): 'line' or 'detailed'; '' or absent follows the account's. */
   row_layout?: string
+  /** List layout only: 'nested' shows a match under its matching parent (GitHub issue 1108); else the flat list. */
+  subtasks?: string
   created_at: number
   deleted_at: number | null
   /** Workspace id (OpenSpec change `workspaces`), null or absent for the default workspace. Read with `workspaceOf` from lib/workspaces.ts. */
@@ -557,7 +559,8 @@ export interface OnDropRule {
 }
 
 /** Trigger kinds of an automation rule (automation-rules "Rule validation"). */
-export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule', 'manual'] as const
+export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule', 'manual',
+  'note.created', 'note.edited', 'note.label.added'] as const
 export type RuleTriggerKind = (typeof RULE_TRIGGERS)[number]
 
 /** An automation rule's trigger: one kind with the members it takes. */
@@ -571,6 +574,8 @@ export interface RuleTrigger {
   weekdays?: number[]
   /** `schedule` instead of weekdays: days of the month, 1 to 31 or "last" (routines-dynamic-data D5). */
   month_days?: (number | 'last')[]
+  /** `manual`: what it runs on, a task (also when absent) or a note (notes-in-routines D2). */
+  on?: 'task' | 'note'
 }
 
 /** A date predicate (`due`, `deadline`). */
@@ -647,6 +652,8 @@ export interface RoutineRun {
   run_id: string
   rule_id: string
   task_id?: string
+  /** The standalone note a note routine ran on (notes-in-routines). */
+  note_id?: string
   at: number
   outcome: RuleRun['outcome'] | 'ended' | 'proposal' | 'waiting_device' | 'missed'
   reason?: string
@@ -797,7 +804,7 @@ export interface Rule extends RuleFields {
 }
 
 /** The type of a routine step's output (routines-engine D3); lines is a list of text. */
-export type RoutineStepType = 'text' | 'task' | 'tasks' | 'project' | 'date' | 'number' | 'lines' | 'none'
+export type RoutineStepType = 'text' | 'task' | 'tasks' | 'note' | 'notes' | 'project' | 'date' | 'number' | 'lines' | 'none'
 
 /** A step input: a reference to the trigger, an earlier step or a Repeat's item, or a literal. */
 export type RoutineArg = { ref: string } | { literal: unknown }
@@ -1186,6 +1193,8 @@ export interface Profile {
   emailManagedBy?: string
   /** Whether an email change waits for a link (otherwise it applies at once). */
   emailByLink: boolean
+  /** Whether the address was confirmed by a link; absent from older servers (confirm-current-email). */
+  emailVerified?: boolean
 }
 
 /**
@@ -1369,6 +1378,8 @@ export interface CalendarConnection {
   include_date_only: boolean
   /** The part of the account written to the calendar (sync-scope); absent from older servers: all. */
   scope?: SyncScope
+  /** Projects matched to calendars of the connection (calsync-project-calendars); empty or absent: one calendar. */
+  project_calendars?: Record<string, string>
   enabled: boolean
   state: 'off' | 'choose_calendar' | 'pending' | 'ok' | 'failed' | 'reconnect' | 'stopped'
   next_sync_at: number
@@ -1413,6 +1424,8 @@ export interface CalendarConnectionPatch {
   enabled?: boolean
   password?: string
   scope?: SyncScope
+  /** Replaces the project-to-calendar matches; {} is one calendar again. */
+  project_calendars?: Record<string, string>
 }
 
 /**
@@ -1779,6 +1792,8 @@ export interface AppPassword {
   revokedAt: number | null
   /** Absent from servers before sync-scope: the whole account. */
   scope?: SyncScope
+  /** Shows the calendars as events instead of to-dos (caldav-events); absent means to-dos. */
+  events?: boolean
 }
 
 export interface WebhookDelivery {
@@ -2022,6 +2037,7 @@ export type ImportFormat =
   | 'super-productivity-json'
   | 'tududi-db'
   | 'vikunja-export'
+  | 'ics'
 export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'opentodo', 'todoist-backup', 'todoist-csv', 'things-db', 'ticktick-csv', 'linear-csv',
   'google-tasks-json', 'trello-json', 'asana-csv', 'microsoft-todo-json', 'apple-reminders-json', 'anydo-json',
@@ -2030,6 +2046,7 @@ export const IMPORT_FORMATS: readonly ImportFormat[] = [
   'super-productivity-json',
   'omnifocus-csv',
   'notion-csv',
+  'ics',
   'json-items', 'json-lists', 'json-generic', 'csv',
 ]
 

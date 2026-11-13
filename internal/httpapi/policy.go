@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"fmt"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"net/http"
 	"net/url"
 
@@ -69,7 +70,7 @@ func (rt *routes) handler(pattern string, p routePolicy, h http.Handler) {
 	}
 	authed := rt.s.requireAuth(func(w http.ResponseWriter, r *http.Request) {
 		if rt.s.admits(w, r, p) {
-			h.ServeHTTP(w, r)
+			h.ServeHTTP(w, withTokenReach(r))
 		}
 	})
 	if p.SignIn {
@@ -124,6 +125,9 @@ func (s *Server) admits(w http.ResponseWriter, r *http.Request, p routePolicy) b
 		case p.Tokens == httpx.TokensFull && !auth.FullAccess(scope):
 			writeError(w, http.StatusForbidden, "insufficient_scope", "this needs a signed-in session or a full-access API token")
 			return false
+		case tokenFrom(r.Context()).Workspaces != nil && !p.Reach:
+			writeTokenRestricted(w)
+			return false
 		}
 		return true
 	}
@@ -132,4 +136,21 @@ func (s *Server) admits(w http.ResponseWriter, r *http.Request, p routePolicy) b
 		return false
 	}
 	return true
+}
+
+// withTokenReach puts a token's workspace limit on the request's context, so
+// the sync service reads and writes only inside it (token-workspaces D2).
+func withTokenReach(r *http.Request) *http.Request {
+	if sessionFrom(r.Context()) != nil {
+		return r
+	}
+	if ws := tokenFrom(r.Context()).Workspaces; ws != nil {
+		return r.WithContext(opsync.WithReach(r.Context(), ws))
+	}
+	return r
+}
+
+// writeTokenRestricted refuses a token limited to workspaces (token-workspaces D4).
+func writeTokenRestricted(w http.ResponseWriter) {
+	writeError(w, http.StatusForbidden, "token_restricted", "this token is limited to chosen workspaces and cannot use this route")
 }

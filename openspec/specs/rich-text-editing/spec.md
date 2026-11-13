@@ -171,7 +171,7 @@ Dropping or pasting an image into the editor, or choosing Image from the slash m
 - **THEN** the note gets a link to that address, no image is loaded, and no request is made to example.org
 
 ### Requirement: Checklist items become subtasks
-On a check-list line in a task's notes the editor SHALL offer Make subtask (slash menu, context menu and a key combination registered in the shortcut registry); it SHALL create a subtask of the task with the line's text as title, the task's project, and the line's checked state as completion, and replace the line with a paragraph holding a link to the subtask, as one change that Undo reverts in one step. The link SHALL show the subtask's current title and done state when the subtask is on the device, and the stored text otherwise. The command SHALL not be offered in project notes or comments.
+On a check-list line, or a selection holding check-list lines, in a task's notes the editor SHALL offer Make subtask (slash menu, context menu and a key combination registered in the shortcut registry); it SHALL create one subtask of the task per check-list line with the line's text as title, the task's project, and the line's checked state as completion. In a project's note and in a standalone note the same command, the same key and the same menus SHALL offer Make tasks: one task per check-list line, its line read with quick-add syntax (a date, a priority, labels), in the project of the note (a standalone note without a project: the Inbox of the note's workspace), with the line's checked state as completion. Either command SHALL replace each line with a paragraph holding a link to its task, and SHALL be one change that Undo reverts in one step, the tasks and the note together. Lines of the selection that are not check-list lines, and lines that already hold only a link to a task, SHALL be left as they are; one command SHALL turn at most 50 lines and say so when the selection holds more. The link SHALL show the task's current title and done state when the task is on the device, and the stored text otherwise, so the note's Linked references and the task's Linked references connect the two. The tasks and the note change SHALL be written as local operations in one batch, offline included, and SHALL converge like any task creation and note edit: a concurrent edit of the same note on another device merges with the replaced lines. Viewers of a shared project SHALL not be offered either command. The commands SHALL not be offered in comments.
 
 #### Scenario: Make subtask offline
 - **WHEN** the device is offline and the user chooses Make subtask on the line "Book hotel"
@@ -184,6 +184,26 @@ On a check-list line in a task's notes the editor SHALL offer Make subtask (slas
 #### Scenario: Subtask retitled
 - **WHEN** the subtask is renamed on another device and this one syncs
 - **THEN** the link in the note shows the new title without a write to the note
+
+#### Scenario: Meeting note to tasks
+- **WHEN** the user selects three lines of the standalone note "Planning meeting" in Work, "[ ] book room friday", "notes from Anna" and "[ ] send agenda p1", and presses Ctrl+Shift+Enter
+- **THEN** two tasks are created in Work, "book room" due Friday and "send agenda" with priority 1, the two lines read as links to them, "notes from Anna" is unchanged, and the note's Linked references list nothing new while each task's Linked references list the note
+
+#### Scenario: Several subtasks at once
+- **WHEN** the user selects four check-list lines in the note of the task "Move house" and chooses Make subtask
+- **THEN** four subtasks of "Move house" are created and Undo removes all four and restores the lines
+
+#### Scenario: Concurrent edit
+- **WHEN** the user makes tasks from two lines of a project note offline while another member adds a paragraph to the same note, and both sync
+- **THEN** every device shows the two links and the new paragraph, and the two tasks exist once
+
+#### Scenario: Viewer
+- **WHEN** a viewer of a shared project selects check-list lines in its project note
+- **THEN** neither Make tasks nor Make subtask is offered
+
+#### Scenario: Too many lines
+- **WHEN** the user selects 70 check-list lines and chooses Make tasks
+- **THEN** the first 50 become tasks and the editor says 20 lines were left
 
 ### Requirement: Recognised issue links
 A link in a note or comment whose address is a GitHub, GitLab, Jira or Linear issue, recognised on the device the way a task's origin is, SHALL render as an inline issue chip (`o/r#7`, `ENG-123`) that opens the issue in a new tab; recognition SHALL use the address alone and SHALL make no request. Every other link renders as a link.
@@ -320,3 +340,75 @@ A read of a task, project or note through the REST API SHALL return `body_versio
 #### Scenario: Unauthenticated patch
 - **WHEN** a request without credentials patches a note's `description` with `If-Match`
 - **THEN** the response is 401 `unauthorized` and nothing is written
+
+### Requirement: Outline of a note
+A task note, project note or standalone note with 3 or more top-level headings SHALL show its outline: the headings of levels 1 to 3 in document order, indented by level, with the heading currently at the top of the reading area marked and announced as the current location. Choosing a heading SHALL scroll the note to it and, in a note the user may edit, put the caret at its start. When the note's column is at least 52 rem wide the outline SHALL be a column beside the note that stays in view while the note scrolls, inside the existing scroller and never as a scroll region of its own; otherwise, and always in the docked task panel and in project notes, it SHALL be an **Outline** button in the note's top corner opening a menu of the headings. Notes with fewer than 3 headings SHALL show neither. The outline SHALL follow local and remote edits at once, SHALL work offline and on encrypted accounts from the local, decrypted document, and SHALL not be stored or synced, so offline behaviour and convergence of notes are unchanged.
+
+#### Scenario: Jump to a section
+- **WHEN** a standalone note on a 1440 px screen has the headings "Flights", "Hotels" and "Days" and the user chooses "Days" in the outline column
+- **THEN** the note scrolls so that "Days" is at the top, the caret is at its start, and "Days" is marked as current
+
+#### Scenario: Docked panel
+- **WHEN** a task note in the docked panel has four headings
+- **THEN** the note shows an Outline button, and its menu lists the four headings
+
+#### Scenario: Short note
+- **WHEN** a note has two headings
+- **THEN** no outline column and no Outline button are shown
+
+#### Scenario: Remote heading
+- **WHEN** another device adds a heading "Budget" to a note open on this device with an outline, and this device syncs
+- **THEN** "Budget" appears in the outline at its place without a reload
+
+#### Scenario: Read-only
+- **WHEN** a viewer of a shared project chooses a heading in a project note's outline
+- **THEN** the note scrolls to the heading and focus moves to it, and the note stays read-only
+
+### Requirement: Outline from the keyboard
+While a note with an outline has focus, `Ctrl+Shift+O` (`⌘+Shift+O` on a Mac) SHALL move focus to the outline column or open the outline menu; ↑ and ↓ SHALL move between headings, Home and End to the first and last, Enter SHALL go to the focused heading and Esc SHALL return focus to the note where it was. The shortcut SHALL be registered in the keyboard registry's editing section without a conflict and listed in the cheat sheet.
+
+#### Scenario: Keyboard only
+- **WHEN** the user presses `Ctrl+Shift+O` in a note with five headings, presses ↓ twice and Enter
+- **THEN** the note scrolls to the third heading with the caret at its start
+
+#### Scenario: Esc returns
+- **WHEN** the user opens the outline with the keyboard and presses Esc
+- **THEN** focus is back in the note at the same caret position
+
+### Requirement: Markdown source mode
+Every note the user may edit (task notes on the task page and in the docked panel, project notes and standalone notes) SHALL offer a Markdown source mode that shows the note's plain-text projection as editable monospace text in the note's place, reached with `Ctrl+Shift+M` (`⌘+Shift+M` on a Mac) while the note has focus, with a **Markdown** entry in the slash menu, and on a fine pointer with a **Markdown** button beside the Formatting toggle, revealed with it and announced with its pressed state. The same key or button SHALL return to rich text with the caret in the block that held it. The mode SHALL last until the note is closed and SHALL not be stored or synced. A read-only note SHALL show its source read-only. The shortcut SHALL be registered in the keyboard registry's editing section without a conflict.
+
+#### Scenario: Open the source
+- **WHEN** the user presses `Ctrl+Shift+M` in a note holding a heading "Plan" and a check list
+- **THEN** the note shows `# Plan` and `- [ ] ` lines as plain text, and pressing `Ctrl+Shift+M` again shows the heading and the check list as rich text
+
+#### Scenario: Fix a list
+- **WHEN** in source mode the user changes `1. milk` to `- milk` and returns to rich text
+- **THEN** the line is a bullet item, on every device after sync
+
+#### Scenario: Viewer
+- **WHEN** a viewer of a shared project switches a project note to its source
+- **THEN** the source is shown and cannot be edited
+
+#### Scenario: Not remembered
+- **WHEN** the user closes a note in source mode and opens it again
+- **THEN** it opens as rich text
+
+### Requirement: Source edits apply block by block
+Edits made in source mode SHALL be applied to the note's document at each local save pause and on leaving the mode by replacing, inserting or deleting only the top-level blocks whose text differs from the projection, so unchanged blocks keep their nodes (mentions, images from attachments, tables) and the projection is written in the same batch. Each application SHALL be an ordinary document edit: it SHALL apply locally and offline at once, survive a reload, and converge with concurrent edits from other devices under "Concurrent note edits converge without loss". Remote edits arriving while the source is shown SHALL update the source text in the blocks the user has not changed since the last pause without moving the caret or selection.
+
+#### Scenario: Concurrent edit kept
+- **WHEN** device A edits the second paragraph of a note in source mode while device B, online, adds a fourth paragraph, and device A returns to rich text
+- **THEN** every device shows A's change to the second paragraph and B's fourth paragraph
+
+#### Scenario: Untouched mention kept
+- **WHEN** a task note holds a paragraph with a mention of Anna and the user changes only another paragraph in source mode
+- **THEN** the mention is still a mention after leaving source mode
+
+#### Scenario: Remote edit while typing
+- **WHEN** the user types in the first paragraph in source mode and another device changes the last paragraph
+- **THEN** the source shows the new last paragraph and the caret stays where the user was typing
+
+#### Scenario: Offline
+- **WHEN** the device is offline and the user edits a note in source mode and reloads
+- **THEN** the edit is shown and is uploaded on the next successful sync

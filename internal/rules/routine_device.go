@@ -107,7 +107,7 @@ func (e *Engine) deviceRun(ctx context.Context, uid string, r *rule, run Run) (r
 	if err != nil {
 		return relay.RoutineRun{}, err
 	}
-	req := relay.RoutineRun{Op: relay.OpRoutineRun, RuleID: r.ID, RunID: run.RunID, Key: run.OccurrenceKey, At: run.At, TaskID: run.TaskID,
+	req := relay.RoutineRun{Op: relay.OpRoutineRun, RuleID: r.ID, RunID: run.RunID, Key: run.OccurrenceKey, At: run.At, TaskID: run.TaskID, NoteID: run.NoteID,
 		Rev: ruleRev(row), Budget: r.AIBudget}
 	if ruleval.HasAI(r.Steps) {
 		mode, err := e.AIMode(ctx, uid, r.ID)
