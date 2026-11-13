@@ -3,6 +3,7 @@
 // In a browser it is an anchor with `download`, as before. A web view ignores that,
 // so in a shell that lists `files` the bytes go over the bridge in chunks and the
 // shell opens the phone's save dialog. Every save in the app goes through here.
+import { resettable } from './moduleState'
 import { has, shell } from './shell'
 
 /** `saved`: written (in a browser: handed to the browser). `cancelled`: the user closed the dialog. */
@@ -22,6 +23,7 @@ export interface ShellFileChunk {
 
 let seq = 0
 const failed = new Set<(name: string) => void>()
+resettable('saveFile', () => { seq = 0; failed.clear() })
 
 /** Called with the file's name when a save fails, so the app can say so. Returns the remover. */
 export function onSaveFailed(listener: (name: string) => void): () => void {
