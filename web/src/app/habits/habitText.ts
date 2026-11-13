@@ -28,8 +28,9 @@ function hashOf(id: string): number {
   return h
 }
 
-/** The habit's hue (D8): its project's, else one of the 12 picked by its id. */
-export function habitHue(task: Pick<Task, 'id' | 'split_from'>, projectColor?: string | null): HueName {
+/** The habit's hue (D8, habits-polish D5): its own colour, else its project's, else one of the 12 picked by its id. */
+export function habitHue(task: Pick<Task, 'id' | 'split_from' | 'habit_color'>, projectColor?: string | null): HueName {
+  if (task.habit_color) return hueFor(task.habit_color)
   if (projectColor) return hueFor(projectColor)
   // The pieces of a lineage keep the hue of the first; red is left out, so no habit reads as an alarm.
   const calm = HUES.filter((h) => h.name !== 'red')
