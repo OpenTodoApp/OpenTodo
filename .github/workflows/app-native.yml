@@ -35,9 +35,9 @@ jobs:
   # compiled to Hermes bytecode and embedded, which checks the whole bundle too. The
   # newest Xcode on the runner, as for the TestFlight upload.
   app-ios:
-    name: App on iOS (prebuild, simulator build)
+    name: App on iOS (prebuild, simulator build, flows)
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -62,6 +62,41 @@ jobs:
           app=build/Build/Products/Release-iphonesimulator/OpenTodo.app
           test -f "$app/main.jsbundle" || { echo "::error::no JavaScript bundle in $app"; exit 1; }
           du -sh "$app"
+      # The flows (task 4.4): the Release build on a simulator against a server built from
+      # this commit with the web app in it, since sign-in runs on the server's own page in
+      # the system's sheet. Maestro is a pinned release, checked against its checksum.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21.0.13+9
+      - name: The server, with the web app
+        run: make build
+      - name: Maestro
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/maestro.zip" https://github.com/mobile-dev-inc/maestro/releases/download/cli-2.12.0/maestro.zip
+          echo "a6044a84542f522f434c5dc3d609e60c7446d423f3ed1b2ae513f5c48663ec5e  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/maestro/bin" >> "$GITHUB_PATH"
+      - name: Flows on the simulator (sign-in, restart, sign-out)
+        env:
+          MAESTRO_CLI_NO_ANALYTICS: "1"
+          MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: "true"
+        run: |
+          sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone 1[6-9]$/p' | head -1)
+          [ -n "$sim" ] || sim=$(xcrun simctl list devices available | sed -n 's/^[[:space:]]*//; s/ (.*//; /^iPhone/p' | head -1)
+          xcrun simctl boot "$sim"
+          xcrun simctl bootstatus "$sim" -b
+          xcrun simctl install booted mobile/app/ios/build/Build/Products/Release-iphonesimulator/OpenTodo.app
+          OT_SERVER_BIN="$PWD/bin/opentodo" OUT="$PWD/dist/app-flows" mobile/app/flows/run.sh ios
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: app-flows-ios
+          path: dist/app-flows
+          retention-days: 7
 
   # Prebuild, a debug build for the emulator's ABI only (the four-ABI build is the
   # release's) and the app module's unit tests. The JDK is the one the Android shell pins.
