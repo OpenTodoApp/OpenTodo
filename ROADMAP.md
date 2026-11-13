@@ -166,7 +166,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-checklist-tasks`](openspec/changes/note-checklist-tasks/) | Turn checklist lines of a note into tasks, each line becoming a link to its task | |
 | [`unlinked-mentions`](openspec/changes/unlinked-mentions/) | Unlinked mentions below Linked references, linked in one step | |
 | [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
-| [`notes-sort`](openspec/changes/notes-sort/) | Sort the Notes list by last change, creation or title | |
+| [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
 | [`notes-bulk-actions`](openspec/changes/notes-bulk-actions/) | Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/note-markdown-source/) | Edit a note's Markdown source as plain text | |
 | [`note-outline`](openspec/changes/note-outline/) | An outline of a long note's headings | |
