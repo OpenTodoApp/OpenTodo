@@ -5,7 +5,7 @@ import { createNoteUndoable, moveTaskNoteOut, noteToTask, trashNote, type NewNot
 import { reportActionError } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 
-async function withToast(p: Promise<Converted | null>): Promise<Converted | null> {
+export async function withToast(p: Promise<Converted | null>): Promise<Converted | null> {
   try {
     const r = await p
     if (r) showUndoToast(r.label, r.entry?.id ?? null)

@@ -78,6 +78,40 @@ type Template struct {
 type library struct {
 	Schema    int        `json:"schema"`
 	Templates []Template `json:"templates"`
+	// Notes are the built-in note templates (note-templates D4).
+	Notes []NoteTemplate `json:"notes"`
+}
+
+// NoteTemplate is a built-in note template: its title, summary and Markdown
+// body per language, placeholders unfilled.
+type NoteTemplate struct {
+	Slug    string    `json:"slug"`
+	Icon    string    `json:"icon"`
+	Title   Localized `json:"title"`
+	Summary Localized `json:"summary"`
+	Body    Localized `json:"body"`
+}
+
+// Notes lists the built-in note templates.
+func Notes() ([]NoteTemplate, error) {
+	if _, err := All(); err != nil {
+		return nil, err
+	}
+	return lib.Notes, nil
+}
+
+// FindNote returns the built-in note template with this slug.
+func FindNote(slug string) (*NoteTemplate, bool) {
+	list, err := Notes()
+	if err != nil {
+		return nil, false
+	}
+	for i := range list {
+		if list[i].Slug == slug {
+			return &list[i], true
+		}
+	}
+	return nil, false
 }
 
 var (

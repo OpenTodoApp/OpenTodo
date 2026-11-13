@@ -1,0 +1,6 @@
+title: "Meeting {{date}}"
+summary: "Attendees, agenda, notes and the actions that come out of a meeting."
+icon: users
+author: OpenTodo
+reviewed: 2026-11-13
+body: "## Attendees\n\n## Agenda\n\n## Notes\n\n## Actions\n- [ ] "

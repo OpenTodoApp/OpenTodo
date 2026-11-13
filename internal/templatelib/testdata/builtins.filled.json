@@ -1,0 +1,172 @@
+{
+ "daily": {
+  "de": [
+   "Montag 16/11/2026",
+   "## Plan\n- [ ] \n\n## Notizen\n\n## Wie es lief\n"
+  ],
+  "en": [
+   "Monday 11/16/2026",
+   "## Plan\n- [ ] \n\n## Notes\n\n## How it went\n"
+  ],
+  "es": [
+   "lunes 16/11/2026",
+   "## Plan\n- [ ] \n\n## Notas\n\n## Cómo fue\n"
+  ],
+  "fr": [
+   "lundi 16/11/2026",
+   "## Plan\n- [ ] \n\n## Notes\n\n## Le bilan\n"
+  ],
+  "it": [
+   "lunedì 16/11/2026",
+   "## Piano\n- [ ] \n\n## Appunti\n\n## Com’è andata\n"
+  ],
+  "nl": [
+   "maandag 16/11/2026",
+   "## Plan\n- [ ] \n\n## Aantekeningen\n\n## Hoe het ging\n"
+  ],
+  "pt": [
+   "segunda-feira 16/11/2026",
+   "## Plano\n- [ ] \n\n## Notas\n\n## Como correu\n"
+  ],
+  "zh": [
+   "星期一 2026-11-16",
+   "## 计划\n- [ ] \n\n## 记录\n\n## 今天如何\n"
+  ]
+ },
+ "meeting": {
+  "de": [
+   "Besprechung 16/11/2026",
+   "## Teilnehmende\n\n## Agenda\n\n## Notizen\n\n## Aufgaben\n- [ ] "
+  ],
+  "en": [
+   "Meeting 11/16/2026",
+   "## Attendees\n\n## Agenda\n\n## Notes\n\n## Actions\n- [ ] "
+  ],
+  "es": [
+   "Reunión 16/11/2026",
+   "## Asistentes\n\n## Orden del día\n\n## Notas\n\n## Acciones\n- [ ] "
+  ],
+  "fr": [
+   "Réunion 16/11/2026",
+   "## Participants\n\n## Ordre du jour\n\n## Notes\n\n## Actions\n- [ ] "
+  ],
+  "it": [
+   "Riunione 16/11/2026",
+   "## Partecipanti\n\n## Ordine del giorno\n\n## Appunti\n\n## Azioni\n- [ ] "
+  ],
+  "nl": [
+   "Vergadering 16/11/2026",
+   "## Aanwezigen\n\n## Agenda\n\n## Aantekeningen\n\n## Acties\n- [ ] "
+  ],
+  "pt": [
+   "Reunião 16/11/2026",
+   "## Participantes\n\n## Agenda\n\n## Notas\n\n## Ações\n- [ ] "
+  ],
+  "zh": [
+   "会议 2026-11-16",
+   "## 参会人\n\n## 议程\n\n## 记录\n\n## 行动项\n- [ ] "
+  ]
+ },
+ "one-on-one": {
+  "de": [
+   "1:1 16/11/2026",
+   "## Wie läuft es\n\n## Was im Weg steht\n\n## Feedback\n\n## Nächste Schritte\n- [ ] "
+  ],
+  "en": [
+   "1:1 11/16/2026",
+   "## How are things\n\n## What is in the way\n\n## Feedback\n\n## Next steps\n- [ ] "
+  ],
+  "es": [
+   "1:1 16/11/2026",
+   "## Cómo va todo\n\n## Qué lo frena\n\n## Comentarios\n\n## Próximos pasos\n- [ ] "
+  ],
+  "fr": [
+   "1:1 16/11/2026",
+   "## Comment ça va\n\n## Ce qui bloque\n\n## Retours\n\n## Prochaines étapes\n- [ ] "
+  ],
+  "it": [
+   "1:1 16/11/2026",
+   "## Come va\n\n## Cosa blocca\n\n## Feedback\n\n## Prossimi passi\n- [ ] "
+  ],
+  "nl": [
+   "1:1 16/11/2026",
+   "## Hoe gaat het\n\n## Wat zit in de weg\n\n## Feedback\n\n## Volgende stappen\n- [ ] "
+  ],
+  "pt": [
+   "1:1 16/11/2026",
+   "## Como vão as coisas\n\n## O que está a travar\n\n## Feedback\n\n## Próximos passos\n- [ ] "
+  ],
+  "zh": [
+   "一对一 2026-11-16",
+   "## 近况\n\n## 阻碍\n\n## 反馈\n\n## 下一步\n- [ ] "
+  ]
+ },
+ "trip": {
+  "de": [
+   "Reise",
+   "## Daten\n\n## Anreise\n\n## Unterkunft\n\n## Einpacken\n- [ ] \n\n## Ideen\n"
+  ],
+  "en": [
+   "Trip",
+   "## Dates\n\n## Getting there\n\n## Where to stay\n\n## To pack\n- [ ] \n\n## Ideas\n"
+  ],
+  "es": [
+   "Viaje",
+   "## Fechas\n\n## Cómo llegar\n\n## Alojamiento\n\n## Qué llevar\n- [ ] \n\n## Ideas\n"
+  ],
+  "fr": [
+   "Voyage",
+   "## Dates\n\n## Le trajet\n\n## Logement\n\n## À emporter\n- [ ] \n\n## Idées\n"
+  ],
+  "it": [
+   "Viaggio",
+   "## Date\n\n## Come arrivare\n\n## Dove dormire\n\n## Da portare\n- [ ] \n\n## Idee\n"
+  ],
+  "nl": [
+   "Reis",
+   "## Data\n\n## Erheen\n\n## Overnachten\n\n## Inpakken\n- [ ] \n\n## Ideeën\n"
+  ],
+  "pt": [
+   "Viagem",
+   "## Datas\n\n## Como chegar\n\n## Onde ficar\n\n## Para levar\n- [ ] \n\n## Ideias\n"
+  ],
+  "zh": [
+   "旅行",
+   "## 日期\n\n## 交通\n\n## 住宿\n\n## 行李\n- [ ] \n\n## 想法\n"
+  ]
+ },
+ "weekly-review": {
+  "de": [
+   "Wochenrückblick",
+   "## Was gut lief\n\n## Was nicht\n\n## Noch offen\n\n## Nächste Woche\n- [ ] "
+  ],
+  "en": [
+   "Weekly review",
+   "## What went well\n\n## What did not\n\n## Still open\n\n## Next week\n- [ ] "
+  ],
+  "es": [
+   "Revisión semanal",
+   "## Qué fue bien\n\n## Qué no\n\n## Aún pendiente\n\n## La próxima semana\n- [ ] "
+  ],
+  "fr": [
+   "Revue de la semaine",
+   "## Ce qui a marché\n\n## Ce qui n’a pas marché\n\n## Encore ouvert\n\n## La semaine prochaine\n- [ ] "
+  ],
+  "it": [
+   "Revisione settimanale",
+   "## Cosa è andato bene\n\n## Cosa no\n\n## Ancora aperto\n\n## La prossima settimana\n- [ ] "
+  ],
+  "nl": [
+   "Weekoverzicht",
+   "## Wat ging goed\n\n## Wat niet\n\n## Nog open\n\n## Volgende week\n- [ ] "
+  ],
+  "pt": [
+   "Revisão semanal",
+   "## O que correu bem\n\n## O que não correu\n\n## Ainda em aberto\n\n## Próxima semana\n- [ ] "
+  ],
+  "zh": [
+   "每周回顾",
+   "## 顺利的事\n\n## 不顺的事\n\n## 仍未完成\n\n## 下周\n- [ ] "
+  ]
+ }
+}

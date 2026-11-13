@@ -1012,6 +1012,81 @@
    }
   },
   {
+   "slug": "monday-meeting-note",
+   "category": "work",
+   "icon": "users",
+   "author": "OpenTodo",
+   "reviewed": "2026-11-13",
+   "languages": [
+    "en"
+   ],
+   "text": {
+    "title": {
+     "en": "Monday meeting note"
+    },
+    "summary": {
+     "en": "Every Monday at 09:00, a meeting note from the Meeting template, ready in your project."
+    },
+    "description": {
+     "en": "Every Monday at 09:00 this routine starts a note from the built-in Meeting template in the project you choose, titled with the day's date and with headings for the attendees, the agenda, the notes and the actions.\n\nAdd steps after it to put the agenda in, or swap the template for one of your own."
+    }
+   },
+   "ask": {
+    "project": {
+     "type": "project",
+     "suggest": {
+      "en": "Work"
+     }
+    }
+   },
+   "trigger": {
+    "kind": "schedule",
+    "at": "09:00",
+    "weekdays": [
+     1
+    ]
+   },
+   "steps": [
+    {
+     "id": "a",
+     "kind": "note_from_template",
+     "in": {
+      "template": {
+       "literal": "builtin:meeting"
+      },
+      "project": {
+       "literal": {
+        "project": {
+         "ask": "project"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "texts": {},
+   "test": {
+    "fill": {
+     "project": "work"
+    },
+    "projects": [
+     {
+      "id": "work",
+      "name": "Work"
+     }
+    ],
+    "expect": {
+     "notes_created": [
+      {
+       "title": "Meeting 10/21/2026",
+       "text": "## Attendees\n\n## Agenda\n\n## Notes\n\n## Actions\n- [ ] ",
+       "project_id": "work"
+      }
+     ]
+    }
+   }
+  },
+  {
    "slug": "waiting-follow-up",
    "category": "work",
    "icon": "hourglass",
