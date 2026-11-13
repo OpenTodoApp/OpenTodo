@@ -5,9 +5,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { click, mockFetch, render, waitFor } from '../ui/test-utils'
 import { OAuthConsent, OAuthConsentView } from './OAuthConsent'
 import { api } from '../lib/api'
-import { takeConsentQuery } from './OAuthConsentHost'
+import { setConsentQuery, takeConsentQuery, useConsentPending } from './OAuthConsentHost'
 
-afterEach(() => { vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals(); setConsentQuery(null) })
 
 const dialog = () => document.querySelector<HTMLElement>('[data-testid="oauth-consent"]')
 const query = 'client_id=c1&redirect_uri=https%3A%2F%2Foauth-redirect.googleusercontent.com%2Fr%2Fx&response_type=code'
@@ -75,5 +75,18 @@ describe('OAuthConsent', () => {
     expect(takeConsentQuery()).toBe(query)
     expect(window.location.search).toBe('')
     expect(takeConsentQuery()).toBeNull()
+  })
+
+  it('tells the shell while a request waits, so the first-run dialogs stay behind it', async () => {
+    function Waiting() {
+      return <p data-waiting={String(useConsentPending())} />
+    }
+    const waiting = () => document.querySelector('[data-waiting]')?.getAttribute('data-waiting')
+    await render(<Waiting />)
+    expect(waiting()).toBe('false')
+    setConsentQuery(query)
+    await waitFor(() => waiting() === 'true', 'the pending request')
+    setConsentQuery(null)
+    await waitFor(() => waiting() === 'false', 'the answered request')
   })
 })

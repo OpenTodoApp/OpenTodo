@@ -2,7 +2,8 @@
 // `?oauth_consent=<authorize request>`. The parameter is read when this module
 // loads, before the router or sign-in touch the address, and removed from it;
 // the screen itself is loaded only then, so the first load does not carry it.
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useSyncExternalStore } from 'react'
+import { resettable } from '../lib/moduleState'
 
 const OAuthConsent = lazy(() => import('./OAuthConsent').then((m) => ({ default: m.OAuthConsent })))
 
@@ -18,11 +19,32 @@ export function takeConsentQuery(): string | null {
   return q
 }
 
-const pending = takeConsentQuery()
+// The pending request, kept outside React so the shell can hold its first-run dialogs
+// back while it waits: a new account that signs in from the app sees the confirmation,
+// not the welcome note on top of it.
+let pending = takeConsentQuery()
+const listeners = new Set<() => void>()
+const subscribe = (fn: () => void) => {
+  listeners.add(fn)
+  return () => { listeners.delete(fn) }
+}
+
+/** Test hook and the screen's "done": sets the pending request (null when answered). */
+export function setConsentQuery(query: string | null): void {
+  pending = query
+  for (const fn of [...listeners]) fn()
+}
+
+resettable('oauthConsentHost', () => setConsentQuery(null))
+
+/** Whether a consent screen is waiting for an answer. */
+export function useConsentPending(): boolean {
+  return useSyncExternalStore(subscribe, () => pending !== null)
+}
 
 /** Shows the consent screen for a pending authorize request, if the app was opened with one. */
 export function OAuthConsentHost() {
-  const [query, setQuery] = useState(pending)
+  const query = useSyncExternalStore(subscribe, () => pending)
   if (!query) return null
-  return <Suspense fallback={null}><OAuthConsent query={query} onDone={() => setQuery(null)} /></Suspense>
+  return <Suspense fallback={null}><OAuthConsent query={query} onDone={() => setConsentQuery(null)} /></Suspense>
 }
