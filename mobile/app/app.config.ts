@@ -7,6 +7,17 @@
 // app ships under the existing App Store record as version 2.0.0, on TestFlight first,
 // and as the next version of the Android app.
 import type { ExpoConfig } from 'expo/config'
+import { withAndroidManifest, type ConfigPlugin } from 'expo/config-plugins'
+
+// Plain http for a server on the person's own network, as in the shells (native-shells
+// D3): the server screen accepts http only for local addresses (src/server.ts), iOS
+// enforces the same with NSAllowsLocalNetworking, and Android has only all or nothing.
+const withLocalHttp: ConfigPlugin = (c) =>
+  withAndroidManifest(c, (m) => {
+    const application = m.modResults.manifest.application?.[0]
+    if (application) application.$['android:usesCleartextTraffic'] = 'true'
+    return m
+  })
 
 const config: ExpoConfig = {
   name: 'OpenTodo',
@@ -21,11 +32,14 @@ const config: ExpoConfig = {
     supportsTablet: false,
     // Light and dark with the system (on Android this needs expo-system-ui, not installed yet).
     userInterfaceStyle: 'automatic',
+    infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
   },
   // The Android shell's application id (mobile/android/app/build.gradle.kts).
   android: {
     package: 'app.opentodo',
   },
+  // The Keychain is read without Face ID, so the plugin's usage text is not needed.
+  plugins: [['expo-secure-store', { faceIDPermission: false }], 'expo-web-browser'],
 }
 
-export default config
+export default withLocalHttp(config)

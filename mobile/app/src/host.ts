@@ -10,8 +10,16 @@ import { installPlatform } from '@shared/platform'
 import { createPlatform, type Host } from './platform'
 import { opSqlite } from './storage/opSqlite'
 
+let prefs: ReturnType<typeof createMMKV> | undefined
+const prefsStore = () => (prefs ??= createMMKV({ id: 'opentodo.prefs' }))
+
+/** Sign-out: the device's settings go with the account. */
+export function clearPrefs(): void {
+  prefsStore().clearAll()
+}
+
 export function reactNativeHost(): Host {
-  const storage = createMMKV({ id: 'opentodo.prefs' })
+  const storage = prefsStore()
   return {
     appState: () => AppState.currentState ?? 'unknown',
     onAppState(fn) {

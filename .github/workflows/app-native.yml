@@ -94,6 +94,13 @@ jobs:
         run: |
           ./gradlew --no-daemon -PreactNativeArchitectures=x86_64 :app:assembleDebug :app:testDebugUnitTest
           ls -l app/build/outputs/apk/debug/
+      # The debug build for an emulator, kept a few days: a contributor without the memory
+      # for a native build (it takes about 11 GB) installs this one and runs Metro.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-android-debug
+          path: mobile/app/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 5
 
   # The app's performance run (design D4, task 5.2's app-perf; the storage spike's harness):
   # the perfseed 10,000-task account on the iOS simulator, on the app's own database (the

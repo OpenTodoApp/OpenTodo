@@ -9,15 +9,33 @@ export const UPDATE_GUIDE = 'https://github.com/OpenTodoApp/OpenTodo/blob/main/d
 
 export type ServerCheck =
   | { ok: true; url: string; version: string }
-  | { ok: false; problem: 'address' | 'not-opentodo' | 'needs-update'; message: string }
+  | { ok: false; problem: 'address' | 'insecure' | 'not-opentodo' | 'needs-update'; message: string }
 
 export const MESSAGES = {
   address: 'Enter the address of your OpenTodo server.',
+  insecure: 'Plain http works only on your own network. Use https for this server.',
   'not-opentodo': 'No OpenTodo server answers at this address.',
   'needs-update': `This server needs OpenTodo ${MIN_SERVER} or later for the app.`,
 } as const
 
 const fail = (problem: keyof typeof MESSAGES): ServerCheck => ({ ok: false, problem, message: MESSAGES[problem] })
+
+/**
+ * This device, private IPv4 ranges, IPv6 loopback, unique-local and link-local, and
+ * `.local` names: where plain http is accepted, as in the shells (native-shells D3).
+ * Anywhere else the tokens would cross the internet unencrypted.
+ */
+export function isLocalHost(rawHost: string): boolean {
+  const host = rawHost.toLowerCase().replace(/^\[|\]$/g, '')
+  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) return true
+  const v4 = host.split('.')
+  if (v4.length === 4 && v4.every((p) => /^\d{1,3}$/.test(p) && Number(p) <= 255)) {
+    const [a, b] = [Number(v4[0]), Number(v4[1])]
+    return a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254)
+  }
+  if (host.includes(':')) return host === '::1' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host)
+  return false
+}
 
 /** The server's base URL from what was typed: https unless http is written, no trailing slash. */
 export function serverURL(typed: string): string | null {
@@ -37,6 +55,7 @@ export function serverURL(typed: string): string | null {
 export async function checkServer(typed: string, fetchFn: typeof fetch = fetch, timeoutMs = 10_000): Promise<ServerCheck> {
   const url = serverURL(typed)
   if (!url) return fail('address')
+  if (url.startsWith('http:') && !isLocalHost(new URL(url).hostname)) return fail('insecure')
   const abort = new AbortController()
   const timer = setTimeout(() => abort.abort(), timeoutMs)
   try {
