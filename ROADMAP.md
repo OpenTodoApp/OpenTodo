@@ -244,8 +244,9 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | Change | What | Issues |
 | --- | --- | --- |
 | [`shell-repairs`](openspec/changes/shell-repairs/) | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | |
+| [`shell-reminders-on`](openspec/changes/shell-reminders-on/) | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | |
 
-Then reminders on at first run, push, first paint, touch and motion, each its own change.
+Then push, first paint, touch and motion, each its own change.
 
 ### Native app
 
