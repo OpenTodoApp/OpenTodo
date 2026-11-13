@@ -12,7 +12,10 @@ import (
 
 // FeedTask is one task as the feed renders it.
 type FeedTask struct {
-	ID          string
+	ID string
+	// UID is the event's UID when it is not the task's id (a CalDAV client's
+	// own UID, caldav-events); "" uses ID.
+	UID         string
 	Title       string
 	Description string
 	Date        string  // due date, YYYY-MM-DD
@@ -133,7 +136,11 @@ func taskEvent(cal *caldav.Component, zones map[string]bool, t FeedTask, opts Fe
 		c.Props = append(c.Props, caldav.Prop{Name: name, Value: value})
 	}
 	ev := &caldav.Component{Name: "VEVENT"}
-	add(ev, "UID", t.ID)
+	uid := t.ID
+	if t.UID != "" {
+		uid = t.UID
+	}
+	add(ev, "UID", uid)
 	stamp := time.UnixMilli(t.Modified).UTC().Format("20060102T150405Z")
 	if t.Modified <= 0 {
 		stamp = opts.Now.UTC().Format("20060102T150405Z")
