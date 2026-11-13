@@ -116,6 +116,10 @@ func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, "unauthorized", "an API token is required: Authorization: Bearer <token>")
 		return
 	}
+	// A token limited to workspaces reads and writes only there (token-workspaces D4).
+	if tok.Workspaces != nil {
+		r = r.WithContext(opsync.WithReach(r.Context(), tok.Workspaces))
+	}
 	if !acceptsJSON(r.Header.Get("Accept")) {
 		writeError(w, http.StatusNotAcceptable, "not_acceptable", "responses are application/json; this server opens no event streams")
 		return

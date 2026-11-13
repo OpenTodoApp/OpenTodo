@@ -415,6 +415,11 @@ func (s *Server) callTool(ctx context.Context, c agenttools.Caller, cl Client, p
 		return nil, invalidParams("name: the tool name is required")
 	}
 	if isDisplay(p.Name) && cl.Apps {
+		// Display blocks read across the account: closed to a workspace-limited
+		// token (token-workspaces D4), like every tool outside its list.
+		if opsync.Reached(ctx) {
+			return toolResult{Content: []content{{Type: "text", Text: "this token is limited to chosen workspaces; " + p.Name + " is not available to it"}}, IsError: true}, nil
+		}
 		return s.callDisplay(ctx, c, cl, p.Name, p.Arguments)
 	}
 	out, err := s.tools.Call(ctx, c, p.Name, p.Arguments)

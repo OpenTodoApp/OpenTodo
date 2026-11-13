@@ -18817,6 +18817,9 @@
   "This token cannot read issues; give it read access to issues.": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "This token is limited to chosen workspaces and cannot do this.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This token or session is not allowed to do this: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],

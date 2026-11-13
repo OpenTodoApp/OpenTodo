@@ -11,6 +11,13 @@ import (
 // transaction admits, resolves and stores each op (applyBatch.applyOne), and
 // finally charges the write guard, commits and notifies (finish).
 func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict bool) (ApplyResult, error) {
+	// A request limited to workspaces writes only inside them (token-workspaces D3).
+	if err := s.checkReach(ctx, userID, ops); err != nil {
+		return ApplyResult{}, err
+	}
+	if r := reachOf(ctx); r != nil {
+		defer r.stale()
+	}
 	guard, err := s.validateBatch(ctx, ops)
 	if err != nil {
 		return ApplyResult{}, err

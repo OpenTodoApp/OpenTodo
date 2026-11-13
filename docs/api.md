@@ -92,6 +92,8 @@ curl -s -X POST "$OT/api/v1/app/token" -H 'Content-Type: application/json' \
 # {"access_token":"ot_…","token_type":"Bearer","expires_in":3600,"refresh_token":"q8Z…","scope":"app"}
 ```
 
+**Tokens limited to workspaces** (OpenSpec change `token-workspaces`). `POST /api/v1/tokens` takes an optional `"workspaces": ["<workspace id>", …]` (1 to 50 of your own workspaces; another id is 400 `invalid_input`); without it a token covers every workspace. The list is fixed for the token's life and returned as `workspaces` on the token. Such a token's secret starts with `otw_`. It reads and changes only those workspaces: the collection routes (`GET`, `POST`, `PATCH`, `DELETE /api/v1/{collection}…`) list and return only items inside them (projects, tasks, sections, custom fields, notes, labels, views, rules, and the reminders, comments, attachments and time entries of their tasks), anything else answers 404 `not_found`, a new item without a workspace or project goes to the first listed workspace, and a create or move into another workspace is 403 `token_restricted`. `GET /api/v1/workspaces` lists only those. Every other route, `/api/v1/sync`, the export, history and activity included, answers 403 `token_restricted`. Over [MCP](mcp.md#a-token-for-some-workspaces) the same holds for every tool and resource.
+
 An `app` token is accepted wherever a `full` token is, and refused like one on the [credential routes](#token-scopes) (403 `insufficient_scope`): the app links to the web for them. It is not listed with the API tokens. Revoking the app in the sessions list, signing out in the app, Sign out everywhere, a password change or reset and deactivation end the grant, and its tokens get 401 from the next request.
 
 ### Endpoints

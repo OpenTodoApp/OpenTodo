@@ -40,6 +40,10 @@ Full-access tokens also work with `/mcp`, but only with the read tools: they nev
 
 An app that signs in with OAuth instead of taking a pasted token — Google Gemini's Connected apps, ChatGPT and claude.ai are such apps — connects that way. **Settings → Integrations → AI assistants → Apps that sign in with OAuth** registers a client and shows its id and secret once; see [OAuth clients](mcp-oauth.md).
 
+### A token for some workspaces
+
+To keep an assistant to your work, limit its token to chosen workspaces: `POST /api/v1/tokens` with `"workspaces": ["<id>"]` (see [the API](api.md#token-scopes)). With such a token, every tool and resource sees and changes only those workspaces, `list_workspaces` lists only them, new tasks without a project land in the first of them, and the tools over the whole account (frames, slots, objectives, free time, routines, blocks) answer `token_restricted`. Choosing workspaces in Settings and on the consent page of a connected app comes next.
+
 ## 3. Connect an assistant
 
 Use the endpoint URL shown in Settings (`https://todo.example.com/mcp`) as a **remote MCP server** with the **streamable HTTP** transport, and send the token as a header:
