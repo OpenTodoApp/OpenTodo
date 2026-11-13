@@ -1344,7 +1344,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
      at about 100 characters before its two lines end, whatever room the column leaves. */
   [data-row-title] { max-width: 48rem; }
   /* The Inbox's source line, in the column's place: on the title's first line too. */
-  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; }
+  /* At most 16 rem and 40 % of the row, cut with an ellipsis, so the title keeps most of a narrow row (GitHub issue 1258). */
+  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; max-width: min(16rem, 40cqw); }
 }
 @container row (40rem <= width < 48rem) {
   [data-row-props] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
