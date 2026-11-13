@@ -422,6 +422,19 @@ const shots = [
     await p.keyboard.press('Control+Shift+M'); await p.keyboard.press('Escape')
     await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.sourceNote).catch(() => {})
   } },
+  // Several notes at once (notes-bulk-actions): three new notes ticked, the Actions menu open; removed after.
+  { name: 'notes-bulk', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const add = (title, description) => p.evaluate(async ([t, d]) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: t, description: d }) })).json()).id, [title, description])
+    p.bulkNotes = [await add('Agenda 3 Nov', 'Budget, rota'), await add('Agenda 4 Nov', 'Hiring'), await add('Agenda 5 Nov', 'Launch plan')]
+    const first = p.locator(`[data-note-key="note:${p.bulkNotes[2]}"] [data-note-open]`); await first.waitFor(); await first.focus()
+    await p.keyboard.press('x'); await p.keyboard.press('Shift+ArrowDown'); await p.keyboard.press('Shift+ArrowDown')
+    await p.locator('[data-selection-bar]').waitFor(); await p.keyboard.press('.')
+    await p.locator('[role="menu"]').waitFor(); await p.mouse.move(900, 100); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
+    for (const id of p.bulkNotes ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
