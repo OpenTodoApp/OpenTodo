@@ -570,6 +570,7 @@
           "ref": "required"
         },
         "flags": {
+          "note": "string",
           "task": "string",
           "test": "bool"
         },
