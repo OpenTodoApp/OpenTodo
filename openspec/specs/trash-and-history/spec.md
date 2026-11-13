@@ -198,7 +198,7 @@ Expanding a version SHALL show each field change with the old value struck throu
 
 #### Scenario: Readable values
 - **WHEN** the user expands a version that changed priority from 4 to 1 and the project from Inbox to "Work"
-- **THEN** the changes read "Priority P4 → P1" and "Project Inbox → Work", not raw numbers or ids
+- **THEN** the changes read "Priority None → P1" and "Project Inbox → Work", not raw numbers or ids
 
 #### Scenario: Lost change
 - **WHEN** a version contains a change that lost under last-writer-wins
