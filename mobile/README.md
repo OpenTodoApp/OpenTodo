@@ -4,7 +4,7 @@ Thin apps around the OpenTodo web app (OpenSpec change `native-shells`). A shell
 
 - `android/`: the Android app (Kotlin, one `app` module, AndroidX only; OpenSpec change `native-shells`).
 - `ios/`: the iOS app (Swift, one app target and two extensions, no third-party code; OpenSpec change `ios-shell`).
-- `app/`: the native app in progress (React Native with Expo, OpenSpec change `native-app-foundation`), which draws its own screens and shares the web app's protocol code instead of loading the web app. [Below](#the-native-app-mobileapp).
+- `app/`: the native app, **paused since 2026-11-13** in favour of making the shells feel native ([the audit](AUDIT.md)); kept, not developed (React Native with Expo, OpenSpec change `native-app-foundation`), which draws its own screens and shares the web app's protocol code instead of loading the web app. [Below](#the-native-app-mobileapp).
 - Desktop (`desktop-shell`) is a separate change.
 
 ## The native app (`mobile/app`)
