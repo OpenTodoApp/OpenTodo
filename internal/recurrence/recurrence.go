@@ -59,12 +59,24 @@ type Rule struct {
 	monthDay        int   // 1..31 for kMonthDay
 	ordinal         int   // 1..4, or -1 for last (kNthWeekday, kWorkday)
 	weekday         int   // ISO 1 (Monday) .. 7 (Sunday) for kNthWeekday
+	month           int   // 1..12 for a yearly kNthWeekday (yearly-weekday-of-month), 0 for monthly
 	afterCompletion bool
 	until           string // YYYY-MM-DD or ""
 	count           int    // for N times, 0 when absent
 }
 
 var weekdayNames = [...]string{"", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+
+var monthNames = [...]string{"", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"}
+
+// monthAliases are the month names `every last sunday of march` accepts: full, three letters, and "sept".
+var monthAliases = func() map[string]int {
+	m := map[string]int{"sept": 9}
+	for i, n := range monthNames[1:] {
+		m[n], m[n[:3]] = i+1, i+1
+	}
+	return m
+}()
 
 var weekdayAliases = map[string]int{
 	"monday": 1, "mon": 1, "tuesday": 2, "tue": 2, "wednesday": 3, "wed": 3,
@@ -234,6 +246,13 @@ func Parse(input string) (Rule, error) {
 			}
 			r.kind, r.ordinal, r.weekday = kNthWeekday, ord, wd
 			i += 2
+			// `of <month>` (or `in <month>`) makes it yearly (yearly-weekday-of-month D1).
+			if p := peek(0); p == "of" || p == "in" {
+				if mo, ok := monthAliases[peek(1)]; ok {
+					r.month = mo
+					i += 2
+				}
+			}
 			break
 		}
 		if !isNum {
@@ -367,6 +386,9 @@ func (r Rule) Canonical() string {
 			fmt.Fprintf(&b, "%d%s", r.ordinal, ordinalSuffix(r.ordinal))
 		}
 		b.WriteString(" " + weekdayNames[r.weekday])
+		if r.month > 0 {
+			b.WriteString(" of " + monthNames[r.month])
+		}
 	}
 	if r.afterCompletion {
 		b.WriteString(" after completion")
@@ -597,6 +619,12 @@ func (r Rule) firstAfter(z int) int {
 		return z + 7 // unreachable: the mask is never empty
 	default:
 		y, m, _ := civilFromDays(z)
+		if r.kind == kNthWeekday && r.month > 0 {
+			if c := nthWeekdayOf(y, r.month, r.ordinal, r.weekday); c > z {
+				return c
+			}
+			return nthWeekdayOf(y+1, r.month, r.ordinal, r.weekday)
+		}
 		if c := r.inMonth(y, m); c > z {
 			return c
 		}

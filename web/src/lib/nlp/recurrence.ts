@@ -5,7 +5,7 @@
 // only if parseRule accepts it, so the parser never emits a rule the server
 // would refuse.
 import { parseRule } from '../recurrence'
-import { countAt, dayNumber, lookupAt, matchDateAt, ofMonthAt, phraseAt, weekdayAt, weekdayOrdinalAt, type DateContext } from './dates'
+import { countAt, dayNumber, lookupAt, matchDateAt, ofMonthAt, phraseAt, weekdayAt, weekdayOrdinalAt, type DateContext, monthAt } from './dates'
 import type { Token } from './tokenize'
 import type { Vocabulary } from './vocab'
 
@@ -109,14 +109,14 @@ function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern 
   const nth = weekdayOrdinalAt(tokens, k, v, (w) => weekdayPluralAt(tokens, w, v) >= 0)
   if (nth) {
     const wd = weekdayPluralAt(tokens, k + nth.n, v)
-    return { n: nth.n + 1, pattern: `${ORDINAL_EN[nth.value]} ${WEEKDAY_EN[wd]}`, monthly: true }
+    return ofAMonth(tokens, k + nth.n + 1, v, { n: nth.n + 1, pattern: `${ORDINAL_EN[nth.value]} ${WEEKDAY_EN[wd]}`, monthly: true })
   }
   // ordinal [weekday | day | weekday-collective]
   const ord = ordinalAt(tokens, k, v)
   if (ord) {
     const j = k + ord.n
     const wd = weekdayPluralAt(tokens, j, v)
-    if (wd >= 0 && ord.value <= 4) return { n: ord.n + 1, pattern: `${ORDINAL_EN[ord.value]} ${WEEKDAY_EN[wd]}`, monthly: true }
+    if (wd >= 0 && ord.value <= 4) return ofAMonth(tokens, j + 1, v, { n: ord.n + 1, pattern: `${ORDINAL_EN[ord.value]} ${WEEKDAY_EN[wd]}`, monthly: true })
     // "1st weekday" … "last weekday": the n-th Monday-to-Friday day of the month.
     const wall = ord.value <= 4 ? phraseAt(tokens, j, v.weekdayAll, `${v.code}:wdall`) : 0
     if (wall) return { n: ord.n + wall, pattern: `${ORDINAL_EN[ord.value]} weekday`, monthly: true }
@@ -134,6 +134,20 @@ function patternAt(tokens: readonly Token[], k: number, v: Vocabulary): Pattern 
   }
   const list = weekdayListAt(tokens, k, v)
   return list ? { n: list.n, pattern: list.days, monthly: false } : null
+}
+
+const MONTH_EN = ['', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+
+/**
+ * An ordinal weekday followed by a month ("last sunday in march", "letzten Sonntag
+ * im März") is yearly: `every last sunday of march` (yearly-weekday-of-month D3),
+ * with the same "of"/"in" words and month names one-off dates read. Otherwise the
+ * monthly pattern as it is.
+ */
+function ofAMonth(tokens: readonly Token[], k: number, v: Vocabulary, p: { n: number; pattern: string; monthly: boolean }): { n: number; pattern: string; monthly: boolean } {
+  const of = phraseAt(tokens, k, v.ordinalOf, `${v.code}:ordof`)
+  const month = of ? monthAt(tokens, k + of, v, true) : 0
+  return month ? { n: p.n + of + 1, pattern: `${p.pattern} of ${MONTH_EN[month]}`, monthly: false } : p
 }
 
 /** A weekday list at k ("Mon, Wed and Fri") as the rule's English list, or null. */
