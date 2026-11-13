@@ -80,6 +80,7 @@ Phones, Apple, Obsidian and voice.
 | [`focus-live-activity`](openspec/changes/focus-live-activity/) | Focus as a Live Activity and in the Dynamic Island |  |
 | [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
+| [`view-project-drops`](openspec/changes/view-project-drops/) | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
 | [`app-links`](openspec/changes/app-links/) | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
