@@ -132,6 +132,9 @@ type calendarConnectionView struct {
 	State       string `json:"state"`
 	PasswordSet bool   `json:"password_set"`
 	EventCount  int    `json:"event_count"`
+	// ProjectCalendars matches projects (or Inboxes, by their calendar id) to
+	// calendars of the connection (calsync-project-calendars); empty is one calendar.
+	ProjectCalendars map[string]string `json:"project_calendars"`
 }
 
 func (s *Server) calendarViews(ctx context.Context, uid string, list []calsync.Connection) ([]calendarConnectionView, error) {
@@ -150,7 +153,11 @@ func (s *Server) calendarViews(ctx context.Context, uid string, list []calsync.C
 	out := make([]calendarConnectionView, 0, len(list))
 	for i := range list {
 		c := &list[i]
-		out = append(out, calendarConnectionView{Connection: c, State: c.State(), PasswordSet: has[c.ID], EventCount: counts[c.ID]})
+		targets, err := s.calsync.Store.ProjectTargets(ctx, c.ID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, calendarConnectionView{Connection: c, State: c.State(), PasswordSet: has[c.ID], EventCount: counts[c.ID], ProjectCalendars: targets})
 	}
 	return out, nil
 }

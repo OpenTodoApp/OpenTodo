@@ -328,7 +328,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'trash' ? (
             <TrashView />
           ) : route.view === 'task' ? (
-            <TaskPage id={route.id} user={user} />
+            <TaskPage id={route.id} user={user} asTask={route.asTask} />
           ) : route.view === 'review' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading the review…')}</p>}>
               {route.step === 'daily' ? <DailyCheck /> : route.step === 'monthly' ? <MonthlyLook /> : route.step === 'close' ? <CloseDay /> : <ReviewView key={route.step ?? ''} userId={user.id} step={route.step} />}
@@ -340,7 +340,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'loop' ? (
             <Suspense fallback={null}><LoopHome move={route.move} /></Suspense>
           ) : route.view === 'habits' ? (
-            <Suspense fallback={null}><HabitsScreen /></Suspense>
+            <Suspense fallback={null}><HabitsScreen id={route.id} /></Suspense>
           ) : route.view === 'stats' ? (
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (

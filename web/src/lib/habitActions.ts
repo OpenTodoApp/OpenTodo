@@ -103,6 +103,8 @@ export interface HabitInput {
   anchor: string
   /** Morning, Afternoon, This Evening, or none (Any time). */
   part: 'morning' | 'afternoon' | 'evening' | null
+  /** A palette hex, or "" for automatic (habits-polish D5); left out keeps the stored one. */
+  color?: string
   projectId?: string | null
 }
 
@@ -118,6 +120,7 @@ function habitPatch(input: HabitInput): Record<string, unknown> {
   return {
     habit: true, habit_tiny: input.tiny.trim(), habit_anchor: input.anchor.trim(),
     evening: input.part === 'evening', day_part: input.part === 'morning' || input.part === 'afternoon' ? input.part : null,
+    ...(input.color !== undefined ? { habit_color: input.color } : {}),
   }
 }
 
@@ -131,11 +134,11 @@ export function planMakeHabit(task: Task, input: HabitInput, today: string): Cha
   const p = parseRule(input.rule)
   if (!p.ok) return null
   const patch: Record<string, unknown> = { ...habitPatch(input), title: input.title.trim() || task.title }
-  if (task.recurrence !== p.canonical) {
-    const due = task.due ?? { date: firstOccurrence(p.rule, today) }
-    patch.recurrence = compatibleRule(p.canonical, due.date)
-    if (!task.due) patch.due = due
-  }
+  // A repeating task without a due date gets its first date too (habits-polish D2):
+  // without one a habit has no current occurrence, no check button and no numbers.
+  const due = task.due ?? { date: firstOccurrence(p.rule, today) }
+  if (!task.due) patch.due = due
+  if (task.recurrence !== p.canonical) patch.recurrence = compatibleRule(p.canonical, due.date)
   return [{ entity: 'task', entityId: task.id, patch }]
 }
 
@@ -195,9 +198,9 @@ export async function createHabit(input: HabitInput) {
   return r ? { ...r, id: planned.id } : null
 }
 
-/** Make an existing task a habit (D9) with an Undo offer. */
+/** Make an existing task a habit (D9), or save an edited habit (habits-polish D4), with an Undo offer. */
 export async function makeHabit(taskId: string, input: HabitInput, today = logicalToday()) {
   const task = await db.tasks.get(taskId)
   const changes = task ? planMakeHabit(task, input, today) : null
-  return changes ? apply(changes, t('Habit created')) : null
+  return changes ? apply(changes, task?.habit ? t('Habit saved') : t('Habit created')) : null
 }
