@@ -10,4 +10,6 @@ The person matches projects to calendars that already exist and are writable; Op
 
 ## D3. Moves from the calendar side
 
-A linked event found in another target calendar (CalDAV: a different collection; Graph: a different calendar id) moves the task to the project matched to that calendar when exactly one project is matched to it; else the event is written back to its own calendar.
+Kept out of this change. Each calendar is synced on its own cursor, so an event moved in the calendar app to another calendar reads as deleted from the first and is answered like any deleted event; the copy in the other calendar is not linked. Reading it as a move would need the two pulls to be matched in one cycle, which is a later change if people ask for it. Moves made in OpenTodo work: a task moved to a project with another calendar has its event deleted from the old calendar and written to the new one in the same cycle.
+
+The Inbox has no row of its own: tasks without a project go to the target calendar, which keeps the dialog to the projects people actually split.
