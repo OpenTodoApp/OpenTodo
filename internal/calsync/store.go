@@ -398,6 +398,17 @@ type Link struct {
 	Href     string
 	ETag     string
 	Snapshot Snapshot
+	// Body is the hash of what the event shows beyond the snapshot (its notes
+	// and link, BodyHash) when OpenTodo last wrote it: a change of the notes
+	// rewrites the event, while the pull still compares the snapshot only
+	// (GitHub issue 1231). "" for links written before it, rewritten once.
+	Body string
+}
+
+// storedLink is a link's snapshot column: the snapshot with the body hash.
+type storedLink struct {
+	Snapshot
+	Body string `json:"body,omitempty"`
 }
 
 // Links returns a connection's links by task id.
@@ -414,7 +425,9 @@ func (s *Store) Links(ctx context.Context, connID string) (map[string]*Link, err
 		if err := rows.Scan(&l.TaskID, &l.Href, &l.ETag, &snap); err != nil {
 			return nil, err
 		}
-		_ = json.Unmarshal([]byte(snap), &l.Snapshot)
+		var st storedLink
+		_ = json.Unmarshal([]byte(snap), &st)
+		l.Snapshot, l.Body = st.Snapshot, st.Body
 		out[l.TaskID] = &l
 	}
 	return out, rows.Err()
@@ -444,7 +457,7 @@ func (s *Store) LinkCounts(ctx context.Context, userID string) (map[string]int, 
 func (s *Store) SaveLink(ctx context.Context, connID string, l *Link) error {
 	_, err := s.db.ExecContext(ctx, `INSERT INTO calsync_links(connection_id, task_id, href, etag, snapshot, synced_at) VALUES(?,?,?,?,?,?)
 		ON CONFLICT(connection_id, task_id) DO UPDATE SET href = excluded.href, etag = excluded.etag, snapshot = excluded.snapshot, synced_at = excluded.synced_at`,
-		connID, l.TaskID, l.Href, l.ETag, jsonText(l.Snapshot), s.now().UnixMilli())
+		connID, l.TaskID, l.Href, l.ETag, jsonText(storedLink{l.Snapshot, l.Body}), s.now().UnixMilli())
 	return err
 }
 

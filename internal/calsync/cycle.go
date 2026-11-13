@@ -262,7 +262,7 @@ func (r *cycle) push(ctx context.Context) error {
 		t := r.tasks[id]
 		want := TaskSnapshot(t, r.encrypted)
 		link := r.links[id]
-		if link != nil && link.Snapshot == want {
+		if link != nil && link.Snapshot == want && link.Body == BodyHash(t, r.encrypted, r.w.BaseURL) {
 			continue
 		}
 		if r.writes >= MaxWritesPerRun {
@@ -335,7 +335,7 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 		return statusError(status)
 	}
 	r.counts.Written++
-	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want}
+	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want, Body: BodyHash(t, r.encrypted, r.w.BaseURL)}
 	r.links[t.ID], r.byHref[r.tr.key(href)] = nl, nl
 	return r.w.Store.SaveLink(ctx, r.c.ID, nl)
 }

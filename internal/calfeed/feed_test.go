@@ -24,7 +24,7 @@ func TestWriteFeed(t *testing.T) {
 		"METHOD:PUBLISH", "X-WR-CALNAME:OpenTodo", "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
 		"UID:t-dentist", "DTSTART:20261016T150000", "DTEND:20261016T154500", "CATEGORIES:health,a\\,b", "DESCRIPTION:Bring the card",
 		"DTSTART;TZID=Europe/Berlin:20261019T093000", "DTEND;TZID=Europe/Berlin:20261019T100000", "RRULE:FREQ=WEEKLY;BYDAY=MO", "BEGIN:VTIMEZONE",
-		"DTSTART;VALUE=DATE:20261020", "DTEND;VALUE=DATE:20261021", "URL:https://todo.example/day/2026-10-20",
+		"DTSTART;VALUE=DATE:20261020", "DTEND;VALUE=DATE:20261021", "URL:https://todo.example/task/",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("feed lacks %q:\n%s", want, out)

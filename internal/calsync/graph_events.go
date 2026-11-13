@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
-	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/zoned"
 )
 
@@ -178,9 +177,10 @@ func graphTimes(t calfeed.FeedTask, mailbox string) (start, end graphDateTime, a
 // times and no reminder (design D7).
 func graphBody(t calfeed.FeedTask, opts calfeed.FeedOptions, mailbox string) map[string]any {
 	start, end, allDay := graphTimes(t, mailbox)
-	content := ""
-	if !opts.Encrypted && !e2ee.IsCiphertext(t.Description) {
-		content = t.Description
+	// Graph events have no URL property: the task's link ends the text.
+	content := calfeed.EventNotes(t, opts.Encrypted)
+	if opts.BaseURL != "" {
+		content = strings.TrimSpace(content + "\n\n" + calfeed.TaskURL(opts.BaseURL, t.ID))
 	}
 	return map[string]any{
 		"subject":      calfeed.EventTitle(t, opts.Encrypted),

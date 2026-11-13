@@ -19,7 +19,7 @@ The server owner turns calendar sync on under **Settings → Integrations → Ca
 
 | In OpenTodo | In your calendar |
 | --- | --- |
-| An open task due at 09:00 with an estimate of 45 minutes | An event from 09:00 to 09:45, titled like the task, with the notes as its description |
+| An open task due at 09:00 with an estimate of 45 minutes | An event from 09:00 to 09:45, titled like the task, with the notes as its description and a link to the task |
 | A task due at a time without an estimate | A 30-minute event |
 | A task due on a day without a time | An all-day event, only with **Include tasks without a time** on |
 | A multi-day task, from its start date to its due date | One all-day event over those days, whatever **Include tasks without a time** says; a due time is not shown |
