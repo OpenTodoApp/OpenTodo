@@ -436,7 +436,8 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
   if (!ast) return { ok: false, error: t('This view has no query') }
   if (withCompleted && !mentionsState(ast)) ast = withCompletedTasks(ast)
   const ctx = filterScope(ast, given)
-  // Like the Filter view and the other cross-project views, tasks of archived projects stay out.
+  // Like the Filter view and the other cross-project views, tasks of archived projects stay out,
+  // and so does a graduated habit (habits-home D7).
   const archived = new Set(ctx.projects.filter((p) => p.archived && !p.deleted_at).map((p) => p.id))
   let compiled: ReturnType<typeof compile>
   try {
@@ -446,7 +447,7 @@ export function compileView(view: Pick<View, 'query'>, given: FilterContext, wit
     return { ok: false, error: (e as Error).message }
   }
   const { test, warnings } = compiled
-  return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && test(task) }
+  return { ok: true, warnings, every: !!given.everyWorkspace && namesWorkspace(ast), test: (task) => !(task.project_id && archived.has(task.project_id)) && task.habit_graduated_at == null && test(task) }
 }
 
 const TITLE_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' })

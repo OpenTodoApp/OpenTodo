@@ -305,6 +305,9 @@
   "A CSV of the period, made on this device": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "A Habits screen, a strip in Today and a thread of the last seven days.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "A Large, a Medium and a Small task": [
     "web/src/app/review/DailyCheck.tsx"
   ],
@@ -375,6 +378,9 @@
   ],
   "A group with this name already exists in the workspace.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "A habit repeats on the calendar. Choose a rule such as every day.": [
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "A home page for the method and a daily check-in.": [
     "web/src/lib/settingsCopy.ts"
@@ -1412,7 +1418,13 @@
     "web/src/app/themes/TokenList.tsx"
   ],
   "After": [
-    "web/src/app/assistant/blocks/BeforeAfter.tsx"
+    "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitSection.tsx"
+  ],
+  "After dinner": [
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "After its deadline": [
     "web/src/app/calendar/ReplanPreview.tsx"
@@ -1425,6 +1437,8 @@
   ],
   "Afternoon": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/lib/dayParts.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
@@ -1511,6 +1525,9 @@
   ],
   "All views": [
     "web/src/app/Sidebar.tsx"
+  ],
+  "All workspaces": [
+    "web/src/app/WorkspaceChoice.tsx"
   ],
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -1791,6 +1808,8 @@
   "Any time": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/assistant/blocks/CalendarBlock.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/lib/dayParts.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
@@ -2342,6 +2361,10 @@
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/StepCard.tsx"
   ],
+  "Back on track": [
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/habits/habitText.ts"
+  ],
   "Back to Appearance": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
@@ -2829,6 +2852,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
     "web/src/app/profile/ProfileSection.tsx",
@@ -3061,6 +3085,13 @@
   "Check for changes": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "Check in": [
+    "web/src/app/habits/HabitRow.tsx"
+  ],
+  "Check in {title}": [
+    "web/src/app/habits/HabitRow.tsx",
+    "web/src/app/habits/TodayStrip.tsx"
+  ],
   "Check list": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -3227,6 +3258,9 @@
   "Choose at least one event.": [
     "web/src/app/NotificationChannelEditor.tsx"
   ],
+  "Choose at least one workspace.": [
+    "web/src/app/TokensSection.tsx"
+  ],
   "Choose calendars": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -3293,6 +3327,7 @@
   ],
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx",
     "web/src/app/views/ViewToolbar.tsx"
@@ -4141,6 +4176,9 @@
   "Create feed URL": [
     "web/src/app/CalendarFeedsPanel.tsx"
   ],
+  "Create habit": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "Create invitation": [
     "web/src/app/MembersPanel.tsx"
   ],
@@ -4496,6 +4534,12 @@
   "Day calendar": [
     "web/src/app/CalendarView.tsx"
   ],
+  "Day changed": [
+    "web/src/lib/habitActions.ts"
+  ],
+  "Day cleared": [
+    "web/src/lib/habitActions.ts"
+  ],
   "Day closed": [
     "web/src/lib/closeDay.ts"
   ],
@@ -4548,6 +4592,9 @@
   ],
   "Days of the month": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "Days of the week": [
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Days to keep audit events": [
     "web/src/app/AuditPanel.tsx"
@@ -5155,6 +5202,7 @@
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
+    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -5268,6 +5316,9 @@
   ],
   "Draw the kitchen plan": [
     "web/src/app/themes/previewData.ts"
+  ],
+  "Drink water": [
+    "web/src/app/habits/HabitsScreen.tsx"
   ],
   "Drinks": [
     "web/src/lib/aisles/index.ts"
@@ -5945,6 +5996,7 @@
   "Evening": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/lib/dayParts.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
   ],
@@ -5954,6 +6006,7 @@
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Events": [
+    "web/src/app/CaldavPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
@@ -5984,6 +6037,7 @@
     "web/src/app/themes/templateText.ts"
   ],
   "Every day": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/frames.ts"
   ],
@@ -6853,6 +6907,7 @@
     "web/src/app/BackupsPanel.tsx"
   ],
   "Fri": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Friday": [
@@ -7077,6 +7132,12 @@
   "Go to Focus: one task, a timer, a break when you need one": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Go to Habits": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Go to Habits: your habits, their last seven days and a check button (while Habits is on)": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "Go to Inbox": [
     "web/src/app/TaskPage.tsx",
     "web/src/app/display/DisplayScreen.tsx",
@@ -7275,6 +7336,13 @@
   "Got it|list": [
     "web/src/app/task-list/ListGroups.tsx"
   ],
+  "Graduate": [
+    "web/src/app/habits/HabitSection.tsx"
+  ],
+  "Graduated": [
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
   "Graph": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/connections/ConnectionsDialog.tsx",
@@ -7393,6 +7461,33 @@
   "Habit": [
     "web/src/app/filter/conditionText.ts",
     "web/src/lib/assistantBlocks.ts"
+  ],
+  "Habit created": [
+    "web/src/lib/habitActions.ts"
+  ],
+  "Habit graduated": [
+    "web/src/lib/habitActions.ts"
+  ],
+  "Habit resumed": [
+    "web/src/lib/habitActions.ts"
+  ],
+  "Habits": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
+    "web/src/app/habits/TodayStrip.tsx",
+    "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Habits is in the sidebar under More.": [
+    "web/src/app/method/HowYouWorkSection.tsx"
+  ],
+  "Habits is off": [
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
+  "Habits is on.": [
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "Haptic feedback": [
     "web/src/app/AppearanceSection.tsx",
@@ -7652,6 +7747,9 @@
   "How much of the Open Loops method the app shows. Synced; never changes a task.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "How often": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "How people who share a project with you see you.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -7672,6 +7770,7 @@
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
   "How you work": [
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/method/MethodModeChooser.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
@@ -7905,6 +8004,9 @@
   "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In Reminders and to-do apps: tick tasks off there.": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -8001,6 +8103,9 @@
   ],
   "In the afternoon": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "In the calendar: dated tasks as events, multi-day tasks over their days.": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "In the command bar's Add mode: add the task and open it": [
     "web/src/lib/shortcuts.ts"
@@ -8759,6 +8864,9 @@
   "Last sent {day}": [
     "web/src/app/DigestCard.tsx"
   ],
+  "Last seven days": [
+    "web/src/app/habits/Thread.tsx"
+  ],
   "Last sync: {moved} tasks moved, {renamed} renamed, {unscheduled} unscheduled; {written} events written, {removed} removed": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -9250,6 +9358,12 @@
   "Log as done": [
     "web/src/app/palette/BarParts.tsx"
   ],
+  "Log the tiny version": [
+    "web/src/app/habits/HabitRow.tsx"
+  ],
+  "Log the tiny version: {tiny}": [
+    "web/src/app/habits/HabitRow.tsx"
+  ],
   "Logged as done": [
     "web/src/app/palette/addFromBar.ts"
   ],
@@ -9351,6 +9465,11 @@
   ],
   "Make floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Make it a habit": [
+    "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Make it the default": [
     "web/src/app/BrandingThemes.tsx"
@@ -9681,6 +9800,7 @@
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
   "Mon": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Monday": [
@@ -9755,8 +9875,13 @@
   "More theme actions": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
+  "More ways to check in {title}": [
+    "web/src/app/habits/HabitRow.tsx"
+  ],
   "Morning": [
     "web/src/app/ParseChips.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/lib/dayParts.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/testdata/dayParts-1.0.ts"
@@ -10201,6 +10326,11 @@
   ],
   "New group": [
     "web/src/app/WorkspaceGroups.tsx"
+  ],
+  "New habit": [
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "New invitation": [
     "web/src/app/MembersPanel.tsx"
@@ -11788,6 +11918,15 @@
   "On macOS, check System Settings → Notifications → your browser (allow notifications, banners or alerts), and Focus.": [
     "web/src/lib/push.ts"
   ],
+  "On the Habits screen: check in the focused habit": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Habits screen: log the tiny version of the focused habit": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "On the Habits screen: open the focused habit's page": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "On the Notes page: focus the search field, which finds notes by every word": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -11885,6 +12024,10 @@
   "One origin per line, at most 10: https://host[:port], or http://localhost:port for a model on the person’s own computer.": [
     "web/src/app/assistant/AssistantDevice.tsx"
   ],
+  "One page": [
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitSection.tsx"
+  ],
   "One per device, so you can revoke a lost phone without touching the others. They only work for CalDAV.": [
     "web/src/app/CaldavPanel.tsx"
   ],
@@ -11970,7 +12113,8 @@
     "web/src/lib/assistants.ts"
   ],
   "Only these": [
-    "web/src/app/SyncScopeField.tsx"
+    "web/src/app/SyncScopeField.tsx",
+    "web/src/app/WorkspaceChoice.tsx"
   ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
@@ -11993,6 +12137,9 @@
   "Only you, the owner, see this. It goes away after the server restarts with a corrected value.": [
     "web/src/app/ConfigWarnings.tsx"
   ],
+  "Only {names}": [
+    "web/src/app/TokensSection.tsx"
+  ],
   "Open": [
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
@@ -12009,6 +12156,10 @@
   "Open GitHub and GitLab issues assigned to you become tasks that follow them.": [
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Open Habits": [
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/method/HowYouWorkSection.tsx"
   ],
   "Open Help": [
     "web/src/app/AboutSection.tsx",
@@ -12395,6 +12546,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Other": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/themes/tokenNames.ts",
     "web/src/lib/dashboard.ts",
     "web/src/lib/feed.ts",
@@ -12568,7 +12720,8 @@
     "web/src/app/QuickAddSettings.tsx"
   ],
   "Part of the day": [
-    "web/src/app/ParseChips.tsx"
+    "web/src/app/ParseChips.tsx",
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -13622,6 +13775,9 @@
     "web/src/app/task-detail/TaskPageDialog.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
+  "Read 10 minutes": [
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
   "Read it as {format}": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -14107,7 +14263,8 @@
     "web/src/app/calendar/FramesDialog.tsx"
   ],
   "Repeat rule": [
-    "web/src/app/RecurrenceField.tsx"
+    "web/src/app/RecurrenceField.tsx",
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Repeating occurrences": [
     "web/src/app/task-list/ProjectedGroupRows.tsx"
@@ -14336,6 +14493,8 @@
   ],
   "Resume": [
     "web/src/app/focus/FocusView.tsx",
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Retention": [
@@ -14715,6 +14874,7 @@
     "web/src/app/App.tsx"
   ],
   "Sat": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Saturday": [
@@ -15675,6 +15835,9 @@
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
+  "Show tasks as": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "Show tasks assigned to others": [
     "web/src/app/TaskListView.tsx"
   ],
@@ -16041,6 +16204,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Skipped": [
+    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
@@ -16410,6 +16574,9 @@
   "Start with Today": [
     "web/src/app/TaskListView.tsx"
   ],
+  "Start with something small": [
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
   "Start with three sample tasks": [
     "web/src/app/FirstRun.tsx"
   ],
@@ -16601,10 +16768,13 @@
     "web/src/app/review/StatsView.tsx"
   ],
   "Streak {current} · Best {best}": [
-    "web/src/app/RecurrenceField.tsx"
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "Streaks and a month history, counted on this device from the days done": [
-    "web/src/app/RecurrenceField.tsx"
+    "web/src/app/habits/HabitSection.tsx"
+  ],
+  "Strength {strength}": [
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "Strikethrough": [
     "web/src/app/editorCommands.ts",
@@ -16694,6 +16864,7 @@
     "web/src/app/review/DailyCheck.tsx"
   ],
   "Sun": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Sunday": [
@@ -18256,6 +18427,7 @@
   "This Evening": [
     "web/src/app/ParseChips.tsx",
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/lib/activity.ts",
     "web/src/lib/listGroups.ts"
@@ -18938,6 +19110,9 @@
   "This token cannot read issues; give it read access to issues.": [
     "web/src/app/IssuesPanel.tsx"
   ],
+  "This token is limited to chosen workspaces and cannot do this.": [
+    "web/src/lib/i18n/errors.ts"
+  ],
   "This token or session is not allowed to do this: {detail}": [
     "web/src/lib/i18n/errors.ts"
   ],
@@ -18986,6 +19161,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Thu": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Thumbs up": [
@@ -19148,6 +19324,11 @@
   "Time|tracking": [
     "web/src/app/task-detail/ConversationTabs.tsx"
   ],
+  "Tiny version": [
+    "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/habits/HabitForm.tsx",
+    "web/src/app/habits/HabitSection.tsx"
+  ],
   "Title": [
     "web/src/app/ImportScreen.tsx",
     "web/src/app/RelayConfirm.tsx",
@@ -19155,6 +19336,7 @@
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
@@ -19206,6 +19388,9 @@
   ],
   "To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.": [
     "web/src/app/assistant/assistantHints.tsx"
+  ],
+  "To-dos": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
     "web/src/app/AppearanceSection.tsx",
@@ -19426,7 +19611,7 @@
     "web/src/app/task-detail/TimeTab.tsx"
   ],
   "Track as a habit": [
-    "web/src/app/RecurrenceField.tsx"
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "Track time on a task": [
     "web/src/lib/rules/sentence.ts"
@@ -19502,6 +19687,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Tue": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Tuesday": [
@@ -19517,6 +19703,9 @@
   "Turn into task": [
     "web/src/app/notes/NoteRow.tsx",
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Turn it off in How you work": [
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "Turn off": [
     "web/src/app/TwoFactorPanel.tsx",
@@ -19698,6 +19887,9 @@
   ],
   "Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.": [
     "web/src/app/FilterView.tsx"
+  ],
+  "Type a rule such as every weekday.": [
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Type a title": [
     "web/src/app/QuickAdd.tsx",
@@ -19977,6 +20169,9 @@
     "web/src/app/focus/FocusSessions.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
+    "web/src/app/habits/HabitRow.tsx",
+    "web/src/app/habits/HabitsScreen.tsx",
+    "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
@@ -20469,6 +20664,9 @@
   "Waits for {title}": [
     "web/src/lib/method/groups.ts"
   ],
+  "Walk after lunch": [
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
   "Walk again": [
     "web/src/app/review/ProjectWalk.tsx"
   ],
@@ -20514,6 +20712,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Wed": [
+    "web/src/app/habits/HabitForm.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Wednesday": [
@@ -20866,6 +21065,7 @@
     "web/src/app/WorkspaceControl.tsx"
   ],
   "Workspaces": [
+    "web/src/app/WorkspaceChoice.tsx",
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
@@ -21473,6 +21673,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a removed workspace": [
+    "web/src/app/TokensSection.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/StepCard.tsx"
   ],
@@ -21653,7 +21854,7 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "at risk": [
-    "web/src/app/RecurrenceField.tsx"
+    "web/src/app/habits/HabitSection.tsx"
   ],
   "at the start of a line or after a space": [
     "web/src/lib/shortcuts.ts"
@@ -21928,7 +22129,7 @@
     "web/src/app/task-detail/FieldsGroup.tsx"
   ],
   "done": [
-    "web/src/app/HabitHistory.tsx",
+    "web/src/app/habits/habitText.ts",
     "web/src/app/review/ReviewProgress.tsx"
   ],
   "done today": [
@@ -21964,7 +22165,7 @@
     "web/src/lib/rules/index.ts"
   ],
   "due, not done yet": [
-    "web/src/app/HabitHistory.tsx"
+    "web/src/app/habits/habitText.ts"
   ],
   "duplicate": [
     "web/src/app/LabelsView.tsx"
@@ -22135,6 +22336,9 @@
   ],
   "focus, today, plan": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "focused habit": [
+    "web/src/lib/shortcuts.ts"
   ],
   "focused invitation": [
     "web/src/lib/shortcuts.ts"
@@ -22411,7 +22615,7 @@
     "web/src/app/RemindersField.tsx"
   ],
   "missed": [
-    "web/src/app/HabitHistory.tsx"
+    "web/src/app/habits/habitText.ts"
   ],
   "missing pattern after \"every\"": [
     "web/src/lib/recurrence.ts",
@@ -22622,7 +22826,7 @@
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "not scheduled": [
-    "web/src/app/HabitHistory.tsx"
+    "web/src/app/habits/habitText.ts"
   ],
   "not text": [
     "web/src/app/task-detail/FieldsGroup.tsx"
@@ -23041,7 +23245,7 @@
     "web/src/app/settingsSections.ts"
   ],
   "skipped": [
-    "web/src/app/HabitHistory.tsx"
+    "web/src/app/habits/habitText.ts"
   ],
   "slate": [
     "web/src/lib/colourNames.ts"
@@ -23408,6 +23612,9 @@
   "timer, track, time, stop": [
     "web/src/lib/rules/sentence.ts"
   ],
+  "tiny version": [
+    "web/src/app/habits/habitText.ts"
+  ],
   "title": [
     "web/src/app/routines/words.tsx"
   ],
@@ -23537,7 +23744,7 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "upcoming": [
-    "web/src/app/HabitHistory.tsx"
+    "web/src/app/habits/habitText.ts"
   ],
   "update, edit, label, move, pin, trash": [
     "web/src/lib/rules/sentence.ts"
@@ -23943,6 +24150,12 @@
   "{kbd} command · {kbd2} help": [
     "web/src/app/vim/VimLayer.tsx"
   ],
+  "{kept} of last {of}": [
+    "web/src/app/habits/HabitSection.tsx"
+  ],
+  "{kept} of {of}": [
+    "web/src/app/habits/habitText.ts"
+  ],
   "{key} cannot be transparent.": [
     "web/src/lib/theme/files.ts"
   ],
@@ -24143,6 +24356,12 @@
     "web/src/app/auditFormat.ts",
     "web/src/app/calendar/MonthWeek.tsx"
   ],
+  "{n, plural, one {# graduated habit} other {# graduated habits}}": [
+    "web/src/app/habits/HabitsScreen.tsx"
+  ],
+  "{n, plural, one {# habit to do} other {# habits to do}}": [
+    "web/src/app/habits/TodayStrip.tsx"
+  ],
   "{n, plural, one {# hour after} other {# hours after}}": [
     "web/src/lib/nlp/reminders.ts"
   ],
@@ -24203,6 +24422,9 @@
   ],
   "{n, plural, one {# more file was left out: a share takes at most 10.} other {# more files were left out: a share takes at most 10.}}": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "{n, plural, one {# more habit} other {# more habits}}": [
+    "web/src/app/habits/TodayStrip.tsx"
   ],
   "{n, plural, one {# more matches, keep typing} other {# more match, keep typing}}": [
     "web/src/ui/Combobox/Combobox.tsx"
@@ -24566,6 +24788,10 @@
   ],
   "{n, plural, one {Its sub-project moves up one level.} other {Its # sub-projects move up one level.}}": [
     "web/src/app/ProjectHeader.tsx"
+  ],
+  "{n, plural, one {Kept for # day} other {Kept for # days}}": [
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/habits/HabitsScreen.tsx"
   ],
   "{n, plural, one {Label added to # task} other {Label added to # tasks}}": [
     "web/src/lib/bulk.ts"
@@ -25183,6 +25409,10 @@
   "{time}, no estimate": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
+  "{tiny} is enough": [
+    "web/public/push-sw.js",
+    "web/src/app/ReminderToasts.tsx"
+  ],
   "{title} calendar": [
     "web/src/app/MonthView.tsx",
     "web/src/app/YearView.tsx"
@@ -25202,6 +25432,10 @@
   ],
   "{title} left today’s focus.": [
     "web/src/lib/focusEdit.ts"
+  ],
+  "{title}, done today": [
+    "web/src/app/habits/HabitRow.tsx",
+    "web/src/app/habits/TodayStrip.tsx"
   ],
   "{title}, open task": [
     "web/src/app/Briefing.tsx"

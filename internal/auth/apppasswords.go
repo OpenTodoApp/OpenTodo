@@ -30,6 +30,8 @@ type AppPassword struct {
 	RevokedAt  *int64 `json:"revokedAt"`
 	// Scope is the part of the account the password reaches (sync-scope).
 	Scope syncscope.Scope `json:"scope"`
+	// Events serves the calendars as events instead of to-dos (caldav-events).
+	Events bool `json:"events"`
 }
 
 // CreateAppPassword issues an app password; the secret is returned exactly once.
@@ -40,12 +42,19 @@ func (s *Service) CreateAppPassword(ctx context.Context, userID, name string) (*
 
 // CreateScopedAppPassword is CreateAppPassword with a normalized scope.
 func (s *Service) CreateScopedAppPassword(ctx context.Context, userID, name string, scope syncscope.Scope) (*AppPassword, string, error) {
+	return s.CreateAppPasswordAs(ctx, userID, name, scope, false)
+}
+
+// CreateAppPasswordAs is CreateScopedAppPassword that, with events, shows the
+// calendars as events instead of to-dos (caldav-events D1), fixed for the
+// password's life.
+func (s *Service) CreateAppPasswordAs(ctx context.Context, userID, name string, scope syncscope.Scope, events bool) (*AppPassword, string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		name = "Calendar app"
 	}
 	plain := AppPasswordPrefix + ids.Secret(32)
-	p := &AppPassword{ID: ids.New(), Name: textutil.Truncate(name, 100), CreatedAt: s.clock().UnixMilli(), Scope: syncscope.Parse(scope.Text())}
+	p := &AppPassword{ID: ids.New(), Name: textutil.Truncate(name, 100), CreatedAt: s.clock().UnixMilli(), Scope: syncscope.Parse(scope.Text()), Events: events}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, "", err
@@ -60,6 +69,11 @@ func (s *Service) CreateScopedAppPassword(ctx context.Context, userID, name stri
 			return nil, "", err
 		}
 	}
+	if events {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO app_password_events(app_password_id) VALUES(?)`, p.ID); err != nil {
+			return nil, "", err
+		}
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.AppPasswordCreated(userID, p.ID, p.Name)); err != nil {
 		return nil, "", err
 	}
@@ -71,8 +85,9 @@ func (s *Service) CreateScopedAppPassword(ctx context.Context, userID, name stri
 
 // ListAppPasswords returns a user's app passwords, newest first, revoked ones included.
 func (s *Service) ListAppPasswords(ctx context.Context, userID string) ([]AppPassword, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.name,p.created_at,p.last_used_at,p.revoked_at,COALESCE(sc.scope,'') FROM app_passwords p
-		LEFT JOIN app_password_scopes sc ON sc.app_password_id = p.id WHERE p.user_id = ? ORDER BY p.created_at DESC, p.id`, userID)
+	rows, err := s.db.QueryContext(ctx, `SELECT p.id,p.name,p.created_at,p.last_used_at,p.revoked_at,COALESCE(sc.scope,''),ev.app_password_id IS NOT NULL FROM app_passwords p
+		LEFT JOIN app_password_scopes sc ON sc.app_password_id = p.id LEFT JOIN app_password_events ev ON ev.app_password_id = p.id
+		WHERE p.user_id = ? ORDER BY p.created_at DESC, p.id`, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +96,7 @@ func (s *Service) ListAppPasswords(ctx context.Context, userID string) ([]AppPas
 	for rows.Next() {
 		var p AppPassword
 		var scope string
-		if err := rows.Scan(&p.ID, &p.Name, &p.CreatedAt, &p.LastUsedAt, &p.RevokedAt, &scope); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.CreatedAt, &p.LastUsedAt, &p.RevokedAt, &scope, &p.Events); err != nil {
 			return nil, err
 		}
 		p.Scope = syncscope.Parse(scope)
@@ -169,11 +184,13 @@ func (s *Service) AppPasswordUser(ctx context.Context, email, secret string) (*U
 	}
 	var u User
 	var id, scope string
+	var events bool
 	var lastUsed sql.NullInt64
-	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.last_used_at,COALESCE(sc.scope,''),u.id,u.email,u.name,u.role,u.created_at FROM app_passwords p
-		JOIN users u ON u.id = p.user_id LEFT JOIN app_password_scopes sc ON sc.app_password_id = p.id WHERE p.hash = ? AND p.revoked_at IS NULL
+	err := s.db.QueryRowContext(ctx, `SELECT p.id,p.last_used_at,COALESCE(sc.scope,''),ev.app_password_id IS NOT NULL,u.id,u.email,u.name,u.role,u.created_at FROM app_passwords p
+		JOIN users u ON u.id = p.user_id LEFT JOIN app_password_scopes sc ON sc.app_password_id = p.id
+		LEFT JOIN app_password_events ev ON ev.app_password_id = p.id WHERE p.hash = ? AND p.revoked_at IS NULL
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)`, hashToken(secret)).
-		Scan(&id, &lastUsed, &scope, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
+		Scan(&id, &lastUsed, &scope, &events, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, ErrNotFound
 	}
@@ -186,5 +203,5 @@ func (s *Service) AppPasswordUser(ctx context.Context, email, secret string) (*U
 	if now := s.clock().UnixMilli(); lastUseStale(lastUsed, now) {
 		_, _ = s.db.ExecContext(ctx, `UPDATE app_passwords SET last_used_at = ? WHERE id = ?`, now, id)
 	}
-	return &u, &AppPassword{ID: id, Scope: syncscope.Parse(scope)}, nil
+	return &u, &AppPassword{ID: id, Scope: syncscope.Parse(scope), Events: events}, nil
 }

@@ -139,6 +139,7 @@ func (s *Server) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	applyCreateDefaults(entity, body, now, keyed, id)
+	reachDefaults(r.Context(), entity, body)
 	if _, has := body["position"]; !has && entity != "reminder" {
 		body["position"] = json.RawMessage(fmt.Sprint(now))
 	}
@@ -682,4 +683,28 @@ func (s *Server) writeOps(w http.ResponseWriter, r *http.Request, entity, id str
 	}
 	presentReused(r, e)
 	writeJSON(w, status, e)
+}
+
+// reachDefaults places a new item of a token limited to workspaces in the
+// token's first workspace when the body names no workspace and no project or
+// task to follow (token-workspaces D3), never the account's default workspace.
+func reachDefaults(ctx context.Context, entity string, body map[string]json.RawMessage) {
+	ws := opsync.ReachWorkspaces(ctx)
+	if len(ws) == 0 {
+		return
+	}
+	switch entity {
+	case "task", "project", "label", "view", "note", "rule":
+	default:
+		return
+	}
+	if v, has := body["workspace_id"]; has && string(v) != "null" {
+		return
+	}
+	for _, f := range []string{"project_id", "parent_id"} {
+		if v, has := body[f]; has && string(v) != "null" && string(v) != `""` {
+			return
+		}
+	}
+	body["workspace_id"] = json.RawMessage(opsync.QuoteJSON(ws[0]))
 }

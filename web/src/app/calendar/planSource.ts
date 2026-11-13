@@ -70,7 +70,7 @@ export function resolveSource(key: string, sources: readonly PlanSource[]): Plan
  */
 export function planSourceTasks(source: PlanSource, d: PlanSourceData & { tasks: readonly Task[]; today: string; ctx?: ViewContext }): Task[] {
   const archived = new Set(d.projects.filter((p) => p.archived).map((p) => p.id))
-  const usable = (task: Task) => !task.completed_at && !task.deleted_at && !(task.project_id && archived.has(task.project_id))
+  const usable = (task: Task) => !task.completed_at && !task.deleted_at && task.habit_graduated_at == null && !(task.project_id && archived.has(task.project_id))
   if (source.kind === 'view') {
     const view = d.views.find((v) => `view:${v.id}` === source.key)
     const r = view && d.ctx ? runView(view, d.ctx) : null

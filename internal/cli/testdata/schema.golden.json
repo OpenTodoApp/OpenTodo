@@ -2578,6 +2578,11 @@
           ],
           "default": "full",
           "description": "token scope: full, read or agent"
+        },
+        {
+          "name": "limit-to",
+          "type": "string_list",
+          "description": "limit the token to this workspace (name or id), repeatable"
         }
       ],
       "writes": true,

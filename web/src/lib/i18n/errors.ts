@@ -88,6 +88,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   idempotency_conflict: msg('This request was already sent with different content.'),
   identity_taken: msg('This identity is already linked to another account.'),
   insufficient_scope: msg('This token or session is not allowed to do this: {detail}'),
+  token_restricted: msg('This token is limited to chosen workspaces and cannot do this.'),
   insufficient_storage: msg('The server does not have enough disk space.'),
   integrity: msg('The archive is damaged: {detail}'),
   internal: msg('Something went wrong on the server. Try again.'),

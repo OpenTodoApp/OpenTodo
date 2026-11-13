@@ -51,6 +51,15 @@ node scripts/e2e-views.mjs [screenshot-dir]
 CHROMIUM_PATH=/path/to/chrome node scripts/e2e-views.mjs
 ```
 
+## `e2e-habits.mjs`
+
+Browser check of Habits (OpenSpec change `habits-home`): a new account sees no habit control and the Habits address says Habits is off; turning on **Track as a habit** turns Habits on with its one message; Today then lists the habit in its strip and not as a row; the Habits screen checks it in with Space. Run it against a **fresh** data directory, like `e2e-views.mjs`:
+
+```bash
+OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
+node scripts/e2e-habits.mjs
+```
+
 ## `e2e-offline.mjs`
 
 Offline start of the built app, run by `make e2e`: it sets up the owner on a **fresh** server, adds a task, waits until the built service worker controls the page and checks the web app manifest, then turns the network off and reloads. The app must open from the precache with the task from IndexedDB, a request to `/api/*` must fail rather than be answered from a cache, and a task added offline must reach the server once the network is back.

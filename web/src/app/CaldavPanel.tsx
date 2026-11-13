@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, IconButton, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
+import { Button, IconButton, Dialog, Menu, RadioGroup, StatusIndicator, toneForHue } from '../ui'
 import { Badge } from '../ui'
 import { Field, Input } from '../ui'
 import { Icon } from '../ui'
@@ -34,6 +34,9 @@ export interface CaldavViewProps {
   newName: string
   /** The lists the new app password syncs. */
   newScope?: SyncScope
+  /** The new password shows tasks as events (caldav-events). */
+  newEvents?: boolean
+  onEventsChange?: (events: boolean) => void
   /** The app password whose lists are being changed. */
   editing?: AppPassword | null
   /** The app password just created; shown once in the dialog's success step. */
@@ -138,7 +141,7 @@ export function CaldavView(p: CaldavViewProps) {
           {live.map((x) => (
             <ListRow key={x.id} leading={<Icon name="key-round" size="md" />} label={x.name}
               meta={[x.lastUsedAt ? t('Created {day} · used {used}', { day: day(x.createdAt), used: day(x.lastUsedAt) }) : t('Created {day} · never used', { day: day(x.createdAt) }),
-                scopeSummary(x.scope, places)].filter(Boolean).join(' · ')}
+                x.events ? t('Events') : '', scopeSummary(x.scope, places)].filter(Boolean).join(' · ')}
               menu={(
                 <Menu label={t('Actions for {name}', { name: x.name })} trigger={<Icon name="ellipsis" />} kind="menu" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm ui-btn--icon">
                   <MenuItem label={t('Lists')} icon="list" disabled={p.busy} onSelect={() => p.onEditLists?.(x.id)} />
@@ -165,6 +168,12 @@ export function CaldavView(p: CaldavViewProps) {
               <Field label={t('Device name')} description={t('So you know which one to revoke later.')}>
                 <Input aria-label={t('App password name')} placeholder={t('e.g. iPhone')} value={p.newName} onChange={(e) => p.onNameChange(e.target.value)} data-autofocus />
               </Field>
+              <RadioGroup label={t('Show tasks as')} name="app-password-show-as" dataKey="app-password-show-as" value={p.newEvents ? 'events' : 'todos'}
+                onChange={(v) => p.onEventsChange?.(v === 'events')}
+                options={[
+                  { value: 'todos', label: t('To-dos'), description: t('In Reminders and to-do apps: tick tasks off there.') },
+                  { value: 'events', label: t('Events'), description: t('In the calendar: dated tasks as events, multi-day tasks over their days.') },
+                ]} />
               <SyncScopeField label={t('Lists')} value={p.newScope ?? allScope()} onChange={(s) => p.onScopeChange?.(s)} />
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
@@ -191,6 +200,7 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
   useSettingsPending(setting === null || passwords === null)
   const [newName, setNewName] = useState('')
   const [newScope, setNewScope] = useState<SyncScope>(allScope)
+  const [newEvents, setNewEvents] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   const [secret, setSecret] = useState<string | null>(null)
   const { busy, error, setError, run } = useAction({ describe: message })
@@ -213,7 +223,7 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
   return (
     <>
       <CaldavView isOwner={isOwner} email={email} setting={setting} passwords={passwords} newName={newName} secret={secret}
-        error={error} busy={busy} creating={creating} onNameChange={setNewName} newScope={newScope} onScopeChange={setNewScope}
+        error={error} busy={busy} creating={creating} onNameChange={setNewName} newScope={newScope} onScopeChange={setNewScope} newEvents={newEvents} onEventsChange={setNewEvents}
         editing={passwords?.find((x) => x.id === editing && !x.revokedAt) ?? null}
         onEditLists={(id) => { setError(null); setEditing(id) }}
         onSaveLists={(id, scope) => void run(async () => {
@@ -221,11 +231,11 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
           setEditing(null)
           await load()
         })}
-        onNew={() => { setError(null); setSecret(null); setNewScope(allScope()); setCreating(true) }}
+        onNew={() => { setError(null); setSecret(null); setNewScope(allScope()); setNewEvents(false); setCreating(true) }}
         onCloseNew={() => { setCreating(false); setSecret(null); setNewName('') }}
         onToggle={(enabled) => void run(async () => setSetting(await api.caldavSwitch.put(enabled)))}
         onCreate={() => void run(async () => {
-          const res = await api.createAppPassword(newName.trim() || 'Calendar app', newScope.mode === 'all' ? undefined : newScope)
+          const res = await api.createAppPassword(newName.trim() || 'Calendar app', newScope.mode === 'all' ? undefined : newScope, newEvents)
           setSecret(res.secret)
           setNewName('')
           await load()

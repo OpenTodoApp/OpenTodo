@@ -328,6 +328,9 @@ func (r *Registry) Lookup(name string, c Caller) (Definition, bool) {
 // overlay holds changes planned earlier in the same agent turn (in-app
 // assistant); MCP passes none.
 func (r *Registry) Plan(ctx context.Context, c Caller, name string, rawArgs json.RawMessage, overlay ChangeSet) (Plan, error) {
+	if err := reachRefused(ctx, name); err != nil {
+		return Plan{}, err
+	}
 	t, d, ok := lookup(name, c)
 	if !ok {
 		return Plan{}, argErr("unknown tool: " + name)
@@ -373,6 +376,9 @@ func parseArgs(raw json.RawMessage) (args, error) {
 // pass the permission gate, the limits, planning and Apply, and every write
 // call by an agent token is audited (design D3-D6).
 func (r *Registry) Call(ctx context.Context, c Caller, name string, rawArgs json.RawMessage) (map[string]any, error) {
+	if err := reachRefused(ctx, name); err != nil {
+		return nil, err
+	}
 	_, d, ok := lookup(name, c)
 	if !ok {
 		return nil, argErr("unknown tool: " + name)

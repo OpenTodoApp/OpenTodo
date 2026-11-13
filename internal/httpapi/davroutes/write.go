@@ -160,10 +160,16 @@ func (d *davRequest) put() {
 	}
 	var id string
 	var created bool
-	if existing == nil {
+	switch {
+	case existing == nil:
+		if d.events {
+			eventTiming(in, nil)
+		}
 		id, err = d.create(v, in)
 		created = true
-	} else {
+	case d.events:
+		id, err = d.updateEvent(v, existing, in)
+	default:
 		id, err = d.update(v, existing, in)
 	}
 	if err != nil {
@@ -675,6 +681,14 @@ func (d *davRequest) delete() {
 		}
 		if v.role(d.path.calendar) == opsync.RoleViewer {
 			d.precondition(http.StatusForbidden, "d", "need-privileges")
+			return
+		}
+		if d.events {
+			if err := d.unscheduleEvent(t); err != nil {
+				d.applyError(err)
+				return
+			}
+			d.w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		ts := d.s.opTS()

@@ -5,7 +5,7 @@
 // the list is a folded column on the board and the other way round, per device
 // (OpenSpec change board-polish, design D1).
 import { lazy, Suspense, useMemo, type ReactNode } from 'react'
-import { ListGroupHeader } from '../../ui'
+import { ListGroupHeader, type HueName } from '../../ui'
 import type { Task } from '../../lib/types'
 import type { ViewLayout } from '../../lib/types'
 import { t } from '../../lib/i18n'
@@ -41,6 +41,8 @@ export function useFoldedGroups<G extends ResultGroup>(scope: string, groups: G[
 export interface ViewResultsProps {
   groups: ResultGroup[]
   layout: ViewLayout
+  /** A group's header tint: a project's colour when grouped by project (project-group-tint). */
+  hueOf?: (key: string) => HueName | undefined
   /** A row of the list, or a card of the board; the key is unique across groups. */
   renderTask: (task: Task, key: string, shape: 'row' | 'card') => ReactNode
   /** Where the groups' fold state is kept (see useFoldedGroups); absent: groups do not fold. */
@@ -49,7 +51,7 @@ export interface ViewResultsProps {
   selectedGroup?: string | null
 }
 
-export function ViewResults({ groups, layout, renderTask, foldScope, selectedGroup = null }: ViewResultsProps) {
+export function ViewResults({ groups, layout, renderTask, foldScope, selectedGroup = null, hueOf }: ViewResultsProps) {
   const fold = (key: string, on: boolean) => { if (foldScope) setGroupCollapsed(foldScope, key, on) }
   // `z` on a view's board: the selected card's column, else the focused header or strip.
   useShortcutScope('board', {
@@ -74,7 +76,7 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
           return (
             <section key={g.key} data-group={g.key} data-column={g.key} aria-label={t('{name}, {n, plural, one {# task} other {# tasks}}', { name, n: g.tasks.length })}
               className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72">
-              <ListGroupHeader title={name} count={g.tasks.length} countTone="muted" bar={false} actions={menu} />
+              <ListGroupHeader title={name} count={g.tasks.length} countTone="muted" bar={false} actions={menu} hue={hueOf?.(g.key)} />
               <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
                 {g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'card'))}
               </ul>
@@ -88,7 +90,7 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
     <>
       {groups.map((g) => (
         <section key={g.key} data-group={g.key} className="mb-3">
-          {g.heading && <ListGroupHeader title={g.heading} count={g.tasks.length}
+          {g.heading && <ListGroupHeader title={g.heading} count={g.tasks.length} hue={hueOf?.(g.key)}
             collapsed={foldScope ? !!g.folded : undefined} onToggle={foldScope ? () => fold(g.key, !g.folded) : undefined} />}
           {!g.folded && <ul>{g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'row'))}</ul>}
         </section>

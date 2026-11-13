@@ -12,6 +12,7 @@
 // for a fixed mode, a Light and a Dark list under System, one op per choice. While
 // the side shown has a theme other than OpenTodo's, the accent comes from that theme
 // and the tiles are not offered (D7).
+import { useHabitsEnabled } from '../lib/habitPrefs'
 import { readMethodMode } from '../lib/method/mode'
 import { type DragEvent, type KeyboardEvent, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { cachedCustom, customAccentStyle, type CustomAccentValues, deriveCustom, DENSITIES, type Density, destinationOrder, type DestinationId, FIXED_DESTINATIONS, moveDestination, PROMOTABLE, type Promotable, readAppearance, readSidebarCounts, setAppearance, setCustomAccent, setPromoted, setSidebarCounts, SIDEBAR_COUNTS, type SidebarCounts, THEME_MODES, type Appearance } from '../lib/appearance'
@@ -45,7 +46,7 @@ const TASK_OPEN_LABEL = translatedMap<TaskOpenPref>({ page: msg('As a page'), pa
 /** The destinations of the sidebar's More group, as the switches name them (app-shell "Sidebar structure"). */
 export const PROMOTABLE_LABEL = translatedMap<Promotable>({
   loop: msg('Loop home'), next: msg('Next actions'), waiting: msg('Waiting'),
-  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('New view'), focus: msg('Focus'),
+  anytime: msg('Anytime'), someday: msg('Someday'), assigned: msg('Assigned to me'), completed: msg('Completed'), feed: msg('Updates'), trash: msg('Trash'), filter: msg('New view'), focus: msg('Focus'), habits: msg('Habits'),
 })
 
 export interface AppearanceViewProps {
@@ -341,9 +342,11 @@ export function SidebarSection() {
   const loaded = useUserPrefsRow() !== undefined
   const row = usePrefsRow()
   const value = readAppearance(row)
+  // Off means off (habits-home D2): no Habits destination to arrange while Habits is not on.
+  const habits = useHabitsEnabled()
   return <SidebarView promoted={value.sidebar ?? []} arranged={readMethodMode(row) === 'first'} onPromote={(id, on) => act(setPromoted(row, id, on))}
     counts={readSidebarCounts(row)} onCounts={(v) => act(setSidebarCounts(v))}
-    order={destinationOrder(row)} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
+    order={destinationOrder(row).filter((id) => habits || id !== 'habits')} onMove={loaded ? (id, delta) => moveDestination(row, id, delta) : undefined} />
 }
 
 /** Settings → Appearance → Task details (task-side-panel D1): the synced choice, written through ops. */

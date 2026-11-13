@@ -99,7 +99,7 @@ text     := word | '"' chars '"'
 | `blocked` | tasks waiting for another task that is still open ([Blocked by](tasks-and-projects.md#wait-for-another-task)) |
 | `unblocked` | tasks not waiting for any open task |
 | `available` | tasks you can do now: not blocked, not waiting for an earlier step of a [sequential project or section](project-flows.md), not parked and not starting later. `!available` lists the other open tasks |
-| `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak |
+| `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak (a [graduated](habit-days.md#graduate-a-habit) habit is in no view) |
 | `no project` | Inbox tasks (no project) |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |

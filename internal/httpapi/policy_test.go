@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -535,5 +536,30 @@ func TestRolePolicyBeforeCredentials(t *testing.T) {
 		if resp.StatusCode != 403 || errCode(out) != "forbidden" {
 			t.Errorf("member on %s %s = %d %v", r[0], r[1], resp.StatusCode, out)
 		}
+	}
+}
+
+// TestWorkspaceReachRoutes pins the routes a token limited to workspaces may
+// use (token-workspaces D4): every other route refuses it, so adding one here
+// is a reviewed decision that its handler reads and writes only through the
+// sync service with the request's reach.
+func TestWorkspaceReachRoutes(t *testing.T) {
+	want := []string{
+		"DELETE /api/v1/{collection}/{id}",
+		"GET /api/v1/workspaces",
+		"GET /api/v1/{collection}",
+		"GET /api/v1/{collection}/{id}",
+		"PATCH /api/v1/{collection}/{id}",
+		"POST /api/v1/{collection}",
+	}
+	var got []string
+	for _, e := range routeTableOf(t, false) {
+		if e.policy.Reach {
+			got = append(got, e.pattern)
+		}
+	}
+	sort.Strings(got)
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("routes open to workspace-limited tokens:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
 	}
 }

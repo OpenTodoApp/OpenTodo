@@ -1788,6 +1788,8 @@ export interface AppPassword {
   revokedAt: number | null
   /** Absent from servers before sync-scope: the whole account. */
   scope?: SyncScope
+  /** Shows the calendars as events instead of to-dos (caldav-events); absent means to-dos. */
+  events?: boolean
 }
 
 export interface WebhookDelivery {

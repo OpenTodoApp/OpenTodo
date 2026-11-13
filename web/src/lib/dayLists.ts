@@ -10,12 +10,14 @@ import { inToday, inUpcoming, overdueInToday, upcomingDate } from './views'
 
 /**
  * The tasks the cross-project views consider: tasks of archived projects stay
- * out, except in the archived project's own list (`keepProject`).
+ * out, except in the archived project's own list (`keepProject`), and graduated
+ * habits stay out of every list (habits-home D7).
  */
 export function withoutArchived(tasks: readonly Task[], projects: readonly Pick<Project, 'id' | 'archived'>[], keepProject?: string): Task[] {
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
-  if (hidden.size === 0) return [...tasks]
-  return tasks.filter((t) => !t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject)
+  // A graduated habit is in no list (habits-home D7) whatever its project.
+  if (hidden.size === 0) return tasks.some((t) => t.habit_graduated_at != null) ? tasks.filter((t) => t.habit_graduated_at == null) : [...tasks]
+  return tasks.filter((t) => t.habit_graduated_at == null && (!t.project_id || !hidden.has(t.project_id) || t.project_id === keepProject))
 }
 
 /**
