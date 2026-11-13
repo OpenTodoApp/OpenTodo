@@ -1,0 +1,1 @@
+- Grouped by project, each project's group header takes the project's colour, as a coloured section's header does; the Inbox stays neutral (project-group-tint, #1210).
