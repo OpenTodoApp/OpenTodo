@@ -1,0 +1,1 @@
+- A browser or Android System WebView too old for the app (older than Chrome 111, Safari 16.4 or Firefox 128) shows a plain note naming the minimum and what it found, instead of a broken page; the Android guide states the WebView it needs (#1259).

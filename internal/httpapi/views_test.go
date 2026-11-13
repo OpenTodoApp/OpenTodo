@@ -614,3 +614,23 @@ func TestViewIcon(t *testing.T) {
 		t.Fatalf("cleared icon = %v", out["icon"])
 	}
 }
+
+// A view's Nest subtasks (GitHub issue 1108): "nested" or "", anything else refused.
+func TestViewSubtasksField(t *testing.T) {
+	e := registeredEnv(t)
+	resp, out := e.do("POST", "/api/v1/views", map[string]any{"name": "Urgent", "query": "p1", "subtasks": "nested"})
+	e.mustStatus(resp, 201, out)
+	if out["subtasks"] != "nested" {
+		t.Fatalf("created = %v", out)
+	}
+	id := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"subtasks": "tree"})
+	if resp.StatusCode != 400 || errCode(out) != "invalid_input" {
+		t.Fatalf("unknown value = %d %v", resp.StatusCode, out)
+	}
+	resp, out = e.do("PATCH", "/api/v1/views/"+id, map[string]any{"subtasks": ""})
+	e.mustStatus(resp, 200, out)
+	if out["subtasks"] != "" {
+		t.Fatalf("cleared = %v", out)
+	}
+}
