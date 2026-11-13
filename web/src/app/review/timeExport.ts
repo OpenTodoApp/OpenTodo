@@ -2,7 +2,6 @@
 // "Time entries export", design D8): the CSV of the chosen period, built on this
 // device from local rows with lib/time.ts toCSV, so it works offline, sends
 // nothing, and holds what the server's CSV holds for the same entries.
-import { saveFile } from '../../lib/saveFile'
 import { useCallback } from 'react'
 import { useAllLabels } from '../../lib/localData'
 import { periodFor, type PeriodKind } from '../../lib/stats'
@@ -15,7 +14,7 @@ export const timeExportName = (start: string, end: string) => `time-entries-${st
 
 /** Offer a text file made on the device as a download. */
 export function downloadText(text: string, name: string, type: string): void {
-  void saveFile(new Blob([text], { type }), name)
+  void import('../../lib/saveFile').then((m) => m.saveFile(new Blob([text], { type }), name))
 }
 
 /** The export action for the shown period. */

@@ -1,4 +1,3 @@
-import { saveFile } from '../lib/saveFile'
 import { Select, SettingRow, SettingsSection, Dialog, Menu, StatusIndicator, toneForHue } from '../ui'
 import { Button } from '../ui'
 import { Icon } from '../ui'
@@ -108,7 +107,7 @@ function RecoveryCodes({ codes, onDone }: { codes: string[]; onDone: () => void 
     <RecoveryCodesView
       codes={codes} acknowledged={acknowledged} copied={copied} onAcknowledge={setAcknowledged} onDone={onDone}
       onCopy={() => void copyText(text).then(() => setCopied(true), () => setCopied(false))}
-      onDownload={() => void saveFile(new Blob([text], { type: 'text/plain' }), 'opentodo-recovery-codes.txt')}
+      onDownload={() => void import('../lib/saveFile').then((m) => m.saveFile(new Blob([text], { type: 'text/plain' }), 'opentodo-recovery-codes.txt'))}
     />
   )
 }

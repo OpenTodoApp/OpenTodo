@@ -2,7 +2,8 @@
 // recovery codes, an export of tracked time, a theme, a decrypted attachment.
 // In a browser it is an anchor with `download`, as before. A web view ignores that,
 // so in a shell that lists `files` the bytes go over the bridge in chunks and the
-// shell opens the phone's save dialog. Every save in the app goes through here.
+// shell opens the phone's save dialog. Every save in the app goes through here,
+// imported where the user asks for the file, so it stays out of the first load.
 import { resettable } from './moduleState'
 import { has, shell } from './shell'
 
@@ -21,15 +22,11 @@ export interface ShellFileChunk {
   last: boolean
 }
 
-let seq = 0
-const failed = new Set<(name: string) => void>()
-resettable('saveFile', () => { seq = 0; failed.clear() })
+/** Dispatched on `window` when a save fails, `detail` the file's name: the app shows a notice (main.tsx). */
+export const SAVE_FAILED_EVENT = 'opentodo:save-failed'
 
-/** Called with the file's name when a save fails, so the app can say so. Returns the remover. */
-export function onSaveFailed(listener: (name: string) => void): () => void {
-  failed.add(listener)
-  return () => { failed.delete(listener) }
-}
+let seq = 0
+resettable('saveFile', () => { seq = 0 })
 
 function base64(bytes: Uint8Array): string {
   let s = ''
@@ -68,7 +65,7 @@ function throughAnchor(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
-/** Save `blob` as a file called `name`. Never throws; a failure reaches `onSaveFailed`. */
+/** Save `blob` as a file called `name`. Never throws; a failure dispatches `SAVE_FAILED_EVENT`. */
 export async function saveFile(blob: Blob, name: string): Promise<SaveResult> {
   let result: SaveResult = 'saved'
   try {
@@ -77,6 +74,6 @@ export async function saveFile(blob: Blob, name: string): Promise<SaveResult> {
   } catch {
     result = 'failed'
   }
-  if (result === 'failed') for (const l of failed) l(name)
+  if (result === 'failed') window.dispatchEvent(new CustomEvent(SAVE_FAILED_EVENT, { detail: name }))
   return result
 }

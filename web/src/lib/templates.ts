@@ -3,7 +3,6 @@
 // template file; one planner that turns a tree into a single batch of ordinary
 // ops with fresh ids and dates shifted to a start day. Copies carry structure and
 // open work, never completion, assignees, comments or reminders.
-import { saveFile } from './saveFile'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { addDaysISO, daysBetweenISO, logicalToday } from './dates'
 import { db } from './db'
@@ -447,7 +446,7 @@ export function templateFileName(name: string): string {
 
 /** Offer a file made on the device as a download (no server round trip). */
 export function downloadJSON(data: unknown, name: string): void {
-  void saveFile(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), name)
+  void import('./saveFile').then((m) => m.saveFile(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), name))
 }
 
 /** The logical today (day-boundary D5) used as `template.day` when saving. */

@@ -2,7 +2,6 @@
 // as a download for a type the browser should not render. Web only: it opens
 // pages and object URLs, so the native app, which shares lib/attachments.ts
 // (native-app-foundation D2), does not import it.
-import { saveFile } from './saveFile'
 import { AttachmentError, contentUrl, isInlineType, linkHref } from './attachments'
 import { decryptFile } from './crypto'
 import { db } from './db'
@@ -46,7 +45,7 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
 /** Open bytes held on this device; types the browser should not render are downloaded. */
 function openBlob(blob: Blob, a: Attachment, download?: boolean) {
   if (download || !isInlineType(a.mime)) {
-    void saveFile(blob, a.name)
+    void import('./saveFile').then((m) => m.saveFile(blob, a.name))
     return
   }
   const href = URL.createObjectURL(blob)

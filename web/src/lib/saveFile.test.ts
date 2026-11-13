@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fileChunks, onSaveFailed, saveFile, type ShellFileChunk } from './saveFile'
+import { fileChunks, SAVE_FAILED_EVENT, saveFile, type ShellFileChunk } from './saveFile'
 import type { OpenTodoShell } from './shell'
 
 const bytes = (n: number) => Uint8Array.from({ length: n }, (_, i) => i % 251)
@@ -50,20 +50,21 @@ describe('saveFile', () => {
   it('reports a cancelled dialog without calling it a failure', async () => {
     shellWith(() => Promise.resolve('cancelled'))
     const failed = vi.fn()
-    const off = onSaveFailed(failed)
+    window.addEventListener(SAVE_FAILED_EVENT, failed)
     await expect(saveFile(new Blob(['x']), 'a.txt')).resolves.toBe('cancelled')
     expect(failed).not.toHaveBeenCalled()
-    off()
+    window.removeEventListener(SAVE_FAILED_EVENT, failed)
   })
 
   it('stops at a chunk the shell refuses and tells the listeners', async () => {
     const calls = shellWith(() => 'failed')
-    const failed = vi.fn()
-    const off = onSaveFailed(failed)
+    const names: string[] = []
+    const failed = (e: Event) => void names.push((e as CustomEvent<string>).detail)
+    window.addEventListener(SAVE_FAILED_EVENT, failed)
     await expect(saveFile(new Blob([bytes(600 * 1024)]), 'big.bin')).resolves.toBe('failed')
     expect(calls).toHaveLength(1)
-    expect(failed).toHaveBeenCalledWith('big.bin')
-    off()
+    expect(names).toEqual(['big.bin'])
+    window.removeEventListener(SAVE_FAILED_EVENT, failed)
   })
 
   it('fails when the shell throws or answers something else', async () => {

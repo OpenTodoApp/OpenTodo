@@ -8,8 +8,6 @@ import { watchFocusClearance } from './lib/focusClearance'
 import { bootLanguage, t } from './lib/i18n'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
 import { installShellLinks } from './lib/shell'
-import { onSaveFailed } from './lib/saveFile'
-import { showActionToast } from './app/bulk/toastStore'
 import { startShellPublishers } from './lib/shellPublish'
 
 // Bottom sheets sit above the on-screen keyboard; the focused field stays visible.
@@ -25,7 +23,7 @@ logUnhandledRejections()
 // In a native shell, links to other origins open in the system browser (native-shells D5).
 installShellLinks(document)
 // A file that could not be saved says so (shell-repairs: saving a file from the app).
-onSaveFailed(() => showActionToast(t('The file could not be saved.')))
+window.addEventListener('opentodo:save-failed', () => void import('./app/bulk/toastStore').then((m) => m.showActionToast(t('The file could not be saved.'))))
 // In a native shell, reminders and the widgets' Today list are handed over as they change.
 startShellPublishers()
 // The page's icons and description follow the instance branding: the service

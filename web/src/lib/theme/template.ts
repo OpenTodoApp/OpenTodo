@@ -8,7 +8,6 @@
 // every entry ends with a comma and any line can be uncommented on its own. The
 // notes come from the caller in the user's language (app/themes/templateText.ts);
 // the keys and values stay as the format writes them.
-import { saveFile } from '../saveFile'
 import { colourToHex } from './oklch'
 import { THEME_FORMAT, type ThemeDocument } from './format'
 import { themeFileName } from './files'
@@ -130,5 +129,5 @@ export function themeTemplate(doc: ThemeDocument, resolution: { tokens: Record<s
 
 /** Offers the template as a download from a Blob URL (made on the device, no server round trip). */
 export function downloadTemplate(text: string, name: string): void {
-  void saveFile(new Blob([text], { type: 'application/json' }), templateFileName(name))
+  void import('../saveFile').then((m) => m.saveFile(new Blob([text], { type: 'application/json' }), templateFileName(name)))
 }
