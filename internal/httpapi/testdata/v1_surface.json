@@ -824,6 +824,7 @@
           "name": "required"
         },
         "flags": {
+          "limit-to": "string_list",
           "scope": "string"
         },
         "output": {
@@ -2073,6 +2074,10 @@
       "400",
       "listed"
     ],
+    "token_restricted": [
+      "403",
+      "listed"
+    ],
     "too_large": [
       "413",
       "listed"
@@ -2342,6 +2347,9 @@
         "evening": "bool",
         "flow_mode": "string",
         "habit": "bool",
+        "habit_anchor": "string",
+        "habit_graduated_at": "nullable_number",
+        "habit_tiny": "string",
         "ical_extra": "nullable_text",
         "id": "string",
         "labels": "string_list",
@@ -2364,6 +2372,7 @@
         "span": "bool",
         "split_from": "split",
         "start": "start",
+        "tiny": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       },
@@ -2413,6 +2422,7 @@
         "focus_work_minutes": "number",
         "formatting_toggle": "string",
         "full_titles": "string",
+        "habits": "string",
         "haptics": "string",
         "id": "string",
         "inbox_group_by": "string",
@@ -3404,6 +3414,9 @@
       "evening": "bool",
       "flow_mode": "string",
       "habit": "bool",
+      "habit_anchor": "string",
+      "habit_graduated_at": "nullable_number",
+      "habit_tiny": "string",
       "ical_extra": "nullable_text",
       "labels": "string_list",
       "location": "location",
@@ -3425,6 +3438,7 @@
       "span": "bool",
       "split_from": "split",
       "start": "start",
+      "tiny": "bool",
       "title": "string",
       "workspace_id": "nullable_string"
     },
@@ -3472,6 +3486,7 @@
       "focus_work_minutes": "number",
       "formatting_toggle": "string",
       "full_titles": "string",
+      "habits": "string",
       "haptics": "string",
       "inbox_group_by": "string",
       "inbox_row_layout": "string",
@@ -4007,6 +4022,7 @@
       "response": {
         "appPasswords": "array",
         "appPasswords[].createdAt": "number",
+        "appPasswords[].events": "boolean",
         "appPasswords[].id": "string",
         "appPasswords[].lastUsedAt": "number|null",
         "appPasswords[].name": "string",
@@ -6354,6 +6370,9 @@
         "tasks[].fields": "object",
         "tasks[].flow_mode": "string",
         "tasks[].habit": "bool",
+        "tasks[].habit_anchor": "string",
+        "tasks[].habit_graduated_at": "nullable_number",
+        "tasks[].habit_tiny": "string",
         "tasks[].ical_extra": "nullable_text",
         "tasks[].id": "string",
         "tasks[].labels": "string_list",
@@ -6376,6 +6395,7 @@
         "tasks[].span": "bool",
         "tasks[].split_from": "split",
         "tasks[].start": "start",
+        "tasks[].tiny": "bool",
         "tasks[].title": "string",
         "tasks[].workspace_id": "nullable_string"
       }
@@ -6401,6 +6421,9 @@
         "fields": "object",
         "flow_mode": "string",
         "habit": "bool",
+        "habit_anchor": "string",
+        "habit_graduated_at": "nullable_number",
+        "habit_tiny": "string",
         "ical_extra": "nullable_text",
         "id": "string",
         "labels": "string_list",
@@ -6423,6 +6446,7 @@
         "span": "bool",
         "split_from": "split",
         "start": "start",
+        "tiny": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }
@@ -6651,7 +6675,8 @@
         "tokens[].id": "string",
         "tokens[].lastUsedAt": "number|null",
         "tokens[].name": "string",
-        "tokens[].scope": "string"
+        "tokens[].scope": "string",
+        "tokens[].workspaces": "array"
       },
       "statuses": [
         "200"
@@ -6919,6 +6944,7 @@
       "response": {
         "appPassword": "object|null",
         "appPassword.createdAt": "number",
+        "appPassword.events": "boolean",
         "appPassword.id": "string",
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
@@ -7487,6 +7513,9 @@
         "evening": "bool?",
         "flow_mode": "string?",
         "habit": "bool?",
+        "habit_anchor": "string?",
+        "habit_graduated_at": "nullable_number?",
+        "habit_tiny": "string?",
         "ical_extra": "nullable_text?",
         "labels": "string_list?",
         "location": "location?",
@@ -7508,6 +7537,7 @@
         "span": "bool?",
         "split_from": "split?",
         "start": "start?",
+        "tiny": "bool?",
         "title": "string?",
         "workspace_id": "nullable_string?"
       },
@@ -7530,6 +7560,9 @@
         "fields": "object",
         "flow_mode": "string",
         "habit": "bool",
+        "habit_anchor": "string",
+        "habit_graduated_at": "nullable_number",
+        "habit_tiny": "string",
         "ical_extra": "nullable_text",
         "id": "string",
         "labels": "string_list",
@@ -7552,6 +7585,7 @@
         "span": "bool",
         "split_from": "split",
         "start": "start",
+        "tiny": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }
@@ -7742,6 +7776,7 @@
     "POST /api/v1/app-passwords": {
       "policy": "signed-in.credential.recent",
       "request": {
+        "events": "boolean",
         "name": "string",
         "scope": "object|null?",
         "scope.inboxes": "array",
@@ -7752,6 +7787,7 @@
       "response": {
         "appPassword": "object|null",
         "appPassword.createdAt": "number",
+        "appPassword.events": "boolean",
         "appPassword.id": "string",
         "appPassword.lastUsedAt": "number|null",
         "appPassword.name": "string",
@@ -8836,7 +8872,8 @@
       "policy": "signed-in.session-only",
       "request": {
         "allow": "boolean",
-        "query": "string"
+        "query": "string",
+        "workspaces": "array?"
       },
       "response": {
         "error": "string",
@@ -10356,6 +10393,9 @@
         "evening": "bool?",
         "flow_mode": "string?",
         "habit": "bool?",
+        "habit_anchor": "string?",
+        "habit_graduated_at": "nullable_number?",
+        "habit_tiny": "string?",
         "ical_extra": "nullable_text?",
         "labels": "string_list?",
         "location": "location?",
@@ -10377,6 +10417,7 @@
         "span": "bool?",
         "split_from": "split?",
         "start": "start?",
+        "tiny": "bool?",
         "title": "string?",
         "workspace_id": "nullable_string?"
       },
@@ -10399,6 +10440,9 @@
         "fields": "object",
         "flow_mode": "string",
         "habit": "bool",
+        "habit_anchor": "string",
+        "habit_graduated_at": "nullable_number",
+        "habit_tiny": "string",
         "ical_extra": "nullable_text",
         "id": "string",
         "labels": "string_list",
@@ -10421,6 +10465,7 @@
         "span": "bool",
         "split_from": "split",
         "start": "start",
+        "tiny": "bool",
         "title": "string",
         "workspace_id": "nullable_string"
       }
@@ -10552,7 +10597,8 @@
       "policy": "signed-in.credential.recent",
       "request": {
         "name": "string",
-        "scope": "string"
+        "scope": "string",
+        "workspaces": "array?"
       },
       "response": {
         "secret": "string",
@@ -10562,7 +10608,8 @@
         "token.id": "string",
         "token.lastUsedAt": "number|null",
         "token.name": "string",
-        "token.scope": "string"
+        "token.scope": "string",
+        "token.workspaces": "array"
       },
       "statuses": [
         "201"

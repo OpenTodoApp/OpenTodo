@@ -6,7 +6,8 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { occurrenceId } from '../lib/ids'
-import { completeTask, createTask, resetDeviceId, skipOccurrence, updateTask } from '../lib/ops'
+import { completeTask, createProject, createTask, resetDeviceId, skipOccurrence, updateTask } from '../lib/ops'
+import { setHabitsOn } from '../lib/habitPrefs'
 import type { Task } from '../lib/types'
 import { click, key, render, spokenText, visibleText, waitFor } from '../ui/test-utils'
 import { HabitHistory } from './HabitHistory'
@@ -109,18 +110,21 @@ describe('RecurrenceField habit switch', () => {
     await completeTask(id, { today: '2026-10-13' })
     const before = await db.outbox.count()
     const r = await render(<RecurrenceField task={(await db.tasks.get(id))!} />)
+    await waitFor(() => !!r.container.querySelector('[role="switch"]'), 'the switch')
     const sw = r.container.querySelector<HTMLElement>('[role="switch"]')!
     expect(sw.closest('label')!.textContent).toContain('Track as a habit')
     expect(sw.getAttribute('aria-checked')).toBe('false')
     await click(sw)
     await waitFor(async () => (await db.outbox.count()) > before, 'the habit op')
     const ops = (await db.outbox.toArray()).slice(before)
-    expect(ops.map((o) => [o.field, o.value])).toEqual([['habit', true]])
+    // Not decided yet: the switch also turns Habits on, in the same batch (habits-home D1).
+    expect(ops.map((o) => [o.field, o.value])).toEqual([['habit', true], ['habits', 'on']])
+    await waitFor(() => !!r.container.querySelector('[data-habits-turned-on]'), 'the one-time message')
     await r.unmount()
 
     const r2 = await render(<RecurrenceField task={(await db.tasks.get(id))!} />)
-    await waitFor(() => r2.container.querySelector('[data-habit-streak]')?.textContent === 'Streak 2 · Best 2')
-    expect(r2.container.querySelector('[data-habit-streak]')!.textContent).toBe('Streak 2 · Best 2')
+    await waitFor(() => !!r2.container.querySelector('[data-habit-streak]')?.textContent?.includes('Streak 2 · Best 2'))
+    expect(r2.container.querySelector('[data-habit-streak]')!.textContent).toBe('Strength 10 · 2 of last 2 · Streak 2 · Best 2')
     expect(cell(r2.container, '2026-10-12').dataset.state).toBe('done')
     expect(cell(r2.container, '2026-10-14').dataset.state).toBe('pending')
     expect(fetch).not.toHaveBeenCalled()
@@ -144,25 +148,44 @@ describe('RecurrenceField habit switch', () => {
 describe('rows and views', () => {
   it('the streak chip has an accessible name, with "at risk" when the day has passed', async () => {
     const t = task({ id: 'h', title: 'Read', recurrence: 'every day', due: { date: '2026-10-14' }, habit: true })
-    const r = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 12, best: 30, pending: true, atRisk: false }} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const r = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 12, best: 30, pending: true, overdue: false, kept: 0, keptOf: 0, strength: 0, atRisk: false, backOnTrack: false }} onToggle={() => {}} onOpen={() => {}} /></ul>)
     const chip = r.container.querySelector<HTMLElement>('[data-streak]')!
     expect(spokenText(chip)).toBe('12-day streak')
     expect(visibleText(chip)).toBe('12')
     expect(chip.querySelector('[data-icon="flame"]')).toBeTruthy()
     expect(r.container.querySelector('[data-recurring]')).toBeTruthy()
     await r.unmount()
-    const r2 = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 3, best: 3, pending: true, atRisk: true }} onToggle={() => {}} onOpen={() => {}} /></ul>)
+    const r2 = await render(<ul><TaskRow task={t} selected={false} showProject={false} habit={{ current: 3, best: 3, pending: true, overdue: true, kept: 0, keptOf: 0, strength: 0, atRisk: false, backOnTrack: false }} onToggle={() => {}} onOpen={() => {}} /></ul>)
     expect(spokenText(r2.container.querySelector('[data-streak]')!)).toBe('3-day streak, at risk')
     await r2.unmount()
   })
 
-  it('Today shows a habit with its streak chip', async () => {
-    const id = await createTask({ title: 'Meditate', due: { date: '2026-10-11' }, recurrence: 'every day' })
+  it('a project shows a habit with its streak chip, and none while Habits is off', async () => {
+    const p = await createProject({ name: 'Health' })
+    const id = await createTask({ title: 'Meditate', due: { date: '2026-10-11' }, recurrence: 'every day', project_id: p })
     await updateTask(id, { habit: true })
     for (const d of ['2026-10-11', '2026-10-12', '2026-10-13']) await completeTask(id, { today: d })
-    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
     await waitFor(() => !!r.container.querySelector('[data-streak]'))
     expect(spokenText(r.container.querySelector('[data-streak]')!)).toBe('3-day streak')
+    await setHabitsOn(false)
+    await waitFor(() => !r.container.querySelector('[data-streak]'), 'no chip while off')
+    expect(r.container.querySelector(`[data-task-id="${id}"]`)).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('Today lists a habit in its strip and not among its rows while Habits is on (habits-home "No habit shown twice")', async () => {
+    const id = await createTask({ title: 'Meditate', due: { date: '2026-10-14' }, recurrence: 'every day' })
+    await updateTask(id, { habit: true })
+    const plain = await createTask({ title: 'Call Ana', due: { date: '2026-10-14' } })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    await waitFor(() => !!r.container.querySelector(`[data-strip-chip="${id}"]`), 'the strip')
+    expect(r.container.querySelector(`[data-task-id="${id}"]`)).toBeNull()
+    expect(r.container.querySelector(`[data-task-id="${plain}"]`)).toBeTruthy()
+    // Off brings the row back and the strip goes.
+    await setHabitsOn(false)
+    await waitFor(() => !!r.container.querySelector(`[data-task-id="${id}"]`), 'the row while off')
+    expect(r.container.querySelector('[data-today-habits]')).toBeNull()
     await r.unmount()
   })
 

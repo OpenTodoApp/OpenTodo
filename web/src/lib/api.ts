@@ -368,8 +368,8 @@ export const api = {
   readNotification: (id: string) => request<void>('POST', `/api/v1/notifications/${encodeURIComponent(id)}/read`),
   listTokens: () => request<{ tokens: ApiToken[] }>('GET', '/api/v1/tokens'),
   /** scope `read` tokens are refused on every write route (mcp-server). */
-  createToken: (name: string, scope?: TokenScope) =>
-    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', scope ? { name, scope } : { name }),
+  createToken: (name: string, scope?: TokenScope, workspaces?: string[]) =>
+    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', { name, ...(scope ? { scope } : {}), ...(workspaces ? { workspaces } : {}) }),
   // AI assistants (mcp-server): status for everyone, the toggle for the owner.
   getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),
@@ -384,7 +384,7 @@ export const api = {
   deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
   /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
   getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),
-  answerMcpConsent: (query: string, allow: boolean) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow }),
+  answerMcpConsent: (query: string, allow: boolean, workspaces?: string[]) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow, ...(workspaces ? { workspaces } : {}) }),
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),
@@ -405,8 +405,8 @@ export const api = {
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
-  createAppPassword: (name: string, scope?: SyncScope) =>
-    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', scope ? { name, scope } : { name }),
+  createAppPassword: (name: string, scope?: SyncScope, events = false) =>
+    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name, ...(scope ? { scope } : {}), ...(events ? { events: true } : {}) }),
   setAppPasswordScope: (id: string, scope: SyncScope) =>
     request<{ appPassword: AppPassword }>('PATCH', `/api/v1/app-passwords/${encodeURIComponent(id)}`, { scope }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),

@@ -458,6 +458,9 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Name  string `json:"name"`
 		Scope string `json:"scope"`
+		// Workspaces limits the token to these workspaces (token-workspaces);
+		// absent or null covers every workspace.
+		Workspaces *[]string `json:"workspaces"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -469,7 +472,21 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "session_required", "an admin token can only be created from a signed-in session")
 		return
 	}
-	t, plain, err := s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
+	var t *auth.Token
+	var plain string
+	var err error
+	if in.Workspaces != nil {
+		if !s.ownWorkspaces(w, r, *in.Workspaces) {
+			return
+		}
+		t, plain, err = s.auth.CreateTokenIn(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope, *in.Workspaces)
+	} else {
+		t, plain, err = s.auth.CreateTokenScoped(r.Context(), userFrom(r.Context()).ID, in.Name, in.Scope)
+	}
+	if errors.Is(err, auth.ErrInvalidWorkspaces) {
+		writeError(w, http.StatusBadRequest, "invalid_input", "workspaces: "+err.Error())
+		return
+	}
 	if errors.Is(err, auth.ErrInvalidScope) {
 		writeError(w, http.StatusBadRequest, "invalid_input", "scope: must be full, read, agent or admin")
 		return
@@ -492,4 +509,25 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ownWorkspaces checks that every id names a workspace the person belongs to,
+// answering 400 invalid_input when one does not (token-workspaces).
+func (s *Server) ownWorkspaces(w http.ResponseWriter, r *http.Request, ids []string) bool {
+	list, err := s.sync.Workspaces(r.Context(), userFrom(r.Context()).ID)
+	if err != nil {
+		s.internal(w, err)
+		return false
+	}
+	mine := map[string]bool{}
+	for _, ws := range list {
+		mine[ws.ID] = true
+	}
+	for _, id := range ids {
+		if !mine[id] {
+			writeError(w, http.StatusBadRequest, "invalid_input", "workspaces: "+id+" is not one of your workspaces")
+			return false
+		}
+	}
+	return true
 }

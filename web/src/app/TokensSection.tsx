@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { Notice, RadioGroup } from '../ui'
+import { useWorkspaceChoices, WorkspaceChoice } from './WorkspaceChoice'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -92,6 +93,11 @@ export interface TokensViewProps {
   busy?: boolean
   onNameChange: (name: string) => void
   onScopeChange: (scope: TokenScope) => void
+  /** The account's workspaces; the choice is offered when there are two or more (token-workspaces). */
+  workspaces?: { id: string; name: string }[]
+  /** The chosen workspaces, or null for every workspace. */
+  only?: string[] | null
+  onOnlyChange?: (only: string[] | null) => void
   onCreate: () => void
   onRevoke: (token: ApiToken) => void
   onNew?: () => void
@@ -99,6 +105,12 @@ export interface TokensViewProps {
   /** No connection: the last loaded list stays, actions are disabled. */
   offline?: boolean
   now?: number
+}
+
+/** The names of a token's workspaces, "Only Work, Side" (token-workspaces). */
+function workspaceNames(ids: string[], all: { id: string; name: string }[] = []): string {
+  const names = ids.map((id) => all.find((w) => w.id === id)?.name ?? t('a removed workspace'))
+  return t('Only {names}', { names: names.join(', ') })
 }
 
 /** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
@@ -117,7 +129,7 @@ export function TokensView(p: TokensViewProps) {
         <div className="-mx-3">
           {p.tokens.map((token) => (
             <ListRow key={token.id} leading={<Icon name="key-round" size="md" />} label={<span data-token-name>{token.name}</span>}
-              meta={<span data-token-meta>{tokenMeta(token, p.now)}</span>}
+              meta={<span data-token-meta>{tokenMeta(token, p.now)}{token.workspaces && <> · <span data-token-workspaces>{workspaceNames(token.workspaces, p.workspaces)}</span></>}</span>}
               badges={<Badge hue={SCOPE_HUE[token.scope ?? 'full']}>{scopeBadge(token.scope)}</Badge>}
               menu={<Button variant="ghost" size="sm" disabled={p.offline} aria-label={t('Revoke {name}', { name: token.name })} onClick={() => p.onRevoke(token)} data-token-revoke>{t('Revoke')}</Button>} />
           ))}
@@ -145,6 +157,7 @@ export function TokensView(p: TokensViewProps) {
                   {t('An admin token can turn off two-factor authentication, create more tokens and app passwords, manage accounts and change single sign-on and other secret settings, without your password or a code. Create one only for a script that needs it, keep it like a password and revoke it when you are done.')}
                 </Notice>
               )}
+              {(p.workspaces?.length ?? 0) > 1 && <WorkspaceChoice workspaces={p.workspaces!} only={p.only ?? null} onChange={(v) => p.onOnlyChange?.(v)} />}
               {p.scope === 'full' && <p className="text-meta text-muted" data-obsidian-hint>{t('For the Obsidian plugin, create a full token named after the device.')}</p>}
               {p.error && <Notice tone="danger">{p.error}</Notice>}
               <div className="flex justify-end gap-2">
@@ -165,6 +178,8 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   useSettingsPending(tokens === null)
   const [name, setName] = useState('')
   const [scope, setScope] = useState<TokenScope>('full')
+  const [only, setOnly] = useState<string[] | null>(null)
+  const workspaces = useWorkspaceChoices()
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -187,14 +202,15 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
     <>
       <TokensView
         tokens={tokens} name={name} scope={scope} secret={secret} error={error} creating={creating} busy={busy} offline={!online}
-        onNameChange={setName} onScopeChange={setScope}
+        onNameChange={setName} onScopeChange={setScope} workspaces={workspaces} only={only} onOnlyChange={setOnly}
         onNew={() => { setError(null); setSecret(null); setCreating(true) }}
-        onCloseNew={() => { setCreating(false); setSecret(null); setName(''); setScope('full') }}
+        onCloseNew={() => { setCreating(false); setSecret(null); setName(''); setScope('full'); setOnly(null) }}
         onCreate={() => void (async () => {
           setError(null)
           setBusy(true)
           try {
-            const res = await api.createToken(name || 'API token', scope)
+            if (only && only.length === 0) throw new Error(t('Choose at least one workspace.'))
+            const res = await api.createToken(name || 'API token', scope, only ?? undefined)
             setSecret(res.secret)
             setName('')
             await load()

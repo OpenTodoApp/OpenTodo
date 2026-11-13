@@ -67,6 +67,8 @@ function withImplied(rows: ListRow[], implied: RowImplied | undefined): ListRow[
 export interface ListGroup {
   key: string
   heading: string | null
+  /** The project a "Group by: Project" group stands for; its header takes the project's colour (project-group-tint). */
+  project?: string
   rows: ListRow[]
   /** Project list grouped by section (board-view): the section (null = "No section"). */
   section?: Section | null
@@ -207,7 +209,7 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
   const hidden = new Set(projects.filter((p) => p.archived).map((p) => p.id))
   const keepProject = scope.view === 'project' ? scope.id : undefined
   // withoutArchived's rule, a task at a time. inbox-rule-ok: tasks of archived projects, not the Inbox.
-  const shown = (task: Task) => !task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject // inbox-rule-ok: as above
+  const shown = (task: Task) => task.habit_graduated_at == null && (!task.project_id || !hidden.has(task.project_id) || task.project_id === keepProject) // inbox-rule-ok: as above
   const byDone = (a: Task, b: Task) => (b.completed_at ?? 0) - (a.completed_at ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
   switch (scope.view) {
     case 'inbox': {
@@ -572,6 +574,7 @@ function flatGroups(p: GroupInput): ListGroup[] {
     const implied: RowImplied | undefined = p.view === 'someday' ? { someday: true } : undefined
     return order.filter((id) => byProject.has(id)).map((id) => ({
       key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), rows: withImplied(byProject.get(id)!.map(row), implied), named: true as const,
+      ...(id && p.projectMap.has(id) ? { project: id } : {}),
     }))
   }
   return [{ key: 'all', heading: null, rows: p.tasks.map(row) }]
@@ -635,6 +638,7 @@ function chosenTodayGroups(p: GroupInput, tasks: Task[], groupBy: ListDisplay['g
     return groupTasks(tasks, groupBy, { today: p.today, labels: p.labels ?? [], projects: p.projects }, true).map((x) => ({
       key: `day:${x.key}`, heading: x.heading, rows: withImplied(rows(x.tasks), groupBy === 'project' ? { ...implied, project: true } : implied),
       ...(named(x.key) ? { named: true as const } : {}),
+      ...(groupBy === 'project' && named(x.key) ? { project: x.key } : {}),
     }))
   }
   if (inUpcoming ? !tasks.length : !tasks.length && afterEarlier) return []

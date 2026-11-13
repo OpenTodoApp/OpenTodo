@@ -81,13 +81,15 @@ func scopeOf(t token) string {
 func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("token create", g)
 	scope := fs.String("scope", "full", "token scope: full, read or agent")
+	var only stringList
+	fs.Var(&only, "limit-to", "limit the token to this workspace (name or id; repeat for more)")
 	pos, err := a.parse(g, fs, "token create", args)
 	if err != nil {
 		return a.helpOr("token", err)
 	}
 	name := strings.TrimSpace(strings.Join(pos, " "))
 	if name == "" {
-		return usageErr("usage: ot token create <name> [--scope full|read|agent]")
+		return usageErr("usage: ot token create <name> [--scope full|read|agent] [--limit-to <workspace>]...")
 	}
 	// Validated before any request is sent (exit 2).
 	valid := false
@@ -101,8 +103,25 @@ func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) err
 	if err != nil {
 		return err
 	}
+	body := map[string]any{"name": name, "scope": *scope}
+	if len(only) > 0 {
+		// Limited to workspaces (token-workspaces): names resolve to ids first.
+		list, err := c.workspaces(ctx)
+		if err != nil {
+			return err
+		}
+		ids := make([]string, 0, len(only))
+		for _, choice := range only {
+			ws, err := resolveWorkspace(list, strings.TrimSpace(choice))
+			if err != nil {
+				return err
+			}
+			ids = append(ids, ws.id)
+		}
+		body["workspaces"] = ids
+	}
 	var raw json.RawMessage
-	if err := c.postJSON(ctx, "/tokens", map[string]string{"name": name, "scope": *scope}, &raw); err != nil {
+	if err := c.postJSON(ctx, "/tokens", body, &raw); err != nil {
 		return err
 	}
 	if g.json {
@@ -115,6 +134,9 @@ func tokenCreate(a *App, ctx context.Context, g *globalFlags, args []string) err
 	_ = json.Unmarshal(raw, &created)
 	fmt.Fprintf(a.Stdout, "%s\n", created.Secret)
 	fmt.Fprintf(a.Stderr, "Token %q (%s, scope %s) created. This secret is shown only once; store it now.\n", created.Token.Name, shortID(created.Token.ID), scopeOf(created.Token))
+	if len(only) > 0 {
+		fmt.Fprintf(a.Stderr, "It reaches only the workspaces %s.\n", strings.Join(only, ", "))
+	}
 	switch *scope {
 	case "read":
 		fmt.Fprintln(a.Stderr, "It can read everything you can and is refused on every change.")

@@ -3,7 +3,8 @@
 // app and what it may do, and only Allow asks the server for a code.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { click, mockFetch, render, waitFor } from '../ui/test-utils'
-import { OAuthConsent } from './OAuthConsent'
+import { OAuthConsent, OAuthConsentView } from './OAuthConsent'
+import { api } from '../lib/api'
 import { takeConsentQuery } from './OAuthConsentHost'
 
 afterEach(() => { vi.unstubAllGlobals() })
@@ -46,6 +47,27 @@ describe('OAuthConsent', () => {
     await waitFor(() => assign.mock.calls.length === 1, 'the redirect')
     expect(posts).toEqual([{ query, allow: true }])
     expect(assign).toHaveBeenCalledWith('https://oauth-redirect.googleusercontent.com/r/x?code=abc')
+  })
+
+  it('offers the workspaces when there are two or more, and Allow needs one chosen (token-workspaces D5)', async () => {
+    const info = { client: { id: 'c1', name: 'Gemini', dynamic: true }, scope: 'agent' as const, redirectHost: 'x' }
+    const two = [{ id: 'w-home', name: 'Home' }, { id: 'w-work', name: 'Work' }]
+    const one = await render(<OAuthConsentView info={info} busy={false} workspaces={[two[0]]} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector('[data-token-workspace-choice]')).toBeNull()
+    await one.unmount()
+    const none = await render(<OAuthConsentView info={info} busy={false} workspaces={two} only={[]} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector('[data-token-workspace-choice]')).not.toBeNull()
+    expect(document.querySelector<HTMLButtonElement>('[data-oauth-allow]')!.disabled).toBe(true)
+    await none.unmount()
+    await render(<OAuthConsentView info={info} busy={false} workspaces={two} only={['w-work']} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector<HTMLButtonElement>('[data-oauth-allow]')!.disabled).toBe(false)
+  })
+
+  it('sends the chosen workspaces with Allow', async () => {
+    const posts: unknown[] = []
+    serve('agent', posts)
+    await api.answerMcpConsent(query, true, ['w-work'])
+    expect(posts).toEqual([{ query, allow: true, workspaces: ['w-work'] }])
   })
 
   it('takes the request out of the address once', () => {

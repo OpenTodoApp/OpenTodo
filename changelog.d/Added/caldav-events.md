@@ -1,0 +1,1 @@
+- A CalDAV app password can show tasks as **Events** instead of to-dos: the per-project calendars then hold one event per dated open task (multi-day tasks as one all-day event, with the notes and a link to the task); moving, resizing or renaming an event changes the task, and deleting it clears the date (caldav-events, #1230).

@@ -140,6 +140,7 @@
   "stt_not_configured",
   "stt_unavailable",
   "task_required",
+  "token_restricted",
   "too_large",
   "too_many_appends",
   "too_many_objectives",

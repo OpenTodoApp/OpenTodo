@@ -263,7 +263,7 @@ function CardMeta({ m }: { m: MetaValues }) {
       {m.deadline && <ToneText tone={DEADLINE_TONE[m.deadline.tone]} icon="hourglass" data-deadline="" label={m.deadlineLabel}>{m.deadline.label}</ToneText>}
       {m.startText && <ToneText icon={m.someday ? 'archive' : 'calendar-days'} data-start="">{m.startText}</ToneText>}
       <BlockMark m={m} />
-      {m.streak && <ToneText icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>}
+      {m.streak && <ToneText icon="flame" data-streak="" data-at-risk={m.streak.overdue ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>}
       {m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>)}
       {more.length > 0 && (
         <ToneText data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>
@@ -328,7 +328,7 @@ function DetailedMeta({ m, priority, projectMark, labels }: { m: MetaValues; pri
     m.assignee && <span key="assignee" data-row-assignee="" className="inline-flex min-w-0 items-center gap-1 text-meta">{m.assignee}</span>,
     m.sample && <ToneText key="sample" data-sample="">{t('Sample')}</ToneText>,
     (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} />,
-    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
+    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-at-risk={m.streak.overdue ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
     ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id}>{b.text}</ToneText>),
     more.length > 0 && <ToneText key="more" data-field-more="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
   ].filter(Boolean)
@@ -375,7 +375,7 @@ function RowLine({ m, projectMark, projectColumn, slotsOff }: { m: MetaValues; p
     m.deadline && <span key="deadline" className="contents">{deadline(true)}</span>,
     m.startText && <ToneText key="start" icon={m.someday ? 'archive' : 'calendar-days'} data-start="" data-row-item="">{m.startText}</ToneText>,
     (m.blockedBy > 0 || m.waitsFor) && <BlockMark key="blocked" m={m} rowItem />,
-    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-row-item="" data-at-risk={m.streak.atRisk ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
+    m.streak && <ToneText key="streak" icon="flame" data-streak="" data-row-item="" data-at-risk={m.streak.overdue ? '' : undefined} label={streakLabel(m.streak)}>{m.streak.current}</ToneText>,
     ...m.badges.slice(0, MAX_FIELD_BADGES).map((b) => <ToneText key={b.def.id} data-field-badge={b.def.id} data-row-item="">{b.text}</ToneText>),
     more.length > 0 && <ToneText key="more" data-field-more="" data-row-item="" label={t('{count} more fields: {join}', { count: more.length, join: more.map((b) => b.text).join(', ') })}>+{more.length}</ToneText>,
   ].filter(Boolean)
