@@ -299,3 +299,27 @@ func TestPlainWinsOverStubHTML(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+// GitHub issue 1309: Central European, Cyrillic and Greek mail decodes in
+// subjects (encoded words) and bodies alike.
+func TestParseSingleByteCharsets(t *testing.T) {
+	for _, c := range []struct{ raw, title, body string }{
+		{"Subject: =?windows-1250?Q?Test_=EC=9A=E8=F8=9E=FD=E1=ED=E9_=CC=8A=C8=D8=8E=DD=C1=CD=C9?=\nContent-Type: text/plain; charset=windows-1250\n\nP\xf8\xedli\x9a \x9elu\x9dou\xe8k\xfd k\xf9\xf2 \xfap\xecl \xef\xe1belsk\xe9 \xf3dy.\n", "Test ěščřžýáíé ĚŠČŘŽÝÁÍÉ", "Příliš žluťoučký kůň úpěl ďábelské ódy."},
+		{"Subject: =?iso-8859-2?Q?Test_=EC=B9=E8=F8=BE=FD=E1=ED=E9_=CC=A9=C8=D8=AE=DD=C1=CD=C9?=\nContent-Type: text/plain; charset=iso-8859-2\n\nP\xf8\xedli\xb9 \xbelu\xbbou\xe8k\xfd k\xf9\xf2 \xfap\xecl \xef\xe1belsk\xe9 \xf3dy.\n", "Test ěščřžýáíé ĚŠČŘŽÝÁÍÉ", "Příliš žluťoučký kůň úpěl ďábelské ódy."},
+		{"Subject: =?windows-1251?Q?=CF=F0=E8=E2=E5=F2=2C_=EC=E8=F0?=\nContent-Type: text/plain; charset=windows-1251\n\n\xd1\xfa\xe5\xf8\xfc \xe6\xe5 \xe5\xf9\xb8 \xfd\xf2\xe8\xf5 \xec\xff\xe3\xea\xe8\xf5 \xf4\xf0\xe0\xed\xf6\xf3\xe7\xf1\xea\xe8\xf5 \xe1\xf3\xeb\xee\xea.\n", "Привет, мир", "Съешь же ещё этих мягких французских булок."},
+		{"Subject: =?koi8-r?Q?=F0=D2=C9=D7=C5=D4=2C_=CD=C9=D2?=\nContent-Type: text/plain; charset=koi8-r\n\n\xf3\xdf\xc5\xdb\xd8 \xd6\xc5 \xc5\xdd\xa3 \xdc\xd4\xc9\xc8 \xcd\xd1\xc7\xcb\xc9\xc8 \xc6\xd2\xc1\xce\xc3\xd5\xda\xd3\xcb\xc9\xc8 \xc2\xd5\xcc\xcf\xcb.\n", "Привет, мир", "Съешь же ещё этих мягких французских булок."},
+		{"Subject: =?iso-8859-7?Q?=C3=E5=E9=DC_=F3=EF=F5?=\nContent-Type: text/plain; charset=iso-8859-7\n\n\xce\xe5\xf3\xea\xe5\xf0\xdc\xe6\xf9 \xf4\xe7\xed \xf8\xf5\xf7\xef\xf6\xe8\xfc\xf1\xe1 \xe2\xe4\xe5\xeb\xf5\xe3\xec\xdf\xe1.\n", "Γειά σου", "Ξεσκεπάζω την ψυχοφθόρα βδελυγμία."},
+	} {
+		p, err := Parse([]byte(c.raw))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if p.Title != c.title || p.Description != c.body {
+			t.Errorf("%.40s: title %q, description %q", c.raw, p.Title, p.Description)
+		}
+	}
+	// Bytes a charset leaves undefined become U+FFFD; the result is valid UTF-8.
+	if got := toUTF8("windows-1250", []byte{'a', 0x81, 'b'}); got != "a\uFFFDb" {
+		t.Fatalf("undefined byte = %q", got)
+	}
+}

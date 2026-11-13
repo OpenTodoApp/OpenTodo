@@ -175,7 +175,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
 | [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
 | [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
-| [`note-webhooks`](openspec/changes/note-webhooks/) | Opt-in note events for webhooks | |
+| [`note-webhooks`](openspec/changes/archive/2026-11-13-note-webhooks/) | **Shipped.** Opt-in note events for webhooks | |
 | [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |
 
 The changes land in this order; each ships on its own. Links are computed on the device, so they work offline and with end-to-end encryption, and the server keeps no link table.

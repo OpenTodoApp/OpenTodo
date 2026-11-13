@@ -24,10 +24,16 @@ var cp1252 = [32]rune{
 }
 
 // toUTF8 decodes text in the common mail charsets: UTF-8, US-ASCII,
-// ISO-8859-1, ISO-8859-15 and windows-1252. Anything else is taken as UTF-8
-// with invalid sequences replaced, so the result is always valid UTF-8.
+// ISO-8859-1, ISO-8859-15, windows-1252 and the single-byte charsets of
+// charsets_gen.go (Central European, Cyrillic, Greek, Turkish, Baltic; GitHub
+// issue 1309). Anything else is taken as UTF-8 with invalid sequences
+// replaced, so the result is always valid UTF-8.
 func toUTF8(charset string, b []byte) string {
-	switch strings.ToLower(strings.Trim(charset, `" `)) {
+	label := strings.ToLower(strings.Trim(charset, `" `))
+	if table, ok := singleByte[label]; ok {
+		return decodeSingleByte(b, table)
+	}
+	switch label {
 	case "iso-8859-1", "iso8859-1", "latin1", "latin-1", "l1", "iso_8859-1",
 		"windows-1252", "cp1252", "x-cp1252", "us-ascii", "ascii":
 		// Like browsers (WHATWG Encoding), ISO-8859-1 and ASCII labels decode as
@@ -75,6 +81,21 @@ func latin(b []byte, win, fifteen bool) string {
 			}
 		}
 		sb.WriteRune(r)
+	}
+	return sb.String()
+}
+
+// decodeSingleByte decodes b in a single-byte charset whose bytes 0x80-0xFF
+// are table; bytes below 0x80 are ASCII.
+func decodeSingleByte(b []byte, table *[128]rune) string {
+	var sb strings.Builder
+	sb.Grow(len(b) + len(b)/2)
+	for _, c := range b {
+		if c < 0x80 {
+			sb.WriteByte(c)
+		} else {
+			sb.WriteRune(table[c-0x80])
+		}
 	}
 	return sb.String()
 }

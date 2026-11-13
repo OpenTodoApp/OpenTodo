@@ -584,6 +584,16 @@ func (s *Service) enqueue(ctx context.Context, changes []opsync.Change) error {
 					}
 					loaded = true
 				}
+				if c.Entity == "note" {
+					row, err := s.queueNote(ctx, sub, userID, event, c, now)
+					if err != nil {
+						return err
+					}
+					if row != nil {
+						rows = append(rows, *row)
+					}
+					continue
+				}
 				if c.Entity == "comment" && related == nil {
 					task, err := s.commentTask(ctx, userID, entity)
 					if err != nil {

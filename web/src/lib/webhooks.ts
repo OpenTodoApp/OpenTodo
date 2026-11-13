@@ -18,6 +18,10 @@ export const WEBHOOK_EVENTS: { event: WebhookEvent; label: string }[] = [
   { event: 'project.updated', label: msg('Project updated') },
   { event: 'project.archived', label: msg('Project archived') },
   { event: 'project.deleted', label: msg('Project deleted') },
+  // Standalone notes (note-webhooks): sent once the note is quiet; the picker shows them as their own group.
+  { event: 'note.created', label: msg('Note created') },
+  { event: 'note.updated', label: msg('Note updated') },
+  { event: 'note.deleted', label: msg('Note deleted') },
   // Imports are reported once per job, not once per task (harden-server-edges).
   { event: 'import.completed', label: msg('Import completed') },
   { event: 'import.undone', label: msg('Import undone') },

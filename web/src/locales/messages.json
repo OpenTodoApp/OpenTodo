@@ -11438,7 +11438,14 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "Note created": [
-    "web/src/lib/noteOps.ts"
+    "web/src/lib/noteOps.ts",
+    "web/src/lib/webhooks.ts"
+  ],
+  "Note deleted": [
+    "web/src/lib/webhooks.ts"
+  ],
+  "Note updated": [
+    "web/src/lib/webhooks.ts"
   ],
   "Notes": [
     "web/src/app/ImportScreen.tsx",
@@ -11446,6 +11453,7 @@
     "web/src/app/NotesEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SpaceSwitch.tsx",
+    "web/src/app/WebhooksPanel.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
@@ -19506,6 +19514,9 @@
   ],
   "Titles": [
     "web/src/app/NotificationChannels.tsx"
+  ],
+  "Titles and text arrive encrypted.": [
+    "web/src/app/WebhooksPanel.tsx"
   ],
   "Titles appear as “Encrypted item” in calendar apps: the server cannot read them.": [
     "web/src/lib/settingsCopy.ts"
