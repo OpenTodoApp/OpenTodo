@@ -12,8 +12,8 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
 	"github.com/OpenTodoApp/opentodo/internal/notesearch"
 	"github.com/OpenTodoApp/opentodo/internal/ruleval"
-	"github.com/OpenTodoApp/opentodo/internal/templatelib"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
+	"github.com/OpenTodoApp/opentodo/internal/templatelib"
 )
 
 // Standalone notes in routines (OpenSpec change notes-in-routines): the note
