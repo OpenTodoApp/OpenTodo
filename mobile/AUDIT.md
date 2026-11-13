@@ -8,6 +8,8 @@ The audit read both shells and the web app on a phone. Paths are from the reposi
 
 ### Reminders (the complaint)
 
+`shell-reminders-on` turns reminders and task names on by default, asks for exact alarms with an explanation and ends a hidden run on a signal. Push and the limits of iOS remain.
+
 Both shells only fire reminders the web app handed them while it ran.
 
 | Finding | Where |

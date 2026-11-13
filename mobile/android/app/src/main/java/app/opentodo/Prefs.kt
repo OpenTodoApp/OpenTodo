@@ -44,10 +44,6 @@ class Prefs(context: Context) {
         get() = p.getString("systemBars", null)
         set(v) = p.edit().putString("systemBars", v).apply()
 
-    var exactAlarmAsked: Boolean
-        get() = p.getBoolean("exactAlarmAsked", false)
-        set(v) = p.edit().putBoolean("exactAlarmAsked", v).apply()
-
     /** The account key, AES-GCM encrypted under the biometric Keystore key: base64 iv and ciphertext. */
     var wrappedKey: Pair<String, String>?
         get() {

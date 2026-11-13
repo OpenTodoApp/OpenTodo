@@ -7659,5 +7659,8 @@
   "template, meeting, journal, new note": "modello, riunione, diario, nuova nota",
   "Note deleted": "Nota eliminata",
   "Note updated": "Nota aggiornata",
-  "Titles and text arrive encrypted.": "Titoli e testo arrivano cifrati."
+  "Titles and text arrive encrypted.": "Titoli e testo arrivano cifrati.",
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Le notifiche non sono consentite per OpenTodo. Consentile nelle Impostazioni dell'iPhone (Notifiche → OpenTodo); i promemoria compaiono comunque nell'app.",
+  "Reminders may arrive a few minutes late.": "I promemoria possono arrivare con qualche minuto di ritardo.",
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "L'app non è riuscita a mostrare una notifica. Consenti le notifiche per OpenTodo nelle Impostazioni dell'iPhone."
 }

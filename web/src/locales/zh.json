@@ -7659,5 +7659,8 @@
   "template, meeting, journal, new note": "模板, 会议, 日志, 新笔记",
   "Note deleted": "笔记已删除",
   "Note updated": "笔记已更新",
-  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。"
+  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。",
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "OpenTodo 的通知未获允许。请在 iPhone 的“设置”（通知 → OpenTodo）中允许通知；提醒仍会在应用内显示。",
+  "Reminders may arrive a few minutes late.": "提醒可能会晚几分钟送达。",
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "应用无法显示通知。请在 iPhone 的“设置”中允许 OpenTodo 发送通知。"
 }

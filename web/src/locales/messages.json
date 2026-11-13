@@ -1551,7 +1551,9 @@
     "web/src/app/AgentAccessRow.tsx",
     "web/src/app/OAuthConsent.tsx",
     "web/src/app/RelayConfirm.tsx",
-    "web/src/app/palette/registry.ts"
+    "web/src/app/ShellNotifications.tsx",
+    "web/src/app/palette/registry.ts",
+    "web/src/app/shellExactNotice.ts"
   ],
   "Allow AI assistants": [
     "web/src/lib/settingsCopy.ts"
@@ -11706,6 +11708,9 @@
   "Notifications are blocked in your browser settings; reminders still appear in the app.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
   "Notifications are not allowed.": [
     "web/src/lib/push.ts"
   ],
@@ -14174,6 +14179,9 @@
   ],
   "Reminders delivered to this device, and a test": [
     "web/src/app/settingsIndex.ts"
+  ],
+  "Reminders may arrive a few minutes late.": [
+    "web/src/app/shellExactNotice.ts"
   ],
   "Reminders on this device and how notifications reach it.": [
     "web/src/app/SettingsView.tsx"
@@ -17275,6 +17283,7 @@
     "web/src/app/auditFormat.ts"
   ],
   "Task reopened": [
+    "web/src/app/task-list/boardReopen.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
   ],
@@ -17602,6 +17611,9 @@
     "web/src/lib/assistant.ts"
   ],
   "The app could not show a notification. Allow notifications for OpenTodo in Android's settings.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": [
     "web/src/app/ShellNotifications.tsx"
   ],
   "The app showed a test notification on this device.": [
@@ -25337,7 +25349,7 @@
     "web/src/app/BoardView.tsx"
   ],
   "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": [
-    "web/src/app/BoardView.tsx"
+    "web/src/app/FoldedStrip.tsx"
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx",

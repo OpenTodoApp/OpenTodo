@@ -531,9 +531,15 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         backgroundPermission.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
     }
 
-    override fun requestExactAlarms() {
+    /** The system's "Alarms & reminders" page for the app; a device without it gets the app's own settings page. */
+    override fun openAlarmSettings() {
         if (Build.VERSION.SDK_INT < 31) return
-        try { startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName"))) } catch (e: ActivityNotFoundException) { /* inexact alarms stay */ }
+        val app = Uri.parse("package:$packageName")
+        try {
+            startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, app))
+        } catch (e: ActivityNotFoundException) {
+            try { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app)) } catch (e2: ActivityNotFoundException) { /* inexact alarms stay */ }
+        }
     }
 
     private fun prompt(cipher: javax.crypto.Cipher, title: Int, done: (javax.crypto.Cipher?) -> Unit) {

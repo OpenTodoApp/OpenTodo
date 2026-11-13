@@ -7659,5 +7659,8 @@
   "template, meeting, journal, new note": "sjabloon, vergadering, dagboek, nieuwe notitie",
   "Note deleted": "Notitie verwijderd",
   "Note updated": "Notitie bijgewerkt",
-  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan."
+  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan.",
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Meldingen zijn niet toegestaan voor OpenTodo. Sta ze toe in de Instellingen van de iPhone (Meldingen → OpenTodo); herinneringen verschijnen nog steeds in de app.",
+  "Reminders may arrive a few minutes late.": "Herinneringen kunnen een paar minuten te laat komen.",
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "De app kon geen melding tonen. Sta meldingen voor OpenTodo toe in de Instellingen van de iPhone."
 }

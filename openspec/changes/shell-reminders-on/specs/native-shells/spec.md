@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: The notification permission is asked with the first reminder
-A shell with the `reminders` capability SHALL ask for the phone's notification permission only while the app is visible and only when it is handed a schedule with at least one reminder, and SHALL NOT ask at launch, from a background run, or again after the user answered. A background run that is handed reminders without the permission SHALL keep the schedule, answer that notifications are not allowed yet, and leave the question to the visible app. The web app SHALL treat an answer from a background run as no answer: it SHALL NOT turn the device's setting off because of it. Nothing here changes task data or needs the network.
+A shell with the `reminders` capability SHALL ask for the phone's notification permission only while the app is visible and only when it is handed a schedule with at least one reminder, and SHALL NOT ask at launch, from a background run, or again after the user answered. A background run that is handed reminders without the permission SHALL answer that notifications are not allowed yet and leave the question to the visible app, which is handed the schedule again whenever it opens. The web app SHALL treat an answer from a background run as no answer: it SHALL NOT turn the device's setting off because of it. Nothing here changes task data or needs the network.
 
 #### Scenario: First reminder on a fresh install
 - **WHEN** the user installs the app, signs in, and adds a task with a reminder for tomorrow

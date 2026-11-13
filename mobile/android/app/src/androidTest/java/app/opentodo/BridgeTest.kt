@@ -6,6 +6,7 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import android.view.View
 import android.webkit.WebView
 import android.widget.TextView
@@ -21,7 +22,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -73,6 +76,9 @@ class BridgeTest {
         assertEquals("\"android\"", web.js("window.opentodoShell.platform"))
         val caps = web.js("window.opentodoShell.capabilities.join(',')")
         for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
+        // shell-reminders-on: the alarm page only where exact alarms need a permission; never a background run's capability.
+        assertEquals("alarm-settings in $caps", Build.VERSION.SDK_INT >= 31, caps.split(',').contains("alarm-settings"))
+        assertFalse("background in $caps", caps.split(',').contains("background"))
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
@@ -80,6 +86,48 @@ class BridgeTest {
         web.waitForJs("typeof window.opentodoShell", "\"object\"")
         web.js("window.__r = null; window.opentodoShell.scheduleReminders('[]').then(function (r) { window.__r = r }); 0")
         web.waitForJs("window.__r", "\"granted\"")
+    }
+
+    /**
+     * shell-reminders-on D3: handing over reminders never opens a settings page. Exact alarms are
+     * allowed here (taking them away stops the app), so the refused case is the unit tests'.
+     */
+    @Test fun aScheduleStartsNoSettingsActivity() {
+        Intents.init()
+        try {
+            val (_, web) = open()
+            web.waitForJs("typeof window.opentodoShell", "\"object\"")
+            web.js(
+                "window.__s = null; window.opentodoShell.scheduleReminders(JSON.stringify([{id:'r1',taskId:'t1',fireAt:Date.now()+3600000,title:'Water the plants'}]))" +
+                    ".then(function (r) { window.__s = r }); 0",
+            )
+            web.waitForJs("window.__s === 'granted' || window.__s === 'exact-denied'", "true")
+            // The visible app's backgroundDone has no run to end: nothing happens.
+            web.js("window.opentodoShell.backgroundDone(); 0")
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            val settings = Intents.getIntents().filter { it.action?.startsWith("android.settings.") == true }
+            assertTrue("no settings page: $settings", settings.isEmpty())
+        } finally {
+            Intents.release()
+        }
+    }
+
+    /** The web app's Allow button: the system's exact-alarm page for this app. */
+    @Test fun openAlarmSettingsOpensTheSystemPage() {
+        assumeTrue("exact alarms need no permission before Android 12", Build.VERSION.SDK_INT >= 31)
+        Intents.init()
+        try {
+            intending(hasAction(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)).respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, null))
+            val (_, web) = open()
+            web.waitForJs("typeof window.opentodoShell", "\"object\"")
+            web.js("window.opentodoShell.openAlarmSettings(); 0")
+            val page = Uri.parse("package:${context.packageName}")
+            waitUntil("the exact-alarm page") {
+                Intents.getIntents().any { it.action == Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM && it.data == page }
+            }
+        } finally {
+            Intents.release()
+        }
     }
 
     @Test fun noBridgeOnAnotherOrigin() {

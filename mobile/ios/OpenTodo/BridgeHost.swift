@@ -7,12 +7,30 @@ import UIKit
 @MainActor
 final class BridgeHost: BridgeActions {
     private let interactive: Bool
+    /// The background run's end (shell-reminders-on D4); the visible app has none.
+    private let backgroundDone: (@MainActor () -> Void)?
 
-    init(interactive: Bool) { self.interactive = interactive }
+    init(interactive: Bool, backgroundDone: (@MainActor () -> Void)? = nil) {
+        self.interactive = interactive
+        self.backgroundDone = backgroundDone
+    }
 
-    func bridgedScheduleReminders(_ json: String) async -> String { await Reminders.shared.replace(json) }
+    /// shell-reminders-on D2: only the visible app may ask for the notification permission.
+    func bridgedScheduleReminders(_ json: String) async -> String {
+        await Reminders.shared.replace(json, interactive: interactive)
+    }
 
-    func bridgedTestNotification() async -> Bool { await Reminders.shared.test() }
+    /// The test notification asks for the permission, so a run without a screen sends none.
+    func bridgedTestNotification() async -> Bool {
+        guard interactive else { return false }
+        return await Reminders.shared.test()
+    }
+
+    /// shell-reminders-on D4: the web app of a background run is done; the visible app ignores it.
+    func bridgedBackgroundDone() {
+        guard !interactive else { return }
+        backgroundDone?()
+    }
 
     func bridgedPublishWidget(_ json: String) { WidgetPublication.publish(json) }
 

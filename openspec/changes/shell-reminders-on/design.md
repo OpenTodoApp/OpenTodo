@@ -25,7 +25,7 @@ Alternative: a first-run sheet that asks "Turn on reminders?". Rejected: the sys
 
 ### D2. The question comes with the first reminder, in the visible app
 
-Nothing changes on Android: the permission is requested only when a non-empty schedule arrives and the bridge has a host. iOS gets the same rule: a background run (`interactive == false`) no longer calls `requestAuthorization` when the status is not determined; it stores the schedule for the next visible hand-over and answers `denied`.
+Nothing changes on Android: the permission is requested only when a non-empty schedule arrives and the bridge has a host. iOS gets the same rule: a background run (`interactive == false`) no longer calls `requestAuthorization` when the status is not determined; it answers `denied` and schedules nothing; the visible app is handed the whole schedule again on every start, and asks then.
 
 The web app must not read a background run's `denied` as the user's answer. `publishReminders` stores the setting off on `denied` only when the shell has a screen, which it knows from a capability only the visible app lists (`links`). So D1's default survives until a person has actually been asked.
 
@@ -50,7 +50,7 @@ Alternative: `USE_EXACT_ALARM`, granted at install. Rejected: Google Play restri
 
 ### Data model, size
 
-No op field, no table, no server route. Two meta keys change their default, one is added (`shell:exactNoticed`); all are per device and never synced. `shellBackground.ts` is imported lazily, only in a background run; the first load gains the toast call and the default change, under 0.3 KB gzip.
+No op field, no table, no server route. Two meta keys change their default, one is added (`shell:exactNoticed`); all are per device and never synced. `shellBackground.ts` and the exact-alarm notice are imported only in a shell, and so is `shellPublish.ts` now, which a browser never needed: the first load shrinks from 702.4 to 701.8 KB gzip.
 
 ### Interface budget
 

@@ -17,7 +17,7 @@
 
 ## 4. iOS
 
-- [ ] 4.1 A background run does not ask for the notification permission; it keeps the schedule and answers `denied`. Verify: unit test of the decision (interactive or not, by authorization status); the `ios` CI job.
+- [ ] 4.1 A background run does not ask for the notification permission; it answers `denied`, and the visible app's next hand-over asks. Verify: unit test of the decision (interactive or not, by authorization status); the `ios` CI job.
 - [ ] 4.2 `backgroundDone` ends the background task; capability `background` only there. Verify: unit test of the capability lists and the handler; the `ios` CI job.
 
 ## 5. Docs and release
