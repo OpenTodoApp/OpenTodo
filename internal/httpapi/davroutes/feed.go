@@ -85,6 +85,7 @@ func (v *davView) feedTask(t opsync.Entity) (calfeed.FeedTask, bool) {
 	_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
 	_ = json.Unmarshal(t["priority"], &ft.Priority)
 	ft.Start = spanStart(t, due.Date)
+	ft.Places = v.placesOf(t)
 	var rule string
 	if json.Unmarshal(t["recurrence"], &rule) == nil && rule != "" {
 		if parsed, err := recurrence.Parse(rule); err == nil {
@@ -102,4 +103,25 @@ func (v *davView) feedTask(t opsync.Entity) (calfeed.FeedTask, bool) {
 		}
 	}
 	return ft, true
+}
+
+// placesOf is a task's calendar id and then its project's ancestors, nearest
+// first (calsync-project-calendars).
+func (v *davView) placesOf(t opsync.Entity) []string {
+	cal := v.calendarOf(t)
+	if cal == "" {
+		return nil
+	}
+	out := []string{cal}
+	seen := map[string]bool{cal: true}
+	for p := v.projects[cal]; p != nil; {
+		parent := idOf(p["parent_id"])
+		if parent == "" || seen[parent] {
+			break
+		}
+		seen[parent] = true
+		out = append(out, parent)
+		p = v.projects[parent]
+	}
+	return out
 }

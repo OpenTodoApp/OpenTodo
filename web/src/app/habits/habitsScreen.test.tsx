@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 // The Habits screen, the Today strip, the form and Habits off (OpenSpec change
-// habits-home, tasks 3.2, 4.1, 4.4, 5.1, 6.1, 6.2, 7.1, 8.1).
+// habits-home, tasks 3.2, 4.1, 4.4, 5.1, 6.1, 6.2, 7.1, 8.1), and habits-polish.
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../lib/db'
@@ -130,15 +130,97 @@ describe('the Today strip', () => {
     expect(strip.some((s) => s.task.id === run)).toBe(false)
   })
 
-  it('folds the rest into +N on a narrow screen and the heading folds the strip', async () => {
-    const ids: string[] = []
-    for (let i = 0; i < 9; i++) ids.push(await habit(`Habit ${i}`, 'every day', '2026-11-11'))
+  it('One quiet line: a Habits link through to the screen, rings that check in, titles that open the habit', async () => {
+    const read = await habit('Read', 'every day', '2026-11-11')
     const r = await render(<TaskListView route={{ view: 'today' }} />)
-    await waitFor(() => document.querySelectorAll('[data-strip-chip]').length > 0, 'the strip')
+    await waitFor(() => !!document.querySelector(`[data-strip-chip="${read}"]`), 'the line')
     expect(document.querySelectorAll('[data-task-id]').length).toBe(0)
-    await click(document.querySelector<HTMLElement>('[data-today-habits] [data-group-toggle]')!)
-    await waitFor(() => !document.querySelector('[data-strip]'), 'folded')
-    expect(localStorage.length).toBeGreaterThanOrEqual(0)
+    // No group heading, count or fold (habits-polish D1).
+    expect(document.querySelector('[data-today-habits] [data-group-toggle]')).toBeNull()
+    await click(document.querySelector<HTMLElement>(`[data-strip-chip="${read}"] [data-strip-check]`)!)
+    await waitFor(async () => !!(await db.tasks.get(occurrenceId(read, '2026-11-11')))?.completed_at, 'checked in')
+    await waitFor(() => !!document.querySelector(`[data-strip-chip="${read}"] [data-kept]`), 'filled')
+    await click(document.querySelector<HTMLElement>(`[data-strip-chip="${read}"] [data-strip-open]`)!)
+    expect(location.pathname).toBe(`/habits/${read}`)
+    await click(document.querySelector<HTMLElement>('[data-strip-habits]')!)
+    expect(location.pathname).toBe('/habits')
+    await r.unmount()
+  })
+})
+
+describe('habits-polish', () => {
+  it('A long title stays on one line, its name whole; every row has a check button, early for a habit due later', async () => {
+    const long = 'Practise the Bach cello suite in G major, first movement'
+    const cello = await habit(long, 'every day', '2026-11-11')
+    const run = await habit('Run', 'every mon, wed, fri', '2026-11-13')
+    const r = await render(<HabitsScreen />)
+    await waitFor(() => !!document.querySelector(`[data-habit-row="${run}"]`), 'the rows')
+    const title = document.querySelector<HTMLElement>(`[data-habit-row="${cello}"] [data-habit-title]`)!
+    expect(title.className).toContain('truncate')
+    expect(title.textContent).toBe(long)
+    const early = document.querySelector<HTMLElement>(`[data-check-in="${run}"]`)!
+    expect(early.dataset.later).toBe('true')
+    expect(early.getAttribute('aria-label')).toBe('Check in Run early (Friday 13 November)')
+    await click(early)
+    await waitFor(async () => !!(await db.tasks.get(occurrenceId(run, '2026-11-13')))?.completed_at, 'checked in early')
+    await r.unmount()
+  })
+
+  it('A habit opens its own page: facts, numbers, history and no task fields; Open as a task shows the task page', async () => {
+    const read = await habit('Read', 'every day', '2026-11-09')
+    await updateTask(read, { evening: true, habit_anchor: 'After dinner', habit_tiny: 'One page' })
+    await completeTask(read, { today: '2026-11-09' })
+    await completeTask(read, { today: '2026-11-10' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    navigate({ view: 'task', id: read })
+    await waitFor(() => !!document.querySelector(`[data-habit-page="${read}"]`), 'the habit page')
+    expect(document.body.textContent).toContain('Every day · This Evening · After dinner')
+    expect(document.querySelector('[data-habit-tiny-line]')!.textContent).toContain('One page')
+    expect(document.querySelector('[data-habit-numbers]')).toBeTruthy()
+    expect(document.querySelector('[data-detail-for]')).toBeNull()
+    expect(document.body.textContent).not.toContain('Past occurrences take')
+    navigate({ view: 'task', id: read, asTask: true })
+    await waitFor(() => !!document.querySelector(`[data-detail-for="${read}"]`), 'the task page')
+    await r.unmount()
+  })
+
+  it('A task made a habit on its own page stays on its task page', async () => {
+    const run = await createTask({ title: 'Run', due: { date: '2026-11-11' }, recurrence: 'every day' })
+    await setHabitsOn(true)
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    navigate({ view: 'task', id: run })
+    await waitFor(() => !!document.querySelector(`[data-detail-for="${run}"]`), 'the task page')
+    await updateTask(run, { habit: true })
+    await waitFor(async () => !!(await db.tasks.get(run))?.habit, 'a habit')
+    // The page never swaps for the habit page (it would within a few renders).
+    await expect(waitFor(() => !!document.querySelector(`[data-habit-page="${run}"]`), 'the habit page', 1500)).rejects.toThrow()
+    expect(document.querySelector(`[data-detail-for="${run}"]`)).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('Edit saves in one batch with the colour; "?" explains Tiny version and After', async () => {
+    const read = await habit('Read', 'every day', '2026-11-11')
+    const r = await render(<HabitFormDialog req={{ taskId: read }} task={(await db.tasks.get(read))!} />)
+    expect(document.querySelector('[data-testid="habit-form"]')?.textContent ?? document.body.textContent).toContain('Edit habit')
+    const hints = [...document.querySelectorAll<HTMLElement>('[data-field-hint]')].map((h) => h.getAttribute('aria-label'))
+    expect(hints).toEqual(['The two-minute version that still counts on a bad day', 'The routine this habit follows, like "After dinner"'])
+    const title = document.querySelector<HTMLInputElement>('[data-habit-title]')!
+    await type(title, 'Read a book')
+    await click(document.querySelector<HTMLElement>('[data-habit-colour="#22c55e"]')!)
+    await click(document.querySelector('[data-habit-save]')!)
+    await waitFor(async () => (await db.tasks.get(read))?.title === 'Read a book', 'saved')
+    expect((await db.tasks.get(read))!.habit_color).toBe('#22c55e')
+    await r.unmount()
+  })
+
+  it('Make it a habit gives a repeating task without a due date its first date', async () => {
+    const stretch = await createTask({ title: 'Stretch' })
+    await updateTask(stretch, { recurrence: 'every day' })
+    expect((await db.tasks.get(stretch))!.due).toBeNull()
+    const r = await render(<HabitFormDialog req={{ taskId: stretch }} task={(await db.tasks.get(stretch))!} />)
+    await click(document.querySelector('[data-habit-save]')!)
+    await waitFor(async () => !!(await db.tasks.get(stretch))?.habit, 'a habit')
+    expect((await db.tasks.get(stretch))!.due?.date).toBe('2026-11-11')
     await r.unmount()
   })
 })

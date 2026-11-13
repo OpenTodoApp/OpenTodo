@@ -4,11 +4,13 @@
 // a task the same way.
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { t } from '../lib/i18n'
+import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useLabels, useMembershipMap, useProjects, useTask } from '../lib/localData'
 import { roleOf } from '../lib/sharing'
 import type { Task, User } from '../lib/types'
 import { useMediaQuery } from '../ui'
 import { closePanel, closeTaskPanel, openTaskPanel, SPLIT_EMPTY_QUERY, SPLIT_QUERY, usePanel, usePanelHandlers, useSplitEmptyPane, useSplitKind } from './panel'
+import { navigate } from './router'
 import { PanelResizeHandle, SidePanelClose } from './sidePanel'
 import { TaskDetail } from './TaskDetail'
 
@@ -64,6 +66,16 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   useEffect(() => {
     if (taskId && (task === null || task?.deleted_at)) closePanel()
   }, [taskId, task])
+  // An open habit series opens its own page instead (habits-polish D3).
+  const habitsOn = useHabitsEnabled()
+  // Only a task that was a habit when it opened: one made a habit in the panel stays there.
+  const [openedAs, setOpenedAs] = useState<{ id: string; habit: boolean } | null>(null)
+  if (task && taskId && openedAs?.id !== taskId) setOpenedAs({ id: taskId, habit: !!task.habit })
+  const wasHabit = openedAs?.id === taskId ? openedAs.habit : !!task?.habit
+  const habit = !!task && habitsOn && wasHabit && !!task.habit && !task.series_id && !task.deleted_at
+  useEffect(() => {
+    if (habit && taskId) { closePanel(); navigate({ view: 'habits', id: taskId }) }
+  }, [habit, taskId])
 
   const emptyPane = emptyShown && empty ? <SplitPane side={kind === 'panel'}>{empty()}</SplitPane> : null
   if (!occupant) return emptyPane
@@ -71,7 +83,7 @@ export function PanelHost({ user }: { user?: Pick<User, 'id'> }) {
   // The first task after the empty pane is still reading, or turned out not to exist and
   // is about to leave: the pane stays until a task replaces it in one step, so the slot
   // never disappears for a frame (GitHub issue 442).
-  if (!shownTask) return emptyPane
+  if (!shownTask || habit) return emptyPane
   return (
     <TaskDetail
       // Remount per task so pickers and drafts never show the previous task's data.
