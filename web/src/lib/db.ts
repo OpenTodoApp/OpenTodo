@@ -469,6 +469,9 @@ class OpenTodoDB extends Dexie {
     this.version(28).stores({ themes: 'id, position' }) // v28 (theme-editor): the synced `theme` entity.
     this.version(29).stores({ objectives: 'id, period' }) // v29 (plan-objectives): the synced `objective` entity.
     this.version(30).stores({ memories: 'id, position' }) // v30 (assistant-memory): the synced `memory` entity.
+    // v31: a series' occurrence records and the pieces of a split series by index, so completing or
+    // skipping a repeating task reads its own rows and not every task (lineageRows.ts).
+    this.version(31).stores({ tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id, series_id, split_from.series' })
   }
 }
 
