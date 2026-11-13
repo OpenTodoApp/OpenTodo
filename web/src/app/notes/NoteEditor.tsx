@@ -120,7 +120,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
     <div className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} outline="auto" />
       </Suspense>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
         <span className="pt-2 text-meta text-muted">{t('Project')}</span>
@@ -180,8 +180,10 @@ export function NotePanel({ id }: { id: string }) {
   return (
     <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}
       edge={<PanelResizeHandle store={NOTE_PANEL_WIDTH} label={t('Resize the note')} />}>
-      <div className="mx-auto w-full max-w-[40rem] px-2 pt-2 pb-12 lg:px-4" data-note-column>
-        <NoteForm note={note} readOnly={!editable} />
+      <div data-outline-room>
+        <div className="note-column px-2 pt-2 pb-12 lg:px-4" data-note-column>
+          <NoteForm note={note} readOnly={!editable} />
+        </div>
       </div>
     </PanelFrame>
   )

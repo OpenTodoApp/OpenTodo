@@ -147,8 +147,8 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
             parent={m.parent ?? undefined} childCount={m.children.length} onOpen={onOpen} />
         </aside>
         {/* From 1024 px the notes follow the title as one block, as before: the grid's row gap is taken back. */}
-        <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-2 lg:-mt-3" data-task-notes-block>
-          <TaskNotes task={task} readOnly={locked} />
+        <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-2 lg:-mt-3" data-task-notes-block data-outline-room>
+          <TaskNotes task={task} readOnly={locked} outline="auto" />
           {!locked && (
             <div className="flex items-center gap-1" data-content-tools>
               <AttachMenu taskId={task.id} />

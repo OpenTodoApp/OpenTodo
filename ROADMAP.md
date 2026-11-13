@@ -169,7 +169,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
 | [`notes-bulk-actions`](openspec/changes/notes-bulk-actions/) | Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/note-markdown-source/) | Edit a note's Markdown source as plain text | |
-| [`note-outline`](openspec/changes/note-outline/) | An outline of a long note's headings | |
+| [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
 | [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
 | [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
 | [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |

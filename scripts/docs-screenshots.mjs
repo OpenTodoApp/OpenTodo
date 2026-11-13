@@ -395,6 +395,20 @@ const shots = [
   }, async after(p) {
     await p.keyboard.press('Escape'); await p.evaluate(() => localStorage.removeItem('ot.notes.sort'))
   } },
+  // The outline (note-outline): a note with four headings beside the list, its Outline menu open; removed after.
+  { name: 'note-outline', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const body = '# Flights\n\nTuesday at 9:40 from Terminal 2, window seats.\n\n## Outbound\n\nOne bag each.\n\n# Hotels\n\nTwo nights near the river, check-in after 15:00.\n\n# Days\n\nWalks, the tram, the market on Saturday.\n\n## Budget\n\nAbout 600 in all.'
+    p.outlineNote = await p.evaluate(async (d) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Trip to Lisbon', description: d }) })).json()).id, body)
+    const row = p.locator(`[data-note-key="note:${p.outlineNote}"]`); await row.waitFor(); await row.click()
+    await p.locator('[data-note-form] .notes-editor').waitFor(); await settle(p, 600)
+    const opener = p.locator('[data-note-form] [data-outline-open], [data-note-form] [data-note-outline="column"]').first(); await opener.waitFor()
+    if (await p.locator('[data-note-form] [data-outline-open]').count()) await p.locator('[data-note-form] [data-outline-open]').click()
+    await p.mouse.move(600, 700); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
+    await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.outlineNote).catch(() => {})
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())

@@ -35,6 +35,8 @@ import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
 import { useMentionTargets } from './useMentionTargets'
 import { filesFrom } from './task-detail/AttachmentsRow'
+import type { OutlinePlace } from './editor/NoteOutline'
+import { headingStops, useNoteOutline } from './editor/useNoteOutline'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
 
@@ -180,6 +182,19 @@ async function embedImages(view: EditorView, taskId: string, files: File[]): Pro
   view.focus()
 }
 
+/** Calls `save` when the page is hidden or unloaded; returns the cleanup. */
+function onLeave(save: () => void): () => void {
+  const onHide = () => { if (document.visibilityState === 'hidden') save() }
+  document.addEventListener('visibilitychange', onHide)
+  window.addEventListener('pagehide', save)
+  window.addEventListener('beforeunload', save)
+  return () => {
+    document.removeEventListener('visibilitychange', onHide)
+    window.removeEventListener('pagehide', save)
+    window.removeEventListener('beforeunload', save)
+  }
+}
+
 /** A document this device cannot read: its plain text instead. */
 function UnreadableNote({ text }: { text: string }) {
   return (
@@ -194,9 +209,11 @@ function UnreadableNote({ text }: { text: string }) {
   )
 }
 
-export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape }: {
+export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu' }: {
   note: NoteTarget
   readOnly: boolean
+  /** The outline (note-outline D2): 'auto' for a column when the `[data-outline-room]` around the note is wide; else the menu. */
+  outline?: OutlinePlace
   /** Focus the editor when it mounts (the project note opens in place). */
   autoFocus?: boolean
   /** Called on Escape after the editor lost focus (the project note returns to its rendered view). */
@@ -204,6 +221,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
 }) {
   const task = note
   const host = useRef<HTMLDivElement>(null)
+  const frame = useRef<HTMLDivElement>(null)
   const view = useRef<EditorView | null>(null)
   const ydoc = useRef<Y.Doc | null>(null)
   const bodyName = useRef('')
@@ -254,6 +272,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
   const envRef = useRef(env)
   envRef.current = env
+  const outline = useNoteOutline({ view, frame, readOnly, place: outlinePlace })
+  const outlineRef = useRef(outline)
+  outlineRef.current = outline
 
   // Lazy upgrade of a legacy note and folding of plain-text writes (REST, older
   // clients) happen when the note is opened, and again whenever its text changes
@@ -315,10 +336,13 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         pendingSubtask.current = null
         void mutate(p.entity, p.id, { deleted_at: Date.now() })
       },
+      outline: () => outlineRef.current.open(),
     }
     const v = new EditorView(host.current as HTMLDivElement, {
       state: createState(toModel(activeBody(doc)), hooks),
       editable: () => !readOnly,
+      // A read-only note's headings take focus from the outline (note-outline D3).
+      decorations: (state) => (readOnly ? headingStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
       nodeViews: { ...imageViews(entity === 'task' ? taskId : null), ...refViews },
       clipboardTextParser: (text) => markdownSlice(text),
@@ -355,6 +379,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       dispatchTransaction(tr) {
         const next = v.state.apply(tr)
         v.updateState(next)
+        // Local and remote edits alike (D1).
+        if (tr.docChanged) outlineRef.current.onState(next)
         if (!tr.docChanged || tr.getMeta(remoteKey) || !ydoc.current) return
         const d = ydoc.current
         d.transact(() => writeBody(activeBody(d), next.doc), LOCAL)
@@ -368,20 +394,13 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     view.current = v
     views.set(v.dom, v)
     setMounted((n) => n + 1)
+    outlineRef.current.onState(v.state)
     size.current = usage(doc, v.state.doc)
     if (autoFocus && !readOnly) v.focus()
-    const onHide = () => {
-      if (document.visibilityState === 'hidden') flush.current('now')
-    }
-    const onUnload = () => flush.current('now')
-    document.addEventListener('visibilitychange', onHide)
-    window.addEventListener('pagehide', onUnload)
-    window.addEventListener('beforeunload', onUnload)
+    const unwatch = onLeave(() => flush.current('now'))
     return () => {
       flush.current('now')
-      document.removeEventListener('visibilitychange', onHide)
-      window.removeEventListener('pagehide', onUnload)
-      window.removeEventListener('beforeunload', onUnload)
+      unwatch()
       v.destroy()
       view.current = null
       ydoc.current = null
@@ -390,7 +409,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   }, [taskId, unreadable]) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per task; later notes_doc/readOnly values arrive through the merge effect
 
   useEffect(() => {
-    view.current?.setProps({ editable: () => !readOnly })
+    view.current?.setProps({ editable: () => !readOnly, decorations: (state) => (readOnly ? headingStops(state.doc) : null) })
   }, [readOnly])
 
   // A newer stored document (a remote merge, or our own save coming back) is
@@ -421,7 +440,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
 
   if (unreadable) return <UnreadableNote text={task.description ?? ''} />
   return (
-    <div className="notes-frame space-y-1" data-formatting={formatting.offered || undefined}>
+    <div ref={frame} className="notes-frame space-y-1" data-formatting={formatting.offered || undefined} data-outline={outline.place}>
+      {outline.element}
       {/* Before the text in the Tab order, so Shift+Tab from the note reaches it (D2). */}
       {formatting.offered && <FormattingToggle className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />}
       {!readOnly && <EditorToolbar id={rowId} view={view.current} env={env} visible={editing || menuOpen} onMenu={setMenuOpen} always={formatting.open} />}
