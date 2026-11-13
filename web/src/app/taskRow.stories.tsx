@@ -459,9 +459,8 @@ export const ImportedOrigins: StoryObj = {
 }
 
 /**
- * The Inbox's source line at a tablet or landscape phone width (GitHub issue 1258): from 40 to
- * 48 rem the source is the second line, as on a phone; from 48 rem it sits beside the title,
- * at most 16 rem wide, so a long title keeps most of the row.
+ * The Inbox's source line at a tablet or landscape phone width (GitHub issue 1258): beside the
+ * title, at most 16 rem and 40 % of the row, cut with an ellipsis, so a long title keeps most of it.
  */
 export const InboxSourceWidths: StoryObj = {
   render: () => {

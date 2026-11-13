@@ -1344,12 +1344,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
      at about 100 characters before its two lines end, whatever room the column leaves. */
   [data-row-title] { max-width: 48rem; }
   /* The Inbox's source line, in the column's place: on the title's first line too. */
-  /* At most 16 rem, cut with an ellipsis, so the title keeps most of the row (GitHub issue 1258). */
-  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; max-width: 16rem; }
+  /* At most 16 rem and 40 % of the row, cut with an ellipsis, so the title keeps most of a narrow row (GitHub issue 1258). */
+  [data-row-source] { align-self: start; min-height: 1.25rem; margin-top: 0; margin-inline-start: 0.75rem; max-width: min(16rem, 40cqw); }
 }
 @container row (40rem <= width < 48rem) {
-  /* Too narrow for the title and the source side by side: the source is the second line, as on a phone. */
-  [data-row-source] { grid-area: 2 / 1 / 3 / 3; max-width: none; margin-inline-start: 0; margin-top: 0.125rem; }
   [data-row-props] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
   [data-row-props="project"] { --slot-labels: 0rem; }
   [data-row-props="project"] > [data-row-cell="labels"] { display: none; }
