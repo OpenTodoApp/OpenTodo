@@ -5,12 +5,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { evaluate, loadBudgets, median } from './budgets.mjs'
+import { report } from '../../mobile/app/perf/host.mjs'
 
 const budgets = loadBudgets()
 const page = readFileSync(new URL('../../docs/performance.md', import.meta.url), 'utf8')
 
 // The column of each setting in the page's tables.
-const COLUMNS = { desktop: 'Desktop', phone: 'Phone profile', 'device-android': 'Android', 'device-ios': 'iPhone', server: 'Server', pi4: 'Raspberry Pi 4' }
+const COLUMNS = { desktop: 'Desktop', phone: 'Phone profile', 'device-android': 'Android', 'device-ios': 'iPhone', server: 'Server', pi4: 'Raspberry Pi 4', 'app-simulator': 'Simulator', 'app-iphone': 'iPhone, native app' }
 
 /** Every row of every table whose first cell starts with a `metric-id`: id -> {column: cell}. */
 export function tableRows(markdown) {
@@ -72,4 +73,21 @@ test('the verdict is the median of the runs against the limit', () => {
   assert.equal(sync.ok, false)
   assert.equal(sync.failure, 'first sync, desktop, 41 s, budget 30 s')
   assert.match(r.metrics.find((m) => m.id === 'cold-start').failure, /not measured/)
+})
+
+test("the native app's run is judged against its budgets", () => {
+  const run = (over = {}) => ({
+    phase: 'measure', jsStartToTodayMs: 500, instructionMs: 150, coldStartMs: 1500, peakRssMB: 280,
+    inbox: { totalMs: 40 }, pull: { applyMs: 100, longestFrameMs: 18 }, complete: { toFrameP95Ms: 30, writeP95Ms: 9 }, ...over,
+  })
+  const results = [{ phase: 'baseline', peakRssMB: 245 }, run(), run(), run()]
+  const good = report({ device: '    iPhone 16 (X) (Booted)', results }, budgets)
+  assert.deepEqual(good.failures, [])
+  assert.match(good.text, /native app: JavaScript start to the Today list \| ≤ 800 ms \| 350 \(within\)/)
+  assert.match(good.text, /native app: memory over the empty app after the session \| ≤ 60 MB \| 35 \(within\)/)
+  // A slow Inbox fails the run, naming the metric; a metric the run lost fails too.
+  const slow = report({ device: '', results: [results[0], run({ inbox: { totalMs: 900 } })] }, budgets)
+  assert.deepEqual(slow.failures, ['native app: open Inbox, app-simulator, 900 ms, budget 300 ms'])
+  const lost = report({ device: '', results: [results[0], run({ complete: undefined })] }, budgets)
+  assert.deepEqual(lost.failures, ['native app: complete a task, to the frame without it, p95, app-simulator: not measured'])
 })
