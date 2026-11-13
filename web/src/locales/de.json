@@ -7590,5 +7590,8 @@
   "when a note gets the label {label}": "wenn eine Notiz das Label {label} bekommt",
   "when a note is created": "wenn eine Notiz erstellt wird",
   "when a note is edited": "wenn eine Notiz bearbeitet wird",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# Notiz passt jetzt} other {# Notizen passen jetzt}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# Notiz passt jetzt} other {# Notizen passen jetzt}}",
+  "Note deleted": "Notiz gelöscht",
+  "Note updated": "Notiz geändert",
+  "Titles and text arrive encrypted.": "Titel und Text kommen verschlüsselt an."
 }
