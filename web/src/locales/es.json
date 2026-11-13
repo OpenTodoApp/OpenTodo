@@ -6936,6 +6936,8 @@
   "{name}, revoked": "{name}, revocado",
   "{name}, {n, plural, one {# open task} other {# open tasks}}": "{name}, {n, plural, one {# tarea abierta} other {# tareas abiertas}}",
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# tarea abierta} other {# tareas abiertas}}, plegada",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}": "{name}, {n, plural, one {# tarea completada} other {# tareas completadas}}",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": "{name}, {n, plural, one {# tarea completada} other {# tareas completadas}}, plegada",
   "{name}, {n, plural, one {# task} other {# tasks}}": "{name}, {n, plural, one {# tarea} other {# tareas}}",
   "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# tarea} other {# tareas}}, plegada",
   "{name}: a proposal is waiting for your review": "{name}: una propuesta espera tu revisión",

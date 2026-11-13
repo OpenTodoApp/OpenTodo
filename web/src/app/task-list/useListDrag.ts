@@ -4,7 +4,7 @@
 // list; placing it among other rows needs a manually ordered list.
 import { useCallback, useRef, useState } from 'react'
 import { beginDrag } from '../../lib/dnd'
-import type { ListGroup, ListRow } from '../../lib/listGroups'
+import { COMPLETED_COLUMN, type ListGroup, type ListRow } from '../../lib/listGroups'
 import { moveTask } from '../../lib/move'
 import type { Section, Task } from '../../lib/types'
 import { flattenTree, type Tree } from '../../lib/tree'
@@ -114,13 +114,18 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         let id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
         // An own order moves within the task's group only (view-manual-order D4).
         if (id && now.groupOf && now.groupOf.get(id) !== now.groupOf.get(task.id)) id = null
+        // The Completed column has no order of its own: a card over it, or a completed card anywhere, goes to the column (board-completed-column D3).
+        const doneColumn = now.board && id ? completedMove(now.sectionOfRow, task.id, id) : null
+        if (doneColumn !== null) id = null
         const tree = !now.board && !now.reorder
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, tree) : null
         const gap = tree && id && zone ? gapAround(now.groups, own, id, zone) : null
         const depth = gap ? pointedDepth(startDepth, x - startX, step, gapDepths(gap.above, gap.below)) : undefined
         show(id && zone ? { id, zone, ...(depth !== undefined ? { depth } : {}) } : null)
         // A drop on a column lands last in it, so the placeholder follows its last card.
-        showColumn(manual && dragState.current.board && target?.startsWith('section:') ? target.slice('section:'.length) : null)
+        const over = target?.startsWith('section:') ? target.slice('section:'.length) : doneColumn
+        // A completed card's own column takes no drop: the column has no order (D3).
+        showColumn(manual && now.board && !(over === COMPLETED_COLUMN && now.sectionOfRow.get(task.id) === COMPLETED_COLUMN) ? over : null)
       },
       onDrop: (target) => {
         const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly } = dragState.current
@@ -134,6 +139,9 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         if (target.startsWith('task:') && reorder) {
           if (!current || current.zone === 'inside') return
           reorder(task.id, current.zone === 'before' ? { before: current.id } : { after: current.id })
+        } else if (target.startsWith('task:') && b && completedMove(secs, task.id, target.slice('task:'.length)) !== null) {
+          const key = completedMove(secs, task.id, target.slice('task:'.length))!
+          if (key !== secs.get(task.id)) moveToSection(task, key)
         } else if (target.startsWith('task:')) {
           const r = current ? rs.find((x) => x.task.id === current?.id) : undefined
           if (!r || !current) return
@@ -164,4 +172,14 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
   /** The section map of the latest render, for code that runs later (an `o` insertion). */
   const latestSectionMap = useCallback(() => dragState.current.sectionMap, [])
   return { dropAt, draggingId, placeholder, startDrag, latestSectionMap }
+}
+
+/**
+ * On a board with a Completed column: the column a card dropped over the card `overId` goes to
+ * when either card is in the Completed column (that column, or the other card's), else null.
+ */
+function completedMove(sectionOf: Map<string, string>, dragId: string, overId: string): string | null {
+  const from = sectionOf.get(dragId), to = sectionOf.get(overId)
+  if (to === undefined || (from !== COMPLETED_COLUMN && to !== COMPLETED_COLUMN)) return null
+  return to
 }

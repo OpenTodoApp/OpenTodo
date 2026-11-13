@@ -18,6 +18,8 @@ export interface BoardColumn {
   cards: Task[]
   /** Folded to a strip on this device (board-polish D1): the section is collapsed. */
   folded?: boolean
+  /** The Completed column (board-completed-column): completed cards, no quick add, no manual order. */
+  completed?: boolean
 }
 
 /** The drop target key of a section ('' = "No section"); shared with the list headings. */
@@ -76,7 +78,7 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
   onFold?: (key: string, folded: boolean) => void
 }) {
   const sections = columns.filter((c) => c.section)
-  const nameOf = (col: BoardColumn) => (col.section ? col.section.name || t('Untitled section') : t('No section'))
+  const nameOf = (col: BoardColumn) => (col.completed ? t('Completed') : col.section ? col.section.name || t('Untitled section') : t('No section'))
   // The pager and the page bar know only unfolded columns (D9).
   const open = columns.filter((c) => !c.folded)
   const names = open.map(nameOf)
@@ -132,17 +134,19 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
             key={col.key || 'none'}
             data-drop-target={sectionTarget(col.key)}
             data-column={col.key}
-            aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: open })}
+            aria-label={col.completed ? t('{name}, {n, plural, one {# completed task} other {# completed tasks}}', { name, n: open }) : t('{name}, {n, plural, one {# open task} other {# open tasks}}', { name, n: open })}
+            data-column-completed={col.completed || undefined}
             className="ui-column flex h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72"
           >
             <SectionHeader
               section={col.section}
+              name={col.completed ? name : undefined}
               count={open}
               layout="board"
               editable={editable}
               first={idx <= 0}
               last={idx === sections.length - 1}
-              onAdd={() => setAddingTo(col.key)}
+              onAdd={col.completed ? undefined : () => setAddingTo(col.key)}
               onFold={onFold ? () => onFold(col.key, true) : undefined}
             />
             {/* Cards lift on hover and focus; the dragged one fades while its placeholder shows where it lands. */}
@@ -151,12 +155,12 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
               {placeholder?.key === col.key && <li aria-hidden data-drop-placeholder className="ui-drop-placeholder" style={{ height: placeholder.height }} />}
             </ul>
             {/* "Add a task" ends every column's cards (D2); the header's plus opens the same field. */}
-            {editable && addingTo !== col.key && (
+            {editable && !col.completed && addingTo !== col.key && (
               <Button variant="ghost" size="sm" icon="plus" className="w-full justify-start text-muted" data-column-add={col.key} onClick={() => setAddingTo(col.key)}>
                 {t('Add a task')}
               </Button>
             )}
-            {addingTo === col.key && editable && (
+            {addingTo === col.key && editable && !col.completed && (
               <SectionQuickAdd project={project} sectionId={col.key || null} sectionName={name} projects={projects} labels={labels} onClose={() => setAddingTo(null)} />
             )}
           </section>
@@ -174,9 +178,9 @@ export function BoardView({ project, columns, editable, addingTo, setAddingTo, p
  * strip is one button that unfolds it; it stays a drop target for cards.
  */
 function FoldedColumn({ col, name, open, over, onUnfold }: { col: BoardColumn; name: string; open: number; over: boolean; onUnfold: () => void }) {
-  const label = t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name, n: open })
+  const label = col.completed ? undefined : t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name, n: open })
   return (
-    <section data-drop-target={sectionTarget(col.key)} data-column={col.key} data-folded="" data-drop-over={over || undefined} className="ui-column-strip">
+    <section data-drop-target={sectionTarget(col.key)} data-column={col.key} data-folded="" data-column-completed={col.completed || undefined} data-drop-over={over || undefined} className="ui-column-strip">
       <Suspense fallback={null}>
         <FoldedStrip id={col.key} name={name} label={label} count={open} mark={col.section && <SectionMark section={col.section} />} onUnfold={onUnfold} />
       </Suspense>

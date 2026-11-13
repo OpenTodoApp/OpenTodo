@@ -204,8 +204,9 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const share = liveTasks && projectFlowOf(project) !== 'area' ? shareOf(projectProgressOf(liveTasks).get(project.id)) : null
   const percent = share === null ? null : percentOf(share)
   const pinned = useIsFavourite('project', project.id)
-  // "Show completed tasks" (project-completed-section): a list-layout preference of this device.
-  const listLayout = useProjectViewMode(project.id) === 'list'
+  // "Show completed tasks" (project-completed-section): a preference of this device, in the list and the board (board-completed-column D1).
+  const layoutMode = useProjectViewMode(project.id)
+  const completedLayout = layoutMode === 'list' || layoutMode === 'board'
   const showCompleted = useShowCompletedPref(project.id)
 
   // Activity and History are occupants of the shell's panel slot (app-shell "The
@@ -242,7 +243,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   const connected = useConnected('project', project.id)
   const panels: ActionGroup = { items: [
     // A reusable list always shows its ticked items (reusable-lists D7), so it offers no switch.
-    ...(listLayout && !isReusable(project) ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
+    ...(completedLayout && !isReusable(project) ? [{ kind: 'check' as const, id: 'show-completed', label: t('Show completed tasks'), icon: 'circle-check-big' as const, checked: showCompleted, onSelect: () => saveShowCompleted(project.id, !showCompleted) }] : []),
     { kind: 'action', id: 'activity', label: t('Activity'), icon: 'history', shortcut: keysOf('project.activity'), onSelect: showActivity },
     { kind: 'action', id: 'history', label: t('History'), icon: 'rotate-ccw', onSelect: showHistory },
     // What links with the project (notes-graph D3), offered while something does.

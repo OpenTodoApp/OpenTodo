@@ -7111,6 +7111,8 @@
   "{name}, revoked": "{name}, ingetrokken",
   "{name}, {n, plural, one {# open task} other {# open tasks}}": "{name}, {n, plural, one {# openstaande taak} other {# openstaande taken}}",
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}, {n, plural, one {# openstaande taak} other {# openstaande taken}}, ingeklapt",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}": "{name}, {n, plural, one {# voltooide taak} other {# voltooide taken}}",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": "{name}, {n, plural, one {# voltooide taak} other {# voltooide taken}}, ingeklapt",
   "{name}, {n, plural, one {# task} other {# tasks}}": "{name}, {n, plural, one {# taak} other {# taken}}",
   "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}, {n, plural, one {# taak} other {# taken}}, ingeklapt",
   "{name}: a proposal is waiting for your review": "{name}: er wacht een voorstel op je beoordeling",

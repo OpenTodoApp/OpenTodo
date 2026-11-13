@@ -290,7 +290,7 @@ function focusedColumn(columns: ListColumn[]): ListColumn | undefined {
 }
 
 /** A column's name as the board shows it. */
-const columnName = (col: ListColumn) => (col.section ? col.section.name || t('Untitled section') : t('No section'))
+const columnName = (col: ListColumn) => (col.completed ? t('Completed') : col.section ? col.section.name || t('Untitled section') : t('No section'))
 
 /** The `board` scope: columns and cards; cards are not nested. A folded column shows no cards (board-polish). */
 function useBoardShortcuts(c: ShortcutContext, row: ListRow | undefined) {

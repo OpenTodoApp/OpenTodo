@@ -2570,6 +2570,7 @@
     "web/src/lib/colourNames.ts"
   ],
   "Board": [
+    "web/src/app/PublicLinksSection.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/themes/ThemePreview.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -3785,6 +3786,7 @@
   ],
   "Completed": [
     "web/src/app/AppearanceSection.tsx",
+    "web/src/app/BoardView.tsx",
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TaskListView.tsx",
@@ -3794,6 +3796,7 @@
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/useListShortcuts.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/feed.ts",
     "web/src/lib/rules/proposal.ts",
@@ -9223,6 +9226,7 @@
     "web/src/lib/attachments.ts"
   ],
   "List": [
+    "web/src/app/PublicLinksSection.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/connections/ConnectionsDialog.tsx",
     "web/src/app/menus/listMenu.tsx",
@@ -11090,6 +11094,7 @@
   ],
   "No section": [
     "web/src/app/BoardView.tsx",
+    "web/src/app/PublicListScreen.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/assistant/blocks/BoardBlock.tsx",
@@ -15892,6 +15897,7 @@
     "web/src/app/ProjectsSettings.tsx"
   ],
   "Show as": [
+    "web/src/app/PublicLinksSection.tsx",
     "web/src/app/connections/ConnectionsDialog.tsx"
   ],
   "Show as graph": [
@@ -25323,6 +25329,12 @@
   ],
   "{name}, revoked": [
     "web/src/app/CaldavPanel.tsx"
+  ],
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}": [
+    "web/src/app/BoardView.tsx"
+  ],
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": [
+    "web/src/app/BoardView.tsx"
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx",

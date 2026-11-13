@@ -7085,6 +7085,8 @@
   "{name}, revoked": "{name}，已撤销",
   "{name}, {n, plural, one {# open task} other {# open tasks}}": "{name}，{n, plural, other {# 项未完成任务}}",
   "{name}, {n, plural, one {# open task} other {# open tasks}}, folded": "{name}，{n, plural, other {# 项未完成任务}}，已折叠",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}": "{name}，{n, plural, other {# 项已完成任务}}",
+  "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": "{name}，{n, plural, other {# 项已完成任务}}，已折叠",
   "{name}, {n, plural, one {# task} other {# tasks}}": "{name}，{n, plural, other {# 项任务}}",
   "{name}, {n, plural, one {# task} other {# tasks}}, folded": "{name}，{n, plural, other {# 项任务}}，已折叠",
   "{name}: a proposal is waiting for your review": "{name}：有一项建议等待你审阅",
