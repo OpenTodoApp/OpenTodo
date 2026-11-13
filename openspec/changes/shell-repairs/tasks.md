@@ -12,18 +12,18 @@
 
 ## 3. Android
 
-- [ ] 3.1 `saveFile` on the bridge: chunk assembly in the cache directory, `ACTION_CREATE_DOCUMENT`, copy, clean-up, the three answers; capability `files` only with a screen. Verify: unit tests for assembly, name reduction, a new id discarding the old file, and the fixture; `make android`.
-- [ ] 3.2 `DownloadListener`: same-origin fetch with the web view's cookies into the cache file, then the save dialog; other addresses as foreign links. Verify: unit tests of the origin check and the file name from `Content-Disposition`; `make android`.
-- [ ] 3.3 Back: keep the callback enabled and move the task to the back on the first screen. Verify: an instrumented test that presses Back to leave, resumes, navigates and presses Back, and finds the activity resumed.
-- [ ] 3.4 `haptic` on the bridge and capability `haptics`. Verify: unit test of the kind mapping and the unknown kind; `make android`.
+- [x] 3.1 `saveFile` on the bridge: chunk assembly in the cache directory, `ACTION_CREATE_DOCUMENT`, copy, clean-up, the three answers; capability `files` only with a screen. Verify: unit tests for assembly, name reduction, a new id discarding the old file, and the fixture; `make android`.
+- [x] 3.2 `DownloadListener`: same-origin fetch with the web view's cookies into the cache file, then the save dialog; other addresses as foreign links. Verify: unit tests of the origin check and the file name from `Content-Disposition`; `make android`.
+- [x] 3.3 Back: keep the callback enabled and move the task to the back on the first screen. Verify: an instrumented test that presses Back to leave, resumes, navigates and presses Back, and finds the activity resumed.
+- [x] 3.4 `haptic` on the bridge and capability `haptics`. Verify: unit test of the kind mapping and the unknown kind; `make android`.
 
 ## 4. iOS
 
-- [ ] 4.1 Downloads: the download policy for the server's origin, `WKDownloadDelegate` into a temporary file, the export picker, clean-up. Verify: unit tests of the policy decision (own origin, `blob:`, foreign host) in `OpenTodoTests`; the `ios` CI job.
+- [x] 4.1 Downloads: the download policy for the server's origin, `WKDownloadDelegate` into a temporary file, the export picker, clean-up. Verify: unit tests of the policy decision (own origin, `blob:`, foreign host) in `OpenTodoTests`; the `ios` CI job.
 - [x] 4.2 `NSFaceIDUsageDescription` in `project.yml` and its translations. Verify: a unit test reads the key from the bundle; a repo check that the key exists.
-- [ ] 4.3 Done: the third notification action and `done` passed through `AppModel`. Verify: unit test that `show(reminder:action:"done")` builds the fixture's address.
-- [ ] 4.4 Status bar icons from the stored choice through the root controller, applied at launch and on hand-over, without changing the page's colour scheme. Verify: unit test of the stored choice to style mapping; the UI walkthrough still launches.
-- [ ] 4.5 `haptic` on the bridge and capability `haptics` (not in a background run). Verify: unit test of the kind mapping and of the capability list.
+- [x] 4.3 Done: the third notification action and `done` passed through `AppModel`. Verify: unit test that `show(reminder:action:"done")` builds the fixture's address.
+- [x] 4.4 Status bar icons from the stored choice through the root controller, applied at launch and on hand-over, without changing the page's colour scheme. Verify: unit test of the stored choice to style mapping; the UI walkthrough still launches.
+- [x] 4.5 `haptic` on the bridge and capability `haptics` (not in a background run). Verify: unit test of the kind mapping and of the capability list.
 
 ## 5. Docs and release
 
