@@ -39,6 +39,11 @@ func (r Rule) RRULE() string {
 	case kWorkday:
 		parts = append(parts, "FREQ=MONTHLY", "BYDAY=MO,TU,WE,TH,FR", "BYSETPOS="+strconv.Itoa(r.ordinal))
 	case kNthWeekday:
+		if r.month > 0 {
+			// every last sunday of march (yearly-weekday-of-month D2).
+			parts = append(parts, "FREQ=YEARLY", "BYMONTH="+strconv.Itoa(r.month), "BYDAY="+strconv.Itoa(r.ordinal)+rruleDays[r.weekday])
+			break
+		}
 		parts = append(parts, "FREQ=MONTHLY", "BYDAY="+strconv.Itoa(r.ordinal)+rruleDays[r.weekday])
 	}
 	if r.until != "" {
@@ -295,6 +300,9 @@ func FromRRULE(value, due string) (rule Rule, ok bool) {
 		}
 		return Rule{}, false
 	case "YEARLY":
+		if hasDay && hasMonth && !hasSetpos && !hasMonthDay && interval == 1 {
+			return r.weekdayOfMonth(byday, bymonth)
+		}
 		if hasDay || hasSetpos {
 			return Rule{}, false
 		}
@@ -329,4 +337,21 @@ func parseDayMask(s string) (uint8, bool) {
 		mask |= 1 << wd
 	}
 	return mask, true
+}
+
+// weekdayOfMonth reads BYDAY=-1SU with BYMONTH=3 into r as `every last sunday
+// of march` (yearly-weekday-of-month D2); one weekday and one month only.
+func (r Rule) weekdayOfMonth(byday, bymonth string) (Rule, bool) {
+	if strings.Contains(byday, ",") || strings.Contains(bymonth, ",") {
+		return Rule{}, false
+	}
+	mo, merr := strconv.Atoi(bymonth)
+	ordText, day := byday[:max(0, len(byday)-2)], byday[max(0, len(byday)-2):]
+	wd := dayIndex(day)
+	ord, err := strconv.Atoi(strings.TrimPrefix(ordText, "+"))
+	if merr != nil || mo < 1 || mo > 12 || wd == 0 || err != nil || !(ord == -1 || ord >= 1 && ord <= 4) {
+		return Rule{}, false
+	}
+	r.kind, r.ordinal, r.weekday, r.month = kNthWeekday, ord, wd, mo
+	return r, true
 }
