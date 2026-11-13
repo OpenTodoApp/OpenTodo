@@ -2,7 +2,8 @@
 // calendar-two-way): connect a CalDAV account, choose its calendars, enter a new
 // app password, and the owner's Google and Microsoft clients.
 import { useState } from 'react'
-import { Button, Combobox, Dialog, Field, hueFor, Input, LabelChip, LearnMore, Notice, Switch } from '../ui'
+import { Button, Combobox, Dialog, Field, hueFor, Input, LabelChip, LearnMore, Notice, RadioGroup, Switch } from '../ui'
+import { useProjectsOfEveryWorkspace } from '../lib/localData'
 import type { CalendarConnection, CalendarConnectionPatch, GoogleClientSetting, MicrosoftClientSetting, SyncCalendar } from '../lib/types'
 import { ago } from '../lib/dates'
 import { allScope, SyncScopeField } from './SyncScopeField'
@@ -79,6 +80,10 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
   const [read, setRead] = useState<string[]>(connection.read)
   const [dateOnly, setDateOnly] = useState(connection.include_date_only)
   const [scope, setScope] = useState(connection.scope ?? allScope())
+  // A calendar per project (calsync-project-calendars): matches by project id.
+  const [perProject, setPerProject] = useState(Object.keys(connection.project_calendars ?? {}).length > 0)
+  const [matches, setMatches] = useState<Record<string, string>>(connection.project_calendars ?? {})
+  const projects = useProjectsOfEveryWorkspace().filter((pr) => !pr.deleted_at && !pr.archived)
   const byUrl = new Map(connection.calendars.map((c) => [c.url, c]))
   const others = connection.calendars.filter((c) => c.url !== target)
   const toggle = (url: string) => setRead((cur) => (cur.includes(url) ? cur.filter((u) => u !== url) : [...cur, url]))
@@ -86,7 +91,12 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
   return (
     <Dialog title={t('Calendars of {name}', { name: connection.name })} onClose={p.onClose} size="md">
       <form className="space-y-4" data-testid="calendar-choice"
-        onSubmit={(e) => { e.preventDefault(); onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly, scope }) }}>
+        onSubmit={(e) => {
+          e.preventDefault()
+          const chosen = perProject ? Object.fromEntries(Object.entries(matches).filter(([, u]) => u && u !== target)) : {}
+          const had = Object.keys(connection.project_calendars ?? {}).length > 0
+          onSave({ target, read: read.filter((u) => u !== target), include_date_only: dateOnly, scope, ...(perProject || had ? { project_calendars: chosen } : {}) })
+        }}>
         <fieldset className="space-y-2">
           <legend className="text-body font-medium text-default">{t('Write tasks into')}</legend>
           <p className="text-meta text-muted">{t('Dated tasks become events in this calendar. Choose one you use only for tasks, or your main one.')}</p>
@@ -94,6 +104,25 @@ export function CalendarsDialog({ connection, onSave, ...p }: FormProps & { conn
           <Combobox label={t('Write tasks into')} placeholder={t('Find a calendar…')} source={writable} getKey={(c: SyncCalendar) => c.url}
             getLabel={(c: SyncCalendar) => c.name} selected={target ? [target] : []} emptyText={t('No calendar of this account can be written.')}
             renderLeading={dot} onPick={(c: SyncCalendar) => setTarget(c.url)} />
+          {writable.length > 1 && (
+            <RadioGroup variant="list" label={t('Write to')} name="calendar-per-project" dataKey="calendar-per-project" value={perProject ? 'projects' : 'one'}
+              onChange={(v) => setPerProject(v === 'projects')}
+              options={[{ value: 'one', label: t('One calendar') }, { value: 'projects', label: t('A calendar per project') }]} />
+          )}
+          {perProject && writable.length > 1 && (
+            <ul className="space-y-1" data-project-calendars aria-label={t('A calendar per project')}>
+              {projects.map((pr) => (
+                <li key={pr.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate text-body">{pr.name}</span>
+                  <select className="ui-input w-48 py-1 text-meta" aria-label={t('Calendar of {name}', { name: pr.name })} value={matches[pr.id] ?? ''}
+                    onChange={(e) => setMatches((cur) => ({ ...cur, [pr.id]: e.target.value }))} data-project-calendar={pr.id}>
+                    <option value="">{t('The calendar above')}</option>
+                    {writable.filter((c) => c.url !== target).map((c) => <option key={c.url} value={c.url}>{c.name}</option>)}
+                  </select>
+                </li>
+              ))}
+            </ul>
+          )}
         </fieldset>
         <fieldset className="space-y-2">
           <legend className="text-body font-medium text-default">{t('Also show in Day and Week')}</legend>

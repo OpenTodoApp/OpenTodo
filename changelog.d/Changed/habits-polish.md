@@ -1,0 +1,1 @@
+- **Leaner habits.** Today's habits are one quiet line with a link to Habits; rows keep long titles on one line and every row has a check button; a habit opens a page of its own with its facts, numbers and history, and **Open as a task** for everything else; one lean form for New habit, Make it a habit and Edit adds a colour and a "?" that explains Tiny version and After.
