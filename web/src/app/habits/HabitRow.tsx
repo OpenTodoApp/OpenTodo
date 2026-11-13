@@ -59,14 +59,15 @@ export function CheckButton({ series, state, today, compact = false }: { series:
           ${kept ? 'bg-hue-solid text-surface' : state === 'later' ? 'border-dashed text-hue hover:bg-hue-soft' : 'text-hue hover:bg-hue-soft'} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus`}>
         <Icon name="check" size="sm" className={kept ? '' : 'opacity-0'} />
       </button>
-      {!kept && !compact && (
+      {/* The menu's slot keeps its width on a kept row, so buttons and measures line up (habits-polish D2). */}
+      {!compact && <span className="flex w-7 justify-center">{!kept && (
         <ActionMenu label={t('More ways to check in {title}', { title })} align="end" width="sm:w-56"
           trigger={<Icon name="chevron-down" size="xs" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1 text-faint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
           groups={[{ items: [
             { kind: 'action', id: 'done', label: t('Check in'), icon: 'check', shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) },
             { kind: 'action', id: 'tiny', label: series.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: series.habit_tiny }) : t('Log the tiny version'), icon: 'circle', shortcut: 'Shift+Space', onSelect: () => checkInWithUndo(series.id, true) },
           ] }]} />
-      )}
+      )}</span>}
     </span>
   )
 }

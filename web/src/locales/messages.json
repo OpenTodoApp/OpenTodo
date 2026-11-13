@@ -3096,7 +3096,11 @@
     "web/src/app/IssueEditor.tsx"
   ],
   "Check in": [
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
+  ],
+  "Check in early": [
+    "web/src/app/habits/HabitPage.tsx"
   ],
   "Check in {title}": [
     "web/src/app/habits/HabitRow.tsx",
@@ -5249,6 +5253,7 @@
   ],
   "Done today": [
     "web/src/app/display/DisplayScreen.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/lib/listGroups.ts"
   ],
@@ -9403,9 +9408,11 @@
     "web/src/app/palette/BarParts.tsx"
   ],
   "Log the tiny version": [
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
   "Log the tiny version: {tiny}": [
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
   "Logged as done": [

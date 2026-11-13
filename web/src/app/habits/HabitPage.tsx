@@ -23,8 +23,8 @@ import { useToday } from '../useViews'
 import { openHabitForm } from './habitFormStore'
 import { habitFacts } from './habitRule'
 import { habitHue } from './habitText'
-import { CheckButton, checkStateOf } from './HabitRow'
-import { pickDay } from './habitUndo'
+import { checkStateOf, type CheckState } from './HabitRow'
+import { checkInWithUndo, pickDay } from './habitUndo'
 
 const HabitHistory = lazy(() => import('../HabitHistory').then((m) => ({ default: m.HabitHistory })))
 
@@ -51,8 +51,19 @@ function Numbers({ stats }: { stats: HabitStats }) {
   )
 }
 
-function menuItems(task: Task, graduated: boolean, choice: ReturnType<typeof useHabitsChoice>): ActionItem[] {
+/** Check in as a labelled button: Done today once kept, Check in early for a habit due later. */
+function CheckIn({ task, state }: { task: Task; state: CheckState }) {
+  const kept = state === 'kept'
+  return (
+    <Button size="sm" variant={kept ? 'ghost' : 'secondary'} icon="check" disabled={kept} onClick={() => act(checkInWithUndo(task.id, false))} data-check-in={task.id} data-kept={kept || undefined}>
+      {kept ? t('Done today') : state === 'later' ? t('Check in early') : t('Check in')}
+    </Button>
+  )
+}
+
+function menuItems(task: Task, graduated: boolean, kept: boolean, choice: ReturnType<typeof useHabitsChoice>): ActionItem[] {
   return [
+    ...(!graduated && !kept ? [{ kind: 'action' as const, id: 'tiny', label: task.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: task.habit_tiny }) : t('Log the tiny version'), icon: 'circle' as const, onSelect: () => checkInWithUndo(task.id, true) }] : []),
     { kind: 'action', id: 'edit', label: t('Edit'), icon: 'pencil', onSelect: () => openHabitForm({ taskId: task.id }) },
     graduated
       ? { kind: 'action', id: 'resume', label: t('Resume'), icon: 'rotate-ccw', onSelect: () => undo(resume(task.id)) }
@@ -92,8 +103,8 @@ export function HabitPage({ id }: { id: string }) {
       <div data-hue={habitHue(task, colour)}>
         <PageHeader title={task.title || t('Untitled')} back={back} meta={habitFacts(task)}
           leading={<span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />}
-          actions={graduated ? undefined : <CheckButton series={task} state={state} today={today} />}
-          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, choice) }]} />} />
+          actions={graduated ? undefined : <CheckIn task={task} state={state} />}
+          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state === 'kept', choice) }]} />} />
         <div className="space-y-5 px-1 pb-8">
           {task.habit_tiny && (
             <p className="text-body text-muted" data-habit-tiny-line><span className="text-default">{t('Tiny version')}</span> · {task.habit_tiny}</p>

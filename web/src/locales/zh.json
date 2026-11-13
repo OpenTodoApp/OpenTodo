@@ -862,6 +862,7 @@
   "Check / uncheck item": "勾选 / 取消勾选条目",
   "Check for changes": "检查更改",
   "Check in": "打卡",
+  "Check in early": "提前打卡",
   "Check in {title}": "为“{title}”打卡",
   "Check in {title} early ({date})": "提前打卡“{title}”（{date}）",
   "Check list": "核对清单",
