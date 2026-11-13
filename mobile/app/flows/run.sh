@@ -6,8 +6,8 @@
 # With OT_SERVER_BIN (a server binary with the web app built in), a throwaway server is
 # started on a new data directory and an account is registered; otherwise SERVER names a
 # running one that has the account. The app must be installed on the booted simulator or
-# emulator. Maestro's report and its screenshots (debug/.maestro/tests/…/takeScreenshot) go to OUT
-# (default: flows/out).
+# emulator. Maestro's report, its log and each flow's screenshots (the named ones, and the screen at a failure) go to OUT
+# (default: flows/out), in a folder per flow.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -39,6 +39,6 @@ fi
 mkdir -p "$OUT"
 [ $# -gt 0 ] || set -- sign-in.yaml
 for flow in "$@"; do
-  maestro test --format junit --output "$OUT/${flow%.yaml}.xml" --debug-output "$OUT/debug" \
+  maestro test --format junit --output "$OUT/${flow%.yaml}.xml" --debug-output "$OUT/${flow%.yaml}" --flatten-debug-output \
     -e APP_ID="$app" -e SERVER="$SERVER" -e ACCOUNT_EMAIL="$ACCOUNT_EMAIL" -e ACCOUNT_PASSWORD="$ACCOUNT_PASSWORD" -e ACCOUNT_NAME="$ACCOUNT_NAME" "$flow"
 done
