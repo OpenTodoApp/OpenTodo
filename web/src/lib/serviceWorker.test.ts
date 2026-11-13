@@ -23,8 +23,9 @@ describe('built service worker', () => {
     expect(sw).toMatch(/"revision":"[0-9a-f]+"/)
     expect(sw).not.toContain('self.__WB_MANIFEST')
     // A task page (/t/) is its own document, never the app (task-pages D8), and the
-    // OAuth endpoints and discovery documents reach the server too (mcp-oauth).
-    expect(sw).toContain('[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//,/^\\/oauth\\//,/^\\/\\.well-known\\//,/^\\/mcp$/]')
+    // OAuth endpoints and discovery documents reach the server too (mcp-oauth), and the
+    // OpenTodo app's sign-in (native-app-foundation D5).
+    expect(sw).toContain('[/^\\/api\\//,/^\\/healthz/,/^\\/t\\//,/^\\/oauth\\//,/^\\/app\\/sign-in$/,/^\\/\\.well-known\\//,/^\\/mcp$/]')
     expect(sw).toContain('push-sw.js')
     expect(sw).toContain('/share?inbox=')
     expect(sw).toContain('opentodo-share')
