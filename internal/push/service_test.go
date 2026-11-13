@@ -524,3 +524,27 @@ func TestSendTest(t *testing.T) {
 		t.Fatalf("failure not counted: %+v", f)
 	}
 }
+
+// A graduated habit fires no reminder (habits-home D7), as a completed task.
+func TestGraduatedHabitFiresNoReminder(t *testing.T) {
+	e := newTestEnv(t)
+	f := newFakePush(t)
+	ctx := context.Background()
+	s := e.service()
+	if _, _, err := s.Upsert(ctx, "u1", "", f.input("phone", false)); err != nil {
+		t.Fatal(err)
+	}
+	now := e.clock.UnixMilli()
+	e.apply(t, "u1", map[string]map[string]any{
+		"task:floss": {"title": "Floss", "habit": true, "habit_graduated_at": now - 5000, "completed_at": nil, "deleted_at": nil},
+		"task:read":  {"title": "Read", "habit": true, "completed_at": nil, "deleted_at": nil},
+	})
+	e.reminder(t, "u1", "r-floss", "floss", now-60_000)
+	e.reminder(t, "u1", "r-read", "read", now-60_000)
+	if n, err := s.Tick(ctx); err != nil || n != 1 {
+		t.Fatalf("tick recorded %d, %v", n, err)
+	}
+	if got := f.received(); len(got) != 1 || got[0].ReminderID != "r-read" {
+		t.Fatalf("pushed = %+v, want only r-read", got)
+	}
+}

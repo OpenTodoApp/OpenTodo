@@ -1,3 +1,4 @@
+import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
 import { Button, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { ProjectMark } from './ProjectMark'
@@ -414,7 +415,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   // The More group (app-shell "Sidebar structure"): the less frequent destinations,
   // collapsed by default on this device; a promoted destination (appearance
   // preferences, synced) leaves it for the primary items.
-  const promoted = appearance.sidebar ?? []
+  const promoted = appearance.sidebar ?? [], habitsOn = useHabitsEnabled()
   const unreadBadge = unread.total > 0 ? <UnreadBadge n={unread.total} label={t('unread updates')} /> : undefined
   // The weekly review (stats-and-review): when the last one was, and a marker once it is due.
   const method = readMethodMode(prefsRow)
@@ -422,7 +423,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   const { text: reviewText, marker: reviewDot } = reviewMarker(review, method, today)
   // Each More destination once, as data: an item in the inline group, or a menu item
   // (with its badge as the item's description) in the desktop menu.
-  const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available })
+  const moreEntries = moreEntriesOf({ shared: sharedIds.size > 0, reviewDot, reviewText, unreadBadge, unreadTotal: unread.total, ask: !!assistant?.available, habits: habitsOn })
   const first = method === 'first', calendarMode = readCalendarMode()
   const moreList = first ? firstModeMore(moreEntries, calendarMode) : moreEntries
   const more = moreList.map((m) => ({ ...m, node: item(m.route, m.label, m.icon, undefined, m.badge, m.tip) }))
@@ -680,7 +681,7 @@ function UnreadBadge({ n, label }: { n: number; label: string }) {
 type MoreEntry = { id: Promotable | 'ask' | 'review' | 'stats' | 'upcoming' | 'calendar' | 'places' | 'rules'; route: Route; label: string; icon: IconName; badge?: ReactNode; note?: string; tip?: string }
 
 /** The More group's destinations, each once, as data (app-shell "Sidebar structure"). */
-function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean }): MoreEntry[] {
+function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: string; unreadBadge: ReactNode; unreadTotal: number; ask: boolean; habits: boolean }): MoreEntry[] {
   return [
     // The Open Loops views (open-loops-method D7, D9), in every mode.
     { id: 'loop', route: { view: 'loop' }, label: t('Loop home'), icon: 'rotate-ccw' },
@@ -695,6 +696,8 @@ function moreEntriesOf(o: { shared: boolean; reviewDot: ReactNode; reviewText: s
     { id: 'stats', route: { view: 'stats' }, label: t('Statistics'), icon: 'chart-column' },
     // Focus (focus-everywhere D1): after Statistics in every mode, promotable, no count.
     { id: 'focus', route: { view: 'focus' }, label: t('Focus'), icon: 'clock' },
+    // Habits (habits-home D9): after Focus while Habits is on, promotable; nothing at all while it is not.
+    ...(o.habits ? [{ id: 'habits' as const, route: { view: 'habits' } as Route, label: t('Habits'), icon: 'leaf' as IconName }] : []),
     ...(o.shared ? [{ id: 'feed' as const, route: { view: 'feed' } as Route, label: t('Updates'), icon: 'newspaper' as IconName, badge: o.unreadBadge, note: o.unreadTotal > 0 ? `${formatUnread(o.unreadTotal)} ${t('unread updates')}` : undefined }] : []),
     // Saved locations (task-locations "Locations page"): in More in every mode, never primary.
     { id: 'places', route: { view: 'places' }, label: t('Locations'), icon: 'map-pin' },

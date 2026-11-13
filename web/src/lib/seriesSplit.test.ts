@@ -116,7 +116,7 @@ describe('pieces of one lineage', () => {
     const rows = [root, piece, rec('r', '2026-10-11'), rec('r', '2026-10-12'), rec('p', '2026-10-14')]
     const one = habitStats(piece, rows, '2026-10-15')
     // The 13th is the root's last occurrence, completed when it ended.
-    expect(one).toEqual({ current: 4, best: 4, pending: true, atRisk: false })
+    expect(one).toMatchObject({ current: 4, best: 4, pending: true, overdue: false })
     expect(habitStats(piece, [...rows].reverse(), '2026-10-15')).toEqual(one)
   })
 })

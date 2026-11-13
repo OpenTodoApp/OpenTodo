@@ -1,20 +1,20 @@
 import { Icon } from '../ui'
 import { keysOf } from '../lib/shortcuts'
-import { Switch, Tooltip } from '../ui'
+import { Tooltip } from '../ui'
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSeriesRecords } from '../lib/localData'
 import { formatShort, logicalToday, weekday } from '../lib/dates'
-import { habitRule, habitStats } from '../lib/habits'
-import { detachOccurrence, mutate, setRecurrence, skipOccurrence } from '../lib/ops'
+import { habitRule } from '../lib/habits'
+import { detachOccurrence, setRecurrence, skipOccurrence } from '../lib/ops'
 import { firstOccurrence, parseRule, previewOccurrences, RULE_SUGGESTIONS } from '../lib/recurrence'
 import { pieceRule, seriesBudget } from '../lib/recurring'
 import { walkOccurrences } from '../lib/occurrences'
 import type { Task } from '../lib/types'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+// The habit section loads with the first habit (habits-home): none of it is on the first load.
+const HabitSection = lazy(() => import('./habits/HabitSection').then((m) => ({ default: m.HabitSection })))
 
-// The month grid shows only for a habit: loaded with the first one (assistant-project-blocks shares it).
-const HabitHistory = lazy(() => import('./HabitHistory').then((m) => ({ default: m.HabitHistory })))
 
 /**
  * The detail panel's recurrence controls (OpenSpec change recurring-tasks): the
@@ -62,7 +62,6 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
   const recurring = !!task.recurrence && !task.completed_at
   // Habits (OpenSpec habits): only a calendar rule has a schedule to measure.
   const habitOffered = recurring && !task.deleted_at && habitRule(task) !== null
-  const stats = useMemo(() => (habitOffered && task.habit ? habitStats(task, related, today) : null), [habitOffered, task, related, today])
   const skip = async () => {
     setNotice((await skipOccurrence(task.id)) ? null : t('This is the last occurrence; complete or delete it instead.'))
   }
@@ -119,18 +118,7 @@ export function RecurrenceField({ task, onOpen }: { task: Task; onOpen?: (id: st
         </div>
       )}
       {notice && <p className="text-meta text-muted" role="status">{notice}</p>}
-      {habitOffered && (
-        <div className="space-y-2 pt-2" data-habit>
-          <Switch checked={!!task.habit} onChange={(v) => act(mutate('task', task.id, { habit: v }))} label={t('Track as a habit')}
-            description={t('Streaks and a month history, counted on this device from the days done')} />
-          {stats && (
-            <>
-              <p className="text-meta text-muted" data-habit-streak>{t('Streak {current} · Best {best}', { current: stats.current, best: stats.best })}{stats.atRisk ? ` · ${t('at risk')}` : ''}</p>
-              <Suspense fallback={null}><HabitHistory series={task} records={related} today={today} /></Suspense>
-            </>
-          )}
-        </div>
-      )}
+      {habitOffered && <Suspense fallback={null}><HabitSection task={task} related={related} today={today} /></Suspense>}
     </div>
   )
 }

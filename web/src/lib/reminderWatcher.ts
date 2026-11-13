@@ -63,6 +63,8 @@ export function dueReminders(
   for (const r of reminders) {
     const task = tasks.get(r.task_id)
     if (!isDue(r, task, now)) continue
+    // A graduated habit fires no reminder (habits-home D7).
+    if (task?.habit_graduated_at != null) continue
     if (inQuietProject(task?.project_id, projects)) continue
     const s = shown[r.id]
     if (s && s.by === 'sw' && s.fireAt === r.fire_at) continue

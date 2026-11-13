@@ -34,7 +34,7 @@ Completing a repeating task records that occurrence and moves the task to its ne
 
 Turn on **Track as a habit** under **Repeat** (for rules like `every day`, not `after completion`). The row shows a flame chip with your streak; the task panel shows your best streak and a month grid of done, skipped and missed days, counted on your device.
 
-**Skip** keeps the chain without adding to it; a scheduled day that passes undone breaks it. A daily habit due Monday and completed Wednesday misses Tuesday and Wednesday. Save the query `habit` as a view to list your habits. See [Habits](recurrence.md#habits).
+**Skip** keeps the chain without adding to it; a scheduled day that passes undone breaks it. A daily habit due Monday and completed Wednesday misses Tuesday and Wednesday. Save the query `habit` as a view to list your habits. See [Habits](habits.md) and [the rules](recurrence.md#habits).
 
 ## Add a reminder
 
