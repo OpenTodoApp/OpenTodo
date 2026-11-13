@@ -454,12 +454,14 @@ function useFrameBox(active: boolean): { left: number; width: number } | null {
  * button stands (the button steps aside while it shows), so it appearing or leaving
  * never moves a row, and it stays in sight while the list scrolls.
  */
-export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone }: {
+export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone, menu }: {
   ids: readonly string[]
   onClear: () => void
   menuOpen: boolean
   onMenuOpenChange: (open: boolean) => void
   startPicker?: string | null
+  /** Another Actions menu in place of the tasks' (the Notes page's, notes-bulk-actions D2), given its trigger. */
+  menu?: (trigger: React.ReactNode, triggerClassName: string) => React.ReactNode
   /** Select mode on touch (phone-v2 D8): Done hides the checkboxes and keeps the ticks; the bar shows with nothing ticked. */
   onDone?: () => void
 }) {
@@ -489,8 +491,10 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
       className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
       <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
         <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
-        {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-          trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
+        {ids.length > 0 && (menu
+          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
+          : <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
+            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
         {ids.length > 0 && (
           <Tooltip label={t('Clear the selection')} shortcut="Esc">
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>

@@ -183,6 +183,7 @@ func (s *Server) registerDataRoutes(mux *routes) {
 	// Import (OpenSpec `data-import`).
 	mux.handle("POST /api/v1/import/preview", signedIn.DemoDenied(), s.handleImportPreview)
 	mux.handle("POST /api/v1/import", signedIn.DemoDenied(), s.handleImportStart)
+	mux.handle("POST /api/v1/import/todoist", signedIn.FullTokens().DemoDenied(), s.handleImportTodoist)
 	mux.handle("GET /api/v1/import/jobs", signedIn, s.handleImportJobs)
 	mux.handle("GET /api/v1/import/jobs/{id}", signedIn, s.handleImportJob)
 	mux.handle("POST /api/v1/import/jobs/{id}/undo", signedIn.DemoDenied(), s.handleImportUndo)

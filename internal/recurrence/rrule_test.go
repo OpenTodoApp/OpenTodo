@@ -26,6 +26,9 @@ func TestRRULERoundTrip(t *testing.T) {
 		"every month until 2027-01-01":                "FREQ=MONTHLY;UNTIL=20270101",
 		"every 2 weeks on saturday":                   "FREQ=WEEKLY;INTERVAL=2;BYDAY=SA",
 		"every 3 weeks on monday, friday for 4 times": "FREQ=WEEKLY;INTERVAL=3;BYDAY=MO,FR;COUNT=4",
+		"every last sunday of march":                  "FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU",
+		"every 4th thursday of november":              "FREQ=YEARLY;BYMONTH=11;BYDAY=4TH",
+		"every 2nd monday of october for 5 times":     "FREQ=YEARLY;BYMONTH=10;BYDAY=2MO;COUNT=5",
 	}
 	for text, rrule := range cases {
 		r, err := Parse(text)

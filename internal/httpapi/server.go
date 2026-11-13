@@ -90,6 +90,8 @@ type Server struct {
 	// passkeyOptions limits anonymous passkey challenge requests separately, so
 	// the sign-in screen's autofill request does not use up password attempts.
 	passkeyOptions *rateLimiter
+	// todoistLimiter bounds Todoist API imports per account (todoist-api-import).
+	todoistLimiter *rateLimiter
 	// inviteLimiter caps invitation creation per account (20/hour).
 	inviteLimiter *rateLimiter
 	// projectInviteLimiter caps project invite link creation per account
@@ -300,6 +302,7 @@ func (s *Server) initLimiters() {
 	s.invitePreviewLimiter, s.publicLinkLimiter = s.limit("invitation.preview", 10, time.Minute), s.limit("public.unknown", 10, time.Minute)
 	s.mcpLimiter, s.oauthRegisterLimiter = s.limit("mcp.auth", 10, time.Minute), s.limit("oauth.register", 5, time.Minute)
 	s.passkeyLimiter, s.passkeyOptions = s.limit("passkey", 10, time.Minute), s.limit("passkey.options", 10, time.Minute)
+	s.todoistLimiter = s.limit("import.todoist", 10, time.Hour)
 	s.accountLimiter = s.limit("account", accountFailures, accountWindow)
 	s.mfaLimiter, s.reauthLimiter = s.limit("mfa", 10, time.Minute), s.limit("reauth", 10, time.Minute)
 	s.adminLimiter, s.passwordLimiter = s.limit("admin", 60, time.Hour), s.limit("password", 10, time.Hour)

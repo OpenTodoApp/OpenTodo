@@ -146,7 +146,7 @@ export function scheduled(rule: Rule, dueDate: string | null, date: string): boo
       return n === rule.ordinal
     }
     case 'nthWeekday': {
-      if (isoWeekday(z) !== rule.weekday) return false
+      if (isoWeekday(z) !== rule.weekday || (rule.month && m !== rule.month)) return false
       if (rule.ordinal < 0) return d + 7 > monthLen(y, m)
       return Math.ceil(d / 7) === rule.ordinal
     }
