@@ -194,7 +194,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (14 of 21) |
+| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (15 of 21) |
 | `native-app-everyday` | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | Planned |
 | `native-app-handover` | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | Planned |
 

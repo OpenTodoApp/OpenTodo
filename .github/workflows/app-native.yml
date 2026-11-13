@@ -101,8 +101,9 @@ jobs:
   # entry (perf/index.ts, never the app's), launched by perf/host.mjs with no database,
   # to seed it, three times cold to measure, then to write a task and be killed
   # (SIGKILL) right after, and once more to read it back. Uploads app-perf: results.json,
-  # the summary against the budgets and the reference run on the runner. It fails only
-  # when the harness or the kill-after-write check fails; the numbers are reported.
+  # the summary against the budgets and the reference run on the runner. It fails when
+  # the harness or the kill-after-write check fails, or a budget of the app is exceeded
+  # (scripts/perf/budgets.json, setting app-simulator).
   #   gh workflow run app-native.yml --ref <branch> -f perf=true
   app-perf:
     name: App performance (iOS simulator)
@@ -163,8 +164,11 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          node mobile/app/perf/host.mjs summary dist/app-perf/results.json > dist/app-perf/summary.md || true
+          # Fails the job when a budget of the app (scripts/perf/budgets.json) is exceeded.
+          status=0
+          node mobile/app/perf/host.mjs summary dist/app-perf/results.json > dist/app-perf/summary.md || status=$?
           cat dist/app-perf/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+          exit "$status"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
