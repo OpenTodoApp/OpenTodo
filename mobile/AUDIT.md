@@ -28,7 +28,6 @@ Both shells only fire reminders the web app handed them while it ran.
 | **iOS Face ID unlock** has no `NSFaceIDUsageDescription`. | `mobile/ios/OpenTodo/Info.plist` |
 | **Android Back** exits the app after the first exit and resume: the callback is disabled and never re-enabled. | `MainActivity.kt:134` |
 | **Haptics**: `navigator.vibrate` only. Android has no `VIBRATE` permission; iOS has no vibrate. | `web/src/app/motion.ts:314` |
-| iOS ignores JavaScript `alert` and `confirm` (no `WKUIDelegate` handlers). | `ShellView.swift` |
 | iOS status bar icons ignore the app theme (`lightIcons` parsed, never applied). | `mobile/ios/OpenTodo/Bridge.swift:14` |
 | iOS share extension opens the app through a responder-chain `openURL:`, fragile on iOS 18. | `OpenTodoShare/ShareViewController.swift:90` |
 
@@ -63,7 +62,7 @@ Nothing to delete in the shells: every class is wired. Small leftovers: the `sha
 
 Each step is one OpenSpec change, ships on its own, and ends with a check on a real phone.
 
-1. **`shell-repairs`**: downloads, Face ID description, Android Back, haptics through the bridge, iOS alerts, status bar icons, the iOS Done action. No design questions; the largest gain per line.
+1. **`shell-repairs`**: downloads, Face ID description, Android Back, haptics through the bridge, status bar icons, the iOS Done action. No design questions; the largest gain per line.
 2. **`shell-reminders-on`**: ask for notifications at first run, explain exact alarms before asking, show task titles by default, a completion signal for the hidden run in place of the fixed 30 s.
 3. **`shell-push`**: the server wakes the shell when a reminder changes or is due. Needs a design: Android through UnifiedPush or ntfy (no Google, F-Droid stays); iOS needs APNs, so a relay that holds the app's key, since a self-hosted server cannot sign for the app. Opt-in, no content in the push.
 4. **`shell-first-paint`**: a splash on both platforms, the skeleton with the phone's chrome, a stored copy for the iOS store build.

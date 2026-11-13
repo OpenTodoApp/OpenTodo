@@ -191,6 +191,12 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `habits-assistant` | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | Planned |
 | `habit-targets` | Times per week or month, and daily amounts that add up exactly across devices | Planned |
 
+## Shells that feel native
+
+| Change | What | Status |
+| --- | --- | --- |
+| `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | Planned |
+
 ## Native app
 
 | Change | What | Status |
