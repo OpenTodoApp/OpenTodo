@@ -14,6 +14,7 @@ import { Icon } from '../ui'
 import { CONNECTIONS_ICON, LINK_ICON } from './LinkOption'
 import { openNote } from './notes/openNote'
 import { openConnections } from './signals'
+import UnlinkedMentions from './UnlinkedMentions'
 
 /** The per-device open state of the folded line in a project's note area. */
 export const REFERENCES_OPEN_KEY = 'opentodo.linkedReferences.open'
@@ -72,9 +73,14 @@ export default function LinkedReferences({ kind, id, folded = false }: { kind: L
       // No performance timeline: nothing to record.
     }
   }, [shown])
-  if (!refs || refs.length === 0) return null
-  return <ReferencesSection target={`${kind}:${id}`} refs={refs} folded={folded} project={(r) => (r.kind === 'project' ? null : projectName(r.projectId))}
-    onGraph={() => openConnections(kind, id)} />
+  return (
+    <>
+      {refs && refs.length > 0 && <ReferencesSection target={`${kind}:${id}`} refs={refs} folded={folded} project={(r) => (r.kind === 'project' ? null : projectName(r.projectId))}
+        onGraph={() => openConnections(kind, id)} />}
+      {/* The notes that name the item without linking it (unlinked-mentions), once the index is built. */}
+      {refs && <UnlinkedMentions kind={kind} id={id} folded={folded} />}
+    </>
+  )
 }
 
 /** The section itself (stories render it with sample rows). */

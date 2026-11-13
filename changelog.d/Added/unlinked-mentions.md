@@ -1,0 +1,1 @@
+- **Unlinked mentions.** Under Linked references of a note, a task or a project, a folded line counts the notes that name its title without linking to it; open it to see each mention highlighted, and **Link** turns one into a link, with Undo. Found on your device, offline and with encryption included.
