@@ -6,6 +6,8 @@
 // Matching: the query is split into terms (quoted text is one phrase), every term must occur
 // as a substring of the note's title and its Markdown-stripped text, ignoring case and
 // diacritics (NFKD, combining marks removed, lower-cased, final sigma folded to sigma).
+// Operators (note-search-operators): `OR` joins alternatives, `title:` and `text:` limit
+// a word or phrase to one field.
 
 /** A segment of a snippet: plain text, marked when it is a match. Never HTML. */
 export interface SnippetSegment {
@@ -237,30 +239,81 @@ export function stripMarkdown(md: string): string {
   return collapse(lines.join(' '))
 }
 
-/** The search terms of a query: quoted text (straight or curly quotes) is one phrase, the rest one term per word; normalised, without empties or repeats. */
-export function parseQuery(q: string, lang?: string): string[] {
-  const terms: string[] = []
-  const add = (t: string) => {
-    const n = collapse(t)
-    if (n !== '' && !terms.includes(n)) terms.push(n)
+/** Where a search term must occur (note-search-operators D2): the title or the text, or either. */
+export type SearchField = 'any' | 'title' | 'text'
+/** One alternative of a group: a normalised word or phrase and its field. */
+export interface SearchTerm { text: string; field: SearchField }
+/**
+ * A parsed query (note-search-operators D1): every group must match, a group matches
+ * when one of its alternatives does. Without `OR` each group holds one term.
+ */
+export type SearchQuery = SearchTerm[][]
+
+const FIELD_PREFIXES: Record<string, SearchField> = { 'title:': 'title', 'text:': 'text' }
+
+/**
+ * A query's groups (D1, D2): words and quoted phrases (straight or curly quotes); the
+ * word `OR` in capitals outside quotes joins its neighbours into one group, and is
+ * ignored at the start, the end or doubled; `title:` or `text:` directly before a word
+ * or phrase limits it to that field, and alone it is a word. Terms are normalised;
+ * empty terms and repeated groups are left out.
+ */
+export function parseSearch(q: string, lang?: string): SearchQuery {
+  const tokens: (SearchTerm | 'OR')[] = []
+  const add = (raw: string, field: SearchField, quoted: boolean) => {
+    if (!quoted && field === 'any' && raw === 'OR') return void tokens.push('OR')
+    let f = field
+    let t = raw
+    if (!quoted && field === 'any') {
+      const prefix = Object.keys(FIELD_PREFIXES).find((p) => normalizeText(raw.slice(0, p.length), lang) === p && raw.length > p.length)
+      if (prefix) { f = FIELD_PREFIXES[prefix]; t = raw.slice(prefix.length) }
+    }
+    const n = collapse(normalizeText(t, lang))
+    if (n !== '') tokens.push({ text: n, field: f })
   }
-  const cs = [...normalizeText(q, lang)]
+  // The query keeps its case (for OR); a character that normalises to a space or a quote counts as one.
+  const cs = [...q]
+  const asSpace = (c: string) => isSpace(c) || (c.charCodeAt(0) > 0x7f && [...normalizeText(c, lang)].some(isSpace))
+  const asQuote = (c: string) => QUOTES.has(c) || (c.charCodeAt(0) > 0x7f && QUOTES.has(normalizeText(c, lang)))
   let word = ''
   for (let i = 0; i < cs.length; i++) {
     const c = cs[i]
-    if (QUOTES.has(c)) {
-      add(word)
+    if (asQuote(c)) {
+      // A field prefix directly before the quote limits the phrase.
+      const field = FIELD_PREFIXES[normalizeText(word, lang)] ?? 'any'
+      if (field === 'any') add(word, 'any', false)
       word = ''
       let j = i + 1
-      while (j < cs.length && !QUOTES.has(cs[j])) j++
-      add(cs.slice(i + 1, j).join(''))
+      while (j < cs.length && !asQuote(cs[j])) j++
+      add(cs.slice(i + 1, j).join(''), field, true)
       i = j
-    } else if (isSpace(c)) {
-      add(word)
+    } else if (asSpace(c)) {
+      add(word, 'any', false)
       word = ''
     } else word += c
   }
-  add(word)
+  add(word, 'any', false)
+  const groups: SearchQuery = []
+  let join = false
+  for (const tok of tokens) {
+    if (tok === 'OR') { join = groups.length > 0; continue }
+    const last = groups[groups.length - 1]
+    if (join && last) { if (!last.some((x) => x.text === tok.text && x.field === tok.field)) last.push(tok) }
+    else groups.push([tok])
+    join = false
+  }
+  const key = (g: SearchTerm[]) => g.map((x) => `${x.field}:${x.text}`).join('|')
+  return groups.filter((g, i) => groups.findIndex((h) => key(h) === key(g)) === i)
+}
+
+/**
+ * The terms a snippet highlights: every word and phrase of the query that may match in
+ * the text (a `title:` term never does), normalised, without empties or repeats. For a
+ * query without operators these are its search terms, quoted text one phrase.
+ */
+export function parseQuery(q: string, lang?: string): string[] {
+  const terms: string[] = []
+  for (const g of parseSearch(q, lang)) for (const x of g) if (x.field !== 'title' && !terms.includes(x.text)) terms.push(x.text)
   return terms
 }
 
@@ -269,27 +322,41 @@ export function prepareNote(note: { title: string; text: string }, lang?: string
   return { title: normalizeText(note.title, lang), body: normalizeText(stripMarkdown(note.text), lang) }
 }
 
-/** matchNote over a prepared note. */
-export function matchPrepared(p: PreparedNote, terms: string[]): NoteMatch {
-  let matched = terms.length > 0
+/**
+ * matchNote over a prepared note: every group must have an alternative that occurs in
+ * its field (D1, D2); a group counts as a title match when a matching alternative is in
+ * the title, and as a body word when one is in the text. Plain terms are groups of one.
+ */
+export function matchPrepared(p: PreparedNote, query: SearchQuery | string[]): NoteMatch {
+  const groups: SearchQuery = query.map((g) => (typeof g === 'string' ? [{ text: g, field: 'any' as const }] : g))
+  let matched = groups.length > 0
   let titleMatch = false
   let bodyWords = 0
-  for (const t of terms) {
-    const inTitle = p.title.includes(t)
-    const inBody = p.body.includes(t)
-    if (inTitle) titleMatch = true
-    if (inBody) bodyWords++
-    // A term found in neither can still run from the title into the body, but only
-    // through the space that joins them: the joined text is built for such a phrase
-    // alone (joining it for every note on each keystroke copied every 10 KB note).
-    if (!inTitle && !inBody && !(t.includes(' ') && (p.title + ' ' + p.body).includes(t))) matched = false
+  for (const g of groups) {
+    let any = false
+    let title = false
+    let body = false
+    for (const { text: t, field } of g) {
+      const inTitle = field !== 'text' && p.title.includes(t)
+      const inBody = field !== 'title' && p.body.includes(t)
+      // A term found in neither can still run from the title into the body, but only
+      // through the space that joins them: the joined text is built for such a phrase
+      // alone (joining it for every note on each keystroke copied every 10 KB note).
+      const across = field === 'any' && !inTitle && !inBody && t.includes(' ') && (p.title + ' ' + p.body).includes(t)
+      if (inTitle || inBody || across) any = true
+      if (inTitle) title = true
+      if (inBody) body = true
+    }
+    if (!any) matched = false
+    if (title) titleMatch = true
+    if (body) bodyWords++
   }
   return { matched, titleMatch, bodyWords }
 }
 
-/** Whether a note matches terms (from parseQuery); no terms match nothing. */
-export function matchNote(note: { title: string; text: string }, terms: string[], lang?: string): NoteMatch {
-  return matchPrepared(prepareNote(note, lang), terms)
+/** Whether a note matches a query (from parseSearch, or terms from parseQuery); no terms match nothing. */
+export function matchNote(note: { title: string; text: string }, query: SearchQuery | string[], lang?: string): NoteMatch {
+  return matchPrepared(prepareNote(note, lang), query)
 }
 
 /** Orders matches: title matches first, then more matched body words, then newest, then key. */
@@ -302,11 +369,11 @@ export function compareHits<T extends SearchableNote>(a: NoteHit<T>, b: NoteHit<
 
 /** The notes matching query, ranked (compareHits). An empty query matches nothing. */
 export function rankNotes<T extends SearchableNote>(notes: T[], query: string, lang?: string): NoteHit<T>[] {
-  const terms = parseQuery(query, lang)
+  const groups = parseSearch(query, lang)
   const hits: NoteHit<T>[] = []
-  if (terms.length === 0) return hits
+  if (groups.length === 0) return hits
   for (const note of notes) {
-    const m = matchNote(note, terms, lang)
+    const m = matchNote(note, groups, lang)
     if (m.matched) hits.push({ note, ...m })
   }
   return hits.sort(compareHits)

@@ -81,6 +81,7 @@ Phones, Apple, Obsidian and voice.
 | [`focus-session-readable`](openspec/changes/archive/2026-10-31-focus-session-readable/) | **Shipped.** The running Focus session readable by the shells and agents | [#604](https://github.com/OpenTodoApp/OpenTodo/issues/604) |
 | [`obsidian-origin`](openspec/changes/archive/2026-10-31-obsidian-origin/) | **Shipped.** An `obsidian` origin that links a task back to its note | [#605](https://github.com/OpenTodoApp/OpenTodo/issues/605) |
 | [`view-project-drops`](openspec/changes/view-project-drops/) | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | [#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211) |
+| [`board-completed-column`](openspec/changes/board-completed-column/) | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | [#1291](https://github.com/OpenTodoApp/OpenTodo/issues/1291) |
 | [`app-links`](openspec/changes/app-links/) | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
@@ -167,7 +168,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-attachments`](openspec/changes/archive/2026-11-13-note-attachments/) | **Shipped.** Images and files in standalone notes | |
 | [`note-checklist-tasks`](openspec/changes/archive/2026-11-13-note-checklist-tasks/) | **Shipped.** Turn checklist lines of a note into tasks, each line becoming a link to its task | |
 | [`unlinked-mentions`](openspec/changes/archive/2026-11-13-unlinked-mentions/) | **Shipped.** Unlinked mentions below Linked references, linked in one step | |
-| [`note-search-operators`](openspec/changes/note-search-operators/) | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
+| [`note-search-operators`](openspec/changes/archive/2026-11-13-note-search-operators/) | **Shipped.** `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | |
 | [`notes-sort`](openspec/changes/archive/2026-11-13-notes-sort/) | **Shipped.** Sort the Notes list by last change, creation or title | |
 | [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |

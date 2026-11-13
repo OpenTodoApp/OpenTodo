@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -479,5 +480,31 @@ func TestNoteViewerRefused(t *testing.T) {
 	}
 	if f.opCount() != before {
 		t.Fatal("a refused call wrote ops")
+	}
+}
+
+// note-search-operators "Assistant title search": title: keeps notes whose title has the word.
+func TestSearchNotesOperators(t *testing.T) {
+	f := newFixture(t)
+	f.note("u1", "n-wifi", "Wi-Fi wifi", "home-5G", nil)
+	f.note("u1", "n-router", "Router", "the wifi password", nil)
+	f.note("u1", "n-trip", "Trip", "the ferry leaves", nil)
+	f.note("u1", "n-commute", "Commute", "train at 8", nil)
+	ids := func(query string) []string {
+		var got []string
+		for _, n := range noteList(t, f.mustCall(readToken("u1"), "search_notes", map[string]any{"query": query})) {
+			got = append(got, n["id"].(string))
+		}
+		slices.Sort(got)
+		return got
+	}
+	if got := ids("title:wifi"); !slices.Equal(got, []string{"n-wifi"}) {
+		t.Fatalf("title:wifi = %v", got)
+	}
+	if got := ids("ferry OR train"); !slices.Equal(got, []string{"n-commute", "n-trip"}) {
+		t.Fatalf("ferry OR train = %v", got)
+	}
+	if got := ids("ferry or train"); len(got) != 0 {
+		t.Fatalf("ferry or train = %v", got)
 	}
 }

@@ -74,6 +74,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
 | `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Planned |
+| `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Planned |
 | `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
@@ -143,7 +144,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-attachments` | Images and files in standalone notes | Shipped |
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Shipped |
 | `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Shipped |
-| `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
+| `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Shipped |
 | `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Shipped |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |

@@ -8936,7 +8936,8 @@
     "web/src/app/review/MonthlyLook.tsx"
   ],
   "Last month": [
-    "web/src/app/filter/ConditionEditor.tsx"
+    "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteSearchField.tsx"
   ],
   "Last review {ago}": [
     "web/src/app/Sidebar.tsx"
@@ -19019,6 +19020,7 @@
   ],
   "This month": [
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/notes/NoteSearchField.tsx",
     "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
