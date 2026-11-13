@@ -516,11 +516,13 @@
   "route": "habits",
   "kind": "screen",
   "seed": "layout-check",
-  "frequency": "daily",
+  "frequency": "rare",
   "core": false,
   "layoutCheck": null,
   "layoutCheckReason": "Shown only while Habits is on, and the layout seed has no habit; the screen's stories are in the visual baselines",
-  "story": "Screens/Habits"
+  "story": "Screens/Habits",
+  "path": "/habits",
+  "ready": "main"
  },
  {
   "id": "completed",
