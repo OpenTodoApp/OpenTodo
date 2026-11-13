@@ -23,9 +23,9 @@ var TodoistAPIBase = "https://api.todoist.com"
 
 // Errors of FetchTodoist, each answered with its own code by the route.
 var (
-	ErrTodoistToken    = errors.New("Todoist refused the token")
+	ErrTodoistToken    = errors.New("todoist refused the token")
 	ErrTodoistTooLarge = errors.New("the Todoist account is larger than the import limit")
-	ErrTodoistFailed   = errors.New("Todoist could not be reached")
+	ErrTodoistFailed   = errors.New("todoist could not be reached")
 )
 
 // todoistResources are the kinds asked for: what json-items reads.
