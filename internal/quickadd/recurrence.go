@@ -164,12 +164,12 @@ func patternAt(tokens []token, k int, v *Vocab) *recPattern {
 	}
 	// ordinal weekday: "2nd monday", "2e lundis", "segunda segunda-feira" (quick-add-nth-weekday D3)
 	if on, val, ok := weekdayOrdinalAt(tokens, k, v, func(w int) bool { return weekdayPluralAt(tokens, w, v) >= 0 }); ok {
-		return &recPattern{on + 1, ordinalEN[val] + " " + weekdayEN[weekdayPluralAt(tokens, k+on, v)], true}
+		return ofAMonth(tokens, k+on+1, v, &recPattern{on + 1, ordinalEN[val] + " " + weekdayEN[weekdayPluralAt(tokens, k+on, v)], true})
 	}
 	if on, val, ok := ordinalAt(tokens, k, v); ok {
 		j := k + on
 		if wd := weekdayPluralAt(tokens, j, v); wd >= 0 && val <= 4 {
-			return &recPattern{on + 1, ordinalEN[val] + " " + weekdayEN[wd], true}
+			return ofAMonth(tokens, j+1, v, &recPattern{on + 1, ordinalEN[val] + " " + weekdayEN[wd], true})
 		}
 		// "1st weekday" … "last weekday": the n-th Monday-to-Friday day of the month.
 		if val <= 4 {
@@ -422,4 +422,21 @@ func ruleAt(tokens []token, i int, ctx *dateCtx) *recMatch {
 		consider(p.text, k)
 	}
 	return best
+}
+
+var monthEN = [...]string{"", "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"}
+
+// ofAMonth makes an ordinal weekday followed by a month ("last sunday in march",
+// "letzten Sonntag im März") yearly: `every last sunday of march`
+// (yearly-weekday-of-month D3), with the words one-off dates read. Otherwise p.
+func ofAMonth(tokens []token, k int, v *Vocab, p *recPattern) *recPattern {
+	of := phraseAt(tokens, k, v.OrdinalOf)
+	if of == 0 {
+		return p
+	}
+	month := monthAt(tokens, k+of, v, true)
+	if month == 0 {
+		return p
+	}
+	return &recPattern{p.n + of + 1, p.text + " of " + monthEN[month], false}
 }

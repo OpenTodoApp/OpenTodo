@@ -37,25 +37,50 @@ func (w *Worker) Cycle(ctx context.Context, c *Connection) (RunCounts, error) {
 	}
 	cctx, cancel := context.WithTimeout(ctx, CycleTimeout)
 	defer cancel()
-	r := &cycle{w: w, c: c, target: c.TargetURL}
-	err = w.prepare(cctx, r)
-	if err == nil {
-		err = r.run(cctx)
-	}
-	if err == nil {
-		err = r.tr.commit(cctx)
-	}
+	targets, err := w.Store.ProjectTargets(ctx, c.ID)
 	if err != nil {
-		return r.counts, w.fail(ctx, r, err)
+		return RunCounts{}, err
 	}
-	if err := w.Store.Success(ctx, c.ID, r.syncToken, r.ver.key(), r.counts); err != nil {
-		return r.counts, err
+	// One cycle per target calendar with a calendar per project
+	// (calsync-project-calendars D2), the connection's own target first.
+	var total RunCounts
+	var own *cycle
+	for _, url := range c.targetCalendars(targets) {
+		r := &cycle{w: w, c: c, target: url, targetOf: c.targetFunc(targets)}
+		if url != c.TargetURL {
+			tc := *c
+			if tc.SyncToken, tc.CTag, err = w.Store.TargetState(ctx, c.ID, url); err != nil {
+				return total, err
+			}
+			r.c = &tc
+		}
+		err = w.prepareFor(cctx, r, url)
+		if err == nil {
+			err = r.run(cctx)
+		}
+		if err == nil {
+			err = r.tr.commit(cctx)
+		}
+		total = total.plus(r.counts)
+		if err != nil {
+			r.counts = total
+			return total, w.fail(ctx, r, err)
+		}
+		if url == c.TargetURL {
+			own = r
+		} else if err := w.Store.SaveTargetState(ctx, c.ID, url, r.syncToken, r.ver.key()); err != nil {
+			return total, err
+		}
 	}
-	w.log().Debug("calendar sync: cycle", "connection", c.ID, "moved", r.counts.Moved, "written", r.counts.Written, "removed", r.counts.Removed)
-	return r.counts, nil
+	if err := w.Store.Success(ctx, c.ID, own.syncToken, own.ver.key(), total); err != nil {
+		return total, err
+	}
+	w.log().Debug("calendar sync: cycle", "connection", c.ID, "moved", total.Moved, "written", total.Written, "removed", total.Removed)
+	return total, nil
 }
 
-func (w *Worker) prepare(ctx context.Context, r *cycle) error {
+// prepareFor readies r to sync the calendar url of its connection.
+func (w *Worker) prepareFor(ctx context.Context, r *cycle, url string) error {
 	if w.Tasks == nil {
 		return errors.New("calendar sync: no task source")
 	}
@@ -63,8 +88,9 @@ func (w *Worker) prepare(ctx context.Context, r *cycle) error {
 	if err != nil {
 		return err
 	}
+	r.target = url
 	if _, ok := tr.(davTransport); ok {
-		r.target = dirURL(r.c.TargetURL)
+		r.target = dirURL(url)
 	}
 	r.tr = tr
 	return nil

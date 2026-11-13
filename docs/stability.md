@@ -39,7 +39,7 @@ Only additions:
 - new `ot` commands and flags;
 - new members in the export.
 
-- new forms of the [recurrence rule](recurrence.md) grammar. Every writer stores a rule in the form 1.0 reads whenever one gives the same dates ([rules older devices read](recurrence.md#rules-older-devices-read)). A rule only a newer release can express (`every 2 weeks on saturday` on a task due on another day, or `every 3 weeks on monday, thursday`) is shown as text on a 1.0 device, and completing the task there ends the series. Update the devices that share an account to the same 1.x release.
+- new forms of the [recurrence rule](recurrence.md) grammar. Every writer stores a rule in the form 1.0 reads whenever one gives the same dates ([rules older devices read](recurrence.md#rules-older-devices-read)). A rule only a newer release can express (`every 2 weeks on saturday` on a task due on another day, or `every 3 weeks on monday, thursday`, or a weekday of one month every year, `every last sunday of march`) is shown as text on a 1.0 device, and completing the task there ends the series. Update the devices that share an account to the same 1.x release.
 
 These need a new major version (`/api/v2/`, export version 2, `ot` 2.x):
 

@@ -68,7 +68,7 @@ export const en: Vocabulary = {
   weekdayAll: ['weekday', 'weekdays', 'workday', 'workdays'],
   ordinals: { first: 1, second: 2, third: 3, fourth: 4, last: -1 },
   ordinalArticles: ['the'],
-  ordinalOf: ['of'],
+  ordinalOf: ['of', 'in'],
   ofMonthWords: ['of the month', 'of every month', 'of each month'],
   ordinalsBeforeWeekday: {},
   andWords: ['and'],

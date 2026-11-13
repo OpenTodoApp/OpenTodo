@@ -2122,6 +2122,10 @@
       "400",
       "listed"
     ],
+    "upstream_failed": [
+      "502",
+      "listed"
+    ],
     "user_not_found": [
       "404",
       "listed"
@@ -2353,6 +2357,7 @@
         "flow_mode": "string",
         "habit": "bool",
         "habit_anchor": "string",
+        "habit_color": "string",
         "habit_graduated_at": "nullable_number",
         "habit_tiny": "string",
         "ical_extra": "nullable_text",
@@ -3421,6 +3426,7 @@
       "flow_mode": "string",
       "habit": "bool",
       "habit_anchor": "string",
+      "habit_color": "string",
       "habit_graduated_at": "nullable_number",
       "habit_tiny": "string",
       "ical_extra": "nullable_text",
@@ -4424,6 +4430,7 @@
         "connections[].name": "string",
         "connections[].next_sync_at": "number",
         "connections[].password_set": "boolean",
+        "connections[].project_calendars": "object",
         "connections[].provider": "string",
         "connections[].read": "array",
         "connections[].scope": "object",
@@ -6380,6 +6387,7 @@
         "tasks[].flow_mode": "string",
         "tasks[].habit": "bool",
         "tasks[].habit_anchor": "string",
+        "tasks[].habit_color": "string",
         "tasks[].habit_graduated_at": "nullable_number",
         "tasks[].habit_tiny": "string",
         "tasks[].ical_extra": "nullable_text",
@@ -6431,6 +6439,7 @@
         "flow_mode": "string",
         "habit": "bool",
         "habit_anchor": "string",
+        "habit_color": "string",
         "habit_graduated_at": "nullable_number",
         "habit_tiny": "string",
         "ical_extra": "nullable_text",
@@ -7015,6 +7024,7 @@
         "include_date_only": "boolean|null?",
         "name": "string|null?",
         "password": "string|null?",
+        "project_calendars": "object|null?",
         "read": "array?",
         "scope": "object|null?",
         "scope.inboxes": "array",
@@ -7052,6 +7062,7 @@
         "connection.name": "string",
         "connection.next_sync_at": "number",
         "connection.password_set": "boolean",
+        "connection.project_calendars": "object",
         "connection.provider": "string",
         "connection.read": "array",
         "connection.scope": "object",
@@ -7523,6 +7534,7 @@
         "flow_mode": "string?",
         "habit": "bool?",
         "habit_anchor": "string?",
+        "habit_color": "string?",
         "habit_graduated_at": "nullable_number?",
         "habit_tiny": "string?",
         "ical_extra": "nullable_text?",
@@ -7570,6 +7582,7 @@
         "flow_mode": "string",
         "habit": "bool",
         "habit_anchor": "string",
+        "habit_color": "string",
         "habit_graduated_at": "nullable_number",
         "habit_tiny": "string",
         "ical_extra": "nullable_text",
@@ -8247,6 +8260,7 @@
         "connection.name": "string",
         "connection.next_sync_at": "number",
         "connection.password_set": "boolean",
+        "connection.project_calendars": "object",
         "connection.provider": "string",
         "connection.read": "array",
         "connection.scope": "object",
@@ -8293,6 +8307,7 @@
         "connection.name": "string",
         "connection.next_sync_at": "number",
         "connection.password_set": "boolean",
+        "connection.project_calendars": "object",
         "connection.provider": "string",
         "connection.read": "array",
         "connection.scope": "object",
@@ -8586,6 +8601,12 @@
       "statuses": [
         "200"
       ]
+    },
+    "POST /api/v1/import/todoist": {
+      "policy": "signed-in.full-tokens",
+      "request": {
+        "token": "string"
+      }
     },
     "POST /api/v1/invitations": {
       "policy": "admins-only.credential.recent",
@@ -10412,6 +10433,7 @@
         "flow_mode": "string?",
         "habit": "bool?",
         "habit_anchor": "string?",
+        "habit_color": "string?",
         "habit_graduated_at": "nullable_number?",
         "habit_tiny": "string?",
         "ical_extra": "nullable_text?",
@@ -10459,6 +10481,7 @@
         "flow_mode": "string",
         "habit": "bool",
         "habit_anchor": "string",
+        "habit_color": "string",
         "habit_graduated_at": "nullable_number",
         "habit_tiny": "string",
         "ical_extra": "nullable_text",

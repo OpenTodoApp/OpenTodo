@@ -248,6 +248,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `objectives` (your quarterly and weekly [objectives](objectives.md), deleted ones included), `memory` (what the [assistant remembers](assistant-memory.md), deleted items included; only for a session or a `full` or `admin` token), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
+| POST | `/api/v1/import/todoist` | session or `full` token | `{token}`, a Todoist API token → Todoist's sync answer (projects, sections, labels, tasks, comments) as JSON, which `/api/v1/import/preview` and `/api/v1/import` read like an uploaded file (format `json-items`); one request to Todoist through the outbound policy, the token never stored; 400 `invalid_token` when Todoist refuses it, 413 `too_large` over `OPENTODO_IMPORT_MAX_MB`, 502 `upstream_failed` when Todoist cannot be reached, 429 `rate_limited` (10 an hour); demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/import/jobs` | yes | `{jobs:[…]}`, newest first (last 50) |
 | GET | `/api/v1/import/jobs/{id}` | yes | `{job}` with status, counts and row errors |
 | POST | `/api/v1/import/jobs/{id}/undo` | yes | tombstone everything the job created → `{job}` (status `undone`); idempotent |
@@ -2636,7 +2637,8 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `account_locked` | 429 | 10 failed passwords, codes or re-authentications for one account within 15 minutes; `Retry-After` says when to try again |
 | `setup_token_invalid` | 403 | creating the first account without the `OPENTODO_SETUP_TOKEN` value |
 | `setup_code_invalid` | 403 | creating the first account without the setup code from another machine (`OPENTODO_SETUP_CODE=required`), or under a domain name while no `OPENTODO_BASE_URL` is set |
-| `invalid_token` | 400 | an email change link that is unknown, used or expired |
+| `invalid_token` | 400 | an email change link that is unknown, used or expired; a Todoist API token Todoist refuses (`/api/v1/import/todoist`) |
+| `upstream_failed` | 502 | `/api/v1/import/todoist`: Todoist could not be reached or answered something else |
 | `invalid_grant` | 400 | [app sign-in](#app-sign-in): a code that is unknown, used, expired or does not match the verifier or the state; a refresh token that is unknown, revoked or reused |
 | `invalid_request` | 400 | [app sign-in](#app-sign-in): a sign-in request without an S256 challenge or a state; a token request whose body or fields are missing or malformed; `/app/sign-out` with a credential that is not an app token |
 | `signup_closed` | 403 | registration without an invitation while sign-up is closed; first sign-in through the provider when provisioning is not allowed |

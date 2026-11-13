@@ -4,7 +4,7 @@
 // lib/liveData), the keyboard (useListShortcuts), drag (useListDrag), the bindings to
 // the panel and the Vim layer (useListBindings), and the bodies for the list, the
 // board and the timeline.
-import { HABITS_STRIP_KEY, TodayStrip } from './habits/TodayStrip'
+import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -411,7 +411,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               )}
             </div>
           )}
-          {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} collapsed={m.collapsed.has(HABITS_STRIP_KEY)} onToggle={() => m.toggleCollapsed(HABITS_STRIP_KEY)} />}
+          {agenda.toggle && <TodayAgenda cal={agenda.cal} zone={m.zone} />}{m.todayHabits && <TodayStrip tasks={m.allTasks} projects={m.projects} today={today} />}
 
           <SelectionBar ids={ticked} onClear={selection.clear} menuOpen={actions.forTicked}
             onMenuOpenChange={actions.onOpenChange} startPicker={actions.picker} onDone={selectMode ? () => setSelectMode(false) : undefined} />

@@ -28,6 +28,28 @@ type cycle struct {
 	ver       version
 	syncToken string
 	applied   bool
+	// targetOf names the calendar of each task with a calendar per project
+	// (calsync-project-calendars D2); nil writes every task to target. A cycle
+	// then covers one target calendar: its tasks and the links in it.
+	targetOf func(calfeed.FeedTask) string
+}
+
+// calendarOf is the calendar a link's event is in.
+func (r *cycle) calendarOf(l *Link) string {
+	if l.Calendar == "" {
+		return r.c.TargetURL
+	}
+	return l.Calendar
+}
+
+// inPlace reports whether a link's event is in this cycle's calendar.
+func (r *cycle) inPlace(l *Link) bool {
+	return r.targetOf == nil || r.c.calendarKey(r.calendarOf(l)) == r.c.calendarKey(r.target)
+}
+
+// mine reports whether this cycle's calendar is t's.
+func (r *cycle) mine(t calfeed.FeedTask) bool {
+	return r.targetOf == nil || r.targetOf(t) == r.c.calendarKey(r.target)
 }
 
 // run pulls, pushes and refreshes the shown calendars.
@@ -44,10 +66,10 @@ func (r *cycle) run(ctx context.Context) error {
 			r.calZone = loc
 		}
 	}
-	if err := r.loadLinks(ctx); err != nil {
+	if err := r.loadTasks(ctx); err != nil {
 		return err
 	}
-	if err := r.loadTasks(ctx); err != nil {
+	if err := r.loadLinks(ctx); err != nil {
 		return err
 	}
 	r.syncToken = r.c.SyncToken
@@ -72,8 +94,14 @@ func (r *cycle) loadLinks(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	r.links, r.byHref = links, map[string]*Link{}
-	for _, l := range links {
+	r.links, r.byHref = map[string]*Link{}, map[string]*Link{}
+	for id, l := range links {
+		// With a calendar per project: the links in this calendar, and those of
+		// its tasks still in another one (moved there by write).
+		if _, ours := r.tasks[id]; r.targetOf != nil && !ours && r.c.calendarKey(r.calendarOf(l)) != r.c.calendarKey(r.target) {
+			continue
+		}
+		r.links[id] = l
 		r.byHref[r.tr.key(l.Href)] = l
 	}
 	return nil
@@ -95,7 +123,7 @@ func (r *cycle) loadTasks(ctx context.Context) error {
 	r.tasks = map[string]calfeed.FeedTask{}
 	for _, t := range list {
 		// A span is written whatever the option says (multi-day-tasks D7).
-		if t.Date == "" || t.Date < from || t.Date > to || (t.Time == nil && t.Start == "" && !r.c.IncludeDateOnly) {
+		if t.Date == "" || t.Date < from || t.Date > to || (t.Time == nil && t.Start == "" && !r.c.IncludeDateOnly) || !r.mine(t) {
 			continue
 		}
 		r.tasks[t.ID] = t
@@ -262,7 +290,7 @@ func (r *cycle) push(ctx context.Context) error {
 		t := r.tasks[id]
 		want := TaskSnapshot(t, r.encrypted)
 		link := r.links[id]
-		if link != nil && link.Snapshot == want && link.Body == BodyHash(t, r.encrypted, r.w.BaseURL) {
+		if link != nil && link.Snapshot == want && link.Body == BodyHash(t, r.encrypted, r.w.BaseURL) && r.inPlace(link) {
 			continue
 		}
 		if r.writes >= MaxWritesPerRun {
@@ -300,6 +328,14 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 	var status int
 	var href, etag string
 	var err error
+	// Its project now writes to another calendar: the old event goes, a new one
+	// is written here (calsync-project-calendars D2).
+	if link != nil && r.targetOf != nil && r.c.calendarKey(r.calendarOf(link)) != r.c.calendarKey(r.target) {
+		if err := r.remove(ctx, link); err != nil {
+			return err
+		}
+		link = nil
+	}
 	if link == nil {
 		if status, href, etag, err = r.tr.create(ctx, r.target, t, opts, ""); err != nil {
 			return err
@@ -336,6 +372,9 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 	}
 	r.counts.Written++
 	nl := &Link{TaskID: t.ID, Href: href, ETag: etag, Snapshot: want, Body: BodyHash(t, r.encrypted, r.w.BaseURL)}
+	if r.c.calendarKey(r.target) != r.c.calendarKey(r.c.TargetURL) {
+		nl.Calendar = r.c.calendarKey(r.target)
+	}
 	r.links[t.ID], r.byHref[r.tr.key(href)] = nl, nl
 	return r.w.Store.SaveLink(ctx, r.c.ID, nl)
 }
