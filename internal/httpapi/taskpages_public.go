@@ -399,7 +399,7 @@ func (s *Server) handleTaskPageFile(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such file on this page")
 		return
 	}
-	f, info, err := s.blobs.Open(idOf(a["id"]))
+	f, info, err := s.blobs.Open(storedFile(a))
 	if errors.Is(err, blobs.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "the file is not on this server")
 		return

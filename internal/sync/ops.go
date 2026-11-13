@@ -512,8 +512,15 @@ var Schema = map[string]map[string]Field{
 	// <data>/attachments/ (internal/blobs). It lives in its task's scope and follows
 	// the comment authorship rules; uploaded_at is written by the server alone (D3).
 	"attachment": {
-		"task_id":     {Kind: kID, Default: `""`},
-		"comment_id":  {Kind: kNullableString, Default: `null`},
+		"task_id":    {Kind: kID, Default: `""`},
+		"comment_id": {Kind: kNullableString, Default: `null`},
+		// The standalone note an attachment belongs to instead of a task
+		// (note-attachments D1): exactly one of task_id and note_id is set.
+		"note_id": {Kind: kNullableString, Default: `null`},
+		// The attachment whose stored file this one shares (note-attachments
+		// D3): a note's copy names the original's bytes instead of uploading
+		// them again; the content route serves that file.
+		"file_id":     {Kind: kNullableString, Default: `null`},
 		"name":        {Kind: kString, Default: `""`, Content: true},
 		"mime":        {Kind: kString, Default: `"application/octet-stream"`, Content: true},
 		"size":        {Kind: kNumber, Default: `0`},

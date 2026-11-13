@@ -85,8 +85,10 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
  * personal, so a viewer of a shared project has it too), then Turn into task and
  * Delete for a note the user may change.
  */
-export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, pinKey, label = t('Note actions') }: {
+export function NoteMenu({ onAttach, pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, pinKey, label = t('Note actions') }: {
   pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
+  /** Attach files or a link (note-attachments D5): the open note's menu only. */
+  onAttach?: (kind: 'files' | 'link') => void
   /** The manual routines that run on a note (notes-in-routines): Run routine… lists them. */
   routines?: readonly { id: string; name: string }[]
   onRunRoutine?: (id: string) => void
@@ -102,6 +104,8 @@ export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelet
     <Menu kind="menu" label={label} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-56"
       triggerProps={{ 'data-note-menu': '' }}>
       <MenuItem label={pinned ? t('Unpin') : t('Pin')} icon={pinned ? 'pin-off' : 'pin'} shortcut={pinKey} onSelect={onPin} data-note-pin={pinned ? 'unpin' : 'pin'} />
+      {onAttach && <MenuItem label={t('Attach files…')} icon="paperclip" description={t('Or paste or drop files on the note')} onSelect={() => onAttach('files')} data-note-attach />}
+      {onAttach && <MenuItem label={t('Add a link…')} icon="link" onSelect={() => onAttach('link')} data-note-attach-link />}
       {onConnections && <MenuItem label={t('Show connections')} icon="waypoints" onSelect={onConnections} data-show-connections />}
       {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
       {onRunRoutine && !!routines?.length && (

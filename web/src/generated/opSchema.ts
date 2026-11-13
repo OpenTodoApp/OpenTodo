@@ -503,6 +503,17 @@ export interface CommentFields {
 export interface AttachmentFields {
   task_id?: string
   comment_id?: string | null
+  /**
+   * The standalone note an attachment belongs to instead of a task
+   * (note-attachments D1): exactly one of task_id and note_id is set.
+   */
+  note_id?: string | null
+  /**
+   * The attachment whose stored file this one shares (note-attachments
+   * D3): a note's copy names the original's bytes instead of uploading
+   * them again; the content route serves that file.
+   */
+  file_id?: string | null
   name?: string
   mime?: string
   size?: number
@@ -1260,7 +1271,7 @@ export const OP_DEFAULTS = {
     task_id: '', parent_id: null, body: '', author_id: '', mentions: [], created_at: 0, edited_at: null, deleted_at: null, guest_name: null, page_id: null, reactions: {},
   } satisfies Omit<Comment, 'id' | '_clock'>,
   attachment: {
-    task_id: '', comment_id: null, name: '', mime: 'application/octet-stream', size: 0, sha256: '', url: null, encrypted: false, author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
+    task_id: '', comment_id: null, note_id: null, file_id: null, name: '', mime: 'application/octet-stream', size: 0, sha256: '', url: null, encrypted: false, author_id: '', created_at: 0, uploaded_at: null, deleted_at: null,
   } satisfies Omit<Attachment, 'id' | '_clock'>,
   time_entry: {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,

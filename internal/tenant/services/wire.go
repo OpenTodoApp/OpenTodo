@@ -169,12 +169,21 @@ func (s *Set) AttachmentUsage(ctx context.Context, uid string) (int64, error) {
 		return 0, err
 	}
 	var total int64
+	// A file shared by a note's copies counts once (note-attachments D3).
+	files := map[string]bool{}
 	for _, a := range rows {
-		var author string
+		var author, file string
 		_ = json.Unmarshal(a["author_id"], &author)
 		if author != uid || opsync.IsNull(a["uploaded_at"]) {
 			continue
 		}
+		if _ = json.Unmarshal(a["file_id"], &file); file == "" {
+			_ = json.Unmarshal(a["id"], &file)
+		}
+		if files[file] {
+			continue
+		}
+		files[file] = true
 		var size float64
 		_ = json.Unmarshal(a["size"], &size)
 		total += int64(size)

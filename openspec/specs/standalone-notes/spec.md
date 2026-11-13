@@ -44,7 +44,7 @@ A note with a project SHALL live in that project's sharing scope and a note with
 - **THEN** there is none; the note's project decides who sees it
 
 ### Requirement: Writing a standalone note
-The user SHALL create a note from the Notes page (New note) and edit it in the docked panel on a computer and as a page on a phone, with a title field, the rich-text note editor, a project chosen with the project picker and labels chosen with the label picker. The editor SHALL offer every formatting command of notes except mentions, images from attachments and making a subtask. An empty title SHALL read "Untitled note". The note's address SHALL be `/notes/<id>`. Edits SHALL save on the device and sync as notes do, offline included.
+The user SHALL create a note from the Notes page (New note) and edit it in the docked panel on a computer and as a page on a phone, with a title field, the rich-text note editor, a project chosen with the project picker and labels chosen with the label picker. The editor SHALL offer every formatting command of notes except mentions and making a subtask; images SHALL be offered and embed attachments of the same note (`attachments` "Attachments on standalone notes"). An empty title SHALL read "Untitled note". The note's address SHALL be `/notes/<id>`. Edits SHALL save on the device and sync as notes do, offline included.
 
 #### Scenario: New note from the page
 - **WHEN** the user presses `q` on the Notes page, types "Meeting with the architect", presses Tab and writes a bullet list
@@ -56,7 +56,11 @@ The user SHALL create a note from the Notes page (New note) and edit it in the d
 
 #### Scenario: Unsupported commands
 - **WHEN** the user opens the slash menu in a standalone note
-- **THEN** it offers no mention, image or make-subtask entry
+- **THEN** it offers no mention or make-subtask entry
+
+#### Scenario: Paste a photo into a note
+- **WHEN** the user pastes a screenshot into the standalone note "Whiteboard", offline
+- **THEN** the image shows in the note at once, an attachment of the note is queued, and after sync every device shows the image once the bytes are uploaded
 
 ### Requirement: Turning notes into tasks and back
 The user SHALL turn a standalone note into a task (same title, note, project and labels; the note goes to the Trash) and move a task's note out into a new standalone note (titled with the task's title, with the task's project and labels; the task keeps its title and its note becomes empty), each in one batch with one Undo. Clearing the task's note SHALL delete the content inside the document, so a device holding an older copy cannot bring the text back by merging. Viewers SHALL be offered neither. Both SHALL work offline as local batches and converge like any edit.

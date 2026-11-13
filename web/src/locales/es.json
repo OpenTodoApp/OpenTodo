@@ -7590,5 +7590,10 @@
   "when a note gets the label {label}": "cuando una nota recibe la etiqueta {label}",
   "when a note is created": "cuando se crea una nota",
   "when a note is edited": "cuando se edita una nota",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}",
+  "Attach files…": "Adjuntar archivos…",
+  "Drop files to attach them to this note": "Suelta archivos para adjuntarlos a esta nota",
+  "Or paste or drop files on the note": "O pega o suelta archivos en la nota",
+  "“{name}” is removed from this note. You can undo right after.": "«{name}» se quita de esta nota. Puedes deshacerlo justo después.",
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": "«{name}» se muestra en la nota «{note}» y también se quita de ella. Puedes deshacerlo justo después."
 }

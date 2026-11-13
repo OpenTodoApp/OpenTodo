@@ -53,6 +53,9 @@ func (s *Server) registerAttachmentRoutes(mux *routes) {
 	mux.handle("PUT /api/v1/settings/attachments", ownerOnly("manage the attachment settings").DemoDenied(), s.handlePutAttachmentSettings)
 	mux.handle("GET /api/v1/tasks/{id}/attachments", signedIn.DemoDenied(), s.handleListAttachments)
 	mux.handle("POST /api/v1/tasks/{id}/attachments", signedIn.DemoDenied(), s.handleCreateAttachment)
+	// A standalone note's attachments (note-attachments D1): the task routes' rules.
+	mux.handle("GET /api/v1/notes/{id}/attachments", signedIn.DemoDenied(), s.handleListNoteAttachments)
+	mux.handle("POST /api/v1/notes/{id}/attachments", signedIn.DemoDenied(), s.handleCreateNoteAttachment)
 	mux.handle("PUT /api/v1/attachments/{id}/content", signedIn.DemoDenied(), s.handleUploadAttachment)
 	mux.handle("GET /api/v1/attachments/{id}/content", signedIn.DemoDenied(), s.handleAttachmentContent)
 	mux.handle("PATCH /api/v1/attachments/{id}", signedIn.DemoDenied(), s.handleRenameAttachment)
@@ -150,16 +153,29 @@ func (s *Server) liveAttachment(w http.ResponseWriter, r *http.Request) (opsync.
 }
 
 func (s *Server) handleListAttachments(w http.ResponseWriter, r *http.Request) {
+	s.listAttachments(w, r, "task")
+}
+
+func (s *Server) handleListNoteAttachments(w http.ResponseWriter, r *http.Request) {
+	s.listAttachments(w, r, "note")
+}
+
+func (s *Server) handleCreateNoteAttachment(w http.ResponseWriter, r *http.Request) {
+	s.createAttachment(w, r, "note")
+}
+
+// listAttachments lists the live attachments of a task or a standalone note.
+func (s *Server) listAttachments(w http.ResponseWriter, r *http.Request, parent string) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
 	taskID := r.PathValue("id")
-	task, err := s.sync.Get(ctx, uid, "task", taskID)
+	task, err := s.sync.Get(ctx, uid, parent, taskID)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
 	if task == nil || task.Deleted() {
-		writeError(w, http.StatusNotFound, "not_found", "task not found")
+		writeError(w, http.StatusNotFound, "not_found", parent+" not found")
 		return
 	}
 	rows, err := s.sync.List(ctx, uid, "attachment", false)
@@ -169,7 +185,7 @@ func (s *Server) handleListAttachments(w http.ResponseWriter, r *http.Request) {
 	}
 	out := []map[string]any{}
 	for _, a := range rows {
-		if idOf(a["task_id"]) == taskID {
+		if idOf(a[parent+"_id"]) == taskID {
 			out = append(out, attachmentView(a))
 		}
 	}
@@ -302,11 +318,29 @@ func (s *Server) handleUploadAttachment(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "attachment_mismatch", "a link attachment has no file")
 		return
 	}
+	id := r.PathValue("id")
+	if file := idOf(a["file_id"]); file != "" {
+		// A copy shares the original's file (note-attachments D3): nothing to
+		// receive; it is stored once the original is.
+		if !isNullish(a["uploaded_at"]) {
+			writeError(w, http.StatusConflict, "already_uploaded", "this attachment's file is already stored")
+			return
+		}
+		if !s.blobs.Exists(file) {
+			writeError(w, http.StatusNotFound, "not_found", "the shared file has not been uploaded yet")
+			return
+		}
+		if err := s.markUploaded(ctx, uid, id); err != nil {
+			s.internal(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	cfg, ok := s.attachmentGate(w, r)
 	if !ok {
 		return
 	}
-	id := r.PathValue("id")
 	if !isNullish(a["uploaded_at"]) || s.blobs.Exists(id) {
 		writeError(w, http.StatusConflict, "already_uploaded", "this attachment's file is already stored")
 		return
@@ -331,7 +365,23 @@ func (s *Server) handleUploadAttachment(w http.ResponseWriter, r *http.Request) 
 		s.internal(w, err)
 		return
 	}
+	s.markCopiesUploaded(ctx, id)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// markCopiesUploaded marks the rows that share a newly stored file as
+// uploaded, each as its own author (note-attachments D3). A copy that fails
+// stays waiting; its device asks again.
+func (s *Server) markCopiesUploaded(ctx context.Context, id string) {
+	copies, err := s.sync.SharedFileCopies(ctx, id)
+	if err != nil {
+		return
+	}
+	for cid, author := range copies {
+		if a, err := s.sync.Get(ctx, author, "attachment", cid); err == nil && a != nil && isNullish(a["uploaded_at"]) {
+			_ = s.markUploaded(ctx, author, cid)
+		}
+	}
 }
 
 func (s *Server) handleAttachmentContent(w http.ResponseWriter, r *http.Request) {
@@ -343,7 +393,7 @@ func (s *Server) handleAttachmentContent(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusNotFound, "not_found", "the file has not been uploaded yet")
 		return
 	}
-	f, info, err := s.blobs.Open(r.PathValue("id"))
+	f, info, err := s.blobs.Open(storedFile(a))
 	if errors.Is(err, blobs.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "the file is not on this server")
 		return
@@ -425,16 +475,21 @@ func (s *Server) writeAttachment(w http.ResponseWriter, r *http.Request, id stri
 // {name?, url}. With an Idempotency-Key the id derives from the key, so a retry
 // answers with the existing attachment.
 func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) {
+	s.createAttachment(w, r, "task")
+}
+
+// createAttachment attaches a file or a link to a task or a standalone note.
+func (s *Server) createAttachment(w http.ResponseWriter, r *http.Request, parent string) {
 	ctx := r.Context()
 	uid := userFrom(ctx).ID
 	taskID := r.PathValue("id")
-	task, err := s.sync.Get(ctx, uid, "task", taskID)
+	task, err := s.sync.Get(ctx, uid, parent, taskID)
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
 	if task == nil || task.Deleted() {
-		writeError(w, http.StatusNotFound, "not_found", "task not found")
+		writeError(w, http.StatusNotFound, "not_found", parent+" not found")
 		return
 	}
 	cfg, ok := s.attachmentGate(w, r)
@@ -460,6 +515,10 @@ func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) 
 		"encrypted": json.RawMessage("false"), "created_at": json.RawMessage(strconv.FormatInt(now, 10)),
 		"uploaded_at": json.RawMessage("null"), "deleted_at": json.RawMessage("null"),
 	}
+	if parent == "note" {
+		delete(body, "task_id")
+		body["note_id"] = mustJSON(taskID)
+	}
 	mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	stored := false
 	// The file's room stays held until its row is committed below.
@@ -477,7 +536,7 @@ func (s *Server) handleCreateAttachment(w http.ResponseWriter, r *http.Request) 
 		stored = true
 		body["name"], body["mime"], body["size"], body["sha256"], body["url"] = mustJSON(name), mustJSON(ctype), json.RawMessage(strconv.FormatInt(size, 10)), mustJSON(digest), json.RawMessage("null")
 		body["uploaded_at"] = json.RawMessage(strconv.FormatInt(now, 10))
-		if comment != "" {
+		if comment != "" && parent == "task" {
 			body["comment_id"] = mustJSON(comment)
 		}
 	} else {
@@ -635,7 +694,7 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[
 		if a.Deleted() || isNullish(a["uploaded_at"]) || !blobs.ValidID(id) {
 			continue
 		}
-		f, _, err := s.blobs.Open(id)
+		f, _, err := s.blobs.Open(storedFile(a))
 		if err != nil {
 			continue
 		}
@@ -653,4 +712,13 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[
 			return
 		}
 	}
+}
+
+// storedFile is the id of the file an attachment's bytes are stored under:
+// its own, or the original's for a copy (note-attachments D3).
+func storedFile(a opsync.Entity) string {
+	if f := idOf(a["file_id"]); f != "" {
+		return f
+	}
+	return idOf(a["id"])
 }

@@ -5,7 +5,7 @@
 // decrypted on the device. Nothing is ever loaded from another address.
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { contentUrl, isImage } from './attachments'
+import { contentUrl, fileKeyOf, isImage, parentOf } from './attachments'
 import { decryptFile } from './crypto'
 import { db } from './db'
 import { currentKey, onEncryptionChange } from './e2ee'
@@ -23,7 +23,8 @@ export type EmbedState =
 /** The attachment row an embed may show: an image file of the same task that is not deleted. */
 async function embeddable(id: string, taskId: string | null | undefined) {
   const a = await db.attachments.get(id)
-  if (!a || a.deleted_at || a.url || !isImage(a.mime) || !taskId || a.task_id !== taskId) return null
+  // The same task, or the same standalone note (note-attachments, "Embedded attachments").
+  if (!a || a.deleted_at || a.url || !isImage(a.mime) || !taskId || parentOf(a) !== taskId) return null
   return a
 }
 
@@ -43,6 +44,7 @@ export function useEmbeddedImage(id: string, taskId: string | null | undefined):
   const wanted = a?.encrypted && (blob || a.uploaded_at) ? `${a.id}:${keyEpoch}:${blob ? 'local' : 'remote'}` : null
   const name = a?.name ?? ''
   const mime = a?.mime ?? ''
+  const fileKey = a ? fileKeyOf(a) : id
   useEffect(() => {
     if (!wanted) return
     let url: string | null = null
@@ -60,7 +62,7 @@ export function useEmbeddedImage(id: string, taskId: string | null | undefined):
           if (!res.ok) throw new Error(String(res.status))
           envelope = await res.blob()
         }
-        const plain = await decryptFile(key, id, envelope, mime)
+        const plain = await decryptFile(key, fileKey, envelope, mime)
         if (!live) return
         url = URL.createObjectURL(plain)
         setDecrypted({ key: wanted, state: { kind: 'ready', src: url, name } })
@@ -72,7 +74,7 @@ export function useEmbeddedImage(id: string, taskId: string | null | undefined):
       live = false
       if (url) URL.revokeObjectURL(url)
     }
-  }, [wanted, id, name, mime, blob])
+  }, [wanted, id, name, mime, blob, fileKey])
   if (row === undefined) return { kind: 'loading' }
   if (!a) return { kind: 'removed' }
   if (a.encrypted) {

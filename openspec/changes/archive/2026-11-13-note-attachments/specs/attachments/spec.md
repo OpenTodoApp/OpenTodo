@@ -64,7 +64,7 @@ Anyone who may read a standalone note SHALL be able to attach to it, viewers of 
 - **THEN** the attachments are hidden while it is in the Trash, the quota still counts them, and they are listed again after the restore on every device
 
 ### Requirement: Attachments move with their note
-A note moved into a project of another sharing scope SHALL be copied with its live attachments: the copy batch SHALL create new attachment rows on the copy that name the same stored file (same digest, size and type), upload nothing, and remove the original's rows with the original. Turning a note into a task SHALL move its live attachments to the new task, and moving a task's note into a new note SHALL move the attachments that note embeds to the new note, each in the conversion's one batch with its embeds rewritten to the new ids, undone by its one Undo. A stored file SHALL be deleted only when no attachment row names it any longer. Offline, these are local batches; refusals revert on the device and every device converges on the server's result.
+A note moved into a project of another sharing scope SHALL be copied with its live attachments: the copy batch SHALL create new attachment rows on the copy that name the same stored file (same digest, size and type), upload nothing, and remove the original's rows with the original. An encrypted file SHALL NOT be copied into a shared project, whose members could not read it; it SHALL stay with the original in the Trash. The server SHALL accept a row that names another attachment's stored file only from an author who can see that attachment, for a file of its own with the same digest, and SHALL count a shared file once in its author's quota. Turning a note into a task SHALL move its live attachments to the new task, and moving a task's note into a new note SHALL move the attachments that note embeds to the new note, each in the conversion's one batch with its embeds rewritten to the new ids, undone by its one Undo. A stored file SHALL be deleted only when no attachment row names it any longer. Offline, these are local batches; refusals revert on the device and every device converges on the server's result.
 
 #### Scenario: Move to a shared project
 - **WHEN** the user moves a personal note with an embedded 3 MB photo into a project shared with Anna
@@ -73,6 +73,14 @@ A note moved into a project of another sharing scope SHALL be copied with its li
 #### Scenario: Turn into task
 - **WHEN** the user turns the note "Boiler manual" with one PDF and one embedded image into a task
 - **THEN** the task lists both attachments, its note shows the image, and Undo brings the note back with both
+
+#### Scenario: Encrypted file stays
+- **WHEN** an encrypted account moves a personal note with an encrypted PDF into a project shared with Anna
+- **THEN** the copy in the shared project has no attachment, and the original note with its PDF is in the Trash
+
+#### Scenario: Someone else's file
+- **WHEN** a device submits an attachment that names, as its stored file, an attachment of a project its author is not a member of
+- **THEN** the operation is rejected with reason `forbidden` and nothing is stored
 
 #### Scenario: Original purged
 - **WHEN** the original rows of a copied note are purged after the Trash retention period

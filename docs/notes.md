@@ -31,7 +31,7 @@ Narrow the list with tokens such as `in:Renovation` or `@errand`: see [Narrow no
 
 There are no folders: projects and labels organise notes. A note in a shared project is shared with that project: editors can change it and viewers can read it. A single note cannot be shared on its own. Moving a note into a project that is shared differently makes a copy there and removes the original, as for tasks.
 
-Mentions, images and **Make subtask** are not offered in standalone notes: they need a task.
+Mentions and **Make subtask** need a task; images and [files](attachments.md) stay with the note.
 
 ## Linking notes, tasks and projects
 

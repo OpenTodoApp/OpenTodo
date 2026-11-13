@@ -83,15 +83,20 @@ export interface Converted {
 
 /** Turns a standalone note into a task in one batch (D6). */
 export async function noteToTask(noteId: string, now = Date.now()): Promise<Converted> {
+  await foldNote('note', noteId)
   const note = await liveNote(noteId)
   const { id, change } = await planTask({
     title: note.title.trim() || t('Untitled note'), description: note.description ?? '', project_id: note.project_id, labels: note.labels ?? [],
   })
-  if (note.notes_doc) change.patch.notes_doc = note.notes_doc
+  // Its files go to the task, the embeds renamed (note-attachments D4); the text then rebuilds the task's document.
+  const { noteParent, planAttachmentMove, renameEmbeds } = await import('./noteAttachments')
+  const files = await planAttachmentMove(noteParent(noteId), id, { now })
+  if (files.renamed.size > 0) change.patch.description = renameEmbeds(note.description ?? '', files.renamed)
+  else if (note.notes_doc) change.patch.notes_doc = note.notes_doc
   // Without a project the task stays in the note's workspace, not the current one.
   if (!note.project_id) change.patch.workspace_id = note.workspace_id ?? null
   const label = t('Turned into a task')
-  const entry = await undoable([{ ...change, create: true }, tombstone('note', noteId, now)], label)
+  const entry = await undoable([{ ...change, create: true }, ...files.changes, tombstone('note', noteId, now)], label)
   return { id, entry, label }
 }
 
@@ -119,11 +124,18 @@ export async function moveTaskNoteOut(taskId: string, now = Date.now()): Promise
       ...(task.project_id ? {} : keep === undefined ? { workspace_id: task.workspace_id ?? null } : { workspace_id: keep }),
     },
   }
+  // The files the note shows go with it (note-attachments D4).
+  const { embeddedAttachmentIds, noteParent, planAttachmentMove, renameEmbeds } = await import('./noteAttachments')
+  const files = await planAttachmentMove(taskId, noteParent(note.entityId), { only: embeddedAttachmentIds(text), now })
+  if (files.renamed.size > 0) {
+    note.patch.description = renameEmbeds(text, files.renamed)
+    delete note.patch.notes_doc
+  }
   if (!note.patch.notes_doc) delete note.patch.notes_doc
   const cleared = clearedDoc(task.notes_doc)
   const taskPatch: Record<string, unknown> = cleared ? { notes_doc: cleared, description: '' } : { description: '' }
   const label = t('Moved the note to a new note')
-  const entry = await undoable([note, { entity: 'task', entityId: taskId, patch: taskPatch, base: { notes_doc: task.notes_doc ?? '', description: text } }], label)
+  const entry = await undoable([note, ...files.changes, { entity: 'task', entityId: taskId, patch: taskPatch, base: { notes_doc: task.notes_doc ?? '', description: text } }], label)
   // Undo writes the earlier text back as the projection only (a fold, like a history
   // restore): the earlier document merged into the cleared one would stay cleared.
   if (entry) {
@@ -152,8 +164,18 @@ export async function setNoteProject(noteId: string, projectId: string | null): 
   const workspace = projectId ? {} : { workspace_id: keep === undefined ? note.workspace_id ?? null : keep }
   const memberships = await membershipMap()
   if (scopeOf(note.project_id, memberships) !== scopeOf(projectId, memberships)) {
-    const copy = copyNoteChange(note, projectId, projectId ? null : (workspace.workspace_id ?? null))
-    await mutateMany([copy, { entity: 'note', entityId: noteId, patch: { deleted_at: Date.now() } }])
+    await foldNote('note', noteId)
+    const current = (await db.notes.get(noteId)) ?? note
+    const copy = copyNoteChange(current, projectId, projectId ? null : (workspace.workspace_id ?? null))
+    // The copy takes the files along without uploading them again (note-attachments D3); encrypted
+    // ones stay with the original when the members of a shared project could not read them.
+    const { noteParent, planAttachmentMove, renameEmbeds } = await import('./noteAttachments')
+    const files = await planAttachmentMove(noteParent(noteId), noteParent(copy.entityId), { plainOnly: !!projectId && memberships.has(projectId) })
+    if (files.renamed.size > 0) {
+      copy.patch.description = renameEmbeds(current.description ?? '', files.renamed)
+      delete copy.patch.notes_doc
+    }
+    await mutateMany([copy, ...files.changes, { entity: 'note', entityId: noteId, patch: { deleted_at: Date.now() } }])
     return copy.entityId
   }
   await mutate('note', noteId, { project_id: projectId, ...workspace })

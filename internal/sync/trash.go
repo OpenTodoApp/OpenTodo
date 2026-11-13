@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -361,11 +362,9 @@ func (s *Service) SweepOrphans(ctx context.Context) (int, error) {
 		if modified.After(cutoff) {
 			return nil
 		}
-		var one int
-		err := s.db.QueryRowContext(ctx, `SELECT 1 FROM scope_fields WHERE entity = 'attachment' AND entity_id = ? LIMIT 1`, id).Scan(&one)
-		if errors.Is(err, sql.ErrNoRows) {
+		used, err := fileReferenced(ctx, s.db, id)
+		if err == nil && !used {
 			orphans = append(orphans, id)
-			return nil
 		}
 		return err
 	})
@@ -460,6 +459,11 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 	touched := map[string]bool{}
 	var purgedFiles []string
 	for _, t := range all {
+		if t.entity == "attachment" {
+			if f := sharedFileOf(ctx, tx, t.scope, t.id); f != "" {
+				purgedFiles = append(purgedFiles, f)
+			}
+		}
 		if err := purgeOne(ctx, tx, actor, t, now); err != nil {
 			return res, err
 		}
@@ -526,8 +530,8 @@ func (s *Service) purgeTx(ctx context.Context, actor string, pick func(tx *sql.T
 	// Files go only once their rows are gone, unless the id lives on in another scope.
 	if s.blobs != nil {
 		for _, id := range purgedFiles {
-			var one int
-			if err := s.db.QueryRowContext(ctx, `SELECT 1 FROM scope_fields WHERE entity = 'attachment' AND entity_id = ? LIMIT 1`, id).Scan(&one); err == nil {
+			// A file shared by copies stays while any row names it (note-attachments D3).
+			if used, err := fileReferenced(ctx, s.db, id); err != nil || used {
 				continue
 			}
 			_ = s.blobs.Remove(id)
@@ -656,6 +660,19 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		}
 		for _, id := range eids {
 			add(purgeTarget{t.scope, "time_entry", id})
+		}
+	}
+	// A standalone note's attachments go with it (note-attachments D1).
+	for _, t := range slices.Clone(out) {
+		if t.entity != "note" {
+			continue
+		}
+		aids, err := childIDsWhere(ctx, tx, t.scope, "attachment", "note_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range aids {
+			add(purgeTarget{t.scope, "attachment", id})
 		}
 	}
 	return out, nil

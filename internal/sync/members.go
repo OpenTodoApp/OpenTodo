@@ -540,6 +540,19 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 		if err := relabel(c.entity, c.id); err != nil {
 			return err
 		}
+		if c.entity == "note" {
+			// A note's attachments live in its scope (note-attachments D1).
+			aids, err := childIDsWhere(ctx, tx, personal, "attachment", "note_id", c.id, false)
+			if err != nil {
+				return err
+			}
+			for _, aid := range aids {
+				if err := relabel("attachment", aid); err != nil {
+					return err
+				}
+			}
+			continue
+		}
 		if c.entity != "task" {
 			continue
 		}

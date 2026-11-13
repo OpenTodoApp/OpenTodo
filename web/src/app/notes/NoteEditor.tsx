@@ -11,7 +11,9 @@ import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
 import { setNoteProject, toggleNoteLabel } from '../../lib/noteOps'
 import { mutate } from '../../lib/ops'
-import { canEditTasks, roleOf } from '../../lib/sharing'
+import { canEditTasks, roleOf, useMe } from '../../lib/sharing'
+import { noteParent } from '../../lib/attachments'
+import { requestAttach } from '../task-detail/attachRequest'
 import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
 import { resettable } from '../../lib/moduleState'
@@ -33,6 +35,8 @@ import { useRules } from '../../lib/rules/store'
 import { useOnline } from '../../lib/online'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
+// A standalone note's files (note-attachments D5): the task detail's list, below the text.
+const AttachmentsRow = lazy(() => import('../task-detail/AttachmentsRow').then((m) => ({ default: m.AttachmentsRow })))
 
 /** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
 let bodyFocus: string | null = null
@@ -118,12 +122,17 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
   const [focusBody] = useState(() => takeBodyFocus(note.id))
+  const form = useRef<HTMLDivElement>(null)
+  const me = useMe()
+  const role = roleOf(note.project_id, useMembershipMap())
   return (
-    <div className="space-y-4" data-note-form={note.id}>
+    <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
-      <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
+      <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
         <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} outline="auto" />
       </Suspense>
+      {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
+      <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
         <span className="pt-2 text-meta text-muted">{t('Project')}</span>
         {readOnly
@@ -144,6 +153,7 @@ const toList = () => navigate({ view: 'notes' })
 /** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
 function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
+  const me = useMe()
   const connected = useConnected('note', note.id)
   // Run routine…: the manual routines that run on a note (notes-in-routines).
   const rules = useRules().filter((r) => r.trigger?.kind === 'manual' && r.trigger.on === 'note')
@@ -154,7 +164,7 @@ function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   }
   const routines = rules.map((r) => ({ id: r.id, name: r.name }))
   return (
-    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
+    <NoteMenu onAttach={me ? (kind) => requestAttach(noteParent(note.id), kind) : undefined} pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
       onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />

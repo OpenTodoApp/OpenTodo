@@ -967,6 +967,7 @@
     "web/src/app/LinkDialog.tsx"
   ],
   "Add a link…": [
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -2280,6 +2281,9 @@
   ],
   "Attach files": [
     "web/src/app/task-detail/Composer.tsx"
+  ],
+  "Attach files…": [
+    "web/src/app/notes/NoteRow.tsx"
   ],
   "Attached files": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -5332,6 +5336,9 @@
   "Drop": [
     "web/src/app/objectives/ObjectiveCards.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx"
+  ],
+  "Drop files to attach them to this note": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Drop files to attach them to this task": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
@@ -12506,6 +12513,10 @@
   ],
   "Options, one per line": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "Or paste or drop files on the note": [
+    "web/src/app/notes/NoteRow.tsx",
+    "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "Or paste or drop files on the task": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
@@ -20257,6 +20268,7 @@
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/wordPicker.tsx",
     "web/src/app/routines/words.tsx",
+    "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
@@ -25552,7 +25564,13 @@
   "“{name}” (read-only)": [
     "web/src/app/auditFormat.ts"
   ],
+  "“{name}” is removed from this note. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
   "“{name}” is removed from this task. You can undo right after.": [
+    "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "“{name}” is shown in the note “{note}” and is removed from it too. You can undo right after.": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
   ],
   "“{name}” is shown in the notes of “{task}” and is removed from them too. You can undo right after.": [
