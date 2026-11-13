@@ -961,3 +961,14 @@ Each turn SHALL record input read from the provider's prompt cache apart from fr
 #### Scenario: Unauthenticated usage request
 - **WHEN** a request without credentials calls `GET /api/v1/me/assistant/usage`
 - **THEN** the response is 401 `unauthorized`
+
+### Requirement: Write tools on request
+A turn without a skill SHALL first offer the read and display tools and `propose_changes`, unless it amends an open proposal, which offers the write tools from its first round. After the model calls `propose_changes`, later rounds of that turn SHALL also offer the write tools, `remember` included; a write tool called before that SHALL be refused without planning anything. Proposals, limits and review are unchanged. The server and the device behave the same.
+
+#### Scenario: A question reads only
+- **WHEN** the user asks "what is due today?"
+- **THEN** the model calls are offered no write tool and the answer proposes nothing
+
+#### Scenario: A change is asked for
+- **WHEN** the user asks "move everything overdue to Friday"
+- **THEN** the model calls `propose_changes`, the next round offers `schedule_tasks`, and the turn ends with a change set

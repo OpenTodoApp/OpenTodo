@@ -459,4 +459,4 @@ For an encrypted account the device SHALL encrypt the four priority names of its
 
 #### Scenario: Locked device
 - **WHEN** a device of an encrypted account is locked
-- **THEN** priorities read "Priority 1" to "Priority 4" and show the real names after unlocking
+- **THEN** priorities read "Priority 1" to "Priority 3" and "No priority" and show the real names after unlocking

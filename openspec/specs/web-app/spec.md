@@ -673,7 +673,7 @@ The Add control SHALL list the properties that have no value under the headings 
 
 #### Scenario: Add an estimate
 - **WHEN** the user opens Add, picks Estimate under How, types `1h30` and presses Enter
-- **THEN** the How line reads "P4 · 1 h 30" and focus is on the new part
+- **THEN** the How line reads "Priority · 1 h 30", Priority in the faint tone of an unset part, and focus is on the new part
 
 #### Scenario: Cancel leaves no trace
 - **WHEN** the user picks Deadline from Add and presses Escape without a date
@@ -1007,7 +1007,7 @@ The task page SHALL show the task's properties in a facts column of labelled row
 
 #### Scenario: More properties
 - **WHEN** the user taps "More properties" on that card
-- **THEN** Start, Repeat, Priority 4, Estimate, Blocked by, Location, Parent task and Labels are added in place, the unset ones as actions, and "More properties" is gone
+- **THEN** Start, Repeat, Priority, Estimate, Blocked by, Location, Parent task and Labels are added in place, the unset ones as actions, and "More properties" is gone
 
 #### Scenario: Set a deadline from its row
 - **WHEN** the user activates "Set a deadline" on a task's page
