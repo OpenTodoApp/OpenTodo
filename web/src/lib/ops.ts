@@ -1263,6 +1263,28 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
 }
 
 /**
+ * The changes completeTask writes for `id`, without writing them: for a caller that
+ * applies them as one undoable batch (lib/undo.ts applyBatch; the native app's swipe to
+ * complete, whose Undo brings the task, its subtasks and the series' date back in one
+ * step; a timer the completion stopped stays stopped). Empty for a task that is missing,
+ * deleted or completed.
+ */
+export async function planCompleteTask(id: string, opts: { now?: number; today?: string } = {}): Promise<Change[]> {
+  const now = opts.now ?? Date.now()
+  const today = opts.today ?? logicalToday()
+  const task = await db.tasks.get(id)
+  if (!task || task.deleted_at || task.completed_at) return []
+  const stops = await trackingStops(id, now)
+  const rule = seriesRule(task)
+  if (rule) {
+    const members = task.project_id ? memberSet(await db.memberships.get(task.project_id)) : undefined
+    const plan = planCompletion(task, rule, await lineageRows(id), now, today, members)
+    if (plan.kind === 'roll') return [...plan.changes, ...stops]
+  }
+  return [...planCompletePlain(id, await liveSubtree(id), now), ...stops]
+}
+
+/**
  * Skip the current occurrence of a series: an ordinary due-date change, no record.
  * A habit also writes the occurrence record marked `skipped` (OpenSpec `habits`).
  * Returns false (and writes nothing) when the task is not an open series or the
