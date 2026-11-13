@@ -2707,6 +2707,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `attachments_unavailable` | 503 | the server has no file store for attachments |
 | `private_target` | 400 | webhook URL on a private, loopback or link-local network while the owner has not allowed private targets |
 | `task_required` | 400 | a routine run by hand whose steps read the trigger's task, without `task_id` |
+| `note_required` | 400 | a routine triggered by a note, or run on a note, run by hand without `note_id` or with a `task_id` instead |
 | `already_undone` | 409 | the routine run was undone before |
 | `paused` | 409 | a routine the server paused (`paused_reason: "runaway"`) was run by hand; turn it on again first |
 | `automations_off` | 409 | a routine was run by hand while the owner has automations off |
