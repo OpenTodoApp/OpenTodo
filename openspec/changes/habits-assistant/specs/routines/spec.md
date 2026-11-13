@@ -17,13 +17,13 @@ Find habits SHALL use the numbers of "Habit numbers on the server" (OpenSpec `ha
 The catalogue SHALL offer these steps, grouped as listed, with the inputs and outputs of the designs' catalogues:
 - **Tasks:** Find tasks (a filter query, a saved view or a rule condition, at most 500, live; a condition finds open tasks, and a query or view follows the filter rule of open tasks unless it names `completed` or `open` or compares the completion date), Create tasks (one per line of a Text or Lines, each line read with quick-add syntax, or from fields; in a project, or as subtasks of a parent task), Change tasks (priority, due, start, deadline, energy, assignee, labels added and removed, project and section, complete or reopen, move to the Trash), Add a comment, Get a specific task.
 - **Projects:** Find project (by name), Get the project of a task, Create project, Update project (name, colour, icon, archived), Create sections, Create labels, Favourite, Create a project from a template of the library.
-- **Notes and text:** Get note text, Add to a note and Clear a note (of a task, of a project from an earlier step, or of a project chosen in the picker), Split into lines (optionally only the open checkboxes), Join, Format text (placeholders for earlier outputs), Find and replace (plain text).
+- **Notes and text:** Find notes (standalone notes by project, sub-projects included, by labels, by when they last changed and by words read like the Notes page search, at most 500, newest change first), Get a specific note, Create note (a title, a text, a project and labels; outputs the Note), Change notes (project, labels added and removed, pin or unpin for the run-as person, move to the Trash), Turn into task (outputs the Task), Get note text (of a task, of a project, or of a note; the text or the title), Add to a note and Clear a note (of a task, of a project or of a note, from an earlier step or chosen in the picker), Split into lines (optionally only the open checkboxes), Join, Format text (placeholders for earlier outputs, a note's title included), Find and replace (plain text).
 - **Habits:** Find habits (open habits, optionally only those at risk, back on track or with a streak of at least N; outputs Tasks), Log a habit (a habit, a date, today by default, a state and an optional note).
-- **Lists and logic:** Pick (first, last, first N, last N, all, or where), Sort, Count, If/Otherwise, Repeat for each, Stop.
+- **Lists and logic:** Pick (first, last, first N, last N, all, or where), Sort (tasks, or notes by title, last change or creation), Count, If/Otherwise, Repeat for each, Stop; each takes Tasks, Notes or Lines alike.
 - **Time and focus:** Get the date (today, tomorrow, in N days or a date), Start timer, Stop timer, Tracked time for a period (minutes), Set today's focus (three tasks, or Bento slots by estimate, by the same rules as the Daily check).
 - **Communication:** Notify me, Send a webhook, Email me, Email project members (shared routines only).
 
-Steps with a counterpart in the agent tool registry SHALL be validated and planned by the registry's planning for that tool, so a change a routine plans is the change an agent or the assistant would plan with the same arguments. Every write SHALL follow the user's own action rules (a recurring completion rolls the series forward; a date on a parked task un-parks it; a reminder follows a moved due; a project change clears a section of another project). Steps SHALL never purge, delete permanently, change sharing or membership, or create, edit, enable or run a routine.
+Steps with a counterpart in the agent tool registry SHALL be validated and planned by the registry's planning for that tool, so a change a routine plans is the change an agent or the assistant would plan with the same arguments. Every write SHALL follow the user's own action rules (a recurring completion rolls the series forward; a date on a parked task un-parks it; a reminder follows a moved due; a project change clears a section of another project). Steps SHALL never purge, delete permanently, change sharing or membership, or create, edit, enable or run a routine. Other requirements of this specification MAY add steps to a group.
 
 #### Scenario: Groceries from a note
 - **WHEN** the routine "Groceries" runs (Get the note text of the project Groceries, chosen in the picker → Split into lines → Create tasks in Errands) and the note reads "- oat milk\n- [ ] bread tomorrow\n\n- apples"
@@ -68,3 +68,11 @@ Steps with a counterpart in the agent tool registry SHALL be validated and plann
 #### Scenario: Habits group
 - **WHEN** the user opens Add step while Habits is on
 - **THEN** a Habits group offers Find habits and Log a habit
+
+#### Scenario: A note from the week's work
+- **WHEN** the routine "Weekly review note" runs on Friday at 16:00 (Find tasks `completed = this week` → Join their titles → Create note "Week {the date}" with the joined text in Reviews, label review) and the user completed four tasks this week
+- **THEN** one standalone note "Week 2026-11-13" exists in Reviews with the label review and the four titles, on every device after sync
+
+#### Scenario: Stale reference notes
+- **WHEN** a monthly routine finds the notes in Reference that have not changed for 90 days and changes them: add label review
+- **THEN** each such note gets the label review in one run, and notes changed within 90 days are untouched

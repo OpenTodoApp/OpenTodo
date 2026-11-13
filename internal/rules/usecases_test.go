@@ -43,6 +43,15 @@ type ucSeed struct {
 	} `json:"projects"`
 	Labels []struct{ ID, Name string }        `json:"labels"`
 	Views  []struct{ ID, Name, Query string } `json:"views"`
+	// Notes are standalone notes (notes-in-routines); changed_on is their last change.
+	Notes []struct {
+		ID        string   `json:"id"`
+		Title     string   `json:"title"`
+		Text      string   `json:"text"`
+		ProjectID string   `json:"project_id"`
+		Labels    []string `json:"labels"`
+		ChangedOn string   `json:"changed_on"`
+	} `json:"notes"`
 	// Entries are the user's time entries (routines-ai-step: tracked time, timers).
 	Entries []struct {
 		ID      string `json:"id"`
@@ -74,6 +83,10 @@ type ucExpect struct {
 	Sections        []string                  `json:"sections"`
 	LabelsCreated   []string                  `json:"labels_created"`
 	Favourites      *string                   `json:"favourites"`
+	// Standalone notes (notes-in-routines): created ones, and the fields of
+	// seeded ones that changed.
+	NotesCreated []map[string]any          `json:"notes_created"`
+	NotesChanged map[string]map[string]any `json:"notes_changed"`
 }
 
 type ucCase struct {
@@ -85,6 +98,7 @@ type ucCase struct {
 	Trigger   json.RawMessage `json:"trigger"`
 	Condition json.RawMessage `json:"condition"`
 	RunOn     string          `json:"run_on"`
+	RunOnNote string          `json:"run_on_note"`
 	Steps     json.RawMessage `json:"steps"`
 	Webhooks  []string        `json:"webhooks"`
 	Email     bool            `json:"email"`
@@ -194,7 +208,11 @@ func runUseCase(t *testing.T, f ucFile, c ucCase) {
 		h.e.AI = &ucAI{answers: slices.Clone(c.AI)}
 		h.write("alice", "laptop", "rule", "uc", map[string]any{"ai_apply": "auto"})
 	}
-	res := h.runNow("alice", "uc", c.RunOn, false)
+	h.n++
+	res, err := h.e.RunNow(h.ctx, "alice", RunRequest{RuleID: "uc", RunID: fmt.Sprintf("run-%d", h.n), TaskID: c.RunOn, NoteID: c.RunOnNote})
+	if err != nil {
+		t.Fatalf("run: %v", err)
+	}
 	want := c.Expect.Outcome
 	if want == "" {
 		want = OutcomeApplied
@@ -204,6 +222,74 @@ func runUseCase(t *testing.T, f ucFile, c ucCase) {
 	}
 	checkUseCase(t, h, c, seed, before, res, sink, deliveries, mailer)
 	checkUseCaseProjects(t, h, c, seed)
+	checkUseCaseNotes(t, h, c, seed)
+}
+
+// ucNoteState is what a case compares of a standalone note.
+func ucNoteState(e opsync.Entity) map[string]any {
+	labels := listOf(e["labels"])
+	slices.Sort(labels)
+	return map[string]any{"title": strOf(e["title"]), "text": strOf(e["description"]), "project_id": strOf(e["project_id"]),
+		"labels": strings.Join(labels, ","), "deleted": !opsync.IsNull(e["deleted_at"])}
+}
+
+// checkUseCaseNotes compares the notes a run created and the fields of seeded notes it changed.
+func checkUseCaseNotes(t *testing.T, h *harness, c ucCase, seed ucSeed) {
+	t.Helper()
+	rows, err := h.sync.List(h.ctx, "alice", "note", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	created := []map[string]any{}
+	changed := map[string]map[string]any{}
+	for _, r := range rows {
+		id := strOf(r["id"])
+		now := ucNoteState(r)
+		i := slices.IndexFunc(seed.Notes, func(n struct {
+			ID        string   `json:"id"`
+			Title     string   `json:"title"`
+			Text      string   `json:"text"`
+			ProjectID string   `json:"project_id"`
+			Labels    []string `json:"labels"`
+			ChangedOn string   `json:"changed_on"`
+		}) bool {
+			return n.ID == id
+		})
+		if i < 0 {
+			x := map[string]any{}
+			for k, v := range now {
+				if v != "" && v != false {
+					x[k] = v
+				}
+			}
+			created = append(created, x)
+			continue
+		}
+		sn := seed.Notes[i]
+		labels := slices.Clone(sn.Labels)
+		slices.Sort(labels)
+		old := map[string]any{"title": sn.Title, "text": sn.Text, "project_id": sn.ProjectID, "labels": strings.Join(labels, ","), "deleted": false}
+		for k, v := range now {
+			if !reflect.DeepEqual(old[k], v) {
+				ensure(changed, id)[k] = v
+			}
+		}
+	}
+	slices.SortFunc(created, func(a, b map[string]any) int { return strings.Compare(fmt.Sprint(a["title"]), fmt.Sprint(b["title"])) })
+	want := c.Expect.NotesCreated
+	if want == nil {
+		want = []map[string]any{}
+	}
+	if !reflect.DeepEqual(created, want) {
+		t.Errorf("notes created %v, want %v", created, want)
+	}
+	wantChanged := c.Expect.NotesChanged
+	if wantChanged == nil {
+		wantChanged = map[string]map[string]any{}
+	}
+	if !reflect.DeepEqual(changed, wantChanged) {
+		t.Errorf("notes changed %v, want %v", changed, wantChanged)
+	}
 }
 
 // checkUseCaseProjects compares the projects, sections, labels and favourites
@@ -302,6 +388,28 @@ type delivery struct {
 // each task's state before the run.
 func seedUseCase(t *testing.T, h *harness, seed ucSeed) map[string]map[string]any {
 	t.Helper()
+	// Notes first: a note's last change can be in the past only before any newer write.
+	for _, n := range seed.Notes {
+		now := h.clock
+		if n.ChangedOn != "" {
+			day, err := time.Parse("2006-01-02", n.ChangedOn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			h.clock = day.Add(10 * time.Hour)
+		}
+		labels := n.Labels
+		if labels == nil {
+			labels = []string{}
+		}
+		var pid any
+		if n.ProjectID != "" {
+			pid = n.ProjectID
+		}
+		h.write("alice", "phone", "note", n.ID, map[string]any{"title": n.Title, "description": n.Text, "project_id": pid, "labels": labels,
+			"position": 1, "created_at": h.clock.UnixMilli(), "deleted_at": nil})
+		h.clock = now
+	}
 	for _, l := range seed.Labels {
 		h.write("alice", "laptop", "label", l.ID, map[string]any{"name": l.Name, "created_at": 1, "deleted_at": nil})
 	}
@@ -406,7 +514,7 @@ func checkUseCase(t *testing.T, h *harness, c ucCase, seed ucSeed, before map[st
 			}
 		} else {
 			x := map[string]any{"title": now["title"]}
-			for _, k := range []string{"project_id", "parent_id", "due"} {
+			for _, k := range []string{"project_id", "parent_id", "due", "description"} {
 				if now[k] != "" {
 					x[k] = now[k]
 				}
@@ -433,6 +541,13 @@ func checkUseCase(t *testing.T, h *harness, c ucCase, seed ucSeed, before map[st
 			appended[p.ID] = a
 		} else if d := strOf(row["description"]); d != p.Description {
 			appended[p.ID] = []string{strings.TrimSpace(strings.TrimPrefix(d, p.Description))}
+		}
+	}
+	for _, n := range seed.Notes {
+		if row, err := h.sync.Get(h.ctx, "alice", "note", n.ID); err == nil && row != nil {
+			if a := appendedOf(row); len(a) > 0 {
+				appended[n.ID] = a
+			}
 		}
 	}
 	slices.SortFunc(created, func(a, b map[string]any) int { return strings.Compare(fmt.Sprint(a["title"]), fmt.Sprint(b["title"])) })

@@ -3,10 +3,11 @@
 // app and what it may do, and only Allow asks the server for a code.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { click, mockFetch, render, waitFor } from '../ui/test-utils'
-import { OAuthConsent } from './OAuthConsent'
-import { takeConsentQuery } from './OAuthConsentHost'
+import { OAuthConsent, OAuthConsentView } from './OAuthConsent'
+import { api } from '../lib/api'
+import { setConsentQuery, takeConsentQuery, useConsentPending } from './OAuthConsentHost'
 
-afterEach(() => { vi.unstubAllGlobals() })
+afterEach(() => { vi.unstubAllGlobals(); setConsentQuery(null) })
 
 const dialog = () => document.querySelector<HTMLElement>('[data-testid="oauth-consent"]')
 const query = 'client_id=c1&redirect_uri=https%3A%2F%2Foauth-redirect.googleusercontent.com%2Fr%2Fx&response_type=code'
@@ -48,10 +49,44 @@ describe('OAuthConsent', () => {
     expect(assign).toHaveBeenCalledWith('https://oauth-redirect.googleusercontent.com/r/x?code=abc')
   })
 
+  it('offers the workspaces when there are two or more, and Allow needs one chosen (token-workspaces D5)', async () => {
+    const info = { client: { id: 'c1', name: 'Gemini', dynamic: true }, scope: 'agent' as const, redirectHost: 'x' }
+    const two = [{ id: 'w-home', name: 'Home' }, { id: 'w-work', name: 'Work' }]
+    const one = await render(<OAuthConsentView info={info} busy={false} workspaces={[two[0]]} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector('[data-token-workspace-choice]')).toBeNull()
+    await one.unmount()
+    const none = await render(<OAuthConsentView info={info} busy={false} workspaces={two} only={[]} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector('[data-token-workspace-choice]')).not.toBeNull()
+    expect(document.querySelector<HTMLButtonElement>('[data-oauth-allow]')!.disabled).toBe(true)
+    await none.unmount()
+    await render(<OAuthConsentView info={info} busy={false} workspaces={two} only={['w-work']} onAllow={() => {}} onDeny={() => {}} />)
+    expect(document.querySelector<HTMLButtonElement>('[data-oauth-allow]')!.disabled).toBe(false)
+  })
+
+  it('sends the chosen workspaces with Allow', async () => {
+    const posts: unknown[] = []
+    serve('agent', posts)
+    await api.answerMcpConsent(query, true, ['w-work'])
+    expect(posts).toEqual([{ query, allow: true, workspaces: ['w-work'] }])
+  })
+
   it('takes the request out of the address once', () => {
     window.history.replaceState(null, '', `/?oauth_consent=${encodeURIComponent(query)}`)
     expect(takeConsentQuery()).toBe(query)
     expect(window.location.search).toBe('')
     expect(takeConsentQuery()).toBeNull()
+  })
+
+  it('tells the shell while a request waits, so the first-run dialogs stay behind it', async () => {
+    function Waiting() {
+      return <p data-waiting={String(useConsentPending())} />
+    }
+    const waiting = () => document.querySelector('[data-waiting]')?.getAttribute('data-waiting')
+    await render(<Waiting />)
+    expect(waiting()).toBe('false')
+    setConsentQuery(query)
+    await waitFor(() => waiting() === 'true', 'the pending request')
+    setConsentQuery(null)
+    await waitFor(() => waiting() === 'false', 'the answered request')
   })
 })

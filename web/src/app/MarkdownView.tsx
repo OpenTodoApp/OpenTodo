@@ -60,7 +60,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
     case 'h': {
       const h = HEADING[b.level] ?? { tag: 'h4' as const, cls: 'text-body font-semibold text-strong' }
       const Tag = h.tag
-      return <Tag key={i} className={h.cls}>{inl(b.c)}</Tag>
+      return <Tag key={i} className={h.cls} data-heading-level={b.level}>{inl(b.c)}</Tag>
     }
     case 'table':
       // The table scrolls inside its own box; the page never scrolls sideways.

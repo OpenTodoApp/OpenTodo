@@ -68,6 +68,8 @@ export type Route =
   // Weekly review and Statistics (stats-and-review).
   | { view: 'review'; step?: string }
   | { view: 'stats' }
+  // Habits (habits-home D9): the habits screen, while Habits is on.
+  | { view: 'habits' }
   // Open Loops (open-loops-method): the derived Next and Waiting views.
   | { view: 'next' }
   | { view: 'waiting' }
@@ -100,7 +102,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
-  trash: false, feed: false, ask: false, display: false, stats: false,
+  trash: false, feed: false, ask: false, display: false, stats: false, habits: false,
 }
 
 /** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
@@ -277,6 +279,8 @@ export function parseRoute(pathname: string): Route {
       return LOOP_MOVES.includes(parts[1]) ? { view: 'loop', move: parts[1] as LoopMove } : { view: 'loop' }
     case 'stats':
       return { view: 'stats' }
+    case 'habits':
+      return { view: 'habits' }
     case 'focus':
       return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
     case 'notes': {

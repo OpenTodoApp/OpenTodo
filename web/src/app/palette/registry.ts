@@ -3,6 +3,7 @@
 // running through the same function as the button, key or menu item it stands for.
 // Object commands (project, saved view, label, section) are built from the menus'
 // own item lists, so the two cannot drift; a guard test checks it.
+import { openHabitForm } from '../habits/habitFormStore'
 import { createLabel } from '../../lib/labels'
 import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
@@ -83,6 +84,8 @@ export interface PaletteContext {
   dayParts?: boolean
   /** The account's Time sectors switch (time-sectors D6): "Set time sector…" is offered while it is on. */
   timeSectors?: boolean
+  /** Habits is on (habits-home D2): Go to Habits, New habit and Make it a habit are offered. */
+  habits?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
   /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
@@ -346,6 +349,9 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push({ id: n.pinned ? 'note:unpin' : 'note:pin', label: n.pinned ? t('Unpin note') : t('Pin note'), icon: n.pinned ? 'pin-off' : 'pin',
       keywords: 'pin favourite favorite sidebar notes', run: () => setFavourite('note', n.id, !n.pinned) })
     if (connectedNow('note', n.id)) out.push(connectionsCommand('note', n.id, null))
+    // Run routine… on the open note (notes-in-routines): the manual routines that take a note.
+    out.push({ id: 'note:run-routine', label: t('Run routine on this note…'), icon: 'zap', keywords: 'routine rule automation run now note',
+      run: async () => (await import('./routineCommand')).runRoutineOnNoteStep(n.id) })
   }
   if (ctx.section) {
     const s = ctx.section
@@ -404,6 +410,10 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    ...(ctx.habits ? [
+      { id: 'go:habits', label: t('Go to Habits'), icon: 'leaf' as const, shortcut: keysOf('go.habits'), keywords: 'habits streak routine daily tracker', run: () => navigate({ view: 'habits' }) },
+      { id: 'habit:new', label: t('New habit'), icon: 'leaf' as const, keywords: 'habit create start tracker daily', run: () => openHabitForm() },
+    ] : []),
     // Today's closed list (today-closed-list D5, D6): no default keys.
     { id: 'today:log-win', label: t('Log a win'), icon: 'party-popper', keywords: 'done today completed logged win record unplanned',
       // After the box has closed, so the bar opens again in Add with "Log as done" on.

@@ -22,6 +22,8 @@ export interface ApiToken {
   scope?: TokenScope
   createdAt: number
   lastUsedAt: number | null
+  /** The only workspaces the token reaches (token-workspaces); absent means every workspace. */
+  workspaces?: string[]
 }
 
 export interface McpStatus {

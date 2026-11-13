@@ -183,14 +183,15 @@ func (s *Server) registerDataRoutes(mux *routes) {
 	// Import (OpenSpec `data-import`).
 	mux.handle("POST /api/v1/import/preview", signedIn.DemoDenied(), s.handleImportPreview)
 	mux.handle("POST /api/v1/import", signedIn.DemoDenied(), s.handleImportStart)
+	mux.handle("POST /api/v1/import/todoist", signedIn.FullTokens().DemoDenied(), s.handleImportTodoist)
 	mux.handle("GET /api/v1/import/jobs", signedIn, s.handleImportJobs)
 	mux.handle("GET /api/v1/import/jobs/{id}", signedIn, s.handleImportJob)
 	mux.handle("POST /api/v1/import/jobs/{id}/undo", signedIn.DemoDenied(), s.handleImportUndo)
-	mux.handle("GET /api/v1/{collection}", signedIn, s.handleList)
-	mux.handle("POST /api/v1/{collection}", signedIn, s.handleCreate)
-	mux.handle("GET /api/v1/{collection}/{id}", signedIn, s.handleGet)
-	mux.handle("PATCH /api/v1/{collection}/{id}", signedIn, s.handlePatch)
-	mux.handle("DELETE /api/v1/{collection}/{id}", signedIn, s.handleDelete)
+	mux.handle("GET /api/v1/{collection}", signedIn.Workspaces(), s.handleList)
+	mux.handle("POST /api/v1/{collection}", signedIn.Workspaces(), s.handleCreate)
+	mux.handle("GET /api/v1/{collection}/{id}", signedIn.Workspaces(), s.handleGet)
+	mux.handle("PATCH /api/v1/{collection}/{id}", signedIn.Workspaces(), s.handlePatch)
+	mux.handle("DELETE /api/v1/{collection}/{id}", signedIn.Workspaces(), s.handleDelete)
 	// A known path asked with another method is a 405, anything else a 404
 	// naming the method and path (api-method-not-allowed).
 	mux.handle("/api/", public("unknown API routes answer 404 not_found, a known path with another method 405"), mux.unknownAPIRoute)

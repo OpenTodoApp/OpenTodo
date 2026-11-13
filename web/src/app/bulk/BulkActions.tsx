@@ -2,6 +2,8 @@
 // menu for the ticked tasks (or the cursor task when nothing is ticked), built on
 // the shared ActionMenu so its items, pickers, shortcuts and disabled reasons work
 // like every other object menu. Moves and assignments go through the review (D6).
+import { useHabitsEnabled } from '../../lib/habitPrefs'
+import { openHabitForm } from '../habits/habitFormStore'
 import { keysOf } from '../../lib/shortcuts'
 import { Kbd } from '../shortcuts/Kbd'
 import { createContext, lazy, Suspense, useContext, useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
@@ -105,7 +107,9 @@ interface Data { tasks: Task[]; labels: Label[]; projects: Project[]; sections: 
   /** Every read the items depend on has landed: until then the menu stays closed, so it opens complete (issue 840). */
   ready?: boolean
   /** One task's place in a manually ordered list (accessibility-aa D3): the Reorder items. */
-  edges?: { first: boolean; last: boolean } | null }
+  edges?: { first: boolean; last: boolean } | null
+  /** Habits is on (habits-home D9): Make it a habit for one task. */
+  habits?: boolean }
 
 /**
  * Start or Stop tracking for one task (time-tracking D5): Stop while its entry runs,
@@ -145,6 +149,15 @@ export function slotItem(task: Task | undefined, slot: SlotState | undefined): A
 export function todayFocusItem(task: Task | undefined, state: FocusMenuState | undefined): ActionItem[] {
   if (!task || !state) return []
   return [{ kind: 'action', id: 'today-focus', label: focusMenuLabel(state), icon: state === 'remove' ? 'x' : 'sun', onSelect: () => runFocusPress(task.id) }]
+}
+
+/**
+ * Make it a habit (habits-home D9): while Habits is on, for one open task that is not
+ * a habit or an occurrence record and that the user may edit.
+ */
+export function makeHabitItem(task: Task | undefined, d: Pick<Data, 'memberships' | 'habits'>): ActionItem[] {
+  if (!d.habits || !task || task.habit || task.series_id || task.completed_at || task.deleted_at || roleOf(task.project_id, d.memberships) === 'viewer') return []
+  return [{ kind: 'action', id: 'make-habit', label: t('Make it a habit'), icon: 'leaf', onSelect: () => openHabitForm({ taskId: task.id }) }]
 }
 
 /**
@@ -252,7 +265,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
   const swipeTwins = n === 1 && a.schedule
   return [
     ...(swipeTwins ? [{ items: [complete, { kind: 'action', id: 'schedule', label: t('Schedule…'), icon: 'calendar-days', onSelect: a.schedule } as ActionItem] }] : []),
-    ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships)] }] : []),
+    ...(n === 1 ? [{ items: [...whyItem(a.why), ...slotItem(d.tasks[0], d.slot), ...todayFocusItem(d.tasks[0], d.focus), ...trackingItem(d.tasks[0], d.runningTask, d.memberships), ...focusItem(d.tasks[0], d.memberships), ...makeHabitItem(d.tasks[0], d)] }] : []),
     ...(swipeTwins ? [] : [{ items: [complete] }]),
     // Beside a row its own Priority and Schedule buttons already offer these.
     // Priority and Date are one row each (a submenu), so the menu fits on the screen;
@@ -337,6 +350,7 @@ function useBulkData(ids: readonly string[]): Data {
   const prefs = useUserPrefsRow()
   const dayParts = dayPartsOn(prefs)
   const energy = energyLevelsOn(prefs)
+  const habits = useHabitsEnabled()
   const slot = useSlotState(ids.length === 1 ? ids[0] : '')
   const review = useReviewRow()
   const today = useToday()
@@ -344,7 +358,7 @@ function useBulkData(ids: readonly string[]): Data {
   // The one task's items (focus, tracking, slot, Energy, Day part) and the Labels item's
   // reason come from these reads: a menu shown before them grows under the pointer.
   const ready = read?.key === key && labelsLoaded && memberMap !== undefined && prefs !== undefined && review !== undefined
-  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, slot, focus, ready }
+  return { tasks, labels, projects, sections, memberships, runningTask, dayParts, energy, habits, slot, focus, ready }
 }
 
 /**
@@ -440,12 +454,14 @@ function useFrameBox(active: boolean): { left: number; width: number } | null {
  * button stands (the button steps aside while it shows), so it appearing or leaving
  * never moves a row, and it stays in sight while the list scrolls.
  */
-export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone }: {
+export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPicker, onDone, menu }: {
   ids: readonly string[]
   onClear: () => void
   menuOpen: boolean
   onMenuOpenChange: (open: boolean) => void
   startPicker?: string | null
+  /** Another Actions menu in place of the tasks' (the Notes page's, notes-bulk-actions D2), given its trigger. */
+  menu?: (trigger: React.ReactNode, triggerClassName: string) => React.ReactNode
   /** Select mode on touch (phone-v2 D8): Done hides the checkboxes and keeps the ticks; the bar shows with nothing ticked. */
   onDone?: () => void
 }) {
@@ -475,8 +491,10 @@ export function SelectionBar({ ids, onClear, menuOpen, onMenuOpenChange, startPi
       className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--toast-lift,4.25rem)-3.5rem+var(--safe-bottom))] z-30 flex justify-center px-4 md:bottom-[calc(1.25rem+var(--safe-bottom))] md:px-8">
       <div className="pointer-events-auto flex w-full max-w-[40rem] items-center gap-2 rounded-control border border-default bg-selected px-3 py-1.5 text-body shadow-2" data-selection-bar>
         <span role="status" className="min-w-0 flex-1 font-medium text-strong">{t('{count} selected', { count: ids.length })}</span>
-        {ids.length > 0 && <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
-          trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />}
+        {ids.length > 0 && (menu
+          ? menu(<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>, 'ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body')
+          : <BulkActionsMenu ids={ids} open={menuOpen} onOpenChange={onMenuOpenChange} startPicker={startPicker}
+            trigger={<>{t('Actions')} <Kbd k={keysOf('list.actions')} only className="ml-1" /></>} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" />)}
         {ids.length > 0 && (
           <Tooltip label={t('Clear the selection')} shortcut="Esc">
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-1 text-body" onClick={onClear}><Icon name="x" />{t('Clear')}</button>

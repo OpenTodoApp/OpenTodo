@@ -221,6 +221,16 @@ func (d *decoder) eventTiming() {
 	}
 	d.in.HasDuration = true
 	start, err := parseDue(*d.dtstart)
+	if err == nil && start.Time == nil && d.dtend != nil {
+		// An all-day event over several days: its last day (DTEND is exclusive).
+		if end, err := parseDue(*d.dtend); err == nil && end.Time == nil {
+			if a, errA := time.Parse(time.DateOnly, start.Date); errA == nil {
+				if b, errB := time.Parse(time.DateOnly, end.Date); errB == nil && b.Sub(a) > 24*time.Hour {
+					d.in.EventLastDay = b.AddDate(0, 0, -1).Format(time.DateOnly)
+				}
+			}
+		}
+	}
 	if err != nil || start.Time == nil || d.in.EstimateMinutes != nil {
 		return
 	}

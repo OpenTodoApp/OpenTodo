@@ -35,6 +35,16 @@ An app password syncs every list by default. To keep work lists off a personal p
 
 The calendar app sees only the lists in the choice: the others are not listed, and asking for them answers as for a list that does not exist, so nothing in them is read or changed. After a change, the calendar app drops the lists that left the choice and picks up the new ones on its next sync. A list the calendar app creates goes into the first chosen workspace; with only projects chosen, creating a list is refused. A task moved to a list outside the choice disappears from the calendar app at its next sync.
 
+### Tasks as events in your calendar
+
+By default the lists are to-do lists, which Apple's Calendar and most calendar apps show in a reminders list, where a multi-day task is a single tick-off. To see your dated tasks in the calendar itself, choose **Show tasks as: Events** when you create the app password (it stays that way; create another password to change it). The same lists, one per project and the Inbox, are then calendars of events, written the way [Calendar sync](calendar-sync.md#what-syncs) writes them:
+
+- an open task with a due date is an event: a timed task lasts its estimate (30 minutes without one), a date-only task is all-day, and a multi-day task is one all-day event over its days;
+- the notes are the event's description and the event links to the task;
+- a repeating task is its next occurrence; tasks without a date and completed tasks are not shown.
+
+Moving or resizing an event moves the task (its date, time, start and estimate), renaming it renames the task, and editing the description edits the notes. Labels, priority, reminders and the repeat rule are not in the event, so an edit never changes them. Deleting an event removes the task's date and keeps the task. A new event in one of the calendars becomes a task. Ticking tasks off happens in OpenTodo or in a to-do app, since events cannot be completed.
+
 Accounts with two-factor authentication or in SSO-only mode use app passwords like everyone else: creating one requires a recent sign-in (the same step-up check as API tokens). Failed sign-ins are limited to 10 a minute per address; after that the endpoint answers 429 for a minute.
 
 ## Client setup

@@ -15,7 +15,7 @@ interface Vectors {
 interface Split { from: string; rule: string; due: string; completed?: boolean; records: Record<string, string> }
 const vectors = rawVectors as unknown as Vectors
 
-const CHAR: Record<DayState, string> = { blank: '.', done: 'D', skipped: 'S', missed: 'M', pending: 'P', upcoming: 'U' }
+const CHAR: Record<DayState, string> = { blank: '.', done: 'D', tiny: 'T', skipped: 'S', missed: 'M', pending: 'P', upcoming: 'U' }
 
 function task(over: Partial<Task>): Task {
   return {
@@ -43,7 +43,7 @@ function recordRows(seriesId: string, records: Record<string, string>): Task[] {
     const [state, movedTo] = mark.split('>')
     return task({
       id: occurrenceId(seriesId, date), series_id: seriesId, due: { date: movedTo ?? date }, completed_at: state === 'open' ? null : 100,
-      skipped: state === 'skipped', ...(movedTo || state === 'open' ? { occurrence_date: date } : {}),
+      skipped: state === 'skipped', ...(state === 'tiny' ? { tiny: true } : {}), ...(movedTo || state === 'open' ? { occurrence_date: date } : {}),
     })
   })
 }
@@ -155,13 +155,13 @@ describe('day start (day-boundary D5, habits "Done after midnight with a day sta
       expect(series.due).toEqual({ date: '2026-10-15' })
       const all = await db.tasks.toArray()
       expect(recordsByDate(id, all).get('2026-10-14')).toBe('done')
-      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, pending: true, atRisk: false })
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, pending: true, overdue: false })
       // 03:59 on the 16th: still the 15th, the occurrence is pending and not at risk.
       vi.setSystemTime(new Date(2026, 9, 16, 3, 59))
-      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, atRisk: false })
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ current: 1, overdue: false })
       // From 04:00 on the 16th the 15th is over.
       vi.setSystemTime(new Date(2026, 9, 16, 4, 0))
-      expect(habitStats(series, all, logicalToday())).toMatchObject({ atRisk: true })
+      expect(habitStats(series, all, logicalToday())).toMatchObject({ overdue: true })
       // The month grid marks the logical today.
       vi.setSystemTime(new Date(2026, 9, 16, 1, 0))
       const grid = monthGrid(series, all, 2026, 10, logicalToday())

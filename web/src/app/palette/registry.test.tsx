@@ -153,5 +153,7 @@ describe('Pin note (notes-home D4)', () => {
     await pinCmd.run()
     expect((await db.userPrefs.get('me'))!.favourites).toBe('note:n1')
     expect(commands({ ...base, note: { id: 'n1', pinned: true } }).find((c) => c.id === 'note:unpin')!.label).toBe('Unpin note')
+    // Run routine on this note… while a note is open (notes-in-routines).
+    expect(commands({ ...base, note: { id: 'n1', pinned: false } }).some((c) => c.id === 'note:run-routine')).toBe(true)
   })
 })

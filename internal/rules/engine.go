@@ -231,6 +231,12 @@ type world struct {
 	// loadWorkspaces reads the user's workspaces once, when a routine needs them.
 	loadWorkspaces func() ([]opsync.Workspace, error)
 	wsList         *[]opsync.Workspace
+	// notes are the standalone notes this world sees and noteDates, noteMs
+	// their newest change, read once when a note trigger or step needs them
+	// (notes-in-routines).
+	notes     map[string]opsync.Entity
+	noteDates map[string]string
+	noteMs    map[string]int64
 }
 
 // load reads one user's rows, zone and preferences.

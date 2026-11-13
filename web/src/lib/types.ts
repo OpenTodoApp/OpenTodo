@@ -559,7 +559,8 @@ export interface OnDropRule {
 }
 
 /** Trigger kinds of an automation rule (automation-rules "Rule validation"). */
-export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule', 'manual'] as const
+export const RULE_TRIGGERS = ['task.created', 'task.completed', 'task.reopened', 'label.added', 'label.removed', 'assigned.to_me', 'task.moved', 'due.reached', 'overdue', 'schedule', 'manual',
+  'note.created', 'note.edited', 'note.label.added'] as const
 export type RuleTriggerKind = (typeof RULE_TRIGGERS)[number]
 
 /** An automation rule's trigger: one kind with the members it takes. */
@@ -573,6 +574,8 @@ export interface RuleTrigger {
   weekdays?: number[]
   /** `schedule` instead of weekdays: days of the month, 1 to 31 or "last" (routines-dynamic-data D5). */
   month_days?: (number | 'last')[]
+  /** `manual`: what it runs on, a task (also when absent) or a note (notes-in-routines D2). */
+  on?: 'task' | 'note'
 }
 
 /** A date predicate (`due`, `deadline`). */
@@ -649,6 +652,8 @@ export interface RoutineRun {
   run_id: string
   rule_id: string
   task_id?: string
+  /** The standalone note a note routine ran on (notes-in-routines). */
+  note_id?: string
   at: number
   outcome: RuleRun['outcome'] | 'ended' | 'proposal' | 'waiting_device' | 'missed'
   reason?: string
@@ -799,7 +804,7 @@ export interface Rule extends RuleFields {
 }
 
 /** The type of a routine step's output (routines-engine D3); lines is a list of text. */
-export type RoutineStepType = 'text' | 'task' | 'tasks' | 'project' | 'date' | 'number' | 'lines' | 'none'
+export type RoutineStepType = 'text' | 'task' | 'tasks' | 'note' | 'notes' | 'project' | 'date' | 'number' | 'lines' | 'none'
 
 /** A step input: a reference to the trigger, an earlier step or a Repeat's item, or a literal. */
 export type RoutineArg = { ref: string } | { literal: unknown }
@@ -1783,6 +1788,8 @@ export interface AppPassword {
   revokedAt: number | null
   /** Absent from servers before sync-scope: the whole account. */
   scope?: SyncScope
+  /** Shows the calendars as events instead of to-dos (caldav-events); absent means to-dos. */
+  events?: boolean
 }
 
 export interface WebhookDelivery {

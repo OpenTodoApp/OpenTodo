@@ -4,7 +4,9 @@
 // shared header and footer; the part of the day is Do on's time of day row
 // (when-picker). Every segment is the editor it replaces and writes exactly the
 // fields it wrote before.
-import { type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
+import { habitRule } from '../../lib/habits'
+import { useSeriesRecords } from '../../lib/localData'
+import { lazy, Suspense, type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
 import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { parseRule } from '../../lib/recurrence'
@@ -27,6 +29,8 @@ import { useUserPrefsRow } from '../../lib/localData'
 import { formatSpan, multiDayOnPatch, spanOf } from '../../lib/span'
 import { useTimeSectors } from '../../lib/sectorPrefs'
 import { SectorChoice } from './SectorChoice'
+// The habit section loads with the first habit (habits-home): none of it is on the first load.
+const HabitSection = lazy(() => import('../habits/HabitSection').then((m) => ({ default: m.HabitSection })))
 
 export type WhenSegment = 'due' | 'start' | 'sector' | 'deadline' | 'repeat' | 'reminders'
 
@@ -238,8 +242,15 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
         </button>
       </div>
       {showCustom && <RecurrenceField task={task} onOpen={onOpen} />}
+      {/* A preset rule keeps the habit section under it too (habits-home D9); Custom… has it inside the rule editor. */}
+      {!showCustom && !task.completed_at && !task.deleted_at && habitRule(task) && <PresetHabit task={task} />}
     </div>
   )
+}
+
+function PresetHabit({ task }: { task: Task }) {
+  const related = useSeriesRecords(task.id)
+  return <Suspense fallback={null}><HabitSection task={task} related={related} today={logicalToday()} /></Suspense>
 }
 
 export function WhenControl({ task, readOnly = false, focus = 'due', segment, onDone, onOpen, onClose, onAddLocation }: {

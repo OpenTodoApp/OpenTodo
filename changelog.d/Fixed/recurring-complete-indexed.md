@@ -1,0 +1,1 @@
+- **Completing a repeating task no longer slows down with the size of the account.** Completing or skipping one read every task on the device to find the series' earlier occurrences; it now reads only the series' own. In an account with 10,000 tasks that took a quarter of a second, and takes about a hundredth now.

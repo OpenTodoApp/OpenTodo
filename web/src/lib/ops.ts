@@ -1249,7 +1249,8 @@ export async function completeTask(id: string, opts: { now?: number; today?: str
       plain = true
       return
     }
-    const plan = planCompletion(series, rule, await db.tasks.toArray(), now, today, series.project_id === pid ? members : undefined)
+    // The series' own records and pieces, by index: never every task (lineageRows.ts).
+    const plan = planCompletion(series, rule, await lineageRows(id), now, today, series.project_id === pid ? members : undefined)
     if (plan.kind === 'end') {
       plain = true
       return

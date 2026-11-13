@@ -2,12 +2,13 @@
 // delta), on the app's own database: the shared data layer over the SQLite adapter, with
 // the perfseed 10,000-task account. `seed` writes the account's rows; `measure` is a cold
 // start: open, Today and Inbox from the phone's indexes (src/storage/lists.ts), and a
-// 500-op pull page through the shared applyOps; `write` and `verify` are the two halves
+// 500-op pull page through the shared applyOps, and twenty completions in Today; `write`
+// and `verify` are the two halves
 // of the kill-after-write check. Times in milliseconds, from performance.now().
 import { withDeferredActivity } from '@shared/activity'
 import { logicalToday } from '@shared/dates'
 import { db, useDatabase as openDatabaseNamed } from '@shared/db'
-import { applyOps, createTask, getDeviceId } from '@shared/ops'
+import { applyOps, completeTask, createTask, getDeviceId } from '@shared/ops'
 import type { Op, Task } from '@shared/types'
 import type { SqliteDatabase } from '../src/storage/adapter'
 import { inboxList, todayTasks } from '../src/storage/lists'
@@ -93,6 +94,25 @@ export async function measure(hooks: Hooks, startedAt: number): Promise<Record<s
   const check = await db.tasks.get(ops[0].entityId)
   out.pullApplied = !!check && String(check.title).endsWith('(edited)')
   out.ok = out.pullApplied
+
+  // Completing a task in Today: the shared completeTask (the write and its ops), then
+  // the frame that shows the list without it. Twenty tasks, the 95th percentile.
+  await getDeviceId()
+  let shown = await todayTasks(logicalToday())
+  await hooks.draw(shown)
+  const writes: number[] = []
+  const frames: number[] = []
+  for (const task of shown.slice(0, 20)) {
+    const c0 = performance.now()
+    await completeTask(task.id)
+    const c1 = performance.now()
+    shown = shown.filter((t) => t.id !== task.id)
+    await hooks.draw(shown)
+    writes.push(c1 - c0)
+    frames.push(performance.now() - c0)
+  }
+  const p95 = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.max(0, Math.ceil(xs.length * 0.95) - 1)] ?? 0
+  out.complete = { count: writes.length, writeP95Ms: ms(p95(writes)), toFrameP95Ms: ms(p95(frames)) }
   return out
 }
 

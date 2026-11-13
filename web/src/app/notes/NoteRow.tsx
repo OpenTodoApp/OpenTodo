@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
 import type { SnippetSegment } from '../../lib/noteSearch'
 import type { NoteEntry } from '../../lib/noteList'
 import type { Label, Project } from '../../lib/types'
-import { Icon, LabelChips, Menu, MenuItem, type IconName } from '../../ui'
+import { Icon, LabelChips, Menu, MenuGroup, MenuItem, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'
 
 export const SOURCE_ICON: Record<NoteEntry['source'], IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
@@ -37,19 +37,21 @@ export interface NoteRowProps {
   onOpen: () => void
   /** A standalone note the user may change: its menu. */
   menu?: ReactNode
+  /** A note that can be ticked (notes-bulk-actions D1): its state, whether checkboxes show, and the tick (a range with Shift). */
+  tick?: { ticked: boolean; shown: boolean; onTick: (range: boolean) => void }
 }
 
 /** The row grid (D5): icon, title, place, labels, time; the same tracks on every row, so the columns line up. */
 // Narrow, the place is as wide as its name up to 5 rem (an empty one takes none), so the title keeps the room.
 const GRID = 'grid grid-cols-[1.25rem_minmax(0,1fr)_auto_auto] gap-x-2 @min-[40rem]/note:grid-cols-[1.25rem_minmax(0,1fr)_10rem_8rem_5rem] @min-[40rem]/note:gap-x-3'
 
-export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle, current, cursor, onOpen, menu }: NoteRowProps) {
+export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle, current, cursor, onOpen, menu, tick }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
   // Where the note lives: its project (a task's, or the project of a project note); a task without one is in the Inbox.
   const place = project ? project.name : entry.source === 'task' ? t('Inbox') : ''
   return (
-    <li className={`group relative flex min-h-12 items-center gap-1 rounded-control @container/note md:min-h-(--size-row) ${current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
-      data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined}
+    <li className={`group relative flex min-h-12 items-center gap-1 rounded-control @container/note md:min-h-(--size-row) ${tick?.ticked ? 'bg-accent-soft' : current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+      data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined} data-ticked={tick?.ticked || undefined}
       // A long press (a right click on a computer) opens the row's menu (notes-home D6).
       onContextMenu={menu ? (e) => {
         const trigger = e.currentTarget.querySelector<HTMLButtonElement>('[data-note-menu]')
@@ -57,9 +59,17 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
         e.preventDefault()
         trigger.click()
       } : undefined}>
-      <button type="button" data-note-open onClick={onOpen} aria-current={current || undefined}
+      <button type="button" data-note-open aria-current={current || undefined} aria-pressed={tick?.shown ? tick.ticked : undefined}
+        onClick={(e) => {
+          // While checkboxes show, or with Ctrl/⌘ or Shift, a click ticks (bulk-actions "Select with a pointer").
+          if (tick && (tick.shown || e.ctrlKey || e.metaKey || e.shiftKey)) { e.preventDefault(); tick.onTick(e.shiftKey); return }
+          onOpen()
+        }}
         className={`${GRID} min-w-0 flex-1 items-baseline rounded-control px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
-        <span className="flex h-5 w-5 items-center justify-center self-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>
+        {/* The checkbox takes the kind icon's 20 px slot, so the row's grid does not move (D2). */}
+        {tick?.shown
+          ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center self-center justify-self-center rounded-[4px] border ${tick.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-note-tick>{tick.ticked && <Icon name="check" size={12} />}</span>
+          : <span className="flex h-5 w-5 items-center justify-center self-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>}
         <span className="flex min-w-0 items-baseline gap-2" data-note-line>
           <span className={`user-text min-w-0 truncate text-body ${snippet?.length ? 'max-w-[60%] shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
           {entry.marker && <span className="shrink-0 text-meta text-faint" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
@@ -85,8 +95,13 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
  * personal, so a viewer of a shared project has it too), then Turn into task and
  * Delete for a note the user may change.
  */
-export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, pinKey, label = t('Note actions') }: {
+export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, pinKey, label = t('Note actions') }: {
   pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
+  /** The manual routines that run on a note (notes-in-routines): Run routine… lists them. */
+  routines?: readonly { id: string; name: string }[]
+  onRunRoutine?: (id: string) => void
+  /** Running a routine needs a connection: the list says so. */
+  offline?: boolean
   /** Show connections (notes-graph D3): passed while the note links with something. */
   onConnections?: () => void
   /** The list row's key for Pin (`p` on a focused row); the panel's menu has none. */
@@ -99,6 +114,13 @@ export function NoteMenu({ pinned, onPin, onConnections, onTurnIntoTask, onDelet
       <MenuItem label={pinned ? t('Unpin') : t('Pin')} icon={pinned ? 'pin-off' : 'pin'} shortcut={pinKey} onSelect={onPin} data-note-pin={pinned ? 'unpin' : 'pin'} />
       {onConnections && <MenuItem label={t('Show connections')} icon="waypoints" onSelect={onConnections} data-show-connections />}
       {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
+      {onRunRoutine && !!routines?.length && (
+        <MenuGroup label={t('Run routine…')}>
+          {offline
+            ? <MenuItem label={t('Running a routine needs a connection.')} disabled onSelect={() => {}} data-note-run-offline />
+            : routines.map((r) => <MenuItem key={r.id} label={r.name || t('Untitled routine')} icon="zap" onSelect={() => onRunRoutine(r.id)} data-note-run-routine={r.id} />)}
+        </MenuGroup>
+      )}
       {onDelete && <MenuItem label={t('Delete')} icon="trash-2" danger onSelect={onDelete} data-note-delete />}
     </Menu>
   )

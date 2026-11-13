@@ -220,7 +220,8 @@ var cmdSpecs = []cmdSpec{
 		}, Writes: true, DryRun: true, Output: ref("task")},
 	{Name: "token list", Aliases: []string{"token ls"}, Summary: "list API tokens with their scopes", Output: arrayOf("token")},
 	{Name: "token create", Aliases: []string{"token add"}, Summary: "create an API token and print its secret once", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
-		Flags: []flagSpec{{Name: "scope", Type: "string", Enum: tokenScopes, Default: "full", Description: "token scope: full, read or agent"}}, Writes: true, DryRun: true, Output: ref("token_created")},
+		Flags: []flagSpec{{Name: "scope", Type: "string", Enum: tokenScopes, Default: "full", Description: "token scope: full, read or agent"},
+			{Name: "limit-to", Type: "string_list", Description: "limit the token to this workspace (name or id), repeatable"}}, Writes: true, DryRun: true, Output: ref("token_created")},
 	{Name: "token revoke", Aliases: []string{"token rm", "token delete"}, Summary: "revoke an API token", Args: []argSpec{{Name: "id-or-name", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("token")},
 	{Name: "mcp", Summary: "bridge stdio MCP clients to the configured server",
 		Flags: []flagSpec{
@@ -295,6 +296,7 @@ var cmdSpecs = []cmdSpec{
 		Flags: []flagSpec{{Name: "failed", Type: "bool", Description: "only failed runs"}, {Name: "limit", Type: "int", Default: 50, Description: "print at most n runs (1 to 100)"}}, Output: arrayOf("routine_run")},
 	{Name: "routine run", Aliases: []string{"routines run"}, Summary: "run a routine now, or test it (--test plans every step and writes nothing); exit 6 when the run failed",
 		Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{{Name: "task", Type: "string", Description: "the trigger's task (id) for a routine whose steps read it"},
+			{Name: "note", Type: "string", Description: "the standalone note (id or title) a routine on a note runs on; not with --task"},
 			{Name: "test", Type: "bool", Description: "plan every step and log a test run; nothing is written"}}, Writes: true, DryRun: true, Output: ref("routine_result")},
 	{Name: "routine enable", Aliases: []string{"routines enable"}, Summary: "turn a routine on (clears a pause for running too often)", Args: []argSpec{{Name: "ref", Required: true}},
 		Writes: true, DryRun: true, Output: ref("rule")},

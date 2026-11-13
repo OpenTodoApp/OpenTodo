@@ -21,7 +21,7 @@ export const THEME_MODES: readonly ThemeModePref[] = ['system', 'light', 'dark']
  * Destinations the user may promote from the sidebar's More group to its primary items (app-shell "Sidebar structure").
  * `notes` left with notes-space (D4): Notes is a sidebar space now; a stored `notes` is ignored on read and kept in the row.
  */
-export const PROMOTABLE = ['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter', 'focus'] as const
+export const PROMOTABLE = ['loop', 'next', 'waiting', 'anytime', 'someday', 'assigned', 'completed', 'feed', 'trash', 'filter', 'focus', 'habits'] as const
 export type Promotable = (typeof PROMOTABLE)[number]
 
 /** Row density (appearance-preferences "Density preference"); unknown stored values read as comfortable. */

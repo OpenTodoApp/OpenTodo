@@ -8,7 +8,7 @@
 // the same keys in one scope, or in a scope and an ancestor scope, without an
 // explicit `overrides`.
 
-export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'arrange' | 'trash' | 'triage' | 'focus' | 'notes' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
+export type ShortcutSection = 'everywhere' | 'go' | 'tasks' | 'board' | 'calendar' | 'filter' | 'arrange' | 'trash' | 'triage' | 'focus' | 'notes' | 'habits' | 'routines' | 'review' | 'display' | 'comments' | 'settings' | 'vim'
 
 /**
  * Where a shortcut applies. The dispatcher runs the innermost active scope first:
@@ -70,6 +70,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'triage', title: 'Process the Inbox' },
   { id: 'focus', title: 'Focus' },
   { id: 'notes', title: 'Notes' },
+  { id: 'habits', title: 'Habits' },
   { id: 'routines', title: 'Routine editor' },
   { id: 'review', title: 'Reviews' },
   { id: 'display', title: 'Display mode' },
@@ -105,6 +106,8 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   rules: [],
   // The theme editor (theme-editor D3): controls and an inert preview, no task list.
   'theme-editor': [],
+  // Habits (habits-home D9): the habit rows, not a task list; Space, Shift+Space and Enter are local to a row.
+  habits: [],
 }
 
 /** The scopes an entry in `scope` shadows when it binds the same keys (`vim` shadows every scope). */
@@ -179,6 +182,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.daily', keys: ['g Shift+R'], label: 'Daily check|method', description: 'Go to the Daily check: the Inbox, what is open from earlier, today\'s focus', section: 'go', scope: 'global' },
   // Close the day (close-the-day D6): `g d` is the Day calendar and `Shift+D` alone duplicates in a list; a `g` sequence meets neither.
   { id: 'go.close', keys: ['g Shift+D'], label: 'Close the day', description: 'Close the day: how it went, carry over what is left, a line for tomorrow', section: 'go', scope: 'global' },
+  // Habits (habits-home D9): `g h` is Updates, so the screen takes the shifted H; it does nothing while Habits is off.
+  { id: 'go.habits', keys: ['g Shift+H'], label: 'Habits', description: 'Go to Habits: your habits, their last seven days and a check button (while Habits is on)', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
   // Notes (notes-overview D7): `g n` is Anytime, so the page takes `g e`.
   { id: 'go.notes', keys: ['g e'], label: 'Notes', description: 'Go to Notes: every note with search, and the sidebar shows your notes', section: 'go', scope: 'global' },
@@ -378,9 +383,16 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
   // notes-home: pin or unpin the focused note, handled by the list itself.
-  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
+  { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note, or the ticked notes', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
+  // notes-bulk-actions D2, D3: the task lists' ticking keys on standalone notes, handled by the list itself; `m` moves the ticked notes.
+  { id: 'notes.tick', keys: ['x', 'Space'], description: 'On the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears)', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused standalone note' },
+  { id: 'notes.move', keys: ['m'], description: 'On the Notes page: move the ticked notes to a project', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'notes ticked' },
   // notes-graph-page D1: the List | Graph switch (the project's layout key). The graph's own keys are local to it, as the Connections dialog's are, and listed in its help.
   { id: 'notes.view-mode', keys: ['v'], description: 'On the Notes page: switch between the list and the graph', section: 'notes', scope: 'view', views: ['notes'] },
+  // ---- Habits (habits-home D9): handled by the focused habit row itself.
+  { id: 'habits.check', keys: ['Space'], description: 'On the Habits screen: check in the focused habit', section: 'habits', scope: 'view', views: ['habits'], local: true, when: 'focused habit' },
+  { id: 'habits.tiny', keys: ['Shift+Space'], description: 'On the Habits screen: log the tiny version of the focused habit', section: 'habits', scope: 'view', views: ['habits'], local: true, when: 'focused habit' },
+  { id: 'habits.open', keys: ['Enter'], description: "On the Habits screen: open the focused habit's page", section: 'habits', scope: 'view', views: ['habits'], local: true, when: 'focused habit' },
   // The routine editor (routines-editor D13): handled by the editor itself, only while it is open.
   { id: 'routines.move-up', keys: ['Alt+↑'], description: 'In the routine editor: move the focused step up (Alt+↓ moves it down)', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step' },
   { id: 'routines.move-down', keys: ['Alt+↓'], description: 'In the routine editor: move the focused step down', section: 'routines', scope: 'view', views: ['rules'], local: true, when: 'focused step', hidden: true },
@@ -464,7 +476,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'editor.inline', keys: ['Ctrl+B', 'Ctrl+I', 'Ctrl+Shift+X', 'Ctrl+E', 'Ctrl+K'], description: 'In the notes and comments: bold, italic, strikethrough, inline code, link (⌘ on a Mac)', section: 'comments', scope: 'editor', local: true, typing: true },
   { id: 'editor.heading', keys: ['Ctrl+Alt+1', 'Ctrl+Alt+2', 'Ctrl+Alt+3', 'Ctrl+Alt+0'], description: 'In the notes and comments: heading 1–3 / normal text', section: 'comments', scope: 'editor', local: true, typing: true },
   { id: 'editor.lists', keys: ['Ctrl+Shift+8', 'Ctrl+Shift+7', 'Ctrl+Shift+9'], description: 'In the notes: bullet, numbered, check list; Ctrl+Enter ticks a check item; Tab / Shift+Tab indent', section: 'comments', scope: 'editor', local: true, typing: true },
-  { id: 'editor.subtask', keys: ['Ctrl+Shift+Enter', '⌘+Shift+Enter'], description: 'In a task\'s notes: make the check-list line a subtask (Ctrl+Z takes it back)', section: 'comments', scope: 'editor', local: true, typing: true, when: 'on a check-list line' },
+  { id: 'editor.subtask', keys: ['Ctrl+Shift+Enter', '⌘+Shift+Enter'], description: 'In a task\'s notes: make the check-list lines a subtask each; in a project or standalone note: a task each, read like quick add (Ctrl+Z takes them back)', section: 'comments', scope: 'editor', local: true, typing: true, when: 'on a check-list line or a selection of them' },
+  { id: 'editor.outline', keys: ['Ctrl+Shift+O', '⌘+Shift+O'], description: 'In the notes: go to the outline of the headings; ↑ / ↓ move, Home / End jump, Enter goes to the heading, Esc returns to the note', section: 'comments', scope: 'editor', local: true, typing: true, when: 'in a note with three or more headings' },
+  { id: 'editor.source', keys: ['Ctrl+Shift+M', '⌘+Shift+M'], description: 'In the notes: show the note\'s Markdown source as plain text, or back to rich text', section: 'comments', scope: 'editor', local: true, typing: true },
   { id: 'editor.slash', keys: ['/'], description: 'In the notes and comments: the command menu (headings, lists, table, quote, code, link, image, date, mention); ↑ / ↓ move, Enter applies, Esc closes', section: 'comments', scope: 'editor', local: true, typing: true, when: 'at the start of a line or after a space' },
   { id: 'editor.table', keys: ['Tab', 'Shift+Tab'], description: 'In a table: next / previous cell; Tab in the last cell adds a row', section: 'comments', scope: 'editor', local: true, typing: true, when: 'in a table' },
   { id: 'note.markdown', keys: ['- · 1. · # · [ ] · > · ``` · **x** (typed in the notes)'], description: 'Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes', section: 'comments', scope: 'editor', note: true },
@@ -525,7 +539,7 @@ const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
   'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.plan': 'calendar', 'go.year': 'calendar',
   'go.triage': 'method', 'go.review': 'method', 'go.loop': 'method', 'go.next': 'method', 'go.waiting': 'method', 'go.daily': 'method',
-  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views',
+  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views', 'go.habits': 'method',
 }
 export function spotlightGroup(id: string): SpotlightGroup {
   if (id.startsWith('arrange.group-')) return 'group'

@@ -51,6 +51,7 @@ import { useDisplayKeys } from './views/useDisplayKeys'
 import { rowLayoutOf, useAccountRowLayout } from '../lib/rowLayout'
 import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { UrgencyChip, UrgencyContext } from './useUrgency'
+import { projectHue } from './projectHue'
 import { useCollapsedRows } from './task-list/collapsedRows'
 import { nestGroup, type NestedRow } from '../lib/viewNest'
 
@@ -301,7 +302,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
-            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
+            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} hueOf={opts.groupBy === 'project' ? (key) => projectHue(projectMap.get(key)) : undefined} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
               <TaskRow
                 key={key}
                 shape={shape}

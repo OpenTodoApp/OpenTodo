@@ -217,6 +217,39 @@ async function plainSetup() {
   const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
 }
 
+// ------------------------------------------------------------------ habits
+// The habits of the Habits scenes (habits-home), created once on the plain instance
+// and trashed after the last of the two shots, so other plain scenes have none.
+let habitIds = null
+let habitShots = 0
+async function habitsScene(ctx, remove = false) {
+  const api = async (method, path, body) => {
+    const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  if (remove) { for (const id of habitIds ?? []) await api('DELETE', `/api/v1/tasks/${id}`); habitIds = null; return null }
+  if (habitIds) return habitIds
+  const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
+  const make = async (title, recurrence, fields, kept) => {
+    const t = await api('POST', '/api/v1/tasks', { title, recurrence, due: { date: day(-kept.length - 1) }, ...fields })
+    await api('PATCH', `/api/v1/tasks/${t.id}`, { habit: true })
+    // Each kept day: the series stands on it, then its occurrence is completed there.
+    for (const n of kept) {
+      await api('PATCH', `/api/v1/tasks/${t.id}`, { due: { date: day(n) } })
+      await api('POST', `/api/v1/tasks/${t.id}/occurrences/${day(n)}/complete`, {})
+    }
+    await api('PATCH', `/api/v1/tasks/${t.id}`, { due: { date: day(0) } })
+    return t.id
+  }
+  habitIds = [
+    await make('Run', 'every day', { day_part: 'morning' }, [-13, -12, -10, -9, -8, -6, -5, -4, -2, -1]),
+    await make('Stretch', 'every day', { day_part: 'afternoon' }, [-6, -5, -4, -3, -1]),
+    await make('Read', 'every day', { evening: true }, [-20, -19, -18, -17, -16, -15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+  ]
+  return habitIds
+}
+
 // ------------------------------------------------------------------ reusable list
 // The Groceries list of the reusable-list scenes, created once on the plain instance
 // (or deleted with `remove`): four aisle sections, open items and two ticked off.
@@ -361,6 +394,46 @@ const shots = [
     await p.locator('[data-notes-sort="title"]').waitFor(); await p.mouse.move(900, 700); await settle(p, 400)
   }, async after(p) {
     await p.keyboard.press('Escape'); await p.evaluate(() => localStorage.removeItem('ot.notes.sort'))
+  } },
+  // The outline (note-outline): a note with four headings beside the list, its Outline menu open; removed after.
+  { name: 'note-outline', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const body = '# Flights\n\nTuesday at 9:40 from Terminal 2, window seats.\n\n## Outbound\n\nOne bag each.\n\n# Hotels\n\nTwo nights near the river, check-in after 15:00.\n\n# Days\n\nWalks, the tram, the market on Saturday.\n\n## Budget\n\nAbout 600 in all.'
+    p.outlineNote = await p.evaluate(async (d) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Trip to Lisbon', description: d }) })).json()).id, body)
+    const row = p.locator(`[data-note-key="note:${p.outlineNote}"]`); await row.waitFor(); await row.click()
+    await p.locator('[data-note-form] .notes-editor').waitFor(); await settle(p, 600)
+    const opener = p.locator('[data-note-form] [data-outline-open], [data-note-form] [data-note-outline="column"]').first(); await opener.waitFor()
+    if (await p.locator('[data-note-form] [data-outline-open]').count()) await p.locator('[data-note-form] [data-outline-open]').click()
+    await p.mouse.move(600, 700); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
+    await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.outlineNote).catch(() => {})
+  } },
+  // The Markdown source (note-markdown-source): a task note of the sample data with a heading and a checklist, in its source.
+  { name: 'note-markdown-source', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const body = '## Hallway\n\n- [ ] Pick the paint colour\n- [x] Book the painter\n\n> Measure twice, paint once.\n\nAsk **Bob** about Saturday.'
+    p.sourceNote = await p.evaluate(async (d) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Paint the hall', description: d }) })).json()).id, body)
+    const row = p.locator(`[data-note-key="note:${p.sourceNote}"]`); await row.waitFor(); await row.click()
+    await p.locator('[data-note-form] .notes-editor').waitFor(); await settle(p, 600)
+    await p.locator('[data-note-form] .notes-editor').click(); await p.keyboard.press('Control+Shift+M')
+    await p.locator('textarea[data-notes-source]').waitFor(); await p.mouse.move(700, 300); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Control+Shift+M'); await p.keyboard.press('Escape')
+    await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.sourceNote).catch(() => {})
+  } },
+  // Several notes at once (notes-bulk-actions): three new notes ticked, the Actions menu open; removed after.
+  { name: 'notes-bulk', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const add = (title, description) => p.evaluate(async ([t, d]) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: t, description: d }) })).json()).id, [title, description])
+    p.bulkNotes = [await add('Agenda 3 Nov', 'Budget, rota'), await add('Agenda 4 Nov', 'Hiring'), await add('Agenda 5 Nov', 'Launch plan')]
+    const first = p.locator(`[data-note-key="note:${p.bulkNotes[2]}"] [data-note-open]`); await first.waitFor(); await first.focus()
+    await p.keyboard.press('x'); await p.keyboard.press('Shift+ArrowDown'); await p.keyboard.press('Shift+ArrowDown')
+    await p.locator('[data-selection-bar]').waitFor(); await p.keyboard.press('.')
+    await p.locator('[role="menu"]').waitFor(); await p.mouse.move(900, 100); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
+    for (const id of p.bulkNotes ?? []) await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), id).catch(() => {})
   } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
@@ -623,6 +696,19 @@ const shots = [
     await editor.getByRole('tab', { name: /^Reminders/ }).click(); await editor.locator('[data-location-chip]').first().waitFor(); await settle(p, 400)
     return clipOf(p, editor, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
+  // Habits (habits-home): the Habits screen, and a habit's page with its numbers and month.
+  { name: 'habits', server: P, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-habit-row]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots === 2) await habitsScene(ctx, true) } },
+  { name: 'habit-page', server: P, async run(p, { ctx }) {
+    const [, , read] = await habitsScene(ctx)
+    await go(p, plainBase, `/task/${read}`, () => p.getByRole('button', { name: /every day/ }).first().waitFor())
+    await p.getByRole('button', { name: /every day/ }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
+    await editor.locator('[data-habit-streak]').waitFor()
+    const section = editor.locator('[data-habit]'); await section.scrollIntoViewIfNeeded(); await settle(p, 400)
+    return clipOf(p, section, 16)
+  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots === 2) await habitsScene(ctx, true) } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)

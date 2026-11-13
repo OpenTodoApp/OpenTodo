@@ -305,6 +305,9 @@ func (s *Server) handleOAuthConsent(w http.ResponseWriter, r *http.Request) {
 	var in struct {
 		Query string `json:"query"`
 		Allow bool   `json:"allow"`
+		// Workspaces limits the app to these workspaces (token-workspaces D5);
+		// absent or null is every workspace.
+		Workspaces *[]string `json:"workspaces"`
 	}
 	if err := readJSON(r, &in); err != nil {
 		badBody(w, err)
@@ -332,8 +335,19 @@ func (s *Server) handleOAuthConsent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	u := userFrom(r.Context())
+	var limit []string
+	if in.Workspaces != nil {
+		if len(*in.Workspaces) == 0 || len(*in.Workspaces) > auth.MaxTokenWorkspaces {
+			writeError(w, http.StatusBadRequest, "invalid_input", "workspaces: choose between 1 and 50")
+			return
+		}
+		if !s.ownWorkspaces(w, r, *in.Workspaces) {
+			return
+		}
+		limit = *in.Workspaces
+	}
 	code, err := s.mcpOAuth.CreateCode(r.Context(), mcpoauth.Code{
-		ClientID: req.client.ID, UserID: u.ID, RedirectURI: req.redirect, Scope: req.scope, Challenge: q.Get("code_challenge"),
+		ClientID: req.client.ID, UserID: u.ID, RedirectURI: req.redirect, Scope: req.scope, Challenge: q.Get("code_challenge"), Workspaces: limit,
 	})
 	if err != nil {
 		s.internal(w, err)
@@ -386,7 +400,7 @@ func (s *Server) oauthExchangeCode(w http.ResponseWriter, r *http.Request, c mcp
 		oauthError(w, http.StatusBadRequest, "invalid_grant", "the code_verifier does not match the challenge")
 		return
 	}
-	g, refresh, err := s.mcpOAuth.UpsertGrant(r.Context(), c.ID, code.UserID, code.Scope)
+	g, refresh, err := s.mcpOAuth.UpsertGrant(r.Context(), c.ID, code.UserID, code.Scope, code.Workspaces)
 	if err != nil {
 		s.internal(w, err)
 		return
@@ -494,7 +508,14 @@ const oauthSwapAttempts = 3
 // it, and the expiry bounds one left by a crash between the two steps.
 func (s *Server) issueOAuthAccess(w http.ResponseWriter, r *http.Request, c mcpoauth.Client, g mcpoauth.Grant) (string, bool) {
 	ctx := r.Context()
-	tok, plain, err := s.auth.CreateTokenExpiring(ctx, g.UserID, "MCP: "+c.Name, tokenScope(g.Scope), s.now().Add(mcpoauth.AccessTTL))
+	var tok *auth.Token
+	var plain string
+	var err error
+	if g.Workspaces != nil {
+		tok, plain, err = s.auth.CreateTokenExpiringIn(ctx, g.UserID, "MCP: "+c.Name, tokenScope(g.Scope), s.now().Add(mcpoauth.AccessTTL), g.Workspaces)
+	} else {
+		tok, plain, err = s.auth.CreateTokenExpiring(ctx, g.UserID, "MCP: "+c.Name, tokenScope(g.Scope), s.now().Add(mcpoauth.AccessTTL))
+	}
 	if err != nil {
 		s.internal(w, err)
 		return "", false

@@ -21,7 +21,7 @@ func (s *Server) registerWorkspaceRoutes(mux *routes) {
 	// Reading the directory is open to read and agent tokens too (the CLI and
 	// MCP place everything in a workspace); every change needs a full token.
 	read, write := signedIn, signedIn.FullTokens().DemoDenied()
-	mux.handle("GET /api/v1/workspaces", read, s.handleListWorkspaces)
+	mux.handle("GET /api/v1/workspaces", read.Workspaces(), s.handleListWorkspaces)
 	mux.handle("POST /api/v1/workspaces", write, s.handleCreateWorkspace)
 	mux.handle("GET /api/v1/workspaces/{id}", read, s.handleGetWorkspace)
 	mux.handle("PATCH /api/v1/workspaces/{id}", write, s.handleUpdateWorkspace)

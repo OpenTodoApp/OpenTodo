@@ -106,7 +106,82 @@ func ParseSteps(raw json.RawMessage) ([]Step, error) {
 	if err := checkRefs(steps, map[string]bool{}, false); err != nil {
 		return nil, err
 	}
+	if err := checkLinkBack(steps); err != nil {
+		return nil, err
+	}
 	return steps, nil
+}
+
+// checkLinkBack refuses Link back to the note on a Create tasks step whose text or
+// lines do not come from a Get note text step (note-checklist-tasks D4).
+func checkLinkBack(steps []Step) error {
+	var err error
+	Walk(steps, func(s *Step) {
+		if err != nil || s.Kind != "create_tasks" {
+			return
+		}
+		a, has := s.In["link_back"]
+		if !has || a.IsRef() {
+			return
+		}
+		var on bool
+		if json.Unmarshal(a.Lit, &on) == nil && on && NoteSource(steps, s.ID) == "" {
+			err = stepErr(s.ID, "link_back", CodeInvalid, "create_tasks: link_back needs text or lines from a Get note text step")
+		}
+	})
+	return err
+}
+
+// NoteSource is the id of the Get note text step whose text a step's text, lines or
+// list come from, through text and list steps and a Repeat's item; "" when none.
+func NoteSource(steps []Step, id string) string {
+	byID := map[string]*Step{}
+	repeatOf := map[string]*Step{}
+	var index func(list []Step, repeat *Step)
+	index = func(list []Step, repeat *Step) {
+		for i := range list {
+			s := &list[i]
+			byID[s.ID] = s
+			if repeat != nil {
+				repeatOf[s.ID] = repeat
+			}
+			index(s.Then, repeat)
+			index(s.Otherwise, repeat)
+			if s.Kind == "repeat" {
+				index(s.Do, s)
+			}
+		}
+	}
+	index(steps, nil)
+	cur := byID[id]
+	for hops := 0; cur != nil && hops < 64; hops++ {
+		var next *Arg
+		for _, name := range []string{"text", "lines", "list", "title"} {
+			if a, ok := cur.In[name]; ok && a.IsRef() {
+				next = &a
+				break
+			}
+		}
+		if next == nil {
+			return ""
+		}
+		switch next.Ref {
+		case RefTrigger:
+			return ""
+		case RefItem:
+			r := repeatOf[cur.ID]
+			if r == nil {
+				return ""
+			}
+			cur = r
+			continue
+		}
+		cur = byID[next.Ref]
+		if cur != nil && cur.Kind == "note_text" {
+			return cur.ID
+		}
+	}
+	return ""
 }
 
 // CheckSteps is the sync kind check of rule.steps.
@@ -237,6 +312,11 @@ func (p *stepParser) inputs(k *StepKind, id string, raw json.RawMessage) (map[st
 			return nil, stepErr(id, "project", CodeInvalid, "create_tasks: subtasks take the parent's project; give parent or project, not both")
 		}
 	}
+	if k.Kind == "change_notes" {
+		if err := checkChangeNotes(id, out); err != nil {
+			return nil, err
+		}
+	}
 	for _, set := range k.OneOf {
 		n := 0
 		for _, name := range set {
@@ -330,7 +410,7 @@ func checkLiteral(def *Input, raw json.RawMessage) string {
 		if _, ok := DateLiteral(raw); !ok {
 			return `must be YYYY-MM-DD, "today", "tomorrow" or {"in_days": n}`
 		}
-	case LitProject, LitTask:
+	case LitProject, LitTask, LitNote:
 		var v map[string]string
 		if strict(raw, &v, "") != nil || len(v) != 1 || checkID(v[string(def.Lit)], "") != nil {
 			return fmt.Sprintf(`must be {"%s": id}`, def.Lit)
@@ -371,6 +451,10 @@ func checkLiteral(def *Input, raw json.RawMessage) string {
 		}
 	case LitCondition:
 		if _, err := ParseCondition(raw); err != nil {
+			return err.Error()
+		}
+	case LitLabels:
+		if _, err := parseLabelsPred(raw); err != nil {
 			return err.Error()
 		}
 	case LitCompare:
@@ -460,4 +544,24 @@ func (s *Step) inputNames() []string {
 		}
 	}
 	return out
+}
+
+// checkChangeNotes: a Change notes step changes something, and moves to a
+// project or out of one, not both (notes-in-routines D4).
+func checkChangeNotes(id string, in map[string]Arg) error {
+	n := 0
+	for _, name := range []string{"project", "no_project", "add_labels", "remove_labels", "pin", "trash"} {
+		if _, has := in[name]; has {
+			n++
+		}
+	}
+	if n == 0 {
+		return stepErr(id, "notes", CodeMissing, "change_notes: give at least one change")
+	}
+	_, p := in["project"]
+	_, np := in["no_project"]
+	if p && np {
+		return stepErr(id, "project", CodeInvalid, "change_notes: give project or no_project, not both")
+	}
+	return nil
 }

@@ -43,10 +43,28 @@ const (
 	Schedule      = "schedule"
 	// Manual fires only when the routine is run by hand (routines-engine D7).
 	Manual = "manual"
+	// Note triggers (notes-in-routines D2).
+	NoteCreated    = "note.created"
+	NoteEdited     = "note.edited"
+	NoteLabelAdded = "note.label.added"
 )
 
 // TriggerKinds is the closed set of trigger kinds.
-var TriggerKinds = []string{TaskCreated, TaskCompleted, TaskReopened, LabelAdded, LabelRemoved, AssignedToMe, TaskMoved, DueReached, Overdue, Schedule, Manual}
+var TriggerKinds = []string{TaskCreated, TaskCompleted, TaskReopened, LabelAdded, LabelRemoved, AssignedToMe, TaskMoved, DueReached, Overdue, Schedule, Manual,
+	NoteCreated, NoteEdited, NoteLabelAdded}
+
+// NoteConditionKeys are the predicates a note trigger's condition takes
+// (notes-in-routines D3): read from the note's project and labels.
+var NoteConditionKeys = []string{"project", "labels"}
+
+// IsNoteKind reports a note event kind.
+func IsNoteKind(kind string) bool {
+	return kind == NoteCreated || kind == NoteEdited || kind == NoteLabelAdded
+}
+
+// IsNote reports a trigger whose output is a standalone note: a note event or
+// a manual run on a note.
+func (t Trigger) IsNote() bool { return IsNoteKind(t.Kind) || (t.Kind == Manual && t.On == "note") }
 
 // IsTimeTrigger reports the kinds the scheduler fires (the rest come from batches).
 func IsTimeTrigger(kind string) bool {
@@ -64,6 +82,9 @@ type Trigger struct {
 	// MonthDays: days of the month (1 to 31, LastDay for "last") instead of
 	// weekdays (routines-dynamic-data D5).
 	MonthDays []MonthDay `json:"month_days,omitempty"`
+	// On is what a manual routine runs on: "task" (also when absent) or
+	// "note" (notes-in-routines D2).
+	On string `json:"on,omitempty"`
 }
 
 // MonthDay is a day of the month, 1 to 31, or LastDay ("last" in JSON).
@@ -176,10 +197,12 @@ func ParseTrigger(raw json.RawMessage) (Trigger, error) {
 		return t, fmt.Errorf("trigger.kind must be one of %v", TriggerKinds)
 	}
 	allowed := map[string][]string{
-		LabelAdded:   {"kind", "label_id"},
-		LabelRemoved: {"kind", "label_id"},
-		TaskMoved:    {"kind", "project_id", "section_id"},
-		Schedule:     {"kind", "at", "weekdays", "month_days"},
+		LabelAdded:     {"kind", "label_id"},
+		LabelRemoved:   {"kind", "label_id"},
+		NoteLabelAdded: {"kind", "label_id"},
+		Manual:         {"kind", "on"},
+		TaskMoved:      {"kind", "project_id", "section_id"},
+		Schedule:       {"kind", "at", "weekdays", "month_days"},
 	}[kind]
 	if allowed == nil {
 		allowed = []string{"kind"}
@@ -191,9 +214,13 @@ func ParseTrigger(raw json.RawMessage) (Trigger, error) {
 		return t, err
 	}
 	switch kind {
-	case LabelAdded, LabelRemoved:
+	case LabelAdded, LabelRemoved, NoteLabelAdded:
 		if err := checkID(t.LabelID, "trigger.label_id"); err != nil {
 			return t, err
+		}
+	case Manual:
+		if _, has := m["on"]; has && t.On != "task" && t.On != "note" {
+			return t, errors.New(`trigger.on must be "task" or "note"`)
 		}
 	case TaskMoved:
 		if err := checkID(t.ProjectID, "trigger.project_id"); err != nil {
@@ -755,3 +782,32 @@ func CheckCondition(raw json.RawMessage) error { _, err := ParseCondition(raw); 
 
 // CheckActions checks an actions value.
 func CheckActions(raw json.RawMessage) error { _, err := ParseActions(raw); return err }
+
+// CheckNoteTrigger is the API's cross-field check of a note trigger
+// (notes-in-routines D2, D3): its condition takes only the project and labels
+// predicates, and it needs steps, since actions change tasks. Other triggers
+// pass unchanged.
+func CheckNoteTrigger(t Trigger, condition json.RawMessage, hasSteps bool) error {
+	if !t.IsNote() {
+		return nil
+	}
+	if len(condition) > 0 && !isNull(condition) {
+		var m map[string]json.RawMessage
+		if json.Unmarshal(condition, &m) == nil {
+			keys := make([]string, 0, len(m))
+			for k := range m {
+				keys = append(keys, k)
+			}
+			slices.Sort(keys)
+			for _, k := range keys {
+				if !slices.Contains(NoteConditionKeys, k) {
+					return fmt.Errorf("condition.%s: a note trigger's condition takes only project and labels", k)
+				}
+			}
+		}
+	}
+	if !hasSteps {
+		return errors.New("a note trigger needs steps: actions change tasks")
+	}
+	return nil
+}

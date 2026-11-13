@@ -115,3 +115,41 @@ func TestRecurringCompletionIgnoresSkippedRecords(t *testing.T) {
 		t.Fatal("series not completed after its second completion")
 	}
 }
+
+// A habit's completion record never copies tiny from its series and says
+// false, so a concurrent tiny log on another device converges by
+// last-writer-wins (habits-home D5, task 1.2).
+func TestHabitCompletionRecordIsNotTiny(t *testing.T) {
+	ctx := context.Background()
+	s := newTestService(t)
+	series := "s1"
+	if _, err := s.ApplyStrict(ctx, "u1", []Op{
+		op("s-1", "task", series, "title", `"Read"`, 100, "A"),
+		op("s-2", "task", series, "recurrence", `"every day"`, 100, "A"),
+		op("s-3", "task", series, "habit", `true`, 100, "A"),
+		op("s-4", "task", series, "due", `{"date":"2026-10-13"}`, 100, "A"),
+		op("s-5", "task", series, "tiny", `true`, 100, "A"),
+		op("s-6", "task", series, "habit_tiny", `"One page"`, 100, "A"),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	existing, err := s.Get(ctx, "u1", "task", series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := map[string]json.RawMessage{"completed_at": json.RawMessage(`200`)}
+	_, record, ok, err := s.RecurringCompletion(ctx, "u1", series, body, existing, "2026-10-13")
+	if err != nil || !ok {
+		t.Fatalf("ok=%v err=%v", ok, err)
+	}
+	if string(record["tiny"]) != "false" {
+		t.Fatalf("record tiny = %s, want false", record["tiny"])
+	}
+	plan, err := PlanActOn(series, existing, "", OccurrenceAction{Kind: "complete"}, []Entity{existing}, 200, "2026-10-13")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(plan.Record["tiny"]) != "false" {
+		t.Fatalf("PlanActOn record tiny = %s, want false", plan.Record["tiny"])
+	}
+}

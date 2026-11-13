@@ -43,6 +43,25 @@ type FieldValue struct {
 // values, then reads the full records of the few entities that can match with
 // ListIDs and applies its rule to them.
 func (s *Service) FieldValues(ctx context.Context, userID, entity string, fields []string) ([]FieldValue, error) {
+	out, err := s.fieldValuesAll(ctx, userID, entity, fields)
+	if err != nil || reachOf(ctx) == nil {
+		return out, err
+	}
+	in, err := s.reachIDs(ctx, userID, entity)
+	if err != nil {
+		return nil, err
+	}
+	kept := out[:0:0]
+	for _, v := range out {
+		if in[v.EntityID] {
+			kept = append(kept, v)
+		}
+	}
+	return kept, nil
+}
+
+// fieldValuesAll is FieldValues without the request's reach.
+func (s *Service) fieldValuesAll(ctx context.Context, userID, entity string, fields []string) ([]FieldValue, error) {
 	schema, ok := Schema[entity]
 	if !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)

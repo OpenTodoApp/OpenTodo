@@ -52,6 +52,11 @@ func (s *Server) applyREST(w http.ResponseWriter, ctx context.Context, uid strin
 	case bodyChanged(w, err):
 	case errors.Is(err, opsync.ErrInvalidOp):
 		writeError(w, http.StatusBadRequest, "invalid_input", err.Error())
+	// A token limited to workspaces (token-workspaces D3): outside reads as missing.
+	case isRej && rej.Reason == opsync.ReasonOutOfReach:
+		writeError(w, http.StatusNotFound, "not_found", "not found")
+	case isRej && rej.Reason == opsync.ReasonReachLimit:
+		writeError(w, http.StatusForbidden, "token_restricted", "this token is limited to other workspaces")
 	case isRej && reasons[rej.Reason] != nil:
 		reasons[rej.Reason](w, rej)
 	case isRej && reasons[otherRefusal] != nil:

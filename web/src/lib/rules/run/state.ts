@@ -42,7 +42,7 @@ export const num = (r: Row | undefined, f: string): number => (typeof r?.[f] ===
 export const isDeleted = (r: Row | undefined): boolean => !!r && !isNull(r.deleted_at)
 
 const accepts = (def: StepInput | undefined, t: string) => !!def?.accepts.includes(t as never)
-const isList = (t: string) => t === 'tasks' || t === 'lines'
+const isList = (t: string) => t === 'tasks' || t === 'lines' || t === 'notes'
 
 export class RunState {
   readonly w: RunWorld
@@ -51,6 +51,8 @@ export class RunState {
   readonly tasks = new Map<string, Row>()
   readonly projects = new Map<string, Row>()
   readonly sections = new Map<string, Row>()
+  /** The standalone notes with the planned changes (notes-in-routines). */
+  readonly notes = new Map<string, Row>()
   labels: Row[]
   /** The stored preferences and time entries: the server's tools read them unplanned. */
   readonly prefs: Row
@@ -75,6 +77,8 @@ export class RunState {
   readonly aiTexts: string[] = []
   /** What the Ask AI steps showed, at most four (assistant-routine-blocks D1). */
   readonly blocks: RunBlock[] = []
+  /** The link to the note each Get note text step read last, by step id (note-checklist-tasks D4). */
+  readonly noteLinks = new Map<string, string>()
   readonly test: boolean
   readonly start: number
   deadline: number
@@ -109,6 +113,7 @@ export class RunState {
       this.parent.set(str(p, 'id'), str(p, 'parent_id'))
     }
     for (const s of w.sections) if (!isDeleted(s)) this.sections.set(str(s, 'id'), s)
+    for (const n of w.notes ?? []) if (!isDeleted(n)) this.notes.set(str(n, 'id'), n)
     this.labels = w.labels.filter((l) => !isDeleted(l))
     for (const l of this.labels) {
       this.labelNames.add(str(l, 'name').trim().toLowerCase())
@@ -129,6 +134,11 @@ export class RunState {
   liveProject(id: string): Row | undefined {
     const p = this.projects.get(id)
     return p && !isDeleted(p) ? p : undefined
+  }
+
+  liveNote(id: string): Row | undefined {
+    const n = this.notes.get(id)
+    return n && !isDeleted(n) ? n : undefined
   }
 
   // ---- the plan ----
@@ -311,6 +321,7 @@ export class RunState {
     if (l && typeof l === 'object' && !Array.isArray(l)) {
       if (typeof l.task === 'string' && l.task) return taskVal(l.task)
       if (typeof l.project === 'string' && l.project) return { type: 'project', id: l.project }
+      if (typeof l.note === 'string' && l.note) return { type: 'note', id: l.note }
     }
     return undefined
   }
@@ -340,6 +351,8 @@ export class RunState {
       case 'task': return str(this.tasks.get(v.id ?? ''), 'title')
       case 'tasks': return (v.ids ?? []).map((id) => str(this.tasks.get(id), 'title')).join('\n')
       case 'project': return str(this.projects.get(v.id ?? ''), 'name')
+      case 'note': return str(this.notes.get(v.id ?? ''), 'title')
+      case 'notes': return (v.ids ?? []).map((id) => str(this.notes.get(id), 'title')).join('\n')
     }
     return ''
   }
@@ -362,6 +375,8 @@ export class RunState {
       case 'task': return { id: v.id, title: str(this.tasks.get(v.id ?? ''), 'title') }
       case 'tasks': return (v.ids ?? []).map((id) => ({ id, title: str(this.tasks.get(id), 'title') }))
       case 'project': return { id: v.id, name: str(this.projects.get(v.id ?? ''), 'name') }
+      case 'note': return { id: v.id, title: str(this.notes.get(v.id ?? ''), 'title') }
+      case 'notes': return (v.ids ?? []).map((id) => ({ id, title: str(this.notes.get(id), 'title') }))
     }
     return null
   }
@@ -421,8 +436,16 @@ export class RunState {
   snapshot(): ToolSnapshot {
     return {
       userId: this.w.userId, tokenId: this.tokenId, now: this.w.now, tasks: this.tasks, projects: this.projects, labels: this.labels,
-      sections: this.sections, timeEntries: this.timeEntries, prefs: this.prefs, memberships: this.w.memberships,
+      sections: this.sections, timeEntries: this.timeEntries, prefs: this.prefs, memberships: this.w.memberships, notes: this.notes,
+      favourites: this.plannedFavourites(),
     }
+  }
+
+  /** The favourites a change planned earlier in the run wrote, if any. */
+  private plannedFavourites(): string | undefined {
+    let out: string | undefined
+    for (const c of this.overlay) if (c.entity === 'user_prefs' && typeof c.patch.favourites === 'string') out = c.patch.favourites
+    return out
   }
 
   /** Plans a tool with the routine caller and lays its changes over the run's view. */
@@ -446,6 +469,7 @@ export class RunState {
       switch (c.entity) {
         case 'task': merge(this.tasks); break
         case 'project': merge(this.projects); break
+        case 'note': merge(this.notes); break
         case 'section':
           if (c.create || this.sections.has(c.entityId)) this.sections.set(c.entityId, { ...(this.sections.get(c.entityId) ?? { _planned: true }), id: c.entityId, ...c.patch })
           break
@@ -465,8 +489,8 @@ export class RunState {
 }
 
 export function idsOf(v: StepValue): string[] {
-  if (v.type === 'tasks') return v.ids ?? []
-  if ((v.type === 'task' || v.type === 'project') && v.id) return [v.id]
+  if (v.type === 'tasks' || v.type === 'notes') return v.ids ?? []
+  if ((v.type === 'task' || v.type === 'project' || v.type === 'note') && v.id) return [v.id]
   return []
 }
 
@@ -474,25 +498,29 @@ export function idsOf(v: StepValue): string[] {
 export function elements(v: StepValue): StepValue[] {
   if (v.type === 'tasks') return (v.ids ?? []).map((id) => taskVal(id))
   if (v.type === 'lines') return (v.lines ?? []).map((text) => ({ type: 'text', text }))
+  if (v.type === 'notes') return (v.ids ?? []).map((id) => ({ type: 'note', id }))
   return []
 }
 
 /** Per-item outputs collected into a list (Repeat's output, a for-each). */
 export function collect(single: string, outs: StepValue[]): StepValue {
-  let type: 'tasks' | 'lines' | '' = ''
+  let type: 'tasks' | 'lines' | 'notes' | '' = ''
   const ids: string[] = []
   const lines: string[] = []
   for (const o of outs) {
     switch (o.type) {
       case 'task': type = 'tasks'; ids.push(o.id ?? ''); break
       case 'tasks': type = 'tasks'; ids.push(...(o.ids ?? [])); break
+      case 'note': type = 'notes'; ids.push(o.id ?? ''); break
+      case 'notes': type = 'notes'; ids.push(...(o.ids ?? [])); break
       case 'text': type = 'lines'; lines.push(o.text ?? ''); break
       case 'lines': type = 'lines'; lines.push(...(o.lines ?? [])); break
     }
   }
-  if (type === 'tasks') return { type, ids }
+  if (type === 'tasks' || type === 'notes') return { type, ids }
   if (type === 'lines') return { type, lines }
   if (single === 'task' || single === 'tasks') return tasksVal([])
+  if (single === 'note' || single === 'notes') return { type: 'notes', ids: [] }
   if (single === 'text' || single === 'lines') return { type: 'lines', lines: [] }
   return none()
 }

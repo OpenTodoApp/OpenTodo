@@ -1,0 +1,1 @@
+- Recurring rules for a weekday of one month every year: `every last sunday of march`, `every 4th thursday of november` (also "in March", and in quick add in every language). CalDAV maps them to `FREQ=YEARLY;BYMONTH;BYDAY` and Todoist imports read them (yearly-weekday-of-month, #1239).

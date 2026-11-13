@@ -4,7 +4,7 @@
 # then the network audit. Expects bin/opentodo and bin/ot; needs Playwright with Chromium.
 set -uo pipefail
 
-for s in e2e-smoke e2e-views e2e-offline e2e-revoked e2e-mcp-decrypt; do
+for s in e2e-smoke e2e-views e2e-offline e2e-revoked e2e-mcp-decrypt e2e-habits; do
   d=$(mktemp -d)
   OPENTODO_DATA_DIR=$d OPENTODO_ADDR=127.0.0.1:18081 ./bin/opentodo >"$d/server.log" 2>&1 &
   pid=$!

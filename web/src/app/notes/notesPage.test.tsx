@@ -432,6 +432,19 @@ describe('pinned notes', () => {
     expect(container.querySelector('[data-note-menu]')).toBeNull()
   })
 
+  it('"Run on this note" and "Offline" (notes-in-routines): the menu lists the routines that run on a note', async () => {
+    const id = await createNote({ title: 'Planning meeting' })
+    await mutate('rule', 'r1', { name: 'Checkboxes to tasks', enabled: false, trigger: { kind: 'manual', on: 'note' }, condition: null, actions: null,
+      steps: [{ id: 'a', kind: 'note_text', in: { of: { ref: 'trigger' } } }], position: 1, created_at: 1, deleted_at: null })
+    await mutate('rule', 'r2', { name: 'On a task', enabled: false, trigger: { kind: 'manual' }, condition: null, actions: null,
+      steps: [{ id: 'a', kind: 'notify', in: { text: { literal: 'x' } } }], position: 2, created_at: 1, deleted_at: null })
+    const { container } = await render(<NotePanel id={id} />)
+    await waitFor(() => !!container.querySelector('[data-note-menu]'), 'the note menu')
+    await click(container.querySelector('[data-note-menu]')!)
+    await waitFor(() => !!document.querySelector('[data-note-run-routine]'), 'the routines')
+    expect([...document.querySelectorAll('[data-note-run-routine]')].map((x) => x.getAttribute('data-note-run-routine'))).toEqual(['r1'])
+  })
+
   it("the open note's own menu pins it", async () => {
     const id = await createNote({ title: 'Wi-Fi' })
     const { container } = await render(<NotePanel id={id} />)

@@ -20,6 +20,12 @@ A note on the [Notes](notes.md) page can become a task, and a task's note can be
 
 Both can be undone with **Undo**. Viewers of a shared project are offered neither. Both work offline and reach your other devices on the next sync.
 
+## Tasks from checklist lines
+
+In a project's note or a standalone note, put the caret on a checklist line, or select several lines, and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> on a Mac), or choose **Make tasks** in the `/` menu. Each checklist line becomes a task, read like [quick add](quick-add.md): "book room friday" is due Friday, "send agenda p1" has priority 1. The tasks go to the note's project, or to the Inbox for a note without one; a ticked line makes a completed task. Each line becomes a link to its task, so the task's Linked references show the note. Other lines stay as they are, at most 50 lines are turned at once, and <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes back the tasks and the lines together. It works offline. In a task's note the same key makes subtasks instead, keeping each line as the title.
+
+A [routine](routines.md) can do the same on a schedule: Create tasks with **Link back to the note** starts each task's note with a link to the note its lines came from.
+
 ## Trash
 
 A deleted note goes to the [Trash](trash-and-history.md) with tasks and projects. Restore it from there, or delete it permanently; the Trash empties itself after the retention period like for tasks, and a project deleted permanently takes its notes with it.
@@ -30,4 +36,6 @@ A deleted note goes to the [Trash](trash-and-history.md) with tasks and projects
 
 Links between notes are Markdown: `[Trip](?note=<id>)`, `[Call the plumber](?task=<id>)` or `[Renovation](?project=<id>)`, so a script or an assistant links by writing that text. `ot notes links <ref>` lists what a note links to and the notes that link to it, worked out on your machine (it needs `ot encryption unlock` on an encrypted account). On an account without end-to-end encryption, the assistant tools `get_note` and `get_task` return the same as `links` and `linked_from`; on an encrypted account they return neither, because the server cannot read the notes.
 
-Notes are not sent to calendar apps over CalDAV, to webhooks, to the activity feed, to automations or to the Markdown vault.
+[Routines](routines.md#notes-in-routines) can turn notes into tasks for you: when a note gets the label todo, or the open checkboxes of a note you run a routine on.
+
+Notes are not sent to calendar apps over CalDAV, to webhooks, to the activity feed or to the Markdown vault.

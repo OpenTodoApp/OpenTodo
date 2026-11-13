@@ -78,6 +78,8 @@ export const SETTINGS_COPY = {
       sectors: { label: msg('Time sectors'), description: msg('Plan tasks into this week, next week or this month without a fake date.') },
       // Objectives (plan-objectives D8): synced user_prefs.objectives, off by default in every mode.
       objectives: { label: msg('Objectives'), description: msg('Pin up to five quarterly and weekly objectives in Plan and the weekly review.') },
+      // Habits (habits-home D1): synced user_prefs.habits; off hides every habit control, never a habit.
+      habits: { label: msg('Habits'), description: msg('A Habits screen, a strip in Today and a thread of the last seven days.') },
       // Energy levels (task-energy D3): synced user_prefs.energy, off by default in every mode.
       energy: { label: msg('Energy levels'), description: msg('Mark tasks Deep, Medium or Low and filter by the energy they need.') },
       // Formatting button (notes-toolbar-desktop D4): synced user_prefs.formatting_toggle, on by default.

@@ -27,7 +27,8 @@ export function planDetach(series: Task, now: number, today: string, tasks: Iter
 // ---- acting on one occurrence (D2, D4) ----
 
 export type OccurrenceAction =
-  | { kind: 'complete' }
+  /** `tiny`: a habit logged as its tiny version (habits-home D5), set on the record in the same batch. */
+  | { kind: 'complete'; tiny?: boolean }
   | { kind: 'skip' }
   | { kind: 'move'; due: Due }
   | { kind: 'edit'; patch: Record<string, unknown> }
@@ -89,12 +90,14 @@ export function planActOn(
   const at = standOn(series, current, today)
   const base = recordFields(at, on, now, today)
   const state = statePatch(action, now)
+  if (action.kind === 'complete' && series.habit) state.tiny = !!action.tiny
   if (existing) {
     if (action.kind === 'detach') return null
     return { recordId, existed: true, base, changes: [{ entity: 'task', entityId: recordId, patch: state }] }
   }
   if (on === current && (action.kind === 'complete' || action.kind === 'skip')) {
     const changes = action.kind === 'complete' ? planCompletion(series, rule, list, now, today, members) : null
+    if (changes?.kind === 'roll' && action.kind === 'complete' && action.tiny) changes.changes[0].patch.tiny = true
     if (changes) return changes.kind === 'roll' ? { recordId, existed: false, base, changes: changes.changes } : { recordId, existed: false, base, changes: [], end: true }
     const skip = planSkip(series, rule, now, today, list)
     return skip ? { recordId, existed: false, base, changes: skip } : null

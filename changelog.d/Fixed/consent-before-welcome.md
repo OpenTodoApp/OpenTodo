@@ -1,0 +1,1 @@
+- **A confirmation is no longer hidden behind the welcome note.** On a new account, the one-time thank-you and the start guide opened on top of a waiting confirmation (connecting an AI app, signing in from the OpenTodo app). They now wait until it is answered.

@@ -29,6 +29,8 @@ import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
 import { openConnections, useConnected } from '../signals'
+import { useRules } from '../../lib/rules/store'
+import { useOnline } from '../../lib/online'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
@@ -120,7 +122,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
     <div className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} outline="auto" />
       </Suspense>
       <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
         <span className="pt-2 text-meta text-muted">{t('Project')}</span>
@@ -143,8 +145,16 @@ const toList = () => navigate({ view: 'notes' })
 function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
   const connected = useConnected('note', note.id)
+  // Run routine…: the manual routines that run on a note (notes-in-routines).
+  const rules = useRules().filter((r) => r.trigger?.kind === 'manual' && r.trigger.on === 'note')
+  const online = useOnline()
+  const run = (id: string) => {
+    const rule = rules.find((r) => r.id === id)
+    if (rule) void import('../palette/routineCommand').then((m) => m.runRoutineNow(rule, undefined, note.id))
+  }
+  const routines = rules.map((r) => ({ id: r.id, name: r.name }))
   return (
-    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
       onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
@@ -180,8 +190,10 @@ export function NotePanel({ id }: { id: string }) {
   return (
     <PanelFrame title={t('Note')} testId="note" onClose={toList} actions={<NoteActions note={note} editable={editable} />}
       edge={<PanelResizeHandle store={NOTE_PANEL_WIDTH} label={t('Resize the note')} />}>
-      <div className="mx-auto w-full max-w-[40rem] px-2 pt-2 pb-12 lg:px-4" data-note-column>
-        <NoteForm note={note} readOnly={!editable} />
+      <div data-outline-room>
+        <div className="note-column px-2 pt-2 pb-12 lg:px-4" data-note-column>
+          <NoteForm note={note} readOnly={!editable} />
+        </div>
       </div>
     </PanelFrame>
   )

@@ -249,7 +249,7 @@ func (e *Engine) sharedEvents(ctx context.Context, c opsync.Change, depth int) [
 		// assigned.to_me means assigned to the run-as person.
 		as := c
 		as.UserID = u
-		for _, ev := range Derive(as) {
+		for _, ev := range derive(as) {
 			ev.UserID, ev.Origin, ev.Depth, ev.ForProject = u, c.Origin, depth, pid
 			out = append(out, ev)
 		}
@@ -309,6 +309,7 @@ func (w *world) bound(pid string) *world {
 	b.labels, b.labelNames, b.labelName = map[string]bool{}, map[string]bool{}, map[string]string{}
 	b.sections, b.sectionName = map[string]string{}, map[string]string{}
 	b.tracked, b.changed = nil, nil
+	b.notes, b.noteDates, b.noteMs = nil, nil, nil
 	for id, t := range w.tasks {
 		if str(t, "project_id") == pid {
 			b.tasks[id] = t

@@ -15,7 +15,7 @@ Notes and comments use the same editor, so everything here works in both (except
 
 ## Type to format
 
-Start a line with `- ` for a bullet list, `1. ` for a numbered list, `[ ] ` for a checklist, `# ` for a heading or `> ` for a quote. Type ```` ``` ```` and press <kbd>Enter</kbd> for a code block: inside it, what you type stays exactly as typed. Select text and press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold, <kbd>Ctrl</kbd>+<kbd>I</kbd> for italic or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac).
+Start a line with `- ` for a bullet list, `1. ` for a numbered list, `[ ] ` for a checklist, `# ` for a heading ([outline](note-outline.md)) or `> ` for a quote. Type ```` ``` ```` and press <kbd>Enter</kbd> for a code block: inside it, what you type stays exactly as typed. Select text and press <kbd>Ctrl</kbd>+<kbd>B</kbd> for bold, <kbd>Ctrl</kbd>+<kbd>I</kbd> for italic or <kbd>Ctrl</kbd>+<kbd>K</kbd> for a link (<kbd>⌘</kbd> on a Mac).
 
 ## The / menu
 
@@ -37,7 +37,7 @@ In a shared project, type `@` and a few letters of a member's name and pick them
 
 ## Make a checklist line a subtask
 
-In a task's notes, put the caret on a checklist line and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> (or choose **Make subtask** from the `/` menu). The line becomes a link to a new subtask with its text; a ticked line makes a completed subtask. The link always shows the subtask's current title. <kbd>Ctrl</kbd>+<kbd>Z</kbd> right after takes both back.
+In a task's notes, put the caret on a checklist line, or select several, and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> (or **Make subtask** in the `/` menu). Each line becomes a link to a new subtask; a ticked line makes a completed one. In other notes it makes tasks: see [Notes, tasks and scripts](notes-to-tasks.md). <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes it back.
 
 ## What other apps see
 

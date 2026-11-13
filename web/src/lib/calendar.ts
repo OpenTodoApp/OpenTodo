@@ -237,7 +237,8 @@ export function calendarTasks(tasks: readonly Task[], projects: readonly Pick<Pr
     const span = spanOf(t)
     return !!span && spanClip(span, from, to) !== null
   }
-  return tasks.filter((t) => !t.deleted_at && (showCompleted || !t.completed_at) && inRange(t) && !(t.project_id && archived.has(t.project_id)))
+  // A graduated habit is not on the calendar (habits-home D7).
+  return tasks.filter((t) => !t.deleted_at && t.habit_graduated_at == null && (showCompleted || !t.completed_at) && inRange(t) && !(t.project_id && archived.has(t.project_id)))
 }
 
 /**

@@ -378,7 +378,7 @@ export const EveryMetadata: StoryObj = {
   render: () => (
     <List>
       <TaskRow {...base} showProject project={work} labels={[errand, call, homeLabel]} progress={{ done: 1, total: 3 }} tracked={35} blockedBy={1}
-        habit={{ current: 6, best: 9, pending: true, atRisk: false } as HabitStats} assignee="Jo"
+        habit={{ current: 6, best: 9, pending: true, overdue: false, kept: 6, keptOf: 7, strength: 80, atRisk: false, backOnTrack: false } as HabitStats} assignee="Jo"
         task={task({ id: 't-counts', title: 'Prepare the quarterly report', project_id: work.id, due: { date: TOMORROW }, recurrence: 'every week', deadline: '2026-10-30', start: '2026-10-01', estimate_minutes: 60, labels: [errand.id, call.id, homeLabel.id], description: 'Three charts.', assignee_id: 'u-jo', origin: { kind: 'issue', provider: 'github', id: 'o/r#7', url: 'https://github.com/o/r/issues/7' } })} />
     </List>
   ),
