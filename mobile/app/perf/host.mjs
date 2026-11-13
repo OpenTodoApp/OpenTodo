@@ -11,15 +11,20 @@
 //     measure, sampling the app's resident memory; then once to write a task, kills it
 //     (SIGKILL) as soon as it reports the write committed, and once more to read it back.
 //   node perf/host.mjs summary <results.json>
-//     Prints the medians of the measured runs against the budgets (design D4), as
-//     Markdown for the job summary.
+//     Prints the medians of the measured runs against the app's budgets
+//     (scripts/perf/budgets.json, setting app-simulator) as Markdown for the job
+//     summary, and fails when one is exceeded or was not measured.
 import { execFileSync, spawn } from 'node:child_process'
 import { copyFileSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { evaluate, loadBudgets, median } from '../../../scripts/perf/budgets.mjs'
 
-const [cmd, ...args] = process.argv.slice(2)
+// Imported by the budgets test for `report`; the commands run only as a script.
+const main = process.argv[1] === fileURLToPath(import.meta.url)
+const [cmd, ...args] = main ? process.argv.slice(2) : []
 const log = (s) => console.log(`[host ${new Date().toISOString().slice(11, 23)}] ${s}`)
 
 async function dump(fixture, bin, out) {
@@ -173,44 +178,65 @@ async function run(rowsFile, bundle, out, runs = 3) {
   if (failed.length) process.exitCode = 1
 }
 
-// The budgets of the performance-budgets delta (design D4); memory is judged on a phone,
-// so the simulator's number is shown with its increase over the empty app.
-const BUDGETS = [
-  ['Cold start to Today drawn', (r) => r.coldStartMs, 1000],
-  ['… launch to first JavaScript', (r) => r.launchToJsMs, null],
-  ['… JavaScript start to Today drawn', (r) => r.jsStartToTodayMs, null],
-  ['… of which the harness asking the host for its step', (r) => r.instructionMs, null],
-  ['… of which opening the database', (r) => r.open?.openMs, null],
-  ['… Today query (open tasks by index)', (r) => r.open?.todayQueryMs, null],
-  ['Opening Inbox', (r) => r.inbox?.totalMs, 300],
-  ['500-op pull page', (r) => r.pull?.applyMs, 400],
-  ['Longest JS-thread frame during the pull', (r) => r.pull?.longestFrameMs, 50],
-  ['Resident memory, peak (MB)', (r) => r.peakRssMB, null],
+// The app's budgets (scripts/perf/budgets.json, setting app-simulator; docs/performance.md
+// shows them). Two are the part of a phone's budget a simulator can judge: JavaScript
+// start to Today (the simulator's own launch time is reported beside it) and the memory
+// over the empty app. The harness's request for its step is not the app's time.
+const SAMPLES = {
+  'app-js-to-today': (r) => (typeof r.jsStartToTodayMs === 'number' ? r.jsStartToTodayMs - (r.instructionMs ?? 0) : undefined),
+  'app-inbox': (r) => r.inbox?.totalMs,
+  'app-pull-page': (r) => r.pull?.applyMs,
+  'app-pull-frame': (r) => r.pull?.longestFrameMs,
+  'app-complete-task': (r) => r.complete?.toFrameP95Ms,
+  'app-memory-growth': (r, base) => (typeof r.peakRssMB === 'number' && typeof base?.peakRssMB === 'number' ? +(r.peakRssMB - base.peakRssMB).toFixed(1) : undefined),
+}
+
+// Reported beside the budgets, never judged here.
+const REPORTED = [
+  ['Cold start to Today drawn (a phone\'s budget: 1,000 ms)', (r) => r.coldStartMs],
+  ['… launch to first JavaScript (the simulator)', (r) => r.launchToJsMs],
+  ['… the harness asking the host for its step', (r) => r.instructionMs],
+  ['… opening the database', (r) => r.open?.openMs],
+  ['… Today query (open tasks by index)', (r) => r.open?.todayQueryMs],
+  ['Completing a task: the write alone, p95', (r) => r.complete?.writeP95Ms],
+  ['Resident memory, peak (MB)', (r) => r.peakRssMB],
 ]
 
-function summary(file) {
-  const { device, results } = JSON.parse(readFileSync(file, 'utf8'))
+/** The summary in Markdown, and whether every budget holds. */
+export function report({ device, results }, budgets = loadBudgets()) {
   const runs = results.filter((r) => r.phase === 'measure' && !r.error)
-  const median = (xs) => { const s = xs.filter((x) => typeof x === 'number').sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null }
-  const range = (xs) => { const s = xs.filter((x) => typeof x === 'number'); return s.length ? `${Math.min(...s)}–${Math.max(...s)}` : '' }
-  const lines = [`Device: ${device.split('\n').find((l) => l.includes('Booted'))?.trim() ?? 'simulator'}`, '', '| Metric | Budget | Median | Range |', '|---|---|---|---|']
-  for (const [name, get, budget] of BUDGETS) {
-    const values = runs.map(get)
-    const m = median(values)
-    const mark = budget && m !== null ? (m <= budget ? ' (within)' : ' (over)') : ''
-    lines.push(`| ${name} | ${budget ? `≤ ${budget} ms` : ''} | ${m ?? 'n/a'}${mark} | ${range(values)} |`)
-  }
   const base = results.find((r) => r.phase === 'baseline')
+  const numbers = (xs) => xs.filter((x) => typeof x === 'number')
+  const range = (xs) => (numbers(xs).length ? `${Math.min(...numbers(xs))}–${Math.max(...numbers(xs))}` : '')
+  const samples = Object.fromEntries(Object.entries(SAMPLES).map(([id, get]) => [id, numbers(runs.map((r) => get(r, base)))]))
+  const verdict = evaluate(budgets, 'app-simulator', samples)
+  const lines = [`Device: ${device.split('\n').find((l) => l.includes('Booted'))?.trim() ?? 'simulator'}`, '', '| Metric | Budget | Median | Range |', '|---|---|---|---|']
+  for (const m of verdict.metrics) {
+    lines.push(`| ${m.name} | ≤ ${m.limit} ${m.unit} | ${m.runs.length ? `${m.median} (${m.ok ? 'within' : 'over'})` : 'not measured'} | ${range(m.runs)} |`)
+  }
+  for (const [name, get] of REPORTED) {
+    const values = numbers(runs.map(get))
+    lines.push(`| ${name} | | ${values.length ? median(values) : 'n/a'} | ${range(values)} |`)
+  }
   const seed = results.find((r) => r.phase === 'seed')
   const verify = results.find((r) => r.phase === 'verify')
-  lines.push('', `Empty app peak memory: ${base?.peakRssMB ?? 'n/a'} MB. Seeding ${seed?.rows ?? '?'} rows: ${seed?.seedMs ?? '?'} ms. Today ${median(runs.map((r) => r.todayCount))} rows, Inbox ${median(runs.map((r) => r.inbox?.count))}.`)
+  const count = (get) => (numbers(runs.map(get)).length ? median(numbers(runs.map(get))) : '?')
+  lines.push('', `Empty app peak memory: ${base?.peakRssMB ?? 'n/a'} MB. Seeding ${seed?.rows ?? '?'} rows: ${seed?.seedMs ?? '?'} ms. Today ${count((r) => r.todayCount)} rows, Inbox ${count((r) => r.inbox?.count)}.`)
   lines.push(`Kill after write: ${verify ? (verify.ok ? 'the task and its queued ops were there after SIGKILL' : `FAILED ${JSON.stringify(verify)}`) : 'not run'}.`)
   const errors = results.filter((r) => r.error)
   if (errors.length) lines.push('', 'Errors:', ...errors.map((e) => `- ${e.phase}: ${String(e.error).split('\n')[0]}`))
-  console.log(lines.join('\n'))
+  const failures = verdict.metrics.filter((m) => !m.ok).map((m) => m.failure)
+  if (failures.length) lines.push('', 'Over budget:', ...failures.map((f) => `- ${f}`))
+  return { text: lines.join('\n'), failures }
 }
 
-if (cmd === 'dump') await dump(...args)
+function summary(file) {
+  const { text, failures } = report(JSON.parse(readFileSync(file, 'utf8')))
+  console.log(text)
+  if (failures.length) process.exitCode = 1
+}
+
+if (!main) { /* imported */ } else if (cmd === 'dump') await dump(...args)
 else if (cmd === 'summary') summary(args[0])
 else if (cmd === 'run') await run(args[0], args[1], args[2], Number(args[3] ?? 3))
 else { console.error('usage: host.mjs dump|run|summary …'); process.exit(2) }

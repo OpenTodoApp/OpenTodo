@@ -4,7 +4,8 @@
     "Settings: desktop and phone are measured nightly by scripts/perf/run.mjs (phone: 4x CPU throttling, 412x915), server by `go test -tags perf ./internal/perf`; a nightly run fails when the median of five runs exceeds the limit. device-android, device-ios and pi4 are to be recorded by hand (scripts/perf/device.md) in docs/performance/results-<version>.md; none was measured for 1.0 and no release requires the record until real devices are available (owner decision 2026-11-07, #990).",
     "A limit is only raised in a pull request that states the reason, here and in its description.",
     "Reviewed on 2026-11-03 against the first CI measurements (task 1.6; numbers in the pull requests and docs/performance.md). The interaction limits of the design (cursor 16 ms, completion and keystroke 50 ms on a computer; 50 and 150 in the phone profile) were set before the benchmark existed and are below what it can measure: it times from the input to the frame after the change (requestAnimationFrame, then a task), so an interaction that does nothing measures one frame of up to 16.7 ms plus the paint. They now follow the response times the design meant: on a computer the cursor in 50 ms (three frames: holding j keeps up with the key repeat) and a completion or keystroke in 100 ms (RAIL's instant response); in the phone profile, the CPU slowed four times as Lighthouse's mid-tier phone, 150 ms for the cursor and 200 ms for a completion or keystroke (Core Web Vitals' good interaction). The phones measured by hand keep their limits. No other limit changed.",
-    "notes-share raised from 100 to 130 MB on 2026-11-03 (OpenSpec change notes-compaction-at-scale, design D5): the first complete compaction of the notes fixture leaves 116 MB, all of it kept by the compaction rules: one revision per UTC day of each note's projection (13,400 descriptions, 65 MB), the 30-day window's documents (31 MB) and the current values, stored twice (the op and the materialized row, 15 MB). The 100 MB of performance-10k D7 was an estimate made before the fixture existed."
+    "notes-share raised from 100 to 130 MB on 2026-11-03 (OpenSpec change notes-compaction-at-scale, design D5): the first complete compaction of the notes fixture leaves 116 MB, all of it kept by the compaction rules: one revision per UTC day of each note's projection (13,400 descriptions, 65 MB), the 30-day window's documents (31 MB) and the current values, stored twice (the op and the materialized row, 15 MB). The 100 MB of performance-10k D7 was an estimate made before the fixture existed.",
+    "The native app (OpenSpec change native-app-foundation, task 5.4, 2026-11-13). app-simulator is the nightly app-perf job (mobile/app/perf/host.mjs fails the run over a limit); app-iphone is recorded by hand on a phone before the app replaces the shells (native-app-handover's go/no-go). The change's first targets were written for a phone and two of them cannot be judged on a simulator, so they are split: cold start (1,000 ms) stays the phone's limit, because the simulator spends 1.0 to 1.9 s between launch and the bundle's first line whatever the app does, and the simulator is held to the part the app controls, JavaScript start to Today drawn; memory (180 MB) stays the phone's limit, because an empty app is already about 245 MB of resident memory on the simulator, which is held to the growth over the empty app: 100 MB, where the session with its twenty completions measured 46 to 88 MB on 2026-11-13 (30 to 34 MB before the completions joined it)."
   ],
   "settings": {
     "desktop": "CI runner, Chromium",
@@ -12,9 +13,11 @@
     "server": "CI runner, the server binary",
     "device-android": "2022 mid-range Android phone, Android shell",
     "device-ios": "iPhone 12, iOS shell",
-    "pi4": "Raspberry Pi 4 (4 GB), arm64 image"
+    "pi4": "Raspberry Pi 4 (4 GB), arm64 image",
+    "app-simulator": "CI runner (macOS), iPhone simulator, the native app",
+    "app-iphone": "iPhone 12 or newer, the native app"
   },
-  "gated": ["desktop", "phone", "server"],
+  "gated": ["desktop", "phone", "server", "app-simulator"],
   "metrics": [
     { "id": "cold-start", "name": "cold start to the Today list", "unit": "ms", "limits": { "desktop": 1200, "phone": 3000, "device-android": 3000, "device-ios": 3000 } },
     { "id": "open-project", "name": "open the 2,000-task project", "unit": "ms", "limits": { "desktop": 400, "phone": 1200, "device-android": 1200, "device-ios": 1200 } },
@@ -50,6 +53,14 @@
     { "id": "note-references", "name": "open a linked note to its Linked references (notes fixture)", "unit": "ms", "limits": { "desktop": 200, "phone": 600 } },
     { "id": "notes-graph", "name": "open the Notes graph to its first paint (notes fixture)", "unit": "ms", "limits": { "desktop": 800, "phone": 2000 } },
     { "id": "notes-graph-frame", "name": "a zoom of the Notes graph to its frame, p95", "unit": "ms", "limits": { "desktop": 50, "phone": 150 } },
-    { "id": "notes-js-heap", "name": "JS heap after the notes session", "unit": "MB", "limits": { "desktop": 170, "phone": 170 } }
+    { "id": "notes-js-heap", "name": "JS heap after the notes session", "unit": "MB", "limits": { "desktop": 170, "phone": 170 } },
+    { "id": "app-cold-start", "name": "native app: cold start to the Today list", "unit": "ms", "limits": { "app-iphone": 1000 } },
+    { "id": "app-js-to-today", "name": "native app: JavaScript start to the Today list", "unit": "ms", "limits": { "app-simulator": 800 } },
+    { "id": "app-inbox", "name": "native app: open Inbox", "unit": "ms", "limits": { "app-simulator": 300, "app-iphone": 300 } },
+    { "id": "app-pull-page", "name": "native app: apply a sync page of 500 ops", "unit": "ms", "limits": { "app-simulator": 400, "app-iphone": 400 } },
+    { "id": "app-pull-frame", "name": "native app: longest frame while the sync page applies", "unit": "ms", "limits": { "app-simulator": 50, "app-iphone": 50 } },
+    { "id": "app-complete-task", "name": "native app: complete a task, to the frame without it, p95", "unit": "ms", "limits": { "app-simulator": 50, "app-iphone": 50 } },
+    { "id": "app-native-memory", "name": "native app: process memory after the session", "unit": "MB", "limits": { "app-iphone": 180 } },
+    { "id": "app-memory-growth", "name": "native app: memory over the empty app after the session", "unit": "MB", "limits": { "app-simulator": 100 } }
   ]
 }
