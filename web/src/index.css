@@ -833,12 +833,19 @@ select.ui-input:not([multiple]) {
   word-wrap: break-word;
   white-space: pre-wrap;
   white-space: break-spaces;
-  font-variant-ligatures: none;
   transition: min-height var(--duration-ui) ease-out, background-color var(--duration-ui) ease-out;
 }
 .notes-host[data-notes-editing] .notes-editor,
 .notes-editor:focus {
   @apply min-h-28 border-input bg-surface ring-2 ring-focus/30 dark:bg-raised;
+}
+/* Ligatures and contextual alternates ("->" drawn as an arrow, as in titles) at rest;
+   off while editing so the caret never sits inside a drawn pair (ProseMirror's base
+   rule; GitHub issue 1278). The stored text is unchanged either way. */
+.notes-host[data-notes-editing] .notes-editor,
+.notes-editor:focus,
+.notes-editor:focus-within {
+  font-variant-ligatures: none;
 }
 .notes-editor[contenteditable="false"] {
   @apply border-transparent ring-0;
