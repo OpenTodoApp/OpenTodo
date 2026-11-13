@@ -18,6 +18,30 @@ function render(over: Partial<TokensViewProps> = {}) {
 
 const token = (over: Partial<ApiToken> = {}): ApiToken => ({ id: 't1', name: 'laptop CLI', scope: 'full', createdAt: 1, lastUsedAt: null, ...over })
 
+describe('TokensView workspaces (token-workspaces)', () => {
+  const two = [{ id: 'w-home', name: 'Home' }, { id: 'w-work', name: 'Work' }]
+  it('offers All workspaces or Only these when there are two or more, and lists the chosen ones', () => {
+    expect(render({ creating: true, workspaces: [two[0]] })).not.toContain('data-token-workspace-choice')
+    const all = render({ creating: true, workspaces: two, only: null })
+    expect(all).toContain('data-token-workspace-choice')
+    expect(all).toMatch(/value="all" checked=""|checked="" value="all"/)
+    expect(all).not.toContain('data-token-workspace="w-work"')
+    const some = render({ creating: true, workspaces: two, only: ['w-work'] })
+    expect(some).toContain('data-token-workspace="w-work"')
+    expect(some).toMatch(/data-token-workspace="w-work"[^>]*checked=""|checked=""[^>]*data-token-workspace="w-work"/)
+    expect(render({ tokens: [token({ workspaces: ['w-work', 'gone'] })], workspaces: two })).toContain('Only Work, a removed workspace')
+    expect(render({ tokens: [token()], workspaces: two })).not.toContain('data-token-workspaces')
+  })
+
+  it('sends the chosen workspaces with the token', async () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ token: token(), secret: 'otw_x' }), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetch)
+    await api.createToken('Work assistant', 'agent', ['w-work'])
+    const body = JSON.parse((fetch.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    expect(body).toEqual({ name: 'Work assistant', scope: 'agent', workspaces: ['w-work'] })
+  })
+})
+
 describe('TokensView', () => {
   it('offers the scopes as described choices in the New token dialog, with full access preselected', () => {
     expect(render()).not.toContain('data-token-scope')

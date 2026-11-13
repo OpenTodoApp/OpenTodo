@@ -39,7 +39,7 @@ MCP: the transport passes the reach on the context. Tools over account-wide reco
 
 ## D5. OAuth
 
-The consent page lists the person's workspaces with **All workspaces** checked; unchecking it shows the list. The grant stores the choice, and every access token minted from it carries it (`api_token_workspaces` rows for the minted token). Refreshing keeps it.
+The consent page lists the person's workspaces with **All workspaces** checked; unchecking it shows the list. The grant stores the choice, and every access token minted from it carries it (`api_token_workspaces` rows for the minted token). Refreshing keeps it. A limited grant's refresh token starts with `otwr_` and is stored under a prefixed hash, as D1 does for tokens, so a binary from before this change cannot refresh it into an unlimited token; the app is asked to authorize again.
 
 ## D6. What is not covered
 
