@@ -13,7 +13,7 @@ import {
   applyLanguagePreference, currentLanguage, currentLocale, errorMessage, formatList, intlLocale, mirroredPreference,
   isSimplifiedChineseTag, preferredLanguages, resolveLanguage, t,
 } from '.'
-import { applyCatalog, fetchCatalog } from './catalog'
+import { applyCatalog, fetchCatalog, formatNumber } from './catalog'
 import { ERROR_MESSAGES } from './errors'
 import serverCodes from './server-error-codes.json'
 
@@ -51,6 +51,15 @@ describe('messages', () => {
     expect(html).toBe('<p>Connecté en tant que <b>Ana</b>.</p>')
     expect(t('{entity, select, task {a task} project {a project} label {a label} section {a section} comment {a comment} view {a view} field {a field} reminder {a reminder} other {an item}}', { entity: 'label' })).toBe('une étiquette')
     expect(t('A message no catalog has')).toBe('A message no catalog has')
+  })
+
+  it('Dutch plural and grouping: 1 taak, 2 taken, 1.234 (more-languages 3.5)', async () => {
+    await applyLanguagePreference('nl', ['en-US'])
+    expect(document.documentElement.lang).toBe('nl')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1 })).toBe('1 taak')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 2 })).toBe('2 taken')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 1234 })).toBe('1.234 taken')
+    expect(formatNumber(1234)).toBe('1.234')
   })
 
   it('lists use the language’s own pattern', async () => {
@@ -153,6 +162,15 @@ describe('dates in the interface language (D4)', () => {
     expect(currentLocale()).toBe('de')
     expect(formatDate('2026-10-14', 'numeric', undefined, '2026-01-01')).toBe('14.10.2026')
     expect(formatDate('2026-10-12', 'full', undefined, '2026-01-01')).toMatch(/^Montag/)
+  })
+  it('Dutch with an en-US browser: day-month order, Dutch day and month names', async () => {
+    await applyLanguagePreference('nl', ['en-US'])
+    setDateTime({ date_format: 'system', time_format: 'system', week_start: 'system' })
+    expect(currentLocale()).toBe('nl')
+    expect(formatDate('2026-10-14', 'numeric', undefined, '2026-01-01')).toBe('14-10-2026')
+    expect(formatDate('2026-10-12', 'full', undefined, '2026-01-01')).toMatch(/^maandag/)
+    expect(formatDate('2026-03-03', 'compact', undefined, '2026-01-01')).toMatch(/^3 mrt/)
+    expect(formatTime('15:00')).toBe('15:00')
   })
   it('Swiss German keeps its region', async () => {
     await applyLanguagePreference('system', ['de-CH'])

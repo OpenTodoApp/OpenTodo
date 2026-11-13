@@ -51,6 +51,10 @@ Date, time, recurrence and reminder vocabulary SHALL be bundled for English, Ger
 - **WHEN** Dutch is active and the user enters `Bel ma`, then `Bel ma om 9 uur`
 - **THEN** the first task has no due date and the title `Bel ma`, and the second is due next Monday at `09:00` with the title `Bel`
 
+#### Scenario: Weekday before a date
+- **WHEN** Dutch is active and the user enters `Vergadering ma 1 mrt`, or English is active and the user enters `Meeting Monday, March 3`
+- **THEN** the task is due on that date (1 March, 3 March) with the title `Vergadering` or `Meeting`
+
 #### Scenario: Dutch words inactive
 - **WHEN** only English is active and the user enters `Fix the door over lunch`
 - **THEN** no attribute is parsed and the title is `Fix the door over lunch`

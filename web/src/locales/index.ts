@@ -36,6 +36,9 @@ export const isShipped = (code: unknown): code is LanguageCode => SHIPPED.some((
 /** A language's name written in that language ("Deutsch"). */
 export const nativeName = (code: LanguageCode): string => SHIPPED.find((l) => l.code === code)!.name
 
+/** A shipped language's own name for any code ("nl" → "Nederlands"), or the code itself when none is shipped. */
+export const languageName = (code: string): string => SHIPPED.find((l) => l.code === code)?.name ?? code
+
 /** Whether a language is a community translation rather than a maintained one. */
 export const isCommunity = (code: string, list: readonly ShippedLanguage[] = LIST): boolean =>
   list.some((l) => l.code === code && l.community === true)

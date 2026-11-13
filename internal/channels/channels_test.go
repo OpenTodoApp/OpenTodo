@@ -290,6 +290,9 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if got := e.render("zh", "", false).Body; got != "有一条提醒到期" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
 		t.Fatalf("Chinese: %q", got)
 	}
+	if got := e.render("nl", "", false).Body; got != "Er is een geplande datum bereikt" || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Dutch: %q", got)
+	}
 	if got := e.render("xx", "", false).Body; got != "A reminder is due" {
 		t.Fatalf("fallback: %q", got)
 	}
@@ -308,7 +311,7 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 		t.Fatalf("turn: %+v", m)
 	}
 	want := map[string]string{"en": "It's your turn on a task", "de": "Du bist bei einer Aufgabe an der Reihe", "fr": "C’est votre tour pour une tâche",
-		"es": "Te toca una tarea", "it": "Tocca a te per un’attività", "pt": "É a sua vez em uma tarefa"}
+		"es": "Te toca una tarea", "it": "Tocca a te per un’attività", "pt": "É a sua vez em uma tarefa", "nl": "Jij bent aan de beurt bij een taak"}
 	for lang, w := range want {
 		if m := turn.render(lang, "", false); m.Body != w || m.Title != "OpenTodo" {
 			t.Errorf("%s turn: %+v", lang, m)

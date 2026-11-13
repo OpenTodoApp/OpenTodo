@@ -1,6 +1,6 @@
 // Package quickadd is the Go port of the web app's quick-add parser
 // (web/src/lib/nlp, OpenSpec change quick-add-recurrence, design D5): dates and
-// times, #project @label p1 +30m, recurrence and reminder phrases, in six
+// times, #project @label p1 +30m, recurrence and reminder phrases, in seven
 // languages. Pure functions over strings and calendar days; the standard
 // library only. Shared vectors (web/src/lib/nlp/quickadd.vectors.json) and the
 // shared vocabulary file (vocab.json, written by `npm run nlp:vocab`) keep the
@@ -60,10 +60,16 @@ type Vocab struct {
 	TimeWords      map[string]string `json:"timeWords"`
 	Am             []string          `json:"am"`
 	Pm             []string          `json:"pm"`
-	Every          []string          `json:"every"`
-	EveryOne       map[string]string `json:"everyOne"`
-	WeekdayAll     []string          `json:"weekdayAll"`
-	Ordinals       map[string]int    `json:"ordinals"`
+	// HalfWords ("half") put a time half an hour before the hour, Dutch "om
+	// half 4" = 03:30; GuardedAbbreviations are weekday abbreviations that are
+	// also ordinary words (Dutch "ma", "zo"), read as a weekday only in a date
+	// context (more-languages D3).
+	HalfWords            []string          `json:"halfWords"`
+	GuardedAbbreviations []string          `json:"guardedAbbreviations"`
+	Every                []string          `json:"every"`
+	EveryOne             map[string]string `json:"everyOne"`
+	WeekdayAll           []string          `json:"weekdayAll"`
+	Ordinals             map[string]int    `json:"ordinals"`
 	// OrdinalArticles, OrdinalOf, OfMonthWords and OrdinalsBeforeWeekday serve the
 	// ordinal weekdays (quick-add-nth-weekday D4).
 	OrdinalArticles       []string       `json:"ordinalArticles"`
@@ -124,7 +130,7 @@ var Vocabularies = func() map[string]*Vocab {
 }()
 
 // Bundled lists the bundled language codes in the web app's order.
-var Bundled = []string{"en", "de", "fr", "it", "es", "pt"}
+var Bundled = []string{"en", "de", "fr", "it", "es", "pt", "nl"}
 
 // ActiveLanguages reduces preferred tags ("de-CH", "ja") to bundled codes in
 // order, always ending with English.
