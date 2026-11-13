@@ -824,6 +824,7 @@
           "name": "required"
         },
         "flags": {
+          "limit-to": "string_list",
           "scope": "string"
         },
         "output": {
