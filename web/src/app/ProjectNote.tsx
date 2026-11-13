@@ -7,7 +7,7 @@
 // timeline, below the quick add, so chrome stays together above content.
 import { resettable } from '../lib/moduleState'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Button, Icon } from '../ui'
+import { Button, Icon, IconButton, useMediaQuery } from '../ui'
 import { setProjectNoteFolded, useMembership, useProjectNoteFolded } from '../lib/localData'
 import { canEditProjectNote, roleOf } from '../lib/sharing'
 import { keysOf } from '../lib/shortcuts'
@@ -50,6 +50,9 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
   const [tall, setTall] = useState(false)
   const [heads, setHeads] = useState<OutlineEntry[]>([])
   const [outlineOpen, setOutlineOpen] = useState(false)
+  // The note's Markdown for a viewer, until the page closes (note-markdown-source).
+  const [sourceShown, setSourceShown] = useState(false)
+  const coarse = useMediaQuery('(pointer: coarse)')
   const body = useRef<HTMLDivElement>(null)
   const note = project.description ?? ''
 
@@ -112,20 +115,31 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
     )
   }
 
-  const clipped = tall && folded
+  const clipped = tall && folded && !sourceShown
+  const outlined = heads.length >= OUTLINE_MIN && !sourceShown
+  // A viewer's way to the source (note-markdown-source "Viewer"); an editor has it in the editor.
+  const sourceButton = !editable && !coarse
+  const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0)
   return (
     <section aria-label={t('Project note')} className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
-      <div className="notes-frame" data-outline={heads.length >= OUTLINE_MIN ? 'menu' : undefined}>
-        {heads.length >= OUTLINE_MIN && <Suspense fallback={null}><OutlineButton items={heads} current={-1} onGo={goTo} open={outlineOpen} onOpenChange={setOutlineOpen} /></Suspense>}
-        <div ref={body} className={`overflow-hidden text-body ${heads.length >= OUTLINE_MIN ? 'pe-9' : ''} ${editable ? 'cursor-text rounded-control hover:bg-sunken dark:hover:bg-raised' : ''}`}
-          style={clipped ? { maxHeight: FOLD_PX } : undefined}
+      <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}>
+        {corner > 0 && (
+          <div className="notes-corner">
+            {outlined && <Suspense fallback={null}><OutlineButton items={heads} current={-1} onGo={goTo} open={outlineOpen} onOpenChange={setOutlineOpen} /></Suspense>}
+            {sourceButton && <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={sourceShown} className="ui-reveal source-toggle" onClick={() => setSourceShown(!sourceShown)} data-notes-source-toggle="" />}
+          </div>
+        )}
+        {sourceShown
+          ? <textarea readOnly className="notes-source" value={note} rows={note.split('\n').length} aria-label={t('Markdown source of the note')} data-notes-source style={{ paddingInlineEnd: `${corner * 2.25}rem` }} />
+          : <div ref={body} className={`overflow-hidden text-body ${editable ? 'cursor-text rounded-control hover:bg-sunken dark:hover:bg-raised' : ''}`}
+          style={{ ...(clipped ? { maxHeight: FOLD_PX } : {}), ...(corner ? { paddingInlineEnd: `${corner * 2.25}rem` } : {}) }}
           {...(editable ? {
             role: 'button', tabIndex: 0, 'aria-label': t('Edit the project note ({keys})', { keys: keysOf('project.note') }),
             onClick: (e: React.MouseEvent) => { if (!(e.target as HTMLElement).closest('a')) setEditing(true) },
             onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); setEditing(true) } },
           } : {})}>
           <Markdown source={note} />
-        </div>
+        </div>}
         {clipped && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-canvas" aria-hidden />}
       </div>
       {tall && (

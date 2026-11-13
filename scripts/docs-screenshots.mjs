@@ -409,6 +409,19 @@ const shots = [
     await p.keyboard.press('Escape'); await p.keyboard.press('Escape')
     await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.outlineNote).catch(() => {})
   } },
+  // The Markdown source (note-markdown-source): a task note of the sample data with a heading and a checklist, in its source.
+  { name: 'note-markdown-source', server: D, async run(p) {
+    await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
+    const body = '## Hallway\n\n- [ ] Pick the paint colour\n- [x] Book the painter\n\n> Measure twice, paint once.\n\nAsk **Bob** about Saturday.'
+    p.sourceNote = await p.evaluate(async (d) => (await (await fetch('/api/v1/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Paint the hall', description: d }) })).json()).id, body)
+    const row = p.locator(`[data-note-key="note:${p.sourceNote}"]`); await row.waitFor(); await row.click()
+    await p.locator('[data-note-form] .notes-editor').waitFor(); await settle(p, 600)
+    await p.locator('[data-note-form] .notes-editor').click(); await p.keyboard.press('Control+Shift+M')
+    await p.locator('textarea[data-notes-source]').waitFor(); await p.mouse.move(700, 300); await settle(p, 500)
+  }, async after(p) {
+    await p.keyboard.press('Control+Shift+M'); await p.keyboard.press('Escape')
+    await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.sourceNote).catch(() => {})
+  } },
   // Note links (note-links): a new note, `[[` typed and the picker open on a task of the sample data; the note is removed after.
   { name: 'note-links', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
