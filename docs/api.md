@@ -213,7 +213,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/projects/{id}/invites/{inviteId}` | owner, admin of the project | revoke a pending link → 204 |
 | POST | `/api/v1/project-invites/{token}/accept` | yes | join the project as the signed-in account → `{projectId, role}` |
 | GET | `/api/v1/projects/{id}/public-links` | owner, admin of the project | active public links `{links:[…]}`, see [Public links](#public-links) |
-| POST | `/api/v1/projects/{id}/public-links` | owner, admin of the project, fresh | `{rights, name?, expiresInDays?}` → 201 the link with `link` (shown once) |
+| POST | `/api/v1/projects/{id}/public-links` | owner, admin of the project, fresh | `{rights, name?, layout?, expiresInDays?}` → 201 the link with `link` (shown once) |
 | DELETE | `/api/v1/projects/{id}/public-links/{linkId}` | owner, admin of the project | revoke → 204 |
 | GET | `/api/v1/public/{token}` | none | a public list `{projectName, projectColor, rights, sections, tasks, serverTime}` |
 | POST | `/api/v1/public/{token}/tick` | none (a `tick` link) | `{taskId, completed}` → `{taskId, completed_at}` |
@@ -1516,18 +1516,18 @@ Members carry names, never emails. Limits are 409 `limit_reached` naming the lim
 
 A project's owner or an admin can publish the project as a list that anyone with the link can open without an account: read-only (`view`) or with checkboxes (`tick`). Links are reusable until revoked or expired, are server data (never synced, never exported) and need a connection.
 
-**Create** — `POST /api/v1/projects/{id}/public-links` (a fresh session or a full token) with `{"rights": "tick", "name": "Grandma", "expiresInDays": 30}`: `rights` is `view` or `tick`, `name` an optional label of at most 60 characters shown only to the project's managers, `expiresInDays` 1–90 or absent for no expiry. 201:
+**Create** — `POST /api/v1/projects/{id}/public-links` (a fresh session or a full token) with `{"rights": "tick", "name": "Grandma", "expiresInDays": 30}`: `rights` is `view` or `tick`, `name` an optional label of at most 60 characters, `layout` `list` (the default) or `board` (a column per section), `expiresInDays` 1–90 or absent for no expiry. 201:
 
 ```json
-{"id": "01J…", "projectId": "…", "rights": "tick", "name": "Grandma", "createdBy": "…", "createdByName": "Alice",
- "createdAt": 1760000000000, "expiresAt": null, "lastUsedAt": null, "link": "https://todo.example.com/public/otl_…"}
+{"id": "01J…", "projectId": "…", "rights": "tick", "name": "Grandma", "layout": "list", "createdBy": "…", "createdByName": "Alice",
+ "createdAt": 1760000000000, "expiresAt": null, "lastUsedAt": null, "link": "https://todo.example.com/public/grandma-otl_…"}
 ```
 
-The `link` carries the secret and is returned only here; the server keeps a hash. Errors: 400 `invalid_input` naming the field, 403 `forbidden` for viewers and editors, 404 `not_found` for non-members, 409 `encryption_enabled` for an unshared project of an account with end-to-end encryption, 429 `rate_limited` after 20 links an hour.
+The `link` carries the secret and is returned only here; the server keeps a hash. A named link's address starts with the name in lower case, runs of other characters as one hyphen, at most 40 characters, then `-` and the secret; `{token}` below may be either form, and the name alone never opens the list. Errors: 400 `invalid_input` naming the field, 403 `forbidden` for viewers and editors, 404 `not_found` for non-members, 409 `encryption_enabled` for an unshared project of an account with end-to-end encryption, 429 `rate_limited` after 20 links an hour.
 
 **List and revoke** — `GET` answers `{links: [...]}` with the active links (no secrets, with `lastUsedAt`); `DELETE …/public-links/{linkId}` revokes (204; 404 `not_found` for an unknown id).
 
-**The list** — `GET /api/v1/public/{token}` needs no authentication and ignores a session cookie, so everyone gets the same answer: `projectName`, `projectColor`, `rights`, `sections` (`id`, `name`, `position`) and `tasks` with only `id`, `title`, `due`, `priority`, `section_id`, `parent_id`, `position` and `completed_at`: open tasks and those completed in the last 24 hours. No description, notes, labels or assignee are ever included.
+**The list** — `GET /api/v1/public/{token}` needs no authentication and ignores a session cookie, so everyone gets the same answer: `projectName`, `projectColor`, `rights`, `layout` (`list` or `board`), `sections` (`id`, `name`, `position`) and `tasks` with only `id`, `title`, `due`, `priority`, `section_id`, `parent_id`, `position` and `completed_at`: open tasks and those completed in the last 24 hours. No description, notes, labels or assignee are ever included.
 
 **Tick** — `POST /api/v1/public/{token}/tick` with `{"taskId": "…", "completed": true}` completes (or with `false` reopens) a task of the list and answers `{taskId, completed_at}`. A repeating task records the occurrence and moves to its next date, as when the API completes it. The change is an ordinary op by the link's creator from the device `public:<link-id>`: history labels it "Public link (*name*)" for the project's owner and admins and "Public link" for everyone else, and activity shows "Public link" as the actor. Errors: 403 `forbidden` on a `view` link, 404 `not_found` for a task that is not on the list, 400 `invalid_input` without `completed`.
 

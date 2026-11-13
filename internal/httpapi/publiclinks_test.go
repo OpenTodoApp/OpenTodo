@@ -37,7 +37,7 @@ func TestPublicLinkManagement(t *testing.T) {
 		}
 	}
 	secret, created := publicLink(t, se.alice, se.project, map[string]any{"rights": "tick", "name": "Grandma"})
-	if !strings.HasPrefix(secret, "otl_") || created["rights"] != "tick" || created["name"] != "Grandma" || created["expiresAt"] != nil || created["id"] == nil {
+	if !strings.HasPrefix(secret, "grandma-otl_") || created["rights"] != "tick" || created["name"] != "Grandma" || created["expiresAt"] != nil || created["id"] == nil {
 		t.Fatalf("created = %v", created)
 	}
 	// An admin may create; an editor and a viewer may not.
@@ -288,5 +288,32 @@ func TestPublicTickAttribution(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("no completed event: %v", out)
+	}
+}
+
+// public-link-board: the link's address carries its name before the secret,
+// opens with or without it, and the page reads the layout chosen at creation.
+func TestPublicLinkBoardAndName(t *testing.T) {
+	se := newShareEnv(t)
+	resp, out := se.alice.do("POST", "/api/v1/projects/"+se.project+"/public-links", map[string]any{"rights": "view", "layout": "grid"})
+	se.alice.mustStatus(resp, 400, out)
+	path, created := publicLink(t, se.alice, se.project, map[string]any{"rights": "view", "name": "Party groceries", "layout": "board"})
+	if !strings.HasPrefix(path, "party-groceries-otl_") || created["layout"] != "board" {
+		t.Fatalf("created = %q %v", path, created)
+	}
+	secret := path[len("party-groceries-"):]
+	anon := newClientAt(se.alice, "10.9.0.3")
+	for _, p := range []string{path, secret} {
+		resp, out = anon.do("GET", "/api/v1/public/"+p, nil)
+		anon.mustStatus(resp, 200, out)
+		if out["layout"] != "board" {
+			t.Fatalf("%s: layout = %v", p, out["layout"])
+		}
+	}
+	plain, _ := publicLink(t, se.alice, se.project, map[string]any{"rights": "tick"})
+	resp, out = anon.do("GET", "/api/v1/public/"+plain, nil)
+	anon.mustStatus(resp, 200, out)
+	if !strings.HasPrefix(plain, "otl_") || out["layout"] != "list" {
+		t.Fatalf("plain = %q %v", plain, out["layout"])
 	}
 }
