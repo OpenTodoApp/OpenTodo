@@ -27,6 +27,12 @@ const answer = () => answerRequests({ '/api/v1/public/': { body: list } })
 /** The list with its sections; anyone with the link may tick items. */
 export const List: StoryObj = { beforeEach: answer, render: () => <PublicListScreen token="otl_story" /> }
 
+/** A board link (public-link-board): a column per section, side by side. */
+export const Board: StoryObj = {
+  beforeEach: () => answerRequests({ '/api/v1/public/': { body: { ...list, layout: 'board', tasks: [...list.tasks, task('t7', 'Order seeds for spring', { position: 1 })] } } }),
+  render: () => <PublicListScreen token="allotment-otl_story" />,
+}
+
 /** The same link as an e-ink display (`?display=1&eink=1`): the address carries the options. */
 export const EinkDisplay: StoryObj = {
   beforeEach: () => {

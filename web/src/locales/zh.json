@@ -7633,5 +7633,8 @@
   "when a note gets the label {label}": "当笔记获得标签{label}时",
   "when a note is created": "当创建笔记时",
   "when a note is edited": "当编辑笔记时",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, other {当前匹配 # 条笔记}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, other {当前匹配 # 条笔记}}",
+  "Note deleted": "笔记已删除",
+  "Note updated": "笔记已更新",
+  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。"
 }

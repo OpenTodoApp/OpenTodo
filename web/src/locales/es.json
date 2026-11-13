@@ -7633,5 +7633,8 @@
   "when a note gets the label {label}": "cuando una nota recibe la etiqueta {label}",
   "when a note is created": "cuando se crea una nota",
   "when a note is edited": "cuando se edita una nota",
-  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}"
+  "{n, plural, one {# note matches now} other {# notes match now}}": "{n, plural, one {# nota coincide ahora} other {# notas coinciden ahora}}",
+  "Note deleted": "Nota eliminada",
+  "Note updated": "Nota actualizada",
+  "Titles and text arrive encrypted.": "Los títulos y el texto llegan cifrados."
 }

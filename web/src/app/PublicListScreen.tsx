@@ -105,6 +105,7 @@ export function PublicListScreen({ token }: { token: string }) {
 
   const list = state.kind === 'ready' ? state.list : null
   const groups = useMemo(() => (list ? publicGroups(list) : []), [list])
+  const board = list?.layout === 'board' && groups.length > 0
   // Display mode (display-mode "Public link display"): `display=1` with the presentation options.
   const [display] = useState(() => publicDisplayOptions(typeof location === 'undefined' ? '' : location.search))
   const updatedLine = stale ? t('Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.') : updatedAt ? t('Updated {time}', { time: formatTime(`${String(new Date(updatedAt).getHours()).padStart(2, '0')}:${String(new Date(updatedAt).getMinutes()).padStart(2, '0')}`) }) : ''
@@ -115,7 +116,7 @@ export function PublicListScreen({ token }: { token: string }) {
 
   return (
     <main className="min-h-full bg-canvas" data-screen="public/list">
-      <div className="mx-auto w-full max-w-2xl px-4 pb-6 pt-[max(1.5rem,var(--safe-top))] md:px-8">
+      <div className={`mx-auto w-full ${board ? 'max-w-screen-2xl' : 'max-w-2xl'} px-4 pb-6 pt-[max(1.5rem,var(--safe-top))] md:px-8`}>
         {state.kind === 'loading' && <p className="text-meta text-muted">{t('Loading the list…')}</p>}
         {state.kind === 'invalid' && (
           <div className="space-y-2 rounded-card border border-default bg-surface p-6" data-public-invalid>
@@ -137,49 +138,72 @@ export function PublicListScreen({ token }: { token: string }) {
                 : t('This list is public and read-only: anyone with the link can see it.')}
             </Notice>
             {error && <div className="mt-2"><Notice tone="danger">{error}</Notice></div>}
-            <div className="mt-4 space-y-5">
-              {groups.length === 0 && <p className="text-body text-muted">{t('Nothing left to do on this list.')}</p>}
-              {groups.map((g) => (
-                <section key={g.id ?? 'none'} aria-label={g.name ?? t('Tasks')}>
-                  {g.name && <h2 className="user-text mb-1 text-hint font-semibold uppercase tracking-wide text-muted">{g.name}</h2>}
-                  <ul className="divide-y divide-default rounded-card border border-default bg-surface">
-                    {g.rows.map(({ task: x1, depth }) => {
-                      const done = x1.id in pending ? pending[x1.id] : x1.completed_at !== null
-                      const due = x1.due ? `${formatShort(x1.due.date)}${x1.due.time ? ` ${formatTime(x1.due.time)}` : ''}` : null
-                      const body = (
-                        <>
-                          <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{x1.title || t('Untitled')}</span>
-                          {due && <span className="shrink-0 text-meta tabular-nums text-muted">{due}</span>}
-                          {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" ><ReadAs label={priorityAccessibleName(x1.priority)}>{priorityShort(x1.priority)}</ReadAs></span>}
-                        </>
-                      )
-                      return (
-                        <li key={x1.id} data-public-task={x1.id} data-done={done || undefined} style={{ paddingLeft: depth * 20 }}>
-                          {list.rights === 'tick' ? (
-                            <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-1">
-                              <span className="flex h-11 w-11 shrink-0 items-center justify-center">
-                                <input type="checkbox" className="h-5 w-5 accent-(--ot-accent)" checked={done}
-                                  aria-label={done ? t('Reopen {title}', { title: x1.title || t('Untitled') }) : t('Tick {title}', { title: x1.title || t('Untitled') })}
-                                  onChange={(e) => void toggle(x1, e.target.checked)} />
-                              </span>
-                              {body}
-                            </label>
-                          ) : (
-                            <div className="flex min-h-11 items-center gap-3 px-3 py-2">{body}</div>
-                          )}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            {groups.length === 0 && <p className="mt-4 text-body text-muted">{t('Nothing left to do on this list.')}</p>}
+            {board ? (
+              <div className="mt-4 flex snap-x gap-3 overflow-x-auto pb-2" data-public-board>
+                {groups.map((g) => (
+                  <section key={g.id ?? 'none'} aria-label={g.name ?? t('No section')} className="w-72 shrink-0 snap-start" data-public-column={g.id ?? 'none'}>
+                    <h2 className="user-text mb-1 truncate text-hint font-semibold uppercase tracking-wide text-muted">{g.name ?? t('No section')}</h2>
+                    <PublicRows rows={g.rows} rights={list.rights} pending={pending} onToggle={(entry, done) => void toggle(entry, done)} />
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 space-y-5">
+                {groups.map((g) => (
+                  <section key={g.id ?? 'none'} aria-label={g.name ?? t('Tasks')}>
+                    {g.name && <h2 className="user-text mb-1 text-hint font-semibold uppercase tracking-wide text-muted">{g.name}</h2>}
+                    <PublicRows rows={g.rows} rights={list.rights} pending={pending} onToggle={(entry, done) => void toggle(entry, done)} />
+                  </section>
+                ))}
+              </div>
+            )}
             <p className="mt-4 text-meta text-faint" role="status" data-public-updated>{updatedLine}</p>
             <p className="mt-6 text-hint text-faint">{t('Shared with OpenTodo. Notes, labels and names of the people on this project are not shown.')}</p>
           </>
         )}
       </div>
     </main>
+  )
+}
+
+/** A section's rows on the public page: a tick box per task when the link allows ticking. */
+function PublicRows({ rows, rights, pending, onToggle }: {
+  rows: { task: Task; depth: number }[]
+  rights: PublicList['rights']
+  pending: Record<string, boolean>
+  onToggle: (item: Task, completed: boolean) => void
+}) {
+  return (
+    <ul className="divide-y divide-default rounded-card border border-default bg-surface">
+      {rows.map(({ task: x1, depth }) => {
+        const done = x1.id in pending ? pending[x1.id] : x1.completed_at !== null
+        const due = x1.due ? `${formatShort(x1.due.date)}${x1.due.time ? ` ${formatTime(x1.due.time)}` : ''}` : null
+        const body = (
+          <>
+            <span className={`user-text min-w-0 flex-1 break-words text-body ${done ? 'text-faint line-through' : 'text-default'}`}>{x1.title || t('Untitled')}</span>
+            {due && <span className="shrink-0 text-meta tabular-nums text-muted">{due}</span>}
+            {x1.priority < 4 && <span className="shrink-0 rounded-chip bg-sunken px-1.5 text-hint font-semibold text-muted" ><ReadAs label={priorityAccessibleName(x1.priority)}>{priorityShort(x1.priority)}</ReadAs></span>}
+          </>
+        )
+        return (
+          <li key={x1.id} data-public-task={x1.id} data-done={done || undefined} style={{ paddingLeft: depth * 20 }}>
+            {rights === 'tick' ? (
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 px-3 py-1">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                  <input type="checkbox" className="h-5 w-5 accent-(--ot-accent)" checked={done}
+                    aria-label={done ? t('Reopen {title}', { title: x1.title || t('Untitled') }) : t('Tick {title}', { title: x1.title || t('Untitled') })}
+                    onChange={(e) => onToggle(x1, e.target.checked)} />
+                </span>
+                {body}
+              </label>
+            ) : (
+              <div className="flex min-h-11 items-center gap-3 px-3 py-2">{body}</div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 

@@ -1,6 +1,6 @@
 ---
 title: Webhooks
-summary: Events, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.
+summary: Events for tasks, comments, notes and projects, payload, signature checks, retries and recipes for Home Assistant, n8n and Telegram.
 audience: developer
 section: Integrations
 specs: [webhooks]
@@ -23,6 +23,9 @@ OpenTodo can notify other systems when your tasks and projects change: switch on
 | `comment.created` | a comment appears on a task (`created_at` is set) |
 | `comment.updated` | any other field of a comment changes (its text, a reply's parent, mentions, an edit time) |
 | `comment.deleted` | the comment gets a tombstone (`deleted_at` is set) |
+| `note.created` | a standalone [note](notes.md) appears, sent once it has been quiet (see [Notes](#notes)) |
+| `note.updated` | any other field of a note changes, including a restore from the Trash; sent once it has been quiet |
+| `note.deleted` | the note goes to the Trash (`deleted_at` is set); sent at once |
 | `project.created` | a project appears for the first time |
 | `project.updated` | any other field of a project changes, including un-archiving |
 | `project.archived` | `archived` goes from false to true |
@@ -78,6 +81,19 @@ Every delivery is a `POST` with a JSON body:
 | `data.task` / `data.project` / `data.comment` | the entity's current state with the same fields as the [REST API](api.md#task-fields), except the opaque note document `notes_doc` (the note's text is `description`). A comment event carries both `data.comment` and `data.task`, the task as it is now. `ping` carries `data: {}` |
 | `changes` | the fields that changed in this batch with their previous (`from`) and new (`to`) values; `from` is `null` when the field had no value before. `notes_doc` is never listed, and a change that only touched it (a merged note republished with the same text) sends no event |
 
+### Notes
+
+Note events are opt-in: a webhook gets them only when you tick them in the **Notes** group of its events. A note is saved every few seconds while you write, so its events wait for quiet: one delivery is sent once the note has had no change for 5 minutes (at most 30 minutes after the first unsent change), with the note as it is then and every field changed since the last delivery (each field's first `from` and latest `to`). A note created and written in one sitting is one `note.created` with its final text. `note.deleted` is sent at once and drops a waiting event of that note. Waiting events survive a server restart.
+
+`data.note` holds `id`, `title`, `description` (the note's Markdown), `project_id`, `labels`, `workspace_id`, `created_at`, `updated_at` (the time of its last change) and `deleted_at`; never the editor document. `changes.description` is `{}`: the new text is in `data.note`. The project filter matches a note in that project (or moved into or out of it); a note without a project never matches a filtered webhook. Notes of a shared project reach the webhooks of its members. Task notes and project notes still travel as `description` in `task.*` and `project.*` events.
+
+```json
+{"version": 1, "id": "…", "event": "note.updated", "time": 1760000300000, "webhook_id": "…", "source": "device", "device": "…",
+ "data": {"note": {"id": "n1", "title": "Lisbon trip", "description": "## Day 1\n- Tram 28", "project_id": null, "labels": [],
+   "workspace_id": null, "created_at": 1760000000000, "updated_at": 1760000000000, "deleted_at": null}},
+ "changes": {"title": {"from": "Trip", "to": "Lisbon trip"}, "description": {}}}
+```
+
 A comment event looks like a task event with two records. `data.comment` is the comment (`id`, `task_id`, `parent_id`, `author_id`, `body`, `mentions`, `guest_name`, `page_id`, `created_at`, `edited_at`, `deleted_at`). `data.task` is that task's current state, the same shape as in a `task.*` event, so a receiver can read the title and project without a second request. An edit lists `body` in `changes` with `from` and `to`. `source` and `device` are the same as for every other event: a comment an assistant wrote through an agent token has `source` `device` and a `device` that starts with `agent:`, so a receiver ignores the comments it wrote itself by that prefix. Adding a comment does not also fire `task.updated`.
 
 A task's `origin` (where it came from, `null` when unset; see [Where a task came from](capture.md#where-a-task-came-from)) travels like every field: a task created from a shared GitHub issue page arrives as `task.created` with `"origin": {"kind": "issue", "provider": "github", "id": "o/r#7", "url": "https://github.com/o/r/issues/7", "title": "…"}` in `data.task` and `"origin": {"from": null, "to": {…}}` in `changes`, so a receiver can link the task back to the issue without a second request.
@@ -88,7 +104,7 @@ A task's [custom field](custom-fields.md) values are in `data.task.fields`, an o
 
 ### Encrypted accounts
 
-For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`, a task's `origin`, a comment's `body` and `guest_name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
+For an account with [end-to-end encryption](e2ee.md), content fields in payloads (`title`, `description`, `name`, a note's title and text, a task's `origin`, a comment's `body` and `guest_name`) carry the stored ciphertext (`"enc:v1:…"`); the server cannot decrypt them. Dates, priority and completion stay plaintext.
 
 ### Imports
 

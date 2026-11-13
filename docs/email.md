@@ -32,7 +32,7 @@ The task is an ordinary change in the operation log (device `server`), so every 
 | Origin | The Message-ID, as an **Email** origin without a link (`origin: email` in a [filter](filters.md)); never the sender. A message without a Message-ID gets none |
 | Project, priority, due | Inbox, priority 4, no due date. Natural-language parsing of the subject (`tomorrow`, `#project`, `p1`) is not applied yet |
 
-Character sets: UTF-8, US-ASCII, ISO-8859-1, ISO-8859-15 and windows-1252 are decoded, as are encoded subjects (`=?UTF-8?B?…?=`) and file names. Text in other character sets keeps its valid UTF-8 parts.
+Character sets: UTF-8, US-ASCII, the Western ones (ISO-8859-1, ISO-8859-15, windows-1252), Central European (ISO-8859-2, ISO-8859-16, windows-1250), Cyrillic (ISO-8859-5, windows-1251, KOI8-R, KOI8-U), Greek (ISO-8859-7, windows-1253), Turkish (ISO-8859-9, windows-1254) and Baltic (ISO-8859-13, windows-1257) are decoded, as are encoded subjects (`=?UTF-8?B?…?=`) and file names. Text in other character sets, such as Japanese or Chinese ones, keeps its valid UTF-8 parts.
 
 ## Protection
 
