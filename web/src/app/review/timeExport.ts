@@ -12,14 +12,9 @@ import { useFieldDefs } from '../useFields'
 /** `time-entries-2026-10-12-2026-10-18.csv` */
 export const timeExportName = (start: string, end: string) => `time-entries-${start}-${end}.csv`
 
-/** Offer a text file as a download from a Blob URL. */
+/** Offer a text file made on the device as a download. */
 export function downloadText(text: string, name: string, type: string): void {
-  const url = URL.createObjectURL(new Blob([text], { type }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  a.click()
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  void import('../../lib/saveFile').then((m) => m.saveFile(new Blob([text], { type }), name))
 }
 
 /** The export action for the shown period. */

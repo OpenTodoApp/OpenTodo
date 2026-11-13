@@ -1,0 +1,5 @@
+- **Saving files works in the Android and iOS apps.** The recovery key, recovery codes, exports, themes and attachments did nothing when you tapped Download. They now open the phone's save dialog. On Android, files made on the phone need the server updated too.
+- **Back stays in the Android app.** After Back had left the app once, it left the app every time, even from an open task. It now closes what is open first.
+- **Haptic feedback in the apps.** Completing a task and picking up a row give a tap on Android and iPhone; the switch is in Settings → Appearance.
+- **Face ID unlock works on iPhone**, and the reminder notification there offers Done.
+- **The iPhone status bar stays readable** when the app's theme is dark and the phone's appearance is light, or the other way round.

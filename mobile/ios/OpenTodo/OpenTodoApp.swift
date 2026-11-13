@@ -11,6 +11,8 @@ struct OpenTodoApp: App {
             RootView()
                 .modifier(ChangeServerDialog())
                 .environmentObject(model)
+                // The window's root answers the status bar style (shell-repairs D7).
+                .background(StatusBarInstaller())
                 .onOpenURL { model.handle(url: $0) }
         }
     }

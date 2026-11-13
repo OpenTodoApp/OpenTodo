@@ -1,0 +1,59 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSFaceIDUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo uses Face ID to unlock your encrypted tasks on this iPhone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo verwendet Face ID, um deine verschlüsselten Aufgaben auf diesem iPhone zu entsperren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo usa Face ID para desbloquear tus tareas cifradas en este iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo utilise Face ID pour déverrouiller vos tâches chiffrées sur cet iPhone."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo usa Face ID per sbloccare le tue attività cifrate su questo iPhone."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O OpenTodo usa o Face ID para desbloquear as suas tarefas cifradas neste iPhone."
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo 使用面容 ID 在此 iPhone 上解锁你的加密任务。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo gebruikt Face ID om je versleutelde taken op deze iPhone te ontgrendelen."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

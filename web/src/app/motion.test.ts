@@ -9,7 +9,7 @@ import { createTask, mutate, resetDeviceId } from '../lib/ops'
 import { USER_PREFS_ID } from '../lib/userPrefs'
 import { runBulk } from './bulk/BulkActions'
 import { hideBulkToast } from './bulk/toastStore'
-import { canReflow, REFLOW_CAP, registerList, resetHaptics, tick, withListTransition } from './motion'
+import { canReflow, canVibrate, REFLOW_CAP, registerList, resetHaptics, success, tick, withListTransition } from './motion'
 import { setDueWithUndo } from './undoable'
 
 type Update = () => Promise<void> | void
@@ -160,5 +160,45 @@ describe('haptic tick', () => {
 
     vi.stubGlobal('navigator', { userAgent: 'test' })
     expect(() => tick()).not.toThrow()
+  })
+
+  // shell-repairs D5: a shell that lists `haptics` plays its own feedback; the page never vibrates there.
+  it('goes through a shell with haptics, by kind, and stays silent with the preference off', async () => {
+    const vibrate = vi.fn(() => true)
+    vi.stubGlobal('navigator', { ...navigator, vibrate })
+    const kinds: string[] = []
+    window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.5.0', capabilities: ['haptics'], haptic: (kind) => void kinds.push(kind) }
+    try {
+      await mutate('user_prefs', USER_PREFS_ID, { haptics: 'on' })
+      resetHaptics()
+      tick()
+      await vi.waitFor(() => expect(kinds).toEqual(['tick']))
+      success()
+      expect(kinds).toEqual(['tick', 'success'])
+      expect(vibrate).not.toHaveBeenCalled()
+
+      await mutate('user_prefs', USER_PREFS_ID, { haptics: 'off' })
+      resetHaptics()
+      success()
+      expect(await readHapticsPref()).toBe(false)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(kinds).toEqual(['tick', 'success'])
+    } finally {
+      delete window.opentodoShell
+    }
+  })
+
+  it('shows the preference where a shell gives feedback, though the page cannot vibrate', () => {
+    vi.stubGlobal('navigator', { userAgent: 'test' })
+    expect(canVibrate()).toBe(false)
+    window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.5.0', capabilities: ['haptics'], haptic: () => undefined }
+    try {
+      expect(canVibrate()).toBe(true)
+      // A shell without the capability is as a browser.
+      window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.4.0', capabilities: ['reminders'] }
+      expect(canVibrate()).toBe(false)
+    } finally {
+      delete window.opentodoShell
+    }
   })
 })

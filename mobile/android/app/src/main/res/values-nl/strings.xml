@@ -49,4 +49,5 @@
     <string name="setup_web_page">Dit adres antwoordt met een webpagina, niet zoals een OpenTodo-server. Zit je server achter een aanmeldpagina, meld je hier aan; controleer anders het adres.</string>
     <string name="setup_sign_in">Hier aanmelden</string>
     <string name="error_sign_in">Je server zit achter een aanmeldpagina, en de aanmelding ging in de app niet verder. Meld je hier opnieuw aan.</string>
+    <string name="save_failed">Het bestand kon niet worden opgeslagen.</string>
 </resources>

@@ -44,6 +44,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a photo to attach to a task or a note.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>OpenTodo uses Face ID to unlock your encrypted tasks on this iPhone.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>OpenTodo connects to the server you enter so it can sync your tasks on this network.</string>
 	<key>NSMicrophoneUsageDescription</key>

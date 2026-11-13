@@ -46,12 +46,13 @@ final class AppModel: ObservableObject {
         BiometricKeyStore.forget()
         prefs.serverOrigin = nil
         prefs.systemBars = nil
+        StatusBar.show(lightIcons: nil)
         // The http warning belonged to the old address; the next one is checked afresh.
         prefs.insecureLocalServer = false
         origin = nil
     }
 
-    /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=snooze`,
+    /// `opentodo://task/<id>`, `opentodo://reminder/<id>?action=done|snooze|dismiss`,
     /// `opentodo://share?files=1` from the share extension. Any app may open these, so the
     /// values are treated as data and never pasted into a path.
     func handle(url: URL) {
@@ -79,11 +80,11 @@ final class AppModel: ObservableObject {
         pendingPath = path([URLQueryItem(name: "task", value: id)])
     }
 
-    /// `/?reminder=<id>&action=snooze|dismiss`: the web app's own reminder operations.
+    /// `/?reminder=<id>&action=done|snooze|dismiss`: the web app's own reminder operations.
     func show(reminder id: String, action: String?) {
         guard !id.isEmpty else { return }
         var items = [URLQueryItem(name: "reminder", value: id)]
-        if let action = action?.lowercased(), action == "snooze" || action == "dismiss" {
+        if let action = action?.lowercased(), Notifications.actions.contains(action) {
             items.append(URLQueryItem(name: "action", value: action))
         }
         pendingPath = path(items)

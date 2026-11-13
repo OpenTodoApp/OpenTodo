@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -96,6 +96,14 @@ export interface OpenTodoShell {
   scheduleGeofences?(json: string): Promise<ShellLocationPermission> | ShellLocationPermission | void
   /** Ask the phone for the microphone before the page records. True once it is allowed. */
   requestMicrophone?(): Promise<boolean> | boolean
+  /**
+   * shell-repairs D2: one chunk of a file made in the page (a `ShellFileChunk` of
+   * lib/saveFile.ts). Answers `more` for a chunk that is not the last; the last one
+   * opens the phone's save dialog and answers `saved`, `cancelled` or `failed`.
+   */
+  saveFile?(json: string): Promise<string> | string
+  /** shell-repairs D5: the platform's own feedback for a `ShellHaptic`; an unknown kind is ignored. */
+  haptic?(kind: string): void
 }
 
 declare global {
@@ -236,6 +244,17 @@ export function openObsidian(url: string): boolean {
   const s = shell()
   if (!s || !has('obsidian-links') || !s.openExternal) return false
   s.openExternal(url)
+  return true
+}
+
+/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5). */
+export type ShellHaptic = 'tick' | 'success'
+
+/** Plays `kind` through a shell that lists `haptics`. False in a browser or another shell. */
+export function shellHaptic(kind: ShellHaptic): boolean {
+  const s = shell()
+  if (!s || !has('haptics') || !s.haptic) return false
+  s.haptic(kind)
   return true
 }
 

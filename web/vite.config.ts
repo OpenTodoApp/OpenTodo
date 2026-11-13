@@ -100,6 +100,10 @@ export default defineConfig({
         // The map (task-locations D5) is not precached: it needs the network for
         // its tiles anyway, and a device with maps off should never download it.
         globIgnores: ['**/MapView-*', '**/maplibre-gl-worker-*', 't.html', '**/assets/t-*'],
+        // The in-app help (every docs page, one lazy chunk) is precached so it reads
+        // offline. It passed Workbox's default limit of 2 MiB per file on 2026-11-13,
+        // and a file over the limit fails the build instead of being left out.
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // A classic worker, so importScripts('push-sw.js') keeps working.
         rollupFormat: 'iife',
       },
