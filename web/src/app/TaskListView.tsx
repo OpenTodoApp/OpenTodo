@@ -24,7 +24,7 @@ import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { getPlace, locationFromPlace } from '../lib/locations'
 import { dayTotalsText } from '../lib/time'
 import { useDayTotals } from '../lib/timeEntries'
-import { effectiveSection, moveTaskToSection, nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, setSectionCollapsed, type ProjectViewMode } from '../lib/sections'
+import { nextViewMode, saveListColumns, saveShowCompleted, saveViewMode, type ProjectViewMode } from '../lib/sections'
 import { parentReadyToComplete } from '../lib/subtasks'
 import type { AccountRole, Label, Task } from '../lib/types'
 import { Button, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
@@ -41,7 +41,6 @@ import { useActionsOpen } from './bulk/useBulkList'
 import { useCollapsedGroups } from './collapsedGroups'
 import { EarlierActions } from './task-list/EarlierActions'
 import { taskDefaults } from './listActions'
-import { withListTransition } from './motion'
 import { panelTaskId, usePanelHasTask, setPanelTaskId as setOpenId, sidePanelDocks, taskSplitDocks } from './panel'
 import { useClickAway } from './task-list/useClickAway'
 import { InlineEditor } from './task-list/InlineEditor'
@@ -58,6 +57,7 @@ import { useSelection } from './selection'
 import { SubProjects } from './SubProjects'
 import { TimelineView } from './TimelineView'
 import { completeWithUndo } from './undoable'
+import { useBoardMoves } from './task-list/useBoardMoves'
 import { CompleteParentPrompt, EmptyState, FilteredEmpty, HiddenNote, LayoutSwitch, ListPageActions, MissingTarget, type PhoneItem, PhoneMenuItems, phoneGroups, placeholderFor, ReadOnlyQuickAdd, usePhoneListActions, RowPickerDialogs } from './task-list/ListChrome'
 import { GroupedList, LogbookMore, useCalmUpcoming, useListMotion, useRowRenderer } from './task-list/ListGroups'
 import { ProjectionsMenuItem } from './calendar/projectionSwitches'
@@ -272,14 +272,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const chooseViewMode = useCallback((mode: ProjectViewMode) => {
     if (projectId) void saveViewMode(projectId, mode)
   }, [projectId])
-  const toggleSection = useCallback((key: string, force?: boolean) => {
-    if (projectId) act(setSectionCollapsed(projectId, key, force ?? !collapsedSections.includes(key)))
-  }, [projectId, collapsedSections])
-  /** Move a top-level task to a section ('' = none); a no-op when it is already there. */
-  const moveToSection = useCallback((task: Task, key: string) => {
-    if ((effectiveSection(task, sectionMap) ?? '') === key) return
-    act(withListTransition(1, () => moveTaskToSection(task.id, key || null)))
-  }, [sectionMap])
+  // The checkbox's completion path, defined below; the board's Completed column completes through it.
+  const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
+  const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
   const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
@@ -331,6 +326,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     // The last open task of a project: offer one-key archiving (trash-and-history).
     if (!parent) await offerArchiveAfterCompletion(id)
   }, [setPrompt])
+  toggleCompleteRef.current = toggleComplete
   const acceptPrompt = useCallback(() => {
     if (!ui.prompt) return
     const parent = ui.prompt

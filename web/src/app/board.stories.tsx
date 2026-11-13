@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { Task } from '../lib/types'
 import { BoardView, type BoardColumn } from './BoardView'
+import { COMPLETED_COLUMN } from '../lib/listGroups'
 import { HEX, label, project, seeded, seedProjectWithSections, storyUser, task, TODAY, TOMORROW, withClock, withSeed } from './stories/fixtures'
 import { TaskCard } from './TaskRow'
 import { hueFor } from '../ui'
@@ -170,6 +171,30 @@ export const FoldedColumnDragOver: StoryObj = {
   render: () => (
     <BoardView project={website} columns={folded} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} onFold={noop}
       placeholder={{ key: 's4', height: 56 }} renderCard={(t) => card(t, t.id === 'b2')} />
+  ),
+}
+
+// The Completed column (OpenSpec change board-completed-column, task 2.3): with Show
+// completed tasks on, the board ends with the project's completed cards, folded by default.
+const doneCards = [
+  task({ id: 'c1', title: 'Register the domain', project_id: website.id, section_id: 's1', completed_at: Date.UTC(2026, 9, 11, 9) }),
+  task({ id: 'c2', title: 'Pick the hosting plan', project_id: website.id, section_id: 's2', completed_at: Date.UTC(2026, 9, 10, 9) }),
+]
+const withCompleted = (folded: boolean): BoardColumn[] => [...columns, { key: COMPLETED_COLUMN, section: null, cards: doneCards, completed: true, ...(folded ? { folded: true } : {}) }]
+
+/** The Completed column folded at the end of the board, as it is by default: its count and name on the strip. */
+export const CompletedColumnFolded: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={withCompleted(true)} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} onFold={noop} renderCard={(t) => card(t)} />
+  ),
+}
+
+/** The Completed column unfolded: completed cards newest first, no Add a task. */
+export const CompletedColumnOpen: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <BoardView project={website} columns={withCompleted(false)} editable addingTo={null} setAddingTo={noop} projects={[website]} labels={labels} onFold={noop} renderCard={(t) => card(t)} />
   ),
 }
 

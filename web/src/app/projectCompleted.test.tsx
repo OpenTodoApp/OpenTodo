@@ -96,7 +96,7 @@ describe('Completed group in a project', () => {
     await r.unmount()
   })
 
-  it('is switched from the project menu in the List layout, and only there', async () => {
+  it('is switched from the project menu in the List and Board layouts, not in the timeline', async () => {
     const { pid } = await groceries()
     const r = await render(<TaskListView route={{ view: 'project', id: pid }} />)
     await waitFor(() => r.container.querySelector('button[aria-label="Project menu"]') !== null)
@@ -107,8 +107,16 @@ describe('Completed group in a project', () => {
     await click(item()!)
     await waitFor(() => group(r.container) !== null)
     expect(await loadShowCompleted(pid)).toBe(true)
+    // The board shares the preference (board-completed-column D1): its menu offers it, checked, and the board ends with the Completed column.
     await saveViewMode(pid, 'board')
-    await waitFor(() => group(r.container) === null)
+    await waitFor(() => group(r.container) === null && r.container.querySelector('[data-column-completed]') !== null, 'the Completed column')
+    await click(r.container.querySelector('button[aria-label="Project menu"]')!)
+    await waitFor(() => item() !== null)
+    expect(item()!.getAttribute('aria-checked')).toBe('true')
+    await click(item()!)
+    await waitFor(() => r.container.querySelector('[data-column-completed]') === null, 'the column leaves')
+    await saveViewMode(pid, 'timeline')
+    await waitFor(() => r.container.querySelector('[data-board]') === null, 'the timeline')
     await click(r.container.querySelector('button[aria-label="Project menu"]')!)
     await waitFor(() => document.querySelectorAll('[role^="menuitem"]').length > 0, 'the project menu')
     expect(item()).toBeNull()
