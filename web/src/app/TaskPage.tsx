@@ -2,7 +2,8 @@
 // everywhere except a page that keeps a split. It reads the trail the list left
 // (taskTrail.ts) for "4 / 12", j and k and the way back; opened from a link or a
 // reload there is no trail, and Back goes to the task's own list with it selected.
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
+import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useTask } from '../lib/localData'
 import type { User } from '../lib/types'
 import { PageBody, Skeleton } from '../ui'
@@ -14,7 +15,10 @@ import { leaveTaskPage, openTaskPage, stepTask, trailNeighbour, trailPosition, u
 import { TaskPageView } from './task-detail/TaskPageView'
 import { t } from '../lib/i18n'
 
-export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) {
+const HabitPage = lazy(() => import('./habits/HabitPage'))
+
+export function TaskPage({ id, user, asTask = false }: { id: string; user?: Pick<User, 'id'>; asTask?: boolean }) {
+  const habitsOn = useHabitsEnabled()
   const data = useTaskDetailData()
   const task = useTask(id)
   const trail = useTaskTrail()
@@ -39,6 +43,8 @@ export function TaskPage({ id, user }: { id: string; user?: Pick<User, 'id'> }) 
       </PageBody>
     )
   }
+  // An open habit series shows its habit page (habits-polish D3); ?as=task, the page's Open as a task, the task page.
+  if (habitsOn && !asTask && task.habit && !task.series_id) return <Suspense fallback={null}><HabitPage key={id} id={id} /></Suspense>
   return (
     <TaskPageView key={id} taskId={id} userId={user?.id} readOnly={data.readOnly(task)} projects={data.projects} labelMap={data.labelMap}
       onOpen={(next) => openTaskPage(next)}
