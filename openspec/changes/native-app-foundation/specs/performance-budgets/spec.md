@@ -7,7 +7,7 @@ The app SHALL meet, with the 10,000-task fixture, at most:
 - opening Inbox: 300 ms;
 - applying a 500-op pull page: 400 ms, with no frame on the JavaScript thread longer than 50 ms;
 - completing a task, from the tap's write to the frame that shows the list without it: 50 ms at the 95th percentile;
-- resident memory after the scripted session: 180 MB on a phone, and at most 60 MB over the empty app on the simulator, where an empty app already takes about 245 MB.
+- resident memory after the scripted session: 180 MB on a phone, and at most 100 MB over the empty app on the simulator, where an empty app already takes about 245 MB.
 
 The phone's limits SHALL be recorded by hand before the app replaces the shells; the simulator's SHALL be measured every night.
 

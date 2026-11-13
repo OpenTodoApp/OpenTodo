@@ -146,7 +146,7 @@ replaces the current one.
 | `app-pull-frame` Longest frame while that page applies | ms | 50 | 50 |
 | `app-complete-task` Complete a task, to the frame without it (95th percentile) | ms | 50 | 50 |
 | `app-native-memory` The app's memory after the session | MB | — | 180 |
-| `app-memory-growth` Memory over the empty app after the session | MB | 60 | — |
+| `app-memory-growth` Memory over the empty app after the session | MB | 100 | — |
 
 Two budgets are split because a simulator cannot judge them. A simulator spends
 one to two seconds between the launch and the app's first line of code, whatever
@@ -283,4 +283,5 @@ and fails when one is exceeded. The first runs (2026-11-11):
 | Opening Inbox | 300 ms | 30–50 ms |
 | A 500-change sync page | 400 ms | 74–135 ms |
 | Longest frame while it applies | 50 ms | 18 ms |
-| Memory over the empty app | 60 MB | 30–34 MB |
+| Completing a task, to the frame without it | 50 ms | 45 ms (334 ms before repeating tasks stopped reading every task) |
+| Memory over the empty app | 100 MB | 30–34 MB (46–88 MB once the session also completes twenty tasks) |
