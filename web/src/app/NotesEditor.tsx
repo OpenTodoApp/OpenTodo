@@ -37,7 +37,11 @@ import { useMentionTargets } from './useMentionTargets'
 import { filesFrom } from './task-detail/AttachmentsRow'
 import type { OutlinePlace } from './editor/NoteOutline'
 import { headingStops, useNoteOutline } from './editor/useNoteOutline'
+import { useSourceMode } from './editor/useSourceMode'
+import { IconButton, useMediaQuery } from '../ui'
+import type { ReactNode } from 'react'
 import { t } from '../lib/i18n'
+import { keysOf } from '../lib/shortcuts'
 import { messageOf } from '../lib/errorText'
 
 /**
@@ -182,6 +186,13 @@ async function embedImages(view: EditorView, taskId: string, files: File[]): Pro
   view.focus()
 }
 
+/** A ref that always holds the latest value (read by callbacks made once). */
+function useLatest<T>(value: T): { readonly current: T } {
+  const ref = useRef(value)
+  ref.current = value
+  return ref
+}
+
 /** Calls `save` when the page is hidden or unloaded; returns the cleanup. */
 function onLeave(save: () => void): () => void {
   const onHide = () => { if (document.visibilityState === 'hidden') save() }
@@ -250,10 +261,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const formatting = useFormattingToggle('notes', !readOnly)
   const rowId = `${useId()}-formatting`
   const [, setMounted] = useState(0)
-  const mentioned = useRef(note.note_mentions)
-  mentioned.current = note.note_mentions
-  const projectId = useRef(note.project_id ?? null)
-  projectId.current = note.project_id ?? null
+  const mentioned = useLatest(note.note_mentions)
+  const projectId = useLatest(note.project_id ?? null)
   // The subtask Make subtask created (or the note New note created), undone with the note's next undo of that step.
   const pendingSubtask = useRef<{ entity: 'task' | 'note'; id: string; depth: number } | null>(null)
   // One batch: the new subtask or note and the note that links to it.
@@ -265,16 +274,17 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   }
   const makeSubtask = makeSubtaskCommand({ enabled: isTask && !readOnly, taskId, projectId: () => projectId.current, save: saveCreated('task') })
   const linkTo = useLinkPicker({ self: `${entity}:${taskId}`, projectId: entity === 'project' ? taskId : note.project_id ?? null, enabled: !readOnly, save: saveCreated('note') })
+  const source = useSourceMode(view, readOnly, () => onEscapeRef.current?.())
+  const coarse = useMediaQuery('(pointer: coarse)')
   const env: CommandEnv = {
     notes: isTask, members: members.length > 0, askLink, notify: (m) => chrome.notify(m),
-    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask, linkTo,
+    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
   }
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
-  const envRef = useRef(env)
-  envRef.current = env
+  const envRef = useLatest(env)
   const outline = useNoteOutline({ view, frame, readOnly, place: outlinePlace })
-  const outlineRef = useRef(outline)
-  outlineRef.current = outline
+  const outlineRef = useLatest(outline)
+  const sourceRef = useLatest(source)
 
   // Lazy upgrade of a legacy note and folding of plain-text writes (REST, older
   // clients) happen when the note is opened, and again whenever its text changes
@@ -286,8 +296,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     void foldNote(entity, taskId)
   }, [entity, taskId, readOnly, descClock?.ts, descClock?.device, docClock?.ts, docClock?.device])
 
-  const onEscapeRef = useRef(onEscape)
-  onEscapeRef.current = onEscape
+  const onEscapeRef = useLatest(onEscape)
   // The note, and for a task the members it mentions, in one mutation (design D7).
   const notePatch = (): Record<string, unknown> => {
     const d = ydoc.current as Y.Doc
@@ -337,6 +346,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         void mutate(p.entity, p.id, { deleted_at: Date.now() })
       },
       outline: () => outlineRef.current.open(),
+      source: () => { sourceRef.current.toggle(); return true },
     }
     const v = new EditorView(host.current as HTMLDivElement, {
       state: createState(toModel(activeBody(doc)), hooks),
@@ -399,6 +409,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     if (autoFocus && !readOnly) v.focus()
     const unwatch = onLeave(() => flush.current('now'))
     return () => {
+      sourceRef.current.leave() // eslint-disable-line react-hooks/exhaustive-deps -- the source mode as it is when the note closes
       flush.current('now')
       unwatch()
       v.destroy()
@@ -423,6 +434,8 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     }
     const bytes = docBytes(task.notes_doc ?? '')
     if (!bytes) return
+    // In the source mode, what was typed goes into the document first, so both edits merge (note-markdown-source D3).
+    sourceRef.current.beforeRemote()
     try {
       Y.applyUpdate(d, bytes, REMOTE)
     } catch {
@@ -435,26 +448,63 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     }
     const tr = applyBody(v.state, activeBody(d))
     if (tr) v.dispatch(tr)
+    sourceRef.current.afterRemote()
     size.current = usage(d, v.state.doc)
-  }, [task.notes_doc, unreadable])
+  }, [task.notes_doc, unreadable, sourceRef])
 
   if (unreadable) return <UnreadableNote text={task.description ?? ''} />
   return (
-    <div ref={frame} className="notes-frame space-y-1" data-formatting={formatting.offered || undefined} data-outline={outline.place}>
-      {outline.element}
-      {/* Before the text in the Tab order, so Shift+Tab from the note reaches it (D2). */}
-      {formatting.offered && <FormattingToggle className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />}
-      {!readOnly && <EditorToolbar id={rowId} view={view.current} env={env} visible={editing || menuOpen} onMenu={setMenuOpen} always={formatting.open} />}
-      <div ref={host} className="notes-host" data-notes-editing={editing || undefined} />
+    // The corner's buttons come before the text in the Tab order, so Shift+Tab from the note reaches them (D2).
+    <NotesCorner frame={frame} formatting={formatting.offered || undefined} outlinePlace={outline.place} source={source.on} buttons={[
+        outline.place === 'menu' && outline.element, !coarse && <SourceButton key="source" on={source.on} onToggle={source.toggle} />,
+        formatting.offered && !source.on && <FormattingToggle key="formatting" className="ui-reveal" pressed={formatting.pressed} onToggle={formatting.set} controls={rowId} data-notes-formatting="" />,
+      ]}>
+      {outline.place === 'column' && !source.on && outline.element}
+      {!readOnly && !source.on && <EditorToolbar id={rowId} view={view.current} env={env} visible={editing || menuOpen} onMenu={setMenuOpen} always={formatting.open} />}
+      <div ref={host} className="notes-host" data-notes-editing={editing || undefined} hidden={source.on} />
+      {source.element}
       {chrome.overlays}
       {isTask && !readOnly && <ImagePicker picker={picker} onFiles={(files) => { if (view.current) void embedImages(view.current, taskId, files) }} />}
-      {sizeNote && <p role="status" className="text-meta text-warning">{sizeNote}</p>}
-      {error && <p role="alert" className="text-meta text-danger">{error}</p>}
-      {linkAsk && (
-        <LinkDialog current={linkAsk.current}
-          onSubmit={(href) => { linkAsk.answer(href); setLinkAsk(null) }}
-          onCancel={() => { linkAsk.answer(null); setLinkAsk(null) }} />
-      )}
+      <NoteStatus size={sizeNote} error={error} />
+      {linkAsk && <LinkAsk ask={linkAsk} onDone={() => setLinkAsk(null)} />}
+    </NotesCorner>
+  )
+}
+
+/**
+ * The note's frame with its top corner (notes-toolbar-desktop D2, note-outline D2,
+ * note-markdown-source D4): the Outline button, Markdown and Formatting in one row at
+ * the top end, over end padding of the first block so text never runs under them.
+ */
+function NotesCorner({ frame, formatting, outlinePlace, source, buttons, children }: {
+  frame: RefObject<HTMLDivElement | null>; formatting?: boolean; outlinePlace?: 'column' | 'menu'; source: boolean; buttons: ReactNode[]; children: ReactNode
+}) {
+  const shown = buttons.filter(Boolean)
+  return (
+    <div ref={frame} className="notes-frame space-y-1" data-formatting={formatting} data-outline={outlinePlace} data-source={source || undefined}
+      data-corner={shown.length || undefined} style={shown.length ? { '--notes-corner': `${shown.length * 2.25}rem` } as React.CSSProperties : undefined}>
+      {shown.length > 0 && <div className="notes-corner">{shown}</div>}
+      {children}
     </div>
   )
+}
+
+/** The size warning and a failed save under the note. */
+function NoteStatus({ size, error }: { size: string | null; error: string | null }) {
+  return (
+    <>
+      {size && <p role="status" className="text-meta text-warning">{size}</p>}
+      {error && <p role="alert" className="text-meta text-danger">{error}</p>}
+    </>
+  )
+}
+
+/** The link dialog of Mod-k, answering the editor's question. */
+function LinkAsk({ ask, onDone }: { ask: { current: string; answer: (href: string | null) => void }; onDone: () => void }) {
+  return <LinkDialog current={ask.current} onSubmit={(href) => { ask.answer(href); onDone() }} onCancel={() => { ask.answer(null); onDone() }} />
+}
+
+/** Markdown beside the Formatting toggle on a fine pointer (note-markdown-source D4): the source, or back to rich text. */
+function SourceButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
 }
