@@ -54,7 +54,7 @@ export default function OccurrenceScope({ m, readOnly }: { m: TaskDetailModel; r
   // Also past ones (series-all-scope D1): offered on All occurrences of a series with a past, for an editor; held per series.
   const [pastFor, setPastFor] = useState<string | null>(null)
   const onAll = isSeries && !following && !date
-  const offerPast = useMemo(() => !readOnly && onAll && !!task && hasPast(task, rows), [readOnly, onAll, task, rows])
+  const offerPast = useMemo(() => !readOnly && onAll && !!task && !task.habit && hasPast(task, rows), [readOnly, onAll, task, rows])
   const pastOn = offerPast && pastFor === task?.id
   useEffect(() => {
     if (!pastOn || !task) return
