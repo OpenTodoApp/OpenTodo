@@ -61,7 +61,7 @@ export function TodayStrip({ tasks, projects, today }: { tasks: readonly Task[];
   if (habits.length === 0) return null
   const shown = cap === null ? habits : habits.slice(0, cap)
   const more = habits.length - shown.length
-  const link = 'rounded-control text-meta outline-none hover:text-default hover:underline focus-visible:outline-2 focus-visible:outline-focus'
+  const link = 'rounded-control text-meta hover:text-default hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
   return (
     <section aria-label={t('Habits')} className="mb-3 flex min-h-8 items-center gap-3 px-2" data-today-habits>
       <button type="button" onClick={() => navigate({ view: 'habits' })} className={`shrink-0 font-medium text-muted ${link}`} data-strip-habits>{t('Habits')}</button>
