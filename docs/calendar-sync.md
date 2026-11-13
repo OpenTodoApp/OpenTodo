@@ -63,6 +63,10 @@ A connection writes all your dated tasks by default. To keep work tasks out of a
 
 At the next check after a change, the events OpenTodo wrote for tasks that left the choice are removed, and the tasks themselves stay as they are. Your own events are never removed. Changes you make in the calendar to an event of a task outside the choice are not applied to the task. Events never create tasks, so there is no question of where a new one would land.
 
+### A calendar per project
+
+To keep Work, Home and Trip in calendars of their own, open the connection's **Calendars**, choose **A calendar per project** under **Write to**, and pick a calendar for each project. A sub-project follows its parent unless it has a calendar of its own, and tasks without a matched project go to the calendar above. OpenTodo never creates calendars: make them in the calendar app first, then choose **Check now** so they show up. Moving a task to another project in OpenTodo moves its event at the next check. Moving an event to another calendar in the calendar app is read like deleting it from its calendar.
+
 ## Connect Google Calendar
 
 With a Google client set up by the server owner, choose **Connect Google**. Google asks you to sign in and to allow OpenTodo to see and edit your calendars, then sends you back to the panel to choose the calendars. Leave the calendar permission ticked: without it Google gives OpenTodo nothing to sync. You can remove the access at any time at myaccount.google.com/permissions; the connection then asks you to **Reconnect**.

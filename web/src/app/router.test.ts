@@ -89,3 +89,14 @@ describe('notes graph routes', () => {
     localStorage.clear()
   })
 })
+
+describe('habit routes (habits-polish D3)', () => {
+  it('parses and prints /habits/<id> and a habit\'s task page', () => {
+    expect(parseRoute('/habits')).toEqual({ view: 'habits' })
+    expect(parseRoute('/habits/t-1')).toEqual({ view: 'habits', id: 't-1' })
+    expect(routePath({ view: 'habits', id: 't-1' })).toBe('/habits/t-1')
+    expect(parseRoute('/task/t-1?as=task')).toEqual({ view: 'task', id: 't-1', asTask: true })
+    expect(routePath({ view: 'task', id: 't-1', asTask: true })).toBe('/task/t-1?as=task')
+    expect(routePath({ view: 'task', id: 't-1' })).toBe('/task/t-1')
+  })
+})
