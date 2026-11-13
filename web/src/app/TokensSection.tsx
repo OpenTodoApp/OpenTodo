@@ -2,15 +2,14 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../lib/api'
 import type { ApiToken, TokenScope } from '../lib/assistants'
 import { Button, Dialog } from '../ui'
-import { useWorkspaceState } from '../lib/localData'
-import { workspaceLabel } from './workspaceNav'
 import { Badge } from '../ui'
 import { Field, Input } from '../ui'
 import { Icon } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
-import { Checkbox, Notice, RadioGroup } from '../ui'
+import { Notice, RadioGroup } from '../ui'
+import { useWorkspaceChoices, WorkspaceChoice } from './WorkspaceChoice'
 import { SettingRow, SettingsSection } from '../ui'
 import type { HueName } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -114,25 +113,6 @@ function workspaceNames(ids: string[], all: { id: string; name: string }[] = [])
   return t('Only {names}', { names: names.join(', ') })
 }
 
-/** All workspaces, or only the chosen ones (token-workspaces): a token for work stays out of the rest. */
-function WorkspaceChoice({ workspaces, only, onChange }: { workspaces: { id: string; name: string }[]; only: string[] | null; onChange: (only: string[] | null) => void }) {
-  return (
-    <div className="space-y-2" data-token-workspace-choice>
-      <RadioGroup label={t('Workspaces')} name="token-workspaces" dataKey="token-workspaces" value={only ? 'only' : 'all'}
-        onChange={(v) => onChange(v === 'all' ? null : [])}
-        options={[{ value: 'all', label: t('All workspaces') }, { value: 'only', label: t('Only these') }]} />
-      {only && (
-        <div className="space-y-1 ps-6" role="group" aria-label={t('Workspaces')}>
-          {workspaces.map((w) => (
-            <Checkbox key={w.id} label={w.name} checked={only.includes(w.id)} data-token-workspace={w.id}
-              onChange={(e) => onChange(e.target.checked ? [...only, w.id] : only.filter((id) => id !== w.id))} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 /** Pure rendering of Settings → Integrations → API tokens; state lives in TokensSection. */
 export function TokensView(p: TokensViewProps) {
   useDateTimeFormat()
@@ -199,8 +179,7 @@ export function TokensSection({ reloadKey = 0 }: { reloadKey?: number }) {
   const [name, setName] = useState('')
   const [scope, setScope] = useState<TokenScope>('full')
   const [only, setOnly] = useState<string[] | null>(null)
-  const ws = useWorkspaceState()
-  const workspaces = ws.list.map((w) => ({ id: w.id, name: workspaceLabel(w.name, w.default) }))
+  const workspaces = useWorkspaceChoices()
   const [secret, setSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)

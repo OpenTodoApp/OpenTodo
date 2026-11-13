@@ -384,7 +384,7 @@ export const api = {
   deleteMcpOAuthClient: (id: string) => request<void>('DELETE', `/api/v1/settings/mcp/clients/${encodeURIComponent(id)}`),
   /** The consent screen of an app connecting through OAuth: `query` is its authorize request. */
   getMcpConsent: (query: string) => request<McpConsentInfo>('GET', `/api/v1/me/mcp-consent?${query}`),
-  answerMcpConsent: (query: string, allow: boolean) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow }),
+  answerMcpConsent: (query: string, allow: boolean, workspaces?: string[]) => request<{ redirect: string }>('POST', '/api/v1/me/mcp-consent', { query, allow, ...(workspaces ? { workspaces } : {}) }),
   /** The user's own "Allow AI assistants to make changes" switch. */
   getAgentAccess: () => request<AgentAccess>('GET', '/api/v1/me/agent-access'),
   setAgentAccess: (allowWrites: boolean) => request<AgentAccess>('PUT', '/api/v1/me/agent-access', { allow_writes: allowWrites }),

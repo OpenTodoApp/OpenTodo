@@ -537,6 +537,18 @@ func (s *Service) CreateTokenIn(ctx context.Context, userID, name, scope string,
 	return s.createTokenWith(ctx, userID, name, scope, time.Time{}, workspaces)
 }
 
+// CreateTokenExpiringIn is CreateTokenExpiring limited to workspaces (an
+// access token of an OAuth grant limited on its consent page, D5).
+func (s *Service) CreateTokenExpiringIn(ctx context.Context, userID, name, scope string, expiresAt time.Time, workspaces []string) (*Token, string, error) {
+	if expiresAt.IsZero() {
+		return nil, "", errors.New("auth: an expiring token needs an expiry")
+	}
+	if len(workspaces) == 0 || len(workspaces) > MaxTokenWorkspaces {
+		return nil, "", ErrInvalidWorkspaces
+	}
+	return s.createTokenWith(ctx, userID, name, scope, expiresAt, workspaces)
+}
+
 // MaxTokenWorkspaces bounds the workspaces of one token.
 const MaxTokenWorkspaces = 50
 
