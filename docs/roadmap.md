@@ -142,7 +142,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Planned |
 | `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |
 | `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
-| `notes-sort` | Sort the Notes list by last change, creation or title | Planned |
+| `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Planned |
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Planned |
 | `note-outline` | An outline of a long note's headings | Planned |

@@ -19,13 +19,15 @@ export interface MenuItemProps {
   disabled?: boolean
   /** Checkable item (pin, start view): announced as checked or not. */
   checked?: boolean
+  /** With `checked`: one choice of a group (a sort order), announced as a radio item. */
+  radio?: boolean
   /** A small visual marker after the label (a status dot, an unread count, sidebar-v2 D7); its meaning belongs in `description`. */
   marker?: ReactNode
   /** Test and script hooks (`data-help-button`). */
   [hook: `data-${string}`]: string | boolean | undefined
 }
 
-export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, marker, ...hooks }: MenuItemProps) {
+export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, radio, marker, ...hooks }: MenuItemProps) {
   const close = useContext(MenuCloseContext)
   const id = useId()
   const describedBy = [shortcut && `${id}-k`, description && `${id}-d`].filter(Boolean).join(' ') || undefined
@@ -35,7 +37,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
     <button
       {...hooks}
       type="button"
-      role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+      role={checked === undefined ? 'menuitem' : radio ? 'menuitemradio' : 'menuitemcheckbox'}
       aria-checked={checked}
       aria-describedby={describedBy}
       aria-keyshortcuts={shortcut}
