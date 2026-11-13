@@ -9154,6 +9154,7 @@
   ],
   "Link": [
     "web/src/app/EditorChrome.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/editorCommands.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/fields.ts",
@@ -9195,6 +9196,10 @@
   ],
   "Linked references": [
     "web/src/app/LinkedReferences.tsx"
+  ],
+  "Linked {title}": [
+    "web/src/app/UnlinkedMentions.tsx",
+    "web/src/lib/noteMentionLink.ts"
   ],
   "Linked. You can now sign in with the provider.": [
     "web/src/app/SsoPanel.tsx"
@@ -15944,6 +15949,7 @@
   ],
   "Show more": [
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/wordPicker.tsx",
@@ -20248,6 +20254,9 @@
   "Unlink {email}?": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "Unlinked mentions": [
+    "web/src/app/UnlinkedMentions.tsx"
+  ],
   "Unlock": [
     "web/src/app/UnlockScreen.tsx"
   ],
@@ -20410,6 +20419,7 @@
   "Untitled note": [
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/UnlinkedMentions.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/notes-graph/GraphView.tsx",
     "web/src/app/notes/NoteBulkActions.tsx",
