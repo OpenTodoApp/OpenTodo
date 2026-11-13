@@ -8842,7 +8842,8 @@
       "policy": "signed-in.session-only",
       "request": {
         "allow": "boolean",
-        "query": "string"
+        "query": "string",
+        "workspaces": "array?"
       },
       "response": {
         "error": "string",

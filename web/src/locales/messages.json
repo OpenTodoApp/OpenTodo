@@ -1491,7 +1491,7 @@
     "web/src/app/Sidebar.tsx"
   ],
   "All workspaces": [
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/WorkspaceChoice.tsx"
   ],
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
@@ -11880,7 +11880,7 @@
   ],
   "Only these": [
     "web/src/app/SyncScopeField.tsx",
-    "web/src/app/TokensSection.tsx"
+    "web/src/app/WorkspaceChoice.tsx"
   ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
@@ -20752,7 +20752,7 @@
     "web/src/app/WorkspaceControl.tsx"
   ],
   "Workspaces": [
-    "web/src/app/TokensSection.tsx",
+    "web/src/app/WorkspaceChoice.tsx",
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
