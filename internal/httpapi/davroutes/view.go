@@ -3,6 +3,7 @@ package davroutes
 import (
 	"database/sql"
 	"strings"
+	"time"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
@@ -10,8 +11,13 @@ import (
 
 // davView is the user's data as CalDAV sees it, loaded once per request.
 type davView struct {
-	uid      string
-	scope    syncscope.Scope
+	uid   string
+	scope syncscope.Scope
+	// events: the app password shows tasks as events (caldav-events); now and
+	// baseURL write them.
+	events   bool
+	now      time.Time
+	baseURL  string
 	projects map[string]opsync.Entity // live (not deleted) projects
 	roles    map[string]string        // shared project id -> role
 	tasks    []opsync.Entity          // live tasks
@@ -66,7 +72,7 @@ func (d *davRequest) base() (*davView, error) {
 		return d.view, nil
 	}
 	ctx, uid := d.ctx(), d.user.ID
-	v := &davView{uid: uid, scope: d.scope, projects: map[string]opsync.Entity{}, roles: map[string]string{},
+	v := &davView{uid: uid, scope: d.scope, events: d.events, now: d.s.now(), baseURL: d.origin(), projects: map[string]opsync.Entity{}, roles: map[string]string{},
 		labels: map[string]string{}, byName: map[string]string{}, today: localToday(d.s.now()), projectsFetched: map[string]bool{}}
 	v.resetTasks()
 	var err error
@@ -242,6 +248,9 @@ func (v *davView) addResources(rows *sql.Rows) error {
 func (v *davView) index() {
 	v.byCal, v.byRes, v.uidToID = map[string][]opsync.Entity{}, map[string]opsync.Entity{}, map[string]string{}
 	for _, t := range v.tasks {
+		if v.events && !servedAsEvent(t) {
+			continue // an event calendar holds the open tasks with a due date
+		}
 		cal := v.calendarOf(t)
 		v.byCal[cal] = append(v.byCal[cal], t)
 		key := cal + "\x00" + v.resourceName(idOf(t["id"]))

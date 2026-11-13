@@ -2304,6 +2304,9 @@
   "Available now": [
     "web/src/app/filter/conditionText.ts"
   ],
+  "A–Z": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "Back": [
     "web/src/app/AuthScreen.tsx",
     "web/src/app/LabelsView.tsx",
@@ -4216,6 +4219,7 @@
   "Created": [
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/filter/conditionText.ts",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/review/MonthlyLook.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -5913,6 +5917,7 @@
     "web/src/app/calendar/TodayAgenda.tsx"
   ],
   "Events": [
+    "web/src/app/CaldavPanel.tsx",
     "web/src/app/WebhooksPanel.tsx"
   ],
   "Events from other calendars are stored unencrypted on the server.": [
@@ -7845,6 +7850,9 @@
   "In Plan: the span one week later": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In Reminders and to-do apps: tick tasks off there.": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "In Updates: open the task of the selected change (Tab reaches the filters)": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -7941,6 +7949,9 @@
   ],
   "In the afternoon": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "In the calendar: dated tasks as events, multi-day tasks over their days.": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "In the command bar's Add mode: add the task and open it": [
     "web/src/lib/shortcuts.ts"
@@ -8655,6 +8666,9 @@
   "Last action": [
     "web/src/app/ToastActionHost.tsx",
     "web/src/app/bulk/UndoToast.tsx"
+  ],
+  "Last changed": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Last compacted": [
     "web/src/lib/settingsCopy.ts"
@@ -10259,6 +10273,9 @@
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/palette/registry.ts"
   ],
+  "Newest": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
   "News, guides, comparisons and what is new in each release.": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -11620,6 +11637,12 @@
   ],
   "Older updates could not be loaded.": [
     "web/src/app/FeedView.tsx"
+  ],
+  "Oldest": [
+    "web/src/app/notes/NotesPage.tsx"
+  ],
+  "Oldest changed": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "Oldest in Inbox": [
     "web/src/app/method/loop/PulseDetails.tsx"
@@ -15574,6 +15597,9 @@
   "Show successful runs": [
     "web/src/app/routines/RoutinesInboxCard.tsx"
   ],
+  "Show tasks as": [
+    "web/src/app/CaldavPanel.tsx"
+  ],
   "Show tasks assigned to others": [
     "web/src/app/TaskListView.tsx"
   ],
@@ -16115,6 +16141,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Sort": [
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Sort direction": [
@@ -19054,6 +19081,7 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/notes/NoteEditor.tsx",
+    "web/src/app/notes/NotesPage.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/views/DisplayPanel.tsx",
@@ -19103,6 +19131,9 @@
   ],
   "To use the assistant, you can turn encryption off in <a>Settings → Account → Encryption</a>; your tasks are then stored on the server without end-to-end encryption.": [
     "web/src/app/assistant/assistantHints.tsx"
+  ],
+  "To-dos": [
+    "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
     "web/src/app/AppearanceSection.tsx",
@@ -21285,6 +21316,9 @@
   ],
   "Zoom out": [
     "web/src/app/notes-graph/GraphView.tsx"
+  ],
+  "Z–A": [
+    "web/src/app/notes/NotesPage.tsx"
   ],
   "[Cannot decrypt]": [
     "web/src/lib/e2ee.ts"

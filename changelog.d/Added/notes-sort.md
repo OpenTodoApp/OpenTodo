@@ -1,0 +1,1 @@
+- **Sort notes.** The **⋯** menu of the Notes page sorts the list by **Last changed**, **Created** or **Title** (numbers in order, untitled notes last); choosing the checked order again reverses it. Pinned notes keep their order, searches keep their ranking, and each device remembers its choice.

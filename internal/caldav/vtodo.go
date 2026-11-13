@@ -143,6 +143,10 @@ type Inbound struct {
 	// Span comes from X-OPENTODO-SPAN (multi-day-tasks D7): TRUE or FALSE;
 	// nil when the client did not send a known value.
 	Span *bool
+	// EventLastDay is the last day of an all-day VEVENT that covers more than
+	// one day (from its exclusive DTEND), "" otherwise. An app password in
+	// event mode reads such an event as a multi-day task (caldav-events D3).
+	EventLastDay string
 	// DayPart comes from X-OPENTODO-DAY-PART (day-parts): "morning" or
 	// "afternoon"; nil when the client did not send a known value.
 	DayPart *string

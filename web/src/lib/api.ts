@@ -405,8 +405,8 @@ export const api = {
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
-  createAppPassword: (name: string, scope?: SyncScope) =>
-    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', scope ? { name, scope } : { name }),
+  createAppPassword: (name: string, scope?: SyncScope, events = false) =>
+    request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name, ...(scope ? { scope } : {}), ...(events ? { events: true } : {}) }),
   setAppPasswordScope: (id: string, scope: SyncScope) =>
     request<{ appPassword: AppPassword }>('PATCH', `/api/v1/app-passwords/${encodeURIComponent(id)}`, { scope }),
   revokeAppPassword: (id: string) => request<void>('DELETE', `/api/v1/app-passwords/${encodeURIComponent(id)}`),

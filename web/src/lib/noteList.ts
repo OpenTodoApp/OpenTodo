@@ -23,6 +23,8 @@ export interface NoteEntry {
   labels: string[]
   /** When the note itself last changed (Unix ms): the greatest clock of its note fields. */
   updated: number
+  /** When the note's home was created (Unix ms): the note, the task or the project (notes-sort D2). */
+  created?: number
   /** A completed task or an archived project. */
   marker?: 'completed' | 'archived'
 }
@@ -70,12 +72,12 @@ export function noteEntries(tasks: readonly Task[], projects: readonly Project[]
     const text = noteText(p)
     if (!text.trim()) continue
     out.push({ key: `project:${p.id}`, source: 'project', id: p.id, title: p.name, text, projectId: p.id, labels: [],
-      updated: updatedOf(p._clock, NOTE_FIELDS), ...(p.archived ? { marker: 'archived' as const } : {}) })
+      updated: updatedOf(p._clock, NOTE_FIELDS), created: p.created_at, ...(p.archived ? { marker: 'archived' as const } : {}) })
   }
   for (const n of notes) {
     if (n.deleted_at) continue
     out.push({ key: `note:${n.id}`, source: 'note', id: n.id, title: n.title ?? '', text: noteText(n), projectId: n.project_id ?? null,
-      labels: n.labels ?? [], updated: updatedOf(n._clock, STANDALONE_FIELDS) || n.created_at || 0 })
+      labels: n.labels ?? [], updated: updatedOf(n._clock, STANDALONE_FIELDS) || n.created_at || 0, created: n.created_at })
   }
   return out.sort(byRecency)
 }
@@ -91,7 +93,7 @@ export function sameEntries(a: readonly NoteEntry[], b: readonly NoteEntry[]): b
   for (let i = 0; i < a.length; i++) {
     const x = a[i]
     const y = b[i]
-    if (x.key !== y.key || x.title !== y.title || x.text !== y.text || x.updated !== y.updated || x.marker !== y.marker
+    if (x.key !== y.key || x.title !== y.title || x.text !== y.text || x.updated !== y.updated || x.created !== y.created || x.marker !== y.marker
       || x.projectId !== y.projectId || x.labels.length !== y.labels.length || x.labels.some((l, j) => l !== y.labels[j])) return false
   }
   return true
@@ -109,7 +111,7 @@ function taskNoteEntry(t: Task): NoteEntry | null {
   const text = noteText(t)
   const e: NoteEntry | null = text.trim()
     ? { key: `task:${t.id}`, source: 'task', id: t.id, title: t.title, text, projectId: t.project_id, labels: t.labels ?? [],
-      updated: updatedOf(t._clock, NOTE_FIELDS), ...(t.completed_at ? { marker: 'completed' as const } : {}) }
+      updated: updatedOf(t._clock, NOTE_FIELDS), created: t.created_at, ...(t.completed_at ? { marker: 'completed' as const } : {}) }
     : null
   taskEntries.set(t, e)
   return e
