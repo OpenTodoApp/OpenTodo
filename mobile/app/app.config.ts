@@ -23,16 +23,24 @@ const config: ExpoConfig = {
   name: 'OpenTodo',
   slug: 'opentodo',
   version: '2.0.0',
+  // The current app's icon, until the native app has its own set (native-app-handover).
+  icon: '../ios/OpenTodo/Assets.xcassets/AppIcon.appiconset/AppIcon.png',
   scheme: 'opentodo',
   orientation: 'portrait',
   // metro.config.js resolves @shared/* itself (with the shared modules' packages).
   experiments: { tsconfigPaths: false },
   ios: {
     bundleIdentifier: 'app.open-todo.ios',
-    supportsTablet: false,
+    // The record's current app runs on iPad, and an update cannot drop a device family.
+    // Until the iPad layout (native-app-handover) the phone's screens fill the iPad's.
+    supportsTablet: true,
+    requireFullScreen: true,
     // Light and dark with the system (on Android this needs expo-system-ui, not installed yet).
     userInterfaceStyle: 'automatic',
-    infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true } },
+    // The TestFlight upload passes the build number (ios-testflight.yml, app: native).
+    buildNumber: process.env.APP_BUILD_NUMBER ?? '1',
+    // Only the system's encryption and standard algorithms, as the current app declares.
+    infoPlist: { NSAppTransportSecurity: { NSAllowsLocalNetworking: true }, ITSAppUsesNonExemptEncryption: false },
   },
   // The Android shell's application id (mobile/android/app/build.gradle.kts).
   android: {

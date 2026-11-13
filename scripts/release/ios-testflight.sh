@@ -5,9 +5,12 @@
 #   ios-testflight.sh xcode                                    select the newest stable Xcode
 #   ios-testflight.sh archive <archive> <version> <build> [team]
 #                                                              archive unsigned, then sign ad hoc
+#   ios-testflight.sh archive-native <archive> <version> <build> [team]
+#                                                              the same for the native app (mobile/app,
+#                                                              after `expo prebuild --platform ios`)
 #   ios-testflight.sh csr <dir>                                a new private key and its CSR
 #   ios-testflight.sh keychain <dir>                           this run's keychain and profiles
-#   ios-testflight.sh export <archive> <dir> <out>             sign for the App Store, write and check the .ipa
+#   ios-testflight.sh export <archive> <dir> <out> [native]    sign for the App Store, write and check the .ipa
 #   ios-testflight.sh upload <ipa> <app-id> <version> <build>  upload with the API key (altool)
 #   ios-testflight.sh cleanup <dir>                            delete keychain, profiles and key
 #
@@ -47,8 +50,8 @@ distribution_logs() { # <file with xcodebuild's output>
 # What App Store Connect checks after the upload, checked before it: the app and each extension in
 # the .ipa are signed by an Apple Distribution certificate of the team, chained to Apple's root,
 # with their App Store profile and the App Group. Apple only answers by email, an hour later.
-verify_ipa() { # <ipa> <team>
-  local ipa=$1 team=$2 tmp b name info ents p bad=0 problems
+verify_ipa() { # <ipa> <team> [native: no extensions and no App Group yet]
+  local ipa=$1 team=$2 native=${3:-} tmp b name info ents p bad=0 problems
   tmp=$(mktemp -d)
   ditto -x -k "$ipa" "$tmp"
   [ -d "$tmp/Payload/OpenTodo.app" ] || { echo "::error::the .ipa holds no Payload/OpenTodo.app"; rm -rf "$tmp"; return 1; }
@@ -64,7 +67,7 @@ verify_ipa() { # <ipa> <team>
     grep -qx "TeamIdentifier=$team" <<<"$info" || problems+=("TeamIdentifier is not the team")
     [ -f "$b/embedded.mobileprovision" ] || problems+=("no embedded.mobileprovision")
     ents=$(codesign -d --entitlements - --xml "$b" 2>/dev/null || true)
-    grep -q '<string>group.app.open-todo</string>' <<<"$ents" || problems+=("no App Group group.app.open-todo in the entitlements")
+    [ -n "$native" ] || grep -q '<string>group.app.open-todo</string>' <<<"$ents" || problems+=("no App Group group.app.open-todo in the entitlements")
     if grep -q '<key>get-task-allow</key><true/>' <<<"$ents"; then problems+=("get-task-allow is true (a development signature)"); fi
     echo "$name:"
     grep -E '^(Identifier|Authority|TeamIdentifier|Signature)=' <<<"$info" | sed 's/^/  /'
@@ -124,6 +127,38 @@ archive)
   echo "archived $app: version $short build $bundle, signed ad hoc with its entitlements"
   ;;
 
+archive-native)
+  # The native app (OpenSpec change native-app-foundation D10): the project `expo prebuild`
+  # wrote from mobile/app/app.config.ts, which carries the version and, through
+  # APP_BUILD_NUMBER, the build number. No extensions and no App Group yet.
+  archive=$1 version=$2 build=$3 team=${4:-XXXXXXXXXX}
+  native="$root/mobile/app/ios"
+  [ -d "$native/OpenTodo.xcworkspace" ] || die "no $native/OpenTodo.xcworkspace: run npx expo prebuild --platform ios in mobile/app first"
+  xcodebuild archive -quiet -workspace "$native/OpenTodo.xcworkspace" -scheme OpenTodo -configuration Release \
+    -destination 'generic/platform=iOS' -archivePath "$archive" -derivedDataPath "$native/build/archive" CODE_SIGNING_ALLOWED=NO
+  app="$archive/Products/Applications/OpenTodo.app"
+  [ -d "$app" ] || die "no app in $archive"
+  [ -f "$app/main.jsbundle" ] || die "no JavaScript bundle in $app"
+  tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+  id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+  [ "$id" = app.open-todo.ios ] || die "the app is $id, expected app.open-todo.ios"
+  e="$tmp/OpenTodo.plist"
+  if [ -f "$native/OpenTodo/OpenTodo.entitlements" ]; then cp "$native/OpenTodo/OpenTodo.entitlements" "$e"; else /usr/libexec/PlistBuddy -c 'Clear dict' "$e" >/dev/null; fi
+  /usr/libexec/PlistBuddy -c "Add :application-identifier string $team.$id" -c "Add :com.apple.developer.team-identifier string $team" "$e"
+  # Inside out: the embedded frameworks (Hermes), then the app that holds them.
+  for framework in "$app"/Frameworks/*.framework; do
+    [ -d "$framework" ] || continue
+    codesign --force --sign - --timestamp=none "$framework"
+  done
+  codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$e" "$app"
+  codesign --verify --deep --strict "$app"
+  short=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")
+  bundle=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")
+  [ "$short" = "$version" ] && [ "$bundle" = "$build" ] || die "the app carries $short ($bundle), expected $version ($build)"
+  echo "archived $app: version $short build $bundle, signed ad hoc with its entitlements"
+  ;;
+
 csr)
   dir=$1
   mkdir -p "$dir"
@@ -161,7 +196,7 @@ keychain)
   ;;
 
 export)
-  archive=$1 dir=$2 out=$3
+  archive=$1 dir=$2 out=$3 native=${4:-}
   team=$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$dir/ExportOptions.plist")
   log=$(mktemp)
   if ! xcodebuild -exportArchive -archivePath "$archive" -exportPath "$out" -exportOptionsPlist "$dir/ExportOptions.plist" 2>&1 | tee "$log"; then
@@ -171,7 +206,7 @@ export)
   ipa=$(ls "$out"/*.ipa 2>/dev/null | head -1)
   [ -n "$ipa" ] || { distribution_logs "$log"; die "the export wrote no .ipa"; }
   echo "exported $ipa ($(du -k "$ipa" | cut -f1) KB)"
-  if ! verify_ipa "$ipa" "$team"; then
+  if ! verify_ipa "$ipa" "$team" "$native"; then
     distribution_logs "$log"
     die "the .ipa is not signed for the App Store; Xcode's distribution logs are above"
   fi
@@ -203,7 +238,7 @@ cleanup)
   ;;
 
 *)
-  echo "usage: $0 xcode|archive|csr|keychain|export|upload|cleanup …" >&2
+  echo "usage: $0 xcode|archive|archive-native|csr|keychain|export|upload|cleanup …" >&2
   exit 2
   ;;
 esac

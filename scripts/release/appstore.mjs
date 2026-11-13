@@ -10,7 +10,7 @@
 //   node scripts/release/appstore.mjs app-id                        the app record's id
 //   node scripts/release/appstore.mjs sign <dir>                    certificate, profiles, ExportOptions.plist
 //   node scripts/release/appstore.mjs cleanup <dir>                 revoke and delete what `sign` made (a run that uploaded nothing)
-//   node scripts/release/appstore.mjs notes <version> <build>       "What to test" from CHANGELOG.md
+//   node scripts/release/appstore.mjs notes <version> <build> [file] "What to test" from CHANGELOG.md, or from a text file
 //   node scripts/release/appstore.mjs processed <version> <build>   wait for Apple's processing (VALID)
 //   node scripts/release/appstore.mjs key-file <path>               ASC_KEY_P8 as a file for altool (mode 600)
 //
@@ -511,8 +511,11 @@ async function main(argv) {
       await cleanup(call, { dir: args[0] })
       return
     case 'notes': {
-      const [version, build] = args
-      const text = whatToTest(readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'), version, build)
+      const [version, build, file] = args
+      // The native app's trial has no changelog section of its own: its notes are a file.
+      const text = file
+        ? readFileSync(file, 'utf8').trim().slice(0, WHAT_TO_TEST_LIMIT)
+        : whatToTest(readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'), version, build)
       await setWhatToTest(call, { version, build, text })
       return
     }

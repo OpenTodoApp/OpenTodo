@@ -1,0 +1,7 @@
+This is the first build of the new native OpenTodo app. It replaces the current app on this device.
+
+What works: sign in to your server (version 1.4 or later), Today, completing a task, sync with your other devices, and offline use. Everything else is still to come; use the web app or the App Store version for it.
+
+To go back, install OpenTodo from the App Store again.
+
+Please report what does not feel like a native app.

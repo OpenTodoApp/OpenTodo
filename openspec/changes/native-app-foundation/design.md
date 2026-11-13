@@ -319,6 +319,8 @@ The trial ships under the existing App Store record of the OpenTodo app (`app.op
 
 As built (task 4.3's pull request): `app.config.ts` has the name "OpenTodo", the slug `opentodo`, the bundle id `app.open-todo.ios`, the Android package `app.opentodo` and the version 2.0.0, so the prebuilt project is `OpenTodo.xcworkspace` (app-native.yml builds it). The TestFlight wiring is task 5.3, in a later pull request.
 
+As built (task 5.3): `ios-testflight.yml` takes `app: shell | native` (by hand only until the app ships). The native path reads the version from `app.config.ts`, takes the next free build number of 2.0.0 (20000, then 20000.N), prebuilds with `APP_BUILD_NUMBER`, archives the workspace unsigned and signs it ad hoc (`ios-testflight.sh archive-native`: the embedded frameworks, then the app with its identifier and team), and from there shares the shell's steps: the run's certificate and profiles, the export, the signature check (without the App Group, which the app does not have yet), the upload and the wait for Apple's processing. "What to test" is `mobile/app/testflight-notes.txt`. The app keeps the iPad device family, full screen with the phone's layout, because the record's current version runs on iPad and an update cannot drop a device family; its icon is the current app's. Internal testers see the build as soon as Apple has processed it; no group is created and nothing is submitted.
+
 Earlier plan, replaced by the decision above: a separate App Store Connect app, "OpenTodo Preview" (`app.open-todo.preview`), installed next to the current app so testers could compare them side by side.
 
 ### D11. Server compatibility
