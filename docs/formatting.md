@@ -37,7 +37,7 @@ In a shared project, type `@` and a few letters of a member's name and pick them
 
 ## Make a checklist line a subtask
 
-In a task's notes, put the caret on a checklist line and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> (or choose **Make subtask** from the `/` menu). The line becomes a link to a new subtask with its text; a ticked line makes a completed subtask. The link always shows the subtask's current title. <kbd>Ctrl</kbd>+<kbd>Z</kbd> right after takes both back.
+In a task's notes, put the caret on a checklist line, or select several, and press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd> (or **Make subtask** in the `/` menu). Each line becomes a link to a new subtask; a ticked line makes a completed one. In other notes it makes tasks: see [Notes, tasks and scripts](notes-to-tasks.md). <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes it back.
 
 ## What other apps see
 

@@ -161,7 +161,9 @@ var Steps = []StepKind{
 			in("project", []Type{TProject}, LitProject), in("section", nil, LitID), in("due", []Type{TDate}, LitDate),
 			bound(in("priority", []Type{TNumber}, LitNumber), 4), in("labels", nil, LitIDs), enum("energy", "deep", "medium", "low"),
 			// parent: subtasks of a task (routines-dynamic-data D5); the project comes from it.
-			in("parent", []Type{TTask}, LitNone)}},
+			in("parent", []Type{TTask}, LitNone),
+			// link_back: each task's note starts with a link to the note its lines came from (note-checklist-tasks D4).
+			in("link_back", nil, LitBool)}},
 	{Kind: "change_tasks", Group: GroupTasks, Out: TTasks, SameAs: "", Tool: "update_tasks",
 		Inputs: []Input{req(in("tasks", []Type{TTasks}, LitNone)), req(in("set", nil, LitActions))}},
 	{Kind: "add_comment", Group: GroupTasks, Out: TNone, Content: true, Tool: "add_comment",

@@ -11,8 +11,9 @@ import { queueFiles, isImage } from '../lib/attachments'
 import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
-import { checkLineAt, mentionIds, sameIds, subtaskLine } from '../lib/editorNotes'
-import { foldNote, mutate, mutateMany, planTask, saveNote, type Change, type PushTiming } from '../lib/ops'
+import { checkLinesIn, linesToLinks, mentionIds, sameIds } from '../lib/editorNotes'
+import { planLineTasks, type NoteTaskHome } from '../lib/noteTasks'
+import { foldNote, mutateMany, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { pushPendingNotes } from '../lib/sync'
@@ -80,6 +81,8 @@ export interface NoteTarget {
   /** A task's project (members to mention) and the members its note mentions (editor-everywhere D7). */
   project_id?: string | null
   note_mentions?: string[]
+  /** A standalone note's workspace: Make tasks puts tasks without a project in its Inbox (note-checklist-tasks). */
+  workspace_id?: string | null
   _clock?: Clock
 }
 
@@ -90,21 +93,24 @@ export function noteViewOf(el: Element): EditorView | undefined {
 }
 
 /**
- * Make subtask (design D6): the check-list line becomes a link to a new subtask;
- * `save` writes both in one batch and remembers the history depth for Undo.
+ * Make subtask in a task's note, Make tasks in a project or standalone note (design D6,
+ * note-checklist-tasks D1 to D3): each check-list line of the selection becomes a link
+ * to its new task; `save` writes the tasks and the note in one batch and remembers the
+ * history depth for Undo. More than 50 lines: the first 50, and the editor says so.
  */
-function makeSubtaskCommand(o: { enabled: boolean; taskId: string; projectId: () => string | null; save: (change: Change, id: string, depth: number) => Promise<void> }): Command {
+function makeTasksCommand(o: { enabled: boolean; home: () => NoteTaskHome; notify: (m: string) => void; save: (changes: Change[], ids: string[], depth: number) => Promise<void> }): Command {
   return (state, dispatch, v) => {
-    const line = checkLineAt(state)
-    if (!o.enabled || !line) return false
+    const { lines, more } = checkLinesIn(state)
+    if (!o.enabled || lines.length === 0) return false
     if (!dispatch || !v) return true
     void (async () => {
-      const { id, change } = await planTask({ title: line.title, parent_id: o.taskId, project_id: o.projectId() })
-      if (line.checked) change.patch.completed_at = Date.now()
-      const tr = subtaskLine(v.state, id)
-      if (!tr || v.isDestroyed) return
-      v.dispatch(closeHistory(tr))
-      await o.save(change, id, undoDepth(v.state))
+      const planned = await planLineTasks(lines, o.home())
+      // The lines as they are now (a remote merge may have moved them meanwhile).
+      const now = checkLinesIn(v.state).lines
+      if (v.isDestroyed || now.length !== lines.length || now.some((l, i) => l.title !== lines[i].title)) return
+      v.dispatch(closeHistory(linesToLinks(v.state, now, planned.map((p) => p.id), planned.map((p) => String(p.change.patch.title)))))
+      await o.save(planned.map((p) => p.change), planned.map((p) => p.id), undoDepth(v.state))
+      if (more) o.notify(t('{n, plural, one {# line was left: at most 50 at once.} other {# lines were left: at most 50 at once.}}', { n: more }))
     })()
     return true
   }
@@ -261,24 +267,23 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const formatting = useFormattingToggle('notes', !readOnly)
   const rowId = `${useId()}-formatting`
   const [, setMounted] = useState(0)
-  const mentioned = useLatest(note.note_mentions)
-  const projectId = useLatest(note.project_id ?? null)
+  const [mentioned, projectId, workspace] = [useLatest(note.note_mentions), useLatest(note.project_id ?? null), useLatest(note.workspace_id ?? null)]
   // The subtask Make subtask created (or the note New note created), undone with the note's next undo of that step.
-  const pendingSubtask = useRef<{ entity: 'task' | 'note'; id: string; depth: number } | null>(null)
-  // One batch: the new subtask or note and the note that links to it.
-  const saveCreated = (kind: 'task' | 'note') => async (change: Change, id: string, depth: number) => {
-    pendingSubtask.current = { entity: kind, id, depth }
+  const pendingSubtask = useRef<{ entity: 'task' | 'note'; ids: string[]; depth: number } | null>(null)
+  // One batch: the new subtasks, tasks or note and the note that links to them.
+  const saveCreated = (kind: 'task' | 'note') => async (changes: Change[], ids: string[], depth: number) => {
+    pendingSubtask.current = { entity: kind, ids, depth }
     if (timer.current) clearTimeout(timer.current)
     dirty.current = false
-    await mutateMany([change, { entity, entityId: taskId, patch: notePatch() }])
+    await mutateMany([...changes, { entity, entityId: taskId, patch: notePatch() }])
   }
-  const makeSubtask = makeSubtaskCommand({ enabled: isTask && !readOnly, taskId, projectId: () => projectId.current, save: saveCreated('task') })
-  const linkTo = useLinkPicker({ self: `${entity}:${taskId}`, projectId: entity === 'project' ? taskId : note.project_id ?? null, enabled: !readOnly, save: saveCreated('note') })
+  const makeSubtask = makeTasksCommand({ enabled: !readOnly, notify: (m) => chrome.notify(m), save: saveCreated('task'), home: () => (isTask ? { subtasksOf: taskId, projectId: projectId.current } : { projectId: entity === 'project' ? taskId : projectId.current, workspaceId: workspace.current }) })
+  const linkTo = useLinkPicker({ self: `${entity}:${taskId}`, projectId: entity === 'project' ? taskId : note.project_id ?? null, enabled: !readOnly, save: (change, id, depth) => saveCreated('note')([change], [id], depth) })
   const source = useSourceMode(view, readOnly, () => onEscapeRef.current?.())
   const coarse = useMediaQuery('(pointer: coarse)')
   const env: CommandEnv = {
     notes: isTask, members: members.length > 0, askLink, notify: (m) => chrome.notify(m),
-    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
+    pickImage: isTask && !readOnly ? () => picker.current?.click() : undefined, makeSubtask: readOnly ? undefined : makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
   }
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
   const envRef = useLatest(env)
@@ -343,7 +348,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         const p = pendingSubtask.current
         if (!p || depthBefore !== p.depth) return
         pendingSubtask.current = null
-        void mutate(p.entity, p.id, { deleted_at: Date.now() })
+        void mutateMany(p.ids.map((id) => ({ entity: p.entity, entityId: id, patch: { deleted_at: Date.now() } })))
       },
       outline: () => outlineRef.current.open(),
       source: () => { sourceRef.current.toggle(); return true },

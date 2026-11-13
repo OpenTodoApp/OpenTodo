@@ -760,6 +760,29 @@
       "trigger": "date",
       "steps": [{"id": "a", "kind": "find_notes", "in": {"labels": {"literal": {}}}}],
       "error": {"step": "a", "input": "labels", "code": "invalid_literal"}
+    },
+    {
+      "name": "link back: the open checkboxes of each task's note, each task linked to its note (note-checklist-tasks)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "@meeting"}}},
+        {"id": "r", "kind": "repeat", "in": {"list": {"ref": "a"}}, "do": [
+          {"id": "b", "kind": "note_text", "in": {"of": {"ref": "item"}}},
+          {"id": "c", "kind": "split_lines", "in": {"text": {"ref": "b"}, "only": {"literal": "open_checkboxes"}}},
+          {"id": "d", "kind": "create_tasks", "in": {"text": {"ref": "c"}, "link_back": {"literal": true}}}
+        ]}
+      ],
+      "types": {"a": "tasks", "r": "tasks", "b": "text", "c": "lines", "d": "tasks"},
+      "content": "a"
+    },
+    {
+      "name": "link back without a note is refused (note-checklist-tasks)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "format", "in": {"template": {"literal": "Call the plumber"}}},
+        {"id": "b", "kind": "create_tasks", "in": {"text": {"ref": "a"}, "link_back": {"literal": true}}}
+      ],
+      "error": {"step": "b", "input": "link_back", "code": "invalid_step"}
     }
   ],
   "auto": [
