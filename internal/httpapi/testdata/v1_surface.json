@@ -2486,6 +2486,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -3542,6 +3543,7 @@
       "show_completed": "bool",
       "sort_by": "string",
       "sort_dir": "string",
+      "subtasks": "string",
       "workspace_id": "nullable_string"
     }
   },
@@ -6696,6 +6698,7 @@
         "views[].show_completed": "bool",
         "views[].sort_by": "string",
         "views[].sort_dir": "string",
+        "views[].subtasks": "string",
         "views[].workspace_id": "nullable_string"
       }
     },
@@ -6723,6 +6726,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -7603,6 +7607,7 @@
         "show_completed": "bool?",
         "sort_by": "string?",
         "sort_dir": "string?",
+        "subtasks": "string?",
         "workspace_id": "nullable_string?"
       },
       "response": {
@@ -7627,6 +7632,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },
@@ -10664,6 +10670,7 @@
         "show_completed": "bool?",
         "sort_by": "string?",
         "sort_dir": "string?",
+        "subtasks": "string?",
         "workspace_id": "nullable_string?"
       },
       "response": {
@@ -10688,6 +10695,7 @@
         "show_completed": "bool",
         "sort_by": "string",
         "sort_dir": "string",
+        "subtasks": "string",
         "workspace_id": "nullable_string"
       }
     },

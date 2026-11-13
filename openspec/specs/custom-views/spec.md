@@ -356,6 +356,7 @@ A list view and the New view page SHALL offer a display panel, opened from the t
 - **Completed tasks:** Hide (default) or Show. Show lists completed matches too, as if the query were `(query) & (open | completed)`; a query that names a state itself (`completed`, `open` or a completion date) is unchanged. Sidebar and overview counts stay counts of open matches.
 - **Show on rows:** one toggle per row property (date, project, labels, estimate, assignee, deadline, start, origin), all shown by default. A hidden property is left out of every row and card of the view, and the property column keeps no room for it; the task itself still shows every property.
 - **Notes on cards:** shown only when Layout is Board, under "Show on rows": a switch, off by default, that shows the first two lines of each card's notes as plain text (OpenSpec `sections-and-boards` "Notes preview on cards"), stored on the view.
+- **Nest subtasks:** shown only when Layout is List: a switch, off by default and stored on the view (`subtasks: "nested"`), that lists a matching subtask under its matching parent in the same group, indented with the fold arrow (folds per device), the top-level rows in the view's order and the subtasks in their manual order; a match whose parent is not in the group stays a row of its own with its parent's path. The view's manual order moves top-level rows only.
 - **More options:** folded by default, holding the sort direction.
 
 On a saved view every change SHALL be written to the view at once, as operations that work offline and converge per field; on the New view page the choices are kept with the page and saved with the view. The panel SHALL be a popover from 640 px and a bottom sheet below it, reachable and operable by keyboard, with every target at least 44 by 44 px on a coarse pointer.
@@ -383,6 +384,10 @@ On a saved view every change SHALL be written to the view at once, as operations
 #### Scenario: Notes on the cards of a view board
 - **WHEN** the user opens the display panel of the board view "Client work" and turns on Notes on cards
 - **THEN** every card of "Client work" with notes shows two lines of them, the choice is stored on the view, and the switch is not offered while the view's Layout is List
+
+#### Scenario: Nest subtasks in a saved view
+- **WHEN** a list view matching `p1` holds Plan trip and its subtask Book flights, and Buy seeds whose parent Garden does not match, and the person turns on Nest subtasks
+- **THEN** Book flights is shown under Plan trip and folds with it, Buy seeds stays a row of its own naming Garden, and the view's `subtasks` is `nested` on every device
 
 ### Requirement: Toolbar filter chips
 Under the header of a list view and of the New view page, a toolbar SHALL show the query's conditions as chips on the left, followed by "Filter", and the filter and display buttons on the right. A query whose top level is "All of these" SHALL show one chip per condition or group, in words ("Label is waiting", "Due on or before tomorrow", "Any of 2 conditions"), each with its property's icon and "Not" when negated; any other query SHALL show one chip for the whole query. A chip SHALL open the filter panel; "Filter" SHALL open it and start adding a condition. The chips only read the query and SHALL follow every change of it, including changes from other devices after sync. The toolbar SHALL be one row of chrome, wrapping its chips on a narrow screen.
