@@ -153,10 +153,24 @@ export function obsidianLink(raw: string): ObsidianLink | null {
   return out.vault !== undefined && out.file !== undefined ? { vault: out.vault, file: out.file } : null
 }
 
+function obsidianPath(file: string): string {
+  const last = file.slice(file.lastIndexOf('/') + 1)
+  return last.lastIndexOf('.') > 0 ? file : `${file}.md`
+}
+
 /** The note's vault-relative path a link opens: its file, with ".md" when the last segment has no extension. */
 export function obsidianNotePath(link: ObsidianLink): string {
-  const last = link.file.slice(link.file.lastIndexOf('/') + 1)
-  return last.lastIndexOf('.') > 0 ? link.file : `${link.file}.md`
+  return obsidianPath(link.file)
+}
+
+/**
+ * The path of the note a link opens at a heading or block (obsidian-anchors): the
+ * file before its first "#", when that and the anchor are both non-empty; null
+ * otherwise. A note whose name has a "#" keeps its whole file as the path.
+ */
+export function obsidianAnchoredPath(link: ObsidianLink): string | null {
+  const at = link.file.indexOf('#')
+  return at > 0 && at < link.file.length - 1 ? obsidianPath(link.file.slice(0, at)) : null
 }
 
 /**
@@ -168,7 +182,7 @@ export function obsidianNotePath(link: ObsidianLink): string {
 export function obsidianURL(url: string | undefined, id: string | undefined): ObsidianLink | null {
   const link = url ? obsidianLink(url) : null
   if (!link || !id) return null
-  return id === obsidianNotePath(link) || id === `${link.file}.md` ? link : null
+  return id === obsidianNotePath(link) || id === `${link.file}.md` || id === obsidianAnchoredPath(link) ? link : null
 }
 
 /** The last segment of a vault-relative path without ".md". */
