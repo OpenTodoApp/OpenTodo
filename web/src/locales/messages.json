@@ -6479,6 +6479,7 @@
     "web/src/app/notes/NotesPage.tsx"
   ],
   "Find a note…": [
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/wordPicker.tsx"
   ],
   "Find a person…": [
@@ -20024,6 +20025,7 @@
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/notes/NotesSidebar.tsx",
     "web/src/app/palette/notesSection.tsx",
+    "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/wordPicker.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/lib/assistantBlocks.ts",
