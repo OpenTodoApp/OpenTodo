@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -26,14 +27,15 @@ const ReasonTooLarge = "too_large"
 
 // attachmentImmutable lists the fields fixed at creation.
 var attachmentImmutable = map[string]bool{
-	"task_id": true, "comment_id": true, "mime": true, "size": true, "sha256": true,
+	"task_id": true, "note_id": true, "comment_id": true, "file_id": true, "mime": true, "size": true, "sha256": true,
 	"url": true, "encrypted": true, "author_id": true, "created_at": true,
 }
 
 // batchAttachment is what a batch says about an attachment it creates.
 type batchAttachment struct {
-	task, author, comment string
-	size                  float64
+	task, note, author, comment, file, sha string
+	uploaded                               bool
+	size                                   float64
 }
 
 type attachmentState struct {
@@ -55,6 +57,14 @@ func (r *resolver) noteAttachment(op Op) {
 	switch op.Field {
 	case "task_id":
 		b.task = idValue(op.Value)
+	case "note_id":
+		b.note = idValue(op.Value)
+	case "file_id":
+		b.file = idValue(op.Value)
+	case "sha256":
+		b.sha = idValue(op.Value)
+	case "uploaded_at":
+		b.uploaded = string(op.Value) != "null"
 	case "author_id":
 		b.author = idValue(op.Value)
 	case "comment_id":
@@ -82,9 +92,15 @@ func (r *resolver) attachment(id string) (*attachmentState, error) {
 // resolveAttachment places an attachment op in its task's scope and applies the
 // rules above.
 func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
-	// Only the server says a file is stored; a device may create the row with null.
+	// Only the server says a file is stored; a device may create the row with null,
+	// or a copy of a stored file with its time (note-attachments D3, checked below).
 	if op.Field == "uploaded_at" && !IsServerDevice(op.Device) && string(op.Value) != "null" {
-		return "", ReasonForbidden, nil
+		if b := r.batchAttachment[op.EntityID]; b == nil || b.file == "" {
+			return "", ReasonForbidden, nil
+		}
+		if st, err := r.attachment(op.EntityID); err != nil || st.found {
+			return "", ReasonForbidden, err
+		}
 	}
 	st, err := r.attachment(op.EntityID)
 	if err != nil {
@@ -111,21 +127,44 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		case attachmentImmutable[op.Field]:
 			// Only a repeat of the stored value is harmless (task and author are the
 			// ones the lookup knows); anything else would rewrite a fixed field.
-			if !(op.Field == "task_id" && idValue(op.Value) == st.task) && !(op.Field == "author_id" && idValue(op.Value) == st.author) {
+			if !(op.Field == "task_id" && idValue(op.Value) == st.task) && !(op.Field == "author_id" && idValue(op.Value) == st.author) &&
+				!(op.Field == "note_id" && st.task == "" && idValue(op.Value) != "" && r.storedAttachmentNote(st.scope, op.EntityID) == idValue(op.Value)) {
 				return "", ReasonForbidden, nil
 			}
 		}
 		return st.scope, "", nil
 	}
 	b := r.batchAttachment[op.EntityID]
-	if b == nil || b.task == "" || b.author != r.acc.userID {
+	// One parent: a task, or a standalone note (note-attachments D1).
+	if b == nil || (b.task == "") == (b.note == "") || b.author != r.acc.userID || (b.note != "" && b.comment != "") {
 		return "", ReasonForbidden, nil
 	}
-	if (op.Field == "author_id" && idValue(op.Value) != b.author) || (op.Field == "task_id" && idValue(op.Value) != b.task) {
+	if (op.Field == "author_id" && idValue(op.Value) != b.author) || (op.Field == "task_id" && idValue(op.Value) != b.task) || (op.Field == "note_id" && idValue(op.Value) != b.note) {
 		return "", ReasonForbidden, nil
 	}
 	if r.attachmentLimit > 0 && b.size > float64(r.attachmentLimit) {
 		return "", ReasonTooLarge, nil
+	}
+	if b.file != "" {
+		if reason, err := r.checkSharedFile(b); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
+	if b.note != "" {
+		// The note's scope, viewers included (D2).
+		scope, err := r.scopeOfChild("note", b.note)
+		if err != nil {
+			return "", "", err
+		}
+		if scope == "" || !r.acc.canSee(scope) {
+			return "", ReasonForbidden, nil
+		}
+		if _, found, err := r.existingChildScope("note", b.note); err != nil {
+			return "", "", err
+		} else if !found && !r.batchNotes[b.note] {
+			return "", ReasonForbidden, nil
+		}
+		return scope, "", nil
 	}
 	scope, found, err := r.existingTaskScope(b.task)
 	if err != nil {
@@ -170,4 +209,79 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		}
 	}
 	return scope, "", nil
+}
+
+// storedAttachmentNote is the note_id stored for an attachment in scope ("" when none).
+func (r *resolver) storedAttachmentNote(scope, id string) string {
+	var v sql.NullString
+	_ = r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = 'note_id'`, scope, id).Scan(&v)
+	return idValue(json.RawMessage(v.String))
+}
+
+// checkSharedFile allows a row to share another attachment's stored file
+// (note-attachments D3) only when the author can see that attachment, it is a
+// file of its own (not itself a copy) with the same digest, and, for a copy
+// that says it is uploaded, the file is stored.
+func (r *resolver) checkSharedFile(b *batchAttachment) (string, error) {
+	src, err := r.attachment(b.file)
+	if err != nil {
+		return "", err
+	}
+	if !src.found || src.scope == "" || !r.acc.canSee(src.scope) {
+		return ReasonForbidden, nil
+	}
+	field := func(name string) string {
+		var v sql.NullString
+		_ = r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = ?`, src.scope, b.file, name).Scan(&v)
+		if !v.Valid {
+			return ""
+		}
+		return v.String
+	}
+	if idValue(json.RawMessage(field("file_id"))) != "" || b.sha == "" || idValue(json.RawMessage(field("sha256"))) != b.sha {
+		return ReasonForbidden, nil
+	}
+	if up := field("uploaded_at"); b.uploaded && (up == "" || up == "null") {
+		return ReasonForbidden, nil
+	}
+	return "", nil
+}
+
+// fileReferenced reports whether an attachment row in any scope still names
+// the stored file id: as its own id, or as the file it shares (D3).
+func fileReferenced(ctx context.Context, q querier, id string) (bool, error) {
+	var one int
+	err := q.QueryRowContext(ctx, `SELECT 1 FROM scope_fields WHERE entity = 'attachment' AND (entity_id = ? OR (field = 'file_id' AND value = ?)) LIMIT 1`, id, QuoteJSON(id)).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// sharedFileOf is the stored file an attachment row shares ("" for its own).
+func sharedFileOf(ctx context.Context, q querier, scope, id string) string {
+	var v sql.NullString
+	_ = q.QueryRowContext(ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = 'file_id'`, scope, id).Scan(&v)
+	return idValue(json.RawMessage(v.String))
+}
+
+// SharedFileCopies lists the attachments that share the stored file id, by
+// author (note-attachments D3), so the upload of the original marks them
+// uploaded too.
+func (s *Service) SharedFileCopies(ctx context.Context, id string) (map[string]string, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT f.entity_id, COALESCE((SELECT a.value FROM scope_fields a WHERE a.scope_id = f.scope_id AND a.entity = 'attachment' AND a.entity_id = f.entity_id AND a.field = 'author_id'), '""')
+		FROM scope_fields f WHERE f.entity = 'attachment' AND f.field = 'file_id' AND f.value = ?`, QuoteJSON(id))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var cid, author string
+		if err := rows.Scan(&cid, &author); err != nil {
+			return nil, err
+		}
+		out[cid] = idValue(json.RawMessage(author))
+	}
+	return out, rows.Err()
 }

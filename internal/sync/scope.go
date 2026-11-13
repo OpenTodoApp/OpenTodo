@@ -156,7 +156,9 @@ type resolver struct {
 	// Comments (comments-and-activity): the batch's task ids, the task_id and
 	// author_id a new comment is created with in this batch, and what is known
 	// about each comment id (see comments.go).
-	batchTasks   map[string]bool
+	batchTasks map[string]bool
+	// batchNotes: the notes this batch writes (a note attachment may arrive with its note).
+	batchNotes   map[string]bool
 	batchComment map[string]*batchComment
 	comments     map[string]*commentState
 	// allowComment counts one comment creation against the author's rate limit;
@@ -204,7 +206,7 @@ type resolver struct {
 func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolver {
 	r := &resolver{ctx: ctx, tx: tx, acc: acc, shared: map[string]bool{}, childScope: map[string]string{}, batchProject: map[string]Op{}, assignable: map[string]bool{},
 		claims: map[string]bool{}, misplaced: map[string]bool{}, workspaces: map[string]bool{},
-		batchTasks: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
+		batchTasks: map[string]bool{}, batchNotes: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
 		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{},
 		batchTimeEntry: map[string]*batchTimeEntry{}, timeEntries: map[string]*timeEntryState{}}
 	for _, op := range ops {
@@ -216,6 +218,9 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 		r.noteReminder(op)
 		if op.Entity == "task" {
 			r.batchTasks[op.EntityID] = true
+		}
+		if op.Entity == "note" {
+			r.batchNotes[op.EntityID] = true
 		}
 		if !projectChild[op.Entity] || op.Field != "project_id" {
 			continue
