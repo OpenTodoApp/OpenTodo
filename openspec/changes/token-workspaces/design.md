@@ -4,6 +4,8 @@
 
 `api_token_workspaces(token_id, workspace_id, PRIMARY KEY(token_id, workspace_id))`, rows written in the same transaction as the token, deleted with it. No rows means all workspaces. The default workspace is stored by its id like any other (the `workspaces` change). A token's workspaces are never edited: a restriction that can be widened later by a stolen token's holder is not a restriction, and a new token is one click.
 
+**Downgrades fail safe.** A binary from before this change would ignore the rows and give the token the whole account. So a restricted token's secret starts with `otw_` and is stored as the hash of a prefixed value: an older binary hashes the secret as it is, finds no token and answers 401. A downgrade makes a restricted token stop working; it never widens it.
+
 Removing a workspace (deletion, losing membership) leaves its row; it then matches nothing. A token whose every workspace is gone sees nothing and creates nothing (403 `token_restricted` on creates).
 
 ## D2. One reach on the request, applied in the sync service

@@ -2073,6 +2073,10 @@
       "400",
       "listed"
     ],
+    "token_restricted": [
+      "403",
+      "listed"
+    ],
     "too_large": [
       "413",
       "listed"
@@ -6651,7 +6655,8 @@
         "tokens[].id": "string",
         "tokens[].lastUsedAt": "number|null",
         "tokens[].name": "string",
-        "tokens[].scope": "string"
+        "tokens[].scope": "string",
+        "tokens[].workspaces": "array"
       },
       "statuses": [
         "200"
@@ -10552,7 +10557,8 @@
       "policy": "signed-in.credential.recent",
       "request": {
         "name": "string",
-        "scope": "string"
+        "scope": "string",
+        "workspaces": "array?"
       },
       "response": {
         "secret": "string",
@@ -10562,7 +10568,8 @@
         "token.id": "string",
         "token.lastUsedAt": "number|null",
         "token.name": "string",
-        "token.scope": "string"
+        "token.scope": "string",
+        "token.workspaces": "array"
       },
       "statuses": [
         "201"

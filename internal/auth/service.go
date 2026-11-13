@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/mail"
+	"slices"
 	"strings"
 	"time"
 
@@ -36,6 +37,9 @@ type Token struct {
 	LastUsedAt *int64 `json:"lastUsedAt"`
 	// ExpiresAt is set on a token that stops working at that time (mcp-oauth).
 	ExpiresAt *int64 `json:"expiresAt,omitempty"`
+	// Workspaces limits the token to these workspaces (token-workspaces); absent
+	// means every workspace.
+	Workspaces []string `json:"workspaces,omitempty"`
 }
 
 // Token scopes (OpenSpec changes `mcp-server` D2 and `mcp-write-tools` D2). A
@@ -87,6 +91,9 @@ type TokenInfo struct {
 	ID    string
 	Name  string
 	Scope string
+	// Workspaces are the only workspaces the token may reach (OpenSpec change
+	// token-workspaces); nil means every workspace, an empty list none.
+	Workspaces []string
 }
 
 // scopeExpr reads a token's effective scope from api_tokens t, api_token_scopes
@@ -518,9 +525,45 @@ func (s *Service) CreateTokenExpiring(ctx context.Context, userID, name, scope s
 	return s.createToken(ctx, userID, name, scope, expiresAt)
 }
 
+// CreateTokenIn issues a scoped API token that reaches only the given
+// workspaces (OpenSpec change token-workspaces, D1): at least one, at most
+// MaxTokenWorkspaces; the caller checks that the person belongs to each. The
+// secret starts with otw_ and is stored under restrictedHash, so a binary that
+// does not know the restriction cannot resolve it.
+func (s *Service) CreateTokenIn(ctx context.Context, userID, name, scope string, workspaces []string) (*Token, string, error) {
+	if len(workspaces) == 0 || len(workspaces) > MaxTokenWorkspaces {
+		return nil, "", ErrInvalidWorkspaces
+	}
+	return s.createTokenWith(ctx, userID, name, scope, time.Time{}, workspaces)
+}
+
+// MaxTokenWorkspaces bounds the workspaces of one token.
+const MaxTokenWorkspaces = 50
+
+// ErrInvalidWorkspaces refuses a restriction without workspaces or with too many.
+var ErrInvalidWorkspaces = errors.New("a token is limited to between 1 and 50 workspaces")
+
+// restrictedPrefix starts the secret of a token limited to workspaces.
+const restrictedPrefix = "otw_"
+
+// tokenHash is the stored hash of a token's secret: a restricted token's is
+// derived differently (token-workspaces D1), so an older binary that hashes the
+// secret as it is finds no token.
+func tokenHash(plain string) string {
+	if strings.HasPrefix(plain, restrictedPrefix) {
+		return hashToken("token-workspaces\x00" + plain)
+	}
+	return hashToken(plain)
+}
+
 // createToken writes a token, its scope rows and its audit event in one
 // transaction; a non-zero expiresAt adds the expiry row.
 func (s *Service) createToken(ctx context.Context, userID, name, scope string, expiresAt time.Time) (*Token, string, error) {
+	return s.createTokenWith(ctx, userID, name, scope, expiresAt, nil)
+}
+
+// createTokenWith is createToken, limited to workspaces when they are given.
+func (s *Service) createTokenWith(ctx context.Context, userID, name, scope string, expiresAt time.Time, workspaces []string) (*Token, string, error) {
 	if scope == "" {
 		scope = ScopeFull
 	}
@@ -532,6 +575,9 @@ func (s *Service) createToken(ctx context.Context, userID, name, scope string, e
 		name = "API token"
 	}
 	plain := "ot_" + ids.Secret(32)
+	if workspaces != nil {
+		plain = restrictedPrefix + ids.Secret(32)
+	}
 	t := &Token{ID: ids.New(), Name: textutil.Truncate(name, 100), Scope: scope, CreatedAt: s.clock().UnixMilli()}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -539,8 +585,16 @@ func (s *Service) createToken(ctx context.Context, userID, name, scope string, e
 	}
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx, "INSERT INTO api_tokens(id,user_id,name,token_hash,created_at) VALUES(?,?,?,?,?)",
-		t.ID, userID, t.Name, hashToken(plain), t.CreatedAt); err != nil {
+		t.ID, userID, t.Name, tokenHash(plain), t.CreatedAt); err != nil {
 		return nil, "", err
+	}
+	for _, ws := range workspaces {
+		if _, err := tx.ExecContext(ctx, "INSERT OR IGNORE INTO api_token_workspaces(token_id,workspace_id) VALUES(?,?)", t.ID, ws); err != nil {
+			return nil, "", err
+		}
+	}
+	if workspaces != nil {
+		t.Workspaces = slices.Clone(workspaces)
 	}
 	stored := scope
 	if scope == ScopeAgent || scope == ScopeAdmin {
@@ -615,7 +669,7 @@ func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, Tok
 	err := s.db.QueryRowContext(ctx, `SELECT t.id,t.name,`+scopeExpr+`,t.last_used_at,u.id,u.email,u.name,u.role,u.created_at FROM api_tokens t
 		JOIN users u ON u.id = t.user_id`+scopeJoins+`WHERE t.token_hash = ?
 		AND u.id NOT IN (SELECT user_id FROM user_status WHERE deactivated_at IS NOT NULL)
-		AND NOT EXISTS (SELECT 1 FROM api_token_expiry e WHERE e.token_id = t.id AND e.expires_at <= ?)`, hashToken(plain), s.clock().UnixMilli()).
+		AND NOT EXISTS (SELECT 1 FROM api_token_expiry e WHERE e.token_id = t.id AND e.expires_at <= ?)`, tokenHash(plain), s.clock().UnixMilli()).
 		Scan(&info.ID, &info.Name, &info.Scope, &lastUsed, &u.ID, &u.Email, &u.Name, &u.Role, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, TokenInfo{}, ErrNotFound
@@ -623,10 +677,34 @@ func (s *Service) UserByTokenInfo(ctx context.Context, plain string) (*User, Tok
 	if err != nil {
 		return nil, TokenInfo{}, err
 	}
+	if strings.HasPrefix(plain, restrictedPrefix) {
+		// Restricted, also when every row is gone: none rather than all (D1).
+		if info.Workspaces, err = s.tokenWorkspaces(ctx, info.ID); err != nil {
+			return nil, TokenInfo{}, err
+		}
+	}
 	if now := s.clock().UnixMilli(); lastUseStale(lastUsed, now) {
 		_, _ = s.db.ExecContext(ctx, "UPDATE api_tokens SET last_used_at = ? WHERE id = ?", now, info.ID)
 	}
 	return &u, info, nil
+}
+
+// tokenWorkspaces lists a token's workspaces, never nil.
+func (s *Service) tokenWorkspaces(ctx context.Context, tokenID string) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT workspace_id FROM api_token_workspaces WHERE token_id = ? ORDER BY rowid", tokenID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }
 
 // LastUseInterval is how often a token's or app password's last-use time is
@@ -670,7 +748,20 @@ func (s *Service) ListTokens(ctx context.Context, userID string) ([]Token, error
 		}
 		out = append(out, t)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	for i := range out {
+		ws, err := s.tokenWorkspaces(ctx, out[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		if len(ws) > 0 {
+			out[i].Workspaces = ws
+		}
+	}
+	return out, nil
 }
 
 // DeleteToken revokes a token owned by the user, recording token.revoked in the

@@ -141,6 +141,23 @@ var wsRoleOrder = map[string]int{WorkspaceOwner: 0, WorkspaceAdmin: 1, Workspace
 // in a fixed number of queries"): workspaces by id, members owner first then by
 // role and name, groups by name.
 func (s *Service) Workspaces(ctx context.Context, userID string) ([]Workspace, error) {
+	all, err := s.workspacesAll(ctx, userID)
+	if err != nil || reachOf(ctx) == nil {
+		return all, err
+	}
+	// A request limited to workspaces lists only those (token-workspaces D2).
+	r := reachOf(ctx)
+	out := all[:0:0]
+	for _, w := range all {
+		if r.in[w.ID] {
+			out = append(out, w)
+		}
+	}
+	return out, nil
+}
+
+// workspacesAll is Workspaces without the request's reach.
+func (s *Service) workspacesAll(ctx context.Context, userID string) ([]Workspace, error) {
 	q := s.reader()
 	rows, err := q.QueryContext(ctx, `SELECT w.id, w.kind, w.owner_id, w.name, w.icon, w.color, m.role FROM workspace_members m
 		JOIN workspaces w ON w.id = m.workspace_id AND w.deleted_at IS NULL WHERE m.user_id = ? ORDER BY w.id`, userID)

@@ -823,7 +823,8 @@ func (s *Service) ListWhere(ctx context.Context, userID, entity string, includeD
 
 // listEntities is ListWhere, further narrowed to the given ids when ids is
 // not nil (ListIDs).
-func (s *Service) listEntities(ctx context.Context, userID, entity string, includeDeleted bool, m *Match, ids []string) ([]Entity, error) {
+// listEntitiesAll is listEntities without the request's reach (reach.go).
+func (s *Service) listEntitiesAll(ctx context.Context, userID, entity string, includeDeleted bool, m *Match, ids []string) ([]Entity, error) {
 	fields, ok := Schema[entity]
 	if !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
@@ -956,7 +957,8 @@ func listQuery(n int) string {
 // its newest winning field value over every visible scope: when anything of it
 // last changed (the routines condition `unchanged`, OpenSpec change
 // routines-dynamic-data D5). Plaintext metadata on every account.
-func (s *Service) LastChanged(ctx context.Context, userID, entity string) (map[string]int64, error) {
+// lastChangedAll is LastChanged without the request's reach.
+func (s *Service) lastChangedAll(ctx context.Context, userID, entity string) (map[string]int64, error) {
 	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return nil, err
@@ -984,7 +986,8 @@ func (s *Service) LastChanged(ctx context.Context, userID, entity string) (map[s
 // can see, over every visible scope; 0 when the field was never written. A
 // server write that must win over a device whose clock runs ahead (an
 // attachment's uploaded_at, issue #246) uses ServerTSAt(FieldTS+1).
-func (s *Service) FieldTS(ctx context.Context, userID, entity, id, field string) (int64, error) {
+// fieldTSAll is FieldTS without the request's reach.
+func (s *Service) fieldTSAll(ctx context.Context, userID, entity, id, field string) (int64, error) {
 	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return 0, err
@@ -1000,7 +1003,8 @@ func (s *Service) FieldTS(ctx context.Context, userID, entity, id, field string)
 }
 
 // Get materializes one entity the user can see or returns nil when it does not exist.
-func (s *Service) Get(ctx context.Context, userID, entity, id string) (Entity, error) {
+// getAll is Get without the request's reach.
+func (s *Service) getAll(ctx context.Context, userID, entity, id string) (Entity, error) {
 	if _, ok := Schema[entity]; !ok {
 		return nil, fmt.Errorf("%w: unknown entity %q", ErrInvalidOp, entity)
 	}

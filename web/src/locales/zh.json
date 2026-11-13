@@ -5316,6 +5316,7 @@
   "This title could not be decrypted with this device's key": "无法使用此设备的密钥解密此标题",
   "This token cannot read issues; give it read access to issues.": "此令牌无法读取议题；请授予其议题的读取权限。",
   "This token or session is not allowed to do this: {detail}": "此令牌或会话无权执行此操作：{detail}",
+  "This token is limited to chosen workspaces and cannot do this.": "此令牌仅限所选工作区，无法执行此操作。",
   "This upload would go over your attachment storage.": "此次上传将超出你的附件存储空间上限。",
   "This view": "此视图",
   "This view does not exist (it may have been deleted on another device).": "此视图不存在（可能已在另一台设备上删除）。",

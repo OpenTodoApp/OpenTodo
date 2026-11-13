@@ -65,6 +65,12 @@ type Policy struct {
 	// sign-in page, which returns to the route afterwards, instead of being
 	// answered 401 (native-app-foundation D5).
 	SignIn bool
+	// Reach: the route applies a token's workspace limit (OpenSpec change
+	// token-workspaces, D4): its reads and writes go through the sync service
+	// with the token's reach on the context. A token limited to workspaces is
+	// refused on every route without it, so a new route stays closed to such
+	// tokens until it is marked on purpose.
+	Reach bool
 	// Deprecation marks a deprecated v1 route (stability-contract D3): it keeps
 	// its behaviour and answers with the Deprecation and Sunset headers.
 	Deprecation *Deprecation
@@ -135,6 +141,9 @@ func (p Policy) FullTokens() Policy { p.Tokens = TokensFull; return p }
 
 // DemoDenied marks a route a demo instance refuses.
 func (p Policy) DemoDenied() Policy { p.Demo = true; return p }
+
+// Workspaces marks a route that honours a token's workspace limit (Reach).
+func (p Policy) Workspaces() Policy { p.Reach = true; return p }
 
 // SignInFirst marks a browser page that sends a request without a session to
 // sign in first and back afterwards.

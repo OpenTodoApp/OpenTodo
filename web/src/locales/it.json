@@ -5215,6 +5215,7 @@
   "This title could not be decrypted with this device's key": "Impossibile decifrare questo titolo con la chiave di questo dispositivo",
   "This token cannot read issues; give it read access to issues.": "Questo token non può leggere le issue; dagli accesso in lettura alle issue.",
   "This token or session is not allowed to do this: {detail}": "Questo token o questa sessione non è autorizzato a farlo: {detail}",
+  "This token is limited to chosen workspaces and cannot do this.": "Questo token è limitato agli spazi di lavoro scelti e non può farlo.",
   "This upload would go over your attachment storage.": "Questo caricamento supererebbe lo spazio per gli allegati.",
   "This view": "Questa vista",
   "This view does not exist (it may have been deleted on another device).": "Questa vista non esiste (potrebbe essere stata eliminata su un altro dispositivo).",

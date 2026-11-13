@@ -5352,6 +5352,7 @@
   "This title could not be decrypted with this device's key": "Deze titel kon niet met de sleutel van dit apparaat worden ontsleuteld",
   "This token cannot read issues; give it read access to issues.": "Dit token kan geen issues lezen; geef het leesrechten voor issues",
   "This token or session is not allowed to do this: {detail}": "Dit token of deze sessie mag dit niet: {detail}",
+  "This token is limited to chosen workspaces and cannot do this.": "Dit token is beperkt tot gekozen werkruimten en kan dit niet.",
   "This update wasn't installed.": "Deze update is niet geïnstalleerd.",
   "This upload would go over your attachment storage.": "Deze upload zou je opslag voor bijlagen overschrijden",
   "This view": "Deze weergave",
