@@ -333,6 +333,9 @@
   "A calendar": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
+  "A calendar per project": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "A card dropped on this column gets these changes.": [
     "web/src/app/RuleEditor.tsx"
   ],
@@ -2762,6 +2765,9 @@
   ],
   "Calendar name": [
     "web/src/app/CalendarFeedsPanel.tsx"
+  ],
+  "Calendar of {name}": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Calendar options": [
     "web/src/app/calendar/ProjectCalendar.tsx"
@@ -12052,6 +12058,9 @@
   "One block for several small tasks": [
     "web/src/app/CalendarView.tsx"
   ],
+  "One calendar": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "One line": [
     "web/src/app/views/DisplayPanel.tsx"
   ],
@@ -17559,6 +17568,9 @@
   "The browser has not been asked yet.": [
     "web/src/lib/push.ts"
   ],
+  "The calendar above": [
+    "web/src/app/CalendarSyncDialogs.tsx"
+  ],
   "The calendar server asked to slow down.": [
     "web/src/app/CalendarSyncPanel.tsx"
   ],
@@ -21218,6 +21230,9 @@
   ],
   "Write the text {template}": [
     "web/src/lib/rules/sentence.ts"
+  ],
+  "Write to": [
+    "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "Written by AI": [
     "web/src/app/routines/ProposalReview.tsx",

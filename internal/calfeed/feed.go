@@ -32,6 +32,11 @@ type FeedTask struct {
 	Labels   []string
 	Priority int
 	Modified int64 // Unix ms, for DTSTAMP and LAST-MODIFIED
+	// Places is where the task is, nearest first: its CalDAV calendar id (a
+	// project id or an Inbox's) and then the project's ancestors; calendar sync
+	// writes its event to the calendar matched to the first matched place
+	// (calsync-project-calendars).
+	Places []string
 }
 
 // SpanStart is a task's first day when it is drawn as a span (OpenSpec change
