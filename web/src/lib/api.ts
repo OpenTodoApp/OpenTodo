@@ -368,8 +368,8 @@ export const api = {
   readNotification: (id: string) => request<void>('POST', `/api/v1/notifications/${encodeURIComponent(id)}/read`),
   listTokens: () => request<{ tokens: ApiToken[] }>('GET', '/api/v1/tokens'),
   /** scope `read` tokens are refused on every write route (mcp-server). */
-  createToken: (name: string, scope?: TokenScope) =>
-    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', scope ? { name, scope } : { name }),
+  createToken: (name: string, scope?: TokenScope, workspaces?: string[]) =>
+    request<{ token: ApiToken; secret: string }>('POST', '/api/v1/tokens', { name, ...(scope ? { scope } : {}), ...(workspaces ? { workspaces } : {}) }),
   // AI assistants (mcp-server): status for everyone, the toggle for the owner.
   getMcpSettings: () => request<McpStatus>('GET', '/api/v1/settings/mcp'),
   setMcpSettings: (enabled: boolean) => request<McpStatus>('PUT', '/api/v1/settings/mcp', { enabled }),

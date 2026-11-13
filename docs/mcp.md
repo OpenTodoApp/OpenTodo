@@ -42,7 +42,7 @@ An app that signs in with OAuth instead of taking a pasted token — Google Gemi
 
 ### A token for some workspaces
 
-To keep an assistant to your work, limit its token to chosen workspaces: `POST /api/v1/tokens` with `"workspaces": ["<id>"]` (see [the API](api.md#token-scopes)). With such a token, every tool and resource sees and changes only those workspaces, `list_workspaces` lists only them, new tasks without a project land in the first of them, and the tools over the whole account (frames, slots, objectives, free time, routines, blocks) answer `token_restricted`. Choosing workspaces in Settings and on the consent page of a connected app comes next.
+To keep an assistant to your work, limit its token to chosen workspaces: in Settings → Integrations → API tokens → **New token**, choose **Workspaces: Only these** (shown when you have two or more), or `ot token create --limit-to Work`, or `POST /api/v1/tokens` with `"workspaces": ["<id>"]` (see [the API](api.md#token-scopes)). With such a token, every tool and resource sees and changes only those workspaces, `list_workspaces` lists only them, new tasks without a project land in the first of them, and the tools over the whole account (frames, slots, objectives, free time, routines, blocks) answer `token_restricted`. Choosing workspaces on the consent page of an app connected with OAuth comes next.
 
 ## 3. Connect an assistant
 

@@ -1490,6 +1490,9 @@
   "All views": [
     "web/src/app/Sidebar.tsx"
   ],
+  "All workspaces": [
+    "web/src/app/TokensSection.tsx"
+  ],
   "All-day events on {date}": [
     "web/src/app/calendar/DayColumn.tsx"
   ],
@@ -3186,6 +3189,9 @@
   ],
   "Choose at least one event.": [
     "web/src/app/NotificationChannelEditor.tsx"
+  ],
+  "Choose at least one workspace.": [
+    "web/src/app/TokensSection.tsx"
   ],
   "Choose calendars": [
     "web/src/app/CalendarSyncPanel.tsx"
@@ -11873,7 +11879,8 @@
     "web/src/lib/assistants.ts"
   ],
   "Only these": [
-    "web/src/app/SyncScopeField.tsx"
+    "web/src/app/SyncScopeField.tsx",
+    "web/src/app/TokensSection.tsx"
   ],
   "Only this person can use the link. Leave empty for anyone with the link.": [
     "web/src/app/MembersPanel.tsx"
@@ -11892,6 +11899,9 @@
   ],
   "Only you, the owner, see this. It goes away after the server restarts with a corrected value.": [
     "web/src/app/ConfigWarnings.tsx"
+  ],
+  "Only {names}": [
+    "web/src/app/TokensSection.tsx"
   ],
   "Open": [
     "web/src/app/TrackingIndicator.tsx",
@@ -20736,6 +20746,7 @@
     "web/src/app/WorkspaceControl.tsx"
   ],
   "Workspaces": [
+    "web/src/app/TokensSection.tsx",
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/WorkspacesSettings.tsx",
     "web/src/app/settingsSections.ts"
@@ -21337,6 +21348,7 @@
     "web/src/app/routines/words.tsx"
   ],
   "a removed workspace": [
+    "web/src/app/TokensSection.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/StepCard.tsx"
   ],
