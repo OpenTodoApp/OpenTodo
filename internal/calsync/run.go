@@ -79,10 +79,6 @@ func (w *Worker) Cycle(ctx context.Context, c *Connection) (RunCounts, error) {
 	return total, nil
 }
 
-func (w *Worker) prepare(ctx context.Context, r *cycle) error {
-	return w.prepareFor(ctx, r, r.c.TargetURL)
-}
-
 // prepareFor readies r to sync the calendar url of its connection.
 func (w *Worker) prepareFor(ctx context.Context, r *cycle, url string) error {
 	if w.Tasks == nil {
