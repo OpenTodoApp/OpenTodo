@@ -3,6 +3,7 @@
 // loads, before the router or sign-in touch the address, and removed from it;
 // the screen itself is loaded only then, so the first load does not carry it.
 import { lazy, Suspense, useSyncExternalStore } from 'react'
+import { resettable } from '../lib/moduleState'
 
 const OAuthConsent = lazy(() => import('./OAuthConsent').then((m) => ({ default: m.OAuthConsent })))
 
@@ -33,6 +34,8 @@ export function setConsentQuery(query: string | null): void {
   pending = query
   for (const fn of [...listeners]) fn()
 }
+
+resettable('oauthConsentHost', () => setConsentQuery(null))
 
 /** Whether a consent screen is waiting for an answer. */
 export function useConsentPending(): boolean {
