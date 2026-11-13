@@ -42,8 +42,8 @@ function Button() {
   const [open, setOpen] = useState(true)
   return (
     <div className="max-w-xl bg-canvas p-4" style={{ minHeight: 420 }}>
-      <div className="notes-frame" data-outline="menu">
-        <OutlineButton items={HEADINGS} current={3} onGo={() => {}} open={open} onOpenChange={setOpen} />
+      <div className="notes-frame" data-outline="menu" data-corner style={{ '--notes-corner': '2.25rem' } as React.CSSProperties}>
+        <div className="notes-corner"><OutlineButton items={HEADINGS} current={3} onGo={() => {}} open={open} onOpenChange={setOpen} /></div>
         <div className="notes-host"><Body /></div>
       </div>
     </div>

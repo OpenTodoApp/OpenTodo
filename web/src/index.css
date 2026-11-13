@@ -951,19 +951,20 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
    end corner, over end padding of the first block (and of the row), so text never
    runs under it. */
 .notes-frame { @apply relative; }
-.notes-frame > .formatting-toggle { @apply absolute end-0 top-0 z-10; }
-.formatting-toggle[aria-pressed="true"] { @apply bg-selected text-strong; }
-.notes-frame[data-formatting] .notes-editor > :first-child,
-.notes-frame[data-formatting] .editor-toolbar { padding-inline-end: 2.25rem; }
+.formatting-toggle[aria-pressed="true"], .source-toggle[aria-pressed="true"] { @apply bg-selected text-strong; }
+/* One row at the top end for the Outline button, Markdown and Formatting (note-outline D2,
+   note-markdown-source D4); the first block and the formatting row leave it room. */
+.notes-corner { @apply absolute end-0 top-0 z-10 flex items-center; }
+.notes-frame[data-corner] .notes-editor > :first-child,
+.notes-frame[data-corner] .editor-toolbar,
+.notes-frame[data-corner] > .notes-source { padding-inline-end: var(--notes-corner); }
 /* A note's outline (note-outline D2): the Outline button beside the Formatting toggle,
    or a column in the start margin, sticky inside the note's scroller and never a
    scroller of its own; the room around the note makes space for it. */
-.note-outline-button { @apply absolute end-0 top-0 z-10; }
-.notes-frame[data-formatting] > .note-outline-button { @apply end-8; }
-.notes-frame[data-outline="menu"] .notes-editor > :first-child,
-.notes-frame[data-outline="menu"] .editor-toolbar { padding-inline-end: 2.25rem; }
-.notes-frame[data-outline="menu"][data-formatting] .notes-editor > :first-child,
-.notes-frame[data-outline="menu"][data-formatting] .editor-toolbar { padding-inline-end: 4.5rem; }
+/* The Markdown source (note-markdown-source D1): the note's text as plain monospace, growing with it. */
+.notes-source { @apply -mx-2 block min-h-28 w-[calc(100%+1rem)] resize-none overflow-hidden rounded-control border border-input bg-surface px-2 py-1 font-mono text-meta text-default
+  focus:outline-none focus:ring-2 focus:ring-focus/30 dark:bg-raised; white-space: pre-wrap; }
+.notes-source[readonly] { @apply border-transparent bg-sunken ring-0; }
 .note-outline { @apply absolute inset-y-0 w-48; inset-inline-end: calc(100% + 1.5rem); }
 .note-outline__list { @apply sticky top-4 space-y-px border-s border-soft; }
 .note-outline__item { @apply flex min-h-7 w-full items-center rounded-e-control py-1 pe-2 text-left text-meta outline-none transition-colors duration-(--duration-ui)
@@ -1474,7 +1475,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   .ui-reveal { opacity: 0; transition: opacity var(--duration-ui); }
   :is(.group, [data-sidebar-item], [data-sidebar-group-header]):is(:hover, :focus-within) .ui-reveal, .ui-reveal:focus-within { opacity: 1; }
   /* A note's Formatting toggle (notes-toolbar-desktop D2): with the note, and always while pressed. */
-  .notes-frame:is(:hover, :focus-within) > .ui-reveal, .ui-reveal[aria-pressed="true"] { opacity: 1; }
+  .notes-frame:is(:hover, :focus-within) > .notes-corner > .ui-reveal, .ui-reveal[aria-pressed="true"] { opacity: 1; }
 }
 /* Every count on (sidebar-polish D2): the count sits in a slot as wide as the row's
    menu button; with a fine pointer the button takes the slot while the row is hovered

@@ -8143,6 +8143,9 @@
   "In the notes: go to the outline of the headings; ↑ / ↓ move, Home / End jump, Enter goes to the heading, Esc returns to the note": [
     "web/src/lib/shortcuts.ts"
   ],
+  "In the notes: show the note's Markdown source as plain text, or back to rich text": [
+    "web/src/lib/shortcuts.ts"
+  ],
   "In the query of New view: recall recent queries on this device": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -9580,6 +9583,18 @@
   ],
   "Mark “{title}” not done": [
     "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
+  "Markdown": [
+    "web/src/app/NotesEditor.tsx",
+    "web/src/app/ProjectNote.tsx",
+    "web/src/app/editorCommands.ts"
+  ],
+  "Markdown source of the note": [
+    "web/src/app/ProjectNote.tsx",
+    "web/src/app/editor/MarkdownSource.tsx"
+  ],
+  "Markdown source of the note (again: rich text)": [
+    "web/src/lib/richtextEditor.ts"
   ],
   "Markdown typing becomes formatting (``` and Enter starts a code block); Shift+Enter is a line break, Esc leaves the notes": [
     "web/src/lib/shortcuts.ts"

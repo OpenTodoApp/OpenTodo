@@ -144,7 +144,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-search-operators` | `OR`, `title:`, `text:` and a `changed:` range in note search, the same in the CLI and MCP | Planned |
 | `notes-sort` | Sort the Notes list by last change, creation or title | Shipped |
 | `notes-bulk-actions` | Select several notes to move, label, pin, trash or turn into tasks at once | Planned |
-| `note-markdown-source` | Edit a note's Markdown source as plain text | Planned |
+| `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |
 | `note-outline` | An outline of a long note's headings | Shipped |
 | `note-templates` | Start a note from a template, with built-in ones and a routine step | Planned |
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Planned |
