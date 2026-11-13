@@ -40,7 +40,10 @@ const WEEKDAY_ALIASES: Record<string, number> = {
 }
 const WORD_ORDINALS: Record<string, number> = { first: 1, second: 2, third: 3, fourth: 4, last: -1 }
 const MONTH_NAMES = ['', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
-const MONTH_ALIASES: Record<string, number> = Object.fromEntries(MONTH_NAMES.flatMap((name, m) => (m ? [[name, m], [name.slice(0, 3), m]] : [])).concat([['sept', 9]]))
+const MONTH_ALIASES: Record<string, number> = { sept: 9 }
+MONTH_NAMES.forEach((name, m) => {
+  if (m) MONTH_ALIASES[name] = MONTH_ALIASES[name.slice(0, 3)] = m
+})
 const UNITS: Unit[] = ['day', 'week', 'month', 'year']
 
 export function ordinalSuffix(n: number): string {
@@ -152,8 +155,9 @@ function parseOrThrow(input: string): Rule {
       rule = { kind: 'nthWeekday', ordinal, weekday: WEEKDAY_ALIASES[next], afterCompletion: false, ...ends }
       i += 2
       // `of <month>` (or `in <month>`) makes it yearly (yearly-weekday-of-month D1).
-      if ((peek() === 'of' || peek() === 'in') && has(MONTH_ALIASES, peek(1) ?? '')) {
-        rule.month = MONTH_ALIASES[peek(1)!]
+      const monthWord = peek(1) ?? ''
+      if ((peek() === 'of' || peek() === 'in') && has(MONTH_ALIASES, monthWord)) {
+        rule.month = MONTH_ALIASES[monthWord]
         i += 2
       }
     } else {
