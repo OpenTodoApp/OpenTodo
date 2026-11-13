@@ -302,6 +302,7 @@ ot routine list
 ot routine show Groceries                 # trigger, condition and steps as numbered sentences
 ot routine run Groceries --test           # plan every step, write nothing
 ot routine run "Waiting follow-up" --task 3f2a…
+ot routine run "Checkboxes to tasks" --note "Planning meeting"   # a routine on a note, by id or title
 ot routine runs Groceries --failed --limit 10
 ot routine create --file groceries.yaml
 ot routine create --project Household --file chores.yaml   # a routine of a (shared) project
@@ -311,7 +312,7 @@ ot routine undo Groceries <run-id>
 ot routine rm Groceries --yes
 ```
 
-A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views and webhooks may be written by name (`project: Errands`); the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
+A routine file is JSON or YAML with `name`, `trigger`, an optional `condition`, `steps` (or `actions`), `enabled` and an optional `project` (the project it belongs to, by name or id; `--project` does the same), in the shapes of the [API](api.md#routines). Projects, sections, labels, saved views, webhooks and standalone notes (`note: Journal`, a note's title) may be written by name (`project: Errands`), and a note trigger's `label_id` by the label's name; the CLI resolves them before sending and fails naming one that matches nothing (`project Erands not found`), sending nothing.
 
 ```yaml
 name: Groceries

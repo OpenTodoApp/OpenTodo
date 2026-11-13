@@ -32,7 +32,7 @@ type Routines interface {
 	// RunNow runs a routine (source mcp) and returns the answer and the writes.
 	// A run that planned more than maxWrites entities (0: no cap) writes
 	// nothing and fails with the agent's daily limit as its reason.
-	RunNow(ctx context.Context, userID, ruleID, taskID string, test bool, maxWrites int) (map[string]any, int, error)
+	RunNow(ctx context.Context, userID, ruleID, taskID, noteID string, test bool, maxWrites int) (map[string]any, int, error)
 	// State is the server's pause and the last run time per routine.
 	State(ctx context.Context, userID string) (paused map[string]string, lastRun map[string]int64)
 	// RunAs names the person each shared routine runs as (routines-shared D4):
@@ -549,7 +549,7 @@ func (r *Registry) planRunRoutine(ctx context.Context, c Caller, a args, _ Chang
 	if r.routines == nil {
 		return Plan{}, routinesOff()
 	}
-	if err := a.only("", "routine", "task_id", "test"); err != nil {
+	if err := a.only("", "routine", "task_id", "note_id", "test"); err != nil {
 		return Plan{}, err
 	}
 	ref, _ := a.str("routine")
@@ -560,6 +560,13 @@ func (r *Registry) planRunRoutine(ctx context.Context, c Caller, a args, _ Chang
 	taskID, err := a.str("task_id")
 	if err != nil {
 		return Plan{}, err
+	}
+	noteID, err := a.str("note_id")
+	if err != nil {
+		return Plan{}, err
+	}
+	if taskID != "" && noteID != "" {
+		return Plan{}, toolErr("invalid_input", "give task_id or note_id, not both")
 	}
 	test := false
 	if a.present("test") {
@@ -576,7 +583,7 @@ func (r *Registry) planRunRoutine(ctx context.Context, c Caller, a args, _ Chang
 	}
 	id := str(row, "id")
 	return Plan{Result: map[string]any{}, execWrites: !test, exec: func(ctx context.Context, maxWrites int) (map[string]any, int, error) {
-		res, n, err := r.routines.RunNow(ctx, c.UserID, id, taskID, test, maxWrites)
+		res, n, err := r.routines.RunNow(ctx, c.UserID, id, taskID, noteID, test, maxWrites)
 		if err != nil {
 			var te *ToolError
 			if errors.As(err, &te) {

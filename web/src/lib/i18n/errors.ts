@@ -52,6 +52,7 @@ export const ERROR_MESSAGES: Record<string, string> = {
   demo_restricted: msg('This is disabled on the demo instance.'),
   paused: msg('The server paused this routine because it ran too often. Turn it on again first.'),
   task_required: msg('This routine works on a task: open one, then run it.'),
+  note_required: msg('This routine works on a note: open one, then run it.'),
   demo_token: msg('This demo link is not valid.'),
   destination_error: msg('The backup destination answered with an error: {detail}'),
   email_disabled: msg('Email to task is not enabled on this server.'),

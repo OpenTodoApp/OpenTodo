@@ -24,7 +24,7 @@ func stepCheck(_ context.Context, d RoutineDraft) ([]DraftProblem, []ruleval.Ste
 	}
 	steps, err := ruleval.ParseSteps(d.Steps)
 	if err == nil {
-		_, err = ruleval.Check(steps, ruleval.TriggerOutput(tr.Kind, string(d.Condition) != "null"))
+		_, err = ruleval.Check(steps, ruleval.TriggerOutput(tr, string(d.Condition) != "null"))
 	}
 	if err != nil {
 		return []DraftProblem{{Code: "invalid_input", Message: err.Error()}}, nil

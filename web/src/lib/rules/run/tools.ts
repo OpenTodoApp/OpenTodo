@@ -38,6 +38,10 @@ export interface ToolSnapshot {
   timeEntries: Row[]
   prefs: Row
   memberships: Map<string, Membership>
+  /** The standalone notes with the run's planned changes (notes-in-routines). */
+  notes?: Map<string, Row>
+  /** Favourites planned earlier in the run, laid over prefs. */
+  favourites?: string
 }
 
 export interface ToolPlan { changes: Change[]; result?: Record<string, unknown> }
@@ -369,12 +373,13 @@ export function favouriteEntries(v: string): string[] {
 }
 
 function setFavourite(s: ToolSnapshot, a: Args): ToolPlan {
+  const kind = a.kind === 'note' ? 'note' : 'project'
   const id = typeof a.id === 'string' ? a.id : ''
-  if (!id) throw new ArgError('id: the project id is required')
+  if (!id) throw new ArgError(`id: the ${kind} id is required`)
   const on = a.favourite === true
-  if (!liveProject(s, id)) throw notFound('project')
-  const list = favouriteEntries(str(s.prefs, 'favourites'))
-  const entry = `project:${id}`
+  if (kind === 'note' ? !liveNote(s, id) : !liveProject(s, id)) throw notFound(kind)
+  const list = favouriteEntries(s.favourites ?? str(s.prefs, 'favourites'))
+  const entry = `${kind}:${id}`
   const has = list.includes(entry)
   if (on === has) return { changes: [] }
   const next = on ? [...list, entry] : list.filter((e) => e !== entry)
@@ -383,19 +388,84 @@ function setFavourite(s: ToolSnapshot, a: Args): ToolPlan {
 
 function appendToNote(s: ToolSnapshot, a: Args): ToolPlan {
   const taskId = typeof a.task_id === 'string' ? a.task_id : ''
+  const noteId = typeof a.note_id === 'string' ? a.note_id : ''
+  if (!taskId === !noteId) throw new ArgError('give exactly one of note_id and task_id')
   const txt = text(a, 'text', true, 20000)!
   const aid = typeof a.append_id === 'string' && a.append_id ? a.append_id : uuid()
   if (!APPEND_ID.test(aid)) throw new ArgError('append_id: 1 to 64 letters, digits, - or _')
-  const t = liveTask(s, taskId)
+  const entity = noteId ? 'note' : 'task'
+  const id = noteId || taskId
+  const t = noteId ? liveNote(s, noteId) : liveTask(s, taskId)
   const pid = t ? str(t, 'project_id') : ''
   // A task of a project the caller cannot see (or one in the Trash) is not found.
-  if (!t || (pid && !liveProject(s, pid))) throw notFound('task')
+  if (!t || (pid && !liveProject(s, pid))) throw notFound(entity)
   const field = `appends.${aid}`
-  if (!canWrite(roleIn(s, pid), 'task', field)) throw forbidden()
+  if (!canWrite(roleIn(s, pid), entity, field)) throw forbidden()
   const pending = Object.entries(t).filter(([f, v]) => f.startsWith('appends.') && v !== '').length
   if (field in t) throw new ToolError('append_taken', 'this append id was used already; nothing was changed')
   if (pending >= MAX_PENDING_APPENDS) throw new ToolError('too_many_appends', 'the note has too many appends waiting; nothing was changed')
-  return { changes: [{ entity: 'task', entityId: taskId, patch: { [field]: txt } }] }
+  return { changes: [{ entity, entityId: id, patch: { [field]: txt } }] }
+}
+
+// ---- standalone notes (internal/agenttools write_notes.go, notes-in-routines D4) ----
+
+function liveNote(s: ToolSnapshot, id: string): Row | undefined {
+  const n = s.notes?.get(id)
+  return n && !isDeleted(n) ? n : undefined
+}
+
+function createNote(s: ToolSnapshot, a: Args): ToolPlan {
+  const title = (text(a, 'title', false, 500) ?? '').trim()
+  const desc = text(a, 'description', false, 20000) ?? ''
+  const id = chosenId(a, '') || uuid()
+  const pid = typeof a.project_id === 'string' ? a.project_id : ''
+  const patch: Row = { title, description: desc, project_id: null, labels: [], position: s.now, created_at: s.now, deleted_at: null }
+  if (pid) {
+    if (!liveProject(s, pid)) throw notFound('project')
+    if (!canWrite(roleIn(s, pid), 'note', 'title')) throw forbidden()
+    patch.project_id = pid
+  }
+  if (a.label_ids !== undefined) patch.labels = labelIds(s, '', a.label_ids)
+  return { changes: [{ entity: 'note', entityId: id, create: true, patch }] }
+}
+
+function updateNote(s: ToolSnapshot, a: Args): ToolPlan {
+  const id = typeof a.id === 'string' ? a.id : ''
+  const n = liveNote(s, id)
+  if (!n) throw notFound('note')
+  const patch: Row = {}
+  if ('project_id' in a) patch.project_id = typeof a.project_id === 'string' && a.project_id ? a.project_id : null
+  if (a.label_ids !== undefined) patch.labels = labelIds(s, '', a.label_ids)
+  if (!Object.keys(patch).length) throw new ArgError('nothing to change: give at least one field besides id')
+  const role = roleIn(s, str(n, 'project_id'))
+  for (const f of Object.keys(patch)) if (!canWrite(role, 'note', f)) throw forbidden()
+  return { changes: [{ entity: 'note', entityId: id, patch }] }
+}
+
+function trashNote(s: ToolSnapshot, a: Args): ToolPlan {
+  const ids = Array.isArray(a.ids) ? (a.ids as string[]) : []
+  const changes: Change[] = []
+  for (const id of ids) {
+    const n = liveNote(s, id)
+    if (!n) throw notFound('note')
+    if (!canWrite(roleIn(s, str(n, 'project_id')), 'note', 'deleted_at')) throw forbidden()
+    changes.push({ entity: 'note', entityId: id, patch: { deleted_at: s.now } })
+  }
+  return { changes }
+}
+
+function noteToTask(s: ToolSnapshot, a: Args): ToolPlan {
+  const id = typeof a.id === 'string' ? a.id : ''
+  const n = liveNote(s, id)
+  if (!n) throw notFound('note')
+  const role = roleIn(s, str(n, 'project_id'))
+  if (!canWrite(role, 'note', 'deleted_at') || !canWrite(role, 'task', 'title')) throw forbidden()
+  // opsync.NoteToTask: the note's title, text, project, labels and workspace.
+  const task: Row = { created_at: s.now, position: s.now, priority: 4, project_id: null, parent_id: null, labels: [], completed_at: null, deleted_at: null, due: null }
+  for (const f of ['title', 'description', 'notes_doc', 'project_id', 'labels', 'workspace_id']) if (n[f] !== undefined) task[f] = n[f]
+  for (const [f, v] of Object.entries(n)) if (f.startsWith('appends.') && v !== '') task[f] = v
+  if (task.title === undefined) task.title = ''
+  return { changes: [{ entity: 'task', entityId: uuid(), create: true, patch: task }, { entity: 'note', entityId: id, patch: { deleted_at: s.now } }] }
 }
 
 function entries(s: ToolSnapshot): EntryLike[] {
@@ -434,6 +504,7 @@ function stopTimer(s: ToolSnapshot): ToolPlan {
 const TOOLS: Record<string, (s: ToolSnapshot, a: Args) => ToolPlan> = {
   create_tasks: createTasks, add_comment: addComment, create_project: createProject, update_project: updateProject, archive_projects: archiveProjects,
   create_sections: createSections, create_label: createLabel, set_favourite: setFavourite, append_to_note: appendToNote, start_timer: startTimer, stop_timer: stopTimer,
+  create_note: createNote, update_note: updateNote, trash_note: trashNote, note_to_task: noteToTask,
 }
 
 /** Plans one tool call; ToolError and ArgError describe a refusal. */

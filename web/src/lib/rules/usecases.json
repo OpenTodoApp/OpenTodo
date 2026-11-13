@@ -540,6 +540,71 @@
         {"id": "c", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"ref": "b"}}}
       ],
       "expect": {"comments": {"o1": ["Four tasks are late, the oldest since the 15th."]}}
+    },
+    {
+      "row": 41,
+      "name": "Weekly review note: find what I finished this week, write it as one text and create a note in Reviews labelled review (notes-in-routines)",
+      "projects": [{"id": "reviews", "name": "Reviews"}],
+      "labels": [{"id": "review", "name": "review"}],
+      "tasks": [{"id": "w1", "title": "Ship the release", "completed_on": "2026-10-19"}, {"id": "w2", "title": "Pay the rent", "completed_on": "2026-10-20"}, {"id": "w3", "title": "Still open"}],
+      "trigger": {"kind": "schedule", "at": "16:00", "weekdays": [5]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "completed = this week"}}},
+        {"id": "d", "kind": "date", "in": {}},
+        {"id": "c", "kind": "create_note", "in": {"title": {"literal": {"format": "Week {d}"}}, "text": {"literal": {"format": "{a}"}}, "project": {"literal": {"project": "reviews"}}, "labels": {"literal": ["review"]}}}
+      ],
+      "expect": {"notes_created": [{"title": "Week 2026-10-21", "text": "Ship the release\nPay the rent", "project_id": "reviews", "labels": "review"}]}
+    },
+    {
+      "row": 42,
+      "name": "Todo label to task: a note that gets the label todo becomes a task (notes-in-routines)",
+      "labels": [{"id": "todo", "name": "todo"}],
+      "notes": [{"id": "n1", "title": "Call the bank about the card", "labels": ["todo"]}],
+      "trigger": {"kind": "note.label.added", "label_id": "todo"}, "run_on_note": "n1",
+      "steps": [{"id": "a", "kind": "note_to_task", "in": {"note": {"ref": "trigger"}}}],
+      "expect": {"created": [{"title": "Call the bank about the card"}], "notes_changed": {"n1": {"deleted": true}}}
+    },
+    {
+      "row": 43, "editor": true,
+      "name": "Checkboxes to tasks: run on a note, its open checkboxes become tasks in the note's project (notes-in-routines)",
+      "projects": [{"id": "work", "name": "Work"}],
+      "notes": [{"id": "n2", "title": "Planning meeting", "text": "- [ ] book room\n- [x] done\n- [ ] send agenda", "project_id": "work"}],
+      "trigger": {"kind": "manual", "on": "note"}, "run_on_note": "n2",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}}},
+        {"id": "b", "kind": "split_lines", "in": {"text": {"ref": "a"}, "only": {"literal": "open_checkboxes"}}},
+        {"id": "p", "kind": "project_of", "in": {"task": {"ref": "trigger"}}},
+        {"id": "c", "kind": "create_tasks", "in": {"text": {"ref": "b"}, "project": {"ref": "p"}}}
+      ],
+      "expect": {"created": [{"title": "book room", "project_id": "work"}, {"title": "send agenda", "project_id": "work"}]}
+    },
+    {
+      "row": 44,
+      "name": "Stale reference notes: once a month, the notes in Reference not changed for 90 days get the label review (notes-in-routines)",
+      "projects": [{"id": "ref", "name": "Reference"}],
+      "labels": [{"id": "review", "name": "review"}],
+      "notes": [{"id": "old1", "title": "Old", "project_id": "ref", "changed_on": "2026-06-01"}, {"id": "new1", "title": "New", "project_id": "ref"}, {"id": "else", "title": "Elsewhere", "changed_on": "2026-06-01"}],
+      "trigger": {"kind": "schedule", "at": "09:00", "month_days": [1]},
+      "steps": [
+        {"id": "a", "kind": "find_notes", "in": {"project": {"literal": {"project": "ref"}}, "unchanged_days": {"literal": 90}}},
+        {"id": "b", "kind": "change_notes", "in": {"notes": {"ref": "a"}, "add_labels": {"literal": ["review"]}}}
+      ],
+      "expect": {"notes_changed": {"old1": {"labels": "review"}}}
+    },
+    {
+      "row": 45,
+      "name": "Journal line: count what I finished today and add a line to the note Journal (notes-in-routines)",
+      "tasks": [{"id": "j1", "completed_on": "2026-10-21"}, {"id": "j2", "completed_on": "2026-10-21"}, {"id": "j3", "completed_on": "2026-10-20"}],
+      "notes": [{"id": "journal", "title": "Journal", "text": "October"}],
+      "trigger": {"kind": "schedule", "at": "18:00", "weekdays": [1, 2, 3, 4, 5, 6, 7]},
+      "steps": [
+        {"id": "a", "kind": "find_tasks", "in": {"query": {"literal": "completed = today"}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "f", "kind": "format", "in": {"template": {"literal": "Completed: {b} tasks"}}},
+        {"id": "g", "kind": "get_note", "in": {"note": {"literal": {"note": "journal"}}}},
+        {"id": "h", "kind": "append_to_note", "in": {"of": {"ref": "g"}, "text": {"ref": "f"}}}
+      ],
+      "expect": {"appended": {"journal": ["Completed: 2 tasks"]}}
     }
   ]
 }

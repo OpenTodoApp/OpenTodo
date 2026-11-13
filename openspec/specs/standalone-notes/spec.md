@@ -204,15 +204,19 @@ The JSON export SHALL include every note the account can read, deleted ones incl
 - **THEN** the new account has the five notes with their titles, bodies, labels and projects
 
 ### Requirement: Integrations that leave notes out
-CalDAV, the Markdown vault, webhooks, the activity feed, automation rules and public task pages SHALL not include standalone notes and SHALL be unaffected by them.
+CalDAV, the Markdown vault, webhooks, the activity feed and public task pages SHALL not include standalone notes and SHALL be unaffected by them. Routines SHALL reach standalone notes only as `routines` "Notes in routines" states.
 
 #### Scenario: Calendar app
 - **WHEN** a calendar app syncs the account over CalDAV
 - **THEN** it receives the tasks as before and no entry for any note
 
 #### Scenario: Webhook
-- **WHEN** a note is created in a project with a webhook
+- **WHEN** a note is created in a project with a webhook that subscribes to no note event
 - **THEN** no webhook delivery is queued for it
+
+#### Scenario: Routine
+- **WHEN** a note is created and the user has a `note.created` routine and a `task.created` routine
+- **THEN** only the `note.created` routine fires
 
 ### Requirement: Encrypted notes
 On an end-to-end encrypted account a note's title, document and projection SHALL be encrypted before they leave the device, and every feature of the Notes page, the palette and the filter terms SHALL work from the decrypted local copy without sending text, queries or indexes to the server.

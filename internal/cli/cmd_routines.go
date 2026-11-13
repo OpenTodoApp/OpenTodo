@@ -21,7 +21,7 @@ import (
 // creates and edits routines from a JSON or YAML file, deletes and undoes a
 // run; `ot routines` is the same command and `ot rules` keeps its own.
 
-const routineUsage = "ot routine list\not routine show <id|name>\not routine runs <id|name> [--failed] [--limit n]\not routine run <id|name> [--task <id>] [--test]\not routine enable|disable <id|name>\not routine create --file <routine.yaml|json>\not routine edit <id|name> --file <path>\not routine rm <id|name> [--yes]\not routine undo <id|name> <run-id>"
+const routineUsage = "ot routine list\not routine show <id|name>\not routine runs <id|name> [--failed] [--limit n]\not routine run <id|name> [--task <id> | --note <id|title>] [--test]\not routine enable|disable <id|name>\not routine create --file <routine.yaml|json>\not routine edit <id|name> --file <path>\not routine rm <id|name> [--yes]\not routine undo <id|name> <run-id>"
 
 func cmdRoutine(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
@@ -380,13 +380,34 @@ func routineRuns(a *App, ctx context.Context, g *globalFlags, args []string) err
 func routineRun(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	fs := a.flagSet("routine run", g)
 	task := fs.String("task", "", "the task the routine's steps read as the trigger's task (id)")
+	note := fs.String("note", "", "the standalone note a routine on a note runs on (id or title, as ot notes takes it)")
 	test := fs.Bool("test", false, "plan every step and log a test run; nothing is written")
 	pos, err := a.parse(g, fs, "routine run", args)
 	if err != nil {
 		return a.helpOr("routine", err)
 	}
 	if len(pos) != 1 {
-		return usageErr("usage: ot routine run <id|name> [--task <id>] [--test]")
+		return usageErr("usage: ot routine run <id|name> [--task <id> | --note <id|title>] [--test]")
+	}
+	if *task != "" && *note != "" {
+		return usageErr("give --task or --note, not both")
+	}
+	noteID := ""
+	if *note != "" {
+		// A title is resolved as ot notes does; an ambiguous one fails before anything is sent.
+		s, err := a.notesConnect(ctx, g)
+		if err != nil {
+			return err
+		}
+		rows, err := s.standaloneNotes(ctx)
+		if err != nil {
+			return err
+		}
+		n, err := resolveNote(rows, *note)
+		if err != nil {
+			return err
+		}
+		noteID = n.id
 	}
 	c, _, err := a.connect(g)
 	if err != nil {
@@ -404,6 +425,9 @@ func routineRun(a *App, ctx context.Context, g *globalFlags, args []string) erro
 	body := map[string]any{"run_id": ids.New(), "test": *test}
 	if *task != "" {
 		body["task_id"] = *task
+	}
+	if noteID != "" {
+		body["note_id"] = noteID
 	}
 	raw, _, err := c.do(ctx, http.MethodPost, "/rules/"+r.ID+"/run", body, nil)
 	if err != nil {

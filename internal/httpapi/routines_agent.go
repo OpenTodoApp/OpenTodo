@@ -53,8 +53,8 @@ func (rt routineTools) Run(ctx context.Context, uid, ruleID, runID string) (any,
 	return run, err == nil, err
 }
 
-func (rt routineTools) RunNow(ctx context.Context, uid, ruleID, taskID string, test bool, maxWrites int) (map[string]any, int, error) {
-	res, err := rt.s.rules.RunNow(ctx, uid, rules.RunRequest{RuleID: ruleID, RunID: ids.New(), TaskID: taskID, Test: test, Source: rules.SourceMCP, MaxWrites: maxWrites})
+func (rt routineTools) RunNow(ctx context.Context, uid, ruleID, taskID, noteID string, test bool, maxWrites int) (map[string]any, int, error) {
+	res, err := rt.s.rules.RunNow(ctx, uid, rules.RunRequest{RuleID: ruleID, RunID: ids.New(), TaskID: taskID, NoteID: noteID, Test: test, Source: rules.SourceMCP, MaxWrites: maxWrites})
 	if err != nil {
 		code := "run_refused"
 		switch {
@@ -62,6 +62,8 @@ func (rt routineTools) RunNow(ctx context.Context, uid, ruleID, taskID string, t
 			code = "not_found"
 		case errors.Is(err, rules.ErrTaskRequired):
 			code = "task_required"
+		case errors.Is(err, rules.ErrNoteRequired):
+			code = "note_required"
 		case errors.Is(err, rules.ErrRateLimited):
 			code = "rate_limited"
 		case errors.Is(err, rules.ErrPausedRule):

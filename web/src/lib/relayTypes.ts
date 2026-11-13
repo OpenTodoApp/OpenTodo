@@ -23,6 +23,8 @@ export interface RoutineRunRequest {
   occurrence: string
   at: number
   task?: string
+  /** The standalone note of a note routine (notes-in-routines). */
+  note?: string
   rev: string
   auto: boolean
   tokens: number

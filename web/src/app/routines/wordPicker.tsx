@@ -14,7 +14,7 @@ import { insertStep, newId, placeOf, setInput, type RoutineDraft } from '../../l
 import { fixFor } from '../../lib/rules/fixes'
 import { inputLabel } from '../../lib/rules/sentence'
 import { placeholders, textLiteral, triggerOutput, type StepInput } from '../../lib/rules/steps'
-import type { RoutineArg, RoutineStep, RoutineStepType, Task } from '../../lib/types'
+import type { Note, RoutineArg, RoutineStep, RoutineStepType, Task } from '../../lib/types'
 import { Button, Field, Input, WordButton } from '../../ui'
 import { ChoicePopover, InlineText, Inspector, type Choice } from './pickers'
 import { chipOptions, ComparePicker, DatePicker, ENUM_LABEL, LiteralPicker, PERIOD_LABEL, textValue, wordPlaceholder, wordValue, type ChipOption, type WordContext } from './words'
@@ -27,13 +27,13 @@ function modeOf(step: RoutineStep, def: StepInput, ctx: WordContext): Mode {
   if (def.literal === 'condition' || def.literal === 'actions') return 'inspector'
   if (def.literal === 'where') {
     const list = step.in?.list
-    const type = list && 'ref' in list ? (list.ref === 'trigger' ? triggerOutput(ctx.draft.trigger.kind, !!ctx.draft.condition) : ctx.types[list.ref]) : undefined
+    const type = list && 'ref' in list ? (list.ref === 'trigger' ? triggerOutput(ctx.draft.trigger, !!ctx.draft.condition) : ctx.types[list.ref]) : undefined
     return type === 'lines' ? 'choice' : 'inspector'
   }
   return 'choice'
 }
 
-const typeName = (x: RoutineStepType): string => ({ text: 'Text', task: 'Task', tasks: 'Tasks', project: 'Project', date: 'Date', number: 'Number', lines: 'Lines', none: 'none' })[x]
+const typeName = (x: RoutineStepType): string => ({ text: 'Text', task: 'Task', tasks: 'Tasks', note: 'Note', notes: 'Notes', project: 'Project', date: 'Date', number: 'Number', lines: 'Lines', none: 'none' })[x]
 
 function withRef(d: RoutineDraft, id: string, input: string, ref: string): RoutineDraft {
   return { ...d, steps: setInput(d.steps, id, input, { ref }) }
@@ -85,6 +85,12 @@ function literalChoices(step: RoutineStep, def: StepInput, ctx: WordContext, act
     case 'enum': return def.enum!.map((x) => ({ key: `e:${x}`, label: ENUM_LABEL[x] ?? x, selected: v === x, run: pick(x) }))
     case 'bool': return [true, false].map((x) => ({ key: `b:${x}`, label: x ? t('yes') : t('no'), selected: v === x, run: pick(x) }))
     case 'period': return Object.keys(PERIOD_LABEL).map((x) => ({ key: `pe:${x}`, label: PERIOD_LABEL[x], selected: v === x, run: pick(x) }))
+    case 'labels': {
+      // Find notes' labels: notes with any of them (notes-in-routines D5).
+      const ids = ((v as { any?: string[] } | undefined)?.any) ?? []
+      return n.labels.filter((l) => !l.deleted_at).map((l) => ({ key: `l:${l.id}`, label: l.name, group: t('Labels'), selected: ids.includes(l.id), keep: true,
+        run: () => { const next = ids.includes(l.id) ? ids.filter((x) => x !== l.id) : [...ids, l.id]; act.onSet(next.length ? { literal: { any: next } } : undefined) } }))
+    }
     case 'ids': {
       const ids = Array.isArray(v) ? (v as string[]) : []
       return n.labels.filter((l) => !l.deleted_at).map((l) => ({ key: `l:${l.id}`, label: l.name, group: t('Labels'), selected: ids.includes(l.id), keep: true,
@@ -108,13 +114,19 @@ function literalChoices(step: RoutineStep, def: StepInput, ctx: WordContext, act
   return []
 }
 
-/** Find tasks…, then a specific task (folded, last), then Remove. */
+/** Find tasks… (Find notes…), then a specific task or note (folded, last), then Remove. */
 function moreChoices(step: RoutineStep, def: StepInput, act: Actions): Choice[] {
   const out: Choice[] = []
   if (def.accepts.includes('task') || def.accepts.includes('tasks')) {
     out.push({ key: 'find', label: t('Find tasks…'), group: t('More'), run: () => act.onEdit(insertAbove(step, def, (id) => ({ id, kind: 'find_tasks', in: { condition: { literal: {} } } }))) })
   }
+  if (def.accepts.includes('note') || def.accepts.includes('notes')) {
+    out.push({ key: 'find-notes', label: t('Find notes…'), group: t('More'), run: () => act.onEdit(insertAbove(step, def, (id) => ({ id, kind: 'find_notes' }))) })
+  }
   if (def.literal === 'task') out.push({ key: 'specific', label: t('A specific task…'), group: t('More'), keep: true, run: () => act.setSpecific(true) })
+  if (def.literal === 'note' || (def.accepts.includes('note') && step.kind !== 'note_to_task' || def.accepts.includes('notes'))) {
+    out.push({ key: 'specific-note', label: t('A specific note…'), group: t('More'), keep: true, run: () => act.setSpecific(true) })
+  }
   if (step.in?.[def.name] && !def.required) out.push({ key: 'remove', label: t('Remove'), group: t('More'), run: () => act.onSet(undefined) })
   return out
 }
@@ -126,6 +138,19 @@ function taskChoices(tasks: readonly Task[], act: Actions): Choice[] {
     ...tasks.filter((x) => !x.deleted_at && !x.completed_at).map((x) => ({ key: `t:${x.id}`, label: x.title, group: t('Always this task, whatever the routine finds'), run: () => act.onSet({ literal: { task: x.id } }) })),
   ]
 }
+
+/** A note chosen by hand, after "A specific note…": the literal of Get a specific note, or one inserted above. */
+function noteChoices(step: RoutineStep, def: StepInput, notes: readonly Note[], act: Actions): Choice[] {
+  const pick = (id: string) => (def.literal === 'note'
+    ? () => act.onSet({ literal: { note: id } })
+    : () => act.onEdit(insertAbove(step, def, (sid) => ({ id: sid, kind: 'get_note', in: { note: { literal: { note: id } } } }))))
+  return [
+    { key: 'back', label: t('Back to the values'), keep: true, run: () => act.setSpecific(false) },
+    ...notes.map((n) => ({ key: `n:${n.id}`, label: n.title || t('Untitled note'), group: t('Always this note, whatever the routine finds'), run: pick(n.id) })),
+  ]
+}
+
+const takesNote = (def: StepInput) => def.literal === 'note' || def.accepts.includes('note') || def.accepts.includes('notes')
 
 /** Whether an input has a small field under its list. */
 const hasFooter = (def: StepInput): boolean =>
@@ -182,7 +207,7 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef, o
   const label = inputLabel(def.name, step.kind)
   const close = () => { setOpen(false); setSpecific(false); requestAnimationFrame(() => anchor.current?.focus()) }
   const act: Actions = { onSet, onEdit, specific, setSpecific }
-  const choices = useMemo(() => (mode !== 'choice' ? [] : specific ? taskChoices(ctx.names.tasks, act)
+  const choices = useMemo(() => (mode !== 'choice' ? [] : specific ? (takesNote(def) ? noteChoices(step, def, ctx.names.notes ?? [], act) : taskChoices(ctx.names.tasks, act))
     : [...flowingChoices(step, def, ctx, act), ...literalChoices(step, def, ctx, act), ...moreChoices(step, def, act)]),
   // eslint-disable-next-line react-hooks/exhaustive-deps -- act holds this render's callbacks
   [mode, specific, step, def, ctx, onSet, onEdit])
@@ -215,7 +240,7 @@ export function InputWord({ step, def, ctx, error, me, onSet, onEdit, openRef, o
       )}
       {mode === 'choice' && (
         <ChoicePopover open={open} onClose={close} anchor={anchor} label={label} choices={choices} multiple={def.literal === 'ids'}
-          placeholder={specific ? t('Find a task…') : undefined} footer={specific || !hasFooter(def) ? undefined : <Footer step={step} def={def} ctx={ctx} onSet={onSet} />} />
+          placeholder={specific ? (takesNote(def) ? t('Find a note…') : t('Find a task…')) : undefined} footer={specific || !hasFooter(def) ? undefined : <Footer step={step} def={def} ctx={ctx} onSet={onSet} />} />
       )}
       {mode === 'inspector' && (
         <Inspector open={open} onClose={close} stepId={step.id} title={label}>

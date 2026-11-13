@@ -29,13 +29,15 @@ const SUGGEST: Record<RoutineStepType | 'start', string[]> = {
   date: ['create_tasks', 'find_tasks', 'format'],
   none: ['find_tasks', 'create_tasks', 'note_text', 'notify', 'format', 'if'],
   start: ['find_tasks', 'create_tasks', 'note_text', 'notify', 'format', 'split_lines'],
+  note: ['note_text', 'append_to_note', 'change_notes', 'note_to_task', 'notify'],
+  notes: ['change_notes', 'repeat', 'take', 'sort', 'count'],
 }
 
 /**
  * Kinds found by search only: Get a specific task (the rare fixed target) and
  * Filter (Pick's "the ones where" mode), routines-dynamic-data D2, D4.
  */
-const SEARCH_ONLY = new Set(['get_task', 'filter'])
+const SEARCH_ONLY = new Set(['get_task', 'get_note', 'filter'])
 
 /** The suggested kinds after a step with this output, available only, at most six. */
 export function suggestions(above: RoutineStepType | 'start', cat: Catalogue | null): string[] {

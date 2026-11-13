@@ -467,11 +467,11 @@ func TestRoutineDraftTest(t *testing.T) {
 	}
 	// The legacy reading of a rule as one Change tasks step.
 	h.rule("alice", "legacy", "P1", `{"kind":"task.created"}`, "", `{"priority":1}`)
-	lres, err := h.e.TestRule(h.ctx, "alice", "legacy", "")
+	lres, err := h.e.TestRule(h.ctx, "alice", "legacy", "", "")
 	if err == nil {
 		t.Fatalf("a legacy rule needs its task: %+v", lres)
 	}
-	lres, err = h.e.TestRule(h.ctx, "alice", "legacy", "t1")
+	lres, err = h.e.TestRule(h.ctx, "alice", "legacy", "t1", "")
 	if err != nil || lres.Writes != 1 || lres.Steps[0].Kind != "change_tasks" {
 		t.Fatalf("legacy %+v %v", lres, err)
 	}

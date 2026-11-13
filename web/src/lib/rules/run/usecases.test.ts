@@ -12,15 +12,17 @@ import { planRoutine, type AIAnswer, type LibraryTemplate, type Row, type RunPla
 
 interface UcTask { id: string; title?: string; due?: string; completed_on?: string; labels?: string[]; priority?: number; project_id?: string; parent_id?: string; description?: string; changed_on?: string; deleted?: boolean }
 interface UcSeed { tasks?: UcTask[]; projects?: { id: string; name: string; description?: string; archived?: boolean; deleted?: boolean }[]; labels?: { id: string; name: string }[]; views?: { id: string; name: string; query: string }[]
-  entries?: { id: string; task_id: string; started: string; ended?: string }[] }
+  entries?: { id: string; task_id: string; started: string; ended?: string }[]
+  notes?: { id: string; title?: string; text?: string; project_id?: string; labels?: string[]; changed_on?: string }[] }
 interface UcExpect {
   outcome?: string; comments?: Record<string, string[]>; changed?: Record<string, Record<string, unknown>>; created?: Record<string, unknown>[]
   appended?: Record<string, string[]>; notices?: string[]; webhooks?: { text: string | null; tasks: string[] }[]; emails?: { subject: string; text: string }[]
   focus?: string; timer?: string; created_count?: number
   changed_projects?: Record<string, Record<string, unknown>>; created_projects?: string[]; sections?: string[]; labels_created?: string[]; favourites?: string
+  notes_created?: Record<string, unknown>[]; notes_changed?: Record<string, Record<string, unknown>>
 }
 interface UcCase extends UcSeed {
-  row: number; name: string; seed?: string; trigger: { kind: string } & Record<string, unknown>; condition?: Record<string, unknown>; run_on?: string
+  row: number; name: string; seed?: string; trigger: { kind: string } & Record<string, unknown>; condition?: Record<string, unknown>; run_on?: string; run_on_note?: string
   steps: unknown; webhooks?: string[]; email?: boolean; ai?: { text?: string; lines?: string[] }[]; expect: UcExpect
 }
 
@@ -45,7 +47,15 @@ function seedWorld(c: UcCase): RunWorld {
   const projects: Row[] = (seed.projects ?? []).map((p) => ({
     id: p.id, name: p.name, description: p.description ?? '', created_at: 1, deleted_at: p.deleted ? 5 : null, ...(p.archived ? { archived: true } : {}),
   }))
+  const noteChanged: Record<string, string> = {}
+  const noteMs: Record<string, number> = {}
+  const notes: Row[] = (seed.notes ?? []).map((n) => {
+    noteChanged[n.id] = n.changed_on ?? TODAY
+    noteMs[n.id] = n.changed_on ? dayMs(n.changed_on) : NOW
+    return { id: n.id, title: n.title ?? '', description: n.text ?? '', project_id: n.project_id || null, labels: n.labels ?? [], position: 1, created_at: noteMs[n.id], deleted_at: null }
+  })
   return {
+    notes, noteChanged, noteMs,
     userId: 'alice', today: TODAY, now: NOW, weekStart: 1, offset: 0, dayStart: '', tasks, projects,
     labels: (seed.labels ?? []).map((l) => ({ id: l.id, name: l.name, created_at: 1, deleted_at: null })), sections: [],
     views: (seed.views ?? []).map((v) => ({ id: v.id, name: v.name, query: v.query, created_at: 1, deleted_at: null })),
@@ -67,6 +77,7 @@ function taskState(t: Row): Record<string, unknown> {
 /** The plan laid over the rows, as a commit writes it (with the open subtasks of a completed task). */
 function apply(w: RunWorld, plan: RunPlan) {
   const tasks = new Map(w.tasks.map((t) => [t.id as string, { ...t }]))
+  const notes = new Map((w.notes ?? []).map((n) => [n.id as string, { ...n }]))
   const projects = new Map(w.projects.map((p) => [p.id as string, { ...p }]))
   const comments: Row[] = []
   const entries = new Map(w.timeEntries.map((e) => [e.id as string, { ...e }]))
@@ -78,7 +89,7 @@ function apply(w: RunWorld, plan: RunPlan) {
     if (m.entity === 'section') sections.push({ id: m.id, ...m.patch })
     if (m.entity === 'label' && m.create) labels.push({ id: m.id, ...m.patch })
     if (m.entity === 'user_prefs') prefs = { ...prefs, ...m.patch }
-    const into = m.entity === 'task' ? tasks : m.entity === 'project' ? projects : m.entity === 'time_entry' ? entries : null
+    const into = m.entity === 'task' ? tasks : m.entity === 'project' ? projects : m.entity === 'time_entry' ? entries : m.entity === 'note' ? notes : null
     if (into) into.set(m.id, { ...(into.get(m.id) ?? { id: m.id }), ...m.patch })
     if (m.entity === 'comment') comments.push({ id: m.id, ...m.patch })
     if (m.entity === 'review') review = { ...review, ...m.patch }
@@ -88,7 +99,7 @@ function apply(w: RunWorld, plan: RunPlan) {
     const open = (pid: string): string[] => [...tasks.values()].filter((t) => t.parent_id === pid && !t.completed_at && !t.deleted_at).flatMap((t) => [t.id as string, ...open(t.id as string)])
     for (const sub of open(id)) tasks.set(sub, { ...tasks.get(sub)!, completed_at: done })
   }
-  return { tasks, projects, comments, entries, review, sections, labels, prefs }
+  return { tasks, projects, comments, entries, review, sections, labels, prefs, notes }
 }
 
 describe('routine use cases on the device planner (shared with internal/rules)', () => {
@@ -98,7 +109,7 @@ describe('routine use cases on the device planner (shared with internal/rules)',
       const answers = [...(c.ai ?? [])]
       const ai = async (): Promise<AIAnswer> => ({ ...(answers.shift() ?? { text: '' }), input: 100, output: 20 })
       const rule = { id: 'uc', name: c.name, steps: parseSteps(c.steps) as RoutineStep[], trigger: c.trigger, condition: (c.condition ?? null) as never }
-      const plan = await planRoutine(w, rule, { key: 'manual:run-1', runId: 'run-1', triggerTaskId: c.run_on, ai })
+      const plan = await planRoutine(w, rule, { key: 'manual:run-1', runId: 'run-1', triggerTaskId: c.run_on, triggerNoteId: c.run_on_note, ai })
       expect(plan.outcome, JSON.stringify(plan.records)).toBe(c.expect.outcome ?? 'applied')
       const after = apply(w, plan)
       const before = new Map(w.tasks.map((t) => [t.id as string, taskState(t)]))
@@ -124,6 +135,21 @@ describe('routine use cases on the device planner (shared with internal/rules)',
         if (d !== p.description) appended[p.id as string] = [d.slice((p.description as string).length).trim()]
       }
       created.sort((a, b) => (String(a.title) < String(b.title) ? -1 : String(a.title) > String(b.title) ? 1 : 0))
+      // Standalone notes (notes-in-routines): created ones, changed fields, appends.
+      const noteState = (n: Row) => ({ title: String(n.title ?? ''), text: String(n.description ?? ''), project_id: String(n.project_id ?? ''),
+        labels: [...((n.labels as string[]) ?? [])].sort().join(','), deleted: n.deleted_at !== null && n.deleted_at !== undefined })
+      const notesCreated: Record<string, unknown>[] = []
+      const notesChanged: Record<string, Record<string, unknown>> = {}
+      for (const [id, n] of after.notes) {
+        const now: Record<string, unknown> = noteState(n)
+        const old = w.notes?.find((x) => x.id === id)
+        if (!old) { notesCreated.push(Object.fromEntries(Object.entries(now).filter(([, v]) => v !== '' && v !== false))); continue }
+        const was: Record<string, unknown> = noteState(old)
+        for (const [k, v] of Object.entries(now)) if (JSON.stringify(was[k]) !== JSON.stringify(v)) (notesChanged[id] ??= {})[k] = v
+        const a = Object.entries(n).filter(([f, v]) => f.startsWith('appends.') && typeof v === 'string' && v).map(([, v]) => (v as string).trim()).sort()
+        if (a.length) appended[id] = a
+      }
+      notesCreated.sort((a, b) => (String(a.title) < String(b.title) ? -1 : String(a.title) > String(b.title) ? 1 : 0))
       const comments: Record<string, string[]> = {}
       for (const cm of after.comments) (comments[cm.task_id as string] ??= []).push(cm.body as string)
       const notices = plan.sides.filter((s) => s.kind === 'notify').map((s) => s.notice!.text)
@@ -139,6 +165,8 @@ describe('routine use cases on the device planner (shared with internal/rules)',
       expect(webhooks).toEqual((e.webhooks ?? []).map((x) => ({ text: x.text ?? null, tasks: x.tasks })))
       expect(emails).toEqual((e.emails ?? []).map((m) => `${m.subject}|${m.text}`))
       if (e.focus) expect(after.review.focus).toBe(e.focus)
+      expect(notesCreated).toEqual(e.notes_created ?? [])
+      expect(notesChanged).toEqual(e.notes_changed ?? {})
       const changedProjects: Record<string, Record<string, unknown>> = {}
       const createdProjects: string[] = []
       for (const [id, p] of after.projects) {

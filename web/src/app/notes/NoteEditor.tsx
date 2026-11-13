@@ -29,6 +29,8 @@ import { isFavourite, setFavourite } from '../../lib/favourites'
 import { deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu } from './NoteRow'
 import { openConnections, useConnected } from '../signals'
+import { useRules } from '../../lib/rules/store'
+import { useOnline } from '../../lib/online'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
 
@@ -143,8 +145,16 @@ const toList = () => navigate({ view: 'notes' })
 function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
   const connected = useConnected('note', note.id)
+  // Run routine…: the manual routines that run on a note (notes-in-routines).
+  const rules = useRules().filter((r) => r.trigger?.kind === 'manual' && r.trigger.on === 'note')
+  const online = useOnline()
+  const run = (id: string) => {
+    const rule = rules.find((r) => r.id === id)
+    if (rule) void import('../palette/routineCommand').then((m) => m.runRoutineNow(rule, undefined, note.id))
+  }
+  const routines = rules.map((r) => ({ id: r.id, name: r.name }))
   return (
-    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))}
+    <NoteMenu pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
       onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />

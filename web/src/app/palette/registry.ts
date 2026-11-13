@@ -346,6 +346,9 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push({ id: n.pinned ? 'note:unpin' : 'note:pin', label: n.pinned ? t('Unpin note') : t('Pin note'), icon: n.pinned ? 'pin-off' : 'pin',
       keywords: 'pin favourite favorite sidebar notes', run: () => setFavourite('note', n.id, !n.pinned) })
     if (connectedNow('note', n.id)) out.push(connectionsCommand('note', n.id, null))
+    // Run routine… on the open note (notes-in-routines): the manual routines that take a note.
+    out.push({ id: 'note:run-routine', label: t('Run routine on this note…'), icon: 'zap', keywords: 'routine rule automation run now note',
+      run: async () => (await import('./routineCommand')).runRoutineOnNoteStep(n.id) })
   }
   if (ctx.section) {
     const s = ctx.section

@@ -23,6 +23,8 @@ type RoutineRun struct {
 	Key    string `json:"occurrence"`
 	At     int64  `json:"at"`
 	TaskID string `json:"task,omitempty"`
+	// NoteID is the standalone note of a note routine (notes-in-routines).
+	NoteID string `json:"note,omitempty"`
 	// Rev is the routine's revision the commit must match.
 	Rev string `json:"rev"`
 	// Auto: the routine is in effective auto mode; Tokens: its AI tokens of

@@ -137,7 +137,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | Shipped |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
 | `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Shipped |
-| `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Planned |
+| `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Shipped |
 | `note-attachments` | Images and files in standalone notes | Planned |
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Planned |
 | `unlinked-mentions` | Unlinked mentions below Linked references, linked in one step | Planned |

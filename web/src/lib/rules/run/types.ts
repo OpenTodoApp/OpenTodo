@@ -86,6 +86,14 @@ export interface RunWorld {
   elsewhere?: ReadonlySet<string>
   /** Each task's logical date of its newest change, for the condition `unchanged`. */
   changed?: Record<string, string>
+  /**
+   * The standalone notes the routine sees (notes-in-routines), with each
+   * note's logical date and time of its newest change; loaded when the
+   * routine reads notes.
+   */
+  notes?: Row[]
+  noteChanged?: Record<string, string>
+  noteMs?: Record<string, number>
   encrypted: boolean
   env?: RunEnv
   /** The template library (project_from_template); loaded lazily by the caller. */
@@ -140,6 +148,8 @@ export interface RunOptions {
   runId: string
   /** The trigger's task, when the trigger has one. */
   triggerTaskId?: string
+  /** The standalone note of a note routine (notes-in-routines). */
+  triggerNoteId?: string
   /** A test: AI steps are estimated, not called, unless callAI. */
   test?: boolean
   callAI?: boolean

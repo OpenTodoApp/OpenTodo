@@ -141,10 +141,13 @@ type SortTask struct {
 	Deadline string `json:"deadline,omitempty"`
 	Priority int    `json:"priority,omitempty"`
 	Created  int64  `json:"created_at,omitempty"`
+	// Changed is a note's last change (notes-in-routines: Sort by last change).
+	Changed int64 `json:"changed_at,omitempty"`
 }
 
-// SortTasks orders tasks by due, deadline, priority, created or title; tasks
-// without a date come last either way, ties keep their order.
+// SortTasks orders tasks by due, deadline, priority, created or title, and
+// notes by title, created or changed; tasks without a date come last either
+// way, ties keep their order.
 func SortTasks(tasks []SortTask, by string, desc bool) []SortTask {
 	out := slices.Clone(tasks)
 	dir := 1
@@ -179,6 +182,8 @@ func SortTasks(tasks []SortTask, by string, desc bool) []SortTask {
 			return dir * cmp.Compare(pa, pb)
 		case "created":
 			return dir * cmp.Compare(a.Created, b.Created)
+		case "changed":
+			return dir * cmp.Compare(a.Changed, b.Changed)
 		case "title":
 			return dir * strings.Compare(strings.ToLower(a.Title), strings.ToLower(b.Title))
 		}
@@ -209,8 +214,8 @@ type Value struct {
 	Type   Type     `json:"type"`
 	Text   string   `json:"text,omitempty"`
 	Lines  []string `json:"lines,omitempty"`
-	IDs    []string `json:"ids,omitempty"` // tasks
-	ID     string   `json:"id,omitempty"`  // task or project
+	IDs    []string `json:"ids,omitempty"` // tasks or notes
+	ID     string   `json:"id,omitempty"`  // task, project or note
 	Date   string   `json:"date,omitempty"`
 	Number float64  `json:"number,omitempty"`
 }
@@ -218,11 +223,11 @@ type Value struct {
 // Len is a list's length (1 for a set single value, 0 for an empty one).
 func (v Value) Len() int {
 	switch v.Type {
-	case TTasks:
+	case TTasks, TNotes:
 		return len(v.IDs)
 	case TLines:
 		return len(v.Lines)
-	case TTask, TProject:
+	case TTask, TProject, TNote:
 		if v.ID == "" {
 			return 0
 		}
@@ -258,7 +263,7 @@ func Holds(v Value, c Compare) bool {
 	switch {
 	case v.Type == TNumber && c.Number != nil:
 		order = cmp.Compare(v.Number, *c.Number)
-	case (v.Type == TTasks || v.Type == TLines) && c.Number != nil:
+	case (v.Type == TTasks || v.Type == TLines || v.Type == TNotes) && c.Number != nil:
 		order = cmp.Compare(float64(v.Len()), *c.Number)
 	case v.Type == TDate && c.Text != nil && validDate(*c.Text):
 		order = strings.Compare(v.Date, *c.Text)

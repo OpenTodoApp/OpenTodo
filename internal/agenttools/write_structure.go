@@ -366,6 +366,13 @@ func (r *Registry) planSetFavourite(ctx context.Context, c Caller, a args, overl
 	if prefs != nil {
 		current = rawStr(prefs, "favourites")
 	}
+	// A change planned earlier in the same turn or run comes first, so pinning
+	// several items in one go keeps every one of them.
+	for _, ch := range overlay {
+		if v, ok := ch.Patch["favourites"]; ok && ch.Entity == "user_prefs" && ch.EntityID == "me" {
+			_ = json.Unmarshal(v, &current)
+		}
+	}
 	list := FavouriteEntries(current)
 	entry := kind + ":" + id
 	next := make([]string, 0, len(list)+1)

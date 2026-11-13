@@ -7,7 +7,7 @@ import (
 )
 
 // typeNames are the types as the interface names them.
-var typeNames = map[Type]string{TText: "Text", TTask: "Task", TTasks: "Tasks", TProject: "Project", TDate: "Date", TNumber: "Number", TLines: "Lines", TNone: "no output"}
+var typeNames = map[Type]string{TText: "Text", TTask: "Task", TTasks: "Tasks", TProject: "Project", TDate: "Date", TNumber: "Number", TLines: "Lines", TNone: "no output", TNote: "Note", TNotes: "Notes"}
 
 // TypeName is a type's display name.
 func TypeName(t Type) string {
@@ -35,6 +35,8 @@ func elementOf(t Type) Type {
 		return TTask
 	case TLines:
 		return TText
+	case TNotes:
+		return TNote
 	}
 	return ""
 }
@@ -46,6 +48,8 @@ func listOfType(t Type) Type {
 		return TTasks
 	case TText, TLines:
 		return TLines
+	case TNote, TNotes:
+		return TNotes
 	case TNone:
 		return TNone
 	}
@@ -53,8 +57,8 @@ func listOfType(t Type) Type {
 }
 
 // accepts reports whether an input takes a value of type t as it is, with
-// the three coercions (design D3): a Task where Tasks is accepted, a Number
-// or a Date where Text is accepted.
+// the coercions (design D3): a Task where Tasks is accepted, a Note where
+// Notes is (notes-in-routines D1), a Number or a Date where Text is accepted.
 func accepts(def *Input, t Type) (Type, bool) {
 	if slices.Contains(def.Accepts, t) {
 		return t, true
@@ -62,6 +66,8 @@ func accepts(def *Input, t Type) (Type, bool) {
 	switch {
 	case t == TTask && slices.Contains(def.Accepts, TTasks):
 		return TTasks, true
+	case t == TNote && slices.Contains(def.Accepts, TNotes):
+		return TNotes, true
 	case (t == TNumber || t == TDate) && slices.Contains(def.Accepts, TText):
 		return TText, true
 	}
@@ -232,6 +238,10 @@ func isContent(s *Step, trigger Type, types map[string]Type) bool {
 		_, q := s.In["query"]
 		_, v := s.In["view"]
 		return q || v
+	case "find_notes":
+		// Words read the notes' text; the rest is ids, labels and times (notes-in-routines D6).
+		_, words := s.In["words"]
+		return words
 	case "change_tasks":
 		set, _ := ParseStepActions(s.In["set"].Lit)
 		return set.Comment != nil

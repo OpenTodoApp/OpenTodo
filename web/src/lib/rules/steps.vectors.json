@@ -648,6 +648,118 @@
         {"id": "a", "kind": "create_tasks", "in": {"title": {"literal": "x"}, "parent": {"ref": "trigger"}, "project": {"literal": {"project": "p1"}}}}
       ],
       "error": {"step": "a", "input": "project", "code": "invalid_step"}
+    },
+    {
+      "name": "each note: add to every found note (notes-in-routines)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_notes", "in": {"labels": {"literal": {"any": ["weekly"]}}}},
+        {"id": "b", "kind": "append_to_note", "in": {"of": {"ref": "a"}, "text": {"literal": "Done"}}}
+      ],
+      "types": {"a": "notes", "b": "none"},
+      "content": "b"
+    },
+    {
+      "name": "a note is not text",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "create_note", "in": {"title": {"literal": "Week"}}},
+        {"id": "b", "kind": "notify", "in": {"text": {"ref": "a"}}}
+      ],
+      "error": {"step": "b", "input": "text", "code": "type_mismatch", "message": "notify: text expects Text, got Note"}
+    },
+    {
+      "name": "a note trigger outputs a note; its title through Get note text",
+      "trigger": "note",
+      "steps": [
+        {"id": "a", "kind": "note_text", "in": {"of": {"ref": "trigger"}, "field": {"literal": "title"}}},
+        {"id": "b", "kind": "notify", "in": {"text": {"literal": {"format": "New note {a}"}}}}
+      ],
+      "types": {"a": "text", "b": "none"},
+      "content": "a"
+    },
+    {
+      "name": "a note is not a task",
+      "trigger": "note",
+      "steps": [
+        {"id": "a", "kind": "add_comment", "in": {"task": {"ref": "trigger"}, "text": {"literal": "x"}}}
+      ],
+      "error": {"step": "a", "input": "task", "code": "type_mismatch", "message": "add_comment: task expects Task, got Note"}
+    },
+    {
+      "name": "find notes without words is content-free; change notes",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_notes", "in": {"project": {"literal": {"project": "ref1"}}, "unchanged_days": {"literal": 90}}},
+        {"id": "b", "kind": "change_notes", "in": {"notes": {"ref": "a"}, "add_labels": {"literal": ["review"]}}},
+        {"id": "c", "kind": "count", "in": {"list": {"ref": "b"}}}
+      ],
+      "types": {"a": "notes", "b": "notes", "c": "number"},
+      "content": ""
+    },
+    {
+      "name": "find notes with words is a content step",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "find_notes", "in": {"words": {"literal": "invoice"}}}],
+      "types": {"a": "notes"},
+      "content": "a"
+    },
+    {
+      "name": "one note where notes are accepted",
+      "trigger": "note",
+      "steps": [{"id": "a", "kind": "change_notes", "in": {"notes": {"ref": "trigger"}, "trash": {"literal": true}}}],
+      "types": {"a": "notes"},
+      "content": ""
+    },
+    {
+      "name": "turn a note into a task, then comment",
+      "trigger": "note",
+      "steps": [
+        {"id": "a", "kind": "note_to_task", "in": {"note": {"ref": "trigger"}}},
+        {"id": "b", "kind": "add_comment", "in": {"task": {"ref": "a"}, "text": {"literal": "From a note"}}}
+      ],
+      "types": {"a": "task", "b": "none"},
+      "content": "a"
+    },
+    {
+      "name": "repeat for each note, sort and pick notes",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_notes", "in": {"within_days": {"literal": 7}}},
+        {"id": "b", "kind": "sort", "in": {"list": {"ref": "a"}, "by": {"literal": "changed"}, "direction": {"literal": "desc"}}},
+        {"id": "c", "kind": "take", "in": {"list": {"ref": "b"}, "n": {"literal": 3}}},
+        {"id": "d", "kind": "repeat", "in": {"list": {"ref": "c"}}, "do": [{"id": "e", "kind": "note_text", "in": {"of": {"ref": "item"}}}]}
+      ],
+      "types": {"a": "notes", "b": "notes", "c": "notes", "d": "lines", "e": "text"},
+      "content": "e"
+    },
+    {
+      "name": "change notes needs a change",
+      "trigger": "note",
+      "steps": [{"id": "a", "kind": "change_notes", "in": {"notes": {"ref": "trigger"}}}],
+      "error": {"step": "a", "input": "notes", "code": "missing_input"}
+    },
+    {
+      "name": "change notes: project or no project",
+      "trigger": "note",
+      "steps": [{"id": "a", "kind": "change_notes", "in": {"notes": {"ref": "trigger"}, "project": {"literal": {"project": "p1"}}, "no_project": {"literal": true}}}],
+      "error": {"step": "a", "input": "project", "code": "invalid_step"}
+    },
+    {
+      "name": "get a specific note",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "get_note", "in": {"note": {"literal": {"note": "n1"}}}},
+        {"id": "b", "kind": "clear_note", "in": {"of": {"ref": "a"}}}
+      ],
+      "types": {"a": "note", "b": "none"},
+      "content": "b"
+    },
+    {
+      "name": "find notes: labels need any, all or none",
+      "trigger": "date",
+      "steps": [{"id": "a", "kind": "find_notes", "in": {"labels": {"literal": {}}}}],
+      "error": {"step": "a", "input": "labels", "code": "invalid_literal"}
     }
   ],
   "auto": [
@@ -676,7 +788,11 @@
     ], "blocked": {"step": "b", "what": "notes"}},
     {"name": "a project step", "steps": [
       {"id": "a", "kind": "create_project", "in": {"name": {"literal": "New"}}}
-    ], "blocked": {"step": "a", "what": "projects"}}
+    ], "blocked": {"step": "a", "what": "projects"}},
+    {"name": "note writes", "steps": [
+      {"id": "a", "kind": "find_notes", "in": {}},
+      {"id": "b", "kind": "change_notes", "in": {"notes": {"ref": "a"}, "add_labels": {"literal": ["x"]}}}
+    ], "blocked": {"step": "b", "what": "notes"}}
   ],
   "reading": [
     {
@@ -776,6 +892,7 @@
         {"id": "b", "project_id": "old"}, {"id": "c", "project_id": "gone"}, {"id": "d", "project_id": "oldgone"}, {"id": "e", "project_id": "unknown"}, {"id": "f", "project_id": "child"}]},
       "out": ["inbox", "a", "b", "f"]},
     {"fn": "find_scope", "in": {"archived": true, "projects": [{"id": "old", "archived": true}], "tasks": [{"id": "x", "project_id": "old", "deleted": true}]}, "out": []},
-    {"fn": "find_scope", "in": {"archived": false, "projects": [], "tasks": [{"id": "x"}, {"id": "y", "project_id": "p"}]}, "out": ["x"]}
+    {"fn": "find_scope", "in": {"archived": false, "projects": [], "tasks": [{"id": "x"}, {"id": "y", "project_id": "p"}]}, "out": ["x"]},
+    {"fn": "sort_tasks", "in": {"tasks": [{"id": "a", "changed_at": 30}, {"id": "b", "changed_at": 10}, {"id": "c", "changed_at": 20}], "by": "changed", "desc": true}, "out": ["a", "c", "b"]}
   ]
 }

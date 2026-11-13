@@ -583,7 +583,7 @@ export const api = {
   myRules: () => request<RulesStatus>('GET', '/api/v1/me/rules'),
   ruleRuns: (id: string) => request<{ runs: RuleRun[] }>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs`),
   /** Routines (routines-engine): run one now, undo one of its runs. */
-  runRoutine: (id: string, body: { run_id: string; task_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
+  runRoutine: (id: string, body: { run_id: string; task_id?: string; note_id?: string; test?: boolean; call_ai?: boolean; device?: string }) =>
     request<{ run: { run_id: string; outcome: string; writes: number; reason?: string }; writes: number; test: boolean; device_run?: RoutineRunRequest }>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, body),
   /** Device runs of an encrypted account (routines-ai-step D8): the result as ciphertext, or the failure. */
   commitDeviceRun: (runId: string, body: DeviceCommit) =>
@@ -598,9 +598,9 @@ export const api = {
   routineCatalogue: () => request<{ steps: RoutineCatalogueEntry[] }>('GET', '/api/v1/me/rules/catalogue'),
   /** Describe it (routines-describe-it): the assistant drafts a routine from one sentence; nothing is saved. */
   draftRoutine: (text: string) => request<DraftAnswer>('POST', '/api/v1/assistant/routine-draft', { text }),
-  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; call_ai?: boolean; project_id?: string; workspace_id?: string }) =>
+  testRoutineDraft: (body: { trigger: RuleTrigger; condition?: RuleCondition | null; steps: RoutineStep[]; task_id?: string; note_id?: string; call_ai?: boolean; project_id?: string; workspace_id?: string }) =>
     request<RoutineTestResult>('POST', '/api/v1/rules/test', body),
-  testRoutine: (id: string, body: { run_id: string; task_id?: string; call_ai?: boolean }) =>
+  testRoutine: (id: string, body: { run_id: string; task_id?: string; note_id?: string; call_ai?: boolean }) =>
     request<RoutineTestResult>('POST', `/api/v1/rules/${encodeURIComponent(id)}/run`, { ...body, test: true }),
   routineRun: (id: string, runId: string) => request<RoutineRun>('GET', `/api/v1/rules/${encodeURIComponent(id)}/runs/${encodeURIComponent(runId)}`),
   routineRuns: (q: { rule?: string; outcome?: string; source?: string; before?: number; limit?: number } = {}) => {
