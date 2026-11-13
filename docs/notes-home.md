@@ -15,7 +15,7 @@ The search field is the first thing on the [Notes](notes.md) page. Press `/` to 
 
 ## Searching
 
-The search field finds notes whose title or text contains every word you type, ignoring letter case and accents, so `cafe muller` finds "Café Müller". Put words in quotes to find them as a phrase: `"oat milk"`. Formatting does not get in the way: `**oat** milk` is found as "oat milk". Each result shows the text around the first match with the words highlighted, title matches first. Search runs on your device over your own copy, so it works offline and with [end-to-end encryption](e2ee.md); nothing you type is sent to the server.
+The search field finds notes whose title or text contains every word you type, ignoring letter case and accents, so `cafe muller` finds "Café Müller". Put words in quotes to find them as a phrase: `"oat milk"`. `OR` in capitals finds either word (`lisbon ferry OR train` is lisbon and ferry or train; `or` stays a word), and `title:wifi` or `text:"oat milk"` looks only in the title or only in the text. Formatting does not get in the way: `**oat** milk` is found as "oat milk". Each result shows the text around the first match with the words highlighted, title matches first. Search runs on your device over your own copy, so it works offline and with [end-to-end encryption](e2ee.md); nothing you type is sent to the server.
 
 <kbd>↑</kbd> and <kbd>↓</kbd> move through the results while you type, and <kbd>Enter</kbd> opens the best match. <kbd>Esc</kbd> moves to the list, where `j` and `k` move and <kbd>Enter</kbd> opens.
 

@@ -4,7 +4,8 @@
 // move, Enter, Tab or a click picks, Escape closes. While a word starts a key, the key
 // is offered and Tab completes it, so Enter keeps opening the list's cursor row.
 import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type Ref } from 'react'
-import { addTokens, chipText, commitTokens, KIND_VALUES, missing, replaceTyping, typingOf, type NoteToken, type TokenWorld } from '../../lib/noteQuery'
+import { addTokens, chipText, commitTokens, KIND_VALUES, missing, monthRange, replaceTyping, typingOf, type NoteToken, type TokenWorld } from '../../lib/noteQuery'
+import { logicalToday } from '../../lib/dates'
 import { projectSource } from '../../lib/pickerSources'
 import type { Label, Project } from '../../lib/types'
 import { ComboboxList, Icon, useCombobox } from '../../ui'
@@ -12,8 +13,10 @@ import { t } from '../../lib/i18n'
 
 interface Suggestion { key: string; label: string; path: string[]; color?: string; secondary?: string; token?: NoteToken; word?: string }
 
-/** The `changed:` forms offered, each with its meaning. */
+/** The `changed:` forms offered, each with its meaning; this month and last month as ranges (note-search-operators D3). */
 const CHANGED = (): Suggestion[] => [
+  { key: 'c:month', label: monthRange(logicalToday(), 0), secondary: t('This month'), path: [] },
+  { key: 'c:last-month', label: monthRange(logicalToday(), -1), secondary: t('Last month'), path: [] },
   { key: 'c:<7d', label: '<7d', secondary: t('In the last 7 days'), path: [] },
   { key: 'c:<30d', label: '<30d', secondary: t('In the last 30 days'), path: [] },
   { key: 'c:>30d', label: '>30d', secondary: t('More than 30 days ago'), path: [] },
