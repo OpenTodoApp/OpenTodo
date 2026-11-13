@@ -16,15 +16,19 @@
 import { addDaysISO } from '@shared/dates'
 import { groupToday, groupUpcoming, todayList, upcomingList, withoutArchived, type TodayAssigneeFilter, type TodayGroups } from '@shared/dayLists'
 import { db } from '@shared/db'
+import { todaySlots } from '@shared/closedListPrefs'
 import { blockedMap, blockersOf } from '@shared/dependencies'
 import { inboxTasks } from '@shared/inbox'
 import { deletedProjectIds, isTaskVisible } from '@shared/trash'
 import type { Project, Task } from '@shared/types'
+import { USER_PREFS_ID } from '@shared/userPrefs'
 import { readWorkspaceState, tasksIn } from '@shared/workspaces'
 import type { SqliteTable } from './adapter'
 import { columnOf, quote } from './schema'
 
 const MAX_DEPTH = 64
+/** The personal review row (today's focus and the taken slots). */
+const REVIEW_ID = 'me'
 
 // The database in use (db.ts's, the account's): the shared rules below read it too.
 const tasksTable = () => db.tasks as unknown as SqliteTable
@@ -63,20 +67,32 @@ export async function todayTasks(today: string, hide?: TodayAssigneeFilter | nul
   return todayList(withoutArchived(list, projects), today, hide)
 }
 
+/** Today's groups, and the tasks its closed list keeps waiting for a slot (in the order they come in). */
+export interface TodayView extends TodayGroups { waiting: Task[] }
+
 /**
  * Today in its groups (the shared groupToday): Earlier, the day, This Evening, and the
  * tasks that wait for another one. The blockers are read by id, so a task blocked by one
  * that is not in Today is still known as blocked, and pass the same visibility rules as
- * the lists.
+ * the lists. With a Today limit (today-closed-list), the shared slot rule decides which
+ * tasks are listed and which wait for a slot.
  */
-export async function todayGroups(today: string, hide?: TodayAssigneeFilter | null): Promise<TodayGroups> {
+export async function todayGroups(today: string, hide?: TodayAssigneeFilter | null): Promise<TodayView> {
   const list = await todayTasks(today, hide)
   const have = new Set(list.map((task) => task.id))
   const missing = [...new Set(list.flatMap(blockersOf))].filter((id) => !have.has(id))
   const found = missing.length ? (await db.tasks.bulkGet(missing)).filter((task): task is Task => !!task) : []
   // A blocker the lists do not show (a deleted or archived project, another workspace) blocks nothing, as on the web.
   const shown = await visible(found)
-  return groupToday(list, today, blockedMap([...list, ...withoutArchived(shown.list, shown.projects)]))
+  const blocked = blockedMap([...list, ...withoutArchived(shown.list, shown.projects)])
+  const [prefs, review] = await Promise.all([db.userPrefs.get(USER_PREFS_ID), db.review.get(REVIEW_ID)])
+  const fill = todaySlots(list, today, prefs, review, (id) => !blocked.has(id))
+  const out = new Set(fill.waiting)
+  const byId = new Map(list.map((task) => [task.id, task]))
+  return {
+    ...groupToday(out.size ? list.filter((task) => !out.has(task.id)) : list, today, blocked),
+    waiting: fill.waiting.map((id) => byId.get(id)!),
+  }
 }
 
 /** The Inbox: the shared inboxTasks over the open tasks without a project. */

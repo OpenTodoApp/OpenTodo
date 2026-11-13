@@ -10,6 +10,7 @@
 import { DatabaseSync } from 'node:sqlite'
 import { refreshViewerZone } from '@shared/dates'
 import { groupToday, groupUpcoming, todayList, upcomingList, withoutArchived } from '@shared/dayLists'
+import { todaySlots } from '@shared/closedListPrefs'
 import { blockedMap } from '@shared/dependencies'
 import { db, useDatabase as openDatabaseNamed } from '@shared/db'
 import { inboxTasks } from '@shared/inbox'
@@ -17,6 +18,7 @@ import { resetModuleState } from '@shared/moduleState'
 import { installPlatform, platform } from '@shared/platform'
 import { visibleTaskSets } from '@shared/trash'
 import type { Project, Task } from '@shared/types'
+import { USER_PREFS_ID } from '@shared/userPrefs'
 import { CURRENT_WORKSPACE_KEY } from '@shared/workspaces'
 import { sqliteDatabase } from '../../src/storage/adapter'
 import { inboxList, todayGroups, todayTasks, upcomingDays } from '../../src/storage/lists'
@@ -109,6 +111,26 @@ describe('Today and Inbox from the index', () => {
     const upcoming = await upcomingDays(TODAY)
     expect(want.upcoming.flatMap((d) => d.tasks).length).toBeGreaterThan(20)
     expect(upcoming.map((d) => [d.date, ids(d.tasks)])).toEqual(want.upcoming.map((d) => [d.date, ids(d.tasks)]))
+  })
+
+  it('keep the tasks over the Today limit waiting for a slot, as the shared slot rule fills them', async () => {
+    useAdapter()
+    const { projects, tasks } = account(1)
+    await db.projects.bulkPut(projects as Project[])
+    await db.tasks.bulkPut(tasks as Task[])
+    const open = await todayGroups(TODAY)
+    expect(open.waiting).toEqual([])
+    await db.userPrefs.put({ id: USER_PREFS_ID, today_limit: 5 } as never)
+    const want = await webLists()
+    const blocked = blockedMap(withoutArchived((await visibleTaskSets()).here, await db.projects.toArray()))
+    const fill = todaySlots(want.today, TODAY, { today_limit: 5 }, null, (id) => !blocked.has(id))
+    expect(fill.slots).toHaveLength(5)
+    const limited = await todayGroups(TODAY)
+    expect(ids(limited.waiting)).toEqual(fill.waiting)
+    const listed = [...limited.overdue, ...limited.day, ...limited.evening]
+    expect(ids(listed).sort()).toEqual([...fill.slots].sort())
+    // Blocked tasks never take a slot and keep their own group.
+    expect(ids(limited.blocked)).toEqual(ids(open.blocked))
   })
 
   it('match the web lists in another workspace', async () => {
