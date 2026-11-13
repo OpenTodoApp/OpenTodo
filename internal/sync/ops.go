@@ -303,6 +303,11 @@ var Schema = map[string]map[string]Field{
 		// keeps its records; Resume continues it as a new piece of its lineage.
 		// Not content; additive.
 		"habit_graduated_at": {Kind: kNullableNumber, Default: `null`},
+		// The habit's own colour (OpenSpec change habits-polish, design D5): a
+		// palette hex such as "#22c55e", or "" for automatic (the project's
+		// colour, else one picked from the id). Not content, like project
+		// colours; additive.
+		"habit_color": {Kind: kString, Default: `""`},
 		// An occurrence record logged as the habit's tiny version (habits-home
 		// D5): set in the completion batch, never copied from the series; a
 		// full completion writes false. Not content; additive.

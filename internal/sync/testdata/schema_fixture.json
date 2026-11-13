@@ -201,6 +201,7 @@
       "flow_mode",
       "habit",
       "habit_anchor",
+      "habit_color",
       "habit_graduated_at",
       "habit_tiny",
       "ical_extra",

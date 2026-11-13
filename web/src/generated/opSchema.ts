@@ -217,6 +217,13 @@ export interface TaskFields {
    */
   habit_graduated_at?: number | null
   /**
+   * The habit's own colour (OpenSpec change habits-polish, design D5): a
+   * palette hex such as "#22c55e", or "" for automatic (the project's
+   * colour, else one picked from the id). Not content, like project
+   * colours; additive.
+   */
+  habit_color?: string
+  /**
    * An occurrence record logged as the habit's tiny version (habits-home
    * D5): set in the completion batch, never copied from the series; a
    * full completion writes false. Not content; additive.
@@ -1241,7 +1248,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '', reusable: false, aisles: false,
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, habit_tiny: '', habit_anchor: '', habit_graduated_at: null, tiny: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, habit_tiny: '', habit_anchor: '', habit_graduated_at: null, habit_color: '', tiny: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
