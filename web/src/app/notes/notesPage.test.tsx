@@ -606,12 +606,17 @@ describe('sorting the list', () => {
 
   it('Graph mode keeps the graph items in the menu, without Sort', async () => {
     await createNote({ title: 'One' })
-    const { container } = await page()
+    const { container, unmount } = await page()
     await act(async () => navigate({ view: 'notes', graph: true }))
     await waitFor(() => container.querySelector('[data-page="notes"]')?.getAttribute('data-notes-mode') === 'graph', 'Graph mode')
     await click(moreActions())
     await waitFor(() => !!document.querySelector('[data-notes-graph-show]'), 'the graph items')
     expect(sortItem('title')).toBeNull()
+    // Back to the list before the next test: the route and the remembered mode outlive the render.
+    await act(async () => navigate({ view: 'notes', graph: false }))
+    unmount()
+  })
+})
 
 // note-search-operators: "Title only", "Prefix without a value", "Either word".
 describe('search operators', () => {
