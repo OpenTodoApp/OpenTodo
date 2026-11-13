@@ -9,7 +9,7 @@
 // candidates through the phone's indexes, not by scanning the table.
 import { DatabaseSync } from 'node:sqlite'
 import { refreshViewerZone } from '@shared/dates'
-import { todayList, withoutArchived } from '@shared/dayLists'
+import { groupUpcoming, todayList, upcomingList, withoutArchived } from '@shared/dayLists'
 import { db, useDatabase as openDatabaseNamed } from '@shared/db'
 import { inboxTasks } from '@shared/inbox'
 import { resetModuleState } from '@shared/moduleState'
@@ -18,7 +18,7 @@ import { visibleTaskSets } from '@shared/trash'
 import type { Project, Task } from '@shared/types'
 import { CURRENT_WORKSPACE_KEY } from '@shared/workspaces'
 import { sqliteDatabase } from '../../src/storage/adapter'
-import { inboxList, todayTasks } from '../../src/storage/lists'
+import { inboxList, todayTasks, upcomingDays } from '../../src/storage/lists'
 import { nodeSqlite } from './nodeSqlite'
 
 const TODAY = '2026-11-10'
@@ -78,7 +78,8 @@ afterEach(() => resetModuleState())
 async function webLists() {
   const [{ here }, projects] = await Promise.all([visibleTaskSets(), db.projects.toArray()])
   const all = withoutArchived(here, projects)
-  return { today: todayList(all, TODAY), inbox: inboxTasks(all, here) }
+  const upcoming = groupUpcoming(upcomingList(all, TODAY), TODAY).filter((d) => d.date > TODAY && d.date <= day(14))
+  return { today: todayList(all, TODAY), inbox: inboxTasks(all, here), upcoming }
 }
 
 const ids = (list: Task[]) => list.map((t) => t.id)
@@ -94,6 +95,10 @@ describe('Today and Inbox from the index', () => {
     expect(want.inbox.length).toBeGreaterThan(50)
     expect(ids(await todayTasks(TODAY))).toEqual(ids(want.today))
     expect(ids(await inboxList())).toEqual(ids(want.inbox))
+    // Upcoming: the same days, each with the same tasks in the same order.
+    const upcoming = await upcomingDays(TODAY)
+    expect(want.upcoming.flatMap((d) => d.tasks).length).toBeGreaterThan(20)
+    expect(upcoming.map((d) => [d.date, ids(d.tasks)])).toEqual(want.upcoming.map((d) => [d.date, ids(d.tasks)]))
   })
 
   it('match the web lists in another workspace', async () => {

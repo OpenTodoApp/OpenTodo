@@ -37,3 +37,16 @@ appId: ${APP_ID}
 - tapOn:
     id: tab-inbox
 - assertVisible: An idea for later
+# Upcoming: a task made for tomorrow through the REST API is listed under its day.
+- runScript:
+    file: scripts/create-task.js
+    env:
+      TITLE: Renew the passport
+      DAYS: "1"
+- tapOn:
+    id: tab-upcoming
+- extendedWaitUntil:
+    visible: Renew the passport
+    timeout: 20000
+- assertVisible: Tomorrow
+- takeScreenshot: upcoming

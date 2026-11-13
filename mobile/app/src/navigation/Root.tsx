@@ -16,6 +16,7 @@ import CaptureSheet from '../screens/CaptureSheet'
 import InboxScreen, { useInbox } from '../screens/InboxScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
 import TodayScreen from '../screens/TodayScreen'
+import UpcomingScreen from '../screens/UpcomingScreen'
 import { useColors } from '../theme'
 
 type RootRoutes = { Tabs: undefined; Capture: { from?: string } | undefined }
@@ -117,7 +118,7 @@ function useStacks(signed: SignedIn, onSignOut: () => void): Record<TabName, Com
   return useMemo(() => ({
     Today: stackOf('Today', () => t('Today'), TodayScreen),
     Inbox: stackOf('Inbox', () => t('Inbox'), InboxScreen),
-    Upcoming: stackOf('Upcoming', () => t('Upcoming'), () => <PlaceholderScreen testID="upcoming" />),
+    Upcoming: stackOf('Upcoming', () => t('Upcoming'), UpcomingScreen),
     Browse: stackOf('Browse', () => t('Browse'), () => <BrowseScreen onSignOut={() => signOut.current()} signed={signed} />),
     Search: stackOf('Search', () => t('Search'), () => <PlaceholderScreen testID="search" />),
   }), [signed])

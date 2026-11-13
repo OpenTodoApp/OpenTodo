@@ -8,11 +8,13 @@
 // - Today's candidates: open tasks with a do-on date up to two days ahead (a do-on time
 //   in another zone can be up to two days earlier here), a deadline or a start date
 //   up to today (Someday sorts after every date, so it never matches).
+// - Upcoming's candidates: open tasks with a do-on date, a deadline or a start date in
+//   the days the phone shows (the next 14), the do-on date two days wider for the zones.
 // - Inbox's candidates: open tasks without a project.
 // - The parents of the candidates, up the tree: the Inbox rule and the workspace of a
 //   subtask look at them.
 import { addDaysISO } from '@shared/dates'
-import { todayList, withoutArchived, type TodayAssigneeFilter } from '@shared/dayLists'
+import { groupUpcoming, todayList, upcomingList, withoutArchived, type TodayAssigneeFilter } from '@shared/dayLists'
 import { db } from '@shared/db'
 import { inboxTasks } from '@shared/inbox'
 import { deletedProjectIds, isTaskVisible } from '@shared/trash'
@@ -65,4 +67,25 @@ export async function inboxList(): Promise<Task[]> {
   const candidates = await tasksTable().select(`${open} AND ${columnOf('project_id')} IS NULL`) as unknown as Task[]
   const { list, known, projects } = await visible(candidates)
   return inboxTasks(withoutArchived(list, projects), known)
+}
+
+/** The days Upcoming shows on the phone, after today (native-app-everyday D1). */
+export const UPCOMING_DAYS = 14
+
+export interface UpcomingDay { date: string; tasks: Task[] }
+
+/**
+ * Upcoming: the shared upcomingList over the indexed candidates, grouped by day with
+ * the shared groupUpcoming, for the next `days` days.
+ */
+export async function upcomingDays(today: string, days = UPCOMING_DAYS): Promise<UpcomingDay[]> {
+  const t = quote('tasks')
+  const horizon = addDaysISO(today, days)
+  const range = (path: string) => `SELECT pk FROM ${t} WHERE ${open} AND ${columnOf(path)} > ? AND ${columnOf(path)} <= ?`
+  const candidates = await tasksTable().select(
+    `pk IN (${range('due.date')} UNION ${range('deadline')} UNION ${range('start')})`,
+    [addDaysISO(today, -2), addDaysISO(horizon, 2), today, horizon, today, horizon],
+  ) as unknown as Task[]
+  const { list, projects } = await visible(candidates)
+  return groupUpcoming(upcomingList(withoutArchived(list, projects), today), today).filter((d) => d.date > today && d.date <= horizon)
 }

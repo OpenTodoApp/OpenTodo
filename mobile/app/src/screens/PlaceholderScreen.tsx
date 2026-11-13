@@ -1,4 +1,4 @@
-// A tab whose screen is still to come (Upcoming: task 2.1; Search: 5.2): the system's
+// A tab whose screen is still to come (Search: task 5.2): the system's
 // background under its title, nothing else.
 import { ScrollView } from 'react-native'
 import { useColors } from '../theme'
