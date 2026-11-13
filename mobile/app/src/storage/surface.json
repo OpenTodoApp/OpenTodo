@@ -172,7 +172,6 @@
       "web/src/lib/attachments.ts",
       "web/src/lib/bulk.ts",
       "web/src/lib/labels.ts",
-      "web/src/lib/lineageRows.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/notifications.ts",
       "web/src/lib/ops.ts",
@@ -260,6 +259,7 @@
       "web/src/lib/activity.ts",
       "web/src/lib/defaultReminder.ts",
       "web/src/lib/e2eeSync.ts",
+      "web/src/lib/lineageRows.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/ops.ts",
       "web/src/lib/reminders.ts",
@@ -273,10 +273,12 @@
       "web/src/lib/db.ts"
     ],
     "WhereClause.above": [
-      "web/src/lib/e2eeSync.ts"
+      "web/src/lib/e2eeSync.ts",
+      "web/src/lib/lineageRows.ts"
     ],
     "WhereClause.anyOf": [
       "web/src/lib/activity.ts",
+      "web/src/lib/lineageRows.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/ops.ts",
       "web/src/lib/reminders.ts",
