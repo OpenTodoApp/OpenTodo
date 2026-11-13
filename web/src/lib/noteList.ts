@@ -2,7 +2,7 @@
 // on-device search index (D4). Pure functions over the rows the app already
 // holds; nothing here reads IndexedDB or the network, so the page and the
 // palette work offline and on an encrypted account's decrypted copy.
-import { compareHits, matchPrepared, normalizeText, parseQuery, snippetPlain, stripMarkdown, type NoteHit, type PreparedNote, type SnippetSegment } from './noteSearch'
+import { compareHits, matchPrepared, normalizeText, parseQuery, parseSearch, snippetPlain, stripMarkdown, type NoteHit, type PreparedNote, type SnippetSegment } from './noteSearch'
 import { pendingAppends } from './noteAppends'
 import type { Clock, Note, Project, Task } from './types'
 
@@ -190,11 +190,12 @@ export class NoteIndex {
    * the rest have none until it shows more).
    */
   search(entries: readonly NoteEntry[], query: string, snippetLength = 140, snippets = Infinity): NoteResult[] {
+    const groups = parseSearch(query, this.lang)
+    if (groups.length === 0) return []
     const terms = parseQuery(query, this.lang)
-    if (terms.length === 0) return []
     const hits: NoteHit<NoteEntry & { key: string }>[] = []
     for (const e of entries) {
-      const m = matchPrepared(this.prepare(e), terms)
+      const m = matchPrepared(this.prepare(e), groups)
       if (m.matched) hits.push({ note: e, ...m })
     }
     hits.sort(compareHits)

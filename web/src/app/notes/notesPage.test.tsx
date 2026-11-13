@@ -612,5 +612,34 @@ describe('sorting the list', () => {
     await click(moreActions())
     await waitFor(() => !!document.querySelector('[data-notes-graph-show]'), 'the graph items')
     expect(sortItem('title')).toBeNull()
+
+// note-search-operators: "Title only", "Prefix without a value", "Either word".
+describe('search operators', () => {
+  const field = (root: ParentNode) => root.querySelector<HTMLInputElement>('[data-note-search]')!
+  it('title: keeps the notes with the word in their title; ti offers title: without a chip', async () => {
+    await createNote({ title: 'Wi-Fi wifi', description: 'home-5G' })
+    await createNote({ title: 'Router', description: 'the wifi password' })
+    await createNote({ title: 'Guests', description: 'wifi for guests' })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 3, 'three rows')
+    await act(async () => field(container).focus())
+    await type(field(container), 'ti')
+    await waitFor(() => [...container.querySelectorAll('[data-note-suggestions] [role="option"]')].some((o) => o.textContent?.includes('title:')), 'the title: suggestion')
+    await type(field(container), 'title:wifi')
+    await waitFor(() => rows(container).length === 1, 'one result')
+    expect(titles(container)).toEqual(['Wi-Fi wifi'])
+    expect(container.querySelector('[data-note-chip]')).toBeNull()
+    await type(field(container), 'ferry OR wifi')
+    await waitFor(() => rows(container).length === 3, 'either word')
+  })
+
+  it('a prefix without a value is a word', async () => {
+    await createNote({ title: 'Trip', description: 'the ferry, title: page one' })
+    await createNote({ title: 'Boat', description: 'the ferry' })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 2, 'two rows')
+    await type(field(container), 'title: ferry')
+    await waitFor(() => rows(container).length === 1, 'one result')
+    expect(titles(container)).toEqual(['Trip'])
   })
 })

@@ -3,7 +3,7 @@
 // by id. Pure functions over the rows the page holds, so they work offline and over
 // an encrypted account's decrypted copy; nothing here reads IndexedDB or the network.
 // Client-only (D8): the server's note search takes its own project and label parameters.
-import { instantToLocalDue } from './dates'
+import { dateLocaleOf, instantToLocalDue } from './dates'
 import type { NoteEntry, NoteFilters, NoteSource } from './noteList'
 import { normalizeText } from './noteSearch'
 
@@ -32,6 +32,9 @@ export const KEY_WORDS: readonly { word: string; key: TokenKey }[] = [
   { word: 'changed:', key: 'changed' }, { word: 'pinned', key: 'pinned' }, { word: 'orphan', key: 'orphan' },
 ]
 
+/** The search words' field prefixes, offered with the keys but never chips. */
+export const FIELD_WORDS = ['title:', 'text:'] as const
+
 const KINDS: Record<string, NoteSource> = { note: 'note', notes: 'note', standalone: 'note', task: 'task', tasks: 'task', project: 'project', projects: 'project' }
 export const KIND_VALUES: readonly NoteSource[] = ['note', 'task', 'project']
 
@@ -54,17 +57,45 @@ export function keyOf(raw: string): { key: TokenKey; value: string } | null {
   return null
 }
 
-/** A `changed:` value in its written form, or null when it is not one: `<7d`, `>2w`, `>3m`, today, yesterday, `[<>]YYYY-MM-DD`. */
+const validDay = (s: string) => {
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (!d) return false
+  const at = new Date(Date.UTC(+d[1], +d[2] - 1, +d[3]))
+  return at.getUTCFullYear() === +d[1] && at.getUTCMonth() === +d[2] - 1 && at.getUTCDate() === +d[3]
+}
+
+/**
+ * A `changed:` value in its written form, or null when it is not one: `<7d`, `>2w`, `>3m`,
+ * today, yesterday, `[<>]YYYY-MM-DD`, or a range `YYYY-MM-DD..YYYY-MM-DD` (note-search-operators
+ * D3) with either end left out; a range written backwards is put in date order.
+ */
 export function changedValue(v: string): string | null {
   const s = v.trim().toLowerCase()
   if (s === 'today' || s === 'yesterday') return s
   if (/^[<>]\d{1,4}[dwm]$/.test(s)) return s
-  const d = /^([<>]?)(\d{4})-(\d{2})-(\d{2})$/.exec(s)
-  if (d) {
-    const at = new Date(Date.UTC(+d[2], +d[3] - 1, +d[4]))
-    if (at.getUTCFullYear() === +d[2] && at.getUTCMonth() === +d[3] - 1 && at.getUTCDate() === +d[4]) return s
-  }
-  return null
+  const d = /^([<>]?)(\d{4}-\d{2}-\d{2})$/.exec(s)
+  if (d) return validDay(d[2]) ? s : null
+  const r = /^(\d{4}-\d{2}-\d{2})?\.\.(\d{4}-\d{2}-\d{2})?$/.exec(s)
+  if (!r || (!r[1] && !r[2]) || (r[1] && !validDay(r[1])) || (r[2] && !validDay(r[2]))) return null
+  const [a, b] = r[1] && r[2] && r[1] > r[2] ? [r[2], r[1]] : [r[1] ?? '', r[2] ?? '']
+  return `${a}..${b}`
+}
+
+/** The days of the month of `today` (offset 0) or of the month before (-1), as a `changed:` range. */
+export function monthRange(today: string, offset: 0 | -1): string {
+  const y = +today.slice(0, 4)
+  const m = +today.slice(5, 7) - 1 + offset
+  const first = new Date(Date.UTC(y, m, 1))
+  const last = new Date(Date.UTC(y, m + 1, 0))
+  return `${first.toISOString().slice(0, 10)}..${last.toISOString().slice(0, 10)}`
+}
+
+/** A range's days in words ("1–31 Oct 2026" in the app's language), the written form for an open end. */
+export function rangeText(value: string, locale?: string): string {
+  const [a, b] = value.split('..')
+  if (!a || !b) return value
+  const f = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+  return f.formatRange(new Date(`${a}T00:00:00Z`), new Date(`${b}T00:00:00Z`))
 }
 
 const byName = <T extends { id: string; deleted_at?: number | null }>(rows: readonly T[], name: (r: T) => string, value: string): T | undefined => {
@@ -155,7 +186,8 @@ export function typingOf(text: string): Typing | null {
   if (k && k.key !== 'pinned' && k.key !== 'orphan') return { kind: 'value', key: k.key, value: k.value, raw: last.raw }
   const w = last.raw.toLowerCase()
   if (w.length < 2 || !/^[a-z]+$/.test(w)) return null
-  const words = KEY_WORDS.map((x) => x.word).filter((x) => x.startsWith(w) && x !== w)
+  // title: and text: are offered like the keys, and stay words (note-search-operators D2).
+  const words = [...KEY_WORDS.map((x) => x.word), ...FIELD_WORDS].filter((x) => x.startsWith(w) && x !== w)
   return words.length ? { kind: 'key', words, raw: last.raw } : null
 }
 
@@ -203,6 +235,11 @@ function changedTest(value: string, ctx: MatchContext): (e: NoteEntry) => boolea
     // The calendar day before today's, whatever the zone and the clock changes.
     const y = new Date(Date.parse(`${today}T00:00:00Z`) - DAY).toISOString().slice(0, 10)
     return (e) => dayOf(e.updated) === y
+  }
+  if (value.includes('..')) {
+    // Both ends included, in the viewer's day (note-search-operators D3).
+    const [a, b] = value.split('..')
+    return (e) => { const d = dayOf(e.updated); return (!a || d >= a) && (!b || d <= b) }
   }
   const op = value[0] === '<' || value[0] === '>' ? value[0] : ''
   const day = op ? value.slice(1) : value
@@ -268,7 +305,7 @@ export function chipText(t: NoteToken, w: TokenWorld): { key: string; value: str
     case 'label': return { key: '@', value: current(w.labels, t.id, (l) => l.name, t.name) }
     case 'linked': return { key: 'linked:', value: current(w.notes, t.id, (n) => n.title ?? '', t.name) }
     case 'kind': return { key: 'kind:', value: t.value }
-    case 'changed': return { key: 'changed:', value: t.value }
+    case 'changed': return { key: 'changed:', value: t.value.includes('..') ? rangeText(t.value, dateLocaleOf()) : t.value }
     default: return { key: t.key, value: '' }
   }
 }

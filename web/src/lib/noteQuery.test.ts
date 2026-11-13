@@ -1,7 +1,7 @@
 // The Notes page's search tokens (OpenSpec change notes-space, notes-page "Search tokens").
 import { describe, expect, it } from 'vitest'
 import type { NoteEntry } from './noteList'
-import { addTokens, commitTokens, compileTokens, filterByTokens, missing, chipText, parseStoredTokens, replaceTyping, tokenOf, tokensFromFilters, typingOf, type MatchContext, type NoteToken, type TokenWorld } from './noteQuery'
+import { addTokens, commitTokens, compileTokens, filterByTokens, missing, chipText, monthRange, parseStoredTokens, replaceTyping, tokenOf, tokensFromFilters, typingOf, type MatchContext, type NoteToken, type TokenWorld } from './noteQuery'
 
 const W: TokenWorld = {
   projects: [{ id: 'house', name: 'House' }, { id: 'kitchen', name: 'Kitchen', parent_id: 'house' }, { id: 'side', name: 'Side projects' }, { id: 'reno', name: 'Renovation' }],
@@ -147,5 +147,44 @@ describe('stored chips', () => {
     expect(parseStoredTokens(JSON.parse(JSON.stringify(list)))).toEqual(list)
     expect(parseStoredTokens([{ key: 'kind', value: 'folder' }, { key: 'in' }, 3, null])).toEqual([])
     expect(parseStoredTokens('x')).toBeNull()
+  })
+})
+
+// note-search-operators "Changed within a date range" and the field prefixes.
+describe('changed: ranges and field prefixes', () => {
+  const notes = [
+    e('note:trip', { updated: Date.UTC(2026, 9, 14, 9) }),
+    e('note:taxes', { updated: Date.UTC(2026, 10, 2, 9) }),
+    e('note:ideas', { updated: Date.UTC(2026, 8, 30, 9) }),
+    e('note:late', { updated: Date.UTC(2026, 9, 31, 23, 30) }),
+  ]
+  const kept = (raw: string) => filterByTokens(notes, [tokenOf(raw, W)!], ctx())!.map((x) => x.id)
+
+  it('October: a chip, both ends included', () => {
+    const t = commitTokens('changed:2026-10-01..2026-10-31 ', W)
+    expect(t.tokens).toEqual([{ key: 'changed', value: '2026-10-01..2026-10-31' }])
+    expect(chipText(t.tokens[0], W).value).toMatch(/Oct/)
+    expect(chipText(t.tokens[0], W).value).toMatch(/2026/)
+    expect(kept('changed:2026-10-01..2026-10-31')).toEqual(['trip', 'late'])
+  })
+
+  it('backwards and open ends', () => {
+    expect(tokenOf('changed:2026-10-31..2026-10-01', W)).toEqual({ key: 'changed', value: '2026-10-01..2026-10-31' })
+    expect(kept('changed:2026-10-01..')).toEqual(['trip', 'taxes', 'late'])
+    expect(kept('changed:..2026-09-30')).toEqual(['ideas'])
+    expect(tokenOf('changed:..', W)).toBeNull()
+    expect(tokenOf('changed:2026-02-30..2026-03-01', W)).toBeNull()
+  })
+
+  it('Last month from the suggestions covers the month before', () => {
+    expect(monthRange('2026-11-12', -1)).toBe('2026-10-01..2026-10-31')
+    expect(monthRange('2026-01-05', -1)).toBe('2025-12-01..2025-12-31')
+    expect(monthRange('2026-02-10', 0)).toBe('2026-02-01..2026-02-28')
+  })
+
+  it('title: and text: are offered like the keys and stay words', () => {
+    expect(typingOf('ti')).toEqual({ kind: 'key', words: ['title:'], raw: 'ti' })
+    expect(typingOf('te')).toEqual({ kind: 'key', words: ['text:'], raw: 'te' })
+    expect(commitTokens('title:wifi ', W)).toEqual({ text: 'title:wifi ', tokens: [] })
   })
 })

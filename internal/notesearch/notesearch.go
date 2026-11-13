@@ -14,6 +14,7 @@
 package notesearch
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -41,6 +42,19 @@ type Note struct {
 	Title   string
 	Text    string
 	Updated int64
+}
+
+// The fields a search term may be limited to (note-search-operators D2).
+const (
+	FieldAny   = "any"
+	FieldTitle = "title"
+	FieldText  = "text"
+)
+
+// Term is one alternative of a query group: a normalised word or phrase and its field.
+type Term struct {
+	Text  string `json:"text"`
+	Field string `json:"field"`
 }
 
 // Hit is a ranked result: the note and its match.
@@ -319,62 +333,151 @@ func StripMarkdown(md string) string {
 	return collapse(strings.Join(lines, " "))
 }
 
-// ParseQuery returns the search terms of a query: quoted text (straight or curly quotes) is one
-// phrase, the rest one term per word; normalised, without empties or repeats.
-func ParseQuery(q string) []string {
-	terms := []string{}
-	add := func(t string) {
-		n := collapse(t)
-		if n == "" {
+// ParseGroups reads a query into groups (note-search-operators D1, D2): words and
+// quoted phrases (straight or curly quotes); the word OR in capitals outside quotes
+// joins its neighbours into one group, and is ignored at the start, the end or doubled;
+// title: or text: directly before a word or phrase limits it to that field, and alone
+// it is a word. Terms are normalised; empty terms and repeated groups are left out.
+func ParseGroups(q string) [][]Term {
+	var tokens []*Term // nil is OR
+	add := func(raw string, field string, quoted bool) {
+		if !quoted && field == FieldAny && raw == "OR" {
+			tokens = append(tokens, nil)
 			return
 		}
-		for _, x := range terms {
-			if x == n {
-				return
+		f, t := field, raw
+		if !quoted && field == FieldAny {
+			for _, p := range []string{"title:", "text:"} {
+				if r := []rune(raw); len(r) > len([]rune(p)) && Normalize(string(r[:len([]rune(p))])) == p {
+					f, t = strings.TrimSuffix(p, ":"), string(r[len([]rune(p)):])
+					break
+				}
 			}
 		}
-		terms = append(terms, n)
+		if n := collapse(Normalize(t)); n != "" {
+			tokens = append(tokens, &Term{Text: n, Field: f})
+		}
 	}
-	cs := []rune(Normalize(q))
+	// The query keeps its case (for OR); a character that normalises to a space or a quote counts as one.
+	asSpace := func(r rune) bool {
+		return isSpace(r) || (r > 0x7f && strings.ContainsFunc(Normalize(string(r)), isSpace))
+	}
+	asQuote := func(r rune) bool {
+		if isQuote(r) {
+			return true
+		}
+		n := []rune(Normalize(string(r)))
+		return r > 0x7f && len(n) == 1 && isQuote(n[0])
+	}
+	cs := []rune(q)
 	var word []rune
 	for i := 0; i < len(cs); i++ {
 		c := cs[i]
 		switch {
-		case isQuote(c):
-			add(string(word))
+		case asQuote(c):
+			// A field prefix directly before the quote limits the phrase.
+			field := FieldAny
+			switch Normalize(string(word)) {
+			case "title:":
+				field = FieldTitle
+			case "text:":
+				field = FieldText
+			}
+			if field == FieldAny {
+				add(string(word), FieldAny, false)
+			}
 			word = word[:0]
 			j := i + 1
-			for j < len(cs) && !isQuote(cs[j]) {
+			for j < len(cs) && !asQuote(cs[j]) {
 				j++
 			}
-			add(string(cs[i+1 : j]))
+			add(string(cs[i+1:min(j, len(cs))]), field, true)
 			i = j
-		case isSpace(c):
-			add(string(word))
+		case asSpace(c):
+			add(string(word), FieldAny, false)
 			word = word[:0]
 		default:
 			word = append(word, c)
 		}
 	}
-	add(string(word))
+	add(string(word), FieldAny, false)
+	groups := [][]Term{}
+	join := false
+	for _, tok := range tokens {
+		if tok == nil {
+			join = len(groups) > 0
+			continue
+		}
+		if join {
+			last := &groups[len(groups)-1]
+			if !slices.Contains(*last, *tok) {
+				*last = append(*last, *tok)
+			}
+		} else {
+			groups = append(groups, []Term{*tok})
+		}
+		join = false
+	}
+	out := [][]Term{}
+	for _, g := range groups {
+		if !slices.ContainsFunc(out, func(h []Term) bool { return slices.Equal(h, g) }) {
+			out = append(out, g)
+		}
+	}
+	return out
+}
+
+// ParseQuery returns the terms a snippet highlights: every word and phrase of the query
+// that may match in the text (a title: term never does), normalised, without empties or
+// repeats. For a query without operators these are its search terms, quoted text one phrase.
+func ParseQuery(q string) []string {
+	terms := []string{}
+	for _, g := range ParseGroups(q) {
+		for _, x := range g {
+			if x.Field != FieldTitle && !slices.Contains(terms, x.Text) {
+				terms = append(terms, x.Text)
+			}
+		}
+	}
 	return terms
 }
 
 // Match reports how a note's title and Markdown text match terms (from ParseQuery). No terms
 // match nothing.
 func Match(title, text string, terms []string) Result {
+	groups := make([][]Term, len(terms))
+	for i, t := range terms {
+		groups[i] = []Term{{Text: t, Field: FieldAny}}
+	}
+	return MatchGroups(title, text, groups)
+}
+
+// MatchGroups reports how a note matches a parsed query: every group needs an alternative
+// that occurs in its field (D1, D2); a group counts as a title match when a matching
+// alternative is in the title, and as a body word when one is in the text.
+func MatchGroups(title, text string, groups [][]Term) Result {
 	nt := Normalize(title)
 	nb := Normalize(StripMarkdown(text))
 	all := nt + " " + nb
-	r := Result{Matched: len(terms) > 0}
-	for _, t := range terms {
-		if !strings.Contains(all, t) {
+	r := Result{Matched: len(groups) > 0}
+	for _, g := range groups {
+		found, inT, inB := false, false, false
+		for _, x := range g {
+			t := strings.Contains(nt, x.Text) && x.Field != FieldText
+			b := strings.Contains(nb, x.Text) && x.Field != FieldTitle
+			if t || b || (x.Field == FieldAny && strings.Contains(all, x.Text)) {
+				found = true
+			}
+			inT = inT || t
+			inB = inB || b
+		}
+		if !found {
 			r.Matched = false
 		}
-		if strings.Contains(nt, t) {
+		if inT {
 			r.TitleMatch = true
 		}
-		if strings.Contains(nb, t) {
+		if inB {
 			r.BodyWords++
 		}
 	}
@@ -384,13 +487,13 @@ func Match(title, text string, terms []string) Result {
 // Rank returns the notes matching query, title matches first, then more matched words in the
 // text, then the newest change, then the key. An empty query matches nothing.
 func Rank(notes []Note, query string) []Hit {
-	terms := ParseQuery(query)
+	groups := ParseGroups(query)
 	hits := []Hit{}
-	if len(terms) == 0 {
+	if len(groups) == 0 {
 		return hits
 	}
 	for _, n := range notes {
-		if r := Match(n.Title, n.Text, terms); r.Matched {
+		if r := MatchGroups(n.Title, n.Text, groups); r.Matched {
 			hits = append(hits, Hit{Note: n, Result: r})
 		}
 	}

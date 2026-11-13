@@ -17,6 +17,11 @@ type vectors struct {
 		In   string   `json:"in"`
 		Out  []string `json:"out"`
 	} `json:"query"`
+	Groups []struct {
+		Name string   `json:"name"`
+		In   string   `json:"in"`
+		Out  [][]Term `json:"out"`
+	} `json:"groups"`
 	Match []struct {
 		Name       string `json:"name"`
 		Title      string `json:"title"`
@@ -76,9 +81,14 @@ func TestVectors(t *testing.T) {
 			t.Errorf("query %s: %q, want %q", c.Name, got, c.Out)
 		}
 	}
+	for _, c := range v.Groups {
+		if got := ParseGroups(c.In); !reflect.DeepEqual(got, c.Out) {
+			t.Errorf("groups %s: %+v, want %+v", c.Name, got, c.Out)
+		}
+	}
 	for _, c := range v.Match {
 		want := Result{Matched: c.Matched, TitleMatch: c.TitleMatch, BodyWords: c.BodyWords}
-		if got := Match(c.Title, c.Text, ParseQuery(c.Query)); got != want {
+		if got := MatchGroups(c.Title, c.Text, ParseGroups(c.Query)); got != want {
 			t.Errorf("match %s: %+v, want %+v", c.Name, got, want)
 		}
 	}
@@ -113,8 +123,8 @@ func TestVectors(t *testing.T) {
 func TestVectorCounts(t *testing.T) {
 	// web/src/lib/noteSearch.test.ts pins the same counts.
 	v := load(t)
-	got := []int{len(v.Normalize), len(v.Strip), len(v.Query), len(v.Match), len(v.Rank), len(v.Snippet)}
-	if want := []int{12, 19, 9, 11, 3, 11}; !reflect.DeepEqual(got, want) {
+	got := []int{len(v.Normalize), len(v.Strip), len(v.Query), len(v.Groups), len(v.Match), len(v.Rank), len(v.Snippet)}
+	if want := []int{12, 19, 10, 10, 18, 4, 13}; !reflect.DeepEqual(got, want) {
 		t.Errorf("vector counts %v, want %v", got, want)
 	}
 }
