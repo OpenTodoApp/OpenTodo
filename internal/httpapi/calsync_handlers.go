@@ -137,6 +137,9 @@ type calendarPatch struct {
 	Password        *string   `json:"password"`
 	// Scope is the part of the account written to the calendar (sync-scope).
 	Scope *syncscope.Scope `json:"scope"`
+	// ProjectCalendars replaces the project-to-calendar matches
+	// (calsync-project-calendars); {} is one calendar again.
+	ProjectCalendars *map[string]string `json:"project_calendars"`
 }
 
 // patchOf checks a patch against the connection's calendars; it returns the
@@ -220,6 +223,17 @@ func (s *Server) handlePatchCalendarConnection(w http.ResponseWriter, r *http.Re
 			return
 		}
 		changed = append(changed, "password")
+	}
+	if in.ProjectCalendars != nil {
+		if field, msg := projectCalendarsError(c, *in.ProjectCalendars); field != "" {
+			writeFieldError(w, field, msg)
+			return
+		}
+		if err := s.calsync.Store.SetProjectTargets(ctx, c.ID, *in.ProjectCalendars); err != nil {
+			s.internal(w, err)
+			return
+		}
+		changed = append(changed, "project_calendars")
 	}
 	if _, err := s.calsync.Store.Update(ctx, uid, c.ID, p); err != nil {
 		s.internal(w, err)
@@ -523,4 +537,25 @@ func reasonText(err error) string {
 		return e.Reason
 	}
 	return "internal_error"
+}
+
+// maxProjectCalendars bounds the matches of one connection.
+const maxProjectCalendars = 200
+
+// projectCalendarsError checks matches: each a short place id and one of the
+// connection's writable calendars.
+func projectCalendarsError(c *calsync.Connection, m map[string]string) (string, string) {
+	if len(m) > maxProjectCalendars {
+		return "project_calendars", "at most 200 matches"
+	}
+	for place, url := range m {
+		if place == "" || len(place) > 64 {
+			return "project_calendars", "a project id is empty or too long"
+		}
+		cal := c.Calendar(url)
+		if cal == nil || cal.ReadOnly {
+			return "project_calendars", "not one of the connection's writable calendars: " + url
+		}
+	}
+	return "", ""
 }
