@@ -7646,5 +7646,8 @@
   "Use template": "Usar plantilla",
   "Your templates": "Tus plantillas",
   "a deleted template": "una plantilla eliminada",
-  "template, meeting, journal, new note": "plantilla, reunión, diario, nota nueva"
+  "template, meeting, journal, new note": "plantilla, reunión, diario, nota nueva",
+  "Note deleted": "Nota eliminada",
+  "Note updated": "Nota actualizada",
+  "Titles and text arrive encrypted.": "Los títulos y el texto llegan cifrados."
 }

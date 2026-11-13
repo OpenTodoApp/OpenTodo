@@ -7646,5 +7646,8 @@
   "Use template": "Usa modello",
   "Your templates": "I tuoi modelli",
   "a deleted template": "un modello eliminato",
-  "template, meeting, journal, new note": "modello, riunione, diario, nuova nota"
+  "template, meeting, journal, new note": "modello, riunione, diario, nuova nota",
+  "Note deleted": "Nota eliminata",
+  "Note updated": "Nota aggiornata",
+  "Titles and text arrive encrypted.": "Titoli e testo arrivano cifrati."
 }

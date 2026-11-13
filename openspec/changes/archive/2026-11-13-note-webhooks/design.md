@@ -40,7 +40,7 @@ Alternatives considered:
 
 ### D5. Who receives which note
 
-A webhook receives note events for notes its owner can read: their personal notes and notes of projects shared with them, as for tasks. The project filter matches a note whose `project_id` is the filter's project (or that moved into or out of it); a note without a project never matches a filtered webhook. Notes in the routines and agent paths carry `source` and `device` (`rule:<id>`, `agent:<token-id>`), so a receiver can ignore its own writes.
+A webhook receives note events for notes its owner can read: their personal notes and notes of projects shared with them, as for tasks. The project filter matches a note whose `project_id` is the filter's project (or that moved into or out of it); a note without a project never matches a filtered webhook. Notes in the routines and agent paths carry `source` and `device` (`source: "rule"`, or `device: "agent:<token-id>"`), so a receiver can ignore its own writes.
 
 ### Data model
 

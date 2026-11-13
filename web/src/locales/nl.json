@@ -7646,5 +7646,8 @@
   "Use template": "Sjabloon gebruiken",
   "Your templates": "Je sjablonen",
   "a deleted template": "een verwijderd sjabloon",
-  "template, meeting, journal, new note": "sjabloon, vergadering, dagboek, nieuwe notitie"
+  "template, meeting, journal, new note": "sjabloon, vergadering, dagboek, nieuwe notitie",
+  "Note deleted": "Notitie verwijderd",
+  "Note updated": "Notitie bijgewerkt",
+  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan."
 }
