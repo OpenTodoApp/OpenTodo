@@ -1,0 +1,53 @@
+# The row's gestures (native-app-everyday 2.2): a full swipe right completes, the row
+# stays for the grace period and Undo reopens the task; a swipe left shows Schedule and
+# Delete; a completion that is not undone reaches the server.
+appId: ${APP_ID}
+---
+- runFlow: steps/sign-in.yaml
+- runScript:
+    file: scripts/create-task.js
+    env:
+      TITLE: Call the dentist
+# The last task made is the one the server checks below read.
+- runScript:
+    file: scripts/create-task.js
+    env:
+      TITLE: Water the plants
+- extendedWaitUntil:
+    visible: Water the plants
+    timeout: 20000
+# Swipe right, then Undo within the grace period: the task is open again.
+- swipe:
+    from:
+      text: Water the plants
+    direction: RIGHT
+- assertVisible:
+    id: undo
+- takeScreenshot: completed
+- tapOn:
+    id: undo
+- assertVisible: Water the plants
+- runScript:
+    file: scripts/assert-open.js
+# Swipe left: Schedule moves it to tomorrow, and it leaves Today.
+- swipe:
+    from:
+      text: Call the dentist
+    direction: LEFT
+- takeScreenshot: actions
+- tapOn:
+    id: schedule-Call the dentist
+- tapOn:
+    id: when-tomorrow
+- extendedWaitUntil:
+    notVisible: Call the dentist
+    timeout: 10000
+# Swipe right and let the grace period pass: the row folds away and the server has it.
+- swipe:
+    from:
+      text: Water the plants
+    direction: RIGHT
+- extendedWaitUntil:
+    notVisible: Water the plants
+    timeout: 15000
+- runScript: scripts/assert-completed.js

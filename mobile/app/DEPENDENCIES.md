@@ -17,6 +17,9 @@ Every package in `package.json`, with the reason it is there (OpenSpec change `n
 - `@react-navigation/native-stack`: each tab's stack and the capture sheet, drawn by `react-native-screens`.
 - `react-native-bottom-tabs`: the platform's own tab bar (UITabBarController, Material bottom navigation), with the badge, the search role and iOS 26's bottom accessory (design D7).
 - `@bottom-tabs/react-navigation`: `react-native-bottom-tabs` as a React Navigation navigator.
+- `react-native-gesture-handler`: the platform's gesture recognizers for a row's swipe actions (design D7): the swipe runs on the UI thread and yields to the list's scroll and the system's back gesture. 3.3.0, the SDK's version.
+- `react-native-reanimated`: the animations the swipeable row runs on the UI thread (required by the gesture library's swipeable). 4.7.1, the SDK's version.
+- `react-native-worklets`: the runtime Reanimated 4 runs its animations on (peer dependency). 0.13.0, the SDK's version.
 - `@react-native-community/netinfo`: the network state for the platform port (`network`).
 - `react-native-mmkv`: the platform port's small preferences store (`prefs`), synchronous like `localStorage`.
 - `react-native-quick-crypto`: `crypto.subtle` and `crypto.getRandomValues` for the shared encryption code (AES-GCM, PBKDF2, HKDF); Hermes has no Web Crypto.

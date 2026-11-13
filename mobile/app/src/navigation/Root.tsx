@@ -15,11 +15,13 @@ import BrowseScreen from '../screens/BrowseScreen'
 import CaptureSheet from '../screens/CaptureSheet'
 import InboxScreen, { useInbox } from '../screens/InboxScreen'
 import PlaceholderScreen from '../screens/PlaceholderScreen'
+import ScheduleSheet from '../screens/ScheduleSheet'
 import TodayScreen from '../screens/TodayScreen'
 import UpcomingScreen from '../screens/UpcomingScreen'
 import { useColors } from '../theme'
+import { ActionToast, RowActionsProvider } from '../ui/RowActions'
 
-type RootRoutes = { Tabs: undefined; Capture: { from?: string } | undefined }
+type RootRoutes = { Tabs: undefined; Capture: { from?: string } | undefined; Schedule: { id: string } }
 type TabName = 'Today' | 'Inbox' | 'Upcoming' | 'Browse' | 'Search'
 
 const Root = createNativeStackNavigator<RootRoutes>()
@@ -81,6 +83,8 @@ function stackOf(name: TabName, title: () => string, Screen: ComponentType) {
             }}
           />
         </Stack.Navigator>
+        {/* Beside Android's floating button, across the width elsewhere. */}
+        <ActionToast right={Platform.OS === 'android' ? 88 : 16} />
         {Platform.OS === 'android' && name !== 'Search' && name !== 'Browse' && <Fab from={name} />}
       </View>
     )
@@ -135,6 +139,7 @@ export default function RootNavigation(props: Props) {
   const base = dark ? DarkTheme : DefaultTheme
   const theme = { ...base, colors: { ...base.colors, primary: c.accent, background: c.bg, card: c.bg, text: c.text, border: c.field } }
   return (
+    <RowActionsProvider>
     <NavigationContainer theme={theme}>
       <Root.Navigator>
         <Root.Screen name="Tabs" options={{ headerShown: false }}>{() => <TabsScreen {...props} />}</Root.Screen>
@@ -144,8 +149,15 @@ export default function RootNavigation(props: Props) {
         >
           {({ route }) => <CaptureSheet from={route.params?.from} />}
         </Root.Screen>
+        <Root.Screen
+          name="Schedule"
+          options={{ headerShown: false, presentation: 'formSheet', sheetAllowedDetents: [0.4], sheetGrabberVisible: true, sheetCornerRadius: 16 }}
+        >
+          {({ route }) => <ScheduleSheet id={route.params.id} />}
+        </Root.Screen>
       </Root.Navigator>
     </NavigationContainer>
+    </RowActionsProvider>
   )
 }
 

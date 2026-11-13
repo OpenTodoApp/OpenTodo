@@ -5,6 +5,7 @@
 // syncs and shows its tabs (native-app-everyday).
 import { useEffect, useMemo, useState } from 'react'
 import { View } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { bootLanguage } from '@shared/i18n'
 import { platform } from '@shared/platform'
@@ -37,8 +38,10 @@ export default function App() {
   if (signed === undefined) return <View style={{ flex: 1, backgroundColor: c.bg }} />
   if (!signed) return <ServerScreen account={deps} onSignedIn={setSigned} sheet={signInDeps} />
   return (
-    <SafeAreaProvider>
-      <RootNavigation onSignOut={() => { void signOut(signed, deps).finally(() => setSigned(null)) }} signed={signed} />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <RootNavigation onSignOut={() => { void signOut(signed, deps).finally(() => setSigned(null)) }} signed={signed} />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

@@ -1,7 +1,7 @@
 // Inbox: the shared Inbox rule (no project, not scheduled) over the phone's database.
 import { useLive } from '../data/useLive'
 import { inboxList } from '../storage/lists'
-import TaskList from '../ui/TaskList'
+import TaskSections from '../ui/TaskSections'
 
 /** The Inbox's tasks, live; also the tab's badge. */
 export function useInbox() {
@@ -9,5 +9,6 @@ export function useInbox() {
 }
 
 export default function InboxScreen() {
-  return <TaskList tasks={useInbox()} testID="inbox-list" />
+  const tasks = useInbox()
+  return <TaskSections sections={tasks && (tasks.length ? [{ key: 'inbox', data: tasks }] : [])} testID="inbox-list" />
 }
