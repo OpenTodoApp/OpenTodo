@@ -255,10 +255,14 @@ describe('the agenda', () => {
 
   it('says how old the cached events are while offline', async () => {
     await seed([review], new Date(2026, 9, 22, 7, 40).getTime())
+    // Offline: no request reaches the server. A fetch that answered would read the switches as
+    // off and empty the cache, racing the status line.
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     await setTodayEventsShown(true)
     const r = await openToday()
-    await waitFor(() => !!agenda()?.querySelector('[data-calendars-status]'))
+    // The status reads "unavailable" until the cached window has loaded: wait for the stale line.
+    await waitFor(() => !!agenda()?.querySelector('[data-calendars-status="stale"]'), 'the cached events')
     expect(agenda()!.querySelector('[data-calendars-status]')!.textContent).toBe('Calendars as of 07:40')
     await r.unmount()
   })
