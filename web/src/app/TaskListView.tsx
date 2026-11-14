@@ -166,10 +166,7 @@ function useListReadyMark(ready: boolean, route: ListRoute) {
   useEffect(() => { if (ready) perfMark(LIST_READY, { view: route.view }) }, [ready, key]) // eslint-disable-line react-hooks/exhaustive-deps -- the key names the route
 }
 
-/**
- * A label page's own manual order (view-manual-order): drops and keyboard steps
- * within a row's group, written on the label; null on every other list.
- */
+/** The personal order for a label page or Today grouped by Project. */
 function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean) {
   const todayModule = useRef<typeof TodayDrop>(undefined)
   useEffect(() => {
@@ -185,14 +182,21 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
   const reorder = useCallback((id: string, at: ViewPlacement) => {
     if (host) act(reorderInView(host, latest.current.rows.map((r) => r.task), id, at))
   }, [host])
+  const siblingsOf = useCallback((id: string) => {
+    const group = latest.current.groups.find((g) => g.rows.some((r) => r.task.id === id))
+    if (!group || (today && (!isTodayProjectGroup(group) || !canEditTasks(roleOf(group.project, memberships))))) return []
+    return group.rows.filter((r) => !today || (r.depth === 0 && !r.task.completed_at)).map((r) => r.task)
+  }, [today, memberships])
   const step = useCallback((id: string, how: Step) => {
     if (!host) return Promise.resolve(false)
-    const { rows: rs, groups: gs } = latest.current
-    const group = gs.find((g) => (!today || isTodayProjectGroup(g)) && g.rows.some((r) => r.task.id === id))
-    if (today && !canEditTasks(roleOf(group?.project, memberships))) return Promise.resolve(false)
-    const siblings = group?.rows.filter((r) => !today || r.depth === 0).map((r) => r.task) ?? []
-    return stepInView(host, rs.map((r) => r.task), siblings, id, how)
-  }, [host, today, memberships])
+    return stepInView(host, latest.current.rows.map((r) => r.task), siblingsOf(id), id, how)
+  }, [host, siblingsOf])
+  const edges = useCallback<ListReorder['edges']>(async (id) => {
+    if (!today) return { first: false, last: false }
+    const siblings = siblingsOf(id)
+    const i = siblings.findIndex((task) => task.id === id)
+    return i < 0 ? null : { first: i === 0, last: i === siblings.length - 1 }
+  }, [today, siblingsOf])
   // Grouped by Project in the List layout (view-project-drops D1): a drop in another project's group moves the task there.
   const byProject = !board && groups.some((g) => g.project)
   const across = useMemo(() => {
@@ -221,16 +225,16 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
       canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
     }
   }, [host, today, memberships, nest])
-  return useMemo(() => (host ? { reorder, step, groupOf, across, todayDrop } : null), [host, reorder, step, groupOf, across, todayDrop])
+  return useMemo(() => (host ? { reorder, step, edges, groupOf, across, todayDrop } : null), [host, reorder, step, edges, groupOf, across, todayDrop])
 }
 
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
-function useListReorder(manual: boolean, ownStep: ((id: string, how: Step) => Promise<boolean>) | undefined, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
+function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
-    move: (id, step) => { if (ownStep) act(ownStep(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
-    edges: ownStep ? () => Promise.resolve({ first: false, last: false }) : taskStepEdges,
+    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
+    edges: ownOrder?.edges ?? taskStepEdges,
     add,
-  }), [manual, ownStep, onReorder, add])
+  }), [manual, ownOrder, onReorder, add])
 }
 
 /**
@@ -320,7 +324,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
   const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
+  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
   const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   const { latestSectionMap } = drag

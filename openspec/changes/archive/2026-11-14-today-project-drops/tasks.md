@@ -13,6 +13,6 @@
 
 ## 2. Today project-group drops
 
-- [x] 2.1 Reuse #1357 for top-level transfers, nesting and permissions; verify cross-group placement, the displayed Inbox, special groups, and one Undo in view interaction tests.
+- [x] 2.1 Reuse the project-group move planner for top-level transfers, nesting and permissions; verify cross-group placement, the displayed Inbox, special groups, and one Undo in view interaction tests.
 - [x] 2.2 Update Today help and changelog. Run OpenSpec validation, the web tests and build, `make check`, and the bundle budget. Capture desktop and phone before/after and verify in a real browser.
 - [x] 2.3 Expose nested rows as pointer drop targets. Reuse the saved view's depth and sibling placement. Verify direct and gap nesting under another project's existing subtask, Undo, and the local demo.

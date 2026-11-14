@@ -70,6 +70,36 @@ describe('Today grouped by Project', () => {
     } finally { await r.unmount() }
   })
 
+  it('offers Reorder in the editable project group but not on an Earlier row or a nested subtask', async () => {
+    const f = await todayFixture()
+    const late = await createTask({ title: 'Late', project_id: f.home, due: { date: addDaysISO(f.due.date, -1) } })
+    const child = await createTask({ title: 'Child', project_id: f.home, parent_id: f.a, due: f.due })
+    await setListDisplay({ kind: 'today' }, { subtasks: true })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    const action = (id: string) => document.querySelector<HTMLElement>(`[data-action="${id}"]`)
+    const open = async (id: string) => {
+      await act(async () => {
+        rowOf(id).dispatchEvent(new MouseEvent('contextmenu', { clientX: 20, clientY: 20, bubbles: true, cancelable: true }))
+      })
+      await waitFor(() => !!action('trash'), 'the task menu')
+    }
+    const close = async () => {
+      await act(async () => { document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+      await waitFor(() => !action('trash'), 'the task menu to close')
+    }
+    try {
+      await waitFor(() => !!rowOf(late) && !!rowOf(child) && !!rowOf(f.a))
+      await open(f.a)
+      await waitFor(() => !!action('reorder'), 'Reorder for the top-level task')
+      await close()
+      await open(late)
+      expect(action('reorder')).toBeNull()
+      await close()
+      await open(child)
+      expect(action('reorder')).toBeNull()
+    } finally { await r.unmount() }
+  })
+
   it('refuses drops into Earlier and a project shared with the user as a viewer', async () => {
     const f = await todayFixture()
     const late = await createTask({ title: 'Late', project_id: f.work, due: { date: addDaysISO(f.due.date, -1) } })
@@ -78,6 +108,8 @@ describe('Today grouped by Project', () => {
     try {
       await waitFor(() => !!rowOf(f.b) && !!rowOf(late) && !!rowOf(f.y))
       expect(group(f.work)).toBeNull()
+      expect(rowOf(f.y).hasAttribute('data-draggable')).toBe(false)
+      expect(rowOf(f.b).hasAttribute('data-draggable')).toBe(true)
       expect(await drag(f.b, rowOf(f.y), 102)).toEqual({ line: null, note: null })
       expect(await drag(f.b, rowOf(late), 102)).toEqual({ line: null, note: null })
       expect((await db.tasks.get(f.b))?.project_id).toBe(f.home)

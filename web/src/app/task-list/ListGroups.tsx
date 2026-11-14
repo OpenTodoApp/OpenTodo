@@ -179,7 +179,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
+          draggable={!ghost && !editing && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
           reorderable={!ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
