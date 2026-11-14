@@ -1,9 +1,11 @@
 import { Icon } from '../Icon'
 import { type ReactNode, type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { playExit } from './exit'
 import { place } from './position'
 import { safeInsets } from './safeArea'
 import { trapTab, useWide } from './stack'
+import { useSheetDrag } from './sheetDrag'
 import { isolate, useOverlay } from './useOverlay'
 import { t } from '../../lib/i18n'
 
@@ -58,6 +60,9 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
   const panel = useRef<HTMLDivElement>(null)
   // Below 640 px a popover is a bottom sheet over the page: the page behind it is inert.
   useOverlay({ panel, onClose, modal, trigger: anchor, blocking: !docked })
+  // The sheet follows a drag down and closes past 80 px or on a flick (sheet-drag-dismiss);
+  // dragged away, it leaves from where the finger left it instead of vanishing there.
+  useSheetDrag(panel, () => { playExit(panel.current, { className: 'dialog-sheet z-50' }); onClose() }, !docked)
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight?: number; maxWidth?: number } | null>(null)
 
   const measure = useCallback(() => {
@@ -119,8 +124,8 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
         <div ref={panel} role={ariaRole === 'menu' ? 'dialog' : ariaRole} aria-label={label} aria-modal={ariaRole ? true : undefined} tabIndex={-1} data-overlay="sheet"
           className="overlay-fade-in pointer-events-auto absolute inset-x-0 flex flex-col rounded-t-popover border-t border-strong bg-pop px-safe text-body shadow-3 outline-none"
           style={{ bottom: 'var(--vv-bottom, 0px)', maxHeight: SHEET_MAX_HEIGHT }}>
-          {/* The handle strip and the title row: a drag down of more than 80 px closes the sheet (phone-v2 D5). */}
-          <div className="relative flex shrink-0 items-center gap-2 border-b border-default pl-4 pr-1 pt-2" {...dragToClose(onClose)}>
+          {/* The handle strip and the title row: the grip a drag always starts from (sheetDrag.ts). */}
+          <div className="relative flex shrink-0 touch-none items-center gap-2 border-b border-default pl-4 pr-1 pt-2" data-sheet-grip>
             <span aria-hidden="true" data-sheet-handle className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint" />
             <h2 className="min-w-0 flex-1 truncate text-body font-semibold">{label}</h2>
             <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 text-h3 leading-none" aria-label={t('Close')} data-overlay-close
@@ -149,16 +154,3 @@ function PopoverPanel({ onClose, anchor, label, side = 'bottom', align = 'end', 
  * and Close button are never under the Dynamic Island (GitHub issue 973).
  */
 const SHEET_MAX_HEIGHT = 'min(90dvh, calc(100dvh - var(--vv-bottom, 0px) - var(--safe-top) - 0.5rem))'
-
-/** A drag down on a sheet's top row closes it: more than 80 px, mostly vertical (phone-v2 D5). */
-function dragToClose(onClose: () => void) {
-  let start: { x: number; y: number } | null = null
-  return {
-    onTouchStart: (e: React.TouchEvent) => { const p = e.touches[0]; start = p ? { x: p.clientX, y: p.clientY } : null },
-    onTouchEnd: (e: React.TouchEvent) => {
-      const p = e.changedTouches[0], s = start
-      start = null
-      if (s && p && p.clientY - s.y > 80 && Math.abs(p.clientX - s.x) < 60) onClose()
-    },
-  }
-}
