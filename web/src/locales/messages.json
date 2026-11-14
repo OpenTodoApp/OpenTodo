@@ -1524,6 +1524,7 @@
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/lib/shortcuts.ts"
   ],
   "All runs": [
@@ -4615,6 +4616,7 @@
     "web/src/app/CalendarRange.tsx",
     "web/src/app/DigestCard.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/shortcuts.ts"
@@ -5228,6 +5230,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Display options": [
+    "web/src/app/completed/CompletedBar.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/views/DisplayPanel.tsx"
@@ -6662,6 +6665,7 @@
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/routines/words.tsx"
   ],
@@ -7502,6 +7506,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Group by": [
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/views/DisplayOptionsBody.tsx",
     "web/src/lib/shortcuts.ts"
@@ -11108,7 +11113,8 @@
     "web/src/app/WorkspaceGroups.tsx"
   ],
   "No project matches.": [
-    "web/src/app/ProjectPickerField.tsx"
+    "web/src/app/ProjectPickerField.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx"
   ],
   "No project named \"{name}\"": [
     "web/src/lib/filter/evaluate.ts"
@@ -13637,6 +13643,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/colorByControls.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteEditor.tsx",
@@ -13791,6 +13798,7 @@
     "web/src/app/TokenSuggest.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/PlanPanel.tsx",
+    "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/wordPicker.tsx",
@@ -15383,6 +15391,7 @@
   ],
   "Search": [
     "web/src/app/TabBar.tsx",
+    "web/src/app/completed/CompletedBar.tsx",
     "web/src/app/palette/modes.ts",
     "web/src/app/routines/pickers.tsx"
   ],
@@ -15403,6 +15412,9 @@
   ],
   "Search by key or action": [
     "web/src/app/ShortcutHelp.tsx"
+  ],
+  "Search completed tasks": [
+    "web/src/app/completed/CompletedBar.tsx"
   ],
   "Search help": [
     "web/src/app/help/HelpView.tsx"

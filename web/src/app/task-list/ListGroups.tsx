@@ -166,6 +166,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           assignedToMe={!!c.userId && r.task.assignee_id === c.userId}
           showProject={c.view !== 'project' && c.view !== 'label' && c.view !== 'inbox' && !r.implied?.project}
           source={c.view === 'inbox' && r.depth === 0 && !c.board}
+          logbook={c.view === 'completed'}
           implied={r.implied}
           omitLabel={c.view === 'label' ? c.labelId : undefined}
           selected={!ghost && r.task.id === c.selectedId}

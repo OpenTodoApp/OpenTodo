@@ -553,9 +553,16 @@ function flatGroups(p: GroupInput): ListGroup[] {
   if (p.view === 'today') return todayGroups(p, row)
   if (p.logbook) {
     // Completed as a logbook: one group per local completion day, newest first.
-    return p.logbook.groups.map((g) => ({
-      key: g.date, heading: logbookHeading(g.date, p.today, p.resolved), note: t('{n, plural, one {# done} other {# done}}', { n: g.tasks.length }), rows: g.tasks.map(row),
-    }))
+    // Grouped by project (completed-view-review D2): the project's name, the Inbox for none.
+    return p.logbook.groups.map((g): ListGroup => {
+      const note = t('{n, plural, one {# done} other {# done}}', { n: g.tasks.length })
+      if (g.project === undefined) return { key: g.date, heading: logbookHeading(g.date, p.today, p.resolved), note, rows: g.tasks.map(row) }
+      const id = g.project
+      return {
+        key: id || 'inbox', heading: id ? p.projectMap.get(id)?.name ?? t('Project') : t('Inbox'), note, named: true,
+        rows: withImplied(g.tasks.map(row), { project: true }), ...(id && p.projectMap.has(id) ? { project: id } : {}),
+      }
+    })
   }
   if (p.view === 'upcoming') {
     // Start with Today (upcoming-start-with-today D2): Today's own groups, then Tomorrow onwards.

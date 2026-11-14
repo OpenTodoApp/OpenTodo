@@ -7,7 +7,7 @@
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
@@ -20,6 +20,7 @@ import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
 import { reorderInView, stepInView } from './viewOrderActions'
 import { LOGBOOK_PAGE } from '../lib/logbook'
+import { isNarrowed, setCompletedDisplay } from '../lib/completedDisplay'
 import { createTaskThenSuggest } from '../lib/assistantSuggest'
 import { getPlace, locationFromPlace } from '../lib/locations'
 import { dayTotalsText } from '../lib/time'
@@ -205,6 +206,10 @@ function useListAdd(on: boolean, ui: ListUi, toggleCollapsed: (id: string, force
   }), [on, setAddingUnder, setAddingBelow, toggleCollapsed])
 }
 
+// The Completed view's controls load with the view (completed-view-review: bundle budget).
+const CompletedSearch = lazy(() => import('./completed/CompletedBar').then((m) => ({ default: m.CompletedSearch })))
+const CompletedOptions = lazy(() => import('./completed/CompletedBar').then((m) => ({ default: m.CompletedOptions })))
+
 export function TaskListView({ route, userId, userRole }: { route: ListRoute; userId?: string; userRole?: AccountRole }) {
   const m = useListModel(route, userId)
   const workspaceName = useWorkspaceName()
@@ -357,14 +362,17 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // A project list whose completed tasks are hidden ends with how many (precision-rows D6).
   const hiddenDone = !m.showCompleted && projectId && viewMode === 'list' ? [...m.doneBySection.values()].reduce((n, tasks) => n + tasks.length, 0) : 0
   const showCompleted = projectId ? () => act(saveShowCompleted(projectId, true)) : undefined
+  // Completed has its own display options (completed-view-review D1).
+  const displayControl = route.view === 'completed' ? <Suspense fallback={null}><CompletedOptions value={m.completedDisplay} /></Suspense> : m.listDisplay.control
+  const completedNarrowed = route.view === 'completed' && isNarrowed(m.completedDisplay, m.completedQuery)
   const pageActions = (
-    <ListPageActions route={route} userRole={userRole} rowCount={own.length} extra={m.listDisplay.control}
+    <ListPageActions route={route} userRole={userRole} rowCount={own.length} extra={displayControl}
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} queryFilter={queryFilter} />
   )
   const { currentProject, currentLabel, currentPlace } = m
   // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
   const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
-    onSelectMode: () => setSelectMode(true), extraSlot: m.listDisplay.control, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
+    onSelectMode: () => setSelectMode(true), extraSlot: displayControl, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
   const methodMove = route.view === 'inbox' ? 'catch' as const : route.view === 'someday' ? 'place' as const : undefined
@@ -399,6 +407,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
           )}
 
+          {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {route.view !== 'completed' && (
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
             <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
@@ -420,8 +429,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'project' && currentProject && <><ProjectNote project={currentProject} phone={phone} /><LinkedRefs kind="project" id={currentProject.id} folded /></>}
           {route.view === 'project' && !board && <SubProjects projectId={route.id} />}
           {m.offerColumns && <ColumnsToggle on={!!m.columnsPref} onToggle={() => projectId && saveListColumns(projectId, !m.columnsPref)} />}
-          {own.length === 0 && !upcomingCal.hasEvents && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query
-            ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery('') }} />
+          {own.length === 0 && !upcomingCal.hasEvents && !(board || m.liveSections.length > 0) && (m.duration || m.queryFilter?.query || completedNarrowed
+            ? <FilteredEmpty onClear={() => { m.chooseDuration(null); m.queryFilter?.setQuery(''); m.setCompletedQuery(''); if (completedNarrowed) setCompletedDisplay({ projects: [] }) }} />
             : <EmptyState view={route.view} waiting={groups.find((g) => g.key === 'blocked')?.count ?? 0} readOnly={m.projectReadOnly}
                 completed={hiddenDone} onShowCompleted={showCompleted} />)}
 

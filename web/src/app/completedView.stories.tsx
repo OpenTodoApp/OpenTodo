@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
+import { setCompletedDisplay } from '../lib/completedDisplay'
 import { createTask, updateTask } from '../lib/ops'
 import { TaskListView } from './TaskListView'
 import { seedBase, seeded, storyUser, withSeed } from './stories/fixtures'
@@ -13,20 +14,34 @@ function Column({ children }: { children: ReactNode }) {
   return <div className="-m-4 h-[48rem] overflow-y-auto bg-canvas">{children}</div>
 }
 
+async function seedDone(): Promise<void> {
+  await seedBase()
+  const at = (iso: string) => Date.parse(iso)
+  for (const [title, when, project] of [
+    ['Send the invoice to Northwind', '2026-10-14T09:20:00', seeded.work],
+    ['Book the dentist', '2026-10-14T11:05:00', seeded.health],
+    ['Water the plants', '2026-10-13T18:40:00', seeded.home],
+    ['Write the release notes', '2026-10-13T16:10:00', seeded.website],
+  ] as const) {
+    const id = await createTask({ title, project_id: project })
+    await updateTask(id, { completed_at: at(when) })
+  }
+}
+
 /** Two days of completed tasks, newest first. */
 export const TwoDays: StoryObj = {
   ...withSeed(async () => {
-    await seedBase()
-    const at = (iso: string) => Date.parse(iso)
-    for (const [title, when, project] of [
-      ['Send the invoice to Northwind', '2026-10-14T09:20:00', seeded.work],
-      ['Book the dentist', '2026-10-14T11:05:00', seeded.health],
-      ['Water the plants', '2026-10-13T18:40:00', seeded.home],
-      ['Write the release notes', '2026-10-13T16:10:00', seeded.website],
-    ] as const) {
-      const id = await createTask({ title, project_id: project })
-      await updateTask(id, { completed_at: at(when) })
-    }
+    setCompletedDisplay({ groupBy: 'day', projects: [] })
+    await seedDone()
+  }),
+  render: () => <Column><TaskListView route={{ view: 'completed' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+/** Grouped by project and narrowed to two projects (completed-view-review). */
+export const ByProject: StoryObj = {
+  ...withSeed(async () => {
+    await seedDone()
+    setCompletedDisplay({ groupBy: 'project', projects: [seeded.work, seeded.health] })
   }),
   render: () => <Column><TaskListView route={{ view: 'completed' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
 }

@@ -20,7 +20,8 @@ const { chromium } = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { spawn } from 'node:child_process'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { writeIfChanged } from './same-image.mjs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -83,11 +84,15 @@ async function encode(png, width = 0) {
   return Buffer.from(b64, 'base64')
 }
 let bytes = 0
+// A shot that looks the same as the file already there is kept (scripts/same-image.mjs),
+// so re-running the capture adds nothing to history unless a screen really changed.
+let kept = 0
 async function save(name, theme, png, card) {
   const buf = await encode(png)
-  writeFileSync(`${OUT}/${name}-${theme}.webp`, buf); bytes += buf.length
-  if (card) { const c = await encode(png, 640); writeFileSync(`${OUT}/card-${name}-${theme}.webp`, c); bytes += c.length }
-  console.log(`  ${name}-${theme}.webp ${(buf.length / 1024).toFixed(0)} KB`)
+  const wrote = await writeIfChanged(enc, `${OUT}/${name}-${theme}.webp`, buf); bytes += buf.length
+  if (!wrote) kept++
+  if (card) { const c = await encode(png, 640); if (!await writeIfChanged(enc, `${OUT}/card-${name}-${theme}.webp`, c)) kept++; bytes += c.length }
+  console.log(`  ${name}-${theme}.webp ${(buf.length / 1024).toFixed(0)} KB${wrote ? '' : ' (unchanged)'}`)
 }
 
 // ------------------------------------------------------------------ helpers
@@ -1160,7 +1165,7 @@ for (const shot of shots) {
     try {
       const clip = await shot.run(p, { ctx, home: plain?.home, ...extra })
       const png = await p.screenshot(clip ? { clip } : {})
-      if (shot.store) { writeFileSync(`${STORE}/${shot.store}.png`, png); console.log(`  ${STORE}/${shot.store}.png`) } else await save(shot.name, theme, png, shot.card)
+      if (shot.store) { const wrote = await writeIfChanged(enc, `${STORE}/${shot.store}.png`, png); console.log(`  ${STORE}/${shot.store}.png${wrote ? '' : ' (unchanged)'}`) } else await save(shot.name, theme, png, shot.card)
       if (shot.after) await shot.after(p, { ctx })
     } catch (err) {
       failed++
@@ -1171,5 +1176,5 @@ for (const shot of shots) {
 }
 await browser.close()
 stopServers()
-console.log(`${failed ? 'SHOTS FAILED' : 'SHOTS OK'}: ${(bytes / 1024).toFixed(0)} KB written to ${OUT}/`)
+console.log(`${failed ? "SHOTS FAILED" : "SHOTS OK"}: ${(bytes / 1024).toFixed(0)} KB rendered, ${kept} unchanged files kept in ${OUT}/`)
 process.exit(failed ? 1 : 0)

@@ -172,7 +172,7 @@ Environment: `PAGES` (comma-separated paths), `WIDTHS` (`360,390,1280`), `CHROMI
 
 ## `docs-screenshots.mjs`
 
-Captures the user guide's screenshots (`docs/images/<name>-{light,dark}.webp`, plus small `card-<name>-*.webp` thumbnails for the docs landing page) from the seeded demo data. It starts two throwaway servers from a binary itself: a demo instance (`OPENTODO_DEMO=true`, one sandbox, the demo banner hidden) for everyday screens and a fresh ordinary instance for sign-in, settings and sharing screens the demo switches off. Desktop shots are 1200×760 at 1.25×, phone shots 390×780 at 1.5×, WebP quality 0.72, encoded by Chromium; the whole set is about 2.3 MB. The `store-*` shots are F-Droid's phone screenshots instead (`fastlane/metadata/android/en-US/images/phoneScreenshots/<n>.png`, one theme each, 390×780 at 2.5×, PNG). `make docs-screenshots` builds the web app and a binary that reports the latest released version, runs the script, then `make docs`.
+Captures the user guide's screenshots (`docs/images/<name>-{light,dark}.webp`, plus small `card-<name>-*.webp` thumbnails for the docs landing page) from the seeded demo data. It starts two throwaway servers from a binary itself: a demo instance (`OPENTODO_DEMO=true`, one sandbox, the demo banner hidden) for everyday screens and a fresh ordinary instance for sign-in, settings and sharing screens the demo switches off. Desktop shots are 1200×760 at 1.25×, phone shots 390×780 at 1.5×, WebP quality 0.72, encoded by Chromium; the whole set is about 2.3 MB. The `store-*` shots are F-Droid's phone screenshots instead (`fastlane/metadata/android/en-US/images/phoneScreenshots/<n>.png`, one theme each, 390×780 at 2.5×, PNG). A shot that looks the same as the file already there is not rewritten (`scripts/same-image.mjs`: same size and at most 0.1 % of the pixels more than 24 levels apart), so a re-run only adds the screens that really changed to history. `make docs-screenshots` builds the web app and a binary that reports the latest released version, runs the script, then `make docs`.
 
 ```bash
 make docs-screenshots
@@ -182,7 +182,7 @@ OPENTODO_BIN=bin/opentodo node scripts/docs-screenshots.mjs store-today,store-up
 
 ## `screenshots.mjs`
 
-Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the screenshots used by `README.md` (`docs/screenshots/*.png`) and the website (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
+Seeds a fresh server with realistic demo data (three accounts, shared projects, sections, subtasks, comments, reminders, saved views, settings) and captures the website's screenshots (`docs/screenshots/site/*.webp`, shipped in the site bundle as `shots/`), keeping any that look the same as before (`scripts/same-image.mjs`). Run it against an **empty** data directory; see [`website/README.md`](../website/README.md#refresh-the-screenshots) for the full recipe.
 
 ## `release-notes.sh`
 

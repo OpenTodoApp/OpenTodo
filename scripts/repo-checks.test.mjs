@@ -1146,3 +1146,10 @@ test('both shells declare a launch screen in the app\'s colour, light and dark',
   // No splash screen library: the module ships AndroidX it already has and nothing else.
   assert.doesNotMatch(read('mobile/android/app/build.gradle.kts'), /splashscreen/)
 })
+
+test('docs screenshots are WebP (docs-screenshot-growth): no PNG or JPEG copies in docs/images or docs/screenshots', () => {
+  const walk = (dir) => readdirSync(path.join(root, dir), { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`]))
+  const raster = ['docs/images', 'docs/screenshots'].flatMap(walk).filter((f) => /\.(png|jpe?g)$/i.test(f))
+  assert.deepEqual(raster, [], 'encode docs screenshots as WebP (scripts/docs-screenshots.mjs, scripts/screenshots.mjs); README.md embeds only docs/screenshots/demo.gif')
+})
