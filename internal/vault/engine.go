@@ -257,11 +257,7 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 		// one changed meanwhile push nothing, write nothing and keep the state,
 		// so the next sync reads the whole save.
 		if saved := e.savedSinceRead(); len(saved) > 0 {
-			rep := &Report{Warnings: e.rep.Warnings, Events: []Event{}, Cursor: e.startCursor}
-			for _, p := range saved {
-				rep.event("skipped", p, "", "skipped %s: it was saved while the sync read it; the next sync reads it", p)
-			}
-			return rep, nil
+			return e.skippedReport(saved), nil
 		}
 		if err := e.push(ctx, e.ops); err != nil {
 			return nil, err
@@ -448,6 +444,16 @@ func (e *engine) savedSinceRead() []string {
 		}
 	}
 	return out
+}
+
+// skippedReport is the report of a sync that stopped before its push
+// because files were saved while it read them: nothing was sent or written.
+func (e *engine) skippedReport(saved []string) *Report {
+	rep := &Report{Warnings: e.rep.Warnings, Events: []Event{}, Cursor: e.startCursor}
+	for _, p := range saved {
+		rep.event("skipped", p, "", "skipped %s: it was saved while the sync read it; the next sync reads it", p)
+	}
+	return rep
 }
 
 // saveBase makes the app the new base, except for what a read-only run left
