@@ -13,7 +13,11 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
+<<<<<<< HEAD
 export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background'
+=======
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'pull-refresh'
+>>>>>>> worktree-agent-a327148a1a1e3624c
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -104,10 +108,18 @@ export interface OpenTodoShell {
   saveFile?(json: string): Promise<string> | string
   /** shell-repairs D5: the platform's own feedback for a `ShellHaptic`; an unknown kind is ignored. */
   haptic?(kind: string): void
+<<<<<<< HEAD
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
   /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
   backgroundDone?(): void
+=======
+  /**
+   * pull-to-sync D4: the page showing handles a pull down itself, so a shell with its
+   * own pull to refresh (`pull-refresh`) turns that off until another page loads.
+   */
+  pullHandled?(): void
+>>>>>>> worktree-agent-a327148a1a1e3624c
 }
 
 declare global {
@@ -284,6 +296,19 @@ export function shellHaptic(kind: ShellHaptic): boolean {
   const s = shell()
   if (!s || !has('haptics') || !s.haptic) return false
   s.haptic(kind)
+  return true
+}
+
+/**
+ * Tells a shell that lists `pull-refresh` (one with its own pull to refresh, which
+ * reloads the page) that this page handles the pull itself (pull-to-sync D4). The
+ * shell forgets it when another page loads, so every load says it again. False in a
+ * browser or a shell without one.
+ */
+export function takeOverPull(): boolean {
+  const s = shell()
+  if (!s || !has('pull-refresh') || !s.pullHandled) return false
+  s.pullHandled()
   return true
 }
 

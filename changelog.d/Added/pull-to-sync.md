@@ -1,0 +1,1 @@
+- **Pull down to sync on a phone or tablet.** Pulling a page down from its top syncs now: a small mark follows your finger and turns until the sync is done, and offline it just says so. The iPhone app no longer reloads the whole app on that pull (with an older server it still does) (pull-to-sync, #1342).

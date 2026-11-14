@@ -2,7 +2,7 @@ import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
@@ -64,6 +64,13 @@ import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+// Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
+// or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
+type Scroller = { scroller: RefObject<HTMLElement | null> }
+const PullToSync = lazy((): Promise<{ default: ComponentType<Scroller> }> => import('./PullToSync').catch(() => ({ default: () => null })))
+function PullHost({ scroller }: Scroller) {
+  return useMediaQuery('(pointer: coarse)') ? <Suspense fallback={null}><PullToSync scroller={scroller} /></Suspense> : null
+}
 // Plan, the calendar's least used mode, loads on first use (multi-day-tasks kept the first load in its budget).
 const PlanView = lazy(() => import('./PlanView').then((m) => ({ default: m.PlanView })))
 // Month and Year load on first use too (year-view): several months and the year's grids stay off the first load.
@@ -309,7 +316,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
-        <PhoneBar onMenu={() => setSidebarOpen(true)} />
+        <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}

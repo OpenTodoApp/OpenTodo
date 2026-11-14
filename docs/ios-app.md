@@ -62,6 +62,10 @@ Version 1.2.0 of the app never filled the widget, never scheduled reminders and 
 
 The area behind the page (under the status bar before the page draws, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons turn light or dark with the theme, so they stay readable when the app's theme differs from the phone's appearance.
 
+## Pull to sync
+
+Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status) and keeps what you had open. With a server that does not have pull to sync yet, the pull reloads the page instead, as it did before.
+
 ## Saving files
 
 Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.

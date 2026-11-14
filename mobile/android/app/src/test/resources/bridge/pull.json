@@ -1,0 +1,8 @@
+{
+  "description": "Pull to sync (pull-to-sync D4): a shell with its own pull to refresh lists the capability. The web app calls the method once per page load, without arguments, when it handles the pull itself; the shell then turns its own off until another page loads. A shell without a pull to refresh lists nothing and is not called.",
+  "capability": "pull-refresh",
+  "method": "pullHandled",
+  "calls": [
+    []
+  ]
+}
