@@ -241,7 +241,9 @@ export function smallFields([rootSel, min]) {
 // Touch feels like an app (shell-touch, GitHub issue 1338), on the touch screen: the page
 // ends the overscroll chain (no bounce, no pull to reload) and keeps zoom; no control or
 // navigation can be text-selected by a long press; every field, editable area and comment
-// stays selectable. With a root selector only that subtree's controls and fields are read.
+// stays selectable; a tab of the tab bar, unless the bar is minimised, is at least 48 px
+// tall (touch-pressed-states). With a root selector only that subtree's controls and fields
+// are read.
 export function touchFeel([rootSel]) {
   const root = rootSel ? document.querySelector(rootSel) : document.body
   if (!root) return []
@@ -254,6 +256,10 @@ export function touchFeel([rootSel]) {
     for (const el of [document.documentElement, document.body]) {
       const action = getComputedStyle(el).touchAction
       if (action !== 'auto' && action !== 'manipulation') out.push(`${el.tagName.toLowerCase()} has touch-action ${action}: pinch zoom is blocked`)
+    }
+    for (const tab of document.querySelectorAll('[data-tab-bar]:not([data-minimised]) [data-tab]')) {
+      const h = Math.round(tab.getBoundingClientRect().height)
+      if (h > 0 && h < 48) out.push(`the tab "${tab.textContent.trim()}" is ${h} px tall: under 48 px`)
     }
   }
   const NOT_TEXT = new Set(['checkbox', 'radio', 'range', 'color', 'hidden', 'file', 'button', 'submit', 'reset', 'image'])

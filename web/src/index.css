@@ -1192,6 +1192,14 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
 /* A touch hold armed (task-row-context-menu "Touch: hold and release"): the pressed
    row tints while the hold counts, so holding reads as feedback before the menu opens
    on release. A plain attribute, so it survives the row's re-renders mid-hold. */
+/* A row pressed on touch (touch-pressed-states): while a finger is on the row's body, the
+   part that opens the task, the whole row takes the selected-row surface, and the body
+   does not also dim. Not while one of its controls is pressed: they show their own.
+   Zero specificity past the `li`, and before the hold's tint, so a hold still wins. */
+@media (pointer: coarse) {
+  li[data-task-id]:where(:has(> [data-row-open]:active)) { background-color: var(--color-selected-row); }
+  li[data-task-id] > [data-row-open]:active { opacity: 1; }
+}
 li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
 /* The bulk-selection box (bulk-actions): drawn by us, not by the platform, so it fills
    the same 20 px slot as the completion circle it stands in for on every device — the
@@ -1533,6 +1541,21 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     min-height: 44px;
   }
 }
+/* Pressed colour on touch (touch-pressed-states, GitHub issue 1349): `press-selected`,
+   `press-accent-hover`, `press-danger-soft`. While a finger is on the control it takes
+   that colour token as its background, in place of the generic dim below (the two never
+   stack). Nothing with a mouse, where hover and `active:` stay as they are. It comes
+   at once, whatever transition the control has, so it is the same under reduced motion.
+   `press-inset` keeps the colour to the 28 px around the glyph of a 44 px target that
+   overlaps its neighbours (a task row's checkbox, chevrons and grip). */
+@utility press-* {
+  @media (pointer: coarse) {
+    &:active:not(:disabled, [aria-disabled="true"]) { background-color: --value(--color-*); opacity: 1; transition-duration: 0s; }
+  }
+}
+@utility press-inset {
+  @media (pointer: coarse) { padding: 0.5rem; background-clip: content-box; }
+}
 /* Safe areas (GitHub issue 973): a surface that touches an edge pads by its inset.
    With a minimum, write the token in an arbitrary value: pt-[max(0.5rem,var(--safe-top))]. */
 @utility pt-safe { padding-top: var(--safe-top); }
@@ -1568,8 +1591,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     }
     /* Pressed (shell-touch D7): with the browser's flash gone, a control that has no
        pressed state of its own dims while a finger is on it, so every tap answers at
-       once: tabs, the add button, menu items, drawer rows, icon buttons. `.ui-btn` has
-       its own pressed colour and keeps it. Zero specificity: a component's own
+       once. It is the fallback: `.ui-btn` has its own pressed colour and keeps it, and
+       tabs, the add button, menu items, drawer rows and a task row's controls name
+       theirs with `press-*` (touch-pressed-states). Zero specificity: a component's own
        `active:` still wins. No transition, so it is the same under reduced motion. */
     :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], summary, a[href]):where(:not(.ui-btn):not(:disabled):not([aria-disabled="true"])):active {
       opacity: 0.6;

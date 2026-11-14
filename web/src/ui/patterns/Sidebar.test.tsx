@@ -74,6 +74,8 @@ describe('SidebarItem tones', () => {
     expect(rest.className).toContain('text-faint')
     expect(rest.className).toContain('hover:text-default')
     expect(rest.className).toContain('focus-visible:text-default')
+    // On touch it shows the selected surface while pressed (touch-pressed-states).
+    expect(rest.className).toContain('press-selected')
     expect(rest.querySelector('[data-icon]')!.parentElement!.className).not.toMatch(/text-/)
     expect(active.getAttribute('data-tone')).toBe('active')
     expect(active.className).toContain('text-strong')

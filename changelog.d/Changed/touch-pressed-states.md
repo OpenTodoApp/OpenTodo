@@ -1,0 +1,1 @@
+- **Taps answer in the app's own colours.** On a touch screen the tabs, the add button, menu items, the drawer's rows, a task row and its checkbox show a pressed colour under your finger instead of dimming, and the tab bar's tabs are 56 px tall as designed (they were 44 px on touch) ([#1349](https://github.com/OpenTodoApp/OpenTodo/issues/1349)).

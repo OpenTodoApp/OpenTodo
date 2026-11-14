@@ -919,7 +919,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse}
-              className="flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
+              className="press-selected press-inset flex h-5 w-4 items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
             >
               <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
             </button>
@@ -937,7 +937,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           aria-label={done ? t('Reopen {title}', { title: name }) : t('Complete {title}', { title: name })}
           onClick={onToggle}
           disabled={readOnly}
-          className={`group/check touch-target inline-flex items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6 pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
+          className={`group/check touch-target press-selected press-inset inline-flex items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6 pointer-coarse:-m-3 ${onTick && !readOnly && (showCheckbox || ticked) ? 'invisible' : ''}`}
         >
           <span data-check-mark className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors duration-(--duration-ui) ${checked ? 'bg-faint border-input text-on-accent' : `${PRIORITY_RING[task.priority]} group-hover/check:bg-success-soft`}`}>
             {checked && <Icon name="check" size="xs" />}
@@ -969,7 +969,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
         <span data-row-expand="" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center md:pointer-fine:hidden">
           <button type="button" aria-expanded={showDetails} aria-controls={showDetails ? detailsId : undefined}
             aria-label={showDetails ? t('Hide details') : t('Show details')} onClick={onExpand}
-            className="touch-target flex h-5 w-5 items-center justify-center rounded-chip text-faint hover:bg-hover hover:text-muted pointer-coarse:-m-3">
+            className="touch-target press-selected press-inset flex h-5 w-5 items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint hover:bg-hover hover:text-muted pointer-coarse:-m-3">
             <Icon name="chevron-down" size="xs" className={`transition-transform duration-(--duration-ui) ${showDetails ? 'rotate-180' : ''}`} />
           </button>
         </span>
@@ -1031,7 +1031,7 @@ function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string
         data-drag-id="task-row"
         onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
         onClick={onClick}
-        className="touch-target pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="touch-target press-selected press-inset pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         <Icon name="grip-vertical" size="sm" />
       </button>
