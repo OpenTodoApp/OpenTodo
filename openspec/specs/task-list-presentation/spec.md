@@ -417,7 +417,7 @@ The keyboard cursor of a task list SHALL be real focus: when the cursor moves to
 - **THEN** its complete button is named "Complete Pack"
 
 ### Requirement: Completed group in a project
-Outside a reusable list (OpenSpec `reusable-lists`), a project's Project menu SHALL offer "Show completed tasks" in the list layout, a preference of the device per project that is off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first. The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. While it is off and the project has completed tasks, a list with open tasks SHALL end with one line, "n completed tasks hidden by display options" and a Show link that turns the preference on. The board and the timeline SHALL be unchanged. In a reusable list the group SHALL always be shown, headed "Got it", whatever the device preference, the Project menu SHALL NOT offer the preference, and the hidden-tasks line SHALL NOT appear. A completed task's circle SHALL show the filled check without the priority ring.
+Outside a reusable list (OpenSpec `reusable-lists`), a project's Project menu SHALL offer "Show completed tasks" in the list layout and in the board layout, one preference of the device per project, shared by both layouts, off by default and never synced. While it is on, the project's list SHALL end with a "Completed" group holding every completed (not skipped) task of the project, most recently completed first, and the project's board SHALL end with a Completed column (`sections-and-boards` "Completed column on a project board"). The group SHALL be closed by default with its count on the heading, and its open or closed state SHALL be remembered on the device. Completing a task SHALL move it into the group; unticking a task in the group SHALL reopen it and return it among the open tasks. While it is off and the project has completed tasks, a list with open tasks SHALL end with one line, "n completed tasks hidden by display options" and a Show link that turns the preference on. The timeline SHALL be unchanged. In a reusable list the group SHALL always be shown, headed "Got it", whatever the device preference, the Project menu SHALL NOT offer the preference, and the hidden-tasks line SHALL NOT appear. A completed task's circle SHALL show the filled check without the priority ring. The preference SHALL work offline, and since it is never synced there is nothing to converge.
 
 #### Scenario: Groceries reused
 - **WHEN** a user turns on "Show completed tasks" in a Groceries project where Milk and Eggs were ticked off, Eggs last, and opens the Completed group
@@ -428,8 +428,12 @@ Outside a reusable list (OpenSpec `reusable-lists`), a project's Project menu SH
 - **THEN** no Completed group is shown, completed tasks are only in the Completed view, and the list ends with "2 completed tasks hidden by display options · Show" when two were completed
 
 #### Scenario: Board layout
-- **WHEN** the project is shown as a board
-- **THEN** the Project menu does not offer "Show completed tasks" and the board shows open tasks only
+- **WHEN** the project is shown as a board and the user opens the Project menu
+- **THEN** it offers "Show completed tasks", and with it on the board ends with a folded Completed column
+
+#### Scenario: One preference for both layouts
+- **WHEN** the user turns on "Show completed tasks" from the Project menu of "Renovation" in the board layout and switches to the list layout
+- **THEN** the list ends with the Completed group, and on the user's phone, where the preference was never changed, neither layout shows completed tasks
 
 #### Scenario: Reusable list ignores the device preference
 - **WHEN** a device with "Show completed tasks" off opens a reusable list where Milk was ticked off
