@@ -2,7 +2,8 @@ import { Icon } from '../Icon'
 import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { clearExits, playExit } from './exit'
-import { trapTab } from './stack'
+import { useSheetDrag } from './sheetDrag'
+import { trapTab, useWide } from './stack'
 import { isolate, useOverlay } from './useOverlay'
 import { t } from '../../lib/i18n'
 
@@ -14,7 +15,10 @@ export interface DialogProps {
   size?: 'sm' | 'md' | 'lg' | 'graph' | 'xl'
   /** Controls in the header between the title and Close (the Connections dialog's Graph / List switch). */
   actions?: ReactNode
-  /** A tap outside closes (default). Off for destructive confirmations. */
+  /**
+   * A tap outside closes, and so does a drag down on a bottom sheet (default). Off for
+   * destructive confirmations and for content that must not be lost by accident.
+   */
   dismissable?: boolean
   role?: 'dialog' | 'alertdialog'
   /** Accessible name when the title is not plain text. */
@@ -75,6 +79,10 @@ export function Dialog({ title, onClose, children, size = 'sm', actions, dismiss
   const root = useRef<HTMLDivElement>(null)
   const titleId = useId()
   useOverlay({ panel, onClose: onEscape ?? onClose, blocking: true })
+  // A bottom sheet is dragged away by the rule of the tap outside (sheet-drag-dismiss).
+  const wide = useWide()
+  const draggable = dismissable && (placement === 'bottom' || (placement === 'sheet' && !wide))
+  useSheetDrag(panel, onClose, draggable)
   // The exit (web-app "Overlay motion", motion-v2 D5) plays on a copy once this unmounts.
   useLayoutEffect(() => {
     clearExits()
@@ -87,7 +95,8 @@ export function Dialog({ title, onClose, children, size = 'sm', actions, dismiss
       onKeyDown={(e) => { if (panel.current) trapTab(e, panel.current); e.stopPropagation() }}>
       <div ref={panel} role={role} aria-modal="true" aria-labelledby={label ? undefined : titleId} aria-label={label} tabIndex={-1} data-overlay="dialog" data-testid={testId}
         data-placement={placement === 'center' ? undefined : placement} className={`${CARD[placement]} ${motion === 'fade' ? 'overlay-fade-in' : 'dialog-card'} ${placement === 'palette' || placement === 'bottom' ? '' : WIDTH[size]}`}>
-        <div className={placement === 'sheet' || placement === 'bottom' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER}>
+        <div className={`${placement === 'sheet' || placement === 'bottom' ? HEADER_SHEET : placement === 'palette' ? HEADER_PALETTE : HEADER} ${draggable ? 'touch-none' : ''}`} data-sheet-grip={draggable ? '' : undefined}>
+          {draggable && <span aria-hidden="true" data-sheet-handle className="absolute left-1/2 top-1 h-1 w-10 -translate-x-1/2 rounded-full bg-faint sm:hidden" />}
           <h2 id={titleId} className={`min-w-0 flex-1 py-2 text-body font-semibold ${placement === 'palette' ? 'sm:sr-only' : ''}`}>{title}</h2>
           {actions}
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm touch-target my-1 px-2 text-h3 leading-none" onClick={onClose} aria-label={t('Close')} data-overlay-close><Icon name="x" size="md" /></button>

@@ -2,7 +2,7 @@ import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type RefObject } from 'react'
 import type { User } from '../lib/types'
 import { openStartView } from './startView'
 import { describeRejected } from '../lib/sharing'
@@ -33,6 +33,7 @@ import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, panelTaskId, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
@@ -64,6 +65,13 @@ import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+// Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
+// or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
+type Scroller = { scroller: RefObject<HTMLElement | null> }
+const PullToSync = lazy((): Promise<{ default: ComponentType<Scroller> }> => import('./PullToSync').catch(() => ({ default: () => null })))
+function PullHost({ scroller }: Scroller) {
+  return useMediaQuery('(pointer: coarse)') ? <Suspense fallback={null}><PullToSync scroller={scroller} /></Suspense> : null
+}
 // Plan, the calendar's least used mode, loads on first use (multi-day-tasks kept the first load in its budget).
 const PlanView = lazy(() => import('./PlanView').then((m) => ({ default: m.PlanView })))
 // Month and Year load on first use too (year-view): several months and the year's grids stay off the first load.
@@ -242,9 +250,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
-  // The routine editor page keeps its own action bar at the bottom (routines-editor-page D2).
-  const routinePage = route.view === 'rules' && !!(route.id || route.create)
-  const phoneChrome = !sheetOpen && !panelOpen && !routinePage && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset', 'task'].includes(route.view)
+  const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
@@ -309,7 +315,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <main ref={frame} className="flex min-w-0 flex-1 flex-col md:!pb-0 md:mt-[max(0.5rem,var(--safe-top))] md:mb-2 md:mr-2 md:overflow-hidden md:rounded-surface md:border md:border-default md:bg-surface" data-app-frame data-phone-chrome={phoneChrome || undefined} inert={drawer.open || undefined}
         style={phoneChrome ? { paddingBottom: `calc(${TAB_BAR_HEIGHT_REM}rem + var(--safe-bottom))` } : undefined}>
         {/* Below 768 px: the bar with the menu button, the page's title and its actions (app-shell "No desktop top bar"). */}
-        <PhoneBar onMenu={() => setSidebarOpen(true)} />
+        <PhoneBar onMenu={() => setSidebarOpen(true)} /><PullHost scroller={content} />
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
@@ -466,7 +472,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   const day = !!bar?.day
   return (
-    <header className={`flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
+    <header className={`${PHONE_BAR_FRAME} ${day ? '' : PHONE_BAR_LINE}`} data-phone-bar data-phone-bar-day={day || undefined}>
       {bar?.back
         ? <IconButton icon="chevron-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />
         : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}
@@ -479,7 +485,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
       <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
-        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} helpInMenu />}
       </div>
     </header>
   )

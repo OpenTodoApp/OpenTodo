@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launch screen before Android 12 (shell-first-paint): the app's icon over its canvas
+     colour. From Android 12 the system draws its own (values-v31/themes.xml). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/launch_background" />
+    <item
+        android:width="96dp"
+        android:height="96dp"
+        android:drawable="@drawable/ic_launcher"
+        android:gravity="center" />
+</layer-list>

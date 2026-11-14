@@ -27,7 +27,10 @@ function DialogDemo() {
   )
 }
 
-/** placement="sheet" (lean-chrome D3): a bottom sheet of at most two thirds of a phone, the page visible above; the centred card from 640 px. */
+/**
+ * placement="sheet" (lean-chrome D3): a bottom sheet of at most two thirds of a phone, the page visible above; the centred card from 640 px.
+ * Below 640 px it has a handle and is dragged down to close (sheet-drag-dismiss); with `dismissable={false}` it has neither.
+ */
 function SheetDemo() {
   const [open, setOpen] = useState(true)
   return (

@@ -60,6 +60,12 @@ final class BridgeHost: BridgeActions {
         Haptics.play(kind)
     }
 
+    /// pull-to-sync D4: the visible app's web view turns its refresh control off.
+    func bridgedPullHandled() {
+        guard interactive else { return }
+        NotificationCenter.default.post(name: PullRefresh.handled, object: nil)
+    }
+
     func bridgedOpenExternal(_ url: String) {
         guard interactive, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)

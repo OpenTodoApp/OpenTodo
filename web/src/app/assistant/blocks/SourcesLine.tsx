@@ -18,12 +18,14 @@ function Rows({ source }: { source: AssistantSource }) {
   if (!rows) return null
   const open = (id: string) => (source.of === 'projects' ? navigate({ view: 'project', id }) : openTaskPanel(id))
   const more = source.total - source.ids.length
+  // Each row and the summary are 24 px targets (WCAG 2.5.8) on the text's own 18 px lines:
+  // the 3 px added above and below are taken back by the negative margin, so nothing moves.
   return (
     <ul className="mt-1 space-y-0.5 pl-5">
       {rows.map((r, i) => (
         <li key={source.ids[i]}>
           {r
-            ? <button type="button" className="min-w-0 text-left text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
+            ? <button type="button" className="-my-[3px] inline-flex min-h-6 min-w-0 items-center text-left text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
             : <span>{t('Removed')}</span>}
         </li>
       ))}
@@ -39,7 +41,7 @@ export default function SourcesLine({ source }: { source: AssistantSource }) {
   if (!source.ids.length) return <p className="my-1 text-meta text-muted" data-assistant-source={source.of}>{label}</p>
   return (
     <details className="my-1 text-meta text-muted" data-assistant-source={source.of}>
-      <summary className="w-fit cursor-pointer rounded-control">{label}</summary>
+      <summary className="-my-[3px] w-fit cursor-pointer rounded-control py-[3px]">{label}</summary>
       <Rows source={source} />
     </details>
   )

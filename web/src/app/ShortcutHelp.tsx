@@ -162,6 +162,8 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
     // The shared Dialog: full screen on phones, a card from 640 px up with the
     // header pinned; from 640 px the sheet itself is capped and scrolls inside.
     <Dialog title={t('Keyboard shortcuts')} onClose={onClose} size="xl" className="!pt-2" testId="shortcut-help">
+      {/* The sheet is reference: its keys stay on a touch device (touch-keyboard-hints). */}
+      <div data-kbd-keep>
       <div role="search" className="mb-2">
         <label className="sr-only" htmlFor="shortcut-search">{t('Search shortcuts')}</label>
         <input id="shortcut-search" type="search" className="ui-input w-full" placeholder={t('Search by key or action')} value={query} autoFocus
@@ -203,6 +205,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
         <a className="touch-target inline-flex items-center text-muted underline" href="/help"
           onClick={(e) => { e.preventDefault(); onClose(); navigate({ view: 'help' }) }}>{t.rich('Open Help ({keys})', { keys: <><span className="ui-kbd mx-0.5">g</span> <span className="ui-kbd mx-0.5">?</span></> })}</a>
       </p>
+      </div>
     </Dialog>
   )
 }

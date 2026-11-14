@@ -13,6 +13,7 @@ import { tabBarDestinations } from '../lib/appearance'
 import { t, msg, translatedList } from '../lib/i18n'
 import { useUserPrefsRow } from '../lib/localData'
 import { navigate, type Route } from './router'
+import { TAB_BAR_FRAME, TAB_FRAME } from './phoneFrame'
 
 export const TAB_BAR_HEIGHT_REM = 3.5
 
@@ -29,14 +30,14 @@ export function TabBar({ route, onSearch, minimised = false }: { route: Route; o
   const tabs = [...tabBarDestinations(useUserPrefsRow()).map((id) => TAB_BY_ID[id]), TAB_BY_ID.search]
   return (
     <nav aria-label={t('Primary destinations')} data-tab-bar data-minimised={minimised || undefined}
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas px-safe pb-safe md:hidden">
+      className={TAB_BAR_FRAME}>
       {tabs.map((item) => {
         const active = !!item.route && route.view === item.route.view
         const onClick = item.route ? () => navigate(item.route!) : onSearch
         return (
           <button key={item.id} type="button" onClick={onClick} data-tab={item.id} aria-current={active ? 'page' : undefined}
             aria-haspopup={item.id === 'search' ? 'dialog' : undefined}
-            className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-hint transition-[min-height] duration-(--duration-ui) ${minimised ? 'min-h-10' : 'min-h-14'} ${active ? 'text-strong' : 'text-muted'}`}>
+            className={`${TAB_FRAME} text-hint transition-[min-height] duration-(--duration-ui) ${minimised ? 'min-h-10' : 'min-h-14'} ${active ? 'text-strong' : 'text-muted'}`}>
             <Icon name={item.icon} size="md" />
             {/* Minimised, the word stays the tab's name for assistive technology. */}
             <span className={minimised ? 'sr-only' : 'truncate'}>{item.label}</span>

@@ -246,8 +246,15 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | --- | --- | --- |
 | [`shell-repairs`](openspec/changes/shell-repairs/) | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | |
 | [`shell-reminders-on`](openspec/changes/shell-reminders-on/) | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | |
+| [`touch-keyboard-hints`](openspec/changes/touch-keyboard-hints/) | No keyboard shortcuts or key hints on a device without a keyboard | [#1337](https://github.com/OpenTodoApp/OpenTodo/issues/1337) |
+| [`shell-touch`](openspec/changes/shell-touch/) | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | [#1338](https://github.com/OpenTodoApp/OpenTodo/issues/1338) |
+| [`phone-row-titles`](openspec/changes/phone-row-titles/) | A task's title on up to two lines on a phone | [#1339](https://github.com/OpenTodoApp/OpenTodo/issues/1339) |
+| [`phone-header-room`](openspec/changes/phone-header-room/) | Help in the bar's menu on a phone, so the title has room | [#1340](https://github.com/OpenTodoApp/OpenTodo/issues/1340) |
+| [`sheet-drag-dismiss`](openspec/changes/sheet-drag-dismiss/) | Bottom sheets follow the finger and close on a drag | [#1341](https://github.com/OpenTodoApp/OpenTodo/issues/1341) |
+| [`pull-to-sync`](openspec/changes/pull-to-sync/) | Pull down to sync, never a reload | [#1342](https://github.com/OpenTodoApp/OpenTodo/issues/1342) |
+| [`shell-first-paint`](openspec/changes/shell-first-paint/) | The apps open on their colour and icon, and the loading frame already has the phone's bars | [#1343](https://github.com/OpenTodoApp/OpenTodo/issues/1343) |
 
-Then push, first paint, touch and motion, each its own change.
+Then push to the apps ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)), which needs a decision on how an iPhone is reached from a self-hosted server.
 
 ### Native app
 

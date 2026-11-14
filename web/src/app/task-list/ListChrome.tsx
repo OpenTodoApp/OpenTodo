@@ -399,13 +399,13 @@ export function RowPickerDialogs({ assignFor, pickerFor, userId, onCloseAssign, 
       {assignFor && userId && (
         <Dialog title={t('Assign')} label={t('Assign task')} onClose={onCloseAssign}>
           <AssigneePicker taskId={assignFor} userId={userId} onClose={onCloseAssign} />
-          <p className="mt-2 px-1 text-hint text-faint">{t('Type to filter · Enter assigns · Esc closes')}</p>
+          <p className="mt-2 px-1 text-hint text-faint" data-kbd-hint>{t('Type to filter · Enter assigns · Esc closes')}</p>
         </Dialog>
       )}
       {pickerFor && (
         <Dialog title={t('Labels')} label={t('Labels for task')} onClose={onClosePicker}>
           <LabelPicker taskId={pickerFor} onClose={onClosePicker} />
-          <p className="mt-2 px-1 text-hint text-faint">{t('Enter toggles or creates · Esc closes')}</p>
+          <p className="mt-2 px-1 text-hint text-faint" data-kbd-hint>{t('Enter toggles or creates · Esc closes')}</p>
         </Dialog>
       )}
     </>

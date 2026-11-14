@@ -12,10 +12,12 @@ import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.provider.Settings
 import android.util.Base64
 import android.view.View
+import android.view.ViewTreeObserver
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
@@ -70,9 +72,13 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private val io = Executors.newSingleThreadExecutor()
     /** Files the app saves (shell-repairs D2): the bridge's chunks, the server's downloads, the save dialog. */
     private val saver = FileSaver(this)
+    /** The launch screen stays until the page can be drawn (shell-first-paint); null once it went. */
+    private var hold: LaunchHold? = null
+    /** The bars asked for while the launch screen is up: they come with the page. */
+    private var heldBars: SystemBars? = null
 
     private val setup = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == RESULT_OK) start() else finish()
+        if (r.resultCode == RESULT_OK) { holdLaunchScreen(firstFrame = false); start() } else finish()
     }
     private val chooser = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
         fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(r.resultCode, r.data))
@@ -119,7 +125,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         siteBar = findViewById(R.id.site_bar)
         siteHost = findViewById(R.id.site_host)
         findViewById<View>(R.id.site_close).setOnClickListener { backToServer() }
-        // The last bars the app asked for, before the page draws (theme-engine D8).
+        // With a server the page loads now, and the launch screen stays until it can be drawn.
+        if (Prefs(this).server != null) holdLaunchScreen(firstFrame = true)
+        // The last bars the app asked for, before the page draws (theme-engine D8); under
+        // the launch screen they wait and come with the page.
         SystemBars.parse(Prefs(this).systemBars)?.let { setSystemBars(it) }
         saver.clearStale()
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.root)) { v, insets ->
@@ -171,6 +180,49 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     private fun isShare(i: Intent?) = i?.action == Intent.ACTION_SEND || i?.action == Intent.ACTION_SEND_MULTIPLE
+
+    /**
+     * Keeps the launch screen up while the page loads (shell-first-paint). Nothing of the
+     * activity covers the window's background, which is the launch screen. On Android 12
+     * and later the system's splash screen stays as long as the first frame is held back
+     * ([firstFrame]: only at a cold start, when that splash screen is showing).
+     */
+    private fun holdLaunchScreen(firstFrame: Boolean) {
+        val h = LaunchHold(SystemClock.uptimeMillis())
+        hold = h
+        val root = findViewById<View>(R.id.root)
+        root.background = null
+        web.visibility = View.INVISIBLE
+        if (firstFrame && Build.VERSION.SDK_INT >= 31) {
+            root.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean {
+                    if (hold === h) return false
+                    root.viewTreeObserver.removeOnPreDrawListener(this)
+                    return true
+                }
+            })
+        }
+        revealWhenDue(h)
+    }
+
+    /** The launch screen never outlasts its hold, whatever the page does. */
+    private fun revealWhenDue(h: LaunchHold) {
+        findViewById<View>(R.id.root).postDelayed({
+            if (hold === h && !h.holds(SystemClock.uptimeMillis())) reveal()
+        }, h.remaining(SystemClock.uptimeMillis()))
+    }
+
+    /** The launch screen goes: the root gets its colour and the bars asked for meanwhile, and the web view shows. */
+    private fun reveal() {
+        val h = hold ?: return
+        if (isDestroyed) return
+        h.show()
+        hold = null
+        findViewById<View>(R.id.root).setBackgroundResource(R.color.background)
+        heldBars?.let { setSystemBars(it) }
+        heldBars = null
+        web.visibility = View.VISIBLE
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun start() {
@@ -316,6 +368,17 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
 
         override fun onPageFinished(view: WebView, url: String?) {
+            // The page is in the document: the launch screen goes as soon as it can be drawn,
+            // and soon after in any case. A failed first try is not a page; its retry or the
+            // error screen follows.
+            val h = hold
+            if (h != null && !mainFrameFailed) {
+                h.loaded(SystemClock.uptimeMillis())
+                revealWhenDue(h)
+                view.postVisualStateCallback(0, object : WebView.VisualStateCallback() {
+                    override fun onComplete(requestId: Long) { runOnUiThread { reveal() } }
+                })
+            }
             if (url == null || SignInFlow.originOf(url) != origin) return
             // Back on the server, perhaps through a login wall: keep its cookies now, and keep the
             // sign-in pages out of the back history.
@@ -467,6 +530,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     /** [signIn]: offer "Sign in here" (a fresh sign-in flow from the server's address) instead of "Try again". */
     private fun showError(message: String, signIn: Boolean = false) {
+        reveal()
         errorText.text = message
         findViewById<View>(R.id.sign_in).visibility = if (signIn) View.VISIBLE else View.GONE
         findViewById<View>(R.id.retry).visibility = if (signIn) View.GONE else View.VISIBLE
@@ -474,6 +538,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     }
 
     private fun confirmChangeServer() {
+        reveal()
         AlertDialog.Builder(this)
             .setTitle(R.string.change_server)
             .setMessage(R.string.change_server_confirm)
@@ -572,6 +637,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
      * Android versions are set too); the icons are light or dark to stay legible.
      */
     override fun setSystemBars(bars: SystemBars) {
+        // Under the launch screen nothing of the activity shows: the bars come with the page.
+        if (hold != null) { heldBars = bars; return }
         findViewById<View>(R.id.root).setBackgroundColor(bars.color)
         if (Build.VERSION.SDK_INT < 35) {
             @Suppress("DEPRECATION")

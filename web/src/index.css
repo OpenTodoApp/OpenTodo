@@ -723,6 +723,18 @@ html, body, #root {
   #root { height: 100dvh; }
 }
 
+/* Touch behaves like an app (shell-touch, GitHub issue 1338). The browser's flash on a
+   tap is off: a control shows its own pressed state. With a touch screen as the main
+   pointer the page itself never bounces, shows the pull glow or reloads on a pull: the
+   root ends the overscroll chain. Lists, sheets and menus keep scrolling in their own
+   scrollers, and a scroller still gets every touch event at its top. Pinch zoom stays
+   (no touch-action, no user-scalable). A mouse or trackpad keeps the browser's
+   overscroll, such as the swipe back in history. */
+html { -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) {
+  html, body { overscroll-behavior: none; }
+}
+
 html {
   font-synthesis: style;
   /* Inter's optical-size axis picks its Display cut at large sizes (tokens-v2 D7). */
@@ -765,6 +777,17 @@ body {
       font-size: max(16px, 1em);
     }
   }
+}
+
+/* Keyboard hints only where a key can be pressed (touch-keyboard-hints). With no fine
+   pointer and nothing that hovers (a phone, a tablet on its own), shortcut badges
+   (.ui-kbd) and lines that only name keys ([data-kbd-hint]) are not drawn; a mouse, a
+   trackpad or a pen that hovers means a computer or an attached keyboard set. A keyboard
+   without a pointer is seen at its first key press (lib/keyboardSeen.ts sets
+   data-keyboard). [data-kbd-keep] marks reference (the cheat sheet) and keys inside a
+   sentence that would break without them. Unlayered, so no utility class brings a hint back. */
+@media not ((any-pointer: fine) or (any-hover: hover)) {
+  :root:not([data-keyboard]) :is(.ui-kbd, [data-kbd-hint]):not([data-kbd-keep], [data-kbd-keep] *) { display: none; }
 }
 
 @layer components {
@@ -1384,14 +1407,15 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-props="project"] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
   [data-row-props="project"] > :is([data-row-cell="estimate"], [data-row-cell="assignee"]) { display: none; }
 }
-/* The phone row (precision-phone D2, task-list-presentation "Phone rows"): below 768 px
-   a narrow list row is one line, 44 px tall, with the title at 14.5 px and one cell at
-   its end, the one the row marks `data-row-phone`: the date, else the deadline, else the
-   assignee's avatar, else the project marker. The other facts are on the task page. A
-   narrow list beside other content on a wider screen keeps its two lines. The open
-   control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
-   no row padding adds to its 44 px minimum; the slots before it sit on the title's first
-   line, also when a second line (the Inbox's source) follows. The time column shows
+/* The phone row (precision-phone D2, phone-row-titles, task-list-presentation "One row
+   anatomy"): below 768 px a narrow list row is its title, at 14.5 px on up to two lines,
+   and one cell at its end, the one the row marks `data-row-phone`: the date, else the
+   deadline, else the assignee's avatar, else the project marker. The other facts are on
+   the task page. A narrow list beside other content on a wider screen keeps its metadata
+   line. The open control is the row, 44 px with a one-line title and 64 px with two: 12 px
+   above and below the title's 20 px lines, so on touch no row padding adds to its 44 px
+   minimum; the slots before it and the cell at its end sit on the title's first line, also
+   when a second line (the title's, or the Inbox's source) follows. The time column shows
    only where a row has a time, and the counts stay off the line. Screens only: a printed
    page is narrower than 768 px too, and keeps the column (print-lists). */
 @media screen and (width < 48rem) {
@@ -1404,10 +1428,12 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-time] { width: auto; margin-inline-end: 0.25rem; }
     [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; }
     [data-row-head] { grid-area: 1 / 1; }
-    /* The phone row stays one line (task-list-width D1): its title ends with an ellipsis. */
-    [data-row-title] { font-size: 0.90625rem; -webkit-line-clamp: 1; line-clamp: 1; }
+    /* The title keeps the row's two lines (phone-row-titles): a phone's title column holds
+       about 15 characters a line beside a time and a date. */
+    [data-row-title] { font-size: 0.90625rem; }
     [data-row-meta="row"] { display: contents; }
-    [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
+    /* On the title's first line, not in the middle of a two-line title. */
+    [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; align-self: start; min-height: 1.25rem; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
     [data-row-props] > [data-row-cell="deadline"][data-row-phone] { display: inline-flex; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
@@ -1424,16 +1450,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 
 /* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
    <html> carries data-titles="full" and every row, card and Today title shows in full,
-   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
-   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
-   it wins at every width. On the phone row the cell at the end stays on the title's
-   first line rather than in the middle of a tall title. */
+   wrapped onto as many lines as it takes, instead of two lines and an ellipsis. Outside
+   the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
-@media screen and (width < 48rem) {
-  @container row (width < 40rem) {
-    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
-  }
-}
 
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line
@@ -1529,6 +1548,33 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   /* Row-aware (labels-and-menus D6): keyboard focus anywhere in the row, or a selected row, shows its trigger. */
   .group:focus-within .hover-reveal, .group[data-active] .hover-reveal { opacity: 1; }
 }
+}
+/* Chrome is not text (shell-touch, GitHub issue 1338): on a touch screen a long press on a
+   control or on navigation selects no words and opens no callout (the link preview and
+   the Copy bubble of iOS). Chrome is every button, tab, menu item, option, switch and
+   disclosure, each navigation landmark (the tab bar, the sidebar's lists, breadcrumbs),
+   the phone bar, the sidebar and a page's header. Everything else is content and stays
+   selectable: the title in the task view, notes, comments, descriptions and the links in
+   them. A field or an editable area inside chrome (a title being renamed in a header)
+   keeps its selection too. Zero specificity in the base layer, so `select-text` on an
+   element still wins. With a mouse nothing changes. */
+@layer base {
+  @media (pointer: coarse) {
+    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="switch"], summary, nav, a.ui-btn, [data-phone-bar], [data-sidebar], [data-page-header]) {
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    }
+    :where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+    /* Pressed (shell-touch D7): with the browser's flash gone, a control that has no
+       pressed state of its own dims while a finger is on it, so every tap answers at
+       once: tabs, the add button, menu items, drawer rows, icon buttons. `.ui-btn` has
+       its own pressed colour and keeps it. Zero specificity: a component's own
+       `active:` still wins. No transition, so it is the same under reduced motion. */
+    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], summary, a[href]):where(:not(.ui-btn):not(:disabled):not([aria-disabled="true"])):active {
+      opacity: 0.6;
+    }
+  }
 }
 @media (pointer: coarse) {
   /* A held row is the menu's gesture, never a text selection (task-row-context-menu

@@ -119,6 +119,10 @@ A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **
 
 Whatever the app saves opens Android's save dialog, where you choose the folder: the recovery key and recovery codes, an export, a theme, an attachment. Close the dialog and nothing is saved. Files the app makes on the phone (the recovery key, recovery codes, themes, decrypted attachments) need a server on the same release as the app or newer; exports and attachments from the server save with any server.
 
+## Opening the app
+
+The app opens on its icon over the app's background colour, light or dark with the phone, and keeps that until the page is ready, so no blank screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
+
 ## Back
 
 Back closes what is open (a dialog, a sheet, a task), then goes back through the app, and leaves the app only from the screen it started on.
@@ -126,6 +130,10 @@ Back closes what is open (a dialog, a sheet, a task), then goes back through the
 ## Haptic feedback
 
 Completing a task and picking up a row give a short tap, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+
+## Touch
+
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere.
 
 ## Sharing
 
@@ -137,7 +145,7 @@ Two home-screen widgets: **Today** shows your tasks for today with the time of t
 
 ## Status and navigation bars
 
-The phone's status and navigation bars take the colour of your [theme](themes.md) (the accent in light, the canvas in dark, or the theme's own bar colour), with light or dark icons so they stay readable, and they switch with it. The app remembers the colour, so the bars are right from the first frame of the next launch.
+The phone's status and navigation bars take the colour of your [theme](themes.md) (the accent in light, the canvas in dark, or the theme's own bar colour), with light or dark icons so they stay readable, and they switch with it. The app remembers the colour, so the bars are right as soon as the page shows at the next launch.
 
 ## Voice input
 

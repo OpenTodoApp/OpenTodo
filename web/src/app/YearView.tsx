@@ -213,7 +213,7 @@ export default function YearView({ date }: { date?: string }) {
           {tipText(tipDay, tipEvents).map((line, i) => <span key={i} className={`block truncate ${i === 0 ? 'font-medium' : ''}`}>{line}</span>)}
         </div>
       )}
-      <p className="mt-4 hidden text-meta text-faint sm:block">
+      <p className="mt-4 hidden text-meta text-faint sm:block" data-kbd-keep>
         {t.rich('Arrows move the focused day, {pgup} / {pgdn} a month, {open} opens it in Day. Marks count open tasks, repeating occurrences while shown and every day of a multi-day task.', {
           pgup: <span className="ui-kbd">Page Up</span>, pgdn: <span className="ui-kbd">Page Down</span>, open: <span className="ui-kbd">Enter</span>,
         })}

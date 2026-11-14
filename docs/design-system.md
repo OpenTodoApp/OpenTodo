@@ -216,6 +216,8 @@ Wrap a control in `<Field label description error>`: the label, the description 
 
 Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `MenuGroup` and `MenuSeparator`. Items take an `icon`, a `shortcut` hint (shown and announced), a `description` (for example why an item is unavailable), `danger` (placed last, in its own group), `disabled` and `checked` for toggles. The menu opens on its first item; ↑/↓ wrap, Home/End jump, typing a letter moves to the next item starting with it, and choosing an item closes the menu and returns focus to its button. Panels that contain form controls keep `kind="dialog"`.
 
+**Keyboard hints on touch devices.** One rule in `web/src/index.css` hides every `.ui-kbd` badge and every element marked `data-kbd-hint` (a line that only names keys, or a separator that belongs to a badge) when the device has no fine pointer and nothing that hovers, until a hardware key press is seen (`web/src/lib/keyboardSeen.ts` sets `data-keyboard` on the root). Mark a new keys-only line with `data-kbd-hint`; do not hide it per component. `data-kbd-keep` exempts reference (the cheat sheet) and a key inside a sentence that would break without it (`<Kbd>` without `only` sets it). `aria-keyshortcuts` and descriptions stay in every case.
+
 ### Smart picker (Combobox)
 
 `<Combobox>` is a field whose list opens anchored to it from 640 px up and as a bottom sheet below; `<ComboboxPanel>` keeps field and list together inside a dialog. Both follow the ARIA combobox pattern: focus stays in the field, ↑/↓ move the active option, Enter picks, Escape closes, and the number of results is announced.
@@ -250,6 +252,17 @@ A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`
 `index.html` sets `viewport-fit=cover`, so the app runs under the status bar, the notch or Dynamic Island, the home indicator and, in landscape, the rounded sides of the screen. `index.css` reads `env(safe-area-inset-*)` once, into the tokens `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left`, with the utilities `pt-safe`, `pb-safe`, `pl-safe`, `pr-safe` and `px-safe`. Every surface that touches an edge of the viewport pads by them where it touches it: the phone bar and full-screen sheets at the top, the tab bar, bottom sheets, sticky footers and toasts at the bottom, the shell, side panels and dialog overlays at the sides. With a minimum, write the token in an arbitrary value (`pt-[max(0.5rem,var(--safe-top))]`). Code that places a panel itself reads the insets with `safeInsets()` (`web/src/ui/overlay/safeArea.ts`); `place()` keeps anchored popovers clear of them. Nothing else reads `env()` (the token lint fails on it), and `make safe-area-check` (`scripts/e2e-safe-area.mjs`) opens every screen and overlay as the installed app on a phone with a Dynamic Island, in portrait and landscape, and fails when a control sits in an inset.
 
 The status bar's backdrop (GitHub issue 999): on an iPhone, Safari covers the strip under the status bar with a soft blur, taller than the strip and drawn over the page below it, unless an opaque fixed element spans the top edge, whose colour it extends instead. `index.html` holds that element before the app (`[data-status-bar-backdrop]`, styled in `index.css`): the canvas, as tall as `--safe-top`, under the side panels, the drawer and every overlay, which pad their own tops by the inset. Keep it, and keep its colour the canvas the phone bar sits on. The safe-area check also fails when a screen has no such backdrop or draws text under the status bar at rest: as it loads, after each of its overlays closes, and after a cold start with the insets arriving late (`topEdge` in `scripts/ux-audit/measure.mjs`).
+
+### Touch
+
+On a touch screen (`pointer: coarse`) the app behaves like an app, not a page (shell-touch, GitHub issue 1338). The rules are in `index.css`:
+
+- The browser's tap highlight is off, so a control needs its own pressed state (`active:`); `hover:` does not apply on touch.
+- Chrome is not text: every button, tab, menu item, option, switch and `summary`, every `nav`, the phone bar, the sidebar and `PageHeader` cannot be selected or called out by a long press. Everything else is content and stays selectable, as does a field or an editable area inside chrome. A new control is covered by its element or role; text that a person may want to copy must not be put inside a button or a `nav`. `select-text` on an element overrides the rule.
+- The page ends the overscroll chain (`overscroll-behavior: none` on the root): no bounce, no pull glow, no reload on a pull. Scrollers keep their own behaviour and still get every touch event.
+- Zoom stays: no `touch-action` on the page that blocks pinch.
+
+With a mouse nothing changes. The layout check (`touchFeel` in `scripts/ux-audit/measure.mjs`) fails on a selectable control, an unselectable field or comment, a page that bounces or a viewport that turns zoom off.
 
 ## The workbench
 
