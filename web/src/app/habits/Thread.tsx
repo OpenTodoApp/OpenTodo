@@ -21,7 +21,7 @@ const R = 5
 
 type Link = 'solid' | 'dotted' | 'thin' | null
 
-const isKept = (s: DayState) => s === 'done' || s === 'tiny'
+const isKept = (s: DayState) => s === 'done' || s === 'tiny' || s === 'partial'
 const isMark = (s: DayState) => s !== 'blank' && s !== 'upcoming'
 
 /** The line between two consecutive marked days. */
@@ -32,7 +32,15 @@ export function linkOf(a: DayState, b: DayState): Link {
   return isKept(a) && isKept(b) ? 'solid' : null
 }
 
-function Mark({ cell, x }: { cell: DayCell; x: number }): ReactNode {
+/** The filled wedge of a ring for `share` (0–1) of it, clockwise from the top. */
+function wedge(x: number, y: number, r: number, share: number): string {
+  const a = 2 * Math.PI * Math.min(Math.max(share, 0), 0.999)
+  const ex = x + r * Math.sin(a)
+  const ey = y - r * Math.cos(a)
+  return `M ${x} ${y} L ${x} ${y - r} A ${r} ${r} 0 ${a > Math.PI ? 1 : 0} 1 ${ex.toFixed(2)} ${ey.toFixed(2)} Z`
+}
+
+function Mark({ cell, x, goal }: { cell: DayCell; x: number; goal?: number }): ReactNode {
   const y = STEP / 2
   const common = 'transition-[fill,stroke,opacity] duration-(--duration-moment)'
   switch (cell.state) {
@@ -43,6 +51,14 @@ function Mark({ cell, x }: { cell: DayCell; x: number }): ReactNode {
       return (
         <g data-mark="tiny">
           <path d={`M ${x} ${y - R} A ${R} ${R} 0 0 0 ${x} ${y + R} Z`} className={`fill-hue-solid ${common}`} />
+          <circle cx={x} cy={y} r={R - 0.75} fill="none" strokeWidth={1.5} className="stroke-hue-solid" />
+        </g>
+      )
+    case 'partial':
+      // Part of an amount (habit-targets D3): a wedge for the share reached, the ring whole.
+      return (
+        <g data-mark="partial">
+          <path d={wedge(x, y, R, goal ? (cell.amount ?? 0) / goal : 0.5)} className={`fill-hue-solid ${common}`} />
           <circle cx={x} cy={y} r={R - 0.75} fill="none" strokeWidth={1.5} className="stroke-hue-solid" />
         </g>
       )
@@ -57,7 +73,7 @@ function Mark({ cell, x }: { cell: DayCell; x: number }): ReactNode {
   }
 }
 
-export function Thread({ days, today, onPick, onNote, notes, label }: {
+export function Thread({ days, today, onPick, onNote, notes, label, goal, unit }: {
   days: readonly DayCell[]
   today: string
   /** Done, Tiny, Skipped or Clear chosen on a past scheduled day (D6); omitted where days are not editable (the strip). */
@@ -67,6 +83,9 @@ export function Thread({ days, today, onPick, onNote, notes, label }: {
   /** The days with a check-in note: a small mark under the day (habit-notes D3). */
   notes?: ReadonlySet<string>
   label?: string
+  /** An amount habit's goal and unit (habit-targets D3): days fill by their share and read "5 of 8 glasses". */
+  goal?: number
+  unit?: string
 }) {
   const width = STEP * days.length
   const x = (i: number) => STEP / 2 + i * STEP
@@ -85,12 +104,12 @@ export function Thread({ days, today, onPick, onNote, notes, label }: {
             strokeWidth={kind === 'thin' ? 1 : 2} strokeLinecap="round" strokeDasharray={kind === 'dotted' ? '1 3' : undefined}
             className={kind === 'thin' ? 'stroke-faint' : kind === 'dotted' ? 'stroke-muted' : 'stroke-hue-solid transition-opacity duration-(--duration-moment)'} />
         ))}
-        {days.map((d, i) => <Mark key={d.date} cell={d} x={x(i)} />)}
+        {days.map((d, i) => <Mark key={d.date} cell={d} x={x(i)} goal={goal} />)}
         {days.map((d, i) => notes?.has(d.date) && <circle key={`n-${d.date}`} cx={x(i)} cy={STEP - 1.5} r={1.5} className="fill-accent" data-note-mark={d.date} />)}
       </svg>
       <div className="absolute inset-0 flex">
         {days.map((d) => {
-          const name = threadDayLabel(d.date, d.state, !!notes?.has(d.date))
+          const name = threadDayLabel(d.date, d.state, !!notes?.has(d.date), goal && d.amount ? { amount: d.amount, goal, unit } : undefined)
           const editable = !!onPick && editableDay(d, today)
           return editable ? (
             <DayMenu key={d.date} cell={d} label={name} onPick={(c) => onPick!(d.date, c)} onNote={onNote ? () => onNote(d.date) : undefined}

@@ -35,7 +35,17 @@ type vectors struct {
 			Month string `json:"month"`
 			Days  string `json:"days"`
 		} `json:"grids"`
+		Target    int                       `json:"target"`
+		Period    string                    `json:"period"`
+		WeekStart *int                      `json:"weekStart"`
+		Amount    float64                   `json:"amount"`
+		Tallies   map[string]map[string]int `json:"tallies"`
 	} `json:"cases"`
+	SetAmount []struct {
+		Others float64 `json:"others"`
+		Exact  float64 `json:"exact"`
+		Want   float64 `json:"want"`
+	} `json:"setAmount"`
 	Previous []struct {
 		Rule    string   `json:"rule"`
 		Due     string   `json:"due"`
@@ -50,7 +60,7 @@ const (
 	root   = "root-1"
 )
 
-var char = map[string]string{Blank: ".", Done: "D", Tiny: "T", Skipped: "S", Missed: "M", Pending: "P", Upcoming: "U"}
+var char = map[string]string{Blank: ".", Done: "D", Tiny: "T", Partial: "A", Skipped: "S", Missed: "M", Rest: "R", Pending: "P", Upcoming: "U"}
 
 func entity(fields map[string]any) opsync.Entity {
 	e := opsync.Entity{}
@@ -121,7 +131,19 @@ func TestVectors(t *testing.T) {
 	for _, c := range v.Cases {
 		t.Run(c.Name, func(t *testing.T) {
 			all := rows(c.Rule, c.Due, c.Records, c.Split)
-			got := Compute(series, all[0], all, c.Today)
+			if c.Target > 0 {
+				all[0]["habit_target"], all[0]["habit_period"] = opsync.JSONOf(c.Target), opsync.JSONOf(c.Period)
+			}
+			if c.Amount > 0 {
+				all[0]["habit_amount"] = opsync.JSONOf(c.Amount)
+			}
+			opts := Options{WeekStart: c.WeekStart}
+			for date, byDevice := range c.Tallies {
+				for device, n := range byDevice {
+					opts.Tallies = append(opts.Tallies, entity(map[string]any{"series_id": series, "date": date, "device": device, "count": n, "deleted_at": nil}))
+				}
+			}
+			got := ComputeWith(series, all[0], all, c.Today, opts)
 			switch {
 			case c.Stats == nil && got != nil:
 				t.Fatalf("stats = %+v, want nil", *got)
@@ -134,7 +156,7 @@ func TestVectors(t *testing.T) {
 				from := g.Month + "-01"
 				to := AddDays(time.Date(atoi(g.Month[:4]), time.Month(atoi(g.Month[5:])+1), 1, 0, 0, 0, 0, time.UTC).Format(time.DateOnly), -1)
 				var b strings.Builder
-				for _, d := range Days(series, all[0], all, from, to, c.Today) {
+				for _, d := range DaysWith(series, all[0], all, from, to, c.Today, opts) {
 					b.WriteString(char[d.State])
 				}
 				if b.String() != g.Days {
@@ -142,6 +164,11 @@ func TestVectors(t *testing.T) {
 				}
 			}
 		})
+	}
+	for _, c := range v.SetAmount {
+		if got := OwnForExact(c.Others, c.Exact); got != c.Want {
+			t.Errorf("exact %v with %v from others = %v, want %v", c.Exact, c.Others, got, c.Want)
+		}
 	}
 	for _, p := range v.Previous {
 		r, err := recurrence.Parse(p.Rule)

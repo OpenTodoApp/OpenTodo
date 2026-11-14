@@ -2,20 +2,38 @@ import { describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from './db'
 import { logicalToday, setDayStart } from './dates'
 import { completeTask, createTask, resetDeviceId } from './ops'
-import { habitRule, habitStats, monthGrid, previousScheduled, recordsByDate, scheduled, type DayState, type HabitStats } from './habits'
+import { habitRule, habitStats, monthGrid, previousScheduled, recordsByDate, scheduled, type DayState, type HabitOptions, type HabitStats } from './habits'
 import rawVectors from './habits.vectors.json'
+import { ownForExact } from './habitAmounts'
 import { detachedId, occurrenceId } from './ids'
 import { parseRule, type Rule } from './recurrence'
-import type { Task } from './types'
+import type { HabitTally, Task } from './types'
 
+interface Case {
+  name: string; rule: string; due: string; today: string; records: Record<string, string>; split?: Split; stats: HabitStats | null; grids?: { month: string; days: string }[]
+  target?: number; period?: string; weekStart?: number; amount?: number; tallies?: Record<string, Record<string, number>>
+}
 interface Vectors {
-  cases: { name: string; rule: string; due: string; today: string; records: Record<string, string>; split?: Split; stats: HabitStats | null; grids?: { month: string; days: string }[] }[]
+  cases: Case[]
   previous: { rule: string; due: string; before: string; records: string[]; want: string | null }[]
+  setAmount: { others: number; exact: number; want: number }[]
+}
+
+/** A case's habit-targets fields on the series and its options (tallies, week start). */
+function targetsOf(v: Case): { fields: Partial<Task>; opts: HabitOptions } {
+  const tallies: HabitTally[] = []
+  for (const [date, byDevice] of Object.entries(v.tallies ?? {})) {
+    for (const [device, count] of Object.entries(byDevice)) tallies.push({ id: `${date}:${device}`, series_id: SERIES, date, device, count, created_at: 1, deleted_at: null, _clock: {} })
+  }
+  const fields: Partial<Task> = {}
+  if (v.target) Object.assign(fields, { habit_target: v.target, habit_period: v.period })
+  if (v.amount) fields.habit_amount = v.amount
+  return { fields, opts: { tallies, weekStart: v.weekStart } }
 }
 interface Split { from: string; rule: string; due: string; completed?: boolean; records: Record<string, string> }
 const vectors = rawVectors as unknown as Vectors
 
-const CHAR: Record<DayState, string> = { blank: '.', done: 'D', tiny: 'T', skipped: 'S', missed: 'M', pending: 'P', upcoming: 'U' }
+const CHAR: Record<DayState, string> = { blank: '.', done: 'D', tiny: 'T', partial: 'A', skipped: 'S', missed: 'M', rest: 'R', pending: 'P', upcoming: 'U' }
 
 function task(over: Partial<Task>): Task {
   return {
@@ -29,8 +47,8 @@ const SERIES = 'series-1'
 
 const ROOT = 'root-1'
 
-function rows(rule: string, due: string, records: Record<string, string>, split?: Split): Task[] {
-  const series = task({ id: SERIES, recurrence: rule, due: { date: due }, habit: true, ...(split ? { split_from: { series: ROOT, date: split.from } } : {}) })
+function rows(rule: string, due: string, records: Record<string, string>, split?: Split, extra: Partial<Task> = {}): Task[] {
+  const series = task({ id: SERIES, recurrence: rule, due: { date: due }, habit: true, ...(split ? { split_from: { series: ROOT, date: split.from } } : {}), ...extra })
   const own = recordRows(SERIES, records)
   if (!split) return [series, ...own]
   const root = task({ id: ROOT, recurrence: split.rule, due: { date: split.due }, habit: true, completed_at: split.completed ? 100 : null })
@@ -57,14 +75,19 @@ function mustRule(text: string): Rule {
 describe('habit vectors', () => {
   for (const v of vectors.cases) {
     it(v.name, () => {
-      const all = rows(v.rule, v.due, v.records, v.split)
-      expect(habitStats(all[0], all, v.today)).toEqual(v.stats)
+      const { fields, opts } = targetsOf(v)
+      const all = rows(v.rule, v.due, v.records, v.split, fields)
+      expect(habitStats(all[0], all, v.today, opts)).toEqual(v.stats)
       for (const g of v.grids ?? []) {
         const [y, m] = g.month.split('-').map(Number)
-        const days = monthGrid(all[0], all, y, m, v.today).map((c) => CHAR[c.state]).join('')
+        const days = monthGrid(all[0], all, y, m, v.today, opts).map((c) => CHAR[c.state]).join('')
         expect(days, g.month).toBe(g.days)
       }
     })
+  }
+
+  for (const c of vectors.setAmount) {
+    it(`an exact ${c.exact} with ${c.others} from other devices`, () => expect(ownForExact(c.others, c.exact)).toBe(c.want))
   }
 
   for (const p of vectors.previous) {

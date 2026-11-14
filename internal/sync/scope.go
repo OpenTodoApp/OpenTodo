@@ -181,6 +181,10 @@ type resolver struct {
 	// known about each entry id.
 	batchTimeEntry map[string]*batchTimeEntry
 	timeEntries    map[string]*timeEntryState
+	// Habit tallies (habittally.go): the key fields per new tally, and
+	// what is known about each tally id.
+	batchTally map[string]*tallyKey
+	tallies    map[string]*tallyState
 	// batchSeries marks the tasks this batch gives a series_id (occurrence_check.go).
 	batchSeries map[string]bool
 	// batchRule marks the tasks this batch gives a rule (split_check.go).
@@ -208,11 +212,13 @@ func newResolver(ctx context.Context, tx querier, acc *access, ops []Op) *resolv
 		claims: map[string]bool{}, misplaced: map[string]bool{}, workspaces: map[string]bool{},
 		batchTasks: map[string]bool{}, batchNotes: map[string]bool{}, batchComment: map[string]*batchComment{}, comments: map[string]*commentState{},
 		batchAttachment: map[string]*batchAttachment{}, attachments: map[string]*attachmentState{},
-		batchTimeEntry: map[string]*batchTimeEntry{}, timeEntries: map[string]*timeEntryState{}}
+		batchTimeEntry: map[string]*batchTimeEntry{}, timeEntries: map[string]*timeEntryState{},
+		batchTally: map[string]*tallyKey{}, tallies: map[string]*tallyState{}}
 	for _, op := range ops {
 		r.noteComment(op)
 		r.noteAttachment(op)
 		r.noteTimeEntry(op)
+		r.noteTally(op)
 		r.noteSeries(op)
 		r.noteRule(op)
 		r.noteReminder(op)
@@ -351,6 +357,9 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 		// Time entries follow their task's scope with their own authorship rules
 		// (time-tracking D1, timeentries.go).
 		return r.resolveTimeEntry(op)
+	case "habit_tally":
+		// Tallies follow their record's task (habit-targets D2, habittally.go).
+		return r.resolveTally(op)
 	default:
 		// Labels, saved views and reminders are personal: a reminder on a task in a
 		// shared project still belongs to its creator only (OpenSpec `reminders`).
@@ -505,6 +514,12 @@ func (r *resolver) restoreOps(refused []Op) ([]Op, error) {
 			scope = st.scope
 		case "time_entry":
 			st := r.timeEntries[op.EntityID]
+			if st == nil || !st.found || st.scope == "" {
+				continue
+			}
+			scope = st.scope
+		case "habit_tally":
+			st := r.tallies[op.EntityID]
 			if st == nil || !st.found || st.scope == "" {
 				continue
 			}

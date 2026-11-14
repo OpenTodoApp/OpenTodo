@@ -20,3 +20,10 @@ export async function pickDay(seriesId: string, date: string, choice: DayChoice)
   const r = await setPastDay(seriesId, date, choice)
   if (r?.entry) showUndoToast(r.label, r.entry.id)
 }
+
+/** Subtract a step from today's amount, or add one (habit-targets D2), with the Undo toast. */
+export async function stepAmount(seriesId: string, step: number): Promise<void> {
+  const { changeAmount } = await import('../../lib/habitActions')
+  const r = await changeAmount(seriesId, { add: step })
+  if (r?.entry) showUndoToast(r.label, r.entry.id)
+}

@@ -44,10 +44,10 @@ A habit opens a page of its own: its note, how often, the anchor, the tiny versi
 - **A past day**: choose it in the thread or the month history, then **Note**. A day without a check-in asks for its state first.
 - A day with a note has a small mark, read out as "with a note"; **Check-ins** lists them newest first.
 
-A day's note is an ordinary task note: formatted, [linked](note-links.md), searchable with the habit's title and date, and editable offline.
+A day's note is an ordinary task note: formatted, [linked](note-links.md), searchable and editable offline.
 
 ## Start a habit
 
 **New habit**, **Make it a habit** (in a task's menu) and **Edit** (on a habit's page) open one form: the title, how often (any calendar rule written as under **Repeat**), the tiny version, **After** (the routine it follows), the part of the day and the colour. A task without a rule gets `every day`; one that repeats after completion asks for a calendar rule first, because a habit is measured against the calendar. **Make habits** turns a note's check-list lines into habits ([Notes to tasks](notes-to-tasks.md)).
 
-The tiny version, the thread, the numbers, fixing a past day and graduating are in [A habit's days](habit-days.md).
+More in [A habit's days](habit-days.md) and [Targets and amounts](habit-targets.md).

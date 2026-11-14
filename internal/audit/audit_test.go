@@ -116,8 +116,9 @@ func TestConstructorsNeverCarryEntityFields(t *testing.T) {
 	deny := map[string]string{}
 	// Field names that also name an audit detail and are never content: a frame's
 	// planning source is a "project:<id>" key (calendar-frames D1), while a
-	// restore's source is the backup it came from.
-	shared := map[string]bool{"frame.source": true}
+	// restore's source is the backup it came from. A habit tally's count is a
+	// number of check-ins (habit-targets D2), an audit count a number of rows.
+	shared := map[string]bool{"frame.source": true, "habit_tally.count": true}
 	for entity, fields := range opsync.Schema {
 		for f, def := range fields {
 			if shared[entity+"."+f] && !def.Content {

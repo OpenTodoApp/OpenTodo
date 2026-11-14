@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie'
 import type { FocusState } from './focus/timer'
 import { platform } from './platform'
 import { forgetShellData } from './shell'
-import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type CustomTheme, type MemoryItem, type Objective, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
+import { ENTITIES, type Attachment, type Clock, type Entity, type FieldDef, type CalendarEvent, type CalendarSubscription, type ActivityEntry, type AppNotification, type Comment, type Label, type Membership, type Op, type Place, type Project, type Rule, type Frame, type CustomTheme, type MemoryItem, type Objective, type ProjectPrefs, type Reminder, type Review, type RowEncryption, type Note, type Section, type Slot, type Task, type TimeEntry, type HabitTally, type UserPrefs, type View, type Workspace, type WorkspaceGroup, type WorkspaceMember } from './types'
 import { createStore } from './store'
 
 export interface OutboxOp extends Op {
@@ -170,6 +170,7 @@ class OpenTodoDB extends Dexie {
   calendarSubscriptions!: Table<CalendarSubscription, string>
   /** Time entries (OpenSpec time-tracking): a synced entity, indexed by task, author and start. */
   timeEntries!: Table<TimeEntry, string>
+  habitTallies!: Table<HabitTally, string>
   /** Saved places (OpenSpec task-locations): a synced entity, ordered by position. */
   places!: Table<Place, string>
   /** Automation rules (OpenSpec automation-rules): a synced entity, ordered by position. */
@@ -481,6 +482,7 @@ class OpenTodoDB extends Dexie {
     // v31: a series' occurrence records and the pieces of a split series by index, so completing or
     // skipping a repeating task reads its own rows and not every task (lineageRows.ts).
     this.version(31).stores({ tasks: 'id, project_id, parent_id, completed_at, position, assignee_id, section_id, workspace_id, series_id, split_from.series' })
+    this.version(32).stores({ habitTallies: 'id, series_id' }) // v32 (habit-targets): the synced `habit_tally` entity.
   }
 }
 
@@ -558,7 +560,7 @@ function tableMap(d: OpenTodoDB) {
   return {
     project: d.projects, task: d.tasks, label: d.labels, view: d.views, reminder: d.reminders, section: d.sections,
     field: d.fields, comment: d.comments, project_prefs: d.prefs, user_prefs: d.userPrefs, attachment: d.attachments, review: d.review,
-    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames, slot: d.slots, note: d.notes, theme: d.themes, objective: d.objectives, memory: d.memories,
+    time_entry: d.timeEntries, place: d.places, rule: d.rules, frame: d.frames, slot: d.slots, note: d.notes, theme: d.themes, objective: d.objectives, memory: d.memories, habit_tally: d.habitTallies,
   } satisfies Record<Entity, Table<unknown, string>>
 }
 

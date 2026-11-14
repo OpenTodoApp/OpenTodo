@@ -18,7 +18,15 @@ func (st *runState) findHabits(s *ruleval.Step) (ruleval.Value, string, error) {
 	only, _ := lit[string](s, "only")
 	streak, _ := lit[float64](s, "streak")
 	var ids []string
-	for _, h := range habits.List(tasks, st.w.today, false, nil, nil) {
+	opts := habits.Options{}
+	if tallies, err := st.e.Sync.List(st.ctx, st.w.uid, "habit_tally", false); err == nil {
+		opts.Tallies = tallies
+	}
+	if prefs, err := st.e.Sync.Get(st.ctx, st.w.uid, "user_prefs", "me"); err == nil && prefs != nil {
+		ws := habits.WeekStart(prefs)
+		opts.WeekStart = &ws
+	}
+	for _, h := range habits.List(tasks, st.w.today, false, nil, nil, opts) {
 		switch {
 		case only == "at_risk" && !h.AtRisk, only == "back_on_track" && !h.BackOnTrack, streak > 0 && float64(h.Streak) < streak:
 			continue
