@@ -44,6 +44,7 @@
   "settings/capture",
   "settings/data",
   "settings/date-time",
+  "settings/default-reminders",
   "settings/digest",
   "settings/email",
   "settings/encryption",

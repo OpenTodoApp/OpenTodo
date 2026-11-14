@@ -1008,7 +1008,7 @@ const shots = [
       await fetch('/api/v1/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ device: 'docs', cursor: 0, ops: [op('reminder_default_timed', '-30'), op('reminder_default_dated', '-1440')] }) })
     })
-    await go(p, plainBase, '/settings/notifications/push', () => p.locator('#default-reminder-timed').waitFor())
+    await go(p, plainBase, '/settings/notifications/reminders', () => p.locator('#default-reminder-timed').waitFor())
     await p.waitForFunction(() => document.querySelector('#default-reminder-timed')?.value === '-30', null, { timeout: 20000 })
     const h = p.getByRole('heading', { level: 2, name: 'Default reminders' }); await h.waitFor()
     await h.evaluate((el) => el.scrollIntoView({ block: 'start' })); await settle(p, 400)

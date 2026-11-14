@@ -3766,7 +3766,7 @@
   "Push needs the offline service worker (see above).": "Il push richiede il service worker offline (vedi sopra).",
   "Push notifications": "Notifiche push",
   "Push notifications are turned off on this server. Reminders are shown in the app.": "Le notifiche push sono disattivate su questo server. I promemoria vengono mostrati nell’app.",
-  "Push notifications for reminders on this device, delivery channels and the weekly digest": "Notifiche push per i promemoria su questo dispositivo, canali di invio e riepilogo settimanale",
+  "Default reminders, push notifications on this device, delivery channels and the weekly digest": "Promemoria predefiniti, notifiche push su questo dispositivo, canali di consegna e il riepilogo settimanale",
   "Put in a slot": "Metti in uno spazio",
   "Put in maintenance": "Metti in manutenzione",
   "Puts the whole server back to the state in an archive: every account, project, task and the sync log. The server restarts, and everything is checked before anything changes. On a stopped server you can also use the <a>command line</a>.": "Riporta l’intero server allo stato di un archivio: ogni account, progetto, attività e il registro di sincronizzazione. Il server si riavvia e tutto viene verificato prima di qualsiasi modifica. Con il server fermo puoi anche usare la <a>riga di comando</a>.",

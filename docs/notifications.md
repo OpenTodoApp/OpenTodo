@@ -35,7 +35,7 @@ How to add reminders is covered in [Recurring tasks and reminders](recurring-and
 
 ## Get reminders when the app is closed
 
-Push notifications deliver reminders even when OpenTodo isn't open, and each device decides for itself: open **Settings → Notifications** on the device, turn on **Enable notifications on this device**, allow notifications when the browser asks, then select **Send test notification**. Repeat it on your phone, laptop and tablet. The full steps are in [Push notifications](push-notifications.md).
+Push notifications deliver reminders even when OpenTodo isn't open, and each device decides for itself: open **Settings → Notifications → Push notifications** on the device, turn on **Enable notifications on this device**, allow notifications when the browser asks, then select **Send test notification**. Repeat it on your phone, laptop and tablet. The full steps are in [Push notifications](push-notifications.md).
 
 ### Check that it works
 
