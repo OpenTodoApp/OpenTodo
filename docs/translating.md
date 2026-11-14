@@ -99,6 +99,7 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | Deutsch, Français, Español, Italiano, Português | `de`, `fr`, `es`, `it`, `pt` | maintained | the project maintainers |
 | 简体中文 | `zh` | maintained | peilf |
 | Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
+<!-- | Polski | `pl` | community | your GitHub name | — add this row when the catalog is listed -->
 
 ## Writing a quick-add vocabulary
 
@@ -111,29 +112,29 @@ Quick add understands dates, times, repeats and reminders in a language only wit
 
 ## Glossary
 
-Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *vous*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você* and Simplified Chinese 你. peilf reviews the Simplified Chinese catalog.
+Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *vous*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你 and Polish *ty*. peilf reviews the Simplified Chinese catalog.
 
-| English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | Taak |
-| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | Subtaak |
-| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project |
-| Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie |
-| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label |
-| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox |
-| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag |
-| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort |
-| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd |
-| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 | Ooit |
-| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond |
-| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid |
-| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak |
-| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum |
-| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline |
-| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering |
-| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen |
-| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen |
-| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer |
-| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey |
-| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie |
-| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik |
+| English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands | Polski |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Task | Aufgabe | tâche | tarea | attività | tarefa | 任务 | Taak | zadanie |
+| Subtask | Unteraufgabe | sous-tâche | subtarea | sottoattività | subtarefa | 子任务 | Subtaak | podzadanie |
+| Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project | projekt |
+| Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie | sekcja |
+| Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label | etykieta |
+| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Skrzynka odbiorcza |
+| Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag | Dziś |
+| Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort | Nadchodzące |
+| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | W dowolnym momencie |
+| Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 | Ooit | Kiedyś |
+| This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond | Dziś wieczorem |
+| Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid | Ukończone |
+| Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak | Kosz |
+| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum | data wykonania |
+| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline | termin |
+| Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering | przypomnienie |
+| Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen | Szybkie dodawanie |
+| Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen | Ustawienia |
+| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer | właściciel, administrator, edytor, czytelnik |
+| Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey | klucz dostępu |
+| Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie | uwierzytelnianie dwuskładnikowe |
+| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik | przegląd tygodnia |
