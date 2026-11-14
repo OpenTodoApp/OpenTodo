@@ -279,12 +279,14 @@ Every entry of the screen inventory, rare ones included, names the story that sh
 
 ### Updating baselines
 
-Font rendering differs between operating systems, so baselines are only generated inside the pinned Playwright image and stored under `web/src/ui/__screenshots__/`:
+Font rendering differs between operating systems, so baselines are only generated inside the pinned Playwright image. They live on the `ui-baselines` branch, one commit that is replaced on every change, so main's history doesn't grow with each copy of every image. Before comparing, `make ui-check` and CI run `node scripts/ui-check/baselines.mjs fetch`, which puts the branch's set in `web/.ui-baselines/` (ignored by git) and lays any PNGs in `web/src/ui/__screenshots__/` over it. Offline, it keeps the set it fetched last.
 
-- With Docker: `make ui-baselines`, then review and commit the changed PNGs.
-- Without Docker: run the **UI baselines** workflow on GitHub (Actions → UI baselines → Run workflow), download the `ui-baselines` artifact and commit its PNGs. For a story that has no baseline yet, the CI "UI check (visual regression)" job also writes one and fails; its `ui-check-report-<shard>` artifact contains it under `web/src/ui/__screenshots__`.
+A pull request carries only the baselines it adds or changes, in `web/src/ui/__screenshots__/`:
 
-Update baselines only for intended visual changes, in the same pull request as the change.
+- With Docker: `make ui-baselines` regenerates inside the image and copies the new or changed baselines there; review and commit them.
+- Without Docker: run the **UI baselines** workflow on your branch (Actions → UI baselines → Run workflow) and commit the PNGs of its `ui-baselines` artifact there. Or take a failing "UI check (visual regression)" job's `ui-check-report-<shard>` artifact: its `*-actual.png` files, renamed without `-actual`, are the new baselines.
+
+After the pull request merges, the **UI baselines** workflow folds those PNGs into the branch and removes them from main. Running it on `main` regenerates every baseline and replaces the branch. Update baselines only for intended visual changes, in the same pull request as the change.
 
 ## The interface audit
 

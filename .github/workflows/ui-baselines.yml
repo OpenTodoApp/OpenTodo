@@ -1,23 +1,69 @@
 name: UI baselines
 
-# Regenerates the visual-regression baselines of the design workbench (OpenSpec
-# design-language) inside the pinned Playwright image and uploads them as an
-# artifact. Download it and commit the PNGs under web/src/ui/__screenshots__/.
+# The visual-regression baselines of the design workbench live on the ui-baselines
+# branch: one parentless commit, replaced on every change, so main's history no longer
+# grows with each copy of every PNG (OpenSpec ui-baselines-branch, docs/design-system.md).
+#
+# - Push to main with PNGs in web/src/ui/__screenshots__ (a merged pull request's new or
+#   changed baselines): fold them into the branch and remove them from main.
+# - Run on main (Actions → UI baselines → Run workflow): regenerate every baseline inside
+#   the pinned Playwright image and replace the branch.
+# - Run on any other branch: regenerate inside the image and upload only the new or
+#   changed baselines as the ui-baselines artifact, to commit in web/src/ui/__screenshots__.
+#
+# The first push to main after the branch is missing writes it from main's PNGs (or, when
+# main has just dropped them, from main's parent).
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['web/src/ui/__screenshots__/**']
 
 permissions:
   contents: read
 
+# One writer of the branch at a time; never cancel a fold half-way.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ui-baselines-branch
+  cancel-in-progress: false
 
 jobs:
-  baselines:
+  fold:
+    name: Fold baselines into the ui-baselines branch
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Assemble the branch's set and this commit's baselines
+        env:
+          UI_BASELINES_REPO: origin
+        run: node scripts/ui-check/baselines.mjs fetch
+      - name: Replace the branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          commit=$(node scripts/ui-check/baselines.mjs commit)
+          git push --force origin "$commit:refs/heads/ui-baselines"
+      - name: Remove them from main
+        run: |
+          if ls web/src/ui/__screenshots__/*.png >/dev/null 2>&1; then
+            git rm -q web/src/ui/__screenshots__/*.png
+            git commit -q -m "Move UI baselines to the ui-baselines branch"
+            git push origin HEAD:main
+          fi
+
+  regenerate:
     name: Generate UI baselines
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
     # The image the UI check job runs in (pinned by digest; same as PLAYWRIGHT_IMAGE in the Makefile).
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
@@ -27,10 +73,29 @@ jobs:
         working-directory: web
       - run: npm run build-storybook
         working-directory: web
+      - name: Assemble the current baselines
+        env:
+          UI_BASELINES_REPO: origin
+        run: node scripts/ui-check/baselines.mjs fetch
       - name: Write baselines
         working-directory: scripts/ui-check
-        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all
+        env:
+          UPDATE: ${{ github.ref == 'refs/heads/main' && 'all' || 'changed' }}
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --update-snapshots="$UPDATE"
+      - name: Replace the branch (main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          commit=$(node scripts/ui-check/baselines.mjs commit)
+          git push --force origin "$commit:refs/heads/ui-baselines"
+      - name: Collect the new or changed baselines
+        if: github.ref != 'refs/heads/main'
+        run: node scripts/ui-check/baselines.mjs collect ui-baselines-out
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: github.ref != 'refs/heads/main'
         with:
           name: ui-baselines
-          path: web/src/ui/__screenshots__
+          path: ui-baselines-out
+          if-no-files-found: warn

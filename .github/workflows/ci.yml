@@ -537,8 +537,10 @@ jobs:
       matrix:
         shard: [1, 2, 3]
     # The same image `make ui-baselines` uses, so screenshots match the baselines
-    # pixel for pixel. A missing baseline is written and the job fails; the
-    # ui-check-report-<shard> artifact then carries it (web/src/ui/__screenshots__) to commit.
+    # pixel for pixel. The baselines come from the ui-baselines branch, with this pull
+    # request's new or changed ones in web/src/ui/__screenshots__ laid over them
+    # (ui-baselines-branch). A missing or differing baseline fails the job; the
+    # ui-check-report-<shard> artifact carries the *-actual.png images to commit there.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -547,6 +549,8 @@ jobs:
         working-directory: web
       - run: npm run build-storybook
         working-directory: web
+      - name: Baselines
+        run: node scripts/ui-check/baselines.mjs fetch
       - name: Visual regression
         working-directory: scripts/ui-check
         env:
@@ -559,7 +563,6 @@ jobs:
           path: |
             web/test-results/ui-visual
             web/playwright-report/ui-visual
-            web/src/ui/__screenshots__
 
   cli:
     name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})

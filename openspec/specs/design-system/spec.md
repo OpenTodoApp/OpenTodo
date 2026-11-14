@@ -201,7 +201,7 @@ CI SHALL run an automated accessibility audit on every workbench story in light 
 - **THEN** the UI check fails and names the story, theme and rule
 
 ### Requirement: Visual regression gate on stories
-CI SHALL capture every workbench story in light and dark at 375 px and 1280 px wide and compare it with committed baselines. It SHALL fail when the difference exceeds a small threshold and report a diff image. Contributors SHALL be able to update baselines with one documented command.
+CI SHALL capture every workbench story in light and dark at 375 px and 1280 px wide and compare it with baselines. It SHALL fail when the difference exceeds a small threshold and report a diff image. Contributors SHALL be able to update baselines with one documented command. The baselines SHALL live outside main's history, on one branch that is replaced on every change; a pull request SHALL carry only the baselines it adds or changes, which the check lays over that set and which move to the branch once the pull request merges.
 
 #### Scenario: Unintended visual change
 - **WHEN** a change alters the padding of the shared button and baselines were not updated
@@ -209,7 +209,15 @@ CI SHALL capture every workbench story in light and dark at 375 px and 1280 px w
 
 #### Scenario: Intended visual change
 - **WHEN** a contributor intentionally changes a component and runs the baseline update command
-- **THEN** the new baselines are written to the repository and the UI check passes
+- **THEN** only the new or changed baselines are written for the pull request and the UI check passes
+
+#### Scenario: Merged baselines leave main
+- **WHEN** a pull request with new or changed baselines merges
+- **THEN** the baselines branch is replaced with a set that includes them, they are removed from main, and main's history does not gain a copy of the other baselines
+
+#### Scenario: Full refresh
+- **WHEN** a maintainer regenerates every baseline on main
+- **THEN** the baselines branch is replaced and main's history does not change
 
 ### Requirement: One icon set
 Every pictogram in the client SHALL come from one line-icon set with a consistent grid and stroke. Emoji and Unicode symbols SHALL NOT be used as icons. User-written content and emoji typed by users are unaffected. Icons SHALL follow the current text colour, so they adapt to light and dark themes.
