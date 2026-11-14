@@ -207,6 +207,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `sheet-drag-dismiss` | Bottom sheets follow the finger and close on a drag | In progress (11 of 13) |
 | `pull-to-sync` | Pull down to sync, never a reload | In progress (7 of 9) |
 | `shell-first-paint` | The apps open on their colour and icon, and the loading frame already has the phone's bars | In progress (10 of 15) |
+| `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Planned |
 
 ## Native app
 
