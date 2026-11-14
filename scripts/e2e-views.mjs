@@ -5,6 +5,7 @@
 // start view with its fallback, and two devices converging on a view edited offline.
 // See scripts/README.md.
 // Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
+import { diagnoser } from './e2e-diagnose.mjs'
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -65,7 +66,8 @@ const seed = [
 ]
 for (const t of seed) await post('tasks', t)
 
-const pageA = A.page
+const { watch, diagnosed } = diagnoser()
+const pageA = watch(A.page)
 // The display panel (views-and-display): opened from the toolbar, kept open while options change.
 const display = async (p) => {
   if (!(await p.locator('[data-display-panel]').count())) await p.getByRole('button', { name: 'Display options' }).click()
@@ -387,7 +389,8 @@ const frameEdges = () => pageA.evaluate(() => {
   }
 })
 const layout = (name) => pageA.getByRole('group', { name: 'Project layout' }).getByRole('button', { name })
-const settle = async () => { await pageA.locator('[data-page-header-row]').first().waitFor(); await pageA.waitForTimeout(400) }
+// The first wait after a navigation records what the page shows when it fails (issue 1363).
+const settle = async () => { await diagnosed(pageA, 'views-settle', () => pageA.locator('[data-page-header-row]').first().waitFor()); await pageA.waitForTimeout(400) }
 await pageA.setViewportSize({ width: 1536, height: 900 })
 const standalone = []
 for (const path of ['/inbox', '/today', '/labels', '/trash', '/views/new']) {

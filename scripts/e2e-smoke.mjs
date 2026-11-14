@@ -1,4 +1,5 @@
 // Resolve Playwright locally (npm i / npx -p) or from a global install (npm i -g playwright).
+import { diagnoser } from './e2e-diagnose.mjs'
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
   const { execSync } = await import('node:child_process')
@@ -23,26 +24,10 @@ page.on('response', (r) => { if (r.status() >= 400 && !(r.status() === 404 && /\
 
 const step = (s) => console.log('·', s)
 const snap = async (p, name) => { if (shots) await p.screenshot({ path: `${shots}/${name}.png` }) }
-// What a page shows when a wait fails (issue 1363): a screenshot, its address, the page's
-// recent navigations and its text, into the report directory CI uploads on failure
-// (layout-report, or E2E_REPORT), then the error goes on as before.
-const report = process.env.E2E_REPORT ?? 'layout-report'
-const navigations = new Map()
-const watchNavigations = (p) => { navigations.set(p, []); p.on('framenavigated', (f) => { if (f === p.mainFrame()) navigations.get(p).push(`${new Date().toISOString()} ${f.url()}`) }) }
+// What a page shows when a wait fails (issue 1363): scripts/e2e-diagnose.mjs.
+const { watch: watchNavigations, diagnosed: diagnose } = diagnoser()
 watchNavigations(page)
-const diagnosed = async (p, name, wait) => {
-  try { return await wait() } catch (e) {
-    try {
-      const { mkdirSync, writeFileSync } = await import('node:fs')
-      mkdirSync(report, { recursive: true })
-      await p.screenshot({ path: `${report}/e2e-${name}.png`, fullPage: true })
-      const text = await p.evaluate(() => document.body.innerText).catch(() => '')
-      writeFileSync(`${report}/e2e-${name}.txt`, [`url: ${p.url()}`, 'navigations:', ...(navigations.get(p) ?? []), 'errors:', ...errors, 'text:', text.slice(0, 4000)].join('\n'))
-      console.log(`  ${name}: failed at ${p.url()}; screenshot and page text in ${report}/e2e-${name}.*`)
-    } catch {}
-    throw e
-  }
-}
+const diagnosed = (p, name, wait) => diagnose(p, name, wait, errors)
 // A task row's open button: its accessible name starts with the title (date and project chips follow).
 // Scoped to the role so the Parent task picker's <option> and subtask toggles never match.
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
