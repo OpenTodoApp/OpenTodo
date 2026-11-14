@@ -2,7 +2,7 @@
 // The menu's edge swipe (OpenSpec change edge-swipe-menu): a right swipe from the
 // left edge opens the phone menu; anything else leaves it, and rows ignore the edge.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { watchEdgeSwipe } from './edgeSwipe'
+import { edgeSwipeAction, watchEdgeSwipe, watchesEdge } from './edgeSwipe'
 import { beginSwipe, SWIPE } from './rowSwipe'
 
 const ptr = (type: string, x: number, y = 300, pointerType = 'touch') =>
@@ -47,5 +47,27 @@ describe('edge swipe', () => {
     ptr('pointermove', 80, 300)
     ptr('pointerup', 80, 300)
     expect(onLock).not.toHaveBeenCalled()
+  })
+
+  // edge-swipe-back (GitHub issue 1323): back on a page with Back, the menu on a top-level page.
+  it('goes back on a page with Back and opens the menu on a top-level page', () => {
+    const back = vi.fn()
+    const menu = vi.fn()
+    stop = watchEdgeSwipe(() => edgeSwipeAction(back, menu)(), () => true)
+    swipe([[5, 300], [30, 302], [80, 303], [130, 304]])
+    expect(back).toHaveBeenCalledTimes(1)
+    expect(menu).not.toHaveBeenCalled()
+    stop()
+    stop = watchEdgeSwipe(() => edgeSwipeAction(undefined, menu)(), () => true)
+    swipe([[5, 300], [30, 302], [80, 303], [130, 304]])
+    expect(menu).toHaveBeenCalledTimes(1)
+    expect(back).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves the installed web app on iOS to the system back swipe', () => {
+    expect(watchesEdge({ shell: false, standalone: true, ios: true })).toBe(false)
+    expect(watchesEdge({ shell: true, standalone: true, ios: true })).toBe(true)
+    expect(watchesEdge({ shell: false, standalone: false, ios: true })).toBe(true)
+    expect(watchesEdge({ shell: false, standalone: true, ios: false })).toBe(true)
   })
 })
