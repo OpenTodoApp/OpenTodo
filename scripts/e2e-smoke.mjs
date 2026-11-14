@@ -23,6 +23,26 @@ page.on('response', (r) => { if (r.status() >= 400 && !(r.status() === 404 && /\
 
 const step = (s) => console.log('·', s)
 const snap = async (p, name) => { if (shots) await p.screenshot({ path: `${shots}/${name}.png` }) }
+// What a page shows when a wait fails (issue 1363): a screenshot, its address, the page's
+// recent navigations and its text, into the report directory CI uploads on failure
+// (layout-report, or E2E_REPORT), then the error goes on as before.
+const report = process.env.E2E_REPORT ?? 'layout-report'
+const navigations = new Map()
+const watchNavigations = (p) => { navigations.set(p, []); p.on('framenavigated', (f) => { if (f === p.mainFrame()) navigations.get(p).push(`${new Date().toISOString()} ${f.url()}`) }) }
+watchNavigations(page)
+const diagnosed = async (p, name, wait) => {
+  try { return await wait() } catch (e) {
+    try {
+      const { mkdirSync, writeFileSync } = await import('node:fs')
+      mkdirSync(report, { recursive: true })
+      await p.screenshot({ path: `${report}/e2e-${name}.png`, fullPage: true })
+      const text = await p.evaluate(() => document.body.innerText).catch(() => '')
+      writeFileSync(`${report}/e2e-${name}.txt`, [`url: ${p.url()}`, 'navigations:', ...(navigations.get(p) ?? []), 'errors:', ...errors, 'text:', text.slice(0, 4000)].join('\n'))
+      console.log(`  ${name}: failed at ${p.url()}; screenshot and page text in ${report}/e2e-${name}.*`)
+    } catch {}
+    throw e
+  }
+}
 // A task row's open button: its accessible name starts with the title (date and project chips follow).
 // Scoped to the role so the Parent task picker's <option> and subtask toggles never match.
 const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -155,6 +175,7 @@ step('second device: fresh context sees the same data')
 const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 800 } })
 await ctx2.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open') } catch {} })  // click opens the panel, as these flows expect (inline-task-editing)
 const p2 = await ctx2.newPage()
+watchNavigations(p2)
 await p2.goto(base)
 await p2.getByLabel('Email').fill('ada@example.com')
 await p2.getByLabel(/Password/).fill('correct horse battery staple')
@@ -255,7 +276,7 @@ console.log('  service workers:', sw, 'manifest status:', manifest)
 step('process the Inbox (inbox-triage)')
 await page.keyboard.press('Escape')
 await page.goto(`${base}/inbox`)
-await row(page, 'Book dentist appointment').waitFor()
+await diagnosed(page, 'inbox', () => row(page, 'Book dentist appointment').waitFor())
 await page.keyboard.press('g'); await page.keyboard.press('p')
 await page.locator('[data-triage-card]').waitFor()
 const before = await page.locator('[data-triage-progress]').innerText()
