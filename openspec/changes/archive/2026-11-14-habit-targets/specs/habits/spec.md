@@ -35,7 +35,7 @@ A task SHALL have the additive fields `habit_amount` (a positive number, 0 for n
 - **THEN** it reads "7 of 8 glasses", today is partial again, and the completion is undone
 
 ### Requirement: Exact amounts across devices
-Each device SHALL record its additions to a day as a `habit_tally` row with a name-based id derived from the occurrence record and the device id, holding its own count, so that devices never write each other's rows; the day's amount SHALL be the sum of the day's live tallies. A tally SHALL follow its habit's sharing, export, trash and end-to-end encryption rules (the count is not content). Setting an exact amount on a device SHALL set its own tally to the exact amount minus the other devices' counts, never below zero. The server, the API and MCP SHALL report the sum.
+Each device SHALL record its additions to a day as a `habit_tally` row naming the habit series and the day, with a name-based id derived from the series, the day and the device id, holding its own count, so that devices never write each other's rows; the day's amount SHALL be the sum of the day's live tallies. A tally SHALL follow its habit's sharing, export, trash and end-to-end encryption rules (the count is not content). Setting an exact amount on a device SHALL set its own tally to the exact amount minus the other devices' counts, never below zero. The server, the API and MCP SHALL report the sum.
 
 #### Scenario: Two phones, offline
 - **WHEN** phone A adds two glasses and phone B adds three glasses to today's Water, both offline, and both sync
@@ -43,7 +43,7 @@ Each device SHALL record its additions to a day as a `habit_tally` row with a na
 
 #### Scenario: Export
 - **WHEN** the user downloads the JSON export
-- **THEN** each day's tallies are present with their record id, device and count
+- **THEN** each day's tallies are present with their series, day, device and count
 
 ### Requirement: Targets and amounts in tools and routes
 `list_habits`, `get_habit`, `GET /api/v1/habits` and `GET /api/v1/habits/{id}` SHALL carry `target`, `period`, `amount`, `unit` and, per day, the day's amount; `log_habit` and `POST /api/v1/habits/{id}/log` SHALL accept `amount` (added as the calling client's own tally, or `set_amount` for an exact value) for an amount habit and answer 400 `invalid_input` naming `amount` for a habit without one or a negative value. The server's numbers SHALL include periods and partial days with the same vectors as the devices. `create_tasks`, `update_tasks` and the New habit form SHALL accept a target with its period, and an amount with its unit and step.

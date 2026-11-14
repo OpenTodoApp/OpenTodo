@@ -5,7 +5,9 @@
 // the focused row checks in and Shift+Space logs the tiny version; a long press on the
 // button logs it too, and the button's menu offers both. The title opens the habit page.
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { threadDays, type HabitStats } from '../../lib/habits'
+import { habitGoal, habitTarget, threadDays, type HabitOptions, type HabitStats } from '../../lib/habits'
+import { habitStep } from '../../lib/habitAmounts'
+import { targetThread } from '../../lib/habitTargets'
 import { noteDatesOf } from '../../lib/habitNotes'
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
@@ -13,21 +15,24 @@ import { Icon, Tooltip, type HueName } from '../../ui'
 import { formatDate } from '../../lib/dates'
 import { act } from '../actionError'
 import { ActionMenu } from '../menus/ActionMenu'
-import { checkInWithUndo, pickDay } from './habitUndo'
+import { checkInWithUndo, pickDay, stepAmount } from './habitUndo'
 import { navigate } from '../router'
 import { measureText } from './habitText'
 import { Thread } from './Thread'
+import { TargetBar } from './TargetBar'
+import { openSetAmount } from './amountStore'
 import { CheckInNote } from './CheckInNote'
 import { openDayNote } from './dayNoteStore'
 
 /** Where the current occurrence stands today: kept today, due (today or earlier), or later. */
 export type CheckState = 'kept' | 'due' | 'later'
 
-export function checkStateOf(series: Task, rows: readonly Task[], today: string): CheckState {
-  const day = threadDays(series, rows, today).at(-1)
+export function checkStateOf(series: Task, rows: readonly Task[], today: string, opts?: HabitOptions): CheckState {
+  const day = threadDays(series, rows, today, opts).at(-1)
   if (day && (day.state === 'done' || day.state === 'tiny')) return 'kept'
-  // A habit without a due date (made before habits-polish) checks in today, as completing it does.
-  return !series.due || series.due.date <= today ? 'due' : 'later'
+  // A habit without a due date (made before habits-polish) checks in today, as completing it does;
+  // an amount habit's button always adds to today (habit-targets D2).
+  return !series.due || series.due.date <= today || habitGoal(series) > 0 ? 'due' : 'later'
 }
 
 const LONG_PRESS_MS = 500
@@ -42,10 +47,14 @@ export function CheckButton({ series, state, today, compact = false }: { series:
   const long = useRef(false)
   const title = series.title || t('Untitled')
   const kept = state === 'kept'
+  const step = habitStep(series)
+  const amount = habitGoal(series) > 0
   // A habit due later checks in its current occurrence early, named with its date (D2).
+  // An amount habit's button adds its step to today (habit-targets D2).
   const name = kept ? t('{title}, done today', { title })
-    : state === 'later' && series.due ? t('Check in {title} early ({date})', { title, date: formatDate(series.due.date, 'full', undefined, today) })
-      : t('Check in {title}', { title })
+    : amount ? t('Add {step} to {title}', { step: series.habit_unit ? `${step} ${series.habit_unit}` : step, title })
+      : state === 'later' && series.due ? t('Check in {title} early ({date})', { title, date: formatDate(series.due.date, 'full', undefined, today) })
+        : t('Check in {title}', { title })
   const down = (e: PointerEvent) => {
     if (kept || e.button !== 0) return
     long.current = false
@@ -63,10 +72,14 @@ export function CheckButton({ series, state, today, compact = false }: { series:
         <Icon name="check" size="sm" className={kept ? '' : 'opacity-0'} />
       </button>
       {/* The menu's slot keeps its width on a kept row, so buttons and measures line up (habits-polish D2). */}
-      {!compact && <span className="flex w-7 justify-center">{!kept && (
+      {!compact && <span className="flex w-7 justify-center">{(!kept || amount) && (
         <ActionMenu label={t('More ways to check in {title}', { title })} align="end" width="sm:w-56"
           trigger={<Icon name="chevron-down" size="xs" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-1 text-faint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
-          groups={[{ items: [
+          groups={[{ items: amount ? [
+            ...(kept ? [] : [{ kind: 'action' as const, id: 'add', label: t('Add {step}', { step }), icon: 'plus' as const, shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) }]),
+            { kind: 'action', id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus', onSelect: () => stepAmount(series.id, -step) },
+            { kind: 'action', id: 'set', label: t('Set amount'), icon: 'pencil', onSelect: () => openSetAmount(series.id, today) },
+          ] : [
             { kind: 'action', id: 'done', label: t('Check in'), icon: 'check', shortcut: 'Space', onSelect: () => checkInWithUndo(series.id, false) },
             { kind: 'action', id: 'tiny', label: series.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: series.habit_tiny }) : t('Log the tiny version'), icon: 'circle', shortcut: 'Shift+Space', onSelect: () => checkInWithUndo(series.id, true) },
           ] }]} />
@@ -75,11 +88,14 @@ export function CheckButton({ series, state, today, compact = false }: { series:
   )
 }
 
-export function HabitRow({ series, rows, stats, hue, today }: { series: Task; rows: readonly Task[]; stats: HabitStats | null; hue: HueName; today: string }) {
-  const state = checkStateOf(series, rows, today)
-  const measure = measureText(stats)
+export function HabitRow({ series, rows, stats, hue, today, opts }: { series: Task; rows: readonly Task[]; stats: HabitStats | null; hue: HueName; today: string; opts?: HabitOptions }) {
+  const state = checkStateOf(series, rows, today, opts)
+  const measure = measureText(stats, series.habit_unit)
   const title = series.title || t('Untitled')
-  const thread = <Thread days={threadDays(series, rows, today)} today={today} notes={noteDatesOf(series, rows)}
+  // A target habit's thread is its period's bar (habit-targets D5).
+  const bar = habitTarget(series) ? targetThread(series, rows, today, opts) : null
+  const thread = bar ? <TargetBar thread={bar} /> : <Thread days={threadDays(series, rows, today, opts)} today={today} notes={noteDatesOf(series, rows)}
+    goal={habitGoal(series) || undefined} unit={series.habit_unit}
     onPick={(date, c) => act(pickDay(series.id, date, c))} onNote={(date) => openDayNote(series.id, date)} />
   const onKey = (e: KeyboardEvent<HTMLLIElement>) => {
     if (e.target !== e.currentTarget) return

@@ -1333,6 +1333,13 @@
   "Add {input}": [
     "web/src/app/routines/StepCard.tsx"
   ],
+  "Add {step}": [
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitRow.tsx"
+  ],
+  "Add {step} to {title}": [
+    "web/src/app/habits/HabitRow.tsx"
+  ],
   "Add {text} to the note of {of}": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -1697,6 +1704,16 @@
   ],
   "Am I keeping up?": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Amount": [
+    "web/src/app/habits/AmountDialog.tsx",
+    "web/src/app/habits/HabitForm.tsx"
+  ],
+  "Amount ({unit})": [
+    "web/src/app/habits/AmountDialog.tsx"
+  ],
+  "Amount per day": [
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "An AI assistant changes tasks only through its tools, while you and the owner allow it.": [
     "web/src/app/TokensSection.tsx"
@@ -2901,6 +2918,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
+    "web/src/app/habits/AmountDialog.tsx",
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/locations/PlacesView.tsx",
@@ -3339,6 +3357,9 @@
   "Choose files…": [
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "Choose how many times, from 1 to {max}.": [
+    "web/src/app/habits/HabitForm.tsx"
   ],
   "Choose icon": [
     "web/src/app/WorkspaceGeneral.tsx"
@@ -5534,6 +5555,9 @@
   "Each change an AI connector asks for shows here before it is written.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Each check adds": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "Each code signs you in once if you lose your phone. Keep them somewhere safe, away from this device.": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
@@ -5584,6 +5608,9 @@
   ],
   "Earlier versions": [
     "web/src/app/WhatsNew.tsx"
+  ],
+  "Earlier: {list}": [
+    "web/src/app/habits/TargetBar.tsx"
   ],
   "Edit": [
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -15273,6 +15300,7 @@
     "web/src/app/WebhooksPanel.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/habits/AmountDialog.tsx",
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/locations/LocationEditor.tsx",
     "web/src/app/profile/ProfileSection.tsx",
@@ -15842,6 +15870,10 @@
   ],
   "Set a time to fix this due to a time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Set amount": [
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitRow.tsx"
   ],
   "Set by OPENTODO_GOOGLE_CLIENT_ID and OPENTODO_GOOGLE_CLIENT_SECRET on this server.": [
     "web/src/app/CalendarSyncDialogs.tsx"
@@ -17224,6 +17256,10 @@
   ],
   "Subtasks tick off on their own row": [
     "web/src/lib/sampleTasks.ts"
+  ],
+  "Subtract {step}": [
+    "web/src/app/habits/HabitPage.tsx",
+    "web/src/app/habits/HabitRow.tsx"
   ],
   "Succeeded": [
     "web/src/app/BackupsPanel.tsx"
@@ -19261,6 +19297,9 @@
     "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
+  "This month, {count} of {target}": [
+    "web/src/app/habits/TargetBar.tsx"
+  ],
   "This month’s assistant allowance is used. Describe it works again when it resets.": [
     "web/src/app/routines/DescribeIt.tsx"
   ],
@@ -19600,6 +19639,9 @@
     "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
   ],
+  "This week, {count} of {target}": [
+    "web/src/app/habits/TargetBar.tsx"
+  ],
   "This weekend": [
     "web/src/lib/dates.ts"
   ],
@@ -19771,6 +19813,12 @@
   "Times need fixing": [
     "web/src/app/calendar/FramesDialog.tsx"
   ],
+  "Times per month": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
+  "Times per week": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "Time|icon category": [
     "web/src/ui/icons/catalogue.ts"
   ],
@@ -19874,6 +19922,7 @@
     "web/src/app/display/DisplayScreen.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusPicker.tsx",
+    "web/src/app/habits/HabitPage.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/CloseDay.tsx",
@@ -20490,6 +20539,9 @@
   "Unexpected text {text} at position {pos}; quote names after \"@\" or \"#\", or use search:": [
     "web/src/lib/filter/parse.ts"
   ],
+  "Unit": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "Unknown": [
     "web/src/app/NotificationsSettings.tsx"
   ],
@@ -20647,6 +20699,7 @@
     "web/src/app/focus/FocusSessions.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
+    "web/src/app/habits/AmountDialog.tsx",
     "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx",
@@ -22918,6 +22971,9 @@
   "gitlab.com or the address of your own instance.": [
     "web/src/app/IssueEditor.tsx"
   ],
+  "glasses": [
+    "web/src/app/habits/HabitForm.tsx"
+  ],
   "graph": [
     "web/src/app/notes-graph/GraphView.tsx"
   ],
@@ -23150,6 +23206,9 @@
   "merged a duplicate": [
     "web/src/lib/activity.ts"
   ],
+  "met": [
+    "web/src/app/habits/TargetBar.tsx"
+  ],
   "min": [
     "web/src/app/focus/FocusSettings.tsx"
   ],
@@ -23350,6 +23409,9 @@
   "not in {projects}": [
     "web/src/lib/rules/summary.ts"
   ],
+  "not met": [
+    "web/src/app/habits/TargetBar.tsx"
+  ],
   "not offered on a demo instance": [
     "web/src/lib/rules/catalogue.ts"
   ],
@@ -23547,6 +23609,9 @@
   "parent task": [
     "web/src/lib/activityRuns.ts"
   ],
+  "part of the amount": [
+    "web/src/app/habits/habitText.ts"
+  ],
   "part of the day": [
     "web/src/lib/history.ts"
   ],
@@ -23703,6 +23768,9 @@
   ],
   "rescheduled|version": [
     "web/src/lib/historyVersions.ts"
+  ],
+  "rest day": [
+    "web/src/app/habits/habitText.ts"
   ],
   "restored the project": [
     "web/src/lib/activity.ts"
@@ -24496,6 +24564,14 @@
   "{added} new, {reused} already yours": [
     "web/src/app/templates/TemplateLibrary.tsx"
   ],
+  "{amount} of {goal}": [
+    "web/src/app/habits/habitText.ts",
+    "web/src/lib/habitActions.ts"
+  ],
+  "{amount} of {goal} {unit}": [
+    "web/src/app/habits/habitText.ts",
+    "web/src/lib/habitActions.ts"
+  ],
   "{archivesError} You can still upload an archive.": [
     "web/src/app/RestoreSection.tsx"
   ],
@@ -24720,6 +24796,12 @@
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/habitText.ts",
     "web/src/app/review/ReviewHabits.tsx"
+  ],
+  "{kept} of {of} this month": [
+    "web/src/app/habits/habitText.ts"
+  ],
+  "{kept} of {of} this week": [
+    "web/src/app/habits/habitText.ts"
   ],
   "{key} cannot be transparent.": [
     "web/src/lib/theme/files.ts"
@@ -25395,6 +25477,12 @@
   ],
   "{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}": [
     "web/src/app/task-detail/Facets.tsx"
+  ],
+  "{n, plural, one {Once a month} other {# times a month}}": [
+    "web/src/app/habits/habitRule.ts"
+  ],
+  "{n, plural, one {Once a week} other {# times a week}}": [
+    "web/src/app/habits/habitRule.ts"
   ],
   "{n, plural, one {One task is} other {# tasks are}} planned, about {time} in all.": [
     "web/src/app/Briefing.tsx"

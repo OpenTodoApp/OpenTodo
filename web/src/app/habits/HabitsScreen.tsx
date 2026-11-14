@@ -20,6 +20,8 @@ import { habitHue } from './habitText'
 import { HabitPage } from './HabitPage'
 import { HabitRow } from './HabitRow'
 import { DayNoteHost } from './DayNoteDialog'
+import { AmountHost } from './AmountDialog'
+import { useHabitOptions } from './useHabitOptions'
 
 type Group = 'morning' | 'afternoon' | 'evening' | 'any'
 
@@ -58,6 +60,7 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
   const tasks = useLiveTasks()
   const projects = useProjects()
   const today = useToday()
+  const opts = useHabitOptions()
   const [graduatedOpen, setGraduatedOpen] = useState(false)
   const colours = useMemo(() => new Map(projects.map((p) => [p.id, p.color])), [projects])
   const model = useMemo(() => {
@@ -94,7 +97,7 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
           <ul className="space-y-0.5">
             {items.map((x) => {
               const rows = model.rowsOf(x)
-              return <HabitRow key={x.id} series={x} rows={rows} stats={habitStats(x, rows, today)} hue={hue(x)} today={today} />
+              return <HabitRow key={x.id} series={x} rows={rows} stats={habitStats(x, rows, today, opts)} hue={hue(x)} today={today} opts={opts} />
             })}
           </ul>
         </section>
@@ -120,6 +123,7 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
         </section>
       )}
       <DayNoteHost />
+      <AmountHost />
     </PageBody>
   )
 }

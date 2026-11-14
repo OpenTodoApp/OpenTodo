@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
@@ -70,13 +71,15 @@ func (s *Server) handleLogHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for k := range body {
-		if k != "date" && k != "state" && k != "note" && k != "timezone" {
-			writeError(w, http.StatusBadRequest, "invalid_input", k+": unexpected field (date, state, note and timezone are accepted)")
+		if k != "date" && k != "state" && k != "note" && k != "timezone" && k != "amount" && k != "set_amount" {
+			writeError(w, http.StatusBadRequest, "invalid_input", k+": unexpected field (date, state, note, amount, set_amount and timezone are accepted)")
 			return
 		}
 	}
-	if _, ok := body["state"]; !ok {
-		writeError(w, http.StatusBadRequest, "invalid_input", "state: is required (done, tiny, skipped or clear)")
+	_, hasAmount := body["amount"]
+	_, hasSet := body["set_amount"]
+	if _, ok := body["state"]; !ok && !hasAmount && !hasSet {
+		writeError(w, http.StatusBadRequest, "invalid_input", "state: is required (done, tiny, skipped or clear), or amount or set_amount for an amount habit")
 		return
 	}
 	encrypted, err := s.keys().Enabled(ctx, uid)
@@ -85,7 +88,7 @@ func (s *Server) handleLogHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	cs, err := s.agentTools.PlanHabitLog(ctx, uid, encrypted, id, mustJSON(body))
+	cs, err := s.agentTools.PlanHabitLog(ctx, uid, httpx.TokenFrom(ctx).ID, encrypted, id, mustJSON(body))
 	if err != nil {
 		s.writeAgentError(w, err)
 		return

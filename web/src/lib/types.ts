@@ -1,12 +1,12 @@
 // Shared data types. Field names mirror the server op schema exactly
 // (internal/sync/ops.go); never rename a field without a migration plan.
 
-import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, ObjectiveFields, MemoryItemFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
+import type { AttachmentFields, CommentFields, FieldDefFields, FrameFields, CustomThemeFields, HabitTallyFields, ObjectiveFields, MemoryItemFields, LabelFields, NoteFields, PlaceFields, ProjectFields, ProjectPrefsFields, ReminderFields, ReviewFields, RuleFields, SectionFields, SlotFields, TaskFields, TimeEntryFields, UserPrefsFields, ViewFields } from '../generated/opSchema'
 import type { LanguageCode } from '../locales'
 import type { ThemeDocument } from './theme/format'
 
-export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective' | 'memory'
-export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective', 'memory']
+export type Entity = 'project' | 'task' | 'label' | 'view' | 'reminder' | 'section' | 'comment' | 'project_prefs' | 'user_prefs' | 'attachment' | 'field' | 'review' | 'time_entry' | 'place' | 'rule' | 'frame' | 'slot' | 'note' | 'theme' | 'objective' | 'memory' | 'habit_tally'
+export const ENTITIES: readonly Entity[] = ['project', 'task', 'label', 'view', 'reminder', 'section', 'comment', 'project_prefs', 'user_prefs', 'attachment', 'field', 'review', 'time_entry', 'place', 'rule', 'frame', 'slot', 'note', 'theme', 'objective', 'memory', 'habit_tally']
 
 export interface Op {
   id: string
@@ -899,6 +899,24 @@ export interface TimeEntry extends TimeEntryFields {
   /** The device that started or logged it ("server" for the REST API). */
   device_id: string
   note: string
+  created_at: number
+  deleted_at: number | null
+  _clock: Clock
+}
+
+/**
+ * One device's count toward one day of an amount habit (OpenSpec
+ * `habit-targets`, D2). Its id is `nameId(series_id:date:device)`, so each
+ * device writes only its own row; the day's amount is the sum of the day's
+ * live tallies (lib/habits.ts `amountsOf`). It syncs in its series' scope.
+ */
+export interface HabitTally extends HabitTallyFields {
+  id: string
+  series_id: string
+  /** The day the count is toward, YYYY-MM-DD (null only before its op arrives). */
+  date: string | null
+  device: string
+  count: number
   created_at: number
   deleted_at: number | null
   _clock: Clock

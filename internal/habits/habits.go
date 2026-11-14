@@ -23,6 +23,8 @@ const (
 	Tiny     = "tiny"
 	Skipped  = "skipped"
 	Missed   = "missed"
+	Partial  = "partial"
+	Rest     = "rest"
 	Pending  = "pending"
 	Upcoming = "upcoming"
 )
@@ -38,6 +40,29 @@ type Stats struct {
 	Strength    int  `json:"strength"`
 	AtRisk      bool `json:"atRisk"`
 	BackOnTrack bool `json:"backOnTrack"`
+	// A target habit (habit-targets D1): its period and target, and whether
+	// the current period holds it; Kept is the current period's count.
+	Period string `json:"period,omitempty"`
+	Target int    `json:"target,omitempty"`
+	Met    bool   `json:"met,omitempty"`
+	// An amount habit (habit-targets D2): today's summed amount and the goal.
+	Amount float64 `json:"amount,omitempty"`
+	Goal   float64 `json:"goal,omitempty"`
+}
+
+// Options is what the numbers read besides the rows (habit-targets): the
+// habit_tally rows (any list; only the lineage's count) and the first day of
+// the week, 0 = Sunday … 6 = Saturday (web HabitOptions; Monday by default).
+type Options struct {
+	Tallies   []opsync.Entity
+	WeekStart *int
+}
+
+func (o Options) weekStart() int {
+	if o.WeekStart == nil {
+		return 1
+	}
+	return *o.WeekStart
 }
 
 // Day is one local day with its state.
@@ -130,8 +155,8 @@ func markOf(t opsync.Entity) string {
 	return Done
 }
 
-func marks(r string) bool { return r == Done || r == Tiny || r == Skipped }
-func kept(r string) bool  { return r == Done || r == Tiny }
+func marks(r string) bool { return r == Done || r == Tiny || r == Partial || r == Skipped }
+func kept(r string) bool  { return r == Done || r == Tiny || r == Partial }
 
 type part struct {
 	id         string
@@ -146,6 +171,7 @@ type measure struct {
 	sched   func(string) bool
 	records map[string]string
 	parts   []part
+	amounts map[string]float64
 }
 
 func (m *measure) partOf(date string) part {
@@ -158,9 +184,35 @@ func (m *measure) partOf(date string) part {
 	return p
 }
 
-// measureOf is the habit's schedule and its records by date over its lineage;
-// nil when the series has no calendar rule.
-func measureOf(id string, series opsync.Entity, tasks []opsync.Entity) *measure {
+// measureOf is the habit's schedule and its records by date over its lineage,
+// an amount habit's days done at their goal and partial below it
+// (habit-targets D3); nil when the series has no calendar rule.
+func measureOf(id string, series opsync.Entity, tasks []opsync.Entity, opts Options) *measure {
+	m := scheduleOf(id, series, tasks)
+	if m == nil {
+		return nil
+	}
+	if goal := Goal(series); goal > 0 {
+		ids := map[string]bool{}
+		for _, p := range m.parts {
+			ids[p.id] = true
+		}
+		m.amounts = AmountsOf(ids, opts.Tallies)
+		for d, n := range m.amounts {
+			if r := m.records[d]; r == Done || r == Tiny || r == Skipped {
+				continue
+			}
+			if n >= goal {
+				m.records[d] = Done
+			} else {
+				m.records[d] = Partial
+			}
+		}
+	}
+	return m
+}
+
+func scheduleOf(id string, series opsync.Entity, tasks []opsync.Entity) *measure {
 	if _, ok := Rule(series); !ok {
 		return nil
 	}
@@ -196,7 +248,7 @@ func measureOf(id string, series opsync.Entity, tasks []opsync.Entity) *measure 
 
 // PieceFor is the id of the piece of the lineage a record of date belongs to.
 func PieceFor(id string, series opsync.Entity, tasks []opsync.Entity, date string) string {
-	if m := measureOf(id, series, tasks); m != nil {
+	if m := scheduleOf(id, series, tasks); m != nil {
 		return m.partOf(date).id
 	}
 	return id
@@ -255,10 +307,18 @@ func StrengthAlpha(f float64) float64 { return 1 - math.Pow(0.5, math.Sqrt(f)/13
 // measured (no calendar rule or no current occurrence). tasks holds the
 // lineage's pieces and records (every task will do).
 func Compute(id string, series opsync.Entity, tasks []opsync.Entity, today string) *Stats {
-	m := measureOf(id, series, tasks)
+	return ComputeWith(id, series, tasks, today, Options{})
+}
+
+// ComputeWith is Compute with the habit's tallies and the week start.
+func ComputeWith(id string, series opsync.Entity, tasks []opsync.Entity, today string, opts Options) *Stats {
+	m := measureOf(id, series, tasks, opts)
 	due := dueDate(series)
 	if m == nil || due == "" {
 		return nil
+	}
+	if target, period, ok := Target(series); ok {
+		return targetStats(m, due, today, target, period, opts.weekStart())
 	}
 	past := m.past(due)
 	best, run := 0, 0
@@ -317,16 +377,23 @@ func Compute(id string, series opsync.Entity, tasks []opsync.Entity, today strin
 	for i := n - 2; i >= 0 && missed(i); i-- {
 		gap++
 	}
-	return &Stats{
-		Current: current, Best: best, Pending: !marks(own), Overdue: !marks(own) && due < today,
-		Kept: keptN, KeptOf: len(last), Strength: int(math.Floor(s*100 + 0.5)),
+	pending := !marks(own) || own == Partial
+	st := &Stats{
+		Current: current, Best: best, Pending: pending, Overdue: pending && due < today,
+		Kept: keptN, KeptOf: len(last), Strength: round(s),
 		AtRisk: missed(n-1) && missed(n-2), BackOnTrack: n > 0 && kept(m.records[past[n-1]]) && gap >= 2,
 	}
+	if goal := Goal(series); goal > 0 {
+		st.Amount, st.Goal = m.amounts[today], goal
+	}
+	return st
 }
+
+func round(s float64) int { return int(math.Floor(s*100 + 0.5)) }
 
 // KeptDays is the number of done and tiny days over the lineage.
 func KeptDays(id string, series opsync.Entity, tasks []opsync.Entity) int {
-	m := measureOf(id, series, tasks)
+	m := measureOf(id, series, tasks, Options{})
 	if m == nil {
 		return 0
 	}
@@ -341,7 +408,12 @@ func KeptDays(id string, series opsync.Entity, tasks []opsync.Entity) int {
 
 // Days lists the days from from to to (inclusive) with their state (web habitDays).
 func Days(id string, series opsync.Entity, tasks []opsync.Entity, from, to, today string) []Day {
-	m := measureOf(id, series, tasks)
+	return DaysWith(id, series, tasks, from, to, today, Options{})
+}
+
+// DaysWith is Days with the habit's tallies and the week start.
+func DaysWith(id string, series opsync.Entity, tasks []opsync.Entity, from, to, today string, opts Options) []Day {
+	m := measureOf(id, series, tasks, opts)
 	due := dueDate(series)
 	records := map[string]string{}
 	if m != nil {
@@ -353,10 +425,17 @@ func Days(id string, series opsync.Entity, tasks []opsync.Entity, from, to, toda
 	if due != "" {
 		first = firstDay(due, records)
 	}
+	target, period, isTarget := Target(series)
 	var out []Day
 	for z, end := dayOf(from), dayOf(to); z <= end; z++ {
 		d := isoOf(z)
-		out = append(out, Day{Date: d, State: dayState(m, due, first, records, d)})
+		state := ""
+		if m != nil && isTarget {
+			state = targetDayState(records, first, d, today, target, period, opts.weekStart())
+		} else {
+			state = dayState(m, due, first, records, d)
+		}
+		out = append(out, Day{Date: d, State: state})
 	}
 	return out
 }
@@ -390,7 +469,7 @@ func dayState(m *measure, due, first string, records map[string]string, date str
 // Editable reports a day that can be set to done, tiny, skipped or cleared
 // (web editableDay): a scheduled day of the habit's history up to today.
 func Editable(d Day, today string) bool {
-	return d.Date <= today && (d.State == Done || d.State == Tiny || d.State == Skipped || d.State == Missed)
+	return d.Date <= today && (d.State == Done || d.State == Tiny || d.State == Partial || d.State == Skipped || d.State == Missed || d.State == Rest)
 }
 
 // PreviousScheduled is the latest scheduled date strictly before before, ""

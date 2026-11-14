@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
 import { addDaysISO, logicalToday, weekday, monthName } from '../lib/dates'
-import { editableDay, monthGrid, type DayState } from '../lib/habits'
+import { editableDay, monthGrid, type DayState, type HabitOptions } from '../lib/habits'
 import { noteDatesOf } from '../lib/habitNotes'
 import type { DayChoice } from '../lib/habitActions'
 import type { Task } from '../lib/types'
@@ -27,9 +27,13 @@ const CELL: Record<DayState, string> = {
   done: 'bg-success text-surface',
   // Half filled (habits-home D8): the tiny version counts as done.
   tiny: 'border border-success bg-[linear-gradient(90deg,var(--color-success-soft)_50%,transparent_50%)] text-default',
+  // Part of an amount (habit-targets D3): filled from the bottom, a dotted outline so it differs by shape.
+  partial: 'border border-dotted border-success bg-[linear-gradient(0deg,var(--color-success-soft)_50%,transparent_50%)] text-default',
   skipped: 'border border-input bg-sunken text-muted',
   // No danger colour for a missed day (habits-home "Forgiving measure"): a dashed outline.
   missed: 'border border-dashed border-strong bg-surface text-muted',
+  // A target habit's day without a check-in (habit-targets D1): never missed, so no outline.
+  rest: 'text-muted',
   pending: 'bg-accent-soft text-on-accent-soft',
   upcoming: 'border border-default bg-surface text-muted',
   blank: 'text-faint',
@@ -54,7 +58,7 @@ function shiftMonth(iso: string, n: number): string {
 const monthNameOf = (year: number, month: number, withYear: boolean) =>
   monthName(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`, 'long', withYear)
 
-export function HabitHistory({ series, records, today = logicalToday(), onPick, onNote }: {
+export function HabitHistory({ series, records, today = logicalToday(), onPick, onNote, opts }: {
   series: Task
   records: readonly Task[]
   today?: string
@@ -62,13 +66,15 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick, 
   onPick?: (date: string, choice: DayChoice) => void
   /** Open a past day's note (habit-notes D2). */
   onNote?: (date: string) => void
+  /** The tallies and week start (habit-targets). */
+  opts?: HabitOptions
 }) {
   const dt = useDateTimeFormat()
   const [focus, setFocus] = useState(today)
   const moved = useRef(false)
   const grid = useRef<HTMLDivElement>(null)
   const { year, month } = monthOf(focus)
-  const days = useMemo(() => monthGrid(series, records, year, month, today), [series, records, year, month, today])
+  const days = useMemo(() => monthGrid(series, records, year, month, today, opts), [series, records, year, month, today, opts])
   // Days with a check-in note get a small mark and "with a note" in their name (habit-notes D3).
   const notes = useMemo(() => noteDatesOf(series, records), [series, records])
 
