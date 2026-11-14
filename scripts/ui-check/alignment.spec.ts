@@ -41,7 +41,7 @@ for (const width of [1280, 768, 390]) {
       expect(spread(dates.map((b) => b.left))).toBeLessThanOrEqual(0.5)
       expect(spread(labels.map((b) => b.left))).toBeLessThanOrEqual(0.5)
     } else {
-      // The phone's one line: the date ends the row at one x.
+      // The phone row: the date ends the row at one x.
       expect(spread(dates.map((b) => b.right))).toBeLessThanOrEqual(0.5)
     }
   })

@@ -46,9 +46,19 @@ describe('preference', () => {
     // Every list row, card and Today title is RowTitle's element, clamped to two lines.
     expect(row).toMatch(/line-clamp-2 break-words \$\{tone\}`\} data-row-title/)
     expect(css).toContain(':root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }')
-    // More specific than the phone row's one-line clamp, which it must beat.
-    expect(css).toContain('[data-row-title] { font-size: 0.90625rem; -webkit-line-clamp: 1; line-clamp: 1; }')
-    expect(css).toMatch(/:root\[data-titles="full"\] \[data-row-props\] \{ align-self: start;/)
+  })
+
+  it('the phone row keeps the two lines, with its end cell and controls on the first (phone-row-titles)', () => {
+    const at = css.indexOf('@media screen and (width < 48rem) {\n  .row-pad')
+    expect(at).toBeGreaterThan(0)
+    const phone = css.slice(at, css.indexOf('\n}\n', at))
+    // No clamp of its own: RowTitle's two lines (above) are the only one.
+    expect(phone).toContain('[data-row-title] { font-size: 0.90625rem; }')
+    expect(phone).not.toContain('line-clamp')
+    expect(phone).toMatch(/\[data-row-props\] \{ grid-area: 1 \/ 2; [^}]*align-self: start; min-height: 1\.25rem;/)
+    // The row keeps its 44 px and the controls before the title stay on its first line.
+    expect(phone).toContain('.row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }')
+    expect(phone).toContain('.row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }')
   })
 
   it('is found by the settings search', () => {
