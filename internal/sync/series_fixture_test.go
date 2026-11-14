@@ -51,17 +51,17 @@ type seriesFixtureCase struct {
 		To   string `json:"to"`
 	} `json:"range"`
 	Expect struct {
-		OK          *bool                      `json:"ok"`
-		Invalid     bool                       `json:"invalid"`
-		End         bool                       `json:"end"`
-		RecordDate  string                     `json:"record_date"`
-		Record      json.RawMessage            `json:"record"`
+		OK         *bool           `json:"ok"`
+		Invalid    bool            `json:"invalid"`
+		End        bool            `json:"end"`
+		RecordDate string          `json:"record_date"`
+		Record     json.RawMessage `json:"record"`
 		// RecordAbsent are fields the record must not hold (habit-notes D1).
-		RecordAbsent []string `json:"record_absent"`
-		Series      json.RawMessage            `json:"series"`
-		Piece       json.RawMessage            `json:"piece"`
-		Carries     map[string]json.RawMessage `json:"carries"`
-		Occurrences map[string][]string        `json:"occurrences"`
+		RecordAbsent []string                   `json:"record_absent"`
+		Series       json.RawMessage            `json:"series"`
+		Piece        json.RawMessage            `json:"piece"`
+		Carries      map[string]json.RawMessage `json:"carries"`
+		Occurrences  map[string][]string        `json:"occurrences"`
 	} `json:"expect"`
 }
 
