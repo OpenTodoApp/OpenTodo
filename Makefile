@@ -181,7 +181,8 @@ storybook:
 	cd web && npm run storybook
 
 ## UI gates over the static workbench: axe-core (WCAG 2.2 AA) on every story in light
-## and dark, then visual regression against web/src/ui/__screenshots__. Needs Playwright
+## and dark, then visual regression against the ui-baselines branch plus this checkout's
+## new or changed baselines in web/src/ui/__screenshots__. Needs Playwright
 ## and @playwright/test $(PLAYWRIGHT_VERSION) installed globally (as CI does); override
 ## PLAYWRIGHT_NODE_PATH to use another install.
 PLAYWRIGHT_VERSION := 1.56.1
@@ -192,18 +193,22 @@ ui-check:
 	cd web && npm run build-storybook
 	node scripts/ui-check/a11y.mjs
 	node scripts/ui-check/motion.mjs
+	node scripts/ui-check/baselines.mjs fetch
 	cd scripts/ui-check && NODE_PATH=$(PLAYWRIGHT_NODE_PATH) node $(PLAYWRIGHT_NODE_PATH)/@playwright/test/cli.js test -c playwright.config.ts
 
 ## Regenerate the visual baselines inside the pinned Playwright image, because font
-## rendering differs per OS. web/node_modules stays the host's (anonymous volume).
-## Without Docker, run the "UI baselines" workflow and commit its artifact instead.
+## rendering differs per OS, and copy the new or changed ones to web/src/ui/__screenshots__
+## to commit. web/node_modules stays the host's (anonymous volume). Without Docker, run the
+## "UI baselines" workflow on your branch and commit its artifact instead.
 ui-baselines:
+	node scripts/ui-check/baselines.mjs fetch
 	docker run --rm -v "$(CURDIR)":/work -v /work/web/node_modules -w /work \
 	  $(PLAYWRIGHT_IMAGE) bash -euc '\
 	    npm i -g --no-audit --no-fund @playwright/test@$(PLAYWRIGHT_VERSION) >/dev/null; \
 	    cd web && npm ci --no-audit --no-fund >/dev/null && npm run build-storybook; \
-	    cd ../scripts/ui-check && NODE_PATH=$$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=all; \
-	    chown -R $(shell id -u):$(shell id -g) /work/web/src/ui/__screenshots__'
+	    cd ../scripts/ui-check && NODE_PATH=$$(npm root -g) playwright test -c playwright.config.ts --update-snapshots=changed; \
+	    chown -R $(shell id -u):$(shell id -g) /work/web/.ui-baselines'
+	node scripts/ui-check/baselines.mjs collect
 
 ## Run the production binary locally on :8080 with ./data.
 run: build
