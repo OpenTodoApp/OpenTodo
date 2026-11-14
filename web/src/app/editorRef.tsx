@@ -35,7 +35,7 @@ class RefView implements NodeView {
     }
     const target = resolve(ref.kind, ref.id)
     this.root.render(
-      <RefChip kind={ref.kind} id={ref.id} title={target?.title ?? null} label={label} done={target?.done} tabIndex={this.view.editable ? -1 : undefined}
+      <RefChip kind={ref.kind} id={ref.id} title={target?.title ?? null} label={label} done={target?.done} habit={target?.habit} tabIndex={this.view.editable ? -1 : undefined}
         onOpen={(e) => {
           e.preventDefault()
           // Keep the editor's own Ctrl-click (a web link in a new tab) away from it.

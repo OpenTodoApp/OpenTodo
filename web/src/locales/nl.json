@@ -7711,5 +7711,15 @@
   "Deliver instantly through UnifiedPush": "Direct bezorgen via UnifiedPush",
   "Needs a UnifiedPush app such as ntfy": "Vereist een UnifiedPush-app zoals ntfy",
   "Your UnifiedPush app needs attention. Open it, then try again.": "Je UnifiedPush-app vraagt om aandacht. Open de app en probeer het opnieuw.",
-  "The UnifiedPush app could not register this device.": "De UnifiedPush-app kon dit apparaat niet registreren."
+  "The UnifiedPush app could not register this device.": "De UnifiedPush-app kon dit apparaat niet registreren.",
+  "Check-ins": "Check-ins",
+  "How did it go?": "Hoe ging het?",
+  "How did it go? {title}": "Hoe ging het? {title}",
+  "How did the day go?": "Hoe ging de dag?",
+  "Make habits": "Gewoontes maken",
+  "Note removed": "Notitie verwijderd",
+  "Note saved": "Notitie opgeslagen",
+  "Repeats after completion, so made a task, not a habit: {titles}": "Herhaalt na voltooiing, dus een taak in plaats van een gewoonte: {titles}",
+  "with a note": "met notitie",
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# check-in} other {# check-ins}}"
 }

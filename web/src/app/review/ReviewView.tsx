@@ -38,6 +38,8 @@ import { useResetOnChange } from '../../lib/useResetOnChange'
 
 // The Objectives section (plan-objectives D4): its own chunk, loaded only while the switch is on.
 const ReviewObjectives = lazy(() => import('../objectives/ReviewObjectives'))
+// Habits in Look back (habit-notes D6): its own chunk; renders nothing while Habits is off.
+const ReviewHabits = lazy(() => import('./ReviewHabits'))
 
 const LIST_STEPS: readonly StepId[] = ['clear', 'back', 'waiting', 'ahead', 'someday']
 
@@ -165,6 +167,9 @@ export function ReviewView({ step: routeStep }: { userId?: string; step?: string
               <ul className="-mx-2" data-testid={`review-${step}`}>
                 {taskRows.map(row)}
               </ul>
+            )}
+            {step === 'back' && input && (
+              <Suspense fallback={null}><ReviewHabits today={input.today} weekStart={weekStart} /></Suspense>
             )}
             {step === 'ahead' && input && (
               <SectorReview carried={sectorRows.carried} next={sectorRows.next} today={input.today} weekStart={weekStart} row={row}

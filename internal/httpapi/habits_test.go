@@ -3,6 +3,7 @@ package httpapi
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestHabitOverRESTAndCalDAV (OpenSpec change habits, design D7): the REST API
@@ -35,5 +36,39 @@ func TestHabitOverRESTAndCalDAV(t *testing.T) {
 	rec := e.task(occurrenceID("h1", "2026-10-12"))
 	if rec["completed_at"] == nil || rec["skipped"] == true || rec["habit"] == true {
 		t.Fatalf("occurrence record: %v", rec)
+	}
+}
+
+// TestHabitRecordHoldsNoNote (OpenSpec change habit-notes, scenario "Completed on
+// the server"): a script that completes a habit through the REST API gets a
+// record with an empty note, while the habit keeps its own note; a plain series'
+// record still copies the series' note.
+func TestHabitRecordHoldsNoNote(t *testing.T) {
+	e := registeredEnv(t)
+	today := dayOffset(0)
+	create := func(title string, habit bool) string {
+		resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": title, "recurrence": "every day", "habit": habit,
+			"description": "Training for the 10k in March", "due": map[string]any{"date": today}})
+		e.mustStatus(resp, 201, out)
+		return out["id"].(string)
+	}
+	complete := func(id string) map[string]any {
+		resp, out := e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"completed_at": time.Now().UnixMilli()})
+		e.mustStatus(resp, 200, out)
+		if out["description"] != "Training for the 10k in March" {
+			t.Fatalf("series note after completion = %v", out["description"])
+		}
+		resp, out = e.do("GET", "/api/v1/tasks/"+occurrenceID(id, today), nil)
+		e.mustStatus(resp, 200, out)
+		if out["completed_at"] == nil {
+			t.Fatalf("no completed record: %v", out)
+		}
+		return out
+	}
+	if rec := complete(create("Run", true)); rec["description"] != nil && rec["description"] != "" {
+		t.Fatalf("habit record note = %q, want it empty", rec["description"])
+	}
+	if rec := complete(create("Review", false)); rec["description"] != "Training for the 10k in March" {
+		t.Fatalf("plain record note = %q, want the series' note", rec["description"])
 	}
 }

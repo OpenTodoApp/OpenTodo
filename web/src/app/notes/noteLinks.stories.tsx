@@ -43,6 +43,23 @@ const rows: LinkCandidate[] = [
   { kind: 'project', id: 'p1', title: 'Plumbing', secondary: null, done: false },
 ]
 
+/** A habit in the picker while Habits is on (habit-notes D4): the habit mark and its kept measure. */
+export const PickerHabit: StoryObj = {
+  render: () => (
+    <Column>
+      <ul role="listbox" aria-label={t('Link to')} className="slash-menu link-menu" data-suggest="link">
+        <li role="presentation" className="link-menu__group">{linkGroupLabel('task')}</li>
+        <li role="option" aria-selected className="flex min-h-11 items-center gap-2 rounded-control px-2 py-1 text-body sm:min-h-9">
+          <LinkOption c={{ kind: 'task', id: 'h1', title: 'Run', secondary: 'Health', done: false, habit: { measure: '6 of 7' } }} />
+        </li>
+        <li role="option" aria-selected={false} className="flex min-h-11 items-center gap-2 rounded-control px-2 py-1 text-body sm:min-h-9">
+          <LinkOption c={{ kind: 'task', id: 't9', title: 'Running shoes', secondary: 'Errands', done: false }} />
+        </li>
+      </ul>
+    </Column>
+  ),
+}
+
 /** The `[[` picker: grouped by kind, the first row selected, New note last. */
 export const Picker: StoryObj = {
   render: () => (

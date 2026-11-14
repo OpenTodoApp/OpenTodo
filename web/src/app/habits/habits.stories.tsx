@@ -3,10 +3,16 @@ import type { DayCell, DayState } from '../../lib/habits'
 import { completeTask, createTask, mutate, updateTask } from '../../lib/ops'
 import { setHabitsOn } from '../../lib/habitPrefs'
 import { addDaysISO } from '../../lib/dates'
-import { checkIn, setPastDay } from '../../lib/habitActions'
+import { checkIn, setDayNote, setPastDay } from '../../lib/habitActions'
+import { occurrenceId } from '../../lib/ids'
+import { useEffect } from 'react'
+import ReviewHabits from '../review/ReviewHabits'
+import { offerNote } from './checkInNoteStore'
+import { DayNoteDialog } from './DayNoteDialog'
 import { TODAY, withClock, withSeed } from '../stories/fixtures'
 import { TaskListView } from '../TaskListView'
 import { useLiveTasks } from '../../lib/liveTasks'
+import { db } from '../../lib/db'
 import { HabitFormDialog } from './HabitForm'
 import { HabitPage } from './HabitPage'
 import HabitsScreen from './HabitsScreen'
@@ -15,7 +21,9 @@ import { Thread } from './Thread'
 // Habits (OpenSpec changes habits-home and habits-polish) on the frozen Wednesday 14
 // October 2026: the Habits screen by part of the day with a graduated habit, its empty
 // state with the starters, Today's habits line, a habit's page, the habit form, and
-// the thread in every state (the visual baselines
+// the thread in every state; with habit-notes the "How did it go?" line, a page with
+// the habit's note and its Check-ins, a day's note asking for the state, and Habits
+// in the weekly review (the visual baselines
 // render each in every built-in theme, light and dark, and at 360 px).
 const meta: Meta = { title: 'Screens/Habits' }
 export default meta
@@ -98,4 +106,44 @@ export const Form: StoryObj = {
 function ByTitle({ title, render }: { title: string; render: (id: string, task: NonNullable<ReturnType<typeof useLiveTasks>>[number]) => React.ReactNode }) {
   const task = useLiveTasks()?.find((x) => x.title === title && !x.series_id)
   return task ? <>{render(task.id, task)}</> : null
+}
+
+/** Notes on Run (habit-notes): the habit's own note and three check-in notes, one of them a week back. */
+async function seedNotes(): Promise<void> {
+  await seedHabits()
+  const run = (await db.tasks.filter((x) => x.title === 'Run' && !x.series_id).first())!.id
+  await updateTask(run, { description: 'Training for the 10k in March. Easy pace, no watch.' })
+  await setDayNote(occurrenceId(run, '2026-10-12'), '5k, knee a bit sore')
+  await setDayNote(occurrenceId(run, '2026-10-09'), 'Rain the whole way. **Still went.**')
+  await setDayNote(occurrenceId(run, '2026-10-05'), 'First run in a month')
+}
+
+/** After a check-in (habit-notes D2): one quiet "How did it go?" line under the row. */
+export const CheckInLine: StoryObj = {
+  ...withSeed(seedHabits),
+  render: () => <div className="-m-4 bg-canvas"><Offer title="Drink water" /><HabitsScreen /></div>,
+}
+
+/** Run's page with its own note first, note marks in the grid and Check-ins newest first (habit-notes D3). */
+export const PageWithCheckIns: StoryObj = {
+  ...withSeed(seedNotes),
+  render: () => <div className="-m-4 bg-canvas"><ByTitle title="Run" render={(id) => <HabitPage id={id} />} /></div>,
+}
+
+/** Note on a missed day (habit-notes D2): the day's state is asked for first. */
+export const DayNoteState: StoryObj = {
+  ...withSeed(seedHabits),
+  render: () => <ByTitle title="Read" render={(id) => <DayNoteDialog seriesId={id} date="2026-10-10" onClose={() => {}} />} />,
+}
+
+/** Look back in the weekly review (habit-notes D6): each habit's week, its measure and the week's notes. */
+export const WeeklyReviewHabits: StoryObj = {
+  ...withSeed(seedNotes),
+  render: () => <div className="max-w-xl"><ReviewHabits today={TODAY} weekStart={1} /></div>,
+}
+
+function Offer({ title }: { title: string }) {
+  const id = useLiveTasks()?.find((x) => x.title === title && !x.series_id)?.id
+  useEffect(() => { if (id) offerNote(id, occurrenceId(id, TODAY)) }, [id])
+  return null
 }

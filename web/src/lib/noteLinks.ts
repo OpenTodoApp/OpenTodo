@@ -45,6 +45,8 @@ export interface Target {
   projectId: string | null
   /** A completed task or an archived project. */
   done: boolean
+  /** A task tracked as a habit (habit-notes D4): the link shows the habit mark while Habits is on. */
+  habit?: boolean
 }
 
 /** The title a note reads as (an empty one as "Untitled note"). */
@@ -138,7 +140,7 @@ export function resolve(kind: LinkKind, id: string): Target | null {
 export function resolveIn(w: World, kind: LinkKind, id: string): Target | null {
   if (kind === 'task') {
     const task = w.taskById.get(id)
-    return task ? { kind, id, title: task.title, projectId: task.project_id, done: !!task.completed_at } : null
+    return task ? { kind, id, title: task.title, projectId: task.project_id, done: !!task.completed_at, habit: !!task.habit } : null
   }
   if (kind === 'project') {
     const p = w.projectById.get(id)

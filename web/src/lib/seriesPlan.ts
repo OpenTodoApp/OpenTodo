@@ -9,7 +9,7 @@ import { nextFree, walkOccurrences } from './occurrences'
 import type { Change } from './ops'
 import { canonicalOf, type Rule } from './recurrence'
 import {
-  currentOccurrence, isRecordOf, moveDates, pieceRule, planCompletion, planSkip, recordFields, recordsOf, seriesBudget, seriesRule, standOn,
+  currentOccurrence, isRecordOf, moveDates, pieceRule, planCompletion, planSkip, occurrenceFields, recordsOf, seriesBudget, seriesRule, standOn,
 } from './recurring'
 import { relativeFireAt } from './reminderTime'
 import type { Due, Reminder, Task } from './types'
@@ -88,7 +88,7 @@ export function planActOn(
   const recordId = occurrenceId(series.id, on)
   const existing = list.find((t) => t.id === recordId && !t.deleted_at && isRecordOf(series.id, t))
   const at = standOn(series, current, today)
-  const base = recordFields(at, on, now, today)
+  const base = occurrenceFields(at, on, now, today)
   const state = statePatch(action, now)
   if (action.kind === 'complete' && series.habit) state.tiny = !!action.tiny
   if (existing) {

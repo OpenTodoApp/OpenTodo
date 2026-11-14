@@ -12,7 +12,7 @@ import { nextFree } from './occurrences'
 import { actOnOccurrenceUndoable, type OccurrenceResult } from './occurrenceActions'
 import { getDeviceId, planTask, type Change } from './ops'
 import { canonicalOf, compatibleRule, firstOccurrence, parseRule } from './recurrence'
-import { recordFields, seriesBudget } from './recurring'
+import { occurrenceFields, recordFields, seriesBudget } from './recurring'
 import { copyReminders } from './seriesPlan'
 import { endedRule } from './seriesSplit'
 import type { Reminder, Task } from './types'
@@ -36,7 +36,7 @@ export function planPastDay(series: Task, tasks: readonly Task[], date: string, 
   if (choice === 'clear') return existing ? [{ entity: 'task', entityId: id, patch: { deleted_at: now } }] : null
   const state = { completed_at: now, skipped: choice === 'skipped', tiny: choice === 'tiny' }
   if (existing) return [{ entity: 'task', entityId: id, patch: state }]
-  return [{ entity: 'task', entityId: id, patch: { ...recordFields(piece, date, now, today), ...state } }]
+  return [{ entity: 'task', entityId: id, patch: { ...occurrenceFields(piece, date, now, today), ...state } }]
 }
 
 /** The last date the rule schedules before `today`, within a year; null when none. */
@@ -171,6 +171,18 @@ export async function setPastDay(seriesId: string, date: string, choice: DayChoi
   if (!series) return null
   const changes = planPastDay(series, await lineageRows(seriesId), date, choice, now, today)
   return changes ? apply(changes, choice === 'clear' ? t('Day cleared') : t('Day changed')) : null
+}
+
+/**
+ * Write a day's note on its record (habit-notes D2), in its own batch so Undo takes
+ * back the note and keeps the check-in. Null when the record is gone (undone).
+ */
+export async function setDayNote(recordId: string, text: string) {
+  const record = await db.tasks.get(recordId)
+  if (!record || record.deleted_at) return null
+  const note = text.trim()
+  if (note === (record.description ?? '').trim()) return null
+  return apply([{ entity: 'task', entityId: recordId, patch: { description: note } }], note ? t('Note saved') : t('Note removed'))
 }
 
 /** Graduate a habit (D7) with an Undo offer. */

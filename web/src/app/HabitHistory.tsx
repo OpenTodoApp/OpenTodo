@@ -1,7 +1,8 @@
 // The month history of a habit (OpenSpec change habits, design D4): a grid of one
 // month's days, derived on the device from the series and its occurrence records
 // (lib/habits.ts), so it renders offline and needs no request. While Habits is on a
-// past scheduled day opens Done, Tiny, Skipped and Clear (habits-home D6).
+// past scheduled day opens Done, Tiny, Skipped, Clear and Note (habits-home D6,
+// habit-notes D2); a day with a check-in note carries a small mark (habit-notes D3).
 // Colours come from the design tokens and every state also differs by glyph or
 // border, with the date and state in each cell's accessible name.
 //
@@ -12,6 +13,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { Icon, IconButton, type IconName } from '../ui'
 import { addDaysISO, logicalToday, weekday, monthName } from '../lib/dates'
 import { editableDay, monthGrid, type DayState } from '../lib/habits'
+import { noteDatesOf } from '../lib/habitNotes'
 import type { DayChoice } from '../lib/habitActions'
 import type { Task } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
@@ -52,12 +54,14 @@ function shiftMonth(iso: string, n: number): string {
 const monthNameOf = (year: number, month: number, withYear: boolean) =>
   monthName(`${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}`, 'long', withYear)
 
-export function HabitHistory({ series, records, today = logicalToday(), onPick }: {
+export function HabitHistory({ series, records, today = logicalToday(), onPick, onNote }: {
   series: Task
   records: readonly Task[]
   today?: string
   /** Set a past day (habits-home D6); omitted while Habits is not on, which keeps the grid read-only. */
   onPick?: (date: string, choice: DayChoice) => void
+  /** Open a past day's note (habit-notes D2). */
+  onNote?: (date: string) => void
 }) {
   const dt = useDateTimeFormat()
   const [focus, setFocus] = useState(today)
@@ -65,6 +69,8 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick }
   const grid = useRef<HTMLDivElement>(null)
   const { year, month } = monthOf(focus)
   const days = useMemo(() => monthGrid(series, records, year, month, today), [series, records, year, month, today])
+  // Days with a check-in note get a small mark and "with a note" in their name (habit-notes D3).
+  const notes = useMemo(() => noteDatesOf(series, records), [series, records])
 
   // Leading blanks so the first day falls under its weekday (week start follows the preference).
   const first = days[0].date
@@ -127,7 +133,8 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick }
                 role="gridcell"
                 data-date={c.date}
                 data-state={c.state}
-                aria-label={dayLabel(c.date, c.state)}
+                aria-label={dayLabel(c.date, c.state, notes.has(c.date))}
+                data-note={notes.has(c.date) || undefined}
                 aria-current={c.today ? 'date' : undefined}
                 aria-selected={c.date === focus}
                 tabIndex={c.date === focus ? 0 : -1}
@@ -135,13 +142,15 @@ export function HabitHistory({ series, records, today = logicalToday(), onPick }
                 onKeyDown={(e) => {
                   if ((e.key === 'Enter' || e.key === ' ') && e.currentTarget.querySelector('button')) { e.preventDefault(); e.currentTarget.querySelector('button')!.click() }
                 }}
-                className={`flex h-6 w-6 items-center justify-center rounded-chip focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus
+                className={`relative flex h-6 w-6 items-center justify-center rounded-chip focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-focus
                   ${CELL[c.state]} ${c.today ? 'ring-1 ring-focus' : ''}`}
               >
                 {onPick && editableDay(c, today)
-                  ? <DayMenu cell={c} label={dayLabel(c.date, c.state)} onPick={(choice) => onPick(c.date, choice)}
+                  ? <DayMenu cell={c} label={dayLabel(c.date, c.state, notes.has(c.date))} onPick={(choice) => onPick(c.date, choice)}
+                    onNote={onNote ? () => onNote(c.date) : undefined}
                     trigger={<Glyph state={c.state} date={c.date} />} triggerClassName="flex h-6 w-6 items-center justify-center rounded-chip" />
                   : <Glyph state={c.state} date={c.date} />}
+                {notes.has(c.date) && <span aria-hidden="true" className="pointer-events-none absolute -bottom-0.5 right-0 h-1.5 w-1.5 rounded-full border border-surface bg-accent" />}
               </span>
             ) : <span key={`blank-${w}-${i}`} role="gridcell" aria-hidden="true" className="h-6 w-6" />)}
           </div>

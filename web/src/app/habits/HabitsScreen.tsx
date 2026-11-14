@@ -19,6 +19,7 @@ import { openHabitForm } from './habitFormStore'
 import { habitHue } from './habitText'
 import { HabitPage } from './HabitPage'
 import { HabitRow } from './HabitRow'
+import { DayNoteHost } from './DayNoteDialog'
 
 type Group = 'morning' | 'afternoon' | 'evening' | 'any'
 
@@ -118,6 +119,7 @@ export default function HabitsScreen({ id }: { id?: string } = {}) {
           )}
         </section>
       )}
+      <DayNoteHost />
     </PageBody>
   )
 }

@@ -30,6 +30,8 @@ import { useTaskDetail } from './useTaskDetail'
 
 export { taskLink } from './useTaskDetail'
 export { AddSubtask } from './Subtasks'
+// The habit's page and a day's note show a task note too (habit-notes): from here, so it stays in this chunk.
+export { TaskNotes }
 
 export interface TaskDetailProps {
   taskId: string

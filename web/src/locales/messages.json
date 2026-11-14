@@ -1007,6 +1007,7 @@
   ],
   "Add a note": [
     "web/src/app/ProjectNote.tsx",
+    "web/src/app/habits/CheckInNote.tsx",
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Add a picture": [
@@ -3159,6 +3160,9 @@
   "Check your operating system's notification settings for this browser, and any do-not-disturb mode.": [
     "web/src/lib/push.ts"
   ],
+  "Check-ins": [
+    "web/src/app/habits/CheckIns.tsx"
+  ],
   "Check-list lines to subtasks (a task's note) or tasks": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -5301,6 +5305,7 @@
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/objectives/ReviewObjectives.tsx",
     "web/src/app/review/ReviewView.tsx",
     "web/src/app/review/StatsView.tsx",
@@ -7614,6 +7619,7 @@
     "web/src/app/habits/HabitsScreen.tsx",
     "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/method/HowYouWorkSection.tsx",
+    "web/src/app/review/ReviewHabits.tsx",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -7859,6 +7865,15 @@
   ],
   "How dates and times look and where weeks start, on all your devices.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "How did it go?": [
+    "web/src/app/habits/CheckInNote.tsx"
+  ],
+  "How did it go? {title}": [
+    "web/src/app/habits/CheckInNote.tsx"
+  ],
+  "How did the day go?": [
+    "web/src/app/habits/DayNoteDialog.tsx"
   ],
   "How do you want to work?": [
     "web/src/app/FirstRun.tsx"
@@ -9645,6 +9660,9 @@
   ],
   "Make floating": [
     "web/src/app/task-detail/ZoneControl.tsx"
+  ],
+  "Make habits": [
+    "web/src/app/editorCommands.ts"
   ],
   "Make it a habit": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -11558,6 +11576,7 @@
     "web/src/app/RelayConfirm.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/habits/DayMenu.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
@@ -11589,6 +11608,12 @@
   ],
   "Note page…": [
     "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Note removed": [
+    "web/src/lib/habitActions.ts"
+  ],
+  "Note saved": [
+    "web/src/lib/habitActions.ts"
   ],
   "Note updated": [
     "web/src/lib/webhooks.ts"
@@ -14598,6 +14623,9 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
+  "Repeats after completion, so made a task, not a habit: {titles}": [
+    "web/src/app/NotesEditor.tsx"
+  ],
   "Repeats {rule}": [
     "web/src/app/task-detail/WhenControl.tsx",
     "web/src/lib/assistant.ts"
@@ -16123,6 +16151,7 @@
   "Show more": [
     "web/src/app/ProjectNote.tsx",
     "web/src/app/UnlinkedMentions.tsx",
+    "web/src/app/habits/CheckIns.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/routines/RunHistory.tsx",
     "web/src/app/routines/wordPicker.tsx",
@@ -16544,6 +16573,7 @@
   ],
   "Skipped": [
     "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
@@ -19538,6 +19568,7 @@
   "This week": [
     "web/src/app/DateTimeSettings.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
+    "web/src/app/review/ReviewHabits.tsx",
     "web/src/app/themes/previewData.ts",
     "web/src/lib/sectorNames.ts",
     "web/src/lib/stats.ts"
@@ -19721,6 +19752,7 @@
   ],
   "Tiny version": [
     "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitSection.tsx"
@@ -20587,6 +20619,7 @@
     "web/src/app/focus/FocusSessions.tsx",
     "web/src/app/focus/startFocus.ts",
     "web/src/app/focus/useFocusTimer.ts",
+    "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx",
     "web/src/app/habits/HabitsScreen.tsx",
@@ -20600,6 +20633,7 @@
     "web/src/app/review/CarryOver.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/review/ProjectWalk.tsx",
+    "web/src/app/review/ReviewHabits.tsx",
     "web/src/app/review/SectorReview.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx",
@@ -24341,6 +24375,9 @@
   "while its notice is shown": [
     "web/src/lib/shortcuts.ts"
   ],
+  "with a note": [
+    "web/src/app/habits/habitText.ts"
+  ],
   "within the week": [
     "web/src/app/method/loop/PulseDetails.tsx"
   ],
@@ -24630,8 +24667,10 @@
     "web/src/app/habits/HabitSection.tsx"
   ],
   "{kept} of {of}": [
+    "web/src/app/NotesEditor.tsx",
     "web/src/app/habits/HabitPage.tsx",
-    "web/src/app/habits/habitText.ts"
+    "web/src/app/habits/habitText.ts",
+    "web/src/app/review/ReviewHabits.tsx"
   ],
   "{key} cannot be transparent.": [
     "web/src/lib/theme/files.ts"
@@ -24777,6 +24816,9 @@
   ],
   "{n, plural, one {# character left} other {# characters left}}": [
     "web/src/app/objectives/ObjectiveCards.tsx"
+  ],
+  "{n, plural, one {# check-in} other {# check-ins}}": [
+    "web/src/app/habits/CheckIns.tsx"
   ],
   "{n, plural, one {# colour derived} other {# colours derived}}": [
     "web/src/app/themes/ImportReport.tsx"

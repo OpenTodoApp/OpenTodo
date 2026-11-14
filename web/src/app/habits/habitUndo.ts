@@ -10,6 +10,8 @@ export async function checkInWithUndo(seriesId: string, tiny: boolean): Promise<
   const { checkIn } = await import('../../lib/habitActions')
   const r = await checkIn(seriesId, tiny)
   if (r?.entry) { success(); showUndoToast(r.label, r.entry.id) }
+  // "How did it go?" opens under what made the check-in (habit-notes D2).
+  if (r?.recordId && r.recordId !== seriesId) (await import('./checkInNoteStore')).offerNote(seriesId, r.recordId)
 }
 
 /** Set a past day with the Undo toast. */

@@ -18,6 +18,8 @@ export interface LinkCandidate {
   secondary: string | null
   /** A completed task or an archived project (listed after open ones). */
   done: boolean
+  /** A habit while Habits is on (habit-notes D4): the habit mark and its kept measure ("6 of 7"), filled in by the editor. */
+  habit?: { measure: string | null }
 }
 
 export interface LinkPickerInput {

@@ -343,3 +343,55 @@ describe('rich-text notes: data layer', () => {
     expect(rows.some((r) => r.field === 'description')).toBe(true)
   })
 })
+
+// A habit's check-in note is the occurrence record's task note (OpenSpec change habit-notes, task 2.3).
+describe('habit-notes: a day note on two devices', () => {
+  async function dayRecord(a: Device, b: Device): Promise<string> {
+    const { setPastDay } = await import('./habitActions')
+    const { occurrenceId } = await import('./ids')
+    const today = '2026-11-11'
+    const series = await on(a, async () => {
+      const id = await createTask({ title: 'Run', due: { date: '2026-11-09' }, recurrence: 'every day' })
+      await updateTask(id, { habit: true })
+      await setPastDay(id, '2026-11-09', 'done', Date.now(), today)
+      return id
+    })
+    await settle([a, b])
+    return occurrenceId(series, '2026-11-09')
+  }
+
+  it('two offline lines on the same day converge on one note', async () => {
+    const { setDayNote } = await import('./habitActions')
+    const a = device('a')
+    const b = device('b')
+    const id = await dayRecord(a, b)
+    await on(a, () => setDayNote(id, 'Easy pace'))
+    await on(b, () => setDayNote(id, 'Knee a bit sore'))
+    await settle([a, b])
+    await on(a, () => foldNote(id))
+    await on(b, () => foldNote(id))
+    await settle([a, b])
+    const [ta, tb] = [await read(a, id), await read(b, id)]
+    expect(['Easy pace', 'Knee a bit sore']).toContain(ta.description)
+    expect(tb.description).toBe(ta.description)
+    expect(projectDoc(ta.notes_doc ?? '')).toBe(projectDoc(tb.notes_doc ?? ''))
+  })
+
+  it('concurrent edits of a day note merge as task notes do', async () => {
+    const { setDayNote } = await import('./habitActions')
+    const a = device('a')
+    const b = device('b')
+    const id = await dayRecord(a, b)
+    await on(a, () => setDayNote(id, 'Easy pace'))
+    await on(a, () => foldNote(id))
+    await settle([a, b])
+    await editNote(a, id, (n) => [...n, para('Felt strong.')])
+    await editNote(b, id, (n) => [...n, para('Rain at the end.')])
+    await settle([a, b])
+    const [ta, tb] = [await read(a, id), await read(b, id)]
+    for (const s of ['Easy pace', 'Felt strong.', 'Rain at the end.']) expect(ta.description).toContain(s)
+    expect(tb.description).toBe(ta.description)
+    // The habit's own note is not touched by a day's note.
+    expect((await read(a, ta.series_id!)).description).toBe('')
+  })
+})

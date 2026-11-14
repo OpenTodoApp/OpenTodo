@@ -57,11 +57,15 @@ function Mark({ cell, x }: { cell: DayCell; x: number }): ReactNode {
   }
 }
 
-export function Thread({ days, today, onPick, label }: {
+export function Thread({ days, today, onPick, onNote, notes, label }: {
   days: readonly DayCell[]
   today: string
   /** Done, Tiny, Skipped or Clear chosen on a past scheduled day (D6); omitted where days are not editable (the strip). */
   onPick?: (date: string, choice: DayChoice) => void
+  /** Note on a past day (habit-notes D2). */
+  onNote?: (date: string) => void
+  /** The days with a check-in note: a small mark under the day (habit-notes D3). */
+  notes?: ReadonlySet<string>
   label?: string
 }) {
   const width = STEP * days.length
@@ -82,13 +86,14 @@ export function Thread({ days, today, onPick, label }: {
             className={kind === 'thin' ? 'stroke-faint' : kind === 'dotted' ? 'stroke-muted' : 'stroke-hue-solid transition-opacity duration-(--duration-moment)'} />
         ))}
         {days.map((d, i) => <Mark key={d.date} cell={d} x={x(i)} />)}
+        {days.map((d, i) => notes?.has(d.date) && <circle key={`n-${d.date}`} cx={x(i)} cy={STEP - 1.5} r={1.5} className="fill-accent" data-note-mark={d.date} />)}
       </svg>
       <div className="absolute inset-0 flex">
         {days.map((d) => {
-          const name = threadDayLabel(d.date, d.state)
+          const name = threadDayLabel(d.date, d.state, !!notes?.has(d.date))
           const editable = !!onPick && editableDay(d, today)
           return editable ? (
-            <DayMenu key={d.date} cell={d} label={name} onPick={(c) => onPick!(d.date, c)}
+            <DayMenu key={d.date} cell={d} label={name} onPick={(c) => onPick!(d.date, c)} onNote={onNote ? () => onNote(d.date) : undefined}
               triggerClassName="h-6 w-6 rounded-chip focus-visible:outline-2 focus-visible:outline-focus" />
           ) : (
             <span key={d.date} role="img" aria-label={name} data-day={d.date} data-state={d.state} aria-current={d.today ? 'date' : undefined} style={{ width: STEP }} />

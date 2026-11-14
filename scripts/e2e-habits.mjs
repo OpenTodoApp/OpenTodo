@@ -1,7 +1,8 @@
 // End-to-end check of Habits (OpenSpec change habits-home) against a running server
 // with a FRESH data directory: a new account sees nothing about habits; turning on
 // Track as a habit on "Run" turns Habits on with one message, and Today then shows
-// Run in its Habits strip, not as a row; the Habits screen checks it in.
+// Run in its Habits strip, not as a row; the Habits screen checks it in, and the
+// "How did it go?" line (habit-notes) opens without taking focus and saves a note.
 // See scripts/README.md.
 const { chromium } = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -57,6 +58,17 @@ try {
   await row.focus()
   await page.keyboard.press('Space')
   await page.locator(`[data-check-in="${run}"][data-kept]`).waitFor()
+
+  step('"How did it go?" opens without taking focus; Tab reaches it, Enter saves the note (habit-notes)')
+  const noteLine = row.locator('[data-note-line]')
+  await noteLine.waitFor()
+  assert(await row.evaluate((el) => document.activeElement === el), 'focus stays on the row')
+  for (let i = 0; i < 8 && !(await noteLine.evaluate((el) => document.activeElement === el)); i++) await page.keyboard.press('Tab')
+  assert(await noteLine.evaluate((el) => document.activeElement === el), 'Tab reaches the line')
+  await page.keyboard.type('5k, knee a bit sore')
+  await page.keyboard.press('Enter')
+  await row.locator(`[data-note-mark="${TODAY}"]`).waitFor()
+  assert(await row.evaluate((el) => document.activeElement === el || el.contains(document.activeElement) || document.activeElement === document.body), 'focus stays in the list')
   assert(errors.length === 0, errors.join('\n'))
   console.log('e2e-habits: ok')
 } finally {

@@ -15,7 +15,10 @@ import { act } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
 import { navigate } from '../router'
 import { pickDay } from './habitUndo'
+import { openDayNote } from './dayNoteStore'
 
+// Note on a past day (habit-notes D2): the dialog loads when a day's note opens.
+const DayNoteHost = lazy(() => import('./DayNoteDialog').then((m) => ({ default: m.DayNoteHost })))
 const HabitHistory = lazy(() => import('../HabitHistory').then((m) => ({ default: m.HabitHistory })))
 
 /** A text field saved on blur or Enter, as one op. */
@@ -71,7 +74,11 @@ export function HabitSection({ task, related, today }: { task: Task; related: re
         </>
       )}
       {task.habit && enabled && (
-        <Suspense fallback={null}><HabitHistory series={task} records={related} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))} /></Suspense>
+        <>
+          <Suspense fallback={null}><HabitHistory series={task} records={related} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
+            onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} /></Suspense>
+          <Suspense fallback={null}><DayNoteHost /></Suspense>
+        </>
       )}
       {stats && !graduated && (
         <Button size="sm" variant="ghost" icon="graduation-cap" onClick={() => undo(graduate(task.id))} data-graduate>{t('Graduate')}</Button>

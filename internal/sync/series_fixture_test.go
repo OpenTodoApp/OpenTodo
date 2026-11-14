@@ -56,6 +56,8 @@ type seriesFixtureCase struct {
 		End         bool                       `json:"end"`
 		RecordDate  string                     `json:"record_date"`
 		Record      json.RawMessage            `json:"record"`
+		// RecordAbsent are fields the record must not hold (habit-notes D1).
+		RecordAbsent []string `json:"record_absent"`
 		Series      json.RawMessage            `json:"series"`
 		Piece       json.RawMessage            `json:"piece"`
 		Carries     map[string]json.RawMessage `json:"carries"`
@@ -296,4 +298,9 @@ func fixtureAct(t *testing.T, c seriesFixtureCase, id string, row Entity, tasks 
 		t.Fatalf("record id = %s, want the record of %s", plan.RecordID, c.Expect.RecordDate)
 	}
 	subset(t, "record", plan.Record, c.Expect.Record)
+	for _, k := range c.Expect.RecordAbsent {
+		if _, has := plan.Record[k]; has {
+			t.Errorf("record.%s = %s, want it left out", k, plan.Record[k])
+		}
+	}
 }

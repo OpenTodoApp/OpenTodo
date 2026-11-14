@@ -1,6 +1,7 @@
 // A habit's own page at /habits/<id> (OpenSpec change habits-polish, design D3): the
 // title, one line of facts (how often, the part of the day, the anchor), the tiny
-// version, its numbers, Check in, and the month history with editable past days.
+// version, its numbers, Check in, and the month history with editable past days;
+// with habit-notes the habit's own note comes first and its Check-ins come last.
 // Edit opens the lean habit form; everything a habit leaves out (project, labels,
 // reminders, notes) is one step away in Open as a task. Rendered from the device's
 // rows only, offline too.
@@ -26,6 +27,12 @@ import { habitFacts } from './habitRule'
 import { habitHue } from './habitText'
 import { checkStateOf, type CheckState } from './HabitRow'
 import { checkInWithUndo, pickDay } from './habitUndo'
+import { CheckInNote } from './CheckInNote'
+import { CheckIns } from './CheckIns'
+import { TaskNotes } from '../task-detail/TaskDetail'
+import { DayNoteHost } from './DayNoteDialog'
+import { openDayNote } from './dayNoteStore'
+
 
 
 type Undoable = Promise<{ entry: { id: string } | null; label: string } | null>
@@ -106,6 +113,8 @@ export function HabitPage({ id }: { id: string }) {
           actions={graduated ? undefined : <CheckIn task={task} state={state} />}
           menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state === 'kept', choice) }]} />} />
         <div className="space-y-5 px-1 pb-8">
+          <CheckInNote seriesId={task.id} title={task.title || t('Untitled')} />
+          <div data-habit-note><TaskNotes task={task} readOnly={false} /></div>
           {task.habit_tiny && (
             <p className="text-body text-muted" data-habit-tiny-line><span className="text-default">{t('Tiny version')}</span> · {task.habit_tiny}</p>
           )}
@@ -117,8 +126,11 @@ export function HabitPage({ id }: { id: string }) {
           )}
           {stats && <Numbers stats={stats} />}
           {stats?.backOnTrack && <p className="text-meta text-hue" data-habit-status>{t('Back on track')}</p>}
-          <HabitHistory series={task} records={rows} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))} />
+          <HabitHistory series={task} records={rows} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
+            onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} />
+          <CheckIns series={task} rows={rows} today={today} />
         </div>
+        <DayNoteHost />
       </div>
     </PageBody>
   )

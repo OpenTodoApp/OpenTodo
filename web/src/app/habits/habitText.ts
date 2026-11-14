@@ -10,15 +10,16 @@ export const STATE_TEXT = translatedMap<DayState>({
   done: msg('done'), tiny: msg('tiny version'), skipped: msg('skipped'), missed: msg('missed'), pending: msg('due, not done yet'), upcoming: msg('upcoming'), blank: msg('not scheduled'),
 })
 
-/** "6 October, skipped": a day of the month grid. */
-export function dayLabel(iso: string, state: DayState): string {
+/** "6 October, skipped": a day of the month grid; "…, with a note" when the day has one (habit-notes D3). */
+export function dayLabel(iso: string, state: DayState, note = false): string {
   const month = monthName(iso.slice(0, 7), 'long', false)
-  return `${Number(iso.slice(8, 10))} ${month}, ${STATE_TEXT[state]}`
+  const day = `${Number(iso.slice(8, 10))} ${month}, ${STATE_TEXT[state]}`
+  return note ? `${day}, ${t('with a note')}` : day
 }
 
 /** "Wednesday 11 November, skipped": a day of the thread. */
-export function threadDayLabel(iso: string, state: DayState): string {
-  return `${weekday(iso)} ${dayLabel(iso, state)}`
+export function threadDayLabel(iso: string, state: DayState, note = false): string {
+  return `${weekday(iso)} ${dayLabel(iso, state, note)}`
 }
 
 /** A stable small hash of an id, so every device picks the same hue. */

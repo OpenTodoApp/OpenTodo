@@ -13,7 +13,10 @@ import { createNote } from '../../lib/noteOps'
 import { createProject, createTask, mutate } from '../../lib/ops'
 import { activeBody, encodeDoc, newDoc, parseMarkdown, renderMarkdown, toModel, updateBody } from '../../lib/richtext'
 import { createState, pmToModel, writeBody, type EditorHooks } from '../../lib/richtextEditor'
-import { flush, render } from '../../ui/test-utils'
+import { click, flush, render } from '../../ui/test-utils'
+import { formattingRowKey } from '../../lib/formattingRow'
+import { setHabitsOn } from '../../lib/habitPrefs'
+import { editorCommands, filterCommands, type CommandEnv } from '../editorCommands'
 import NotesEditor, { noteViewOf } from '../NotesEditor'
 import { open, setupTaskDetailTests, waitFor } from '../task-detail/taskDetail.testkit'
 
@@ -151,5 +154,81 @@ describe('selection helpers', () => {
     const want = 'Agenda\n\n- [book room](?task=t1)\n- [send agenda](?task=t2)\n\nAdded by another member'
     expect(renderMarkdown(toModel(activeBody(a)))).toBe(want)
     expect(renderMarkdown(toModel(activeBody(b)))).toBe(want)
+  })
+})
+
+// Make habits (OpenSpec change habit-notes, task 5.1): the Make tasks pipeline with the
+// habit preset, from the More menu of the formatting row, with one Undo.
+describe('Make habits', () => {
+  async function makeHabits(container: HTMLElement) {
+    await waitFor(() => !!container.querySelector('[data-toolbar-more]'), 'the formatting row')
+    await click(container.querySelector<HTMLElement>('[data-toolbar-more]')!)
+    await waitFor(() => [...document.querySelectorAll('[role="menuitem"]')].some((m) => m.textContent === 'Make habits'), 'Make habits')
+    await click([...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((m) => m.textContent === 'Make habits')!)
+  }
+
+  it('A morning routine note: three habits, each line a link, one Undo takes back habits and lines', async () => {
+    await setHabitsOn(true)
+    localStorage.setItem(formattingRowKey('notes'), 'on')
+    const home = await createProject({ name: 'Home' })
+    const text = '- [ ] Drink water\n- [ ] Stretch every weekday\n- [ ] Journal'
+    const note = await noteWith({ title: 'Morning routine', project_id: home, description: text })
+    const { container, unmount } = await render(<NotesEditor note={{ ...note, entity: 'note' }} readOnly={false} />)
+    const v = await viewOf(container)
+    selectAll(v)
+    await makeHabits(container)
+    await waitFor(async () => (await db.tasks.where('project_id').equals(home).count()) === 3, 'three habits', 5000)
+    const made = await db.tasks.where('project_id').equals(home).toArray()
+    const by = (title: string) => made.find((x) => x.title === title)!
+    expect(made.every((x) => x.habit)).toBe(true)
+    expect([by('Drink water').recurrence, by('Stretch').recurrence, by('Journal').recurrence]).toEqual(['every day', 'every weekday', 'every day'])
+    expect(md(v)).toBe(`- [Drink water](?task=${by('Drink water').id})\n- [Stretch](?task=${by('Stretch').id})\n- [Journal](?task=${by('Journal').id})`)
+    // Offline: written on the device alone (the test kit fails any request), synced later with the outbox.
+    expect((await db.outbox.toArray()).some((o) => o.entityId === by('Journal').id && o.field === 'habit')).toBe(true)
+    await waitFor(async () => ((await db.notes.get(note.id))?.description ?? '').split('?task=').length === 4, 'the note saved', 5000)
+    await flush()
+    await press(v, 'z', { ctrlKey: true })
+    expect(md(v)).toBe(text)
+    await waitFor(async () => (await db.tasks.where('project_id').equals(home).filter((x) => !x.deleted_at).count()) === 0, 'the habits removed', 5000)
+    await unmount()
+  })
+
+  it('A completion-relative line becomes a plain repeating task, and the result says so', async () => {
+    await setHabitsOn(true)
+    localStorage.setItem(formattingRowKey('notes'), 'on')
+    const note = await noteWith({ title: 'Plants', description: '- [ ] Water the plants every 3 days after completion' })
+    const { container, unmount } = await render(<NotesEditor note={{ ...note, entity: 'note' }} readOnly={false} />)
+    const v = await viewOf(container)
+    selectAll(v)
+    await makeHabits(container)
+    await waitFor(async () => (await db.tasks.filter((x) => x.title === 'Water the plants').count()) === 1, 'the task', 5000)
+    const task = (await db.tasks.filter((x) => x.title === 'Water the plants').first())!
+    expect(task.habit).toBeFalsy()
+    expect(task.recurrence).toBe('every 3 days after completion')
+    await waitFor(() => (document.body.textContent ?? '').includes('Repeats after completion, so made a task, not a habit: Water the plants'), 'the result')
+    await unmount()
+  })
+
+  it('is not offered while Habits is off, nor in a task\'s notes', async () => {
+    await setHabitsOn(false)
+    const state = createState(parseMarkdown('- [ ] Drink water'), hooks)
+    const view = { state } as unknown as EditorView
+    const env = (o: Partial<CommandEnv>): CommandEnv => ({ notes: false, members: false, askLink: () => null, notify: () => {}, ...o })
+    const ids = (e: CommandEnv) => filterCommands(editorCommands(), 'make', view, e).map((c) => c.id)
+    const cmd = () => true
+    expect(ids(env({ makeSubtask: cmd }))).toEqual(['tasks'])
+    expect(ids(env({ makeSubtask: cmd, makeHabits: cmd }))).toEqual(['tasks', 'habits'])
+    expect(ids(env({ notes: true, makeSubtask: cmd, makeHabits: cmd }))).toEqual(['subtask'])
+    // The editor passes makeHabits only while Habits is on (NotesEditor): off, the More menu has none.
+    localStorage.setItem(formattingRowKey('notes'), 'on')
+    const note = await noteWith({ title: 'Routine', description: '- [ ] Drink water' })
+    const { container, unmount } = await render(<NotesEditor note={{ ...note, entity: 'note' }} readOnly={false} />)
+    const v = await viewOf(container)
+    selectAll(v)
+    await waitFor(() => !!container.querySelector('[data-toolbar-more]'), 'the formatting row')
+    await click(container.querySelector<HTMLElement>('[data-toolbar-more]')!)
+    await waitFor(() => document.querySelectorAll('[role="menuitem"]').length > 0, 'the menu')
+    expect([...document.querySelectorAll('[role="menuitem"]')].map((m) => m.textContent)).not.toContain('Make habits')
+    await unmount()
   })
 })

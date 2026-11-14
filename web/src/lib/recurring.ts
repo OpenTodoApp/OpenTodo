@@ -221,6 +221,18 @@ export function recordFields(series: Task, date: string, now: number, today: str
   }
 }
 
+/**
+ * The fields of an occurrence record: recordFields, except that a habit's record
+ * copies no note (habit-notes D1), so a day's note starts empty and holds only what
+ * was written about that day. A piece of the lineage (a split, a resume) is the
+ * habit itself and keeps recordFields' copy.
+ */
+export function occurrenceFields(series: Task, date: string, now: number, today: string): Record<string, unknown> {
+  const fields = recordFields(series, date, now, today)
+  if (series.habit) delete fields.description
+  return fields
+}
+
 // ---- the current occurrence ----
 
 /**
@@ -270,7 +282,7 @@ export function planCompletion(
     kind: 'roll', recordId, next,
     changes: [
       // A habit's full completion says it is not the tiny version (habits-home D5), so a concurrent tiny log converges.
-      { entity: 'task', entityId: recordId, patch: { ...recordFields(at, date, now, today), completed_at: now, ...(series.habit ? { tiny: false } : {}) } },
+      { entity: 'task', entityId: recordId, patch: { ...occurrenceFields(at, date, now, today), completed_at: now, ...(series.habit ? { tiny: false } : {}) } },
       { entity: 'task', entityId: series.id, patch: withTurn(moveDates(at, next, today), at, members) },
     ],
   }
@@ -313,7 +325,7 @@ export function planSkip(series: Task, rule: Rule, now: number, today: string, t
   const move: Change = { entity: 'task', entityId: series.id, patch: moveDates(at, next, today) }
   if (!series.habit) return [move]
   return [
-    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...recordFields(at, date, now, today), completed_at: now, skipped: true } },
+    { entity: 'task', entityId: occurrenceId(series.id, date), patch: { ...occurrenceFields(at, date, now, today), completed_at: now, skipped: true } },
     move,
   ]
 }

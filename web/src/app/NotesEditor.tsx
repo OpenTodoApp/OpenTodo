@@ -12,7 +12,7 @@ import { byteLength, MAX_PLAINTEXT_BYTES } from '../lib/crypto'
 import { DocTooLargeError, MAX_DOC_CHARS_ENCRYPTED, MAX_TEXT_VALUE } from '../lib/docfields'
 import { encryptionSnapshot } from '../lib/e2ee'
 import { checkLinesIn, linesToLinks, mentionIds, sameIds } from '../lib/editorNotes'
-import { planLineTasks, type NoteTaskHome } from '../lib/noteTasks'
+import { planLineHabits, planLineTasks, type NoteTaskHome } from '../lib/noteTasks'
 import { foldNote, mutateMany, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
 import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
@@ -21,12 +21,15 @@ import { useMe } from '../lib/timeEntries'
 import type { Suggest } from '../lib/editorSuggest'
 import { suggestKey } from '../lib/editorSuggest'
 import { linkCandidates, type LinkCandidate } from '../lib/linkPicker'
+import { habitRowsOf, habitStats } from '../lib/habits'
+import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useMembershipMap, useProjects } from '../lib/localData'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { hrefOf } from '../lib/noteLinks'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
-import type { Clock } from '../lib/types'
+import type { Clock, Task } from '../lib/types'
+import { logicalToday } from '../lib/dates'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
 import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
 import type { CommandEnv, LinkPickerEnv } from './editorCommands'
@@ -98,18 +101,22 @@ export function noteViewOf(el: Element): EditorView | undefined {
  * to its new task; `save` writes the tasks and the note in one batch and remembers the
  * history depth for Undo. More than 50 lines: the first 50, and the editor says so.
  */
-function makeTasksCommand(o: { enabled: boolean; home: () => NoteTaskHome; notify: (m: string) => void; save: (changes: Change[], ids: string[], depth: number) => Promise<void> }): Command {
+function makeTasksCommand(o: { enabled: boolean; habits?: boolean; home: () => NoteTaskHome; notify: (m: string) => void; save: (changes: Change[], ids: string[], depth: number) => Promise<void> }): Command {
   return (state, dispatch, v) => {
     const { lines, more } = checkLinesIn(state)
     if (!o.enabled || lines.length === 0) return false
     if (!dispatch || !v) return true
     void (async () => {
-      const planned = await planLineTasks(lines, o.home())
+      const home = o.home()
+      // Make habits (habit-notes D5): the habit preset; a completion-relative line stays a plain task, named after the write.
+      const habits = o.habits && !('subtasksOf' in home) ? await planLineHabits(lines, home) : null
+      const planned = habits ? habits.planned : await planLineTasks(lines, home)
       // The lines as they are now (a remote merge may have moved them meanwhile).
       const now = checkLinesIn(v.state).lines
       if (v.isDestroyed || now.length !== lines.length || now.some((l, i) => l.title !== lines[i].title)) return
       v.dispatch(closeHistory(linesToLinks(v.state, now, planned.map((p) => p.id), planned.map((p) => String(p.change.patch.title)))))
       await o.save(planned.map((p) => p.change), planned.map((p) => p.id), undoDepth(v.state))
+      if (habits?.plain.length) o.notify(t('Repeats after completion, so made a task, not a habit: {titles}', { titles: habits.plain.join(', ') }))
       if (more) o.notify(t('{n, plural, one {# line was left: at most 50 at once.} other {# lines were left: at most 50 at once.}}', { n: more }))
     })()
     return true
@@ -123,6 +130,26 @@ function insertLink(view: EditorView, s: Suggest, kind: LinkCandidate['kind'], i
   return view.state.tr.replaceWith(s.from, s.to, [node, schema.text(' ')]).setMeta(linkSpaceKey, s.from + node.nodeSize).scrollIntoView()
 }
 
+/** Make habits next to Make tasks in a project or standalone note, only while Habits is on (habit-notes D5). */
+function useMakeHabits(offered: boolean, o: Omit<Parameters<typeof makeTasksCommand>[0], 'enabled' | 'habits'>): Command | undefined {
+  const on = useHabitsEnabled()
+  return offered && on ? makeTasksCommand({ ...o, enabled: true, habits: true }) : undefined
+}
+
+/** A habit in the picker while Habits is on (habit-notes D4): the habit mark and its kept measure, for the few rows shown. */
+function withHabits(rows: LinkCandidate[], tasks: readonly Task[], on: boolean): LinkCandidate[] {
+  if (!on) return rows
+  let rowsOf: ((series: Task) => readonly Task[]) | undefined
+  const today = logicalToday()
+  return rows.map((c) => {
+    const task = c.kind === 'task' ? tasks.find((x) => x.id === c.id) : undefined
+    if (!task?.habit || task.completed_at) return c
+    rowsOf ??= habitRowsOf(tasks)
+    const stats = habitStats(task, rowsOf(task), today)
+    return { ...c, habit: { measure: stats ? t('{kept} of {of}', { kept: stats.kept, of: stats.keptOf }) : null } }
+  })
+}
+
 /**
  * The `[[` picker over the current workspace's rows (D3): only the project's items
  * in a note of a shared project; New note creates the note and the link in one
@@ -134,9 +161,10 @@ function useLinkPicker(o: { self: string; projectId: string | null; enabled: boo
   const notes = useNoteRows()
   const memberships = useMembershipMap()
   const scope = o.projectId && memberships.has(o.projectId) ? o.projectId : null
+  const habits = useHabitsEnabled()
   if (!o.enabled) return undefined
   return {
-    candidates: (query) => linkCandidates(query, { tasks, projects, notes, scope, self: o.self, untitled: t('Untitled note') }),
+    candidates: (query) => withHabits(linkCandidates(query, { tasks, projects, notes, scope, self: o.self, untitled: t('Untitled note') }), tasks, habits),
     insert: (view, s, item) => {
       view.dispatch(insertLink(view, s, item.kind, item.id, item.title))
       view.focus()
@@ -290,7 +318,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   const coarse = useMediaQuery('(pointer: coarse)')
   const env: CommandEnv = {
     notes: isTask, members: members.length > 0, askLink, notify: (m) => chrome.notify(m),
-    pickImage: imageParent && !readOnly ? () => picker.current?.click() : undefined, makeSubtask: readOnly ? undefined : makeSubtask, linkTo, source: () => sourceRef.current.toggle(),
+    pickImage: imageParent && !readOnly ? () => picker.current?.click() : undefined, makeSubtask: readOnly ? undefined : makeSubtask, linkTo, source: () => sourceRef.current.toggle(), makeHabits: useMakeHabits(!isTask && !readOnly, { notify: (m) => chrome.notify(m), save: saveCreated('task'), home: () => ({ projectId: entity === 'project' ? taskId : projectId.current, workspaceId: workspace.current }) }),
   }
   const chrome = useEditorChrome({ id: `${useId()}-notes`, env, members, me })
   const envRef = useLatest(env)

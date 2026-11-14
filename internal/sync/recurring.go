@@ -111,7 +111,7 @@ func (s *Service) RecurringCompletion(ctx context.Context, uid, id string, body 
 	if err != nil || !more {
 		return "", nil, false, err
 	}
-	record = recordFields(at, id, date, date, int64(NumberOf(completedAt)))
+	record = occurrenceRecord(at, id, date, date, int64(NumberOf(completedAt)))
 	record["created_at"], record["completed_at"] = completedAt, completedAt
 	// A habit's full completion is not its tiny version (habits-home D5): the
 	// record says so, so a concurrent tiny log converges by last-writer-wins.

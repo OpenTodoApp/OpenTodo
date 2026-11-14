@@ -11,7 +11,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { resetLinkIndex } from '../../lib/noteLinks'
 import { createNote } from '../../lib/noteOps'
-import { createProject, createTask, mutate } from '../../lib/ops'
+import { createProject, createTask, mutate, updateTask } from '../../lib/ops'
+import { addDaysISO, logicalToday } from '../../lib/dates'
+import { setPastDay } from '../../lib/habitActions'
+import { setHabitsOn } from '../../lib/habitPrefs'
+import { render } from '../../ui/test-utils'
+import NotesEditor from '../NotesEditor'
 import { renderMarkdown } from '../../lib/richtext'
 import { pmToModel } from '../../lib/richtextEditor'
 import { flush } from '../../ui/test-utils'
@@ -235,5 +240,55 @@ describe('links read as their target now', () => {
     await mutate('task', source, { description: 'no link' })
     await waitFor(() => !t.container.querySelector('[data-linked-references]'), 'the section gone', 5000)
     await t.unmount()
+  })
+})
+
+// Habits in links (OpenSpec change habit-notes, task 4.1): the habit mark and the kept
+// measure in the picker, the habit mark on the link, the stored link a task link.
+describe('habits in links', () => {
+  async function run(): Promise<string> {
+    const today = logicalToday()
+    const id = await createTask({ title: 'Run', due: { date: today }, recurrence: 'every day' })
+    await updateTask(id, { habit: true })
+    for (let i = 7; i >= 1; i--) if (i !== 4) await setPastDay(id, addDaysISO(today, -i), 'done', Date.now(), today)
+    return id
+  }
+  const option = (title: string) => [...(picker()?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])].find((o) => o.textContent?.includes(title))
+
+  it('Link the habit from a plan: the habit mark and "6 of 7", a link with the habit mark, Run lists the note', async () => {
+    const habit = await run()
+    await setHabitsOn(true)
+    const note = await createNote({ title: 'Running plan' })
+    const { container, unmount } = await render(<NotesEditor note={{ ...(await db.notes.get(note))!, entity: 'note' }} readOnly={false} />)
+    const v = await editorOf(container)
+    await typeText(v, '[[run')
+    await waitFor(() => !!option('Run'), 'the picker')
+    expect(option('Run')!.querySelector('[data-icon="leaf"]')).not.toBeNull()
+    expect(option('Run')!.querySelector('[data-link-measure]')!.textContent).toBe('6 of 7')
+    expect(await press(v, 'Enter')).toBe(true)
+    // The stored link stays a task link.
+    expect(md(v)).toBe(`[Run](?task=${habit})`)
+    await waitFor(() => !!chips(container)[0]?.querySelector('[data-icon="leaf"]'), 'the habit mark on the link')
+    v.dom.blur()
+    await waitFor(async () => ((await db.notes.get(note))?.description ?? '').includes(`(?task=${habit})`), 'the saved note', 5000)
+    await unmount()
+    const t = await open(habit)
+    await waitFor(() => !!t.container.querySelector(`[data-linked-ref="note:${note}"]`), 'Linked references', 5000)
+    await t.unmount()
+  })
+
+  it('Off: Run is listed and linked as a task', async () => {
+    await run()
+    await setHabitsOn(false)
+    const id = await createTask({ title: 'Plan' })
+    const { container, unmount } = await open(id)
+    const v = await editorOf(container)
+    await typeText(v, '[[run')
+    await waitFor(() => !!option('Run'), 'the picker')
+    expect(option('Run')!.querySelector('[data-icon="circle-check-big"]')).not.toBeNull()
+    expect(option('Run')!.querySelector('[data-link-measure]')).toBeNull()
+    await press(v, 'Enter')
+    await waitFor(() => !!chips(container)[0]?.querySelector('[data-icon="circle-check-big"]'), 'the task mark on the link')
+    await unmount()
   })
 })

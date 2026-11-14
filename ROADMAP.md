@@ -233,7 +233,7 @@ Habits get their own place: easy to start, forgiving on a bad day, connected to 
 | Change | What | Issues |
 | --- | --- | --- |
 | [`habits-home`](openspec/changes/habits-home/) | A Habits switch where off means off, a Habits screen and Today strip, one-step creation, a forgiving measure and strength, the tiny version, editing past days, graduating, and a calm visual language | |
-| [`habit-notes`](openspec/changes/habit-notes/) | The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
+| [`habit-notes`](openspec/changes/archive/2026-11-14-habit-notes/) | **Shipped.** The habit's note, a note on each check-in, habits in `[[` links, Make habits from a note, habits in the weekly review | |
 | [`habits-assistant`](openspec/changes/habits-assistant/) | Habit numbers on the server, `list_habits`, `get_habit` and `log_habit`, a habits route and `ot habits`, Start a habit and How are my habits?, check-ins from capture, routine steps | |
 | [`habit-targets`](openspec/changes/habit-targets/) | Times per week or month, and daily amounts that add up exactly across devices | |
 

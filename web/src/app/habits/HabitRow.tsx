@@ -6,6 +6,7 @@
 // button logs it too, and the button's menu offers both. The title opens the habit page.
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { threadDays, type HabitStats } from '../../lib/habits'
+import { noteDatesOf } from '../../lib/habitNotes'
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 import { Icon, Tooltip, type HueName } from '../../ui'
@@ -16,6 +17,8 @@ import { checkInWithUndo, pickDay } from './habitUndo'
 import { navigate } from '../router'
 import { measureText } from './habitText'
 import { Thread } from './Thread'
+import { CheckInNote } from './CheckInNote'
+import { openDayNote } from './dayNoteStore'
 
 /** Where the current occurrence stands today: kept today, due (today or earlier), or later. */
 export type CheckState = 'kept' | 'due' | 'later'
@@ -76,7 +79,8 @@ export function HabitRow({ series, rows, stats, hue, today }: { series: Task; ro
   const state = checkStateOf(series, rows, today)
   const measure = measureText(stats)
   const title = series.title || t('Untitled')
-  const thread = <Thread days={threadDays(series, rows, today)} today={today} onPick={(date, c) => act(pickDay(series.id, date, c))} />
+  const thread = <Thread days={threadDays(series, rows, today)} today={today} notes={noteDatesOf(series, rows)}
+    onPick={(date, c) => act(pickDay(series.id, date, c))} onNote={(date) => openDayNote(series.id, date)} />
   const onKey = (e: KeyboardEvent<HTMLLIElement>) => {
     if (e.target !== e.currentTarget) return
     if (e.key === 'Enter') { e.preventDefault(); openHabit(series.id); return }
@@ -94,6 +98,7 @@ export function HabitRow({ series, rows, stats, hue, today }: { series: Task; ro
       <span className={`shrink-0 text-right text-meta tabular-nums sm:w-24 ${stats?.backOnTrack ? 'text-hue' : 'text-muted'}`} data-habit-measure>{measure}</span>
       <CheckButton series={series} state={state} today={today} />
       <span className="col-start-2 col-end-[-1] sm:hidden">{thread}</span>
+      <CheckInNote seriesId={series.id} title={title} className="col-start-2 col-end-[-1] pb-1" />
     </li>
   )
 }

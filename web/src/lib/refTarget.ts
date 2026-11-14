@@ -9,10 +9,10 @@ import type { Project, Task } from './types'
  * What a link to a task, note or project reads as (note-links D2, D4): its title
  * and whether it is done, or null when it is missing or deleted.
  */
-export function useRefTarget(kind: 'task' | 'note' | 'project', id: string): { title: string; done: boolean } | null | undefined {
+export function useRefTarget(kind: 'task' | 'note' | 'project', id: string): { title: string; done: boolean; habit: boolean } | null | undefined {
   return useLiveQuery(async () => {
     const r = (await db[`${kind}s` as 'tasks'].get(id)) as (Task & Project) | undefined
-    return r && !r.deleted_at ? { title: r.name ?? (r.title.trim() || t('Untitled note')), done: !!(r.completed_at || r.archived) } : null
+    return r && !r.deleted_at ? { title: r.name ?? (r.title.trim() || t('Untitled note')), done: !!(r.completed_at || r.archived), habit: kind === 'task' && !!r.habit } : null
   }, [kind, id])
 }
 

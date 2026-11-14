@@ -7,7 +7,7 @@ import { wrapInList } from 'prosemirror-schema-list'
 import type { Command } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { formatDate } from '../lib/dates'
-import { checkLineAt } from '../lib/editorNotes'
+import { checkLinesIn } from '../lib/editorNotes'
 import { insertTable, isInTable, TABLE_COMMANDS } from '../lib/editorTables'
 import { linkCommand, schema, wrapInCheckList } from '../lib/richtextEditor'
 import { logicalToday } from '../lib/dates'
@@ -26,6 +26,8 @@ export interface CommandEnv {
   /** Choose an image file and embed it (notes and comments of a task). */
   pickImage?: () => void
   makeSubtask?: Command
+  /** Make habits from check-list lines (a project or standalone note while Habits is on; habit-notes D5). */
+  makeHabits?: Command
   notify: (message: string) => void
   /** The `[[` picker and Link to… (notes only, never read-only; note-links D3). */
   linkTo?: LinkPickerEnv
@@ -99,6 +101,9 @@ export function tableCommands(): EditorCommand[] {
   }))
 }
 
+/** The caret on a check-list line, or a selection holding some (Make subtask, Make tasks, Make habits). */
+const onCheckLines = (view: EditorView) => checkLinesIn(view.state).lines.length > 0
+
 /** Every command, in menu order. */
 export function editorCommands(): EditorCommand[] {
   const { nodes, marks } = schema
@@ -132,14 +137,19 @@ export function editorCommands(): EditorCommand[] {
     },
     {
       id: 'subtask', label: t('Make subtask'), icon: 'corner-down-right', keywords: 'task',
-      available: (view, env) => env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
+      available: (view, env) => env.notes && !!env.makeSubtask && onCheckLines(view),
       run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
     },
     {
       // In a project or standalone note the same command makes tasks (note-checklist-tasks D1).
       id: 'tasks', label: t('Make tasks'), icon: 'circle-check-big', keywords: 'task todo action',
-      available: (view, env) => !env.notes && !!env.makeSubtask && !!checkLineAt(view.state),
+      available: (view, env) => !env.notes && !!env.makeSubtask && onCheckLines(view),
       run: (view, env) => env.makeSubtask && exec(env.makeSubtask)(view),
+    },
+    {
+      id: 'habits', label: t('Make habits'), icon: 'leaf', keywords: 'habit routine daily',
+      available: (view, env) => !env.notes && !!env.makeHabits && onCheckLines(view),
+      run: (view, env) => env.makeHabits && exec(env.makeHabits)(view),
     },
     { id: 'markdown', label: t('Markdown'), icon: 'code', keywords: 'source md plain text', available: (_v, env) => !!env.source, run: (_v, env) => env.source?.() },
     { id: 'bold', label: t('Bold'), icon: 'bold', available: () => false, run: exec(toggleMark(marks.strong)) },

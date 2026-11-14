@@ -7711,5 +7711,15 @@
   "Deliver instantly through UnifiedPush": "通过 UnifiedPush 即时送达",
   "Needs a UnifiedPush app such as ntfy": "需要 ntfy 等 UnifiedPush 应用",
   "Your UnifiedPush app needs attention. Open it, then try again.": "你的 UnifiedPush 应用需要处理。请打开它，然后重试。",
-  "The UnifiedPush app could not register this device.": "UnifiedPush 应用无法注册此设备。"
+  "The UnifiedPush app could not register this device.": "UnifiedPush 应用无法注册此设备。",
+  "Check-ins": "打卡记录",
+  "How did it go?": "感觉怎么样？",
+  "How did it go? {title}": "感觉怎么样？{title}",
+  "How did the day go?": "这一天怎么样？",
+  "Make habits": "创建习惯",
+  "Note removed": "已移除备注",
+  "Note saved": "已保存备注",
+  "Repeats after completion, so made a task, not a habit: {titles}": "完成后才重复，因此创建为任务而非习惯：{titles}",
+  "with a note": "有备注",
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, other {# 条打卡}}"
 }

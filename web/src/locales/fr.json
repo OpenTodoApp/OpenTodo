@@ -7711,5 +7711,15 @@
   "Deliver instantly through UnifiedPush": "Livrer immédiatement via UnifiedPush",
   "Needs a UnifiedPush app such as ntfy": "Nécessite une application UnifiedPush comme ntfy",
   "Your UnifiedPush app needs attention. Open it, then try again.": "Votre application UnifiedPush demande votre attention. Ouvrez-la, puis réessayez.",
-  "The UnifiedPush app could not register this device.": "L'application UnifiedPush n'a pas pu enregistrer cet appareil."
+  "The UnifiedPush app could not register this device.": "L'application UnifiedPush n'a pas pu enregistrer cet appareil.",
+  "Check-ins": "Suivis",
+  "How did it go?": "Comment ça s’est passé ?",
+  "How did it go? {title}": "Comment ça s’est passé ? {title}",
+  "How did the day go?": "Comment s’est passée la journée ?",
+  "Make habits": "Créer des habitudes",
+  "Note removed": "Note supprimée",
+  "Note saved": "Note enregistrée",
+  "Repeats after completion, so made a task, not a habit: {titles}": "Se répète après achèvement, donc une tâche plutôt qu’une habitude : {titles}",
+  "with a note": "avec une note",
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# suivi} other {# suivis}}"
 }

@@ -14,6 +14,7 @@ import { act } from '../actionError'
 import { navigate } from '../router'
 import { habitHue } from './habitText'
 import { checkInWithUndo } from './habitUndo'
+import { CheckInNoteSlot } from './CheckInNoteSlot'
 
 const PART_ORDER = (x: Task) => (x.day_part === 'morning' ? 0 : x.day_part === 'afternoon' ? 1 : x.evening ? 2 : 3)
 
@@ -63,6 +64,7 @@ export function TodayStrip({ tasks, projects, today }: { tasks: readonly Task[];
   const more = habits.length - shown.length
   const link = 'rounded-control text-meta hover:text-default hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus'
   return (
+    <>
     <section aria-label={t('Habits')} className="mb-3 flex min-h-8 items-center gap-3 px-2" data-today-habits>
       <button type="button" onClick={() => navigate({ view: 'habits' })} className={`shrink-0 font-medium text-muted ${link}`} data-strip-habits>{t('Habits')}</button>
       <ul ref={box} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 overflow-hidden" data-strip>
@@ -89,5 +91,8 @@ export function TodayStrip({ tasks, projects, today }: { tasks: readonly Task[];
         )}
       </ul>
     </section>
+    {/* "How did it go?" under the strip for the habit just checked in (habit-notes D2). */}
+    {habits.map(({ task }) => <CheckInNoteSlot key={task.id} seriesId={task.id} title={task.title || t('Untitled')} className="-mt-1 mb-3 max-w-md px-2" />)}
+    </>
   )
 }

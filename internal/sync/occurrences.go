@@ -205,6 +205,18 @@ func (s seriesRow) standOn(date, today string) Entity {
 	return out
 }
 
+// occurrenceRecord is recordFields for an occurrence record: a habit's record
+// copies no note (OpenSpec change habit-notes, design D1), so a day's note starts
+// empty, like the client's occurrenceFields. A piece of the lineage (a split) is
+// the habit itself and keeps recordFields' copy.
+func occurrenceRecord(row Entity, id, from, date string, now int64) map[string]json.RawMessage {
+	rec := recordFields(row, id, from, date, now)
+	if string(row["habit"]) == "true" {
+		delete(rec, "description")
+	}
+	return rec
+}
+
 // recordFields are the fields an occurrence record of date inherits from the
 // series row (which stands on from), open. On an encrypted account (the
 // series' title is ciphertext) no content field is copied: a ciphertext is bound
@@ -341,7 +353,7 @@ func PlanActOn(id string, row Entity, date string, action OccurrenceAction, task
 		}
 	}
 	at := s.standOn(current, today)
-	plan.Record = recordFields(at, id, current, date, now)
+	plan.Record = occurrenceRecord(at, id, current, date, now)
 	for k, v := range state {
 		plan.Record[k] = v
 	}

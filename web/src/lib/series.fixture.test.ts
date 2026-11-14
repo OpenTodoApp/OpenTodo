@@ -30,6 +30,8 @@ interface FixtureCase {
     end?: true
     record_date?: string
     record?: Record<string, unknown> | null
+    /** Fields the record must not hold (habit-notes D1). */
+    record_absent?: string[]
     series?: Record<string, unknown> | null
     piece?: Record<string, unknown>
     carries?: Record<string, Record<string, unknown>>
@@ -148,5 +150,6 @@ describe('shared series fixture', () => {
     }
     expect(recordChanges.map((ch) => ch.entityId)).toEqual([occurrenceId(target.id, c.expect.record_date!)])
     expect(recordChanges[0].patch).toMatchObject(c.expect.record!)
+    for (const k of c.expect.record_absent ?? []) expect(Object.keys(recordChanges[0].patch)).not.toContain(k)
   })
 })

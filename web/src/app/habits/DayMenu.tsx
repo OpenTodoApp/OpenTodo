@@ -1,16 +1,19 @@
 // A past day's menu (OpenSpec change habits-home, design D6): Done, Tiny, Skipped
 // and Clear on a scheduled day before the current occurrence, in the thread and the
 // month grid. The current state is marked; Clear is offered only when a record exists.
+// Note (habit-notes) opens the day's note.
 import type { ReactNode } from 'react'
 import type { DayCell } from '../../lib/habits'
 import type { DayChoice } from '../../lib/habitActions'
 import { t } from '../../lib/i18n'
 import { ActionMenu, type ActionItem } from '../menus/ActionMenu'
 
-export function DayMenu({ cell, label, onPick, trigger, triggerClassName }: {
+export function DayMenu({ cell, label, onPick, onNote, trigger, triggerClassName }: {
   cell: Pick<DayCell, 'date' | 'state'>
   label: string
   onPick: (choice: DayChoice) => void
+  /** Note (habit-notes D2): add or change the day's note; a day without a record asks for its state first. */
+  onNote?: () => void
   trigger?: ReactNode
   triggerClassName?: string
 }) {
@@ -21,6 +24,7 @@ export function DayMenu({ cell, label, onPick, trigger, triggerClassName }: {
     item('tiny', t('Tiny version'), 'tiny'),
     item('skipped', t('Skipped'), 'skipped'),
     ...(cell.state !== 'missed' ? [{ kind: 'action' as const, id: 'clear', label: t('Clear'), icon: 'x' as const, onSelect: () => onPick('clear') }] : []),
+    ...(onNote ? [{ kind: 'action' as const, id: 'note', label: t('Note'), icon: 'pencil' as const, onSelect: onNote }] : []),
   ]
   return (
     <ActionMenu label={label} title={label} groups={[{ items }]} align="start" width="sm:w-48"
