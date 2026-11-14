@@ -4,7 +4,8 @@
 // without a change), laid out as a grid of icons grouped by category, because a list
 // of hundreds of named rows is not how people choose a picture. Arrow keys move
 // through the grid as it is drawn; "No icon" comes first.
-import { useEffect, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { pickerField, restInOverlay } from './overlay/stack'
 import { CatalogueIcon } from './CatalogueIcon'
 import { Icon, isIconName } from './Icon'
 import { CATALOGUE_NAMES } from './icons/catalogue.names'
@@ -45,6 +46,9 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   const [failed, setFailed] = useState(false)
   const [query, setQuery] = useState(defaultQuery)
   const [active, setActive] = useState<string>(value ?? NONE)
+  // Opened from a menu's step on a touch-only device, the field stays unfocused and focus rests on the sheet.
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => restInOverlay(root.current), [])
 
   useEffect(() => {
     if (catalogue) return
@@ -148,13 +152,13 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   }
 
   return (
-    <div className="space-y-1" data-icon-picker>
+    <div ref={root} className="space-y-1" data-icon-picker>
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"><Icon name="search" /></span>
         <input role="combobox" aria-label={label} aria-expanded aria-controls={listboxId} aria-autocomplete="list"
           aria-activedescendant={cells.some((c) => c.key === active) ? optionId(active) : undefined}
           value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={onKeyDown}
-          placeholder={t('Search icons')} autoComplete="off" spellCheck={false} autoFocus data-autofocus
+          placeholder={t('Search icons')} autoComplete="off" spellCheck={false} {...pickerField()}
           className="ui-input pl-9" />
         <span role="status" aria-live="polite" className="sr-only">
           {query.trim() ? (count ? t('{n, plural, one {# result available} other {# results available}}', { n: count }) : t('No matches')) : ''}

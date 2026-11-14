@@ -1,0 +1,1 @@
+- **A picker on a phone no longer opens under the keyboard.** The When sheet, the label, assignee, project and icon pickers and other lists with a search field open with their choices in view; tap the field to type. Quick add, comments and rename prompts still open ready to type, and nothing changes with a keyboard attached (#1360).

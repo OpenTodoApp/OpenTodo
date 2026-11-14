@@ -5,8 +5,10 @@
 // here: the first key press only a hardware keyboard can make marks the page, and the
 // hints show from then on. Nothing is stored; the next start asks again.
 
-/** The mark on the root element the stylesheet reads. */
-export const KEYBOARD_ATTR = 'data-keyboard'
+import { KEYBOARD_ATTR } from './keyboardLikely'
+
+/** The mark on the root element the stylesheet reads, and `touchOnly()` in keyboardLikely.ts. */
+export { KEYBOARD_ATTR }
 
 const ALWAYS = new Set(['Tab', 'Escape'])
 

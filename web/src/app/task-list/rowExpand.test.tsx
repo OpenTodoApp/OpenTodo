@@ -161,12 +161,14 @@ describe('expanded rows', () => {
     await r.unmount()
   })
 
-  it('on a touch phone the row ends with a disclosure that toggles the details without opening the task', async () => {
-    viewport(360, true)
+  it('on a touch screen from 768 px the row ends with a disclosure that toggles the details without opening the task', async () => {
+    viewport(820, true)
     const { r } = await today('Call the plumber')
     const button = row('Call the plumber').querySelector<HTMLButtonElement>('[data-row-expand] button')!
     expect(button.getAttribute('aria-label')).toBe('Show details')
     expect(button.className).toContain('touch-target')
+    // Its 44 px target stands clear of the grip's (phone-row-controls D2).
+    expect(button.parentElement!.className).toContain('pointer-coarse:me-3')
     await click(button)
     await waitFor(() => details().length === 1, 'the details')
     expect(openedTask()).toBeNull()
@@ -177,6 +179,30 @@ describe('expanded rows', () => {
     expect(openedTask()).toBeNull()
     await click(button)
     await waitFor(() => details().length === 0, 'the details hidden')
+    await r.unmount()
+  })
+
+  it('below 768 px a row has no disclosure: a tap opens the task, and only an expanded row shows Hide details (phone-row-controls)', async () => {
+    viewport(360, true)
+    const { r } = await today('Call the plumber')
+    const slot = () => row('Call the plumber').querySelector<HTMLElement>('[data-row-expand]')!
+    // Not displayed below 768 px (so not a tab stop and not heard); from 768 px on touch it is.
+    expect(slot().className).toContain('max-md:hidden')
+    // → still expands (a keyboard on a narrow window); the row then carries the way to close it.
+    await key(document.body, 'j')
+    await waitFor(() => focused().matches('[data-row-open]'), 'focus on the row')
+    await key(focused(), 'ArrowRight')
+    await waitFor(() => details().length === 1, 'the details')
+    expect(slot().className).not.toContain('max-md:hidden')
+    const hide = slot().querySelector('button')!
+    expect(hide.getAttribute('aria-label')).toBe('Hide details')
+    await click(hide)
+    await waitFor(() => details().length === 0, 'the details hidden')
+    expect(slot().className).toContain('max-md:hidden')
+    expect(openedTask()).toBeNull()
+    // A tap on the row opens the task.
+    await click(openControl('Call the plumber'))
+    await waitFor(() => openedTask() !== null, 'the task opened')
     await r.unmount()
   })
 

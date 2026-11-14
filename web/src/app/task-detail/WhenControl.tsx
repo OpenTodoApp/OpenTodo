@@ -5,6 +5,7 @@
 // (when-picker). Every segment is the editor it replaces and writes exactly the
 // fields it wrote before.
 import { habitRule } from '../../lib/habits'
+import { raisesKeyboard, touchOnly } from '../../lib/keyboardLikely'
 import { useSeriesRecords } from '../../lib/localData'
 import { lazy, Suspense, type KeyboardEvent, type RefObject, useEffect, useRef, useState, type ReactNode } from 'react'
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
@@ -278,7 +279,11 @@ export function WhenControl({ task, readOnly = false, focus = 'due', segment, on
   useEffect(() => {
     const seg = root.current?.querySelector<HTMLElement>(`[data-when-segment="${shownFocus}"]`)
     // A text field first (the date), else the segment's first control (a switch, Add reminder).
-    ;(seg?.querySelector<HTMLElement>('input:not([disabled])') ?? seg?.querySelector<HTMLElement>(FOCUSABLE))?.focus()
+    const first = seg?.querySelector<HTMLElement>('input:not([disabled])') ?? seg?.querySelector<HTMLElement>(FOCUSABLE)
+    // On a touch-only device the date field waits for a tap: its keyboard would cover the
+    // calendar (touch-sheet-focus). Focus stays where the sheet or the tapped segment put it.
+    if (raisesKeyboard(first) && touchOnly()) return
+    first?.focus()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- on mount and when the shown segment changes
   }, [segment])
   const shows = (id: WhenSegment) => !segment || id === segment

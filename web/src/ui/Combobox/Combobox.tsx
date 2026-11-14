@@ -3,7 +3,7 @@
 // keeps field and list together (inside a dialog or a panel).
 import { useEffect, useRef, useState, type ReactNode, type UIEvent } from 'react'
 import { Popover } from '../overlay/Popover'
-import { useWide } from '../overlay/stack'
+import { pickerField, restInOverlay, useWide } from '../overlay/stack'
 import { Icon } from '../Icon'
 import { highlight, type Range } from './match'
 import { useCombobox, type ComboboxConfig, type ComboboxState, type ComboOption } from './useCombobox'
@@ -168,7 +168,13 @@ export function ComboboxField<T>(props: Parameters<typeof Field<T>>[0]) {
 }
 
 function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, autoFocus, look = 'default', trailing }: {
-  state: ComboboxState<T>; label: string; placeholder?: string; inputRef?: React.Ref<HTMLInputElement>; onFocus?: () => void; expanded: boolean; autoFocus?: boolean
+  state: ComboboxState<T>; label: string; placeholder?: string; inputRef?: React.Ref<HTMLInputElement>; onFocus?: () => void; expanded: boolean
+  /**
+   * `true`: the field is what its sheet is for (the command bar) and takes focus on open everywhere.
+   * `'keyboard'`: a picker's search field, focused on open only where a key can be pressed
+   * (touch-sheet-focus). Omitted: the overlay around it focuses it, by the same rule.
+   */
+  autoFocus?: boolean | 'keyboard'
   look?: ComboboxLook
   /** Shown at the field's end (the palette's selected-task chip). */
   trailing?: ReactNode
@@ -193,8 +199,7 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
         onKeyDown={state.onKeyDown}
         onFocus={onFocus}
         className={palette ? 'min-w-0 flex-1 bg-transparent py-3.5 text-prose text-strong outline-none placeholder:text-faint' : 'ui-input pl-9'}
-        autoFocus={autoFocus}
-        data-autofocus
+        {...(autoFocus === true ? { autoFocus: true, 'data-autofocus': '' } : { ...pickerField(), ...(autoFocus ? null : { autoFocus: false }) })}
       />
       {trailing}
       <span role="status" aria-live="polite" className="sr-only">{state.announcement}</span>
@@ -205,11 +210,14 @@ function Field<T>({ state, label, placeholder, inputRef, onFocus, expanded, auto
 /** Field and list always visible, for dialogs and panels. */
 export function ComboboxPanel<T>({ label, placeholder, emptyText, renderLeading, ...cfg }: ComboboxViewProps<T>) {
   const state = useCombobox(cfg)
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => restInOverlay(root.current), [])
   return (
-    <div className="space-y-1" data-combobox>
+    <div ref={root} className="space-y-1" data-combobox>
       {/* The panel lives in a dialog that may have mounted before this picker's data
-          arrived, so it focuses its own field. */}
-      <Field state={state} label={label} placeholder={placeholder} expanded autoFocus />
+          arrived, so it focuses its own field: where a key can be pressed. On a touch-only
+          device the list is what the person came for, and focus rests on the dialog. */}
+      <Field state={state} label={label} placeholder={placeholder} expanded autoFocus="keyboard" />
       <ComboboxList state={state} renderLeading={renderLeading} emptyText={emptyText} label={label} />
     </div>
   )

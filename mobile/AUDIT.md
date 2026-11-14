@@ -74,6 +74,8 @@ Second round (2026-11-14, from the interface tour at 360 px and what was left ab
 
 Third round (2026-11-14, what the second found and left): `touch-pressed-states`, `phone-bar-overflow`, `phone-titles-everywhere`. Issues #1349 to #1351. Planned: `shell-push` (#1344), Android through UnifiedPush.
 
+Fourth round (2026-11-14, a new tour at 360 px): `phone-row-controls`, `touch-sheet-focus`, `phone-calendar-chrome`, `touch-no-tooltips`. Issues #1359 to #1362.
+
 Open:
 
 - **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android is `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).

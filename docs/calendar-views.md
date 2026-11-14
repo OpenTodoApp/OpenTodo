@@ -17,11 +17,11 @@ The calendar shows dated tasks by day, week, month, two-week plan or [year](mont
 
 ## Open the calendar
 
-Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Plan** or **Year** in its header, or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd>, <kbd>g</kbd> <kbd>Shift+C</kbd> or <kbd>g</kbd> <kbd>y</kbd>. The sidebar remembers the last one on each device.
+Choose **Calendar** in the sidebar, then **Day**, **Week**, **Month**, **Plan** or **Year** in its header (on a phone, tap the view's name), or press <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd>, <kbd>g</kbd> <kbd>Shift+C</kbd> or <kbd>g</kbd> <kbd>y</kbd>. The sidebar remembers the last one on each device.
 
-- Tasks with a date **and** a time appear as blocks at that time, filled in their project's colour. The block is as tall as the estimate.
+- Tasks with a date **and** a time appear as blocks at that time, in their project's colour. The block is as tall as the estimate.
 - A timed task without an estimate gets a 30-minute block with a dashed edge.
-- Tasks with a date but no time wait in the **Unscheduled** lane at the top of their day. On a touch screen, more than three fold under a tappable count.
+- Tasks with a date but no time wait in the **Unscheduled** lane above their day. On a touch screen, more than three fold under a tappable count.
 - Past days are dimmed.
 - A red line marks the current time.
 - **+N** shows more all-day events.

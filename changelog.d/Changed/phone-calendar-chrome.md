@@ -1,0 +1,1 @@
+- **The calendar starts higher on a phone.** Previous, Today and Next share one row with the view: tap its name ("Week") to choose Day, Week, Month, Plan or Year. The Calendars toggle moved into the "…" menu. Nothing changes on wider screens.

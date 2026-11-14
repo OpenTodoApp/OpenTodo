@@ -10,7 +10,9 @@ import { setBlockedBy } from '../../lib/dependencies'
 import { createProject, createTask, resetDeviceId, setTaskCompleted } from '../../lib/ops'
 import { loadShowCompleted } from '../../lib/sections'
 import { click, mockFetch, noPublicLinks, render, waitFor } from '../../ui/test-utils'
+import type { Project } from '../../lib/types'
 import { TaskListView } from '../TaskListView'
+import { placeholderFor } from './ListChrome'
 
 const originalMatchMedia = window.matchMedia
 function pointer(kind: 'fine' | 'coarse') {
@@ -139,5 +141,14 @@ describe('empty views', () => {
       expect(empty.querySelector('[data-empty-secondary]')).toBeNull()
       await r.unmount()
     }
+  })
+})
+
+describe('the add field hint', () => {
+  it('names the list from 768 px and is the short one on a phone (phone-row-controls)', () => {
+    const project = { name: 'Home renovation with a rather long project name' } as Project
+    expect(placeholderFor({ view: 'project', id: 'p' }, project)).toBe('Add a task to Home renovation with a rather long project name…')
+    expect(placeholderFor({ view: 'project', id: 'p' }, project, undefined, undefined, undefined, true)).toBe('Add a task…')
+    expect(placeholderFor({ view: 'today' }, undefined, undefined, undefined, undefined, true)).toBe('Add a task…')
   })
 })

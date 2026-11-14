@@ -165,6 +165,8 @@ export function truncation() {
  * M11: visible interactive controls overlapping by more than 4 px on both axes. Controls
  * in different layers (the page and an open menu, dialog, sheet or list of options) are
  * not compared: a control under an open overlay is covered, not visible (ux-fixes-phone).
+ * Nor is a control of the page's fixed chrome (the tab bar, the add button) with one of the
+ * content that scrolls under it: scrolling uncovers it (phone-row-controls).
  */
 export function overlaps() {
   const out = []
@@ -172,10 +174,11 @@ export function overlaps() {
   const els = [...document.querySelectorAll(window.__ux.targets)].filter((el) => window.__ux.shown(el))
   const boxes = els.map((el) => el.getBoundingClientRect())
   const layers = els.map((el) => el.closest(LAYER))
+  const fixed = els.map((el) => { for (let n = el; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true; return false })
   for (let i = 0; i < els.length; i++) {
     for (let j = i + 1; j < els.length; j++) {
       if (els[i].contains(els[j]) || els[j].contains(els[i])) continue
-      if (layers[i] !== layers[j]) continue
+      if (layers[i] !== layers[j] || fixed[i] !== fixed[j]) continue
       const a = boxes[i], b = boxes[j]
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
       const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)

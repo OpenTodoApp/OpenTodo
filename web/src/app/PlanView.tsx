@@ -223,6 +223,7 @@ export function PlanView({ date }: { date?: string }) {
   // The active filter is one chip in the lead line (design D4).
   const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
   const overflow = <>
+    <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />
     <CalendarCompletedToggle shown={showCompleted} menu />
     {PLAN_SPANS.map((n) => (
       <MenuItem key={n} label={t('{n} days', { n })} icon="calendar-days" checked={span === n} data-plan-span={n}

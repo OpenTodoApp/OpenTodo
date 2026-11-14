@@ -211,7 +211,11 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `touch-pressed-states` | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | In progress (9 of 11) |
 | `phone-bar-overflow` | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | In progress (7 of 9) |
 | `phone-titles-everywhere` | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | In progress (10 of 12) |
-| `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | In progress (9 of 14) |
+| `phone-row-controls` | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | In progress (11 of 13) |
+| `touch-sheet-focus` | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | In progress (9 of 11) |
+| `phone-calendar-chrome` | The calendar on a phone: one row under the bar, the views in a menu | In progress (10 of 13) |
+| `touch-no-tooltips` | No tooltip after a tap; hover and keyboard focus as before | In progress (6 of 7) |
+| `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | In progress (10 of 14) |
 
 ## Native app
 

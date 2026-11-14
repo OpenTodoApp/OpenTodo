@@ -6,7 +6,8 @@ import { TaskListView } from './TaskListView'
 
 // Expanded rows (OpenSpec change row-expand, task-list-presentation "Expanded rows"):
 // Today with one row's details open under it, as Show details (a fine pointer from
-// 768 px) or the row's disclosure (narrower) opens them: the notes, the facet lines,
+// 768 px), the row's disclosure (touch from 768 px) or → (below 768 px, where a row has
+// no disclosure until it is expanded, phone-row-controls) opens them: the notes, the facet lines,
 // the subtasks with their checkboxes, the counts and Open task, indented under the title.
 const meta: Meta = { title: 'Screens/Expanded row' }
 export default meta
@@ -41,7 +42,7 @@ function Expand({ children }: { children: ReactNode }) {
       if (details) { (document.activeElement as HTMLElement | null)?.blur(); setDone(true); return }
       const button = li && (li.querySelector<HTMLButtonElement>('[data-row-action="details"]') ?? li.querySelector<HTMLButtonElement>('[data-row-expand] button'))
       if (button && li.getAttribute('data-expanded') === null) {
-        // The visible control: the cluster's from 768 px on a fine pointer, else the row's disclosure.
+        // The cluster's control from 768 px on a fine pointer, else the row's disclosure (not displayed below 768 px until the row is expanded; the click stands in for →).
         const wide = matchMedia('(min-width: 768px) and (pointer: fine)').matches
         ;(wide ? li.querySelector<HTMLButtonElement>('[data-row-action="details"]') : li.querySelector<HTMLButtonElement>('[data-row-expand] button'))?.click()
       }

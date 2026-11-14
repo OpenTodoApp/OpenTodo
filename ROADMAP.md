@@ -257,6 +257,10 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`touch-pressed-states`](openspec/changes/touch-pressed-states/) | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | [#1349](https://github.com/OpenTodoApp/OpenTodo/issues/1349) |
 | [`phone-bar-overflow`](openspec/changes/phone-bar-overflow/) | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | [#1350](https://github.com/OpenTodoApp/OpenTodo/issues/1350) |
 | [`phone-titles-everywhere`](openspec/changes/phone-titles-everywhere/) | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | [#1351](https://github.com/OpenTodoApp/OpenTodo/issues/1351) |
+| [`phone-row-controls`](openspec/changes/phone-row-controls/) | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | [#1359](https://github.com/OpenTodoApp/OpenTodo/issues/1359) |
+| [`touch-sheet-focus`](openspec/changes/touch-sheet-focus/) | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | [#1360](https://github.com/OpenTodoApp/OpenTodo/issues/1360) |
+| [`phone-calendar-chrome`](openspec/changes/phone-calendar-chrome/) | The calendar on a phone: one row under the bar, the views in a menu | [#1361](https://github.com/OpenTodoApp/OpenTodo/issues/1361) |
+| [`touch-no-tooltips`](openspec/changes/touch-no-tooltips/) | No tooltip after a tap; hover and keyboard focus as before | [#1362](https://github.com/OpenTodoApp/OpenTodo/issues/1362) |
 | [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.

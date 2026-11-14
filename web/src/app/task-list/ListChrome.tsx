@@ -255,7 +255,9 @@ function DurationFilterControl({ active, onChange, onQuery }: { active: Duration
   )
 }
 
-export function placeholderFor(route: ListRoute, project?: Project, label?: Label, place?: Place, workspace?: string): string {
+/** The add field's hint. `short`: a phone, where the field's one line holds "Add a task…" and not a project's name (phone-row-controls D3). */
+export function placeholderFor(route: ListRoute, project?: Project, label?: Label, place?: Place, workspace?: string, short = false): string {
+  if (short) return t('Add a task…')
   switch (route.view) {
     case 'today':
       return t('Add a task for today…')

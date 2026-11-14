@@ -3,6 +3,7 @@
 // page behind, and focus capture / restore. Kept free of React so it is unit-tested
 // with plain objects.
 import { useSyncExternalStore } from 'react'
+import { raisesKeyboard, touchOnly } from '../../lib/keyboardLikely'
 import { createSignal } from '../../lib/store'
 
 interface Entry { id: number; onEscape: () => void }
@@ -152,12 +153,53 @@ if (typeof document !== 'undefined') {
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
 
-/** Moves focus into `panel`: an [autofocus] element, else the first focusable, else the panel. */
+/** `data-autofocus` value of a picker's search field: focused on open only where a key can be pressed. */
+const KEYBOARD_ONLY = 'keyboard'
+
+/** The element an overlay hands focus to: an [autofocus] element, else the first focusable that is not Close. */
+function entryOf(panel: HTMLElement): HTMLElement | undefined {
+  return panel.querySelector<HTMLElement>('[autofocus], [data-autofocus]')
+    ?? [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].find((el) => !el.hasAttribute('data-overlay-close'))
+}
+
+/**
+ * Moves focus into `panel`: an [autofocus] element, else the first focusable, else the panel.
+ * On a device without a keyboard (touch-sheet-focus) a text field takes focus only when
+ * it asks for it (`autoFocus`, `data-autofocus`): the sheet is for typing. A field that
+ * is merely first, or a picker's search field (`pickerField()`), leaves focus on the
+ * panel, so the on-screen keyboard stays down over the choices.
+ */
 export function focusInto(panel: HTMLElement) {
   if (panel.contains(document.activeElement)) return
-  const auto = panel.querySelector<HTMLElement>('[autofocus], [data-autofocus]')
-  const first = auto ?? [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].find((el) => !el.hasAttribute('data-overlay-close'))
-  ;(first ?? panel).focus({ preventScroll: true })
+  const first = entryOf(panel)
+  ;(waits(first) ? panel : first ?? panel).focus({ preventScroll: true })
+}
+
+/** Whether `first` is a text field that did not ask for focus, on a device without a keyboard. */
+function waits(first: HTMLElement | null | undefined): boolean {
+  if (!first || !raisesKeyboard(first)) return false
+  const asked = first.hasAttribute('autofocus') || (first.hasAttribute('data-autofocus') && first.getAttribute('data-autofocus') !== KEYBOARD_ONLY)
+  return !asked && touchOnly()
+}
+
+/**
+ * Props of a picker's search field (touch-sheet-focus): it takes focus on open where
+ * there is a keyboard; on a touch-only device the list or calendar under it is what
+ * the person came for, and the field waits for a tap.
+ */
+export function pickerField(): { autoFocus: boolean; 'data-autofocus': string } {
+  return { autoFocus: !touchOnly(), 'data-autofocus': KEYBOARD_ONLY }
+}
+
+/**
+ * A picker that arrives in an overlay already open (a menu's second step) on a
+ * touch-only device: its field stays unfocused, so focus rests on the overlay itself
+ * instead of falling to the page behind when the first step's controls are removed.
+ */
+export function restInOverlay(content: HTMLElement | null) {
+  const panel = content?.closest<HTMLElement>('[data-overlay]')
+  if (!panel || !touchOnly() || panel.contains(document.activeElement)) return
+  panel.focus({ preventScroll: true })
 }
 
 /**
@@ -169,12 +211,17 @@ export function focusArrived(content: HTMLElement | null) {
   const panel = content?.closest<HTMLElement>('[data-overlay]')
   if (!content || !panel || document.activeElement !== panel) return
   const first = content.querySelector<HTMLElement>('[autofocus], [data-autofocus]') ?? content.querySelector<HTMLElement>(FOCUSABLE)
-  first?.focus({ preventScroll: true })
+  if (!waits(first)) first?.focus({ preventScroll: true })
 }
 
 /** Keeps Tab and Shift+Tab inside `panel`. */
 export function trapTab(e: KeyboardEvent | React.KeyboardEvent, panel: HTMLElement) {
   if (e.key !== 'Tab') return
+  // From the panel itself (focus rested there on open), Tab goes where focus would have gone.
+  if (!e.shiftKey && document.activeElement === panel) {
+    const first = entryOf(panel)
+    if (first) { e.preventDefault(); first.focus(); return }
+  }
   const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null || el === document.activeElement)
   if (items.length === 0) { e.preventDefault(); return }
   const first = items[0], last = items[items.length - 1]

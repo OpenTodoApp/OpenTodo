@@ -93,7 +93,9 @@ describe('Week on a phone', () => {
     await seed()
     await setShowEvents(false)
     const r = await render(<CalendarView mode="week" />)
-    await waitFor(() => r.container.querySelector('[data-agenda-day="2026-11-18"]') !== null && r.container.querySelector('[data-calendars-toggle]') !== null)
+    // On a phone the toggle is an item of the bar's menu (phone-calendar-chrome), not in the page.
+    await waitFor(() => r.container.querySelector('[data-agenda-day="2026-11-18"]') !== null)
+    expect(r.container.querySelector('[data-calendars-toggle]')).toBeNull()
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- it proves that nothing appears, and no event marks "nothing"
     await flush(30)
     expect(r.container.querySelector('[data-agenda-event]')).toBeNull()

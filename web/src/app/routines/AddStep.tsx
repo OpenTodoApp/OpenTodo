@@ -95,7 +95,7 @@ export function AddStepPanel({ id, above, catalogue, onPick, onClose }: {
         <h3 className="min-w-0 flex-1 text-meta font-medium text-muted">{t('Add step')}</h3>
         <IconButton size="sm" icon="x" label={t('Close')} onClick={onClose} data-add-step-close />
       </div>
-      <ComboboxField state={state} label={t('Search steps')} placeholder={t('Search steps')} expanded autoFocus />
+      <ComboboxField state={state} label={t('Search steps')} placeholder={t('Search steps')} expanded autoFocus="keyboard" />
       <div data-add-results={query ? '' : undefined} data-add-browse={query ? undefined : ''}>
         <ComboboxList state={state} label={t('Steps')} emptyText={dimmed.length ? undefined : t('No step matches.')}
           renderLeading={(e) => <span data-add-kind={e.kind} data-add-suggested={e.key.startsWith('s:') || undefined} className="flex"><Icon name="plus" className="text-faint" /></span>} />

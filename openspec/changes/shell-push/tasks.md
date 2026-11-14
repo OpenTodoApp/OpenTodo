@@ -9,7 +9,7 @@
 
 - [x] 2.1 `WebPush.kt`: `aes128gcm` decryption with platform crypto, rejecting malformed input. Verify: unit tests against `push-message.json`, RFC 8291's example, a wrong key, a truncated body and an oversized record; `make android`.
 - [x] 2.2 `UnifiedPush.kt` and `PushReceiver`: the registration state machine, the token check, endpoint changes, failures and unregistration, key creation and deletion. Verify: unit tests of every transition and of an intent with a foreign token being ignored; `make android`.
-- [ ] 2.3 Show a pushed reminder through the alarm's own notification code, once per reminder, cancel its alarm, acknowledge, and enqueue a background run. Verify: unit test that the notification id and channel are those of the alarm path; an instrumented test that a `MESSAGE` broadcast with the fixture's bytes shows one notification and a second one does not alert again.
+- [x] 2.3 Show a pushed reminder through the alarm's own notification code, once per reminder, cancel its alarm, acknowledge, and enqueue a background run. Verify: unit test that the notification id and channel are those of the alarm path; an instrumented test that a `MESSAGE` broadcast with the fixture's bytes shows one notification and a second one does not alert again.
 - [x] 2.4 The bridge methods and capability; the link activity from the visible app. Verify: unit tests of the answers by state; the script-text test lists the methods.
 
 ## 3. Web app

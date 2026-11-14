@@ -1,0 +1,1 @@
+- **Task rows on a phone have no Show details arrow, and their controls no longer share touch targets.** A tap opens the task; the fold arrow, the checkbox and the grip each take taps in their own 44 px, and the grip sits level with the title. The add field's hint is the short **Add a task…** on a phone ([#1359](https://github.com/OpenTodoApp/OpenTodo/issues/1359)).

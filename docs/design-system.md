@@ -204,7 +204,7 @@ Name it in `Illustration.tsx` and pass that name to the empty-state pattern (`<E
 
 ### Buttons
 
-`<Button variant size icon iconEnd>` with `primary`, `secondary`, `ghost` and `danger`, sizes `sm` (32 px), `md` (40 px) and `lg` (48 px). When `onClick` returns a promise, the button shows a spinner, sets `aria-busy` and ignores further clicks until it settles. `<IconButton icon label>` is the icon-only form; `label` is required and becomes the accessible name and the tooltip.
+`<Button variant size icon iconEnd>` with `primary`, `secondary`, `ghost` and `danger`, sizes `sm` (32 px), `md` (40 px) and `lg` (48 px). When `onClick` returns a promise, the button shows a spinner, sets `aria-busy` and ignores further clicks until it settles. `<IconButton icon label>` is the icon-only form; `label` is required and becomes the accessible name and the tooltip. The tooltip opens for a resting mouse and for focus a key moved, never for a tap, a click or the focus they leave on the button.
 
 A button that only dismisses a sheet, popover, panel or mode says **Close**, never **Done**: next to a task, "Done" reads as "complete the task" (#801). The task panel, the facet editors (When, Assignee, Take turns, Labels), the selection bar and the Focus timer follow this. **Done** stays only where it confirms a choice or finishes an edit away from any task (a routine's picker, the accent picker, a project note, a secret shown once in Settings); next to a task, a button that confirms a choice says what it does (**Apply**, **Save**, **Stop the timer**).
 
@@ -217,6 +217,8 @@ Wrap a control in `<Field label description error>`: the label, the description 
 Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `MenuGroup` and `MenuSeparator`. Items take an `icon`, a `shortcut` hint (shown and announced), a `description` (for example why an item is unavailable), `danger` (placed last, in its own group), `disabled` and `checked` for toggles. The menu opens on its first item; ↑/↓ wrap, Home/End jump, typing a letter moves to the next item starting with it, and choosing an item closes the menu and returns focus to its button. Panels that contain form controls keep `kind="dialog"`.
 
 **Keyboard hints on touch devices.** One rule in `web/src/index.css` hides every `.ui-kbd` badge and every element marked `data-kbd-hint` (a line that only names keys, or a separator that belongs to a badge) when the device has no fine pointer and nothing that hovers, until a hardware key press is seen (`web/src/lib/keyboardSeen.ts` sets `data-keyboard` on the root). Mark a new keys-only line with `data-kbd-hint`; do not hide it per component. `data-kbd-keep` exempts reference (the cheat sheet) and a key inside a sentence that would break without it (`<Kbd>` without `only` sets it). `aria-keyshortcuts` and descriptions stay in every case.
+
+**Focus on open on touch devices.** On the same devices (`touchOnly()` in `web/src/lib/keyboardLikely.ts`) an overlay does not focus a text field as it opens unless the field asks for it, so the on-screen keyboard does not cover a picker's choices. A sheet for typing (quick add, a rename, a comment) asks with `autoFocus` or `data-autofocus`, as before. A picker's search or date field spreads `pickerField()` (from `web/src/ui`) instead, or uses `<ComboboxPanel>`, which does: it is focused where a key can be pressed and waits for a tap elsewhere. Focus then rests on the overlay panel, and Tab from there reaches the field first. Do not call `.focus()` on a field from a picker's mount effect; if content must, check `touchOnly()` and `raisesKeyboard()` first.
 
 ### Smart picker (Combobox)
 
@@ -257,7 +259,7 @@ The status bar's backdrop (GitHub issue 999): on an iPhone, Safari covers the st
 
 On a touch screen (`pointer: coarse`) the app behaves like an app, not a page (shell-touch, GitHub issue 1338). The rules are in `index.css`:
 
-- The browser's tap highlight is off, so a control needs its own pressed state; `hover:` does not apply on touch. `.ui-btn` has one. Any other control names its pressed colour with `press-<colour token>` (`press-selected`, `press-danger-soft`, `press-accent-hover`): on touch it takes that background at once while a finger is on it. Add `press-inset` when the 44 px target overlaps its neighbours (a row's checkbox): the colour keeps to 28 px. A task row takes the selected-row surface while its body is pressed. A control with none of these dims to 60%, the fallback; the two never stack (touch-pressed-states).
+- The browser's tap highlight is off, so a control needs its own pressed state; `hover:` does not apply on touch. `.ui-btn` has one. Any other control names its pressed colour with `press-<colour token>` (`press-selected`, `press-danger-soft`, `press-accent-hover`): on touch it takes that background at once while a finger is on it. Add `press-inset` on a 44 px target around a small glyph (a row's checkbox): the colour keeps to 28 px. A row's touch targets do not overlap: each control has its own 44 px, and where the glyph is not the target's centre (the fold arrow, whose target reaches back over the indent) the circle is drawn around the glyph (phone-row-controls). A task row takes the selected-row surface while its body is pressed. A control with none of these dims to 60%, the fallback; the two never stack (touch-pressed-states).
 - Chrome is not text: every button, tab, menu item, option, switch and `summary`, every `nav`, the phone bar, the sidebar and `PageHeader` cannot be selected or called out by a long press. Everything else is content and stays selectable, as does a field or an editable area inside chrome. A new control is covered by its element or role; text that a person may want to copy must not be put inside a button or a `nav`. `select-text` on an element overrides the rule.
 - The page ends the overscroll chain (`overscroll-behavior: none` on the root): no bounce, no pull glow, no reload on a pull. Scrollers keep their own behaviour and still get every touch event.
 - Zoom stays: no `touch-action` on the page that blocks pinch.
@@ -313,7 +315,7 @@ The workbench checks stories; the audit checks the built app. `make ux-audit` st
 | M7 | target size | 44 px on touch; 24 px, or 24 px of space around it, with a mouse |
 | M8 | focus: Tab through the screen at 1280 px | a ring on every focusable element |
 | M10 | text cut with an ellipsis | its full text in the accessible name, the tooltip (`data-tip`) or an `sr-only` neighbour |
-| M11 | two controls overlapping | at most 4 px |
+| M11 | two controls overlapping; fixed chrome (the tab bar, the add button) over content that scrolls under it is not compared | at most 4 px |
 | M12 | layout shift from navigation to idle | 0.1 |
 | M13 | the first task row on a second visit with the server stopped | reported |
 | M14 | story coverage of the core screens | none missing |

@@ -630,6 +630,23 @@ describe('the touch grip', () => {
     await r.unmount()
   })
 
+  it('on touch the fold arrow, the checkbox and the grip each have a target of their own (phone-row-controls)', async () => {
+    const r = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} hasChildren onToggleCollapse={() => {}} onToggle={() => {}} onOpen={() => {}} onTick={() => {}} onGripDown={() => {}} onGripClick={() => {}} /></ul>)
+    const fold = r.container.querySelector<HTMLElement>('[data-leading-slot] button')!
+    // 44 px that end where the checkbox's begin (its -m-3 around a 20 px slot, 8 px after the 16 px leading slot) and reach back over the indent.
+    for (const cls of ['pointer-coarse:w-11', 'pointer-coarse:h-11', 'pointer-coarse:-ml-8', 'pointer-coarse:mr-1', 'pointer-coarse:justify-end']) expect(fold.className).toContain(cls)
+    expect(fold.className).not.toContain('-mx-3.5')
+    // Its pressed circle is the glyph's, not the target's, and the press does not dim it.
+    const mark = fold.querySelector<HTMLElement>('[data-fold-mark]')!
+    expect(mark.className).toContain('pointer-coarse:group-active/fold:bg-selected')
+    expect(mark.className).toContain('pointer-events-none')
+    expect(fold.className).toContain('pointer-coarse:active:opacity-100')
+    expect(r.container.querySelector('button[aria-label="Complete Task"]')!.className).toContain('pointer-coarse:-m-3')
+    // The grip's target ends inside the row, 4 px from its edge.
+    expect(r.container.querySelector('[data-row-grip]')!.className).toMatch(/\bme-1\b/)
+    await r.unmount()
+  })
+
   it('is absent where there is nothing to select: no onTick, no drag, or read-only', async () => {
     const down = vi.fn()
     const bare = await render(<ul><TaskRow task={task({})} selected={false} showProject={false} onToggle={() => {}} onOpen={() => {}} onGripDown={down} onGripClick={() => {}} /></ul>)

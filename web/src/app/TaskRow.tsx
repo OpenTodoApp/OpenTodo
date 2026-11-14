@@ -867,6 +867,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     </span>
   )
 
+  const grip = !!(onGripDown && onGripClick && onTick) && !readOnly && !inline && !departing // the touch grip at the row's end (RowGrip)
   const { clickRow, doubleClick } = useRowClicks(canExpand && onExpand, onOpenPage, selectMode)
   // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
   const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
@@ -925,10 +926,10 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
               type="button"
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
-              onClick={onToggleCollapse}
-              className="press-selected press-inset flex h-5 w-4 items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-mx-3.5 pointer-coarse:-my-2.5 pointer-coarse:h-11 pointer-coarse:w-11"
+              onClick={onToggleCollapse} // its 44 px touch target ends where the checkbox's begins (phone-row-controls D2)
+              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:opacity-100"
             >
-              <Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} />
+              <span data-fold-mark className="pointer-events-none flex items-center justify-center rounded-full pointer-coarse:-mr-2 pointer-coarse:size-7 pointer-coarse:shrink-0 pointer-coarse:group-active/fold:bg-selected"><Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} /></span>
             </button>
           )}
         </span>
@@ -971,9 +972,8 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       </button>}
       {trailing}
       {canExpand && (
-        // Touch and narrow windows (row-expand D2): one quiet disclosure at the row's end; a fine pointer from 768 px has it in the revealed actions.
-        // The slot sits on the title's line like the checkbox's; the button inside takes a 44 px target on touch.
-        <span data-row-expand="" className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center md:pointer-fine:hidden">
+        // Touch from 768 px (row-expand D2, phone-row-controls D1): one disclosure at the row's end, clear of the grip; below 768 px only while expanded (a tap opens the task).
+        <span data-row-expand="" className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center md:pointer-fine:hidden ${showDetails ? '' : 'max-md:hidden'} ${grip ? 'pointer-coarse:me-3' : ''}`}>
           <button type="button" aria-expanded={showDetails} aria-controls={showDetails ? detailsId : undefined}
             aria-label={showDetails ? t('Hide details') : t('Show details')} onClick={onExpand}
             className="touch-target press-selected press-inset flex h-5 w-5 items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint hover:bg-hover hover:text-muted pointer-coarse:-m-3">
@@ -983,7 +983,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
-      {onGripDown && onGripClick && onTick && !readOnly && !inline && !departing && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown} onClick={onGripClick} />}
+      {grip && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown!} onClick={onGripClick!} />}
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
@@ -1027,7 +1027,7 @@ function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string
   // not stop on two controls with the same name (bulk-actions on touch).
   const quiet = !!(showCheckbox || ticked)
   return (
-    <span data-row-grip="" className="mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
+    <span data-row-grip="" className="me-1 mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
       <button
         type="button"
         aria-label={t('Select {title}', { title: name })}

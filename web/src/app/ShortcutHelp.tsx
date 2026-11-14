@@ -4,7 +4,7 @@
 // columns from 768 px (three from 1280 px), with a search field, inside a dialog capped
 // at 80 % of the viewport with its own scroller. Rows are compact (shortcut-spotlight
 // D6): the label on one line, the keys as keycaps that never wrap.
-import { Dialog, Tooltip } from '../ui'
+import { Dialog, pickerField, Tooltip } from '../ui'
 import { useMemo, useState } from 'react'
 import { listedShortcuts, QUICK_ADD_SYNTAX, SHORTCUT_SECTIONS, type Shortcut, type ShortcutSection } from '../lib/shortcuts'
 import { Keys } from './shortcuts/Kbd'
@@ -166,7 +166,7 @@ export function ShortcutHelp({ onClose, extraSections = [], context, vim = extra
       <div data-kbd-keep>
       <div role="search" className="mb-2">
         <label className="sr-only" htmlFor="shortcut-search">{t('Search shortcuts')}</label>
-        <input id="shortcut-search" type="search" className="ui-input w-full" placeholder={t('Search by key or action')} value={query} autoFocus
+        <input id="shortcut-search" type="search" className="ui-input w-full" placeholder={t('Search by key or action')} value={query} {...pickerField()}
           onChange={(e) => setQuery(e.target.value)} data-shortcut-search />
       </div>
       <p className="sr-only" aria-live="polite">{q ? t('{n, plural, one {# shortcut} other {# shortcuts}}', { n: groups.reduce((n, g) => n + g.rows.length, 0) + extras.reduce((n, s) => n + s.rows.length, 0) + quickAdd.length }) : ''}</p>

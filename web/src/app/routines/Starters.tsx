@@ -10,6 +10,7 @@
 // one, Escape steps back.
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { messageOf } from '../../lib/errorText'
+import { touchOnly } from '../../lib/keyboardLikely'
 import { currentLanguage, msg, t, translatedMap } from '../../lib/i18n'
 import { createLabel, LabelExistsError } from '../../lib/labels'
 import { createProject } from '../../lib/ops'
@@ -54,7 +55,8 @@ export function StarterList({ starters, autoFocus = false }: { starters: Starter
   const list = useRef<HTMLDivElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const found = useMemo(() => searchStarters(starters, query, lang), [starters, query, lang])
-  useEffect(() => { if (autoFocus) search.current?.focus() }, [autoFocus])
+  // The search takes focus where a key can be pressed; on a touch-only device the cards are in view instead (touch-sheet-focus).
+  useEffect(() => { if (autoFocus && !touchOnly()) search.current?.focus() }, [autoFocus])
   function onListKey(e: KeyboardEvent) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
     const all = cards(list.current)

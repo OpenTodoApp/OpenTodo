@@ -44,7 +44,7 @@ export function TemplatePicker({ open, anchor, projectId, onClose, onCreated }: 
   return (
     <Popover open={open} onClose={onClose} anchor={anchor} label={t('From template…')} align="end" width="sm:w-80" className="p-2">
       <div className="space-y-1" data-template-picker>
-        <ComboboxField state={state} label={t('From template…')} placeholder={t('Find a template…')} expanded autoFocus />
+        <ComboboxField state={state} label={t('From template…')} placeholder={t('Find a template…')} expanded autoFocus="keyboard" />
         <ComboboxList state={state} label={t('Templates')} emptyText={t('No templates yet.')} />
       </div>
     </Popover>

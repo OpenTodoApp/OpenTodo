@@ -1,0 +1,1 @@
+- **A tap no longer leaves a tooltip behind.** On a phone, tapping the sync dot in the menu left its tooltip over the screen, and Search, Assistant and Ask flashed theirs. Tooltips now appear only for a mouse resting on a button and for focus moved with a keyboard (#1362).

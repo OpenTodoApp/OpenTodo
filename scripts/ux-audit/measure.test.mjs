@@ -109,6 +109,11 @@ test('M11 overlap: side by side passes, stacked controls fail', { skip }, async 
   // An open menu covers the page's controls by design: only controls of one layer are compared.
   await fixture('<button style="width:40px;height:40px">a</button><div role="menu" style="position:absolute;left:10px;top:10px"><button style="width:40px;height:40px">b</button></div>')
   assert.deepEqual(await page.evaluate(overlaps), [])
+  // Fixed chrome over content that scrolls under it is not an overlap; two fixed controls on each other are.
+  await fixture('<button style="width:40px;height:40px">a</button><div style="position:fixed;left:10px;top:10px"><button style="width:40px;height:40px">b</button></div>')
+  assert.deepEqual(await page.evaluate(overlaps), [])
+  await fixture('<div style="position:fixed;left:0;top:0"><button style="width:40px;height:40px">a</button></div><div style="position:fixed;left:10px;top:10px"><button style="width:40px;height:40px">b</button></div>')
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
 })
 
 test('M12 layout shift: a still page passes, a late banner fails', { skip }, async () => {

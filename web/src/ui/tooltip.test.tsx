@@ -6,6 +6,7 @@ import { IconButton } from './Button'
 import { Icon } from './Icon'
 import { Menu } from './overlay/Menu'
 import { render } from './test-utils'
+import { keyPress } from '../lib/focusSource'
 import { Tooltip } from './Tooltip'
 import { TruncatedText } from './TruncatedText'
 
@@ -73,17 +74,59 @@ describe('Tooltip', () => {
     await r.unmount()
   })
 
-  it('does not open on the focus a tap or click gives the control, only on keyboard focus (issue 169)', async () => {
+  // A tap in a browser: the pointer is down and up before the mousedown that moves focus.
+  const press = (el: Element, type: string, pointerType: string) => act(async () => { el.dispatchEvent(new (window.PointerEvent ?? MouseEvent)(type, { bubbles: true, pointerType } as PointerEventInit)) })
+  const key = (k: string, target: EventTarget = document.body) => act(async () => { target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })) })
+
+  it('does not open on the focus a tap leaves on the control, only on keyboard focus (issues 169, 1362)', async () => {
+    mockPointer(true)
     const r = await render(<Tooltip label="Open menu"><button>≡</button></Tooltip>)
     const button = r.container.querySelector('button')!
-    const press = (type: string) => act(async () => { button.dispatchEvent(new (window.PointerEvent ?? MouseEvent)(type, { bubbles: true, pointerType: 'touch' } as PointerEventInit)) })
-    await press('pointerdown')
+    await pointer(button, 'pointerenter', 'touch')
+    await press(button, 'pointerdown', 'touch')
+    await press(button, 'pointerup', 'touch')
+    await pointer(button, 'pointerleave', 'touch')
     await focus(button, 'focus')
-    await press('pointerup')
+    await advance(1000)
+    expect(tip()).toBeNull()
+    // Focus the page gives back after the tap (a sheet closed) is not keyboard focus either.
+    await focus(button, 'blur')
+    await focus(button, 'focus')
+    expect(tip()).toBeNull()
+    // Enter from the on-screen keyboard does not count; scripted keys are never a hardware keyboard.
+    const field = document.createElement('input')
+    document.body.append(field)
+    await focus(button, 'blur')
+    await key('Enter', field)
+    await focus(button, 'focus')
+    expect(tip()).toBeNull()
+    field.remove()
+    await r.unmount()
+  })
+
+  it('a key press on a touch-first device counts only when an on-screen keyboard cannot make it', () => {
+    const field = document.createElement('input')
+    const k = (init: Partial<KeyboardEvent>) => ({ isTrusted: true, key: 'a', keyCode: 65, isComposing: false, ctrlKey: false, metaKey: false, altKey: false, target: document.body, ...init }) as KeyboardEvent
+    expect(keyPress(k({ key: 'Enter', target: field }), true)).toBe(false)
+    expect(keyPress(k({ key: 'Tab', target: field }), true)).toBe(true)
+    expect(keyPress(k({ key: 'j' }), true)).toBe(true)
+    expect(keyPress(k({ key: 'Enter', target: field }), false)).toBe(true)
+  })
+
+  it('does not open on the focus a mouse click gives; Tab afterwards shows the tip', async () => {
+    const r = await render(<Tooltip label="Open menu"><button>≡</button></Tooltip>)
+    const button = r.container.querySelector('button')!
+    await pointer(button, 'pointerenter')
+    await advance(400)
+    expect(tip()).toBeTruthy()
+    await press(button, 'pointerdown', 'mouse')
+    expect(tip()).toBeNull()
+    await focus(button, 'focus')
+    await press(button, 'pointerup', 'mouse')
     await advance(1000)
     expect(tip()).toBeNull()
     await focus(button, 'blur')
-    // Tabbing to it afterwards still shows the tip.
+    await key('Tab')
     await focus(button, 'focus')
     expect(tip()!.textContent).toBe('Open menu')
     await r.unmount()

@@ -157,7 +157,7 @@ export default function YearView({ date }: { date?: string }) {
 
   return (
     <PageBody width="full" className="flex flex-col" data-calendar-page="year">
-      <CalendarPageHeader chrome={chrome} title={year} meta={meta} overflow={chrome.overflow}
+      <CalendarPageHeader chrome={chrome} title={year} meta={meta} overflow={<><CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />{chrome.overflow}</>}
         actions={<>
           <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} />
           <span className="flex items-center" role="group" aria-label={t('Range')}>

@@ -1315,6 +1315,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   :root[data-density="compact"] .row-pad { padding-block: 0.5rem; }
   .row-offscreen { contain-intrinsic-size: auto var(--row-estimate, 2.625rem); }
   .row-block { contain-intrinsic-size: auto calc(var(--row-estimate, 2.625rem) * var(--block-rows, 50)); }
+  /* A row with a fold arrow draws normally (phone-row-controls D2): the arrow's 44 px target
+     reaches back over the page's gutter, and a row that may be skipped takes no tap outside
+     its own box. In a long list's block the block is the box, and the gutter stays dead. */
+  .row-offscreen:has(> [data-leading-slot] > button) { content-visibility: visible; }
   :root[data-density="compact"] [data-sidebar-item] { min-height: 2.75rem; }
 }
 /* User-written text wraps instead of pushing the page sideways. */
@@ -1424,12 +1428,14 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    above and below the title's 20 px lines, so on touch no row padding adds to its 44 px
    minimum; the slots before it and the cell at its end sit on the title's first line, also
    when a second line (the title's, or the Inbox's source) follows. The time column shows
-   only where a row has a time, and the counts stay off the line. Screens only: a printed
+   only where a row has a time, and the counts stay off the line. The row has no Show
+   details arrow (phone-row-controls: a tap opens the task), and its grip sits on the first
+   line with the other controls, inside the row. Screens only: a printed
    page is narrower than 768 px too, and keeps the column (print-lists). */
 @media screen and (width < 48rem) {
   .row-pad, :root[data-density="compact"] .row-pad { padding-block: 0; }
   .row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }
-  .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }
+  .row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand], [data-row-grip]) { margin-top: 0.75rem; }
   .row-pad > [data-row-time]:empty { display: none; }
   @container row (width < 40rem) {
     [data-row-counts] { display: none; }
@@ -1564,8 +1570,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    that colour token as its background, in place of the generic dim below (the two never
    stack). Nothing with a mouse, where hover and `active:` stay as they are. It comes
    at once, whatever transition the control has, so it is the same under reduced motion.
-   `press-inset` keeps the colour to the 28 px around the glyph of a 44 px target that
-   overlaps its neighbours (a task row's checkbox, chevrons and grip). */
+   `press-inset` keeps the colour to the 28 px around the glyph of a 44 px target
+   (a task row's checkbox, Show details and grip; the fold arrow's glyph is not its target's
+   centre, so its circle is the glyph's own, phone-row-controls). */
 @utility press-* {
   @media (pointer: coarse) {
     &:active:not(:disabled, [aria-disabled="true"]) { background-color: --value(--color-*); opacity: 1; transition-duration: 0s; }

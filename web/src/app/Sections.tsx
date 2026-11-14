@@ -1,7 +1,7 @@
 // Section headings, per-section quick add and "Add section" (OpenSpec `board-view`).
 // Shared by the grouped list and the board columns. Every write goes through
 // lib/sections, so all of it works offline and converges like any other edit.
-import { CatalogueIcon, HUES, hueFor, Icon, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader } from '../ui'
+import { CatalogueIcon, DESKTOP_HEADER_QUERY, HUES, hueFor, Icon, IconButton, IconPicker, isCatalogueIcon, ListGroupHeader, useMediaQuery } from '../ui'
 import { hueName } from '../lib/colourNames'
 import { ActionMenu, type ActionGroup, type ActionItem } from './menus/ActionMenu'
 import { sectionFlowItem } from './menus/flowMenu'
@@ -222,6 +222,8 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
       showBulkToast(added.label, added.undoId)
     })
   }
+  // On a phone the field's one line holds the short hint; the field is still named after the section (phone-row-controls D3).
+  const wide = useMediaQuery(DESKTOP_HEADER_QUERY)
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
   }
@@ -232,7 +234,7 @@ export function SectionQuickAdd({ project, sectionId, sectionName, projects, lab
       if (to?.closest?.('[data-overlay-root]')) return
       if (!e.currentTarget.contains(to) && !(e.target as HTMLInputElement).value) onClose()
     }}>
-      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} projects={projects} labels={labels} hideHint autoFocus placeholder={t('Add a task to {sectionName}…', { sectionName })} label={t('Add a task to {sectionName}', { sectionName })} />
+      <QuickAdd onAdd={onAdd} onAddMany={onAddMany} projects={projects} labels={labels} hideHint autoFocus placeholder={wide ? t('Add a task to {sectionName}…', { sectionName }) : t('Add a task…')} label={t('Add a task to {sectionName}', { sectionName })} />
     </div>
   )
 }

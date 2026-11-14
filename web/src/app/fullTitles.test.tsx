@@ -64,7 +64,7 @@ describe('preference', () => {
     expect(phone).toMatch(/\[data-row-props\] \{ grid-area: 1 \/ 2; [^}]*align-self: start; min-height: 1\.25rem;/)
     // The row keeps its 44 px and the controls before the title stay on its first line.
     expect(phone).toContain('.row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }')
-    expect(phone).toContain('.row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }')
+    expect(phone).toContain('.row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand], [data-row-grip]) { margin-top: 0.75rem; }')
   })
 
   it('the lists outside the task row follow it on a phone (phone-titles-everywhere)', () => {

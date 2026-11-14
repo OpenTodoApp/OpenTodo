@@ -299,6 +299,7 @@ export function CalendarView({ mode, date }: { mode: 'day' | 'week'; date?: stri
       : <CalendarStatus placing={placing} placingTask={placingTask} placingSlot={placingSlot ? slotName(placingSlot.slot) : undefined} status={feeds.status} online={online} fetchedAt={feeds.win?.fetchedAt} />
   const meta = chrome.chip ? <span className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-2">{chrome.chip}{status}</span> : status
   const overflow = <>
+    <CalendarsToggle shown={feeds.eventsShown} count={feeds.subs.length} menu />
     <CalendarCompletedToggle shown={showCompleted} menu />
     <MenuItem label={planOpen ? t('Hide the planning list') : t('Plan from a list')} icon="list" description={t('Drag tasks onto a time, or press s on one')} onSelect={() => chrome.plan(planOpen, togglePlan)} />
     {rp.missed > 0 && !previewing && <MenuItem label={t('Re-plan the rest of the day')} icon="calendar-clock" data-replan-item onSelect={rp.start} />}
