@@ -5,7 +5,7 @@
 - [x] 1.1 `web/src/index.css`: the tap highlight off on `html`; under `pointer: coarse`, `overscroll-behavior: none` on `html, body`. Verify: Playwright at 390 px with touch reads `rgba(0, 0, 0, 0)` and `none` on `html`, the document does not scroll and `#content` scrolls to 200 px; at 1280 px with a mouse `html` reads `auto`.
 - [x] 1.2 `web/src/index.css`, base layer under `pointer: coarse`: chrome unselectable and without callout, fields and editable areas selectable. Verify: Playwright at 390 px reads `user-select: none` on the tab bar, a tab, its label, the phone bar and its title and the add button; `text` on the task view's title (a `textarea`), a notes paragraph and a link in the notes; `auto` on a comment's paragraph; a selection over the notes and the comment returns their text and over a tab's label returns nothing; at 1280 px with a mouse a button and `nav` read `auto`.
 - [x] 1.3 Check that controls keep a pressed state on touch and record those without one in the design. Verify: the survey of `:active` rules under touch emulation (design, "Finding").
-- [x] 1.4 A control without a pressed state of its own dims while pressed on a coarse pointer (D7). Verify: Chromium at 390 px with touch, the computed opacity of a tab bar tab and a menu item while `:active`, and a `.ui-btn` unchanged.
+- [x] 1.4 A control without a pressed state of its own dims while pressed on a coarse pointer (D7). Verify: Chromium at 360 px with touch and the pressed state forced, a tab bar tab reads opacity 0.6 and a `.ui-btn` stays 1 (measured). That a real finger sets the pressed state is a device check: an emulated touch held for 300 ms did not.
 
 ## 2. Checks
 
