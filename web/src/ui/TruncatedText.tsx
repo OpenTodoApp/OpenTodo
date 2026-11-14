@@ -21,6 +21,8 @@ export interface TruncatedTextProps {
   tabIndex?: number
   /** The element, for a caller that focuses or measures it. */
   elRef?: Ref<HTMLElement>
+  /** `phone`: below 768 px the text takes two lines before it is cut, as a task row's title does (phone-titles-everywhere). */
+  wrap?: 'phone'
 }
 
 /** True while the element's text overflows its box. */
@@ -28,7 +30,7 @@ function isCut(el: HTMLElement): boolean {
   return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1
 }
 
-export function TruncatedText({ text, as: Tag = 'span', className = '', tabIndex, elRef, ...rest }: TruncatedTextProps) {
+export function TruncatedText({ text, as: Tag = 'span', className = '', tabIndex, elRef, wrap, ...rest }: TruncatedTextProps) {
   const ref = useRef<HTMLElement | null>(null)
   const [cut, setCut] = useState(false)
   useLayoutEffect(() => {
@@ -48,7 +50,7 @@ export function TruncatedText({ text, as: Tag = 'span', className = '', tabIndex
         if (typeof elRef === 'function') elRef(el)
         else if (elRef) (elRef as { current: HTMLElement | null }).current = el
       }} {...rest} tabIndex={cut ? 0 : tabIndex}
-        className={`truncate ${cut ? 'rounded-chip focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus' : ''} ${className}`}>
+        className={`${wrap === 'phone' ? 'title-phone' : 'truncate'} ${cut ? 'rounded-chip focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus' : ''} ${className}`}>
         {text}
       </Tag>
     </Tooltip>

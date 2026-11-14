@@ -1454,6 +1454,24 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
 
+/* Titles on a phone (OpenSpec change phone-titles-everywhere): the one-line titles of the
+   lists that are not the task row (Notes, the calendar's agendas, Close the day, the
+   command bar) follow the row's rule below 768 px: up to two lines, then an ellipsis, and
+   every line with Show full task titles. From 768 px `.title-phone` is one line, as
+   `truncate` is. `.title-phone-row` is the 44 px row around such a title: its parts sit
+   on the title's first line (one baseline), and its padding makes a one-line row 44 px,
+   so a second line adds its own height only (`--title-phone-row` names another height:
+   the Month's day list is 22 px with a mouse). Screens only, as the phone row; the phone's
+   rules are outside the layers, so they win over the row's own alignment and padding. */
+@layer components {
+  .title-phone { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media screen and (width < 48rem) {
+  .title-phone { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }
+  :root[data-titles="full"] .title-phone { -webkit-line-clamp: none; line-clamp: none; }
+  .title-phone-row { align-items: baseline; padding-block: calc((var(--title-phone-row, 2.75rem) - 1lh) / 2); }
+}
+
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line
    row are for one-line rows only. Outside the layers, after the column's rules, so

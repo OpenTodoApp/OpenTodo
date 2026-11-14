@@ -146,7 +146,8 @@ function OptionRow<T>({ state, o, i, renderLeading, renderTrailing, renderSecond
         <>
           {renderLeading && <span className="flex shrink-0 items-center">{renderLeading(o.item)}</span>}
           <span className="min-w-0 flex-1">
-            <span className="block truncate"><Marked text={o.label} ranges={o.m.label} /></span>
+            {/* The command bar's results take two lines on a phone (phone-titles-everywhere); a windowed row has a fixed height. */}
+            <span className={palette && !windowed ? 'title-phone' : 'block truncate'}><Marked text={o.label} ranges={o.m.label} /></span>
             {(custom || o.secondary || (o.path.length > 0 && o.depth === 0)) && (
               <span className="block truncate text-meta text-muted">
                 {custom || (o.path.length > 0 && o.depth === 0 ? o.path.join(' › ') : <Marked text={o.secondary ?? ''} ranges={o.m.secondary} />)}

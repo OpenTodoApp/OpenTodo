@@ -56,10 +56,10 @@ export function WeekAgenda({ days, today, prefs, tasks, meetings, frames, taskMa
     <li key={task.id}>
       <button type="button" data-cal-id={task.id} data-agenda-task={task.id} onClick={() => onSelect(task.id)} onDoubleClick={() => onOpen(task.id)}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(task.id) } }}
-        className={`ui-block flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past || task.completed_at ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
+        className={`ui-block title-phone-row flex min-h-11 w-full items-center gap-2 px-2 py-1 text-left text-body ${past || task.completed_at ? 'ui-block--past' : ''} ${selectedId === task.id ? 'ring-1 ring-accent' : ''}`}
         data-hue={hueOf(task)}>
         <span className="w-14 shrink-0 text-meta tabular-nums">{time ?? t('all day')}</span>
-        <span className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+        <span className={`title-phone min-w-0 flex-1 ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
         {position && <span data-span-position className="shrink-0 text-meta tabular-nums text-muted">{position}</span>}
         {task.completed_at ? <span className="sr-only">{t('(completed)')}</span> : null}
         {task.deadline === date && !task.completed_at && <><DeadlineDiamond past={past} /><span className="sr-only">, {deadlineMark(task, date)}</span></>}
@@ -146,14 +146,14 @@ function AgendaSlot({ view, past, onOpen }: { view: SlotView; past: boolean; onO
         <ul className="ml-16 mt-0.5 space-y-0.5" aria-label={t('Tasks in {title}', { title: name })}>
           {rows.length === 0 && <li className="px-1 text-meta text-faint">{t('No tasks yet.')}</li>}
           {rows.map((task) => (
-            <li key={task.id} data-agenda-slot-task={task.id} className="flex min-h-11 items-center gap-2 text-body">
+            <li key={task.id} data-agenda-slot-task={task.id} className="flex min-h-11 items-center gap-2 text-body max-md:items-start">
               <button type="button" role="checkbox" aria-checked={!!task.completed_at} aria-label={task.title || t('Untitled')}
                 className="touch-target inline-flex shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 onClick={() => act(completeWithUndo(task.id, !task.completed_at))}>
                 <Icon name={task.completed_at ? 'check' : 'circle'} size="sm" />
               </button>
-              <button type="button" className={`min-h-11 min-w-0 flex-1 truncate text-left ${task.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen(task.id)}>{task.title || t('Untitled')}</button>
-              {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}
+              <button type="button" className={`min-h-11 min-w-0 flex-1 text-left ${task.completed_at ? 'text-faint line-through' : ''}`} onClick={() => onOpen(task.id)}><span className="title-phone">{task.title || t('Untitled')}</span></button>
+              {task.estimate_minutes ? <span className="shrink-0 text-hint tabular-nums text-muted max-md:mt-3.5">{formatMinutes(task.estimate_minutes)}</span> : null}
             </li>
           ))}
         </ul>
