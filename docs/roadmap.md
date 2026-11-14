@@ -207,6 +207,9 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `sheet-drag-dismiss` | Bottom sheets follow the finger and close on a drag | In progress (11 of 13) |
 | `pull-to-sync` | Pull down to sync, never a reload | In progress (7 of 9) |
 | `shell-first-paint` | The apps open on their colour and icon, and the loading frame already has the phone's bars | In progress (10 of 15) |
+| `touch-pressed-states` | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | In progress (9 of 11) |
+| `phone-bar-overflow` | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | In progress (7 of 9) |
+| `phone-titles-everywhere` | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | In progress (10 of 12) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Planned |
 
 ## Native app
