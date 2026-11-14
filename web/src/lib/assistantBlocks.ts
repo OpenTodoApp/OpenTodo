@@ -2,7 +2,7 @@
 // D4): reading a block event, where blocks sit in an answer's text, the label a
 // block is announced and named by, and an answer as plain Markdown for Copy. A
 // block holds ids and parameters only; content always comes from the device's rows.
-import { db, type AssistantBlock, type AssistantMessage } from './db'
+import { db, type AssistantBlock, type AssistantMessage, type AssistantSource } from './db'
 import { formatDate } from './dates'
 import { t } from './i18n'
 
@@ -83,21 +83,28 @@ export function answerFollowups(m: Pick<AssistantMessage, 'followups' | 'blocks'
   return m.followups
 }
 
-/** The answer's text cut at its blocks: Markdown parts and blocks in reading order. */
-export type AnswerPart = { kind: 'text'; text: string } | { kind: 'block'; block: AssistantBlock; index: number }
+/** The answer's text cut at its blocks and sources: Markdown parts, blocks and sources in reading order. */
+export type AnswerPart = { kind: 'text'; text: string } | { kind: 'block'; block: AssistantBlock; index: number } | { kind: 'source'; source: AssistantSource; index: number }
 
-export function splitAnswer(source: string, blocks: AssistantMessage['blocks']): AnswerPart[] {
-  if (!blocks?.length) return source ? [{ kind: 'text', text: source }] : []
+type Placed = { at: number; index: number; part: AnswerPart }
+
+export function splitAnswer(source: string, blocks: AssistantMessage['blocks'], sources?: AssistantMessage['sources']): AnswerPart[] {
+  if (!blocks?.length && !sources?.length) return source ? [{ kind: 'text', text: source }] : []
   const out: AnswerPart[] = []
   let from = 0
-  const placed = blocks.map((b, index) => ({ ...b, index, at: Math.max(0, Math.min(source.length, b.at)) })).sort((a, b) => a.at - b.at || a.index - b.index)
-  for (const b of placed) {
-    if (b.at > from) out.push({ kind: 'text', text: source.slice(from, b.at) })
-    from = Math.max(from, b.at)
-    out.push({ kind: 'block', block: b.block, index: b.index })
+  const clamp = (at: number) => Math.max(0, Math.min(source.length, at))
+  // A read runs before the blocks of its round, so at one point sources come first (assistant-tool-sources D2).
+  const placed: Placed[] = [
+    ...(sources ?? []).map((s, index) => ({ at: clamp(s.at), index, part: { kind: 'source' as const, source: s.source, index } })),
+    ...(blocks ?? []).map((b, index) => ({ at: clamp(b.at), index: index + 10_000, part: { kind: 'block' as const, block: b.block, index } })),
+  ].sort((a, b) => a.at - b.at || a.index - b.index)
+  for (const p of placed) {
+    if (p.at > from) out.push({ kind: 'text', text: source.slice(from, p.at) })
+    from = Math.max(from, p.at)
+    out.push(p.part)
   }
   if (from < source.length) out.push({ kind: 'text', text: source.slice(from) })
-  return out.filter((p) => p.kind === 'block' || p.text.trim())
+  return out.filter((p) => p.kind !== 'text' || p.text.trim())
 }
 
 /** The name a block is announced and labelled by, from its parameters alone. */
@@ -185,6 +192,6 @@ export async function blockText(b: AssistantBlock): Promise<string> {
 
 /** An answer as Markdown, each block written as plain text where it was (Copy, D8). */
 export async function answerMarkdown(m: Pick<AssistantMessage, 'text' | 'blocks'>): Promise<string> {
-  const parts = await Promise.all(splitAnswer(m.text, m.blocks).map((p) => (p.kind === 'text' ? p.text.trim() : blockText(p.block))))
+  const parts = await Promise.all(splitAnswer(m.text, m.blocks).map((p) => (p.kind === 'text' ? p.text.trim() : p.kind === 'block' ? blockText(p.block) : '')))
   return parts.filter(Boolean).join('\n\n')
 }

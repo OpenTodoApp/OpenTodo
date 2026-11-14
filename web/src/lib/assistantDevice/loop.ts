@@ -4,6 +4,7 @@
 // write tools only plan into a draft. It emits the same events as the server's
 // turn stream, so the panel's review, apply (mutateMany with device
 // assistant:<device-id>) and undo are unchanged. It never writes.
+import { sourceOfResult } from '../assistantSources'
 import type { ProposedChange, TurnEvent } from '../assistantTypes'
 import type { TurnRequest } from '../assistant'
 import { ArgError, ToolError, type Args } from './args'
@@ -329,6 +330,9 @@ export async function runDeviceTurn(req: TurnRequest, onEvent: (e: TurnEvent) =>
           }
           const res = await runTool(call, tools, draft, now())
           draft = res.draft
+          // What a read returned, as ids (assistant-tool-sources D1).
+          const source = def?.kind === 'read' && !res.isError ? sourceOfResult(call.name, res.content) : null
+          if (source) onEvent({ type: 'source', ...source })
           results.push({ id: call.id, content: res.content, isError: res.isError })
         }
         conv.addToolResults(results)

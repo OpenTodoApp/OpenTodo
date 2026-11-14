@@ -130,7 +130,11 @@ describe('device loop', () => {
     expect(read.tasks[0].untrusted_text.title).toBe('Pay rent')
     const planned = JSON.parse(seen.results[2][0].content)
     expect(planned).toMatchObject({ proposed: true, changed: 2 })
-    expect(events.map((e) => e.type)).toEqual(['status', 'status', 'text', 'usage', 'changeset', 'done'])
+    expect(events.map((e) => e.type)).toEqual(['status', 'source', 'status', 'text', 'usage', 'changeset', 'done'])
+    // What the read returned, as ids only (assistant-tool-sources D1).
+    const source = events.find((e) => e.type === 'source')!
+    expect(source).toEqual({ type: 'source', of: 'tasks', ids: read.tasks.map((r: { id: string }) => r.id), total: read.tasks.length })
+    expect(JSON.stringify(source)).not.toContain('Pay rent')
     const cs = events.find((e) => e.type === 'changeset') as Extract<TurnEvent, { type: 'changeset' }>
     expect(cs.items).toEqual([
       { entity: 'task', entityId: 'a', patch: { due: { date: '2026-10-16' } }, base: { due: { date: '2026-10-10' } } },

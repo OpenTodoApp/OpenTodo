@@ -6,6 +6,7 @@ import { resettable } from './moduleState'
 import { useEffect, useState } from 'react'
 import { useOnline } from './online'
 import type { AssistantBlock } from './assistantBlocks'
+import type { AssistantSource } from './assistantSources'
 import type { Review } from './assistant'
 import { DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs } from './calendar'
 import { ensureEventsFor } from './calendarFeeds'
@@ -30,6 +31,15 @@ import { readDayStart } from './userPrefs'
 export function useBlockTasks(ids: readonly string[]): (Task | null)[] | undefined {
   const key = ids.join()
   return useLiveQuery(async () => (await db.tasks.bulkGet([...ids])).map((r) => (r && !r.deleted_at ? r : null)), [key])
+}
+
+/** A source's rows in order (assistant-tool-sources D3): an id and its title or name, or null for one that is gone. */
+export function useSourceRows(source: AssistantSource): ({ id: string; name: string } | null)[] | undefined {
+  const key = source.of + ':' + source.ids.join()
+  return useLiveQuery(async () => {
+    if (source.of === 'projects') return (await db.projects.bulkGet([...source.ids])).map((p) => (p && !p.deleted_at ? { id: p.id, name: p.name } : null))
+    return (await db.tasks.bulkGet([...source.ids])).map((r) => (r && !r.deleted_at ? { id: r.id, name: r.title } : null))
+  }, [key])
 }
 
 /** The working day's length on this device (the calendar's grid settings). */

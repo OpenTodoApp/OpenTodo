@@ -7698,5 +7698,9 @@
   "Turn on Daily notes to use this": "Ative as notas diárias para usar isto",
   "Where new daily notes go. Earlier ones stay where they are.": "Onde ficam as novas notas diárias. As anteriores ficam onde estão.",
   "daily note, journal, diary, today": "nota diária, diário, registo, hoje",
-  "the daily note": "a nota diária"
+  "the daily note": "a nota diária",
+  "No projects found": "Nenhum projeto encontrado",
+  "No tasks found": "Nenhuma tarefa encontrada",
+  "{n, plural, one {Looked at # project} other {Looked at # projects}}": "{n, plural, one {Consultado # projeto} other {Consultados # projetos}}",
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {Consultada # tarefa} other {Consultadas # tarefas}}"
 }

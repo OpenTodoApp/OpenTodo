@@ -12,6 +12,7 @@ import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
 import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
 import { blockLabel, blockOf, followupsOf, type AssistantBlock } from '../../lib/assistantBlocks'
+import { sourceOf } from '../../lib/assistantSources'
 import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
 import { amendReview } from '../../lib/assistantAmend'
 import type { ProposedChange, TurnEvent } from '../../lib/assistantTypes'
@@ -28,7 +29,7 @@ export interface ConversationOptions {
   userName?: string
 }
 
-type Streaming = { text: string; status: string[]; blocks?: AssistantMessage['blocks'] }
+type Streaming = { text: string; status: string[]; blocks?: AssistantMessage['blocks']; sources?: AssistantMessage['sources'] }
 
 /** The assistant's message of one turn, the change set it proposed, and the error that ended it early, if any. */
 interface StreamedAnswer {
@@ -51,12 +52,15 @@ interface StreamCallbacks {
   status: (line: string, all: string, lines: string[]) => void
   /** A block arrived (assistant-generative-ui D3): every block so far. */
   block?: (block: AssistantBlock, blocks: NonNullable<AssistantMessage['blocks']>) => void
+  /** A read tool's source arrived (assistant-tool-sources D2): every source so far. */
+  source?: (sources: NonNullable<AssistantMessage['sources']>) => void
 }
 
 async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCallbacks, run: TurnRunner = streamTurn): Promise<StreamedAnswer> {
   let text = ''
   const statusLines: string[] = []
   const blocks: NonNullable<AssistantMessage['blocks']> = []
+  const sources: NonNullable<AssistantMessage['sources']> = []
   let followups: string[] | null = null
   let proposal: ProposedChange[] | null = null
   let failure: StreamedAnswer['failure']
@@ -88,6 +92,15 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
           }
           break
         }
+        case 'source': {
+          // Where the read ran (assistant-tool-sources D2); quiet, never announced.
+          const source = sourceOf(ev)
+          if (source) {
+            sources.push({ at: text.length, source })
+            on.source?.([...sources])
+          }
+          break
+        }
         case 'usage':
           answer.usage = { input: ev.input, output: ev.output, cached: ev.cached, cache_write: ev.cache_write, month_total: ev.month_total, cap: ev.cap, own_key: ev.own_key }
           break
@@ -112,6 +125,7 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
   // The steps stay on the answer (assistant-generative-ui D8).
   if (statusLines.length) answer.status = [...statusLines]
   if (blocks.length) answer.blocks = blocks
+  if (sources.length) answer.sources = sources
   if (followups) answer.followups = followups
   return { answer, proposal, failure, errorCode }
 }
@@ -388,10 +402,11 @@ export function useAssistantConversation({ context, onApplied, userName = '' }: 
         ? await import('../../lib/assistantDevice/loop').then(({ runDeviceTurn }) => (r: TurnRequest, on: (e: TurnEvent) => void, sig?: AbortSignal) => runDeviceTurn(r, on, sig, { setup, userName }))
         : undefined
       streamed = await streamAnswer(req, ctl.signal, {
-        text: (delta, text, lines) => { live.push(delta); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
-        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming((cur) => ({ text, status: lines, blocks: cur?.blocks })) },
+        text: (delta, text, lines) => { live.push(delta); setStreaming((cur) => ({ ...cur, text, status: lines })) },
+        status: (line, text, lines) => { setStatusAnnounce(line); setStreaming((cur) => ({ ...cur, text, status: lines })) },
         // A block is announced once, by its label, where it arrives (D4).
-        block: (block, all) => { live.push(` ${blockLabel(block)}. `); setStreaming((cur) => ({ text: cur?.text ?? '', status: cur?.status ?? [], blocks: all })) },
+        block: (block, all) => { live.push(` ${blockLabel(block)}. `); setStreaming((cur) => ({ ...cur, text: cur?.text ?? '', status: cur?.status ?? [], blocks: all })) },
+        source: (all) => setStreaming((cur) => ({ ...cur, text: cur?.text ?? '', status: cur?.status ?? [], sources: all })),
       }, run)
     } catch (err) {
       streamed = { answer: { role: 'assistant', text: '', at: Date.now() }, proposal: null, failure: { err } }

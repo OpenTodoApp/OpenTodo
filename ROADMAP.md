@@ -200,6 +200,7 @@ The assistant's answers show the app's own interface (`assistant-generative-ui`,
 | [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
 | [`assistant-eval-gaps`](openspec/changes/assistant-eval-gaps/) | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | |
 | [`mcp-blocks`](openspec/changes/archive/2026-11-10-mcp-blocks/) | **Shipped.** Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
+| [`assistant-tool-sources`](openspec/changes/archive/2026-11-14-assistant-tool-sources/) | **Shipped.** Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | [#1317](https://github.com/OpenTodoApp/OpenTodo/issues/1317) |
 
 They land in waves:
 1. the evaluation suite, the usage accounting and the device reads;
