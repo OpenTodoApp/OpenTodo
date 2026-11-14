@@ -5,7 +5,8 @@
 // the link after `#`. maintainTaskPages runs after each sync and keeps encrypted
 // pages current (a new snapshot within a minute of a change) and imports the
 // guests' encrypted replies as comments (D4), with ids derived from the reply ids so
-// two devices importing at once write the same comment.
+// two devices importing at once write the same comment. The same pass keeps encrypted
+// note pages current through notePages.ts (note-public-links).
 import { api } from './api'
 import { db } from './db'
 import { currentKey, isEnabled } from './e2ee'
@@ -17,9 +18,18 @@ import { platform } from './platform'
 import { currentUserId } from './sharing'
 import { decryptReply, encryptSnapshot, generateShareKey, shareKeyFragment, unwrapShareKey, wrapShareKey } from './taskPageCrypto'
 import { setKnownTaskPages } from './taskPageStore'
+
+// Note pages read and record the same store (note-public-links); through this module,
+// so the store stays in one chunk with the task pages.
+export { knownNotePage, setKnownNotePage, subscribeTaskPages, taskPagesVersion } from './taskPageStore'
 import { onTestTeardown } from './testTeardown'
 import type { PublishTaskPageInput, Task, TaskPageContent, TaskPageCreated, TaskPageRights } from './types'
 import { readJSON, writeJSON } from './deviceStorage'
+
+/** A page's label from a title (task and note pages): lowercase letters, digits and hyphens, at most 40. */
+export function labelFromTitle(title: string): string {
+  return title.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '')
+}
 
 /** Is the task served from a snapshot: an encrypted account's task outside every shared project? */
 export async function taskPageEncrypted(task: Pick<Task, 'project_id'>): Promise<boolean> {
@@ -179,7 +189,9 @@ async function maintain(): Promise<void> {
   if (!(await isEnabled())) return
   const account = await currentKey()
   if (!account) return
-  const encrypted = pages.filter((p) => p.encrypted && p.wrappedKey)
+  // Note pages (note-public-links D4) share the list and the pass.
+  if (pages.some((p) => p.kind === 'note' && p.encrypted)) await import('./notePages').then((m) => m.maintainNotePages(pages, account))
+  const encrypted = pages.filter((p) => p.kind !== 'note' && p.encrypted && p.wrappedKey)
   if (encrypted.length === 0) return
   const me = await currentUserId()
   const myName = (await api.me().catch(() => null))?.user.name ?? ''

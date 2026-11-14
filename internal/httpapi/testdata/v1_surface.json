@@ -3697,6 +3697,9 @@
     "DELETE /api/v1/notes/{id}": {
       "policy": "signed-in"
     },
+    "DELETE /api/v1/notes/{id}/page": {
+      "policy": "signed-in.full-tokens"
+    },
     "DELETE /api/v1/notes/{id}/purge": {
       "policy": "signed-in",
       "response": {
@@ -5406,6 +5409,23 @@
         "200"
       ]
     },
+    "GET /api/v1/notes/{id}/page": {
+      "policy": "signed-in.full-tokens",
+      "response": {
+        "createdBy": "string",
+        "encrypted": "boolean",
+        "expiresAt": "number|null",
+        "id": "string",
+        "label": "string|null",
+        "lastOpenedAt": "number|null",
+        "noteId": "string",
+        "publishedAt": "number",
+        "snapshotAt": "number|null"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
     "GET /api/v1/notification-channels": {
       "policy": "signed-in",
       "response": {
@@ -5496,9 +5516,11 @@
     "GET /api/v1/pages/{secret}": {
       "policy": "public",
       "response": {
+        "changedAt": "number",
         "comments": "array",
         "files": "array",
         "id": "string",
+        "kind": "string",
         "label": "string|null",
         "links": "array",
         "location": "string",
@@ -5507,7 +5529,9 @@
         "serverTime": "number",
         "snapshot": "string",
         "snapshotAt": "number|null",
-        "subtasks": "array"
+        "subtasks": "array",
+        "text": "string",
+        "title": "string"
       },
       "statuses": [
         "200"
@@ -6377,8 +6401,10 @@
         "pages[].expiresAt": "number|null",
         "pages[].id": "string",
         "pages[].includeMap": "boolean",
+        "pages[].kind": "string",
         "pages[].label": "string|null",
         "pages[].lastOpenedAt": "number|null",
+        "pages[].noteId": "string",
         "pages[].pendingReplies": "number",
         "pages[].publishedAt": "number",
         "pages[].replies": "number",
@@ -9405,6 +9431,27 @@
         "201"
       ]
     },
+    "POST /api/v1/notes/{id}/page": {
+      "policy": "signed-in.full-tokens.recent",
+      "request": {
+        "expiresInDays": "number|null?",
+        "label": "string|null?",
+        "snapshot": "string",
+        "wrappedKey": "string"
+      },
+      "response": {
+        "encrypted": "boolean",
+        "expiresAt": "number|null",
+        "id": "string",
+        "label": "string|null",
+        "link": "string",
+        "noteId": "string",
+        "publishedAt": "number"
+      },
+      "statuses": [
+        "201"
+      ]
+    },
     "POST /api/v1/notes/{id}/to-task": {
       "policy": "signed-in",
       "statuses": [
@@ -11253,6 +11300,20 @@
       "response": {
         "enabled": "boolean",
         "paused": "boolean"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "PUT /api/v1/notes/{id}/page/snapshot": {
+      "policy": "signed-in.full-tokens",
+      "request": {
+        "ciphertext": "string",
+        "version": "number",
+        "wrappedKey": "string"
+      },
+      "response": {
+        "ok": "boolean"
       },
       "statuses": [
         "200"

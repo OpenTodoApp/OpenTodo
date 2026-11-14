@@ -51,8 +51,12 @@ func ValidTaskPageRights(r string) bool { return r == "view" || r == "reply" || 
 
 // TaskPage is the publisher's view of a page. It never carries the secret.
 type TaskPage struct {
-	ID              string  `json:"id"`
+	ID string `json:"id"`
+	// Kind is "task" or "note" (note-public-links D1); a note page has an
+	// empty TaskID and its note in NoteID.
+	Kind            string  `json:"kind"`
 	TaskID          string  `json:"taskId"`
+	NoteID          string  `json:"noteId,omitempty"`
 	UserID          string  `json:"createdBy"`
 	Rights          string  `json:"rights"`
 	Label           *string `json:"label"`
@@ -82,6 +86,9 @@ type ResolvedTaskPage struct {
 
 // PublishInput is a publish request the caller validated.
 type PublishInput struct {
+	// Kind is "task" (the default) or "note"; NoteID names the note of a note page.
+	Kind       string
+	NoteID     string
 	TaskID     string
 	Rights     string
 	Label      string
@@ -94,13 +101,13 @@ type PublishInput struct {
 
 const taskPageColumns = `p.id, p.task_id, p.user_id, p.rights, p.label, p.include_map, p.published_at, p.expires_at, p.last_opened_at,
 	p.replies, p.ticks, p.snapshot IS NOT NULL OR p.wrapped_key IS NOT NULL, p.snapshot_version, p.snapshot_at, p.wrapped_key,
-	(SELECT COUNT(*) FROM task_page_replies r WHERE r.page_id = p.id)`
+	(SELECT COUNT(*) FROM task_page_replies r WHERE r.page_id = p.id), p.kind, COALESCE(p.note_id, '')`
 
 func scanTaskPage(sc interface{ Scan(...any) error }, extra ...any) (*TaskPage, error) {
 	var p TaskPage
 	var wrapped sql.NullString
 	dest := append([]any{&p.ID, &p.TaskID, &p.UserID, &p.Rights, &p.Label, &p.IncludeMap, &p.PublishedAt, &p.ExpiresAt, &p.LastOpenedAt,
-		&p.Replies, &p.Ticks, &p.Encrypted, &p.SnapshotVersion, &p.SnapshotAt, &wrapped, &p.PendingReplies}, extra...)
+		&p.Replies, &p.Ticks, &p.Encrypted, &p.SnapshotVersion, &p.SnapshotAt, &wrapped, &p.PendingReplies, &p.Kind, &p.NoteID}, extra...)
 	if err := sc.Scan(dest...); err != nil {
 		return nil, err
 	}
@@ -113,6 +120,26 @@ func scanTaskPage(sc interface{ Scan(...any) error }, extra ...any) (*TaskPage, 
 // activeTaskPage is the SQL condition of an active page at time ?.
 const activeTaskPage = `p.revoked_at IS NULL AND (p.expires_at IS NULL OR p.expires_at > ?)`
 
+// pageItem is the SQL expression of the id a page publishes: its task or note.
+const pageItem = `CASE p.kind WHEN 'note' THEN p.note_id ELSE p.task_id END`
+
+// itemColumn is the column that names a page's item for kind, so a lookup uses
+// that kind's one-active-page index.
+func itemColumn(kind string) string {
+	if kind == "note" {
+		return "p.note_id"
+	}
+	return "p.task_id"
+}
+
+// pageKind is in.Kind with its default.
+func (in PublishInput) pageKind() (kind, item string) {
+	if in.Kind == "note" {
+		return "note", in.NoteID
+	}
+	return "task", in.TaskID
+}
+
 // PublishTaskPage replaces the task's active page, if any, with a new one and
 // returns it with its secret (returned once). The caller checked that publisher
 // may publish the task. Replacing and publishing commit together with their
@@ -124,18 +151,27 @@ func (s *Service) PublishTaskPage(ctx context.Context, publisher *User, in Publi
 		return nil, "", err
 	}
 	defer tx.Rollback()
+	kind, item := in.pageKind()
+	// Task and note pages share the limit (note-public-links "Note page lifecycle
+	// and limits"); the page this one replaces does not count.
 	var active int
-	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM task_pages p WHERE p.user_id = ? AND p.task_id <> ? AND `+activeTaskPage,
-		publisher.ID, in.TaskID, now.UnixMilli()).Scan(&active); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM task_pages p WHERE p.user_id = ? AND NOT (p.kind = ? AND `+pageItem+` = ?) AND `+activeTaskPage,
+		publisher.ID, kind, item, now.UnixMilli()).Scan(&active); err != nil {
 		return nil, "", err
 	}
 	if active >= MaxActiveTaskPages {
 		return nil, "", ErrTaskPageLimit
 	}
-	if err := revokeTaskPageTx(ctx, tx, s, publisher.ID, in.TaskID, now); err != nil {
+	if err := revokePageTx(ctx, tx, s, publisher.ID, kind, item, now); err != nil {
 		return nil, "", err
 	}
-	p := &TaskPage{ID: ids.New(), TaskID: in.TaskID, UserID: publisher.ID, Rights: in.Rights, IncludeMap: in.IncludeMap, PublishedAt: now.UnixMilli()}
+	p := &TaskPage{ID: ids.New(), Kind: kind, UserID: publisher.ID, Rights: in.Rights, IncludeMap: in.IncludeMap, PublishedAt: now.UnixMilli()}
+	var noteID any
+	if kind == "note" {
+		p.NoteID, noteID = item, item
+	} else {
+		p.TaskID = item
+	}
 	if in.Label != "" {
 		p.Label = &in.Label
 	}
@@ -151,9 +187,9 @@ func (s *Service) PublishTaskPage(ctx context.Context, publisher *User, in Publi
 		}
 	}
 	secret := ids.Secret(TaskPageSecretBytes)
-	if _, err := tx.ExecContext(ctx, `INSERT INTO task_pages(id,task_id,user_id,secret_hash,rights,label,include_map,expires_at,published_at,snapshot,snapshot_version,snapshot_at,wrapped_key)
-		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		p.ID, p.TaskID, p.UserID, hashToken(secret), p.Rights, p.Label, p.IncludeMap, p.ExpiresAt, p.PublishedAt, snapshot, p.SnapshotVersion, p.SnapshotAt, wrapped); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO task_pages(id,kind,task_id,note_id,user_id,secret_hash,rights,label,include_map,expires_at,published_at,snapshot,snapshot_version,snapshot_at,wrapped_key)
+		VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		p.ID, p.Kind, p.TaskID, noteID, p.UserID, hashToken(secret), p.Rights, p.Label, p.IncludeMap, p.ExpiresAt, p.PublishedAt, snapshot, p.SnapshotVersion, p.SnapshotAt, wrapped); err != nil {
 		return nil, "", err
 	}
 	if err := s.audit.RecordTx(ctx, tx, audit.TaskPagePublished(publisher.ID, p.ID, p.Rights)); err != nil {
@@ -165,11 +201,11 @@ func (s *Service) PublishTaskPage(ctx context.Context, publisher *User, in Publi
 	return p, secret, nil
 }
 
-// revokeTaskPageTx revokes the task's active page (if any) and drops its
-// snapshot, wrapped key and pending replies.
-func revokeTaskPageTx(ctx context.Context, tx *sql.Tx, s *Service, actorID, taskID string, now time.Time) error {
+// revokePageTx revokes the active page (if any) of a task or note (kind) and
+// drops its snapshot, wrapped key and pending replies.
+func revokePageTx(ctx context.Context, tx *sql.Tx, s *Service, actorID, kind, item string, now time.Time) error {
 	var id string
-	err := tx.QueryRowContext(ctx, `SELECT id FROM task_pages WHERE task_id = ? AND revoked_at IS NULL`, taskID).Scan(&id)
+	err := tx.QueryRowContext(ctx, `SELECT p.id FROM task_pages p WHERE p.kind = ? AND `+itemColumn(kind)+` = ? AND p.revoked_at IS NULL`, kind, item).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -187,7 +223,16 @@ func revokeTaskPageTx(ctx context.Context, tx *sql.Tx, s *Service, actorID, task
 
 // RevokeTaskPage revokes the task's active page; ErrNotFound when there is none.
 func (s *Service) RevokeTaskPage(ctx context.Context, actorID, taskID string) error {
-	if _, err := s.ActiveTaskPage(ctx, taskID); err != nil {
+	return s.revokePage(ctx, actorID, "task", taskID)
+}
+
+// RevokeNotePage revokes the note's active page; ErrNotFound when there is none.
+func (s *Service) RevokeNotePage(ctx context.Context, actorID, noteID string) error {
+	return s.revokePage(ctx, actorID, "note", noteID)
+}
+
+func (s *Service) revokePage(ctx context.Context, actorID, kind, item string) error {
+	if _, err := s.activePage(ctx, kind, item); err != nil {
 		return err
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -195,7 +240,7 @@ func (s *Service) RevokeTaskPage(ctx context.Context, actorID, taskID string) er
 		return err
 	}
 	defer tx.Rollback()
-	if err := revokeTaskPageTx(ctx, tx, s, actorID, taskID, s.clock()); err != nil {
+	if err := revokePageTx(ctx, tx, s, actorID, kind, item, s.clock()); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -203,15 +248,25 @@ func (s *Service) RevokeTaskPage(ctx context.Context, actorID, taskID string) er
 
 // ActiveTaskPage returns the task's active page, or ErrNotFound.
 func (s *Service) ActiveTaskPage(ctx context.Context, taskID string) (*TaskPage, error) {
-	p, err := scanTaskPage(s.db.QueryRowContext(ctx, `SELECT `+taskPageColumns+` FROM task_pages p WHERE p.task_id = ? AND `+activeTaskPage,
-		taskID, s.clock().UnixMilli()))
+	return s.activePage(ctx, "task", taskID)
+}
+
+// ActiveNotePage returns the note's active page, or ErrNotFound.
+func (s *Service) ActiveNotePage(ctx context.Context, noteID string) (*TaskPage, error) {
+	return s.activePage(ctx, "note", noteID)
+}
+
+func (s *Service) activePage(ctx context.Context, kind, item string) (*TaskPage, error) {
+	p, err := scanTaskPage(s.db.QueryRowContext(ctx, `SELECT `+taskPageColumns+` FROM task_pages p WHERE p.kind = ? AND `+itemColumn(kind)+` = ? AND `+activeTaskPage,
+		kind, item, s.clock().UnixMilli()))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	return p, err
 }
 
-// UserTaskPages lists the active pages a user published, newest first.
+// UserTaskPages lists the active pages a user published, task and note pages,
+// newest first.
 func (s *Service) UserTaskPages(ctx context.Context, userID string) ([]TaskPage, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+taskPageColumns+` FROM task_pages p WHERE p.user_id = ? AND `+activeTaskPage+` ORDER BY p.published_at DESC`,
 		userID, s.clock().UnixMilli())

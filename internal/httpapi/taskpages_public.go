@@ -47,39 +47,62 @@ type resolvedPage struct {
 	encrypted bool
 }
 
-// resolveTaskPage runs the limits and use-time checks every public page route
-// shares (lifecycle requirement). On failure it has answered and returns ok=false.
-func (s *Server) resolveTaskPage(w http.ResponseWriter, r *http.Request, perPage *rateLimiter) (resolvedPage, bool) {
+// lookupPage runs the limits and checks every public page route shares, task
+// and note pages alike (lifecycle requirement): the client address limit, the
+// secret (unknown ones charged to the sign-in limiter), the page's own limit
+// and the publisher's account. On failure it has answered and returns ok=false.
+func (s *Server) lookupPage(w http.ResponseWriter, r *http.Request, perPage *rateLimiter) (*auth.ResolvedTaskPage, bool) {
 	publicHeaders(w)
-	ctx := r.Context()
 	ip := clientIP(r)
 	if !s.pages.addr.allow(ip) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many requests, try again in a minute")
-		return resolvedPage{}, false
+		return nil, false
 	}
-	invalid := func() (resolvedPage, bool) {
-		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
-		return resolvedPage{}, false
-	}
-	p, err := s.auth.LookupTaskPage(ctx, r.PathValue("secret"))
+	p, err := s.auth.LookupTaskPage(r.Context(), r.PathValue("secret"))
 	if errors.Is(err, auth.ErrTaskPageInvalid) {
 		// Guessing pages costs as much as guessing passwords: the sign-in limiter.
 		if !s.limiter.allow(ip) {
 			writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
-			return resolvedPage{}, false
+			return nil, false
 		}
-		return invalid()
+		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
+		return nil, false
 	}
 	if err != nil {
 		s.internal(w, err)
-		return resolvedPage{}, false
+		return nil, false
 	}
 	if !perPage.allow(p.ID) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "this page is used too often, try again later")
-		return resolvedPage{}, false
+		return nil, false
 	}
 	if p.PublisherDeactivated {
-		return invalid()
+		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
+		return nil, false
+	}
+	return p, true
+}
+
+// resolveTaskPage is lookupPage and the task half of the use-time checks. A note
+// page reaching a route only task pages have (replies, ticks) is read-only.
+func (s *Server) resolveTaskPage(w http.ResponseWriter, r *http.Request, perPage *rateLimiter) (resolvedPage, bool) {
+	p, ok := s.lookupPage(w, r, perPage)
+	if !ok {
+		return resolvedPage{}, false
+	}
+	if p.Kind == "note" {
+		writeError(w, http.StatusForbidden, "forbidden", "this page can only be read")
+		return resolvedPage{}, false
+	}
+	return s.resolveTask(w, r, p)
+}
+
+// resolveTask runs the task half of the use-time checks on a page lookupPage found.
+func (s *Server) resolveTask(w http.ResponseWriter, r *http.Request, p *auth.ResolvedTaskPage) (resolvedPage, bool) {
+	ctx := r.Context()
+	invalid := func() (resolvedPage, bool) {
+		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
+		return resolvedPage{}, false
 	}
 	tp, ok, err := s.sync.TaskPageData(ctx, p.UserID, p.TaskID)
 	if err != nil {
@@ -117,12 +140,20 @@ func (s *Server) resolveTaskPage(w http.ResponseWriter, r *http.Request, perPage
 var pageTaskFields = []string{"title", "description", "due", "deadline", "completed_at"}
 
 func (s *Server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
-	rp, ok := s.resolveTaskPage(w, r, s.pages.read)
+	found, ok := s.lookupPage(w, r, s.pages.read)
+	if !ok {
+		return
+	}
+	if found.Kind == "note" {
+		s.serveNotePage(w, r, found)
+		return
+	}
+	rp, ok := s.resolveTask(w, r, found)
 	if !ok {
 		return
 	}
 	p := rp.page
-	out := map[string]any{"rights": p.Rights, "serverTime": s.now().UnixMilli(), "label": p.Label}
+	out := map[string]any{"kind": "task", "rights": p.Rights, "serverTime": s.now().UnixMilli(), "label": p.Label}
 	if rp.encrypted {
 		out["mode"] = "encrypted"
 		out["snapshot"] = string(p.Snapshot)
@@ -383,7 +414,15 @@ func (s *Server) applyPageTick(w http.ResponseWriter, r *http.Request, rp resolv
 // handleTaskPageFile downloads a file attached to a live page's task, always as
 // a download, never rendered.
 func (s *Server) handleTaskPageFile(w http.ResponseWriter, r *http.Request) {
-	rp, ok := s.resolveTaskPage(w, r, s.pages.read)
+	found, ok := s.lookupPage(w, r, s.pages.read)
+	if !ok {
+		return
+	}
+	if found.Kind == "note" {
+		s.serveNotePageFile(w, r, found)
+		return
+	}
+	rp, ok := s.resolveTask(w, r, found)
 	if !ok {
 		return
 	}
@@ -426,7 +465,7 @@ func (s *Server) pageMap(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	p, err := s.auth.LookupTaskPage(r.Context(), r.PathValue("secret"))
-	if err != nil || !p.IncludeMap || p.PublisherDeactivated || !s.mapRoutes.Available(r.Context()) {
+	if err != nil || p.Kind == "note" || !p.IncludeMap || p.PublisherDeactivated || !s.mapRoutes.Available(r.Context()) {
 		writeError(w, http.StatusNotFound, "page_invalid", auth.ErrTaskPageInvalid.Error())
 		return false
 	}

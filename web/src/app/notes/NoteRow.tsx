@@ -96,7 +96,7 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
  * personal, so a viewer of a shared project has it too), then Turn into task and
  * Delete for a note the user may change.
  */
-export function NoteMenu({ onAttach, pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, template, onTemplate, pinKey, label = t('Note actions') }: {
+export function NoteMenu({ onAttach, pinned, onPin, onConnections, onTurnIntoTask, onDelete, routines, onRunRoutine, offline, template, onTemplate, onPublish, published, pinKey, label = t('Note actions') }: {
   pinned: boolean; onPin: () => void; onTurnIntoTask?: () => void; onDelete?: () => void
   /** Attach files or a link (note-attachments D5): the open note's menu only. */
   onAttach?: (kind: 'files' | 'link') => void
@@ -108,6 +108,10 @@ export function NoteMenu({ onAttach, pinned, onPin, onConnections, onTurnIntoTas
   onRunRoutine?: (id: string) => void
   /** Running a routine needs a connection: the list says so. */
   offline?: boolean
+  /** Publish note page… (note-public-links): for whoever may publish; needs a connection. */
+  onPublish?: () => void
+  /** The note has an active page: the item opens its status. */
+  published?: boolean
   /** Show connections (notes-graph D3): passed while the note links with something. */
   onConnections?: () => void
   /** The list row's key for Pin (`p` on a focused row); the panel's menu has none. */
@@ -121,6 +125,9 @@ export function NoteMenu({ onAttach, pinned, onPin, onConnections, onTurnIntoTas
       {onAttach && <MenuItem label={t('Attach files…')} icon="paperclip" description={t('Or paste or drop files on the note')} onSelect={() => onAttach('files')} data-note-attach />}
       {onAttach && <MenuItem label={t('Add a link…')} icon="link" onSelect={() => onAttach('link')} data-note-attach-link />}
       {onConnections && <MenuItem label={t('Show connections')} icon="waypoints" onSelect={onConnections} data-show-connections />}
+      {onPublish && <MenuItem label={published ? t('Note page…') : t('Publish note page…')} icon="globe"
+        description={offline ? t('Note pages need a connection') : t('A read-only page anyone with the link can open')}
+        disabled={offline} onSelect={onPublish} data-publish-note-page />}
       {onTemplate && <MenuItem label={template ? t('Stop using as template') : t('Use as template')} icon="copy" onSelect={onTemplate} data-note-template-toggle={template ? 'off' : 'on'} />}
       {onTurnIntoTask && <MenuItem label={t('Turn into task')} icon="circle-check-big" description={t('The note goes to the Trash; Undo brings it back')} onSelect={onTurnIntoTask} data-note-to-task />}
       {onRunRoutine && !!routines?.length && (

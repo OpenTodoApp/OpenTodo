@@ -24,6 +24,7 @@ var undocumentedOK = map[string]string{
 	"/":                    "the web app (internal/web)",
 	"GET /public/":         "the web app's public list page; its data comes from the public-link API",
 	"GET /t/":              "the web app's task page; its data comes from the task page API",
+	"GET /n/":              "the web app's note page; its data comes from the task page API",
 	"GET /routine-emails/": "the web app's routine email stop page (the task page document); its data comes from the stop link API",
 	"POST /share":          "the PWA share target: redirects into the app (docs/capture.md)",
 	"/api/":                "the 404 not_found answer of every unknown API path",

@@ -38,28 +38,11 @@ func (s *Service) TaskPageData(ctx context.Context, publisherID, taskID string) 
 		return tp, false, err
 	}
 	tp.Task = task
-	tp.Role, tp.Scope = RoleOwner, PersonalScope(publisherID)
-	if pid := idValue(task["project_id"]); pid != "" {
-		role, shared, err := projectRole(ctx, s.reader(), publisherID, pid)
-		if err != nil || role == "" {
-			return tp, false, err
-		}
-		tp.Role, tp.Shared = role, shared
-		if shared {
-			tp.Scope = ProjectScope(pid)
-		}
-		project, err := s.scopeEntities(ctx, tp.Scope, "project", pid)
-		if err != nil {
-			return tp, false, err
-		}
-		p := project[pid]
-		if p == nil || p.deleted() {
-			return tp, false, nil
-		}
-		var archived bool
-		_ = json.Unmarshal(p["archived"], &archived)
-		tp.ProjectArchived = archived
+	ps, ok, err := s.pageScope(ctx, publisherID, idValue(task["project_id"]))
+	if err != nil || !ok {
+		return tp, false, err
 	}
+	tp.Scope, tp.Shared, tp.Role, tp.ProjectArchived = ps.Scope, ps.Shared, ps.Role, ps.ProjectArchived
 	tasks, err := s.scopeEntities(ctx, tp.Scope, "task", "")
 	if err != nil {
 		return tp, false, err
@@ -108,6 +91,43 @@ func (s *Service) TaskPageData(ctx context.Context, publisherID, taskID string) 
 	byCreated(tp.Comments)
 	byCreated(tp.Attachments)
 	return tp, true, nil
+}
+
+// pageScope is where a published item lives for its publisher (task-pages D1,
+// note-public-links D5): the personal scope without a project, else the
+// project's (shared) scope with the publisher's role and whether it is
+// archived. ok is false when the project is deleted or the publisher no longer
+// belongs to it.
+type pageScopeInfo struct {
+	Scope           string
+	Shared          bool
+	Role            string
+	ProjectArchived bool
+}
+
+func (s *Service) pageScope(ctx context.Context, publisherID, projectID string) (ps pageScopeInfo, ok bool, err error) {
+	ps.Role, ps.Scope = RoleOwner, PersonalScope(publisherID)
+	if projectID == "" {
+		return ps, true, nil
+	}
+	role, shared, err := projectRole(ctx, s.reader(), publisherID, projectID)
+	if err != nil || role == "" {
+		return ps, false, err
+	}
+	ps.Role, ps.Shared = role, shared
+	if shared {
+		ps.Scope = ProjectScope(projectID)
+	}
+	project, err := s.scopeEntities(ctx, ps.Scope, "project", projectID)
+	if err != nil {
+		return ps, false, err
+	}
+	p := project[projectID]
+	if p == nil || p.deleted() {
+		return ps, false, nil
+	}
+	_ = json.Unmarshal(p["archived"], &ps.ProjectArchived)
+	return ps, true, nil
 }
 
 // scopeEntities materialises the entities of one kind in one scope (only id

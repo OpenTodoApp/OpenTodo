@@ -5,6 +5,7 @@
       "web/src/lib/activity.ts",
       "web/src/lib/attachments.ts",
       "web/src/lib/localData.ts",
+      "web/src/lib/notePages.ts",
       "web/src/lib/notifications.ts"
     ],
     "Collection.filter": [
@@ -173,6 +174,7 @@
       "web/src/lib/bulk.ts",
       "web/src/lib/labels.ts",
       "web/src/lib/localData.ts",
+      "web/src/lib/notePages.ts",
       "web/src/lib/notifications.ts",
       "web/src/lib/ops.ts",
       "web/src/lib/sharing.ts",
@@ -196,6 +198,7 @@
       "web/src/lib/labels.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/locations.ts",
+      "web/src/lib/notePages.ts",
       "web/src/lib/notifications.ts",
       "web/src/lib/ops.ts",
       "web/src/lib/reminders.ts",
