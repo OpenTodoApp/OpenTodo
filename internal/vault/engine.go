@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -248,6 +249,20 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 		return e.rep, nil
 	}
 	if !o.ReadOnly && len(e.ops) > 0 {
+		if testHookBeforePush != nil {
+			testHookBeforePush()
+		}
+		// A file read in the middle of a save (an editor's empty first step)
+		// must not turn into ops: re-read the files the merge used, and when
+		// one changed meanwhile push nothing, write nothing and keep the state,
+		// so the next sync reads the whole save.
+		if saved := e.savedSinceRead(); len(saved) > 0 {
+			rep := &Report{Warnings: e.rep.Warnings, Events: []Event{}, Cursor: e.startCursor}
+			for _, p := range saved {
+				rep.event("skipped", p, "", "skipped %s: it was saved while the sync read it; the next sync reads it", p)
+			}
+			return rep, nil
+		}
 		if err := e.push(ctx, e.ops); err != nil {
 			return nil, err
 		}
@@ -406,6 +421,33 @@ func (e *engine) scan() error {
 		e.changed[p] = true
 	}
 	return nil
+}
+
+// savedSinceRead lists the files the merge read as changed that no longer
+// hold what it read: vault files, and standalone note files when notes are on.
+func (e *engine) savedSinceRead() []string {
+	var out []string
+	still := func(p string, read []byte) {
+		b, err := os.ReadFile(filepath.Join(e.o.Dir, filepath.FromSlash(p)))
+		if err != nil || !bytes.Equal(b, read) {
+			out = append(out, p)
+		}
+	}
+	for _, p := range sortedKeys(e.changed) {
+		still(p, e.disk[p])
+	}
+	if e.sn != nil {
+		recorded := map[string]string{}
+		for _, rec := range e.st.NoteFiles {
+			recorded[rec.Path] = rec.Hash
+		}
+		for _, p := range sortedKeys(e.sn.disk) {
+			if raw := e.sn.disk[p].raw; recorded[p] != hashOf(raw) {
+				still(p, raw)
+			}
+		}
+	}
+	return out
 }
 
 // saveBase makes the app the new base, except for what a read-only run left

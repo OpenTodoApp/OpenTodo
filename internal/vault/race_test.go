@@ -149,3 +149,84 @@ func hasEvent(rep *Report, kind, file string) bool {
 	}
 	return false
 }
+
+// beforePush runs fn once, right before the next sync pushes its ops: a save
+// landing after the sync read the folder but before anything was sent.
+func beforePush(t *testing.T, fn func()) {
+	t.Helper()
+	done := false
+	testHookBeforePush = func() {
+		if !done {
+			done = true
+			fn()
+		}
+	}
+	t.Cleanup(func() { testHookBeforePush = nil })
+}
+
+// TestHalfSavedFileIsNotPushed: a sync that read a file in the middle of a
+// save (an editor's empty first step) pushes nothing derived from it when the
+// save lands before the push; the next sync reads the whole save, and no task
+// the save keeps is trashed (TestVaultWatch on CI ended with an empty Home.md).
+func TestHalfSavedFileIsNotPushed(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	pay := s.create("tasks", map[string]any{"title": "Pay rent", "project_id": home})
+	mum := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md") + "- [ ] Buy seeds\n"
+	v.write(t, "Home.md", "") // the save's first step, as the sync reads it
+	beforePush(t, func() { v.write(t, "Home.md", saved) })
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("first sync report %+v", rep)
+	}
+	for _, id := range []string{pay, mum} {
+		if s.get("tasks", id)["deleted_at"] != nil {
+			t.Fatalf("task %s was trashed from the half-saved file", id)
+		}
+	}
+	if v.read(t, "Home.md") != saved {
+		t.Fatalf("the save was overwritten:\n%s", v.read(t, "Home.md"))
+	}
+	// The next sync reads the whole save: the new line becomes a task and the
+	// others stay.
+	if rep := v.sync(t); rep.Created != 1 {
+		t.Fatalf("second sync %+v", rep)
+	}
+	text := v.read(t, "Home.md")
+	for _, title := range []string{"Pay rent", "Call mum", "Buy seeds"} {
+		if !strings.Contains(lineOf(t, text, title), "🆔 ") {
+			t.Errorf("%s lost or without id:\n%s", title, text)
+		}
+	}
+	for _, id := range []string{pay, mum} {
+		if s.get("tasks", id)["deleted_at"] != nil {
+			t.Errorf("task %s trashed after the second sync", id)
+		}
+	}
+}
+
+// TestHalfSavedNoteIsNotPushed: a note file read in the middle of a save (an
+// empty file, without its opentodo-id) is not trashed and its body not
+// cleared when the save lands before the push.
+func TestHalfSavedNoteIsNotPushed(t *testing.T) {
+	s := newServer(t)
+	s.newNote(t, "n-pack", "Packing list", "Socks\nCharger", "", nil)
+	v := s.notesVault(t)
+	saved := strings.Replace(v.read(t, "Notes/Packing list.md"), "Charger\n", "Charger\nPassport\n", 1)
+	v.write(t, "Notes/Packing list.md", "")
+	beforePush(t, func() { v.write(t, "Notes/Packing list.md", saved) })
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Notes/Packing list.md") {
+		t.Errorf("first sync report %+v", rep)
+	}
+	note := s.account(t).Get("note", "n-pack")
+	if note == nil || !note.Live() || note.Str("description") != "Socks\nCharger" {
+		t.Fatalf("the half-saved file reached the note: %+v", note)
+	}
+	v.sync(t)
+	if got := noteDesc(t, s, "n-pack"); got != "Socks\nCharger\nPassport" {
+		t.Errorf("after the whole save the note holds %q", got)
+	}
+}

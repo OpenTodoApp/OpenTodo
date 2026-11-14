@@ -374,6 +374,9 @@ func (e *engine) giveFreshIDs(p, full string) error {
 // testHookBeforeWrite runs right before a sync writes the vault's files.
 var testHookBeforeWrite func()
 
+// testHookBeforePush runs right before a sync pushes its ops.
+var testHookBeforePush func()
+
 // sourceOf is the file on disk that holds a project's lines: the file parsed
 // for it this run, else its recorded file, else the file at its new place.
 func (e *engine) sourceOf(pid, old, target string) string {
