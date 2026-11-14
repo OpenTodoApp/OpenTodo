@@ -7659,5 +7659,7 @@
   "template, meeting, journal, new note": "sjabloon, vergadering, dagboek, nieuwe notitie",
   "Note deleted": "Notitie verwijderd",
   "Note updated": "Notitie bijgewerkt",
-  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan."
+  "Titles and text arrive encrypted.": "Titels en tekst komen versleuteld aan.",
+  "Scheduled for today": "Ingepland voor vandaag",
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": "{n, plural, one {# taak ingepland voor vandaag} other {# taken ingepland voor vandaag}}"
 }
