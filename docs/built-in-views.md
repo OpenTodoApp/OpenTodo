@@ -49,4 +49,4 @@ Someday holds the tasks you parked: ideas and maybes you don't want to see every
 
 ## Narrow a list by duration
 
-The **Filter** action in the header of the Inbox, Today, Upcoming and project lists offers **Quick wins** (15 minutes or less), **Under 30 min**, **Over 1 h** and **Unestimated**. Turn one on to see only matching tasks; its chip in the header has a × to clear it. Your choice stays on that device. Set estimates with <kbd>e</kbd>.
+**Filter** in the header of the Inbox, Today, Upcoming and project lists (on a phone, the page's **…** menu) offers **Quick wins** (15 minutes or less), **Under 30 min**, **Over 1 h** and **Unestimated**. The active one is a chip in the header; its × clears it. The choice stays on that device. Set estimates with <kbd>e</kbd>.

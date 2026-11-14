@@ -78,6 +78,16 @@ describe('Menu kind="menu"', () => {
     expect(items.find((i) => i.textContent?.includes('Pin'))!.getAttribute('role')).toBe('menuitemcheckbox')
     await unmount()
   })
+
+  it('shows its own pressed colour on touch: the selected surface, the soft danger for a destructive item', async () => {
+    const { unmount } = await open([])
+    const items = [...document.querySelectorAll('[role^="menuitem"]')]
+    expect(items.find((i) => i.textContent?.includes('Rename'))!.className).toContain('press-selected')
+    const del = items.find((i) => i.textContent?.includes('Delete view'))!
+    expect(del.className).toContain('press-danger-soft')
+    expect(del.className).not.toContain('press-selected')
+    await unmount()
+  })
 })
 
 describe('nextIndex', () => {

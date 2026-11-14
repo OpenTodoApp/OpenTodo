@@ -145,6 +145,16 @@ describe('TruncatedText (ux-fixes-phone D2)', () => {
     await r.unmount()
   })
 
+  it('wrap="phone" takes the two-line phone rule instead of the one-line cut (phone-titles-everywhere)', async () => {
+    measure(80, 80)
+    const r = await render(<><TruncatedText text="Garden" /><TruncatedText as="p" wrap="phone" text="Paint the fence" /></>)
+    expect(r.container.querySelector('span')!.className).toMatch(/(^| )truncate( |$)/)
+    const p = r.container.querySelector('p')!
+    expect(p.className).toMatch(/(^| )title-phone( |$)/)
+    expect(p.className).not.toMatch(/(^| )truncate( |$)/)
+    await r.unmount()
+  })
+
   it('a disabled Tooltip never opens', async () => {
     const r = await render(<Tooltip label="Rename" disabled><button>Garden</button></Tooltip>)
     const button = r.container.querySelector('button')!

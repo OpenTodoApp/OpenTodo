@@ -52,7 +52,7 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(funct
   const quiet = countMode === 'hover' ? ' ui-reveal' : countMode === 'hidden' ? ' sr-only' : countMode === 'swap' ? ' ui-swap-count' : ''
   const button = (
     <button ref={ref} type={type} aria-current={active ? 'page' : undefined} data-sidebar-item data-depth={depth} data-tone={active ? 'active' : 'quiet'}
-      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
+      className={`flex min-h-9 w-full min-w-0 items-center gap-2 rounded-control py-1.5 text-left text-body press-selected pointer-fine:min-h-8 pointer-fine:py-1 ${collapsed ? 'justify-center px-0' : 'px-2'} ${active ? ACTIVE : IDLE}${className ? ` ${className}` : ''}`}
       {...rest}>
       {icon ? <span className="flex w-5 shrink-0 justify-center" aria-hidden="true"><Icon name={icon} /></span> : leading ? <span className="flex w-5 shrink-0 items-center justify-center">{leading}</span> : null}
       <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{label}</span>

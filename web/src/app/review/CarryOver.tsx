@@ -56,7 +56,7 @@ export function MovesList({ rows, day, decisions, projects, cursor, onCursor, on
             onClick={() => onCursor(x.task.id)} onFocusCapture={() => onCursor(x.task.id)}
             className={`flex flex-wrap items-center gap-x-4 gap-y-2 rounded-control px-2 py-2.5 transition-colors duration-(--duration-ui) sm:flex-nowrap sm:px-3 ${current ? 'bg-selected-row' : ''}`}>
             <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
-              <TruncatedText as="p" text={title} className={`user-text block text-body ${d.kind === 'done' ? 'text-muted line-through decoration-faint' : 'text-strong'}`} data-carry-title="" />
+              <TruncatedText as="p" wrap="phone" text={title} className={`user-text text-body ${d.kind === 'done' ? 'text-muted line-through decoration-faint' : 'text-strong'}`} data-carry-title="" />
               <p className="flex min-w-0 flex-wrap gap-x-1.5 text-meta text-muted">
                 {project && <span className="truncate">{project.name}</span>}
                 {project && <span aria-hidden="true">·</span>}

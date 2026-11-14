@@ -72,11 +72,13 @@ Done: `shell-repairs`, `shell-reminders-on`.
 
 Second round (2026-11-14, from the interface tour at 360 px and what was left above): `touch-keyboard-hints`, `shell-touch`, `phone-row-titles`, `phone-header-room`, `sheet-drag-dismiss`, `pull-to-sync`, `shell-first-paint`. Issues #1337 to #1343.
 
+Third round (2026-11-14, what the second found and left): `touch-pressed-states`, `phone-bar-overflow`, `phone-titles-everywhere`. Issues #1349 to #1351. Planned: `shell-push` (#1344), Android through UnifiedPush.
+
 Open:
 
-- **`shell-push`** ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)): the server wakes the app when a reminder changes. Android through UnifiedPush; iOS needs a relay that holds the app's key, or an app signed by whoever runs the server. A decision for the owner before any design.
+- **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android is `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).
 - The iOS store build cannot start offline (no service worker without app-bound domains).
-- Found in the second round, not done: a pressed colour per component (one generic dim covers touch today); the tab bar measures 45 px on touch where its spec says 48; a long project name is still cut at 360 px (Filter could move into the project menu); one-line titles remain in calendar compact rows, Close the day, command bar results and Notes; windowed lists; universal links; lock-screen widgets.
+- Still open after the third round: display options are a button in the phone bar, so a very long project name is cut at about 24 characters; windowed lists; universal links; lock-screen widgets.
 
 ## Device check, after each step
 

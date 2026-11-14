@@ -257,7 +257,7 @@ The status bar's backdrop (GitHub issue 999): on an iPhone, Safari covers the st
 
 On a touch screen (`pointer: coarse`) the app behaves like an app, not a page (shell-touch, GitHub issue 1338). The rules are in `index.css`:
 
-- The browser's tap highlight is off, so a control needs its own pressed state (`active:`); `hover:` does not apply on touch.
+- The browser's tap highlight is off, so a control needs its own pressed state; `hover:` does not apply on touch. `.ui-btn` has one. Any other control names its pressed colour with `press-<colour token>` (`press-selected`, `press-danger-soft`, `press-accent-hover`): on touch it takes that background at once while a finger is on it. Add `press-inset` when the 44 px target overlaps its neighbours (a row's checkbox): the colour keeps to 28 px. A task row takes the selected-row surface while its body is pressed. A control with none of these dims to 60%, the fallback; the two never stack (touch-pressed-states).
 - Chrome is not text: every button, tab, menu item, option, switch and `summary`, every `nav`, the phone bar, the sidebar and `PageHeader` cannot be selected or called out by a long press. Everything else is content and stays selectable, as does a field or an editable area inside chrome. A new control is covered by its element or role; text that a person may want to copy must not be put inside a button or a `nav`. `select-text` on an element overrides the rule.
 - The page ends the overscroll chain (`overscroll-behavior: none` on the root): no bounce, no pull glow, no reload on a pull. Scrollers keep their own behaviour and still get every touch event.
 - Zoom stays: no `touch-action` on the page that blocks pinch.

@@ -253,8 +253,12 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`sheet-drag-dismiss`](openspec/changes/sheet-drag-dismiss/) | Bottom sheets follow the finger and close on a drag | [#1341](https://github.com/OpenTodoApp/OpenTodo/issues/1341) |
 | [`pull-to-sync`](openspec/changes/pull-to-sync/) | Pull down to sync, never a reload | [#1342](https://github.com/OpenTodoApp/OpenTodo/issues/1342) |
 | [`shell-first-paint`](openspec/changes/shell-first-paint/) | The apps open on their colour and icon, and the loading frame already has the phone's bars | [#1343](https://github.com/OpenTodoApp/OpenTodo/issues/1343) |
+| [`touch-pressed-states`](openspec/changes/touch-pressed-states/) | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | [#1349](https://github.com/OpenTodoApp/OpenTodo/issues/1349) |
+| [`phone-bar-overflow`](openspec/changes/phone-bar-overflow/) | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | [#1350](https://github.com/OpenTodoApp/OpenTodo/issues/1350) |
+| [`phone-titles-everywhere`](openspec/changes/phone-titles-everywhere/) | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | [#1351](https://github.com/OpenTodoApp/OpenTodo/issues/1351) |
+| [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
-Then push to the apps ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)), which needs a decision on how an iPhone is reached from a self-hosted server.
+Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.
 
 ### Native app
 

@@ -3,7 +3,7 @@
 // bar with the frame the real ones use, and only where the shell will show them.
 import { describe, expect, it } from 'vitest'
 import { render } from '../ui/test-utils'
-import { PHONE_BAR_FRAME, PHONE_BAR_LINE, PhoneFrameSkeleton, TAB_BAR_FRAME, TAB_FRAME, hasPhoneChrome } from './phoneFrame'
+import { PHONE_BAR_FRAME, PHONE_BAR_LINE, PhoneFrameSkeleton, TAB_BAR_FRAME, TAB_FRAME, TAB_HEIGHT, hasPhoneChrome } from './phoneFrame'
 import { TabBar } from './TabBar'
 import type { Route } from './router'
 
@@ -19,7 +19,7 @@ describe('the cold-start skeleton on a phone', () => {
     expect(bar.className).toBe(`${PHONE_BAR_FRAME} ${PHONE_BAR_LINE}`)
     expect(tabs.className).toBe(TAB_BAR_FRAME)
     // Four tabs, each a button in the tab's box, so the touch rules size them as the real ones.
-    expect([...tabs.children].map((tab) => `${tab.tagName} ${tab.className}`)).toEqual(Array(4).fill(`BUTTON ${TAB_FRAME} min-h-14`))
+    expect([...tabs.children].map((tab) => `${tab.tagName} ${tab.className}`)).toEqual(Array(4).fill(`BUTTON ${TAB_FRAME} ${TAB_HEIGHT}`))
     expect([...tabs.querySelectorAll('button')].every((tab) => tab.disabled)).toBe(true)
     expect(container.querySelector('[data-rows]')).not.toBeNull()
     // Nothing in the chrome is announced or named: the rows carry the one status.
@@ -32,7 +32,8 @@ describe('the cold-start skeleton on a phone', () => {
     expect(nav.className).toBe(TAB_BAR_FRAME)
     expect(nav.children).toHaveLength(4)
     for (const tab of nav.children) expect(tab.className.startsWith(`${TAB_FRAME} `)).toBe(true)
-    expect(nav.children[0].className).toContain('min-h-14')
+    expect(nav.children[0].className).toContain(TAB_HEIGHT)
+    expect(TAB_HEIGHT).toBe('min-h-14!')
   })
 
   it('leaves the hairline off a day page, as its bar does', async () => {

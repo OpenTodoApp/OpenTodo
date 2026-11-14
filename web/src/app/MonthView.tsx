@@ -271,7 +271,7 @@ export function MonthView({ date }: { date?: string }) {
   const weekdays = shownMonths[0].weeks[0].map((d) => formatDateParts(d, { weekday: narrow ? 'narrow' : 'short' }))
 
   const row = (task: Task) => (
-    <MonthRow key={task.id} task={task} v={viewedMap.get(task.id)} compact={false} today={today} selected={selectedId === task.id} hue={chrome.color.hueOf(task)}
+    <MonthRow key={task.id} task={task} v={viewedMap.get(task.id)} compact={false} list={narrow} today={today} selected={selectedId === task.id} hue={chrome.color.hueOf(task)}
       canMove={editable(task)} readOnly={!canEdit(task)} extend={!narrow} onDrop={dropOn} onOpen={setPanelTaskId}
       onSelect={(id, d) => { setSelectedId(id); if (d) setFocused(d) }} />
   )

@@ -11,8 +11,14 @@ export const PHONE_BAR_FRAME = 'flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[m
 export const PHONE_BAR_LINE = 'border-b border-soft'
 /** The tab bar: fixed to the bottom, above the safe area, phones only. */
 export const TAB_BAR_FRAME = 'fixed inset-x-0 bottom-0 z-40 flex border-t border-soft bg-canvas px-safe pb-safe md:hidden'
-/** One tab's box; its height is `min-h-14`, or `min-h-10` minimised. */
+/** One tab's box; its height is `TAB_HEIGHT`, or `min-h-10` minimised. */
 export const TAB_FRAME = 'flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1'
+/**
+ * A tab's height, 56 px (`TAB_BAR_HEIGHT_REM`). Important, because the touch rule that
+ * makes every button at least 44 px is outside the layers and would otherwise replace
+ * it: the tabs were 44 px on a touch screen (touch-pressed-states).
+ */
+export const TAB_HEIGHT = 'min-h-14!'
 
 /** Whether a route's screen has the tab bar; the task page and the routine editor have their own bars. */
 export function hasPhoneChrome(route: Route): boolean {
@@ -43,7 +49,7 @@ export function PhoneFrameSkeleton({ route, signedIn, children }: { route: Route
       {chrome && (
         <div aria-hidden className={TAB_BAR_FRAME}>
           {/* Buttons, as the tabs are: the touch rules that size a real tab size these too. */}
-          {[0, 1, 2, 3].map((i) => <button key={i} disabled className={`${TAB_FRAME} min-h-14`}>{BLOCK}</button>)}
+          {[0, 1, 2, 3].map((i) => <button key={i} disabled className={`${TAB_FRAME} ${TAB_HEIGHT}`}>{BLOCK}</button>)}
         </div>
       )}
     </div>

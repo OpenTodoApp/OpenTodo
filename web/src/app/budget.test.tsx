@@ -318,6 +318,32 @@ describe('on a phone (390 px)', () => {
     await today.unmount()
   })
 
+  it('a project\'s bar has no Filter button: the menu lists the filter, and the active one is a chip in the bar (phone-bar-overflow)', async () => {
+    const { project } = await seed()
+    await createTask({ title: 'Quick call', project_id: project, estimate_minutes: 10 })
+    navigate({ view: 'project', id: project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    const bar = () => document.querySelector('[data-phone-bar]')!
+    const menu = () => bar().querySelector<HTMLButtonElement>('button[aria-label="Project menu"]')
+    await waitFor(() => !!menu() && document.querySelectorAll('[data-task-id]').length === 9)
+    expect(bar().querySelector('button[aria-label="Filter"]')).toBeNull()
+    expect(bar().querySelector('[data-duration-active]')).toBeNull()
+    menu()!.click()
+    const choice = () => document.querySelector<HTMLButtonElement>('[role="menuitemcheckbox"][data-menu-label="Quick wins"]')
+    await waitFor(() => !!choice())
+    expect(choice()!.closest('[role="group"]')!.textContent).toContain('Filter by duration')
+    expect(choice()!.getAttribute('aria-checked')).toBe('false')
+    choice()!.click()
+    await waitFor(() => document.querySelectorAll('[data-task-id]').length === 1)
+    expect(bar().querySelector('[data-duration-active]')!.textContent).toBe('Quick wins')
+    menu()!.click()
+    await waitFor(() => choice()?.getAttribute('aria-checked') === 'true')
+    bar().querySelector<HTMLButtonElement>('[data-clear-duration]')!.click()
+    await waitFor(() => document.querySelectorAll('[data-task-id]').length === 9)
+    expect(bar().querySelector('[data-duration-active]')).toBeNull()
+    await r.unmount()
+  })
+
   it('the Inbox lists only its own tasks: no group or subtitle for planned tasks without a project (inbox-only-inbox)', async () => {
     await seed()
     navigate({ view: 'inbox' })

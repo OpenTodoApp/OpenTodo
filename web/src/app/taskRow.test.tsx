@@ -612,6 +612,12 @@ describe('the touch grip', () => {
     expect(button.className).toMatch(/select-none/)
     expect(button.className).toMatch(/touch-target/)
     expect(button.getAttribute('aria-label')).toBe('Select Task')
+    // Pressed on touch (touch-pressed-states): the grip and the checkbox show the selected
+    // surface, kept inside their 44 px targets so it does not cover the title beside them.
+    for (const control of [button, r.container.querySelector('button[aria-label="Complete Task"]')!]) {
+      expect(control.className).toContain('press-selected')
+      expect(control.className).toContain('press-inset')
+    }
     expect(button.getAttribute('aria-pressed')).toBe('false')
     // The press stops at the grip: the row's own swipe/drag/hold handler never sees it.
     await act(async () => { button.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'touch', clientX: 5, clientY: 5 })) })
