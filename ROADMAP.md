@@ -163,8 +163,8 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
 | [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
-| [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
-| [`notes-in-routines`](openspec/changes/notes-in-routines/) | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
+| [`notes-space`](openspec/changes/archive/2026-11-13-notes-space/) | **Shipped.** A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
+| [`notes-in-routines`](openspec/changes/archive/2026-11-13-notes-in-routines/) | **Shipped.** Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
 | [`note-attachments`](openspec/changes/archive/2026-11-13-note-attachments/) | **Shipped.** Images and files in standalone notes | |
 | [`note-checklist-tasks`](openspec/changes/archive/2026-11-13-note-checklist-tasks/) | **Shipped.** Turn checklist lines of a note into tasks, each line becoming a link to its task | |
 | [`unlinked-mentions`](openspec/changes/archive/2026-11-13-unlinked-mentions/) | **Shipped.** Unlinked mentions below Linked references, linked in one step | |
@@ -173,9 +173,9 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |
 | [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
-| [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
-| [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
-| [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
+| [`note-templates`](openspec/changes/archive/2026-11-13-note-templates/) | **Shipped.** Start a note from a template, with built-in ones and a routine step | |
+| [`daily-notes`](openspec/changes/archive/2026-11-14-daily-notes/) | **Shipped.** One note per day, opened from Today, that routines can add to | |
+| [`note-public-links`](openspec/changes/archive/2026-11-14-note-public-links/) | **Shipped.** A read-only public link for one note | |
 | [`note-webhooks`](openspec/changes/archive/2026-11-13-note-webhooks/) | **Shipped.** Opt-in note events for webhooks | |
 | [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |
 
@@ -200,6 +200,7 @@ The assistant's answers show the app's own interface (`assistant-generative-ui`,
 | [`assistant-lean-tools`](openspec/changes/assistant-lean-tools/) | Write tools only once the model asks for them, so questions send far fewer tokens | |
 | [`assistant-eval-gaps`](openspec/changes/assistant-eval-gaps/) | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | |
 | [`mcp-blocks`](openspec/changes/archive/2026-11-10-mcp-blocks/) | **Shipped.** Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | |
+| [`assistant-tool-sources`](openspec/changes/archive/2026-11-14-assistant-tool-sources/) | **Shipped.** Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | [#1317](https://github.com/OpenTodoApp/OpenTodo/issues/1317) |
 
 They land in waves:
 1. the evaluation suite, the usage accounting and the device reads;

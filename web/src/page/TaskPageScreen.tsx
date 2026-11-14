@@ -18,6 +18,8 @@ import { Notice } from '../ui/patterns/Notice'
 import { readString, writeString } from '../lib/deviceStorage'
 
 const MapView = lazy(() => import('../app/locations/MapView'))
+// A note page opened through a task page's address (note-public-links D1: the secret decides).
+const NotePageScreen = lazy(() => import('./NotePageScreen'))
 
 /** How often the page refreshes while visible. */
 export const REFRESH_MS = 30_000
@@ -28,6 +30,7 @@ type State =
   | { kind: 'loading' }
   | { kind: 'gone' }
   | { kind: 'locked' }
+  | { kind: 'note' }
   | { kind: 'ready'; content: TaskPageContent; rights: TaskPageRights; encrypted: boolean; updatedAt: number | null; serverTime: number }
 
 /** The browser-local key of this page's guest name: a hash, never the secret itself. */
@@ -58,8 +61,9 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
   const load = useCallback(async () => {
     try {
       const res = await pageApi.get(secret)
+      if (res.kind === 'note') return setState({ kind: 'note' })
       if (res.mode === 'live') {
-        const { mode: _mode, rights, serverTime, label: _label, ...content } = res
+        const { kind: _kind, mode: _mode, rights, serverTime, label: _label, ...content } = res
         setState({ kind: 'ready', content, rights, encrypted: false, updatedAt: serverTime, serverTime })
       } else {
         if (keyRef.current === undefined) keyRef.current = await shareKeyFromFragment(fragment)
@@ -91,6 +95,7 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
     }
   }, [load])
 
+  if (state.kind === 'note') return <Suspense fallback={null}><NotePageScreen secret={secret} fragment={fragment} /></Suspense>
   // data-story-pending: the workbench waits for the first answer before capturing.
   if (state.kind === 'loading') return <Shell><p className="text-body text-muted" data-story-pending>{t('Loading…')}</p></Shell>
   if (state.kind === 'gone') return <Shell><Ended title={t('This page is no longer available')} body={t('The link was revoked or has expired. Ask the person who sent it for a new one.')} /></Shell>
@@ -254,11 +259,11 @@ export function TaskPageScreen({ secret, fragment }: { secret: string; fragment:
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+export function Shell({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto min-h-dvh w-full max-w-2xl bg-canvas px-4 pb-8 pt-[max(2rem,var(--safe-top))] sm:px-6">{children}</main>
 }
 
-function Ended({ title, body }: { title: string; body: string }) {
+export function Ended({ title, body }: { title: string; body: string }) {
   return (
     <div className="space-y-2" role="status">
       <h1 className="text-h1 font-semibold text-default">{title}</h1>

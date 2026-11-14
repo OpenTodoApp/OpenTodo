@@ -766,6 +766,16 @@
       "content": "a"
     },
     {
+      "name": "the daily note outputs a note to add to (daily-notes)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "daily_note", "in": {"date": {"literal": "today"}}},
+        {"id": "b", "kind": "append_to_note", "in": {"of": {"ref": "a"}, "text": {"literal": "Done"}}}
+      ],
+      "types": {"a": "note", "b": "none"},
+      "content": "a"
+    },
+    {
       "name": "a note from a template: Tasks are not a title",
       "trigger": "date",
       "steps": [

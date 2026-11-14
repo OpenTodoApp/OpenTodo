@@ -1,8 +1,24 @@
-// The menu's edge swipe on phones (OpenSpec change edge-swipe-menu, GitHub issue
-// 1232): a touch that starts at the left edge and moves right opens the menu, as in
-// an iOS app, instead of going back through the browser's history. The row swipes
-// leave that strip alone (rowSwipe.ts SWIPE.edge); the gesture's numbers are theirs.
+// The edge swipe on phones (OpenSpec changes edge-swipe-menu and edge-swipe-back,
+// GitHub issues 1232 and 1323): a touch that starts at the left edge and moves right
+// goes back on a page with a Back (a task, a note, a nested page) and opens the menu
+// on a top-level page, as in an iOS app. The installed web app on iOS keeps the
+// system's own back swipe, so the watcher is off there. The row swipes leave that
+// strip alone (rowSwipe.ts SWIPE.edge); the gesture's numbers are theirs.
 import { lockOf, releaseOf, SWIPE } from './rowSwipe'
+
+/** What a right edge swipe does: Back when the page has one, else the menu. */
+export function edgeSwipeAction(back: (() => void) | undefined, openMenu: () => void): () => void {
+  return back ?? openMenu
+}
+
+/**
+ * Whether the page itself should watch the edge: not in the installed web app on an
+ * iPhone or iPad (Safari's standalone mode), which has the system's back swipe and no
+ * way to turn it off, so a watcher would make one swipe do two things.
+ */
+export function watchesEdge(env: { shell: boolean; standalone: boolean; ios: boolean }): boolean {
+  return env.shell || !(env.standalone && env.ios)
+}
 
 /**
  * Listens for edge swipes on the window while `enabled()` says the closed phone

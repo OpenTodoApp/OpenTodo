@@ -244,6 +244,8 @@ func (st *runState) noteStep(s *ruleval.Step, in map[string]ruleval.Value, at in
 		return st.createNote(s, in, at)
 	case "note_from_template":
 		return st.noteFromTemplate(s, in, at)
+	case "daily_note":
+		return st.dailyNote(s, in)
 	case "change_notes":
 		return st.changeNotes(s, in, at)
 	case "note_to_task":
@@ -579,3 +581,85 @@ func (st *runState) noteFromTemplate(s *ruleval.Step, in map[string]ruleval.Valu
 	}
 	return st.writeNote(title, body, pid, labels, at)
 }
+
+// ErrCodeDailyNotesOff: Get the daily note while the run-as person's Daily
+// notes setting is off (daily-notes D6).
+const ErrCodeDailyNotesOff = "daily_notes_off"
+
+// dailyNote is the step's date's daily note of the run-as person (daily-notes
+// D1, D2, D6): the note with the name-based id of the person and the day,
+// brought back from the Trash, or created from the Daily notes settings (the
+// project, the template's text as the plain-text projection, its labels).
+// The creation is planned with the run, so a later failure writes nothing.
+func (st *runState) dailyNote(s *ruleval.Step, in map[string]ruleval.Value) (ruleval.Value, string, error) {
+	prefs := st.prefs()
+	if !boolOf(prefs, "daily_notes") {
+		return none(), "", failf(ErrCodeDailyNotesOff, "Daily notes are turned off")
+	}
+	day := st.w.today
+	if v, ok := in["date"]; ok {
+		day = v.Date
+	} else if a, ok := s.In["date"]; ok {
+		if d, ok := ruleval.DateLiteral(a.Lit); ok {
+			day = d.Resolve(st.w.today)
+		}
+	}
+	id := opsync.DailyNoteID(st.w.uid, day)
+	if n, ok := st.allNotes()[id]; ok {
+		if !opsync.IsNull(n["deleted_at"]) {
+			st.lay(agenttools.Change{Entity: "note", EntityID: id, Patch: map[string]json.RawMessage{"deleted_at": raw(nil)}})
+		}
+		return ruleval.Value{Type: ruleval.TNote, ID: id}, "", nil
+	}
+	pid := str(prefs, "daily_notes_project")
+	if pid != "" {
+		if st.w.elsewhere[pid] {
+			return none(), "", failf(ErrCodeOtherWorkspace, "The project for daily notes is in another workspace")
+		}
+		if p, ok := st.projects[pid]; !ok || !opsync.IsNull(p["deleted_at"]) {
+			pid = ""
+		}
+	}
+	lang := st.lang()
+	var tplTitle, body string
+	labels := []string{}
+	// "" the built-in Daily, "none" no template, else a template note; an unknown
+	// or trashed id reads as the built-in Daily.
+	if ref := str(prefs, "daily_notes_template"); ref != "none" {
+		if n, ok := st.liveNote(ref); ref != "" && ok && boolOf(n, "template") {
+			tplTitle, body, labels = str(n, "title"), str(n, "description"), listOf(n["labels"])
+		} else if b, found := templatelib.FindNote("daily"); found {
+			tplTitle, body = b.Title.Pick(lang), b.Body.Pick(lang)
+		}
+	}
+	clock := st.e.now().Add(time.Duration(st.w.offset) * time.Minute).UTC().Format("15:04")
+	c := templatelib.FillContext{Date: day, Time: clock, Order: templatelib.Order(str(prefs, "date_format"), lang),
+		Hour12: templatelib.Hour12(str(prefs, "time_format"), lang), Lang: lang}
+	_, body = templatelib.Fill(tplTitle, body, c)
+	// The title is the day itself, as every device writes it (web/src/lib/dailyNotes.ts dailyTitle).
+	title, _ := templatelib.Fill(DailyTitle, "", c)
+	if labels == nil {
+		labels = []string{}
+	}
+	args := map[string]any{"title": title, "description": body, "id": id, "label_ids": labels}
+	if pid != "" {
+		args["project_id"] = pid
+	}
+	p, err := st.tool("create_note", args)
+	if err != nil {
+		return none(), "", err
+	}
+	if len(createdIDs(p, "note")) == 0 {
+		return none(), "", failf(ErrCodeInvalid, "create_note planned no note")
+	}
+	patch := map[string]json.RawMessage{"day": raw(day)}
+	if pid == "" && st.w.workspace != "" && !st.w.workspaceDefault {
+		patch["workspace_id"] = raw(st.w.workspace)
+	}
+	st.lay(agenttools.Change{Entity: "note", EntityID: id, Patch: patch})
+	return ruleval.Value{Type: ruleval.TNote, ID: id}, "", nil
+}
+
+// DailyTitle is a daily note's title: its weekday and date, filled from the
+// placeholders so every device and the server write the same text.
+const DailyTitle = "{{weekday}} {{date}}"

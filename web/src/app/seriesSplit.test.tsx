@@ -127,6 +127,8 @@ describe('End a series from an occurrence', () => {
     await waitFor(() => on('2026-12-15') === null && on('2026-12-22') === null, 'no projection from the 15th')
     expect(on('2026-12-08')).toBeTruthy()
     expect(await db.tasks.count()).toBe(1)
+    // The toast is shown once the write has resolved, which can be after the rule is stored.
+    await waitFor(() => bulkToast()?.undoId != null, 'the undo toast')
     await undoBatch(bulkToast()!.undoId!)
     expect((await db.tasks.get(id))?.recurrence).toBe('every tuesday')
     await r.unmount()

@@ -85,6 +85,7 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | note | `notes_doc` | document, like the task field |
 | note | `project_id`, `workspace_id` | string or null: the project decides the note's sharing scope like a task's; `workspace_id` only for a note without a project |
 | note | `labels` | array of strings (label ids) |
+| note | `day` | string: `""` or `"YYYY-MM-DD"`, the day of a [daily note](daily-notes.md); refused (`invalid_day`) unless the note's id is the name-based id of the author and that day (`NameID("daily-note", user + ":" + day)`), and never changed once set (daily-notes) |
 | note | `position`, `created_at` | number |
 | note | `deleted_at` | number or null |
 | label | `name`, `color` | string |
@@ -147,6 +148,7 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | project_prefs | `group_by`, `sort_by`, `sort_dir` | string (this user's display options of the project's list: `section`, `none`, `due`, `priority` or `label`; an order as for views; `""` = by section, manual order) |
 | user_prefs | `date_format` | string: `"system"`, `"day-month"`, `"month-day"` or `"iso"` (personal scope only) |
 | user_prefs | `time_format` | string: `"system"`, `"12h"` or `"24h"` |
+| user_prefs | `daily_notes`, `daily_notes_project`, `daily_notes_template` | boolean, default false; string, a project id or `""`; string, `""` (the built-in Daily), `"none"` or a note template's id (daily-notes) |
 | user_prefs | `week_start` | string: `"system"`, `"mon"`, `"sun"` or `"sat"` |
 | user_prefs | `day_start` | string: `"HH:MM"` from `"00:00"` to `"06:00"`, when a new day begins for this person (empty, malformed or out of range reads as `"00:00"`, midnight, and is kept as stored) |
 | user_prefs | `language` | string: `"system"` or a shipped interface language (`"en"`, `"de"`, `"fr"`, `"es"`, `"it"`, `"pt"`) |

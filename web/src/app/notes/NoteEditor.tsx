@@ -5,7 +5,7 @@
 // as a page on a phone. A viewer of a shared project gets it read-only, without
 // conversions. The title saves on the note editor's cadence (notes-save-cadence):
 // a timed save pushed later, leaving the field pushes at once.
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../../lib/localData'
 import { createLabel } from '../../lib/labels'
 import { useNoteRow } from '../../lib/noteRows'
@@ -18,7 +18,7 @@ import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
 import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { Button, Combobox, LabelChip, PageBody, PageHeader } from '../../ui'
+import { Button, Combobox, Icon, LabelChip, PageBody, PageHeader, Tooltip } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { LinkedRefs, Markdown } from '../Markdown'
@@ -33,8 +33,11 @@ import { NoteMenu } from './NoteRow'
 import { openConnections, useConnected } from '../signals'
 import { useRules } from '../../lib/rules/store'
 import { useOnline } from '../../lib/online'
+import { knownNotePage, subscribeTaskPages, taskPagesVersion } from '../../lib/taskPages'
 
 const NotesEditor = lazy(() => import('../NotesEditor'))
+// Publishing a note page (note-public-links): loaded when the dialog opens.
+const NotePageDialog = lazy(() => import('./NotePageDialog'))
 // A standalone note's files (note-attachments D5): the task detail's list, below the text.
 const AttachmentsRow = lazy(() => import('../task-detail/AttachmentsRow').then((m) => ({ default: m.AttachmentsRow })))
 
@@ -48,6 +51,20 @@ function takeBodyFocus(id: string): boolean {
   if (bodyFocus !== id) return false
   bodyFocus = null
   return true
+}
+
+/** What a daily note's draft was typed before the note existed (daily-notes D3): applied once its editor opens. */
+let pendingInput: { id: string; text: string } | null = null
+resettable('notePendingInput', () => { pendingInput = null })
+export function typeOnOpen(id: string, text: string): void {
+  pendingInput = { id, text }
+  bodyFocus = id
+}
+function takePendingInput(id: string): string | undefined {
+  if (pendingInput?.id !== id) return undefined
+  const { text } = pendingInput
+  pendingInput = null
+  return text
 }
 
 /** Debounce of the title's timed save, as the note editor's (NotesEditor SAVE_MS). */
@@ -122,6 +139,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
   const [focusBody] = useState(() => takeBodyFocus(note.id))
+  const [initialInput] = useState(() => takePendingInput(note.id))
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
@@ -129,7 +147,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} outline="auto" />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" />
       </Suspense>
       {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
       <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>
@@ -151,7 +169,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
 const toList = () => navigate({ view: 'notes' })
 
 /** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
-function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
+export function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
   const me = useMe()
   const connected = useConnected('note', note.id)
@@ -163,10 +181,24 @@ function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
     if (rule) void import('../palette/routineCommand').then((m) => m.runRoutineNow(rule, undefined, note.id))
   }
   const routines = rules.map((r) => ({ id: r.id, name: r.name }))
+  // A note page (note-public-links D3): the author of a personal note, the owner or an
+  // admin of a shared project; pages are server data, so offline there is no marker.
+  const role = roleOf(note.project_id, useMembershipMap())
+  const canPublish = role === 'owner' || role === 'admin'
+  useSyncExternalStore(subscribeTaskPages, taskPagesVersion)
+  const page = canPublish && online ? knownNotePage(note.id) : null
+  const [pageDialog, setPageDialog] = useState(false)
   // An open template shows the word Template and Use template first (note-templates).
   const applyTemplate = () => void import('./TemplatePicker').then((m) => m.makeFromTemplate({ kind: 'note', note })).then((id) => { if (id) { focusBodyOnOpen(id); navigate({ view: 'notes', id }) } })
   return (
     <>
+    {page && (
+      <Tooltip label={t('This note has a page anyone with its link can read')}>
+        <button type="button" className="ui-btn ui-btn--ghost ui-btn--sm shrink-0 gap-1 text-meta" onClick={() => setPageDialog(true)} data-page-marker>
+          <Icon name="globe" size="xs" />{t('Published')}
+        </button>
+      </Tooltip>
+    )}
     {note.template && (
       <>
         <span className="text-meta text-faint" data-note-template>{t('Template')}</span>
@@ -176,7 +208,9 @@ function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
     <NoteMenu onAttach={me ? (kind) => requestAttach(noteParent(note.id), kind) : undefined} template={!!note.template} onTemplate={editable ? () => act(mutate('note', note.id, { template: !note.template })) : undefined} pinned={pinned} onPin={() => act(setFavourite('note', note.id, !pinned))} routines={routines} onRunRoutine={run} offline={!online}
       onConnections={connected ? () => openConnections('note', note.id) : undefined}
       onTurnIntoTask={editable ? () => void turnNoteIntoTask(note.id).then((id) => { if (id) toList() }) : undefined}
+      onPublish={canPublish ? () => setPageDialog(true) : undefined} published={!!page}
       onDelete={editable ? () => { toList(); void deleteNote(note.id) } : undefined} />
+    {pageDialog && <Suspense fallback={null}><NotePageDialog note={note} status={page} onClose={() => setPageDialog(false)} /></Suspense>}
     </>
   )
 }

@@ -24,6 +24,8 @@ const ActivityBlock = lazy(() => import('./ActivityBlock'))
 const StatsBlock = lazy(() => import('./StatsBlock'))
 const TaskBlock = lazy(() => import('./TaskBlock'))
 const HabitBlock = lazy(() => import('./HabitBlock'))
+// What a read tool returned (assistant-tool-sources D3), its own chunk.
+const SourcesLine = lazy(() => import('./SourcesLine'))
 
 /** A block that fails to render (or whose chunk is gone after an upgrade) says so; the answer stays. */
 class BlockBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -84,14 +86,16 @@ export function BlockFrame({ block, choice }: { block: AssistantBlock; choice?: 
   )
 }
 
-/** The text of an answer with its blocks where they arrived. */
-export function AnswerContent({ text, blocks, choice }: { text: string; blocks?: AssistantMessage['blocks']; choice?: ChoiceState }) {
-  if (!blocks?.length) return text ? <Markdown source={text} /> : null
+/** The text of an answer with its blocks and sources where they arrived. */
+export function AnswerContent({ text, blocks, sources, choice }: { text: string; blocks?: AssistantMessage['blocks']; sources?: AssistantMessage['sources']; choice?: ChoiceState }) {
+  if (!blocks?.length && !sources?.length) return text ? <Markdown source={text} /> : null
   return (
     <>
-      {splitAnswer(text, blocks).map((part, i) => (part.kind === 'text'
+      {splitAnswer(text, blocks, sources).map((part, i) => (part.kind === 'text'
         ? <Markdown key={i} source={part.text} />
-        : <BlockFrame key={i} block={part.block} choice={choice} />))}
+        : part.kind === 'block'
+          ? <BlockFrame key={i} block={part.block} choice={choice} />
+          : <BlockBoundary key={i}><Suspense fallback={null}><SourcesLine source={part.source} /></Suspense></BlockBoundary>))}
     </>
   )
 }

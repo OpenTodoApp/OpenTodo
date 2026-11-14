@@ -42,6 +42,9 @@ import { useShortcutScope } from '../shortcuts'
 import { relativeLabel } from '../task-detail/RelativeTime'
 import { NoteSearchField } from './NoteSearchField'
 import { focusBodyOnOpen, NotePage, NotePanel } from './NoteEditor'
+// A daily note (daily-notes): its own chunk, loaded when one is opened.
+const DailyNotePanel = lazy(() => import('./DailyNote').then((m) => ({ default: m.DailyNotePanel })))
+const DailyNotePage = lazy(() => import('./DailyNote').then((m) => ({ default: m.DailyNotePage })))
 import { createNoteWithUndo, deleteNote, turnNoteIntoTask } from './noteActions'
 import { NoteMenu, NoteRow } from './NoteRow'
 import { TemplatePicker } from './TemplatePicker'
@@ -81,14 +84,16 @@ export function readNoteFilters(): NoteFilters {
 const PANEL_KEY = 'note:'
 
 /** Opens the standalone note `id` in the shell's panel slot; null closes a note the page put there. */
-function useDockedNote(id: string | null) {
+function useDockedNote(id: string | null, day: string | null = null) {
   useEffect(() => {
-    if (!id) {
+    if (!id && !day) {
       if (panelOccupant()?.kind === 'custom' && (panelOccupant() as { key: string }).key.startsWith(PANEL_KEY)) closePanel()
       return
     }
-    openPanel(`${PANEL_KEY}${id}`, () => <NotePanel key={id} id={id} />)
-  }, [id])
+    // A daily note (daily-notes D5) by its day: it may not exist yet.
+    if (day) openPanel(`${PANEL_KEY}day:${day}`, () => <Suspense fallback={null}><DailyNotePanel key={day} day={day} /></Suspense>)
+    else if (id) openPanel(`${PANEL_KEY}${id}`, () => <NotePanel key={id} id={id} />)
+  }, [id, day])
   useEffect(() => () => {
     const o = panelOccupant()
     if (o?.kind === 'custom' && o.key.startsWith(PANEL_KEY)) closePanel()
@@ -257,7 +262,7 @@ export function NotesHeader({ count, desktop, onNew, onFromTemplate, templateAnc
   )
 }
 
-export function NotesPage({ id }: { id?: string }) {
+export function NotesPage({ id, day }: { id?: string; day?: string }) {
   const route = useRoute()
   const mode: NotesMode = route.view === 'notes' && route.graph ? 'graph' : 'list'
   const graphMode = mode === 'graph'
@@ -285,8 +290,8 @@ export function NotesPage({ id }: { id?: string }) {
   // A note opened from here paints its Linked references without waiting on their chunk (linkedRefsChunk.ts).
   useEffect(() => { void loadLinkedReferences() }, [])
   // On a computer the note is docked beside the list; on a phone it is the page.
-  const phonePage = !!id && !docks
-  useDockedNote(id && docks ? id : null)
+  const phonePage = (!!id || !!day) && !docks
+  useDockedNote(id && docks ? id : null, day && docks ? day : null)
 
   const entries = useStableEntries(useMemo(() => noteEntries(tasks, projects, notes), [tasks, projects, notes]))
   const world = useMemo<TokenWorld>(() => ({ projects, labels, notes }), [projects, labels, notes])
@@ -385,7 +390,7 @@ export function NotesPage({ id }: { id?: string }) {
     'notes.view-mode': () => switchMode(graphMode ? 'list' : 'graph'),
   }, { view: 'notes', enabled: !phonePage })
 
-  if (phonePage) return <NotePage id={id} />
+  if (phonePage) return day ? <Suspense fallback={null}><DailyNotePage day={day} /></Suspense> : <NotePage id={id as string} />
 
   const projectById = new Map(projects.map((p) => [p.id, p]))
   const labelById = new Map(labels.map((l) => [l.id, l]))

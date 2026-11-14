@@ -35,6 +35,8 @@ gosec.sarif
 /web/.vite/
 /web/playwright-report/
 /web/test-results/
+# The assembled visual baselines (scripts/ui-check/baselines.mjs fetch).
+/web/.ui-baselines/
 /layout-report/
 /safe-area-report/
 /ux-audit-report/

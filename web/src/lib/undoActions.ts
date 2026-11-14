@@ -107,6 +107,8 @@ export async function addLabelUndoable(ids: readonly string[], labelId: string, 
  */
 export async function dropUndoable(target: string, ids: readonly string[]): Promise<UndoableResult | null> {
   if (target === 'inbox') return moveManyUndoable(ids, null, t('Inbox'))
+  // The sidebar's Today (drop-on-today): planned for today as a drop on today's day group is.
+  if (target === 'today') return todayDropUndoable(ids)
   if (target.startsWith('project:')) {
     const project = await db.projects.get(target.slice('project:'.length))
     return project && !project.deleted_at ? moveManyUndoable(ids, project.id, project.name) : null
@@ -135,6 +137,14 @@ export async function dayDropUndoable(ids: readonly string[], date: string, toda
   const changes = planDayDrop(tasks, date, today)
   if (!changes.length) return { entry: null, label: '' }
   return apply(changes, changes.length === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length }))
+}
+
+/** Plan tasks for today, dropped on the sidebar's Today (drop-on-today): the rule of a day drop, one batch with Undo. */
+export async function todayDropUndoable(ids: readonly string[], today = logicalToday()): Promise<UndoableResult> {
+  const { tasks } = await readTicked(ids)
+  const changes = planDayDrop(tasks, today, today)
+  if (!changes.length) return { entry: null, label: '' }
+  return apply(changes, changes.length === 1 ? t('Scheduled for today') : t('{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}', { n: changes.length }))
 }
 
 /** Set a project's or a section's flow (project-flow-modes): one op, with Undo. */

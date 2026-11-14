@@ -13,7 +13,7 @@ import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { toggleCollapsedProject } from '../lib/projects'
 import { saveViewMode } from '../lib/sections'
 import type { Task, User } from '../lib/types'
-import { addLabelUndoable, moveManyUndoable } from '../lib/undoActions'
+import { addLabelUndoable, moveManyUndoable, todayDropUndoable } from '../lib/undoActions'
 import { undoBatch } from '../lib/undo'
 import { render, waitFor } from '../ui/test-utils'
 import { hideBulkToast } from './bulk/toastStore'
@@ -202,6 +202,62 @@ describe('drag a project in the sidebar (issue 544)', () => {
     await waitFor(async () => (await db.projects.get(acme))?.parent_id === null, 'Acme at the top level')
     // A task dragged over a project still rings it.
     await waitFor(() => projectRow(clients).className.includes('data-drop-active:ring-2'), 'the task-drop ring back')
+    await r.unmount()
+  })
+})
+
+// drop-on-today (GitHub issue 1328): the sidebar's Today plans a dropped task for today.
+describe('drop a task on Today', () => {
+  it('Drop on Today: Today rings, the task is planned for today and the toast offers Undo', async () => {
+    const work = await createProject({ name: 'Work' })
+    const id = await createTask({ title: 'Report', project_id: work })
+    const r = await shell({ view: 'project', id: work })
+    await waitFor(() => !!row(id) && !!target('today'))
+    const { active, line } = await drag(row(id), target('today'))
+    expect([active, line]).toEqual([true, false])
+    await waitFor(() => toast().includes('Scheduled for today'))
+    expect(toast()).toContain('Undo')
+    expect((await task(id)).due).toEqual({ date: '2026-10-21' })
+    expect((await task(id)).project_id).toBe(work)
+    await r.unmount()
+  })
+
+  it('keeps a time the task already has, and Escape changes nothing', async () => {
+    const work = await createProject({ name: 'Work' })
+    const timed = await createTask({ title: 'Call', project_id: work, due: { date: '2026-10-25', time: '09:30' } })
+    const still = await createTask({ title: 'Stay', project_id: work })
+    const r = await shell({ view: 'project', id: work })
+    await waitFor(() => !!row(timed) && !!row(still) && !!target('today'))
+    await drag(row(still), target('today'), { escape: true })
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag ended')
+    expect((await task(still)).due ?? null).toBeNull()
+    await drag(row(timed), target('today'))
+    await waitFor(async () => (await task(timed)).due?.date === '2026-10-21')
+    expect((await task(timed)).due).toEqual({ date: '2026-10-21', time: '09:30' })
+    await r.unmount()
+  })
+
+  it('Several selected tasks: one batch, one Undo puts them back; a task already today writes nothing', async () => {
+    const ids = await Promise.all(['One', 'Two'].map((title) => createTask({ title })))
+    const already = await createTask({ title: 'Done today', due: { date: '2026-10-21' } })
+    const r = await todayDropUndoable([...ids, already], '2026-10-21')
+    expect(r.label).toBe('2 tasks scheduled for today')
+    for (const id of ids) expect((await task(id)).due).toEqual({ date: '2026-10-21' })
+    const u = await undoBatch(r.entry!.id)
+    expect(u.restored).toBe(2)
+    for (const id of ids) expect((await task(id)).due ?? null).toBeNull()
+    expect((await todayDropUndoable([already], '2026-10-21')).entry).toBeNull()
+  })
+
+  it('Viewer of a shared project: dropping its task on Today changes nothing', async () => {
+    const shared = await createProject({ name: 'Family' })
+    const id = await createTask({ title: 'Theirs', project_id: shared })
+    await db.memberships.put({ projectId: shared, role: 'viewer', ownerId: 'someone', members: [] })
+    const r = await shell({ view: 'project', id: shared })
+    await waitFor(() => !!row(id) && !!target('today'))
+    await drag(row(id), target('today'))
+    await waitFor(() => !document.querySelector('[data-drag-ghost]'), 'the drag ended')
+    expect((await task(id)).due ?? null).toBeNull()
     await r.unmount()
   })
 })

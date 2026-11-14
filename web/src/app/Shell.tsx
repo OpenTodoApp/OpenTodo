@@ -1,7 +1,6 @@
-import { watchEdgeSwipe } from './edgeSwipe'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useHabitForm } from './habits/habitFormStore'
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -38,7 +37,8 @@ import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
 import { TaskPage } from './TaskPage'
-import { watchViewerZone } from '../lib/dates'
+import { logicalToday, watchViewerZone } from '../lib/dates'
+import { useUserPrefsRow } from '../lib/localData'
 import { ActionToasts } from './ActionToasts'
 import { showActionToast } from './bulk/toastStore'
 import { DailyCheckToast } from './method/DailyCheckToast'
@@ -170,7 +170,16 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
   const drawerClosed = useRef(drawer.closed)
   drawerClosed.current = drawer.closed
-  useEffect(() => watchEdgeSwipe(() => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]')), [])
+  // A page with Back goes back, a top-level page opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe.
+  // Loaded after the first paint: the gesture is not part of the first load.
+  useEffect(() => {
+    let stop: (() => void) | undefined
+    let gone = false
+    void import('./edgeWatch').then(({ watchEdge }) => {
+      if (!gone) stop = watchEdge(() => pageBar()?.back?.onClick, () => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]'))
+    })
+    return () => { gone = true; stop?.() }
+  }, [])
   // Changes the server refused after a role change (project-sharing): a toast, which never moves the page (app-shell "Notices are toasts").
   const { rejected } = useSyncStatus()
   useEffect(() => {
@@ -241,8 +250,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // cheat sheet, the sidebar toggle and the assistant.
   useShortcutDispatcher()
   const go = (r: Parameters<typeof navigate>[0]) => () => navigate(r)
-  // Off means off (habits-home D2): `g Shift+H` does nothing unless Habits is on.
-  const habitsOn = useHabitsEnabled()
+  // Off means off (habits-home D2, daily-notes D5): `g Shift+H` and `g j` do nothing unless Habits or Daily notes is on.
+  const habitsOn = useHabitsEnabled(), dailyOn = useUserPrefsRow()?.daily_notes === true
   const habitForm = useHabitForm()
   useShortcutScope('global', {
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
@@ -252,7 +261,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
     'go.focus': go({ view: 'focus' }), 'go.notes': go({ view: 'notes' }), 'go.close': go({ view: 'review', step: 'close' }),
-    'go.habits': () => (habitsOn ? navigate({ view: 'habits' }) : false),
+    'go.habits': () => (habitsOn ? navigate({ view: 'habits' }) : false), 'go.dailyNote': () => (dailyOn ? navigate({ view: 'notes', day: logicalToday() }) : false),
     // `g /` (sidebar-groups): the sidebar's find field; the rail expands and the drawer opens first.
     'go.find': () => sidebarFind.request('open'),
     'global.help': () => setShowHelp((v) => !v),
@@ -350,7 +359,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={<p className="px-4 py-6 text-body text-muted" role="status">{t('Loading statistics…')}</p>}><StatsView /></Suspense>
           ) : route.view === 'focus' ? (
             <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
-          ) : route.view === 'notes' ? <Suspense fallback={null}><NotesPage id={route.id} /></Suspense> : route.view === 'triage' ? (
+          ) : route.view === 'notes' ? <Suspense fallback={null}><NotesPage id={route.id} day={route.day} /></Suspense> : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
           ) : route.view === 'feed' ? (
             <FeedView />

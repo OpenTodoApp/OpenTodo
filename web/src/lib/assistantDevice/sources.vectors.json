@@ -1,0 +1,140 @@
+{
+ "$comment": "assistant-tool-sources D1: the source of a read tool's result, read by internal/assistant SourceOf and web/src/lib/assistantSources.ts sourceOfResult.",
+ "vectors": [
+  {
+   "name": "list_tasks",
+   "tool": "list_tasks",
+   "result": "{\"tasks\": [{\"id\": \"a1\", \"untrusted_text\": {\"title\": \"Pay rent\"}}, {\"id\": \"b2\"}], \"next_cursor\": null}",
+   "source": {
+    "of": "tasks",
+    "ids": [
+     "a1",
+     "b2"
+    ],
+    "total": 2
+   }
+  },
+  {
+   "name": "search_tasks empty",
+   "tool": "search_tasks",
+   "result": "{\"tasks\": []}",
+   "source": {
+    "of": "tasks",
+    "ids": [],
+    "total": 0
+   }
+  },
+  {
+   "name": "get_task",
+   "tool": "get_task",
+   "result": "{\"task\": {\"id\": \"c3\"}, \"subtasks\": [{\"id\": \"d4\"}]}",
+   "source": {
+    "of": "tasks",
+    "ids": [
+     "c3"
+    ],
+    "total": 1
+   }
+  },
+  {
+   "name": "get_task without task",
+   "tool": "get_task",
+   "result": "{\"error\": \"not_found\"}",
+   "source": null
+  },
+  {
+   "name": "today_summary overdue then today, no repeats",
+   "tool": "today_summary",
+   "result": "{\"overdue\": [{\"id\": \"o1\"}, {\"id\": \"o2\"}], \"due_today\": [{\"id\": \"o2\"}, {\"id\": \"d1\"}], \"counts\": {\"per_project\": [{\"id\": \"p1\"}]}}",
+   "source": {
+    "of": "tasks",
+    "ids": [
+     "o1",
+     "o2",
+     "d1"
+    ],
+    "total": 3
+   }
+  },
+  {
+   "name": "list_projects",
+   "tool": "list_projects",
+   "result": "{\"projects\": [{\"id\": \"p1\"}, {\"id\": \"bad id!\"}, {\"id\": \"p2\"}], \"inbox_open_count\": 3}",
+   "source": {
+    "of": "projects",
+    "ids": [
+     "p1",
+     "p2"
+    ],
+    "total": 2
+   }
+  },
+  {
+   "name": "capped at 50",
+   "tool": "list_tasks",
+   "result": "{\"tasks\": [{\"id\": \"t0\"}, {\"id\": \"t1\"}, {\"id\": \"t2\"}, {\"id\": \"t3\"}, {\"id\": \"t4\"}, {\"id\": \"t5\"}, {\"id\": \"t6\"}, {\"id\": \"t7\"}, {\"id\": \"t8\"}, {\"id\": \"t9\"}, {\"id\": \"t10\"}, {\"id\": \"t11\"}, {\"id\": \"t12\"}, {\"id\": \"t13\"}, {\"id\": \"t14\"}, {\"id\": \"t15\"}, {\"id\": \"t16\"}, {\"id\": \"t17\"}, {\"id\": \"t18\"}, {\"id\": \"t19\"}, {\"id\": \"t20\"}, {\"id\": \"t21\"}, {\"id\": \"t22\"}, {\"id\": \"t23\"}, {\"id\": \"t24\"}, {\"id\": \"t25\"}, {\"id\": \"t26\"}, {\"id\": \"t27\"}, {\"id\": \"t28\"}, {\"id\": \"t29\"}, {\"id\": \"t30\"}, {\"id\": \"t31\"}, {\"id\": \"t32\"}, {\"id\": \"t33\"}, {\"id\": \"t34\"}, {\"id\": \"t35\"}, {\"id\": \"t36\"}, {\"id\": \"t37\"}, {\"id\": \"t38\"}, {\"id\": \"t39\"}, {\"id\": \"t40\"}, {\"id\": \"t41\"}, {\"id\": \"t42\"}, {\"id\": \"t43\"}, {\"id\": \"t44\"}, {\"id\": \"t45\"}, {\"id\": \"t46\"}, {\"id\": \"t47\"}, {\"id\": \"t48\"}, {\"id\": \"t49\"}, {\"id\": \"t50\"}, {\"id\": \"t51\"}, {\"id\": \"t52\"}, {\"id\": \"t53\"}, {\"id\": \"t54\"}]}",
+   "source": {
+    "of": "tasks",
+    "ids": [
+     "t0",
+     "t1",
+     "t2",
+     "t3",
+     "t4",
+     "t5",
+     "t6",
+     "t7",
+     "t8",
+     "t9",
+     "t10",
+     "t11",
+     "t12",
+     "t13",
+     "t14",
+     "t15",
+     "t16",
+     "t17",
+     "t18",
+     "t19",
+     "t20",
+     "t21",
+     "t22",
+     "t23",
+     "t24",
+     "t25",
+     "t26",
+     "t27",
+     "t28",
+     "t29",
+     "t30",
+     "t31",
+     "t32",
+     "t33",
+     "t34",
+     "t35",
+     "t36",
+     "t37",
+     "t38",
+     "t39",
+     "t40",
+     "t41",
+     "t42",
+     "t43",
+     "t44",
+     "t45",
+     "t46",
+     "t47",
+     "t48",
+     "t49"
+    ],
+    "total": 55
+   }
+  },
+  {
+   "name": "other tool",
+   "tool": "list_notes",
+   "result": "{\"notes\": [{\"id\": \"n1\"}]}",
+   "source": null
+  }
+ ]
+}

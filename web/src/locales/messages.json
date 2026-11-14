@@ -526,6 +526,9 @@
   "A proxy or the server changed the app's files.": [
     "web/src/lib/appCodeCopy.ts"
   ],
+  "A read-only page anyone with the link can open": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
   "A reminder added when a task gets a date or a time": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -667,6 +670,9 @@
   ],
   "A task’s date passes": [
     "web/src/app/rules/RuleFields.tsx"
+  ],
+  "A template in the Trash": [
+    "web/src/app/DailyNotesSettings.tsx"
   ],
   "A text as a list of its lines": [
     "web/src/lib/rules/sentence.ts"
@@ -1212,6 +1218,7 @@
   ],
   "Add notes…": [
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskNotes.tsx"
   ],
@@ -1848,6 +1855,12 @@
   "Anyone with the link can open this page. Your replies are visible to everyone who has it.": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "Anyone with the link can read the note, without an account. It is read-only.": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
+  "Anyone with the link can read this note. It is read-only.": [
+    "web/src/page/NotePageScreen.tsx"
+  ],
   "Anyone with the link sees this project's open tasks without an account: no notes, labels or names. Use it for a shopping list in a group chat.": [
     "web/src/app/PublicLinksSection.tsx"
   ],
@@ -2313,6 +2326,7 @@
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/settingsCopy.ts",
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Attachments are turned off on this server, so the files are not attached.": [
@@ -3041,6 +3055,9 @@
   "Changed since, left as is: {titles}": [
     "web/src/app/reopenDay.ts"
   ],
+  "Changed {when}": [
+    "web/src/page/NotePageScreen.tsx"
+  ],
   "Changes": [
     "web/src/app/HistoryPanel.tsx",
     "web/src/lib/rules/sentence.ts"
@@ -3472,6 +3489,7 @@
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/help/HelpPanel.tsx",
     "web/src/app/method/LoopHome.tsx",
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/palette/CommandPalette.tsx",
     "web/src/app/routines/AddStep.tsx",
     "web/src/app/routines/DescribeIt.tsx",
@@ -4038,6 +4056,7 @@
     "web/src/app/AssistantsPanel.tsx"
   ],
   "Copy a new link": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Copy address": [
@@ -4061,12 +4080,16 @@
   "Copy it now: it will not be shown again. Anyone with the link can open the page.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
+  "Copy it now: it will not be shown again. Anyone with the link can read the note.": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
   "Copy link": [
     "web/src/app/InviteLinksSection.tsx",
     "web/src/app/MembersPanel.tsx",
     "web/src/app/OriginChip.tsx",
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/UsersPanel.tsx",
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -4129,6 +4152,9 @@
   ],
   "Could not refresh. Replying and ticking are off until the connection is back.": [
     "web/src/page/TaskPageScreen.tsx"
+  ],
+  "Could not refresh. Showing the note as it was last loaded.": [
+    "web/src/page/NotePageScreen.tsx"
   ],
   "Could not refresh: you seem to be offline. Showing the last list; it updates when the connection returns.": [
     "web/src/app/PublicListScreen.tsx"
@@ -4464,6 +4490,9 @@
   "Daily": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Daily (built in)": [
+    "web/src/app/DailyNotesSettings.tsx"
+  ],
   "Daily AI budget (tokens)": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -4483,6 +4512,14 @@
   "Daily focus": [
     "web/src/app/review/DailyCheck.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Daily notes": [
+    "web/src/app/DailyNotesSettings.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Daily notes are turned off": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Dairy and eggs": [
     "web/src/lib/aisles/index.ts"
@@ -6363,6 +6400,7 @@
   ],
   "Expires": [
     "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Expires after": [
@@ -6376,6 +6414,7 @@
     "web/src/app/MembersPanel.tsx"
   ],
   "Expires {time}": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Expires {when} · created by {name}": [
@@ -7130,6 +7169,12 @@
   ],
   "Get reminders while the app is closed. Each device decides for itself.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Get the daily note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the daily note of {date}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Get the date": [
     "web/src/lib/rules/sentence.ts"
@@ -7933,6 +7978,9 @@
     "web/src/app/MarkdownView.tsx",
     "web/src/app/editorCommands.ts"
   ],
+  "Images and files are not shown on encrypted pages": [
+    "web/src/page/NotePageScreen.tsx"
+  ],
   "Import": [
     "web/src/app/quickadd/PasteOffer.tsx",
     "web/src/app/settingsIndex.ts",
@@ -7999,12 +8047,15 @@
     "web/src/lib/dates.ts"
   ],
   "In 30 days": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "In 7 days": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "In 90 days": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "In Day and Week: add a task due on the focused day (the selected task's day, else today)": [
@@ -8122,6 +8173,12 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Year: the same day of the previous or next month": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In a daily note: the next day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In a daily note: the previous day": [
     "web/src/lib/shortcuts.ts"
   ],
   "In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual": [
@@ -8786,6 +8843,7 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Label (optional)": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Label is {name}": [
@@ -9182,6 +9240,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Link copied": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -9189,6 +9248,7 @@
     "web/src/app/EditorChrome.tsx"
   ],
   "Link to share": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Link to…": [
@@ -9398,6 +9458,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "Loading…": [
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/Combobox/Combobox.tsx",
     "web/src/ui/IconPicker.tsx"
@@ -10410,6 +10471,7 @@
   "Never": [
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/PublicLinksSection.tsx",
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Never reviewed": [
@@ -10611,7 +10673,8 @@
     "web/src/app/AppearanceSection.tsx"
   ],
   "Next day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/notes/DailyNote.tsx"
   ],
   "Next day or week": [
     "web/src/lib/shortcuts.ts"
@@ -11032,6 +11095,7 @@
     "web/src/lib/priority.ts"
   ],
   "No project": [
+    "web/src/app/DailyNotesSettings.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -11056,6 +11120,9 @@
   ],
   "No project “{name}” · stays in the title": [
     "web/src/app/ParseChips.tsx"
+  ],
+  "No projects found": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
   ],
   "No projects yet": [
     "web/src/app/ProjectsView.tsx"
@@ -11165,11 +11232,17 @@
     "web/src/app/InboxEmptyPane.tsx",
     "web/src/app/sidePanel.tsx"
   ],
+  "No tasks found": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
+  ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
   ],
   "No tasks yet.": [
     "web/src/app/calendar/WeekAgenda.tsx"
+  ],
+  "No template": [
+    "web/src/app/DailyNotesSettings.tsx"
   ],
   "No template matches. Try another word, or upload a template file.": [
     "web/src/app/templates/TemplateLibrary.tsx"
@@ -11470,7 +11543,8 @@
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-detail/TimeTab.tsx",
     "web/src/lib/assistantBlocks.ts",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/page/NotePageScreen.tsx"
   ],
   "Note actions": [
     "web/src/app/notes/NoteRow.tsx"
@@ -11485,6 +11559,18 @@
   "Note deleted": [
     "web/src/lib/webhooks.ts"
   ],
+  "Note page": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
+  "Note page published": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
+  "Note pages need a connection": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
+  "Note page…": [
+    "web/src/app/notes/NoteRow.tsx"
+  ],
   "Note updated": [
     "web/src/lib/webhooks.ts"
   ],
@@ -11495,12 +11581,14 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/SpaceSwitch.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/NotesLine.tsx",
     "web/src/app/quickadd/SheetBar.tsx",
+    "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/rules/sentence.ts",
@@ -12179,6 +12267,12 @@
   "One next step|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "One note per day, its project and its template": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "One note per day, opened with g j, from Today or the Notes sidebar.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "One occurrence of {title}": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -12511,6 +12605,12 @@
   ],
   "Open the tracked task": [
     "web/src/app/TrackingIndicator.tsx"
+  ],
+  "Open today's note": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Open today's note (while Daily notes is on)": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Open until {date}": [
     "web/src/app/MemberInvitations.tsx"
@@ -12899,6 +12999,7 @@
     "web/src/app/habits/HabitForm.tsx"
   ],
   "Part of the link is missing or changed. Open the complete link you were sent, including everything after the # sign.": [
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "Partial": [
@@ -13377,7 +13478,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Previous day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/notes/DailyNote.tsx"
   ],
   "Previous day or week": [
     "web/src/lib/shortcuts.ts"
@@ -13551,6 +13653,7 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts"
   ],
@@ -13562,6 +13665,9 @@
   ],
   "Project deleted": [
     "web/src/lib/webhooks.ts"
+  ],
+  "Project for daily notes": [
+    "web/src/app/DailyNotesSettings.tsx"
   ],
   "Project from a template": [
     "web/src/lib/rules/sentence.ts"
@@ -13789,7 +13895,14 @@
     "web/src/app/auditFormat.ts"
   ],
   "Publish": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Publish note page": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
+  "Publish note page…": [
+    "web/src/app/notes/NoteRow.tsx"
   ],
   "Publish task page": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -13798,12 +13911,15 @@
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
   "Published": [
+    "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskHead.tsx"
   ],
   "Published {time}": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Publishing failed. Try again.": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Purge history": [
@@ -14305,6 +14421,7 @@
     "web/src/app/assistant/blocks/MapBlock.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/lib/assistantBlockData.ts",
@@ -14778,6 +14895,7 @@
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/TokensSection.tsx",
     "web/src/app/WorkspaceInvites.tsx",
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "Revoke app password": [
@@ -15230,6 +15348,9 @@
   ],
   "Scheduled copies of the whole server to a folder, S3 or WebDAV, restored here.": [
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Scheduled for today": [
+    "web/src/lib/undoActions.ts"
   ],
   "Scheduled for {date}.": [
     "web/src/lib/triage.ts"
@@ -16074,7 +16195,11 @@
     "web/src/app/calendar/projections.tsx"
   ],
   "Shown after the link’s secret, to say what the page is about. Lowercase letters, digits and hyphens.": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
+  ],
+  "Shown after the link’s secret. The server can read it, so keep the note’s content out of it.": [
+    "web/src/app/notes/NotePageDialog.tsx"
   ],
   "Shown after the link’s secret. The server can read it, so keep the task’s content out of it.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
@@ -16755,7 +16880,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "Start view, briefing, keyboard, focus timer, priorities and maps": [
+  "Start view, briefing, keyboard, focus timer, priorities, notes and maps": [
     "web/src/app/settingsSections.ts"
   ],
   "Start with Today": [
@@ -17390,7 +17515,8 @@
   "Template": [
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Template file": [
     "web/src/app/TemplateDialogs.tsx"
@@ -17522,6 +17648,9 @@
   ],
   "That date is not a coming occurrence of this repeating task.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "That day’s daily note, created from your Daily notes settings when needed": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "That did not go through. Check the connection and try again.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -17952,6 +18081,7 @@
     "web/src/app/MembersPanel.tsx"
   ],
   "The link was revoked or has expired. Ask the person who sent it for a new one.": [
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "The link was sent to {sentTo}.": [
@@ -19051,8 +19181,14 @@
   "This note changed since it was read. Read it again and retry.": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This note has a page anyone with its link can read": [
+    "web/src/app/notes/NoteEditor.tsx"
+  ],
   "This note has too many additions waiting. Open it in the app, then try again.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "This note is end-to-end encrypted: the part of the link after # opens it, and the server never receives it. Images and files are not shown on encrypted pages.": [
+    "web/src/app/notes/NotePageDialog.tsx"
   ],
   "This note is too large to save ({size} KB of {limit} KB). Remove some text.": [
     "web/src/lib/docfields.ts"
@@ -19077,6 +19213,7 @@
     "web/src/app/palette/registry.ts"
   ],
   "This page cannot be opened without the full link": [
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "This page could not reach the provider. If the server owner allowed it a moment ago, reload the page. A model server must also allow requests from this app’s address.": [
@@ -19086,6 +19223,7 @@
     "web/src/lib/demo.ts"
   ],
   "This page is no longer available": [
+    "web/src/page/NotePageScreen.tsx",
     "web/src/page/TaskPageScreen.tsx"
   ],
   "This page is no longer available.": [
@@ -19675,6 +19813,11 @@
   "Today limit": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Today's note": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
   "Today, tomorrow or a day a few days away": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -19982,6 +20125,9 @@
   "Turn on": [
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Turn on Daily notes to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Turn on Energy levels to use this": [
     "web/src/lib/rules/catalogue.ts"
@@ -20303,6 +20449,9 @@
   "Unlock encryption on this device to open this file.": [
     "web/src/lib/attachmentOpen.ts"
   ],
+  "Unlock encryption on this device to publish this note.": [
+    "web/src/app/notes/NotePageDialog.tsx"
+  ],
   "Unlock encryption on this device to publish this task.": [
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
@@ -20384,6 +20533,7 @@
     "web/src/app/YearView.tsx",
     "web/src/app/assistant/blocks/DeadlinesBlock.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
@@ -20451,6 +20601,7 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Untitled note": [
+    "web/src/app/DailyNotesSettings.tsx",
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/UnlinkedMentions.tsx",
@@ -20471,7 +20622,8 @@
     "web/src/lib/noteLinks.ts",
     "web/src/lib/noteOps.ts",
     "web/src/lib/refTarget.ts",
-    "web/src/lib/trash.ts"
+    "web/src/lib/trash.ts",
+    "web/src/page/NotePageScreen.tsx"
   ],
   "Untitled project": [
     "web/src/lib/trash.ts"
@@ -21143,6 +21295,9 @@
   ],
   "Where does my time go?": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Where new daily notes go. Earlier ones stay where they are.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
@@ -22035,6 +22190,7 @@
     "web/src/app/calendar/projections.tsx"
   ],
   "and {n} more": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/themes/ImportReport.tsx"
   ],
@@ -22306,6 +22462,9 @@
   ],
   "cyan": [
     "web/src/lib/colourNames.ts"
+  ],
+  "daily note, journal, diary, today": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "date": [
     "web/src/app/routines/words.tsx"
@@ -22809,6 +22968,7 @@
     "web/src/app/filter/conditionText.ts"
   ],
   "last opened {time}": [
+    "web/src/app/notes/NotePageDialog.tsx",
     "web/src/app/task-detail/TaskPageDialog.tsx"
   ],
   "last ran {when}": [
@@ -23607,6 +23767,9 @@
     "web/src/lib/activity.ts"
   ],
   "the count": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the daily note": [
     "web/src/lib/rules/sentence.ts"
   ],
   "the date": [
@@ -24945,6 +25108,9 @@
   "{n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
   ],
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "{n, plural, one {# task will be updated.} other {# tasks will be updated.}}": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -25089,6 +25255,12 @@
   ],
   "{n, plural, one {Label removed from # task} other {Label removed from # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {Looked at # project} other {Looked at # projects}}": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
+  ],
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
   ],
   "{n, plural, one {Map, # place} other {Map, # places}}": [
     "web/src/app/assistant/blocks/MapBlock.tsx",

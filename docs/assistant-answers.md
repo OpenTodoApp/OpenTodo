@@ -11,7 +11,7 @@ order: 78
 
 <picture><source srcset="images/assistant-answers-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/assistant-answers-light.webp" alt="The assistant panel answering Plan my day: the day's tasks as rows with checkboxes under the heading On your plate today, then the day as a short agenda with its planned total, and a sentence suggesting where to start."></picture>
 
-Tasks the assistant names are links to the task, with its current title, struck through once it is done. A finished answer keeps what it read under **2 steps** (select it to see them). The conversation follows the answer as it grows; **Jump to latest** returns after you scroll up.
+Tasks the assistant names are links to the task, with its current title, struck through once it is done. Where it read your tasks or projects, a line such as **Looked at 3 tasks** opens to exactly what it got back, so a task that is not listed there did not come from your account. A finished answer keeps its steps under **2 steps**. The conversation follows the answer as it grows; **Jump to latest** returns after you scroll up.
 
 ## What answers can show
 

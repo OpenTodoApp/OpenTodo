@@ -13,6 +13,7 @@ import type { Row } from './types'
 import { fillTemplate, placeholderHour12, placeholderOrder } from '../../noteTemplateFill'
 import { dateLiteral } from '../steps'
 import { resolveDate } from '../stepData'
+import { DAILY_TITLE, dailyNoteId } from '../../dailyNoteId'
 
 const MAX_LIST_ITEMS = 500
 
@@ -46,6 +47,7 @@ export function noteStep(st: RunState, s: RoutineStep, inputs: Inputs, at: numbe
     }
     case 'create_note': return createNote(st, s, inputs, at)
     case 'note_from_template': return noteFromTemplate(st, s, inputs, at)
+    case 'daily_note': return dailyNote(st, s, inputs)
     case 'change_notes': return changeNotes(st, s, inputs, at)
     case 'note_to_task': return noteToTask(st, inputs)
   }
@@ -213,3 +215,58 @@ export function sortNotes(st: RunState, list: StepValue, by: string, desc: boole
 export function filterNotes(st: RunState, list: StepValue, where: Record<string, unknown>): StepValue {
   return notesVal((list.ids ?? []).filter((id) => { const n = st.liveNote(id); return !!n && matchNoteCond(st, where as RuleCondition, n) }))
 }
+
+/**
+ * The step's date's daily note of the run-as person (daily-notes D6), as
+ * internal/rules dailyNote: brought back from the Trash, or created from the
+ * Daily notes settings with the name-based id, the template's text and labels.
+ */
+function dailyNote(st: RunState, s: RoutineStep, inputs: Inputs): ExecResult {
+  if (st.prefs.daily_notes !== true) throw fail('daily_notes_off', 'Daily notes are turned off')
+  let day = st.w.today
+  const dv = inputs.get('date')
+  if (dv?.date) day = dv.date
+  else {
+    const d = dateLiteral(st.lit(s, 'date'))
+    if (d) day = resolveDate(d, st.w.today)
+  }
+  const id = dailyNoteId(st.w.userId, day)
+  const existing = st.notes.get(id)
+  if (existing) {
+    if (isDeleted(existing)) st.lay({ entity: 'note', entityId: id, patch: { deleted_at: null } })
+    return [{ type: 'note', id }, '']
+  }
+  let pid = str(st.prefs, 'daily_notes_project')
+  if (pid) {
+    if (st.w.elsewhere?.has(pid)) throw fail('other_workspace', 'The project for daily notes is in another workspace')
+    if (!st.liveProject(pid)) pid = ''
+  }
+  const lang = typeof st.prefs.language === 'string' && st.prefs.language !== 'system' && st.prefs.language ? st.prefs.language : 'en'
+  let tplTitle = ''
+  let body = ''
+  let labels: string[] = []
+  const ref = str(st.prefs, 'daily_notes_template')
+  if (ref !== 'none') {
+    const n = ref ? st.liveNote(ref) : undefined
+    if (n && n.template === true) {
+      tplTitle = str(n, 'title'); body = str(n, 'description'); labels = listOf(n, 'labels') ?? []
+    } else {
+      const b = st.w.noteTemplates?.find((x) => x.slug === 'daily')
+      if (b) { tplTitle = b.title[lang] ?? b.title.en; body = b.body[lang] ?? b.body.en }
+    }
+  }
+  const clock = new Date(st.w.now + st.w.offset * 60_000).toISOString().slice(11, 16)
+  const ctx = { date: day, time: clock, order: placeholderOrder(str(st.prefs, 'date_format'), lang), hour12: placeholderHour12(str(st.prefs, 'time_format'), lang), lang }
+  const text = fillTemplate(tplTitle, body, ctx).text
+  const title = fillTemplate(DAILY_TITLE, '', ctx).title
+  const args: Record<string, unknown> = { title, description: text, id, label_ids: labels }
+  if (pid) args.project_id = pid
+  const changes = st.tool('create_note', args)
+  if (!changes.some((c) => c.entity === 'note' && c.create)) throw fail('invalid_argument', 'create_note planned no note')
+  const patch: Record<string, unknown> = { day }
+  const ws = workspaceArg(st)
+  if (!pid && ws.workspace_id) patch.workspace_id = ws.workspace_id
+  st.lay({ entity: 'note', entityId: id, patch })
+  return [{ type: 'note', id }, '']
+}
+

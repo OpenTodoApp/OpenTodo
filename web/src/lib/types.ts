@@ -2540,7 +2540,55 @@ export interface OwnTaskPage extends Omit<TaskPageStatus, 'encrypted'> {
   encrypted: boolean
   snapshotVersion: number
   wrappedKey?: string
+  /** A task or a note page (note-public-links D1); absent from older servers: task. */
+  kind?: 'task' | 'note'
+  /** The published note of a note page (its taskId is empty). */
+  noteId?: string
 }
+
+/** The answer to publishing a note page (OpenSpec `note-public-links`): the link is returned once. */
+export interface NotePageCreated {
+  id: string
+  noteId: string
+  label: string | null
+  encrypted: boolean
+  publishedAt: number
+  expiresAt: number | null
+  link: string
+}
+
+/** A note's active page as its publisher, owner and admins see it: never the secret or a key. */
+export interface NotePageStatus {
+  id: string
+  noteId: string
+  label: string | null
+  createdBy: string
+  publishedAt: number
+  expiresAt: number | null
+  lastOpenedAt: number | null
+  encrypted: boolean
+  snapshotAt: number | null
+}
+
+/** What a note page shows (live from the server, or decrypted from a snapshot). */
+export interface NotePageContent {
+  title: string
+  /** The note's Markdown with links to notes, tasks and projects reduced to their text. */
+  text: string
+  /** When the text last changed (Unix ms). */
+  changedAt: number
+  links: { id: string; name: string; url: string }[]
+  /** Files of a live page; `image` ones are shown in place. */
+  files: { id: string; name: string; size: number | null; image: boolean }[]
+  /** An encrypted page: the note had images or files the page leaves out. */
+  omitted?: boolean
+}
+
+/** A note page as the guest's browser receives it. */
+export type NotePageResponse = { kind: 'note'; rights: 'view'; serverTime: number; label: string | null } & (
+  | ({ mode: 'live' } & NotePageContent)
+  | { mode: 'encrypted'; snapshot: string; snapshotAt: number | null }
+)
 
 /** What a task page shows (live from the server, or decrypted from a snapshot). */
 export interface TaskPageContent {
@@ -2559,7 +2607,7 @@ export interface TaskPageContent {
 }
 
 /** A task page as the guest's browser receives it. */
-export type TaskPageResponse = { rights: TaskPageRights; serverTime: number; label: string | null } & (
+export type TaskPageResponse = { kind?: 'task'; rights: TaskPageRights; serverTime: number; label: string | null } & (
   | ({ mode: 'live' } & TaskPageContent)
   | { mode: 'encrypted'; snapshot: string; snapshotAt: number | null }
 )

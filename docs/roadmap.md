@@ -150,8 +150,8 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-markdown-source` | Edit a note's Markdown source as plain text | Shipped |
 | `note-outline` | An outline of a long note's headings | Shipped |
 | `note-templates` | Start a note from a template, with built-in ones and a routine step | Shipped |
-| `daily-notes` | One note per day, opened from Today, that routines can add to | Planned |
-| `note-public-links` | A read-only public link for one note | Planned |
+| `daily-notes` | One note per day, opened from Today, that routines can add to | Shipped |
+| `note-public-links` | A read-only public link for one note | Shipped |
 | `note-webhooks` | Opt-in note events for webhooks | Shipped |
 | `vault-notes` | Standalone notes as Markdown files in `ot vault` | Planned |
 
@@ -172,6 +172,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Shipped |
 | `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | In progress (5 of 6) |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped in 1.4 |
+| `assistant-tool-sources` | Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | Shipped |
 
 ## UX polish (2026-11 feedback)
 

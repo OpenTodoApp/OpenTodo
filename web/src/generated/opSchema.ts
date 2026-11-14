@@ -354,6 +354,13 @@ export interface NoteFields {
    * template… and New note copies it; otherwise a note like any other.
    */
   template?: boolean
+  /**
+   * A daily note's day, YYYY-MM-DD (daily-notes D1); "" for any other
+   * note. Set once at creation, only on the note whose id is the
+   * name-based id of its author and that day (NameID("daily-note",
+   * user + ":" + day)), so the same day is one note on every device.
+   */
+  day?: string
 }
 
 /**
@@ -1154,6 +1161,16 @@ export interface UserPrefsFields {
   priority_name_2?: string
   priority_name_3?: string
   priority_name_4?: string
+  /**
+   * Daily notes (OpenSpec change daily-notes, design D1): one note per
+   * day, opened with g j; off by default. The project new daily notes go
+   * to ("" for none) and their template: "" the built-in Daily, "none" no
+   * template, otherwise a template note's id (an unknown id reads as the
+   * built-in Daily and is kept).
+   */
+  daily_notes?: boolean
+  daily_notes_project?: string
+  daily_notes_template?: string
 }
 
 /**
@@ -1268,7 +1285,7 @@ export const OP_DEFAULTS = {
     name: '', project_id: '', type: 'text', options: '', position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<FieldDef, 'id' | '_clock'>,
   note: {
-    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, template: false, appends: {},
+    title: '', notes_doc: '', description: '', project_id: null, labels: [], position: 0, created_at: 0, deleted_at: null, workspace_id: null, template: false, day: '', appends: {},
   } satisfies Omit<Note, 'id' | '_clock'>,
   label: {
     name: '', color: '#64748b', position: 0, created_at: 0, deleted_at: null, workspace_id: null, group_by: '', sort_by: '', sort_dir: '', row_layout: '', manual_order: [],
@@ -1307,7 +1324,7 @@ export const OP_DEFAULTS = {
     feed_seen_at: 0, reviewed_at: 0, group_by: '', sort_by: '', sort_dir: '', row_layout: '', review_every: '', card_notes: false,
   } satisfies Omit<ProjectPrefs, 'id' | '_clock'>,
   user_prefs: {
-    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', habits: '', full_titles: '', today_group_by: '', today_sort_by: '', today_sort_dir: '', today_row_layout: '', today_subtasks: '', upcoming_sort_by: '', upcoming_sort_dir: '', upcoming_row_layout: '', upcoming_subtasks: '', upcoming_later: '', inbox_group_by: '', inbox_sort_by: '', inbox_sort_dir: '', inbox_row_layout: '', priority_name_1: '', priority_name_2: '', priority_name_3: '', priority_name_4: '',
+    date_format: 'system', time_format: 'system', week_start: 'system', day_start: '', theme_mode: 'system', theme_accent: 'emerald', theme_accent_custom: '', theme_light: '', theme_dark: '', sidebar_destinations: '', density: '', row_detail: '', favourites: '', first_run: '', welcome: '', method_mode: '', time_sectors: '', start_checklist: '', language: 'system', focus_mode: '', focus_auto_start: '', focus_sound: '', focus_work_minutes: 0, focus_short_break_minutes: 0, focus_long_break_minutes: 0, focus_long_break_every: 0, focus_break_after_minutes: 0, maps: '', haptics: '', briefing: '', task_open: '', row_layout: '', today_events: '', today_assignees: '', upcoming_events: '', add_position: '', reminder_default_timed: '', reminder_default_dated: '', sidebar_counts: '', sidebar_order: '', focus_presets: '', focus_noise: '', focus_alert: '', day_parts: '', today_limit: 0, today_done: '', focus_style: '', energy: '', bento_order: '', formatting_toggle: '', routines_seen_at: 0, routines_hide_successes: '', upcoming_today: '', objectives: '', habits: '', full_titles: '', today_group_by: '', today_sort_by: '', today_sort_dir: '', today_row_layout: '', today_subtasks: '', upcoming_sort_by: '', upcoming_sort_dir: '', upcoming_row_layout: '', upcoming_subtasks: '', upcoming_later: '', inbox_group_by: '', inbox_sort_by: '', inbox_sort_dir: '', inbox_row_layout: '', priority_name_1: '', priority_name_2: '', priority_name_3: '', priority_name_4: '', daily_notes: false, daily_notes_project: '', daily_notes_template: '',
   } satisfies Omit<UserPrefs, 'id' | '_clock'>,
   objective: {
     title: '', period: '', position: 0, done_at: 0, created_at: 0, deleted_at: null,
