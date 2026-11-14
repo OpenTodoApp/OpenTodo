@@ -54,14 +54,16 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       }}
       aria-label={quiet ? name : `${name}. ${detail}`}
       data-sync-status={s.state}
-      className={`flex min-h-9 min-w-0 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
+      className={`flex min-h-9 min-w-0 items-center gap-2 rounded-control text-meta text-muted hover:bg-sunken dark:hover:bg-raised pointer-coarse:w-full ${compact ? 'justify-center px-0' : 'px-2 py-1'}`}
     >
       <span className={`h-2 w-2 shrink-0 rounded-full ${map.dot}`} />
-      {(!quiet && !compact || failed) && <span className="min-w-0 truncate">{map.text}</span>}
+      {/* On touch the dot is the state (touch-sidebar-names): a running sync shows no words, so the row does not
+          change with every sync, and the other states show theirs only where they fit whole. */}
+      {(!quiet && !compact || failed) && <span className={`ui-whole min-w-0 truncate${s.state === 'syncing' ? ' pointer-coarse:hidden' : ''}`}><span>{map.text}</span></span>}
     </button>
   )
   return (
-    <div className={failed ? 'flex min-w-0 flex-col' : 'min-w-0'}>
+    <div className={`min-w-0 pointer-coarse:min-w-11${failed ? ' flex flex-col' : ''}`}>
       <Tooltip label={quiet ? name : detail} side={compact ? 'right' : 'top'}>{button}</Tooltip>
       {/* Announced once when the sync starts failing (a fixed sentence, so a changed detail does not repeat it); the
           detail follows as plain text. In the expanded sidebar it wraps on two lines; the icon rail (about 2.5 rem)

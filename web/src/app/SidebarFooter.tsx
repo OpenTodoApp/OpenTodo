@@ -55,7 +55,8 @@ export function SidebarFooter({ route, user, collapsed, onSearch, onShortcuts, o
           triggerClassName={`flex min-h-9 items-center gap-2 rounded-control py-1 text-left text-body pointer-fine:min-h-8 ${TOUCH} ${collapsed ? 'w-full justify-center px-0' : named ? 'min-w-10 flex-1 px-1.5' : 'shrink-0 px-1.5'} ${current ? ACTIVE : IDLE}`}
           trigger={<>
             <PersonAvatar id={user.id} name={name} />
-            {named && <span className="min-w-0 flex-1 truncate">{name}</span>}
+            {/* On touch the name shows whole or not at all (touch-sidebar-names): the avatar alone names the control then. */}
+            {named && <span className="ui-whole min-w-0 flex-1 truncate"><span>{name}</span></span>}
           </>}>
           <MenuItem label={t('Settings')} icon="settings" shortcut={keysOf('go.settings')} onSelect={() => navigate({ view: 'settings' })} data-settings-button />
           <MenuItem label={t('Help')} icon="circle-help" shortcut={keysOf('go.help')} onSelect={() => navigate({ view: 'help' })} data-help-button />

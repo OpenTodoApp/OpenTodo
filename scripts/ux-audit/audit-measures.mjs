@@ -173,13 +173,29 @@ export function truncation() {
  * (phone-task-page-targets). Two pinned controls on each other stay an overlap. The one pair
  * of chrome and content that is compared is the add button and a page's primary action
  * (`.ui-btn--primary`): the screen is measured as it opens, and there the add button must
- * not stand on the action the page is about (phone-fab-clearance).
+ * not stand on the action the page is about (phone-fab-clearance). A control is compared by
+ * the part of its box a finger can meet: its box cut to every scroll container around it, so
+ * a row scrolled half out of its list does not overlap the bar that stands under the list.
+ * And content that scrolls under a stuck element of its own pinned layer (a drawer's rows
+ * under the drawer's stuck group heading) is content under chrome there too
+ * (touch-sidebar-names).
  */
 export function overlaps() {
   const out = []
   const LAYER = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], dialog'
   const els = [...document.querySelectorAll(window.__ux.targets)].filter((el) => window.__ux.shown(el))
-  const boxes = els.map((el) => el.getBoundingClientRect())
+  // The reachable box: what is left of the control's box inside each scroll container around it.
+  const boxes = els.map((el) => {
+    let { left, top, right, bottom } = el.getBoundingClientRect()
+    // A fixed element is not cut by the scrollers around it.
+    for (let n = el; n.parentElement && n.parentElement !== document.body && getComputedStyle(n).position !== 'fixed'; n = n.parentElement) {
+      const cs = getComputedStyle(n.parentElement)
+      if (!/(auto|scroll|hidden|clip)/.test(cs.overflowX + cs.overflowY)) continue
+      const c = n.parentElement.getBoundingClientRect()
+      left = Math.max(left, c.left); top = Math.max(top, c.top); right = Math.min(right, c.right); bottom = Math.min(bottom, c.bottom)
+    }
+    return { left, top, right, bottom }
+  })
   const layers = els.map((el) => el.closest(LAYER))
   // Stuck: the sticky element is not where it would be in the flow (measured with it static for a moment).
   const stuck = (n) => {
@@ -189,20 +205,24 @@ export function overlaps() {
     n.style.position = was
     return Math.abs(at.top - flow.top) > 1 || Math.abs(at.left - flow.left) > 1
   }
-  const fixed = els.map((el) => {
+  // The element that pins the control: the nearest fixed or stuck ancestor (or itself), null for content.
+  const pins = els.map((el) => {
     for (let n = el; n && n !== document.body; n = n.parentElement) {
       const position = getComputedStyle(n).position
-      if (position === 'fixed' || (position === 'sticky' && stuck(n))) return true
+      if (position === 'fixed' || (position === 'sticky' && stuck(n))) return n
     }
-    return false
+    return null
   })
+  const fixed = pins.map((n) => n !== null)
+  // i is in a stuck element, and j scrolls under it inside the same pinned layer (or the page).
+  const over = (i, j) => fixed[i] && getComputedStyle(pins[i]).position === 'sticky' && !pins[i].contains(els[j]) && (!pins[j] || pins[j].contains(pins[i]))
   const add = els.map((el) => el.matches('[data-add-button]'))
   const primary = els.map((el) => el.matches('.ui-btn--primary'))
   for (let i = 0; i < els.length; i++) {
     for (let j = i + 1; j < els.length; j++) {
       if (els[i].contains(els[j]) || els[j].contains(els[i])) continue
       const onAction = (add[i] && primary[j]) || (add[j] && primary[i])
-      if (layers[i] !== layers[j] || (fixed[i] !== fixed[j] && !onAction)) continue
+      if (layers[i] !== layers[j] || (fixed[i] !== fixed[j] && !onAction) || over(i, j) || over(j, i)) continue
       const a = boxes[i], b = boxes[j]
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
       const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)

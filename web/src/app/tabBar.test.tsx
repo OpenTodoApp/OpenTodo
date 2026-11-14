@@ -108,8 +108,13 @@ describe('the tab bar', () => {
     await act(async () => { navigate({ view: 'settings' }) })
     await waitFor(() => !document.querySelector('[data-add-button]'), 'the add button gone')
     expect(bar()).toBeTruthy()
+    // No button, no room kept for it at the end of the page (phone-fab-scroll-room).
+    const content = document.querySelector('#content')!
+    expect(content.hasAttribute('data-add-room')).toBe(false)
+    expect(content.className).not.toContain('pb-(--add-room)')
     await act(async () => { navigate({ view: 'inbox' }) })
     await waitFor(() => !!document.querySelector('[data-add-button]'), 'the add button back')
+    expect(content.getAttribute('data-add-room')).toBe('true')
     await r.unmount()
   })
 

@@ -17,6 +17,8 @@ export interface TruncatedTextProps {
   /** Extra attributes for the element (data-*, id). */
   [attr: `data-${string}`]: string | undefined
   id?: string
+  /** A breadcrumb's last part names the page. */
+  'aria-current'?: 'page'
   /** The element's own tab index while the text fits (a page title takes focus after navigation with -1). */
   tabIndex?: number
   /** The element, for a caller that focuses or measures it. */

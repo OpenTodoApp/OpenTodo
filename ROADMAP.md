@@ -266,6 +266,10 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`phone-task-page-targets`](openspec/changes/phone-task-page-targets/) | A task page's completion circle takes its whole 44 px, clear of Back | [#1370](https://github.com/OpenTodoApp/OpenTodo/issues/1370) |
 | [`phone-stats-period`](openspec/changes/phone-stats-period/) | The Statistics period as one menu button on a phone; a public list's name on two lines | [#1371](https://github.com/OpenTodoApp/OpenTodo/issues/1371) |
 | [`phone-timeline-rows`](openspec/changes/phone-timeline-rows/) | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | [#1372](https://github.com/OpenTodoApp/OpenTodo/issues/1372) |
+| [`tablet-header-room`](openspec/changes/tablet-header-room/) | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | [#1379](https://github.com/OpenTodoApp/OpenTodo/issues/1379) |
+| [`touch-sidebar-names`](openspec/changes/touch-sidebar-names/) | On touch a sidebar row's name has the room; its menu opens on a hold | [#1380](https://github.com/OpenTodoApp/OpenTodo/issues/1380) |
+| [`reminder-card-compact`](openspec/changes/reminder-card-compact/) | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | [#1381](https://github.com/OpenTodoApp/OpenTodo/issues/1381) |
+| [`phone-fab-scroll-room`](openspec/changes/phone-fab-scroll-room/) | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | [#1382](https://github.com/OpenTodoApp/OpenTodo/issues/1382) |
 | [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.

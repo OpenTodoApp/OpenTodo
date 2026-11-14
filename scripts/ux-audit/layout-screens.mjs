@@ -357,9 +357,11 @@ export const OVERLAYS = {
   },
   async 'sidebar-view-menu'(p) {
     await openSidebar(p)
+    // From the keyboard: on touch the row's menu button is not painted until it has keyboard focus (touch-sidebar-names).
     const trigger = p.locator('aside[data-sidebar]').getByRole('button', { name: /^Menu for view/ }).first()
-    await trigger.click()
-    return { overlay: overlayLoc(p), trigger, kind: 'popover', after: async () => p.keyboard.press('Escape') }
+    const reopen = () => trigger.press('Enter')
+    await reopen()
+    return { overlay: overlayLoc(p), trigger, reopen, kind: 'popover', after: async () => p.keyboard.press('Escape') }
   },
   async 'task-detail'(p) {
     // Enter on the row's open control: from 768 px with a fine pointer a click on the

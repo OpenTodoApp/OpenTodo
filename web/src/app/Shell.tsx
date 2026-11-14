@@ -251,6 +251,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
   const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
+  // The add button's room at the end of the page: only where the button is.
+  const addRoom = phoneChrome && offersQuickAdd(route)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
@@ -319,10 +321,10 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
         {/* relative: the containing block of absolutely positioned content (every
             .sr-only label), which would otherwise be the page and stretch the
             document below the frame (issue #95). */}
-        {/* Below 768 px the add button's footprint is reserved under every list, so it never covers the last row (phone-v2 D2);
-            the room under the selection bar is in index.css (no-layout-jump). */}
-        <div ref={content} id="content" data-add-room={phoneChrome || undefined}
-          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${phoneChrome ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
+        {/* Below 768 px the add button's footprint is reserved at the end of every page that shows it, so it never covers the last row
+            (phone-v2 D2, phone-fab-scroll-room; a page with its own scroller: `.page-fill` in index.css); the room under the selection bar is in index.css (no-layout-jump). */}
+        <div ref={content} id="content" data-add-room={addRoom || undefined}
+          className={`relative min-h-0 flex-1 overflow-y-auto scroll-pb-(--list-scroll-pad) ${addRoom ? 'max-md:pb-(--add-room)' : ''} ${sidebarOpen ? 'max-md:overflow-hidden' : ''}`}>
           {/* One screen failing (a render bug, a chunk gone after an upgrade) leaves the shell usable (client-sync-robustness). */}
           <PanelBoundary resetKey={route}>
           {route.view === 'help' ? (
@@ -391,7 +393,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       </main>
       <PanelBoundary><PanelHost user={user} /></PanelBoundary>
       {phoneChrome && <TabBar route={route} onSearch={openPalette} minimised={minimised} />}
-      {((phoneChrome && offersQuickAdd(route)) || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
+      {(addRoom || addOpen) && <AddButton ref={addButton} open={addOpen} away={minimised && !addOpen} note={route.view === 'notes' && !addOpen}
         onClick={() => (route.view === 'notes' && !addOpen ? navigate({ view: 'notes', create: true }) : setAddOpen((v) => !v))} />}
       <QuickAddSheet open={addOpen} onClose={() => setAddOpen(false)} anchor={addButton} route={route} userId={user.id} />
       {showHelp && <ShortcutHelp onClose={() => setShowHelp(false)} vim={vim} extraSections={vim && vimHelp ? [vimHelp] : []}

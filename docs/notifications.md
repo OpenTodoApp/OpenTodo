@@ -27,7 +27,7 @@ Select an entry to open the task. Opening the task marks it as read. You don't g
 
 ## Reminders inside the app
 
-While OpenTodo is open, a reminder appears in the corner of the screen when it's due, with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss**. It needs no permission and no connection. Press <kbd>Esc</kbd> to dismiss it.
+While OpenTodo is open, a reminder appears in the corner of the screen when it's due, with **Snooze** (10 minutes, 1 hour, tomorrow 09:00) and **Dismiss**. It needs no permission or connection. Press <kbd>Esc</kbd> to dismiss it.
 
 If the OpenTodo tab is in the background and your browser allows notifications for it, you get a system notification instead.
 

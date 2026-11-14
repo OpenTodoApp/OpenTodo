@@ -220,6 +220,10 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `phone-task-page-targets` | A task page's completion circle takes its whole 44 px, clear of Back | In progress (7 of 9) |
 | `phone-stats-period` | The Statistics period as one menu button on a phone; a public list's name on two lines | In progress (11 of 14) |
 | `phone-timeline-rows` | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | In progress (9 of 12) |
+| `tablet-header-room` | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | In progress (12 of 14) |
+| `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | In progress (13 of 16) |
+| `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | In progress (11 of 14) |
+| `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | In progress (8 of 10) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | In progress (10 of 14) |
 
 ## Native app
