@@ -99,3 +99,30 @@ describe('SyncStatus in error state', () => {
     await r.unmount()
   })
 })
+
+// touch-sidebar-names: on touch the dot is the state; words show whole or not at all.
+describe('SyncStatus words on touch', () => {
+  const words = () => document.querySelector('[data-sync-status] .ui-whole')
+
+  it('a running sync shows no words on touch, and keeps them in its name', async () => {
+    const r = await render(<SyncStatus />)
+    setState({ state: 'syncing' })
+    await waitFor(() => words() !== null, 'the words')
+    expect(words()!.textContent).toBe('Syncing…')
+    expect(words()!.className).toContain('pointer-coarse:hidden')
+    expect(document.querySelector('[data-sync-status]')!.getAttribute('aria-label')).toMatch(/^Syncing…/)
+    await r.unmount()
+  })
+
+  it('a state that needs attention keeps its words where they fit whole, in a control that can narrow', async () => {
+    const r = await render(<SyncStatus />)
+    setState({ state: 'offline', pending: 2 })
+    await waitFor(() => words() !== null, 'the words')
+    expect(words()!.textContent).toBe('Offline · 2 pending')
+    expect(words()!.className).not.toContain('pointer-coarse:hidden')
+    const button = document.querySelector('[data-sync-status]')!
+    expect(button.className).toContain('pointer-coarse:w-full')
+    expect(button.parentElement!.className).toContain('pointer-coarse:min-w-11')
+    await r.unmount()
+  })
+})

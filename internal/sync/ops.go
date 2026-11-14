@@ -287,9 +287,8 @@ var Schema = map[string]map[string]Field{
 		// collaborative-rich-text); additive. description stays its Markdown
 		// projection, written by clients in the same batch. Opaque here.
 		"notes_doc": {Kind: kDoc, Default: `""`, Content: true},
-		// Habit tracking (OpenSpec change habits, design D1): habit flags a
-		// series as a habit; skipped marks an occurrence record written by a
-		// skip rather than a completion. Additive booleans, not content.
+		// Habit tracking (habits D1): habit flags a series as a habit; skipped
+		// marks a record written by a skip. Additive booleans, not content.
 		"habit":   {Kind: kBool, Default: `false`},
 		"skipped": {Kind: kBool, Default: `false`},
 		// The habit's tiny version and anchor (OpenSpec change habits-home,
@@ -308,6 +307,15 @@ var Schema = map[string]map[string]Field{
 		// colour, else one picked from the id). Not content, like project
 		// colours; additive.
 		"habit_color": {Kind: kString, Default: `""`},
+		// habit-targets D1: check-ins a period needs (0 none, at most 31) and
+		// the period ("", "week", "month"). Not content.
+		"habit_target": {Kind: kNumber, Default: `0`},
+		"habit_period": {Kind: kString, Default: `""`},
+		// habit-targets D2: the day's goal (0 none), the check button's step
+		// and the unit (content); the day's amount sums its habit_tally rows.
+		"habit_amount": {Kind: kNumber, Default: `0`},
+		"habit_step":   {Kind: kNumber, Default: `1`},
+		"habit_unit":   {Kind: kString, Default: `""`, Content: true},
 		// An occurrence record logged as the habit's tiny version (habits-home
 		// D5): set in the completion batch, never copied from the series; a
 		// full completion writes false. Not content; additive.
@@ -322,9 +330,8 @@ var Schema = map[string]map[string]Field{
 		// Where the task happens (OpenSpec change task-locations): one whole-value
 		// register like origin, so concurrent locations never mix; additive.
 		"location": {Kind: kLocation, Default: `null`, Content: true},
-		// A start guide sample task (OpenSpec change moments-and-onboarding,
-		// design D3): excluded from Statistics, the Loop pulse and the digest,
-		// kept on completion. A whole boolean, not content; additive.
+		// A start guide sample task (moments-and-onboarding D3): excluded from
+		// Statistics, the Loop pulse and the digest. Not content; additive.
 		"sample": {Kind: kBool, Default: `false`},
 		// The workspace of a task without a project, or null for the default
 		// (OpenSpec change workspaces, design D2); a task with a project follows
@@ -575,6 +582,17 @@ var Schema = map[string]map[string]Field{
 		// planned_end_at is when the work stretch ends if nothing changes (Unix
 		// ms), null for Flowtime and other entries. Never before started_at.
 		"planned_end_at": {Kind: kInstant, Default: `null`},
+	},
+	// habit_tally: one device's count toward a day of an amount habit
+	// (habit-targets D2), id NameID(series_id:date:device), in its series'
+	// scope; series_id, date and device never change (habittally.go).
+	"habit_tally": {
+		"series_id":  {Kind: kID, Default: `""`},
+		"date":       {Kind: kDate, Default: `null`},
+		"device":     {Kind: kString, Default: `""`},
+		"count":      {Kind: kNumber, Default: `0`},
+		"created_at": {Kind: kNumber, Default: `0`},
+		"deleted_at": {Kind: kNullableNumber, Default: `null`},
 	},
 	// place: a location the user keeps for reuse (OpenSpec change task-locations,
 	// design D1). Like a label it is personal: it resolves to the author's
@@ -927,11 +945,9 @@ var Schema = map[string]map[string]Field{
 		// clients read an empty or unknown value as off and keep the stored
 		// value. Objectives stay in the export, REST, the CLI and MCP either way.
 		"objectives": {Kind: kString, Default: `""`},
-		// Habits (OpenSpec change habits-home, design D1): "" not decided, "on"
-		// or "off". Not decided keeps the quiet ways in and reads as on while the
-		// device holds an open habit; off hides every habit control and writes
-		// nothing on a task. Clients read an unknown value as not decided and
-		// keep it. Habits stay in the export, REST, the CLI and MCP either way.
+		// Habits (habits-home D1): "" not decided (reads as on while the device
+		// holds an open habit), "on" or "off" (hides every habit control). An
+		// unknown value reads as not decided. REST, the CLI and MCP keep habits.
 		"habits": {Kind: kString, Default: `""`},
 		// Full task titles (OpenSpec change full-task-titles, design D1): "on"
 		// shows every task title in list rows, on board cards and in Today in
@@ -939,12 +955,10 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
-		// Today's display options (OpenSpec change builtin-view-options, design
-		// D1, D2): the grouping of the day's own tasks, "day" (Time of day),
-		// "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
-		// a slot and Done today keep their place. Clients read an empty, unknown
-		// or not-offered value as "day" and keep the stored value. Settings,
-		// never content.
+		// Today's grouping (builtin-view-options D1, D2): "day" (Time of day),
+		// "project", "priority", "label" or "none". Earlier, Blocked, Waiting for
+		// a slot and Done today keep their place. Clients read empty, unknown or unavailable
+		// values as "day" and preserve the stored value. Settings, never content.
 		"today_group_by": {Kind: kString, Default: `""`},
 		// Today's order (builtin-view-options D2): "due", "priority", "created",
 		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".

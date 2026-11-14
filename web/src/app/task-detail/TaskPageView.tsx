@@ -10,7 +10,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { roleOf } from '../../lib/sharing'
 import type { Label, Project } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { DESKTOP_HEADER_QUERY, IconButton, PAGE_FRAME, PageHeader, useMediaQuery } from '../../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, PAGE_FRAME, PageHeader, useMediaQuery, useNarrow } from '../../ui'
 import { navigate } from '../router'
 import { SampleNotice } from '../SampleNotice'
 import { isSample } from '../../lib/sampleTasks'
@@ -63,6 +63,8 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
   const following = useFollowing(m.task)
   const locked = readOnly || !!following
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  // A column narrower than 40 rem (a tablet beside the sidebar): the header's row keeps the nearest step up, as the phone bar does (tablet-header-room).
+  const [rootRef, narrow] = useNarrow(root)
   // The pinned bottom of the content column: the comment composer renders here while Comments is shown.
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
   // The header's height, so the conversation's tab bar and the facts pin just under it.
@@ -117,12 +119,13 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
       parents={m.parents.map((p) => ({ id: p.id, title: p.title }))}
       current={task.title || t('Untitled')}
       onOpen={onOpen}
-      nearestOnly={!desktop}
+      nearestOnly={!desktop || narrow}
+      back={desktop && narrow}
     />
   )
 
   return (
-    <div ref={root} className={`${PAGE_FRAME} px-4 md:px-8`} data-task-page={task.id} data-detail-for={task.id} data-detail-variant="page">
+    <div ref={rootRef} className={`${PAGE_FRAME} px-4 md:px-8`} data-task-page={task.id} data-detail-for={task.id} data-detail-variant="page">
       <PageHeader title={crumbs} help="task-panel" barActions
         back={desktop ? undefined : { label: t('Back to the list'), onClick: nav.onBack }}
         menu={<TaskActionsMenu m={m} page readOnly={locked} onOpen={onOpen} />}

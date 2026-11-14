@@ -28,7 +28,7 @@ import { USER_PREFS_ID } from './userPrefs'
 import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { pinnedNoteIds } from './favourites'
 import type {
-  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, HabitTally, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -285,6 +285,13 @@ export function useProjectFieldRows(projectId: string | null | undefined): Field
   return useLiveQuery(() => (projectId ? db.fields.where('project_id').equals(projectId).toArray() : NO_FIELDS), [projectId], NO_FIELDS)
 }
 
+const NO_TALLIES: HabitTally[] = []
+
+/** Every habit tally on the device (habit-targets D2): what an amount habit's days add up from. */
+export function useHabitTallies(): HabitTally[] {
+  return useLiveQuery(() => db.habitTallies.toArray(), [], NO_TALLIES)
+}
+
 // ---- tasks ----
 
 /**
@@ -488,7 +495,12 @@ const NO_NOTIFICATIONS: AppNotification[] = []
 
 /** The newest in-app notifications, newest first. */
 export function useNotifications(limit = 50): AppNotification[] {
-  return useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(limit).toArray(), [limit], NO_NOTIFICATIONS)
+  return useNotificationsRead(limit) ?? NO_NOTIFICATIONS
+}
+
+/** The same list, undefined until it is read: for a screen that waits for it before its first paint. */
+export function useNotificationsRead(limit = 50): AppNotification[] | undefined {
+  return useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(limit).toArray(), [limit])
 }
 
 /** The calendar subscriptions cached with the last event refresh (for offline). */

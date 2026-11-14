@@ -2,7 +2,7 @@
 // Declare a field in internal/sync/ops.go, then run
 // UPDATE_OP_SCHEMA=1 go test ./internal/sync -run TestGeneratedOpSchema
 import type {
-  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, Label, MemoryItem, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
+  Attachment, Comment, CustomTheme, Due, Entity, FieldDef, Frame, Geo, HabitTally, Label, MemoryItem, Note, Objective, OnDropRule, Origin, Place, Priority, Project, ProjectPrefs, Reminder, ReminderKind, Review, RoutineStep, Rule, RuleActions, RuleCondition, RuleTrigger, Section, Slot, SplitFrom, Task, TaskLocation, ThemeDocument, TimeEntry, UserPrefs, View,
 } from '../lib/types'
 
 /**
@@ -195,9 +195,8 @@ export interface TaskFields {
    */
   notes_doc?: string
   /**
-   * Habit tracking (OpenSpec change habits, design D1): habit flags a
-   * series as a habit; skipped marks an occurrence record written by a
-   * skip rather than a completion. Additive booleans, not content.
+   * Habit tracking (habits D1): habit flags a series as a habit; skipped
+   * marks a record written by a skip. Additive booleans, not content.
    */
   habit?: boolean
   skipped?: boolean
@@ -224,6 +223,19 @@ export interface TaskFields {
    */
   habit_color?: string
   /**
+   * habit-targets D1: check-ins a period needs (0 none, at most 31) and
+   * the period ("", "week", "month"). Not content.
+   */
+  habit_target?: number
+  habit_period?: string
+  /**
+   * habit-targets D2: the day's goal (0 none), the check button's step
+   * and the unit (content); the day's amount sums its habit_tally rows.
+   */
+  habit_amount?: number
+  habit_step?: number
+  habit_unit?: string
+  /**
    * An occurrence record logged as the habit's tiny version (habits-home
    * D5): set in the completion batch, never copied from the series; a
    * full completion writes false. Not content; additive.
@@ -246,9 +258,8 @@ export interface TaskFields {
    */
   location?: TaskLocation | string | null
   /**
-   * A start guide sample task (OpenSpec change moments-and-onboarding,
-   * design D3): excluded from Statistics, the Loop pulse and the digest,
-   * kept on completion. A whole boolean, not content; additive.
+   * A start guide sample task (moments-and-onboarding D3): excluded from
+   * Statistics, the Loop pulse and the digest. Not content; additive.
    */
   sample?: boolean
   /**
@@ -584,6 +595,21 @@ export interface TimeEntryFields {
    * ms), null for Flowtime and other entries. Never before started_at.
    */
   planned_end_at?: number | null
+}
+
+/**
+ * habit_tally: one device's count toward a day of an amount habit
+ * (habit-targets D2), id NameID(series_id:date:device), in its series'
+ * scope; series_id, date and device never change (habittally.go).
+ * A row written before a field existed lacks it, so every field is optional here; the entity type may require it.
+ */
+export interface HabitTallyFields {
+  series_id?: string
+  date?: string | null
+  device?: string
+  count?: number
+  created_at?: number
+  deleted_at?: number | null
 }
 
 /**
@@ -1065,11 +1091,9 @@ export interface UserPrefsFields {
    */
   objectives?: string
   /**
-   * Habits (OpenSpec change habits-home, design D1): "" not decided, "on"
-   * or "off". Not decided keeps the quiet ways in and reads as on while the
-   * device holds an open habit; off hides every habit control and writes
-   * nothing on a task. Clients read an unknown value as not decided and
-   * keep it. Habits stay in the export, REST, the CLI and MCP either way.
+   * Habits (habits-home D1): "" not decided (reads as on while the device
+   * holds an open habit), "on" or "off" (hides every habit control). An
+   * unknown value reads as not decided. REST, the CLI and MCP keep habits.
    */
   habits?: string
   /**
@@ -1081,12 +1105,10 @@ export interface UserPrefsFields {
    */
   full_titles?: string
   /**
-   * Today's display options (OpenSpec change builtin-view-options, design
-   * D1, D2): the grouping of the day's own tasks, "day" (Time of day),
-   * "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
-   * a slot and Done today keep their place. Clients read an empty, unknown
-   * or not-offered value as "day" and keep the stored value. Settings,
-   * never content.
+   * Today's grouping (builtin-view-options D1, D2): "day" (Time of day),
+   * "project", "priority", "label" or "none". Earlier, Blocked, Waiting for
+   * a slot and Done today keep their place. Clients read empty, unknown or unavailable
+   * values as "day" and preserve the stored value. Settings, never content.
    */
   today_group_by?: string
   /**
@@ -1278,7 +1300,7 @@ export const OP_DEFAULTS = {
     name: '', color: '#64748b', position: 0, archived: false, parent_id: null, created_at: 0, deleted_at: null, icon: null, description: '', notes_doc: '', workspace_id: null, flow_mode: '', status: '', reusable: false, aisles: false,
   } satisfies Omit<Project, 'id' | '_clock'>,
   task: {
-    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, habit_tiny: '', habit_anchor: '', habit_graduated_at: null, habit_color: '', tiny: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
+    title: '', description: '', project_id: null, parent_id: null, priority: 4, due: null, labels: [], position: 0, created_at: 0, completed_at: null, deleted_at: null, estimate_minutes: null, deadline: null, start: null, evening: false, span: false, day_part: null, energy: '', sector: '', flow_mode: '', blocked_by: [], note_mentions: [], rotation: [], recurrence: null, series_id: null, occurrence_date: null, split_from: null, assignee_id: null, section_id: null, ical_extra: null, notes_doc: '', habit: false, skipped: false, habit_tiny: '', habit_anchor: '', habit_graduated_at: null, habit_color: '', habit_target: 0, habit_period: '', habit_amount: 0, habit_step: 1, habit_unit: '', tiny: false, completed_by: null, origin: null, location: null, sample: false, workspace_id: null, fields: {}, appends: {},
   } satisfies Omit<Task, 'id' | '_clock'>,
   section: {
     name: '', project_id: '', position: 0, created_at: 0, deleted_at: null, color: null, icon: null, flow_mode: '', aisle: null,
@@ -1307,6 +1329,9 @@ export const OP_DEFAULTS = {
   time_entry: {
     task_id: '', user_id: '', started_at: 0, ended_at: null, device_id: '', note: '', created_at: 0, deleted_at: null, focus_mode: '', focus_session: 0, planned_end_at: null,
   } satisfies Omit<TimeEntry, 'id' | '_clock'>,
+  habit_tally: {
+    series_id: '', date: null, device: '', count: 0, created_at: 0, deleted_at: null,
+  } satisfies Omit<HabitTally, 'id' | '_clock'>,
   rule: {
     name: '', enabled: false, trigger: null, condition: null, actions: null, steps: null, ai_apply: '', ai_budget: 0, project_id: null, workspace_id: null, position: 0, created_at: 0, deleted_at: null,
   } satisfies Omit<Rule, 'id' | '_clock'>,
@@ -1342,7 +1367,7 @@ export const OP_DEFAULTS = {
 /** User-written fields a device encrypts for an account with end-to-end encryption (e2ee D2). */
 export const OP_CONTENT_FIELDS: Partial<Record<Entity, readonly string[]>> = {
   project: ['name', 'description', 'notes_doc'],
-  task: ['title', 'description', 'ical_extra', 'notes_doc', 'habit_tiny', 'habit_anchor', 'origin', 'location'],
+  task: ['title', 'description', 'ical_extra', 'notes_doc', 'habit_tiny', 'habit_anchor', 'habit_unit', 'origin', 'location'],
   section: ['name'],
   field: ['name', 'options'],
   note: ['title', 'notes_doc', 'description'],

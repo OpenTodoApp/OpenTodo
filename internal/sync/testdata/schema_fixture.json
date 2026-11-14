@@ -51,6 +51,14 @@
       "until_date",
       "weekdays"
     ],
+    "habit_tally": [
+      "count",
+      "created_at",
+      "date",
+      "deleted_at",
+      "device",
+      "series_id"
+    ],
     "label": [
       "color",
       "created_at",
@@ -203,10 +211,15 @@
       "evening",
       "flow_mode",
       "habit",
+      "habit_amount",
       "habit_anchor",
       "habit_color",
       "habit_graduated_at",
+      "habit_period",
+      "habit_step",
+      "habit_target",
       "habit_tiny",
+      "habit_unit",
       "ical_extra",
       "labels",
       "location",
@@ -425,6 +438,7 @@
       "description",
       "habit_anchor",
       "habit_tiny",
+      "habit_unit",
       "ical_extra",
       "location",
       "notes_doc",

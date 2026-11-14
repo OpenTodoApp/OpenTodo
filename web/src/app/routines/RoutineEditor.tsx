@@ -31,7 +31,7 @@ import { useAssistantStatus } from '../../lib/assistantStatus'
 import { useEncryption } from '../../lib/e2ee'
 import { useMe } from '../../lib/timeEntries'
 import type { RoutineStepType, Rule, RoutineTestResult } from '../../lib/types'
-import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, Notice, PAGE_FRAME, PageHeader, Tabs, useMediaQuery } from '../../ui'
+import { Badge, Button, ConfirmDialog, DESKTOP_HEADER_QUERY, Field, Icon, Input, Notice, PAGE_FRAME, PageHeader, Tabs, TruncatedText, useMediaQuery } from '../../ui'
 import { runRoutineNow } from '../palette/routineCommand'
 import { setLeaveGuard } from '../router'
 import { useShortcutScope } from '../shortcuts'
@@ -567,7 +567,8 @@ function Crumbs({ name, onBack }: { name: string; onBack: () => void }) {
     <span className="flex min-w-0 items-center gap-0.5 text-body font-normal" data-breadcrumb>
       <button type="button" className={`shrink-0 ${crumbClass}`} onClick={onBack} data-crumb="routines">{t('Routines')}</button>
       <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" />
-      <span className="user-text min-w-0 truncate px-1 text-strong" aria-current="page" data-crumb="routine">{name}</span>
+      {/* The name gives way before "Routines" does; a cut name stays reachable (tablet-header-room). */}
+      <TruncatedText text={name} className="user-text min-w-0 px-1 text-strong" aria-current="page" data-crumb="routine" />
     </span>
   )
 }

@@ -15,7 +15,7 @@ Push notifications deliver [reminders](notifications.md) even when OpenTodo isn'
 
 ## Get reminders when the app is closed
 
-1. Open **Settings → Notifications** on the device.
+1. Open **Settings → Notifications → Push notifications** on the device.
 2. Turn on **Enable notifications on this device** and allow notifications when the browser asks.
 3. Select **Send test notification**. Your server sends a real push to this device, the same way it sends reminders, and a notification appears even while OpenTodo is open.
 

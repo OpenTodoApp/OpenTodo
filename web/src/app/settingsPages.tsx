@@ -104,7 +104,8 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'appearance/sidebar': () => <SidebarSection />,
   'appearance/task-details': () => <TaskDetailsSection />,
   // Default reminders touch no server feature, so they stay usable on the demo (default-reminders D8).
-  'notifications/push': ({ demo }) => <><DefaultRemindersSection /><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><Suspense fallback={null}><LocationRemindersSection /></Suspense><AppBadgeSection /><RoutineRunsSection /></>,
+  'notifications/reminders': () => <DefaultRemindersSection />,
+  'notifications/push': ({ demo }) => <><DemoDisabled on={demo}><NotificationsSettings /></DemoDisabled><Suspense fallback={null}><LocationRemindersSection /></Suspense><AppBadgeSection /><RoutineRunsSection /></>,
   'notifications/channels': ({ user, demo }) => <DemoDisabled on={demo}><NotificationChannelsCard isOwner={user.role === 'owner'} /></DemoDisabled>,
   'notifications/digest': ({ demo }) => <DemoDisabled on={demo}><DigestCard /></DemoDisabled>,
   'capture/quick-add': () => <><QuickAddSettingsSection /><AddPositionSection /></>,

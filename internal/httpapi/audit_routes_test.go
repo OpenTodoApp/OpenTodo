@@ -369,6 +369,8 @@ func TestUserExportExcludesAudit(t *testing.T) {
 			"objectives",
 			// what the assistant remembers (assistant-memory).
 			"memory",
+			// each device's count toward a day of an amount habit (habit-targets).
+			"habit_tallies",
 			// the caller's workspaces (workspaces).
 			"workspaces":
 		default:

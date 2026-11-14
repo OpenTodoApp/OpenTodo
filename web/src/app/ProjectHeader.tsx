@@ -169,7 +169,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
   actions?: ReactNode
   /** The List/Board control, first among the actions (app-shell "Page template"). */
   layout?: ReactNode
-  /** Below 768 px (phone-v2 D1): the bar's visible slots, and items for the project menu (Layout, Share, the list's own). */
+  /** Below 768 px (phone-v2 D1) and in a column narrower than 40 rem (tablet-header-room): the bar's or the row's visible slots, and items for the project menu (Layout, Share, the list's own). */
   phone?: { slots: ReactNode; groups: ActionGroup[] }
 }) {
   const [nameEdit, setNameEdit] = useState<{ projectId: string; value: string } | null>(null)
@@ -315,7 +315,8 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
 
   // On a phone the bar's line under the title is plain text (ux-fixes-phone, audit M12): the
   // members and the public links open from Share in the project menu, and 44 px controls
-  // there would make the bar grow when the membership arrives.
+  // there would make the bar grow when the membership arrives. A narrow header's own row
+  // shows the same text as its lead line, whole or not at all (tablet-header-room).
   const phoneMeta = [
     percent === null ? '' : t('{n}% done', { n: percent }),
     membership ? `${membership.members.length} · ${roleName(role)}` : '',
@@ -326,7 +327,7 @@ export function ProjectHeader({ project, userId, actions, layout, subtitle, phon
 
   return (
     <>
-      <PageHeader title={title} subtitle={phone ? (subtitle ?? phoneMeta) : subtitle} leading={<ProjectMark project={project} size="md" />} meta={meta} help="project"
+      <PageHeader title={title} subtitle={phone ? (subtitle ?? phoneMeta) : subtitle} leading={<ProjectMark project={project} size="md" />} meta={phone ? phoneMeta : meta} help="project"
         barActions={!!phone}
         actions={phone ? phone.slots : <>
           {layout}

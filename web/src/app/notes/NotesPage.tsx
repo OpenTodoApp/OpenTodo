@@ -473,7 +473,7 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
   const overflow = !graphMode ? <>{bulk.selectItem}<MenuSeparator /><NotesSortItems sort={sort} onSort={changeSort} /></> : <GraphShowItems show={show} />
 
   return (
-    <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'flex h-full flex-col' : undefined} data-notes-mode={mode}>
+    <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'page-fill flex flex-col' : undefined} data-notes-mode={mode}>
       <NotesHeader count={entries.length} desktop={desktop} onNew={newNote} onFromTemplate={fromTemplate.open} templateAnchor={fromTemplate.anchor} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
         <NoteSearchField text={text} onText={changeText} tokens={tokens} onTokens={changeTokens} projects={projects} labels={labels} world={world}
           inputRef={search} onListKey={onFieldKey} label={graphMode ? t('Find a note') : t('Search notes')} shortcut={keysOf('notes.search')} />

@@ -38,6 +38,9 @@ describe('one Calendar destination', () => {
     expect(readCalendarMode()).toBe('week')
     expect(parseRoute('/calendar')).toEqual({ view: 'week' })
     expect(r.container.querySelector('[data-calendar-page="week"]')).toBeTruthy()
+    // The page fills the column and its grid scrolls: on a phone the add button's room is at the end of that scroller (phone-fab-scroll-room).
+    expect(r.container.querySelector('[data-calendar-page="week"]')!.classList.contains('page-fill')).toBe(true)
+    expect(r.container.querySelector('[data-calendar-scroller]')!.classList.contains('add-room-end')).toBe(true)
 
     const header = r.container.querySelector('[data-page-header]')!
     expect(header).toBeTruthy()

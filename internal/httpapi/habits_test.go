@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -101,5 +102,58 @@ func TestHabitsRouteAgentToken(t *testing.T) {
 	resp, out = c.do("POST", "/api/v1/habits/"+walk+"/log", map[string]any{"state": "done", "date": localToday(e.now.Now())}, bearer(secret)...)
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("agent with writes off = %d %v", resp.StatusCode, out)
+	}
+}
+
+// OpenSpec change habit-targets, "Targets and amounts in tools and routes".
+func TestHabitsRouteAmounts(t *testing.T) {
+	e := ownerEnv(t)
+	e.now.Freeze(time.Date(2026, 10, 12, 12, 0, 0, 0, time.Local))
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Water", "due": map[string]any{"date": "2026-10-12"}, "recurrence": "every day", "habit": true})
+	e.mustStatus(resp, 201, out)
+	water := out["id"].(string)
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+water, map[string]any{"habit_amount": 8, "habit_unit": "glasses"})
+	e.mustStatus(resp, 200, out)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Read", "due": map[string]any{"date": "2026-10-12"}, "recurrence": "every day", "habit": true})
+	e.mustStatus(resp, 201, out)
+	read := out["id"].(string)
+	c := e.bearerClient()
+	full := e.token("full")
+	// Log water from a shortcut: two posts of one glass read 2 of 8.
+	for range 2 {
+		resp, out = c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"amount": 1}, bearer(full)...)
+		c.mustStatus(resp, 200, out)
+	}
+	h := out["habit"].(map[string]any)
+	if h["amount"] != float64(8) || h["today_amount"] != float64(2) || h["untrusted_text"].(map[string]any)["unit"] != "glasses" || h["current_date"] != "2026-10-12" {
+		t.Fatalf("water = %v", h)
+	}
+	if d := out["days"].([]any)[0].(map[string]any); d["state"] != "partial" || d["amount"] != float64(2) {
+		t.Fatalf("today = %v", d)
+	}
+	// set_amount reaches the goal: the day is done and the series moves on.
+	resp, out = c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"set_amount": 8}, bearer(full)...)
+	c.mustStatus(resp, 200, out)
+	if h := out["habit"].(map[string]any); h["today_amount"] != float64(8) || h["current_date"] != "2026-10-13" {
+		t.Fatalf("after set_amount = %v", h)
+	}
+	before := countOps(t, e)
+	// Amount on a plain habit, and a negative amount: 400 naming amount, nothing written.
+	for _, tc := range []struct {
+		id   string
+		body map[string]any
+	}{{read, map[string]any{"amount": 1}}, {water, map[string]any{"amount": -1}}, {water, map[string]any{"amount": 1, "state": "done"}}} {
+		resp, out = e.do("POST", "/api/v1/habits/"+tc.id+"/log", tc.body)
+		if resp.StatusCode != 400 || errCode(out) != "invalid_input" || !strings.Contains(errMessage(out), "amount") && !strings.Contains(errMessage(out), "state") {
+			t.Fatalf("%v = %d %v", tc.body, resp.StatusCode, out)
+		}
+	}
+	// Not signed in.
+	resp, out = c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"amount": 1})
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("anonymous = %d %v", resp.StatusCode, out)
+	}
+	if after := countOps(t, e); after != before {
+		t.Fatalf("refusals wrote: %d → %d", before, after)
 	}
 }

@@ -83,6 +83,8 @@ describe('add below (issue 1036)', () => {
     expect(line()!.closest('li')!.previousElementSibling?.getAttribute('data-task-id')).toBe(t.c)
     await typeLine('Prepare')
     await waitFor(async () => (await titles(null)).join() === 'A,Prepare,E', 'Prepare after A')
+    // The line is drawn again under the new task: typing into the one it replaces is lost.
+    await waitFor(() => line()?.closest('li')?.previousElementSibling?.textContent?.includes('Prepare') ?? false, 'the line under Prepare')
     await typeLine('Buy paint')
     await waitFor(async () => (await titles(null)).join() === 'A,Prepare,Buy paint,E', 'Buy paint after Prepare')
     // The line moved down with them and keeps the focus.

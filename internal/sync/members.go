@@ -587,6 +587,16 @@ func (s *Service) share(ctx context.Context, tx *sql.Tx, ownerID, projectID stri
 				return err
 			}
 		}
+		// And habit tallies (habit-targets D2).
+		tids, err := childIDsWhere(ctx, tx, personal, "habit_tally", "series_id", c.id, false)
+		if err != nil {
+			return err
+		}
+		for _, tid := range tids {
+			if err := relabel("habit_tally", tid); err != nil {
+				return err
+			}
+		}
 	}
 	now := s.now().UnixMilli()
 	if _, err := tx.ExecContext(ctx, `INSERT INTO project_scopes(project_id, owner_id, created_at) VALUES(?,?,?)`, projectID, ownerID, now); err != nil {

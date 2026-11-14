@@ -8,7 +8,7 @@ import {
   chromeRows, credentialFields, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
   overlaps, primaryDestinations, reflow, rowMetaItems, targetSize, targetSizeWcag, TEXT_SPACING_CSS, textSpacingClip, truncation, watchMotion,
 } from './audit-measures.mjs'
-import { smallFields } from './measure.mjs'
+import { addButtonRoom, smallFields, smallTargets } from './measure.mjs'
 
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -135,6 +135,40 @@ test('M11 overlap: side by side passes, stacked controls fail', { skip }, async 
   await page.evaluate(() => window.scrollTo(0, 200))
   assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
   await page.setViewportSize({ width: 360, height: 640 })
+})
+
+test('touch targets: a hidden control that takes taps fails, one that takes none is not a target', { skip }, async () => {
+  const button = (style) => `<button style="width:44px;height:44px;opacity:0;${style}">Menu</button>`
+  await fixture(button(''))
+  assert.deepEqual(await page.evaluate(smallTargets, [null, 44]), ['"Menu" (button) is invisible until hovered'])
+  // Kept for the keyboard and assistive technology, out of a finger's way (touch-sidebar-names).
+  await fixture(button('pointer-events:none'))
+  assert.deepEqual(await page.evaluate(smallTargets, [null, 44]), [])
+})
+
+test('M11 overlap: a control is compared by the part of its box inside its scrollers', { skip }, async () => {
+  const b = 'display:block;width:200px;height:40px'
+  // A list's row scrolled half out of the list, and the bar under the list: the list cuts the row, a finger meets the bar (touch-sidebar-names).
+  const list = (overflow) => `<div style="height:60px;overflow:${overflow}"><button style="${b}">a</button><button style="${b}">row</button></div><button style="${b};position:relative">foot</button>`
+  await fixture(list('auto'))
+  assert.deepEqual(await page.evaluate(overlaps), [])
+  // The same row painted over the bar (the list cuts nothing) is an overlap.
+  await fixture(list('visible'))
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  // Two controls on each other inside one scroller stay an overlap.
+  await fixture(`<div style="height:60px;overflow:auto;position:relative"><button style="${b}">a</button><button style="${b};position:absolute;left:10px;top:10px">b</button></div>`)
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  // A fixed control is not cut by a scroller around it: on a control of the same fixed layer it is an overlap.
+  await fixture(`<div style="position:fixed;left:0;top:0"><button style="${b}">a</button><div style="height:10px;overflow:auto"><button style="${b};position:fixed;left:10px;top:10px">b</button></div></div>`)
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  // A drawer (fixed) whose rows scroll under its stuck group heading: content under chrome, as on the page...
+  const drawer = (heading) => `<div style="position:fixed;left:0;top:0;width:240px;height:200px"><div id="s" style="height:200px;overflow:auto">${heading}<button style="${b}">row 1</button><button style="${b}">row 2</button><div style="height:600px"></div></div></div>`
+  await fixture(drawer(`<div style="position:sticky;top:0"><button style="${b}">Projects</button></div>`))
+  await page.evaluate(() => { document.getElementById('s').scrollTop = 30 })
+  assert.deepEqual(await page.evaluate(overlaps), [])
+  // ...while a heading drawn over its rows where it stands in the flow is an overlap.
+  await fixture(drawer(`<div style="margin-bottom:-20px"><button style="${b};position:relative">Projects</button></div>`))
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
 })
 
 test('M12 layout shift: a still page passes, a late banner fails', { skip }, async () => {
@@ -363,4 +397,33 @@ test('top edge (GitHub issue 999): without an opaque fixed backdrop over the sta
   const u = await page.evaluate(topEdge, [insets])
   assert.equal(u.length, 1)
   assert.match(u[0], /no opaque fixed element/)
+})
+
+test('room under the add button: the end of the page and of a scroller inside it', { skip }, async () => {
+  await page.setViewportSize({ width: 360, height: 640 })
+  const add = '<button data-add-button style="position:fixed;right:16px;bottom:68px;width:56px;height:56px">+</button>'
+  const bar = '<nav data-tab-bar style="position:fixed;inset:auto 0 0 0;height:56px"></nav>'
+  const shell = (inner, pad = 0) => `<div id="content" style="height:584px;overflow-y:auto;box-sizing:border-box;padding-bottom:${pad}px">${inner}</div>${bar}`
+  const rows = '<div style="height:900px"></div><button style="display:block;width:100%;height:44px">Last row</button>'
+  // A page that ends without room leaves its last row under the button; with the button's room it scrolls clear.
+  await fixture(shell(rows) + add)
+  assert.match((await page.evaluate(addButtonRoom))[0], /covers button "Last row" at the end of the scroll/)
+  await fixture(shell(rows, 76) + add)
+  assert.deepEqual(await page.evaluate(addButtonRoom), [])
+  // A short page whose content ends above the button needs no room.
+  await fixture(shell('<button style="display:block;width:100%;height:44px">Only row</button>') + add)
+  assert.deepEqual(await page.evaluate(addButtonRoom), [])
+  // A scroller inside the page (a calendar grid): the room is at the end of that scroller.
+  const grid = (pad) => `<div style="height:100%;overflow:auto;box-sizing:border-box;padding-bottom:${pad}px"><div style="height:1200px"></div><div role="button" style="height:40px">Late block</div></div>`
+  await fixture(shell(grid(0)) + add)
+  assert.match((await page.evaluate(addButtonRoom))[0], /covers div "Late block"/)
+  await fixture(shell(grid(76)) + add)
+  assert.deepEqual(await page.evaluate(addButtonRoom), [])
+  // The scroll positions are put back.
+  assert.equal(await page.evaluate(() => document.querySelector('#content > div').scrollTop), 0)
+  // No button: no room kept for it.
+  await fixture(shell(rows, 76))
+  assert.match((await page.evaluate(addButtonRoom))[0], /keeps 76 px at its end for an add button it does not show/)
+  await fixture(shell(rows))
+  assert.deepEqual(await page.evaluate(addButtonRoom), [])
 })

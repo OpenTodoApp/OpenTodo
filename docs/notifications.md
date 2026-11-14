@@ -27,7 +27,7 @@ Select an entry to open the task. Opening the task marks it as read. You don't g
 
 ## Reminders inside the app
 
-While OpenTodo is open, a reminder appears in the corner of the screen when it's due, with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss**. It needs no permission and no connection. Press <kbd>Esc</kbd> to dismiss it.
+While OpenTodo is open, a reminder appears in the corner of the screen when it's due, with **Snooze** (10 minutes, 1 hour, tomorrow 09:00) and **Dismiss**. It needs no permission or connection. Press <kbd>Esc</kbd> to dismiss it.
 
 If the OpenTodo tab is in the background and your browser allows notifications for it, you get a system notification instead.
 
@@ -35,7 +35,7 @@ How to add reminders is covered in [Recurring tasks and reminders](recurring-and
 
 ## Get reminders when the app is closed
 
-Push notifications deliver reminders even when OpenTodo isn't open, and each device decides for itself: open **Settings → Notifications** on the device, turn on **Enable notifications on this device**, allow notifications when the browser asks, then select **Send test notification**. Repeat it on your phone, laptop and tablet. The full steps are in [Push notifications](push-notifications.md).
+Push notifications deliver reminders even when OpenTodo isn't open, and each device decides for itself: open **Settings → Notifications → Push notifications** on the device, turn on **Enable notifications on this device**, allow notifications when the browser asks, then select **Send test notification**. Repeat it on your phone, laptop and tablet. The full steps are in [Push notifications](push-notifications.md).
 
 ### Check that it works
 

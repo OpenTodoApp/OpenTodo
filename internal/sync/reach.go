@@ -134,6 +134,8 @@ func workspaceOf(p *Partition, entity string, e Entity) string {
 		return p.Own(e.str("workspace_id"))
 	case "reminder", "comment", "attachment", "time_entry":
 		return p.Task(e.str("task_id"))
+	case "habit_tally":
+		return p.Task(e.str("series_id"))
 	}
 	return ""
 }

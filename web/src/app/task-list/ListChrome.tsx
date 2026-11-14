@@ -2,7 +2,7 @@
 // actions, the layout switch, the duration filter, empty views, the "complete the
 // parent too?" prompt and the label and assignee dialogs. Each is a small
 // component with props only; TaskListView decides when they show.
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ProjectViewMode } from '../../lib/sections'
@@ -10,7 +10,7 @@ import { keysOf } from '../../lib/shortcuts'
 import { logicalToday } from '../../lib/dates'
 import { useUserPrefsRow } from '../../lib/localData'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
-import { Button, DESKTOP_HEADER_QUERY, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip, useMediaQuery } from '../../ui'
+import { Button, DESKTOP_HEADER_QUERY, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip, useMediaQuery, useNarrow } from '../../ui'
 import { TodayAskAction, useTodayAsk } from '../assistant/AskEntry'
 import { AssigneePicker } from '../AssigneePicker'
 import { DEFAULT_DISPLAY_OPTIONS } from '../display/displayOptions'
@@ -118,14 +118,16 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
 export interface PhoneItem { id: string; label: string; icon?: IconName; checked?: boolean; group?: string; onSelect: () => void }
 
 /**
- * A list's actions on a phone (phone-v2 D1): the visible slots in the shell's bar
+ * A list's actions on a phone and in a narrow column (phone-v2 D1, tablet-header-room): the visible slots in the shell's bar or the header's row
  * (Process the Inbox or Ask in Today, then the page's display options) and the rest
  * as overflow items: Select tasks, Display mode and the filters, so the title keeps
  * the room of a Filter button (phone-bar-overflow); an active filter shows as a chip
  * in the bar.
  */
-export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, queryFilter }: {
+export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, queryFilter, root }: {
   route: ListRoute
+  /** The list's root. Its width is measured through `room`: in a narrow column the header takes the phone's slots and menu items (tablet-header-room). */
+  root?: RefObject<HTMLDivElement | null>
   /** A last slot of the bar: a project's or label's display options (list-display-options). */
   extraSlot?: ReactNode
   userRole?: AccountRole
@@ -139,8 +141,9 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
   queryFilter?: QueryFilterControl | null
   /** A project page: its layout choice and, when empty, "Add a note" join the project menu. */
   project?: { row: Project; editable: boolean; viewMode: ProjectViewMode; onViewMode: (m: ProjectViewMode) => void }
-}): { phone: boolean; slots: ReactNode; items: PhoneItem[]; projectItems: PhoneItem[] } {
-  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
+}): { phone: boolean; room: (el: HTMLDivElement | null) => void; slots: ReactNode; items: PhoneItem[]; projectItems: PhoneItem[] } {
+  const [room, narrow] = useNarrow(root)
+  const phone = !useMediaQuery(DESKTOP_HEADER_QUERY) || narrow
   const ask = useTodayAsk(userRole) && route.view === 'today'
   const process = route.view === 'inbox' && rowCount > 0
   const items: PhoneItem[] = []
@@ -173,7 +176,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
     ...(project.editable && !project.row.description?.trim() ? [{ id: 'note', label: t('Add a note'), icon: 'pencil' as const, onSelect: () => requestProjectNote(project.row.id) }] : []),
     ...items,
   ] : items
-  return { phone, slots, items, projectItems }
+  return { phone, room, slots, items, projectItems }
 }
 
 /** The phone overflow items as ActionMenu groups (the project and label menus). */

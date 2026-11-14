@@ -2,6 +2,7 @@
 // A proposal in its own shape and edits before applying (OpenSpec change
 // assistant-generative-ui, tasks 5.2, 5.3).
 import 'fake-indexeddb/auto'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { reviewChangeSet, type Review } from '../lib/assistant'
 import type { ProposedChange } from '../lib/assistantTypes'
@@ -38,16 +39,22 @@ beforeEach(async () => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-/** The card with a live review the test can toggle and apply. */
+/**
+ * The card with a live review the test can toggle and apply. The review is React
+ * state, so a toggle renders through React, never through an act() started from a
+ * callback (never awaited, it can leave React's act queue open for the whole file).
+ */
 async function card(changes: ProposedChange[], onApply = vi.fn()) {
-  let review: Review = await reviewChangeSet(changes)
-  const r = await render(<div />)
-  const draw = () => r.rerender(
-    <ChangeSetReview review={review} result={null} busy={false} shapes onApply={onApply} onDiscard={noop} onUndo={noop}
-      onToggle={(i, c) => { review = { ...review, items: review.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) }; void draw() }} />,
-  )
-  await draw()
-  return { r, onApply, review: () => review }
+  const first: Review = await reviewChangeSet(changes)
+  function Card() {
+    const [review, setReview] = useState(first)
+    return (
+      <ChangeSetReview review={review} result={null} busy={false} shapes onApply={onApply} onDiscard={noop} onUndo={noop}
+        onToggle={(i, c) => setReview((rv) => ({ ...rv, items: rv.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) }))} />
+    )
+  }
+  const r = await render(<Card />)
+  return { r, onApply }
 }
 
 describe('proposal shapes (5.2)', () => {
@@ -166,12 +173,13 @@ describe('edits before applying (5.3)', () => {
 
   it('a wrong value shows its error and keeps the proposal as it was', async () => {
     const { r } = await (async () => {
-      let review: Review = await reviewChangeSet([{ entity: 'task', entityId: 'n', create: true, patch: { title: 'Call landlord', due: { date: '2026-11-13' } } }])
-      const out = await render(<div />)
-      const draw = () => out.rerender(<ChangeSetReview review={review} result={null} busy={false} shapes onToggle={noop} onApply={noop} onDiscard={noop} onUndo={noop}
-        onEdit={() => { review = { ...review, items: review.items.map((it) => ({ ...it, edited: true })) }; void draw() }} />)
-      await draw()
-      return { r: out }
+      const first: Review = await reviewChangeSet([{ entity: 'task', entityId: 'n', create: true, patch: { title: 'Call landlord', due: { date: '2026-11-13' } } }])
+      function Card() {
+        const [review, setReview] = useState(first)
+        return <ChangeSetReview review={review} result={null} busy={false} shapes onToggle={noop} onApply={noop} onDiscard={noop} onUndo={noop}
+          onEdit={() => setReview((rv) => ({ ...rv, items: rv.items.map((it) => ({ ...it, edited: true })) }))} />
+      }
+      return { r: await render(<Card />) }
     })()
     await click(r.container.querySelector('[data-edit-item]')!)
     await type(r.container.querySelector<HTMLInputElement>('[data-edit-field="title"]')!, '   ')

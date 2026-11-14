@@ -10,11 +10,11 @@
 import { parseRule, weeklyInPhase, type Rule } from './recurrence'
 import { lineageOf, pieceEnd } from './lineage'
 import { isRecordOf, recordDate } from './recurring'
-import type { Task, UserPrefs } from './types'
+import type { HabitTally, Task, UserPrefs } from './types'
 import type { TaskChange } from './taskDelta'
 import { t } from './i18n'
 
-export type DayState = 'blank' | 'done' | 'tiny' | 'skipped' | 'missed' | 'pending' | 'upcoming'
+export type DayState = 'blank' | 'done' | 'tiny' | 'partial' | 'skipped' | 'missed' | 'rest' | 'pending' | 'upcoming'
 
 export interface HabitStats {
   /** Consecutive scheduled days with a record, walking back from the day before the current occurrence. */
@@ -35,12 +35,35 @@ export interface HabitStats {
   atRisk: boolean
   /** The latest scheduled date was kept after two or more missed ones. */
   backOnTrack: boolean
+  /** A target habit (habit-targets D1): its period and target; kept is the current period's count of `target`. */
+  period?: TargetPeriod
+  target?: number
+  /** The current period holds the target: the habit rests until the next one. */
+  met?: boolean
+  /** An amount habit (habit-targets D2): today's summed amount and the day's goal. */
+  amount?: number
+  goal?: number
+}
+
+/** The period of a target habit. */
+export type TargetPeriod = 'week' | 'month'
+
+/**
+ * What the numbers read besides the rows (habit-targets): the habit's tallies
+ * (any list; only the lineage's are used) and the first day of the week, 0 =
+ * Sunday … 6 = Saturday (Monday when left out).
+ */
+export interface HabitOptions {
+  tallies?: Iterable<HabitTally>
+  weekStart?: number
 }
 
 export interface DayCell {
   date: string
   state: DayState
   today: boolean
+  /** An amount habit's summed amount of the day, when it has any (habit-targets D3). */
+  amount?: number
 }
 
 // ---- the Habits switch (habits-home D1) ----
@@ -181,13 +204,57 @@ export function recordsByDate(seriesId: string, tasks: Iterable<Task>): Map<stri
   return out
 }
 
-/** A record's mark: done, done as the tiny version (habits-home D5), skipped, or open. */
-export type RecordMark = 'done' | 'tiny' | 'skipped' | 'open'
+/**
+ * A record's mark: done, done as the tiny version (habits-home D5), skipped, or
+ * open; partial is a day of an amount habit with some of its amount (habit-targets D3).
+ */
+export type RecordMark = 'done' | 'tiny' | 'partial' | 'skipped' | 'open'
 
-/** Done, tiny and skipped records; an open one is not (yet) a record of its day. */
-const marks = (r: RecordMark | undefined): r is 'done' | 'tiny' | 'skipped' => r === 'done' || r === 'tiny' || r === 'skipped'
-/** A kept day: done, or its tiny version, which counts as done everywhere. */
-const kept = (r: RecordMark | undefined): boolean => r === 'done' || r === 'tiny'
+/** Done, tiny, partial and skipped days; an open record is not (yet) a record of its day. */
+const marks = (r: RecordMark | undefined): r is 'done' | 'tiny' | 'partial' | 'skipped' => r === 'done' || r === 'tiny' || r === 'partial' || r === 'skipped'
+/** A kept day: done, or its tiny version or a partial amount, which count as done everywhere. */
+const kept = (r: RecordMark | undefined): boolean => r === 'done' || r === 'tiny' || r === 'partial'
+
+// ---- targets and amounts (habit-targets) ----
+
+/** A target habit's target and period, or null (habit-targets D1). */
+export function habitTarget(task: Pick<Task, 'habit_target' | 'habit_period'>): { target: number; period: TargetPeriod } | null {
+  const target = task.habit_target ?? 0
+  const period = task.habit_period
+  return target > 0 && (period === 'week' || period === 'month') ? { target: Math.min(Math.floor(target), 31), period } : null
+}
+
+/** An amount habit's daily goal, 0 for none (habit-targets D2). */
+export function habitGoal(task: Pick<Task, 'habit_amount'>): number {
+  const a = task.habit_amount ?? 0
+  return a > 0 ? a : 0
+}
+
+/** The summed amount of each day over the series ids (a habit's lineage), from the live tallies. */
+export function amountsOf(seriesIds: ReadonlySet<string>, tallies: Iterable<HabitTally> | undefined): Map<string, number> {
+  const out = new Map<string, number>()
+  for (const x of tallies ?? []) {
+    if (x.deleted_at || !x.date || !seriesIds.has(x.series_id) || !(x.count > 0)) continue
+    out.set(x.date, (out.get(x.date) ?? 0) + x.count)
+  }
+  return out
+}
+
+/** The first day of the period that holds `date`: the week from `weekStart` (0 = Sunday), or the month. */
+export function periodStart(date: string, period: TargetPeriod, weekStart = 1): string {
+  if (period === 'month') return date.slice(0, 8) + '01'
+  const z = dayOf(date)
+  const back = ((isoWeekday(z) % 7) - weekStart + 7) % 7
+  return isoOf(z - back)
+}
+
+/** The last day of the period that holds `date`. */
+export function periodEnd(date: string, period: TargetPeriod, weekStart = 1): string {
+  const start = periodStart(date, period, weekStart)
+  if (period === 'week') return isoOf(dayOf(start) + 6)
+  const [y, m] = start.split('-').map(Number)
+  return `${start.slice(0, 8)}${String(monthLen(y, m)).padStart(2, '0')}`
+}
 
 /** Whether the habit's schedule (one series, or the pieces of a split lineage) has a date. */
 type Schedule = (date: string) => boolean
@@ -199,14 +266,30 @@ type Schedule = (date: string) => boolean
  * end counts its last occurrence as done (completing it wrote no record). Null when
  * the series has no calendar rule.
  */
-function measureOf(series: Task, tasks: Iterable<Task>): Measure | null {
+function measureOf(series: Task, tasks: Iterable<Task>, opts?: HabitOptions): Measure | null {
+  const m = scheduleOf(series, tasks)
+  if (!m) return null
+  const goal = habitGoal(series)
+  if (goal) {
+    // A day of an amount habit is done at its goal, partial below it (habit-targets D3).
+    for (const [d, n] of amountsOf(m.ids, opts?.tallies)) {
+      const r = m.records.get(d)
+      if (r === 'done' || r === 'tiny' || r === 'skipped') continue
+      m.records.set(d, n >= goal ? 'done' : 'partial')
+    }
+    m.amounts = amountsOf(m.ids, opts?.tallies)
+  }
+  return m
+}
+
+function scheduleOf(series: Task, tasks: Iterable<Task>): Measure | null {
   const rule = habitRule(series)
   if (!rule) return null
   const list = [...tasks]
   const pieces = lineageOf(series, list)
   if (pieces.length === 1) {
     const dueDate = series.due?.date ?? null
-    return { sched: (d) => scheduled(rule, dueDate, d), records: recordsByDate(series.id, list), pieceOf: () => series }
+    return { sched: (d) => scheduled(rule, dueDate, d), records: recordsByDate(series.id, list), pieceOf: () => series, ids: new Set([series.id]) }
   }
   const records = new Map<string, RecordMark>()
   const parts = pieces.map((p, i) => {
@@ -225,7 +308,7 @@ function measureOf(series: Task, tasks: Iterable<Task>): Measure | null {
     const part = partOf(d)
     return !!part.rule && (!part.end || d <= part.end) && scheduled(part.rule, part.due, d)
   }
-  return { sched, records, pieceOf: (d) => partOf(d).task }
+  return { sched, records, pieceOf: (d) => partOf(d).task, ids: new Set(pieces.map((p) => p.task.id)) }
 }
 
 interface Measure {
@@ -233,6 +316,10 @@ interface Measure {
   records: Map<string, RecordMark>
   /** The piece of the lineage whose range holds `date` (the series itself when it was never split). */
   pieceOf: (date: string) => Task
+  /** The ids of the lineage's pieces. */
+  ids: Set<string>
+  /** An amount habit's summed amount per day. */
+  amounts?: Map<string, number>
 }
 
 /** The first day of the habit's history: its earliest record, or the current occurrence. */
@@ -299,10 +386,12 @@ export function strengthAlpha(f: number): number {
  * breaks it. A tiny day counts as done. A split series is measured over its lineage
  * as one series (series-split D5).
  */
-export function habitStats(series: Task, tasks: Iterable<Task>, today: string): HabitStats | null {
-  const m = measureOf(series, tasks)
+export function habitStats(series: Task, tasks: Iterable<Task>, today: string, opts?: HabitOptions): HabitStats | null {
+  const m = measureOf(series, tasks, opts)
   const dueDate = series.due?.date
   if (!m || !dueDate) return null
+  const target = habitTarget(series)
+  if (target) return targetStats(m, dueDate, today, target.target, target.period, opts?.weekStart ?? 1)
   const { records } = m
   const past = pastSchedule(m.sched, dueDate, records)
   // Best: every maximal run of records, skipped days neither breaking nor counting.
@@ -341,15 +430,60 @@ export function habitStats(series: Task, tasks: Iterable<Task>, today: string): 
   let gap = 0
   for (let i = n - 2; i >= 0 && missed(past[i]); i--) gap++
   const backOnTrack = n > 0 && kept(records.get(past[n - 1])) && gap >= 2
+  const pending = !marks(own) || own === 'partial'
+  const goal = habitGoal(series)
   return {
-    current, best, pending: !marks(own), overdue: !marks(own) && dueDate < today,
+    current, best, pending, overdue: pending && dueDate < today,
     kept: keptN, keptOf: last.length, strength: Math.round(s * 100), atRisk, backOnTrack,
+    ...(goal ? { amount: m.amounts?.get(today) ?? 0, goal } : {}),
   }
 }
 
+/**
+ * The numbers of a target habit (habit-targets D1): periods instead of scheduled
+ * dates. A period is met with `target` done or tiny days; days are never missed;
+ * strength adds each period's share of the target; streaks count met periods,
+ * the current one once met.
+ */
+function targetStats(m: Measure, dueDate: string, today: string, target: number, period: TargetPeriod, weekStart: number): HabitStats {
+  const count = new Map<string, number>()
+  for (const [d, r] of m.records) if (kept(r)) count.set(periodStart(d, period, weekStart), (count.get(periodStart(d, period, weekStart)) ?? 0) + 1)
+  const now = periodStart(today, period, weekStart)
+  const past: string[] = []
+  for (let p = periodStart(firstDay(dueDate < today ? dueDate : today, m.records), period, weekStart); p < now; p = addDays(periodEnd(p, period, weekStart), 1)) past.push(p)
+  const met = (p: string) => (count.get(p) ?? 0) >= target
+  const nowCount = count.get(now) ?? 0
+  const nowMet = nowCount >= target
+  let best = 0
+  let run = 0
+  for (const p of past) best = Math.max(best, run = met(p) ? run + 1 : 0)
+  let current = 0
+  for (let i = past.length - 1; i >= 0 && met(past[i]); i--) current++
+  if (nowMet) current++
+  best = Math.max(best, current)
+  const a = strengthAlpha(period === 'week' ? 1 / 7 : 12 / 365)
+  let s = 0
+  for (const p of nowMet ? [...past, now] : past) s = s * (1 - a) + a * Math.min((count.get(p) ?? 0) / target, 1)
+  const n = past.length
+  const missed = (i: number) => i >= 0 && !met(past[i])
+  let gap = 0
+  for (let i = n - 2; i >= 0 && missed(i); i--) gap++
+  const checkedToday = kept(m.records.get(today))
+  const daysLeft = dayOf(periodEnd(today, period, weekStart)) - dayOf(today) + (checkedToday ? 0 : 1)
+  return {
+    current, best, pending: !nowMet && !checkedToday, overdue: false, kept: nowCount, keptOf: target,
+    strength: Math.round(s * 100), atRisk: !nowMet && (target - nowCount > daysLeft || (n >= 2 && missed(n - 1) && missed(n - 2))),
+    backOnTrack: n > 0 && met(past[n - 1]) && gap >= 2, period, target, met: nowMet,
+  }
+}
+
+function addDays(iso: string, n: number): string {
+  return isoOf(dayOf(iso) + n)
+}
+
 /** Done and tiny days over the habit's lineage: "Kept for 94 days" (habits-home D7). */
-export function keptDays(series: Task, tasks: Iterable<Task>): number {
-  const m = measureOf(series, tasks)
+export function keptDays(series: Task, tasks: Iterable<Task>, opts?: HabitOptions): number {
+  const m = measureOf(series, tasks, opts)
   if (!m) return 0
   let n = 0
   for (const r of m.records.values()) if (kept(r)) n++
@@ -362,7 +496,7 @@ export function keptDays(series: Task, tasks: Iterable<Task>): number {
  * in one pass, so a list does not scan every task per row. A habit of a split
  * lineage reads the whole list (series-split D5).
  */
-export function habitStatsMap(tasks: readonly Task[], today: string): Map<string, HabitStats> {
+export function habitStatsMap(tasks: readonly Task[], today: string, opts?: HabitOptions): Map<string, HabitStats> {
   const bySeries = new Map<string, Task[]>()
   const split = new Set<string>()
   for (const task of tasks) {
@@ -375,7 +509,7 @@ export function habitStatsMap(tasks: readonly Task[], today: string): Map<string
   const out = new Map<string, HabitStats>()
   for (const tk of tasks) {
     if (!tk.habit || tk.completed_at || tk.deleted_at) continue
-    const stats = habitStats(tk, split.has(tk.id) ? tasks : bySeries.get(tk.id) ?? [], today)
+    const stats = habitStats(tk, split.has(tk.id) ? tasks : bySeries.get(tk.id) ?? [], today, opts)
     if (stats) out.set(tk.id, stats)
   }
   return out
@@ -428,28 +562,48 @@ export function streakLabel(stats: HabitStats): string {
  * record is missed, a later one upcoming; anything else, and every day before the
  * habit's first record, is blank. A split series shows its lineage.
  */
-export function monthGrid(series: Task, tasks: Iterable<Task>, year: number, month: number, today: string): DayCell[] {
+export function monthGrid(series: Task, tasks: Iterable<Task>, year: number, month: number, today: string, opts?: HabitOptions): DayCell[] {
   const prefix = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-`
-  return habitDays(series, tasks, `${prefix}01`, prefix + String(monthLen(year, month)).padStart(2, '0'), today)
+  return habitDays(series, tasks, `${prefix}01`, prefix + String(monthLen(year, month)).padStart(2, '0'), today, opts)
 }
 
 /** The days from `from` to `to` (inclusive) with their state, as in monthGrid: the thread's seven days (habits-home D8). */
-export function habitDays(series: Task, tasks: Iterable<Task>, from: string, to: string, today: string): DayCell[] {
-  const m = measureOf(series, tasks)
+export function habitDays(series: Task, tasks: Iterable<Task>, from: string, to: string, today: string, opts?: HabitOptions): DayCell[] {
+  const m = measureOf(series, tasks, opts)
   const dueDate = series.due?.date ?? null
   const records = m?.records ?? recordsByDate(series.id, tasks)
   const first = dueDate ? firstDay(dueDate, records) : null
+  const target = m && habitTarget(series)
   const out: DayCell[] = []
   for (let z = dayOf(from); z <= dayOf(to); z++) {
     const date = isoOf(z)
-    out.push({ date, state: dayState(m?.sched ?? null, dueDate, first, records, date), today: date === today })
+    const state = target ? targetDayState(records, first, date, today, target.target, target.period, opts?.weekStart ?? 1) : dayState(m?.sched ?? null, dueDate, first, records, date)
+    const amount = m?.amounts?.get(date)
+    out.push({ date, state, today: date === today, ...(amount ? { amount } : {}) })
   }
   return out
 }
 
+
+/**
+ * A target habit's day (habit-targets D1): its record; today pending until the
+ * period is met; any other day of its history up to today a rest day, never
+ * missed; later days and days before its history blank.
+ */
+function targetDayState(records: Map<string, RecordMark>, first: string | null, date: string, today: string, target: number, period: TargetPeriod, weekStart: number): DayState {
+  const r = records.get(date)
+  if (r && r !== 'open') return r
+  if (date > today || !first || date < (first < today ? first : today)) return 'blank'
+  if (date !== today) return 'rest'
+  const start = periodStart(today, period, weekStart)
+  let n = 0
+  for (const [d, x] of records) if (kept(x) && periodStart(d, period, weekStart) === start) n++
+  return n >= target ? 'rest' : 'pending'
+}
+
 /** The thread's days: the seven days ending on `today`. */
-export function threadDays(series: Task, tasks: Iterable<Task>, today: string): DayCell[] {
-  return habitDays(series, tasks, isoOf(dayOf(today) - 6), today, today)
+export function threadDays(series: Task, tasks: Iterable<Task>, today: string, opts?: HabitOptions): DayCell[] {
+  return habitDays(series, tasks, isoOf(dayOf(today) - 6), today, today, opts)
 }
 
 /**
@@ -458,7 +612,7 @@ export function threadDays(series: Task, tasks: Iterable<Task>, today: string): 
  * logical today. Later days and days before its first scheduled date cannot.
  */
 export function editableDay(cell: Pick<DayCell, 'date' | 'state'>, today: string): boolean {
-  return cell.date <= today && (cell.state === 'done' || cell.state === 'tiny' || cell.state === 'skipped' || cell.state === 'missed')
+  return cell.date <= today && (cell.state === 'done' || cell.state === 'tiny' || cell.state === 'partial' || cell.state === 'skipped' || cell.state === 'missed' || cell.state === 'rest')
 }
 
 /** The piece of the habit's lineage a record of `date` belongs to (the series when it was never split). */

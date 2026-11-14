@@ -380,6 +380,42 @@ describe('lazy files (design D7)', () => {
 })
 
 describe('caches', () => {
+  // Chromium can drop a stored body handed straight to respondWith() when the
+  // worker collects garbage, and the page's import fails with ERR_ABORTED.
+  it('answers a stored file read whole, never the cache\'s own response (issue 1363)', async () => {
+    const srv = server()
+    await srv.serve(v1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    const r = e.record()
+    const stored = e.caches.stores.get(r.current!.cache)!
+    const handed: Response[] = []
+    const match = stored.match.bind(stored)
+    stored.match = async (key: string) => { const res = await match(key); if (res) handed.push(res); return res }
+    const got = await cachedFile(e, r, 'assets/index-1.js')
+    expect(handed).toHaveLength(1)
+    expect(got).not.toBe(handed[0])
+    expect(handed[0].bodyUsed).toBe(true)
+    expect(got!.headers.get('Content-Type')).toBe('text/javascript')
+    expect(await text(got)).toBe('one')
+  })
+
+  it('takes the previous set, then nothing, when a stored body cannot be read', async () => {
+    const srv = server()
+    await srv.serve(v1)
+    const e = env(srv)
+    await checkForUpdate(e)
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const r = e.record()
+    const broken = () => new Response(new ReadableStream({ pull(c) { c.error(new TypeError('aborted')) } }))
+    e.caches.stores.get(r.current!.cache)!.match = async () => broken()
+    expect(await cachedFile(e, r, 'assets/index-2.js')).toBeNull()
+    expect(await text(await cachedFile(e, r, 'index.html'))).toBe('<div id=root>1</div>')
+    e.caches.stores.get(r.previous!.cache)!.match = async () => broken()
+    expect(await cachedFile(e, r, 'index.html')).toBeNull()
+  })
+
   it('deletes sets the record no longer names, and the Workbox precache on activation', async () => {
     const srv = server()
     await srv.serve(v1)

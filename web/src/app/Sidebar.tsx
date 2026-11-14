@@ -41,6 +41,7 @@ import { navigate, type Route } from './router'
 import { taskIndexOf, useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
 import { beginDrag } from '../lib/dnd'
+import { holdForRowMenu } from './rowMenuHold'
 import { moveProjectBy, moveProjectTo } from '../lib/move'
 import { canEditProject, canEditTasks, roleOf } from '../lib/sharing'
 import { taskDrop } from './taskDrop'
@@ -460,7 +461,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           )}
         </nav>}
       </div>
-      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll>
+      <div ref={scroller} className={`ui-scroller min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 ${collapsed ? 'px-1.5' : 'px-3'}`} data-sidebar-scroll onPointerDown={holdForRowMenu}>
       {space === 'notes' ? <Suspense fallback={null}><NotesSidebar route={route} collapsed={collapsed} /></Suspense> : <>
       {finding && !collapsed && (
         <div className="pt-3" data-sidebar-find>
@@ -503,7 +504,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
             const editing = renamingProject === n.id && !collapsed && movable(n.id)
             return (
               <li data-drag-id="sidebar-project" key={n.id} role="treeitem" aria-level={n.depth + 1} aria-expanded={has ? !isCollapsed : undefined}
-                data-project-row={n.id} data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
+                data-project-row={n.id} data-menu-row data-drop-target={`project:${n.id}`} data-task-drop={canEditTasks(roleOf(n.id, memberMap)) ? taskDrop.project(n.id) : undefined}
                 onPointerDown={!editing && movable(n.id) ? (e) => startDrag(e, n) : undefined}
                 className={`group relative flex items-center rounded-control ${countsAll ? 'ui-swap-row ' : ''}${movingProject ? '' : 'data-drop-active:ring-2 data-drop-active:ring-accent'} ${rowGap(shownRows, i)} ${drop === 'inside' ? feedback.inside : ''}`} style={{ paddingLeft: collapsed ? 0 : `${levels * INDENT_REM}rem` }}>
                 <GuideLines levels={levels} />
@@ -572,7 +573,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
           const active = route.view === 'view' && route.id === v.id
           const c = viewCounts.get(v.id)
           return (
-            <div key={v.id} className={`group flex items-center${countsAll ? ' ui-swap-row' : ''}`}>
+            <div key={v.id} data-menu-row className={`group flex items-center${countsAll ? ' ui-swap-row' : ''}`}>
               <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
                 data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
                 leading={<span style={{ color: v.color }}><ViewMark view={v} /></span>}

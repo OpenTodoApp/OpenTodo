@@ -6,7 +6,7 @@
 // not fit folds into a "+N" link to Habits. No heading, count or fold. On the first
 // load: no thread, no menu, no form.
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { continuedIds, habitRowsOf, isGraduated, isOpenHabit, threadDays } from '../../lib/habits'
+import { continuedIds, habitRowsOf, habitTarget, isGraduated, isOpenHabit, threadDays } from '../../lib/habits'
 import { t } from '../../lib/i18n'
 import type { Project, Task } from '../../lib/types'
 import { Icon } from '../../ui'
@@ -20,7 +20,7 @@ const PART_ORDER = (x: Task) => (x.day_part === 'morning' ? 0 : x.day_part === '
 
 export interface StripHabit { task: Task; kept: boolean }
 
-/** The strip's habits (D3): due today or earlier and open, or kept today; in part-of-the-day order, then time and title. */
+/** The strip's habits (D3): due today or earlier and open, or kept today, a met target habit left out; in part-of-the-day order, then time and title. */
 export function stripHabits(tasks: readonly Task[], today: string): StripHabit[] {
   const rowsOf = habitRowsOf(tasks)
   const continued = continuedIds(tasks)
@@ -29,6 +29,8 @@ export function stripHabits(tasks: readonly Task[], today: string): StripHabit[]
     if (!isOpenHabit(x) || isGraduated(x) || continued.has(x.id) || !x.due) continue
     const last = threadDays(x, rowsOf(x), today).at(-1)
     const kept = last?.state === 'done' || last?.state === 'tiny'
+    // A target habit whose period is met rests until the next one (habit-targets D1).
+    if (!kept && habitTarget(x) && last?.state === 'rest') continue
     if (kept || x.due.date <= today) out.push({ task: x, kept })
   }
   return out.sort((a, b) => PART_ORDER(a.task) - PART_ORDER(b.task) || (a.task.due?.time ?? '99').localeCompare(b.task.due?.time ?? '99') || a.task.title.localeCompare(b.task.title))

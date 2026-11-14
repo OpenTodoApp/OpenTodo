@@ -127,14 +127,16 @@ describe('Today grouped by Project', () => {
       expect(rowOf(child).getAttribute('data-drop-target')).toBe(`task:${child}`)
       expect(await drag(f.a, rowOf(child), 120)).toEqual({ line: null, note: 'Move to Work' })
       await waitFor(async () => (await db.tasks.get(f.a))?.parent_id === child)
-      const existingUndo = await db.assistantUndo.toCollection().primaryKeys()
       expect(await drag(f.b, rowOf(child), 136, 50)).toEqual({ line: 'after', note: 'Move to Work', depth: '2' })
       await waitFor(async () => (await db.tasks.get(f.b))?.parent_id === child)
       expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.work, due: f.due })
       expect((await db.tasks.get(f.b))!.position).toBeLessThan((await db.tasks.get(f.a))!.position)
       expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title' })
-      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work' && !existingUndo.includes(e.id))!
-      await undoBatch(entry.id)
+      const undoForB = async () => (await db.assistantUndo.toArray()).find((e) =>
+        e.label === 'Moved to Work' && e.inverse.some((change) => change.entity === 'task' && change.entityId === f.b))
+      await waitFor(async () => !!(await undoForB()), 'the Undo entry for the second drop')
+      await undoBatch((await undoForB())!.id)
+      expect((await db.tasks.get(f.a))?.parent_id).toBe(child)
       expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.home, parent_id: null, due: f.due })
     } finally { await r.unmount() }
   })

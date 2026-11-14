@@ -245,12 +245,25 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   return { kind: 'installed', version, first, check }
 }
 
-/** The installed copy of a listed file, from the current set or, for an older open tab, the previous one. */
+/**
+ * The installed copy of a listed file, from the current set or, for an older open tab, the previous one.
+ * The stored body is read whole here and answered as a new response, never the
+ * cache's own: Chromium can drop a stored body handed straight to respondWith()
+ * while the page is still reading it, when the worker collects garbage, and the
+ * page gets net::ERR_ABORTED (GitHub issue 1363: one failed static import and
+ * the app never starts). Read here, a failed read is the worker's to handle: the
+ * file comes from the other set, or from the server.
+ */
 export async function cachedFile(env: Pick<InstallEnv, 'caches'>, record: TrustRecord | null, path: string): Promise<Response | null> {
   for (const v of [record?.current, record?.previous]) {
     if (!v || !(path in v.files)) continue
     const hit = await (await env.caches.open(v.cache)).match(cacheKey(path))
-    if (hit) return hit
+    if (!hit) continue
+    try {
+      return fileResponse(await hit.blob(), hit.headers.get('Content-Type'))
+    } catch {
+      // Unreadable: the other set, or the server.
+    }
   }
   return null
 }

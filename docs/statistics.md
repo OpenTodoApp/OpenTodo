@@ -13,7 +13,7 @@ order: 25
 
 ## Statistics
 
-Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, this month, this quarter, this year or last week with the arrow keys (on a phone, tap the period). Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before. A period to date is compared with the same days of the previous one: on 10 October, this month is 1–10 October against 1–10 September.
+Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, this month, this quarter, this year or last week with the arrow keys (on narrow screens, tap the period). Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before. A period to date is compared with the same days of the previous one: on 10 October, this month is 1–10 October against 1–10 September.
 
 The four tiles:
 
