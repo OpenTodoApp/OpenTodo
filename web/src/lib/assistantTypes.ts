@@ -149,6 +149,8 @@ export type TurnEvent =
   | { type: 'error'; code: string; message: string }
   /** assistant-generative-ui D3: a block's kind and parameters, read with `blockOf`. */
   | ({ type: 'block' } & Record<string, unknown>)
+  /** assistant-tool-sources D2: what a read tool returned, read with `sourceOf`. */
+  | ({ type: 'source' } & Record<string, unknown>)
 
 export function isOwnerSettings(s: AssistantOwnerSettings | AssistantMemberSettings | null): s is AssistantOwnerSettings {
   return !!s && 'providers' in s

@@ -49,7 +49,16 @@ export interface AssistantMessage {
   chosen?: string
   /** Next steps offered as buttons under the answer (assistant-followups): 1 to 3 short texts. */
   followups?: string[]
+  /** What the answer's read tools returned (assistant-tool-sources): where in the text, and ids only. */
+  sources?: { at: number; source: AssistantSource }[]
   at: number
+}
+
+/** What one read tool returned (assistant-tool-sources D1): the kind, at most 50 ids and their total, never content. */
+export interface AssistantSource {
+  of: 'tasks' | 'projects'
+  ids: string[]
+  total: number
 }
 
 /**

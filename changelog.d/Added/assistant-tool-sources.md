@@ -1,0 +1,1 @@
+- The assistant shows what it read: where an answer read your tasks or projects, a line such as **Looked at 3 tasks** opens to exactly the tasks or projects the tool returned, so a task a model invents cannot pass as one of yours (assistant-tool-sources, #1317).

@@ -337,3 +337,51 @@ export const BeforeAndAfter: StoryObj = {
   }),
   render: () => <BeforeAndAfterView />,
 }
+
+/**
+ * What the reads returned (assistant-tool-sources): one quiet line per read, in
+ * place; the first is opened to its rows, the last read found nothing.
+ */
+function SourcesView() {
+  const root = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState(true)
+  useEffect(() => {
+    let tries = 0
+    const timer = setInterval(() => {
+      const first = root.current?.querySelector<HTMLDetailsElement>('details[data-assistant-source]')
+      if (first && !first.open) first.open = true
+      if ((first && first.querySelectorAll('li').length === 3 && root.current!.querySelectorAll('[data-assistant-source]').length === 2) || ++tries > 200) {
+        clearInterval(timer)
+        requestAnimationFrame(() => setPending(false))
+      }
+    }, 20)
+    return () => clearInterval(timer)
+  }, [])
+  return (
+    <div ref={root} className="-m-4 min-h-[32rem] bg-surface px-4 py-6" data-story-pending={pending || undefined}>
+      <div className="mx-auto w-full max-w-[46rem]">
+        <AssistantPanelBody {...base} layout="page" messages={[
+          { role: 'user', text: 'What is overdue, and is anything in Errands?', at: 1 },
+          {
+            role: 'assistant', at: 2, status: ['Looking at Today…', 'Searching tasks…'],
+            text: 'Three tasks are overdue; the invoice is the oldest.\n\nNothing in Errands matches.',
+            sources: [
+              { at: 0, source: { of: 'tasks', ids: [seeded.invoice, seeded.dentist, seeded.expenses], total: 3 } },
+              { at: 'Three tasks are overdue; the invoice is the oldest.\n\n'.length, source: { of: 'tasks', ids: [], total: 0 } },
+            ],
+          },
+        ]} />
+      </div>
+    </div>
+  )
+}
+
+export const ToolSources: StoryObj = {
+  ...withSeed(async () => {
+    await seedBase()
+    seeded.invoice = await createTask({ title: 'Send the invoice', due: { date: addDaysISO(TODAY, -3) }, project_id: seeded.work })
+    seeded.dentist = await createTask({ title: 'Book the dentist', due: { date: addDaysISO(TODAY, -2) } })
+    seeded.expenses = await createTask({ title: 'File the expenses', due: { date: addDaysISO(TODAY, -1) }, project_id: seeded.work })
+  }),
+  render: () => <SourcesView />,
+}

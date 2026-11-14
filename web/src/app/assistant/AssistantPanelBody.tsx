@@ -28,7 +28,7 @@ export interface PanelViewProps {
   status: AssistantStatus | null
   connected: boolean
   messages: AssistantMessage[]
-  streaming: { text: string; status: string[]; blocks?: AssistantMessage['blocks'] } | null
+  streaming: { text: string; status: string[]; blocks?: AssistantMessage['blocks']; sources?: AssistantMessage['sources'] } | null
   /** Polite live regions: completed sentences of the answer, and status lines. */
   announce: string
   statusAnnounce: string
@@ -130,7 +130,7 @@ export function AssistantPanelBody(p: PanelViewProps) {
               {p.streaming && (
                 <AnswerItem busy>
                   {p.streaming.status.length > 0 && <p className="text-meta text-muted">{p.streaming.status[p.streaming.status.length - 1]}</p>}
-                  {p.streaming.text || p.streaming.blocks?.length ? <AnswerContent text={p.streaming.text} blocks={p.streaming.blocks} /> : <p className="text-muted">{t('Thinking…')}</p>}
+                  {p.streaming.text || p.streaming.blocks?.length || p.streaming.sources?.length ? <AnswerContent text={p.streaming.text} blocks={p.streaming.blocks} sources={p.streaming.sources} /> : <p className="text-muted">{t('Thinking…')}</p>}
                 </AnswerItem>
               )}
             </ol>
@@ -207,7 +207,7 @@ function MessageItem({ m, actions }: { m: AssistantMessage; actions: ItemActions
     <AnswerItem>
       <span className="sr-only">{t('Assistant:')}{' '}</span>
       {m.status && m.status.length > 0 && <AnswerSteps lines={m.status} />}
-      <AnswerContent text={m.text} blocks={m.blocks} choice={actions.choice} />
+      <AnswerContent text={m.text} blocks={m.blocks} sources={m.sources} choice={actions.choice} />
       {m.stop === 'max_tokens' && <p className="text-meta font-medium text-on-warning-soft">{t('Cut off: the answer reached its length limit.')}</p>}
       {m.error && <p className="text-danger">{m.error}</p>}
       {m.note && <p className="text-meta text-muted">{m.note}</p>}

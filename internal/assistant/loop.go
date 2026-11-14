@@ -142,6 +142,8 @@ type Events struct {
 	Status func(string)
 	// Block streams a shown block (assistant-generative-ui D3).
 	Block func(Block)
+	// Source streams what a read tool returned, as ids (assistant-tool-sources D1).
+	Source func(Source)
 }
 
 // Result is the outcome of a turn.
@@ -403,6 +405,7 @@ func (l *Loop) Run(ctx context.Context, prov Provider, in TurnInput, ev Events) 
 					continue
 				}
 				out, isErr := l.runTool(ctx, caller, in.Skill, withWorkday(call, in.Workday), &draft, log)
+				ev.source(call.Name, out, isErr)
 				results = append(results, ToolResult{ID: call.ID, Content: out, IsError: isErr})
 			}
 			conv.AddToolResults(results)

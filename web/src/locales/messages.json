@@ -11119,6 +11119,9 @@
   "No project “{name}” · stays in the title": [
     "web/src/app/ParseChips.tsx"
   ],
+  "No projects found": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
+  ],
   "No projects yet": [
     "web/src/app/ProjectsView.tsx"
   ],
@@ -11226,6 +11229,9 @@
   "No task selected": [
     "web/src/app/InboxEmptyPane.tsx",
     "web/src/app/sidePanel.tsx"
+  ],
+  "No tasks found": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
   ],
   "No tasks match this panel.": [
     "web/src/app/DashboardView.tsx"
@@ -14407,6 +14413,7 @@
     "web/src/app/assistant/blocks/MapBlock.tsx",
     "web/src/app/assistant/blocks/NoteBlock.tsx",
     "web/src/app/assistant/blocks/ProjectBlock.tsx",
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/lib/assistantBlockData.ts",
@@ -20515,6 +20522,7 @@
     "web/src/app/YearView.tsx",
     "web/src/app/assistant/blocks/DeadlinesBlock.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/assistant/blocks/TimelineBlock.tsx",
     "web/src/app/calendar/DayColumn.tsx",
     "web/src/app/calendar/DeadlineMarker.tsx",
@@ -22171,6 +22179,7 @@
     "web/src/app/calendar/projections.tsx"
   ],
   "and {n} more": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx",
     "web/src/app/review/CloseDay.tsx",
     "web/src/app/themes/ImportReport.tsx"
   ],
@@ -25235,6 +25244,12 @@
   ],
   "{n, plural, one {Label removed from # task} other {Label removed from # tasks}}": [
     "web/src/lib/bulk.ts"
+  ],
+  "{n, plural, one {Looked at # project} other {Looked at # projects}}": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
+  ],
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": [
+    "web/src/app/assistant/blocks/SourcesLine.tsx"
   ],
   "{n, plural, one {Map, # place} other {Map, # places}}": [
     "web/src/app/assistant/blocks/MapBlock.tsx",
