@@ -12,6 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/httpapi/httpx"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Middleware: authentication, origin checks, security headers and request
@@ -54,6 +55,12 @@ func (s *Server) requireAuth(next http.HandlerFunc) http.Handler {
 		// audit (agent_rest.go).
 		if !auth.FullAccess(scope) && isWriteRequest(r) {
 			if scope == auth.ScopeAgent && agentRoute(r) != "" {
+				// The route policy's withTokenReach never runs on this path: a token
+				// limited to workspaces carries its limit into the registry here
+				// (token-workspaces D2), or it would write across the whole account.
+				if tok.Workspaces != nil {
+					ctx = opsync.WithReach(ctx, tok.Workspaces)
+				}
 				s.handleAgentWrite(w, r.WithContext(ctx), u, tok)
 				return
 			}
