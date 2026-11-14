@@ -31,6 +31,14 @@ final class ShellController: NSObject, ObservableObject {
     /// Receives the files the web app saves (shell-repairs D3); made with the first one.
     private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
+    /// The name of the launch screen's colour in the asset catalog (`UILaunchScreen` in Info.plist).
+    static let launchColor = "LaunchBackground"
+    /// The longest the launch colour stays before the web view shows whatever it has.
+    static let revealCap: TimeInterval = 5
+    /// The web view shows: a page has loaded, a load failed, or the cap passed (shell-first-paint).
+    private(set) var revealed = false
+    /// The bars the web app asked for last; their icons come with the web view.
+    private var bars: SystemBars?
 
     init(origin: URL) {
         self.origin = origin
@@ -47,6 +55,13 @@ final class ShellController: NSObject, ObservableObject {
         self.webView = WKWebView(frame: .zero, configuration: config)
         self.bridge = bridge
         super.init()
+        // Hidden over the launch colour until a page has loaded (shell-first-paint): the app
+        // goes from its launch screen to the page with no empty web view between them.
+        webView.alpha = 0
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(ShellController.revealCap * 1_000_000_000))
+            self?.reveal()
+        }
         webView.navigationDelegate = self
         webView.uiDelegate = self
         // No history back gesture (edge-swipe-menu, GitHub issue 1232): in an app an edge swipe
@@ -84,12 +99,22 @@ final class ShellController: NSObject, ObservableObject {
     /// The theme's bar colour behind the page: the status bar area, the first frame and the
     /// overscroll; and the icons on it (shell-repairs D7).
     func apply(_ bars: SystemBars) {
-        StatusBar.show(lightIcons: bars.lightIcons)
+        self.bars = bars
+        // Over the launch colour the system chooses the icons; the bars' own come with the page.
+        StatusBar.show(lightIcons: revealed ? bars.lightIcons : nil)
         let color = bars.color
         webView.isOpaque = false
         webView.backgroundColor = color
         webView.scrollView.backgroundColor = color
         webView.underPageBackgroundColor = color
+    }
+
+    /// Shows the web view in place of the launch colour, with the status bar icons of its bars.
+    func reveal() {
+        guard !revealed else { return }
+        revealed = true
+        if let bars { StatusBar.show(lightIcons: bars.lightIcons) }
+        UIView.animate(withDuration: 0.2) { self.webView.alpha = 1 }
     }
 
     /// Hands a download WebKit started to the saver, which asks where the file goes.
@@ -168,6 +193,7 @@ final class ShellController: NSObject, ObservableObject {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
         failure = Failure(kind: Self.kind(of: nsError), detail: nsError.localizedDescription)
+        reveal()
     }
 
     private static func kind(of error: NSError) -> Failure.Kind {
@@ -308,6 +334,7 @@ extension ShellController: WKNavigationDelegate {
         showSite(webView.url)
         loaded = true
         failure = nil
+        reveal()
         refresher.endRefreshing()
         handOverShareIfNeeded()
     }
@@ -352,6 +379,8 @@ struct ShellView: View {
             WebViewContainer(webView: shell.webView)
                 .ignoresSafeArea(edges: shell.foreignHost == nil ? .all : .bottom)
         }
+        // The launch screen's colour, behind the web view until it shows (shell-first-paint).
+        .background(Color(ShellController.launchColor).ignoresSafeArea())
         .overlay {
             if let failure = shell.failure, !shell.loaded { FailureView(failure: failure) { shell.load() } }
         }

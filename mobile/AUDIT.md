@@ -37,6 +37,8 @@ Fixed by `shell-repairs`, apart from the share extension; each still needs its c
 
 ### Startup and offline
 
+The splash and the skeleton are fixed by `shell-first-paint`; each still needs its check on a phone. The stored copy for the iOS store build is open.
+
 | Finding | Where |
 | --- | --- |
 | No splash on either platform: a blank screen until the page paints; a slow server shows nothing. | `themes.xml`, `Info.plist:65` |
@@ -69,7 +71,7 @@ Each step is one OpenSpec change, ships on its own, and ends with a check on a r
 1. **`shell-repairs`**: downloads, Face ID description, Android Back, haptics through the bridge, status bar icons, the iOS Done action. No design questions; the largest gain per line.
 2. **`shell-reminders-on`**: ask for notifications at first run, explain exact alarms before asking, show task titles by default, a completion signal for the hidden run in place of the fixed 30 s.
 3. **`shell-push`**: the server wakes the shell when a reminder changes or is due. Needs a design: Android through UnifiedPush or ntfy (no Google, F-Droid stays); iOS needs APNs, so a relay that holds the app's key, since a self-hosted server cannot sign for the app. Opt-in, no content in the push.
-4. **`shell-first-paint`**: a splash on both platforms, the skeleton with the phone's chrome, a stored copy for the iOS store build.
+4. **`shell-first-paint`**: a splash on both platforms, the skeleton with the phone's chrome. A stored copy for the iOS store build is left for a change of its own.
 5. **`shell-touch`**: the global CSS (tap highlight, callout, overscroll, selection, zoom in shells), link previews off, pull to sync instead of reload, larger list text.
 6. **`shell-motion`**: transitions between screens, drag to dismiss sheets, edge swipe for the drawer, back gesture on iOS.
 7. Later, by measurement: windowed lists, native share out, universal links, lock-screen widgets.

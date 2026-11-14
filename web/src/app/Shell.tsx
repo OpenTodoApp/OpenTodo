@@ -33,6 +33,7 @@ import { hasScope, useShortcutDispatcher, useShortcutScope } from './shortcuts'
 import { closePanelIfStale, panelTaskId, usePanel } from './panel'
 import { currentAddress, openTaskPage, settleTrail } from './taskTrail'
 import { AddButton, TAB_BAR_HEIGHT_REM, TabBar } from './TabBar'
+import { PHONE_BAR_FRAME, PHONE_BAR_LINE, hasPhoneChrome } from './phoneFrame'
 import { usePhoneChrome } from './useScrollDirection'
 import { onQuickAddSheetRequest, QuickAddSheet, requestQuickAddSheet } from './QuickAddSheet'
 import { PanelHost } from './PanelHost'
@@ -249,9 +250,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const addButton = useRef<HTMLButtonElement>(null)
   const sheetOpen = useOverlayDepth() > 0
   const panelOpen = !!usePanel()
-  // The routine editor page keeps its own action bar at the bottom (routines-editor-page D2).
-  const routinePage = route.view === 'rules' && !!(route.id || route.create)
-  const phoneChrome = !sheetOpen && !panelOpen && !routinePage && !['share', 'invite', 'project-invite', 'workspace-invite', 'reset', 'task'].includes(route.view)
+  const phoneChrome = !sheetOpen && !panelOpen && hasPhoneChrome(route)
   // The one keydown listener (keyboard-shortcuts "One shortcut registry with
   // scopes"); the shell owns the `global` scope: the palette, `g` navigation, the
   // cheat sheet, the sidebar toggle and the assistant.
@@ -473,7 +472,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
   if (desktop) return null
   const day = !!bar?.day
   return (
-    <header className={`flex min-h-12 items-center gap-1 pl-2 pr-2 pt-[max(0.25rem,var(--safe-top))] md:hidden ${day ? '' : 'border-b border-soft'}`} data-phone-bar data-phone-bar-day={day || undefined}>
+    <header className={`${PHONE_BAR_FRAME} ${day ? '' : PHONE_BAR_LINE}`} data-phone-bar data-phone-bar-day={day || undefined}>
       {bar?.back
         ? <IconButton icon="chevron-left" label={bar.back.label} onClick={bar.back.onClick} className="touch-target" data-page-back />
         : <IconButton icon="menu" label={t('Open menu')} onClick={onMenu} className="touch-target" />}

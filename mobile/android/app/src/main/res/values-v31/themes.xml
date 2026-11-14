@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- From Android 12 the system's splash screen is the launch screen (shell-first-paint): it
+         draws the launcher icon over this colour, and MainActivity keeps it up until the page
+         can be drawn. The window behind it has the same colour and no second icon. -->
+    <style name="Theme.OpenTodo.Launch">
+        <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@color/launch_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+    </style>
+</resources>
