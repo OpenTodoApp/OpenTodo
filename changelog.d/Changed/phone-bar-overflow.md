@@ -1,0 +1,1 @@
+- **A project's name gets more of the phone bar.** On a phone the duration filter is in the page's "…" menu on every list, as it already was in the Inbox, and an active filter is a small chip in the bar that clears it with one tap.

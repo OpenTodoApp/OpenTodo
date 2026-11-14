@@ -118,10 +118,11 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
 export interface PhoneItem { id: string; label: string; icon?: IconName; checked?: boolean; group?: string; onSelect: () => void }
 
 /**
- * A list's actions on a phone (phone-v2 D1): two visible slots in the shell's bar
- * (Process the Inbox or Ask in Today first, then the duration filter) and the rest
- * as overflow items: Select tasks, Display mode, and the duration filter when it
- * had no slot (its active choice then shows as a chip in the bar).
+ * A list's actions on a phone (phone-v2 D1): the visible slots in the shell's bar
+ * (Process the Inbox or Ask in Today, then the page's display options) and the rest
+ * as overflow items: Select tasks, Display mode and the filters, so the title keeps
+ * the room of a Filter button (phone-bar-overflow); an active filter shows as a chip
+ * in the bar.
  */
 export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, onSelectMode, filterKey, duration, onDuration, project, extraSlot, queryFilter }: {
   route: ListRoute
@@ -142,17 +143,16 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
   const phone = !useMediaQuery(DESKTOP_HEADER_QUERY)
   const ask = useTodayAsk(userRole) && route.view === 'today'
   const process = route.view === 'inbox' && rowCount > 0
-  const filterSlot = !!filterKey && !ask && !process
   const items: PhoneItem[] = []
   if (route.view !== 'completed' && rowCount > 0) items.push({ id: 'select', label: t('Select tasks'), icon: 'list-checks', onSelect: onSelectMode })
   if (route.view === 'today' || route.view === 'upcoming') {
     const target = { kind: route.view }
     items.push({ id: 'display', label: t('Display mode'), icon: 'monitor', onSelect: () => navigate({ view: 'display', target, options: { ...DEFAULT_DISPLAY_OPTIONS } }) })
   }
-  if (filterKey && !filterSlot) {
+  if (filterKey) {
     for (const f of DURATION_FILTERS) items.push({ id: `duration-${f.kind}`, label: f.label, checked: duration === f.kind, group: t('Filter by duration'), onSelect: () => onDuration(duration === f.kind ? null : f.kind) })
   }
-  if (queryFilter && !filterSlot) items.push({ id: 'query-filter', label: t('Filter…'), icon: 'filter', onSelect: queryFilter.onOpen })
+  if (queryFilter) items.push({ id: 'query-filter', label: t('Filter…'), icon: 'filter', onSelect: queryFilter.onOpen })
   const current = DURATION_FILTERS.find((f) => f.kind === duration)
   const slots = (
     <>
@@ -164,8 +164,7 @@ export function usePhoneListActions({ route, userRole, rowCount, topLevelCount, 
         </Button>
       )}
       {queryFilter?.query && <FilterQueryChip query={queryFilter.query} onOpen={queryFilter.onOpen} onClear={queryFilter.onClear} />}
-      {filterSlot && <DurationFilterControl active={duration} onChange={onDuration} onQuery={queryFilter?.onOpen} />}
-      {!filterSlot && current && <DurationChip label={current.label} onClear={() => onDuration(null)} />}
+      {current && <PhoneDurationChip label={current.label} onClear={() => onDuration(null)} />}
       {extraSlot}
     </>
   )
@@ -210,6 +209,24 @@ function DurationChip({ label, onClear }: { label: string; onClear: () => void }
       {label}
       <button type="button" className="touch-target flex h-5 w-5 items-center justify-center rounded-full hover:bg-accent/10" aria-label={t('Clear filter')} onClick={onClear} data-clear-duration>
         <Icon name="x" size="xs" />
+      </button>
+    </span>
+  )
+}
+
+/**
+ * The chip in the phone bar (phone-bar-overflow): the filter icon stands for the name,
+ * which the menu shows checked, and the whole chip clears the filter, so it takes the
+ * room of one control and the title keeps the rest.
+ */
+function PhoneDurationChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="flex" data-duration-active>
+      <span className="sr-only">{label}</span>
+      <button type="button" className="touch-target flex items-center justify-center rounded-full" aria-label={t('Clear filter')} onClick={onClear} data-clear-duration>
+        <span className="flex items-center gap-1 rounded-full border border-accent bg-accent-soft px-2 py-1 text-on-accent-soft">
+          <Icon name="filter" size="xs" /><Icon name="x" size="xs" />
+        </span>
       </button>
     </span>
   )
