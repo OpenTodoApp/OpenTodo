@@ -7659,5 +7659,7 @@
   "template, meeting, journal, new note": "模板, 会议, 日志, 新笔记",
   "Note deleted": "笔记已删除",
   "Note updated": "笔记已更新",
-  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。"
+  "Titles and text arrive encrypted.": "标题和正文以加密形式送达。",
+  "Scheduled for today": "已安排到今天",
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": "{n, plural, other {已将 # 个任务安排到今天}}"
 }

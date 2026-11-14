@@ -7659,5 +7659,7 @@
   "template, meeting, journal, new note": "Vorlage, Besprechung, Journal, neue Notiz",
   "Note deleted": "Notiz gelöscht",
   "Note updated": "Notiz geändert",
-  "Titles and text arrive encrypted.": "Titel und Text kommen verschlüsselt an."
+  "Titles and text arrive encrypted.": "Titel und Text kommen verschlüsselt an.",
+  "Scheduled for today": "Für heute eingeplant",
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": "{n, plural, one {# Aufgabe für heute eingeplant} other {# Aufgaben für heute eingeplant}}"
 }

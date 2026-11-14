@@ -82,6 +82,8 @@ function dropLevel(n: { depth: number; children: unknown[] }, zone: 'before' | '
 }
 /** The Inbox destination takes dropped tasks (ux-feedback-2 D4): a task dropped on it leaves its project. */
 const INBOX_DROP = { 'data-task-drop': taskDrop.inbox, className: 'data-drop-active:ring-2 data-drop-active:ring-accent' }
+// Today takes a dragged task too: it is planned for today (drop-on-today).
+const TODAY_DROP = { 'data-task-drop': taskDrop.today, className: 'data-drop-active:ring-2 data-drop-active:ring-accent' }
 
 /** 2 px between project rows; 6 px after the last row of an expanded top-level project's subtree (ux-feedback-2 D6). */
 const rowGap = (rows: readonly { depth: number }[], i: number) => (rows[i].depth > 0 && (rows[i + 1]?.depth ?? 0) === 0 ? 'mb-1.5' : 'mb-0.5')
@@ -406,7 +408,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
     const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? !!r.graph === !!route.graph : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
-    const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : {})} />
+    const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : r.view === 'today' ? TODAY_DROP : {})} />
     // Every destination with a `g` sequence names it in its tooltip (precision-shell D4).
     const goKey = GO_KEYS[r.view]
     return (tip || goKey) && !collapsed ? <Tooltip key={label} label={tip ?? t('Go to {page}', { page: label })} shortcut={goKey} side="right">{node}</Tooltip> : node

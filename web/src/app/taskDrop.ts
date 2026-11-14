@@ -1,14 +1,16 @@
 // A task dropped on the sidebar (OpenSpec change ux-feedback-2, design D4): on a
 // project or the Inbox it moves as the Move action does; on a label it gains the
-// label. Targets carry `data-task-drop` ("project:<id>", "inbox", "label:<id>"),
+// label; on Today it is planned for today (drop-on-today). Targets carry
+// `data-task-drop` ("project:<id>", "inbox", "label:<id>", "today"),
 // resolved by the list's drag (lib/dnd `taskDrops`) as `drop:<value>`.
 import { dropUndoable } from '../lib/undoActions'
 import { showUndoToast } from './bulk/toastStore'
 
-/** The value of a `data-task-drop` attribute for a project, the Inbox or a label. */
+/** The value of a `data-task-drop` attribute for a project, the Inbox, a label or Today. */
 export const taskDrop = {
   project: (id: string) => `project:${id}`,
   inbox: 'inbox',
+  today: 'today',
   label: (id: string) => `label:${id}`,
 } as const
 
