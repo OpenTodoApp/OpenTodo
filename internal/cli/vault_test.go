@@ -59,7 +59,7 @@ func TestVaultInitSyncStatus(t *testing.T) {
 	h.put("task", "plum0001", map[string]any{"title": "Call the plumber", "project_id": "home0001"})
 	dir := filepath.Join(t.TempDir(), "Tasks")
 	out := h.mustRun("vault", "init", dir)
-	if !strings.Contains(out, "1 projects and 2 tasks written") {
+	if !strings.Contains(out, "1 projects, 2 tasks and 0 notes written") {
 		t.Fatalf("init output %q", out)
 	}
 	home := filepath.Join(dir, "Home.md")
@@ -304,4 +304,40 @@ func contextWithStop(stop <-chan struct{}) (context.Context, context.CancelFunc)
 		cancel()
 	}()
 	return ctx, cancel
+}
+
+// TestVaultNotesCommand (OpenSpec change vault-notes): init turns notes on,
+// `vault notes off|on` only writes the state, and sync --json counts notes.
+func TestVaultNotesCommand(t *testing.T) {
+	h := newHarness(t)
+	h.login()
+	dir := filepath.Join(t.TempDir(), "Tasks")
+	h.mustRun("vault", "init", dir)
+	if !strings.Contains(readFile(t, filepath.Join(dir, ".opentodo", "state.json")), `"notes":true`) {
+		t.Fatal("init did not turn notes on")
+	}
+	writeFile(t, filepath.Join(dir, "Notes", "Recipes.md"), "Pancakes.\n")
+	out := h.mustRun("vault", "sync", dir, "--json")
+	var rep struct {
+		Notes struct{ Created, Changed int } `json:"notes"`
+	}
+	if err := json.Unmarshal([]byte(out), &rep); err != nil || rep.Notes.Created != 1 {
+		t.Fatalf("sync --json %v: %s", err, out)
+	}
+	if out := h.mustRun("vault", "notes", "off", "--vault", dir); !strings.Contains(out, "Notes are off") {
+		t.Errorf("notes off: %q", out)
+	}
+	if strings.Contains(readFile(t, filepath.Join(dir, ".opentodo", "state.json")), `"notes":true`) {
+		t.Error("notes still on")
+	}
+	if code, _, _ := h.run("vault", "notes", "maybe", "--vault", dir); code != ExitUsage {
+		t.Errorf("notes maybe: exit %d", code)
+	}
+	if out := h.mustRun("vault", "notes", "on", "--vault", dir); !strings.Contains(out, "Notes are on") {
+		t.Errorf("notes on: %q", out)
+	}
+	h.mustRun("vault", "sync", dir)
+	if !strings.Contains(readFile(t, filepath.Join(dir, "Notes", "Recipes.md")), "opentodo-id:") {
+		t.Error("Recipes.md lost its id after off and on")
+	}
 }

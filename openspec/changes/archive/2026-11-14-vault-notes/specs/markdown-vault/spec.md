@@ -47,7 +47,7 @@ On write, a link to a note or a project in a note's Markdown (`[text](?note=<id>
 
 #### Scenario: Link opens in Obsidian
 - **WHEN** the note "Trip" links to the note "Ferry times" and the vault writes it
-- **THEN** `Notes/Trip.md` holds `[Ferry times](Ferry times.md)`, and the app still shows the link to the note after the next sync
+- **THEN** `Notes/Trip.md` holds `[Ferry times](Ferry%20times.md)`, and the app still shows the link to the note after the next sync
 
 #### Scenario: Link written in the file
 - **WHEN** the user adds `[Home](../Home.md)` to a note's file and syncs

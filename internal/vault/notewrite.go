@@ -23,7 +23,7 @@ func (e *engine) planNotes(dry bool) error {
 		return nil
 	}
 	tn := e.st.TaskNotes
-	v := newView(e.app, e.o.Crypter, e.o.Loc, e.sharedSet())
+	v := e.newView(e.app, e.sharedSet())
 	m := &mergeRun{av: v, bv: v, labels: v.labelSlugs(), newLabels: map[string]string{}}
 	type write struct {
 		p, id, text string

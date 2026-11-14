@@ -14,13 +14,25 @@
     "cursor": {"type": "integer"},
     "projects": {"type": "integer"},
     "tasks": {"type": "integer"},
+    "notes": {
+      "type": "object",
+      "description": "standalone notes in Notes/ (OpenSpec vault-notes), absent while the vault's notes are off",
+      "required": ["written", "created", "changed", "trashed", "notes"],
+      "properties": {
+        "written": {"type": "integer", "description": "note files written"},
+        "created": {"type": "integer", "description": "notes created from new files"},
+        "changed": {"type": "integer", "description": "notes changed from their files"},
+        "trashed": {"type": "integer", "description": "notes trashed because their file was deleted"},
+        "notes": {"type": "integer", "description": "notes the vault holds after the sync"}
+      }
+    },
     "events": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["kind", "text"],
         "properties": {
-          "kind": {"type": "string", "enum": ["written", "restored", "removed", "created", "updated", "completed", "reopened", "trashed", "conflict", "project", "section", "label", "notes", "moved", "archived", "unarchived", "time"]},
+          "kind": {"type": "string", "enum": ["written", "restored", "removed", "created", "updated", "completed", "reopened", "trashed", "conflict", "project", "section", "label", "notes", "moved", "archived", "unarchived", "time", "skipped"]},
           "file": {"type": "string"},
           "task": {"type": "string"},
           "text": {"type": "string"}

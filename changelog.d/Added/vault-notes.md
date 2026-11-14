@@ -1,0 +1,1 @@
+- `ot vault` keeps your notes as Markdown files too: one file per note in `Notes/`, with its project and labels in the front matter, links that open in Obsidian, and edits on both sides merged line by line. New vaults sync notes; an existing vault starts with `ot vault notes on` (OpenSpec change `vault-notes`).

@@ -42,6 +42,7 @@ type Rejection struct {
 // Membership names a shared project the account belongs to.
 type Membership struct {
 	ProjectID string `json:"projectId"`
+	Role      string `json:"role,omitempty"`
 }
 
 // Purged is an entity the server removed from the log.
@@ -164,8 +165,11 @@ func (e *engine) generation(rep Reply) bool {
 // absorb folds a reply into the app store and the state.
 func (e *engine) absorb(rep Reply) {
 	for _, op := range rep.Ops {
-		e.app.Apply(op)
 		e.clk.receive(op.TS)
+		if op.Entity == "note" && !e.st.Notes {
+			continue // notes off: the vault does not keep them (vault-notes D5)
+		}
+		e.app.Apply(op)
 	}
 	for _, p := range rep.Purged {
 		e.app.Purge(p.Entity, p.EntityID)
@@ -176,10 +180,14 @@ func (e *engine) absorb(rep Reply) {
 		e.st.Cursor = rep.Cursor
 	}
 	shared := make([]string, 0, len(rep.Memberships))
+	var viewing []string
 	for _, m := range rep.Memberships {
 		shared = append(shared, m.ProjectID)
+		if m.Role == "viewer" {
+			viewing = append(viewing, m.ProjectID)
+		}
 	}
-	e.st.Shared = shared
+	e.st.Shared, e.st.Viewing = shared, viewing
 	e.clk.observe(rep.ServerTime)
 }
 

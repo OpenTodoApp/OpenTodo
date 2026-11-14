@@ -132,6 +132,11 @@ export interface State {
   tasknotes?: unknown
   owner?: Owner
   lease_until?: number
+  /** Standalone notes in Notes/ (vault-notes): written by `ot vault`; the plugin keeps the members and leaves Notes/ alone. */
+  notes?: boolean
+  notes_seeded?: boolean
+  note_files?: Record<string, { path: string; hash: string }>
+  viewing?: string[]
 }
 
 /** A sync stopped by a vault limit; nothing was written or pushed. */

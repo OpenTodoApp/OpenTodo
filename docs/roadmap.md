@@ -154,7 +154,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `daily-notes` | One note per day, opened from Today, that routines can add to | Shipped |
 | `note-public-links` | A read-only public link for one note | Shipped |
 | `note-webhooks` | Opt-in note events for webhooks | Shipped |
-| `vault-notes` | Standalone notes as Markdown files in `ot vault` | Planned |
+| `vault-notes` | Standalone notes as Markdown files in `ot vault` | Shipped |
 
 ## Assistant area
 

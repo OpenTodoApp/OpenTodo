@@ -9,9 +9,12 @@ import { View } from './view'
 
 const root = join(new URL('../../../', import.meta.url).pathname, 'internal/vault/testdata/vault')
 
+// Notes/ holds the vault's standalone notes (vault-notes), which the plugin
+// leaves alone: they are not project files.
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
     const p = join(dir, f)
+    if (dir === root && f === 'Notes') return []
     return statSync(p).isDirectory() ? files(p) : p.endsWith('.md') ? [p] : []
   })
 }

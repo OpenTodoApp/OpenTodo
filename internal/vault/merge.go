@@ -70,7 +70,7 @@ func (e *engine) nowMS() int64 { return e.o.Now().UnixMilli() }
 func (e *engine) merge() error {
 	shared := e.sharedSet()
 	m := &mergeRun{
-		av: newView(e.app, e.o.Crypter, e.o.Loc, shared), bv: newView(e.base, e.o.Crypter, e.o.Loc, shared),
+		av: e.newView(e.app, shared), bv: e.newView(e.base, shared),
 		newLabels: map[string]string{}, sections: map[string]string{}, placed: map[string]place{},
 		groups: map[string][]string{}, moved: map[string]bool{},
 	}

@@ -38,6 +38,9 @@ type view struct {
 	// undecryptable records entity:id:field values that did not open.
 	undecryptable map[string]bool
 	shared        map[string]bool
+	// notesDir reserves the root folder Notes/ for standalone notes
+	// (vault-notes D1): a top-level project with sub-projects gets "Notes 2".
+	notesDir bool
 }
 
 func newView(s Store, c Crypter, loc *time.Location, shared map[string]bool) *view {
@@ -136,7 +139,10 @@ func (v *view) Layout() map[string]string {
 		for _, id := range ids {
 			base := SafeName(v.text("project", id, "name"))
 			name := base
-			for n := 2; taken[strings.ToLower(name)]; n++ {
+			reserved := func(name string) bool {
+				return v.notesDir && dir == "" && len(children[id]) > 0 && strings.EqualFold(name, NotesDir)
+			}
+			for n := 2; taken[strings.ToLower(name)] || reserved(name); n++ {
 				name = base + " " + strconv.Itoa(n)
 			}
 			taken[strings.ToLower(name)] = true

@@ -868,6 +868,17 @@
           "(type)": "ref:vault_report"
         }
       },
+      "vault notes": {
+        "args": {
+          "on|off": "required"
+        },
+        "flags": {
+          "vault": "string"
+        },
+        "output": {
+          "(type)": "ref:vault_notes"
+        }
+      },
       "vault status": {
         "args": {
           "dir": "optional"
@@ -1449,6 +1460,11 @@
         "secret": "string",
         "token": "ref:token"
       },
+      "vault_notes": {
+        "(type)": "object",
+        "notes": "boolean",
+        "vault": "string"
+      },
       "vault_report": {
         "(type)": "object",
         "conflicts": "integer",
@@ -1460,6 +1476,12 @@
         "events[].task": "string",
         "events[].text": "string",
         "files": "array",
+        "notes": "object",
+        "notes.changed": "integer",
+        "notes.created": "integer",
+        "notes.notes": "integer",
+        "notes.trashed": "integer",
+        "notes.written": "integer",
         "planned": "array",
         "projects": "integer",
         "tasks": "integer",

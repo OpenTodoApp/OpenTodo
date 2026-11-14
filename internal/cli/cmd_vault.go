@@ -43,7 +43,7 @@ var (
 
 func cmdVault(a *App, ctx context.Context, g *globalFlags, args []string) error {
 	if len(args) == 0 {
-		return usageErr("usage: ot vault init|sync|status|watch|tasknotes")
+		return usageErr("usage: ot vault init|sync|status|watch|tasknotes|notes")
 	}
 	switch args[0] {
 	case "init":
@@ -54,10 +54,12 @@ func cmdVault(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		return vaultStatus(a, ctx, g, args[1:])
 	case "watch":
 		return vaultWatch(a, ctx, g, args[1:])
+	case "notes":
+		return vaultNotes(a, ctx, g, args[1:])
 	case "tasknotes":
 		return vaultTaskNotes(a, ctx, g, args[1:])
 	}
-	return usageErr("unknown vault command %q (expected init, sync, status, watch or tasknotes)", args[0])
+	return usageErr("unknown vault command %q (expected init, sync, status, watch, tasknotes or notes)", args[0])
 }
 
 // vaultParse parses a vault command's arguments without the shared write
@@ -232,6 +234,8 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 		}
 	}
 	s.opts.State = vault.NewState(s.target.Profile, s.target.URL)
+	// A new vault writes the standalone notes too (OpenSpec change vault-notes).
+	s.opts.State.Notes = true
 	s.opts.Owner = a.vaultOwner()
 	rep, err := vault.Sync(ctx, s.opts)
 	if err != nil {
@@ -251,7 +255,11 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 	}
 	a.printVaultReport(rep)
 	if !g.dryRun {
-		fmt.Fprintf(a.Stdout, "%s is a vault: %d projects and %d tasks written.\n", dir, rep.Projects, rep.Tasks)
+		notes := 0
+		if rep.Notes != nil {
+			notes = rep.Notes.Notes
+		}
+		fmt.Fprintf(a.Stdout, "%s is a vault: %d projects, %d tasks and %d notes written.\n", dir, rep.Projects, rep.Tasks, notes)
 	}
 	return nil
 }
@@ -314,6 +322,9 @@ func (a *App) printVaultReport(rep *vault.Report) {
 	}
 	for _, f := range rep.Files {
 		fmt.Fprintf(a.Stdout, "would write %s\n", f)
+	}
+	if n := rep.Notes; n != nil && n.Created+n.Changed+n.Trashed > 0 {
+		fmt.Fprintf(a.Stdout, "Notes: %d created, %d changed, %d trashed.\n", n.Created, n.Changed, n.Trashed)
 	}
 	if len(rep.Events) == 0 && len(rep.Planned) == 0 && len(rep.Files) == 0 {
 		fmt.Fprintln(a.Stdout, "The vault is up to date.")
@@ -623,6 +634,50 @@ func vaultTaskNotes(a *App, ctx context.Context, g *globalFlags, args []string) 
 	fmt.Fprintf(a.Stdout, "Linked the TaskNotes folder %s. Run `ot vault sync` to sync its task notes.\n", stored)
 	if vault.FindTNSettings(pos[0]) == "" {
 		fmt.Fprintf(a.Stderr, "ot: no TaskNotes settings (.obsidian/plugins/tasknotes/data.json) were found above %s; TaskNotes' default field names will be used\n", pos[0])
+	}
+	return nil
+}
+
+// vaultNotes turns a vault's standalone notes on or off (OpenSpec change
+// vault-notes, design D5). It works offline and only writes the vault's state;
+// the next sync applies it.
+func vaultNotes(a *App, _ context.Context, g *globalFlags, args []string) error {
+	set := a.flagSet("vault notes", g)
+	vdir := set.String("vault", ".", "the vault folder")
+	pos, err := parseArgs(set, "vault notes", args)
+	if err != nil {
+		return a.helpOr("vault", err)
+	}
+	if len(pos) != 1 || pos[0] != "on" && pos[0] != "off" {
+		return a.helpOr("vault", usageErr("usage: ot vault notes on|off [--vault <dir>]"))
+	}
+	on := pos[0] == "on"
+	if g.dryRun {
+		if _, err := vault.LoadState(*vdir); err != nil {
+			return vaultErr(*vdir, err)
+		}
+		if g.json {
+			return a.printJSON(map[string]any{"vault": *vdir, "notes": on})
+		}
+		fmt.Fprintln(a.Stdout, "Dry run: nothing was changed.")
+		return nil
+	}
+	changed, err := vault.SetNotes(*vdir, on)
+	if err != nil {
+		return vaultErr(*vdir, err)
+	}
+	if g.json {
+		return a.printJSON(map[string]any{"vault": *vdir, "notes": on})
+	}
+	switch {
+	case !changed && on:
+		fmt.Fprintln(a.Stdout, "Notes are already on.")
+	case !changed:
+		fmt.Fprintln(a.Stdout, "Notes are already off.")
+	case on:
+		fmt.Fprintf(a.Stdout, "Notes are on. The next `ot vault sync` writes every note to %s.\n", vault.NotesDir+"/")
+	default:
+		fmt.Fprintf(a.Stdout, "Notes are off. The files in %s stay; the next syncs leave them alone.\n", vault.NotesDir+"/")
 	}
 	return nil
 }

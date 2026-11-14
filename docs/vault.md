@@ -1,6 +1,6 @@
 ---
 title: Markdown vault
-summary: Keep a folder of Markdown files in two-way sync with your account, readable by Obsidian Tasks and Dataview, plus your TaskNotes task notes, with ot vault.
+summary: Keep a folder of Markdown files in two-way sync with your account, readable by Obsidian Tasks and Dataview, plus your notes and TaskNotes task notes, with ot vault.
 audience: developer
 section: Integrations
 specs: [cli-client, markdown-vault]
@@ -9,7 +9,7 @@ order: 25
 ---
 # Markdown vault
 
-`ot vault` keeps a folder of Markdown files in two-way sync with your account, one file per project and one Obsidian Tasks line per task. Every edit becomes an ordinary change on your other devices, and theirs reach the files.
+`ot vault` keeps a folder of Markdown files in two-way sync with your account, one file per project, one Obsidian Tasks line per task and one file per note. Every edit becomes an ordinary change on your other devices, and theirs reach the files.
 
 ```bash
 ot vault init ~/Notes/Tasks     # new or empty folder; --adopt accepts .md files
@@ -17,6 +17,7 @@ ot vault sync ~/Notes/Tasks     # --dry-run plans; --read-only pushes nothing; -
 ot vault status ~/Notes/Tasks   # changed and conflict files, offline
 ot vault watch ~/Notes/Tasks    # keep syncing until Ctrl+C
 ot vault tasknotes <folder>     # also sync a TaskNotes folder (see below)
+ot vault notes on|off           # sync your notes in Notes/ (on for new vaults)
 ```
 
 `watch` syncs when the app changes (over the live channel) and when a file is saved. A file that changed since the last sync is read only once it has held still for a second, also when the app's change arrives meanwhile, so a save in progress is never read half written. Every sync reads a file again right before writing or removing it: a file saved while the sync ran is left as saved (the output says "skipped … it was saved while the sync ran"), and the next sync merges that save with what changed in the app meanwhile. A new line in it still gets its `🆔`, so its task isn't created twice.
@@ -91,6 +92,28 @@ Make the vault a sub-folder of your Obsidian vault and install Tasks. With Datav
 ```dataview
 TASK FROM "Tasks" WHERE !completed AND deadline <= date(today) + dur(7 days)
 ```
+
+## Notes
+
+Each note is one file in `Notes/`, named after its title ("Untitled note" without one, `Packing 2.md` for a second "Packing"). The front matter holds `opentodo-id`, the project as a link to its file and the labels as `tags`; the rest is the note's text. Other keys you add stay as written.
+
+<!-- fixture: Notes/Packing.md -->
+```markdown
+---
+opentodo-id: n-packing
+project: "[[Home]]"
+tags: [errands, family]
+---
+Check the [Ferry times](Ferry.md) first.
+
+- Socks
+- Charger
+- Passport
+```
+
+Renaming a file renames the note, editing `project` or `tags` moves or relabels it, and a new `.md` file in `Notes/` is a new note. A link to another note or a project is written as a link to its file, so it opens in Obsidian, and reads back as the app's link. Text changed on both sides merges line by line; when both changed the same lines, the note keeps the app's text and the file's goes to `<title>.conflict.md`. A deleted file trashes the note, unless it changed in the app since the last sync: then the file is written again. A note you can only view is written, and edits to its file are not sent.
+
+A vault made by an earlier version of `ot` writes no notes until `ot vault notes on`; `off` leaves the files where they are and stops syncing them. A top-level project with sub-projects named "Notes" gets the folder `Notes 2/`.
 
 ## Merging
 
@@ -185,10 +208,10 @@ The vault doesn't write new notes for tasks created elsewhere: those go to proje
 
 ## Limits
 
-1 MB and 5,000 task lines per file, 20,000 tasks, 64 KB per note. A task note counts as one task. Over a limit, nothing is written or sent.
+1 MB and 5,000 task lines per file, 20,000 tasks, 64 KB per task note or note, 5,000 notes. A task note counts as one task. Over a limit, nothing is written or sent.
 
 A file that iCloud Drive has not downloaded yet (only a `.<name>.icloud` placeholder is there) is skipped, and its tasks are left alone until it arrives.
 
 ## Encrypted accounts
 
-Run `ot encryption unlock` first: the server sees only ciphertext, but the files and task notes are plain text. A value that can't be decrypted shows as "Encrypted item" and is never sent back. Run `ot encryption lock` when done.
+Run `ot encryption unlock` first: the server sees only ciphertext, but the files, task notes and notes are plain text. A value that can't be decrypted shows as "Encrypted item" and is never sent back. Run `ot encryption lock` when done.

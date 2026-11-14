@@ -63,6 +63,27 @@ type State struct {
 	// before that change: the next installation to sync becomes the owner.
 	Owner      *Owner `json:"owner,omitempty"`
 	LeaseUntil int64  `json:"lease_until,omitempty"`
+	// Notes turns the vault's standalone notes on (OpenSpec change
+	// vault-notes, design D5): one file per note in Notes/. Absent reads as
+	// off, so a vault made by an earlier version keeps working as it was.
+	Notes bool `json:"notes,omitempty"`
+	// NotesSeeded is true once the store holds every standalone note: the
+	// vault pulled from the start while notes were on. A vault that turns
+	// notes on later pulls once from the start to learn the notes it skipped.
+	NotesSeeded bool `json:"notes_seeded,omitempty"`
+	// NoteFiles maps a standalone note's id to its file in Notes/ and what
+	// was last written to it; kept while notes are off, so turning them on
+	// again matches the files instead of creating notes twice.
+	NoteFiles map[string]NoteFileState `json:"note_files,omitempty"`
+	// Viewing lists the shared projects the account may only view: their
+	// notes' files are written but never pushed.
+	Viewing []string `json:"viewing,omitempty"`
+}
+
+// NoteFileState is what the vault last wrote to a standalone note's file.
+type NoteFileState struct {
+	Path string `json:"path"`
+	Hash string `json:"hash"`
 }
 
 // Owner names the installation that syncs a vault folder: `ot` on a machine
@@ -128,6 +149,7 @@ func (st *State) takeOver() {
 	st.Extra = map[string]string{}
 	st.Initialized = false
 	st.Owner, st.LeaseUntil = nil, 0
+	st.NotesSeeded, st.NoteFiles, st.Viewing = false, nil, nil
 	if st.TaskNotes != nil {
 		st.TaskNotes.Hashes = map[string]string{}
 	}

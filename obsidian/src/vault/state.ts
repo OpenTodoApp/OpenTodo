@@ -64,6 +64,10 @@ export function stateJSON(st: State): Record<string, unknown> {
   if (st.tasknotes !== undefined && st.tasknotes !== null) out.tasknotes = st.tasknotes
   if (st.owner) out.owner = st.owner
   if (st.lease_until) out.lease_until = st.lease_until
+  if (st.notes) out.notes = st.notes
+  if (st.notes_seeded) out.notes_seeded = st.notes_seeded
+  if (st.note_files && Object.keys(st.note_files).length > 0) out.note_files = st.note_files
+  if (st.viewing && st.viewing.length > 0) out.viewing = st.viewing
   return out
 }
 
@@ -106,6 +110,9 @@ export function takeOver(st: State, device: string): void {
   st.initialized = false
   st.owner = undefined
   st.lease_until = 0
+  st.notes_seeded = undefined
+  st.note_files = undefined
+  st.viewing = undefined
   const tn = st.tasknotes as { hashes?: unknown } | undefined
   if (tn && typeof tn === 'object') tn.hashes = {}
 }

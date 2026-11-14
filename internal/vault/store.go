@@ -32,7 +32,9 @@ type Row map[string]Field
 type Store map[string]map[string]Row
 
 // kept are the entities the vault needs: what it prints and what it resolves.
-var kept = map[string]bool{"task": true, "project": true, "section": true, "label": true, "field": true, "time_entry": true}
+// A standalone note (entity note, OpenSpec change vault-notes) is kept only
+// while the vault's notes are on: the engine leaves its ops out otherwise.
+var kept = map[string]bool{"task": true, "project": true, "section": true, "label": true, "field": true, "time_entry": true, "note": true}
 
 // wins is the winner rule of the log: a greater timestamp wins, ties go to the
 // greater device id (internal/sync.Wins).

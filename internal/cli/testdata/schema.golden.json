@@ -2700,6 +2700,32 @@
       }
     },
     {
+      "name": "vault notes",
+      "summary": "turn the vault's standalone notes on or off: on writes every note to Notes/ on the next sync, off leaves the files and stops syncing them; offline, it only writes the vault's state",
+      "args": [
+        {
+          "name": "on|off",
+          "required": true,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "vault",
+          "type": "string",
+          "default": ".",
+          "description": "the vault folder"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/vault_notes"
+      }
+    },
+    {
       "name": "vault status",
       "summary": "list the vault files changed since the last sync and the conflict files, without the server",
       "args": [
@@ -5372,6 +5398,24 @@
         }
       }
     },
+    "vault_notes": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "vault_notes",
+      "description": "Whether a vault syncs its standalone notes (OpenSpec vault-notes): notes is true after `ot vault notes on`, false after `off`; the next sync applies it.",
+      "type": "object",
+      "required": [
+        "vault",
+        "notes"
+      ],
+      "properties": {
+        "vault": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "boolean"
+        }
+      }
+    },
     "vault_report": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "vault_report",
@@ -5422,6 +5466,39 @@
         "tasks": {
           "type": "integer"
         },
+        "notes": {
+          "type": "object",
+          "description": "standalone notes in Notes/ (OpenSpec vault-notes), absent while the vault's notes are off",
+          "required": [
+            "written",
+            "created",
+            "changed",
+            "trashed",
+            "notes"
+          ],
+          "properties": {
+            "written": {
+              "type": "integer",
+              "description": "note files written"
+            },
+            "created": {
+              "type": "integer",
+              "description": "notes created from new files"
+            },
+            "changed": {
+              "type": "integer",
+              "description": "notes changed from their files"
+            },
+            "trashed": {
+              "type": "integer",
+              "description": "notes trashed because their file was deleted"
+            },
+            "notes": {
+              "type": "integer",
+              "description": "notes the vault holds after the sync"
+            }
+          }
+        },
         "events": {
           "type": "array",
           "items": {
@@ -5450,7 +5527,8 @@
                   "moved",
                   "archived",
                   "unarchived",
-                  "time"
+                  "time",
+                  "skipped"
                 ]
               },
               "file": {

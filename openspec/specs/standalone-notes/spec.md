@@ -208,7 +208,7 @@ The JSON export SHALL include every note the account can read, deleted ones incl
 - **THEN** the new account has the five notes with their titles, bodies, labels and projects
 
 ### Requirement: Integrations that leave notes out
-CalDAV, the Markdown vault, the activity feed and public task pages SHALL not include standalone notes and SHALL be unaffected by them. Routines SHALL reach standalone notes only as `routines` "Notes in routines" states. Webhooks SHALL deliver note events only as `webhooks` "Note events" states.
+CalDAV, the activity feed and public task pages SHALL not include standalone notes and SHALL be unaffected by them. Routines SHALL reach standalone notes only as `routines` "Notes in routines" states. Webhooks SHALL deliver note events only as `webhooks` "Note events" states. The Markdown vault SHALL hold standalone notes only as `markdown-vault` "Standalone notes in the vault" states.
 
 #### Scenario: Calendar app
 - **WHEN** a calendar app syncs the account over CalDAV

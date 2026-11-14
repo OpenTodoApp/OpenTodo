@@ -318,7 +318,9 @@ export class Engine {
     const files = this.o.files
     const all = await files.list()
     const onDisk = new Set(all)
-    const paths = all.filter(vaultFile).sort()
+    // Notes/ holds the standalone notes `ot vault` syncs (vault-notes); they are no project files.
+    const notes = this.st.notes || Object.keys(this.st.note_files ?? {}).length > 0
+    const paths = all.filter((p) => vaultFile(p) && !(notes && p.startsWith(NOTES_DIR + '/'))).sort()
     for (const p of paths) {
       const text = await files.read(p)
       if (text !== null) this.disk.set(p, text)
@@ -377,6 +379,9 @@ export class Engine {
   }
 }
 
+/** The folder of standalone notes (internal/vault.NotesDir). */
+export const NOTES_DIR = 'Notes'
+
 /** A file the vault reads: `.md` outside hidden folders, not a conflict file. */
 export function vaultFile(rel: string): boolean {
   if (!rel.endsWith('.md') || rel.endsWith('.conflict.md')) return false
@@ -393,6 +398,9 @@ export function icloudPlaceholder(p: string): string {
 export async function sync(o: Options): Promise<Report> {
   const st = o.state ?? (await loadState(o.files))
   if (st.tasknotes !== undefined && st.tasknotes !== null) throw new TaskNotesError('This folder has a TaskNotes folder linked; keep syncing it with `ot vault`.')
+  // The plugin does not keep notes: `ot vault` pulls them again from the start
+  // on its next sync (vault-notes D5).
+  if (st.notes) st.notes_seeded = undefined
   let taken = false
   const owned = checkOwner(st, o.owner, o.now(), o.zone)
   if (owned) {

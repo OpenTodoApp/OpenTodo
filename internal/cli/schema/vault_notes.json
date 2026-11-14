@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vault_notes",
+  "description": "Whether a vault syncs its standalone notes (OpenSpec vault-notes): notes is true after `ot vault notes on`, false after `off`; the next sync applies it.",
+  "type": "object",
+  "required": ["vault", "notes"],
+  "properties": {
+    "vault": {"type": "string"},
+    "notes": {"type": "boolean"}
+  }
+}
