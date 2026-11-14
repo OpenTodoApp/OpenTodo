@@ -18,14 +18,13 @@ function Rows({ source }: { source: AssistantSource }) {
   if (!rows) return null
   const open = (id: string) => (source.of === 'projects' ? navigate({ view: 'project', id }) : openTaskPanel(id))
   const more = source.total - source.ids.length
-  // Each row and the summary are 24 px targets (WCAG 2.5.8) on the text's own 18 px lines:
-  // the 3 px added above and below are taken back by the negative margin, so nothing moves.
+  // Each row and the summary are 24 px targets (WCAG 2.5.8), one line each, so no target overlaps another.
   return (
     <ul className="mt-1 space-y-0.5 pl-5">
       {rows.map((r, i) => (
         <li key={source.ids[i]}>
           {r
-            ? <button type="button" className="-my-[3px] inline-flex min-h-6 min-w-0 items-center text-left text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
+            ? <button type="button" className="inline-flex min-h-6 min-w-0 items-center text-left text-default underline decoration-dotted underline-offset-2 user-text" onClick={() => open(r.id)}>{r.name || t('Untitled')}</button>
             : <span>{t('Removed')}</span>}
         </li>
       ))}
@@ -36,12 +35,12 @@ function Rows({ source }: { source: AssistantSource }) {
 
 export default function SourcesLine({ source }: { source: AssistantSource }) {
   const label = (
-    <span className="inline-flex items-center gap-1.5 align-top"><Icon name="search" size="sm" />{sourceLabel(source)}</span>
+    <span className="inline-flex h-6 items-center gap-1.5 align-top"><Icon name="search" size="sm" />{sourceLabel(source)}</span>
   )
   if (!source.ids.length) return <p className="my-1 text-meta text-muted" data-assistant-source={source.of}>{label}</p>
   return (
     <details className="my-1 text-meta text-muted" data-assistant-source={source.of}>
-      <summary className="-my-[3px] w-fit cursor-pointer rounded-control py-[3px]">{label}</summary>
+      <summary className="min-h-6 w-fit cursor-pointer rounded-control leading-6">{label}</summary>
       <Rows source={source} />
     </details>
   )
