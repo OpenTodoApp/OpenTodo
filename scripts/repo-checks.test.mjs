@@ -1114,3 +1114,35 @@ test('the iOS app carries its Face ID usage text', () => {
   const catalog = JSON.parse(read('mobile/ios/OpenTodo/InfoPlist.xcstrings'))
   assert.ok(catalog.strings?.NSFaceIDUsageDescription, 'InfoPlist.xcstrings translates NSFaceIDUsageDescription')
 })
+
+// shell-first-paint: both shells open on a launch screen in the web app's canvas colour,
+// light and dark. Neither is compiled here, so the pieces that must agree are checked: the
+// colour both platforms declare, the Info.plist against the project file that generates it,
+// and the Android theme the launcher activity uses, with its Android 12 variant.
+test('both shells declare a launch screen in the app\'s colour, light and dark', () => {
+  const hex = (c) => '#' + ['red', 'green', 'blue'].map((k) => Math.round(Number(c.components[k]) * 255).toString(16).padStart(2, '0')).join('')
+  const set = JSON.parse(read('mobile/ios/OpenTodo/Assets.xcassets/LaunchBackground.colorset/Contents.json')).colors
+  const ios = { light: hex(set.find((c) => !c.appearances).color), dark: hex(set.find((c) => c.appearances?.some((a) => a.value === 'dark')).color) }
+  const colour = (file) => /<color name="launch_background">#FF([0-9A-F]{6})<\/color>/.exec(read(file))?.[1].toLowerCase()
+  const android = { light: '#' + colour('mobile/android/app/src/main/res/values/colors.xml'), dark: '#' + colour('mobile/android/app/src/main/res/values-night/colors.xml') }
+  assert.deepEqual(ios, android, 'the iOS colour set and the Android colours are the same two colours')
+  assert.notEqual(ios.light, ios.dark)
+  // The dark one is the web app's dark canvas, as the installed web app's splash colour is.
+  assert.match(read('web/vite.config.ts'), new RegExp(`background_color: '${ios.dark}'`))
+
+  assert.match(read('mobile/ios/OpenTodo/Info.plist'), /<key>UILaunchScreen<\/key>\s*<dict>\s*<key>UIColorName<\/key>\s*<string>LaunchBackground<\/string>\s*<\/dict>/)
+  assert.match(read('mobile/ios/project.yml'), /^\s+UILaunchScreen:\n\s+UIColorName: LaunchBackground$/m)
+  assert.match(read('mobile/ios/OpenTodo/ShellView.swift'), /static let launchColor = "LaunchBackground"/)
+
+  const manifest = read('mobile/android/app/src/main/AndroidManifest.xml')
+  assert.match(/<activity\s+android:name="\.MainActivity"[^>]*>/.exec(manifest)[0], /android:theme="@style\/Theme\.OpenTodo\.Launch"/)
+  const style = (file) => /<style name="Theme\.OpenTodo\.Launch">([\s\S]*?)<\/style>/.exec(read(file))?.[1] ?? ''
+  assert.match(style('mobile/android/app/src/main/res/values/themes.xml'), /"android:windowBackground">@drawable\/launch</)
+  const v31 = style('mobile/android/app/src/main/res/values-v31/themes.xml')
+  for (const item of ['android:windowBackground', 'android:windowSplashScreenBackground']) assert.match(v31, new RegExp(`"${item}">@color/launch_background<`))
+  const launch = read('mobile/android/app/src/main/res/drawable/launch.xml')
+  assert.match(launch, /@color\/launch_background/)
+  assert.match(launch, /@drawable\/ic_launcher"/)
+  // No splash screen library: the module ships AndroidX it already has and nothing else.
+  assert.doesNotMatch(read('mobile/android/app/build.gradle.kts'), /splashscreen/)
+})

@@ -44,6 +44,10 @@ Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [in
 
 [Location reminders](location-reminders.md) do not fire in the iPhone app yet: it does not offer **Location reminders on this phone**, and the reminders say **Fires on your phone**. Watching places with iOS region monitoring (When In Use, then Always) comes in a later version of the app; until then they fire in the [Android app](android-app.md#location-reminders).
 
+## Opening the app
+
+The app opens on its background colour, light or dark with the phone, and shows the page once it has loaded, so no white screen comes between them. A server that takes longer than five seconds gets the page as far as it has loaded; one that can't be reached gets the usual message.
+
 ## Offline
 
 The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker, so it needs the network to start and says so when there is none. For an offline start, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
@@ -60,7 +64,7 @@ Version 1.2.0 of the app never filled the widget, never scheduled reminders and 
 
 ## Theme colours
 
-The area behind the page (under the status bar before the page draws, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons turn light or dark with the theme, so they stay readable when the app's theme differs from the phone's appearance.
+The area behind the page (under the status bar, and when you pull past the top or the bottom) takes the bar colour of your [theme](themes.md), and the app remembers it for the next launch. The status bar's icons turn light or dark with the theme, so they stay readable when the app's theme differs from the phone's appearance.
 
 ## Saving files
 

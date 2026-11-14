@@ -1,0 +1,1 @@
+- **The Android and iOS apps no longer start on a blank screen.** The Android app opens on its icon and the iOS app on its background colour, light or dark with the phone, and both keep that until the page is ready. On a phone, the loading screen already has the top bar and the tab bar in their places, so nothing jumps when your tasks appear.

@@ -29,6 +29,7 @@ import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
 import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
+import { PhoneFrameSkeleton } from './phoneFrame'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
 import { setHosted } from '../lib/hosted'
 import { setBranding } from '../lib/branding'
@@ -190,7 +191,12 @@ export function App() {
     if (route.view === 'public') return <PublicListScreen token={route.token} />
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
-      return <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
+      // On a phone that was signed in, with the bar and the tab bar in their places (shell-first-paint).
+      return (
+        <PhoneFrameSkeleton route={route} signedIn={localStorage.getItem('opentodo.user') !== null}>
+          <div className="w-full max-w-[62rem] px-4 py-5 md:max-w-[64rem] md:px-8"><Skeleton shape="row" count={8} label={t('Loading your tasks')} /></div>
+        </PhoneFrameSkeleton>
+      )
     }
     if (route.view === 'reset') {
       return (

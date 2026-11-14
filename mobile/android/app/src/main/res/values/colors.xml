@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="background">#FFFFFFFF</color>
+    <!-- The launch screen: the web app's default canvas (shell-first-paint). -->
+    <color name="launch_background">#FFEEF0F2</color>
     <color name="text">#FF1B1F24</color>
     <color name="text_muted">#FF5B6470</color>
     <color name="accent">#FF2F6FEB</color>

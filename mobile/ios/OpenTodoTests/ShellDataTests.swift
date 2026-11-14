@@ -76,6 +76,42 @@ final class VersionTests: XCTestCase {
     }
 }
 
+/// shell-first-paint: the launch screen has the app's colour, light and dark, and the web
+/// view stays hidden over that colour until it has something to show.
+@MainActor
+final class LaunchScreenTests: XCTestCase {
+    func testTheLaunchScreenNamesAColourOfTheBundle() throws {
+        let launch = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UILaunchScreen") as? [String: Any])
+        XCTAssertEqual(launch["UIColorName"] as? String, ShellController.launchColor)
+        let colour = try XCTUnwrap(UIColor(named: ShellController.launchColor), "the asset catalog has the colour")
+        let light = colour.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        let dark = colour.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        XCTAssertNotEqual(light, dark, "the colour has a dark appearance")
+    }
+
+    func testTheWebViewIsHiddenUntilItIsRevealed() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        XCTAssertFalse(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 0)
+        shell.reveal()
+        XCTAssertTrue(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 1)
+    }
+
+    /// Over the launch colour the system chooses the status bar icons; the bars' own come with the page.
+    func testTheStatusBarIconsWaitForTheWebView() throws {
+        defer { StatusBar.show(lightIcons: nil) }
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        let bars = try XCTUnwrap(SystemBars.parse("{\"color\":\"#101014\",\"dark\":true}"))
+        shell.apply(bars)
+        XCTAssertEqual(StatusBar.current, .default)
+        shell.reveal()
+        XCTAssertEqual(StatusBar.current, .lightContent)
+        shell.apply(try XCTUnwrap(SystemBars.parse("{\"color\":\"#ffffff\",\"dark\":false}")))
+        XCTAssertEqual(StatusBar.current, .darkContent)
+    }
+}
+
 /// What App Store review reads from the bundle (ios-distribution D7).
 final class StoreReadinessTests: XCTestCase {
     /// shell-repairs D8: without the text iOS refuses the Face ID prompt, and unlocking an

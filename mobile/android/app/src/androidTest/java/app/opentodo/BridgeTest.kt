@@ -75,6 +75,20 @@ class BridgeTest {
         for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
     }
 
+    /**
+     * shell-first-paint: the web view stays hidden under the launch screen and shows once the
+     * page has loaded. Three seconds after the load is well inside the cap of a start that
+     * took less than two, so a web view shown only by the cap fails here.
+     */
+    @Test fun theWebViewShowsOnceThePageHasLoaded() {
+        val (scenario, web) = open()
+        waitUntil("the web view shows", timeoutMs = 3_000) {
+            var shown = false
+            scenario.onActivity { shown = web.visibility == View.VISIBLE }
+            shown
+        }
+    }
+
     @Test fun aCallAnswersThroughTheMessageChannel() {
         val (_, web) = open()
         web.waitForJs("typeof window.opentodoShell", "\"object\"")
