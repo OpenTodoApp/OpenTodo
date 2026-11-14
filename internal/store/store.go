@@ -226,7 +226,10 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	if err := migrateAuditChain(ctx, db); err != nil {
 		return err
 	}
-	return migrateEmailVerified(ctx, db)
+	if err := migrateEmailVerified(ctx, db); err != nil {
+		return err
+	}
+	return migrateNotePages(ctx, db)
 }
 
 type migration struct {

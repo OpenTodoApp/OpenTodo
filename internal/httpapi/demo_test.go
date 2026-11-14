@@ -620,6 +620,11 @@ func TestDemoRestrictedRoutes(t *testing.T) {
 		{"DELETE", "/api/v1/projects/" + shared + "/public-links/x"},
 		{"GET", "/api/v1/public/otl_x"},
 		{"POST", "/api/v1/public/otl_x/tick"},
+		// Note pages (note-public-links 1.2): every method.
+		{"POST", "/api/v1/notes/x/page"},
+		{"GET", "/api/v1/notes/x/page"},
+		{"DELETE", "/api/v1/notes/x/page"},
+		{"PUT", "/api/v1/notes/x/page/snapshot"},
 		// Attachments (attachments 2.4): every method.
 		{"GET", "/api/v1/settings/attachments"},
 		{"PUT", "/api/v1/settings/attachments"},

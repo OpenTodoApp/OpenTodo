@@ -1,7 +1,7 @@
 // The guest side of a task page (OpenSpec task-pages): no cookies are sent, even
 // from a browser that holds a session, so the answer is the same for everyone. Kept
 // apart from api.ts so the page's bundle stays small.
-import type { TaskPageResponse } from './types'
+import type { NotePageResponse, TaskPageResponse } from './types'
 
 /** A failed request: the server's error code, or "network" when it could not be reached. */
 export class PageError extends Error {
@@ -26,7 +26,8 @@ const base = (secret: string) => `/api/v1/pages/${encodeURIComponent(secret)}`
 const json = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 
 export const pageApi = {
-  get: (secret: string) => call<TaskPageResponse>(base(secret)),
+  /** A task page, or a note page (note-public-links: `kind` says which). */
+  get: (secret: string) => call<TaskPageResponse | NotePageResponse>(base(secret)),
   reply: (secret: string, body: { name: string; body: string } | { ciphertext: string }) =>
     call<{ id: string; pending?: boolean }>(`${base(secret)}/replies`, json(body)),
   tick: (secret: string, taskId: string, completed: boolean, name: string) =>
@@ -35,8 +36,8 @@ export const pageApi = {
   mapStyleUrl: (secret: string) => `${base(secret)}/maps/style`,
 }
 
-/** The secret in /t/<secret>[/<label>], or "" when the address has none. */
+/** The secret in /t/<secret>[/<label>] or /n/<secret>[/<label>], or "" when the address has none. */
 export function secretFromPath(path: string): string {
-  const m = /^\/t\/([A-Za-z0-9_-]{22})(?:\/|$)/.exec(path)
+  const m = /^\/[tn]\/([A-Za-z0-9_-]{22})(?:\/|$)/.exec(path)
   return m ? m[1] : ''
 }

@@ -8,7 +8,7 @@ import { api } from '../../lib/api'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
 import { locationOf } from '../../lib/locations'
-import { publishTaskPage, taskPageEncrypted } from '../../lib/taskPages'
+import { labelFromTitle, publishTaskPage, taskPageEncrypted } from '../../lib/taskPages'
 import type { Task, TaskPageCreated, TaskPageRights, TaskPageStatus } from '../../lib/types'
 import { Button, Dialog, Field, Input, Select, Switch } from '../../ui'
 import { Notice } from '../../ui'
@@ -22,10 +22,6 @@ const RIGHTS: { value: TaskPageRights; label: () => string; hint: () => string }
   { value: 'tick', label: () => t('Reply and tick'), hint: () => t('Guests can reply, tick subtasks and mark the task done.') },
 ]
 
-/** A label from the title: lowercase letters, digits and hyphens, at most 40. */
-export function labelFromTitle(title: string): string {
-  return title.normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '')
-}
 
 export function TaskPageDialog({ task, status, onClose }: { task: Task; status: TaskPageStatus | null; onClose: () => void }) {
   const [encrypted, setEncrypted] = useState<boolean | null>(null)
