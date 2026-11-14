@@ -8,9 +8,10 @@
 // header stays visible while the content scrolls. Below 768 px the shell's bar takes
 // the title and the actions, except on a day page, whose title, date and briefing stay
 // in the page under the bar and scroll with it (precision-phone D1).
-import { useEffect, type HTMLAttributes, type ReactNode, type Ref } from 'react'
+import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
+import { MenuItem, MenuTailContext, type MenuTail } from '../Menu'
 import { IconButton } from '../Button'
 import { Icon, type IconName } from '../Icon'
 import { TruncatedText } from '../TruncatedText'
@@ -204,18 +205,29 @@ export function PageBarTitle({ children }: { children: ReactNode }) {
   return <h1 className="flex min-w-0 flex-1 items-center text-h3 font-semibold text-strong" data-phone-title>{children}</h1>
 }
 
-/** The right side of a page header or of the phone bar: actions, the overflow menu, Help. */
-export function PageActions({ actions, overflow, menu, help }: Pick<PageHeaderProps, 'actions' | 'overflow' | 'menu' | 'help'>) {
+/**
+ * The right side of a page header or of the phone bar: actions, the overflow menu, Help.
+ * `helpInMenu` (the phone bar, phone-header-room): Help is the last item of the page's
+ * menu, so the title gets its room; a page without a menu keeps the button.
+ */
+export function PageActions({ actions, overflow, menu, help, helpInMenu = false }: Pick<PageHeaderProps, 'actions' | 'overflow' | 'menu' | 'help'> & { helpInMenu?: boolean }) {
+  const [held, setHeld] = useState(0)
+  const tail = useMemo<MenuTail | null>(() => (help && helpInMenu ? {
+    render: (trigger) => <MenuItem label={t('Help')} icon="circle-help" data-help-screen={help} onSelect={() => openHelp(help, trigger)} />,
+    claim: () => { setHeld((n) => n + 1); return () => setHeld((n) => n - 1) },
+  } : null), [help, helpInMenu])
   return (
     <>
       {actions}
-      {menu}
-      {overflow && (
-        <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
-          {overflow}
-        </Menu>
-      )}
-      {help && <IconButton icon="circle-help" label={t('Help')} size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
+      <MenuTailContext.Provider value={tail}>
+        {menu}
+        {overflow && (
+          <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" size="md" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1.5" width="sm:w-60">
+            {overflow}
+          </Menu>
+        )}
+      </MenuTailContext.Provider>
+      {help && !(tail && held > 0) && <IconButton icon="circle-help" label={t('Help')} size="sm" data-help-screen={help} aria-haspopup="dialog" onClick={(e) => openHelp(help, e.currentTarget)} />}
     </>
   )
 }

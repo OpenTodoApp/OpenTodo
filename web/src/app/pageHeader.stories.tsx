@@ -38,7 +38,7 @@ function PhoneBar() {
         <PageBarTitle>{bar?.title}</PageBarTitle>
         {bar?.subtitle && <p className="truncate text-meta text-muted">{bar.subtitle}</p>}
       </div>
-      <div className="flex shrink-0 items-center gap-1">{bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} />}</div>
+      <div className="flex shrink-0 items-center gap-1">{bar && <PageActions overflow={bar.overflow} menu={bar.menu} help={bar.help} helpInMenu />}</div>
     </header>
   )
 }

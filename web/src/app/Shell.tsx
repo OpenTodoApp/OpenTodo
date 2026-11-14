@@ -479,7 +479,7 @@ function PhoneBar({ onMenu }: { onMenu: () => void }) {
       </div>
       <TrackingPill />
       <div className="flex shrink-0 items-center gap-1" data-page-actions>
-        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} />}
+        {bar && <PageActions actions={bar.actions} overflow={bar.overflow} menu={bar.menu} help={bar.help} helpInMenu />}
       </div>
     </header>
   )
