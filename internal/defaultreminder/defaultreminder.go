@@ -178,7 +178,10 @@ func Plan(in Input) []Change {
 		oldDue = zoned.DecodeDue(in.Before["due"])
 	}
 	null := json.RawMessage("null")
-	if oldDue != nil {
+	// A due whose old kind had no default never got one (issue 1320: the editor sets
+	// the date, then the time): the switch to a kind with a default counts as getting a due (D3).
+	firstOfKind := oldDue != nil && timed(oldDue) != timed(newDue) && in.pref(oldDue) == nil && !hasOwn
+	if oldDue != nil && !firstOfKind {
 		// D5: the kind of due changed and the default reminder is untouched.
 		if timed(oldDue) == timed(newDue) || !hasOwn {
 			return nil

@@ -118,8 +118,9 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
   },
   {
     id: 'notifications', label: msg('Notifications'), group: 'app', icon: 'bell',
-    description: () => t('Push notifications for reminders on this device, delivery channels and the weekly digest'),
+    description: () => t('Default reminders, push notifications on this device, delivery channels and the weekly digest'),
     pages: pages([
+      page({ id: 'reminders', label: msg('Reminders'), icon: 'alarm-clock', help: 'settings/default-reminders' }),
       page({ id: 'push', label: msg('Push notifications'), icon: 'bell', help: 'settings/notifications', demo: [msg('push notifications')] }),
       page({ id: 'channels', label: msg('Delivery channels'), icon: 'send', help: 'settings/notification-channels' }),
       page({ id: 'digest', label: msg('Weekly digest'), icon: 'mail', help: 'settings/digest', demo: [msg('the weekly digest')] }),

@@ -76,7 +76,7 @@ export const SETTINGS_SCREENS: readonly string[] = [
   'settings/about', 'settings/access', 'settings/account', 'settings/activity', 'settings/appearance',
   'settings/assistant', 'settings/assistants', 'settings/attachments', 'settings/backups', 'settings/branding',
   'settings/caldav', 'settings/calendar', 'settings/calendar-feeds', 'settings/calendar-sync', 'settings/capture',
-  'settings/data', 'settings/date-time', 'settings/digest', 'settings/email', 'settings/encryption', 'settings/focus',
+  'settings/data', 'settings/date-time', 'settings/default-reminders', 'settings/digest', 'settings/email', 'settings/encryption', 'settings/focus',
   'settings/general', 'settings/integrations', 'settings/invitations', 'settings/issues', 'settings/keyboard',
   'settings/language', 'settings/notification-channels', 'settings/notifications', 'settings/outgoing-email',
   'settings/notes', 'settings/people', 'settings/priorities', 'settings/quick-add', 'settings/security', 'settings/server', 'settings/sso',

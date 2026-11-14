@@ -1207,6 +1207,194 @@
     "reminder_default_dated": "-1440"
    },
    "expect": []
+  },
+  {
+   "name": "D3/D5: a time added to a date-only due without a date-only default adds the timed default (issue 1320)",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": ""
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -30,
+      "fire_at": 1793975400000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "D3/D5: the time removed without a timed default adds the date-only default",
+   "before": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": [
+    {
+     "id": "$default",
+     "patch": {
+      "task_id": "t1",
+      "kind": "relative",
+      "offset_minutes": -1440,
+      "fire_at": 1793869200000,
+      "delivered_at": null,
+      "dismissed_at": null,
+      "created_at": 1793000000000,
+      "deleted_at": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "D3/D5: a time added, the old kind had a default but no default reminder: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": "-1440"
+   },
+   "expect": []
+  },
+  {
+   "name": "D3/D5: a time added without a date-only default, another live relative reminder: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "r-other",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -5,
+     "deleted_at": null
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "D3/D5: a time added without a date-only default, the default reminder deleted by the person: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": null,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [
+    {
+     "id": "$default",
+     "task_id": "t1",
+     "kind": "relative",
+     "offset_minutes": -30,
+     "deleted_at": 1792000000000
+    }
+   ],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": ""
+   },
+   "expect": []
+  },
+  {
+   "name": "D3/D5: a time added to a completed task without a date-only default: nothing",
+   "before": {
+    "due": {
+     "date": "2026-11-06"
+    },
+    "completed_at": 1792000000000,
+    "deleted_at": null,
+    "habit": false
+   },
+   "patch": {
+    "due": {
+     "date": "2026-11-06",
+     "time": "15:00"
+    }
+   },
+   "reminders": [],
+   "batch": [],
+   "prefs": {
+    "reminder_default_timed": "-30",
+    "reminder_default_dated": ""
+   },
+   "expect": []
   }
  ]
 }
