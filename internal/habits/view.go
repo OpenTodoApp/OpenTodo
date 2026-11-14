@@ -19,6 +19,8 @@ type Text struct {
 	Title  string `json:"title"`
 	Tiny   string `json:"tiny"`
 	Anchor string `json:"anchor"`
+	// Unit is an amount habit's unit ("glasses", habit-targets D2).
+	Unit string `json:"unit,omitempty"`
 }
 
 // Habit is one habit with its numbers.
@@ -43,6 +45,16 @@ type Habit struct {
 	KeptDays    int     `json:"kept_days"`
 	GraduatedAt *string `json:"graduated_at"`
 	Encrypted   bool    `json:"encrypted,omitempty"`
+	// A target habit (habit-targets D1): check-ins per period ("week" or
+	// "month"); kept counts the current period, met says it holds the target.
+	Target int    `json:"target,omitempty"`
+	Period string `json:"period,omitempty"`
+	Met    bool   `json:"met,omitempty"`
+	// An amount habit (habit-targets D2): the day's goal, the check button's
+	// step and today's summed amount.
+	Amount      float64  `json:"amount,omitempty"`
+	Step        float64  `json:"step,omitempty"`
+	TodayAmount *float64 `json:"today_amount,omitempty"`
 }
 
 // DayText is a day's check-in note.
@@ -52,8 +64,10 @@ type DayText struct {
 
 // DayOut is one scheduled day of get_habit.
 type DayOut struct {
-	Date      string   `json:"date"`
-	State     string   `json:"state"`
+	Date  string `json:"date"`
+	State string `json:"state"`
+	// Amount is an amount habit's summed amount of the day (habit-targets).
+	Amount    float64  `json:"amount,omitempty"`
 	Untrusted *DayText `json:"untrusted_text,omitempty"`
 }
 
@@ -74,8 +88,9 @@ func Display(e opsync.Entity, field string) string {
 
 func display(e opsync.Entity, field string) string { return Display(e, field) }
 
-// View is the habit id (stored row) with its numbers on today.
-func View(id string, row opsync.Entity, tasks []opsync.Entity, today string, text TextOf) Habit {
+// View is the habit id (stored row) with its numbers on today; opts holds the
+// tallies and the week start.
+func View(id string, row opsync.Entity, tasks []opsync.Entity, today string, text TextOf, opts Options) Habit {
 	if text == nil {
 		text = display
 	}
@@ -95,9 +110,18 @@ func View(id string, row opsync.Entity, tasks []opsync.Entity, today string, tex
 		h.GraduatedAt = &s
 	}
 	h.Encrypted = e2ee.IsCiphertextJSON(row["title"]) || e2ee.IsCiphertextJSON(row["habit_tiny"]) || e2ee.IsCiphertextJSON(row["habit_anchor"])
-	if s := Compute(id, row, tasks, today); s != nil {
+	if s := ComputeWith(id, row, tasks, today, opts); s != nil {
 		h.Pending, h.Overdue, h.Kept, h.KeptOf, h.Strength = s.Pending, s.Overdue, s.Kept, s.KeptOf, s.Strength
 		h.Streak, h.BestStreak, h.AtRisk, h.BackOnTrack = s.Current, s.Best, s.AtRisk, s.BackOnTrack
+		h.Target, h.Period, h.Met = s.Target, s.Period, s.Met
+	}
+	if goal := Goal(row); goal > 0 {
+		ids := map[string]bool{}
+		for _, p := range opsync.Lineage(id, row, tasks) {
+			ids[p.ID] = true
+		}
+		n := AmountsOf(ids, opts.Tallies)[today]
+		h.Amount, h.Step, h.TodayAmount, h.Untrusted.Unit = goal, Step(row), &n, text(row, "habit_unit")
 	}
 	h.KeptDays = KeptDays(id, row, tasks)
 	return h
@@ -106,7 +130,7 @@ func View(id string, row opsync.Entity, tasks []opsync.Entity, today string, tex
 // List is the open habits among tasks (graduated ones with graduated),
 // ordered by title, with their numbers. visible drops tasks the caller may not
 // see (nil: all).
-func List(tasks []opsync.Entity, today string, graduated bool, visible func(opsync.Entity) bool, text TextOf) []Habit {
+func List(tasks []opsync.Entity, today string, graduated bool, visible func(opsync.Entity) bool, text TextOf, opts Options) []Habit {
 	by := rowsBySeries(tasks)
 	out := []Habit{}
 	for _, t := range tasks {
@@ -114,7 +138,7 @@ func List(tasks []opsync.Entity, today string, graduated bool, visible func(opsy
 			continue
 		}
 		id := str(t, "id")
-		out = append(out, View(id, t, by(t), today, text))
+		out = append(out, View(id, t, by(t), today, text, opts))
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Untrusted.Title < out[j].Untrusted.Title })
 	return out
@@ -159,7 +183,7 @@ func rowsBySeries(tasks []opsync.Entity) func(opsync.Entity) []opsync.Entity {
 
 // DaysView is the scheduled days from from to to with their states and
 // check-in notes, newest first. Unscheduled (blank) days are left out.
-func DaysView(id string, row opsync.Entity, tasks []opsync.Entity, from, to, today string, text TextOf) []DayOut {
+func DaysView(id string, row opsync.Entity, tasks []opsync.Entity, from, to, today string, text TextOf, opts Options) []DayOut {
 	if text == nil {
 		text = display
 	}
@@ -177,14 +201,22 @@ func DaysView(id string, row opsync.Entity, tasks []opsync.Entity, from, to, tod
 			}
 		}
 	}
-	days := Days(id, row, tasks, from, to, today)
+	days := DaysWith(id, row, tasks, from, to, today, opts)
+	var amounts map[string]float64
+	if Goal(row) > 0 {
+		ids := map[string]bool{}
+		for _, p := range pieces {
+			ids[p.ID] = true
+		}
+		amounts = AmountsOf(ids, opts.Tallies)
+	}
 	out := []DayOut{}
 	for i := len(days) - 1; i >= 0; i-- {
 		d := days[i]
 		if d.State == Blank {
 			continue
 		}
-		o := DayOut{Date: d.Date, State: d.State}
+		o := DayOut{Date: d.Date, State: d.State, Amount: amounts[d.Date]}
 		if n, ok := notes[d.Date]; ok {
 			o.Untrusted = &DayText{Note: n}
 		}
@@ -210,8 +242,10 @@ var (
 	ErrNotADay   = errors.New("the date is not a scheduled day of the habit")
 )
 
-// Write is one task write of a log: its fields and whether it creates the task.
+// Write is one write of a log: its entity ("" for a task), its fields and
+// whether it creates the row.
 type Write struct {
+	Entity string
 	ID     string
 	Create bool
 	Patch  map[string]json.RawMessage

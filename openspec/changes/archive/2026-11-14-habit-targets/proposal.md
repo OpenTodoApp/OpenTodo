@@ -32,7 +32,7 @@ None.
 
 ## Impact
 
-- Server: `internal/sync/ops.go` (`task.habit_target`, `task.habit_period`, `task.habit_amount`, `task.habit_unit` as content, `task.habit_step`; the entity `habit_tally` with `record_id`, `device`, `count`; its scope follows the record's task); `internal/habits` (period measures); `internal/agenttools` and the habits route (`amount` in `log_habit` and day states); regenerated schema files and the v1 surface snapshot.
+- Server: `internal/sync/ops.go` (`task.habit_target`, `task.habit_period`, `task.habit_amount`, `task.habit_unit` as content, `task.habit_step`; the entity `habit_tally` with `series_id`, `date`, `device`, `count`; its scope follows the series); `internal/habits` (period measures); `internal/agenttools` and the habits route (`amount` in `log_habit` and day states); regenerated schema files and the v1 surface snapshot.
 - Web: `web/src/lib/habits.ts` and its vectors (periods, amounts, tallies), the form's How often and Amount choices, the thread's week bar and partial fills, the check button's step, the strip, past-day editing with an amount.
 - Docs: `docs/habits.md`, `docs/recurrence.md`, `docs/mcp.md`, `docs/api.md`, `docs/sync.md` (the tally entity).
 - Size: under 1 KB gzip on the first load; the rest in the Habits chunk.

@@ -24,14 +24,17 @@ import { navigate } from '../router'
 import { useToday } from '../useViews'
 import { openHabitForm } from './habitFormStore'
 import { habitFacts } from './habitRule'
-import { habitHue } from './habitText'
+import { habitHue, measureText } from './habitText'
 import { checkStateOf, type CheckState } from './HabitRow'
-import { checkInWithUndo, pickDay } from './habitUndo'
+import { checkInWithUndo, pickDay, stepAmount } from './habitUndo'
+import { openSetAmount } from './amountStore'
 import { CheckInNote } from './CheckInNote'
 import { CheckIns } from './CheckIns'
 import { TaskNotes } from '../task-detail/TaskDetail'
 import { DayNoteHost } from './DayNoteDialog'
 import { openDayNote } from './dayNoteStore'
+import { AmountHost } from './AmountDialog'
+import { useHabitOptions } from './useHabitOptions'
 
 
 
@@ -39,10 +42,10 @@ type Undoable = Promise<{ entry: { id: string } | null; label: string } | null>
 const undo = (p: Undoable) => act(p.then((r) => { if (r?.entry) showUndoToast(r.label, r.entry.id) }))
 
 /** Strength, Kept, Streak and Best as four quiet numbers. */
-function Numbers({ stats }: { stats: HabitStats }) {
+function Numbers({ stats, unit }: { stats: HabitStats; unit?: string }) {
   const cells = [
     { label: t('Strength'), value: String(stats.strength) },
-    { label: t('Kept'), value: t('{kept} of {of}', { kept: stats.kept, of: stats.keptOf }) },
+    { label: stats.goal ? t('Today') : t('Kept'), value: stats.period || stats.goal ? measureText({ ...stats, backOnTrack: false }, unit) ?? '' : t('{kept} of {of}', { kept: stats.kept, of: stats.keptOf }) },
     { label: t('Streak'), value: String(stats.current) },
     { label: t('Best'), value: String(stats.best) },
   ]
@@ -61,16 +64,23 @@ function Numbers({ stats }: { stats: HabitStats }) {
 /** Check in as a labelled button: Done today once kept, Check in early for a habit due later. */
 function CheckIn({ task, state }: { task: Task; state: CheckState }) {
   const kept = state === 'kept'
+  // An amount habit adds its step (habit-targets D2).
+  const step = task.habit_amount ? task.habit_step || 1 : 0
   return (
-    <Button size="sm" variant={kept ? 'ghost' : 'secondary'} icon="check" disabled={kept} onClick={() => act(checkInWithUndo(task.id, false))} data-check-in={task.id} data-kept={kept || undefined}>
-      {kept ? t('Done today') : state === 'later' ? t('Check in early') : t('Check in')}
+    <Button size="sm" variant={kept ? 'ghost' : 'secondary'} icon={step ? 'plus' : 'check'} disabled={kept} onClick={() => act(checkInWithUndo(task.id, false))} data-check-in={task.id} data-kept={kept || undefined}>
+      {kept ? t('Done today') : step ? t('Add {step}', { step }) : state === 'later' ? t('Check in early') : t('Check in')}
     </Button>
   )
 }
 
-function menuItems(task: Task, graduated: boolean, kept: boolean, choice: ReturnType<typeof useHabitsChoice>): ActionItem[] {
+function menuItems(task: Task, graduated: boolean, kept: boolean, choice: ReturnType<typeof useHabitsChoice>, today: string): ActionItem[] {
+  const step = task.habit_step || 1
   return [
-    ...(!graduated && !kept ? [{ kind: 'action' as const, id: 'tiny', label: task.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: task.habit_tiny }) : t('Log the tiny version'), icon: 'circle' as const, onSelect: () => checkInWithUndo(task.id, true) }] : []),
+    ...(!graduated && task.habit_amount ? [
+      { kind: 'action' as const, id: 'subtract', label: t('Subtract {step}', { step }), icon: 'minus' as const, onSelect: () => stepAmount(task.id, -step) },
+      { kind: 'action' as const, id: 'set', label: t('Set amount'), icon: 'pencil' as const, onSelect: () => openSetAmount(task.id, today) },
+    ] : []),
+    ...(!graduated && !kept && !task.habit_amount ? [{ kind: 'action' as const, id: 'tiny', label: task.habit_tiny ? t('Log the tiny version: {tiny}', { tiny: task.habit_tiny }) : t('Log the tiny version'), icon: 'circle' as const, onSelect: () => checkInWithUndo(task.id, true) }] : []),
     { kind: 'action', id: 'edit', label: t('Edit'), icon: 'pencil', onSelect: () => openHabitForm({ taskId: task.id }) },
     graduated
       ? { kind: 'action', id: 'resume', label: t('Resume'), icon: 'rotate-ccw', onSelect: () => undo(resume(task.id)) }
@@ -88,6 +98,7 @@ export function HabitPage({ id }: { id: string }) {
   const tasks = useLiveTasks()
   const projects = useProjects()
   const today = useToday()
+  const opts = useHabitOptions()
   const choice = useHabitsChoice()
   const task = tasks?.find((x) => x.id === id)
   const rows = useMemo(() => (tasks && task ? habitRowsOf(tasks)(task) : []), [tasks, task])
@@ -102,16 +113,16 @@ export function HabitPage({ id }: { id: string }) {
     )
   }
   const graduated = isGraduated(task)
-  const stats = graduated ? null : habitStats(task, rows, today)
+  const stats = graduated ? null : habitStats(task, rows, today, opts)
   const colour = task.project_id ? projects.find((p) => p.id === task.project_id)?.color : null
-  const state = checkStateOf(task, rows, today)
+  const state = checkStateOf(task, rows, today, opts)
   return (
     <PageBody width="form" data-habit-page={task.id}>
       <div data-hue={habitHue(task, colour)}>
         <PageHeader title={task.title || t('Untitled')} back={back} meta={habitFacts(task)}
           leading={<span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" aria-hidden="true" />}
           actions={graduated ? undefined : <CheckIn task={task} state={state} />}
-          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state === 'kept', choice) }]} />} />
+          menu={<ActionMenu label={t('Habit actions')} groups={[{ items: menuItems(task, graduated, state === 'kept', choice, today) }]} />} />
         <div className="space-y-5 px-1 pb-8">
           <CheckInNote seriesId={task.id} title={task.title || t('Untitled')} />
           <div data-habit-note><TaskNotes task={task} readOnly={false} /></div>
@@ -124,13 +135,14 @@ export function HabitPage({ id }: { id: string }) {
               <Button size="sm" variant="secondary" onClick={() => undo(resume(task.id))} data-resume>{t('Resume')}</Button>
             </div>
           )}
-          {stats && <Numbers stats={stats} />}
+          {stats && <Numbers stats={stats} unit={task.habit_unit} />}
           {stats?.backOnTrack && <p className="text-meta text-hue" data-habit-status>{t('Back on track')}</p>}
-          <HabitHistory series={task} records={rows} today={today} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
+          <HabitHistory series={task} records={rows} today={today} opts={opts} onPick={graduated ? undefined : (date, c) => act(pickDay(task.id, date, c))}
             onNote={graduated ? undefined : (date) => openDayNote(task.id, date)} />
           <CheckIns series={task} rows={rows} today={today} />
         </div>
         <DayNoteHost />
+        <AmountHost />
       </div>
     </PageBody>
   )

@@ -4,8 +4,10 @@
 // local rows; the actions apply them as one batch with one Undo, locally first, so
 // everything works offline and converges as ordinary field operations.
 import { addDaysISO, logicalToday } from './dates'
-import { db } from './db'
-import { habitRule, isGraduated, scheduled } from './habits'
+import { db, tableOf } from './db'
+import { habitGoal, habitRule, isGraduated, scheduled } from './habits'
+import { habitStep, planAmount, type AmountChange } from './habitAmounts'
+import { lineageOf } from './lineage'
 import { pieceId } from './ids'
 import { lineageRows } from './lineageRows'
 import { nextFree } from './occurrences'
@@ -91,6 +93,10 @@ export interface HabitInput {
   /** A palette hex, or "" for automatic (habits-polish D5); left out keeps the stored one. */
   color?: string
   projectId?: string | null
+  /** Times per week or month (habit-targets D1), with the rule every day; null for none; left out keeps the stored one. */
+  target?: { count: number; period: 'week' | 'month' } | null
+  /** A daily amount with its unit and step (habit-targets D2); null for none; left out keeps the stored one. */
+  amount?: { goal: number; unit: string; step: number } | null
 }
 
 /** Why a habit cannot be made from a rule: none (ok), not a valid rule, or a completion-relative rule. */
@@ -106,6 +112,11 @@ function habitPatch(input: HabitInput): Record<string, unknown> {
     habit: true, habit_tiny: input.tiny.trim(), habit_anchor: input.anchor.trim(),
     evening: input.part === 'evening', day_part: input.part === 'morning' || input.part === 'afternoon' ? input.part : null,
     ...(input.color !== undefined ? { habit_color: input.color } : {}),
+    ...(input.target !== undefined ? { habit_target: input.target ? Math.min(31, Math.max(1, Math.floor(input.target.count))) : 0, habit_period: input.target?.period ?? '' } : {}),
+    ...(input.amount !== undefined ? {
+      habit_amount: input.amount && input.amount.goal > 0 ? input.amount.goal : 0,
+      habit_unit: input.amount?.unit.trim() ?? '', habit_step: input.amount && input.amount.step > 0 ? input.amount.step : 1,
+    } : {}),
   }
 }
 
@@ -138,16 +149,38 @@ async function apply(changes: Change[], label: string) {
   await getDeviceId()
   const proposed: ProposedChange[] = []
   for (const c of changes) {
-    const local = c.entity === 'task' ? await db.tasks.get(c.entityId) : c.entity === 'reminder' ? await db.reminders.get(c.entityId) : undefined
+    const local = await tableOf(c.entity).get(c.entityId)
     proposed.push({ entity: c.entity, entityId: c.entityId, patch: c.patch, ...(local ? {} : { create: true }) })
   }
   const entry = await applyBatch(proposed, { source: 'action', label })
   return entry ? { entry, label } : null
 }
 
-/** Check in the current occurrence (D5): completes it exactly as completing the task does; `tiny` logs the tiny version. */
-export function checkIn(seriesId: string, tiny = false, opts: { now?: number; today?: string } = {}): Promise<OccurrenceResult | null> {
+/**
+ * Check in the current occurrence (D5): completes it exactly as completing the task does; `tiny` logs the tiny version.
+ * An amount habit adds its step to today instead (habit-targets D2), checking in once the amount is reached.
+ */
+export async function checkIn(seriesId: string, tiny = false, opts: { now?: number; today?: string } = {}): Promise<OccurrenceResult | null> {
+  const series = await db.tasks.get(seriesId)
+  if (series && habitGoal(series)) {
+    const r = await changeAmount(seriesId, { add: habitStep(series) }, opts)
+    return r ? { ...r, recordId: null } : null
+  }
   return actOnOccurrenceUndoable(seriesId, null, { kind: 'complete', ...(tiny ? { tiny: true } : {}) }, opts)
+}
+
+/** Add to, subtract from or set a day's amount (habit-targets D2) with an Undo offer. */
+export async function changeAmount(seriesId: string, how: AmountChange, opts: { now?: number; today?: string; date?: string } = {}) {
+  const series = await db.tasks.get(seriesId)
+  if (!series) return null
+  const today = opts.today ?? logicalToday()
+  const rows = await lineageRows(seriesId)
+  const ids = lineageOf(series, rows).map((p) => p.task.id)
+  const tallies = await db.habitTallies.where('series_id').anyOf(ids).toArray()
+  const plan = planAmount(series, rows, tallies, opts.date ?? today, how, await getDeviceId(), opts.now ?? Date.now(), today)
+  if (!plan) return null
+  const unit = series.habit_unit ?? ''
+  return apply(plan.changes, unit ? t('{amount} of {goal} {unit}', { amount: plan.amount, goal: plan.goal, unit }) : t('{amount} of {goal}', { amount: plan.amount, goal: plan.goal }))
 }
 
 /** Set a past day (D6) with an Undo offer. */

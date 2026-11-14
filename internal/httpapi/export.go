@@ -63,6 +63,14 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out["time_entries"] = entries
+	// Each device's count toward a day of an amount habit (habit-targets D2),
+	// with its record id and device, deleted ones included.
+	tallies, err := s.sync.List(r.Context(), uid, "habit_tally", true)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	out["habit_tallies"] = tallies
 	// The caller's places (task-locations D1): personal like labels, deleted ones
 	// included; tasks link to them by id in location.place_id.
 	places, err := s.sync.List(r.Context(), uid, "place", true)

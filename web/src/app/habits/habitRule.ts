@@ -3,7 +3,7 @@
 import { t } from '../../lib/i18n'
 import type { Task } from '../../lib/types'
 
-export type Often = 'daily' | 'days' | 'other'
+export type Often = 'daily' | 'days' | 'week' | 'month' | 'other'
 export type Part = 'any' | 'morning' | 'afternoon' | 'evening'
 
 export const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
@@ -36,8 +36,17 @@ export function ruleSummary(rule: string | null | undefined): string {
   return rule ?? ''
 }
 
-/** The page's one line of facts: how often, the part of the day (when set) and the anchor. */
+/** "3 times a week", "10 times a month", or how the rule reads (habit-targets D1). */
+export function oftenSummary(task: Pick<Task, 'recurrence' | 'habit_target' | 'habit_period'>): string {
+  const n = task.habit_target ?? 0
+  if (n > 0 && task.habit_period === 'week') return t('{n, plural, one {Once a week} other {# times a week}}', { n })
+  if (n > 0 && task.habit_period === 'month') return t('{n, plural, one {Once a month} other {# times a month}}', { n })
+  return ruleSummary(task.recurrence)
+}
+
+/** The page's one line of facts: how often, the amount (when set), the part of the day (when set) and the anchor. */
 export function habitFacts(task: Task): string {
   const part = partOf(task)
-  return [ruleSummary(task.recurrence), part === 'any' ? '' : PART_LABEL[part](), task.habit_anchor ?? ''].filter(Boolean).join(' · ')
+  const amount = task.habit_amount ? [String(task.habit_amount), task.habit_unit ?? ''].filter(Boolean).join(' ') : ''
+  return [oftenSummary(task), amount, part === 'any' ? '' : PART_LABEL[part](), task.habit_anchor ?? ''].filter(Boolean).join(' · ')
 }

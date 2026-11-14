@@ -75,7 +75,7 @@ func init() {
 			object([]string{"items"}, map[string]any{
 				"items":             map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": item},
 				"client_request_id": requestIDProp,
-			}), false, false, []string{"title", "description", "origin_url", "origin", "location", "habit_tiny", "habit_anchor"}, true)
+			}), false, false, []string{"title", "description", "origin_url", "origin", "location", "habit_tiny", "habit_anchor", "habit_unit"}, true)
 	}, plan: (*Registry).planCreateTasks})
 
 	register(tool{def: func(c Caller) Definition {
@@ -101,7 +101,7 @@ func init() {
 		return writeDef("update_tasks", "Update tasks", desc,
 			object([]string{"updates"}, map[string]any{
 				"updates": map[string]any{"type": "array", "minItems": 1, "maxItems": PerCall, "items": object([]string{"id"}, props)},
-			}), true, true, []string{"title", "description", "origin_url", "origin", "location", "habit_tiny", "habit_anchor"}, false)
+			}), true, true, []string{"title", "description", "origin_url", "origin", "location", "habit_tiny", "habit_anchor", "habit_unit"}, false)
 	}, plan: (*Registry).planUpdateTasks})
 
 	register(tool{def: func(Caller) Definition {

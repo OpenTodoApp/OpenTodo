@@ -143,6 +143,12 @@ The protocol and the op schema are part of the v1 surface: within 1.x, entities 
 | time_entry | `focus_mode` | string: `pomodoro`, `flowtime` or `countdown` for a Focus work session, `""` for any other entry; readers keep an unknown value |
 | time_entry | `focus_session` | integer 0 to 99: the work session's number in the Pomodoro cycle, `0` otherwise |
 | time_entry | `planned_end_at` | positive number (Unix ms) not before `started_at`, or null (Flowtime and other entries); an earlier value is refused with reason `invalid_planned_end` |
+| habit_tally | `series_id` | non-empty id string: the habit series; fixed at creation, see [Habit tallies](#habit-tallies) |
+| habit_tally | `date` | date `YYYY-MM-DD`: the day counted toward; fixed at creation |
+| habit_tally | `device` | string: the device whose count it is; fixed at creation |
+| habit_tally | `count` | number: that device's count of the day |
+| habit_tally | `created_at` | number |
+| habit_tally | `deleted_at` | number or null |
 | project_prefs | `feed_seen_at` | number (Unix ms: the activity-feed "seen until" time; personal scope only) |
 | project_prefs | `reviewed_at` | number (Unix ms: when this user last marked the project reviewed in the weekly review's project walk) |
 | project_prefs | `group_by`, `sort_by`, `sort_dir` | string (this user's display options of the project's list: `section`, `none`, `due`, `priority` or `label`; an order as for views; `""` = by section, manual order) |
@@ -249,6 +255,13 @@ A `time_entry` is one stretch of work on a task (OpenSpec `time-tracking`, see [
 - **One running entry per user.** Starting an entry writes `ended_at` = the new start on the user's running entry in the same batch. When a device holds two or more running entries of its user after a sync (two devices started offline), it keeps the one with the greatest `started_at` (ties: the greatest id) and writes `ended_at` = that start on the others. Every device computes the same values, so the repair converges without a prompt. The server applies the same rule (`internal/timetrack`, shared with `web/src/lib/time.ts` by fixtures) when it starts or stops an entry for the REST API, and never repairs on the sync path. Completing a task on a device ends its running entry in the completion batch; server-side completions do not.
 - **Days.** An entry belongs whole to the logical day its start falls on (the user's day start applies); totals are computed on demand from the rows, never stored.
 - **Reseeding after a restore** re-sends only the device user's own entries.
+
+### Habit tallies
+
+A `habit_tally` is one device's count toward one day of an amount habit (OpenSpec `habit-targets`, see [the guide](habit-targets.md)). Its id is `NameID("habit-tally", series_id + ":" + date + ":" + device)`, so each device writes only its own row and two devices adding offline never conflict; a day's amount is the sum of its live tallies over the habit's lineage. It names the series rather than the day's occurrence record, which is written only once the day is done.
+
+- **Scope.** A tally lives in the scope of its series, like a time entry; sharing a project relabels it, and purging the series purges it. Ops for a tally whose series was purged are discarded. `series_id`, `date` and `device` never change; whoever may edit the project's tasks may write a tally, a viewer may not.
+- **Not content.** The count is a number, never encrypted, so the server sums it on encrypted accounts. REST and MCP clients add to their own tally (`token:<id>`, `server` for a session).
 
 ### Attachments
 

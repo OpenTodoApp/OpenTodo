@@ -30,7 +30,7 @@ See proposal.md (Why). The current state that shapes the approach:
 
 ### D2. Amounts are summed per-device tallies
 
-A new entity `habit_tally` (`record_id`, `device`, `count`) with the id `NameID(record_id + ":" + device)`. Each device writes only its own row, so concurrent additions never collide; the day's amount is the sum of live tallies. Reaching the amount writes the completion batch (the record's `completed_at`); falling below reopens it. The scope of a tally follows its record's task (shared project members see it; it is exported, trashed and purged with the task), wired like `section` in `internal/sync/scope.go`. The count is not content, so the server can sum it on encrypted accounts.
+A new entity `habit_tally` (`series_id`, `date`, `device`, `count`) with the id `NameID(series_id + ":" + date + ":" + device)`. Each device writes only its own row, so concurrent additions never collide; the day's amount is the sum of the day's live tallies over the habit's lineage. A tally names its series and day rather than the day's occurrence record, because that record is written only when the day is done (a partial today has none yet). Reaching the amount writes the check-in (the current occurrence's completion, or an earlier day's record); falling below clears that day's record. The scope of a tally follows its series (shared project members see it; it is exported, relabelled when the project is shared and purged with the series), wired like `time_entry` in `internal/sync` (`habittally.go`). The count is not content, so the server can sum it on encrypted accounts.
 
 - **Alternative: `amount` on the record, last writer wins.** Rejected: two offline phones adding water lose a glass, which the spec rules out.
 - **Alternative: one op per addition, summed from the op log.** Rejected: devices don't keep the op log (`habits` design Context), and compaction would drop history.
@@ -50,15 +50,15 @@ The form adds two How often choices and an Amount section; the thread's target b
 
 ## Data model impact
 
-Additive: `task.habit_target` (positive int or 0), `task.habit_period` (string), `task.habit_amount` and `task.habit_step` (number), `task.habit_unit` (string, content); a new entity `habit_tally` (`record_id`, `device`, `count`), with scope, export, trash and purge wiring. Regenerated schema files and the v1 surface snapshot. No rename.
+Additive: `task.habit_target` (positive int or 0), `task.habit_period` (string), `task.habit_amount` and `task.habit_step` (number), `task.habit_unit` (string, content); a new entity `habit_tally` (`series_id`, `date`, `device`, `count`), with scope, export, sharing and purge wiring. Regenerated schema files and the v1 surface snapshot. No rename.
 
 ## Size and memory
 
-No dependency. Under 1 KB gzip on the first load; one Dexie table for tallies (indexed by `record_id`), read with the records the grid already loads.
+No dependency. Under 1 KB gzip on the first load; one Dexie table for tallies (indexed by `series_id`), read with the records the grid already loads.
 
 ## Risks / Trade-offs
 
-- **[A new entity needs scope, export and purge wiring]** → Wired like `section`, covered by the existing scope and export tests extended to tallies.
+- **[A new entity needs scope, export and purge wiring]** → Wired like `time_entry`, covered by a sync test (scope, viewers, fixed key, purge) and the export test.
 - **[Many devices make many tallies]** → One row per device per day an amount habit was touched: tens per month for a heavy user.
 - **[Week start differs between users of a shared project]** → Periods use the viewing user's week start; numbers in a shared project can differ between members, stated in the docs.
 

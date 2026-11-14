@@ -19,19 +19,27 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
   const start = proposedRule(task)
   const first = oftenOf(start)
   const [title, setTitle] = useState(task?.title ?? req.title ?? '')
-  const [often, setOften] = useState<Often>(first.often)
+  const [often, setOften] = useState<Often>(task?.habit_target && (task.habit_period === 'week' || task.habit_period === 'month') ? task.habit_period : first.often)
   const [days, setDays] = useState<string[]>(first.days.length ? first.days : ['mon', 'wed', 'fri'])
   const [other, setOther] = useState(first.often === 'other' ? start : '')
   const [tiny, setTiny] = useState(task?.habit_tiny ?? '')
   const [anchor, setAnchor] = useState(task?.habit_anchor ?? '')
   const [part, setPart] = useState<Part>(partOf(task))
   const [color, setColor] = useState(task?.habit_color ?? '')
+  // Times per week or month (habit-targets D1) and a daily amount (D2).
+  const [times, setTimes] = useState(String(task?.habit_target || 3))
+  const [goal, setGoal] = useState(task?.habit_amount ? String(task.habit_amount) : '')
+  const [unit, setUnit] = useState(task?.habit_unit ?? '')
+  const [step, setStep] = useState(String(task?.habit_step || 1))
   // A completion-relative rule asks for a calendar one at once (D9).
   const [tried, setTried] = useState(habitRuleProblem(start) === 'after-completion')
-  const rule = often === 'daily' ? 'every day' : often === 'days' ? `every ${DAYS.filter((d) => days.includes(d)).join(', ')}` : other
-  const problem = often === 'days' && days.length === 0 ? 'invalid' : habitRuleProblem(rule)
+  const periodic = often === 'week' || often === 'month'
+  const rule = often === 'daily' || periodic ? 'every day' : often === 'days' ? `every ${DAYS.filter((d) => days.includes(d)).join(', ')}` : other
+  const count = Number(times)
+  const problem = (often === 'days' && days.length === 0) || (periodic && !(count >= 1 && count <= (often === 'week' ? 7 : 31))) ? 'invalid' : habitRuleProblem(rule)
   const ruleError = !tried || !problem ? undefined
-    : problem === 'after-completion' ? t('A habit repeats on the calendar. Choose a rule such as every day.') : t('Type a rule such as every weekday.')
+    : problem === 'after-completion' ? t('A habit repeats on the calendar. Choose a rule such as every day.')
+      : periodic ? t('Choose how many times, from 1 to {max}.', { max: often === 'week' ? 7 : 31 }) : t('Type a rule such as every weekday.')
   const making = !!req.taskId
   const editing = making && !!task?.habit
 
@@ -39,7 +47,12 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
     e.preventDefault()
     setTried(true)
     if (!title.trim() || problem) return
-    const input: HabitInput = { title, rule, tiny, anchor, part: part === 'any' ? null : part, color }
+    const amount = Number(goal)
+    const input: HabitInput = {
+      title, rule, tiny, anchor, part: part === 'any' ? null : part, color,
+      target: periodic ? { count, period: often } : null,
+      amount: !periodic && amount > 0 ? { goal: amount, unit, step: Number(step) > 0 ? Number(step) : 1 } : null,
+    }
     act((async () => {
       const r = making && task ? await makeHabit(task.id, input) : await createHabit(input)
       if (r?.entry) showUndoToast(r.label, r.entry.id)
@@ -54,7 +67,9 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
         <Field label={t('How often')} error={ruleError}>
           <div className="space-y-2">
             <SegmentedControl label={t('How often')} value={often} onChange={setOften} data-habit-often
-              options={[{ id: 'daily', label: t('Every day') }, { id: 'days', label: t('Days of the week') }, { id: 'other', label: t('Other') }]} />
+              wrap options={[{ id: 'daily', label: t('Every day') }, { id: 'days', label: t('Days of the week') }, { id: 'week', label: t('Times per week') }, { id: 'month', label: t('Times per month') }, { id: 'other', label: t('Other') }]} />
+            {periodic && <Input type="number" inputMode="numeric" min={1} max={often === 'week' ? 7 : 31} value={times} onChange={(e) => setTimes(e.target.value)}
+              aria-label={often === 'week' ? t('Times per week') : t('Times per month')} className="w-24" data-habit-times />}
             {often === 'days' && (
               <div className="flex flex-wrap gap-1" role="group" aria-label={t('Days of the week')}>
                 {DAYS.map((d) => (
@@ -67,6 +82,15 @@ export function HabitFormDialog({ req, task }: { req: HabitFormRequest; task: Ta
             {often === 'other' && <Input value={other} onChange={(e) => setOther(e.target.value)} placeholder="every weekday" aria-label={t('Repeat rule')} data-habit-rule />}
           </div>
         </Field>
+        {!periodic && (
+          <Field label={t('Amount')}>
+            <div className="flex flex-wrap items-center gap-2" data-habit-amount>
+              <Input type="number" inputMode="decimal" min={0} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="8" aria-label={t('Amount per day')} className="w-24" data-habit-goal />
+              <Input value={unit} maxLength={40} onChange={(e) => setUnit(e.target.value)} placeholder={t('glasses')} aria-label={t('Unit')} className="w-32" data-habit-unit />
+              {Number(goal) > 0 && <Input type="number" inputMode="decimal" min={0} value={step} onChange={(e) => setStep(e.target.value)} aria-label={t('Each check adds')} className="w-20" data-habit-step />}
+            </div>
+          </Field>
+        )}
         <Field label={t('Tiny version')} hint={t('The two-minute version that still counts on a bad day')}><Input value={tiny} maxLength={200} onChange={(e) => setTiny(e.target.value)} placeholder={t('One page')} data-habit-tiny /></Field>
         <Field label={t('After')} hint={t('The routine this habit follows, like "After dinner"')}><Input value={anchor} maxLength={200} onChange={(e) => setAnchor(e.target.value)} placeholder={t('After dinner')} data-habit-anchor /></Field>
         <Field label={t('Part of the day')}>

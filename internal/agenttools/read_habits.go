@@ -70,6 +70,20 @@ func (r *Registry) habitToday(ctx context.Context, userID string, a args) (strin
 	return habits.LogicalToday(r.now(), loc, dayStart), loc, nil
 }
 
+// habitOptions are what the habit numbers read besides the tasks
+// (habit-targets): the tallies the caller can read and their week start.
+func (r *Registry) habitOptions(ctx context.Context, userID string) (habits.Options, error) {
+	tallies, err := r.list(ctx, userID, "habit_tally", false)
+	if err != nil {
+		return habits.Options{}, err
+	}
+	ws := 1
+	if prefs, err := r.get(ctx, userID, "user_prefs", "me"); err == nil && prefs != nil {
+		ws = habits.WeekStart(prefs)
+	}
+	return habits.Options{Tallies: tallies, WeekStart: &ws}, nil
+}
+
 // habitText reads user text for an answer: str's placeholder for ciphertext
 // becomes habits.Encrypted; relay markers pass through.
 func habitText(e opsync.Entity, field string) string { return habits.Display(e, field) }
@@ -92,7 +106,11 @@ func (r *Registry) listHabits(ctx context.Context, userID string, a args) (map[s
 	if err != nil {
 		return nil, err
 	}
-	list := habits.List(snap.tasks, today, grad, func(t opsync.Entity) bool { return snap.visible(t, false) }, habitText)
+	opts, err := r.habitOptions(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	list := habits.List(snap.tasks, today, grad, func(t opsync.Entity) bool { return snap.visible(t, false) }, habitText, opts)
 	out := map[string]any{"habits": list, "today": today, "timezone": loc.String(), "server_time": r.serverTime()}
 	if len(list) > MaxItems {
 		out["habits"], out["truncated"] = list[:MaxItems], true
@@ -150,9 +168,13 @@ func (r *Registry) getHabit(ctx context.Context, userID string, a args) (map[str
 	if err != nil {
 		return nil, err
 	}
+	opts, err := r.habitOptions(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]any{
-		"habit": habits.View(id, t, snap.tasks, today, habitText),
-		"days":  habits.DaysView(id, t, snap.tasks, from, to, today, habitText),
+		"habit": habits.View(id, t, snap.tasks, today, habitText, opts),
+		"days":  habits.DaysView(id, t, snap.tasks, from, to, today, habitText, opts),
 		"from":  from, "to": to, "today": today, "timezone": loc.String(), "server_time": r.serverTime(),
 	}, nil
 }

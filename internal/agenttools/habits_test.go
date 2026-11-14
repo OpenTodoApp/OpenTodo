@@ -206,3 +206,45 @@ func TestEncryptedHabit(t *testing.T) {
 		t.Fatalf("habit = %+v days = %+v", h, days)
 	}
 }
+
+// Targets and amounts in create_tasks, update_tasks and log_habit (OpenSpec
+// change habit-targets, tasks 4.1, 4.2).
+func TestHabitTargetsAndAmounts(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	out := f.mustCall(c, "create_tasks", map[string]any{"items": []any{
+		map[string]any{"title": "Gym", "recurrence": "every mon", "habit": true, "habit_target": 3, "habit_period": "week"},
+		map[string]any{"title": "Water", "recurrence": "every day", "habit": true, "habit_amount": 8, "habit_unit": "glasses"},
+	}})
+	res := out["results"].([]map[string]any)
+	gym, water := res[0]["id"].(string), res[1]["id"].(string)
+	if g := f.get("u1", gym); string(g["habit_target"]) != "3" || opsync.StringOf(g["habit_period"]) != "week" || opsync.StringOf(g["recurrence"]) != "every day" {
+		t.Fatalf("gym = %v", g)
+	}
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": gym, "habit_target": 4}}}); !isArgErr(err) {
+		t.Fatalf("a target without its period = %v", err)
+	}
+	// Two log_habit amounts add to the agent's own tally; the day is partial.
+	for range 2 {
+		f.mustCall(c, "log_habit", map[string]any{"id": water, "amount": 3})
+	}
+	h := f.mustCall(c, "get_habit", map[string]any{"id": water})
+	if hb := h["habit"].(habits.Habit); hb.Amount != 8 || hb.TodayAmount == nil || *hb.TodayAmount != 6 || hb.Untrusted.Unit != "glasses" {
+		t.Fatalf("water = %+v", hb)
+	}
+	if d := h["days"].([]habits.DayOut)[0]; d.State != habits.Partial || d.Amount != 6 {
+		t.Fatalf("today = %+v", d)
+	}
+	tallies, _ := f.sync.List(t.Context(), "u1", "habit_tally", false)
+	if len(tallies) != 1 {
+		t.Fatalf("tallies = %v", tallies)
+	}
+	// Amount on a plain habit: invalid_input naming amount.
+	if _, err := f.call(c, "log_habit", map[string]any{"id": gym, "amount": 1}); err == nil || !strings.Contains(err.Error(), "amount") {
+		t.Fatalf("amount on a target habit = %v", err)
+	}
+	g := f.mustCall(c, "get_habit", map[string]any{"id": gym})["habit"].(habits.Habit)
+	if g.Target != 3 || g.Period != "week" || g.KeptOf != 3 {
+		t.Fatalf("gym numbers = %+v", g)
+	}
+}

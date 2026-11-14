@@ -258,6 +258,30 @@ async function habitsScene(ctx, remove = false) {
   return habitIds
 }
 
+// The habits of the Targets and amounts shot (habit-targets), trashed after it.
+let targetIds = null
+async function targetsScene(ctx, remove = false) {
+  const api = async (method, path, body) => {
+    const r = await ctx.request.fetch(plainBase + path, { method, headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: body === undefined ? undefined : JSON.stringify(body) })
+    if (!r.ok()) throw new Error(`${method} ${path} → ${r.status()} ${await r.text()}`)
+    const t = await r.text(); return t ? JSON.parse(t) : null
+  }
+  if (remove) { for (const id of targetIds ?? []) await api('DELETE', `/api/v1/tasks/${id}`); targetIds = null; return }
+  const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
+  const make = async (title, fields) => {
+    const t = await api('POST', '/api/v1/tasks', { title, recurrence: 'every day', due: { date: day(-20) }, habit: true })
+    await api('PATCH', `/api/v1/tasks/${t.id}`, fields)
+    return t.id
+  }
+  const gym = await make('Gym', { habit_target: 3, habit_period: 'week', day_part: 'morning' })
+  for (const n of [-18, -16, -15, -11, -9, -4, -2]) await api('POST', `/api/v1/habits/${gym}/log`, { state: 'done', date: day(n) })
+  await api('PATCH', `/api/v1/tasks/${gym}`, { due: { date: day(0) } })
+  const water = await make('Water', { habit_amount: 8, habit_unit: 'glasses' })
+  await api('PATCH', `/api/v1/tasks/${water}`, { due: { date: day(-6) } })
+  for (const [n, glasses] of [[-6, 8], [-5, 6], [-4, 8], [-3, 8], [-2, 5], [-1, 8], [0, 3]]) await api('POST', `/api/v1/habits/${water}/log`, { set_amount: glasses, date: day(n) })
+  targetIds = [gym, water]
+}
+
 // ------------------------------------------------------------------ reusable list
 // The Groceries list of the reusable-list scenes, created once on the plain instance
 // (or deleted with `remove`): four aisle sections, open items and two ticked off.
@@ -717,6 +741,11 @@ const shots = [
     const section = editor.locator('[data-habit]'); await section.scrollIntoViewIfNeeded(); await settle(p, 400)
     return clipOf(p, section, 16)
   }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots === 2) await habitsScene(ctx, true) } },
+  // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
+  { name: 'habit-targets', server: P, async run(p, { ctx }) {
+    await targetsScene(ctx)
+    await go(p, plainBase, '/habits', () => p.locator('[data-target-bar]').first().waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { await targetsScene(ctx, true) } },
   { name: 'week', server: D, card: true, async run(p) {
     await go(p, demoBase, '/week', () => p.getByRole('button', { name: 'Week' }).first().waitFor())
     await p.getByRole('button', { name: 'Hide task list' }).click().catch(() => {}); await settle(p, 500)

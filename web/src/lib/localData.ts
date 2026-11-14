@@ -28,7 +28,7 @@ import { USER_PREFS_ID } from './userPrefs'
 import { ownIn, projectsIn, readWorkspaceState, tasksIn, type WorkspaceState } from './workspaces'
 import { pinnedNoteIds } from './favourites'
 import type {
-  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
+  AppNotification, Attachment, CalendarConnection, CalendarSubscription, WorkspaceGroup, WorkspaceMember, IssueConnection, Comment, FieldDef, HabitTally, Label, Membership, Note, Project, ProjectPrefs, Reminder, Review, Section, Task, UserPrefs, View,
 } from './types'
 
 export type { AttachmentBlob }
@@ -283,6 +283,13 @@ export function useApplicableFields(): FieldLookup {
 /** Every field definition row of one project, deleted ones too (liveFields narrows them). */
 export function useProjectFieldRows(projectId: string | null | undefined): FieldDef[] {
   return useLiveQuery(() => (projectId ? db.fields.where('project_id').equals(projectId).toArray() : NO_FIELDS), [projectId], NO_FIELDS)
+}
+
+const NO_TALLIES: HabitTally[] = []
+
+/** Every habit tally on the device (habit-targets D2): what an amount habit's days add up from. */
+export function useHabitTallies(): HabitTally[] {
+  return useLiveQuery(() => db.habitTallies.toArray(), [], NO_TALLIES)
 }
 
 // ---- tasks ----

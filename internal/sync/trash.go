@@ -661,6 +661,14 @@ func expandPurge(ctx context.Context, tx *sql.Tx, targets []purgeTarget) ([]purg
 		for _, id := range eids {
 			add(purgeTarget{t.scope, "time_entry", id})
 		}
+		// And an amount habit's tallies (habit-targets D2).
+		tids, err := childIDsWhere(ctx, tx, t.scope, "habit_tally", "series_id", t.id, false)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range tids {
+			add(purgeTarget{t.scope, "habit_tally", id})
+		}
 	}
 	// A standalone note's attachments go with it (note-attachments D1).
 	for _, t := range slices.Clone(out) {

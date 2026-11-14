@@ -17,6 +17,8 @@ import { HabitFormDialog } from './HabitForm'
 import { HabitPage } from './HabitPage'
 import HabitsScreen from './HabitsScreen'
 import { Thread } from './Thread'
+import { TargetBar } from './TargetBar'
+import { tallyId } from '../../lib/habitAmounts'
 
 // Habits (OpenSpec changes habits-home and habits-polish) on the frozen Wednesday 14
 // October 2026: the Habits screen by part of the day with a graduated habit, its empty
@@ -89,6 +91,36 @@ export const ThreadStates: StoryObj = {
       <Thread days={week(['blank', 'done', 'blank', 'done', 'blank', 'missed', 'pending'])} today={TODAY} label="Three days a week" />
     </div>
   ),
+}
+
+/** The new shapes (habit-targets D5): a target bar with earlier weeks met and not met, and days filled by their share of an amount. */
+export const TargetsAndAmounts: StoryObj = {
+  decorators: [withClock],
+  render: () => (
+    <div className="space-y-3" data-hue="teal">
+      <TargetBar thread={{ period: 'week', target: 3, count: 2, past: [false, true, true] }} />
+      <TargetBar thread={{ period: 'month', target: 10, count: 7, past: [true] }} />
+      <Thread days={week(['done', 'partial', 'done', 'partial', 'blank', 'done', 'partial']).map((d, i) => ({ ...d, ...(d.state === 'partial' ? { amount: [0, 2, 0, 6, 0, 0, 5][i] } : {}) }))}
+        today={TODAY} goal={8} unit="glasses" label="Water, 8 glasses a day" />
+    </div>
+  ),
+}
+
+/** Gym three times a week and Water with eight glasses on the Habits screen (habit-targets). */
+async function seedTargets(): Promise<void> {
+  await mutate('user_prefs', 'me', { habits: 'on' })
+  const gym = await habit('Gym', 'every day', TODAY, { habit_target: 3, habit_period: 'week', day_part: 'morning' })
+  for (const d of ['2026-09-29', '2026-10-05', '2026-10-07', '2026-10-09', '2026-10-12']) await setPastDay(gym, d, 'done', 1, TODAY)
+  const water = await habit('Water', 'every day', TODAY, { habit_amount: 8, habit_unit: 'glasses' })
+  for (const [date, count] of [['2026-10-12', 8], ['2026-10-13', 5], [TODAY, 3]] as const) {
+    await mutate('habit_tally', tallyId(water, date, 'story'), { series_id: water, date, device: 'story', count, created_at: 1, deleted_at: null })
+  }
+  await setPastDay(water, '2026-10-12', 'done', 1, TODAY)
+}
+
+export const ScreenWithTargets: StoryObj = {
+  ...withSeed(seedTargets),
+  render: () => <div className="-m-4 bg-canvas"><HabitsScreen /></div>,
 }
 
 /** Read's own page (habits-polish D3): facts, the tiny version, its numbers, Check in and the month history. */

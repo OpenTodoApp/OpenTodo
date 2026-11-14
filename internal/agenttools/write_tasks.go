@@ -41,7 +41,7 @@ func (r *Registry) planCreateTasks(ctx context.Context, c Caller, a args, overla
 		p := fmt.Sprintf("items[%d].", i)
 		if err := it.only(p, "title", "description", "project_id", "section_id", "parent_id", "priority", "due", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin", "id",
 			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "workspace_id", "new",
-			"habit", "habit_tiny", "habit_anchor"); err != nil {
+			"habit", "habit_tiny", "habit_anchor", "habit_target", "habit_period", "habit_amount", "habit_unit", "habit_step"); err != nil {
 			return Plan{}, err
 		}
 		title, _, err := it.contentText(c, "title", true, 500)
@@ -189,7 +189,7 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 		p := fmt.Sprintf("updates[%d].", i)
 		if err := it.only(p, "id", "title", "description", "priority", "labels", "estimate_minutes", "recurrence", "fields", "origin_url", "origin",
 			"deadline", "start", "evening", "span", "day_part", "energy", "flow_mode", "sector", "blocked_by", "location", "rotation",
-			"habit", "habit_tiny", "habit_anchor"); err != nil {
+			"habit", "habit_tiny", "habit_anchor", "habit_target", "habit_period", "habit_amount", "habit_unit", "habit_step"); err != nil {
 			return Plan{}, err
 		}
 		id, err := it.str("id")
@@ -241,7 +241,8 @@ func (r *Registry) planUpdateTasks(ctx context.Context, c Caller, a args, overla
 			return Plan{}, err
 		}
 		rotation, hasRotation := it["rotation"]
-		hasHabit := it.present("habit") || it.present("habit_tiny") || it.present("habit_anchor")
+		hasHabit := it.present("habit") || it.present("habit_tiny") || it.present("habit_anchor") || it.present("habit_target") || it.present("habit_period") ||
+			it.present("habit_amount") || it.present("habit_unit") || it.present("habit_step")
 		if len(patch) == 0 && !it.present("fields") && !hasRotation && !hasHabit {
 			return Plan{}, argErr(p + "nothing to change: give at least one field besides id")
 		}

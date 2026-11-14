@@ -415,7 +415,9 @@ on each device from the series and its occurrence records
 about them is stored and the server computes nothing, so two devices with the same
 rows show the same numbers, offline too. A task whose rule is removed or made
 completion-relative keeps the flag but shows no habit statistics until it has a
-calendar rule again.
+calendar rule again. A target habit ("3 times a week") keeps the rule `every day`
+and is measured over weeks or months instead of scheduled days, and an amount
+habit's days add up the devices' tallies ([Targets and amounts](habit-targets.md)).
 
 The rules:
 
