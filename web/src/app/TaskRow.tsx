@@ -501,6 +501,8 @@ export interface TaskRowProps {
   hidden?: readonly RowProperty[]
   /** The Inbox's source line under the title, "From email · yesterday" (inbox-split D4); it stands for the origin chip. */
   source?: boolean
+  /** The Completed view (completed-view-review D3): every row is done, so the check says it and the title reads muted, without the strikethrough. */
+  logbook?: boolean
   /** The task's details are shown under the row (row-expand, task-list-presentation "Expanded rows"). */
   expanded?: boolean
   /** Shows or hides the details; without it the row cannot expand (boards, review screens). */
@@ -743,7 +745,7 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -954,7 +956,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           clickRow(e, () => onOpen(e))
         }}>
         <div className={card ? '' : 'flex min-w-0 items-baseline gap-2'} data-row-head>
-        <RowTitle title={task.title} tone={checked ? 'text-faint line-through' : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
+        <RowTitle title={task.title} tone={checked ? (logbook ? 'text-muted' : 'text-faint line-through') : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
           undecryptable={undecryptable} unencrypted={unencrypted} measure={!inline && !departing} />
         {!card && <RowMarks priority={detailed ? null : priority} m={m} counts={counts} />}
         </div>

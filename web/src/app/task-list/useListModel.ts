@@ -22,6 +22,7 @@ import { useClosedList, useWaitingNow } from './useClosedList'
 import { NO_TASKS, taskIndexOf, useLiveTasks } from '../../lib/liveTasks'
 import { Derived } from '../../lib/taskDelta'
 import { LOGBOOK_PAGE, logbookGroups } from '../../lib/logbook'
+import { filterCompleted, useCompletedDisplay } from '../../lib/completedDisplay'
 import { todayAssigneeFilter } from '../../lib/dayLists'
 import { canEditTasks, roleOf, useMe } from '../../lib/sharing'
 import { liveProgress } from '../../lib/subtasks'
@@ -188,8 +189,13 @@ export function useListModel(route: ListRoute, userId?: string) {
 
   // Completed renders a page of the logbook at a time; a new route starts again.
   const [logbookLimit, setLogbookLimit] = useState(LOGBOOK_PAGE)
-  useResetOnChange([route.view], () => setLogbookLimit(LOGBOOK_PAGE))
-  const logbook = useMemo(() => (route.view === 'completed' ? logbookGroups(tasks, logbookLimit) : null), [route.view, tasks, logbookLimit])
+  // Its own display options and search (completed-view-review): narrowed, then paged.
+  const completedDisplay = useCompletedDisplay()
+  const [completedQuery, setCompletedQuery] = useState('')
+  useResetOnChange([route.view], () => { setLogbookLimit(LOGBOOK_PAGE); setCompletedQuery('') })
+  const logbook = useMemo(() => (route.view === 'completed'
+    ? logbookGroups(filterCompleted(tasks, completedDisplay, completedQuery), logbookLimit, completedDisplay.groupBy) : null),
+  [route.view, tasks, logbookLimit, completedDisplay, completedQuery])
 
   const { collapsed, toggleCollapsed } = useCollapsedRows()
   const layout = useProjectLayout(projectId)
@@ -308,7 +314,7 @@ export function useListModel(route: ListRoute, userId?: string) {
     currentPlace,
     projectReadOnly: route.view === 'project' && roleOf(route.id, memberMap) === 'viewer',
     projectEditable: !!projectId && canEditTasks(roleOf(projectId, memberMap)),
-    allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit,
+    allTasks, taskMap, progress, blocked, flow, habits, ...filter, logbook, logbookLimit, setLogbookLimit, completedDisplay, completedQuery, setCompletedQuery,
     collapsed, toggleCollapsed, ...layout, tree, columns, groups: projectedGroups, rows, ownRows, siblingPos, timeColumn, slotsOff, doneBySection,
     showCompleted, reusable, completedTasks, completedOpen, display, displayScope, listDisplay, urgency, nested, dayParts, closed, upcomingToday, upcomingThrough,
     queryFilter: route.view === 'upcoming' ? upcoming : null,

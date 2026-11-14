@@ -1,0 +1,1 @@
+- The Completed view can be narrowed to projects in **Display options**, grouped by project instead of by day, and searched; its done rows read with a check and a muted title instead of a strikethrough (completed-view-review, #1325).
