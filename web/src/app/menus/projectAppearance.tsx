@@ -1,4 +1,4 @@
-import { HUES, IconPicker, hueFor } from '../../ui'
+import { HUES, IconPicker, TOUCH_GRID, hueFor } from '../../ui'
 import { hueName } from '../../lib/colourNames'
 import { t } from '../../lib/i18n'
 import { updateProject } from '../../lib/ops'
@@ -45,7 +45,7 @@ export function ColourSwatches({ color, onPick, onDefault, menu = false }: {
 }) {
   const current = color ? hueFor(color) : undefined
   return (
-    <div role="group" aria-label={t('Colour')} className="flex flex-wrap gap-1 px-1.5 py-1.5">
+    <div role="group" aria-label={t('Colour')} className={`flex flex-wrap gap-1 px-1.5 py-1.5 in-data-[overlay=sheet]:px-3 ${TOUCH_GRID}`}>
       {onDefault && <button type="button" aria-label={t('Automatic')} aria-pressed={!color} onClick={onDefault}
         className="touch-target inline-flex items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus">
         <span className={`block size-5 rounded-full border border-dashed border-strong${!color ? ' ring-2 ring-accent ring-offset-1 ring-offset-surface' : ''}`} />

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { applyCatalog } from '../lib/i18n/catalog'
 import it_ from '../locales/it.json'
-import { IconPicker } from './IconPicker'
+import { IconPicker, TOUCH_GRID } from './IconPicker'
 import { loadCatalogue } from './icons/catalogue'
 import { key, render, type, waitFor } from './test-utils'
 
@@ -55,6 +55,31 @@ describe('IconPicker', () => {
     expect(onClose).toHaveBeenCalled()
     expect(onPick).not.toHaveBeenCalled()
     await r.unmount()
+  })
+
+  it('moves by the columns the grid is drawn in (seven 44 px cells on a phone), and marks the cells as touch targets', async () => {
+    await loadCatalogue()
+    // The browser lays the touch grid out; the test stands in for it with seven tracks.
+    const real = window.getComputedStyle
+    const spy = vi.spyOn(window, 'getComputedStyle').mockImplementation((el, pseudo) => (
+      (el as Element).hasAttribute('data-icon-grid') ? { gridTemplateColumns: Array(7).fill('44px').join(' ') } as CSSStyleDeclaration : real.call(window, el, pseudo)
+    ))
+    try {
+      const r = await render(<IconPicker value="briefcase" onPick={() => {}} />)
+      await waitFor(() => document.querySelector('[data-icon-option="briefcase"]') !== null, 'catalogue rendered')
+      const names = [...document.querySelectorAll('[data-icon-grid]')[0].querySelectorAll('[data-icon-option]')].map((o) => o.getAttribute('data-icon-option'))
+      expect(names[0]).toBe('briefcase')
+      await key(field(), 'ArrowDown')
+      expect(active()).toBe(names[7])
+      await key(field(), 'ArrowUp')
+      expect(active()).toBe('briefcase')
+      const cell = document.querySelector('[data-icon-option="briefcase"]')!
+      expect(cell.className).toContain('touch-target')
+      expect(document.querySelector('[data-icon-grid]')!.className).toContain(TOUCH_GRID)
+      await r.unmount()
+    } finally {
+      spy.mockRestore()
+    }
   })
 
   it('matches category names in the interface language', async () => {

@@ -33,7 +33,16 @@ beforeEach(async () => {
   fetchSpy = vi.fn(async () => new Response('{}', { status: 404 }))
   vi.stubGlobal('fetch', fetchSpy)
 })
+const originalMatchMedia = window.matchMedia
+/** Below 768 px: no `min-width` query matches. */
+function phone() {
+  window.matchMedia = ((q: string) => ({
+    matches: !q.includes('min-width'), media: q, onchange: null,
+    addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+  })) as typeof window.matchMedia
+}
 afterEach(() => {
+  window.matchMedia = originalMatchMedia
   vi.useRealTimers()
   vi.unstubAllGlobals()
   resetPanel()
@@ -87,6 +96,34 @@ describe('Statistics dashboard', () => {
     expect(document.activeElement).toBe(checked())
     await waitFor(() => tile(r.container, 'done') === '4')
     expect([...r.container.querySelectorAll('[role="radio"]')].map((b) => b.textContent)).toEqual(['This week', 'This month', 'This quarter', 'This year', 'Last week'])
+    await r.unmount()
+  })
+
+  it('On a phone the period is one menu button beside the page menu; the five are radio items, chosen by tap and by keyboard (phone-stats-period)', async () => {
+    phone()
+    await seedWeek()
+    const r = await render(<StatsView />)
+    await waitFor(() => tile(r.container, 'done') === '3')
+    const row = r.container.querySelector('[data-stats-header-row]')!
+    expect([...row.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Period This week', 'More actions'])
+    expect(r.container.querySelector('[role="radiogroup"]')).toBeNull()
+    const button = row.querySelector<HTMLElement>('[data-period-chooser]')!
+    expect(button.getAttribute('aria-haspopup')).toBe('menu')
+    const focusable = [...r.container.querySelectorAll<HTMLElement>('button, [href], input, select, [tabindex]:not([tabindex="-1"])')].filter((el) => el.tabIndex >= 0)
+    expect(focusable[0]).toBe(button)
+    const items = () => [...document.querySelectorAll<HTMLElement>('[role="menu"] [role="menuitemradio"]')]
+    await click(button)
+    await waitFor(() => items().length === 5, 'the five periods')
+    expect(items().map((i) => `${i.textContent}:${i.getAttribute('aria-checked')}`)).toEqual(['This week:true', 'This month:false', 'This quarter:false', 'This year:false', 'Last week:false'])
+    await key(items()[0], 'ArrowDown')
+    expect(document.activeElement).toBe(items()[1])
+    await click(items()[1])
+    await waitFor(() => tile(r.container, 'done') === '4')
+    expect(row.querySelector('[data-period-chooser]')!.textContent).toBe('Period This month')
+    expect(localStorage.getItem('ot.stats.period')).toBe('this-month')
+    await click(row.querySelector<HTMLElement>('[data-period-chooser]')!)
+    await waitFor(() => items().length === 5, 'the menu again')
+    expect(items()[1].getAttribute('aria-checked')).toBe('true')
     await r.unmount()
   })
 

@@ -11,9 +11,9 @@ import { completeTask, createProject, createTask, resetDeviceId, updateTask } fr
 import type { Task } from '../lib/types'
 import { loadViewMode, nextViewMode, saveViewMode } from '../lib/sections'
 import { flush, key, render, waitFor } from '../ui/test-utils'
-import { resetPanel } from './panel'
+import { panelTaskId, resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
-import { notePlacement } from './TimelineView'
+import { notePlacement, rowMetrics } from './TimelineView'
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -208,6 +208,80 @@ describe('timeline', () => {
     // eslint-disable-next-line test-hygiene/no-fixed-wait -- a viewer's key writes nothing, so there is no signal to wait for; give a wrong write time to land
     await flush(50)
     expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-10' })
+    await r.unmount()
+  })
+})
+
+describe('on a phone and on touch (phone-timeline-rows)', () => {
+  /** matchMedia for a window of `width` px with a coarse pointer or a mouse. */
+  const device = (width: number, coarse: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({
+    matches: q.includes('min-width') ? width >= parseFloat(q.split('min-width:')[1]) * 16 : q.includes('coarse') ? coarse : false,
+    media: q, addEventListener() {}, removeEventListener() {},
+  }))
+
+  it('rows are 36 px with a mouse, 44 px on touch, and 56 px with the bar at the foot below 768 px', () => {
+    expect(rowMetrics(false, false)).toEqual({ row: 36, mid: 18, later: 36 })
+    expect(rowMetrics(false, true)).toEqual({ row: 44, mid: 22, later: 44 })
+    expect(rowMetrics(true, true)).toEqual({ row: 56, mid: 38, later: 44 })
+    expect(rowMetrics(true, false)).toEqual({ row: 56, mid: 38, later: 36 })
+  })
+
+  it('below 768 px the name is a line above its bar and the row is its button; a tap opens the task', async () => {
+    device(360, true)
+    const p = await timeline()
+    const dated = await createTask({ title: 'Get three quotes for the kitchen', project_id: p, due: { date: '2026-11-04' } })
+    const blocked = await createTask({ title: 'Book the fitters', project_id: p, due: { date: '2026-11-08' } })
+    await updateTask(blocked, { blocked_by: [dated] })
+    const none = await createTask({ title: 'No dates', project_id: p })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelectorAll('[data-timeline-row]').length === 3)
+    const row = (id: string) => r.container.querySelector<HTMLElement>(`[data-timeline-row="${id}"]`)!
+    // 56 px with a bar, 44 px without; no name column beside the grid.
+    expect(row(dated).style.height).toBe('56px')
+    expect(row(none).style.height).toBe('44px')
+    expect(r.container.querySelector('[role="columnheader"]')!.className).toBe('sr-only')
+    // The name is drawn once, not truncated to a column, and the button is named by it.
+    const name = row(dated).querySelector<HTMLElement>('[data-timeline-name]')!
+    expect(name.textContent).toBe('Get three quotes for the kitchen')
+    expect(name.className).toContain('sticky')
+    expect(name.style.maxWidth).toBe('calc(100cqw - 0px)')
+    expect(row(dated).querySelector('button')!.getAttribute('aria-label')).toBe('Get three quotes for the kitchen')
+    expect(row(blocked).querySelector('button')!.getAttribute('aria-label')).toContain('waits for Get three quotes')
+    // The arrow runs between the bars' middles: 38 px into the first row and into the second.
+    expect(r.container.querySelector(`[data-arrow="${dated}>${blocked}"] path`)!.getAttribute('d')).toMatch(/^M\d+,38 H\d+ V94 H\d+$/)
+    // The bar still takes its own presses over the row.
+    expect(row(dated).querySelector('[data-bar]')!.className).toContain('pointer-events-auto')
+    await act(async () => { row(dated).querySelector('button')!.click() })
+    // A phone opens a task as its page.
+    await waitFor(() => location.pathname === `/task/${dated}`, 'the task opened')
+    history.replaceState(null, '', '/')
+    await r.unmount()
+  })
+
+  it('with a mouse from 768 px a click on a name selects and the row is the list\'s 36 px', async () => {
+    device(1280, false)
+    const p = await timeline()
+    const id = await createTask({ title: 'Pack', project_id: p, due: { date: '2026-11-04' } })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelector(`[data-timeline-row="${id}"]`) !== null)
+    const row = r.container.querySelector<HTMLElement>(`[data-timeline-row="${id}"]`)!
+    expect(row.style.height).toBe('36px')
+    expect(row.querySelector('[data-timeline-name]')).toBeNull()
+    expect(row.querySelector('button')!.textContent).toBe('Pack')
+    await act(async () => { row.querySelector('button')!.click() })
+    await waitFor(() => row.getAttribute('aria-selected') === 'true', 'the row selected')
+    expect(panelTaskId()).toBeNull()
+    await r.unmount()
+  })
+
+  it('the hint marks its sentence about keys, so a device without a keyboard does not draw it', async () => {
+    const p = await timeline()
+    await createTask({ title: 'Pack', project_id: p, due: { date: '2026-11-04' } })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => r.container.querySelector('[data-timeline] [data-kbd-hint]') !== null)
+    const keys = r.container.querySelector('[data-timeline] [data-kbd-hint]')!
+    expect(keys.textContent!.trim()).toBe('← → move the selected task, Shift+← → its deadline.')
+    expect(keys.parentElement!.textContent).toBe('Drag a bar to move its dates, or its ends to set the start and deadline. ← → move the selected task, Shift+← → its deadline.')
     await r.unmount()
   })
 })

@@ -263,6 +263,7 @@ On a touch screen (`pointer: coarse`) the app behaves like an app, not a page (s
 - Chrome is not text: every button, tab, menu item, option, switch and `summary`, every `nav`, the phone bar, the sidebar and `PageHeader` cannot be selected or called out by a long press. Everything else is content and stays selectable, as does a field or an editable area inside chrome. A new control is covered by its element or role; text that a person may want to copy must not be put inside a button or a `nav`. `select-text` on an element overrides the rule.
 - The page ends the overscroll chain (`overscroll-behavior: none` on the root): no bounce, no pull glow, no reload on a pull. Scrollers keep their own behaviour and still get every touch event.
 - Zoom stays: no `touch-action` on the page that blocks pinch.
+- A grid of choices (the icon picker's icons, the palette swatches) is a grid of 44 px targets: each cell takes `touch-target` and its grid `TOUCH_GRID` (from `web/src/ui`), which on touch lays out as many columns of at least 44 px as the width holds, stretched evenly and 2 px apart, so no two targets overlap; seven columns at 360 and 390 px. Keyboard movement reads the columns as drawn, never a fixed number. In a phone's sheet the picker's field, icons and swatches keep the sheet's inset, in line with its title: content placed bare in a sheet gets `in-data-[overlay=sheet]:px-2` (phone-icon-picker).
 
 With a mouse nothing changes. The layout check (`touchFeel` in `scripts/ux-audit/measure.mjs`) fails on a selectable control, an unselectable field or comment, a page that bounces or a viewport that turns zoom off.
 
@@ -315,7 +316,7 @@ The workbench checks stories; the audit checks the built app. `make ux-audit` st
 | M7 | target size | 44 px on touch; 24 px, or 24 px of space around it, with a mouse |
 | M8 | focus: Tab through the screen at 1280 px | a ring on every focusable element |
 | M10 | text cut with an ellipsis | its full text in the accessible name, the tooltip (`data-tip`) or an `sr-only` neighbour |
-| M11 | two controls overlapping; fixed chrome (the tab bar, the add button) over content that scrolls under it is not compared | at most 4 px |
+| M11 | two controls overlapping; fixed chrome (the tab bar, the add button) and a stuck sticky bar (the task page's comment field) over content that scrolls under them are not compared, except the add button on a page's primary action | at most 4 px |
 | M12 | layout shift from navigation to idle | 0.1 |
 | M13 | the first task row on a second visit with the server stopped | reported |
 | M14 | story coverage of the core screens | none missing |
