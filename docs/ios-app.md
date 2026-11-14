@@ -36,7 +36,7 @@ Only pages the sign-in leads through stay in the app; a link to another site on 
 
 ## Reminders
 
-Your server's reminders arrive as notifications, scheduled on the phone from the web app's own data: the next seven days, with **Done**, **Snooze 10 min** and **Dismiss** on the notification. Each opens the app, which then completes the task or moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone.
+Your server's reminders arrive as notifications with the task's name, without setting anything up; iOS asks to allow notifications when your first reminder is there, never at launch. They are scheduled on the phone from the web app's own data: the next seven days, with **Done**, **Snooze 10 min** and **Dismiss** on the notification. Each opens the app, which then completes the task or moves the reminder, because a local notification cannot change your tasks by itself. No push service is involved and nothing leaves the phone. **Settings → Notifications** in the app turns them off, and turns the task names off.
 
 Two limits come from iOS. A WKWebView cannot receive web push, so unlike the [installed web app](push-notifications.md) the app has no immediate push; it refreshes the schedule whenever you open it, and iOS lets it refresh in the background about hourly when it decides to. Reminders that change while the app is closed can therefore arrive late, and notifications further away than seven days are not scheduled at all. If you want push per reminder, use the installed web app on iOS 16.4 or later; both can be on the same phone, and they share the same account.
 

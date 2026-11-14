@@ -14,15 +14,19 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.TimeUnit
 
 /**
  * Runs the web app briefly in a hidden web view (native-shells D4): hourly so it syncs and
  * hands over a fresh schedule and widget data, and once for a notification's Snooze or
- * Dismiss, which the web app applies as its own reminder ops. At most 30 seconds.
+ * Dismiss, which the web app applies as its own reminder ops. The run ends when the web app
+ * says it is done (shell-reminders-on D4: capability `background`, `backgroundDone()`), or
+ * after 90 seconds when nothing is heard (an older web app, a server that does not answer).
  */
 class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     @SuppressLint("SetJavaScriptEnabled")
@@ -40,15 +44,20 @@ class HiddenRunWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
                     !SignInFlow.hiddenRunStays(request.url.toString(), origin)
             }
-            Bridge(applicationContext, origin, null).install(web)
+            val done = CompletableDeferred<Unit>()
+            Bridge(applicationContext, origin, null) { done.complete(Unit) }.install(web)
             web.loadUrl(origin + path)
-            try { delay(LIMIT_MS) } finally { web.stopLoading(); web.destroy() }
+            try { awaitBackgroundDone(done, LIMIT_MS) } finally { web.stopLoading(); web.destroy() }
         }
         return Result.success()
     }
 
-    companion object { const val LIMIT_MS = 30_000L }
+    companion object { const val LIMIT_MS = 90_000L }
 }
+
+/** Waits for the web app's `backgroundDone()`, at most [limitMs]: true when it came, false at the limit. */
+internal suspend fun awaitBackgroundDone(done: Deferred<Unit>, limitMs: Long): Boolean =
+    withTimeoutOrNull(limitMs) { done.await() } != null
 
 object HiddenRun {
     private const val PERIODIC = "refresh"

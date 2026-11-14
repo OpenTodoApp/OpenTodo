@@ -153,6 +153,66 @@ class BridgeFixtureTest {
         assertTrue(script, script.contains("\"files\"") && script.contains("\"haptics\""))
     }
 
+    private fun strings(f: JSONObject, key: String): List<String> = f.getJSONArray(key).let { a -> (0 until a.length()).map { a.getString(it) } }
+
+    /**
+     * shell-reminders-on: what only the visible app, only a background run and both list.
+     * `biometric` and `geofences` depend on the device and the store build and are not in the fixture.
+     */
+    @Test fun capabilitiesOfTheVisibleAppAndOfABackgroundRun() {
+        val f = fixture("capabilities.json")
+        val visibleOnly = strings(f, "visibleOnly")
+        val backgroundOnly = strings(f, "backgroundOnly")
+        val both = strings(f, "both")
+        assertTrue(visibleOnly.contains("alarm-settings") && backgroundOnly.contains("background"))
+        val visible = Bridge.capabilityList(play = false, hasScreen = true, background = false, sdkInt = 34, biometric = false)
+        for (c in visibleOnly + both) assertTrue("the visible app lists $c: $visible", visible.contains(c))
+        for (c in backgroundOnly) assertFalse("the visible app does not list $c: $visible", visible.contains(c))
+        val run = Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 34, biometric = false)
+        for (c in backgroundOnly + both) assertTrue("a background run lists $c: $run", run.contains(c))
+        for (c in visibleOnly) assertFalse("a background run does not list $c: $run", run.contains(c))
+    }
+
+    /** Every shell's page script has the methods, whatever it lists: one without the capability does nothing. */
+    @Test fun thePageScriptHasTheMethodsOfTheNewCapabilities() {
+        val methods = fixture("capabilities.json").getJSONObject("methods")
+        assertEquals("alarm-settings", methods.getString("openAlarmSettings"))
+        assertEquals("background", methods.getString("backgroundDone"))
+        val script = Bridge.script("1.0.0", listOf("reminders", "widgets"))
+        for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
+    }
+
+    /** shell-reminders-on D3: `alarm-settings` needs a screen and Android 12; nothing else changes with the API level. */
+    @Test fun alarmSettingsByApiLevelAndScreen() {
+        assertFalse(Bridge.alarmSettings(hasScreen = true, sdkInt = 26))
+        assertFalse(Bridge.alarmSettings(hasScreen = true, sdkInt = 30))
+        assertTrue(Bridge.alarmSettings(hasScreen = true, sdkInt = 31))
+        assertTrue(Bridge.alarmSettings(hasScreen = true, sdkInt = 36))
+        assertFalse(Bridge.alarmSettings(hasScreen = false, sdkInt = 31))
+        assertFalse(Bridge.alarmSettings(hasScreen = false, sdkInt = 36))
+        val old = Bridge.capabilityList(play = false, hasScreen = true, background = false, sdkInt = 30, biometric = false)
+        val new = Bridge.capabilityList(play = false, hasScreen = true, background = false, sdkInt = 31, biometric = false)
+        assertEquals(old + "alarm-settings", new)
+        assertFalse(Bridge.capabilityList(play = false, hasScreen = false, background = true, sdkInt = 36, biometric = false).contains("alarm-settings"))
+    }
+
+    /** `background` only in a run without a screen; the Play build drops geofences; biometric needs a screen. */
+    @Test fun capabilityListByBuildAndRun() {
+        assertEquals(listOf("reminders", "widgets", "geofences"), Bridge.capabilityList(play = false, hasScreen = false, background = false, sdkInt = 36, biometric = true))
+        assertEquals(listOf("reminders", "widgets", "background"), Bridge.capabilityList(play = true, hasScreen = false, background = true, sdkInt = 36, biometric = false))
+        val visible = Bridge.capabilityList(play = true, hasScreen = true, background = true, sdkInt = 36, biometric = true)
+        assertFalse(visible.toString(), visible.contains("background") || visible.contains("geofences"))
+        assertTrue(visible.toString(), visible.contains("biometric") && visible.contains("links"))
+    }
+
+    /** The answer of scheduleReminders: exact alarms only matter once notifications are allowed. */
+    @Test fun reminderAnswers() {
+        assertEquals("granted", Bridge.reminderAnswer(notifications = true, exact = true))
+        assertEquals("exact-denied", Bridge.reminderAnswer(notifications = true, exact = false))
+        assertEquals("denied", Bridge.reminderAnswer(notifications = false, exact = true))
+        assertEquals("denied", Bridge.reminderAnswer(notifications = false, exact = false))
+    }
+
     @Test fun addressesTheWebAppReads() {
         val f = fixture("actions.json")
         val actions = f.getJSONArray("reminderActions")

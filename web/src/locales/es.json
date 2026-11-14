@@ -7702,5 +7702,8 @@
   "No projects found": "No se encontraron proyectos",
   "No tasks found": "No se encontraron tareas",
   "{n, plural, one {Looked at # project} other {Looked at # projects}}": "{n, plural, one {Consultado # proyecto} other {Consultados # proyectos}}",
-  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {Consultada # tarea} other {Consultadas # tareas}}"
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {Consultada # tarea} other {Consultadas # tareas}}",
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Las notificaciones de OpenTodo no están permitidas. Permítelas en los Ajustes del iPhone (Notificaciones → OpenTodo); los recordatorios siguen apareciendo dentro de la aplicación.",
+  "Reminders may arrive a few minutes late.": "Los recordatorios pueden llegar unos minutos tarde.",
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "La aplicación no pudo mostrar una notificación. Permite las notificaciones de OpenTodo en los Ajustes del iPhone."
 }

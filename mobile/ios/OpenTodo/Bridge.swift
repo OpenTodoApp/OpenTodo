@@ -67,6 +67,7 @@ protocol BridgeActions: AnyObject {
     func bridgedOpenExternal(_ url: String)
     func bridgedSetSystemBars(_ json: String)
     func bridgedHaptic(_ kind: String)
+    func bridgedBackgroundDone()
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -91,14 +92,20 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// The capabilities this shell offers, in the contract's names. `share`: the shell has
     /// a screen (the background run has none, so it lists nothing a person would see or
     /// feel); `haptics`: the device can play them. No `files`: WebKit downloads what the
-    /// web app saves (shell-repairs D3).
+    /// web app saves (shell-repairs D3). No `alarm-settings`: iOS has no exact-alarm
+    /// permission. `background` (shell-reminders-on D4) is only ever listed without a
+    /// screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
         if share { caps += ["share", "links", "obsidian-links", "system-bars"] }
         if share && haptics { caps.append("haptics") }
+        if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
         return caps
     }
+
+    /// What the background run lists: no screen, so no prompt of any kind.
+    static var backgroundCapabilities: [String] { capabilities(biometric: false, share: false, haptics: false) }
 
     func install(into controller: WKUserContentController, app: String, capabilities: [String]) {
         controller.addScriptMessageHandler(self, contentWorld: .page, name: Self.handlerName)
@@ -160,6 +167,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case "haptic":
             actions.bridgedHaptic(string(0))
+            reply(nil, nil)
+        case "backgroundDone":
+            actions.bridgedBackgroundDone()
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -259,7 +269,8 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             biometricForget: function () { call('biometricForget') },
             openExternal: function (url) { call('openExternal', [String(url)]) },
             setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
-            haptic: function (kind) { call('haptic', [String(kind)]) }
+            haptic: function (kind) { call('haptic', [String(kind)]) },
+            backgroundDone: function () { call('backgroundDone', []) }
           });
         })();
         """

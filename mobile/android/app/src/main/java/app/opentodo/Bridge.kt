@@ -18,12 +18,23 @@ import org.json.JSONObject
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
  * so it offers only reminders, widgets and geofences (and never asks for a permission,
- * saves a file or gives haptic feedback).
+ * saves a file or gives haptic feedback). The hidden run passes [backgroundDone], which the
+ * web app calls when it has synced and handed over (shell-reminders-on D4): only that run
+ * lists the capability `background`.
  */
-class Bridge(private val context: Context, private val origin: String, private val host: Host?) {
+class Bridge(
+    private val context: Context,
+    private val origin: String,
+    private val host: Host?,
+    private val backgroundDone: (() -> Unit)? = null,
+) {
     interface Host {
         fun requestNotificationPermission(done: (Boolean) -> Unit)
-        fun requestExactAlarms()
+        /**
+         * shell-reminders-on D3: the system page where the user allows exact alarms (API 31+).
+         * Only the web app's button leads here; handing over a schedule never does.
+         */
+        fun openAlarmSettings() {}
         /** The microphone for dictation. The default refuses, so a host without a screen never grants it. */
         fun requestMicrophone(done: (Boolean) -> Unit) { done(false) }
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
@@ -52,15 +63,13 @@ class Bridge(private val context: Context, private val origin: String, private v
      * geofences also in the hidden run, which hands the regions over hourly (it never asks);
      * never in the Google Play build, which has no location permission (play-location-later).
      */
-    fun capabilities(play: Boolean): List<String> {
-        val caps = mutableListOf("reminders", "widgets")
-        if (!play) caps += "geofences"
-        if (host != null) {
-            caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
-            if (BiometricKeyStore.available(context)) caps += "biometric"
-        }
-        return caps
-    }
+    fun capabilities(play: Boolean): List<String> = capabilityList(
+        play = play,
+        hasScreen = host != null,
+        background = host == null && backgroundDone != null,
+        sdkInt = Build.VERSION.SDK_INT,
+        biometric = host != null && BiometricKeyStore.available(context),
+    )
 
     /** False on a WebView too old for origin-restricted injection: the app then runs as the plain web app. */
     fun install(webView: WebView): Boolean {
@@ -98,6 +107,9 @@ class Bridge(private val context: Context, private val origin: String, private v
             "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
             // An unknown kind is ignored, and so is every kind without a screen.
             "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT)?.let { c -> main.post { host.haptic(c) } }
+            // Without a screen there is no page to open, and the visible app has no run to end.
+            "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
+            "backgroundDone" -> if (host == null) backgroundDone?.invoke()
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -106,16 +118,15 @@ class Bridge(private val context: Context, private val origin: String, private v
         }
     }
 
+    /**
+     * Replaces the schedule. The notification permission is asked only for a schedule that is
+     * not empty and only with a screen; the exact-alarm setting is never opened from here
+     * (shell-reminders-on D3): without it the alarms are inexact and the answer says so.
+     */
     private fun scheduleReminders(json: String, answer: (Any?) -> Unit) {
         Scheduler.replace(context, json)
         val wantsAlarms = json.trim() != "[]"
-        fun afterPermission(granted: Boolean) {
-            if (!granted) return answer("denied")
-            if (Scheduler.canExact(context)) return answer("granted")
-            val prefs = Prefs(context)
-            if (host != null && !prefs.exactAlarmAsked) { prefs.exactAlarmAsked = true; host.requestExactAlarms() }
-            answer("exact-denied")
-        }
+        fun afterPermission(granted: Boolean) = answer(reminderAnswer(granted, Scheduler.canExact(context)))
         if (Scheduler.notificationsAllowed(context) || !wantsAlarms || host == null) afterPermission(Scheduler.notificationsAllowed(context))
         else host.requestNotificationPermission { afterPermission(it) }
     }
@@ -140,6 +151,27 @@ class Bridge(private val context: Context, private val origin: String, private v
     companion object {
         const val VERSION = 1
         private const val MAX_MESSAGE = 2 * 1024 * 1024
+
+        /**
+         * The capability list, by what the bridge has: geofences never in the Play build,
+         * what needs a screen only in the visible app, `background` only in the hidden run.
+         */
+        fun capabilityList(play: Boolean, hasScreen: Boolean, background: Boolean, sdkInt: Int, biometric: Boolean): List<String> {
+            val caps = mutableListOf("reminders", "widgets")
+            if (!play) caps += "geofences"
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
+            if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
+            if (hasScreen && biometric) caps += "biometric"
+            if (background && !hasScreen) caps += "background"
+            return caps
+        }
+
+        /** `alarm-settings`: a screen to open the page from, and Android 12+ (before it exact alarms need no permission). */
+        fun alarmSettings(hasScreen: Boolean, sdkInt: Int): Boolean = hasScreen && sdkInt >= Build.VERSION_CODES.S
+
+        /** What scheduleReminders answers: `denied` without notifications, `exact-denied` when the alarms are inexact. */
+        fun reminderAnswer(notifications: Boolean, exact: Boolean): String =
+            if (!notifications) "denied" else if (exact) "granted" else "exact-denied"
 
         fun originOf(uri: Uri): String {
             val scheme = uri.scheme?.lowercase() ?: return ""
@@ -189,7 +221,9 @@ class Bridge(private val context: Context, private val origin: String, private v
                 setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
                 requestMicrophone: function () { return call('requestMicrophone', []) },
                 saveFile: function (json) { return call('saveFile', [String(json)]) },
-                haptic: function (kind) { send('haptic', [String(kind)]) }
+                haptic: function (kind) { send('haptic', [String(kind)]) },
+                openAlarmSettings: function () { send('openAlarmSettings', []) },
+                backgroundDone: function () { send('backgroundDone', []) }
               });
             })();
         """.trimIndent()

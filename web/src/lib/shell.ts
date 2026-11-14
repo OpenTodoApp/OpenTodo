@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -104,6 +104,10 @@ export interface OpenTodoShell {
   saveFile?(json: string): Promise<string> | string
   /** shell-repairs D5: the platform's own feedback for a `ShellHaptic`; an unknown kind is ignored. */
   haptic?(kind: string): void
+  /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
+  openAlarmSettings?(): void
+  /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
+  backgroundDone?(): void
 }
 
 declare global {
@@ -225,6 +229,31 @@ export function forgetShellData(): void {
   }
   if (has('widgets')) s.publishWidget?.(JSON.stringify({ updatedAt: Date.now(), locked: true, count: 0, overdue: 0, tasks: [] }))
   if (has('biometric')) s.biometricForget?.()
+}
+
+/**
+ * Whether the shell shows the app to a person (shell-reminders-on D2). A background
+ * run lists no `links`: nothing it answers is a person's answer, and nothing it is
+ * handed may ask one.
+ */
+export function shellVisible(): boolean {
+  return has('links')
+}
+
+/** Opens the system's exact-alarm page in a shell that lists `alarm-settings`; false elsewhere. */
+export function openAlarmSettings(): boolean {
+  const s = shell()
+  if (!s || !has('alarm-settings') || !s.openAlarmSettings) return false
+  s.openAlarmSettings()
+  return true
+}
+
+/** Tells a background run's shell the web app is done; false outside such a run. */
+export function backgroundDone(): boolean {
+  const s = shell()
+  if (!s || !has('background') || !s.backgroundDone) return false
+  s.backgroundDone()
+  return true
 }
 
 /** Opens a URL outside the web view when the shell can; false means the caller opens it itself. */

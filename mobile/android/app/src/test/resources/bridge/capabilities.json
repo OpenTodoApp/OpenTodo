@@ -1,0 +1,40 @@
+{
+  "description": "Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.",
+  "visibleOnly": [
+    "share",
+    "links",
+    "obsidian-links",
+    "system-bars",
+    "microphone",
+    "files",
+    "haptics",
+    "alarm-settings"
+  ],
+  "backgroundOnly": [
+    "background"
+  ],
+  "both": [
+    "reminders",
+    "widgets"
+  ],
+  "methods": {
+    "openAlarmSettings": "alarm-settings",
+    "backgroundDone": "background"
+  },
+  "expect": {
+    "visible": {
+      "shellVisible": true,
+      "openAlarmSettings": true,
+      "backgroundDone": false
+    },
+    "background": {
+      "shellVisible": false,
+      "openAlarmSettings": false,
+      "backgroundDone": true
+    },
+    "called": [
+      "openAlarmSettings",
+      "backgroundDone"
+    ]
+  }
+}

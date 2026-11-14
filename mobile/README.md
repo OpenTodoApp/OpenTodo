@@ -103,7 +103,7 @@ Measured on iOS 27 in the simulator (design D2): without a matching app-bound do
 | `Bridge` | the bridge, injected with `WebViewCompat.addWebMessageListener` and `addDocumentStartJavaScript`, both restricted to the configured origin |
 | `ReminderSchedule`, `Reminders.kt` | the handed-over schedule, exact alarms (inexact when refused), notifications with Snooze 10 min and Dismiss, re-arming after a reboot |
 | `GeofenceSchedule`, `Geofences.kt` | location reminders: the handed-over regions, at most 19 registered as platform proximity alerts (`LocationManager`, no Play services), the nearest to the last known position, re-ranked on leaving a 1 km region around it; a notification with Done and Dismiss on a crossing in the reminder's direction, at most once an hour per reminder; registered again after a reboot or an update |
-| `HiddenRun` | the hourly refresh and notification actions: the web app in a hidden `WebView` for at most 30 seconds |
+| `HiddenRun` | the hourly refresh and notification actions: the web app in a hidden `WebView` until it calls `backgroundDone()`, at most 90 seconds |
 | `WidgetModel`, `Widgets.kt` | the Today and quick-add widgets (`RemoteViews`), drawn from the last publication only |
 | `BiometricKeyStore` | the account key under a Keystore AES-GCM key that needs a strong biometric for every use and is invalidated by an enrolment change |
 
@@ -118,7 +118,7 @@ Certificates: `res/xml/network_security_config.xml` trusts the system and the us
 | `OpenTodo/Bridge` | the bridge: a document-start `WKUserScript` that defines `window.opentodoShell` on the configured origin, and one `WKScriptMessageHandlerWithReply` that checks the frame's origin and main-frame flag again |
 | `OpenTodo/Reminders`, `OpenTodo/Notifications` | the handed-over schedule: `UNUserNotificationCenter`, at most 64 pending notifications, Snooze 10 min and Dismiss as foreground actions, a tap or an action carrying `opentodo://task/…` or `opentodo://reminder/…?action=` into the web app; notifications are shown while the app is in front |
 | `OpenTodo/Version` | the app version from `CFBundleShortVersionString`, short form `major·10000 + minor·100 + patch` for the store metadata |
-| `OpenTodo/BackgroundRefresh` | a `BGAppRefreshTask` (about hourly, at iOS's discretion) that runs the web app in an offscreen `WKWebView` for at most 30 seconds to refresh the schedule |
+| `OpenTodo/BackgroundRefresh` | a `BGAppRefreshTask` (about hourly, at iOS's discretion) that runs the web app in an offscreen `WKWebView` until it calls `backgroundDone()`, at most 25 seconds, to refresh the schedule; it never asks for the notification permission |
 | `OpenTodo/WidgetPublication`, `OpenTodoWidget/TodayWidget` | the Today widget (WidgetKit, medium): rows from the last publication, counts only while locked, no request of its own |
 | `OpenTodoShare/ShareViewController` | the share sheet: text, links and files (10 files, 20 MB each, 25 MB in all) through the App Group, then `opentodo://share?files=1` and the `opentodo-files` message into the capture screen |
 | `OpenTodo/BiometricKeyStore` | the account key in the Keychain under `kSecAccessControlBiometryCurrentSet`, so an added face or finger invalidates it |
@@ -138,7 +138,7 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `platform` | | `"android"` | |
 | `app` | | `"0.10.0"` | the shell's version; Settings → About warns below the web app's `MIN_SHELL_APP` |
 | `capabilities` | | `string[]` | `reminders`, `widgets`, `geofences` (Android), and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
-| `scheduleReminders(json)` | `reminders` | `→ Promise<"granted" \| "denied" \| "exact-denied">` | `[{id, taskId, fireAt, title?}]`, the next 7 days; replaces the stored schedule; asks for the notification permission once, opens the exact-alarm setting once |
+| `scheduleReminders(json)` | `reminders` | `→ Promise<"granted" \| "denied" \| "exact-denied">` | `[{id, taskId, fireAt, title?}]`, the next 7 days; replaces the stored schedule; asks for the notification permission once, in the visible app and only for a schedule with a reminder; never opens a settings page (`exact-denied` is answered instead) |
 | `scheduleGeofences(json)` | `geofences` | `→ Promise<"granted" \| "foreground-only" \| "denied" \| "unavailable">` | `{version: 1, ask?, regions: [{id, taskId, lat, lon, radius, on: "arrive"\|"leave", title?}]}`, at most 100; replaces the stored regions, registered only with background location; asks for fine, then background location only with `ask` in the visible app; the position never reaches the web view |
 | `testNotification()` | `reminders` | `→ Promise<boolean>` | shows a notification now |
 | `publishWidget(json)` | `widgets` | `void` | `{updatedAt, locked, count, overdue, tasks: [{id, title?, time?, priority, overdue}]}`, at most 50 tasks; `locked` means counts only |
@@ -148,6 +148,8 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `openExternal(url)` | `links` | `void` | http(s), `mailto:` and `tel:` in the system browser or app; with `obsidian-links` also an Obsidian note link of exactly the form `obsidian://open?vault=…&file=…` (no other Obsidian action, no other custom scheme) |
 | `saveFile(json)` | `files` (Android, visible app) | `→ Promise<"more" \| "saved" \| "cancelled" \| "failed">` | one chunk of a file made in the page, `{id, name, type, data, last}` with `data` base64 (256 KB before encoding), in order; `more` until the chunk with `last`, which opens the system's save dialog; a new `id` discards an unfinished file. Files from the server need no bridge: the shell fetches a same-origin download itself and opens the same dialog |
 | `haptic(kind)` | `haptics` (visible app; iPhone only on iOS) | `void` | `tick` or `success`, the platform's own feedback, no permission; any other kind is ignored |
+| `openAlarmSettings()` | `alarm-settings` (Android 12 and later, visible app) | `void` | opens the system page where the user allows exact alarms for the app; the shell never opens it by itself |
+| `backgroundDone()` | `background` (a background run only) | `void` | the web app has synced, stored a notification action and handed over the schedule and the widget data; the shell ends the run. Without the call the run ends at its limit |
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 

@@ -6,11 +6,25 @@ import WebKit
 /// The background refresh (ios-shell design D3): iOS decides when it runs, so a reminder
 /// created on another device may arrive late. The hidden web view runs the web app for at
 /// most `budget` seconds, which re-publishes reminders and widget data through the bridge.
+/// The run ends when the web app says `backgroundDone` (shell-reminders-on D4); a web app
+/// that never says it is given until `patience`.
 @MainActor
 enum BackgroundRefresh {
     static let identifier = "app.opentodo.refresh"
     static let interval: TimeInterval = 60 * 60
     static let budget: TimeInterval = 30
+    /// How long a loaded page is waited for to say it is done, from the start of the run:
+    /// inside `budget`, so a web app that does not know `backgroundDone` still ends well.
+    static let patience: TimeInterval = 25
+    /// The least time a loaded page gets for its effects to publish.
+    static let settle: TimeInterval = 5
+
+    /// How long to wait for `backgroundDone` once the page loaded, `elapsed` seconds into
+    /// the run: until `patience`, and never less than `settle`. The shell cannot tell a web
+    /// app that knows the capability from one that does not, so both get the same wait.
+    static func wait(loadedAfter elapsed: TimeInterval) -> TimeInterval {
+        max(settle, patience - max(0, elapsed))
+    }
 
     /// The next run: an hour from now, which iOS treats as a hint, not a promise.
     static func request(now: Date = Date()) -> BGAppRefreshTaskRequest {
@@ -62,6 +76,11 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
     private var finish: ((Bool) -> Void)?
     /// Identifies the run a timer belongs to, so a leftover timer cannot end the next run.
     private var run: UUID?
+    /// When the run began, for the wait after the page loaded.
+    private var started: Date?
+    /// The run's own page is in the web view: a message before that is the page of the run
+    /// before, which stays loaded between runs.
+    private var committed = false
 
     init(origin: URL) {
         self.origin = origin
@@ -76,6 +95,8 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
         self.webView = webView
         let token = UUID()
         run = token
+        started = Date()
+        committed = false
         return await withCheckedContinuation { continuation in
             finish = { ok in
                 guard let finish = self.finish else { return }
@@ -97,8 +118,10 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
         config.limitsNavigationsToAppBoundDomains = AppBoundDomains.limitsNavigation(to: origin)
-        Bridge(origin: origin, actions: BridgeHost(interactive: false))
-            .install(into: config.userContentController, app: Version.app, capabilities: ["reminders", "widgets"])
+        // Weak: the web view holds the bridge, the bridge its host, and the run the web view.
+        let host = BridgeHost(interactive: false, backgroundDone: { [weak self] in self?.done() })
+        Bridge(origin: origin, actions: host)
+            .install(into: config.userContentController, app: Version.app, capabilities: Bridge.backgroundCapabilities)
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
         webView.navigationDelegate = self
         return webView
@@ -107,6 +130,17 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
     func stop() {
         finish?(false)
         webView?.stopLoading()
+    }
+
+    /// The web app synced and handed over what follows from it (`backgroundDone`,
+    /// shell-reminders-on D4): the run ends now, not at its limit.
+    func done() {
+        guard committed else { return }
+        finish?(true)
+    }
+
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if run != nil { committed = true }
     }
 
     /// The background run never leaves the server and never opens a browser: a login wall's
@@ -120,10 +154,12 @@ final class HiddenRun: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // A few seconds for the app's effects to publish, then done; the budget caps it.
+        // The web app says when it is done; one that does not is given until `patience`,
+        // which is long enough for a sync that outlasts the page load. The budget caps it.
         let token = run
+        let wait = BackgroundRefresh.wait(loadedAfter: Date().timeIntervalSince(started ?? Date()))
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000))
             guard self.run == token else { return }
             self.finish?(true)
         }

@@ -199,6 +199,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | Change | What | Status |
 | --- | --- | --- |
 | `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | In progress (15 of 18) |
+| `shell-reminders-on` | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | In progress (10 of 13) |
 
 ## Native app
 

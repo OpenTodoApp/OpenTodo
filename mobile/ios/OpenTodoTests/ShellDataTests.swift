@@ -149,6 +149,24 @@ final class ReminderTests: XCTestCase {
         XCTAssertEqual(Reminders.select(handed, now: now, limit: 1).map(\.id), ["soon"])
     }
 
+    /// shell-reminders-on D2: every combination of status, screen and schedule. Only the
+    /// visible app asks, only with a reminder, and only when nobody was asked yet.
+    func testThePermissionIsAskedOnlyByTheVisibleAppWithAReminder() {
+        let allowed: [UNAuthorizationStatus] = [.authorized, .provisional, .ephemeral]
+        for interactive in [true, false] {
+            for status in allowed + [.denied, .notDetermined] {
+                XCTAssertEqual(Reminders.permission(status: status, interactive: interactive, hasReminders: false), .schedule,
+                               "an empty schedule never asks: \(status.rawValue) \(interactive)")
+            }
+            for status in allowed {
+                XCTAssertEqual(Reminders.permission(status: status, interactive: interactive, hasReminders: true), .schedule)
+            }
+            XCTAssertEqual(Reminders.permission(status: .denied, interactive: interactive, hasReminders: true), .refuse)
+        }
+        XCTAssertEqual(Reminders.permission(status: .notDetermined, interactive: true, hasReminders: true), .ask)
+        XCTAssertEqual(Reminders.permission(status: .notDetermined, interactive: false, hasReminders: true), .refuse)
+    }
+
     func testParseIgnoresWhatItCannotRead() {
         XCTAssertEqual(Reminders.parse("not json").count, 0)
         XCTAssertEqual(Reminders.parse("[]").count, 0)
@@ -249,11 +267,72 @@ final class BridgeTests: XCTestCase {
     func testHapticsNeedAScreenAndFilesAreNeverListed() {
         XCTAssertTrue(Bridge.capabilities(biometric: false, share: true, haptics: true).contains("haptics"))
         XCTAssertFalse(Bridge.capabilities(biometric: false, share: true, haptics: false).contains("haptics"))
-        XCTAssertEqual(Bridge.capabilities(biometric: false, share: false), ["reminders", "widgets"])
+        XCTAssertEqual(Bridge.capabilities(biometric: false, share: false), ["reminders", "widgets", "background"])
         XCTAssertFalse(Bridge.capabilities(biometric: true, share: false, haptics: true).contains("haptics"))
         for share in [true, false] {
             XCTAssertFalse(Bridge.capabilities(biometric: true, share: share).contains("files"))
         }
+    }
+
+    /// shell-reminders-on D3, D4: the capability lists of the visible app and of a
+    /// background run, against the shared bridge fixture (Android's superset, written by
+    /// the web app's tests). `background` is only ever listed without a screen, `links`
+    /// only with one, and iOS never lists `alarm-settings`.
+    func testCapabilityListsFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/capabilities.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let visibleOnly = Set(try XCTUnwrap(fixture["visibleOnly"] as? [String]))
+        let backgroundOnly = Set(try XCTUnwrap(fixture["backgroundOnly"] as? [String]))
+        let both = Set(try XCTUnwrap(fixture["both"] as? [String]))
+        let methods = try XCTUnwrap(fixture["methods"] as? [String: String])
+        XCTAssertEqual(methods["backgroundDone"], "background")
+        XCTAssertTrue(backgroundOnly.contains("background"))
+        XCTAssertTrue(visibleOnly.contains("links"))
+
+        let background = Set(Bridge.backgroundCapabilities)
+        XCTAssertEqual(Bridge.backgroundCapabilities, Bridge.capabilities(biometric: false, share: false))
+        XCTAssertTrue(background.isSuperset(of: backgroundOnly), "\(background)")
+        XCTAssertTrue(background.isSuperset(of: both), "\(background)")
+        XCTAssertTrue(background.isDisjoint(with: visibleOnly), "\(background)")
+        XCTAssertFalse(background.contains("biometric"))
+
+        for biometric in [true, false] {
+            for haptics in [true, false] {
+                let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
+                XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
+                XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric"])), "\(visible)")
+                XCTAssertTrue(visible.contains("links"))
+                XCTAssertFalse(visible.contains("alarm-settings"))
+            }
+        }
+
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: Bridge.backgroundCapabilities)
+        XCTAssertTrue(script.contains("backgroundDone: function () { call('backgroundDone', []) }"))
+        XCTAssertFalse(script.contains("openAlarmSettings"))
+    }
+
+    /// shell-reminders-on D4: `backgroundDone` ends a background run and is ignored by the
+    /// visible app.
+    func testBackgroundDoneReachesOnlyTheBackgroundRun() {
+        final class Count { var ended = 0 }
+        let count = Count()
+        BridgeHost(interactive: false, backgroundDone: { count.ended += 1 }).bridgedBackgroundDone()
+        XCTAssertEqual(count.ended, 1)
+        BridgeHost(interactive: true, backgroundDone: { count.ended += 1 }).bridgedBackgroundDone()
+        XCTAssertEqual(count.ended, 1)
+        BridgeHost(interactive: true).bridgedBackgroundDone()
+        BridgeHost(interactive: false).bridgedBackgroundDone()
+        XCTAssertEqual(count.ended, 1)
+    }
+
+    /// A run without a screen sends no test notification, which would ask for the permission.
+    func testTheBackgroundRunSendsNoTestNotification() async {
+        let sent = await BridgeHost(interactive: false).bridgedTestNotification()
+        XCTAssertFalse(sent)
     }
 
     func testThePageScriptOffersHaptic() throws {
@@ -359,6 +438,20 @@ final class BackgroundRefreshTests: XCTestCase {
         let request = BackgroundRefresh.request(now: now)
         XCTAssertEqual(request.identifier, "app.opentodo.refresh")
         XCTAssertEqual(request.earliestBeginDate, now.addingTimeInterval(3600))
+    }
+
+    /// shell-reminders-on D4: a loaded page is waited for until `patience` from the start
+    /// of the run, at least `settle`, and the wait ends inside the budget for a page that
+    /// loaded in time.
+    func testALoadedPageIsWaitedForUntilPatience() {
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: 0), 25)
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: 2), 23)
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: 20), 5)
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: 24), 5)
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: 40), 5)
+        XCTAssertEqual(BackgroundRefresh.wait(loadedAfter: -1), 25)
+        XCTAssertLessThan(BackgroundRefresh.patience, BackgroundRefresh.budget)
+        XCTAssertLessThanOrEqual(2 + BackgroundRefresh.wait(loadedAfter: 2), BackgroundRefresh.budget)
     }
 }
 

@@ -98,7 +98,9 @@ The page itself (`/` and the app's files under `/assets/`) still goes through th
 
 ## Reminders
 
-In **Settings → Notifications**, turn on **Notifications through the app**. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too. Details in [Notifications](push-notifications.md#in-the-android-app).
+Reminders arrive as notifications with the task's name, without setting anything up. Android asks to allow notifications when your first reminder is there, not when the app starts; answer no and the switch in **Settings → Notifications** (**Notifications through the app**) goes off, where you can turn it on again and turn task names off. The app schedules the next seven days of reminders on the phone itself and refreshes them about once an hour, so a reminder you add on your computer reaches the phone too.
+
+On Android 14 and later a new app may not set exact alarms. The app then says once that reminders can be a few minutes late, with **Allow**, which opens Android's **Alarms & reminders** page for OpenTodo; the same notice stays in **Settings → Notifications** until you allow it. Details in [Notifications](push-notifications.md#in-the-android-app).
 
 A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
 
