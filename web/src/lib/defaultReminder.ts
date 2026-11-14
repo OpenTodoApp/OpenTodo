@@ -101,7 +101,9 @@ export function planDefaultReminder(input: DefaultReminderInput): Change[] {
   const newDue = dueOf(input.patch.due)
   if (!newDue) return []
   const pref = (d: Due) => (timed(d) ? input.prefs.timed : input.prefs.dated)
-  if (oldDue) {
+  // A due whose old kind had no default never got one (issue 1320: the editor sets
+  // the date, then the time): the switch to a kind with a default counts as getting a due (D3).
+  if (oldDue && !(timed(oldDue) !== timed(newDue) && pref(oldDue) === null && !own)) {
     // D5: the kind of due changed and the default reminder is untouched.
     if (timed(oldDue) === timed(newDue) || !own || own.deleted_at || (own.kind ?? 'relative') !== 'relative') return []
     const from = pref(oldDue)

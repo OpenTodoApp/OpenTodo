@@ -9,9 +9,9 @@ order: 53
 ---
 # Default reminders
 
-<picture><source srcset="images/settings-default-reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-default-reminders-light.webp" alt="Settings, Notifications: the Default reminders section with Tasks with a time set to 30 minutes before and Tasks with no time set to 1 day before."></picture>
+<picture><source srcset="images/settings-default-reminders-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/settings-default-reminders-light.webp" alt="Settings, Notifications, Reminders: the Default reminders section with Tasks with a time set to 30 minutes before and Tasks with no time set to 1 day before."></picture>
 
-Instead of adding the same reminder to every task, set a default once in **Settings → Notifications → Default reminders**:
+Instead of adding the same reminder to every task, set a default once in **Settings → Notifications → Reminders**:
 
 - **Tasks with a time**: None, At the due time, 10 minutes before, 30 minutes before, 1 hour before, 1 day before, or **Custom…** for any number of minutes, hours or days before or after.
 - **Tasks with no time**: None, On the day at 09:00, 1 day before, 2 days before, 3 days before, 1 week before, or **Custom…**. These count from 09:00 on the due date.

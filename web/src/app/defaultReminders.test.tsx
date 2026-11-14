@@ -69,6 +69,6 @@ describe('Settings → Notifications → Default reminders', () => {
   it('is found by the settings search', () => {
     const user = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'member' as const, createdAt: 1 }
     const hits = searchSettings('default reminders', user).flatMap((h) => h.entries)
-    expect(hits.some((e) => e.anchor === 'default-reminders-heading' && e.page === 'push')).toBe(true)
+    expect(hits.some((e) => e.anchor === 'default-reminders-heading' && e.page === 'reminders')).toBe(true)
   })
 })
