@@ -34,7 +34,7 @@ function Rows({ source }: { source: AssistantSource }) {
 
 export default function SourcesLine({ source }: { source: AssistantSource }) {
   const label = (
-    <span className="inline-flex items-center gap-1.5"><Icon name="search" size="sm" />{sourceLabel(source)}</span>
+    <span className="inline-flex items-center gap-1.5 align-top"><Icon name="search" size="sm" />{sourceLabel(source)}</span>
   )
   if (!source.ids.length) return <p className="my-1 text-meta text-muted" data-assistant-source={source.of}>{label}</p>
   return (
