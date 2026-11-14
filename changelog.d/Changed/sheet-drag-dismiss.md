@@ -1,0 +1,1 @@
+- **Bottom sheets on a phone can be dragged away.** A menu, a picker or a dialog that opens from the bottom now follows your finger: drag it down by its handle or header (or by its content while that is at the top) and let go to close it, or flick it down; a short drag springs back. Dialogs that ask before something is lost stay put (#1341).

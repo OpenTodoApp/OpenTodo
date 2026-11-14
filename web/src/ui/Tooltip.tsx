@@ -38,7 +38,7 @@ export function coarsePointer(): boolean {
 export function KeySequence({ keys }: { keys: string }) {
   const steps = /^\S+( \S+)+$/.test(keys) && !keys.includes('+') ? keys.split(' ') : [keys]
   return (
-    <span className="inline-flex items-center gap-1" data-key-sequence>
+    <span className="inline-flex items-center gap-1" data-key-sequence data-kbd-hint>
       {steps.map((k, i) => (
         <span key={i} className="inline-flex items-center gap-1">
           {i > 0 && <span className="text-muted">{t('then')}</span>}
@@ -130,7 +130,7 @@ export function Tooltip({ label, shortcut, side = 'bottom', children, delay = 40
       className="overlay-fade-in pointer-events-none fixed z-[70] max-w-64 rounded-chip border border-strong bg-pop px-2 py-1 text-meta text-default shadow-2"
       style={pos ? { top: pos.top, left: pos.left } : { top: -9999, left: -9999 }}>
       <span>{label}</span>
-      {shortcut && <><span className="mx-1 text-muted"> · </span><KeySequence keys={shortcut} /></>}
+      {shortcut && <span data-kbd-hint><span className="mx-1 text-muted"> · </span><KeySequence keys={shortcut} /></span>}
     </div>
   ) : null
 

@@ -183,7 +183,7 @@ export function AuditPanel() {
                 {loadingMore ? t('Fetching more…') : t('Load more')}
               </Button>
             )}
-            <p className="text-meta text-muted">{t.rich('Keyboard: export with the current filters by pressing {kbd} while the table has focus.', { kbd: <Kbd k="e" /> })}</p>
+            <p className="text-meta text-muted" data-kbd-hint>{t.rich('Keyboard: export with the current filters by pressing {kbd} while the table has focus.', { kbd: <Kbd k="e" /> })}</p>
           </div>
         )}
       </SettingsSection>

@@ -285,7 +285,7 @@ export const Composer = forwardRef<HTMLElement | null, ComposerProps>(function C
   )
   const end = (
     <>
-      <span id={`${id}-hint`} className="hidden text-hint text-faint sm:inline">{t.rich('Send with {keys}', { keys: <Kbd k={`${key}+Enter`} /> })}</span>
+      <span id={`${id}-hint`} className="hidden text-hint text-faint sm:inline" data-kbd-hint>{t.rich('Send with {keys}', { keys: <Kbd k={`${key}+Enter`} /> })}</span>
       {onCancel && <Button variant="ghost" size="sm" onClick={onCancel}>{t('Cancel')}</Button>}
     </>
   )

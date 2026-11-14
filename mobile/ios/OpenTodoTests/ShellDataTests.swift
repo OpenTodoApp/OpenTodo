@@ -76,6 +76,42 @@ final class VersionTests: XCTestCase {
     }
 }
 
+/// shell-first-paint: the launch screen has the app's colour, light and dark, and the web
+/// view stays hidden over that colour until it has something to show.
+@MainActor
+final class LaunchScreenTests: XCTestCase {
+    func testTheLaunchScreenNamesAColourOfTheBundle() throws {
+        let launch = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UILaunchScreen") as? [String: Any])
+        XCTAssertEqual(launch["UIColorName"] as? String, ShellController.launchColor)
+        let colour = try XCTUnwrap(UIColor(named: ShellController.launchColor), "the asset catalog has the colour")
+        let light = colour.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        let dark = colour.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        XCTAssertNotEqual(light, dark, "the colour has a dark appearance")
+    }
+
+    func testTheWebViewIsHiddenUntilItIsRevealed() throws {
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        XCTAssertFalse(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 0)
+        shell.reveal()
+        XCTAssertTrue(shell.revealed)
+        XCTAssertEqual(shell.webView.alpha, 1)
+    }
+
+    /// Over the launch colour the system chooses the status bar icons; the bars' own come with the page.
+    func testTheStatusBarIconsWaitForTheWebView() throws {
+        defer { StatusBar.show(lightIcons: nil) }
+        let shell = ShellController(origin: try XCTUnwrap(URL(string: "https://todo.example")))
+        let bars = try XCTUnwrap(SystemBars.parse("{\"color\":\"#101014\",\"dark\":true}"))
+        shell.apply(bars)
+        XCTAssertEqual(StatusBar.current, .default)
+        shell.reveal()
+        XCTAssertEqual(StatusBar.current, .lightContent)
+        shell.apply(try XCTUnwrap(SystemBars.parse("{\"color\":\"#ffffff\",\"dark\":false}")))
+        XCTAssertEqual(StatusBar.current, .darkContent)
+    }
+}
+
 /// What App Store review reads from the bundle (ios-distribution D7).
 final class StoreReadinessTests: XCTestCase {
     /// shell-repairs D8: without the text iOS refuses the Face ID prompt, and unlocking an
@@ -258,7 +294,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "pull-refresh", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -303,7 +339,7 @@ final class BridgeTests: XCTestCase {
                 let visible = Set(Bridge.capabilities(biometric: biometric, share: true, haptics: haptics))
                 XCTAssertTrue(visible.isSuperset(of: both), "\(visible)")
                 XCTAssertTrue(visible.isDisjoint(with: backgroundOnly), "\(visible)")
-                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric"])), "\(visible)")
+                XCTAssertTrue(visible.isSubset(of: visibleOnly.union(both).union(["biometric", "pull-refresh"])), "\(visible)")
                 XCTAssertTrue(visible.contains("links"))
                 XCTAssertFalse(visible.contains("alarm-settings"))
             }
@@ -355,6 +391,41 @@ final class BridgeTests: XCTestCase {
         for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
         XCTAssertNil(Haptics.kind(unknown), unknown)
+    }
+
+    /// pull-to-sync D4: the capability and the call follow the shared bridge fixture; only
+    /// the visible app, which has the refresh control, lists the capability.
+    func testPullRefreshFollowsTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/pull.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        XCTAssertEqual(fixture["capability"] as? String, PullRefresh.capability)
+        XCTAssertEqual(fixture["method"] as? String, PullRefresh.method)
+        // One call per page load, without arguments.
+        let calls = try XCTUnwrap(fixture["calls"] as? [[Any]])
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertTrue(calls[0].isEmpty)
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(PullRefresh.capability))
+        XCTAssertFalse(Bridge.capabilities(biometric: true, share: false).contains(PullRefresh.capability))
+        let origin = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: [PullRefresh.capability])
+        XCTAssertTrue(script.contains("pullHandled: function () { call('pullHandled') }"))
+    }
+
+    /// pull-to-sync D4: the shell's refresh control is on until the page showing takes the
+    /// pull over, and on again for the next page (an older web app never takes it).
+    func testThePageTakesThePullOverUntilAnotherPageLoads() {
+        var pull = PullRefresh()
+        XCTAssertTrue(pull.native)
+        pull.handledByPage()
+        XCTAssertFalse(pull.native)
+        pull.handledByPage()
+        XCTAssertFalse(pull.native)
+        pull.pageLoaded()
+        XCTAssertTrue(pull.native)
+        pull.pageLoaded()
+        XCTAssertTrue(pull.native)
     }
 
     func testHapticKinds() {

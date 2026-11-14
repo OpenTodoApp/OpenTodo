@@ -37,6 +37,8 @@ Fixed by `shell-repairs`, apart from the share extension; each still needs its c
 
 ### Startup and offline
 
+The splash and the skeleton are fixed by `shell-first-paint`; each still needs its check on a phone. The stored copy for the iOS store build is open.
+
 | Finding | Where |
 | --- | --- |
 | No splash on either platform: a blank screen until the page paints; a slow server shows nothing. | `themes.xml`, `Info.plist:65` |
@@ -66,13 +68,15 @@ Nothing to delete in the shells: every class is wired. Small leftovers: the `sha
 
 Each step is one OpenSpec change, ships on its own, and ends with a check on a real phone.
 
-1. **`shell-repairs`**: downloads, Face ID description, Android Back, haptics through the bridge, status bar icons, the iOS Done action. No design questions; the largest gain per line.
-2. **`shell-reminders-on`**: ask for notifications at first run, explain exact alarms before asking, show task titles by default, a completion signal for the hidden run in place of the fixed 30 s.
-3. **`shell-push`**: the server wakes the shell when a reminder changes or is due. Needs a design: Android through UnifiedPush or ntfy (no Google, F-Droid stays); iOS needs APNs, so a relay that holds the app's key, since a self-hosted server cannot sign for the app. Opt-in, no content in the push.
-4. **`shell-first-paint`**: a splash on both platforms, the skeleton with the phone's chrome, a stored copy for the iOS store build.
-5. **`shell-touch`**: the global CSS (tap highlight, callout, overscroll, selection, zoom in shells), link previews off, pull to sync instead of reload, larger list text.
-6. **`shell-motion`**: transitions between screens, drag to dismiss sheets, edge swipe for the drawer, back gesture on iOS.
-7. Later, by measurement: windowed lists, native share out, universal links, lock-screen widgets.
+Done: `shell-repairs`, `shell-reminders-on`.
+
+Second round (2026-11-14, from the interface tour at 360 px and what was left above): `touch-keyboard-hints`, `shell-touch`, `phone-row-titles`, `phone-header-room`, `sheet-drag-dismiss`, `pull-to-sync`, `shell-first-paint`. Issues #1337 to #1343.
+
+Open:
+
+- **`shell-push`** ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)): the server wakes the app when a reminder changes. Android through UnifiedPush; iOS needs a relay that holds the app's key, or an app signed by whoever runs the server. A decision for the owner before any design.
+- The iOS store build cannot start offline (no service worker without app-bound domains).
+- Found in the second round, not done: a pressed colour per component (one generic dim covers touch today); the tab bar measures 45 px on touch where its spec says 48; a long project name is still cut at 360 px (Filter could move into the project menu); one-line titles remain in calendar compact rows, Close the day, command bar results and Notes; windowed lists; universal links; lock-screen widgets.
 
 ## Device check, after each step
 

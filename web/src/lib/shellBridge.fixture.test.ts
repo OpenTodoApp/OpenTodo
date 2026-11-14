@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
@@ -301,6 +301,23 @@ function capabilities() {
   }
 }
 
+/** pull-to-sync D4: the call that tells a shell with its own pull to refresh that the page handles the pull, captured from the real call. */
+function pull() {
+  const calls: unknown[][] = []
+  window.opentodoShell = { bridge: 1, platform: 'ios', app: '1.6.0', capabilities: ['pull-refresh'], pullHandled: (...args: unknown[]) => void calls.push(args) }
+  takeOverPull()
+  // A shell that does not list the capability is never called.
+  window.opentodoShell = { bridge: 1, platform: 'android', app: '1.6.0', capabilities: ['haptics'], pullHandled: (...args: unknown[]) => void calls.push(args) }
+  takeOverPull()
+  delete window.opentodoShell
+  return {
+    description: 'Pull to sync (pull-to-sync D4): a shell with its own pull to refresh lists the capability. The web app calls the method once per page load, without arguments, when it handles the pull itself; the shell then turns its own off until another page loads. A shell without a pull to refresh lists nothing and is not called.',
+    capability: 'pull-refresh' as const,
+    method: 'pullHandled' as const,
+    calls,
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -309,7 +326,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

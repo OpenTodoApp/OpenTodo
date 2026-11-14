@@ -1,6 +1,6 @@
-import { type ButtonHTMLAttributes, type ReactNode, type RefObject, isValidElement, useRef, useState } from 'react'
+import { type ButtonHTMLAttributes, type ReactNode, type RefObject, isValidElement, useContext, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '../Icon'
-import { MenuCloseContext, useRovingMenu } from '../Menu'
+import { MenuCloseContext, MenuSeparator, MenuTailContext, useRovingMenu } from '../Menu'
 import { Tooltip } from '../Tooltip'
 import { Popover } from './Popover'
 
@@ -48,6 +48,12 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
   const ref = useRef<HTMLButtonElement>(null)
   const close = () => set(false)
   const roving = useRovingMenu()
+  // Items the surroundings add at the end (the phone bar's Help): this menu holds them from
+  // the first time it is a menu, also while a picker step shows in its place.
+  const tail = useContext(MenuTailContext)
+  const [holdsTail, setHoldsTail] = useState(kind === 'menu')
+  if (kind === 'menu' && !holdsTail) setHoldsTail(true)
+  useLayoutEffect(() => (tail && holdsTail ? tail.claim() : undefined), [tail, holdsTail])
   const content = typeof children === 'function' ? children(close) : children
   const button = (
     <button ref={ref} type="button" {...triggerProps} className={triggerClassName} aria-label={namedByContent ? undefined : label} aria-haspopup={kind} aria-expanded={open}
@@ -60,8 +66,8 @@ export function Menu({ label, title, trigger, triggerClassName = '', triggerProp
       {tipText ? <Tooltip label={tipText} side={tipSide} shortcut={tipShortcut}>{button}</Tooltip> : button}
       <Popover open={open} onClose={close} anchor={anchor?.current ? anchor : ref} label={title ?? label} align={align} width={width} className={className} role={kind} anchored={anchored}>
         {kind === 'menu'
-          ? <MenuCloseContext.Provider value={close}><div role="none" onKeyDown={roving}>{content}</div></MenuCloseContext.Provider>
-          : content}
+          ? <MenuCloseContext.Provider value={close}><div role="none" onKeyDown={roving}><MenuTailContext.Provider value={null}>{content}</MenuTailContext.Provider>{tail && <><MenuSeparator />{tail.render(ref.current)}</>}</div></MenuCloseContext.Provider>
+          : <MenuTailContext.Provider value={null}>{content}</MenuTailContext.Provider>}
       </Popover>
     </>
   )

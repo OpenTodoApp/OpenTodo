@@ -7,6 +7,14 @@ import { Icon, type IconName } from './Icon'
 /** Set by the overlay Menu (kind="menu"): closes it and returns focus to the trigger. */
 export const MenuCloseContext = createContext<(() => void) | null>(null)
 
+/**
+ * Items a menu's surroundings add at its end (phone-header-room: Help in the phone bar's
+ * menu). The overlay Menu (kind="menu") draws `render(trigger)` after its own items and
+ * calls `claim` while it is mounted, so the surroundings know the items have a place.
+ */
+export interface MenuTail { render: (trigger: HTMLElement | null) => ReactNode; claim: () => () => void }
+export const MenuTailContext = createContext<MenuTail | null>(null)
+
 export interface MenuItemProps {
   label: string
   onSelect: () => void

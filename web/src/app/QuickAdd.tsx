@@ -365,7 +365,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         />
         </span>
         {voice.enabled && <span className={lead}><VoiceButton voice={voice} shortcut={voiceShortcut} /></span>}
-        {!hideHint && hints && <span className={`${lead} max-sm:hidden`}><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
+        {!hideHint && hints && <span className={`${lead} max-sm:hidden`} data-kbd-hint><span className="ui-kbd" data-quick-add-hint>{keysOf('list.quick-add')}</span></span>}
         {suggest.list}
         {paste.offer}
       </div>

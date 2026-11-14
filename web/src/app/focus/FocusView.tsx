@@ -121,7 +121,7 @@ function Controls({ task, session, onToggle, onComplete, onBreak, onStop, onNext
       </StageControls>
       {/* Keys live in the tooltips, the menu and the cheat sheet; printed only with "Show shortcut hints" on (D6). */}
       {hints && (
-        <p className="mt-4 text-hint text-faint" data-focus-hints>
+        <p className="mt-4 text-hint text-faint" data-focus-hints data-kbd-hint>
           {t('Space starts and pauses, Enter completes, {b} takes a break, {n} is the next task, Esc goes back.', { b: keysOf('focus.break'), n: keysOf('focus.next') })}
         </p>
       )}

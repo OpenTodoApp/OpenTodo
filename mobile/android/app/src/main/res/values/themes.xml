@@ -6,6 +6,13 @@
         <item name="android:windowBackground">@color/background</item>
     </style>
 
+    <!-- MainActivity's window (shell-first-paint): its background is the launch screen, the
+         icon over the canvas colour, which shows until the page can be drawn. Android 12 and
+         later: values-v31. -->
+    <style name="Theme.OpenTodo.Launch">
+        <item name="android:windowBackground">@drawable/launch</item>
+    </style>
+
     <style name="WidgetRow">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

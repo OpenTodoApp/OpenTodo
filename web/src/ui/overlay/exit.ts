@@ -38,7 +38,8 @@ export function playExit(el: HTMLElement | null, { closing, className }: { closi
   copy.dataset.overlayExit = ''
   if (className) copy.classList.add(...className.split(' '))
   // Where it was on screen, whatever positioned it (a static column, a fixed sheet).
-  Object.assign(copy.style, { position: 'fixed', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px`, margin: '0', pointerEvents: 'none' })
+  // A sheet dragged down (sheetDrag.ts) is measured where the finger left it: the copy drops the offset.
+  Object.assign(copy.style, { position: 'fixed', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px`, height: `${rect.height}px`, margin: '0', pointerEvents: 'none', translate: 'none' })
   const target = (closing ? copy.querySelector<HTMLElement>(closing) : null) ?? copy
   target.setAttribute('data-closing', '')
   document.body.append(copy)

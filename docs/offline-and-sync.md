@@ -38,7 +38,7 @@ The status at the top right tells you where things stand.
 
 The count is of individual changes, not tasks: one new task with a date and a label counts as several.
 
-**Live** next to the status means this device gets other devices' changes within seconds. Without it, the app still checks regularly, just less often. Click the status to sync now.
+**Live** next to the status means this device gets other devices' changes within seconds. Without it, the app still checks regularly, just less often. Click the status to sync now; on a phone, pull a page down.
 
 ## Several devices
 
@@ -64,4 +64,4 @@ Signing out (**Settings → Account → Security → Sign out here**) removes yo
 - On a shared computer, sign out when you're done.
 - A device that was offline for weeks needs a minute after reconnecting to catch up; wait before you reorganise.
 - Your data lives on your server; you can download all of it at any time. See [Import and export](import-export.md).
-- The [sync protocol](sync.md) describes how it works under the hood, for the curious.
+- The [sync protocol](sync.md) describes how it works under the hood.

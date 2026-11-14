@@ -7,7 +7,10 @@ import { useShortcutHints } from './hints'
 
 export function Kbd({ k, only = false, className = '' }: { k: string; only?: boolean; className?: string }) {
   const on = useShortcutHints()
-  if (on) return <kbd className={`ui-kbd ${className}`.trim()}>{k}</kbd>
+  // On a touch device the stylesheet hides badges (touch-keyboard-hints). A key named
+  // inside a sentence stays, or the sentence would break; a line that is only about keys
+  // carries `data-kbd-hint` and goes as a whole.
+  if (on) return <kbd className={`ui-kbd ${className}`.trim()} data-kbd-keep={only ? undefined : ''}>{k}</kbd>
   if (only) return null
   return <span className={className || undefined}>{k}</span>
 }
@@ -20,7 +23,7 @@ export function Kbd({ k, only = false, className = '' }: { k: string; only?: boo
  */
 export function Keys({ keys, className = '' }: { keys: string[]; className?: string }) {
   return (
-    <span className={`inline-flex flex-wrap items-center justify-end gap-1 ${className}`.trim()} data-keys>
+    <span className={`inline-flex flex-wrap items-center justify-end gap-1 ${className}`.trim()} data-keys data-kbd-hint>
       {keys.map((k, i) => {
         const seq = parseKeys(k)
         return (

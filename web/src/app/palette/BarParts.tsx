@@ -17,7 +17,7 @@ import { MODE_LABEL, PREFIX_OF, type BarMode } from './modes'
 export function ShortcutKeys({ keys }: { keys: string }) {
   const alternatives = keys.split(' / ')
   return (
-    <span className="inline-flex items-center gap-1.5" data-shortcut-keys>
+    <span className="inline-flex items-center gap-1.5" data-shortcut-keys data-kbd-hint>
       {alternatives.map((a, i) => <span key={a} className="inline-flex items-center gap-1.5">{i > 0 && <span className="text-faint">{t('or')}</span>}<KeySequence keys={a} /></span>)}
     </span>
   )
