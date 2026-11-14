@@ -163,7 +163,7 @@ function AnswerItem({ busy, children }: { busy?: boolean; children: ReactNode })
 function AnswerSteps({ lines }: { lines: string[] }) {
   return (
     <details className="text-meta text-muted" data-assistant-steps>
-      <summary className="w-fit cursor-pointer rounded-control">{t('{n, plural, one {# step} other {# steps}}', { n: lines.length })}</summary>
+      <summary className="min-h-6 w-fit cursor-pointer rounded-control leading-6">{t('{n, plural, one {# step} other {# steps}}', { n: lines.length })}</summary>
       <ol className="mt-1 list-decimal space-y-0.5 pl-5">
         {lines.map((line, i) => <li key={i}>{line}</li>)}
       </ol>
