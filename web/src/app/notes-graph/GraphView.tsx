@@ -97,7 +97,7 @@ interface View {
 }
 
 /** The canvas: sized to its box at the device's pixel ratio, its palette from the tokens, one frame per change. */
-function useCanvas(view: MutableRefObject<View>, hover: MutableRefObject<number | null>, hueOf: GraphViewProps['hueOf']) {
+function useCanvas(view: MutableRefObject<View>, hover: MutableRefObject<number | null>, hueOf: GraphViewProps['hueOf'], onResize: MutableRefObject<(() => void) | null>) {
   const host = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const cam = useRef<Camera>({ x: 0, y: 0, k: 1 })
@@ -133,11 +133,14 @@ function useCanvas(view: MutableRefObject<View>, hover: MutableRefObject<number 
       const h = Math.floor(el.clientHeight)
       if (!w || !h) return
       const dpr = window.devicePixelRatio || 1
+      const resized = size.current.width !== w || size.current.height !== h
       size.current = { width: w, height: h }
       c.width = Math.round(w * dpr)
       c.height = Math.round(h * dpr)
       c.style.width = `${w}px`
       c.style.height = `${h}px`
+      // A box that settles after the first fit (or a window resized before any move) is fitted again.
+      if (resized) onResize.current?.()
       draw()
     }
     fit()
@@ -150,7 +153,7 @@ function useCanvas(view: MutableRefObject<View>, hover: MutableRefObject<number 
     const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null
     mq?.addEventListener?.('change', retheme)
     return () => { ro?.disconnect(); mo?.disconnect(); mq?.removeEventListener?.('change', retheme) }
-  }, [draw, invalidate])
+  }, [draw, invalidate, onResize])
   return { host, canvas, cam, size, draw, invalidate }
 }
 
@@ -211,11 +214,11 @@ interface Gesture { moved: boolean; x: number; y: number; cam: Camera; pinch?: {
 function useGestures(o: {
   canvas: MutableRefObject<HTMLCanvasElement | null>; cam: MutableRefObject<Camera>; size: MutableRefObject<Size>; grid: HitGrid | null
   hover: MutableRefObject<number | null>; invalidate: () => void; zoomBy: (f: number, at?: [number, number]) => void; panBy: (dx: number, dy: number) => void
-  onTap: (i: number | null, touch: boolean) => void; onCentre: (i: number) => void
+  onTap: (i: number | null, touch: boolean) => void; onCentre: (i: number) => void; onMove: () => void
 }) {
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const gesture = useRef<Gesture | null>(null)
-  const { canvas, cam, size, grid, hover, invalidate, zoomBy, panBy, onTap, onCentre } = o
+  const { canvas, cam, size, grid, hover, invalidate, zoomBy, panBy, onTap, onCentre, onMove } = o
   const local = (e: { clientX: number; clientY: number }): [number, number] => {
     const r = canvas.current!.getBoundingClientRect()
     return [e.clientX - r.left, e.clientY - r.top]
@@ -254,6 +257,7 @@ function useGestures(o: {
       const k = clampZoom(gs.cam.k * (now.d / (gs.pinch.d || 1)))
       const [wx, wy] = toWorld(gs.cam, size.current, gs.pinch.mid[0], gs.pinch.mid[1])
       cam.current = { k, x: wx - (now.mid[0] - size.current.width / 2) / k, y: wy - (now.mid[1] - size.current.height / 2) / k }
+      onMove()
       invalidate()
       return
     }
@@ -261,6 +265,7 @@ function useGestures(o: {
     const dy = p[1] - gs.y
     if (!gs.moved && Math.hypot(dx, dy) < 5) return
     gs.moved = true
+    onMove()
     cam.current = { ...gs.cam, x: gs.cam.x - dx / gs.cam.k, y: gs.cam.y - dy / gs.cam.k }
     setCursor('grabbing')
     invalidate()
@@ -338,10 +343,18 @@ export function GraphView({ graph, topic, topicKey, matches, hueOf, onOpen, onCl
   if (g && centre !== null) for (const j of [centre, ...g.adj[centre]]) always.add(j)
   view.current = { shown, visible, lit, focus: focusIdx, centre, always }
 
-  const { host, canvas, cam, size, draw, invalidate } = useCanvas(view, hover, hueOf)
-  const { moveTo, zoomBy, panBy, fit } = useCamera(cam, size, draw, invalidate)
+  // What a resize fits again while the person has not moved the view (cleared by any move).
+  const refit = useRef<(() => void) | null>(null)
+  const { host, canvas, cam, size, draw, invalidate } = useCanvas(view, hover, hueOf, refit)
+  const { moveTo: flyCamera, zoomBy: zoomCamera, panBy: panCamera, fit } = useCamera(cam, size, draw, invalidate)
+  const moveTo = useCallback((to: Camera, animate?: boolean) => { refit.current = null; flyCamera(to, animate) }, [flyCamera])
+  const zoomBy = useCallback((f: number, at?: [number, number]) => { refit.current = null; zoomCamera(f, at) }, [zoomCamera])
+  const panBy = useCallback((dx: number, dy: number) => { refit.current = null; panCamera(dx, dy) }, [panCamera])
   useEffect(invalidate, [invalidate, shown, visible, lit, focusIdx, centre, matches])
-  const fitAll = useCallback((animate = true) => fit(view.current.shown?.p, (i) => !!view.current.visible[i], animate), [fit])
+  const fitAll = useCallback((animate = true) => {
+    refit.current = () => fit(view.current.shown?.p, (i) => !!view.current.visible[i], false)
+    fit(view.current.shown?.p, (i) => !!view.current.visible[i], animate)
+  }, [fit])
   const flyTo = useCallback((i: number) => {
     const p = view.current.shown?.p
     if (p) moveTo({ x: p.x[i], y: p.y[i], k: Math.max(cam.current.k, 1.2) })
@@ -391,8 +404,11 @@ export function GraphView({ graph, topic, topicKey, matches, hueOf, onOpen, onCl
     if (lastTopic.current === topicKey || !g) return
     lastTopic.current = topicKey
     const p = view.current.shown?.p
-    if (topic) fit(p, (i) => !!view.current.visible[i] && inTopic(g, i, topic))
-    else fitAll()
+    if (topic) {
+      const which = (i: number) => !!view.current.visible[i] && inTopic(g, i, topic)
+      refit.current = () => fit(view.current.shown?.p, which, false)
+      fit(p, which)
+    } else fitAll()
   }, [topicKey, g, topic, fit, fitAll])
 
   useImperativeHandle(handle, () => ({
@@ -410,7 +426,7 @@ export function GraphView({ graph, topic, topicKey, matches, hueOf, onOpen, onCl
   useEffect(() => { findAt.current = -1 }, [matches])
 
   const gestures = useGestures({
-    canvas, cam, size, grid, hover, invalidate, zoomBy, panBy, onCentre: centreOn,
+    canvas, cam, size, grid, hover, invalidate, zoomBy, panBy, onCentre: centreOn, onMove: () => { refit.current = null },
     onTap: (i, touch) => {
       if (i === null) {
         // The background: lights everything again.
