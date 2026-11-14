@@ -307,7 +307,7 @@ export const ActionsRevealed: StoryObj = {
   render: () => <TodayRows forceActions />,
 }
 
-/** Long titles wrap to two lines beside the column, then end with an ellipsis (task-list-width D1); a phone row keeps one line. */
+/** Long titles wrap to two lines beside the column, then end with an ellipsis (task-list-width D1), on a phone row too (phone-row-titles). */
 export const LongTitle: StoryObj = {
   render: () => (
     <List>
@@ -441,7 +441,7 @@ export const WithOrigins: StoryObj = {
 /**
  * Tasks imported from Todoist (row-title-first-on-phones, GitHub issue 844): the import's
  * id is not shown in the row, so the title keeps the row's width; the Inbox's source line
- * sits under the title. At 375 px each row is the phone's one line, the Inbox row two.
+ * sits under the title. At 375 px each row is the phone row, the Inbox row with its source line under it.
  */
 export const ImportedOrigins: StoryObj = {
   render: () => {

@@ -1396,14 +1396,15 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-props="project"] { --slot-estimate: 0rem; --slot-assignee: 0rem; }
   [data-row-props="project"] > :is([data-row-cell="estimate"], [data-row-cell="assignee"]) { display: none; }
 }
-/* The phone row (precision-phone D2, task-list-presentation "Phone rows"): below 768 px
-   a narrow list row is one line, 44 px tall, with the title at 14.5 px and one cell at
-   its end, the one the row marks `data-row-phone`: the date, else the deadline, else the
-   assignee's avatar, else the project marker. The other facts are on the task page. A
-   narrow list beside other content on a wider screen keeps its two lines. The open
-   control is the 44 px row: 12 px above and below the title's 20 px line, so on touch
-   no row padding adds to its 44 px minimum; the slots before it sit on the title's first
-   line, also when a second line (the Inbox's source) follows. The time column shows
+/* The phone row (precision-phone D2, phone-row-titles, task-list-presentation "One row
+   anatomy"): below 768 px a narrow list row is its title, at 14.5 px on up to two lines,
+   and one cell at its end, the one the row marks `data-row-phone`: the date, else the
+   deadline, else the assignee's avatar, else the project marker. The other facts are on
+   the task page. A narrow list beside other content on a wider screen keeps its metadata
+   line. The open control is the row, 44 px with a one-line title and 64 px with two: 12 px
+   above and below the title's 20 px lines, so on touch no row padding adds to its 44 px
+   minimum; the slots before it and the cell at its end sit on the title's first line, also
+   when a second line (the title's, or the Inbox's source) follows. The time column shows
    only where a row has a time, and the counts stay off the line. Screens only: a printed
    page is narrower than 768 px too, and keeps the column (print-lists). */
 @media screen and (width < 48rem) {
@@ -1416,10 +1417,12 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-time] { width: auto; margin-inline-end: 0.25rem; }
     [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; }
     [data-row-head] { grid-area: 1 / 1; }
-    /* The phone row stays one line (task-list-width D1): its title ends with an ellipsis. */
-    [data-row-title] { font-size: 0.90625rem; -webkit-line-clamp: 1; line-clamp: 1; }
+    /* The title keeps the row's two lines (phone-row-titles): a phone's title column holds
+       about 15 characters a line beside a time and a date. */
+    [data-row-title] { font-size: 0.90625rem; }
     [data-row-meta="row"] { display: contents; }
-    [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; white-space: nowrap; }
+    /* On the title's first line, not in the middle of a two-line title. */
+    [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; align-self: start; min-height: 1.25rem; white-space: nowrap; }
     [data-row-props] > [data-row-cell]:not([data-row-phone]), [data-row-rest] { display: none; }
     [data-row-props] > [data-row-cell="deadline"][data-row-phone] { display: inline-flex; }
     [data-row-meta="row"] > [data-row-props] > [data-row-item]::before { content: none; }
@@ -1436,16 +1439,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 
 /* Full task titles (OpenSpec change full-task-titles, design D2): with the setting on,
    <html> carries data-titles="full" and every row, card and Today title shows in full,
-   wrapped onto as many lines as it takes, instead of two lines (one on a phone) and an
-   ellipsis. Outside the layers and more specific than the phone row's one-line clamp, so
-   it wins at every width. On the phone row the cell at the end stays on the title's
-   first line rather than in the middle of a tall title. */
+   wrapped onto as many lines as it takes, instead of two lines and an ellipsis. Outside
+   the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
-@media screen and (width < 48rem) {
-  @container row (width < 40rem) {
-    :root[data-titles="full"] [data-row-props] { align-self: start; min-height: 1.25rem; }
-  }
-}
 
 /* Detailed rows (OpenSpec change row-layouts, design D2): the title, the parent and a
    details line, stacked at every width; the property column and the phone's one-line

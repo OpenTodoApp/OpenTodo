@@ -1,0 +1,1 @@
+- **Task titles take two lines on a phone.** A title was cut after about 15 characters beside its time and date; it now wraps onto a second line before it ends with **…**, as on wider screens. Short titles and the row's controls are unchanged ([#1339](https://github.com/OpenTodoApp/OpenTodo/issues/1339)).
