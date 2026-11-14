@@ -142,7 +142,7 @@ async function navigation(event: FetchEvent): Promise<Response> {
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
   headers.set('Cache-Control', 'no-cache')
-  return new Response(page.body, { status: 200, headers })
+  return new Response(await page.blob(), { status: 200, headers })
 }
 
 async function appFile(event: FetchEvent, path: string): Promise<Response> {
