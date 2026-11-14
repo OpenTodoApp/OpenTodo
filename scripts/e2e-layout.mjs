@@ -13,7 +13,8 @@
 //     touch screen, which makes Safari on iOS zoom in on focus (issue #724),
 //   - the page does not end the overscroll chain or turns zoom off, a control or
 //     navigation can be text-selected, or a field, editable area or comment cannot
-//     (shell-touch, GitHub issue 1338),
+//     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
+//     (touch-pressed-states, GitHub issue 1349),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),

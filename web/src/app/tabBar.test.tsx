@@ -44,7 +44,11 @@ describe('the tab bar', () => {
     expect(tab('inbox').className).toContain('text-strong')
     expect(tab('inbox').className).not.toContain('text-accent')
     expect(tab('today').getAttribute('aria-current')).toBeNull()
-    for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('min-h-14')
+    // 56 px, important: the touch rule that makes a button at least 44 px would replace it.
+    for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('min-h-14!')
+    // On touch a tab and the add button show their own pressed colour (touch-pressed-states).
+    for (const t of document.querySelectorAll('[data-tab]')) expect(t.className).toContain('press-selected')
+    expect(document.querySelector('[data-add-button]')!.className).toContain('press-accent-hover')
     expect(bar()!.className).toContain('pb-safe')
     expect(bar()!.className).toContain('md:hidden')
     // The content column leaves room for the bar.

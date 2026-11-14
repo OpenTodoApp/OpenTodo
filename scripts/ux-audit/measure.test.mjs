@@ -182,6 +182,14 @@ test('touch feel (shell-touch): chrome unselectable and content selectable pass;
   assert.equal(z.length, 2)
   assert.match(z[0], /turns zoom off/)
   assert.match(z[1], /body has touch-action pan-y/)
+  // The tab bar's tabs (touch-pressed-states): 48 px or more, unless the bar is minimised.
+  const tabs = (h, attr = '') => `<nav data-tab-bar ${attr}><button data-tab="inbox" style="height:${h}px">Inbox</button></nav>`
+  await fixture(css(good) + tabs(56))
+  assert.deepEqual(await page.evaluate(touchFeel, [null]), [])
+  await fixture(css(good) + tabs(44))
+  assert.deepEqual(await page.evaluate(touchFeel, [null]), ['the tab "Inbox" is 44 px tall: under 48 px'])
+  await fixture(css(good) + tabs(44, 'data-minimised'))
+  assert.deepEqual(await page.evaluate(touchFeel, [null]), [])
 })
 
 test('crowded controls (themes-layout-template): padded rows pass; touching a divider or overlapping fails', { skip }, async () => {
