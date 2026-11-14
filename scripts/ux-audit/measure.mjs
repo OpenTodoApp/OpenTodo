@@ -238,6 +238,51 @@ export function smallFields([rootSel, min]) {
   return out
 }
 
+// Touch feels like an app (shell-touch, GitHub issue 1338), on the touch screen: the page
+// ends the overscroll chain (no bounce, no pull to reload) and keeps zoom; no control or
+// navigation can be text-selected by a long press; every field, editable area and comment
+// stays selectable. With a root selector only that subtree's controls and fields are read.
+export function touchFeel([rootSel]) {
+  const root = rootSel ? document.querySelector(rootSel) : document.body
+  if (!root) return []
+  const out = []
+  if (!rootSel) {
+    const html = getComputedStyle(document.documentElement)
+    if (html.overscrollBehaviorY !== 'none') out.push(`the page's overscroll-behavior is ${html.overscrollBehaviorY}: it bounces or reloads on a pull`)
+    const viewport = document.querySelector('meta[name="viewport"]')?.getAttribute('content') ?? ''
+    if (/user-scalable\s*=\s*(no|0)|maximum-scale/i.test(viewport)) out.push(`the viewport turns zoom off: ${viewport}`)
+    for (const el of [document.documentElement, document.body]) {
+      const action = getComputedStyle(el).touchAction
+      if (action !== 'auto' && action !== 'manipulation') out.push(`${el.tagName.toLowerCase()} has touch-action ${action}: pinch zoom is blocked`)
+    }
+  }
+  const NOT_TEXT = new Set(['checkbox', 'radio', 'range', 'color', 'hidden', 'file', 'button', 'submit', 'reset', 'image'])
+  const seen = new Set()
+  const name = (el) => (el.getAttribute('aria-label') || el.textContent || el.getAttribute('placeholder') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 40)
+  const shown = (el) => {
+    if (el.closest('[inert]')) return false
+    const cs = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return cs.display !== 'none' && cs.visibility !== 'hidden' && (r.width > 0 || r.height > 0)
+  }
+  const select = (el) => { const cs = getComputedStyle(el); return cs.userSelect || cs.webkitUserSelect }
+  const report = (el, text) => {
+    const key = `${el.tagName}:${name(el)}:${text}`
+    if (seen.has(key)) return
+    seen.add(key)
+    out.push(`"${name(el)}" (${el.tagName.toLowerCase()}) ${text}`)
+  }
+  const CHROME = 'button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="switch"], summary, nav, a.ui-btn, [data-phone-bar], [data-sidebar], [data-page-header]'
+  for (const el of root.querySelectorAll(CHROME)) {
+    if (shown(el) && select(el) !== 'none') report(el, `can be text-selected by a long press (user-select: ${select(el)})`)
+  }
+  for (const el of root.querySelectorAll('input, textarea, [contenteditable]:not([contenteditable="false"]), article p, [data-row-details]')) {
+    if (el.tagName === 'INPUT' && NOT_TEXT.has((el.getAttribute('type') || 'text').toLowerCase())) continue
+    if (shown(el) && select(el) === 'none') report(el, 'is content but cannot be selected (user-select: none)')
+  }
+  return out
+}
+
 // Crowded controls (themes-layout-template): on a settings page, two visible controls
 // that overlap, or a control within `gap` px of a row divider (a line drawn as a top or
 // bottom border of an element without side borders, as `divide-y` and row separators

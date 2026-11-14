@@ -251,6 +251,17 @@ A block reads `data-hue`: the soft hue as fill, a 3 px solid edge, `text-strong`
 
 The status bar's backdrop (GitHub issue 999): on an iPhone, Safari covers the strip under the status bar with a soft blur, taller than the strip and drawn over the page below it, unless an opaque fixed element spans the top edge, whose colour it extends instead. `index.html` holds that element before the app (`[data-status-bar-backdrop]`, styled in `index.css`): the canvas, as tall as `--safe-top`, under the side panels, the drawer and every overlay, which pad their own tops by the inset. Keep it, and keep its colour the canvas the phone bar sits on. The safe-area check also fails when a screen has no such backdrop or draws text under the status bar at rest: as it loads, after each of its overlays closes, and after a cold start with the insets arriving late (`topEdge` in `scripts/ux-audit/measure.mjs`).
 
+### Touch
+
+On a touch screen (`pointer: coarse`) the app behaves like an app, not a page (shell-touch, GitHub issue 1338). The rules are in `index.css`:
+
+- The browser's tap highlight is off, so a control needs its own pressed state (`active:`); `hover:` does not apply on touch.
+- Chrome is not text: every button, tab, menu item, option, switch and `summary`, every `nav`, the phone bar, the sidebar and `PageHeader` cannot be selected or called out by a long press. Everything else is content and stays selectable, as does a field or an editable area inside chrome. A new control is covered by its element or role; text that a person may want to copy must not be put inside a button or a `nav`. `select-text` on an element overrides the rule.
+- The page ends the overscroll chain (`overscroll-behavior: none` on the root): no bounce, no pull glow, no reload on a pull. Scrollers keep their own behaviour and still get every touch event.
+- Zoom stays: no `touch-action` on the page that blocks pinch.
+
+With a mouse nothing changes. The layout check (`touchFeel` in `scripts/ux-audit/measure.mjs`) fails on a selectable control, an unselectable field or comment, a page that bounces or a viewport that turns zoom off.
+
 ## The workbench
 
 Storybook is a development tool only: it adds nothing to `internal/web/dist`, the Go binary or the container image, and a unit test fails if the production build contains Storybook code.

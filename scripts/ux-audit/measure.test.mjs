@@ -159,6 +159,31 @@ test('text fields under 16 px (issue #724): 16 px fields pass, smaller fields an
   assert.match(r[2], /"Notes" \(div > p\) has 15px/)
 })
 
+test('touch feel (shell-touch): chrome unselectable and content selectable pass; a selectable tab, an unselectable field, a bouncing page and a locked zoom fail', { skip }, async () => {
+  const { touchFeel } = await import('./measure.mjs')
+  const css = (rules) => `<style>${rules}</style>`
+  const good = 'html{overscroll-behavior:none} button,nav{user-select:none} input,textarea,[contenteditable]{user-select:text}'
+  const body = '<nav><button>Inbox</button><input aria-label="Find"></nav><article><p>A comment</p></article><div contenteditable="true">notes</div><button style="display:none;user-select:text">Gone</button>'
+  await fixture(css(good) + body)
+  assert.deepEqual(await page.evaluate(touchFeel, [null]), [])
+  await fixture(css('nav{user-select:none} nav button{user-select:text} article{user-select:none}') + body)
+  const r = await page.evaluate(touchFeel, [null])
+  assert.equal(r.length, 4)
+  assert.match(r[0], /overscroll-behavior is auto/)
+  assert.match(r[1], /"Inbox" \(button\) can be text-selected/)
+  // A field inside chrome takes the chrome's rule unless it is given its own.
+  assert.match(r[2], /"Find" \(input\) is content but cannot be selected/)
+  assert.match(r[3], /"A comment" \(p\) is content but cannot be selected/)
+  // Inside an overlay only its own controls are read, never the page's rules.
+  assert.deepEqual(await page.evaluate(touchFeel, ['article']), [r[3]])
+  await fixture(css(good + ' body{touch-action:pan-y}') + body)
+  await page.evaluate(() => { const m = document.createElement('meta'); m.name = 'viewport'; m.content = 'width=device-width, user-scalable=no'; document.head.append(m) })
+  const z = await page.evaluate(touchFeel, [null])
+  assert.equal(z.length, 2)
+  assert.match(z[0], /turns zoom off/)
+  assert.match(z[1], /body has touch-action pan-y/)
+})
+
 test('crowded controls (themes-layout-template): padded rows pass; touching a divider or overlapping fails', { skip }, async () => {
   const { crowdedControls } = await import('./measure.mjs')
   const row = (pad, inner) => `<div style="padding:${pad}px 0;border-top:1px solid #ccc">${inner}</div>`

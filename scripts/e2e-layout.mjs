@@ -11,6 +11,9 @@
 //   - a control on the touch screen is smaller than 44 × 44 px or only appears on hover,
 //   - a text field (input, textarea, select, editable area) has text under 16 px on the
 //     touch screen, which makes Safari on iOS zoom in on focus (issue #724),
+//   - the page does not end the overscroll chain or turns zoom off, a control or
+//     navigation can be text-selected, or a field, editable area or comment cannot
+//     (shell-touch, GitHub issue 1338),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
@@ -49,7 +52,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -235,6 +238,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       for (const m of await p.evaluate(crumbOverlap)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
       for (const m of await p.evaluate(smallFields, [null, MIN_FIELD_TEXT])) await fail(p, s.name, null, `text field: ${m}`)
+      for (const m of await p.evaluate(touchFeel, [null])) await fail(p, s.name, null, `touch: ${m}`)
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(rowCheckReach)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
@@ -332,6 +336,7 @@ async function checkOverlay(p, screen, name, { overlay, trigger, kind, destructi
   const sel = await overlay.evaluate((el) => { el.setAttribute('data-layout-check', ''); return '[data-layout-check]' })
   for (const m of await p.evaluate(smallTargets, [sel, MIN_TARGET])) await fail(p, screen, name, `touch target: ${m}`)
   for (const m of await p.evaluate(smallFields, [sel, MIN_FIELD_TEXT])) await fail(p, screen, name, `text field: ${m}`)
+  for (const m of await p.evaluate(touchFeel, [sel])) await fail(p, screen, name, `touch: ${m}`)
   for (const m of await p.evaluate(tintDrift, sel)) await fail(p, screen, name, m)
   // Its content fits the panel: nothing sideways out of it, no sentence squeezed by its buttons (issue #731).
   if (fit) for (const m of await p.evaluate(overlayContentFit, sel)) await fail(p, screen, name, m)

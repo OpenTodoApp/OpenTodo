@@ -70,6 +70,10 @@ Whatever the app saves opens the system's save dialog, where you choose a place 
 
 Completing a task gives the phone's success tap and picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
 
+## Touch
+
+Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere.
+
 ## Face ID unlock
 
 On a phone with Face ID or Touch ID, the [encrypted account](e2ee.md) offers **Unlock with Face ID next time**. After you unlock with the passphrase, the app keeps a copy of the account key encrypted by the Secure Enclave under a key that opens only with your face or finger, and the unlock screen offers that from then on; the passphrase still works.

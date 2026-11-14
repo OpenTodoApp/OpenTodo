@@ -127,6 +127,10 @@ Back closes what is open (a dialog, a sheet, a task), then goes back through the
 
 Completing a task and picking up a row give a short tap, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
 
+## Touch
+
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere.
+
 ## Sharing
 
 The app appears in Android's share menu for links, text, photos and files, also on phones without Google Play services. See [Capturing pages](capture.md#from-the-android-app).
