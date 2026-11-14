@@ -67,7 +67,7 @@ try {
   assert(await noteLine.evaluate((el) => document.activeElement === el), 'Tab reaches the line')
   await page.keyboard.type('5k, knee a bit sore')
   await page.keyboard.press('Enter')
-  await row.locator(`[data-note-mark="${TODAY}"]`).waitFor()
+  await row.locator(`[data-note-mark="${TODAY}"]`).first().waitFor()
   assert(await row.evaluate((el) => document.activeElement === el || el.contains(document.activeElement) || document.activeElement === document.body), 'focus stays in the list')
   assert(errors.length === 0, errors.join('\n'))
   console.log('e2e-habits: ok')
