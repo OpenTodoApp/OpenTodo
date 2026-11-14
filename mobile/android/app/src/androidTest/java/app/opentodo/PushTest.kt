@@ -40,6 +40,8 @@ class PushTest {
 
     @Before fun setUp() {
         resetApp()
+        // Cancelling is not immediate: the last test's notification may still be listed.
+        waitUntil("the earlier notifications to go") { shown().isEmpty() }
         allowExactAlarms()
         server = FakeServer()
         Prefs(context).server = server.origin
