@@ -9510,6 +9510,7 @@
   ],
   "Locked": [
     "web/src/app/DataSettings.tsx",
+    "web/src/app/PullToSync.tsx",
     "web/src/app/RelaySettings.tsx",
     "web/src/app/SyncStatus.tsx"
   ],
@@ -11988,6 +11989,7 @@
   ],
   "Offline": [
     "web/src/app/DataSettings.tsx",
+    "web/src/app/PullToSync.tsx",
     "web/src/app/SyncStatus.tsx",
     "web/src/app/display/DisplayScreen.tsx"
   ],
@@ -16395,6 +16397,7 @@
   ],
   "Signed out": [
     "web/src/app/DataSettings.tsx",
+    "web/src/app/PullToSync.tsx",
     "web/src/app/SyncStatus.tsx",
     "web/src/app/auditFormat.ts"
   ],
@@ -17261,6 +17264,7 @@
     "web/src/app/DataSettings.tsx"
   ],
   "Syncing…": [
+    "web/src/app/PullToSync.tsx",
     "web/src/app/SyncStatus.tsx"
   ],
   "System": [

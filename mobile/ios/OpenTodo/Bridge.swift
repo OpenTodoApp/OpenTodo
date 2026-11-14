@@ -55,6 +55,29 @@ enum Haptics {
     }
 }
 
+/// Who answers a pull down (pull-to-sync D4, capability `pull-refresh`): the shell's own
+/// refresh control, which reloads the page, until the page showing says it handles the
+/// pull itself (the web app's pull to sync). A newer web app says so on every load; an
+/// older one never does and keeps the reload. The call is pinned by the shared bridge
+/// fixture pull.json.
+struct PullRefresh: Equatable {
+    static let handled = Notification.Name("app.opentodo.pullHandled")
+    static let capability = "pull-refresh"
+    static let method = "pullHandled"
+
+    /// The page showing said it handles the pull.
+    private(set) var pageHandles = false
+
+    /// Whether the shell's own refresh control is on.
+    var native: Bool { !pageHandles }
+
+    /// The page called `pullHandled`.
+    mutating func handledByPage() { pageHandles = true }
+
+    /// Another page loaded (a reload, an older web app, a sign-in page): nothing is said yet.
+    mutating func pageLoaded() { pageHandles = false }
+}
+
 /// What the bridge needs from the app: prompts, the biometric store, the system browser.
 @MainActor
 protocol BridgeActions: AnyObject {
@@ -67,6 +90,7 @@ protocol BridgeActions: AnyObject {
     func bridgedOpenExternal(_ url: String)
     func bridgedSetSystemBars(_ json: String)
     func bridgedHaptic(_ kind: String)
+    func bridgedPullHandled()
 }
 
 /// The bridge, version 1 (native-shells D5): a document-start script that defines
@@ -90,11 +114,12 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
 
     /// The capabilities this shell offers, in the contract's names. `share`: the shell has
     /// a screen (the background run has none, so it lists nothing a person would see or
-    /// feel); `haptics`: the device can play them. No `files`: WebKit downloads what the
-    /// web app saves (shell-repairs D3).
+    /// feel); `haptics`: the device can play them; `pull-refresh`: the visible app has a
+    /// refresh control the page can take over (pull-to-sync D4). No `files`: WebKit
+    /// downloads what the web app saves (shell-repairs D3).
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", "system-bars"] }
+        if share { caps += ["share", "links", "obsidian-links", "system-bars", PullRefresh.capability] }
         if share && haptics { caps.append("haptics") }
         if biometric { caps.append("biometric") }
         return caps
@@ -160,6 +185,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case "haptic":
             actions.bridgedHaptic(string(0))
+            reply(nil, nil)
+        case PullRefresh.method:
+            actions.bridgedPullHandled()
             reply(nil, nil)
         default:
             reply(nil, "unknown_method")
@@ -259,7 +287,8 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             biometricForget: function () { call('biometricForget') },
             openExternal: function (url) { call('openExternal', [String(url)]) },
             setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
-            haptic: function (kind) { call('haptic', [String(kind)]) }
+            haptic: function (kind) { call('haptic', [String(kind)]) },
+            pullHandled: function () { call('pullHandled') }
           });
         })();
         """

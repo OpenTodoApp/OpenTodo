@@ -25,6 +25,9 @@ final class ShellController: NSObject, ObservableObject {
     private var provisional = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
+    /// Whether that control is on, or the page handles the pull itself (pull-to-sync D4).
+    private var pull = PullRefresh()
+    private var pullObserver: NSObjectProtocol?
     /// Receives the files the web app saves (shell-repairs D3); made with the first one.
     private var saver: DownloadSaver?
     private var barsObserver: NSObjectProtocol?
@@ -53,9 +56,16 @@ final class ShellController: NSObject, ObservableObject {
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-        // Pull to refresh: the gesture every iOS person tries when a page looks stale.
+        // Pull to refresh: the gesture every iOS person tries when a page looks stale. A web app
+        // with its own pull to sync takes it over (pull-to-sync D4); an older one keeps this reload.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
-        webView.scrollView.refreshControl = refresher
+        applyPull()
+        pullObserver = NotificationCenter.default.addObserver(forName: PullRefresh.handled, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.pull.handledByPage()
+                self?.applyPull()
+            }
+        }
         // The last bars the app asked for, before the page draws (theme-engine D8).
         if let json = Prefs.shared.systemBars, let bars = SystemBars.parse(json) { apply(bars) }
         barsObserver = NotificationCenter.default.addObserver(forName: SystemBars.changed, object: nil, queue: .main) { [weak self] note in
@@ -94,6 +104,16 @@ final class ShellController: NSObject, ObservableObject {
 
     @objc private func pulledToRefresh() {
         webView.reload()
+    }
+
+    /// The refresh control is on the web view only while the shell answers the pull.
+    private func applyPull() {
+        if pull.native {
+            if webView.scrollView.refreshControl == nil { webView.scrollView.refreshControl = refresher }
+        } else {
+            refresher.endRefreshing()
+            webView.scrollView.refreshControl = nil
+        }
     }
 
     func load() {
@@ -274,6 +294,9 @@ extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         provisional = false
         showSite(webView.url)
+        // Another page: the shell's pull to refresh is back until this page takes it over.
+        pull.pageLoaded()
+        applyPull()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
