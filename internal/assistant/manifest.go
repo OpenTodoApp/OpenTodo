@@ -229,6 +229,10 @@ func DeviceManifest(reg *agenttools.Registry) Manifest {
 	m.Tools = append(m.Tools, ManifestTool{Name: ProposeTool.Name, Kind: "meta", Description: ProposeTool.Description, InputSchema: ProposeTool.Schema,
 		Strict: strictSchema(ProposeTool.Schema, false), StrictNullable: strictSchema(ProposeTool.Schema, true)})
 	for _, sk := range agenttools.Skills {
+		// The device has no habit tools: the habit skills run on the server only (habits-assistant).
+		if agenttools.IsHabitSkill(sk.ID) {
+			continue
+		}
 		ms := ManifestSkill{Skill: sk, Instructions: sk.Instructions, Tools: []string{}}
 		for _, name := range sk.Tools {
 			if offered[name] {

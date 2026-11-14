@@ -11,7 +11,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { t } from '../../lib/i18n'
 import { isAvailable, reasonHint, settingPath, type Catalogue } from '../../lib/rules/catalogue'
 import { GROUP_NAME, GROUPS, searchKinds, stepDescription, stepName } from '../../lib/rules/sentence'
-import { STEPS } from '../../lib/rules/steps'
+import { STEPS, stepKind } from '../../lib/rules/steps'
+import { useHabitsEnabled } from '../../lib/habitPrefs'
 import type { RoutineStepType } from '../../lib/types'
 import { ComboboxField, ComboboxList, Icon, IconButton, useCombobox } from '../../ui'
 
@@ -48,9 +49,11 @@ export function suggestions(above: RoutineStepType | 'start', cat: Catalogue | n
 interface Entry { key: string; kind: string; group: string }
 
 /** The catalogue without a query: the suggestions, then each group's available kinds. */
-function browseEntries(above: RoutineStepType | 'start', cat: Catalogue | null): Entry[] {
+function browseEntries(above: RoutineStepType | 'start', cat: Catalogue | null, habits: boolean): Entry[] {
   const out: Entry[] = suggestions(above, cat).map((kind) => ({ key: `s:${kind}`, kind, group: t('Suggested') }))
   for (const g of GROUPS) {
+    // The Habits group only while Habits is on (habits-assistant D6); saved steps keep running.
+    if (g === 'habits' && !habits) continue
     for (const k of STEPS) {
       if (k.group === g && !SEARCH_ONLY.has(k.kind) && isAvailable(cat, k.kind)) out.push({ key: k.kind, kind: k.kind, group: t(GROUP_NAME[g]) })
     }
@@ -72,11 +75,12 @@ export function AddStepPanel({ id, above, catalogue, onPick, onClose }: {
 }) {
   const panel = useRef<HTMLElement>(null)
   const picked = useRef(false)
-  const browse = useMemo(() => browseEntries(above, catalogue), [above, catalogue])
+  const habits = useHabitsEnabled()
+  const browse = useMemo(() => browseEntries(above, catalogue, habits), [above, catalogue, habits])
   // Search keeps the catalogue's own matching (every word anywhere in the name, description or
   // synonyms, in the user's language and in English): its results are the list's entries.
   const [query, setQuery] = useState('')
-  const found = useMemo(() => (query ? searchKinds(query) : []), [query])
+  const found = useMemo(() => (query ? searchKinds(query).filter((k) => habits || stepKind(k)?.group !== 'habits') : []), [query, habits])
   const results = useMemo(() => found.filter((k) => isAvailable(catalogue, k)).map((kind): Entry => ({ key: kind, kind, group: t('Results') })), [found, catalogue])
   const dimmed = found.filter((k) => !isAvailable(catalogue, k))
   const state = useCombobox<Entry>({

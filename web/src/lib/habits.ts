@@ -1,7 +1,8 @@
 // Habits (OpenSpec change habits, design D3): streaks and the month history of a
 // recurring task, derived on the device from the series row and its occurrence
 // records. Nothing here is stored or sent; the functions are pure, so two devices
-// holding the same rows compute the same answer. Pinned by habits.vectors.json.
+// holding the same rows compute the same answer. Pinned by habits.vectors.json,
+// which the server's port internal/habits runs too (habits-assistant D1).
 //
 // Dates are floating YYYY-MM-DD strings and all arithmetic runs on day numbers
 // (Date.UTC), never on local `Date` values, so time zones and daylight saving

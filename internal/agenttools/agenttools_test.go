@@ -201,7 +201,7 @@ func TestToolSurfaceIsClosed(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want := "add_comment,add_reminders,append_to_note,archive_projects,complete_tasks,create_label,create_note,create_project,create_routine,create_sections,create_tasks,find_free_time,get_note,get_routine,get_routine_run,get_task,list_frames,list_icons,list_notes,list_objectives,list_projects,list_routine_runs,list_routines,list_slots,list_tasks,list_time_entries,list_workspaces,log_time,move_tasks,note_to_task,remove_reminders,reopen_tasks,reorder_sections,run_routine,schedule_tasks,search_notes,search_tasks,set_favourite,set_routine_enabled,start_timer,stop_timer,today_summary,trash_note,trash_routine,trash_tasks,update_labels,update_note,update_project,update_reminders,update_routine,update_sections,update_tasks,update_time_entries"
+	want := "add_comment,add_reminders,append_to_note,archive_projects,complete_tasks,create_label,create_note,create_project,create_routine,create_sections,create_tasks,find_free_time,get_habit,get_note,get_routine,get_routine_run,get_task,list_frames,list_habits,list_icons,list_notes,list_objectives,list_projects,list_routine_runs,list_routines,list_slots,list_tasks,list_time_entries,list_workspaces,log_habit,log_time,move_tasks,note_to_task,remove_reminders,reopen_tasks,reorder_sections,run_routine,schedule_tasks,search_notes,search_tasks,set_favourite,set_routine_enabled,start_timer,stop_timer,today_summary,trash_note,trash_routine,trash_tasks,update_labels,update_note,update_project,update_reminders,update_routine,update_sections,update_tasks,update_time_entries"
 	if got := strings.Join(names, ","); got != want {
 		t.Fatalf("tools = %s", got)
 	}
@@ -878,8 +878,9 @@ func TestProjectNoteInListProjects(t *testing.T) {
 }
 
 // TestHabitInResults (OpenSpec change habits, design D7): results carry
-// habit: true, update_tasks refuses habit, and complete_tasks records a done
-// occurrence of a habit like any recurring task.
+// habit: true, update_tasks refuses habit: true without a calendar rule
+// (habits-assistant), and complete_tasks records a done occurrence of a habit
+// like any recurring task.
 func TestHabitInResults(t *testing.T) {
 	f := newFixture(t)
 	f.task("u1", "h1", "Meditate", map[string]any{"recurrence": "every day", "habit": true, "due": map[string]any{"date": "2026-10-12"}})
@@ -889,8 +890,9 @@ func TestHabitInResults(t *testing.T) {
 	if !strings.Contains(string(raw), `"habit":true`) {
 		t.Fatalf("get_task without habit: %s", raw)
 	}
-	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "h1", "habit": false}}}); !isArgErr(err) {
-		t.Fatalf("update_tasks accepted habit: %v", err)
+	f.task("u1", "r1", "Water plants", map[string]any{"recurrence": "every 3 days after completion", "due": map[string]any{"date": "2026-10-12"}})
+	if _, err := f.call(c, "update_tasks", map[string]any{"updates": []any{map[string]any{"id": "r1", "habit": true}}}); !isArgErr(err) {
+		t.Fatalf("update_tasks made a completion-relative task a habit: %v", err)
 	}
 	f.mustCall(c, "complete_tasks", map[string]any{"ids": []string{"h1"}})
 	occ := f.get("u1", opsync.OccurrenceID("h1", "2026-10-12"))

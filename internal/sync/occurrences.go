@@ -440,3 +440,15 @@ func PlanRepair(id string, row Entity, tasks []Entity, today string, now int64) 
 	}
 	return out, nil
 }
+
+// HabitRecordFields are the fields of a new record of date for the series id
+// (stored row row), as the app's occurrenceFields writes them for a past day of
+// a habit (OpenSpec change habits-assistant D2): open, no note copied, its
+// dates moved from the series' current occurrence to date.
+func HabitRecordFields(row Entity, id, date string, now int64) map[string]json.RawMessage {
+	from := date
+	if due := decodeRecurringDue(row["due"]); due != nil {
+		from = due.Date
+	}
+	return occurrenceRecord(row, id, from, date, now)
+}

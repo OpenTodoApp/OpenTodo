@@ -7722,5 +7722,18 @@
   "Note saved": "Notiz gespeichert",
   "Repeats after completion, so made a task, not a habit: {titles}": "Wiederholt sich nach Erledigung, daher eine Aufgabe statt einer Gewohnheit: {titles}",
   "with a note": "mit Notiz",
-  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# Check-in} other {# Check-ins}}"
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# Check-in} other {# Check-ins}}",
+  "Find habits": "Gewohnheiten finden",
+  "Your open habits, or those at risk or back on track": "Deine offenen Gewohnheiten oder die gefährdeten oder wieder aufgenommenen",
+  "habit, streak, at risk, routine": "Gewohnheit, Serie, gefährdet, Routine",
+  "Find habits {only}": "Gewohnheiten finden {only}",
+  "the habits": "die Gewohnheiten",
+  "Log a habit": "Gewohnheit eintragen",
+  "Done, the tiny version or skipped, for a day": "Erledigt, die Mini-Version oder ausgelassen, für einen Tag",
+  "habit, check in, done, log, track": "Gewohnheit, abhaken, erledigt, eintragen, verfolgen",
+  "Log {habit} as {state} on {date}": "{habit} am {date} als {state} eintragen",
+  "Streak of at least": "Serie von mindestens",
+  "Log as": "Eintragen als",
+  "back on track": "wieder auf Kurs",
+  "the tiny version": "die Mini-Version"
 }

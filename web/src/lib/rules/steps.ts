@@ -20,7 +20,7 @@ export interface StepInput {
 
 export interface StepKind {
   kind: string
-  group: 'tasks' | 'projects' | 'text' | 'logic' | 'time' | 'communication' | 'ai'
+  group: 'tasks' | 'projects' | 'text' | 'logic' | 'time' | 'communication' | 'ai' | 'habits'
   inputs: StepInput[]
   output: StepType
   sameAs?: string
@@ -130,6 +130,11 @@ export const STEPS: StepKind[] = [
   { kind: 'tracked_time', group: 'time', output: 'number', content: false, needs: 'time_tracking',
     inputs: [inp('period', [], 'period', R), inp('project', ['project'], 'project')] },
   { kind: 'set_focus', group: 'time', output: 'none', content: false, needs: 'focus', inputs: [inp('tasks', ['tasks'], '', R)] },
+  // Habits (habits-assistant D6): the editor offers them while Habits is on.
+  { kind: 'find_habits', group: 'habits', output: 'tasks', content: false,
+    inputs: [en('only', ['at_risk', 'back_on_track']), inp('streak', [], 'number', { max: MAX_LIST_ITEMS })] },
+  { kind: 'log_habit', group: 'habits', output: 'none', content: true, tool: 'log_habit',
+    inputs: [inp('habit', ['task'], 'task', R), inp('date', ['date'], 'date'), en('state', ['done', 'tiny', 'skipped'], R), inp('note', ['text'], 'text', { ...C, max: MAX_COMMENT })] },
   { kind: 'notify', group: 'communication', output: 'none', content: true,
     inputs: [inp('text', ['text'], 'text', { ...R, ...C, max: 300 }), inp('task', ['task'], 'task')] },
   { kind: 'webhook', group: 'communication', output: 'none', content: false, needs: 'webhook',

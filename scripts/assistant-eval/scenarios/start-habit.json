@@ -1,0 +1,38 @@
+{
+  "name": "start-habit",
+  "title": "Start a habit proposes one habit with a calendar rule, a tiny version and an anchor, and creates nothing else",
+  "skill": "start-habit",
+  "seed": {
+    "tasks": [
+      {
+        "key": "report",
+        "title": "Write the quarterly report",
+        "due": 2
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "I want to read more in the evening",
+      "expect": {
+        "changeset": true,
+        "changes": [
+          {
+            "entity": "task",
+            "create": true,
+            "fields": [
+              "habit",
+              "habit_tiny",
+              "habit_anchor",
+              "recurrence"
+            ],
+            "min": 1
+          }
+        ],
+        "never_ids": [
+          "report"
+        ]
+      }
+    }
+  ]
+}

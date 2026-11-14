@@ -59,6 +59,7 @@ Some logic runs on the server and in the web app: the server needs it for REST, 
 | Weekly digest statistics | `internal/digest/stats.go` | `web/src/lib/stats.ts` | `internal/digest/testdata/stats_fixture.json` | `internal/digest/stats_test.go` | `web/src/lib/stats.test.ts` | hand |
 | Available tasks (project flows) | `internal/flow` | `web/src/lib/flow.ts` | `internal/flow/testdata/flow_fixture.json` | `internal/flow/flow_test.go` | `web/src/lib/flow.test.ts`, `mobile/app/test/flow.test.ts` | hand |
 | Calendar frame occurrences | `internal/frames` | `web/src/lib/frames.ts` | `web/src/lib/frames.vectors.json` | `internal/frames/frames_test.go` | `web/src/lib/frames.test.ts` | hand |
+| Habit numbers (scheduled dates, day states, kept, strength, streaks, at risk) | `internal/habits` | `web/src/lib/habits.ts` | `web/src/lib/habits.vectors.json` | `internal/habits/habits_test.go` | `web/src/lib/habits.test.ts` | hand |
 | Urgency score (the urgency order) | `internal/urgency` | `web/src/lib/urgency.ts` | `web/src/lib/urgency.vectors.json` | `internal/urgency/urgency_test.go` | `web/src/lib/urgency.test.ts` | hand |
 | Today's closed list (slot fill) | `internal/closedlist` | `web/src/lib/closedList.ts` | `web/src/lib/closedList.vectors.json` | `internal/closedlist/closedlist_test.go` | `web/src/lib/closedList.test.ts` | hand |
 | Free time (the working day minus events, frames, slots and timed tasks) | `internal/freetime` | `web/src/lib/freeTime.ts` | `web/src/lib/freeTime.vectors.json` | `internal/freetime/freetime_test.go` | `web/src/lib/freeTime.test.ts` | `go test ./internal/freetime -update` |
@@ -80,7 +81,7 @@ The native app runs five of these sets again on its own runtime (`mobile/app/tes
 
 Thin vector sets give false confidence: when you change one of these modules, add the case you fixed or added to its fixture first.
 
-Other fixtures are not shared between the two languages: the agent tool lists (`internal/agenttools/testdata/*.golden.json`, also read by the Claude plugin check), the MCP tool list, the CLI schema, the importers' golden outputs, `web/src/lib/habits.vectors.json`, `web/src/lib/briefing.fixtures.json`, `web/src/lib/accent.vectors.json` (the custom accent derivation, client-only: the server never renders the accent) and `web/src/lib/theme/derive.vectors.json` (the theme derivation, client-only for the same reason).
+Other fixtures are not shared between the two languages: the agent tool lists (`internal/agenttools/testdata/*.golden.json`, also read by the Claude plugin check), the MCP tool list, the CLI schema, the importers' golden outputs, `web/src/lib/briefing.fixtures.json`, `web/src/lib/accent.vectors.json` (the custom accent derivation, client-only: the server never renders the accent) and `web/src/lib/theme/derive.vectors.json` (the theme derivation, client-only for the same reason).
 
 ## The v1 surface snapshot
 

@@ -3146,7 +3146,8 @@
   ],
   "Check in {title}": [
     "web/src/app/habits/HabitRow.tsx",
-    "web/src/app/habits/TodayStrip.tsx"
+    "web/src/app/habits/TodayStrip.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "Check in {title} early ({date})": [
     "web/src/app/habits/HabitRow.tsx"
@@ -5315,6 +5316,7 @@
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/routines/pickers.tsx",
     "web/src/app/themes/previewData.ts",
+    "web/src/lib/assistant.ts",
     "web/src/page/TaskPageScreen.tsx",
     "web/src/ui/AccentPicker.tsx"
   ],
@@ -5341,6 +5343,9 @@
   ],
   "Done today, {instant}": [
     "web/src/app/review/DailyCheck.tsx"
+  ],
+  "Done, the tiny version or skipped, for a day": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Done|task": [
     "web/public/push-sw.js"
@@ -6728,6 +6733,12 @@
   "Find calendars": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Find habits": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Find habits {only}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Find in sidebar": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -7596,7 +7607,8 @@
   ],
   "Habit": [
     "web/src/app/filter/conditionText.ts",
-    "web/src/lib/assistantBlocks.ts"
+    "web/src/lib/assistantBlocks.ts",
+    "web/src/lib/rules/sentence.ts"
   ],
   "Habit actions": [
     "web/src/app/habits/HabitPage.tsx"
@@ -7621,6 +7633,7 @@
     "web/src/app/habits/TodayStrip.tsx",
     "web/src/app/method/HowYouWorkSection.tsx",
     "web/src/app/review/ReviewHabits.tsx",
+    "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts"
   ],
@@ -9544,10 +9557,16 @@
   "Locked on this device": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Log a habit": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Log a win": [
     "web/src/app/palette/BarParts.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/ListGroups.tsx"
+  ],
+  "Log as": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Log as done": [
     "web/src/app/palette/BarParts.tsx"
@@ -9559,6 +9578,9 @@
   "Log the tiny version: {tiny}": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
+  ],
+  "Log {habit} as {state} on {date}": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Logged as done": [
     "web/src/app/palette/addFromBar.ts"
@@ -16575,7 +16597,8 @@
   "Skipped": [
     "web/src/app/habits/DayMenu.tsx",
     "web/src/app/habits/DayNoteDialog.tsx",
-    "web/src/app/routines/RunHistory.tsx"
+    "web/src/app/routines/RunHistory.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
@@ -17143,6 +17166,9 @@
   "Streak": [
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Streak of at least": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "Streak {current} · Best {best}": [
     "web/src/app/habits/HabitSection.tsx"
@@ -19756,7 +19782,8 @@
     "web/src/app/habits/DayNoteDialog.tsx",
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/HabitPage.tsx",
-    "web/src/app/habits/HabitSection.tsx"
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/lib/assistant.ts"
   ],
   "Title": [
     "web/src/app/ImportScreen.tsx",
@@ -21962,6 +21989,9 @@
   "Your new recovery codes": [
     "web/src/app/TwoFactorPanel.tsx"
   ],
+  "Your open habits, or those at risk or back on track": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Your own API key": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
@@ -22343,7 +22373,8 @@
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "at risk": [
-    "web/src/app/habits/HabitSection.tsx"
+    "web/src/app/habits/HabitSection.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "at the start of a line or after a space": [
     "web/src/lib/shortcuts.ts"
@@ -22353,6 +22384,9 @@
   ],
   "automations are turned off on this server": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "back on track": [
+    "web/src/app/routines/words.tsx"
   ],
   "backups": [
     "web/src/app/settingsSections.ts"
@@ -22625,7 +22659,8 @@
   ],
   "done": [
     "web/src/app/habits/habitText.ts",
-    "web/src/app/review/ReviewProgress.tsx"
+    "web/src/app/review/ReviewProgress.tsx",
+    "web/src/app/routines/words.tsx"
   ],
   "done today": [
     "web/src/app/method/LoopHome.tsx"
@@ -22891,6 +22926,12 @@
   ],
   "habit": [
     "web/src/lib/rules/summary.ts"
+  ],
+  "habit, check in, done, log, track": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "habit, streak, at risk, routine": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "has a date": [
     "web/src/lib/rules/summary.ts"
@@ -23750,7 +23791,8 @@
     "web/src/app/settingsSections.ts"
   ],
   "skipped": [
-    "web/src/app/habits/habitText.ts"
+    "web/src/app/habits/habitText.ts",
+    "web/src/app/routines/words.tsx"
   ],
   "slate": [
     "web/src/lib/colourNames.ts"
@@ -23865,6 +23907,9 @@
     "web/src/lib/activity.ts"
   ],
   "the first": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the habits": [
     "web/src/lib/rules/sentence.ts"
   ],
   "the joined text": [
@@ -24048,6 +24093,9 @@
   ],
   "the time sector": [
     "web/src/lib/activity.ts"
+  ],
+  "the tiny version": [
+    "web/src/app/routines/words.tsx"
   ],
   "the title": [
     "web/src/lib/activity.ts"

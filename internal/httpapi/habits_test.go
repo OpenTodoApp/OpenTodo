@@ -1,74 +1,105 @@
 package httpapi
 
 import (
-	"strings"
+	"net/http"
 	"testing"
 	"time"
 )
 
-// TestHabitOverRESTAndCalDAV (OpenSpec change habits, design D7): the REST API
-// takes habit as a plain boolean and refuses anything else, CalDAV serves a
-// habit as an ordinary recurring VTODO with no new property, and a client
-// round trip and completion keep the flag and record a done occurrence.
-func TestHabitOverRESTAndCalDAV(t *testing.T) {
-	e, c := davSetup(t)
-	c.must("PUT", c.cal("inbox")+"h1.ics", vtodoBody("h1", "SUMMARY:Stretch", "DUE;VALUE=DATE:20261012", "RRULE:FREQ=DAILY"), 201)
-	r, out := e.do("PATCH", "/api/v1/tasks/h1", map[string]any{"habit": true})
-	e.mustStatus(r, 200, out)
-	if out["habit"] != true {
-		t.Fatalf("habit not returned: %v", out)
+// OpenSpec change habits-assistant, habits "Habits route".
+
+func habitEnv(t *testing.T) (*env, string) {
+	t.Helper()
+	e := ownerEnv(t)
+	e.now.Freeze(time.Date(2026, 10, 12, 12, 0, 0, 0, time.Local))
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Water", "due": map[string]any{"date": "2026-10-12"}, "recurrence": "every day", "habit": true})
+	e.mustStatus(resp, 201, out)
+	return e, out["id"].(string)
+}
+
+func TestHabitsRouteLogsWater(t *testing.T) {
+	e, water := habitEnv(t)
+	c := e.bearerClient()
+	full := e.token("full")
+	// A phone shortcut logs water: today's record is done, the series moves on.
+	resp, out := c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"state": "done"}, bearer(full)...)
+	c.mustStatus(resp, 200, out)
+	h := out["habit"].(map[string]any)
+	if h["current_date"] != "2026-10-13" || h["streak"] != float64(1) || h["kept_days"] != float64(1) || out["server_time"] == nil {
+		t.Fatalf("answer = %v", out)
 	}
-	r, out = e.do("PATCH", "/api/v1/tasks/h1", map[string]any{"habit": "yes"})
-	e.mustStatus(r, 400, out)
-	if e.task("h1")["habit"] != true {
-		t.Fatal("invalid habit value changed the task")
+	days := out["days"].([]any)
+	if d := days[0].(map[string]any); len(days) != 1 || d["date"] != "2026-10-12" || d["state"] != "done" {
+		t.Fatalf("days = %v", days)
 	}
-	_, ics := c.must("GET", c.cal("inbox")+"h1.ics", "", 200)
-	if !strings.Contains(ics, "RRULE:FREQ=DAILY") || strings.Contains(strings.ToUpper(ics), "HABIT") {
-		t.Fatalf("habit served as: %s", ics)
+	resp, out = e.do("GET", "/api/v1/habits", nil)
+	e.mustStatus(resp, 200, out)
+	if list := out["habits"].([]any); len(list) != 1 || list[0].(map[string]any)["untrusted_text"].(map[string]any)["title"] != "Water" {
+		t.Fatalf("list = %v", out)
 	}
-	done := strings.Replace(ics, "STATUS:NEEDS-ACTION", "STATUS:COMPLETED\r\nCOMPLETED:20261012T090000Z", 1)
-	c.must("PUT", c.cal("inbox")+"h1.ics", done, 204)
-	task := e.task("h1")
-	if task["habit"] != true || task["completed_at"] != nil || task["due"].(map[string]any)["date"] == "2026-10-12" {
-		t.Fatalf("series after CalDAV completion: %v", task)
-	}
-	rec := e.task(occurrenceID("h1", "2026-10-12"))
-	if rec["completed_at"] == nil || rec["skipped"] == true || rec["habit"] == true {
-		t.Fatalf("occurrence record: %v", rec)
+	// Skip through the API keeps the streak.
+	resp, out = e.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"state": "skipped", "date": "2026-10-12"})
+	e.mustStatus(resp, 200, out)
+	if h := out["habit"].(map[string]any); h["streak"] != float64(0) || h["current_date"] != "2026-10-13" {
+		t.Fatalf("after skip = %v", h)
 	}
 }
 
-// TestHabitRecordHoldsNoNote (OpenSpec change habit-notes, scenario "Completed on
-// the server"): a script that completes a habit through the REST API gets a
-// record with an empty note, while the habit keeps its own note; a plain series'
-// record still copies the series' note.
-func TestHabitRecordHoldsNoNote(t *testing.T) {
-	e := registeredEnv(t)
-	today := dayOffset(0)
-	create := func(title string, habit bool) string {
-		resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": title, "recurrence": "every day", "habit": habit,
-			"description": "Training for the 10k in March", "due": map[string]any{"date": today}})
-		e.mustStatus(resp, 201, out)
-		return out["id"].(string)
+func TestHabitsRouteRefusals(t *testing.T) {
+	e, water := habitEnv(t)
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Report"})
+	e.mustStatus(resp, 201, out)
+	plain := out["id"].(string)
+	before := countOps(t, e)
+	c := e.bearerClient()
+	// Not signed in.
+	resp, out = c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"state": "done"})
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("anonymous = %d %v", resp.StatusCode, out)
 	}
-	complete := func(id string) map[string]any {
-		resp, out := e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"completed_at": time.Now().UnixMilli()})
-		e.mustStatus(resp, 200, out)
-		if out["description"] != "Training for the 10k in March" {
-			t.Fatalf("series note after completion = %v", out["description"])
+	// A read token reads, but cannot write.
+	read := e.token("read")
+	resp, out = c.do("POST", "/api/v1/habits/"+water+"/log", map[string]any{"state": "done"}, bearer(read)...)
+	if resp.StatusCode != http.StatusForbidden || errCode(out) != "insufficient_scope" {
+		t.Fatalf("read token = %d %v", resp.StatusCode, out)
+	}
+	resp, out = c.do("GET", "/api/v1/habits/"+water, nil, bearer(read)...)
+	c.mustStatus(resp, 200, out)
+	for _, tc := range []struct {
+		body       map[string]any
+		path, code string
+		status     int
+	}{
+		{map[string]any{"state": "maybe"}, water, "invalid_input", 400},
+		{map[string]any{}, water, "invalid_input", 400},
+		{map[string]any{"state": "done", "date": "2026-10-13"}, water, "invalid_input", 400},
+		{map[string]any{"state": "done", "date": "2026-09-01"}, water, "invalid_input", 400},
+		{map[string]any{"state": "done"}, plain, "not_a_habit", 400},
+		{map[string]any{"state": "done"}, "nope", "not_found", 404},
+	} {
+		resp, out = e.do("POST", "/api/v1/habits/"+tc.path+"/log", tc.body)
+		if resp.StatusCode != tc.status || errCode(out) != tc.code {
+			t.Fatalf("%v = %d %v", tc.body, resp.StatusCode, out)
 		}
-		resp, out = e.do("GET", "/api/v1/tasks/"+occurrenceID(id, today), nil)
-		e.mustStatus(resp, 200, out)
-		if out["completed_at"] == nil {
-			t.Fatalf("no completed record: %v", out)
-		}
-		return out
 	}
-	if rec := complete(create("Run", true)); rec["description"] != nil && rec["description"] != "" {
-		t.Fatalf("habit record note = %q, want it empty", rec["description"])
+	if after := countOps(t, e); after != before {
+		t.Fatalf("refusals wrote: %d → %d", before, after)
 	}
-	if rec := complete(create("Review", false)); rec["description"] != "Training for the 10k in March" {
-		t.Fatalf("plain record note = %q, want the series' note", rec["description"])
+}
+
+func TestHabitsRouteAgentToken(t *testing.T) {
+	e, _, secret, c := agentReady(t)
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Walk", "due": map[string]any{"date": localToday(e.now.Now())}, "recurrence": "every day", "habit": true})
+	e.mustStatus(resp, 201, out)
+	walk := out["id"].(string)
+	resp, out = c.do("POST", "/api/v1/habits/"+walk+"/log", map[string]any{"state": "tiny", "note": "around the block"}, bearer(secret)...)
+	c.mustStatus(resp, 200, out)
+	if h := out["habit"].(map[string]any); h["kept_days"] != float64(1) {
+		t.Fatalf("answer = %v", out)
+	}
+	e.allowMyAssistants(false)
+	resp, out = c.do("POST", "/api/v1/habits/"+walk+"/log", map[string]any{"state": "done", "date": localToday(e.now.Now())}, bearer(secret)...)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("agent with writes off = %d %v", resp.StatusCode, out)
 	}
 }

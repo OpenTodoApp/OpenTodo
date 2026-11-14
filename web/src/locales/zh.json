@@ -7722,5 +7722,18 @@
   "Note saved": "已保存备注",
   "Repeats after completion, so made a task, not a habit: {titles}": "完成后才重复，因此创建为任务而非习惯：{titles}",
   "with a note": "有备注",
-  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, other {# 条打卡}}"
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, other {# 条打卡}}",
+  "Find habits": "查找习惯",
+  "Your open habits, or those at risk or back on track": "你未结束的习惯，或有中断风险、已重回正轨的习惯",
+  "habit, streak, at risk, routine": "习惯, 连续, 风险, 日常",
+  "Find habits {only}": "查找习惯 {only}",
+  "the habits": "这些习惯",
+  "Log a habit": "记录习惯",
+  "Done, the tiny version or skipped, for a day": "某一天完成、完成最小版本或跳过",
+  "habit, check in, done, log, track": "习惯, 打卡, 完成, 记录, 追踪",
+  "Log {habit} as {state} on {date}": "将 {habit} 在 {date} 记录为 {state}",
+  "Streak of at least": "连续至少",
+  "Log as": "记录为",
+  "back on track": "重回正轨",
+  "the tiny version": "最小版本"
 }

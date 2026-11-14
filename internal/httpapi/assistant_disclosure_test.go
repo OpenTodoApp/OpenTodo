@@ -40,6 +40,8 @@ func TestDisclosureCoversEveryReadTool(t *testing.T) {
 		"list_frames": "your routines and calendar frames", "list_workspaces": "names of members and groups of shared projects and workspaces",
 		"list_time_entries": "tracked time and its notes",
 		"find_free_time":    "your free time, worked out from your calendar events, frames, slots and timed tasks",
+		// A habit is a repeating task; its check-in notes are its records' descriptions (habits-assistant).
+		"list_habits": "task titles and descriptions", "get_habit": "task titles and descriptions",
 		// Not offered in the app (assistant notInApp, plan-objectives D7).
 		"list_objectives": "",
 	}

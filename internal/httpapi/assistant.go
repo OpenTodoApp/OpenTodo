@@ -13,6 +13,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/agenttools"
 	"github.com/OpenTodoApp/opentodo/internal/assistant"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // In-app assistant (OpenSpec change `in-app-assistant`): the owner's settings
@@ -76,10 +77,44 @@ func (s *Server) handleAssistantSkills(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !enc {
-			out = agenttools.Skills
+			on, err := s.habitsOn(ctx, userFrom(ctx).ID)
+			if err != nil {
+				s.internal(w, err)
+				return
+			}
+			out = agenttools.SkillsFor(on)
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"skills": out})
+}
+
+// turnSkill is the turn's skill for the user's Habits preference: off means
+// off (habits-assistant D5), no habit skill and no check-ins in capture.
+func (s *Server) turnSkill(w http.ResponseWriter, ctx context.Context, uid string, skill *agenttools.Skill) (*agenttools.Skill, bool) {
+	if skill == nil {
+		return nil, true
+	}
+	on, err := s.habitsOn(ctx, uid)
+	if err != nil {
+		s.internal(w, err)
+		return nil, false
+	}
+	if agenttools.IsHabitSkill(skill.ID) && !on {
+		writeError(w, http.StatusBadRequest, "unknown_skill", "this skill is offered while Habits is on")
+		return nil, false
+	}
+	sk := skill.ForHabits(on)
+	return &sk, true
+}
+
+// habitsOn reports whether the user's Habits preference is on or not decided
+// (habits-assistant D5): only "off" takes habits out of the assistant.
+func (s *Server) habitsOn(ctx context.Context, uid string) (bool, error) {
+	prefs, err := s.sync.Get(ctx, uid, "user_prefs", "me")
+	if err != nil {
+		return false, err
+	}
+	return prefs == nil || opsync.StringOf(prefs["habits"]) != "off", nil
 }
 
 // ---- owner settings ----
@@ -696,7 +731,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "consent_required", "read which data is sent to "+assistant.ProviderLabel(route.Provider)+" and accept before the first message")
 		return
 	}
-	in, skill, zone, ok := readTurn(w, r)
+	in, skill, zone, ok := s.readTurn(w, r)
 	if !ok {
 		return
 	}
@@ -811,7 +846,7 @@ func (s *Server) handleAssistantTurn(w http.ResponseWriter, r *http.Request) {
 
 // readTurn reads and checks a turn request: its size, its messages, the
 // skill and the time zone. It answers the error itself and reports false then.
-func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.Skill, *time.Location, bool) {
+func (s *Server) readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.Skill, *time.Location, bool) {
 	// Photos travel beside the text (voice-ramble D4): the body may reach
 	// 16 MB, while the conversation's text keeps its 256 KB limit.
 	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, turnMaxImageBody))
@@ -862,6 +897,10 @@ func readTurn(w http.ResponseWriter, r *http.Request) (turnRequest, *agenttools.
 			return turnRequest{}, nil, nil, false
 		}
 		skill = &sk
+	}
+	skill, ok := s.turnSkill(w, r.Context(), userFrom(r.Context()).ID, skill)
+	if !ok {
+		return turnRequest{}, nil, nil, false
 	}
 	zone, err := agenttools.ParseZone(in.Timezone, "timezone")
 	if err != nil {

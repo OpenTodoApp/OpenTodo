@@ -324,6 +324,17 @@ var cmdSpecs = []cmdSpec{
 			{Name: "source", Type: "string", Description: "planning source: project:<id>, label:<id> or view:<id>"},
 		}, Writes: true, DryRun: true, Output: ref("frame")},
 	{Name: "frames rm", Aliases: []string{"frames delete"}, Summary: "delete a calendar frame", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("frame")},
+	{Name: "habits list", Aliases: []string{"habits ls"}, Summary: "list open habits with kept, strength and streak, as every device computes them", Output: arrayOf("habit")},
+	{Name: "habits show", Summary: "print one habit's numbers and its last 31 days with their states and notes", Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}}, Output: ref("habit_detail")},
+	{Name: "habits log", Summary: "log a habit for today or an earlier day (done unless --tiny, --skip or --clear) and print its new kept and strength",
+		Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}},
+		Flags: []flagSpec{
+			{Name: "date", Type: "string", Description: "the day: YYYY-MM-DD, today or yesterday (default today)"},
+			{Name: "tiny", Type: "bool", Description: "log the tiny version (counts as done)"},
+			{Name: "skip", Type: "bool", Description: "skip the day (keeps the streak)"},
+			{Name: "clear", Type: "bool", Description: "clear the day (reads as missed)"},
+			{Name: "note", Type: "string", Description: "the day's check-in note"},
+		}, Writes: true, DryRun: true, Output: ref("habit_detail")},
 	{Name: "slots list", Aliases: []string{"slots ls"}, Summary: "list the account's calendar slots (blocks on the Day and Week grid that hold small tasks)",
 		Flags: []flagSpec{
 			{Name: "from", Type: "string", Description: "first day: YYYY-MM-DD, today, tomorrow or a weekday name"},

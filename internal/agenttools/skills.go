@@ -128,6 +128,30 @@ Do it in exactly these steps:
 - Create the new tasks with as few create_tasks calls as possible. Keep the proposal within 50 changed items; offer to continue afterwards.
 - End with a short list: each task, and for an existing one "already in your tasks" and what changes.`,
 	},
+	// habits-assistant D4: prompts over the habit tools, offered while Habits is on.
+	{
+		ID: "start-habit", Name: "Start a habit", Result: ResultChanges,
+		Description: "Turns what you want to do more of into a habit with a tiny version and a moment.",
+		Example:     "I want to read more in the evening",
+		Tools:       []string{"list_habits", "create_tasks"},
+		Instructions: `Turn the user's sentence into a proposal of exactly one new habit, made the way habits stick: tiny, anchored to a moment, at a part of the day.
+- Call list_habits first. When the user already has a habit with the same meaning, say so and propose nothing.
+- Call create_tasks once with one item: a short title (one or two words, "Read"), recurrence a calendar rule ("every day" unless the user names days, such as "every mon, wed, fri"), habit true, habit_tiny the smallest version that still counts ("One page"), habit_anchor an existing moment it follows ("After dinner"), and day_part morning, afternoon or evening when the sentence implies one.
+- Never use a rule "after completion" and never set a due date or a priority.
+- End with two lines: the habit and its rule, then the tiny version and the anchor.`,
+	},
+	{
+		ID: "habit-check", Name: "How are my habits?", Result: ResultAnswer,
+		Description: "Explains how your habits are going from their numbers and your notes.",
+		Example:     "How are my habits going?",
+		Tools:       []string{"list_habits", "get_habit"},
+		Instructions: `Tell the user how their habits are going, from the tools only.
+- Call list_habits, then get_habit for each habit the user names, or for the habits that are at risk or back on track (at most five).
+- Quote the numbers exactly as the tools return them: kept of kept_of, strength, streak and best_streak. Never compute, estimate or round a number yourself, and never state a number no tool returned.
+- Name patterns you can show from the days' states, such as the weekday a habit is most often missed, with the dates that show it. Quote the user's check-in notes when they explain a day.
+- Be kind and brief: one or two lines per habit. A missed day is normal; say what helps (the tiny version, a skip) rather than judging.
+- Change nothing. If the user asks for a change, they can ask for it next.`,
+	},
 	// assistant-in-context: four skills started where their context is, from a
 	// task's menu, a project's header menu and Today's overflow menu.
 	{
@@ -177,6 +201,40 @@ Do it in exactly these steps:
 - Then say in at most four short lines: how full the day is, the one or two tasks that matter most, and anything overdue or due soon to decide on.
 - Change nothing.`,
 	},
+}
+
+// habitSkills are offered only while the user's Habits preference is not off (habits-assistant D5).
+var habitSkills = map[string]bool{"start-habit": true, "habit-check": true}
+
+// IsHabitSkill reports a skill that exists only for habits.
+func IsHabitSkill(id string) bool { return habitSkills[id] }
+
+// captureHabits is what capture adds while Habits is on (habits-assistant D4).
+const captureHabits = `
+- Check-ins: call list_habits once. When a phrase reports doing, half-doing or skipping one of the user's habits ("ran 5k", "skipped reading", "did one page"), propose log_habit for that habit instead of a task: state done, tiny (the tiny version) or skipped, the date it names (today by default, yesterday when it says so), and the rest of the phrase as the note ("5k, knee sore"). A phrase that matches no habit stays a task.`
+
+// ForHabits is the skill as it runs for a user whose Habits preference is on
+// (or not decided) or off: off drops the habit tools and guidance from capture.
+func (s Skill) ForHabits(on bool) Skill {
+	if s.ID != "capture" || !on {
+		return s
+	}
+	s.Tools = append(append([]string{}, s.Tools...), "list_habits", "log_habit")
+	s.Instructions += captureHabits
+	return s
+}
+
+// SkillsFor is the catalogue for a user's Habits preference: off leaves out the
+// habit skills and capture's check-ins.
+func SkillsFor(habitsOn bool) []Skill {
+	out := make([]Skill, 0, len(Skills))
+	for _, s := range Skills {
+		if habitSkills[s.ID] && !habitsOn {
+			continue
+		}
+		out = append(out, s.ForHabits(habitsOn))
+	}
+	return out
 }
 
 // SkillByID returns a built-in skill.

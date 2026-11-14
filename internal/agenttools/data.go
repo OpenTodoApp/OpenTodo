@@ -504,7 +504,7 @@ type taskOut struct {
 	// (OpenSpec `e2ee`) and therefore shown as a placeholder.
 	Encrypted bool `json:"encrypted,omitempty"`
 	// Habit is true for a recurring task tracked as a habit (OpenSpec change
-	// habits, design D7). Read-only: no write tool accepts it.
+	// habits, design D7). create_tasks and update_tasks set it (habits-assistant).
 	Habit bool `json:"habit,omitempty"`
 	// Fields holds the number, checkbox and empty (null) custom field values of
 	// the task's project's definitions keyed by definition id; string values are

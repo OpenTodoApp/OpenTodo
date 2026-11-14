@@ -10,7 +10,8 @@ import {
 } from '../../lib/assistant'
 import { imagesUnsupportedMessage, isImagesUnsupported, releasePhoto, wireImages, type PreparedPhoto } from '../../lib/assistantImages'
 import { assistantStatus, refreshAssistantStatus, setAssistantStatus, setAssistantTurnBusy, takeAssistantPrefill, useAssistantPrefill, type AssistantPrefill, type AssistantStatus } from '../../lib/assistantStatus'
-import { useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
+import { skillsForHabits, useAssistantSkills, workday, type AssistantSkill } from '../../lib/assistantSkills'
+import { useHabitsChoice } from '../../lib/habitPrefs'
 import { blockLabel, blockOf, followupsOf, type AssistantBlock } from '../../lib/assistantBlocks'
 import { sourceOf } from '../../lib/assistantSources'
 import { editReviewItem, type ItemEdits } from '../../lib/assistantShape'
@@ -133,7 +134,8 @@ async function streamAnswer(req: TurnRequest, signal: AbortSignal, on: StreamCal
 /** The composer's draft, chosen skill and pasted material, and prefills from elsewhere (assistant-skills D4). */
 function useComposerState() {
   const [draft, setDraft] = useState('')
-  const skills = useAssistantSkills()
+  // The habit skills follow the Habits switch live (habits-assistant D5).
+  const skills = skillsForHabits(useAssistantSkills(), useHabitsChoice())
   const [skill, setSkill] = useState<AssistantSkill | null>(null)
   const [pickedSkillId, setPickedSkillId] = useState<string | null>(null)
   const [pasted, setPasted] = useState<string | null>(null)

@@ -75,6 +75,7 @@ The catalogue SHALL offer these steps, grouped as listed, with the inputs and ou
 - **Tasks:** Find tasks (a filter query, a saved view or a rule condition, at most 500, live; a condition finds open tasks, and a query or view follows the filter rule of open tasks unless it names `completed` or `open` or compares the completion date), Create tasks (one per line of a Text or Lines, each line read with quick-add syntax, or from fields; in a project, or as subtasks of a parent task), Change tasks (priority, due, start, deadline, energy, assignee, labels added and removed, project and section, complete or reopen, move to the Trash), Add a comment, Get a specific task.
 - **Projects:** Find project (by name), Get the project of a task, Create project, Update project (name, colour, icon, archived), Create sections, Create labels, Favourite, Create a project from a template of the library.
 - **Notes and text:** Find notes (standalone notes by project, sub-projects included, by labels, by when they last changed and by words read like the Notes page search, at most 500, newest change first), Get a specific note, Create note (a title, a text, a project and labels; outputs the Note), Change notes (project, labels added and removed, pin or unpin for the run-as person, move to the Trash), Turn into task (outputs the Task), Get note text (of a task, of a project, or of a note; the text or the title), Add to a note and Clear a note (of a task, of a project or of a note, from an earlier step or chosen in the picker), Split into lines (optionally only the open checkboxes), Join, Format text (placeholders for earlier outputs, a note's title included), Find and replace (plain text).
+- **Habits:** Find habits (open habits, optionally only those at risk, back on track or with a streak of at least N; outputs Tasks), Log a habit (a habit, a date, today by default, a state and an optional note).
 - **Lists and logic:** Pick (first, last, first N, last N, all, or where), Sort (tasks, or notes by title, last change or creation), Count, If/Otherwise, Repeat for each, Stop; each takes Tasks, Notes or Lines alike.
 - **Time and focus:** Get the date (today, tomorrow, in N days or a date), Start timer, Stop timer, Tracked time for a period (minutes), Set today's focus (three tasks, or Bento slots by estimate, by the same rules as the Daily check).
 - **Communication:** Notify me, Send a webhook, Email me, Email project members (shared routines only).
@@ -120,6 +121,10 @@ Steps with a counterpart in the agent tool registry SHALL be validated and plann
 #### Scenario: From a template
 - **WHEN** a routine on the first of each month creates a project from the library template "Weekly review" starting the day
 - **THEN** the project, its sections and tasks are created with the dates the library's own instantiation gives for that start day
+
+#### Scenario: Habits group
+- **WHEN** the user opens Add step while Habits is on
+- **THEN** a Habits group offers Find habits and Log a habit
 
 #### Scenario: A note from the week's work
 - **WHEN** the routine "Weekly review note" runs on Friday at 16:00 (Find tasks `completed = this week` → Join their titles → Create note "Week {the date}" with the joined text in Reviews, label review) and the user completed four tasks this week
@@ -1280,3 +1285,14 @@ The catalogue SHALL offer, in the group Notes and text, **Get the daily note** w
 #### Scenario: Setting off
 - **WHEN** the user turns Daily notes off and the routine runs
 - **THEN** the run fails at Get the daily note with reason `daily_notes_off` and the Daily notes setting, and nothing is written
+
+### Requirement: Habit steps
+Find habits SHALL use the numbers of "Habit numbers on the server" (OpenSpec `habits`) on the server and the same numbers on a device that runs the routine. Log a habit SHALL plan the change `log_habit` plans and write it through the op log like every step, so a webhook or a scheduled routine can log a habit ("when Home Assistant posts a walk, log Walk"). Neither step SHALL be offered in the editor while the user's Habits preference is off; a routine that already holds one SHALL keep running.
+
+#### Scenario: An evening nudge
+- **WHEN** a routine every day at 20:00 finds habits at risk and notifies "Two days without: {the titles}", and Read was missed on its last two scheduled days
+- **THEN** the user gets the notification naming Read, and nothing is written
+
+#### Scenario: A walk from a webhook
+- **WHEN** a routine triggered by an incoming webhook logs the habit Walk as done today, and the webhook fires
+- **THEN** today's record of Walk is done and the series moves on, as a check-in in the app does

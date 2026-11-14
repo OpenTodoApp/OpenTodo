@@ -169,6 +169,30 @@ actions:
       text: "Hang the laundry today p2 #Home"
 ```
 
+Log a [habit](habits.md) when the step counter passes 8,000, with a `full` token in `secrets.yaml` (the id is in the habit's address or `ot habits --json`):
+
+```yaml
+rest_command:
+  opentodo_log_walk:
+    url: https://todo.example.com/api/v1/habits/<walk-id>/log
+    method: post
+    headers:
+      Authorization: !secret opentodo_token
+    content_type: application/json
+    payload: '{"state": "done", "note": "{{ steps }} steps"}'
+
+automation:
+  - alias: Walk logged
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.phone_steps
+        above: 8000
+    actions:
+      - action: rest_command.opentodo_log_walk
+        data:
+          steps: "{{ states('sensor.phone_steps') }}"
+```
+
 ## The Focus session on a dashboard
 
 The integration has no Focus sensor yet, but Home Assistant's own [RESTful sensor](https://www.home-assistant.io/integrations/sensor.rest/) can read your running [Focus](focus-elsewhere.md) session from [`GET /api/v1/time-entries/running`](api.md#the-running-entry) with a **Read only** token. In `configuration.yaml`:

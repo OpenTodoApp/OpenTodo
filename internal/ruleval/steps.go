@@ -73,6 +73,9 @@ const (
 	GroupComms    = "communication"
 	// GroupAI holds Ask AI and Summarise (routines-ai-step D1).
 	GroupAI = "ai"
+	// GroupHabits holds Find habits and Log a habit (habits-assistant D6); the
+	// editor offers it while the user's Habits preference is on.
+	GroupHabits = "habits"
 )
 
 // Needs of a step beyond automations.enabled (design D15).
@@ -257,6 +260,13 @@ var Steps = []StepKind{
 		Inputs: []Input{req(in("period", nil, LitPeriod)), in("project", []Type{TProject}, LitProject)}},
 	{Kind: "set_focus", Group: GroupTime, Out: TNone, Needs: NeedsFocus,
 		Inputs: []Input{req(in("tasks", []Type{TTasks}, LitNone))}},
+	// Habits (habits-assistant D6): the numbers every device computes, and a
+	// day logged as the app logs it.
+	{Kind: "find_habits", Group: GroupHabits, Out: TTasks,
+		Inputs: []Input{enum("only", "at_risk", "back_on_track"), bound(in("streak", nil, LitNumber), MaxListItems)}},
+	{Kind: "log_habit", Group: GroupHabits, Out: TNone, Content: true, Tool: "log_habit",
+		Inputs: []Input{req(in("habit", []Type{TTask}, LitTask)), in("date", []Type{TDate}, LitDate), req(enum("state", "done", "tiny", "skipped")),
+			content(bound(in("note", textIn, LitText), MaxComment))}},
 	// Communication
 	{Kind: "notify", Group: GroupComms, Out: TNone, Content: true,
 		Inputs: []Input{req(content(bound(in("text", textIn, LitText), MaxNotifyText))), in("task", []Type{TTask}, LitTask)}},

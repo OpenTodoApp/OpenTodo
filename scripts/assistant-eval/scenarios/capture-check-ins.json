@@ -1,0 +1,60 @@
+{
+  "name": "capture-check-ins",
+  "title": "Turn this into tasks reads check-ins of the user's habits as logs, with the rest of the phrase as the note, and makes no task of them",
+  "skill": "capture",
+  "seed": {
+    "tasks": [
+      {
+        "key": "run",
+        "title": "Run",
+        "due": 0,
+        "recurrence": "every day",
+        "habit": true
+      },
+      {
+        "key": "read",
+        "title": "Read",
+        "due": 0,
+        "recurrence": "every day",
+        "habit": true
+      },
+      {
+        "key": "stretch",
+        "title": "Stretch",
+        "due": 0,
+        "recurrence": "every day",
+        "habit": true
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "ran 5k this morning, knee sore, read before bed, skipped stretching",
+      "expect": {
+        "changeset": true,
+        "changes": [
+          {
+            "entity": "task",
+            "ids": [
+              "run",
+              "read",
+              "stretch"
+            ],
+            "fields": [
+              "due"
+            ]
+          },
+          {
+            "entity": "task",
+            "create": true,
+            "fields": [
+              "series_id",
+              "occurrence_date"
+            ],
+            "min": 3
+          }
+        ]
+      }
+    }
+  ]
+}

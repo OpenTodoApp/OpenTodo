@@ -69,6 +69,8 @@ const TEXT: Record<string, KindText> = {
   email_me: { name: msg('Email me'), description: msg('An email to your own address'), synonyms: msg('mail, email, message, send'), sentence: msg('Email me {subject}: {text}'), output: '' },
   ask_ai: { name: msg('Ask AI'), description: msg('An answer written by AI from your instruction'), synonyms: msg('ai, assistant, prompt, ask, sort, classify, extract'), sentence: msg('Ask AI {instruction} using {context}'), output: msg('the AI answer') },
   summarise: { name: msg('Summarise'), description: msg('A short summary written by AI'), synonyms: msg('summary, summarize, digest, recap, ai'), sentence: msg('Summarise {text}'), output: msg('the summary') },
+  find_habits: { name: msg('Find habits'), description: msg('Your open habits, or those at risk or back on track'), synonyms: msg('habit, streak, at risk, routine'), sentence: msg('Find habits {only}'), output: msg('the habits') },
+  log_habit: { name: msg('Log a habit'), description: msg('Done, the tiny version or skipped, for a day'), synonyms: msg('habit, check in, done, log, track'), sentence: msg('Log {habit} as {state} on {date}'), output: '' },
   email_members: { name: msg('Email project members'), description: msg('An email to the members of the routine’s project'), synonyms: msg('mail, email, team, members, send'), sentence: msg('Email the project’s members {subject}: {text}'), output: '' },
 }
 
@@ -81,7 +83,7 @@ const CREATE_SUB_ONE = msg('Create the subtask {title} of {parent}')
 
 export const GROUP_NAME: Record<StepKind['group'], string> = {
   tasks: msg('Tasks'), projects: msg('Projects'), text: msg('Notes and text'), logic: msg('Lists and logic'), time: msg('Time and focus'), communication: msg('Communication'),
-  ai: msg('AI'),
+  ai: msg('AI'), habits: msg('Habits'),
 }
 export const GROUPS = Object.keys(GROUP_NAME) as StepKind['group'][]
 
@@ -96,6 +98,7 @@ const INPUT_LABEL: Record<string, string> = {
   date: msg('Date'), only: msg('Only'), link_back: msg('Link back to the note'),
   words: msg('Words'), within_days: msg('Changed in the last days'), unchanged_days: msg('Not changed for days'), add_labels: msg('Add labels'),
   remove_labels: msg('Remove labels'), pin: msg('Pin'), trash: msg('Move to the Trash'), no_project: msg('No project'), note: msg('Note'), notes: msg('Notes'), field: msg('Read'),
+  streak: msg('Streak of at least'), habit: msg('Habit'), state: msg('Log as'),
   instruction: msg('Instruction'), context: msg('Using'), context2: msg('Also using'), context3: msg('And using'), answer: msg('Answer as'), length: msg('Length'),
 }
 
