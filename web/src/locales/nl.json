@@ -7698,5 +7698,9 @@
   "Turn on Daily notes to use this": "Zet Dagnotities aan om dit te gebruiken",
   "Where new daily notes go. Earlier ones stay where they are.": "Waar nieuwe dagnotities komen. Eerdere blijven waar ze zijn.",
   "daily note, journal, diary, today": "dagnotitie, journaal, dagboek, vandaag",
-  "the daily note": "de dagnotitie"
+  "the daily note": "de dagnotitie",
+  "No projects found": "Geen projecten gevonden",
+  "No tasks found": "Geen taken gevonden",
+  "{n, plural, one {Looked at # project} other {Looked at # projects}}": "{n, plural, one {# project bekeken} other {# projecten bekeken}}",
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {# taak bekeken} other {# taken bekeken}}"
 }

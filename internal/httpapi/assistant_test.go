@@ -666,8 +666,16 @@ func TestTurnStreamsEvents(t *testing.T) {
 			order = append(order, ev.name)
 		}
 	}
-	if strings.Join(order, ",") != "usage,changeset,done" {
+	if strings.Join(order, ",") != "source,usage,changeset,done" {
 		t.Fatalf("event order %v", order)
+	}
+	// The read streams what it returned as ids, never a title (assistant-tool-sources D1).
+	src := named(events, "source")[0].data
+	if src["of"] != "tasks" || !strings.Contains(fmt.Sprint(src["ids"]), task) {
+		t.Fatalf("source %v", src)
+	}
+	if raw, _ := json.Marshal(src); strings.Contains(string(raw), "title") {
+		t.Fatalf("source carries content: %s", raw)
 	}
 	if d := named(events, "done")[0].data; d["stop_reason"] != "end_turn" || d["server_time"] == nil {
 		t.Fatalf("done %v", d)

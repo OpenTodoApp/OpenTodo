@@ -7698,5 +7698,9 @@
   "Turn on Daily notes to use this": "开启每日笔记以使用此功能",
   "Where new daily notes go. Earlier ones stay where they are.": "新的每日笔记放在哪里。之前的笔记保持原位。",
   "daily note, journal, diary, today": "每日笔记, 日志, 日记, 今天",
-  "the daily note": "每日笔记"
+  "the daily note": "每日笔记",
+  "No projects found": "未找到项目",
+  "No tasks found": "未找到任务",
+  "{n, plural, one {Looked at # project} other {Looked at # projects}}": "{n, plural, other {查看了 # 个项目}}",
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, other {查看了 # 个任务}}"
 }
