@@ -14,7 +14,6 @@ import { FilterView } from './FilterView'
 import { LabelsView } from './LabelsView'
 import { PlacesView } from './locations/PlacesView'
 import { ProjectsView } from './ProjectsView'
-import { SavedViewRoute } from './SavedViewView'
 import { ViewsView } from './ViewsView'
 import { Sidebar } from './Sidebar'
 import { TaskListView } from './TaskListView'
@@ -115,6 +114,7 @@ const HabitFormHost = lazy(() => import('./habits/HabitForm'))
 // Calendar, Settings and Import are not on the Inbox's first screen: each loads on first visit.
 const CalendarView = lazy(() => import('./CalendarView').then((m) => ({ default: m.CalendarView })))
 const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
+const SavedViewRoute = lazy(() => import('./SavedViewView').then((m) => ({ default: m.SavedViewRoute })))
 const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default: m.ImportScreen })))
 
 /** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
@@ -344,7 +344,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'views' ? (
             <ViewsView />
           ) : route.view === 'view' ? (
-            <SavedViewRoute id={route.id} />
+            <Suspense fallback={SCREEN_LOADING}><SavedViewRoute id={route.id} /></Suspense>
           ) : route.view === 'trash' ? (
             <TrashView />
           ) : route.view === 'task' ? (

@@ -77,7 +77,7 @@ describe('every view opens a task as its page', () => {
 
     // Saved view.
     navigate({ view: 'view', id: view })
-    await waitFor(() => r.container.textContent!.includes('Renew passport'))
+    await waitFor(() => !!document.querySelector(`[data-drop-target^="vrow:"][data-task-id="${inboxTask}"]`), 'the saved view task row')
     await openByClick('Renew passport')
     expect(pageFor()).toBe(inboxTask)
     await r.unmount()

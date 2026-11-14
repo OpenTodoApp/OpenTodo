@@ -44,7 +44,7 @@ A label page and a [saved view](saved-views.md) keep their **own** manual order.
 
 - Drag a task above or below another in its group (on a phone, press and hold, then move), or select it and press <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd>, or <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> for the top or bottom of its group. With Vim keys on, <kbd>Shift</kbd>+<kbd>J</kbd> / <kbd>K</kbd> work too.
 - Without dragging: **Reorder** in the task's menu.
-- Grouped by **Project**, drop a task in another project's group to move it, or onto a task (with **Nest subtasks**) to nest.
+- By **Project**, drag between groups to move tasks. With **Nest subtasks** on, drop onto a row or drag sideways to choose depth.
 - Each move shows **Order changed** with **Undo**.
 - Unmoved tasks follow, in project order.
 - The order keeps up to 500 tasks per page, syncs and works offline; when two devices reorder offline, the last to sync wins.

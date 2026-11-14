@@ -16,7 +16,7 @@ import { viewOptions } from './views'
 import { planMove, readTicked, toProposed } from './bulk'
 import { canEditTasks, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { isDescendant } from './tree'
-import { positionAtEnd } from './ordering'
+import { planMove as planPosition, positionAtEnd, type Placement } from './ordering'
 import { keepWorkspaceFor } from './workspaces'
 import type { Change } from './ops'
 
@@ -84,6 +84,8 @@ export interface GroupDrop {
   projectName: string
   /** Onto a task with Nest subtasks on: the new parent. Absent: a top-level place. */
   parentId?: string
+  /** The position among the new parent's subtasks. Absent: append. */
+  siblingAt?: Placement
   /** Before or after a top-level row, in the view's own order. */
   at?: ViewPlacement
 }
@@ -123,12 +125,22 @@ export async function dropInViewGroup(host: OrderHost, tasks: readonly Task[], m
   const parent = drop.parentId ?? null
   if ((task.parent_id ?? null) !== parent || (own && own.patch.parent_id === null && parent !== null)) patch.parent_id = parent
   if (parent === null && task.section_id && from === to) patch.section_id = null
-  // It lands last among its new siblings: the parent's subtasks, or the project's top-level tasks.
-  if (patch.parent_id !== undefined || from !== to) {
-    const siblings = all.filter((x) => x.id !== moved && !x.deleted_at && (x.project_id ?? null) === to && (x.parent_id ?? null) === parent)
+  let positions: Change[] = []
+  if (parent !== null) {
+    const siblings = all.filter((x) => (x.project_id ?? null) === to && x.parent_id === parent)
+    const planned = planPosition(siblings, id, drop.siblingAt ?? 'bottom', { fallback: now })
+    if (!planned) return null
+    for (const { id: sibling, position } of planned) {
+      if (sibling === id) patch.position = position
+      else positions.push({ entity: 'task', entityId: sibling, patch: { position } })
+    }
+  } else if (patch.parent_id !== undefined || from !== to) {
+    // A top-level move takes the last project position and uses the view order for its visible place.
+    const siblings = all.filter((x) => x.id !== moved && (x.project_id ?? null) === to && !x.parent_id)
     patch.position = positionAtEnd(siblings, moved, now)
   }
-  const taskChanges: Change[] = [...changes.filter((c) => c.entityId !== id), ...(Object.keys(patch).length ? [{ entity: 'task' as const, entityId: id, patch }] : [])]
+  const taskChanges: Change[] = [...changes.filter((c) => c.entityId !== id), ...positions]
+  if (Object.keys(patch).length) taskChanges.push({ entity: 'task', entityId: id, patch })
   // A subtask keeps its place under its parent; a top-level row takes the drop's place in the view's order.
   const order = parent === null && drop.at ? await orderPatch(host, row, tasks, id, drop.at) : null
   if (!taskChanges.length && !order) return null

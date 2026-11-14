@@ -29,17 +29,17 @@ const rowOf = (id: string) => document.querySelector<HTMLElement>(`[data-task-id
 const targetOf = (group: string, id: string) => document.querySelector<HTMLElement>(`[data-drop-target="vrow:${group}:${id}"]`)
 
 /** Press on a task's row, move to `y` (rows span 100–140 px) over another row, read the line, release. */
-async function drag(from: string, over: HTMLElement, y: number) {
+async function drag(from: string, over: HTMLElement, y: number, dx = 0) {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ top: 100, height: 40, bottom: 140, left: 0, right: 600, width: 600, x: 0, y: 100, toJSON: () => ({}) }))
   document.elementFromPoint = () => over
   await act(async () => {
     rowOf(from).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 100, clientY: 20 }))
-    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 100, clientY: y }))
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 100 + dx, clientY: y }))
   })
   const line = document.querySelector<HTMLElement>('[data-drop-indicator]')
   const ring = document.querySelector('[data-drop-note]')
-  const shown = { line: line?.dataset.dropIndicator ?? null, note: ring?.textContent ?? null }
-  await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: 100, clientY: y })) })
+  const shown = { line: line?.dataset.dropIndicator ?? null, note: ring?.textContent ?? null, ...(line?.dataset.dropDepth !== undefined ? { depth: line.dataset.dropDepth } : {}) }
+  await act(async () => { window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, pointerType: 'mouse', clientX: 100 + dx, clientY: y })) })
   return shown
 }
 
@@ -81,6 +81,26 @@ describe('a view grouped by Project', () => {
     await waitFor(async () => (await db.tasks.get(s.paint))?.parent_id === s.report, 'nested')
     expect((await db.tasks.get(s.paint))?.project_id).toBe(s.work)
     await r.unmount()
+  })
+
+  it('indents the gap under an existing subtask in another project and honors the sibling position', async () => {
+    const s = await twoProjects()
+    await mutate('task', s.deck, { parent_id: s.report })
+    const first = await createTask({ title: 'First slide', project_id: s.work, parent_id: s.deck, priority: 1 })
+    const view = await createView({ name: 'This week', query: 'p1', group_by: 'project' })
+    await mutate('view', view, { subtasks: 'nested' })
+    const r = await render(<SavedViewRoute id={view} />)
+    try {
+      await waitFor(() => !!targetOf(s.work, first) && !!rowOf(s.paint), 'both groups and the nested rows')
+      expect(await drag(s.paint, targetOf(s.work, s.deck)!, 136, 50)).toEqual({ line: 'after', note: 'Move to Work', depth: '2' })
+      await waitFor(async () => (await db.tasks.get(s.paint))?.parent_id === s.deck, 'nested under the subtask')
+      const task = (await db.tasks.get(s.paint))!
+      expect(task.project_id).toBe(s.work)
+      expect(task.position).toBeLessThan((await db.tasks.get(first))!.position)
+      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work')!
+      await undoBatch(entry.id)
+      expect(await db.tasks.get(s.paint)).toMatchObject({ project_id: s.home, parent_id: null })
+    } finally { await r.unmount() }
   })
 
   it('a project shared with the person as a viewer takes no drop', async () => {
