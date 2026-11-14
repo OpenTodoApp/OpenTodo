@@ -22,4 +22,3 @@
 
 - [x] 4.1 `docs/keyboard.md` says where keys are shown; `docs/design-system.md` states the rule and the two markers. Verify: `make docs && make docs-check`.
 - [x] 4.2 Changelog fragment `changelog.d/Fixed/touch-keyboard-hints.md`. Verify: `node --test scripts/repo-checks.test.mjs`.
-- [ ] 4.3 Re-baseline the UI screenshots taken with touch emulation that showed a badge. Verify: `make ui-check`.

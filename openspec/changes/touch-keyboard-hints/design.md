@@ -97,4 +97,4 @@ Nothing is added to any screen: no chrome row, no task property, no sidebar dest
 - **A phone that reports a hovering or fine pointer it does not have** shows hints, as today. No regression.
 - **A keyboard-only tablet user sees no hints before the first key.** Accepted (D2).
 - **A new keys-only line without the marker** shows on phones. `docs/design-system.md` states the rule; the interface audit at 360 px is where it would be seen.
-- **Screenshot baselines** taken with touch emulation that show badges change.
+- **Checks that press keys on an emulated phone** (the layout check, the interface audit) count as a keyboard from the first press, so overlays they open by key still show hints there. That matches a real keyboard and keeps those layouts checked.

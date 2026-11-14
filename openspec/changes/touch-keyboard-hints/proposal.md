@@ -31,4 +31,4 @@ None.
 - `web/src/index.css`: one rule. `web/src/lib/keyboardSeen.ts`: the first hardware key press, loaded outside the first load.
 - `web/src/ui` (`Tooltip`) and about twenty screens in `web/src/app`: a `data-kbd-hint` or `data-kbd-keep` attribute on existing elements. No new string, no new dependency.
 - No server change, no op field, no stored preference, no environment variable. First load: the entry chunk is unchanged (145.9 KB gzip of 146 KB); the detector is a lazy chunk under 1 KB.
-- Screenshots: phone baselines taken with touch emulation that show a key badge or a keys-only line change; desktop baselines do not.
+- Screenshots: the UI check takes its Storybook baselines without touch emulation, so none changes. The layout check and the interface audit emulate touch below tablet width; their phone screenshots lose the badges, except where a recipe presses a key first.
