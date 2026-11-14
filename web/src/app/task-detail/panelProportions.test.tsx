@@ -31,6 +31,26 @@ describe('panel proportions', () => {
     await unmount()
   })
 
+  it('Touch: the circle\'s 44 px target starts at the top of the title\'s first line, the circle stays centred on that line (phone-task-page-targets)', async () => {
+    const id = await createTask({ title: 'Paint' })
+    const { container, unmount } = await open(id)
+    await waitFor(() => !!container.querySelector('[data-panel-complete]'))
+    const button = container.querySelector('[data-panel-complete]')!
+    // The target hangs from the top of the line box instead of centring on it, so none of it is above the title row.
+    expect(button.parentElement!.className).toContain('pointer-coarse:items-start')
+    expect(button.className).toContain('touch-target')
+    expect(button.className).toContain('pointer-coarse:items-start')
+    // The circle is centred in a box of the line's height inside the target, where it was.
+    const line = button.firstElementChild!
+    expect(line.className).toContain('items-center')
+    expect(line.className).toMatch(/pointer-coarse:h-6\b/)
+    expect(line.firstElementChild!.className).toContain('size-[18px]')
+    // With a mouse nothing changes: a 24 px button centred on the line.
+    expect(button.className).toContain('pointer-fine:size-6')
+    expect(button.className).toContain('items-center')
+    await unmount()
+  })
+
   it('Touch: every facet line is 32 px, 44 px on a coarse pointer', async () => {
     const id = await createTask({ title: 'Paint', estimate_minutes: 30 })
     const { container, unmount } = await open(id)

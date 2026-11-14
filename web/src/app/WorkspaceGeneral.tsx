@@ -55,7 +55,7 @@ export function IdentitySection({ ws, online }: { ws: Workspace; online: boolean
       </div>
       <SettingRow label={t('Colour')} control={<WorkspaceColours value={form.draft.color} onPick={(color) => { if (online) form.set({ color }) }} />} />
       <SettingRow label={t('Icon')} control={
-        <Menu kind="dialog" label={t('Choose icon')} align="end" triggerClassName="ui-btn ui-btn--secondary ui-btn--md" triggerProps={{ disabled: !online }}
+        <Menu kind="dialog" label={t('Choose icon')} align="end" className="p-1 in-data-[overlay=sheet]:px-2" triggerClassName="ui-btn ui-btn--secondary ui-btn--md" triggerProps={{ disabled: !online }}
           trigger={<><WorkspaceMark workspace={ws} />{t('Choose icon')}</>}>
           {(close) => (
             <IconPicker value={ws.icon || null} onClose={close}

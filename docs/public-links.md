@@ -27,7 +27,7 @@ A named link carries its name at the front of the address, like `/public/group-c
 
 ## What people see
 
-The page shows the project's name, its open tasks by section with subtasks under them, due dates and priorities, and the tasks ticked in the last day. It never shows notes, labels, comments or who is on the project. A banner says the list is public, and on a tick link that anyone with it can tick items. The page refreshes every 30 seconds while it's open, and right after each tick.
+The page shows the project's name (up to two lines on a phone), its open tasks by section with subtasks under them, due dates and priorities, and the tasks ticked in the last day. It never shows notes, labels, comments or who is on the project. A banner says the list is public, and on a tick link that anyone with it can tick items. The page refreshes every 30 seconds while it's open, and right after each tick.
 
 Ticks reach everyone's devices on their next sync. In a task's [history](task-history.md#see-what-changed-on-a-task), its Activity tab, a project's activity and [Updates](comments-and-activity.md#see-what-others-changed) they show **Public link** as the person, not the member who created the link.
 

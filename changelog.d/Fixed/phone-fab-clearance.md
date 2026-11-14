@@ -1,0 +1,1 @@
+- **On a phone, the add button no longer covers Next in the Weekly review.** The floating add button stood on the right end of the step's Next button, so a tap there could add a task instead of going on. The review's steps now show no add button, like Close the day; Mind sweep keeps its own add field (phone-fab-clearance, #1368).

@@ -7,7 +7,7 @@ import { Clock, useNow } from './display/Clock'
 import { DisplayColumn, type DisplayRowData } from './display/DisplayColumn'
 import { parseDisplayOptions, type DisplayOptions } from './display/displayOptions'
 import { useDisplayKeys, useRootPresentation, useWakeLock } from './display/displayHooks'
-import { hueFor, Notice, ReadAs } from '../ui'
+import { hueFor, Notice, ReadAs, TruncatedText } from '../ui'
 import { ApiError, isNetworkError, publicApi } from '../lib/api'
 import { formatShort, formatTime } from '../lib/dates'
 import type { PublicList } from '../lib/types'
@@ -128,9 +128,10 @@ export function PublicListScreen({ token }: { token: string }) {
         {state.kind === 'unreachable' && <Notice tone="warning">{t('The server could not be reached. The list appears when the connection returns.')}</Notice>}
         {list && (
           <>
-            <header className="mb-4 flex items-center gap-2">
+            {/* The name takes two lines on a phone before it is cut (phone-stats-period); the dot stays on its first line. */}
+            <header className="mb-4 flex items-center gap-2 max-md:items-baseline">
               <span className="h-3 w-3 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(list.projectColor)} aria-hidden />
-              <h1 className="user-text min-w-0 truncate text-h2 font-semibold text-strong">{list.projectName}</h1>
+              <TruncatedText as="h1" wrap="phone" text={list.projectName} className="user-text min-w-0 text-h2 font-semibold text-strong" />
             </header>
             <Notice tone={list.rights === 'tick' ? 'warning' : 'info'}>
               {list.rights === 'tick'

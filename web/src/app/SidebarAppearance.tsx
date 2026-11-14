@@ -30,7 +30,8 @@ export function SidebarAppearance({ color, onColor, icon, onIcon, onOpenChange }
           <CatalogueIcon name={icon} fallback={mark} />
         </button>
       </Tooltip>
-      <Popover open={open} onClose={close} anchor={anchor} label={label} align="start" width={onIcon ? 'sm:w-80' : 'sm:w-56'}>
+      {/* In the phone's sheet the swatches, the field and the icons share the menus' 8 px inset (phone-icon-picker). */}
+      <Popover open={open} onClose={close} anchor={anchor} label={label} align="start" width={onIcon ? 'sm:w-80' : 'sm:w-56'} className="in-data-[overlay=sheet]:px-2">
         <ColourSwatches color={color} onPick={pick} onDefault={() => pick(undefined)} />
         {onIcon && <ProjectIconPicker icon={icon} color={color} onClose={close} onPick={(next) => { onIcon(next); close() }} />}
       </Popover>

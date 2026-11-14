@@ -1,0 +1,1 @@
+- **A project's Timeline reads on a phone.** Each task's name sits on its own line above its bar instead of in a narrow column, so names show in full and about ten days fit at once. Rows are tall enough to tap, a tap on a name opens the task, and the hint no longer mentions arrow keys on a device without a keyboard ([#1372](https://github.com/OpenTodoApp/OpenTodo/issues/1372)).

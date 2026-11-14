@@ -59,6 +59,11 @@ describe('public page', () => {
     const r = await render(<PublicListScreen token="otl_abc" />)
     await waitFor(() => r.container.querySelectorAll('[data-public-task]').length === 4)
     expect(r.container.textContent).toContain('anyone with the link can see it and tick items')
+    // The name is the heading, two lines on a phone before it is cut (phone-stats-period).
+    const h1 = r.container.querySelector('h1')!
+    expect(h1.textContent).toBe('Groceries')
+    expect(h1.className).toMatch(/(^| )title-phone( |$)/)
+    expect(h1.className).not.toMatch(/(^| )truncate( |$)/)
     expect(r.container.querySelector('[data-public-task="t4"]')!.hasAttribute('data-done')).toBe(true)
     const box = r.container.querySelector<HTMLInputElement>('[data-public-task="t1"] input[type="checkbox"]')!
     await click(box)

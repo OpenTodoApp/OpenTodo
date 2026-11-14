@@ -1,0 +1,1 @@
+- **Statistics starts higher on a phone.** The period is one button with its name ("This week") beside the "…" menu: tap it to choose this week, this month, this quarter, this year or last week. A public list's name takes two lines on a phone before it is cut. Nothing changes on wider screens.
