@@ -325,7 +325,7 @@ export function UsersView(p: UsersViewProps) {
       </ul>
       {p.users && p.users.length === 0 && <EmptyState icon="users" title={t('No accounts')} body={t('Invite someone below to give them an account on this server.')} />}
       {p.users === null && !p.offline && <Skeleton shape="row" count={3} label={t('Loading users')} />}
-      <p className="pt-2 text-meta text-faint">
+      <p className="pt-2 text-meta text-faint" data-kbd-hint>
         {t.rich('Keyboard, with a row focused: deactivate or reactivate with {kbd}, create a reset link with {kbd2}, delete with {kbd3}; each asks for confirmation.', { kbd: <Kbd k="d" />, kbd2: <Kbd k="r" />, kbd3: <Kbd k="Delete" /> })}
       </p>
 

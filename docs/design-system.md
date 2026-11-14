@@ -216,6 +216,8 @@ Wrap a control in `<Field label description error>`: the label, the description 
 
 Action menus use the overlay `Menu` with `kind="menu"` and contain `MenuItem`, `MenuGroup` and `MenuSeparator`. Items take an `icon`, a `shortcut` hint (shown and announced), a `description` (for example why an item is unavailable), `danger` (placed last, in its own group), `disabled` and `checked` for toggles. The menu opens on its first item; ↑/↓ wrap, Home/End jump, typing a letter moves to the next item starting with it, and choosing an item closes the menu and returns focus to its button. Panels that contain form controls keep `kind="dialog"`.
 
+**Keyboard hints on touch devices.** One rule in `web/src/index.css` hides every `.ui-kbd` badge and every element marked `data-kbd-hint` (a line that only names keys, or a separator that belongs to a badge) when the device has no fine pointer and nothing that hovers, until a hardware key press is seen (`web/src/lib/keyboardSeen.ts` sets `data-keyboard` on the root). Mark a new keys-only line with `data-kbd-hint`; do not hide it per component. `data-kbd-keep` exempts reference (the cheat sheet) and a key inside a sentence that would break without it (`<Kbd>` without `only` sets it). `aria-keyshortcuts` and descriptions stay in every case.
+
 ### Smart picker (Combobox)
 
 `<Combobox>` is a field whose list opens anchored to it from 640 px up and as a bottom sheet below; `<ComboboxPanel>` keeps field and list together inside a dialog. Both follow the ARIA combobox pattern: focus stays in the field, ↑/↓ move the active option, Enter picks, Escape closes, and the number of results is announced.

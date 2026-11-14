@@ -244,7 +244,7 @@ export function ShareCapture() {
           onRemove={(key) => setRemoved((r) => new Set(r).add(key))} />
         {error && <p className="mt-3 text-body text-danger" role="alert">{error}</p>}
         <div className="mt-4 flex items-center justify-end gap-2">
-          <span className="mr-auto hidden text-meta text-faint sm:inline">
+          <span className="mr-auto hidden text-meta text-faint sm:inline" data-kbd-hint>
             {t.rich('{enter} saves · {esc} cancels', { enter: <Kbd k="Enter" />, esc: <Kbd k="Esc" /> })}
           </span>
           <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={() => leave({ view: 'inbox' })}>{t('Cancel')}</button>

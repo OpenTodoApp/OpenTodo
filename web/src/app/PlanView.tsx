@@ -257,7 +257,7 @@ export function PlanView({ date }: { date?: string }) {
         <PlanAgenda days={days} today={today} dayLength={prefs.dayLength} eventHue={eventHue} onAdd={setAdding}
           rowProps={{ ...rowProps, onSelect: (id, d) => { setSelectedId(id); setFocused(d) } }} />
       )}
-      <p className="mt-3 hidden text-meta text-faint sm:block">
+      <p className="mt-3 hidden text-meta text-faint sm:block" data-kbd-hint>
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
       </p>
       {chrome.element}

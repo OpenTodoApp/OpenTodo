@@ -351,7 +351,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
       {pickerFor && (
         <Dialog title={t('Labels')} label={t('Labels for task')} onClose={() => setPickerFor(null)}>
           <LabelPicker taskId={pickerFor} onClose={() => setPickerFor(null)} />
-          <p className="mt-2 px-1 text-hint text-faint">{t('Enter toggles or creates · Esc closes')}</p>
+          <p className="mt-2 px-1 text-hint text-faint" data-kbd-hint>{t('Enter toggles or creates · Esc closes')}</p>
         </Dialog>
       )}
     </PageBody></UrgencyContext.Provider>
@@ -469,7 +469,7 @@ const HINT: [string[], string][] = [
 
 function UsageHint() {
   return (
-    <div className="rounded-control border border-dashed border-input p-4 text-body text-muted">
+    <div className="rounded-control border border-dashed border-input p-4 text-body text-muted" data-kbd-keep>
       <p className="mb-2">{t('Type a query to list matching tasks. Enter jumps to the results, Esc comes back, ↑ / ↓ recall recent queries.')}</p>
       <dl className="text-meta">
         {HINT.map(([terms, d]) => (

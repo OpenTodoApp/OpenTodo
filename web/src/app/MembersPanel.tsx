@@ -200,7 +200,7 @@ export function MembersView(p: MembersViewProps) {
           control={<Button variant="secondary" icon="plus" disabled={disabled} onClick={p.onNew}>{t('New invitation')}</Button>} />
       )}
       {p.invitations === null && (p.offline ? <p className="py-2 text-meta text-faint">{t('Nothing fetched yet.')}</p> : <Skeleton shape="line" count={3} label={t('Loading invitations')} />)}
-      <p className="pt-2 text-meta text-faint">{t.rich('Keyboard, with a row focused: copy a link created in this session with {kbd}, revoke a pending invitation with {kbd2}.', { kbd: <Kbd k="Enter" />, kbd2: <Kbd k="Delete" /> })}</p>
+      <p className="pt-2 text-meta text-faint" data-kbd-hint>{t.rich('Keyboard, with a row focused: copy a link created in this session with {kbd}, revoke a pending invitation with {kbd2}.', { kbd: <Kbd k="Enter" />, kbd2: <Kbd k="Delete" /> })}</p>
     </SettingsSection>
   )
 }

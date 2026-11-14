@@ -285,7 +285,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                   {message ? (
                     <p role="alert" className="text-danger">{message}</p>
                   ) : dirty ? (
-                    <p className="text-faint">{t('Enter saves the query for every device · Esc discards the change')}</p>
+                    <p className="text-faint" data-kbd-hint>{t('Enter saves the query for every device · Esc discards the change')}</p>
                   ) : result.ok && result.warnings.length > 0 ? (
                     <p className="text-warning">{result.warnings.join(' · ')}</p>
                   ) : null}
