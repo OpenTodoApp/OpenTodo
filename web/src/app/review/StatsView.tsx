@@ -4,7 +4,7 @@
 // offline and every synced device shows the same numbers, except "keeps slipping",
 // which reads this device's own activity record and says so (design D5).
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { DESKTOP_HEADER_QUERY, Icon, Menu, MenuItem, PageBody, PageHeader, useMediaQuery } from '../../ui'
+import { DESKTOP_HEADER_QUERY, Icon, Menu, MenuItem, PageBody, PageHeader, useMediaQuery, useNarrow } from '../../ui'
 import { NO_TASK_ROWS, useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { currentDayStart, formatDate, monthName, weekdayName } from '../../lib/dates'
 import { useMe } from '../../lib/sharing'
@@ -36,11 +36,12 @@ function writePeriod(p: DashboardPeriod): void {
  * The period chooser: a radio group with roving focus; the arrow keys change the period.
  * Below 768 px it is one button with the period's name that opens the five as a menu
  * (phone-stats-period), as the calendar's views are, so it shares its row with the page's menu.
+ * `narrow`: the same button in a column narrower than 40 rem (tablet-header-room).
  */
-export function PeriodChooser({ value, onChange }: { value: DashboardPeriod; onChange: (p: DashboardPeriod) => void }) {
+export function PeriodChooser({ value, onChange, narrow = false }: { value: DashboardPeriod; onChange: (p: DashboardPeriod) => void; narrow?: boolean }) {
   const refs = useRef<Partial<Record<DashboardPeriod, HTMLButtonElement | null>>>({})
   const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
-  if (!desktop) {
+  if (!desktop || narrow) {
     return (
       <Menu kind="menu" label={t('Period')} namedByContent align="start" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-period-chooser': value }}
         trigger={<><span className="sr-only">{t('Period')} </span>{PERIOD_LABELS[value]}<Icon name="chevron-down" size="sm" /></>}>
@@ -328,18 +329,27 @@ export function StatsView() {
   const title = useRef<HTMLHeadingElement>(null)
   // The heading takes focus, so Tab reaches the period chooser first (statistics "Keyboard").
   useEffect(() => { title.current?.focus() }, [])
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  const [room, narrow] = useNarrow<HTMLDivElement>()
+  const inRow = desktop && narrow
+  const chooser = <PeriodChooser value={period} narrow={narrow} onChange={(p) => { setPeriod(p); writePeriod(p) }} />
+  const exportItem = <MenuItem label={t('Export time entries')} icon="download" description={t('A CSV of the period, made on this device')} onSelect={exportCsv} data-export-time />
   return (
-    <PageBody width="full" className="max-w-5xl" data-stats-page>
-      <PageHeader title={t('Statistics')} icon="chart-column" titleRef={title} titleTabIndex={-1}>
-        <div className="flex flex-wrap items-center gap-2 max-md:w-full" data-stats-header-row>
-          <PeriodChooser value={period} onChange={(p) => { setPeriod(p); writePeriod(p) }} />
-          {/* After the period chooser, which stays the first stop (statistics "Statistics screen"). */}
-          <span className="ml-auto">
-            <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1" width="sm:w-64" align="end">
-              <MenuItem label={t('Export time entries')} icon="download" description={t('A CSV of the period, made on this device')} onSelect={exportCsv} data-export-time />
-            </Menu>
-          </span>
-        </div>
+    <PageBody ref={room} width="full" className="max-w-5xl" data-stats-page>
+      {/* A header's own row narrower than 40 rem holds the period button and the menu beside the title: one row (tablet-header-room). */}
+      <PageHeader title={t('Statistics')} icon="chart-column" titleRef={title} titleTabIndex={-1}
+        actions={inRow ? chooser : undefined} overflow={inRow ? exportItem : undefined}>
+        {!inRow && (
+          <div className="flex flex-wrap items-center gap-2 max-md:w-full" data-stats-header-row>
+            {chooser}
+            {/* After the period chooser, which stays the first stop (statistics "Statistics screen"). */}
+            <span className="ml-auto">
+              <Menu kind="menu" label={t('More actions')} trigger={<Icon name="ellipsis" />} triggerClassName="ui-btn ui-btn--ghost ui-btn--sm touch-target px-2 py-1" width="sm:w-64" align="end">
+                {exportItem}
+              </Menu>
+            </span>
+          </div>
+        )}
       </PageHeader>
       {ready && <StatsContent tasks={tasks} projects={projects} labels={labels} memberships={memberships} me={me} today={today} weekStart={weekStart}
         dayStart={currentDayStart()} entries={entries} now={now} period={period} slipping={slipping} />}

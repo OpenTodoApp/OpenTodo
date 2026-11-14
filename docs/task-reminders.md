@@ -28,7 +28,7 @@ To add the same reminder to every task that gets a date, set a [default reminder
 
 ## When a reminder goes off
 
-While OpenTodo is open, a reminder pops up in the corner of the screen with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss**. This works without a connection and without any permission.
+While OpenTodo is open, a reminder pops up in the corner of the screen with **Snooze 10 min**, **1 hour**, **Tomorrow 09:00** and **Dismiss**; on a phone, **Snooze** opens the three choices. This works without a connection and without any permission.
 
 To get reminders when the app is closed, turn on notifications for each device in **Settings → Notifications**. On an iPhone this needs the installed app. See [Notifications](notifications.md).
 

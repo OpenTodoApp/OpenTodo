@@ -114,7 +114,7 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
           menu = <ViewMenu view={f.item} within="favourites" className={menuClass} />
         }
         return (
-          <div key={keyOf(f)} className={`group flex items-center rounded-control${countsAll ? ' ui-swap-row' : ''} data-drop-active:ring-2 data-drop-active:ring-accent`} data-favourite-row={keyOf(f)}
+          <div key={keyOf(f)} className={`group flex items-center rounded-control${countsAll ? ' ui-swap-row' : ''} data-drop-active:ring-2 data-drop-active:ring-accent`} data-favourite-row={keyOf(f)} data-menu-row
             data-task-drop={f.kind === 'project' ? (canEditTasks(roleOf(f.id, memberships)) ? taskDrop.project(f.id) : undefined) : f.kind === 'label' ? taskDrop.label(f.id) : undefined}>
             {item}
             {!collapsed && menu}

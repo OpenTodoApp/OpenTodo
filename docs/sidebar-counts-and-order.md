@@ -20,7 +20,9 @@ Both choices are in **Settings → Appearance → Sidebar**. They follow your ac
 - **Inbox and Today** (the default): numbers only on Inbox, Today and folded groups. A project shows its count while you point at it, or always on a touch screen.
 - **Every list**: every project, label and saved view shows its number of open tasks, and so do their favourites. A list with nothing open shows no number, and a board none.
 
-With a mouse, pointing at a row puts its **⋯** menu button where the number was, so the row never grows. On a touch screen both stay.
+With a mouse, pointing at a row puts its **⋯** menu button where the number was, so the row never grows.
+
+On a touch screen a row shows no **⋯** button, so its name has the room: press and hold a project, label, view or favourite to open its menu. With a keyboard, <kbd>Tab</kbd> from the row reaches the button, and a screen reader finds it after the row. The footer there shows your name whole or your picture alone, and the sync state as its dot, with words such as **Offline** only where they fit.
 
 A folded project counts its sub-projects too; unfolded, each shows its own. A project counts its open tasks except deferred and Someday ones, a label the open tasks that carry it, and a view its open matches. The numbers are counted on your device from what it holds, so they are right offline and follow every sync.
 

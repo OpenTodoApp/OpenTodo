@@ -54,7 +54,7 @@ export function NotesSidebar({ route, collapsed }: { route: Route; collapsed: bo
       {pinned.length > 0 && (
         <SidebarGroup title={t('Pinned')} collapsed={collapsed} testId="sidebar-notes-pinned">
           {pinned.map((f) => (
-            <div key={f.id} className="group flex items-center rounded-control">
+            <div key={f.id} data-menu-row className="group flex items-center rounded-control">
               {row(f.id, f.item.title, (e) => onPinnedKey(e, f.id))}
               {!collapsed && <NoteFavouriteMenu id={f.id} name={titleOf(f.item.title)} favourites={pinned} className="hover-reveal" />}
             </div>

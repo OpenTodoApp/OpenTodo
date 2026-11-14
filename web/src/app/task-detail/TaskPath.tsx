@@ -4,7 +4,7 @@
 import { type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import { splitParents } from '../../lib/taskPath'
-import { Icon, Menu, MenuItem } from '../../ui'
+import { Icon, Menu, MenuItem, useCut } from '../../ui'
 
 const crumbClass = 'min-h-6 rounded-control px-1 text-muted hover:bg-hover hover:text-default'
 
@@ -20,7 +20,22 @@ export interface TaskPathParent {
   title: string
 }
 
-export function TaskPath({ origin, project, parents, current, onOpen, compact = false, nearestOnly = false }: {
+/**
+ * The nearest step up in a narrow header (tablet-header-room D5): a back arrow and the
+ * step's name. The name shows whole or not at all; while it does not fit, the arrow
+ * alone leads back and carries the name for a screen reader.
+ */
+function BackStep({ label, onClick, mark, attrs }: { label: string; onClick: () => void; mark?: ReactNode; attrs: Record<`data-${string}`, string | undefined> }) {
+  const [ref, cut] = useCut<HTMLSpanElement>()
+  return (
+    <button type="button" className={`inline-flex min-w-0 items-center gap-1.5 ${crumbClass}`} onClick={onClick} aria-label={cut ? label : undefined} data-crumb-back {...attrs}>
+      <Icon name="arrow-left" size="sm" className="shrink-0" aria-hidden />
+      <span ref={ref} className={`inline-flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap ${cut ? 'invisible' : ''}`}>{mark}{label}</span>
+    </button>
+  )
+}
+
+export function TaskPath({ origin, project, parents, current, onOpen, compact = false, nearestOnly = false, back = false }: {
   /** The list the task was opened from, when that is not the project itself. */
   origin?: TaskPathCrumb | null
   /** The project, or Inbox when the task has neither a project nor an origin. */
@@ -36,6 +51,8 @@ export function TaskPath({ origin, project, parents, current, onOpen, compact = 
    * own title is the page below, and the steps further up are one tap away from that step.
    */
   nearestOnly?: boolean
+  /** With `nearestOnly`, in a header's own row: the step is a back arrow with its name, whole or not at all. */
+  back?: boolean
 }) {
   const { hidden, shown } = splitParents(parents)
   const between = t('{n, plural, one {# parent in between} other {# parents in between}}', { n: hidden.length })
@@ -86,7 +103,11 @@ export function TaskPath({ origin, project, parents, current, onOpen, compact = 
     node: <span className="min-w-0 truncate px-1 text-strong" aria-current="page" data-crumb="task">{current}</span>,
   })
 
-  const shownBits = nearestOnly ? bits.slice(-2, -1) : bits
+  const nearest = shown.at(-1)
+  const step = nearest ? { label: nearest.title || t('Untitled'), onClick: () => onOpen(nearest.id), attrs: { 'data-crumb': 'parent', 'data-parent-id': nearest.id } }
+    : project ? { ...project, attrs: { 'data-crumb': 'project' } }
+    : origin ? { ...origin, attrs: { 'data-crumb': 'origin' } } : null
+  const shownBits = !nearestOnly ? bits : back && step ? [{ key: 'back', node: <BackStep {...step} /> }] : bits.slice(-2, -1)
 
   return (
     <nav aria-label={t('Task path')} data-breadcrumb className={`flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden font-normal ${compact ? 'text-meta' : 'text-body'}`}>

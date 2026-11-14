@@ -11,7 +11,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
-import { useMemberships, useMembership, useMembershipMap, useUserPrefsRow } from '../lib/localData'
+import { useMemberships, useMembershipMap, useUserPrefsRow } from '../lib/localData'
 import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday } from '../lib/userPrefs'
 import { useMe } from '../lib/sharing'
 import { completedOpenKey, flatRow, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
@@ -35,7 +35,9 @@ import { act } from './actionError'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
-import { BriefingText, useBriefing } from './Briefing'
+import { BriefingText } from './Briefing'
+import type { Briefing } from '../lib/briefing'
+import { useListReady } from './task-list/useListReady'
 import { UrgencyContext } from './useUrgency'
 import { BulkActionsMenu, ListReorderContext, SelectionBar, type ListReorder } from './bulk/BulkActions'
 import { useRowMenu } from './bulk/useRowMenu'
@@ -71,7 +73,6 @@ import { useListBindings } from './task-list/useListBindings'
 import { useListDrag } from './task-list/useListDrag'
 import { useAddLines, type AddingBelow } from './task-list/belowLine'
 import { useListModel, type ListRoute } from './task-list/useListModel'
-import { LIST_READY, perfMark } from '../lib/perfMarks'
 import { markPendingDone } from '../lib/pendingDone'
 import { useListShortcuts, type ListUi } from './task-list/useListShortcuts'
 import { noteTodayOpened } from '../lib/firstDay'
@@ -146,24 +147,6 @@ function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isRea
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
-
-/**
- * Nothing until the tasks are read, and on a project its row and membership (undefined
- * while read, null when not shared): a page that fills in stages moves what it already
- * shows (ux-fixes-phone, audit M12).
- */
-function useListReady(route: ListRoute, loaded: boolean, hasProject: boolean): boolean {
-  const membership = useMembership(route.view === 'project' ? route.id : '')
-  const ready = loaded && (route.view !== 'project' || (hasProject && membership !== undefined))
-  useListReadyMark(ready, route)
-  return ready
-}
-
-/** LIST_READY once per list opened, after the rows' first commit (performance-10k D4). */
-function useListReadyMark(ready: boolean, route: ListRoute) {
-  const key = 'id' in route ? `${route.view}:${route.id}` : route.view
-  useEffect(() => { if (ready) perfMark(LIST_READY, { view: route.view }) }, [ready, key]) // eslint-disable-line react-hooks/exhaustive-deps -- the key names the route
-}
 
 /**
  * A label page's own manual order (view-manual-order): drops and keyboard steps
@@ -390,8 +373,8 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
       selectMode={selectMode} onSelectMode={() => setSelectMode((v) => !v)} filterKey={m.filterKey} duration={m.duration} onDuration={m.chooseDuration} queryFilter={queryFilter} />
   )
   const { currentProject, currentLabel, currentPlace } = m
-  // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1).
-  const { phone, ...phoneActions } = usePhoneListActions({ route, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
+  // Below 768 px the list's actions sit in the shell's bar and its overflow (phone-v2 D1); in a narrow column the header's row takes the same (tablet-header-room).
+  const { phone, room, ...phoneActions } = usePhoneListActions({ route, root: listRoot, userRole, rowCount: own.length, topLevelCount: own.filter((r) => r.depth === 0).length,
     onSelectMode: () => setSelectMode(true), extraSlot: displayControl, filterKey: m.filterKey, duration: m.duration, onDuration: m.chooseDuration, queryFilter,
     project: currentProject && { row: currentProject, editable: m.projectEditable, viewMode, onViewMode: chooseViewMode } })
   // The Open Loops move this screen serves (open-loops "References to the method").
@@ -406,7 +389,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
 
   const agenda = useTodayAgenda(route.view === 'today', today, m.zone)
   const frame = useListFrame(route.view === 'project', board || timeline, m.fieldColumns)
-  const ready = useListReady(route, m.loaded, !!currentProject)
+  const { ready, briefing } = useListReady(route, m.loaded, !!currentProject)
   // Measured once the list (and its quick add row) is on screen.
   const quickAddTop = useStickyQuickAdd(quickAddRow, ready && route.view !== 'completed')
   if (route.view === 'project' && m.projects.length > 0 && !currentProject) return <MissingTarget kind="project" />
@@ -416,7 +399,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} onChoose={chooseViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
-    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={listRoot} className="min-w-0 px-4 py-5 md:px-8">
+    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={room} className="min-w-0 px-4 py-5 md:px-8">
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
@@ -424,7 +407,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               phone={phone ? { slots: phoneActions.slots, groups: phoneGroups(phoneActions.projectItems) } : undefined}
               layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
           ) : (
-            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} actions={pageActions} phone={phone ? phoneActions : null} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
+            <ListHeader route={route} title={title} label={currentLabel} meta={meta} subtitle={methodSubtitle} briefing={briefing} actions={pageActions} phone={phone ? phoneActions : null} agenda={agenda.toggle} upcomingEvents={upcomingCal.toggle} />
           )}
 
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
@@ -505,12 +488,14 @@ function listTitle(view: ListRoute['view'], project?: string, label?: string, pl
  * task-list-presentation "Nothing between the header and the list"): title, meta, actions,
  * Help. On a phone the actions are the bar's slots and the rest joins its menu (phone-v2 D1).
  */
-function ListHeader({ route, title, label, meta, subtitle, actions, phone, agenda, upcomingEvents }: {
+function ListHeader({ route, title, label, meta, subtitle, briefing, actions, phone, agenda, upcomingEvents }: {
   route: ListRoute
   title: string
   label?: Label
   meta: ReactNode
   subtitle: ReactNode
+  /** A day page's briefing, read before the list is shown (today-no-shift). */
+  briefing: Briefing | null
   actions: ReactNode
   phone: { slots: ReactNode; items: PhoneItem[] } | null
   /** Today's calendar events option (today-agenda D2): undefined when not offered, else whether it is on. */
@@ -522,7 +507,6 @@ function ListHeader({ route, title, label, meta, subtitle, actions, phone, agend
   // The briefing under a day page's title (OpenSpec change briefing), unless the account hid it (briefing-links D4).
   const day = route.view === 'today' || route.view === 'upcoming'
   const hidden = briefingHidden(useUserPrefsRow())
-  const briefing = useBriefing(day && !hidden ? route.view as 'today' | 'upcoming' : null)
   const menu = route.view === 'label' && label ? <LabelMenu label={label} extra={phoneGroups(items)} />
     : route.view === 'inbox' ? <InboxMenu extra={items.length > 0 ? <PhoneMenuItems items={items} /> : undefined} /> : undefined
   const toggle = day && (

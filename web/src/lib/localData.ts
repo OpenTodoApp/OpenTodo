@@ -495,7 +495,12 @@ const NO_NOTIFICATIONS: AppNotification[] = []
 
 /** The newest in-app notifications, newest first. */
 export function useNotifications(limit = 50): AppNotification[] {
-  return useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(limit).toArray(), [limit], NO_NOTIFICATIONS)
+  return useNotificationsRead(limit) ?? NO_NOTIFICATIONS
+}
+
+/** The same list, undefined until it is read: for a screen that waits for it before its first paint. */
+export function useNotificationsRead(limit = 50): AppNotification[] | undefined {
+  return useLiveQuery(() => db.notifications.orderBy('createdAt').reverse().limit(limit).toArray(), [limit])
 }
 
 /** The calendar subscriptions cached with the last event refresh (for offline). */

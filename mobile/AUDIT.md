@@ -78,6 +78,8 @@ Fourth round (2026-11-14, a new tour at 360 px): `phone-row-controls`, `touch-sh
 
 Fifth round (2026-11-14, the tour after the fourth: 43 findings, from over 186): `phone-fab-clearance`, `phone-icon-picker`, `phone-task-page-targets`, `phone-stats-period`, `phone-timeline-rows`. Issues #1368 to #1372.
 
+Sixth round (2026-11-14, the first tour at 768 px with touch, a tablet held upright): `tablet-header-room`, `touch-sidebar-names`, `reminder-card-compact`, `phone-fab-scroll-room`, `today-no-shift`. Issues #1379 to #1383.
+
 Open:
 
 - **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android is `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).

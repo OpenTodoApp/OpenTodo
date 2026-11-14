@@ -1243,8 +1243,19 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    a toast (3.5 rem) and the selection bar (3.5 rem) plus their gap, so a focused row
    action scrolled into view with `block: 'nearest'` stays clear of both. */
 :root { --list-scroll-pad: 8rem; }
-/* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap. */
+/* The phone add button's footprint under every list (phone-v2 D2): its 3.5 rem, its 0.75 rem offset above the tab bar, a 0.5 rem gap.
+   One rule for every screen (phone-fab-scroll-room): the content column keeps that room at its end while the button is
+   offered (`data-add-room`, set by the shell), so whatever ends a page scrolls clear of the button. A page that fills the
+   column and scrolls inside itself (the calendar's Day and Week, the notes graph) is a `.page-fill`: it takes the room
+   back and runs down to the tab bar, and its scroller ends with the same room (`.add-room-end`). */
 :root { --add-room: 4.75rem; }
+@layer components {
+  .page-fill { height: 100%; }
+}
+@media screen and (width < 48rem) {
+  #content[data-add-room] > .page-fill { height: calc(100% + var(--add-room)); margin-bottom: calc(-1 * var(--add-room)); }
+  #content[data-add-room] .add-room-end { padding-bottom: var(--add-room); }
+}
 /* While the selection bar floats over the bottom (no-layout-jump), the content keeps room
    under its last row for it; adding room at the end never moves a row. The bar marks the
    root (`data-selection-docked`): a `:has()` on #content or the app frame made every change
@@ -1546,6 +1557,28 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   .ui-swap-menu { position: absolute; right: 0.25rem; top: 50%; translate: 0 -50%; opacity: 0; }
   .ui-swap-row:is(:hover, :focus-within) .ui-swap-menu, .ui-swap-menu[aria-expanded="true"] { opacity: 1; }
   .ui-swap-row:is(:hover, :focus-within) .ui-swap-count, .ui-swap-row:has(.ui-swap-menu[aria-expanded="true"]) .ui-swap-count { visibility: hidden; }
+}
+/* On touch a sidebar row's name has the room (touch-sidebar-names, GitHub issue 1380): the
+   row's menu button takes none. It stands at the end of the row, not painted and not in a
+   finger's way; a hold on the row opens its menu (holdForRowMenu), as on a task row. The
+   button stays in the Tab order and the accessibility tree: with keyboard focus it shows
+   in place, over the count, and a screen reader finds and presses it where it stands.
+   The hold arms with the task row's tint. With a mouse nothing changes. */
+@media (pointer: coarse) {
+  [data-sidebar-scroll] [data-menu-row] { position: relative; }
+  [data-sidebar-scroll] [data-menu-row] button[aria-haspopup] { position: absolute; right: 0; top: 50%; translate: 0 -50%; border-radius: var(--radius-control); background-color: var(--sidebar-bg, var(--color-canvas)); }
+  [data-sidebar-scroll] [data-menu-row] button[aria-haspopup]:not(:focus-visible) { opacity: 0; pointer-events: none; }
+  [data-sidebar-scroll] [data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
+}
+/* Whole or not at all (touch-sidebar-names): on touch the text inside `ui-whole` shows only
+   where all of it fits, never a few letters and an ellipsis. The box is one line high and
+   wraps; a strut holds the first line, so a text wider than the box goes to a second line
+   that is cut off. The text stays in the control's name. With a mouse the box is an
+   ordinary `truncate`. */
+@media (pointer: coarse) {
+  .ui-whole { display: flex; flex-wrap: wrap; align-content: flex-start; height: 1lh; overflow: hidden; }
+  .ui-whole::before { content: ""; height: 1lh; }
+  .ui-whole > * { flex: none; white-space: nowrap; }
 }
 .ui-scroller:is([data-fade-top], [data-fade-bottom]) {
   mask-image: var(--fade), linear-gradient(black, black);

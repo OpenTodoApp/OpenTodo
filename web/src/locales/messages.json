@@ -16675,6 +16675,9 @@
   "Small · up to 30 min": [
     "web/src/lib/bentoSlots.ts"
   ],
+  "Snooze": [
+    "web/src/app/ReminderToasts.tsx"
+  ],
   "Snooze 10 min": [
     "web/public/push-sw.js",
     "web/src/app/ReminderToasts.tsx"

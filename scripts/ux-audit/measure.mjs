@@ -363,6 +363,9 @@ export function smallTargets([rootSel, min]) {
     if (el.tagName === 'INPUT' && (type === 'checkbox' || type === 'radio')) box = el.closest('label') ?? el
     const cs = getComputedStyle(el)
     if (cs.visibility === 'hidden' || cs.display === 'none') continue
+    // A control that takes no taps is not a touch target: it is kept for the keyboard and assistive
+    // technology while touch has another way (a sidebar row's menu opens on a hold, touch-sidebar-names).
+    if (cs.pointerEvents === 'none') continue
     // Inline text links inside running text are exempt (WCAG 2.5.8 inline exception).
     if (el.tagName === 'A' && cs.display === 'inline') continue
     const r = box.getBoundingClientRect()
@@ -452,6 +455,55 @@ export async function addButtonCovers() {
   if (last && hits(last.getBoundingClientRect(), button.getBoundingClientRect())) out.push(`the add button covers the last row "${last.textContent.trim().slice(0, 30)}" at the end of the list`)
   content.scrollTop = 0
   return [...new Set(out)]
+}
+
+// Room under the add button (phone-fab-scroll-room): scrolled to its end, no screen leaves
+// a control under the phone's add button. Every vertical scroller of the content column
+// goes to its end (the column itself, a calendar grid, a board column), then each control
+// in the column is compared with the button where it rests: one that shows there, inside
+// the scrollers that clip it, is reported. And a screen without the button keeps no room
+// for it: the column ends at the tab bar.
+export async function addButtonRoom() {
+  const button = document.querySelector('[data-add-button]')
+  const content = document.querySelector('#content')
+  if (!content) return []
+  if (!button || !button.getClientRects().length) {
+    const pad = parseFloat(getComputedStyle(content).paddingBottom)
+    const bar = document.querySelector('[data-tab-bar]')
+    return bar?.getClientRects().length && pad > 0 && !document.documentElement.hasAttribute('data-selection-docked') ? [`the page keeps ${Math.round(pad)} px at its end for an add button it does not show`] : []
+  }
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+  const scrollsY = (el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1
+  const scrollers = [content, ...content.querySelectorAll('*')].filter(scrollsY)
+  const before = scrollers.map((el) => el.scrollTop)
+  for (const el of scrollers) el.scrollTop = el.scrollHeight
+  await frame()
+  // The button where it rests: it slides away while the page scrolls.
+  const moved = button.style.cssText
+  button.style.transform = 'none'
+  button.style.transition = 'none'
+  const b = button.getBoundingClientRect()
+  button.style.cssText = moved
+  const sel = 'a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary, [role="option"], [role="checkbox"], [role="switch"], [role="tab"], [contenteditable="true"], [data-task-id]'
+  const found = []
+  for (const el of content.querySelectorAll(sel)) {
+    if (!el.getClientRects().length || el.closest('[aria-hidden="true"], [inert]') || getComputedStyle(el).visibility === 'hidden') continue
+    let { left, right, top, bottom } = el.getBoundingClientRect()
+    // What shows of it: the part inside every ancestor that clips.
+    for (let a = el.parentElement; a && content.contains(a); a = a.parentElement) {
+      const cs = getComputedStyle(a)
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue
+      const r = a.getBoundingClientRect()
+      left = Math.max(left, r.left); right = Math.min(right, r.right); top = Math.max(top, r.top); bottom = Math.min(bottom, r.bottom)
+    }
+    const w = Math.min(right, b.right) - Math.max(left, b.left)
+    const h = Math.min(bottom, b.bottom) - Math.max(top, b.top)
+    if (w < 2 || h < 2) continue
+    found.push({ el, text: `the add button covers ${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') || el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40)}" at the end of the scroll (${Math.round(h)} px of it)` })
+  }
+  scrollers.forEach((el, i) => { el.scrollTop = before[i] })
+  // A row and the control inside it are one finding: the innermost.
+  return found.filter((f) => !found.some((o) => o !== f && f.el.contains(o.el))).map((f) => f.text).slice(0, 5)
 }
 
 // The Day and Week grid (GitHub issue 775): the sticky header (day names, all-day

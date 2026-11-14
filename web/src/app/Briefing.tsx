@@ -11,7 +11,7 @@ import { formatMinutes } from '../lib/duration'
 import { formatList, t, useLanguageVersion } from '../lib/i18n'
 import { useGridPrefs, useLiveProjects } from '../lib/liveData'
 import { todayAssigneeFilter } from '../lib/dayLists'
-import { useMemberships, useNotifications, useReviewRow, useUserPrefsRow } from '../lib/localData'
+import { useMemberships, useNotificationsRead, useReviewRow, useUserPrefsRow } from '../lib/localData'
 import { useMe } from '../lib/sharing'
 import { useLiveTasks } from '../lib/liveTasks'
 import { dayClosed } from '../lib/review'
@@ -20,8 +20,13 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { routePath } from './router'
 import { useToday } from './useViews'
 
-/** The briefing of Today or Upcoming from the live rows; null for any other view and until the tasks are read. */
-export function useBriefing(view: 'today' | 'upcoming' | null): Briefing | null {
+/**
+ * The briefing of Today or Upcoming from the live rows: null for any other view, undefined
+ * until everything the sentence is made of is read (the tasks, the notifications, the review
+ * row and the preferences). It is never worded from a part of them: a clause that arrived
+ * a frame later made the sentence a line longer and moved the list under it (today-no-shift).
+ */
+export function useBriefing(view: 'today' | 'upcoming' | null): Briefing | null | undefined {
   const tasks = useLiveTasks()
   const projects = useLiveProjects()
   const today = useToday()
@@ -29,14 +34,16 @@ export function useBriefing(view: 'today' | 'upcoming' | null): Briefing | null 
   const { dayLength } = useGridPrefs()
   const review = useReviewRow()
   // The bell's list: the newest in-app notifications, cached on the device (design D4).
-  const notifications = useNotifications()
+  const notifications = useNotificationsRead()
   const prefs = useUserPrefsRow()
   const memberships = useMemberships()
   const me = useMe()
   const hide = useMemo(() => (view === 'today' ? todayAssigneeFilter(prefs, memberships, me) : null), [view, prefs, memberships, me])
-  return useMemo(() => (view && tasks
-    ? briefingFacts({ view, today, tasks, projects, dayLength, notifications, closed: dayClosed(review, today), dayStart, hide })
-    : null), [view, tasks, projects, today, dayLength, notifications, review, dayStart, hide])
+  return useMemo(() => {
+    if (!view) return null
+    if (!tasks || !notifications || review === undefined || prefs === undefined) return undefined
+    return briefingFacts({ view, today, tasks, projects, dayLength, notifications, closed: dayClosed(review, today), dayStart, hide })
+  }, [view, tasks, projects, today, dayLength, notifications, review, prefs, dayStart, hide])
 }
 
 /** A plain click (not one that opens a new tab) runs `go` instead of following the address. */

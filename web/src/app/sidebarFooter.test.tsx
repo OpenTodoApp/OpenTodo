@@ -77,6 +77,10 @@ describe('one footer row', () => {
     expect(account(row).className).toContain('min-w-10')
     expect(account(row).className).toContain('flex-1')
     expect(account(row).querySelector('.truncate')?.textContent).toBe('Alexandra Konstantinopoulou')
+    // On touch the name shows whole or not at all (touch-sidebar-names): the box that hides it when it does not fit.
+    expect(account(row).querySelector('.truncate')!.className).toContain('ui-whole')
+    expect(account(row).querySelector('.ui-whole > span')?.textContent).toBe('Alexandra Konstantinopoulou')
+    expect(spokenText(account(row))).toBe('Alexandra Konstantinopoulou')
     for (const b of [...row.querySelectorAll('button.ui-btn--icon')]) expect(b.className).toMatch(/ui-btn--(sm|md)/)
     await r.unmount()
   })

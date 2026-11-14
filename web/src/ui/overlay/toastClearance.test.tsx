@@ -53,4 +53,17 @@ describe('a toast that moved for keyboard focus', () => {
     expect(region.dataset.toastSide).toBe('top')
     await r.unmount(); row.remove()
   })
+
+  it('stays put while a menu it opened holds the focus', async () => {
+    const { row, region, r } = await setup(true)
+    const trigger = document.createElement('button')
+    trigger.setAttribute('aria-expanded', 'true')
+    region.append(trigger)
+    await act(async () => { row.focus() })
+    expect(region.dataset.toastSide).toBe('end')
+    trigger.setAttribute('aria-expanded', 'false')
+    await act(async () => { row.dispatchEvent(new Event('focusin', { bubbles: true })) })
+    await waitFor(() => region.dataset.toastSide === 'start', 'moves again once the menu is closed')
+    await r.unmount(); row.remove()
+  })
 })

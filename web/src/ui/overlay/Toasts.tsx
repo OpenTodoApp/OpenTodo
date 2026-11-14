@@ -73,7 +73,8 @@ export function useToastClearance(region: RefObject<HTMLDivElement | null>, acti
       const el = region.current
       const focused = document.activeElement as HTMLElement | null
       if (!el) return
-      if (el.contains(focused)) return
+      // Focus in the toast, or in a menu the toast opened (a reminder's Snooze choices): it stays.
+      if (el.contains(focused) || el.querySelector('[aria-expanded="true"]')) return
       // Nothing focused, or focus a tap moved: a toast that moved goes back, without measuring.
       if (!focused || focused === document.body) { down(); return }
       if (!pointer && !keyboardFocus(focused)) { down(); return }

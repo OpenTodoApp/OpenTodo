@@ -1,5 +1,5 @@
 import type { Task } from '../lib/types'
-import { Icon, ToastRegion } from '../ui'
+import { Icon, Menu, MenuItem, ToastRegion, useMediaQuery } from '../ui'
 import { useEffect, useRef, useState } from 'react'
 import { getTask, touchReminders } from '../lib/localData'
 import { hlcSeed } from '../lib/hlc'
@@ -15,7 +15,9 @@ import { t } from '../lib/i18n'
 
 /**
  * In-app reminder notifications (OpenSpec change `reminders`). Mounted once by
- * the Shell. Shows a toast per due reminder with snooze and dismiss buttons; when
+ * the Shell. Shows a toast per due reminder with snooze and dismiss buttons. On a
+ * touch screen or a narrow window (`reminder-card-compact`) it is one compact card:
+ * the oldest reminder, one Snooze menu and Dismiss, the next one after an answer. When
  * the tab is hidden and notifications are allowed but this device has no push
  * subscription, shows a system notification instead (tagged per reminder, so a
  * push for the same reminder replaces rather than duplicates it). Also handles the
@@ -27,8 +29,13 @@ export function ReminderToasts() {
   const [due, setDue] = useState<DueReminder[]>([])
   const watcher = useRef<Watcher | null>(null)
   const notified = useRef(new Set<string>())
-  const firstButton = useRef<HTMLButtonElement>(null)
+  const region = useRef<HTMLDivElement>(null)
   const seenCount = useRef(0)
+  /** Where focus was when a reminder took it, to give it back after the last answer. */
+  const returnTo = useRef<HTMLElement | null>(null)
+  /** An answer was given from a card: the focus it held goes to the next card, or back. */
+  const answered = useRef(false)
+  const compact = useMediaQuery(COMPACT_REMINDER_QUERY)
 
   useEffect(() => {
     const w = startReminderWatcher((list) => {
@@ -54,22 +61,36 @@ export function ReminderToasts() {
 
   // Move focus to a newly arrived reminder, unless the user is typing somewhere
   // or working in an open dialog, menu or popover (the toast is still announced).
+  // After an answer the focus the card held goes to the next card, else back where it was.
   useEffect(() => {
-    if (due.length > seenCount.current && !keepFocus(document.activeElement as HTMLElement | null)) firstButton.current?.focus()
+    const active = document.activeElement as HTMLElement | null
+    const first = region.current?.querySelector<HTMLElement>('[data-reminder-first]')
+    // Focus is nowhere, or in a card (also one that just left).
+    const free = !active || active === document.body || !!region.current?.contains(active)
+    if (due.length > seenCount.current && !keepFocus(active)) {
+      if (!free) returnTo.current = active
+      first?.focus()
+    } else if (answered.current && free) (first ?? returnTo.current)?.focus()
+    answered.current = false
     seenCount.current = due.length
   }, [due])
 
   if (due.length === 0) return null
 
   const act = async (d: DueReminder, what: SnoozeChoice | 'dismiss') => {
+    answered.current = true
     if (what === 'dismiss') await dismissReminder(d.reminder.id)
     else await snoozeReminder(d.reminder.id, what)
     watcher.current?.poke()
   }
+  const shown = due.slice(0, compact ? 1 : 4)
+  const more = due.length - shown.length
+  const choices: [SnoozeChoice, string][] = [['10m', t('Snooze 10 min')], ['1h', t('1 hour')], ['tomorrow', t('Tomorrow 09:00')]]
+  const moreText = t('{n, plural, one {+# more reminder} other {+# more reminders}}', { n: more })
 
   return (
-    <ToastRegion live="assertive">
-      {due.slice(0, 4).map((d, i) => (
+    <ToastRegion live="assertive" regionRef={region}>
+      {shown.map((d, i) => (
         <div
           key={d.reminder.id}
           role="alertdialog"
@@ -83,25 +104,38 @@ export function ReminderToasts() {
           }}
         >
           <div className="flex items-start gap-2">
-            <span className="pt-0.5 text-muted"><Icon name="alarm-clock" /></span>
+            <span className="pt-0.5 text-muted pointer-coarse:pt-1.5"><Icon name="alarm-clock" /></span>
             <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openTaskInList(d.task)}>
-              <p className="line-clamp-2 user-text text-body font-medium">{d.task.title || t('Untitled')}</p>
-              <p className="text-meta text-muted">{tinyText(d.task) ?? t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
+              <p className={`${compact ? 'truncate' : 'line-clamp-2'} user-text text-body font-medium`}>{d.task.title || t('Untitled')}</p>
+              <p className={`text-meta text-muted ${compact ? 'truncate' : ''}`}>{tinyText(d.task) ?? t('Reminder · {instant}', { instant: dt.formatInstant(d.reminder.fire_at as number, 'datetime') })}</p>
             </button>
           </div>
-          <div className="mt-2 flex flex-wrap gap-1">
-            <button ref={i === 0 ? firstButton : undefined} type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '10m')}>{t('Snooze 10 min')}</button>
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, '1h')}>{t('1 hour')}</button>
-            <button type="button" className="ui-btn ui-btn--secondary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'tomorrow')}>{t('Tomorrow 09:00')}</button>
-            <div className="flex-1" />
-            <button type="button" className="ui-btn ui-btn--primary ui-btn--sm px-2 py-0.5 text-meta" onClick={() => void act(d, 'dismiss')}>{t('Dismiss')}</button>
-          </div>
+          {compact ? (
+            <div className="mt-2 flex items-center gap-2">
+              <p className="min-w-0 flex-1 truncate text-meta text-muted">{more > 0 && moreText}</p>
+              <Menu kind="menu" label={t('Snooze')} namedByContent trigger={t('Snooze')} triggerClassName="ui-btn ui-btn--secondary ui-btn--sm" triggerProps={{ 'data-reminder-first': '' }}>
+                {choices.map(([choice, label]) => <MenuItem key={choice} label={label} onSelect={() => void act(d, choice)} />)}
+              </Menu>
+              <button type="button" className="ui-btn ui-btn--primary ui-btn--sm" onClick={() => void act(d, 'dismiss')}>{t('Dismiss')}</button>
+            </div>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {choices.map(([choice, label], c) => (
+                <button key={choice} data-reminder-first={i + c === 0 ? '' : undefined} type="button" className={`${SMALL} ui-btn--secondary`} onClick={() => void act(d, choice)}>{label}</button>
+              ))}
+              <div className="flex-1" />
+              <button type="button" className={`${SMALL} ui-btn--primary`} onClick={() => void act(d, 'dismiss')}>{t('Dismiss')}</button>
+            </div>
+          )}
         </div>
       ))}
-      {due.length > 4 && <p className="pointer-events-auto text-right text-meta text-muted">{t('{n, plural, one {+# more reminder} other {+# more reminders}}', { n: due.length - 4 })}</p>}
+      {!compact && more > 0 && <p className="pointer-events-auto text-right text-meta text-muted">{moreText}</p>}
     </ToastRegion>
   )
 }
+
+/** The card's small buttons with a mouse. */
+const SMALL = 'ui-btn ui-btn--sm px-2 py-0.5 text-meta'
 
 /** A habit's reminder names its tiny version (habits-home D5): "One page is enough". */
 function tinyText(task: Task): string | null {
@@ -171,6 +205,12 @@ async function handleWorkerMessage(data: WorkerMessage, w: Watcher): Promise<voi
     }
   }
 }
+
+/**
+ * Where the reminder is the compact card (reminder-card-compact): a touch screen, whose
+ * 44 px buttons do not fit one row, and a window under 640 px, where the card spans the page.
+ */
+export const COMPACT_REMINDER_QUERY = '(pointer: coarse), (max-width: 39.99rem)'
 
 /** Whether a newly arrived reminder must leave focus where it is. */
 export function keepFocus(active: Pick<HTMLElement, 'tagName' | 'isContentEditable' | 'closest'> | null): boolean {

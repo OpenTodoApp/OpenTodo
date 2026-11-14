@@ -326,7 +326,7 @@ export function LabelRow({ label, labels, count, duplicate, route, drop, onDragS
   const groups = labelMenuGroups(label, labels, { edit: () => setPanelOpen(true), rename: startRename, move, pin: { checked: pinned, toggle: () => setFavourite('label', label.id, !pinned) } })
 
   return (
-    <div ref={row} data-label-row={label.id} data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
+    <div ref={row} data-label-row={label.id} data-menu-row data-drop-target={`label:${label.id}`} data-task-drop={taskDrop.label(label.id)} data-active={active || undefined} data-find-active={findActive || undefined}
       className={`group relative rounded-control ${swap ? 'ui-swap-row ' : ''}data-drop-active:ring-2 data-drop-active:ring-accent ${active ? 'bg-selected-row' : 'hover:bg-hover'}${findActive ? ' ring-2 ring-focus' : ''}`}>
       {drop?.id === label.id && <span aria-hidden="true" className={`pointer-events-none absolute inset-x-1 h-0.5 rounded-control bg-accent ${drop.zone === 'before' ? '-top-px' : '-bottom-px'}`} />}
       <div className="flex items-center gap-1 pr-1">

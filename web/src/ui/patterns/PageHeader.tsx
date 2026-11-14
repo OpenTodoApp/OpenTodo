@@ -7,7 +7,10 @@
 // header step, the lead line beside it, the actions, the overflow menu and Help. The
 // header stays visible while the content scrolls. Below 768 px the shell's bar takes
 // the title and the actions, except on a day page, whose title, date and briefing stay
-// in the page under the bar and scroll with it (precision-phone D1).
+// in the page under the bar and scroll with it (precision-phone D1). A header narrower
+// than 40 rem (a tablet beside the sidebar, a list beside the docked task panel) keeps
+// its row as the phone bar does: Help joins the menu, the title gives way before the
+// actions wrap, and the lead line shows whole or not at all (tablet-header-room).
 import { useEffect, useMemo, useState, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { openHelp } from '../../lib/helpRequest'
 import { Menu } from '../overlay/Menu'
@@ -19,6 +22,7 @@ import { setPageBar } from './pageBar'
 import { useSidebarToggle } from './sidebarToggle'
 import { Tooltip } from '../Tooltip'
 import { DESKTOP_HEADER_QUERY, useMediaQuery } from '../useMediaQuery'
+import { useCut, useNarrow } from '../useHeaderRoom'
 import { t } from '../../lib/i18n'
 
 export type PageWidth = 'list' | 'form' | 'wide' | 'full'
@@ -40,6 +44,8 @@ export interface PageBodyProps extends HTMLAttributes<HTMLDivElement> {
   flush?: boolean
   /** The frame (page-rhythm D3): standalone unless the page offers a layout switch; a `full` page is always a layout page. */
   frame?: PageFrame
+  /** The page's element, for a page that measures its column (tablet-header-room). */
+  ref?: Ref<HTMLDivElement>
   children: ReactNode
 }
 
@@ -100,6 +106,19 @@ export interface PageHeaderProps {
 /** The title of a day page at the display step, of every other page at the header step (precision-shell D1). */
 const TITLE = { day: 'text-display text-strong', tool: 'text-h3 text-strong' } as const
 
+/** In a narrow header the title asks for 6 rem at most before the actions wrap under it, then takes the room up to its whole text (tablet-header-room D2). */
+const NARROW_TITLE = 'basis-24 grow-[999] max-w-max'
+
+/**
+ * A tool page's lead line (tablet-header-room D3): it takes the room the title and the
+ * actions leave and shows whole or not at all, never cut. A lead holding a button (the
+ * calendar's "Re-plan") keeps its width, so it is never hidden.
+ */
+function LeadLine({ children }: { children: ReactNode }) {
+  const [ref, cut] = useCut<HTMLDivElement>()
+  return <div ref={ref} className={`min-w-0 flex-1 basis-0 truncate text-meta text-muted has-[button]:min-w-fit ${cut ? 'invisible' : ''}`} data-page-lead data-page-meta>{children}</div>
+}
+
 /** The sidebar toggle, first in every header from 1024 px, where the sidebar collapses (precision-shell D2). */
 function SidebarToggleButton() {
   const toggle = useSidebarToggle()
@@ -127,6 +146,10 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   // A day page on a phone keeps its title, date and briefing in the page, under a bar
   // that holds only the menu button and the actions (precision-phone D1).
   const phoneDay = day && !ownRow
+  // The header's own width decides how much its row holds (tablet-header-room D1).
+  const [room, measuredNarrow] = useNarrow<HTMLElement>()
+  const narrow = ownRow && measuredNarrow
+  const narrowTitle = narrow && !day ? ` ${NARROW_TITLE}` : ''
   // The bar takes the title, Back, the overflow menu, the page menu and Help; the
   // page's own actions stay in the page as a wrapping row, so nothing is clipped at 360 px,
   // unless the page fitted them into the bar's two slots (phone-v2 D1).
@@ -144,17 +167,17 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
     </a>
   )
   const heading = typeof title === 'string'
-    ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title="" />
-    : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none`} data-page-title>{title}</H>
+    ? <TruncatedText as={H} text={title} elRef={titleRef} tabIndex={titleTabIndex} className={`min-w-0 ${TITLE[day ? 'day' : 'tool']} outline-none${narrowTitle}`} data-page-title="" />
+    : <H ref={titleRef} tabIndex={titleTabIndex} className={`flex min-w-0 items-center ${TITLE[day ? 'day' : 'tool']} outline-none${narrowTitle}`} data-page-title>{title}</H>
   // The lead line: beside a day page's title at the prose step, beside a tool page's title at the metadata step;
   // there it takes the room that is left (basis 0), so a narrow head wraps its actions under the title, never sideways.
   // A lead holding a button (the calendar's "2 blocks behind · Re-plan") is never cut: it keeps its width and the tools wrap instead.
-  const lead = (ownRow || phoneDay) && meta && <div className={`min-w-0 text-muted ${day ? 'text-prose' : 'flex-1 basis-0 truncate text-meta has-[button]:min-w-fit'}`} data-page-lead data-page-meta>{meta}</div>
+  const lead = (ownRow || phoneDay) && meta && (day ? <div className="min-w-0 text-prose text-muted" data-page-lead data-page-meta>{meta}</div> : <LeadLine>{meta}</LeadLine>)
   // At most the row's width: actions longer than a line (the calendar's range, view switch and
   // menus in German or French at 768 px) wrap inside it instead of pushing the page sideways.
-  const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} /></div>
+  const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} helpInMenu={narrow} /></div>
   return (
-    <header data-page-header data-page-head={day ? 'day' : 'tool'} data-testid={testId}
+    <header ref={room} data-page-header data-page-head={day ? 'day' : 'tool'} data-page-narrow={narrow || undefined} data-testid={testId}
       className={`${sticky && !phoneDay ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
       {/* The phone's day head scrolls with the list; the bar above it stays (precision-phone D1). */}
       {phoneDay && <>
@@ -207,7 +230,7 @@ export function PageBarTitle({ children }: { children: ReactNode }) {
 
 /**
  * The right side of a page header or of the phone bar: actions, the overflow menu, Help.
- * `helpInMenu` (the phone bar, phone-header-room): Help is the last item of the page's
+ * `helpInMenu` (the phone bar, phone-header-room; a narrow header, tablet-header-room): Help is the last item of the page's
  * menu, so the title gets its room; a page without a menu keeps the button.
  */
 export function PageActions({ actions, overflow, menu, help, helpInMenu = false }: Pick<PageHeaderProps, 'actions' | 'overflow' | 'menu' | 'help'> & { helpInMenu?: boolean }) {
