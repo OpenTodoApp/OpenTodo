@@ -2,10 +2,10 @@
 // projects, sections, subtasks, comments, reminders, views, settings) and captures
 // the screenshots used by README.md and the website.
 //
-//   node scripts/screenshots.mjs [png-dir] [webp-dir]
+//   node scripts/screenshots.mjs [webp-dir]
 //
-// png-dir  (default docs/screenshots)     PNGs referenced by README.md
-// webp-dir (default docs/screenshots/site) every shot as WebP for the website (site bundle `shots/`)
+// webp-dir (default docs/screenshots/site) every shot as WebP for the website (site bundle `shots/`).
+// A shot that looks the same as the file already there is not rewritten (scripts/same-image.mjs).
 
 //
 // Run it against an EMPTY data directory: it creates the owner account.
@@ -16,18 +16,14 @@ const { chromium } = await import('playwright').catch(async () => {
   const { execSync } = await import('node:child_process')
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
+import { writeIfChanged } from './same-image.mjs'
 import { startFakeLLM } from './fake-llm.mjs'
 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
-const pngDir = process.argv[2] ?? 'docs/screenshots'
-const webpDir = process.argv[3] ?? 'docs/screenshots/site'
+const webpDir = process.argv[2] ?? 'docs/screenshots/site'
 const only = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
-// Shots also written as PNG (README.md embeds these).
-const PNG = new Set(['today', 'project', 'mobile-dark', 'day'])
-// Shots the website does not use (README only).
-const NO_WEBP = new Set(['day'])
-mkdirSync(pngDir, { recursive: true }); mkdirSync(webpDir, { recursive: true })
+mkdirSync(webpDir, { recursive: true })
 
 const PASSWORD = 'correct horse battery staple'
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {})
@@ -63,16 +59,14 @@ const settle = (p, ms = 500) => p.waitForTimeout(ms)
 // Chromium encodes WebP through a canvas, so no image tooling is needed.
 const enc = await (await browser.newContext()).newPage()
 async function save(name, png) {
-  if (PNG.has(name)) writeFileSync(`${pngDir}/${name}.png`, png)
-  if (NO_WEBP.has(name)) return console.log('  shot', name)
   const b64 = await enc.evaluate(async (src) => {
     const img = new Image(); img.src = 'data:image/png;base64,' + src; await img.decode()
     const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight
     c.getContext('2d').drawImage(img, 0, 0)
     return c.toDataURL('image/webp', 0.78).split(',')[1]
   }, png.toString('base64'))
-  writeFileSync(`${webpDir}/${name}.webp`, Buffer.from(b64, 'base64'))
-  console.log('  shot', name)
+  const wrote = await writeIfChanged(enc, `${webpDir}/${name}.webp`, Buffer.from(b64, 'base64'))
+  console.log('  shot', name, wrote ? '' : '(unchanged)')
 }
 const want = (name) => !only || only.has(name)
 const shot = async (p, name, opts = {}) => { if (want(name)) await save(name, await p.screenshot(opts)) }
@@ -315,8 +309,6 @@ await go(page, '/week', () => page.getByRole('button', { name: 'Week' }).first()
 await page.getByRole('button', { name: 'Hide task list' }).click().catch(() => {})
 await settle(page, 400); await shot(page, 'week')
 await page.getByRole('button', { name: /Show task list/ }).click().catch(() => {})
-await go(page, '/day', () => page.getByRole('button', { name: 'Day' }).first().waitFor())
-await shot(page, 'day')
 
 // Filters and saved views
 await go(page, '/views/new', () => page.getByLabel('Filter query').waitFor())
