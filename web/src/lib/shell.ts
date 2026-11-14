@@ -13,11 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-<<<<<<< HEAD
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background'
-=======
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'pull-refresh'
->>>>>>> worktree-agent-a327148a1a1e3624c
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -108,18 +104,15 @@ export interface OpenTodoShell {
   saveFile?(json: string): Promise<string> | string
   /** shell-repairs D5: the platform's own feedback for a `ShellHaptic`; an unknown kind is ignored. */
   haptic?(kind: string): void
-<<<<<<< HEAD
   /** shell-reminders-on D3: opens the system page where exact alarms are allowed (Android, the visible app). */
   openAlarmSettings?(): void
   /** shell-reminders-on D4: a background run's web app is done; the shell ends the run. */
   backgroundDone?(): void
-=======
   /**
    * pull-to-sync D4: the page showing handles a pull down itself, so a shell with its
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
    */
   pullHandled?(): void
->>>>>>> worktree-agent-a327148a1a1e3624c
 }
 
 declare global {

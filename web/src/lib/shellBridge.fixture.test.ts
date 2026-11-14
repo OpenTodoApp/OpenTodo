@@ -298,6 +298,8 @@ function capabilities() {
     visibleOnly, backgroundOnly, both,
     methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background' },
     expect: { visible, background, called },
+  }
+}
 
 /** pull-to-sync D4: the call that tells a shell with its own pull to refresh that the page handles the pull, captured from the real call. */
 function pull() {
