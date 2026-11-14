@@ -1,0 +1,1 @@
+- On a phone, a swipe from the left edge goes back on a page with Back (a task, a note, a nested page) and opens the menu only on top-level pages; the installed web app on iPhone and iPad keeps the system back swipe (edge-swipe-back, #1323).

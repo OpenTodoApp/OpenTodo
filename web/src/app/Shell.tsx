@@ -1,7 +1,6 @@
-import { watchEdgeSwipe } from './edgeSwipe'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useHabitForm } from './habits/habitFormStore'
-import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, usePageBar, useOverlayDepth } from '../ui'
+import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { User } from '../lib/types'
@@ -170,7 +169,16 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
   const drawerClosed = useRef(drawer.closed)
   drawerClosed.current = drawer.closed
-  useEffect(() => watchEdgeSwipe(() => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]')), [])
+  // A page with Back goes back, a top-level page opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe.
+  // Loaded after the first paint: the gesture is not part of the first load.
+  useEffect(() => {
+    let stop: (() => void) | undefined
+    let gone = false
+    void import('./edgeWatch').then(({ watchEdge }) => {
+      if (!gone) stop = watchEdge(() => pageBar()?.back?.onClick, () => setSidebarOpen(true), () => drawerClosed.current && !document.querySelector('[aria-modal="true"]'))
+    })
+    return () => { gone = true; stop?.() }
+  }, [])
   // Changes the server refused after a role change (project-sharing): a toast, which never moves the page (app-shell "Notices are toasts").
   const { rejected } = useSyncStatus()
   useEffect(() => {
