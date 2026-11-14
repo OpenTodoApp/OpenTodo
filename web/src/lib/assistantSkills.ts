@@ -40,6 +40,14 @@ export async function loadSkills(): Promise<AssistantSkill[]> {
   return cache
 }
 
+/** Skills that exist only for habits (habits-assistant D5). */
+const HABIT_SKILLS = new Set(['start-habit', 'habit-check'])
+
+/** The list for a Habits choice: off leaves out the habit skills, as the server does on the next load. */
+export function skillsForHabits(list: AssistantSkill[], choice: 'on' | 'off' | 'undecided' | undefined): AssistantSkill[] {
+  return choice === 'off' ? list.filter((s) => !HABIT_SKILLS.has(s.id)) : list
+}
+
 /** The skills, loaded once per session and shared. */
 export function useAssistantSkills(enabled = true): AssistantSkill[] {
   const [skills, setSkills] = useState<AssistantSkill[]>(cache ?? [])

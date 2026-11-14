@@ -9,6 +9,7 @@ import { resolveDate } from '../stepData'
 import { isNull, parseStepActions, planActions, type PlanContext } from './actions'
 import { PER_CALL } from './tools'
 import { aiStep } from './ai'
+import { findHabits, logHabit } from './habits'
 import { filterNotes, noteStep, sortNotes, writableNote } from './notes'
 import { clearNote, dateStep, emailStep, notifyStep, projectFromTemplate, projectOf, quickAddLine, ruleFiredNotice, setFocus, trackedTime, webhookStep } from './more'
 import { Ended, fail, none, num, str, tasksVal, workspaceArg, type ExecResult, type Inputs, type RunState } from './state'
@@ -68,6 +69,8 @@ export async function exec(st: RunState, s: RoutineStep, inputs: Inputs, at: num
     case 'webhook': return webhookStep(st, s, inputs)
     case 'ask_ai': case 'summarise': return aiStep(st, s, inputs, at)
     case 'email_me': return emailStep(st, s, inputs)
+    case 'find_habits': return findHabits(st, s)
+    case 'log_habit': return logHabit(st, s, inputs)
   }
   throw fail('invalid_argument', `${s.kind} is not available on this device yet`)
 }

@@ -72,6 +72,7 @@ A task chosen by hand is for the rare fixed target (a log or list kept in one ta
 - **Notes and text:** Find notes, Get a specific note, Get the daily note, Create note, Change notes, Turn into task (see [Notes in routines](#notes-in-routines)), Get note text (the text, or a note's title), Add to a note, Clear a note (of a task, of a project you choose, or of a note), Split into lines (optionally only the open checkboxes, `- [ ] …`), Join, Format text (`{a}` places the output of step `a`), Find and replace.
 - **Lists and logic:** Pick, Sort, Count, If/Otherwise, Repeat for each, Stop; each takes tasks, notes or lines alike.
 - **Time and focus:** Get the date (today, tomorrow or in N days), Start timer (several tasks in turn leave the last one running), Stop timer, Tracked time, Set today's focus.
+- **Habits** (while [Habits](habits.md) is on): Find habits (your open habits, or only those at risk or back on track, or with a streak of at least N), Log a habit (done, the tiny version or skipped, today or another day, with an optional note), so an evening routine can nudge about a habit missed twice and a webhook from Home Assistant can log a walk. A routine that holds them keeps running while Habits is off.
 - **Communication:** Notify me (in the app, and through your [delivery channels](notification-channels.md)), Send a webhook (one of your [webhooks](webhooks.md)), Email me (your own verified address), Email project members (in a [shared project's routine](#routines-of-a-shared-project)).
 - **AI:** Ask AI, Summarise (see [AI steps](#ai-steps)).
 

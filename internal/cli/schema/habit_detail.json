@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "habit_detail",
+  "description": "One habit and its scheduled days, newest first, as GET /api/v1/habits/{id} returns it (OpenSpec habits-assistant).",
+  "type": "object",
+  "required": ["habit", "days", "today", "server_time"],
+  "properties": {
+    "habit": {"$ref": "#/schemas/habit"},
+    "days": {"type": "array", "items": {"type": "object", "required": ["date", "state"], "properties": {
+      "date": {"type": "string"},
+      "state": {"type": "string", "enum": ["done", "tiny", "skipped", "missed", "pending", "upcoming"]},
+      "untrusted_text": {"type": "object", "properties": {"note": {"type": "string"}}}
+    }}},
+    "from": {"type": "string"},
+    "to": {"type": "string"},
+    "today": {"type": "string"},
+    "timezone": {"type": "string"},
+    "server_time": {"type": "string"}
+  }
+}

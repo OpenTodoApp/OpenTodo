@@ -23,6 +23,7 @@ export const ENUM_LABEL = translatedMap<string>({
   deep: msg('Deep'), medium: msg('Medium'), low: msg('Low'), due: msg('date'), deadline: msg('deadline'), priority: msg('priority'), created: msg('creation'),
   title: msg('title'), text: msg('text'), asc: msg('ascending'), desc: msg('descending'), start: msg('the start'), end: msg('the end'),
   lines: msg('lines'), short: msg('short'), changed: msg('last change'),
+  at_risk: msg('at risk'), back_on_track: msg('back on track'), done: msg('done'), tiny: msg('the tiny version'), skipped: msg('skipped'),
 })
 export const PERIOD_LABEL = translatedMap<string>({ today: msg('today'), this_week: msg('this week'), last_week: msg('last week'), this_month: msg('this month') })
 const COMPARE_LABEL = translatedMap<string>({

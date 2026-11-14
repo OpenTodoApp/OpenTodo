@@ -169,6 +169,34 @@
           "(type)": "ref:frame"
         }
       },
+      "habits list": {
+        "output": {
+          "(type)": "array"
+        }
+      },
+      "habits log": {
+        "args": {
+          "ref": "required"
+        },
+        "flags": {
+          "clear": "bool",
+          "date": "string",
+          "note": "string",
+          "skip": "bool",
+          "tiny": "bool"
+        },
+        "output": {
+          "(type)": "ref:habit_detail"
+        }
+      },
+      "habits show": {
+        "args": {
+          "ref": "required"
+        },
+        "output": {
+          "(type)": "ref:habit_detail"
+        }
+      },
       "help": {
         "args": {
           "command": "optional"
@@ -1085,6 +1113,44 @@
         "title": "string",
         "until_date": "string|null",
         "weekdays": "string"
+      },
+      "habit": {
+        "(type)": "object",
+        "at_risk": "boolean",
+        "back_on_track": "boolean",
+        "best_streak": "integer",
+        "current_date": "string|null",
+        "day_part": "string|null",
+        "encrypted": "boolean",
+        "graduated_at": "string|null",
+        "id": "string",
+        "kept": "integer",
+        "kept_days": "integer",
+        "kept_of": "integer",
+        "overdue": "boolean",
+        "pending": "boolean",
+        "project_id": "string|null",
+        "rule": "string",
+        "streak": "integer",
+        "strength": "integer",
+        "untrusted_text": "object",
+        "untrusted_text.anchor": "string",
+        "untrusted_text.tiny": "string",
+        "untrusted_text.title": "string"
+      },
+      "habit_detail": {
+        "(type)": "object",
+        "days": "array",
+        "days[].date": "string",
+        "days[].state": "string",
+        "days[].untrusted_text": "object",
+        "days[].untrusted_text.note": "string",
+        "from": "string",
+        "habit": "ref:habit",
+        "server_time": "string",
+        "timezone": "string",
+        "to": "string",
+        "today": "string"
       },
       "import_job": {
         "(type)": "object",
@@ -2698,6 +2764,9 @@
         "items[].fields[].id": "string",
         "items[].fields[].value": "string|null",
         "items[].flow_mode": "string?",
+        "items[].habit": "boolean?",
+        "items[].habit_anchor": "string?",
+        "items[].habit_tiny": "string?",
         "items[].id": "string?",
         "items[].labels": "array?",
         "items[].location": "object|null?",
@@ -2747,6 +2816,15 @@
         "working_day.start": "string"
       }
     },
+    "get_habit": {
+      "arguments": {
+        "from": "string?",
+        "id": "string",
+        "timezone": "string?",
+        "to": "string?"
+      },
+      "kind": "read"
+    },
     "get_note": {
       "arguments": {
         "id": "string",
@@ -2788,6 +2866,20 @@
         "server_time": "string",
         "timezone": "string",
         "to": "string"
+      }
+    },
+    "list_habits": {
+      "arguments": {
+        "include_graduated": "boolean?",
+        "timezone": "string?"
+      },
+      "kind": "read",
+      "result": {
+        "_notice": "string",
+        "habits": "array",
+        "server_time": "string",
+        "timezone": "string",
+        "today": "string"
       }
     },
     "list_icons": {
@@ -2966,6 +3058,16 @@
         "workspaces[].role": "string",
         "workspaces[].untrusted_text": "object"
       }
+    },
+    "log_habit": {
+      "arguments": {
+        "date": "string?",
+        "id": "string",
+        "note": "string?",
+        "state": "string",
+        "timezone": "string?"
+      },
+      "kind": "write"
     },
     "log_time": {
       "arguments": {
@@ -3225,6 +3327,9 @@
         "updates[].fields[].id": "string",
         "updates[].fields[].value": "string|null",
         "updates[].flow_mode": "string?",
+        "updates[].habit": "boolean?",
+        "updates[].habit_anchor": "string?",
+        "updates[].habit_tiny": "string?",
         "updates[].id": "string",
         "updates[].labels": "array?",
         "updates[].location": "object|null?",
@@ -4603,6 +4708,15 @@
       "statuses": [
         "200"
       ]
+    },
+    "GET /api/v1/habits": {
+      "policy": "signed-in",
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/habits/{id}": {
+      "policy": "signed-in"
     },
     "GET /api/v1/health": {
       "policy": "public",
@@ -8504,6 +8618,9 @@
         "encrypted": "boolean",
         "id": "string"
       }
+    },
+    "POST /api/v1/habits/{id}/log": {
+      "policy": "signed-in"
     },
     "POST /api/v1/import": {
       "policy": "signed-in",

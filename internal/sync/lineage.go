@@ -229,3 +229,27 @@ func remainingOf(p piece, end string, used int, except map[string]bool, today st
 	}
 	return n
 }
+
+// LineagePiece is one series of a lineage as Lineage lists it: its id, its
+// stored row (nil when the lineage names a series this user cannot see) and
+// the first date it produces occurrences on ("" for the root).
+type LineagePiece struct {
+	ID    string
+	Row   Entity
+	Start string
+	// End is the last date it produces occurrences on: the day before the next
+	// piece's start, "" for the last piece.
+	End string
+}
+
+// Lineage lists the lineage of the series id (stored row row) among tasks,
+// root first, as web lineageOf does (habit numbers on the server read it,
+// OpenSpec change habits-assistant D1).
+func Lineage(id string, row Entity, tasks []Entity) []LineagePiece {
+	pieces := lineageOf(id, row, tasks)
+	out := make([]LineagePiece, len(pieces))
+	for i, p := range pieces {
+		out[i] = LineagePiece{ID: p.id, Row: p.row, Start: p.start, End: pieceEnd(pieces, i)}
+	}
+	return out
+}

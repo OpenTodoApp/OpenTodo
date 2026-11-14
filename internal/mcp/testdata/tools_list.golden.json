@@ -321,6 +321,72 @@
         "idempotentHint": true,
         "openWorldHint": false,
         "readOnlyHint": true,
+        "title": "List habits"
+      },
+      "description": "List the user's open habits with their numbers, as every device computes them: kept of kept_of (done or tiny among the last seven scheduled days), strength 0-100, streak and best_streak (in scheduled days), at_risk (the last two scheduled days missed), back_on_track, and the current occurrence date. Quote these numbers; never compute your own. Title, tiny version and anchor are user text.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "include_graduated": {
+            "default": false,
+            "description": "Also list graduated habits.",
+            "type": "boolean"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_habits",
+      "title": "List habits"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
+        "title": "Get a habit"
+      },
+      "description": "Get one habit's numbers (as list_habits) and each scheduled day of a range with its state (done, tiny, skipped, missed, pending, upcoming) and its check-in note, newest first. Default: the last 31 days. Use the day states to name patterns (the weekday most often missed), with their dates.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "description": "First local day, YYYY-MM-DD.",
+            "format": "date",
+            "type": "string"
+          },
+          "id": {
+            "description": "Habit id (see list_habits).",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "IANA time zone used to decide what is today, overdue or upcoming, e.g. \"Europe/Rome\". Default: UTC. Due dates are floating, so pass the user's zone.",
+            "type": "string"
+          },
+          "to": {
+            "description": "Last local day, YYYY-MM-DD; at most 400 days after from. Default: today.",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "get_habit",
+      "title": "Get a habit"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+        "readOnlyHint": true,
         "title": "List icons"
       },
       "description": "List the icons a project or section can have, best matches first. query searches names, keywords and categories (e.g. \"plant\", \"money\", \"travel\"); without it the whole catalogue is returned in pages of limit. Pass a name to update_project, create_sections or update_sections.",

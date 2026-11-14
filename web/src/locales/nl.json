@@ -7721,5 +7721,18 @@
   "Note saved": "Notitie opgeslagen",
   "Repeats after completion, so made a task, not a habit: {titles}": "Herhaalt na voltooiing, dus een taak in plaats van een gewoonte: {titles}",
   "with a note": "met notitie",
-  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# check-in} other {# check-ins}}"
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# check-in} other {# check-ins}}",
+  "Find habits": "Gewoonten zoeken",
+  "Your open habits, or those at risk or back on track": "Je open gewoonten, of die in gevaar of weer op koers",
+  "habit, streak, at risk, routine": "gewoonte, reeks, in gevaar, routine",
+  "Find habits {only}": "Gewoonten zoeken {only}",
+  "the habits": "de gewoonten",
+  "Log a habit": "Gewoonte vastleggen",
+  "Done, the tiny version or skipped, for a day": "Gedaan, de mini-versie of overgeslagen, voor een dag",
+  "habit, check in, done, log, track": "gewoonte, afvinken, gedaan, vastleggen, bijhouden",
+  "Log {habit} as {state} on {date}": "{habit} op {date} vastleggen als {state}",
+  "Streak of at least": "Reeks van minstens",
+  "Log as": "Vastleggen als",
+  "back on track": "weer op koers",
+  "the tiny version": "de mini-versie"
 }

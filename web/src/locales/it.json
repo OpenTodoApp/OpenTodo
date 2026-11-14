@@ -7721,5 +7721,18 @@
   "Note saved": "Nota salvata",
   "Repeats after completion, so made a task, not a habit: {titles}": "Si ripete dopo il completamento, quindi è un’attività, non un’abitudine: {titles}",
   "with a note": "con una nota",
-  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# check-in} other {# check-in}}"
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# check-in} other {# check-in}}",
+  "Find habits": "Trova abitudini",
+  "Your open habits, or those at risk or back on track": "Le tue abitudini aperte, o quelle a rischio o di nuovo in carreggiata",
+  "habit, streak, at risk, routine": "abitudine, serie, a rischio, routine",
+  "Find habits {only}": "Trova abitudini {only}",
+  "the habits": "le abitudini",
+  "Log a habit": "Registra un'abitudine",
+  "Done, the tiny version or skipped, for a day": "Fatto, la versione minima o saltato, per un giorno",
+  "habit, check in, done, log, track": "abitudine, spunta, fatto, registra, traccia",
+  "Log {habit} as {state} on {date}": "Registra {habit} come {state} il {date}",
+  "Streak of at least": "Serie di almeno",
+  "Log as": "Registra come",
+  "back on track": "di nuovo in carreggiata",
+  "the tiny version": "la versione minima"
 }

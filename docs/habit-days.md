@@ -37,3 +37,5 @@ A past scheduled day in the thread or in the month grid on the habit's page open
 ## Graduate a habit
 
 When a habit has stuck, **Graduate** on its page takes it out of every list, the calendar and reminders, and keeps its history. The Habits screen's **Graduated** group lists it with how long it was kept ("Kept for 94 days"). **Resume** brings it back from today: the days in between read as not scheduled, not missed. Graduating never completes or deletes the task.
+
+Assistants, scripts, the terminal and routines log habits too: [Habits from elsewhere](habits-elsewhere.md).

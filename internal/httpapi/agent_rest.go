@@ -44,6 +44,8 @@ const (
 	agentStartTime      = "start_time"
 	agentStopTime       = "stop_time"
 	agentPatchTime      = "patch_time"
+	// OpenSpec change habits-assistant (design D3).
+	agentLogHabit = "log_habit"
 )
 
 // agentRoute names the agent content route a request matched, or "".
@@ -90,6 +92,8 @@ func agentRoute(r *http.Request) string {
 		return agentStopTime
 	case "PATCH /api/v1/time-entries/{id}":
 		return agentPatchTime
+	case "POST /api/v1/habits/{id}/log":
+		return agentLogHabit
 	}
 	return ""
 }
@@ -167,6 +171,8 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 		}
 	case agentDeleteTask:
 		calls = []agenttools.ToolCall{{Name: "trash_tasks", Args: mustJSON(map[string]any{"ids": []string{id}})}}
+	case agentLogHabit:
+		calls = agentLogHabitCalls(id, body)
 	case agentPatchTask:
 		var existing opsync.Entity
 		if existing, err = s.sync.Get(ctx, u.ID, "task", id); err != nil {
@@ -203,6 +209,10 @@ func (s *Server) handleAgentWrite(w http.ResponseWriter, r *http.Request, u *aut
 	results, err := s.agentTools.CallAll(ctx, caller, calls)
 	if err != nil {
 		s.writeAgentError(w, err)
+		return
+	}
+	if route == agentLogHabit {
+		s.writeHabit(w, r, http.StatusOK)
 		return
 	}
 	s.writeAgentResult(w, r, route, id, results)

@@ -10,7 +10,7 @@ import (
 
 // assistant-skills 1.1: the catalogue matches the spec and stays inside the registry.
 func TestSkillCatalogue(t *testing.T) {
-	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down", "capture", "rewrite-task", "find-slot", "project-next", "brief-today"}
+	want := []string{"idea-to-project", "plan-week", "weekly-review", "triage-inbox", "break-down", "capture", "start-habit", "habit-check", "rewrite-task", "find-slot", "project-next", "brief-today"}
 	var ids []string
 	seen := map[string]bool{}
 	c := Caller{Scope: ScopeAgent, OwnerAllowsWrites: true, UserAllowsWrites: true}
@@ -54,6 +54,23 @@ func TestSkillCatalogue(t *testing.T) {
 	cp, _ := SkillByID("capture")
 	if cp.Allows("trash_tasks") || !cp.Allows("create_tasks") || !cp.Allows("search_tasks") || !cp.Allows("create_project") || cp.Result != ResultChanges {
 		t.Fatalf("capture tools = %v", cp.Tools)
+	}
+	// Off means off (habits-assistant D5): no habit skill, and capture logs no habit.
+	for _, on := range []bool{true, false} {
+		list := SkillsFor(on)
+		var hasCheck, captureLogs bool
+		for _, s := range list {
+			hasCheck = hasCheck || s.ID == "habit-check"
+			if s.ID == "capture" {
+				captureLogs = s.Allows("log_habit") && strings.Contains(s.Instructions, "list_habits")
+			}
+		}
+		if hasCheck != on || captureLogs != on || len(list) != len(Skills)-map[bool]int{true: 0, false: 2}[on] {
+			t.Fatalf("habits %v: check %v, capture logs %v, %d skills", on, hasCheck, captureLogs, len(list))
+		}
+	}
+	if cp.Allows("log_habit") {
+		t.Fatal("the catalogue's capture logs habits for everyone")
 	}
 	if n := WorkdayNote(9, 17, 420); !strings.Contains(n, "09:00") || !strings.Contains(n, "17:00") || !strings.Contains(n, "420 minutes") {
 		t.Fatalf("workday note = %q", n)

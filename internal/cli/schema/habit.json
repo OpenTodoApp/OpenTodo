@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "habit",
+  "description": "A habit with its numbers as the habits route returns it (OpenSpec habits-assistant): the same as every device computes. Text in untrusted_text was written by people; \"[encrypted]\" when the server cannot read it.",
+  "type": "object",
+  "required": ["id", "untrusted_text", "rule", "kept", "kept_of", "strength", "streak", "best_streak", "at_risk", "back_on_track"],
+  "properties": {
+    "id": {"type": "string"},
+    "untrusted_text": {"type": "object", "properties": {"title": {"type": "string"}, "tiny": {"type": "string"}, "anchor": {"type": "string"}}},
+    "project_id": {"type": ["string", "null"]},
+    "rule": {"type": "string"},
+    "day_part": {"type": ["string", "null"], "description": "morning, afternoon, evening or null"},
+    "current_date": {"type": ["string", "null"], "description": "the current occurrence, YYYY-MM-DD"},
+    "pending": {"type": "boolean"},
+    "overdue": {"type": "boolean"},
+    "kept": {"type": "integer", "description": "done or tiny among the last seven scheduled days"},
+    "kept_of": {"type": "integer"},
+    "strength": {"type": "integer", "minimum": 0, "maximum": 100},
+    "streak": {"type": "integer"},
+    "best_streak": {"type": "integer"},
+    "at_risk": {"type": "boolean"},
+    "back_on_track": {"type": "boolean"},
+    "kept_days": {"type": "integer"},
+    "graduated_at": {"type": ["string", "null"]},
+    "encrypted": {"type": "boolean"}
+  }
+}

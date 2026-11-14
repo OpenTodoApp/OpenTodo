@@ -8,7 +8,7 @@ import type { Catalogue } from './catalogue'
 
 /** Step kinds that act on personal things (internal/ruleval NotInShared). */
 export const NOT_IN_SHARED: ReadonlySet<string> = new Set([
-  'favourite', 'set_focus', 'start_timer', 'stop_timer', 'tracked_time',
+  'favourite', 'set_focus', 'start_timer', 'stop_timer', 'tracked_time', 'find_habits', 'log_habit',
   'create_project', 'update_project', 'project_from_template', 'create_labels',
   'email_me', 'webhook',
 ])

@@ -114,6 +114,8 @@ var NotInShared = map[string]bool{
 	"favourite": true, "set_focus": true, "start_timer": true, "stop_timer": true, "tracked_time": true,
 	"create_project": true, "update_project": true, "project_from_template": true, "create_labels": true,
 	"email_me": true, "webhook": true,
+	// Habits belong to one member (habits-assistant).
+	"find_habits": true, "log_habit": true,
 }
 
 // Availability is whether a step can run and, when not, why and where to fix it.

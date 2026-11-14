@@ -1,0 +1,31 @@
+{
+  "name": "habit-check",
+  "title": "How are my habits? answers from the tools and states no number the tools did not return (a new habit has none above zero)",
+  "skill": "habit-check",
+  "seed": {
+    "tasks": [
+      {
+        "key": "read",
+        "title": "Read",
+        "due": 0,
+        "recurrence": "every day",
+        "habit": true
+      }
+    ]
+  },
+  "turns": [
+    {
+      "say": "How are my habits going?",
+      "expect": {
+        "changeset": false,
+        "no_text": [
+          "\\b[1-9]\\d?\\s*(?:%|percent)",
+          "\\b[1-9]\\d*[- ]day streak",
+          "streak of [1-9]",
+          "\\b[1-9] (?:of|out of) [1-9]",
+          "strength (?:is |of )?[1-9]"
+        ]
+      }
+    }
+  ]
+}

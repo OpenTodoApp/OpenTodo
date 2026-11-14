@@ -365,6 +365,16 @@ ot objectives delete 3fa1 [--yes]
 
 Weeks are ISO weeks starting on Monday, taken from this machine's date. A period holds at most 5 open objectives: a sixth exits 1 with `too_many_objectives`. `add`, `done`, `undone`, `edit` and `delete` write, so `--dry-run`, `--read-only` and token scope apply (a `read` or `agent` token exits 5). `--json` prints the [`objective`](#machine-readable-help-ot-schema) objects. On an encrypted account titles are decrypted after `ot encryption unlock` and print as `[encrypted]` otherwise; adding or editing a title needs the key (exit 5 `encryption_enabled` without it).
 
+## Habits
+
+```sh
+ot habits                                    # open habits with kept, strength and streak
+ot habits show Run                           # one habit's last 31 days, states and notes
+ot habits log Run --note "5k"                # today done; --tiny, --skip or --clear, --date yesterday
+```
+
+The numbers are the server's, the same as every device's after sync. Each command takes `--json`.
+
 ## Issue connections
 
 Your [issue import](issue-import.md) connections, once the server owner has turned the feature on:

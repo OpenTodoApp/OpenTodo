@@ -7721,5 +7721,18 @@
   "Note saved": "Nota guardada",
   "Repeats after completion, so made a task, not a habit: {titles}": "Se repite tras completarse, así que es una tarea, no un hábito: {titles}",
   "with a note": "con nota",
-  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# registro} other {# registros}}"
+  "{n, plural, one {# check-in} other {# check-ins}}": "{n, plural, one {# registro} other {# registros}}",
+  "Find habits": "Buscar hábitos",
+  "Your open habits, or those at risk or back on track": "Tus hábitos abiertos, o los que están en riesgo o han vuelto al buen camino",
+  "habit, streak, at risk, routine": "hábito, racha, en riesgo, rutina",
+  "Find habits {only}": "Buscar hábitos {only}",
+  "the habits": "los hábitos",
+  "Log a habit": "Registrar un hábito",
+  "Done, the tiny version or skipped, for a day": "Hecho, la versión mínima u omitido, para un día",
+  "habit, check in, done, log, track": "hábito, marcar, hecho, registrar, seguir",
+  "Log {habit} as {state} on {date}": "Registrar {habit} como {state} el {date}",
+  "Streak of at least": "Racha de al menos",
+  "Log as": "Registrar como",
+  "back on track": "de vuelta al buen camino",
+  "the tiny version": "la versión mínima"
 }

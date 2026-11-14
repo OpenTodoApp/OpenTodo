@@ -583,6 +583,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 	h.seedSlot()
 	h.put("note", "meet0001", map[string]any{"title": "Meeting", "description": "- agenda", "labels": []string{}, "project_id": nil, "deleted_at": nil})
 	h.put("objective", "obj00001", map[string]any{"title": "Ship", "period": "2026-Q4", "position": 1, "done_at": 0})
+	h.put("task", "habi0001", map[string]any{"title": "Stretch", "recurrence": "every day", "habit": true, "due": map[string]any{"date": "2030-01-07"}, "labels": []string{}, "project_id": nil, "completed_at": nil, "deleted_at": nil})
 	cfgBefore, _ := os.ReadFile(h.configPath)
 	schemas := loadSchemas(t)
 	cases := [][]string{
@@ -634,6 +635,7 @@ func TestDryRunSendsNoWrites(t *testing.T) {
 		{"task", "note", "plum", "--set", "x"},
 		{"task", "occurrence", "plum", "2030-01-08", "skip"},
 		{"task", "split", "plum", "--from", "2030-01-09", "--title", "Dry split"},
+		{"habits", "log", "Stretch", "--note", "dry"},
 	}
 	covered := map[string]bool{}
 	for _, c := range cases {

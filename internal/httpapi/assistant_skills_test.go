@@ -20,9 +20,25 @@ func TestAssistantSkillsRoute(t *testing.T) {
 	}
 	e.enableAssistant(nil)
 	skills := list(e)
-	if len(skills) != 10 || skills[5].(map[string]any)["id"] != "capture" || skills[9].(map[string]any)["id"] != "brief-today" {
+	if len(skills) != 12 || skills[5].(map[string]any)["id"] != "capture" || skills[6].(map[string]any)["id"] != "start-habit" || skills[11].(map[string]any)["id"] != "brief-today" {
 		t.Fatalf("skills = %v", skills)
 	}
+	// Habits off (habits-assistant D5): neither habit skill is listed or runs.
+	setHabits := func(v string, ts int) {
+		t.Helper()
+		resp, out := e.do("POST", "/api/v1/sync", map[string]any{"device": "d1", "ops": []map[string]any{
+			{"id": "hp" + v, "entity": "user_prefs", "entityId": "me", "field": "habits", "value": v, "ts": ts, "device": "d1"}}})
+		e.mustStatus(resp, 200, out)
+	}
+	setHabits("off", 100)
+	if got := list(e); len(got) != 10 || slices.ContainsFunc(got, func(s any) bool { return strings.Contains(s.(map[string]any)["id"].(string), "habit") }) {
+		t.Fatalf("habits off: %v", got)
+	}
+	e.consentAssistant("anthropic")
+	if code, out, _ := e.turn(map[string]any{"timezone": "UTC", "skill": "habit-check", "messages": []any{map[string]any{"role": "user", "text": "how?"}}}); code != 400 || errCode(out) != "unknown_skill" {
+		t.Fatalf("habit skill while off: %d %v", code, out)
+	}
+	setHabits("on", 200)
 	first := skills[0].(map[string]any)
 	if first["id"] != "idea-to-project" || first["name"] == "" || first["description"] == "" || first["example"] == "" {
 		t.Fatalf("first skill = %v", first)
@@ -36,7 +52,7 @@ func TestAssistantSkillsRoute(t *testing.T) {
 	m := newClientAt(e, "10.0.0.9")
 	resp, out = m.do("POST", "/api/v1/auth/register", map[string]string{"email": "m@example.com", "name": "M", "password": "correct horse battery"})
 	m.mustStatus(resp, 201, out)
-	if n := len(list(m)); n != 10 {
+	if n := len(list(m)); n != 12 {
 		t.Fatalf("member lists %d skills", n)
 	}
 	resp, out = m.do("PUT", "/api/v1/encryption/keys", keyRecord(1, 1))

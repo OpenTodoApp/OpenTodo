@@ -26,7 +26,7 @@ Two options:
 
 A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
-An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
+An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries, and log habits) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
 ### Token scopes
 
@@ -249,6 +249,9 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
 | PATCH | `/api/v1/time-entries/{id}` | yes (not `read`; `agent` only its own entries), author only | `{startedAt?, endedAt?, note?}` → the entry |
 | DELETE | `/api/v1/time-entries/{id}` | yes (not `read`, not `agent`) | tombstone an entry (author, project admin or owner) → 204 |
+| GET | `/api/v1/habits` | yes | your open habits with their numbers (`list_habits`' shape); `graduated=true`, `timezone`; see [Habits](#habits) |
+| GET | `/api/v1/habits/{id}` | yes | one habit and its scheduled days with their states and notes (`get_habit`'s shape); `from`, `to` (at most 400 days apart, the last 31 by default), `timezone` |
+| POST | `/api/v1/habits/{id}/log` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{state, date?, note?, timezone?}` logs a day as the app does → the habit with its days |
 | GET | `/api/v1/export` | yes | full JSON export (`projects`, `tasks`, `labels`, `views`, `reminders`, `sections`, `comments`, `time_entries`, `places`, `themes` (your custom themes, [Themes](themes.md)), `objectives` (your quarterly and weekly [objectives](objectives.md), deleted ones included), `memory` (what the [assistant remembers](assistant-memory.md), deleted items included; only for a session or a `full` or `admin` token), `user_prefs`, `workspaces` (each with your role; for those you own, the members' ids and roles and the groups), `encryption`, and `userId`, the exporting account), every task with its `origin` (`null` when unset), including deleted items and the projects shared with you (with `role` and `owner_id`); never contains audit events or push subscriptions; reminders are personal, so only your own |
 | POST | `/api/v1/import/preview` | yes | multipart `file` + options → dry run `{format, totals, rows, …}`, see [Import](#import) |
 | POST | `/api/v1/import` | yes | multipart `file` + options → 202 `{job}`; the import runs in the background |
@@ -573,6 +576,7 @@ An `agent` token may write through REST on this fixed list of routes only, and o
 | `DELETE /api/v1/reminders/{id}` | any of your own reminders |
 | `POST /api/v1/time-entries` | `{taskId}` starts a timer (409 `timer_running` while another of yours runs, unless `stopRunning: true`, which ends it at this start), or `{taskId, startedAt, endedAt, note?}` logs a closed entry (at most 24 hours, not in the future) |
 | `POST /api/v1/time-entries/stop` | stops your running entry |
+| `POST /api/v1/habits/{id}/log` | `state`, `date`, `note`, `timezone`, as `log_habit` |
 | `PATCH /api/v1/time-entries/{id}` | `startedAt`, `endedAt`, `note`, only for entries the same token created (403 `not_permitted` otherwise) |
 
 These requests never reach the regular handlers: they are translated into calls of the same tool registry as the [MCP write tools](mcp.md#letting-an-assistant-make-changes) (one request is one write call) and applied in one batch through the operation log with device `agent:<token-id>`, so they show in history as "AI assistant (*token name*)", are recorded as `agent.write` in the audit log, share the token's limits with MCP (30 write calls a minute, 1,000 changed items a day; beyond that 429 `rate_limited` with `Retry-After`), and follow the same rules for end-to-end encrypted accounts. Responses have the usual REST shapes.
@@ -1723,6 +1727,19 @@ curl -sS "$OT/api/v1/projects/$P/activity?limit=2" -H "Authorization: Bearer $TO
 ```
 
 Kinds: `created`, `completed`, `reopened`, `deleted`, `restored`, `rescheduled`, `assigned`, `unassigned`, `moved`, `archived`, `unarchived`, `edited`, `commented`, `comment_edited`, `comment_deleted`. A malformed `before` or a `limit` outside 1–200 answers `400 invalid_input`.
+
+### Habits
+
+A habit (OpenSpec `habits`, see [the guide](habits.md)) is a repeating task tracked as one. The habits routes give its numbers, the same as every device computes from the synced rows (a day checked in offline counts once that device syncs), and log a day without knowing about occurrence records. Every answer carries `server_time`; text people wrote is in `untrusted_text` (`"[encrypted]"` on an end-to-end encrypted account).
+
+A habit is `{id, untrusted_text: {title, tiny, anchor}, project_id, rule, day_part, current_date, pending, overdue, kept, kept_of, strength, streak, best_streak, at_risk, back_on_track, kept_days, graduated_at}`: `kept` of `kept_of` is the done or tiny days among the last seven scheduled ones, `strength` 0 to 100. `GET /api/v1/habits/{id}` adds `days`, newest first: `{date, state, untrusted_text?: {note}}` with `state` `done`, `tiny`, `skipped`, `missed`, `pending` or `upcoming`.
+
+`POST /api/v1/habits/{id}/log` takes `state` (`done`, `tiny`, `skipped` or `clear`), `date` (default today in `timezone`, else your time zone, from your day start) and `note`. Today, or the habit's current occurrence, completes or skips it and moves it to its next date; an earlier scheduled day writes only its record; `clear` makes the day read as missed. Errors: `400 invalid_input` for a missing or unknown `state`, a date after today or one that is not a scheduled day of the habit's history, `400 not_a_habit`, `404 not_found` for a task you cannot see, `403 insufficient_scope` for a `read` token.
+
+```sh
+curl -sS -X POST "$OT/api/v1/habits/<habit>/log" -H "Authorization: Bearer $TOKEN" -d '{"state":"done","note":"5k"}'
+# 200 {"habit":{"id":"<habit>","kept":6,"kept_of":7,"strength":71,"streak":4,…},"days":[…],"server_time":"…"}
+```
 
 ### Time entries
 

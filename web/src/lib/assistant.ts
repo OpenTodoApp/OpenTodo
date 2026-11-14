@@ -260,6 +260,15 @@ export function fieldWords(names: Names, id: string, v: unknown): string {
 }
 
 /** Every field change of one proposed change, in words. */
+/** A habit check-in (log_habit, habits-assistant): the habit, the state, the day and the note. */
+function checkIn(p: Record<string, unknown>, names: Names): { title: string; lines: string[] } {
+  const habit = names.tasks.get(String(p.series_id)) ?? String(p.title ?? '')
+  const state = p.deleted_at ? t('Moved to the Trash') : p.skipped ? t('Skipped') : p.tiny ? t('Tiny version') : t('Done')
+  const lines = [state, dueWords({ date: p.occurrence_date })]
+  if (typeof p.description === 'string' && p.description) lines.push(clip(p.description, 140))
+  return { title: t('Check in {title}', { title: clip(habit, 50) }), lines }
+}
+
 export function describe(c: ProposedChange, local: Record<string, unknown> | undefined, names: Names): { title: string; lines: string[] } {
   const p = c.patch
   const base = { ...(local ?? {}), ...(c.base ?? {}) } as Record<string, unknown>
@@ -275,6 +284,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
         return { title: t('Comment on “{task}”', { task: clip(task, 50) }), lines: [clip(String(p.body ?? ''), 140)] }
       }
       case 'task': {
+        if (p.series_id && p.occurrence_date) return checkIn(p, names)
         const lines: string[] = []
         if (p.due) lines.push(t('Due {date}', { date: dueWords(p.due) }))
         if (p.priority && p.priority !== 4) lines.push(priorityName(p.priority as number))
@@ -291,6 +301,8 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
     }
     return { title: newEntity(c.entity), lines: [] }
   }
+  // A habit's day logged again (habits-assistant): the record's new state.
+  if (c.entity === 'task' && local?.series_id && local.occurrence_date && ('skipped' in p || 'tiny' in p)) return checkIn({ ...local, ...p }, names)
   const title = String((local as { title?: string; name?: string } | undefined)?.title ?? (local as { name?: string } | undefined)?.name ?? someEntity(c.entity))
   const lines: string[] = c.entity === 'task' ? planningLines(p, base, names, false) : []
   for (const [f, v] of Object.entries(p)) {
@@ -401,7 +413,19 @@ export async function refreshReview(r: Review): Promise<Review> {
 
 /** Applies a proposal as one batch with device assistant:<device-id>, undoable in one step (lib/undo.ts). */
 export async function applyChanges(changes: ProposedChange[]): Promise<AssistantUndo | null> {
-  return applyBatch(changes, { source: 'assistant', origin: 'assistant' })
+  return applyBatch(await withHabitsOn(changes), { source: 'assistant', origin: 'assistant' })
+}
+
+/**
+ * A proposal that makes a habit turns Habits on while it is not decided, in the
+ * same batch, as Track as a habit does (habits-assistant, assistant-skills "Habit skills").
+ */
+export async function withHabitsOn(changes: ProposedChange[]): Promise<ProposedChange[]> {
+  if (!changes.some((c) => c.entity === 'task' && c.patch.habit === true)) return changes
+  // Not decided: anything but on or off (lib/habits habitsChoice).
+  const stored = (await db.userPrefs.get('me'))?.habits
+  if (stored === 'on' || stored === 'off') return changes
+  return [...changes, { entity: 'user_prefs', entityId: 'me', patch: { habits: 'on' } }]
 }
 
 export type { UndoResult }

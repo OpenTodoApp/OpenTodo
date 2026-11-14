@@ -812,6 +812,42 @@
         {"id": "b", "kind": "create_tasks", "in": {"text": {"ref": "a"}, "link_back": {"literal": true}}}
       ],
       "error": {"step": "b", "input": "link_back", "code": "invalid_step"}
+    },
+    {
+      "name": "an evening nudge: the habits at risk, counted, and a notification (habits-assistant)",
+      "trigger": "date",
+      "steps": [
+        {"id": "a", "kind": "find_habits", "in": {"only": {"literal": "at_risk"}}},
+        {"id": "b", "kind": "count", "in": {"list": {"ref": "a"}}},
+        {"id": "c", "kind": "notify", "in": {"text": {"literal": "Two days without a habit"}}}
+      ],
+      "types": {"a": "tasks", "b": "number", "c": "none"},
+      "content": "c"
+    },
+    {
+      "name": "a walk from a webhook: log a habit done today with a note (habits-assistant)",
+      "trigger": "none",
+      "steps": [
+        {"id": "a", "kind": "log_habit", "in": {"habit": {"literal": {"task": "walk"}}, "state": {"literal": "done"}, "note": {"literal": "from Home Assistant"}}}
+      ],
+      "types": {"a": "none"},
+      "content": "a"
+    },
+    {
+      "name": "log a habit needs a state (habits-assistant)",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "log_habit", "in": {"habit": {"ref": "trigger"}}}
+      ],
+      "error": {"step": "a", "input": "state", "code": "missing_input"}
+    },
+    {
+      "name": "log a habit refuses an unknown state (habits-assistant)",
+      "trigger": "task",
+      "steps": [
+        {"id": "a", "kind": "log_habit", "in": {"habit": {"ref": "trigger"}, "state": {"literal": "maybe"}}}
+      ],
+      "error": {"step": "a", "input": "state", "code": "invalid_literal"}
     }
   ],
   "auto": [

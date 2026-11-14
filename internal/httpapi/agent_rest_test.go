@@ -81,6 +81,8 @@ var agentAllowed = map[string]bool{
 	"POST /api/v1/sections": true, "PATCH /api/v1/sections/{id}": true, "PATCH /api/v1/labels/{id}": true,
 	"POST /api/v1/reminders": true, "PATCH /api/v1/reminders/{id}": true, "DELETE /api/v1/reminders/{id}": true,
 	"POST /api/v1/time-entries": true, "POST /api/v1/time-entries/stop": true, "PATCH /api/v1/time-entries/{id}": true,
+	// OpenSpec change habits-assistant (design D3).
+	"POST /api/v1/habits/{id}/log": true,
 }
 
 // anonymousByDesign are sign-in routes that never look at a bearer token.

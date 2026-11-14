@@ -3,7 +3,7 @@ title: Skills, pasted notes and safety
 summary: The assistant's ready-made jobs, how pasted text is kept apart from instructions, and what the assistant can never do on its own.
 audience: user
 section: Guides
-specs: [assistant-skills, voice-capture]
+specs: [assistant-skills, voice-capture, habits]
 screens: []
 order: 78
 ---
@@ -15,7 +15,7 @@ The [assistant](assistant.md) comes with skills for common jobs. Whatever it doe
 
 ## Skills
 
-Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills** under the message box, or select one of the cards on the **Assistant** page. The message box shows what the skill does and an example; add your own words if you like, then send.
+Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills** under the message box or a card on the **Assistant** page. The message box shows what it does and an example; add words if you like, then send.
 
 | Skill | What it does |
 |---|---|
@@ -26,6 +26,7 @@ Skills are ready-made jobs the assistant knows how to do. Pick one from **Skills
 | **Break this down** | Turns the selected task into subtasks with estimates. Also in a task's **⋯** menu. |
 | **Rewrite this**, **Find a slot**, **What's next?**, **Brief me** | See [the assistant where you work](assistant-in-context.md). |
 | **Turn this into tasks** | Turns what you typed, [spoke or photographed](assistant-capture.md) into tasks, one per action, and changes an existing task instead of adding a duplicate. It never trashes a task. |
+| **Start a habit**, **How are my habits?** | [Habits](habits-elsewhere.md). |
 
 A skill can only use the tools it needs (Break this down cannot move or complete anything), and what it proposes is [reviewed, applied and undone](assistant-ask.md#ask-and-review) exactly like any other answer.
 

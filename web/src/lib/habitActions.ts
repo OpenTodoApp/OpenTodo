@@ -5,14 +5,14 @@
 // everything works offline and converges as ordinary field operations.
 import { addDaysISO, logicalToday } from './dates'
 import { db } from './db'
-import { habitRule, isGraduated, pieceFor, scheduled } from './habits'
-import { occurrenceId, pieceId } from './ids'
+import { habitRule, isGraduated, scheduled } from './habits'
+import { pieceId } from './ids'
 import { lineageRows } from './lineageRows'
 import { nextFree } from './occurrences'
 import { actOnOccurrenceUndoable, type OccurrenceResult } from './occurrenceActions'
 import { getDeviceId, planTask, type Change } from './ops'
 import { canonicalOf, compatibleRule, firstOccurrence, parseRule } from './recurrence'
-import { occurrenceFields, recordFields, seriesBudget } from './recurring'
+import { recordFields, seriesBudget } from './recurring'
 import { copyReminders } from './seriesPlan'
 import { endedRule } from './seriesSplit'
 import type { Reminder, Task } from './types'
@@ -20,24 +20,9 @@ import { applyBatch } from './undo'
 import type { ProposedChange } from './assistantTypes'
 import { t } from './i18n'
 
-/** What a past day can be set to (D6). */
-export type DayChoice = 'done' | 'tiny' | 'skipped' | 'clear'
-
-/**
- * Setting a past scheduled day (D6): Done, Tiny and Skipped write that date's
- * record (the derived id of the piece whose range holds it) without moving the
- * series; Clear tombstones it so the day reads as missed. Null when there is
- * nothing to write (Clear on a day without a record).
- */
-export function planPastDay(series: Task, tasks: readonly Task[], date: string, choice: DayChoice, now: number, today: string): Change[] | null {
-  const piece = pieceFor(series, tasks, date)
-  const id = occurrenceId(piece.id, date)
-  const existing = tasks.find((x) => x.id === id && !x.deleted_at)
-  if (choice === 'clear') return existing ? [{ entity: 'task', entityId: id, patch: { deleted_at: now } }] : null
-  const state = { completed_at: now, skipped: choice === 'skipped', tiny: choice === 'tiny' }
-  if (existing) return [{ entity: 'task', entityId: id, patch: state }]
-  return [{ entity: 'task', entityId: id, patch: { ...occurrenceFields(piece, date, now, today), ...state } }]
-}
+export { planPastDay, type DayChoice } from './habitLog'
+import type { DayChoice } from './habitLog'
+import { planPastDay } from './habitLog'
 
 /** The last date the rule schedules before `today`, within a year; null when none. */
 function lastScheduledBefore(series: Task, today: string): string | null {
