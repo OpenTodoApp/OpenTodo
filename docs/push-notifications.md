@@ -19,7 +19,7 @@ Push notifications deliver [reminders](notifications.md) even when OpenTodo isn'
 2. Turn on **Enable notifications on this device** and allow notifications when the browser asks.
 3. Select **Send test notification**. Your server sends a real push to this device, the same way it sends reminders, and a notification appears even while OpenTodo is open.
 
-Repeat this on every device where you want them: your phone, your laptop, your tablet. Turning it off, or signing out, removes that device.
+Repeat this on every device where you want them. Turning it off, or signing out, removes that device.
 
 From a push notification you can tick the task off with **Done**, **Snooze 10 min** or **Dismiss**, and that applies on all your devices. Chrome shows two buttons: **Done** and **Snooze 10 min**. With no tab of OpenTodo open, **Done** opens the app to complete the task ([Done from a notification](reminders.md#done-from-a-notification)).
 
@@ -31,7 +31,7 @@ Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add
 
 ## In the Android app
 
-The [Android app](android-app.md) uses no push service: **Notifications through the app** is on from the start, with task names, and the app schedules your next seven days of reminders on the phone, refreshing them about hourly. For reminders on time, allow **Alarms & reminders** for OpenTodo (the app offers **Allow**), and exempt it from battery optimisation if your phone delays alarms.
+The [Android app](android-app.md) uses no push service: **Notifications through the app** is on from the start, with task names, and the app schedules your next seven days of reminders on the phone, refreshing them about hourly. For reminders on time, allow **Alarms & reminders** for OpenTodo (the app offers **Allow**), and exempt it from battery optimisation if your phone delays alarms. With a UnifiedPush app such as ntfy on the phone, **Deliver instantly through UnifiedPush** has your server push each reminder to the app the moment it is due ([On time through UnifiedPush](android-app.md#on-time-through-unifiedpush)).
 
 ## Privacy
 
@@ -44,8 +44,7 @@ A push message goes through your browser's push service (run by the browser make
 - **"Notifications are blocked in your browser settings"**: you said no when the browser asked. Allow notifications for your OpenTodo address in the browser's site settings, then select **Re-enable**.
 - **"Push notifications are turned off on this server"**: the person running your server has switched push off. Reminders still show inside the app.
 - **"This browser cannot receive push notifications"**: try the installed app, or open OpenTodo over `https://`.
-- **The test says accepted but not received**: the push left your server but didn't reach this device. On a Mac, check **System Settings → Notifications** for your browser; on Windows, **Settings → System → Notifications**; on Android, the browser's or app's notification settings; on iPhone and iPad, the installed app's notification settings. Focus and do-not-disturb modes hide notifications too.
-- **Nothing arrives on a phone**: check that the operating system allows notifications for the app (or the browser), and that battery saving or focus modes aren't holding them back.
+- **The test says accepted but not received**: the push left your server but didn't reach this device. On a Mac, check **System Settings → Notifications** for your browser; on Windows, **Settings → System → Notifications**; on a phone, the notification settings of the browser or the installed app. Focus, do-not-disturb and battery saving modes hold notifications back too.
 - **Running OpenTodo from source with `make dev`**: development builds have no service worker, so push can't work there and the delivery check says so. Use the production build (`make run`, http://localhost:8080) to test push.
 
 More fixes in [Troubleshooting](troubleshooting.md).

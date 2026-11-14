@@ -7706,5 +7706,9 @@
   "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Les notifications ne sont pas autorisées pour OpenTodo. Autorisez-les dans les Réglages de l'iPhone (Notifications → OpenTodo) ; les rappels s'affichent toujours dans l'application.",
   "Reminders may arrive a few minutes late.": "Les rappels peuvent arriver avec quelques minutes de retard.",
   "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "L'application n'a pas pu afficher de notification. Autorisez les notifications pour OpenTodo dans les Réglages de l'iPhone.",
-  "Search completed tasks": "Rechercher dans les tâches terminées"
+  "Search completed tasks": "Rechercher dans les tâches terminées",
+  "Deliver instantly through UnifiedPush": "Livrer immédiatement via UnifiedPush",
+  "Needs a UnifiedPush app such as ntfy": "Nécessite une application UnifiedPush comme ntfy",
+  "Your UnifiedPush app needs attention. Open it, then try again.": "Votre application UnifiedPush demande votre attention. Ouvrez-la, puis réessayez.",
+  "The UnifiedPush app could not register this device.": "L'application UnifiedPush n'a pas pu enregistrer cet appareil."
 }

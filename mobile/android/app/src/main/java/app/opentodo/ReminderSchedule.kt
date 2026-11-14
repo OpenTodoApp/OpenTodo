@@ -43,6 +43,36 @@ object ReminderSchedule {
         return arr.toString()
     }
 
+    private const val SHOWN_KEEP_MS = 24L * 60 * 60 * 1000
+    private const val SHOWN_SAME_MS = 60_000L
+    private const val SHOWN_MAX = 200
+
+    /**
+     * shell-push D4: whether the reminder [id] was already shown for this fire time, by its
+     * alarm or by a push ([shown] is `{id: fireAt}`). The two paths may name the time a little
+     * differently, and a snoozed reminder fires again later: the same minute is the same firing.
+     */
+    fun wasShown(shown: String, id: String, fireAt: Long): Boolean {
+        val o = try { org.json.JSONObject(shown) } catch (e: Exception) { return false }
+        if (!o.has(id)) return false
+        val at = o.optLong(id, -1)
+        return at >= 0 && kotlin.math.abs(at - fireAt) < SHOWN_SAME_MS
+    }
+
+    /** [shown] with [id] shown for [fireAt]; firings older than a day are dropped, and all but the latest [SHOWN_MAX]. */
+    fun markShown(shown: String, id: String, fireAt: Long, now: Long): String {
+        val o = try { org.json.JSONObject(shown) } catch (e: Exception) { org.json.JSONObject() }
+        val kept = ArrayList<Pair<String, Long>>()
+        for (key in o.keys()) {
+            val at = o.optLong(key, -1)
+            if (key != id && at >= now - SHOWN_KEEP_MS) kept.add(key to at)
+        }
+        kept.add(id to fireAt)
+        val out = org.json.JSONObject()
+        for ((key, at) in kept.sortedBy { it.second }.takeLast(SHOWN_MAX)) out.put(key, at)
+        return out.toString()
+    }
+
     /**
      * A time reminder's notification buttons, in order (reminder-done-action): Done first, then
      * Snooze 10 min and Dismiss, like the web push notification.

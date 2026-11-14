@@ -104,6 +104,18 @@ On Android 14 and later a new app may not set exact alarms. The app then says on
 
 A reminder's notification offers **Done**, **Snooze 10 min** and **Dismiss**. **Done** completes the task without opening the app, the same as ticking it off (a repeating task moves to its next date), and works offline: the change goes out with the next sync.
 
+### On time through UnifiedPush
+
+A reminder set on another device shortly before it is due can miss the hourly refresh. With a [UnifiedPush](https://unifiedpush.org) app such as ntfy on the phone, your server pushes each reminder to the app the moment it is due, the way it pushes to a browser, without Google services.
+
+1. Install a UnifiedPush app, such as ntfy, and set it up.
+2. In OpenTodo, open **Settings → Notifications** and turn on **Deliver instantly through UnifiedPush**.
+3. Choose your UnifiedPush app when the phone asks.
+
+It is off until you turn it on. The row appears only while [push notifications](push-notifications.md) are on on your server, and without a UnifiedPush app it says **Needs a UnifiedPush app such as ntfy**. The reminders scheduled on the phone keep working either way, and a reminder that arrives both ways alerts once. Turning it off, turning **Notifications through the app** off, or signing out removes the phone from your server and from the UnifiedPush app.
+
+The UnifiedPush app and its server see an encrypted message, its size and its time, never a task. The message holds the reminder's and the task's ids and, with task names on and no [end-to-end encryption](e2ee.md), the task's name; the key that reads it is made on the phone and never leaves it. Your server must reach the UnifiedPush server at a public `https` address: one on a private network address is refused, as for every push.
+
 ## Location reminders
 
 [Location reminders](location-reminders.md) ("when I arrive at the post office") fire on the phone. Turn on **Settings → Notifications → Location reminders → On this phone**: the app explains what the location is for, then Android asks twice, first for your location (**While using the app** or **Only this time**), then for **Allow all the time**, which on Android 11 and later is a choice on the app's location settings page. Without **Allow all the time** nothing is watched and the setting says so, with **Open settings**.
@@ -157,4 +169,4 @@ With [end-to-end encryption](e2ee.md#unlock-with-a-fingerprint), the unlock scre
 
 ## Privacy
 
-No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the watched places of your location reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup.
+No trackers, no analytics, no advertising. The app stores the server address, the scheduled reminders, the watched places of your location reminders, the widget data and, if you turned on fingerprint unlock, the encrypted account key, only in its private storage, excluded from Android backup. With [delivery through UnifiedPush](#on-time-through-unifiedpush) turned on, it also keeps that registration and its key there, and your server sends encrypted reminders through the UnifiedPush server you chose; nothing else leaves the phone.

@@ -35,6 +35,19 @@ class Prefs(context: Context) {
         get() = p.getString("geofencesFired", "{}") ?: "{}"
         set(v) = p.edit().putString("geofencesFired", v).apply()
 
+    /** Per reminder, the fire time it was last shown for (shell-push D4: alarm and push show it once): `{id: ms}`. */
+    var remindersShown: String
+        get() = p.getString("remindersShown", "{}") ?: "{}"
+        set(v) = p.edit().putString("remindersShown", v).apply()
+
+    /**
+     * The UnifiedPush registration (shell-push D3): token, distributor, endpoint and the Web Push
+     * keys, private key included. It never leaves the phone and goes with the server's data.
+     */
+    var push: String?
+        get() = p.getString("push", null)
+        set(v) = p.edit().apply { if (v == null) remove("push") else putString("push", v) }.apply()
+
     var widget: String?
         get() = p.getString("widget", null)
         set(v) = p.edit().putString("widget", v).apply()

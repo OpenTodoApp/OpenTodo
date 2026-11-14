@@ -1,0 +1,38 @@
+{
+  "description": "Reminders by push (shell-push D5): a shell that lists push answers pushSubscribe(vapidKey) with the JSON text of subscription or of {\"error\": one of errors}, and pushState() with the JSON text of one of states; pushUnsubscribe() takes nothing and answers nothing. The keys are the receiver's of push-message.json; the private key never crosses the bridge.",
+  "capability": "push",
+  "methods": [
+    "pushSubscribe",
+    "pushState",
+    "pushUnsubscribe"
+  ],
+  "subscription": {
+    "endpoint": "https://ntfy.example/upAbC123",
+    "p256dh": "BGkLNImBoTeeh4TeK41SZl8nl2k2MTk0Js-rf7fmKwzkXy0QrgmNf_0W7JVGV3qb-zC1rzcWkVTkJfT6ut--2t4",
+    "auth": "2J0U_Lsm0Ur3Q4PJqlrh9g"
+  },
+  "errors": [
+    "no-distributor",
+    "cancelled",
+    "failed",
+    "action-required",
+    "network"
+  ],
+  "states": [
+    {
+      "available": false,
+      "registered": false
+    },
+    {
+      "available": true,
+      "registered": false
+    },
+    {
+      "available": true,
+      "registered": true,
+      "endpoint": "https://ntfy.example/upAbC123",
+      "p256dh": "BGkLNImBoTeeh4TeK41SZl8nl2k2MTk0Js-rf7fmKwzkXy0QrgmNf_0W7JVGV3qb-zC1rzcWkVTkJfT6ut--2t4",
+      "auth": "2J0U_Lsm0Ur3Q4PJqlrh9g"
+    }
+  ]
+}

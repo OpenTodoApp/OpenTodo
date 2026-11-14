@@ -352,8 +352,11 @@ export const SETTINGS_COPY = {
       // A native shell's rows (native-shells): no push service, the app schedules reminders.
       shell: { label: msg('Notifications through the app'), description: msg('Reminders are scheduled on this phone and shown without a push service.') },
       shellTitles: { label: msg('Include task titles'), description: msg('Off: reminders read "Reminder" until you open the app. Never with encryption.') },
+      // shell-push: the Android app as a push subscriber through the user's UnifiedPush app.
+      shellPush: { label: msg('Deliver instantly through UnifiedPush') },
     },
     notices: {
+      noUnifiedPush: msg('Needs a UnifiedPush app such as ntfy'),
       serverOff: msg('Push notifications are turned off on this server. Reminders are shown in the app.'),
       unsupported: msg('This browser cannot receive push notifications; installing the app may help.'),
       blocked: msg('Notifications are blocked in your browser settings; reminders still appear in the app.'),

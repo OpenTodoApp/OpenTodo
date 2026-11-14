@@ -104,6 +104,7 @@ Measured on iOS 27 in the simulator (design D2): without a matching app-bound do
 | `ReminderSchedule`, `Reminders.kt` | the handed-over schedule, exact alarms (inexact when refused), notifications with Snooze 10 min and Dismiss, re-arming after a reboot |
 | `GeofenceSchedule`, `Geofences.kt` | location reminders: the handed-over regions, at most 19 registered as platform proximity alerts (`LocationManager`, no Play services), the nearest to the last known position, re-ranked on leaving a 1 km region around it; a notification with Done and Dismiss on a crossing in the reminder's direction, at most once an hour per reminder; registered again after a reboot or an update |
 | `HiddenRun` | the hourly refresh and notification actions: the web app in a hidden `WebView` until it calls `backgroundDone()`, at most 90 seconds |
+| `UnifiedPush.kt`, `PushReceiver`, `WebPush.kt` | reminders by push (`shell-push`): the UnifiedPush connector written against the specification (broadcasts, no library), its exported receiver, which ignores every intent without the stored token, and `aes128gcm` decryption (RFC 8291) with the platform's crypto; a pushed reminder is shown by the alarm's own notification code, once per reminder, then a background run syncs. The key pair and secret are made on the phone and deleted with the registration |
 | `WidgetModel`, `Widgets.kt` | the Today and quick-add widgets (`RemoteViews`), drawn from the last publication only |
 | `BiometricKeyStore` | the account key under a Keystore AES-GCM key that needs a strong biometric for every use and is invalidated by an enrolment change |
 
@@ -137,7 +138,7 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `bridge` | | `1` | changes only when a method's shape changes |
 | `platform` | | `"android"` | |
 | `app` | | `"0.10.0"` | the shell's version; Settings → About warns below the web app's `MIN_SHELL_APP` |
-| `capabilities` | | `string[]` | `reminders`, `widgets`, `geofences` (Android), and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
+| `capabilities` | | `string[]` | `reminders`, `widgets`, `geofences` (Android), `push` (Android), and in the visible app `share`, `links`, `obsidian-links`, `biometric` (when a strong biometric is enrolled) |
 | `scheduleReminders(json)` | `reminders` | `→ Promise<"granted" \| "denied" \| "exact-denied">` | `[{id, taskId, fireAt, title?}]`, the next 7 days; replaces the stored schedule; asks for the notification permission once, in the visible app and only for a schedule with a reminder; never opens a settings page (`exact-denied` is answered instead) |
 | `scheduleGeofences(json)` | `geofences` | `→ Promise<"granted" \| "foreground-only" \| "denied" \| "unavailable">` | `{version: 1, ask?, regions: [{id, taskId, lat, lon, radius, on: "arrive"\|"leave", title?}]}`, at most 100; replaces the stored regions, registered only with background location; asks for fine, then background location only with `ask` in the visible app; the position never reaches the web view |
 | `testNotification()` | `reminders` | `→ Promise<boolean>` | shows a notification now |
@@ -151,6 +152,9 @@ The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders
 | `openAlarmSettings()` | `alarm-settings` (Android 12 and later, visible app) | `void` | opens the system page where the user allows exact alarms for the app; the shell never opens it by itself |
 | `backgroundDone()` | `background` (a background run only) | `void` | the web app has synced, stored a notification action and handed over the schedule and the widget data; the shell ends the run. Without the call the run ends at its limit |
 | `pullHandled()` | `pull-refresh` (iOS, visible app) | `void` | the page showing handles a pull down itself (the web app's pull to sync), so the shell turns its own pull to refresh, which reloads, off until another page loads; the web app calls it on every load. Android has no pull to refresh and does not list it |
+| `pushSubscribe(vapidKey)` | `push` (Android; registering only in the visible app) | `→ Promise<string>` | registers with the user's UnifiedPush app (the visible app may open its link screen) with the server's VAPID public key; the JSON text of `{endpoint, p256dh, auth}` (a Web Push subscription: the `https` endpoint, the 65-byte public key and the 16-byte secret, base64url without padding) or of `{error: "no-distributor" \| "cancelled" \| "failed" \| "action-required" \| "network"}`. The private key never crosses the bridge |
+| `pushState()` | `push` (also a background run) | `→ Promise<string>` | the JSON text of `{available, registered, endpoint?, p256dh?, auth?}`: whether a UnifiedPush app is installed, and the registration; asks the user nothing. The web app subscribes a new endpoint on the server and removes the old one |
+| `pushUnsubscribe()` | `push` | `void` | unregisters from the UnifiedPush app and deletes the keys (the switch turned off, sign-out) |
 
 The iOS shell reports `platform: "ios"` and the same members; `scheduleReminders` answers `"granted"` or `"denied"` (iOS has no exact-alarm permission, so never `"exact-denied"`), `widgets`, `share`, `links` and — with Face ID or Touch ID enrolled — `biometric`.
 

@@ -13,6 +13,7 @@ import { shellGeofences } from './geofences'
 import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
+import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
 import { shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
@@ -284,7 +285,7 @@ function haptics() {
 function capabilities() {
   const visibleOnly = ['share', 'links', 'obsidian-links', 'system-bars', 'microphone', 'files', 'haptics', 'alarm-settings']
   const backgroundOnly = ['background']
-  const both = ['reminders', 'widgets']
+  const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
   const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), backgroundDone: () => void called.push('backgroundDone') })
   // Each method is called only where its capability is listed.
@@ -318,6 +319,25 @@ function pull() {
   }
 }
 
+/**
+ * shell-push D5: the subscription a shell with `push` hands over, its errors and
+ * its states. The keys are those of push-message.json (written by the server's own
+ * encryption, internal/push/fixture_test.go), so the subscription here is the one
+ * that message was encrypted for.
+ */
+function pushBridge() {
+  const message = JSON.parse(readFileSync(path.join(dir, 'push-message.json'), 'utf8')) as { receiver: { p256dh: string; auth: string } }
+  const subscription = { endpoint: 'https://ntfy.example/upAbC123', p256dh: message.receiver.p256dh, auth: message.receiver.auth }
+  return {
+    description: 'Reminders by push (shell-push D5): a shell that lists push answers pushSubscribe(vapidKey) with the JSON text of subscription or of {"error": one of errors}, and pushState() with the JSON text of one of states; pushUnsubscribe() takes nothing and answers nothing. The keys are the receiver\'s of push-message.json; the private key never crosses the bridge.',
+    capability: 'push' as const,
+    methods: ['pushSubscribe', 'pushState', 'pushUnsubscribe'],
+    subscription,
+    errors: ['no-distributor', 'cancelled', 'failed', 'action-required', 'network'],
+    states: [{ available: false, registered: false }, { available: true, registered: false }, { available: true, registered: true, ...subscription }],
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -326,7 +346,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
@@ -336,6 +356,33 @@ describe('Android bridge fixtures', () => {
       const file = path.join(dir, name)
       expect(existsSync(file) ? readFileSync(file, 'utf8') : '(missing)', `${name} is out of date: UPDATE_BRIDGE_FIXTURES=1 npx vitest run src/lib/shellBridge.fixture.test.ts`).toBe(body)
     }
+  })
+
+  it('the web app reads every push answer of the fixture, and calls the methods only with the capability', async () => {
+    const f = pushBridge()
+    expect(parsePushSubscription(JSON.stringify(f.subscription))).toEqual(f.subscription)
+    for (const error of f.errors) expect(parsePushSubscription(JSON.stringify({ error }))).toEqual({ error })
+    for (const state of f.states) expect(parsePushState(JSON.stringify(state))).toEqual(state)
+    // Malformed answers: no subscription, and a state that changes nothing.
+    for (const bad of ['not json', 'null', '[]', '{}', '{"error":"other"}', JSON.stringify({ ...f.subscription, endpoint: 'http://ntfy.example/x' }), JSON.stringify({ ...f.subscription, auth: '' })]) expect(parsePushSubscription(bad)).toEqual({ error: 'failed' })
+    for (const bad of ['not json', '{}', '{"available":true}', '{"available":true,"registered":true}', '{"available":"yes","registered":false}']) expect(parsePushState(bad)).toBeNull()
+    const called: string[] = []
+    const bridge = (capabilities: string[]): OpenTodoShell => ({
+      bridge: 1, platform: 'android', app: '1.7.0', capabilities,
+      pushSubscribe: (key) => { called.push(`pushSubscribe:${key}`); return JSON.stringify(f.subscription) },
+      pushState: async () => { called.push('pushState'); return JSON.stringify(f.states[2]) },
+      pushUnsubscribe: () => void called.push('pushUnsubscribe'),
+    })
+    window.opentodoShell = bridge(['reminders'])
+    expect(await pushSubscribe('key')).toEqual({ error: 'failed' })
+    expect(await pushState()).toBeNull()
+    expect(pushUnsubscribe()).toBe(false)
+    expect(called).toEqual([])
+    window.opentodoShell = bridge([f.capability])
+    expect(await pushSubscribe('key')).toEqual(f.subscription)
+    expect(await pushState()).toEqual(f.states[2])
+    expect(pushUnsubscribe()).toBe(true)
+    expect(called).toEqual(['pushSubscribe:key', 'pushState', 'pushUnsubscribe'])
   })
 
   it('every address the shell opens is read back by the web app', () => {

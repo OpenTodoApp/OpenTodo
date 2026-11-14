@@ -1,0 +1,21 @@
+{
+  "description": "A Web Push message as the server encrypts it (internal/push, aes128gcm, RFC 8291) for a shell's subscription, and RFC 8291's own example. Written by internal/push/fixture_test.go (UPDATE_PUSH_FIXTURE=1); the Android shell's unit test decrypts both. All values base64url without padding.",
+  "receiver": {
+    "privateKey": "uQ5Z6VbHR74HCVou8Ms9qx_uce5H3gRyUkB_i9yNr8k",
+    "p256dh": "BGkLNImBoTeeh4TeK41SZl8nl2k2MTk0Js-rf7fmKwzkXy0QrgmNf_0W7JVGV3qb-zC1rzcWkVTkJfT6ut--2t4",
+    "auth": "2J0U_Lsm0Ur3Q4PJqlrh9g"
+  },
+  "sender": {
+    "privateKey": "O9GDNz_6vXC23usGV7xQChRal3i9L2Mc71JeGRkWrdI",
+    "salt": "6miAkt3MMZlG1srtkMOXJg"
+  },
+  "plaintext": "{\"type\":\"reminder\",\"reminderId\":\"r-1\",\"taskId\":\"t-1\",\"fireAt\":1791000000000,\"title\":\"Call the plumber ☎\"}",
+  "body": "6miAkt3MMZlG1srtkMOXJgAAEABBBHe1XFT-Rh3YbjugIyGVUZidHhgughrMDwsSezHL9QrCqC6xRVhRB1xYQExOI7Oxo2OsNKFjiCOUOHcGejYdWp7dbrzn1jbz8kUH6tZkQrygtxqdoEVYjni3c_waksqzrFGbzkmtUQvlKP1nxV1p4xiAfox5XbjrZkC_UIuA3CZIpOVv4Ng3zdWqTNkGdKxTM9u0OdTQ5fKcm09AZSKNhIQIzLJldTY18uFmHq23f-Lye0jjiQmg_heZXL-4",
+  "rfc8291": {
+    "receiverPrivateKey": "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94",
+    "p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    "auth": "BTBZMqHH6r4Tts7J_aSIgg",
+    "body": "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN",
+    "plaintext": "When I grow up, I want to be a watermelon"
+  }
+}

@@ -8,6 +8,7 @@ import type { PushSubscriptionStatus } from './types'
 import { formatInstant } from './dates'
 import { t, msg, translatedMap } from './i18n'
 import { messageOf } from './errorText'
+import { has } from './shell'
 
 const META_ENABLED = 'push:enabled'
 const META_INCLUDE = 'push:includeContent'
@@ -258,6 +259,8 @@ export async function localTestNotification(): Promise<void> {
 
 /** Best effort before signing out (the server also drops it with the session). */
 export async function unsubscribeOnSignOut(): Promise<void> {
+  // The Android app's subscription through UnifiedPush goes too (shell-push D6).
+  if (has('push')) await import('./shellPush').then((m) => m.disableShellPush()).catch(() => undefined)
   if (!(await getMeta<boolean>(META_ENABLED, false))) return
   await disablePush().catch(() => undefined)
 }

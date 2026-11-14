@@ -8,6 +8,7 @@ import android.webkit.WebViewClient
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
@@ -23,8 +24,9 @@ import java.util.concurrent.TimeUnit
 
 /**
  * Runs the web app briefly in a hidden web view (native-shells D4): hourly so it syncs and
- * hands over a fresh schedule and widget data, and once for a notification's Snooze or
- * Dismiss, which the web app applies as its own reminder ops. The run ends when the web app
+ * hands over a fresh schedule and widget data, once for a notification's Snooze or
+ * Dismiss, which the web app applies as its own reminder ops, and once after a pushed
+ * reminder (shell-push D4). The run ends when the web app
  * says it is done (shell-reminders-on D4: capability `background`, `backgroundDone()`), or
  * after 90 seconds when nothing is heard (an older web app, a server that does not answer).
  */
@@ -61,6 +63,7 @@ internal suspend fun awaitBackgroundDone(done: Deferred<Unit>, limitMs: Long): B
 
 object HiddenRun {
     private const val PERIODIC = "refresh"
+    private const val PUSHED = "pushed"
 
     fun schedulePeriodic(context: Context) {
         if (Prefs(context).server == null) return
@@ -74,6 +77,19 @@ object HiddenRun {
     fun enqueueOnce(context: Context, path: String) {
         val req = OneTimeWorkRequestBuilder<HiddenRunWorker>().setInputData(workDataOf("path" to path)).build()
         WorkManager.getInstance(context).enqueue(req)
+    }
+
+    /**
+     * After a pushed reminder or a changed push endpoint (shell-push D4): one run that syncs and
+     * hands over the schedule, the widget and the endpoint. Several messages at once share it.
+     */
+    fun enqueueRefresh(context: Context) {
+        if (Prefs(context).server == null) return
+        val req = OneTimeWorkRequestBuilder<HiddenRunWorker>()
+            .setInputData(workDataOf("path" to "/"))
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(PUSHED, ExistingWorkPolicy.KEEP, req)
     }
 
     fun cancel(context: Context) {

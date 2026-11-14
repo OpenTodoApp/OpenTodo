@@ -54,7 +54,7 @@ The private key never crosses the bridge. Fixtures: the subscription shape, the 
 - `enableShellPush()`: VAPID key from the server, `pushSubscribe`, POST the subscription, remember the subscription id and the endpoint in meta (`shell:push`).
 - `syncShellPush()` on start and in background runs: when `pushState().endpoint` differs from the remembered one, POST the new and DELETE the old; when the shell says unregistered, DELETE and turn the setting off.
 - `disableShellPush()`, and the same on sign-out (`unsubscribeOnSignOut` already deletes the device's subscription) and when notifications through the app are turned off.
-- `ShellNotifications` gets one row, "Deliver at once through UnifiedPush", with the Switch, or the line "Needs a UnifiedPush app such as ntfy" when `available` is false. Not shown on iOS, without the capability, or while the server's push routes answer 404.
+- `ShellNotifications` gets one row, "Deliver instantly through UnifiedPush", with the Switch, or the line "Needs a UnifiedPush app such as ntfy" when `available` is false. Not shown on iOS, without the capability, or while the server's push routes answer 404.
 
 ### D7. Privacy and the owner's rules
 

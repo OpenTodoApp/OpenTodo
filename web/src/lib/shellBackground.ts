@@ -5,7 +5,7 @@
 // one is not cut off. Loaded only in such a run (main.tsx).
 import { db } from './db'
 import { resettable } from './moduleState'
-import { backgroundDone } from './shell'
+import { backgroundDone, has } from './shell'
 import { reminderActionsApplied, shellUrlAction } from './shellActions'
 import { syncSnapshot } from './sync'
 
@@ -15,6 +15,8 @@ export const BACKGROUND_LIMIT_MS = 45_000
 export const BACKGROUND_NO_SYNC_MS = 10_000
 /** The publishers hand over half a second after the last change; wait a little longer. */
 export const BACKGROUND_SETTLE_MS = 1_000
+/** The push subscription gets this long to follow the shell's registration. */
+export const BACKGROUND_PUSH_MS = 10_000
 const POLL_MS = 250
 
 export interface BackgroundState {
@@ -67,5 +69,7 @@ export async function startBackgroundRun(opts: { now?: () => number; sleep?: (ms
     await sleep(POLL_MS)
   }
   await sleep(BACKGROUND_SETTLE_MS)
+  // A new endpoint from the UnifiedPush app is subscribed before the run ends (shell-push D6).
+  if (has('push')) await Promise.race([import('./shellPush').then((m) => m.syncShellPush()).catch(() => undefined), sleep(BACKGROUND_PUSH_MS)])
   backgroundDone()
 }

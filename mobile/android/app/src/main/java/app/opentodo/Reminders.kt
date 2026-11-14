@@ -68,13 +68,21 @@ object Scheduler {
         }
     }
 
+    /** One reminder leaves the schedule and its alarm goes (shell-push D4: a push showed it). */
+    fun cancel(context: Context, id: String) {
+        val prefs = Prefs(context)
+        context.getSystemService(AlarmManager::class.java).cancel(alarmIntent(context, id))
+        val list = ReminderSchedule.parse(prefs.reminders, null)
+        if (list.any { it.id == id }) prefs.reminders = ReminderSchedule.toJson(list.filter { it.id != id })
+    }
+
     fun find(context: Context, id: String): ShellReminder? =
         ReminderSchedule.parse(Prefs(context).reminders, null).firstOrNull { it.id == id }
 }
 
 /** Shows the notifications: the reminder itself and the settings test. */
 object Notifier {
-    private const val CHANNEL = "reminders"
+    const val CHANNEL = "reminders"
 
     private fun channel(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java)
@@ -106,21 +114,39 @@ object Notifier {
 
     fun notificationId(id: String): Int = id.hashCode()
 
-    fun reminder(context: Context, r: ShellReminder): Boolean {
+    /** A reminder of the phone's schedule, when its alarm fires. */
+    fun reminder(context: Context, r: ShellReminder): Boolean = show(context, r.id, r.taskId, r.title, r.fireAt)
+
+    /**
+     * The one notification of a reminder, for its alarm and for a push alike (shell-push D4):
+     * the id comes from the reminder's id, so whichever arrives second replaces the first, and
+     * without another sound. A firing already shown is not shown again (a notification the
+     * user dismissed stays away). False when notifications are not allowed.
+     */
+    fun show(context: Context, reminderId: String, taskId: String, title: String?, fireAt: Long): Boolean {
         if (!Scheduler.notificationsAllowed(context)) return false
+        val prefs = Prefs(context)
+        if (ReminderSchedule.wasShown(prefs.remindersShown, reminderId, fireAt)) return true
         channel(context)
         val n = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(r.title ?: context.getString(R.string.reminder_generic))
+            .setContentTitle(title ?: context.getString(R.string.reminder_generic))
             .setContentText(context.getString(R.string.reminder_text))
-            .setWhen(r.fireAt).setShowWhen(true)
+            .setWhen(fireAt).setShowWhen(true)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setContentIntent(open(context, ReminderSchedule.taskPath(r.taskId), notificationId(r.id)))
-            .actions(context, r.id, ReminderSchedule.REMINDER_ACTIONS)
+            .setOnlyAlertOnce(true)
+            .setContentIntent(open(context, ReminderSchedule.taskPath(taskId), notificationId(reminderId)))
+            .actions(context, reminderId, ReminderSchedule.REMINDER_ACTIONS)
             .build()
-        return try { NotificationManagerCompat.from(context).notify(notificationId(r.id), n); true } catch (e: SecurityException) { false }
+        return try {
+            NotificationManagerCompat.from(context).notify(notificationId(reminderId), n)
+            prefs.remindersShown = ReminderSchedule.markShown(prefs.remindersShown, reminderId, fireAt, System.currentTimeMillis())
+            true
+        } catch (e: SecurityException) {
+            false
+        }
     }
 
     /** A location reminder crossed in its direction (location-reminders): Done and Dismiss, a tap opens the task. */

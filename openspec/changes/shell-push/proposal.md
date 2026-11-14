@@ -13,7 +13,7 @@ The owner decided on 2026-11-14 to do Android this way first and leave the iPhon
 ## What Changes
 
 - **The Android app can receive reminders by push**, through the UnifiedPush app on the phone.
-  - In **Settings → Notifications** a switch, "Deliver at once through UnifiedPush", appears when the app can do it. Turning it on lets the user choose the UnifiedPush app, as that app's own screen asks.
+  - In **Settings → Notifications** a switch, "Deliver instantly through UnifiedPush", appears when the app can do it. Turning it on lets the user choose the UnifiedPush app, as that app's own screen asks.
   - The Android app registers with it, makes its own encryption keys, and the web app subscribes the device on the server the way a browser is subscribed.
   - At a reminder's time the server pushes; the app decrypts the message on the phone and shows the same notification, with Done, Snooze and Dismiss, that a reminder scheduled on the phone shows. One reminder never rings twice.
   - After a push the app refreshes in the background, so the phone's own schedule and the widget are current too.
@@ -42,4 +42,4 @@ None.
 - `web/src/lib`: two bridge methods and a capability (`push`), the subscription through the existing `/api/v1/push/subscriptions`; `web/src/app/ShellNotifications.tsx`: one row.
 - Server: no new route, no schema change. The app's subscription is a row in `push_subscriptions` like a browser's. A fixture written by the server's own encryption pins the app's decryption.
 - Bridge version stays 1. An older app does not list the capability and nothing changes; a newer app on an older server finds the push routes it needs already there.
-- Owner settings apply as they do today: with push turned off on the server, the switch is not offered; a UnifiedPush server on a private address needs the owner's existing "allow private network targets" setting.
+- Owner settings apply as they do today: with push turned off on the server, the switch is not offered. The server's push client refuses private addresses, as it does for browsers, so a UnifiedPush server on a LAN or Tailscale address does not work; it must be reachable from the server on a public address.

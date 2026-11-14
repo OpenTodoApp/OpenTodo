@@ -66,4 +66,37 @@ class ReminderScheduleTest {
         for (a in ReminderSchedule.REMINDER_ACTIONS + ReminderSchedule.LOCATION_ACTIONS) assertTrue(ReminderSchedule.isAction(a))
         assertTrue(!ReminderSchedule.isAction("delete") && !ReminderSchedule.isAction(null))
     }
+
+    /** shell-push D4: a firing is shown once, by its alarm or by a push, whichever comes first. */
+    @Test fun aFiringIsShownOnce() {
+        assertEquals(false, ReminderSchedule.wasShown("{}", "r1", now))
+        val shown = ReminderSchedule.markShown("{}", "r1", now, now)
+        assertTrue(ReminderSchedule.wasShown(shown, "r1", now))
+        // The alarm and the push may name the time a little differently: the same minute is the same firing.
+        assertTrue(ReminderSchedule.wasShown(shown, "r1", now + 59_999))
+        assertTrue(ReminderSchedule.wasShown(shown, "r1", now - 59_999))
+        // Snoozed ten minutes, the same reminder fires again; another reminder is another.
+        assertEquals(false, ReminderSchedule.wasShown(shown, "r1", now + 10 * 60_000))
+        assertEquals(false, ReminderSchedule.wasShown(shown, "r1", now + 60_000))
+        assertEquals(false, ReminderSchedule.wasShown(shown, "r2", now))
+        val snoozed = ReminderSchedule.markShown(shown, "r1", now + 10 * 60_000, now + 10 * 60_000)
+        assertTrue(ReminderSchedule.wasShown(snoozed, "r1", now + 10 * 60_000))
+        assertEquals(false, ReminderSchedule.wasShown(snoozed, "r1", now))
+    }
+
+    @Test fun shownFiringsAreForgottenAfterADayAndKeptFew() {
+        var shown = ReminderSchedule.markShown("{}", "old", now - 25 * hour, now - 25 * hour)
+        shown = ReminderSchedule.markShown(shown, "recent", now - 23 * hour, now - 23 * hour)
+        shown = ReminderSchedule.markShown(shown, "new", now, now)
+        assertEquals(false, ReminderSchedule.wasShown(shown, "old", now - 25 * hour))
+        assertTrue(ReminderSchedule.wasShown(shown, "recent", now - 23 * hour))
+        assertTrue(ReminderSchedule.wasShown(shown, "new", now))
+        for (i in 1..300) shown = ReminderSchedule.markShown(shown, "r$i", now + i, now)
+        assertEquals(200, org.json.JSONObject(shown).length())
+        assertTrue(ReminderSchedule.wasShown(shown, "r300", now + 300))
+        assertEquals(false, ReminderSchedule.wasShown(shown, "r1", now + 1))
+        // Unreadable storage starts over.
+        assertEquals(false, ReminderSchedule.wasShown("not json", "r1", now))
+        assertTrue(ReminderSchedule.wasShown(ReminderSchedule.markShown("not json", "r1", now, now), "r1", now))
+    }
 }

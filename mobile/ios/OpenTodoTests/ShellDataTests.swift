@@ -321,7 +321,8 @@ final class BridgeTests: XCTestCase {
         let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
         let visibleOnly = Set(try XCTUnwrap(fixture["visibleOnly"] as? [String]))
         let backgroundOnly = Set(try XCTUnwrap(fixture["backgroundOnly"] as? [String]))
-        let both = Set(try XCTUnwrap(fixture["both"] as? [String]))
+        // Without `push` (shell-push): reminders through UnifiedPush are the Android app's only.
+        let both = Set(try XCTUnwrap(fixture["both"] as? [String])).subtracting(["push"])
         let methods = try XCTUnwrap(fixture["methods"] as? [String: String])
         XCTAssertEqual(methods["backgroundDone"], "background")
         XCTAssertTrue(backgroundOnly.contains("background"))

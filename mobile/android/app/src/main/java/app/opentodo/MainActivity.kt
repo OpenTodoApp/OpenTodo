@@ -107,6 +107,14 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         backgroundDone = null
     }
 
+    private var pushLinkDone: ((Boolean, String?) -> Unit)? = null
+    /** shell-push D5: the distributor's link activity answers with the app the user chose. */
+    private val pushLinkScreen = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { r ->
+        val done = pushLinkDone
+        pushLinkDone = null
+        done?.invoke(r.resultCode == RESULT_OK, Push.distributorOf(r.data))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -547,7 +555,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             .show()
     }
 
-    /** "Change server": the old server's storage, schedule, location reminders, widget data and stored key go. */
+    /** "Change server": the old server's storage, schedule, location reminders, widget data, push registration and stored key go. */
     private fun forgetServer() {
         web.loadUrl("about:blank")
         WebStorage.getInstance().deleteAllData()
@@ -559,6 +567,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         NotificationManagerCompat.from(this).cancelAll()
         WidgetStore.clear(this)
         BiometricKeyStore.forget(this)
+        Push.forget(this)
         HiddenRun.cancel(this)
         shell?.clear()
         ShellStore.clearAll(File(filesDir, "shell-cache"))
@@ -656,6 +665,18 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     /** On the web view, so it follows the phone's touch-feedback setting and needs no permission. */
     override fun haptic(constant: Int) {
         if (::web.isInitialized) web.performHapticFeedback(constant)
+    }
+
+    /** One link screen at a time; a device where nothing answers the link has no distributor to ask. */
+    override fun pushLink(done: (Boolean, String?) -> Unit) {
+        if (pushLinkDone != null || isFinishing || isDestroyed) return done(false, null)
+        pushLinkDone = done
+        try {
+            pushLinkScreen.launch(Push.linkIntent())
+        } catch (e: ActivityNotFoundException) {
+            pushLinkDone = null
+            done(false, null)
+        }
     }
 
     override fun openExternal(url: String) {

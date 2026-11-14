@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -113,6 +113,34 @@ export interface OpenTodoShell {
    * own pull to refresh (`pull-refresh`) turns that off until another page loads.
    */
   pullHandled?(): void
+  /**
+   * shell-push D5: registers with the UnifiedPush app the user chose (the visible app
+   * may open its link screen) and answers a JSON `ShellPushSubscription`, or `{"error": ShellPushError}`.
+   */
+  pushSubscribe?(vapidKey: string): Promise<string> | string
+  /** shell-push D5: a JSON `ShellPushState`. Asks the user nothing; works in a background run. */
+  pushState?(): Promise<string> | string
+  /** shell-push D5: unregisters from the UnifiedPush app and deletes the keys. */
+  pushUnsubscribe?(): void
+}
+
+/** What a shell with `push` hands over (shell-push D5): a Web Push subscription. The private key stays on the phone. */
+export interface ShellPushSubscription {
+  /** The https address the UnifiedPush app gave. */
+  endpoint: string
+  /** base64url of the 65-byte uncompressed P-256 public key. */
+  p256dh: string
+  /** base64url of the 16-byte secret. */
+  auth: string
+}
+
+/** Why `pushSubscribe` gave no subscription. */
+export type ShellPushError = 'no-distributor' | 'cancelled' | 'failed' | 'action-required' | 'network'
+
+/** The answer of `pushState`: whether a UnifiedPush app is installed, and the registration if there is one. */
+export interface ShellPushState extends Partial<ShellPushSubscription> {
+  available: boolean
+  registered: boolean
 }
 
 declare global {
@@ -234,6 +262,7 @@ export function forgetShellData(): void {
   }
   if (has('widgets')) s.publishWidget?.(JSON.stringify({ updatedAt: Date.now(), locked: true, count: 0, overdue: 0, tasks: [] }))
   if (has('biometric')) s.biometricForget?.()
+  if (has('push')) s.pushUnsubscribe?.()
 }
 
 /**

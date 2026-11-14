@@ -17,8 +17,8 @@ import org.json.JSONObject
  * script, both restricted to the configured origin, so no other page sees
  * `window.opentodoShell`. The activity is the [Host] for what needs a screen (permission
  * prompts, the biometric prompt, the system browser); the hidden background run has none,
- * so it offers only reminders, widgets and geofences (and never asks for a permission,
- * saves a file or gives haptic feedback). The hidden run passes [backgroundDone], which the
+ * so it offers only reminders, widgets, geofences and push (and never asks for a permission,
+ * saves a file, gives haptic feedback or starts a distributor's screen). The hidden run passes [backgroundDone], which the
  * web app calls when it has synced and handed over (shell-reminders-on D4): only that run
  * lists the capability `background`.
  */
@@ -53,6 +53,11 @@ class Bridge(
         fun saveFile(json: String, done: (String) -> Unit) = done(FileSave.FAILED)
         /** shell-repairs D5: the platform's feedback for a `HapticFeedbackConstants` value (main thread). */
         fun haptic(constant: Int) {}
+        /**
+         * shell-push D5: the link activity of the user's UnifiedPush distributor (main thread);
+         * done gets whether it answered RESULT_OK and the app it named. The default starts nothing.
+         */
+        fun pushLink(done: (Boolean, String?) -> Unit) = done(false, null)
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -110,6 +115,10 @@ class Bridge(
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
+            // shell-push D5: only the visible app may start the distributor's link screen (host).
+            "pushSubscribe" -> args.optString(0).let { vapid -> main.post { Push.subscribe(context, host, vapid) { answer(it) } } }
+            "pushState" -> answer(Push.stateJson(context))
+            "pushUnsubscribe" -> main.post { Push.forget(context) }
             "setSystemBars" -> if (host != null) {
                 // A malformed payload keeps the bars, and nothing of it is logged.
                 val json = args.optString(0)
@@ -159,6 +168,8 @@ class Bridge(
         fun capabilityList(play: Boolean, hasScreen: Boolean, background: Boolean, sdkInt: Int, biometric: Boolean): List<String> {
             val caps = mutableListOf("reminders", "widgets")
             if (!play) caps += "geofences"
+            // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
+            caps += "push"
             if (hasScreen) caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
@@ -223,7 +234,10 @@ class Bridge(
                 saveFile: function (json) { return call('saveFile', [String(json)]) },
                 haptic: function (kind) { send('haptic', [String(kind)]) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
-                backgroundDone: function () { send('backgroundDone', []) }
+                backgroundDone: function () { send('backgroundDone', []) },
+                pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },
+                pushState: function () { return call('pushState', []) },
+                pushUnsubscribe: function () { send('pushUnsubscribe', []) }
               });
             })();
         """.trimIndent()

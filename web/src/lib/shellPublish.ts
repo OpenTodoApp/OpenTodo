@@ -78,6 +78,8 @@ export async function shellTitlesEnabled(): Promise<boolean> {
 /** Sets whether notifications carry task titles; the publisher re-sends the schedule. */
 export async function setShellTitles(on: boolean): Promise<void> {
   await setMeta(META_INCLUDE, on)
+  // A push subscription carries the option too (shell-push D6).
+  if (has('push')) void import('./shellPush').then((m) => m.syncShellPush()).catch(() => undefined)
 }
 
 /** Whether the device's notifications go through the shell: on until the user turns it off (shell-reminders-on D1). */
@@ -97,6 +99,8 @@ export async function setShellNotifications(on: boolean): Promise<ShellPermissio
   if (!has('reminders')) return null
   await setMeta(META_SHELL_NOTIFICATIONS, on)
   if (!on) {
+    // Push delivery goes with the device's notifications (shell-push D6).
+    if (has('push')) await import('./shellPush').then((m) => m.disableShellPush()).catch(() => undefined)
     await scheduleReminders([])
     return 'granted'
   }

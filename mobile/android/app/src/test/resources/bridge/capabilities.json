@@ -15,7 +15,8 @@
   ],
   "both": [
     "reminders",
-    "widgets"
+    "widgets",
+    "push"
   ],
   "methods": {
     "openAlarmSettings": "alarm-settings",

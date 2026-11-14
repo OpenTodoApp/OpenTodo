@@ -4995,6 +4995,9 @@
   "Deleting…": [
     "web/src/app/EncryptionPanel.tsx"
   ],
+  "Deliver instantly through UnifiedPush": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Deliver it yourself; nothing is emailed. It works once until {instant}. API tokens keep working after a reset; deactivate the account instead if it may be compromised.": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -10445,6 +10448,9 @@
   ],
   "Needs": [
     "web/src/app/routines/Starters.tsx"
+  ],
+  "Needs a UnifiedPush app such as ntfy": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Needs a connection": [
     "web/src/app/palette/routineCommand.ts",
@@ -17743,6 +17749,9 @@
   "The Trash is empty.": [
     "web/src/app/TrashView.tsx"
   ],
+  "The UnifiedPush app could not register this device.": [
+    "web/src/app/ShellNotifications.tsx"
+  ],
   "The address is on a private network the server owner has not allowed.": [
     "web/src/app/NotificationChannels.tsx"
   ],
@@ -18353,6 +18362,7 @@
     "web/src/app/PublicListScreen.tsx"
   ],
   "The server could not be reached.": [
+    "web/src/app/ShellNotifications.tsx",
     "web/src/lib/errorText.ts"
   ],
   "The server could not be reached. Import needs a connection.": [
@@ -21782,6 +21792,9 @@
   ],
   "Your OpenTodo server never receives audio or transcripts. Only the task you save with Enter is stored and synced, like a typed one.": [
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Your UnifiedPush app needs attention. Open it, then try again.": [
+    "web/src/app/ShellNotifications.tsx"
   ],
   "Your account is end-to-end encrypted, so the server cannot read your tasks. This device can: it sends what a question needs directly to the provider you choose, with your own key. The OpenTodo server sees none of it.": [
     "web/src/app/assistant/AssistantDevice.tsx"

@@ -75,7 +75,7 @@ class BridgeTest {
         assertEquals("1", web.js("window.opentodoShell.bridge"))
         assertEquals("\"android\"", web.js("window.opentodoShell.platform"))
         val caps = web.js("window.opentodoShell.capabilities.join(',')")
-        for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
+        for (c in listOf("reminders", "widgets", "push", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
         // shell-reminders-on: the alarm page only where exact alarms need a permission; never a background run's capability.
         // The page answers a JSON string, quotes included.
         val listed = caps.trim('"').split(',')

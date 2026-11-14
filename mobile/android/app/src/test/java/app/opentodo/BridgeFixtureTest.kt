@@ -198,11 +198,25 @@ class BridgeFixtureTest {
 
     /** `background` only in a run without a screen; the Play build drops geofences; biometric needs a screen. */
     @Test fun capabilityListByBuildAndRun() {
-        assertEquals(listOf("reminders", "widgets", "geofences"), Bridge.capabilityList(play = false, hasScreen = false, background = false, sdkInt = 36, biometric = true))
-        assertEquals(listOf("reminders", "widgets", "background"), Bridge.capabilityList(play = true, hasScreen = false, background = true, sdkInt = 36, biometric = false))
+        assertEquals(listOf("reminders", "widgets", "geofences", "push"), Bridge.capabilityList(play = false, hasScreen = false, background = false, sdkInt = 36, biometric = true))
+        assertEquals(listOf("reminders", "widgets", "push", "background"), Bridge.capabilityList(play = true, hasScreen = false, background = true, sdkInt = 36, biometric = false))
         val visible = Bridge.capabilityList(play = true, hasScreen = true, background = true, sdkInt = 36, biometric = true)
         assertFalse(visible.toString(), visible.contains("background") || visible.contains("geofences"))
         assertTrue(visible.toString(), visible.contains("biometric") && visible.contains("links"))
+    }
+
+    /**
+     * shell-push D5: `push` in the visible app and in a background run (which reads pushState
+     * to notice a new endpoint), in every build and on every Android version; the fixture
+     * lists it under `both`.
+     */
+    @Test fun pushIsACapabilityOfEveryRun() {
+        assertTrue(strings(fixture("capabilities.json"), "both").contains("push"))
+        for (play in listOf(false, true)) for (sdk in listOf(26, 30, 33, 34, 36)) {
+            assertTrue(Bridge.capabilityList(play = play, hasScreen = true, background = false, sdkInt = sdk, biometric = false).contains("push"))
+            assertTrue(Bridge.capabilityList(play = play, hasScreen = false, background = true, sdkInt = sdk, biometric = false).contains("push"))
+            assertTrue(Bridge.capabilityList(play = play, hasScreen = false, background = false, sdkInt = sdk, biometric = false).contains("push"))
+        }
     }
 
     /** The answer of scheduleReminders: exact alarms only matter once notifications are allowed. */
