@@ -77,8 +77,10 @@ class BridgeTest {
         val caps = web.js("window.opentodoShell.capabilities.join(',')")
         for (c in listOf("reminders", "widgets", "share", "links", "obsidian-links", "microphone", "files", "haptics")) assertTrue("capability $c in $caps", caps.contains(c))
         // shell-reminders-on: the alarm page only where exact alarms need a permission; never a background run's capability.
-        assertEquals("alarm-settings in $caps", Build.VERSION.SDK_INT >= 31, caps.split(',').contains("alarm-settings"))
-        assertFalse("background in $caps", caps.split(',').contains("background"))
+        // The page answers a JSON string, quotes included.
+        val listed = caps.trim('"').split(',')
+        assertEquals("alarm-settings in $caps", Build.VERSION.SDK_INT >= 31, listed.contains("alarm-settings"))
+        assertFalse("background in $caps", listed.contains("background"))
     }
 
     @Test fun aCallAnswersThroughTheMessageChannel() {
