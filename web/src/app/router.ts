@@ -91,7 +91,8 @@ const LOOP_MOVES: readonly string[] = ['catch', 'clarify', 'place', 'do', 'revie
  * theme editor, Import, Help, the feeds, statistics, sign-in links) leave the
  * button out: there it would only cover the ends of rows and form fields. Every
  * view is listed, so a new one has to decide. The rituals that keep nothing else
- * on screen, Focus and Close the day, leave it out too (no-layout-jump).
+ * on screen, Focus and Close the day, leave it out too (no-layout-jump), and so
+ * does every screen whose own action ends the page: see `offersQuickAdd`.
  */
 export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   inbox: true, today: true, upcoming: true, someday: true, anytime: true,
@@ -105,9 +106,15 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   trash: false, feed: false, ask: false, display: false, stats: false, habits: false,
 }
 
-/** Whether the route's view offers quick add (VIEW_QUICK_ADD). */
+/**
+ * Whether the route's screen offers quick add (VIEW_QUICK_ADD). One rule for the
+ * screens that end in their own action (phone-fab-clearance): no add button, since
+ * it would stand on that action. Those are the guided reviews, the weekly review's
+ * steps and Close the day, with Back and Next under the step; the Daily check and
+ * the Monthly look are lists with their action in the header and keep the button.
+ */
 export function offersQuickAdd(r: Route): boolean {
-  if (r.view === 'review' && r.step === 'close') return false
+  if (r.view === 'review') return r.step === 'daily' || r.step === 'monthly'
   return VIEW_QUICK_ADD[r.view]
 }
 

@@ -108,7 +108,7 @@ export function ColourPicker({ label, value, derived, onChange, onReset }: Pick<
   }
   return (
     <div className="flex flex-col gap-3" data-colour-picker>
-      <div role="group" aria-label={t('Swatches')} className="grid grid-cols-9 gap-1.5">
+      <div role="group" aria-label={t('Swatches')} className="grid grid-cols-9 gap-1.5 pointer-coarse:grid-cols-6">
         {ACCENT_SWATCHES.map((s) => (
           <button key={s} type="button" aria-label={s} aria-pressed={hex === s} data-swatch={s} style={{ backgroundColor: s }}
             className={`aspect-square min-h-6 w-full rounded-control outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus ${hex === s ? 'ring-2 ring-offset-2 ring-offset-surface ring-accent' : ''}`}

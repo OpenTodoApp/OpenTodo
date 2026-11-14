@@ -18,7 +18,9 @@ const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 
  * The checkbox and the title; `page` sets the title at the page's size and wraps it freely.
  * The panel's title is one step smaller than the page's (sidebar-brand-and-row-grid D5), and
  * the checkbox stands in a box of the title's first line, so it is centred on that line
- * however many lines the title takes.
+ * however many lines the title takes. On touch its 44 px target starts at the top of that
+ * line and reaches down beside the title, so it never lies under the bar above the page
+ * (phone-task-page-targets); the circle stays on the first line.
  */
 export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, size }: { m: TaskDetailModel; readOnly: boolean; completeLocked?: boolean; projects: Project[]; size: 'panel' | 'page' }) {
   const { task } = m
@@ -27,11 +29,13 @@ export function TaskHead({ m, readOnly, completeLocked = readOnly, projects, siz
   const page = size === 'page'
   return (
     <>
-      <span className={`flex shrink-0 items-center self-start ${page ? 'h-7' : 'h-6'}`} data-panel-check>
+      <span className={`flex shrink-0 items-center self-start pointer-coarse:items-start ${page ? 'h-7' : 'h-6'}`} data-panel-check>
         <button type="button" aria-label={done ? t('Reopen task') : t('Complete task')} aria-pressed={done} disabled={completeLocked} onClick={() => m.toggle(task)} data-panel-complete
-          className="touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-fine:-m-0.5 pointer-fine:size-6">
-          <span className={`flex size-[18px] items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
-            {done && <Icon name="check" size="xs" />}
+          className="touch-target inline-flex shrink-0 items-center justify-center rounded-full pointer-coarse:items-start pointer-fine:-m-0.5 pointer-fine:size-6">
+          <span className={`flex items-center ${page ? 'pointer-coarse:h-7' : 'pointer-coarse:h-6'}`}>
+            <span className={`flex size-[18px] items-center justify-center rounded-full border-2 transition ${done ? 'border-accent bg-accent text-on-accent' : `${RING[task.priority] ?? 'border-p4'} hover:bg-success-soft`}`}>
+              {done && <Icon name="check" size="xs" />}
+            </span>
           </span>
         </button>
       </span>

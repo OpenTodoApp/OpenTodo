@@ -166,7 +166,14 @@ export function truncation() {
  * in different layers (the page and an open menu, dialog, sheet or list of options) are
  * not compared: a control under an open overlay is covered, not visible (ux-fixes-phone).
  * Nor is a control of the page's fixed chrome (the tab bar, the add button) with one of the
- * content that scrolls under it: scrolling uncovers it (phone-row-controls).
+ * content that scrolls under it: scrolling uncovers it (phone-row-controls). A control of
+ * a `position: sticky` element counts as such chrome while that element is stuck, that is,
+ * held away from its place in the flow (a composer pinned to the bottom of a page over the
+ * content before it): scrolling on brings it to its place and uncovers what it covered
+ * (phone-task-page-targets). Two pinned controls on each other stay an overlap. The one pair
+ * of chrome and content that is compared is the add button and a page's primary action
+ * (`.ui-btn--primary`): the screen is measured as it opens, and there the add button must
+ * not stand on the action the page is about (phone-fab-clearance).
  */
 export function overlaps() {
   const out = []
@@ -174,11 +181,28 @@ export function overlaps() {
   const els = [...document.querySelectorAll(window.__ux.targets)].filter((el) => window.__ux.shown(el))
   const boxes = els.map((el) => el.getBoundingClientRect())
   const layers = els.map((el) => el.closest(LAYER))
-  const fixed = els.map((el) => { for (let n = el; n && n !== document.body; n = n.parentElement) if (getComputedStyle(n).position === 'fixed') return true; return false })
+  // Stuck: the sticky element is not where it would be in the flow (measured with it static for a moment).
+  const stuck = (n) => {
+    const at = n.getBoundingClientRect(), was = n.style.position
+    n.style.position = 'static'
+    const flow = n.getBoundingClientRect()
+    n.style.position = was
+    return Math.abs(at.top - flow.top) > 1 || Math.abs(at.left - flow.left) > 1
+  }
+  const fixed = els.map((el) => {
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const position = getComputedStyle(n).position
+      if (position === 'fixed' || (position === 'sticky' && stuck(n))) return true
+    }
+    return false
+  })
+  const add = els.map((el) => el.matches('[data-add-button]'))
+  const primary = els.map((el) => el.matches('.ui-btn--primary'))
   for (let i = 0; i < els.length; i++) {
     for (let j = i + 1; j < els.length; j++) {
       if (els[i].contains(els[j]) || els[j].contains(els[i])) continue
-      if (layers[i] !== layers[j] || fixed[i] !== fixed[j]) continue
+      const onAction = (add[i] && primary[j]) || (add[j] && primary[i])
+      if (layers[i] !== layers[j] || (fixed[i] !== fixed[j] && !onAction)) continue
       const a = boxes[i], b = boxes[j]
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left)
       const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)

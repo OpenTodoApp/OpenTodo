@@ -4,7 +4,7 @@
 // offline and every synced device shows the same numbers, except "keeps slipping",
 // which reads this device's own activity record and says so (design D5).
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Icon, Menu, MenuItem, PageBody, PageHeader } from '../../ui'
+import { DESKTOP_HEADER_QUERY, Icon, Menu, MenuItem, PageBody, PageHeader, useMediaQuery } from '../../ui'
 import { NO_TASK_ROWS, useAllLabels, useAllProjects, useAllTaskRows, useMemberships } from '../../lib/localData'
 import { currentDayStart, formatDate, monthName, weekdayName } from '../../lib/dates'
 import { useMe } from '../../lib/sharing'
@@ -32,9 +32,22 @@ function writePeriod(p: DashboardPeriod): void {
   writeString(PERIOD_KEY, p) // device convenience only
 }
 
-/** The period chooser: a radio group with roving focus; the arrow keys change the period. */
-export function PeriodChooser({ value, onChange, chooserRef }: { value: DashboardPeriod; onChange: (p: DashboardPeriod) => void; chooserRef?: React.Ref<HTMLDivElement> }) {
+/**
+ * The period chooser: a radio group with roving focus; the arrow keys change the period.
+ * Below 768 px it is one button with the period's name that opens the five as a menu
+ * (phone-stats-period), as the calendar's views are, so it shares its row with the page's menu.
+ */
+export function PeriodChooser({ value, onChange }: { value: DashboardPeriod; onChange: (p: DashboardPeriod) => void }) {
   const refs = useRef<Partial<Record<DashboardPeriod, HTMLButtonElement | null>>>({})
+  const desktop = useMediaQuery(DESKTOP_HEADER_QUERY)
+  if (!desktop) {
+    return (
+      <Menu kind="menu" label={t('Period')} namedByContent align="start" triggerClassName="ui-btn ui-btn--ghost ui-btn--sm" triggerProps={{ 'data-period-chooser': value }}
+        trigger={<><span className="sr-only">{t('Period')} </span>{PERIOD_LABELS[value]}<Icon name="chevron-down" size="sm" /></>}>
+        {PERIOD_KINDS.map((p) => <MenuItem key={p} label={PERIOD_LABELS[p]} checked={p === value} radio data-period={p} onSelect={() => onChange(p)} />)}
+      </Menu>
+    )
+  }
   const move = (e: KeyboardEvent) => {
     const i = PERIOD_KINDS.indexOf(value)
     const n = PERIOD_KINDS.length
@@ -47,7 +60,7 @@ export function PeriodChooser({ value, onChange, chooserRef }: { value: Dashboar
     refs.current[PERIOD_KINDS[next]]?.focus()
   }
   return (
-    <div ref={chooserRef} role="radiogroup" aria-label={t('Period')} onKeyDown={move} className="inline-flex flex-wrap gap-1 rounded-control border border-default bg-sunken p-1" data-period-chooser>
+    <div role="radiogroup" aria-label={t('Period')} onKeyDown={move} className="inline-flex flex-wrap gap-1 rounded-control border border-default bg-sunken p-1" data-period-chooser>
       {PERIOD_KINDS.map((p) => {
         const on = p === value
         return (
@@ -318,7 +331,7 @@ export function StatsView() {
   return (
     <PageBody width="full" className="max-w-5xl" data-stats-page>
       <PageHeader title={t('Statistics')} icon="chart-column" titleRef={title} titleTabIndex={-1}>
-        <div className="flex flex-wrap items-center gap-2" data-stats-header-row>
+        <div className="flex flex-wrap items-center gap-2 max-md:w-full" data-stats-header-row>
           <PeriodChooser value={period} onChange={(p) => { setPeriod(p); writePeriod(p) }} />
           {/* After the period chooser, which stays the first stop (statistics "Statistics screen"). */}
           <span className="ml-auto">

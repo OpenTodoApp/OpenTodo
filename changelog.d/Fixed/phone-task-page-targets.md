@@ -1,0 +1,1 @@
+- **On a phone, a tap just above a task's completion circle no longer shares its touch area with Back.** The circle's 44 px target now starts under the bar and reaches down beside the title; the circle has not moved ([#1370](https://github.com/OpenTodoApp/OpenTodo/issues/1370)).

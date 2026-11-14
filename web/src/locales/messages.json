@@ -5402,7 +5402,7 @@
   "Drag <strong>Add to OpenTodo</strong> to your bookmarks bar, then click it on any page.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Drag a bar to move its dates, or its ends to set the start and deadline. ← → move the selected task, Shift+← → its deadline.": [
+  "Drag a bar to move its dates, or its ends to set the start and deadline.": [
     "web/src/app/TimelineView.tsx"
   ],
   "Drag a task onto a time, or focus one and press {key}.": [
@@ -26151,6 +26151,9 @@
   ],
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": [
     "web/src/lib/dependencies.ts"
+  ],
+  "← → move the selected task, Shift+← → its deadline.": [
+    "web/src/app/TimelineView.tsx"
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"

@@ -19,6 +19,8 @@ Choose **Timeline** at the top of the project (or press <kbd>v</kbd> until it sh
 - **Keyboard:** select a task with <kbd>j</kbd> and <kbd>k</kbd>, then <kbd>←</kbd> and <kbd>→</kbd> move its dates a day. <kbd>Shift</kbd>+<kbd>←</kbd> and <kbd>Shift</kbd>+<kbd>→</kbd> move its deadline, starting from the due date when it has none. <kbd>Enter</kbd> opens it.
 - **Days** and **Weeks** change the scale. <kbd>[</kbd> and <kbd>]</kbd> move the visible range, and <kbd>t</kbd> comes back to today.
 
-When one task [waits for another](tasks-and-projects.md#wait-for-another-task) in the same project, an arrow joins them and the waiting task is dimmed until the other is done. Moving a task never moves the tasks that wait for it. Viewers of a shared project see the timeline but can't change dates. On a phone the task names stay in place while the dates scroll sideways, and you press and hold a bar to drag it.
+When one task [waits for another](tasks-and-projects.md#wait-for-another-task) in the same project, an arrow joins them and the waiting task is dimmed until the other is done. Moving a task never moves the tasks that wait for it. Viewers of a shared project see the timeline but can't change dates.
+
+On a phone each task's name sits on its own line above its bar, so the name reads in full and the dates get the whole width. The names stay in place while the dates scroll sideways. Tap a name to open the task; press and hold a bar, then move, to drag it. The line about arrow keys only shows where there is a keyboard.
 
 Sections and the board layout of the same project are described in [Sections and boards](sections-and-boards.md).

@@ -215,6 +215,11 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `touch-sheet-focus` | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | In progress (9 of 11) |
 | `phone-calendar-chrome` | The calendar on a phone: one row under the bar, the views in a menu | In progress (10 of 13) |
 | `touch-no-tooltips` | No tooltip after a tap; hover and keyboard focus as before | In progress (6 of 7) |
+| `phone-fab-clearance` | No floating add button on a Weekly review step, whose own action it covered | In progress (6 of 8) |
+| `phone-icon-picker` | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | In progress (11 of 14) |
+| `phone-task-page-targets` | A task page's completion circle takes its whole 44 px, clear of Back | In progress (7 of 9) |
+| `phone-stats-period` | The Statistics period as one menu button on a phone; a public list's name on two lines | In progress (11 of 14) |
+| `phone-timeline-rows` | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | In progress (9 of 12) |
 | `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | In progress (10 of 14) |
 
 ## Native app

@@ -114,6 +114,27 @@ test('M11 overlap: side by side passes, stacked controls fail', { skip }, async 
   assert.deepEqual(await page.evaluate(overlaps), [])
   await fixture('<div style="position:fixed;left:0;top:0"><button style="width:40px;height:40px">a</button></div><div style="position:fixed;left:10px;top:10px"><button style="width:40px;height:40px">b</button></div>')
   assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  // The add button on a page's primary action is an overlap although the page scrolls (phone-fab-clearance); beside it, none.
+  const action = (left) => `<button class="ui-btn--primary" style="width:200px;height:40px">Next</button><button data-add-button style="position:fixed;left:${left}px;top:10px;width:56px;height:56px">+</button>`
+  await fixture(action(160))
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  await fixture(action(210))
+  assert.deepEqual(await page.evaluate(overlaps), [])
+  // A sticky bar held at the bottom of the page over the content before it is such chrome while it is stuck...
+  const sticky = (space) => `<div style="height:300px"></div><button style="display:block;width:40px;height:40px">a</button><div style="height:${space}px"></div><div style="position:sticky;bottom:0"><button style="display:block;width:40px;height:40px">b</button></div>`
+  await page.setViewportSize({ width: 360, height: 360 })
+  await fixture(sticky(600))
+  await page.evaluate(() => window.scrollTo(0, 0))
+  assert.deepEqual(await page.evaluate(overlaps), [])
+  // ...and no longer once the page is scrolled to its place: there it is content like the rest.
+  await fixture(`<button style="display:block;width:40px;height:40px">a</button><div style="position:sticky;bottom:0;margin-top:-20px"><button style="display:block;width:40px;height:40px">b</button></div>`)
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  // Two stuck bars on each other cannot be scrolled apart.
+  await fixture(`<div style="position:sticky;top:0"><button style="display:block;width:40px;height:40px">a</button></div><div style="height:900px"></div><div style="position:sticky;bottom:0"><button style="display:block;width:40px;height:40px">b</button></div>`)
+  await page.setViewportSize({ width: 360, height: 60 })
+  await page.evaluate(() => window.scrollTo(0, 200))
+  assert.deepEqual(rules(await page.evaluate(overlaps)), ['M11'])
+  await page.setViewportSize({ width: 360, height: 640 })
 })
 
 test('M12 layout shift: a still page passes, a late banner fails', { skip }, async () => {

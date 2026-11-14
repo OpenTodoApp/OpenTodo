@@ -13,7 +13,7 @@ order: 25
 
 ## Statistics
 
-Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, this month, this quarter, this year or last week with the arrow keys. Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before. A period to date is compared with the same days of the previous one: on 10 October, this month is 1–10 October against 1–10 September.
+Open **Statistics** under More, or press <kbd>g</kbd> <kbd>Shift+S</kbd>. Choose this week, this month, this quarter, this year or last week with the arrow keys (on a phone, tap the period). Weeks start on your [first day of the week](dates-and-times.md), and days begin at your [day start](dates-and-times.md#when-a-day-ends): with 04:00, a task completed at 01:30 counts for the day before. A period to date is compared with the same days of the previous one: on 10 October, this month is 1–10 October against 1–10 September.
 
 The four tiles:
 
@@ -31,9 +31,9 @@ Each panel answers one question:
 - **How good are my estimates?** For tasks with an estimate and at least 5 minutes tracked: how many times their estimate they take, and the projects or labels furthest from it.
 - **What keeps slipping?** Open tasks whose due date was moved later or removed three times or more in 90 days. It reads this device's history, so another device may list different tasks.
 
-Every chart has **Show as table**, and the arrow keys move through its days or values. A panel with nothing to show collapses to one line.
+Every chart has **Show as table**, and the arrow keys move through its days or values. An empty panel collapses to one line.
 
-**Export time entries** in the menu next to the period chooser downloads a CSV of the period's entries, made on this device. The columns are those of the [server's CSV](time-tracking.md#export).
+**Export time entries** in the menu beside the period downloads a CSV of its entries, made on this device, with the columns of the [server's CSV](time-tracking.md#export).
 
 In a shared project a completed task counts for whoever completed it; older tasks count for their assignee, or for you when unassigned. Tasks in the Trash and the start guide's sample tasks are left out.
 

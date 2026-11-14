@@ -1,6 +1,7 @@
 // The title of a view page (OpenSpec change views-and-display, design D1): "Views ›
 // <name>", where "Views" goes back to the overview. The name is the page's heading text.
-import { Icon } from '../../ui'
+// It stays one line; a cut name shows in full on hover and on keyboard focus.
+import { Icon, TruncatedText } from '../../ui'
 import { t } from '../../lib/i18n'
 import { navigate, routePath } from '../router'
 
@@ -12,7 +13,8 @@ export function ViewsCrumb({ name }: { name: string }) {
         {t('Views')}
       </a>
       <Icon name="chevron-right" size="xs" className="shrink-0 text-faint" />
-      <span className="min-w-0 truncate">{name}</span>
+      {/* One line in the bar and the header (phone-bar-overflow); a cut name stays reachable (phone-stats-period). */}
+      <TruncatedText text={name} className="min-w-0" />
     </span>
   )
 }

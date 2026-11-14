@@ -261,6 +261,11 @@ The phone apps stay web-view shells and are made to feel like apps, in the order
 | [`touch-sheet-focus`](openspec/changes/touch-sheet-focus/) | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | [#1360](https://github.com/OpenTodoApp/OpenTodo/issues/1360) |
 | [`phone-calendar-chrome`](openspec/changes/phone-calendar-chrome/) | The calendar on a phone: one row under the bar, the views in a menu | [#1361](https://github.com/OpenTodoApp/OpenTodo/issues/1361) |
 | [`touch-no-tooltips`](openspec/changes/touch-no-tooltips/) | No tooltip after a tap; hover and keyboard focus as before | [#1362](https://github.com/OpenTodoApp/OpenTodo/issues/1362) |
+| [`phone-fab-clearance`](openspec/changes/phone-fab-clearance/) | No floating add button on a Weekly review step, whose own action it covered | [#1368](https://github.com/OpenTodoApp/OpenTodo/issues/1368) |
+| [`phone-icon-picker`](openspec/changes/phone-icon-picker/) | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | [#1369](https://github.com/OpenTodoApp/OpenTodo/issues/1369) |
+| [`phone-task-page-targets`](openspec/changes/phone-task-page-targets/) | A task page's completion circle takes its whole 44 px, clear of Back | [#1370](https://github.com/OpenTodoApp/OpenTodo/issues/1370) |
+| [`phone-stats-period`](openspec/changes/phone-stats-period/) | The Statistics period as one menu button on a phone; a public list's name on two lines | [#1371](https://github.com/OpenTodoApp/OpenTodo/issues/1371) |
+| [`phone-timeline-rows`](openspec/changes/phone-timeline-rows/) | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | [#1372](https://github.com/OpenTodoApp/OpenTodo/issues/1372) |
 | [`shell-push`](openspec/changes/shell-push/) | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | [#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344) |
 
 Push to the iPhone app needs a relay the project would run, or an app signed by whoever runs the server; not planned.

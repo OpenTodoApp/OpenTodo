@@ -4,7 +4,7 @@
 // without a change), laid out as a grid of icons grouped by category, because a list
 // of hundreds of named rows is not how people choose a picture. Arrow keys move
 // through the grid as it is drawn; "No icon" comes first.
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { pickerField, restInOverlay } from './overlay/stack'
 import { CatalogueIcon } from './CatalogueIcon'
 import { Icon, isIconName } from './Icon'
@@ -12,8 +12,21 @@ import { CATALOGUE_NAMES } from './icons/catalogue.names'
 import { categoryLabel, iconTitle, loadCatalogue, searchIcons, type CatalogueEntry, type IconCategory, type LoadedCatalogue, ICON_CATEGORIES, catalogueIfLoaded } from './icons/catalogue'
 import { t } from '../lib/i18n'
 
+/** The columns of the grid with a mouse. */
 const COLS = 8
+/**
+ * A grid of touch targets (phone-icon-picker, GitHub issue 1369): on touch, as many columns
+ * of at least 44 px as the width holds, stretched evenly, 2 px apart. With a mouse the
+ * element keeps the layout its other classes give it.
+ */
+export const TOUCH_GRID = 'pointer-coarse:grid pointer-coarse:grid-cols-[repeat(auto-fill,minmax(44px,1fr))] pointer-coarse:gap-0.5'
 const NONE = ''
+
+/** The columns a grid of icons is drawn in: the tracks the browser laid out (phone-icon-picker). */
+function columnsOf(grid: Element | null | undefined): number {
+  const tracks = grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').filter((w) => w.endsWith('px')).length : 0
+  return tracks || COLS
+}
 
 interface Cell { key: string; row: number; col: number }
 
@@ -49,6 +62,9 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   // Opened from a menu's step on a touch-only device, the field stays unfocused and focus rests on the sheet.
   const root = useRef<HTMLDivElement>(null)
   useEffect(() => restInOverlay(root.current), [])
+  // The arrow keys follow the grid as drawn: eight columns with a mouse, fewer wider ones on touch.
+  const [cols, setCols] = useState(COLS)
+  const list = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (catalogue) return
@@ -80,11 +96,20 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
     let row = 0
     if (showNone) out.push({ key: NONE, row: row++, col: 0 })
     for (const g of groups) {
-      g.items.forEach((e, i) => out.push({ key: e.name, row: row + Math.floor(i / COLS), col: i % COLS }))
-      row += Math.ceil(g.items.length / COLS)
+      g.items.forEach((e, i) => out.push({ key: e.name, row: row + Math.floor(i / cols), col: i % cols }))
+      row += Math.ceil(g.items.length / cols)
     }
     return out
-  }, [groups, showNone])
+  }, [groups, showNone, cols])
+  useLayoutEffect(() => {
+    const el = list.current
+    if (!el) return
+    const read = () => setCols(columnsOf(el.querySelector('[data-icon-grid]')))
+    read()
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read)
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [groups.length > 0]) // eslint-disable-line react-hooks/exhaustive-deps -- measured when the first grid is drawn, then on resize
 
   // Typing moves the active cell to the best result.
   useEffect(() => {
@@ -144,7 +169,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
       <div key={key || 'none'} id={optionId(key)} role="option" aria-selected={selected} aria-label={title}
         data-icon-option={key || 'none'} data-active={isActive || undefined}
         onMouseDown={(e) => e.preventDefault()} onMouseEnter={() => setActive(key)} onClick={() => onPick(key === NONE ? null : key)}
-        className={`flex h-9 w-9 items-center justify-center rounded-control ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}
+        className={`touch-target flex h-9 w-9 items-center justify-center pointer-coarse:w-auto rounded-control ${isActive ? 'bg-sunken ring-2 ring-focus dark:bg-raised' : ''} ${selected ? 'bg-accent-soft' : ''}`}
         style={{ color: color ?? undefined }}>
         {mark}
       </div>
@@ -152,7 +177,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
   }
 
   return (
-    <div ref={root} className="space-y-1" data-icon-picker>
+    <div ref={root} className="space-y-1 in-data-[overlay=sheet]:px-2" data-icon-picker>
       <div className="relative">
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"><Icon name="search" /></span>
         <input role="combobox" aria-label={label} aria-expanded aria-controls={listboxId} aria-autocomplete="list"
@@ -165,7 +190,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
         </span>
       </div>
       {!catalogue && failed && <p className="px-1 text-meta text-muted" data-icons-offline>{t('Icons are not available offline yet.')}</p>}
-      <div id={listboxId} role="listbox" aria-label={label} className="max-h-72 overflow-y-auto overscroll-contain p-1">
+      <div ref={list} id={listboxId} role="listbox" aria-label={label} className="max-h-72 overflow-y-auto overscroll-contain p-1">
         {!catalogue && !failed && <p className="px-2 py-3 text-meta text-muted" role="status">{t('Loading…')}</p>}
         {showNone && (
           <div role="group" aria-label={t('No icon')} className="mb-1 flex">
@@ -175,7 +200,7 @@ export function IconPicker({ value, onPick, onClose, color, noneMark, label = t(
         {groups.map((g) => (
           <div key={g.category} role="group" aria-label={catalogue ? categoryLabel(g.category) : label} className="mb-1">
             {catalogue && <div role="presentation" className="px-1 pb-0.5 pt-1.5 text-hint font-semibold uppercase tracking-wide text-faint">{categoryLabel(g.category)}</div>}
-            <div className="grid grid-cols-8 gap-0.5">
+            <div data-icon-grid className={`grid grid-cols-8 gap-0.5 ${TOUCH_GRID}`}>
               {g.items.map((e) => cell(e.name, iconTitle(e.name), <CatalogueIcon name={e.name} />))}
             </div>
           </div>
