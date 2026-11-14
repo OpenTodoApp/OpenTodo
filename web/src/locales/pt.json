@@ -7659,5 +7659,7 @@
   "template, meeting, journal, new note": "modelo, reunião, diário, nota nova",
   "Note deleted": "Nota eliminada",
   "Note updated": "Nota atualizada",
-  "Titles and text arrive encrypted.": "Os títulos e o texto chegam cifrados."
+  "Titles and text arrive encrypted.": "Os títulos e o texto chegam cifrados.",
+  "Scheduled for today": "Agendada para hoje",
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": "{n, plural, one {# tarefa agendada para hoje} other {# tarefas agendadas para hoje}}"
 }

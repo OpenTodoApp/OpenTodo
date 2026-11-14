@@ -15223,6 +15223,9 @@
   "Scheduled copies of the whole server to a folder, S3 or WebDAV, restored here.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Scheduled for today": [
+    "web/src/lib/undoActions.ts"
+  ],
   "Scheduled for {date}.": [
     "web/src/lib/triage.ts"
   ],
@@ -17275,6 +17278,7 @@
     "web/src/app/auditFormat.ts"
   ],
   "Task reopened": [
+    "web/src/app/task-list/boardReopen.ts",
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
   ],
@@ -24933,6 +24937,9 @@
   "{n, plural, one {# task rescheduled} other {# tasks rescheduled}}": [
     "web/src/lib/bulk.ts"
   ],
+  "{n, plural, one {# task scheduled for today} other {# tasks scheduled for today}}": [
+    "web/src/lib/undoActions.ts"
+  ],
   "{n, plural, one {# task will be updated.} other {# tasks will be updated.}}": [
     "web/src/app/FieldsDialog.tsx"
   ],
@@ -25337,7 +25344,7 @@
     "web/src/app/BoardView.tsx"
   ],
   "{name}, {n, plural, one {# completed task} other {# completed tasks}}, folded": [
-    "web/src/app/BoardView.tsx"
+    "web/src/app/FoldedStrip.tsx"
   ],
   "{name}, {n, plural, one {# open task} other {# open tasks}}": [
     "web/src/app/BoardView.tsx",
