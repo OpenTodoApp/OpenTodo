@@ -723,6 +723,18 @@ html, body, #root {
   #root { height: 100dvh; }
 }
 
+/* Touch behaves like an app (shell-touch, GitHub issue 1338). The browser's flash on a
+   tap is off: a control shows its own pressed state. With a touch screen as the main
+   pointer the page itself never bounces, shows the pull glow or reloads on a pull: the
+   root ends the overscroll chain. Lists, sheets and menus keep scrolling in their own
+   scrollers, and a scroller still gets every touch event at its top. Pinch zoom stays
+   (no touch-action, no user-scalable). A mouse or trackpad keeps the browser's
+   overscroll, such as the swipe back in history. */
+html { -webkit-tap-highlight-color: transparent; }
+@media (pointer: coarse) {
+  html, body { overscroll-behavior: none; }
+}
+
 html {
   font-synthesis: style;
   /* Inter's optical-size axis picks its Display cut at large sizes (tokens-v2 D7). */
@@ -1529,6 +1541,25 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   /* Row-aware (labels-and-menus D6): keyboard focus anywhere in the row, or a selected row, shows its trigger. */
   .group:focus-within .hover-reveal, .group[data-active] .hover-reveal { opacity: 1; }
 }
+}
+/* Chrome is not text (shell-touch, GitHub issue 1338): on a touch screen a long press on a
+   control or on navigation selects no words and opens no callout (the link preview and
+   the Copy bubble of iOS). Chrome is every button, tab, menu item, option, switch and
+   disclosure, each navigation landmark (the tab bar, the sidebar's lists, breadcrumbs),
+   the phone bar, the sidebar and a page's header. Everything else is content and stays
+   selectable: the title in the task view, notes, comments, descriptions and the links in
+   them. A field or an editable area inside chrome (a title being renamed in a header)
+   keeps its selection too. Zero specificity in the base layer, so `select-text` on an
+   element still wins. With a mouse nothing changes. */
+@layer base {
+  @media (pointer: coarse) {
+    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="switch"], summary, nav, a.ui-btn, [data-phone-bar], [data-sidebar], [data-page-header]) {
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    }
+    :where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
+      -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
+    }
+  }
 }
 @media (pointer: coarse) {
   /* A held row is the menu's gesture, never a text selection (task-row-context-menu

@@ -49,6 +49,10 @@ final class ShellController: NSObject, ObservableObject {
         // No history back gesture (edge-swipe-menu, GitHub issue 1232): in an app an edge swipe
         // opens the menu, which the page does itself; screens have their own back buttons.
         webView.allowsBackForwardNavigationGestures = false
+        // No link previews (shell-touch, GitHub issue 1338): a long press on a link must not
+        // lift a browser preview of it out of the app. Links in notes and comments keep the
+        // text selection and its Copy.
+        webView.allowsLinkPreview = false
         // The page reaches every edge and pads itself by env(safe-area-inset-*) (viewport-fit=cover).
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.
