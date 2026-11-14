@@ -200,6 +200,13 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | --- | --- | --- |
 | `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | In progress (15 of 18) |
 | `shell-reminders-on` | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | In progress (10 of 13) |
+| `touch-keyboard-hints` | No keyboard shortcuts or key hints on a device without a keyboard | In progress (9 of 11) |
+| `shell-touch` | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | In progress (10 of 14) |
+| `phone-row-titles` | A task's title on up to two lines on a phone | In progress (7 of 9) |
+| `phone-header-room` | Help in the bar's menu on a phone, so the title has room | In progress (7 of 9) |
+| `sheet-drag-dismiss` | Bottom sheets follow the finger and close on a drag | In progress (11 of 13) |
+| `pull-to-sync` | Pull down to sync, never a reload | In progress (7 of 9) |
+| `shell-first-paint` | The apps open on their colour and icon, and the loading frame already has the phone's bars | In progress (10 of 15) |
 
 ## Native app
 
