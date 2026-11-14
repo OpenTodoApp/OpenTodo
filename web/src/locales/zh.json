@@ -7705,5 +7705,6 @@
   "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, other {查看了 # 个任务}}",
   "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "OpenTodo 的通知未获允许。请在 iPhone 的“设置”（通知 → OpenTodo）中允许通知；提醒仍会在应用内显示。",
   "Reminders may arrive a few minutes late.": "提醒可能会晚几分钟送达。",
-  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "应用无法显示通知。请在 iPhone 的“设置”中允许 OpenTodo 发送通知。"
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "应用无法显示通知。请在 iPhone 的“设置”中允许 OpenTodo 发送通知。",
+  "Search completed tasks": "搜索已完成的任务"
 }

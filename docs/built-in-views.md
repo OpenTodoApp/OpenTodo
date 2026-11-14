@@ -28,7 +28,7 @@ Each view works offline, from your device's tasks. Today and Upcoming have [a pa
 | **Waiting** | Tasks [waiting](method/places.md) on someone or something | <kbd>g</kbd> <kbd>Shift+W</kbd> |
 | **Assigned to me** | Open tasks assigned to you, across projects | <kbd>g</kbd> <kbd>a</kbd> |
 | **Calendar** | Your dated tasks by Day, Week or Month, as you last left it | <kbd>g</kbd> <kbd>d</kbd>, <kbd>g</kbd> <kbd>w</kbd>, <kbd>g</kbd> <kbd>m</kbd> |
-| **Completed** | What you finished, newest first, under a heading per day; **Show more** at the end reaches older days | <kbd>g</kbd> <kbd>c</kbd> |
+| **Completed** | What you finished, newest first, by day or project; narrow it in **Display options**, or search it | <kbd>g</kbd> <kbd>c</kbd> |
 | **Filter** | Any search you can describe | <kbd>g</kbd> <kbd>f</kbd> |
 | **Trash** | Deleted tasks and projects | <kbd>g</kbd> <kbd>x</kbd> |
 | **Updates** | What changed in your shared projects | <kbd>g</kbd> <kbd>h</kbd> |

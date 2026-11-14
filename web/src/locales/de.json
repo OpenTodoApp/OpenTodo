@@ -7705,5 +7705,6 @@
   "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {# Aufgabe angesehen} other {# Aufgaben angesehen}}",
   "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Benachrichtigungen sind für OpenTodo nicht erlaubt. Erlaube sie in den Einstellungen des iPhones (Mitteilungen → OpenTodo); Erinnerungen erscheinen weiterhin in der App.",
   "Reminders may arrive a few minutes late.": "Erinnerungen können ein paar Minuten zu spät kommen.",
-  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "Die App konnte keine Benachrichtigung anzeigen. Erlaube Benachrichtigungen für OpenTodo in den Einstellungen des iPhones."
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "Die App konnte keine Benachrichtigung anzeigen. Erlaube Benachrichtigungen für OpenTodo in den Einstellungen des iPhones.",
+  "Search completed tasks": "Erledigte Aufgaben durchsuchen"
 }
