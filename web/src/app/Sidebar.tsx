@@ -18,7 +18,7 @@ import { readCalendarMode } from '../lib/calendarMode'
 import { allProjectRows, useFieldDefs, useLiveSections, useMembershipMap, useProjects, useReviewRow, useSidebarRowsLoaded, useUserPrefsRow } from '../lib/localData'
 import { createProject } from '../lib/ops'
 import { dailyDue, dayClosed, monthlyDue, reviewAgo, reviewDue } from '../lib/review'
-import { formatInstant } from '../lib/dates'
+import { formatInstant, logicalToday } from '../lib/dates'
 import { readMethodMode, type MethodMode } from '../lib/method/mode'
 import { SidebarFooter } from './SidebarFooter'
 import { useCurrentWorkspace, WorkspaceControl, WorkspaceMark } from './WorkspaceControl'
@@ -405,7 +405,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
     const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year'
     // A Loop home address with a move open (/loop/<move>) is still the Loop home.
     // All notes and Graph: the Notes page's two modes, a note open beside them or not (notes-graph-page D1).
-    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? !!r.graph === !!route.graph : JSON.stringify(r) === JSON.stringify(route)
+    const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? (r.day ? route.day === r.day : !route.day && !!r.graph === !!route.graph) : JSON.stringify(r) === JSON.stringify(route)
     // With "Show shortcut hints" on, the destination prints its `g` key (keyboard-shortcuts "Hints preference").
     const go = hints && !collapsed && badge == null ? GO_KEYS[r.view] : undefined
     const node = <SidebarItem key={label} icon={icon} label={label} count={count} countLabel={openTasksLabel(count)} badge={go ? <kbd className="ui-kbd" data-go-hint>{go}</kbd> : badge} active={active} collapsed={collapsed} onClick={() => navigate(r)} data-destination={r.view} aria-description={tip && badge == null ? tip : undefined} {...(r.view === 'inbox' ? INBOX_DROP : r.view === 'today' ? TODAY_DROP : {})} />
@@ -449,7 +449,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
         <SpaceSwitch space={space} collapsed={collapsed} />
         {space === 'notes' ? (
           <nav className="space-y-0.5" aria-label={t('Notes')} data-sidebar-primary>
-            {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}
+            {item({ view: 'notes', graph: false }, t('All notes'), 'notebook-pen')}{prefsRow?.daily_notes === true && item({ view: 'notes', day: logicalToday() }, t('Today\'s note'), 'calendar-days') /* daily-notes D5: under All notes */}
             {item({ view: 'notes', graph: true }, t('Graph'), 'waypoints') /* notes-graph-page D1: the page's Graph mode */}
           </nav>
         ) : <nav className="space-y-0.5" aria-label={t('Primary')} data-sidebar-primary>

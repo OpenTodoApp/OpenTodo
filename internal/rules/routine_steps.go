@@ -98,7 +98,7 @@ func (st *runState) exec(s *ruleval.Step, in map[string]ruleval.Value, at int) (
 		return st.findProject(s, in)
 	case "create_project", "update_project", "create_sections", "create_labels", "favourite":
 		return st.projectStep(s, in, at)
-	case "find_notes", "get_note", "create_note", "change_notes", "note_to_task", "note_from_template":
+	case "find_notes", "get_note", "create_note", "change_notes", "note_to_task", "note_from_template", "daily_note":
 		return st.noteStep(s, in, at)
 	case "note_text":
 		return st.noteText(s, in)

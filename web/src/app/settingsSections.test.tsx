@@ -223,7 +223,7 @@ describe('opening a section', () => {
     const rows = (u: User, id: SettingsSectionId) => [...render(u, id).matchAll(/data-settings-subpage="([a-z-]+)"/g)].map((m) => m[1])
     expect(rows(member, 'account')).toEqual(['profile', 'security', 'activity', 'invitations', 'encryption'])
     expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar', 'task-details'])
-    expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'priorities', 'maps'])
+    expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'priorities', 'notes', 'maps'])
     expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
     expect(rows(member, 'notifications')).toEqual(['push', 'channels', 'digest'])
     expect(rows(member, 'capture')).toEqual(['quick-add', 'voice', 'browser', 'email'])

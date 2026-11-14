@@ -4,6 +4,7 @@
 // Object commands (project, saved view, label, section) are built from the menus'
 // own item lists, so the two cannot drift; a guard test checks it.
 import { openHabitForm } from '../habits/habitFormStore'
+import { logicalToday } from '../../lib/dates'
 import { createLabel } from '../../lib/labels'
 import { createProject, detachOccurrence, parkTask, skipOccurrence, unparkTask, updateProject, updateTask } from '../../lib/ops'
 import { reorderLabel, updateLabel } from '../../lib/labels'
@@ -86,6 +87,8 @@ export interface PaletteContext {
   timeSectors?: boolean
   /** Habits is on (habits-home D2): Go to Habits, New habit and Make it a habit are offered. */
   habits?: boolean
+  /** Daily notes is on (daily-notes D5): Open today's note is offered. */
+  dailyNotes?: boolean
   /** The selected task's slot command on Today with a limit (today-closed-list D3). */
   slot?: SlotState
   /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
@@ -410,6 +413,9 @@ export function commands(ctx: PaletteContext): Command[] {
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },
+    ...(ctx.dailyNotes ? [
+      { id: 'go:daily-note', label: t('Open today\'s note'), icon: 'notebook-pen' as const, shortcut: keysOf('go.dailyNote'), keywords: 'daily note journal today diary', run: () => navigate({ view: 'notes', day: logicalToday() }) },
+    ] : []),
     ...(ctx.habits ? [
       { id: 'go:habits', label: t('Go to Habits'), icon: 'leaf' as const, shortcut: keysOf('go.habits'), keywords: 'habits streak routine daily tracker', run: () => navigate({ view: 'habits' }) },
       { id: 'habit:new', label: t('New habit'), icon: 'leaf' as const, keywords: 'habit create start tracker daily', run: () => openHabitForm() },

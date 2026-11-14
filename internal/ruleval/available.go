@@ -32,6 +32,9 @@ const (
 	// ReasonAIEncrypted: an encrypted account's AI steps need one of its
 	// devices with the on-device assistant to run them (routines-ai-step D7).
 	ReasonAIEncrypted = "ai_encrypted"
+	// ReasonDailyNotesOff: Get the daily note while the run-as person's
+	// Daily notes setting is off (daily-notes D6).
+	ReasonDailyNotesOff = "daily_notes_off"
 )
 
 // Settings that fix a reason (the web app links them; "" when nothing can).
@@ -45,6 +48,7 @@ var reasonSettings = map[string]string{
 	ReasonTimeTrackingOff:    "how_you_work",
 	ReasonAINotConfigured:    "integrations.assistant",
 	ReasonAINoConsent:        "integrations.assistant",
+	ReasonDailyNotesOff:      "general.notes",
 }
 
 // reasonText is the sentence a run log and a notice show.
@@ -64,6 +68,7 @@ var reasonText = map[string]string{
 	ReasonAINotConfigured:    "the assistant is not set up for you on this server",
 	ReasonAINoConsent:        "accept the assistant's updated terms for routines",
 	ReasonAIEncrypted:        "turn on Run my routines on a device with the on-device assistant set up",
+	ReasonDailyNotesOff:      "Daily notes are turned off",
 }
 
 // SettingFor is the setting that fixes a reason ("" when none can).
@@ -97,6 +102,8 @@ type Env struct {
 	// (routines-ai-step D1, D10).
 	AI        bool
 	AIConsent bool
+	// DailyNotes: the user's Daily notes setting is on (daily-notes D6).
+	DailyNotes bool
 }
 
 // NotInShared lists the step kinds that act on personal things, not available
@@ -161,6 +168,10 @@ func Available(kind string, env Env) Availability {
 	case NeedsFocus:
 		if env.FocusOff {
 			return unavailable(ReasonFocusOff)
+		}
+	case NeedsDailyNotes:
+		if !env.DailyNotes {
+			return unavailable(ReasonDailyNotesOff)
 		}
 	case NeedsAI:
 		switch {

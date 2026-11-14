@@ -57,6 +57,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'general', label: msg('Vim keybindings'), description: msg('Keyboard navigation with hjkl'), page: 'keyboard', anchor: 'keyboard-heading', keywords: 'keyboard shortcuts' },
   { section: 'general', label: msg('Focus timer'), description: msg('Pomodoro, Flowtime or Countdown, the lengths, breaks and the sound'), page: 'focus', anchor: 'focus-heading', keywords: 'focus pomodoro flowtime countdown timer session break reminder sound tone' },
   { section: 'general', label: msg('Priorities'), description: msg('Your own names for priority 1 to 4'), page: 'priorities', anchor: 'priorities-heading', keywords: 'priority priorities rename name level flag p1 p2 p3 p4 must should' },
+  { section: 'general', label: msg('Daily notes'), description: msg('One note per day, its project and its template'), page: 'notes', anchor: 'daily-notes-heading', keywords: 'daily note journal diary day template g j' },
   { section: 'general', label: msg('Maps'), description: msg('Maps and address search on your devices'), page: 'maps', anchor: 'maps-user-heading', keywords: 'map location address places' },
   // Language and region (settings-subpages: split from General)
   { section: 'language', label: msg('Language'), description: msg('The language of the app on all your devices'), page: 'language', anchor: 'language-heading', keywords: 'language locale translation sprache langue idioma lingua idioma' },

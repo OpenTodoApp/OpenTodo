@@ -100,3 +100,12 @@ describe('habit routes (habits-polish D3)', () => {
     expect(routePath({ view: 'task', id: 't-1' })).toBe('/task/t-1')
   })
 })
+
+// A daily note's address (OpenSpec change daily-notes).
+describe('daily note routes', () => {
+  it('parses and writes /notes/day/YYYY-MM-DD', () => {
+    expect(parseRoute('/notes/day/2026-11-12')).toEqual({ view: 'notes', day: '2026-11-12' })
+    expect(routePath({ view: 'notes', day: '2026-11-12' })).toBe('/notes/day/2026-11-12')
+    expect(parseRoute('/notes/day/tomorrow')).not.toHaveProperty('day')
+  })
+})

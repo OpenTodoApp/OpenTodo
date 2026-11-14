@@ -187,6 +187,30 @@ export function activeBody(doc: Y.Doc): Y.XmlFragment {
   return doc.getXmlFragment(activeBodyName(doc))
 }
 
+/**
+ * Fold a daily note's creation text (daily-notes D2) under a name of its day and of
+ * the text, not of the write's clock: every device that creates the day, and the
+ * routine step's creation, build the same body; a different text (a `{{time}}`
+ * filled at another minute) builds another body, never the same one twice.
+ */
+export function foldDaily(value: string, text: string, day: string): string {
+  return foldText(value, text, 0, `daily-note:${day}:${foldClient(text).toString(16)}`)
+}
+
+type Clock = { ts: number; device: string }
+
+/**
+ * Fold a row's plain-text value back into its document (D2) under the write's clock,
+ * except a daily note's creation, `day` and the text written together by a device
+ * or the routine step, which folds as `foldDaily`.
+ */
+export function foldBack(value: string, row: { description?: string; day?: string; _clock?: Record<string, Clock> }): string {
+  const cd = row._clock?.description ?? { ts: 0, device: '' }
+  const d = row._clock?.day
+  const text = row.description ?? ''
+  return row.day && d && d.ts === cd.ts && d.device === cd.device ? foldDaily(value, text, row.day) : foldText(value, text, cd.ts, cd.device)
+}
+
 /** FNV-1a of the body name: the client id that writes a fold-back, the same on every device. */
 function foldClient(name: string): number {
   let h = 0x811c9dc5

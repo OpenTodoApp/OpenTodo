@@ -50,6 +50,20 @@ function takeBodyFocus(id: string): boolean {
   return true
 }
 
+/** What a daily note's draft was typed before the note existed (daily-notes D3): applied once its editor opens. */
+let pendingInput: { id: string; text: string } | null = null
+resettable('notePendingInput', () => { pendingInput = null })
+export function typeOnOpen(id: string, text: string): void {
+  pendingInput = { id, text }
+  bodyFocus = id
+}
+function takePendingInput(id: string): string | undefined {
+  if (pendingInput?.id !== id) return undefined
+  const { text } = pendingInput
+  pendingInput = null
+  return text
+}
+
 /** Debounce of the title's timed save, as the note editor's (NotesEditor SAVE_MS). */
 const TITLE_SAVE_MS = 400
 
@@ -122,6 +136,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const labels = useLabels()
   const project = projects.find((p) => p.id === note.project_id)
   const [focusBody] = useState(() => takeBodyFocus(note.id))
+  const [initialInput] = useState(() => takePendingInput(note.id))
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
@@ -129,7 +144,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
       <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={focusBody} outline="auto" />
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" />
       </Suspense>
       {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
       <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>
@@ -151,7 +166,7 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
 const toList = () => navigate({ view: 'notes' })
 
 /** The note's menu: Pin or Unpin always (a pin is personal), the conversions when the note may change. */
-function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
+export function NoteActions({ note, editable }: { note: Note; editable: boolean }) {
   const pinned = isFavourite(useUserPrefsRow(), 'note', note.id)
   const me = useMe()
   const connected = useConnected('note', note.id)

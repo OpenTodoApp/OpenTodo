@@ -1,4 +1,9 @@
-## ADDED Requirements
+# daily-notes Specification
+
+## Purpose
+Daily notes are one standalone note per day and user, the same on every device: the setting with its project and template, the name-based note and its server check, opening today's note and moving between days without writing, and the template written once.
+
+## Requirements
 
 ### Requirement: Daily notes setting
 Each user SHALL have the preferences Daily notes (off by default), a project for daily notes (none by default) and a template for them (the built-in Daily by default, one of the user's note templates, or none), in Settings › Notes, stored as additive fields of the user's preferences row, written as operations applied locally first and converging by last-writer-wins like the other preferences. A device SHALL read a template id it cannot resolve as the built-in Daily and keep the stored value. While the setting is off, every entry of "Opening a daily note" SHALL be hidden and existing daily notes SHALL stay ordinary notes.
@@ -12,7 +17,7 @@ Each user SHALL have the preferences Daily notes (off by default), a project for
 - **THEN** the next daily note is created from the built-in Daily, and the setting still names the trashed template
 
 ### Requirement: One note per day
-A daily note SHALL be a standalone note with an additive field `day` (`YYYY-MM-DD`) and the name-based id derived from the user's id and the day, so every device of the user that creates the note of a day creates the same note. It SHALL be created with the day's date in the user's date format as its title, the setting's project, the template's labels, and the filled template written as the note's plain-text text only, from which the document is built once by the fold-back of plain-text writes. The server SHALL refuse, changing nothing, an operation that sets `day` on a note whose id is not the name-based id of the operation's author and that day. `day` SHALL never change after creation. Creating the note of a day whose note is in the Trash SHALL restore it.
+A daily note SHALL be a standalone note with an additive field `day` (`YYYY-MM-DD`) and the name-based id derived from the user's id and the day, so every device of the user that creates the note of a day creates the same note. It SHALL be created with the day's date in the user's date format as its title, the setting's project, the template's labels, and the filled template written as the note's plain-text text only, from which the document is built once by the fold-back of plain-text writes, named after the day and the text rather than the write's clock, whether a device or the routine step creates the note, so every creator builds the same document. The server SHALL refuse, changing nothing, an operation that sets `day` on a note whose id is not the name-based id of the operation's author and that day. `day` SHALL never change after creation. Creating the note of a day whose note is in the Trash SHALL restore it.
 
 #### Scenario: Two devices offline
 - **WHEN** the laptop and the phone are both offline on 2026-11-12, the user writes "Call the bank" in today's note on the laptop and "Ferry at 9" on the phone, and both sync

@@ -163,8 +163,8 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-graph`](openspec/changes/notes-graph/) | Connections: a local graph of what links to and from an item | |
 | [`notes-graph-page`](openspec/changes/notes-graph-page/) | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | |
 | [`note-pane-width`](openspec/changes/note-pane-width/) | A note beside the Notes list resizes by its left edge and keeps a readable column | |
-| [`notes-space`](openspec/changes/notes-space/) | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
-| [`notes-in-routines`](openspec/changes/notes-in-routines/) | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
+| [`notes-space`](openspec/changes/archive/2026-11-13-notes-space/) | **Shipped.** A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | |
+| [`notes-in-routines`](openspec/changes/archive/2026-11-13-notes-in-routines/) | **Shipped.** Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | |
 | [`note-attachments`](openspec/changes/archive/2026-11-13-note-attachments/) | **Shipped.** Images and files in standalone notes | |
 | [`note-checklist-tasks`](openspec/changes/archive/2026-11-13-note-checklist-tasks/) | **Shipped.** Turn checklist lines of a note into tasks, each line becoming a link to its task | |
 | [`unlinked-mentions`](openspec/changes/archive/2026-11-13-unlinked-mentions/) | **Shipped.** Unlinked mentions below Linked references, linked in one step | |
@@ -173,8 +173,8 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`notes-bulk-actions`](openspec/changes/archive/2026-11-13-notes-bulk-actions/) | **Shipped.** Select several notes to move, label, pin, trash or turn into tasks at once | |
 | [`note-markdown-source`](openspec/changes/archive/2026-11-13-note-markdown-source/) | **Shipped.** Edit a note's Markdown source as plain text | |
 | [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
-| [`note-templates`](openspec/changes/note-templates/) | Start a note from a template, with built-in ones and a routine step | |
-| [`daily-notes`](openspec/changes/daily-notes/) | One note per day, opened from Today, that routines can add to | |
+| [`note-templates`](openspec/changes/archive/2026-11-13-note-templates/) | **Shipped.** Start a note from a template, with built-in ones and a routine step | |
+| [`daily-notes`](openspec/changes/archive/2026-11-14-daily-notes/) | **Shipped.** One note per day, opened from Today, that routines can add to | |
 | [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
 | [`note-webhooks`](openspec/changes/archive/2026-11-13-note-webhooks/) | **Shipped.** Opt-in note events for webhooks | |
 | [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |

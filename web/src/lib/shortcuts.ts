@@ -185,6 +185,8 @@ export const SHORTCUTS: Shortcut[] = [
   // Habits (habits-home D9): `g h` is Updates, so the screen takes the shifted H; it does nothing while Habits is off.
   { id: 'go.habits', keys: ['g Shift+H'], label: 'Habits', description: 'Go to Habits: your habits, their last seven days and a check button (while Habits is on)', section: 'go', scope: 'global' },
   { id: 'go.focus', keys: ['g Shift+F'], label: 'Focus', description: 'Go to Focus: one task, a timer, a break when you need one', section: 'go', scope: 'global' },
+  // Daily notes (daily-notes D5): `j` for journal; it does nothing while Daily notes is off.
+  { id: 'go.dailyNote', keys: ['g j'], label: 'Today\'s note', description: 'Open today\'s note (while Daily notes is on)', section: 'go', scope: 'global' },
   // Notes (notes-overview D7): `g n` is Anytime, so the page takes `g e`.
   { id: 'go.notes', keys: ['g e'], label: 'Notes', description: 'Go to Notes: every note with search, and the sidebar shows your notes', section: 'go', scope: 'global' },
   { id: 'go.find', keys: ['g /'], label: 'Find in sidebar', description: 'Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer)', section: 'go', scope: 'global' },
@@ -383,6 +385,9 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'notes.new', keys: ['q'], description: 'On the Notes page: start a new note', section: 'notes', scope: 'view', views: ['notes'], overrides: ['list.quick-add'] },
   { id: 'notes.search', keys: ['/'], description: 'On the Notes page: focus the search field, which finds notes by every word', section: 'notes', scope: 'view', views: ['notes'] },
   // notes-home: pin or unpin the focused note, handled by the list itself.
+  // daily-notes D5: in an open daily note, outside text fields; registered only while one is open.
+  { id: 'notes.day-prev', keys: ['['], description: 'In a daily note: the previous day', section: 'notes', scope: 'view', views: ['notes'], overrides: ['global.sidebar'] },
+  { id: 'notes.day-next', keys: [']'], description: 'In a daily note: the next day', section: 'notes', scope: 'view', views: ['notes'] },
   { id: 'notes.from-template', keys: ['Shift+Q'], description: 'On the Notes page: start a new note from a template', section: 'notes', scope: 'view', views: ['notes'] },
   { id: 'notes.pin', keys: ['p'], description: 'On the Notes page: pin or unpin the focused note, or the ticked notes', section: 'notes', scope: 'view', views: ['notes'], local: true, when: 'focused note' },
   // notes-bulk-actions D2, D3: the task lists' ticking keys on standalone notes, handled by the list itself; `m` moves the ticked notes.
@@ -540,7 +545,7 @@ const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
   'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.plan': 'calendar', 'go.year': 'calendar',
   'go.triage': 'method', 'go.review': 'method', 'go.loop': 'method', 'go.next': 'method', 'go.waiting': 'method', 'go.daily': 'method',
-  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views', 'go.habits': 'method',
+  'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views', 'go.habits': 'method', 'go.dailyNote': 'views',
 }
 export function spotlightGroup(id: string): SpotlightGroup {
   if (id.startsWith('arrange.group-')) return 'group'

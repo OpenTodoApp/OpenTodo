@@ -72,6 +72,7 @@ const REASON: Record<string, string> = {
   ai_not_configured: msg('the assistant is not set up for you on this server'),
   ai_no_consent: msg('accept the assistant’s updated terms for routines'),
   ai_encrypted: msg('turn on Run my routines on a device with the on-device assistant set up'),
+  daily_notes_off: msg('Daily notes are turned off'),
 }
 
 const HINT: Record<string, string> = {
@@ -84,6 +85,7 @@ const HINT: Record<string, string> = {
   time_tracking_off: msg('Turn on time tracking to use this'),
   ai_not_configured: msg('Set up the assistant to use this'),
   ai_no_consent: msg('Accept the assistant’s updated terms to use this'),
+  daily_notes_off: msg('Turn on Daily notes to use this'),
 }
 
 /** Why a step is not available, as a sentence. */
@@ -101,6 +103,7 @@ export function settingPath(setting: string | undefined): string {
     case 'account': return '/settings/account'
     case 'integrations': return '/settings/integrations'
     case 'how_you_work': return '/settings/general'
+    case 'general': return setting === 'general.notes' ? '/settings/general/notes' : '/settings/general'
   }
   return ''
 }

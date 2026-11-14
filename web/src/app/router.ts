@@ -79,7 +79,7 @@ export type Route =
   | { view: 'focus'; id?: string }
   // Notes (notes-overview D7): every note, /notes/<id> one standalone note; `create` (/notes?new=1) starts a new note.
   // `graph` (notes-graph-page D1): the Graph mode, ?view=graph; left out, the mode last shown on this device.
-  | { view: 'notes'; id?: string; create?: boolean; graph?: boolean }
+  | { view: 'notes'; id?: string; create?: boolean; graph?: boolean; day?: string }
 
 /** The Open Loops moves a Loop home address can open (lib/method's MoveId, kept here so the router stays small). */
 export type LoopMove = 'catch' | 'clarify' | 'place' | 'do' | 'review'
@@ -288,6 +288,8 @@ export function parseRoute(pathname: string): Route {
       return parts[1] ? { view: 'focus', id: safeDecode(parts[1]) } : { view: 'focus' }
     case 'notes': {
       const graph = new URLSearchParams(query).get('view') === 'graph' ? { graph: true } : {}
+      // A daily note (daily-notes D5): /notes/day/YYYY-MM-DD.
+      if (parts[1] === 'day' && /^\d{4}-\d{2}-\d{2}$/.test(parts[2] ?? '')) return { view: 'notes', day: parts[2], ...graph }
       return parts[1] ? { view: 'notes', id: safeDecode(parts[1]), ...graph } : { view: 'notes', ...graph }
     }
     default:
@@ -386,6 +388,7 @@ export function routePath(r: Route): string {
       return r.id ? `/habits/${r.id}` : '/habits'
     case 'notes': {
       const graph = r.graph ?? readString(NOTES_VIEW_KEY) === 'graph'
+      if (r.day) return `/notes/day/${r.day}${graph ? '?view=graph' : ''}`
       return r.id ? `/notes/${encodeURIComponent(r.id)}${graph ? '?view=graph' : ''}` : r.create ? `/notes?new=1${graph ? '&view=graph' : ''}` : graph ? '/notes?view=graph' : '/notes'
     }
     case 'help':
