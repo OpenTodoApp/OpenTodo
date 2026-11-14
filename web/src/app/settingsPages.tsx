@@ -44,6 +44,8 @@ import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { PrioritiesSection } from './PrioritiesSettings'
+import { DailyNotesSection } from './DailyNotesSettings'
+// Daily notes (daily-notes): loaded when the page opens.
 import { ClosedListSection } from './ClosedListSettings'
 import { AutoArchiveSection } from './ProjectsSettings'
 import { CaptureSection } from './CaptureSettings'
@@ -93,6 +95,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'general/keyboard': () => <KeyboardSection />,
   'general/focus': () => <FocusSection />,
   'general/priorities': () => <PrioritiesSection />,
+  'general/notes': () => <DailyNotesSection />,
   'general/maps': () => <MapsUserSection />,
   'language/language': () => <LanguageSection />,
   'language/date-time': () => <DateTimeSection />,

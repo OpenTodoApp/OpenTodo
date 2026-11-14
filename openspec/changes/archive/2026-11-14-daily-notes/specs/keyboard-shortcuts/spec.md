@@ -5,7 +5,7 @@ The shortcut registry SHALL register `g j` (`go.dailyNote`, global scope) openin
 
 #### Scenario: Listed in the guide
 - **WHEN** the keyboard guide is generated with `make docs`
-- **THEN** it lists `g j` under Go and `[` and `]` under Daily notes, and the conflict test passes
+- **THEN** it lists `g j` under Go and `[` and `]` under Notes, and the conflict test passes
 
 #### Scenario: In a text field
 - **WHEN** the caret is in a daily note's text and the user types `[`

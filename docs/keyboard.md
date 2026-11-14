@@ -102,6 +102,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>Shift+D</kbd> | Close the day: how it went, carry over what is left, a line for tomorrow |
 | <kbd>g</kbd> then <kbd>Shift+H</kbd> | Go to Habits: your habits, their last seven days and a check button (while Habits is on) |
 | <kbd>g</kbd> then <kbd>Shift+F</kbd> | Go to Focus: one task, a timer, a break when you need one |
+| <kbd>g</kbd> then <kbd>j</kbd> | Open today's note (while Daily notes is on) |
 | <kbd>g</kbd> then <kbd>e</kbd> | Go to Notes: every note with search, and the sidebar shows your notes |
 | <kbd>g</kbd> then <kbd>/</kbd> | Find a project, label or filter in the sidebar (opens the sidebar when it is collapsed or a drawer) |
 
@@ -304,6 +305,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | --- | --- |
 | <kbd>q</kbd> | On the Notes page: start a new note |
 | <kbd>/</kbd> | On the Notes page: focus the search field, which finds notes by every word |
+| <kbd>[</kbd> | In a daily note: the previous day |
+| <kbd>]</kbd> | In a daily note: the next day |
 | <kbd>Shift+Q</kbd> | On the Notes page: start a new note from a template |
 | <kbd>p</kbd> | Focused note: on the Notes page: pin or unpin the focused note, or the ticked notes |
 | <kbd>x</kbd> / <kbd>Space</kbd> | Focused standalone note: on the Notes page: tick the focused note for an action on several (Shift+↑ / ↓ extend, Ctrl+A ticks all, . the Actions, Delete the Trash, Esc clears) |

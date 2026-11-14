@@ -5,6 +5,7 @@
 import { addDaysISO, daysBetweenISO, localDueOf } from './dates'
 import { walkOccurrences } from './occurrences'
 import { pieceRule, seriesBudget, seriesRule } from './recurring'
+import { splitOf } from './lineage'
 import { spanOf } from './span'
 import type { Due, Task } from './types'
 
@@ -62,7 +63,10 @@ export function yearCounts({ tasks, keeps, series, records, today, from, to, zon
     if (!span) { count(task.due.date, task.title); continue }
     for (let d = span.first < from ? from : span.first; d <= span.last && d <= to; d = addDaysISO(d, 1)) count(d, task.title)
   }
-  for (const s of series) countSeries(s, records, today, from, to, zone, count, minutes)
+  // A series reads only its records, its split pieces and the series they name (recurring.ts
+  // recordsOf, lineage.ts lineageOf): filter those out of every task once, not once per series.
+  const seriesRows = seriesRowsOf(records, series)
+  for (const s of series) countSeries(s, seriesRows, today, from, to, zone, count, minutes)
   return out
 }
 
@@ -88,4 +92,14 @@ function countSeries(series: Task, records: readonly Task[], today: string, from
     minutes(last, series.estimate_minutes)
     for (let i = length - 1; i >= 0; i--) count(addDaysISO(last, -i), series.title)
   }
+}
+
+/** The rows any series' budget and lineage can read: occurrence records, split pieces, the series a split names and the series themselves. */
+function seriesRowsOf(records: readonly Task[], series: readonly Task[]): Task[] {
+  const named = new Set<string>(series.map((s) => s.id))
+  for (const t of records) {
+    const split = splitOf(t)
+    if (split) named.add(split.series)
+  }
+  return records.filter((t) => t.series_id || splitOf(t) || named.has(t.id))
 }

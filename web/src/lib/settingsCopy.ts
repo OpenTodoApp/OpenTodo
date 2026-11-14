@@ -603,6 +603,18 @@ export const SETTINGS_COPY = {
       tooLong: msg('At most {n} characters'),
     },
   },
+  // Settings → General → Notes (daily-notes): one note per day, synced user_prefs.
+  'daily-notes': {
+    title: msg('Daily notes'),
+    icon: 'notebook-pen',
+    description: msg('One note per day, opened with g j, from Today or the Notes sidebar.'),
+    learnMore: 'settings/notes',
+    rows: {
+      enabled: { label: msg('Daily notes') },
+      project: { label: msg('Project'), description: msg('Where new daily notes go. Earlier ones stay where they are.') },
+      template: { label: msg('Template') },
+    },
+  },
   'maps-user': {
     title: msg('Maps'),
     icon: 'map',

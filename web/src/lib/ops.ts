@@ -255,7 +255,7 @@ const sameClock = (a?: { ts: number; device: string }, b?: { ts: number; device:
  * A note without a document, or with one this build cannot read, is left alone
  * (legacy notes are upgraded when opened, see foldNote).
  */
-export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'description' | '_clock'>, merged?: string): { notes_doc: string; description: string } | null {
+export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'description' | '_clock'> & { day?: string }, merged?: string): { notes_doc: string; description: string } | null {
   const winner = row.notes_doc ?? ''
   let doc = merged ?? winner
   // A stored value this device cannot read (another format, undecryptable) is
@@ -265,7 +265,7 @@ export function reconcileNote(rt: RichText, row: Pick<Task, 'notes_doc' | 'descr
   const cn = row._clock?.notes_doc
   let publish = merged !== undefined && rt.adds(winner, merged)
   if (cd && !sameClock(cd, cn) && wins(cd.ts, cd.device, cn)) {
-    doc = rt.foldText(doc, row.description ?? '', cd.ts, cd.device)
+    doc = rt.foldBack(doc, row)
     publish = true
   } else if (!publish && !sameClock(cd, cn) && rt.projectDoc(doc) !== (row.description ?? '')) publish = true
   if (!publish) return null
@@ -566,7 +566,7 @@ export async function foldNote(entityOrTaskId: string, id?: string): Promise<boo
   if (!row.notes_doc) {
     if (!row.description) return false
     const c = row._clock?.description ?? { ts: 0, device: '' }
-    const doc = rt.foldText('', row.description, c.ts, c.device)
+    const doc = rt.foldBack('', row)
     if (doc.length > MAX_DOC_CHARS) return false
     hlcSeed(c.ts)
     await mutate(entity, entityId, { notes_doc: doc })

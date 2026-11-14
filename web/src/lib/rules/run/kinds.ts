@@ -42,7 +42,7 @@ export async function exec(st: RunState, s: RoutineStep, inputs: Inputs, at: num
     case 'find_project': return findProject(st, s, inputs)
     case 'create_project': case 'update_project': case 'create_sections': case 'create_labels': case 'favourite':
       return projectStep(st, s, inputs, at)
-    case 'find_notes': case 'get_note': case 'create_note': case 'change_notes': case 'note_to_task': case 'note_from_template':
+    case 'find_notes': case 'get_note': case 'create_note': case 'change_notes': case 'note_to_task': case 'note_from_template': case 'daily_note':
       return noteStep(st, s, inputs, at)
     case 'note_text': return noteText(st, s, inputs)
     case 'append_to_note': return appendNote(st, s, inputs, at)

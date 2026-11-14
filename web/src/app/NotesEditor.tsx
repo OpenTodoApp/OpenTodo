@@ -4,7 +4,7 @@
 // first opened.
 import { type RefObject, useEffect, useId, useRef, useState } from 'react'
 import { closeHistory, undoDepth } from 'prosemirror-history'
-import type { Command } from 'prosemirror-state'
+import { TextSelection, type Command } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
 import { noteParent, queueFiles, isImage } from '../lib/attachments'
@@ -226,13 +226,19 @@ function UnreadableNote({ text }: { text: string }) {
   )
 }
 
+/** Focuses the editor, typing `input` at the end when it is text. */
+function focusAt(v: EditorView, input: true | string) {
+  v.focus()
+  if (typeof input === 'string' && input) v.dispatch(v.state.tr.setSelection(TextSelection.atEnd(v.state.doc)).insertText(input))
+}
+
 export default function NotesEditor({ note, readOnly, autoFocus = false, onEscape, outline: outlinePlace = 'menu' }: {
   note: NoteTarget
   readOnly: boolean
   /** The outline (note-outline D2): 'auto' for a column when the `[data-outline-room]` around the note is wide; else the menu. */
   outline?: OutlinePlace
-  /** Focus the editor when it mounts (the project note opens in place). */
-  autoFocus?: boolean
+  /** Focus the editor when it mounts (the project note opens in place); a string is also typed at the end (a daily note's first keystroke, daily-notes D3). */
+  autoFocus?: boolean | string
   /** Called on Escape after the editor lost focus (the project note returns to its rendered view). */
   onEscape?: () => void
 }) {
@@ -412,7 +418,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
     setMounted((n) => n + 1)
     outlineRef.current.onState(v.state)
     size.current = usage(doc, v.state.doc)
-    if (autoFocus && !readOnly) v.focus()
+    if (autoFocus !== false && !readOnly) focusAt(v, autoFocus)
     const unwatch = onLeave(() => flush.current('now'))
     return () => {
       sourceRef.current.leave() // eslint-disable-line react-hooks/exhaustive-deps -- the source mode as it is when the note closes
