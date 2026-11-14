@@ -418,7 +418,8 @@ function TimelineBar({ task, s, selected, from, totalDays, px, today, hue, edita
       style={{ left: first * px, width: barPx }}>
       {pastDays > 0 && <span data-bar-past aria-hidden className="ui-block ui-block--row ui-block--past pointer-events-none absolute inset-y-0 rounded-e-none" style={{ insetInlineStart: -3, width: pastDays * px }} />}
       {clippedLeft && <Icon name="chevron-left" size="xs" className="relative text-muted" />}
-      {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium">{task.title || t('Untitled')}</span>}
+      {/* Below 768 px the name already stands above the bar (phone-timeline-rows). */}
+      {titled && <span data-bar-title aria-hidden className="user-text pointer-events-none relative min-w-0 flex-1 truncate px-1.5 text-meta font-medium max-md:hidden">{task.title || t('Untitled')}</span>}
       {editable && !clippedLeft && <span data-drag-id="timeline-bar-start" data-bar-edge="start" className="absolute inset-y-0 left-0 w-1.5 cursor-ew-resize" onPointerDown={(e) => onDrag(e, task, 'start')} />}
       {s.dueAt && s.dueAt !== s.from && s.dueAt !== s.to && dayOffset(from, s.dueAt) >= 0 && (
         <span data-due-marker className="absolute top-1.5 h-3 w-0.5 rounded-full bg-accent" style={{ left: (dayOffset(from, s.dueAt) - first + 0.5) * px }} aria-hidden />
