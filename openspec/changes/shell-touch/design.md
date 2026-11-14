@@ -8,7 +8,7 @@
 
 **Goals:** the four giveaways gone on touch, in CSS alone, with a precise and checked boundary between chrome and content.
 
-**Non-Goals:** pull to sync, new pressed states, any change with a mouse, any limit on zoom.
+**Non-Goals:** pull to sync, a pressed colour per component, any change with a mouse, any limit on zoom.
 
 ## Decisions
 
@@ -64,7 +64,9 @@ Removing the browser's highlight leaves the app's own pressed state as the only 
 - **Have one:** every `.ui-btn` (primary, secondary, ghost, danger), which includes icon buttons.
 - **Have none:** the tab bar's tabs, the floating add button, task rows and the controls inside them (the check circle, chips), the drawer's sidebar items, and menu items (hover and focus styles only).
 
-These are reported, not fixed: a pressed state for rows and tabs is a design decision.
+### D7. Every control answers a tap
+
+Shipping without the browser's flash and without a pressed state would make the app feel slower than before, so one rule closes the gap: on a coarse pointer, a button, tab, menu item, option, disclosure or link that is not a `.ui-btn` dims to 60% while pressed. It has zero specificity, so a component that later gets its own pressed colour simply wins. A task row is not dimmed as a whole: its body is a gesture surface (hold, swipe, drag), and its checkbox and controls are buttons, which dim.
 
 ## Data model, size
 
@@ -79,4 +81,4 @@ No screen gains chrome, properties, destinations or scroll regions, and no scrol
 - **Not verified on a device.** Chromium's touch emulation gives the computed styles and the selection API, not the long-press gesture, the callout, the bounce or the reload; WebKit was not available here. `-webkit-touch-callout` exists only in WebKit. The tasks end with a device checklist.
 - **Swift is not compiled here.** One assignment of a public `WKWebView` property; CI is the first compiler.
 - **A label someone wanted to copy** (a project's name in a page header) is no longer selectable on a phone. It stays selectable with a mouse, and names are content in the views that edit them.
-- **Controls without a pressed state** now give no feedback at all at the moment of a tap (see the finding).
+- **The dim is generic.** It is feedback, not a designed pressed state; components can replace it one by one.

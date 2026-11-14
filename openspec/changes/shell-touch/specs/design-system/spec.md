@@ -5,7 +5,7 @@
 ### Requirement: Touch behaves like an app
 On a touch screen (a coarse main pointer: the Android and iOS apps, the installed web app, a phone's or tablet's browser) the app SHALL behave as an app made for touch:
 
-- **No browser tap highlight.** Tapping a control SHALL NOT paint the browser's highlight over it; the control's own pressed state is the only feedback.
+- **No browser tap highlight.** Tapping a control SHALL NOT paint the browser's highlight over it; the control's own pressed state is the only feedback, and every control has one: a control without a pressed colour of its own SHALL dim while a finger is on it.
 - **Chrome is not text.** A long press SHALL NOT select text in, or lift the system callout from, the app's chrome: every button, tab, menu item, option, switch and disclosure, every navigation landmark (the tab bar, the sidebar's lists, breadcrumbs), the phone bar, the sidebar and a page's header.
 - **Content stays text.** Everything else SHALL stay selectable and copyable: the title in the task view, notes, comments, descriptions, the links inside them, and every text field and editable area, including one inside chrome (a title being renamed in a header). The expanded row's notes and facts line stay selectable as before.
 - **The page does not move.** The page itself SHALL NOT bounce, show the pull glow or trigger the browser's pull to reload. Scrolling inside lists, sheets, menus and the drawer SHALL be unchanged, the containment of sheets and the drawer SHALL still hold, and a scroller SHALL still receive every touch event when it is at its top or end.

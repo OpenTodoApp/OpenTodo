@@ -1555,6 +1555,14 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     :where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
       -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
     }
+    /* Pressed (shell-touch D7): with the browser's flash gone, a control that has no
+       pressed state of its own dims while a finger is on it, so every tap answers at
+       once: tabs, the add button, menu items, drawer rows, icon buttons. `.ui-btn` has
+       its own pressed colour and keeps it. Zero specificity: a component's own
+       `active:` still wins. No transition, so it is the same under reduced motion. */
+    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], summary, a[href]):where(:not(.ui-btn):not(:disabled):not([aria-disabled="true"])):active {
+      opacity: 0.6;
+    }
   }
 }
 @media (pointer: coarse) {
