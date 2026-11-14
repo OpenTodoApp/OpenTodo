@@ -44,6 +44,12 @@ export async function applyReminderAction(id: string, action: ReminderAction, no
 }
 
 let pendingAdd: string | null = null
+let applied = 0
+
+/** How many notification actions this page has written; a background run waits for its own (shell-reminders-on D4). */
+export function reminderActionsApplied(): number {
+  return applied
+}
 
 /** Text the quick-add widget asked to prefill; read once by the quick-add sheet. */
 export function takeQuickAddPrefill(): string | null {
@@ -60,7 +66,9 @@ export async function handleShellUrl(openQuickAdd: () => boolean, loc: Location 
   for (const k of ['reminder', 'action', 'add']) p.delete(k)
   const query = p.toString()
   hist.replaceState(hist.state, '', `${loc.pathname}${query ? `?${query}` : ''}${loc.hash}`)
-  if (action.kind === 'reminder') await applyReminderAction(action.id, action.action)
+  if (action.kind === 'reminder') {
+    try { await applyReminderAction(action.id, action.action) } finally { applied++ }
+  }
   else {
     pendingAdd = action.text
     if (!openQuickAdd()) pendingAdd = null

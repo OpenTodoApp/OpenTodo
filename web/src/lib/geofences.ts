@@ -115,7 +115,7 @@ export async function publishGeofences(mode: 'change' | 'ask' | 'check' = 'chang
   const enc = encryptionSnapshot()
   if (!(await geofencesEnabled()) || (enc.enabled && !enc.unlocked)) return scheduleGeofences(NO_GEOFENCES, mode === 'check')
   const [reminders, tasks, places, titles] = await Promise.all([
-    db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), getMeta<boolean>(META_INCLUDE, false),
+    db.reminders.toArray(), db.tasks.toArray(), db.places.toArray(), getMeta<boolean>(META_INCLUDE, true),
   ])
   const payload = shellGeofences(reminders, tasks, places, { titles, encrypted: enc.enabled })
   return scheduleGeofences(mode === 'ask' ? { ...payload, ask: true } : payload, mode === 'check')

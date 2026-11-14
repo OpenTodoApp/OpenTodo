@@ -8,7 +8,9 @@ import { db, getMeta } from '../lib/db'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { addReminder } from '../lib/reminders'
 import type { OpenTodoShell } from '../lib/shell'
-import { META_SHELL_NOTIFICATIONS, setShellNotifications } from '../lib/shellPublish'
+import { EXACT_ALARMS_EVENT, META_EXACT_NOTICED, META_SHELL_NOTIFICATIONS, publishReminders, setShellNotifications, shellNotificationsEnabled, shellTitlesEnabled } from '../lib/shellPublish'
+import { bulkToast, hideBulkToast } from './bulk/toastStore'
+import { noticeExactAlarms } from './shellExactNotice'
 import { ShellNotificationsView } from './ShellNotifications'
 
 function install(answer: 'granted' | 'denied') {
@@ -55,5 +57,101 @@ describe('notifications through the Android app', () => {
     const { scheduleReminders } = install('granted')
     await setShellNotifications(false)
     expect(scheduleReminders).toHaveBeenLastCalledWith('[]')
+  })
+})
+
+// shell-reminders-on: on until turned off, asked only where a person can answer.
+describe('reminders through the apps are on by default', () => {
+  const shellWith = (capabilities: string[], answer: 'granted' | 'denied' | 'exact-denied', platform: 'android' | 'ios' = 'android') => {
+    const scheduleReminders = vi.fn(async () => answer)
+    window.opentodoShell = { bridge: 1, platform, app: '1.6.0', capabilities, scheduleReminders } as OpenTodoShell
+    return scheduleReminders
+  }
+  const reminderInAnHour = async (title = 'Call the bank') => {
+    const id = await createTask({ title })
+    await addReminder(id, { kind: 'absolute', fire_at: Date.now() + 60 * 60 * 1000 })
+    return id
+  }
+  const handed = (fn: ReturnType<typeof vi.fn>) => JSON.parse((fn.mock.calls.at(-1) as unknown as [string])[0]) as { taskId: string; title?: string }[]
+
+  it('a device that never touched the switch is handed the reminders, with their titles', async () => {
+    const schedule = shellWith(['reminders', 'links'], 'granted')
+    const id = await reminderInAnHour()
+    expect(await shellNotificationsEnabled()).toBe(true)
+    expect(await shellTitlesEnabled()).toBe(true)
+    await publishReminders()
+    expect(handed(schedule)).toEqual([expect.objectContaining({ taskId: id, title: 'Call the bank' })])
+    // Nothing was stored: the default, not a choice.
+    expect(await getMeta<boolean | null>(META_SHELL_NOTIFICATIONS, null)).toBeNull()
+  })
+
+  it('a device where it was turned off stays off', async () => {
+    const schedule = shellWith(['reminders', 'links'], 'granted')
+    await reminderInAnHour()
+    await setShellNotifications(false)
+    await publishReminders()
+    expect(schedule).toHaveBeenLastCalledWith('[]')
+    expect(await shellNotificationsEnabled()).toBe(false)
+  })
+
+  it('the person saying no turns the setting off', async () => {
+    shellWith(['reminders', 'links'], 'denied')
+    await reminderInAnHour()
+    expect(await publishReminders()).toBe('denied')
+    expect(await getMeta<boolean | null>(META_SHELL_NOTIFICATIONS, null)).toBe(false)
+  })
+
+  it('a background run, or a schedule without reminders, is nobody\'s answer', async () => {
+    shellWith(['reminders', 'widgets', 'background'], 'denied')
+    await reminderInAnHour()
+    expect(await publishReminders()).toBe('denied')
+    expect(await getMeta<boolean | null>(META_SHELL_NOTIFICATIONS, null)).toBeNull()
+    await db.reminders.clear()
+    shellWith(['reminders', 'links'], 'denied')
+    await publishReminders()
+    expect(await getMeta<boolean | null>(META_SHELL_NOTIFICATIONS, null)).toBeNull()
+  })
+
+  it('refused exact alarms are announced by the visible app only, and said once per device', async () => {
+    const heard = vi.fn()
+    window.addEventListener(EXACT_ALARMS_EVENT, heard)
+    try {
+      await reminderInAnHour()
+      shellWith(['reminders', 'widgets', 'background'], 'exact-denied')
+      await publishReminders()
+      expect(heard).not.toHaveBeenCalled()
+      shellWith(['reminders', 'links', 'alarm-settings'], 'exact-denied')
+      expect(await publishReminders()).toBe('exact-denied')
+      expect(heard).toHaveBeenCalledTimes(1)
+      // Still on: late reminders are reminders.
+      expect(await shellNotificationsEnabled()).toBe(true)
+    } finally {
+      window.removeEventListener(EXACT_ALARMS_EVENT, heard)
+    }
+    hideBulkToast()
+    expect(await noticeExactAlarms()).toBe(true)
+    expect(bulkToast()).toMatchObject({ label: 'Reminders may arrive a few minutes late.', action: { label: 'Allow' } })
+    expect(await getMeta(META_EXACT_NOTICED, false)).toBe(true)
+    hideBulkToast()
+    expect(await noticeExactAlarms()).toBe(false)
+    expect(bulkToast()).toBeNull()
+    // An older shell cannot open the page: the notice has no button.
+    await db.meta.delete(META_EXACT_NOTICED)
+    shellWith(['reminders', 'links'], 'exact-denied')
+    await noticeExactAlarms()
+    expect(bulkToast()?.action).toBeUndefined()
+    hideBulkToast()
+  })
+
+  it('Settings offers Allow for exact alarms only in a shell that can open the page, and names the iPhone on iOS', () => {
+    const view = (extra: Partial<Parameters<typeof ShellNotificationsView>[0]>, permission: 'denied' | 'exact-denied') => renderToStaticMarkup(
+      <ShellNotificationsView state={{ enabled: permission !== 'denied', includeContent: true, permission }} busy={false} message={null} onEnable={() => {}} onIncludeContent={() => {}} onTest={() => {}} {...extra} />,
+    )
+    expect(view({ onAllowAlarms: () => {} }, 'exact-denied')).toMatch(/Alarms &amp; reminders[\s\S]*>Allow</)
+    expect(view({}, 'exact-denied')).not.toContain('>Allow<')
+    const ios = view({ ios: true }, 'denied')
+    expect(ios).toContain('iPhone')
+    expect(ios).not.toContain('Android')
+    expect(view({}, 'denied')).toContain('Android refused notifications')
   })
 })

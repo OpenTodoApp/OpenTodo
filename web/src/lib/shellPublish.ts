@@ -10,7 +10,7 @@ import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayL
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
-import { has, publishWidget, scheduleReminders, shell, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
+import { has, publishWidget, scheduleReminders, shell, shellVisible, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
 import { inQuietProject, type ProjectLink } from './reminderWatcher'
 import { currentUserId } from './sharing'
 import type { Reminder, Task } from './types'
@@ -19,6 +19,10 @@ import type { Reminder, Task } from './types'
 export const META_SHELL_NOTIFICATIONS = 'shell:notifications'
 /** Shared with web push: whether notifications carry task titles. */
 const META_INCLUDE = 'push:includeContent'
+/** Set once the device was told that exact alarms are refused (shell-reminders-on D3). */
+export const META_EXACT_NOTICED = 'shell:exactNoticed'
+/** Dispatched on `window` whenever a hand-over from the visible app answers `exact-denied`; app/shellExactNotice.ts says it once per device. */
+export const EXACT_ALARMS_EVENT = 'opentodo:exact-alarms'
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const WIDGET_MAX = 50
@@ -62,9 +66,13 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
   return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows }
 }
 
-/** Whether notifications carry task titles on this device (shared with web push). */
+/**
+ * Whether the shell's notifications carry task titles on this device. On until the
+ * user turns it off (shell-reminders-on D1); a browser's web push reads the same key
+ * with its own default of off (lib/push.ts).
+ */
 export async function shellTitlesEnabled(): Promise<boolean> {
-  return getMeta<boolean>(META_INCLUDE, false)
+  return getMeta<boolean>(META_INCLUDE, true)
 }
 
 /** Sets whether notifications carry task titles; the publisher re-sends the schedule. */
@@ -72,9 +80,16 @@ export async function setShellTitles(on: boolean): Promise<void> {
   await setMeta(META_INCLUDE, on)
 }
 
-/** Whether the device's notifications go through the shell. */
+/** Whether the device's notifications go through the shell: on until the user turns it off (shell-reminders-on D1). */
 export async function shellNotificationsEnabled(): Promise<boolean> {
-  return getMeta<boolean>(META_SHELL_NOTIFICATIONS, false)
+  return getMeta<boolean>(META_SHELL_NOTIFICATIONS, true)
+}
+
+/** True the first time this device asks: the exact-alarm notice is said once (shell-reminders-on D3). */
+export async function takeExactNotice(): Promise<boolean> {
+  if (await getMeta<boolean>(META_EXACT_NOTICED, false)) return false
+  await setMeta(META_EXACT_NOTICED, true)
+  return true
 }
 
 /** Turns the shell's notifications on or off; returns the permission the shell reports (null without a shell). */
@@ -90,13 +105,23 @@ export async function setShellNotifications(on: boolean): Promise<ShellPermissio
   return permission
 }
 
-/** Computes and hands over the schedule now; empty when off, locked or signed out. */
-async function publishReminders(now = Date.now()): Promise<ShellPermission | null> {
+/**
+ * Computes and hands over the schedule now; empty when off, locked or signed out.
+ * What the shell answers counts only when a person could have been asked
+ * (shell-reminders-on D2): the visible app, handed at least one reminder. Then a
+ * refusal turns the setting off, and refused exact alarms are announced.
+ */
+export async function publishReminders(now = Date.now()): Promise<ShellPermission | null> {
   const enc = encryptionSnapshot()
   const on = await shellNotificationsEnabled()
   if (!on || (enc.enabled && !enc.unlocked)) return scheduleReminders([])
-  const [reminders, tasks, projects, titles] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), getMeta<boolean>(META_INCLUDE, false)])
-  return scheduleReminders(shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled }, projects))
+  const [reminders, tasks, projects, titles] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), shellTitlesEnabled()])
+  const list = shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled }, projects)
+  const permission = await scheduleReminders(list)
+  if (!list.length || !shellVisible()) return permission
+  if (permission === 'denied') await setMeta(META_SHELL_NOTIFICATIONS, false)
+  else if (permission === 'exact-denied' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EXACT_ALARMS_EVENT))
+  return permission
 }
 
 /** Computes and hands over the widgets' Today list now. */

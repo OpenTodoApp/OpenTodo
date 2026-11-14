@@ -31,7 +31,7 @@ Push needs iOS or iPadOS 16.4 or later, and only works in the installed app. Add
 
 ## In the Android app
 
-The [Android app](android-app.md) uses no push service: the switch reads **Notifications through the app**, and the app schedules your next seven days of reminders on the phone, refreshing them about hourly. For reminders on time, allow **Alarms & reminders** for OpenTodo in Android's settings, and exempt it from battery optimisation if your phone delays alarms.
+The [Android app](android-app.md) uses no push service: **Notifications through the app** is on from the start, with task names, and the app schedules your next seven days of reminders on the phone, refreshing them about hourly. For reminders on time, allow **Alarms & reminders** for OpenTodo (the app offers **Allow**), and exempt it from battery optimisation if your phone delays alarms.
 
 ## Privacy
 

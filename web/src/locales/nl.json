@@ -7702,5 +7702,8 @@
   "No projects found": "Geen projecten gevonden",
   "No tasks found": "Geen taken gevonden",
   "{n, plural, one {Looked at # project} other {Looked at # projects}}": "{n, plural, one {# project bekeken} other {# projecten bekeken}}",
-  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {# taak bekeken} other {# taken bekeken}}"
+  "{n, plural, one {Looked at # task} other {Looked at # tasks}}": "{n, plural, one {# taak bekeken} other {# taken bekeken}}",
+  "Notifications are not allowed for OpenTodo. Allow them in the iPhone's Settings (Notifications → OpenTodo); reminders still appear inside the app.": "Meldingen zijn niet toegestaan voor OpenTodo. Sta ze toe in de Instellingen van de iPhone (Meldingen → OpenTodo); herinneringen verschijnen nog steeds in de app.",
+  "Reminders may arrive a few minutes late.": "Herinneringen kunnen een paar minuten te laat komen.",
+  "The app could not show a notification. Allow notifications for OpenTodo in the iPhone's Settings.": "De app kon geen melding tonen. Sta meldingen voor OpenTodo toe in de Instellingen van de iPhone."
 }

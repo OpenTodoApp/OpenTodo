@@ -51,25 +51,55 @@ final class Reminders {
     /// remove-then-add steps cannot interleave and leave an older schedule behind.
     private var latestReplace: Task<String, Never>?
 
+    /// What a hand-over does about the notification permission.
+    enum Permission: Equatable {
+        /// Schedule what was handed over; nothing is asked.
+        case schedule
+        /// Ask the person, then schedule if they allow it.
+        case ask
+        /// Schedule nothing and answer `denied`.
+        case refuse
+    }
+
+    /// The permission rule (shell-reminders-on D2): the question comes with the first
+    /// reminder and only from the visible app (`interactive`). A background run that is
+    /// handed reminders before anyone was asked refuses without asking, so the visible
+    /// app's next hand-over asks; iOS itself never asks twice.
+    nonisolated static func permission(status: UNAuthorizationStatus, interactive: Bool, hasReminders: Bool) -> Permission {
+        guard hasReminders else { return .schedule }
+        switch status {
+        case .authorized, .provisional, .ephemeral: return .schedule
+        case .denied: return .refuse
+        default: return interactive ? .ask : .refuse
+        }
+    }
+
     /// Replaces the schedule; returns what `scheduleReminders` answers the web app.
-    func replace(_ json: String) async -> String {
+    /// `interactive`: the hand-over comes from the visible app, which may ask.
+    func replace(_ json: String, interactive: Bool) async -> String {
         let previous = latestReplace
         let task = Task { @MainActor in
             _ = await previous?.value
-            return await self.apply(json)
+            return await self.apply(json, interactive: interactive)
         }
         latestReplace = task
         return await task.value
     }
 
-    private func apply(_ json: String) async -> String {
+    private func apply(_ json: String, interactive: Bool) async -> String {
         let handed = Self.parse(json)
         let chosen = Self.select(handed)
         await removeScheduled()
         guard !chosen.isEmpty else { return "granted" }
         let center = UNUserNotificationCenter.current()
-        let granted = await requestAuthorization(center)
-        guard granted else { return "denied" }
+        let status = await center.notificationSettings().authorizationStatus
+        switch Self.permission(status: status, interactive: interactive, hasReminders: true) {
+        case .schedule: break
+        case .refuse: return "denied"
+        case .ask:
+            let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+            guard granted else { return "denied" }
+        }
         registerCategory()
         for reminder in chosen {
             let content = UNMutableNotificationContent()
@@ -86,6 +116,7 @@ final class Reminders {
         return "granted"
     }
 
+    /// Only the visible app calls this (`BridgeHost`), so it may ask.
     func test() async -> Bool {
         let center = UNUserNotificationCenter.current()
         guard await requestAuthorization(center) else { return false }

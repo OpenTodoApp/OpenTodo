@@ -71,7 +71,6 @@ class BiometricTest {
         assumeTrue("needs an enrolled strong biometric (not on the CI emulator)", BiometricKeyStore.available(context))
         val caps = Bridge(context, "https://todo.example.com", object : Bridge.Host {
             override fun requestNotificationPermission(done: (Boolean) -> Unit) = done(false)
-            override fun requestExactAlarms() {}
             override fun biometricStore(key: ByteArray, done: (Boolean) -> Unit) = done(false)
             override fun biometricRead(done: (ByteArray?) -> Unit) = done(null)
             override fun openExternal(url: String) {}

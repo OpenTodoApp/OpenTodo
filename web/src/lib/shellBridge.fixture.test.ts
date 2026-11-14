@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { forgetShellData, setSystemBars, shellHaptic, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { shellReminders, shellWidget } from './shellPublish'
@@ -275,6 +275,32 @@ function haptics() {
   }
 }
 
+/**
+ * shell-reminders-on D2 to D4: which capabilities only the visible app lists, which
+ * only a background run lists, and the methods that came with them. The lists are
+ * Android's; the iOS app lists a subset of visibleOnly. The web app reads "the shell
+ * has a screen" from `links`, so no background run may list anything of visibleOnly.
+ */
+function capabilities() {
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'system-bars', 'microphone', 'files', 'haptics', 'alarm-settings']
+  const backgroundOnly = ['background']
+  const both = ['reminders', 'widgets']
+  const called: string[] = []
+  const bridge = (caps: string[]): OpenTodoShell => ({ bridge: 1, platform: 'android', app: '1.6.0', capabilities: caps, openAlarmSettings: () => void called.push('openAlarmSettings'), backgroundDone: () => void called.push('backgroundDone') })
+  // Each method is called only where its capability is listed.
+  window.opentodoShell = bridge([...both, ...visibleOnly])
+  const visible = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  window.opentodoShell = bridge([...both, ...backgroundOnly])
+  const background = { shellVisible: shellVisible(), openAlarmSettings: openAlarmSettings(), backgroundDone: backgroundDone() }
+  delete window.opentodoShell
+  return {
+    description: 'Capabilities by kind of run (shell-reminders-on): visibleOnly is listed only by the app a person sees (biometric and geofences depend on the device and the store build and are not listed here), backgroundOnly only by a background run, both by either. methods names the capability each new method needs; expect is what the web app does in each run.',
+    visibleOnly, backgroundOnly, both,
+    methods: { openAlarmSettings: 'alarm-settings', backgroundDone: 'background' },
+    expect: { visible, background, called },
+  }
+}
+
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
 afterEach(() => {
@@ -283,7 +309,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })
