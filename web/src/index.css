@@ -767,6 +767,17 @@ body {
   }
 }
 
+/* Keyboard hints only where a key can be pressed (touch-keyboard-hints). With no fine
+   pointer and nothing that hovers (a phone, a tablet on its own), shortcut badges
+   (.ui-kbd) and lines that only name keys ([data-kbd-hint]) are not drawn; a mouse, a
+   trackpad or a pen that hovers means a computer or an attached keyboard set. A keyboard
+   without a pointer is seen at its first key press (lib/keyboardSeen.ts sets
+   data-keyboard). [data-kbd-keep] marks reference (the cheat sheet) and keys inside a
+   sentence that would break without them. Unlayered, so no utility class brings a hint back. */
+@media not ((any-pointer: fine) or (any-hover: hover)) {
+  :root:not([data-keyboard]) :is(.ui-kbd, [data-kbd-hint]):not([data-kbd-keep], [data-kbd-keep] *) { display: none; }
+}
+
 @layer components {
 /* Shared Input (src/ui/Field.tsx): 40 px tall, so it lines up with a medium button. */
 .ui-input {

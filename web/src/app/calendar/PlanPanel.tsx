@@ -139,7 +139,7 @@ export function PlanPanel() {
           </Popover>
         </>
       )}>
-      <p className="mb-2 text-meta text-faint">{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
+      <p className="mb-2 text-meta text-faint" data-kbd-keep>{t.rich('Drag a task onto a time, or focus one and press {key}.', { key: <span className="ui-kbd">s</span> })}</p>
       {target && (
         <p className="mb-2 flex items-center gap-1 text-meta text-muted" data-frame-target={target.frameId}>
           <span className="min-w-0 flex-1">{t('Placing into the frame on {date}, {from}–{to}', { date: formatShort(target.date), from: formatTime(clockOf(target.start)), to: formatTime(clockOf(target.end)) })}</span>

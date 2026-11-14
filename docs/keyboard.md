@@ -16,7 +16,7 @@ Everything in OpenTodo can be done from the keyboard. You don't need to learn it
 
 Shortcuts don't fire while you're typing in a field. Press <kbd>Esc</kbd> to leave the field first.
 
-A key does one thing at a time: the shortcuts of where you are (the task panel, a board, the calendar, a list) win over the ones that work everywhere, so <kbd>1</kbd> sets the priority of the open task while the panel has focus and of the selected row otherwise. Every action's key is shown in its tooltip and next to its menu item; to see the keys printed in the app itself too, turn on **Settings → General → Keyboard → Show shortcut hints** on that device.
+A key does one thing at a time: the shortcuts of where you are (the task panel, a board, the calendar, a list) win over the ones that work everywhere, so <kbd>1</kbd> sets the priority of the open task while the panel has focus and of the selected row otherwise. Every action's key is in its tooltip and menu item, and printed in the app with **Settings → General → Keyboard → Show shortcut hints**. Touch-only phones and tablets show keys once a keyboard or mouse is used.
 
 ## See them in the app
 

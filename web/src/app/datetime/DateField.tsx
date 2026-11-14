@@ -206,7 +206,7 @@ export function CalendarGrid({ value, prefs, onPick, today = logicalToday(), com
       </table>
       {compact
         ? <p className="sr-only">{t('Arrows move by day and week, Page Up and Page Down by month.')}</p>
-        : <p className="mt-2 text-meta text-muted">{t('Arrows move by day and week, Page Up and Page Down by month.')}</p>}
+        : <p className="mt-2 text-meta text-muted" data-kbd-hint>{t('Arrows move by day and week, Page Up and Page Down by month.')}</p>}
     </div>
   )
 }

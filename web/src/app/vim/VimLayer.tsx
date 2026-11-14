@@ -150,7 +150,7 @@ export default function VimLayer({ userId, onHelp, onHelpTopic, onHelpSection }:
           {mode.toUpperCase()}
         </span>
         <span className="font-mono text-muted" data-vim-pending>{pending}</span>
-        <span className="ml-auto text-faint">{t.rich('{kbd} command · {kbd2} help', { kbd: <Kbd k=":" />, kbd2: <Kbd k="?" /> })}</span>
+        <span className="ml-auto text-faint" data-kbd-hint>{t.rich('{kbd} command · {kbd2} help', { kbd: <Kbd k=":" />, kbd2: <Kbd k="?" /> })}</span>
       </div>
     </div>
   )

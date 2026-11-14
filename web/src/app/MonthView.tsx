@@ -325,7 +325,7 @@ export function MonthView({ date }: { date?: string }) {
         {focusedTasks.map((task) => row(task))}{focusedDeadlines.map((task) => deadlineRow(task, focused))}{(projected.get(focused) ?? []).map((p) => <ProjectedItem key={p.id} p={p} hue={projectionHue(p)} variant="large" />)}
         {focusedEvents.map((e) => eventRow(e, 'agenda'))}
       </MonthDayList>}
-      <p className="mt-3 hidden text-meta text-faint sm:block">
+      <p className="mt-3 hidden text-meta text-faint sm:block" data-kbd-keep>
         {t.rich('Arrows move the focused day, or the selected task. {j} / {k} select, {q} adds on the focused day.', { j: <span className="ui-kbd">j</span>, k: <span className="ui-kbd">k</span>, q: <span className="ui-kbd">q</span> })}
         {shownRaw.some((task) => task.estimate_minutes) ? ` ${t('Planned estimates against a {minutes} day.', { minutes: formatMinutes(prefs.dayLength) })}` : ''}
       </p>
