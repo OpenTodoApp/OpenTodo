@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // OpenSpec change caldav-verified, "Large-account budgets": a GET, a
@@ -44,6 +45,9 @@ func served(t *testing.T, body string) map[string][2]string {
 
 func TestCalDAVPartialViewServesWhatTheWholeViewServes(t *testing.T) {
 	e, c := davSetup(t)
+	// The repeating task's dates below are fixed, so the server's today is too: on a
+	// real clock the skip of 2026-11-14 stopped being an upcoming occurrence.
+	e.now.Freeze(time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC))
 	create := func(path string, body map[string]any) string {
 		t.Helper()
 		resp, out := e.do("POST", path, body)
