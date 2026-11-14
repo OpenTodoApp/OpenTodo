@@ -14,6 +14,12 @@ import { AppearanceSection } from './AppearanceSection'
 import { searchSettings } from './settingsIndex'
 import css from '../index.css?raw'
 import row from './TaskRow.tsx?raw'
+import noteRow from './notes/NoteRow.tsx?raw'
+import monthRow from './calendar/MonthRow.tsx?raw'
+import weekAgenda from './calendar/WeekAgenda.tsx?raw'
+import closeDay from './review/CloseDay.tsx?raw'
+import carryOver from './review/CarryOver.tsx?raw'
+import combobox from '../ui/Combobox/Combobox.tsx?raw'
 
 const root = () => document.documentElement
 
@@ -59,6 +65,27 @@ describe('preference', () => {
     // The row keeps its 44 px and the controls before the title stay on its first line.
     expect(phone).toContain('.row-pad > [data-row-open] { min-height: 2.75rem; padding-block: 0.75rem; }')
     expect(phone).toContain('.row-pad > :is([data-leading-slot], [data-row-controls], [data-row-time], [data-row-expand]) { margin-top: 0.75rem; }')
+  })
+
+  it('the lists outside the task row follow it on a phone (phone-titles-everywhere)', () => {
+    // One rule: one line from 768 px, two lines below it, every line with the preference.
+    expect(css).toContain('.title-phone { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }')
+    const at = css.indexOf('@media screen and (width < 48rem) {\n  .title-phone ')
+    expect(at).toBeGreaterThan(0)
+    const phone = css.slice(at, css.indexOf('\n}\n', at))
+    expect(phone).toContain('.title-phone { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow-wrap: anywhere; }')
+    expect(phone).toContain(':root[data-titles="full"] .title-phone { -webkit-line-clamp: none; line-clamp: none; }')
+    // The row around it: its parts on the title's first line, 44 px with one line.
+    expect(phone).toContain('.title-phone-row { align-items: baseline; padding-block: calc((var(--title-phone-row, 2.75rem) - 1lh) / 2); }')
+    // The lists that use it; a Month cell's row, a Plan column's row and a windowed option keep one line.
+    expect(noteRow).toMatch(/user-text title-phone min-w-0 text-body/)
+    expect(row).toContain("${large ? 'title-phone' : 'order-first basis-full truncate'}")
+    expect(monthRow).toContain("${list ? 'title-phone' : 'truncate'}")
+    expect(weekAgenda.match(/title-phone(?!-row)/g)).toHaveLength(2)
+    expect(closeDay).toContain('wrap="phone"')
+    expect(closeDay).toMatch(/user-text title-phone min-w-0 flex-1 text-body/)
+    expect(carryOver).toContain('wrap="phone"')
+    expect(combobox).toContain("palette && !windowed ? 'title-phone' : 'block truncate'")
   })
 
   it('is found by the settings search', () => {

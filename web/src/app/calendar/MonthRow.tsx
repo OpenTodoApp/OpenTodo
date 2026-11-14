@@ -13,11 +13,13 @@ import { DeadlineDiamond, deadlineMark } from './DeadlineMarker'
 import { ExtendHandle } from './monthSpans'
 import { usePreloadSpanDrag } from './spanModel'
 
-export function MonthRow({ task, v, compact, today, selected, hue, canMove, readOnly, extend, onDrop, onSelect, onOpen }: {
+export function MonthRow({ task, v, compact, list = false, today, selected, hue, canMove, readOnly, extend, onDrop, onSelect, onOpen }: {
   task: Task
   /** The row in the viewer's zone. */
   v: Task | undefined
   compact: boolean
+  /** A row of the phone's day list: its title takes two lines before it is cut (phone-titles-everywhere). A cell's row is one line. */
+  list?: boolean
   today: string
   selected: boolean
   hue: HueName
@@ -40,11 +42,11 @@ export function MonthRow({ task, v, compact, today, selected, hue, canMove, read
       } : undefined}
       onClick={(e) => { e.stopPropagation(); onSelect(task.id, v?.due?.date) }}
       onDoubleClick={() => onOpen(task.id)}
-      className={`ui-block ui-block--row relative flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
+      className={`ui-block ui-block--row relative flex w-full min-w-0 touch-manipulation items-center gap-1 px-1 text-left ${compact ? 'py-0 text-hint' : list ? 'title-phone-row py-0.5 text-meta pointer-fine:[--title-phone-row:1.375rem]' : 'py-0.5 text-meta'} ${task.completed_at || (v?.due && v.due.date < today) ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canMove ? 'cursor-grab' : ''}`}>
       {/* Named by its content (WCAG 2.5.3 Label in Name): the spoken text is visually hidden, the visible one is not read twice. */}
       <span className="sr-only">{[task.title || t('Untitled'), task.completed_at ? t('(completed)') : '', span ? formatSpan(span) : '', v?.due?.time ? formatTime(v.due.time) : '', task.priority < 4 ? (customPriorityName(task.priority) ? priorityAccessibleName(task.priority) : t('priority {n}', { n: task.priority })) : '', onDeadline ? deadlineMark(task, v!.due!.date) : '', readOnly ? t('read-only') : ''].filter(Boolean).join(', ')}</span>
       {v?.due?.time && !span && <span aria-hidden className="shrink-0 tabular-nums">{formatTime(v.due.time)}</span>}
-      <span aria-hidden className={`min-w-0 flex-1 truncate ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+      <span aria-hidden className={`min-w-0 flex-1 ${list ? 'title-phone' : 'truncate'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
       {/* A span's range chip (multi-day-tasks D8): the phone's day list shows it on each covered day. */}
       {span && <span aria-hidden data-span-range className="shrink-0 tabular-nums text-muted">{formatSpan(span)}</span>}
       {task.priority < 4 && <span aria-hidden className="max-w-20 shrink-0 truncate text-hint font-semibold" data-priority={task.priority}>{priorityShort(task.priority)}</span>}

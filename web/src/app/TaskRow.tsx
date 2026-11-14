@@ -614,11 +614,11 @@ function CompactRow({ task, date, time, today, selected, readOnly = false, proje
       onClick={(e) => { e.stopPropagation(); if (selected && large) onOpen(); else onSelect() }}
       onDoubleClick={onOpen}
       onKeyDown={large ? (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); onOpen() } } : undefined}
-      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
+      className={`ui-block ui-block--row flex w-full min-w-0 touch-manipulation items-center gap-x-1 px-1 text-left ${large ? 'title-phone-row min-h-11 py-1 text-body' : 'flex-wrap py-0.5 text-meta'} ${task.completed_at || date < today ? 'ui-block--past' : ''} ${selected ? 'ring-1 ring-accent' : ''} ${canDrag ? 'cursor-grab' : ''}`}>
       {/* Named by its visible content (WCAG 2.5.3 Label in Name), in reading order; only "read-only" has no visible text. */}
       {time && <span data-plan-time className={`shrink-0 tabular-nums ${TONE_TEXT[ladderTone(date, today)] ?? 'text-muted'}`}>{formatTime(time)}</span>}
       {/* In a narrow column the title takes the first line and the time, estimate and priority the second. */}
-      <span className={`min-w-0 flex-1 truncate ${large ? '' : 'order-first basis-full'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
+      <span className={`min-w-0 flex-1 ${large ? 'title-phone' : 'order-first basis-full truncate'} ${task.completed_at ? 'line-through' : ''}`}>{task.title || t('Untitled')}</span>
       {/* A span's place on this day (multi-day-tasks D3): "Day 2 of 3". */}
       {position && <span data-span-position className="shrink-0 text-hint tabular-nums text-muted">{t('Day {n} of {m}', { n: position.n, m: position.of })}</span>}
       {task.estimate_minutes ? <span data-estimate className="shrink-0 text-hint tabular-nums text-muted">{formatMinutes(task.estimate_minutes)}</span> : null}

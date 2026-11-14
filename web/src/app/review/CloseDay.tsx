@@ -219,7 +219,7 @@ function DoneLead({ summary }: { summary: DaySummary }) {
 
 function ProjectName({ task, projects }: { task: Task; projects: ReadonlyMap<string, Project> }) {
   const p = task.project_id ? projects.get(task.project_id) : undefined
-  return p ? <span className="shrink-0 truncate text-meta text-muted">{p.name}</span> : null
+  return p ? <span className="shrink-0 truncate text-meta text-muted max-md:max-w-1/3 max-md:leading-5">{p.name}</span> : null
 }
 
 /** Done (weekly-review "How the day went"): the tasks completed today, read-only, in completion order. */
@@ -233,9 +233,9 @@ function DoneStep({ summary, projects }: { summary: DaySummary; projects: Readon
     <>
       <ul className="-mx-2 sm:-mx-3" aria-label={t('Done today')} data-close-done-list>
         {shown.map((x) => (
-          <li key={x.id} className="flex min-w-0 items-center gap-3 rounded-control px-2 py-2 sm:px-3" data-close-done-row={x.id}>
+          <li key={x.id} className="flex min-w-0 items-center gap-3 rounded-control px-2 py-2 max-md:items-start sm:px-3" data-close-done-row={x.id}>
             <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><Icon name="check" size="sm" /></span>
-            <TruncatedText as="span" text={x.title || t('Untitled')} className="user-text min-w-0 flex-1 text-body text-default" />
+            <TruncatedText as="span" wrap="phone" text={x.title || t('Untitled')} className="user-text min-w-0 flex-1 text-body text-default" />
             <ProjectName task={x} projects={projects} />
           </li>
         ))}
@@ -277,11 +277,11 @@ function FirstStep({ tasks, projects, chosen, onChoose, note, onNote, onClose }:
             return (
               <button key={x.id} ref={(el) => { refs.current[i] = el }} type="button" role="radio" aria-checked={on} tabIndex={i === at ? 0 : -1}
                 onClick={() => onChoose(on ? null : x.id)} onKeyDown={(e) => onKeyDown(e, i)} data-close-first={x.id}
-                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-control px-2 py-2.5 text-left outline-none transition-colors duration-(--duration-ui) hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus sm:px-3 ${on ? 'bg-accent-soft' : ''}`}>
-                <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${on ? 'border-accent bg-accent' : 'border-strong'}`}>
+                className={`flex w-full min-w-0 cursor-pointer items-center gap-3 rounded-control px-2 py-2.5 text-left max-md:items-start outline-none transition-colors duration-(--duration-ui) hover:bg-hover focus-visible:ring-2 focus-visible:ring-focus sm:px-3 ${on ? 'bg-accent-soft' : ''}`}>
+                <span aria-hidden="true" className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border max-md:mt-0.5 ${on ? 'border-accent bg-accent' : 'border-strong'}`}>
                   {on && <span className="h-1.5 w-1.5 rounded-full bg-on-accent" />}
                 </span>
-                <span className={`user-text min-w-0 flex-1 truncate text-body ${on ? 'font-medium text-strong' : 'text-default'}`}>{x.title || t('Untitled')}</span>
+                <span className={`user-text title-phone min-w-0 flex-1 text-body ${on ? 'font-medium text-strong' : 'text-default'}`}>{x.title || t('Untitled')}</span>
                 <ProjectName task={x} projects={projects} />
               </button>
             )

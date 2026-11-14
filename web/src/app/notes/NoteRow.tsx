@@ -2,8 +2,10 @@
 // row grid of fixed tracks: the kind icon, the title (while searching, the snippet
 // after it with its matched words highlighted, as text), where the note lives, its
 // labels and the relative time of the last change, right-aligned. The row is its own
-// size container: under 40 rem the labels leave and the place narrows. At least 48 px
-// tall on phones; a standalone note's menu holds Pin, Turn into task and Delete (no
+// size container: under 40 rem the labels leave and the place narrows. Below 768 px
+// (phone-titles-everywhere D3) the title takes up to two lines across the row and the
+// time and the place stand on a line under it, the snippet on its own line between. At
+// least 48 px tall on phones; a standalone note's menu holds Pin, Turn into task and Delete (no
 // swipe actions), and a long press opens it.
 import type { ReactNode } from 'react'
 import type { SnippetSegment } from '../../lib/noteSearch'
@@ -43,14 +45,14 @@ export interface NoteRowProps {
 
 /** The row grid (D5): icon, title, place, labels, time; the same tracks on every row, so the columns line up. */
 // Narrow, the place is as wide as its name up to 5 rem (an empty one takes none), so the title keeps the room.
-const GRID = 'grid grid-cols-[1.25rem_minmax(0,1fr)_auto_auto] gap-x-2 @min-[40rem]/note:grid-cols-[1.25rem_minmax(0,1fr)_10rem_8rem_5rem] @min-[40rem]/note:gap-x-3'
+const GRID = 'grid grid-cols-[1.25rem_minmax(0,1fr)_auto_auto] gap-x-2 max-md:grid-cols-[1.25rem_auto_minmax(0,1fr)] @min-[40rem]/note:grid-cols-[1.25rem_minmax(0,1fr)_10rem_8rem_5rem] @min-[40rem]/note:gap-x-3'
 
 export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle, current, cursor, onOpen, menu, tick }: NoteRowProps) {
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
   // Where the note lives: its project (a task's, or the project of a project note); a task without one is in the Inbox.
   const place = project ? project.name : entry.source === 'task' ? t('Inbox') : ''
   return (
-    <li className={`group relative flex min-h-12 items-center gap-1 rounded-control @container/note md:min-h-(--size-row) ${tick?.ticked ? 'bg-accent-soft' : current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
+    <li className={`group relative flex min-h-12 items-center gap-1 rounded-control @container/note max-md:items-start md:min-h-(--size-row) ${tick?.ticked ? 'bg-accent-soft' : current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
       data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined} data-ticked={tick?.ticked || undefined}
       // A long press (a right click on a computer) opens the row's menu (notes-home D6).
       onContextMenu={menu ? (e) => {
@@ -68,20 +70,20 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
         className={`${GRID} min-w-0 flex-1 items-baseline rounded-control px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus`}>
         {/* The checkbox takes the kind icon's 20 px slot, so the row's grid does not move (D2). */}
         {tick?.shown
-          ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center self-center justify-self-center rounded-[4px] border ${tick.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-note-tick>{tick.ticked && <Icon name="check" size={12} />}</span>
-          : <span className="flex h-5 w-5 items-center justify-center self-center text-muted"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>}
-        <span className="flex min-w-0 items-baseline gap-2" data-note-line>
-          <span className={`user-text min-w-0 truncate text-body ${snippet?.length ? 'max-w-[60%] shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
+          ? <span aria-hidden className={`flex h-4 w-4 items-center justify-center self-center justify-self-center rounded-[4px] border max-md:mt-0.5 max-md:self-start ${tick.ticked ? 'border-accent bg-accent text-on-accent' : 'border-strong'}`} data-note-tick>{tick.ticked && <Icon name="check" size={12} />}</span>
+          : <span className="flex h-5 w-5 items-center justify-center self-center text-muted max-md:self-start"><Icon name={SOURCE_ICON[entry.source]} label={SOURCE_NAME[entry.source]()} /></span>}
+        <span className={`flex min-w-0 items-baseline gap-x-2 max-md:col-span-2 ${snippet?.length ? 'max-md:flex-wrap' : ''}`} data-note-line>
+          <span className={`user-text title-phone min-w-0 text-body ${snippet?.length ? 'md:max-w-[60%] md:shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
           {entry.template && <span className="shrink-0 text-meta text-faint" data-note-template>{t('Template')}</span>}
           {entry.marker && <span className="shrink-0 text-meta text-faint" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
-          {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted" data-note-snippet><Snippet segments={snippet} /></span> : null}
+          {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted max-md:basis-full" data-note-snippet><Snippet segments={snippet} /></span> : null}
         </span>
-        <span className="flex min-w-0 max-w-20 items-center justify-end gap-1 text-meta text-faint @min-[40rem]/note:max-w-none @min-[40rem]/note:justify-start" data-note-place>
+        <span className="flex min-w-0 max-w-20 items-center justify-end gap-1 text-meta text-faint max-md:col-start-3 max-md:row-start-2 max-md:max-w-none max-md:justify-start @min-[40rem]/note:max-w-none @min-[40rem]/note:justify-start" data-note-place>
           {project && <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />}
           <span className="truncate">{place}</span>
         </span>
         <span className="hidden min-w-0 overflow-hidden @min-[40rem]/note:flex" data-note-labels>{labels.length > 0 && <LabelChips labels={labels} />}</span>
-        <time className="text-right text-meta whitespace-nowrap text-faint tabular-nums" aria-label={updatedTitle}
+        <time className="text-right text-meta whitespace-nowrap text-faint tabular-nums max-md:col-start-2 max-md:row-start-2 max-md:text-left" aria-label={updatedTitle}
           dateTime={entry.updated ? new Date(entry.updated).toISOString() : undefined}>{updated}</time>
       </button>
       {/* Revealed on hover or focus with a mouse, always shown on touch (.hover-reveal). */}
