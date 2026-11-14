@@ -337,7 +337,8 @@ export const OVERLAYS = {
       const list = await overlay.boundingBox()
       const main = await p.locator('main').first().boundingBox()
       if (word && list && Math.abs(list.x - word.x) > 12) throw new Error(`the trigger list is not at the word's start edge (list ${Math.round(list.x)}, word ${Math.round(word.x)})`)
-      if (word && list && list.y < word.y + word.height - 2) throw new Error('the trigger list is not under the word')
+      // Under the word, or above it where the window leaves no room below (a phone held sideways, 390 px tall).
+      if (word && list && list.y < word.y + word.height - 2 && list.y + list.height > word.y + 2) throw new Error('the trigger list is neither under the word nor above it')
       if (main && list && list.x < main.x) throw new Error(`the trigger list sticks out of the content column (list ${Math.round(list.x)}, main ${Math.round(main.x)})`)
     }
     return { overlay, trigger, reopen, kind: 'popover' }
