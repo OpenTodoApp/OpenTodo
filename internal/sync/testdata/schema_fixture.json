@@ -72,6 +72,7 @@
     ],
     "note": [
       "created_at",
+      "day",
       "deleted_at",
       "description",
       "labels",
@@ -254,6 +255,9 @@
       "add_position",
       "bento_order",
       "briefing",
+      "daily_notes",
+      "daily_notes_project",
+      "daily_notes_template",
       "date_format",
       "day_parts",
       "day_start",

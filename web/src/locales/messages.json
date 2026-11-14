@@ -668,6 +668,9 @@
   "A task’s date passes": [
     "web/src/app/rules/RuleFields.tsx"
   ],
+  "A template in the Trash": [
+    "web/src/app/DailyNotesSettings.tsx"
+  ],
   "A text as a list of its lines": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -1212,6 +1215,7 @@
   ],
   "Add notes…": [
     "web/src/app/NotesEditor.tsx",
+    "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/task-detail/TaskNotes.tsx"
   ],
@@ -4462,6 +4466,9 @@
   "Daily": [
     "web/src/app/BackupsPanel.tsx"
   ],
+  "Daily (built in)": [
+    "web/src/app/DailyNotesSettings.tsx"
+  ],
   "Daily AI budget (tokens)": [
     "web/src/app/routines/AISettings.tsx"
   ],
@@ -4481,6 +4488,14 @@
   "Daily focus": [
     "web/src/app/review/DailyCheck.tsx",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Daily notes": [
+    "web/src/app/DailyNotesSettings.tsx",
+    "web/src/app/settingsIndex.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Daily notes are turned off": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Dairy and eggs": [
     "web/src/lib/aisles/index.ts"
@@ -7129,6 +7144,12 @@
   "Get reminders while the app is closed. Each device decides for itself.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Get the daily note": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "Get the daily note of {date}": [
+    "web/src/lib/rules/sentence.ts"
+  ],
   "Get the date": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -8120,6 +8141,12 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Year: the same day of the previous or next month": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In a daily note: the next day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In a daily note: the previous day": [
     "web/src/lib/shortcuts.ts"
   ],
   "In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual": [
@@ -10609,7 +10636,8 @@
     "web/src/app/AppearanceSection.tsx"
   ],
   "Next day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/notes/DailyNote.tsx"
   ],
   "Next day or week": [
     "web/src/lib/shortcuts.ts"
@@ -11030,6 +11058,7 @@
     "web/src/lib/priority.ts"
   ],
   "No project": [
+    "web/src/app/DailyNotesSettings.tsx",
     "web/src/app/filter/conditionText.ts",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/rules/RuleFields.tsx",
@@ -11168,6 +11197,9 @@
   ],
   "No tasks yet.": [
     "web/src/app/calendar/WeekAgenda.tsx"
+  ],
+  "No template": [
+    "web/src/app/DailyNotesSettings.tsx"
   ],
   "No template matches. Try another word, or upload a template file.": [
     "web/src/app/templates/TemplateLibrary.tsx"
@@ -11493,12 +11525,14 @@
     "web/src/app/Sidebar.tsx",
     "web/src/app/SpaceSwitch.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/notes/DailyNote.tsx",
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NotesPage.tsx",
     "web/src/app/palette/entries.ts",
     "web/src/app/palette/notesSection.tsx",
     "web/src/app/quickadd/NotesLine.tsx",
     "web/src/app/quickadd/SheetBar.tsx",
+    "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/TaskNotes.tsx",
     "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/rules/sentence.ts",
@@ -12174,6 +12208,12 @@
   "One next step|method": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "One note per day, its project and its template": [
+    "web/src/app/settingsIndex.ts"
+  ],
+  "One note per day, opened with g j, from Today or the Notes sidebar.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "One occurrence of {title}": [
     "web/src/app/TaskRow.tsx"
   ],
@@ -12506,6 +12546,12 @@
   ],
   "Open the tracked task": [
     "web/src/app/TrackingIndicator.tsx"
+  ],
+  "Open today's note": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Open today's note (while Daily notes is on)": [
+    "web/src/lib/shortcuts.ts"
   ],
   "Open until {date}": [
     "web/src/app/MemberInvitations.tsx"
@@ -13372,7 +13418,8 @@
     "web/src/app/ImportScreen.tsx"
   ],
   "Previous day": [
-    "web/src/app/CalendarView.tsx"
+    "web/src/app/CalendarView.tsx",
+    "web/src/app/notes/DailyNote.tsx"
   ],
   "Previous day or week": [
     "web/src/lib/shortcuts.ts"
@@ -13546,6 +13593,7 @@
     "web/src/lib/listGroups.ts",
     "web/src/lib/rules/proposal.ts",
     "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts",
     "web/src/lib/shortcuts.ts",
     "web/src/lib/stats.ts"
   ],
@@ -13557,6 +13605,9 @@
   ],
   "Project deleted": [
     "web/src/lib/webhooks.ts"
+  ],
+  "Project for daily notes": [
+    "web/src/app/DailyNotesSettings.tsx"
   ],
   "Project from a template": [
     "web/src/lib/rules/sentence.ts"
@@ -16750,7 +16801,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ViewsView.tsx"
   ],
-  "Start view, briefing, keyboard, focus timer, priorities and maps": [
+  "Start view, briefing, keyboard, focus timer, priorities, notes and maps": [
     "web/src/app/settingsSections.ts"
   ],
   "Start with Today": [
@@ -17385,7 +17436,8 @@
   "Template": [
     "web/src/app/notes/NoteEditor.tsx",
     "web/src/app/notes/NoteRow.tsx",
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Template file": [
     "web/src/app/TemplateDialogs.tsx"
@@ -17517,6 +17569,9 @@
   ],
   "That date is not a coming occurrence of this repeating task.": [
     "web/src/lib/i18n/errors.ts"
+  ],
+  "That day’s daily note, created from your Daily notes settings when needed": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "That did not go through. Check the connection and try again.": [
     "web/src/page/TaskPageScreen.tsx"
@@ -19667,6 +19722,11 @@
   "Today limit": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Today's note": [
+    "web/src/app/Sidebar.tsx",
+    "web/src/app/task-list/ListChrome.tsx",
+    "web/src/lib/shortcuts.ts"
+  ],
   "Today, tomorrow or a day a few days away": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -19974,6 +20034,9 @@
   "Turn on": [
     "web/src/app/TwoFactorPanel.tsx",
     "web/src/app/VoiceSettings.tsx"
+  ],
+  "Turn on Daily notes to use this": [
+    "web/src/lib/rules/catalogue.ts"
   ],
   "Turn on Energy levels to use this": [
     "web/src/lib/rules/catalogue.ts"
@@ -20443,6 +20506,7 @@
     "web/src/app/locations/PlacesView.tsx"
   ],
   "Untitled note": [
+    "web/src/app/DailyNotesSettings.tsx",
     "web/src/app/FavouritesGroup.tsx",
     "web/src/app/NotesEditor.tsx",
     "web/src/app/UnlinkedMentions.tsx",
@@ -21135,6 +21199,9 @@
   ],
   "Where does my time go?": [
     "web/src/app/review/StatsView.tsx"
+  ],
+  "Where new daily notes go. Earlier ones stay where they are.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Where the Week view and calendars start": [
     "web/src/app/settingsIndex.ts"
@@ -22298,6 +22365,9 @@
   ],
   "cyan": [
     "web/src/lib/colourNames.ts"
+  ],
+  "daily note, journal, diary, today": [
+    "web/src/lib/rules/sentence.ts"
   ],
   "date": [
     "web/src/app/routines/words.tsx"
@@ -23599,6 +23669,9 @@
     "web/src/lib/activity.ts"
   ],
   "the count": [
+    "web/src/lib/rules/sentence.ts"
+  ],
+  "the daily note": [
     "web/src/lib/rules/sentence.ts"
   ],
   "the date": [

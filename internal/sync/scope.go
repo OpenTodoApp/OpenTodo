@@ -396,6 +396,11 @@ func (r *resolver) resolve(op Op) (scope, reason string, err error) {
 			return "", reason, err
 		}
 	}
+	if op.Entity == "note" && op.Field == "day" {
+		if reason, err := r.checkNoteDay(op, scope); err != nil || reason != "" {
+			return "", reason, err
+		}
+	}
 	if op.Entity == "task" && op.Field == "split_from" {
 		if reason, err := r.checkSplitFrom(op, scope); err != nil || reason != "" {
 			return "", reason, err

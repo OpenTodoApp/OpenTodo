@@ -14,7 +14,7 @@ function usesTemplates(steps: readonly RoutineStep[], kind = 'project_from_templ
   return steps.some((s) => s.kind === kind || usesTemplates([...(s.then ?? []), ...(s.otherwise ?? []), ...(s.do ?? [])], kind))
 }
 
-const NOTE_KINDS = ['find_notes', 'get_note', 'create_note', 'note_from_template', 'change_notes', 'note_to_task', 'note_text', 'append_to_note', 'clear_note', 'sort', 'filter']
+const NOTE_KINDS = ['find_notes', 'get_note', 'create_note', 'note_from_template', 'daily_note', 'change_notes', 'note_to_task', 'note_text', 'append_to_note', 'clear_note', 'sort', 'filter']
 
 /** Whether a routine reads standalone notes (notes-in-routines): load them only then. */
 function usesNotes(steps: readonly RoutineStep[]): boolean {
@@ -80,7 +80,7 @@ export async function loadRunWorld(o: LoadOptions): Promise<RunWorld> {
   const rows = (x: unknown[]) => x as unknown as Row[]
   let templates: LibraryTemplate[] | undefined
   let noteTemplates: RunWorld['noteTemplates']
-  if (usesTemplates(o.steps) || usesTemplates(o.steps, 'note_from_template')) {
+  if (usesTemplates(o.steps) || usesTemplates(o.steps, 'note_from_template') || usesTemplates(o.steps, 'daily_note')) {
     const lib = (await import('../../../generated/templates.json')).default as unknown as { templates: LibraryTemplate[]; notes?: RunWorld['noteTemplates'] }
     templates = lib.templates
     noteTemplates = lib.notes

@@ -82,6 +82,8 @@ const (
 	NeedsTimeTracking = "time_tracking"
 	NeedsFocus        = "focus"
 	NeedsShared       = "shared"
+	// NeedsDailyNotes: the run-as person's Daily notes setting (daily-notes D6).
+	NeedsDailyNotes = "daily_notes"
 	// NeedsAI: the assistant usable by the user with consent for routines
 	// (routines-ai-step D1, D10).
 	NeedsAI = "ai"
@@ -205,6 +207,10 @@ var Steps = []StepKind{
 	{Kind: "note_from_template", Group: GroupText, Out: TNote, Content: true, Tool: "create_note",
 		Inputs: []Input{req(in("template", nil, LitID)), content(bound(in("title", textIn, LitText), 500)), in("project", []Type{TProject}, LitProject),
 			in("labels", nil, LitIDs), in("date", []Type{TDate}, LitDate)}},
+	// daily_note (daily-notes D6): that day's daily note of the run-as person,
+	// created from the Daily notes settings when it does not exist yet.
+	{Kind: "daily_note", Group: GroupText, Out: TNote, Content: true, Needs: NeedsDailyNotes, Tool: "create_note",
+		Inputs: []Input{in("date", []Type{TDate}, LitDate)}},
 	{Kind: "change_notes", Group: GroupText, Out: TNotes, Tool: "update_note",
 		Inputs: []Input{req(in("notes", []Type{TNotes}, LitNone)), in("project", []Type{TProject}, LitProject), in("no_project", nil, LitBool),
 			in("add_labels", nil, LitIDs), in("remove_labels", nil, LitIDs), in("pin", nil, LitBool), in("trash", nil, LitBool)}},

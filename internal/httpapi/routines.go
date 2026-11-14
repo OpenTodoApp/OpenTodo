@@ -131,6 +131,7 @@ func (s *Server) routineEnv(ctx context.Context, uid string) ruleval.Env {
 	}
 	if prefs, err := s.sync.Get(ctx, uid, "user_prefs", "me"); err == nil && prefs != nil {
 		env.Energy = idOf(prefs["energy"]) == "on"
+		env.DailyNotes = string(prefs["daily_notes"]) == "true"
 	}
 	s.routineAIEnv(ctx, uid, &env)
 	return env

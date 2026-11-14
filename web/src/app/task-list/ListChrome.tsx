@@ -7,6 +7,8 @@ import { DURATION_FILTERS, type DurationFilter } from '../../lib/filters'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import type { ProjectViewMode } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
+import { logicalToday } from '../../lib/dates'
+import { useUserPrefsRow } from '../../lib/localData'
 import type { AccountRole, Label, Place, Project, Task } from '../../lib/types'
 import { Button, DESKTOP_HEADER_QUERY, EmptyState as EmptyStatePattern, type EmptyStateAction, type EmptyStateLink, Icon, type IconName, type IllustrationName, IconButton, MenuGroup, MenuItem, MenuSeparator, Tooltip, useMediaQuery } from '../../ui'
 import { TodayAskAction, useTodayAsk } from '../assistant/AskEntry'
@@ -85,6 +87,7 @@ export function ListPageActions({ route, userRole, rowCount, selectMode, onSelec
   return (
     <>
       {route.view === 'today' && <TodayAskAction role={userRole} />}
+      {route.view === 'today' && <TodayNoteAction />}
       {route.view === 'inbox' && rowCount > 0 && (
         // Process the Inbox one task at a time (inbox-triage): the page's primary action, P (inbox-split D3).
         <Tooltip label={t('Process the Inbox one task at a time')} shortcut={keysOf('inbox.process')}>
@@ -407,4 +410,11 @@ export function RowPickerDialogs({ assignFor, pickerFor, userId, onCloseAssign, 
       )}
     </>
   )
+}
+
+/** Today's note (daily-notes D5): one icon button among Today's actions while Daily notes is on. */
+export function TodayNoteAction() {
+  const on = useUserPrefsRow()?.daily_notes === true
+  if (!on) return null
+  return <IconButton size="sm" icon="notebook-pen" label={t('Today\'s note')} shortcut={keysOf('go.dailyNote')} onClick={() => navigate({ view: 'notes', day: logicalToday() })} data-today-note />
 }

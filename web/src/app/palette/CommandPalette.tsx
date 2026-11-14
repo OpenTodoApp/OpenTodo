@@ -129,6 +129,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       dayParts: dayPartsOn(prefs),
       timeSectors: timeSectorsOn(prefs),
       habits: habitsOn,
+      dailyNotes: prefs?.daily_notes === true,
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
     }

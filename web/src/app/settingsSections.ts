@@ -96,13 +96,15 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
     ]),
   },
   {
-    id: 'general', label: msg('General'), group: 'app', icon: 'settings', description: () => t('Start view, briefing, keyboard, focus timer, priorities and maps'),
+    id: 'general', label: msg('General'), group: 'app', icon: 'settings', description: () => t('Start view, briefing, keyboard, focus timer, priorities, notes and maps'),
     pages: pages([
       page({ id: 'start', label: msg('Start view and briefing'), icon: 'house', help: 'settings/start-view' }),
       page({ id: 'keyboard', label: msg('Keyboard'), icon: 'keyboard', help: 'settings/keyboard', scope: 'device' }),
       page({ id: 'focus', label: msg('Focus timer'), icon: 'timer', help: 'settings/focus' }),
       // priority-names: the person's names for the four levels.
       page({ id: 'priorities', label: msg('Priorities'), icon: 'flag', help: 'settings/priorities' }),
+      // daily-notes: one note per day.
+      page({ id: 'notes', label: msg('Notes'), icon: 'notebook-pen', help: 'settings/notes' }),
       page({ id: 'maps', label: msg('Maps'), icon: 'map', help: 'settings/general' }),
     ]),
   },

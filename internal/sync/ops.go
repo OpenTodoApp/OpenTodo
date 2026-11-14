@@ -401,6 +401,11 @@ var Schema = map[string]map[string]Field{
 		// A template (note-templates D1): the note is offered under From
 		// template… and New note copies it; otherwise a note like any other.
 		"template": {Kind: kBool, Default: `false`},
+		// A daily note's day, YYYY-MM-DD (daily-notes D1); "" for any other
+		// note. Set once at creation, only on the note whose id is the
+		// name-based id of its author and that day (NameID("daily-note",
+		// user + ":" + day)), so the same day is one note on every device.
+		"day": {Kind: kString, Default: `""`},
 	},
 	// task.labels holds label ids (a convention on the string array, not a format change).
 	"label": {
@@ -993,6 +998,14 @@ var Schema = map[string]map[string]Field{
 		"priority_name_2": {Kind: kString, Default: `""`, Content: true},
 		"priority_name_3": {Kind: kString, Default: `""`, Content: true},
 		"priority_name_4": {Kind: kString, Default: `""`, Content: true},
+		// Daily notes (OpenSpec change daily-notes, design D1): one note per
+		// day, opened with g j; off by default. The project new daily notes go
+		// to ("" for none) and their template: "" the built-in Daily, "none" no
+		// template, otherwise a template note's id (an unknown id reads as the
+		// built-in Daily and is kept).
+		"daily_notes":          {Kind: kBool, Default: `false`},
+		"daily_notes_project":  {Kind: kString, Default: `""`},
+		"daily_notes_template": {Kind: kString, Default: `""`},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the
