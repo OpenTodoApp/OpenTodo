@@ -11,7 +11,7 @@ Today, Upcoming and the Inbox SHALL offer the display panel of saved views (Open
 - **Upcoming:** Rows; Later days: Summarised (default) or In full (see "Calm Upcoming"); Order by with the same choices as Today; the direction; Nest subtasks. No Group by.
 - **Inbox:** Rows; Group by: None (default), Due date, Priority or Label; Order by: Manual order (default), Priority, Due date, Created, Deadline or Title; the direction. No Nest subtasks, because the Inbox always shows subtasks under their parent.
 
-None of the three SHALL offer Layout, Completed tasks or Show on rows. Today and Upcoming SHALL offer no Manual order. A choice SHALL apply at once. Rows SHALL show the account's row layout until the view has its own choice. Custom-field orders SHALL be matched and sorted as on a label page (OpenSpec `list-display-options` "Display options on project and label pages").
+None of the three SHALL offer Layout, Completed tasks or Show on rows. Today SHALL offer Manual order only with Project grouping. Upcoming SHALL offer no Manual order. A choice SHALL apply at once. Rows SHALL show the account's row layout until the view has its own choice. Custom-field orders SHALL be matched and sorted as on a label page (OpenSpec `list-display-options` "Display options on project and label pages").
 
 #### Scenario: Today's choices
 - **WHEN** the user opens Display options on Today
@@ -39,7 +39,7 @@ With every option at its default, Today, Upcoming and the Inbox SHALL list the s
 ### Requirement: What each view keeps
 Display options SHALL change how a view lays out its tasks and never which tasks it lists. Each view's task count, its sidebar count, the icon badge and the day page's briefing SHALL be unchanged by them. The Today and Upcoming duration filter, Upcoming's query filter, Today's Hide tasks assigned to others, Show calendar events and Start with Today SHALL work as before under any option.
 
-In Today, the chosen grouping SHALL lay out only the day's own tasks, which Time of day shows under Today, Morning, Afternoon and This Evening. **Earlier** SHALL stay the first group with its actions. **Blocked**, **Waiting for a slot** and **Done today** SHALL stay at the end, in that order, folded as before. The chosen order SHALL apply within Earlier, within each chosen group and within Blocked. Waiting for a slot SHALL keep its fill order, and Done today SHALL stay newest first. Grouping by Project, Priority or Label SHALL use the headings and order of a saved view's grouping, listing each task once (a task with several labels under the first of them in label order). Under Group by Project, rows SHALL leave out the project their heading names. Under any grouping other than Time of day, a task's part of the day SHALL show on its row. Only Time of day's headings SHALL take drops.
+In Today, the chosen grouping SHALL lay out only the day's own tasks, which Time of day shows under Today, Morning, Afternoon and This Evening. **Earlier** SHALL stay the first group with its actions. **Blocked**, **Waiting for a slot** and **Done today** SHALL stay at the end, in that order, folded as before. The chosen order SHALL apply within Earlier, within each chosen group and within Blocked. Waiting for a slot SHALL keep its fill order, and Done today SHALL stay newest first. Grouping by Project, Priority or Label SHALL use the headings and order of a saved view's grouping, listing each task once (a task with several labels under the first of them in label order). Under Group by Project, rows SHALL leave out the project their heading names. Under any grouping other than Time of day, a task's part of the day SHALL show on its row. Time of day's headings SHALL take day-part drops. Today under Project grouping SHALL take project drops as specified in OpenSpec manual-ordering. Manual order SHALL apply to the active project groups and Inbox. While it is selected, Earlier, Blocked and the Today portion of Upcoming SHALL use Today's default order.
 
 The Today limit SHALL fill its slots as before, whatever the grouping and order: the same tasks hold the slots, and the lead line counts them the same way.
 
@@ -91,7 +91,7 @@ With Nest subtasks on, Today and Upcoming SHALL list a subtask under its parent 
 - **THEN** its subtasks are hidden on this device, and Today's count is unchanged
 
 ### Requirement: Reset
-On Today, Upcoming and the Inbox, while any option differs from that view's default, the panel SHALL end with **Reset**, which puts every option of that view back to its default at once. The Reset button SHALL not be shown while the view is at its defaults. After Reset, focus SHALL move to the panel's first control. Reset SHALL change only the view it is used on.
+On Today, Upcoming and the Inbox, while any option differs from that view's default, the panel SHALL end with **Reset**, which puts every option of that view back to its default at once. The Reset button SHALL not be shown while the view is at its defaults. After Reset, focus SHALL move to the panel's first control. Reset SHALL change only the view it is used on. Reset on Today SHALL clear its saved manual order.
 
 #### Scenario: Back to the default
 - **WHEN** Today is grouped by project, ordered by title and nests subtasks, and the user chooses Reset

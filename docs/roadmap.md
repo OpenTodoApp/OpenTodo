@@ -74,6 +74,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `focus-session-readable` | The running Focus session readable by the shells and agents | Shipped in 0.20 |
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
 | `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Shipped |
+| `today-project-drops` | Move, place and nest tasks in Today's project groups | Shipped |
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped |
 | `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |

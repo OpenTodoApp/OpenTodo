@@ -9,12 +9,104 @@ import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { createLabel } from '../lib/labels'
+import { addDaysISO, logicalToday } from '../lib/dates'
+import { setListDisplay } from '../lib/listDisplay'
 import { createProject, createTask, mutate, resetDeviceId } from '../lib/ops'
 import { createView } from '../lib/views'
 import { undoBatch } from '../lib/undo'
 import { mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { SavedViewRoute } from './SavedViewView'
 import { TaskListView } from './TaskListView'
+
+describe('Today grouped by Project', () => {
+  async function todayFixture() {
+    const home = await createProject({ name: 'Home' })
+    const work = await createProject({ name: 'Work' })
+    const due = { date: logicalToday() }
+    const a = await createTask({ title: 'A', project_id: home, due })
+    const b = await createTask({ title: 'B', project_id: home, due })
+    const z = await createTask({ title: 'Z', project_id: work, due })
+    const x = await createTask({ title: 'X', project_id: work, due })
+    const y = await createTask({ title: 'Y', project_id: work, due })
+    const inbox = await createTask({ title: 'Unassigned', due })
+    await setListDisplay({ kind: 'today' }, { groupBy: 'project', sortBy: 'title' })
+    return { home, work, a, b, x, y, z, inbox, due }
+  }
+
+  const group = (key: string) => document.querySelector<HTMLElement>(`[data-drop-target="today-group:day:${key}"]`)
+  const order = (key: string) => [...(group(key)?.querySelectorAll('[data-task-id]') ?? [])].map((el) => el.getAttribute('data-task-id'))
+
+  it('honors the drop line, preserves visible title order, and undoes the move and sort', async () => {
+    const f = await todayFixture()
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    try {
+      await waitFor(() => order(f.work).join() === [f.x, f.y, f.z].join())
+      const shown = await drag(f.b, rowOf(f.y), 102)
+      expect(shown).toEqual({ line: 'before', note: 'Move to Work' })
+      await waitFor(() => order(f.work).join() === [f.x, f.b, f.y, f.z].join())
+      expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.work, due: f.due })
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'position' })
+      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work')!
+      await act(async () => { await undoBatch(entry.id) })
+      await waitFor(() => order(f.home).join() === [f.a, f.b].join())
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title', today_manual_order: [] })
+    } finally { await r.unmount() }
+  })
+
+  it('keeps the sort for a group drop, accepts displayed Inbox and nests in the destination', async () => {
+    const f = await todayFixture()
+    await setListDisplay({ kind: 'today' }, { subtasks: true })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    try {
+      await waitFor(() => !!group('inbox') && !!rowOf(f.b) && !!rowOf(f.y))
+      await drag(f.b, group('inbox')!, 120)
+      await waitFor(() => order('inbox').includes(f.b))
+      expect(await db.tasks.get(f.b)).toMatchObject({ project_id: null, due: f.due })
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title' })
+      await drag(f.b, rowOf(f.y), 120)
+      await waitFor(async () => (await db.tasks.get(f.b))?.parent_id === f.y)
+      expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.work, due: f.due })
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title' })
+    } finally { await r.unmount() }
+  })
+
+  it('refuses drops into Earlier and a project shared with the user as a viewer', async () => {
+    const f = await todayFixture()
+    const late = await createTask({ title: 'Late', project_id: f.work, due: { date: addDaysISO(f.due.date, -1) } })
+    await db.memberships.put({ projectId: f.work, role: 'viewer', ownerId: 'owner', members: [] })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    try {
+      await waitFor(() => !!rowOf(f.b) && !!rowOf(late) && !!rowOf(f.y))
+      expect(group(f.work)).toBeNull()
+      expect(await drag(f.b, rowOf(f.y), 102)).toEqual({ line: null, note: null })
+      expect(await drag(f.b, rowOf(late), 102)).toEqual({ line: null, note: null })
+      expect((await db.tasks.get(f.b))?.project_id).toBe(f.home)
+      expect((await db.userPrefs.get('me'))?.today_sort_by).toBe('title')
+    } finally { await r.unmount() }
+  })
+
+  it('accepts an existing subtask in another group as a parent directly and through an indented gap', async () => {
+    const f = await todayFixture()
+    const child = await createTask({ title: 'Child', project_id: f.work, parent_id: f.y, due: f.due })
+    await setListDisplay({ kind: 'today' }, { subtasks: true })
+    const r = await render(<TaskListView route={{ view: 'today' }} />)
+    try {
+      await waitFor(() => !!rowOf(child) && !!rowOf(f.a) && !!rowOf(f.b))
+      expect(rowOf(child).getAttribute('data-drop-target')).toBe(`task:${child}`)
+      expect(await drag(f.a, rowOf(child), 120)).toEqual({ line: null, note: 'Move to Work' })
+      await waitFor(async () => (await db.tasks.get(f.a))?.parent_id === child)
+      const existingUndo = await db.assistantUndo.toCollection().primaryKeys()
+      expect(await drag(f.b, rowOf(child), 136, 50)).toEqual({ line: 'after', note: 'Move to Work', depth: '2' })
+      await waitFor(async () => (await db.tasks.get(f.b))?.parent_id === child)
+      expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.work, due: f.due })
+      expect((await db.tasks.get(f.b))!.position).toBeLessThan((await db.tasks.get(f.a))!.position)
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title' })
+      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work' && !existingUndo.includes(e.id))!
+      await undoBatch(entry.id)
+      expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.home, parent_id: null, due: f.due })
+    } finally { await r.unmount() }
+  })
+})
 
 let n = 0
 beforeEach(() => {

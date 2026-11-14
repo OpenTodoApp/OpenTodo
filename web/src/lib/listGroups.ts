@@ -104,6 +104,8 @@ export interface ListGroup {
   projectedNote?: string
 }
 
+export const isTodayProjectGroup = (group: ListGroup) => !!group.project || group.key === 'day:inbox'
+
 /** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
 export interface WaitingSoon {
   task: Task
@@ -616,7 +618,8 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   // Today's display options (builtin-view-options D3), also for Upcoming's Today groups (D4):
   // the order applies within Earlier, the day's groups and Blocked.
   const d = inUpcoming ? p.todayDisplay : p.display
-  const order = dayOrder(p, d)
+  const manual = d?.sortBy === 'position'
+  const order = manual ? null : dayOrder(p, d)
   const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
@@ -627,7 +630,9 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   if (groupBy !== 'day') {
     // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
     const own = new Set([...day, ...morning, ...afternoon, ...evening])
-    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, rows))
+    const rank = manual && !inUpcoming ? compareManual(p.manualOrder ?? new Map(), compareDueThenPriority) : null
+    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row) : rows
+    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, projectRows))
   } else {
     const others = earlier.length || morning.length || afternoon.length || evening.length
     // With day parts on an empty Today group is left out, unless the list would be empty without it.

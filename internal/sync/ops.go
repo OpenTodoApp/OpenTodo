@@ -949,6 +949,8 @@ var Schema = map[string]map[string]Field{
 		// Today's order (builtin-view-options D2): "due", "priority", "created",
 		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
 		"today_sort_by": {Kind: kString, Default: `""`},
+		// Task IDs placed by hand in Today's project groups, in personal order.
+		"today_manual_order": {Kind: kOrderList, Default: `[]`},
 		// Today's order direction: "asc" or "desc"; empty or unknown reads as "asc".
 		"today_sort_dir": {Kind: kString, Default: `""`},
 		// Today's row layout (row-layouts): "line" or "detailed"; empty or
