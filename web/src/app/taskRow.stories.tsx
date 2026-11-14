@@ -230,6 +230,17 @@ export const Dragging: StoryObj = {
   ),
 }
 
+/** A drop that moves the task to another project (view-project-drops): the line names the project. */
+export const DropMovesProject: StoryObj = {
+  render: () => (
+    <List>
+      <TaskRow {...base} task={task({ id: 't1', title: 'Report' })} />
+      <TaskRow {...base} dropIndicator="after" dropNote="Move to Work" task={task({ id: 't2', title: 'Deck for the review' })} />
+      <TaskRow {...base} task={task({ id: 't3', title: 'Send the invoice' })} />
+    </List>
+  ),
+}
+
 /** Bulk selection: the selection box takes the task checkbox's slot, so the titles never move; hover a row to see it swap. */
 export const Selecting: StoryObj = {
   render: () => (

@@ -11,6 +11,8 @@ export interface DropAt {
   zone: DropZone
   /** Before or after a row of a tree list: the depth the task lands at (drop-depth). */
   depth?: number
+  /** A drop that moves the task to another project names it (view-project-drops). */
+  note?: string
 }
 
 /**
@@ -45,7 +47,7 @@ export function dropTarget(row: DropRow, zone: DropZone): { parent_id: string | 
 /** The left edge of a drop line at `depth`: the checkbox of a row at that depth (TaskRow caps the indent at three levels). */
 export const dropIndent = (depth: number, maxIndent: number) => `${Math.min(depth, maxIndent) * 1.5 + 2}rem`
 
-export const sameDrop = (a: DropAt | null, b: DropAt | null) => a === b || (!!a && !!b && a.id === b.id && a.zone === b.zone && a.depth === b.depth)
+export const sameDrop = (a: DropAt | null, b: DropAt | null) => a === b || (!!a && !!b && a.id === b.id && a.zone === b.zone && a.depth === b.depth && a.note === b.note)
 
 /** Measure the zone under the pointer for an element carrying `attr="id"`. */
 export function zoneUnder(attr: string, id: string, y: number, allowInside: boolean): DropZone | null {

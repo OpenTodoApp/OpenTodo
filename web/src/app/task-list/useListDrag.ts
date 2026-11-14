@@ -14,6 +14,7 @@ import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
 import { gapAround, gapDepths, gapRow, gapTarget, indentStep, pointedDepth } from './dropDepth'
 import { dropTasks } from '../taskDrop'
 import type { ViewPlacement } from '../../lib/viewOrder'
+import { t } from '../../lib/i18n'
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
@@ -37,6 +38,16 @@ export interface DragSource {
    */
   reorder?: (taskId: string, at: ViewPlacement) => void
   groupOf?: ReadonlyMap<string, string>
+  /**
+   * The page is grouped by Project (view-project-drops): a drop in another project's
+   * group moves the task there and places it; a project the person may not edit
+   * takes no drop.
+   */
+  across?: {
+    projectOf: (groupKey: string) => { id: string | null; name: string } | null
+    canEdit: (projectId: string | null) => boolean
+    move: (taskId: string, at: ViewPlacement, groupKey: string) => void
+  }
   /** A task the user may not change: it can still be ordered in its own list, never dropped on the sidebar. */
   readOnly?: (task: Task) => boolean
 }
@@ -112,8 +123,13 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const now = dragState.current
         let id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
-        // An own order moves within the task's group only (view-manual-order D4).
-        if (id && now.groupOf && now.groupOf.get(id) !== now.groupOf.get(task.id)) id = null
+        // An own order moves within the task's group only (view-manual-order D4), or into another project's group (view-project-drops).
+        let note: string | undefined
+        if (id && now.groupOf && now.groupOf.get(id) !== now.groupOf.get(task.id)) {
+          const into = now.across?.projectOf(now.groupOf.get(id) ?? '')
+          if (into && now.across?.canEdit(into.id)) note = t('Move to {project}', { project: into.name })
+          else id = null
+        }
         // The Completed column has no order of its own: a card over it, or a completed card anywhere, goes to the column (board-completed-column D3).
         const doneColumn = now.board && id ? completedMove(now.sectionOfRow, task.id, id) : null
         if (doneColumn !== null) id = null
@@ -121,14 +137,14 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         const zone = id && !own.has(id) ? zoneUnder('data-task-id', id, y, tree) : null
         const gap = tree && id && zone ? gapAround(now.groups, own, id, zone) : null
         const depth = gap ? pointedDepth(startDepth, x - startX, step, gapDepths(gap.above, gap.below)) : undefined
-        show(id && zone ? { id, zone, ...(depth !== undefined ? { depth } : {}) } : null)
+        show(id && zone ? { id, zone, ...(depth !== undefined ? { depth } : {}), ...(note ? { note } : {}) } : null)
         // A drop on a column lands last in it, so the placeholder follows its last card.
         const over = target?.startsWith('section:') ? target.slice('section:'.length) : doneColumn
         // A completed card's own column takes no drop: the column has no order (D3).
         showColumn(manual && now.board && !(over === COMPLETED_COLUMN && now.sectionOfRow.get(task.id) === COMPLETED_COLUMN) ? over : null)
       },
       onDrop: (target) => {
-        const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly } = dragState.current
+        const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly, groupOf, across } = dragState.current
         if (target.startsWith('drop:')) {
           if (readOnly?.(task)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
@@ -138,7 +154,10 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         if (!manual) return
         if (target.startsWith('task:') && reorder) {
           if (!current || current.zone === 'inside') return
-          reorder(task.id, current.zone === 'before' ? { before: current.id } : { after: current.id })
+          const at = current.zone === 'before' ? { before: current.id } : { after: current.id }
+          const into = groupOf?.get(current.id)
+          if (across && into !== undefined && into !== groupOf?.get(task.id)) across.move(task.id, at, into)
+          else reorder(task.id, at)
         } else if (target.startsWith('task:') && b && completedMove(secs, task.id, target.slice('task:'.length)) !== null) {
           const key = completedMove(secs, task.id, target.slice('task:'.length))!
           if (key !== secs.get(task.id)) moveToSection(task, key)

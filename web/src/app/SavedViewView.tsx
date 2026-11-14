@@ -28,7 +28,9 @@ import { useListKeys, type KeyRow } from './useListKeys'
 import type { ViewStep } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
 import { stepInView } from './viewOrderActions'
-import { groupOfKey, useViewOrderDrag, viewRowTarget } from './views/useViewOrderDrag'
+import { groupOfKey, useViewOrderDrag, viewRowTarget, type ProjectGroups } from './views/useViewOrderDrag'
+import { useMembershipMap } from '../lib/localData'
+import { canEditTasks, roleOf } from '../lib/sharing'
 import { useBulkList } from './bulk/useBulkList'
 import { placeInDay } from './signals'
 import { logicalToday } from '../lib/dates'
@@ -225,7 +227,15 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
       },
     }
   }, [host])
-  const drag = useViewOrderDrag(host, rows, { ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
+  // Grouped by Project in the List layout, a drop may move a task to another project or nest it (view-project-drops).
+  const memberships = useMembershipMap()
+  const projectGroups = useMemo<ProjectGroups | null>(() => (opts.groupBy !== 'project' || display.layout !== 'list' ? null : {
+    projectOf: (k) => (k === 'inbox' ? { id: null, name: t('Inbox') } : projectMap.has(k) ? { id: k, name: projectMap.get(k)!.name } : null),
+    canEdit: (id) => canEditTasks(roleOf(id, memberships)),
+    nest,
+    depthOf: (k) => nested.get(k)?.depth ?? 0,
+  }), [opts.groupBy, display.layout, projectMap, memberships, nest, nested])
+  const drag = useViewOrderDrag(host, rows, { projectGroups, ticked: bulk.ticked, openRowMenu: (tk, x, y, el) => bulk.rowProps(tk).onRowMenu(x, y, el), onDropped: setSelected })
 
   useListKeys({
     rows, selected, setSelected, openId, setOpenId, pickerFor, setPickerFor, bulk, sidePanel: true,
@@ -334,6 +344,7 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
                 onPointerDown={(e) => drag.startDrag(e, key, tk)}
                 dropKey={viewRowTarget(key)}
                 dropIndicator={drag.dropAt?.key === key ? drag.dropAt.zone : null}
+                dropNote={drag.dropAt?.key === key ? drag.dropAt.note : undefined}
                 dragging={drag.draggingKey === key}
                 expanded={!drag.draggingKey && expanded === key}
                 score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}

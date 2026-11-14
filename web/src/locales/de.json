@@ -2827,6 +2827,7 @@
   "Moved to {part}": "In {part} verschoben",
   "Moved to {project}.": "Nach {project} verschoben.",
   "Moved to {project}: {title}.": "Nach {project} verschoben: {title}.",
+  "Move to {project}": "Nach {project} verschieben",
   "Moved to {target}": "Nach {target} verschoben",
   "Moved up: {step}": "Nach oben verschoben: {step}",
   "Moves": "Verschiebungen",

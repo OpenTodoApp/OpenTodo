@@ -8335,6 +8335,7 @@
     "web/src/app/PreferencesPanels.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/SampleNotice.tsx",
+    "web/src/app/SavedViewView.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SyncScopeField.tsx",
     "web/src/app/TabBar.tsx",
@@ -10226,6 +10227,10 @@
   "Move to {name}": [
     "web/src/app/workspaceNav.ts"
   ],
+  "Move to {project}": [
+    "web/src/app/task-list/useListDrag.ts",
+    "web/src/app/views/useViewOrderDrag.ts"
+  ],
   "Move to…": [
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -10352,7 +10357,8 @@
     "web/src/app/TriageView.tsx"
   ],
   "Moved to {target}": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Moved up: {step}": [
     "web/src/app/routines/RoutineEditor.tsx"

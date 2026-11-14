@@ -2827,6 +2827,7 @@
   "Moved to {part}": "Movido a {part}",
   "Moved to {project}.": "Movida a {project}.",
   "Moved to {project}: {title}.": "Movida a {project}: {title}.",
+  "Move to {project}": "Mover a {project}",
   "Moved to {target}": "Movida a {target}",
   "Moved up: {step}": "Subido: {step}",
   "Moves": "Movimientos",

@@ -1,0 +1,1 @@
+- Saved views and label pages grouped by Project take project-style drops: drop a task in another project's group to move it there (with its subtasks) at that place in the view's order, or, with Nest subtasks on, onto a task to make it a subtask; projects you can only view take no drop, and Undo restores both (#1211).

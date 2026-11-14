@@ -4,7 +4,7 @@
 import type { Task } from '../lib/types'
 import type { UndoableResult } from '../lib/undoActions'
 import type { ViewPlacement, ViewStep } from '../lib/viewOrder'
-import type { OrderHost } from '../lib/viewOrderMove'
+import type { GroupDrop, OrderHost } from '../lib/viewOrderMove'
 import { showUndoToast } from './bulk/toastStore'
 import { withListTransition } from './motion'
 
@@ -24,4 +24,9 @@ export function reorderInView(host: OrderHost, tasks: readonly Task[], moved: st
 /** A keyboard step within the task's group; false at the group's edge. */
 export function stepInView(host: OrderHost, tasks: readonly Task[], group: readonly Task[], id: string, step: ViewStep): Promise<boolean> {
   return writer().then((w) => withListTransition(1, () => w.stepInViewOrder(host, tasks, group, id, step))).then(offerUndo)
+}
+
+/** A drop across project groups or onto a task (view-project-drops): a move and a place, "Moved to <project>" with Undo. */
+export function dropInView(host: OrderHost, tasks: readonly Task[], moved: string, drop: GroupDrop): Promise<boolean> {
+  return writer().then((w) => withListTransition(1, () => w.dropInViewGroup(host, tasks, moved, drop))).then(offerUndo)
 }

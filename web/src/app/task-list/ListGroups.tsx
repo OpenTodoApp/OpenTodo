@@ -187,6 +187,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           expanded={!ghost && !c.draggingId && c.expandedId === r.task.id}
           dropIndicator={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.zone : null}
           dropDepth={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.depth : undefined}
+          dropNote={!ghost && c.dropAt?.id === r.task.id ? c.dropAt.note : undefined}
           dragging={!ghost && c.draggingId === r.task.id}
           ticked={!ghost && c.ticked.has(r.task.id)}
           showCheckbox={c.showCheckbox}
@@ -266,6 +267,7 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder) || is(a.addingBelow?.at) !== is(b.addingBelow?.at)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.depth : null) !== (is(b.dropAt?.id) ? b.dropAt!.depth : null)) return false
+  if ((is(a.dropAt?.id) ? a.dropAt!.note : null) !== (is(b.dropAt?.id) ? b.dropAt!.note : null)) return false
   if (a.ticked !== b.ticked && a.ticked.has(id) !== b.ticked.has(id)) return false
   if (a.progress !== b.progress && !sameProgress(a.progress.get(id), b.progress.get(id))) return false
   if (a.blocked !== b.blocked && a.blocked.get(id) !== b.blocked.get(id)) return false

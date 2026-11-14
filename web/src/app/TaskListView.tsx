@@ -11,14 +11,15 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
-import { useMemberships, useMembership, useUserPrefsRow } from '../lib/localData'
+import { useMemberships, useMembership, useMembershipMap, useUserPrefsRow } from '../lib/localData'
 import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday } from '../lib/userPrefs'
 import { useMe } from '../lib/sharing'
 import { completedOpenKey, flatRow, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
-import { reorderInView, stepInView } from './viewOrderActions'
+import { dropInView, reorderInView, stepInView } from './viewOrderActions'
+import { canEditTasks, roleOf } from '../lib/sharing'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { isNarrowed, setCompletedDisplay } from '../lib/completedDisplay'
 import { createTaskThenSuggest } from '../lib/assistantSuggest'
@@ -168,7 +169,7 @@ function useListReadyMark(ready: boolean, route: ListRoute) {
  * A label page's own manual order (view-manual-order): drops and keyboard steps
  * within a row's group, written on the label; null on every other list.
  */
-function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[]) {
+function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean) {
   const host = useMemo<OrderHost | null>(() => (route.view === 'label' ? { entity: 'label', id: route.id } : null), [route])
   const latest = useRef({ rows, groups })
   latest.current = { rows, groups }
@@ -182,7 +183,26 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[]) {
     const group = gs.find((g) => g.rows.some((r) => r.task.id === id))
     return stepInView(host, rs.map((r) => r.task), group ? group.rows.map((r) => r.task) : [], id, how)
   }, [host])
-  return useMemo(() => (host ? { reorder, step, groupOf } : null), [host, reorder, step, groupOf])
+  // Grouped by Project in the List layout (view-project-drops D1): a drop in another project's group moves the task there.
+  const memberships = useMembershipMap()
+  const byProject = !board && groups.some((g) => g.project)
+  const across = useMemo(() => {
+    if (!host || !byProject) return undefined
+    const projectOf = (key: string) => {
+      const g = latest.current.groups.find((x) => x.key === key)
+      if (g?.project) return { id: g.project, name: g.heading ?? t('Project') }
+      return g && (g.key === 'inbox' || g.key.endsWith(':inbox')) ? { id: null, name: t('Inbox') } : null
+    }
+    return {
+      projectOf,
+      canEdit: (id: string | null) => canEditTasks(roleOf(id, memberships)),
+      move: (taskId: string, at: ViewPlacement, key: string) => {
+        const into = projectOf(key)
+        if (into) act(dropInView(host, latest.current.rows.map((r) => r.task), taskId, { projectId: into.id, projectName: into.name, at }))
+      },
+    }
+  }, [host, byProject, memberships])
+  return useMemo(() => (host ? { reorder, step, groupOf, across } : null), [host, reorder, step, groupOf, across])
 }
 
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
@@ -281,9 +301,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
   const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
+  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
-  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, readOnly: isReadOnly }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
+  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   const { latestSectionMap } = drag
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {

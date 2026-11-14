@@ -2,11 +2,11 @@
 // view as one undoable batch, never on the tasks.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { createTask, mutate, resetDeviceId, setTaskCompleted, updateTask } from './ops'
+import { createProject, createTask, mutate, resetDeviceId, setTaskCompleted, updateTask } from './ops'
 import { createLabel } from './labels'
 import { createView } from './views'
 import { undoBatch } from './undo'
-import { moveInViewOrder, stepInViewOrder } from './viewOrderMove'
+import { dropInViewGroup, moveInViewOrder, stepInViewOrder } from './viewOrderMove'
 import type { Task } from './types'
 
 let n = 0
@@ -77,3 +77,69 @@ describe('moveInViewOrder', () => {
 async function updateLabelOrder(id: string, order: string[]) {
   await mutate('label', id, { manual_order: order })
 }
+
+// OpenSpec change view-project-drops, tasks 1.2 and 1.3: a drop across project groups
+// or onto a task moves the task and places it in the view's order, in one batch.
+describe('dropInViewGroup', () => {
+  async function setup() {
+    const home = await createProject({ name: 'Home' })
+    const work = await createProject({ name: 'Work' })
+    const view = await createView({ name: 'This week', query: 'p4', group_by: 'project' })
+    const paint = await createTask({ title: 'Buy paint', project_id: home })
+    const step = await createTask({ title: 'Pick a colour', project_id: home, parent_id: paint })
+    const report = await createTask({ title: 'Report', project_id: work })
+    const deck = await createTask({ title: 'Deck', project_id: work })
+    return { home, work, view, paint, step, report, deck, host: { entity: 'view' as const, id: view } }
+  }
+
+  it('moves the task with its subtasks to the group\'s project and places it, undone together', async () => {
+    const s = await setup()
+    const shown = await tasksOf([s.paint, s.report, s.deck])
+    const r = await dropInViewGroup(s.host, shown, s.paint, { projectId: s.work, projectName: 'Work', at: { after: s.report } })
+    expect(r?.label).toBe('Moved to Work')
+    expect((await db.tasks.get(s.paint))?.project_id).toBe(s.work)
+    expect((await db.tasks.get(s.step))?.project_id).toBe(s.work)
+    const order = (await db.views.get(s.view))?.manual_order as string[]
+    expect(order.indexOf(s.paint)).toBe(order.indexOf(s.report) + 1)
+    await undoBatch(r!.entry!.id)
+    expect((await db.tasks.get(s.paint))?.project_id).toBe(s.home)
+    expect((await db.tasks.get(s.step))?.project_id).toBe(s.home)
+    expect((await db.views.get(s.view))?.manual_order).toEqual([])
+  })
+
+  it('nests onto a task of another project as its last subtask, without touching the view order', async () => {
+    const s = await setup()
+    const flights = await createTask({ title: 'Book flights', project_id: s.home })
+    const existing = await createTask({ title: 'Ask for leave', project_id: s.work, parent_id: s.report })
+    const r = await dropInViewGroup(s.host, await tasksOf([flights, s.report]), flights, { projectId: s.work, projectName: 'Work', parentId: s.report })
+    const moved = await db.tasks.get(flights)
+    expect(moved).toMatchObject({ project_id: s.work, parent_id: s.report })
+    expect(moved!.position).toBeGreaterThan((await db.tasks.get(existing))!.position)
+    expect((await db.views.get(s.view))?.manual_order).toEqual([])
+    await undoBatch(r!.entry!.id)
+    expect(await db.tasks.get(flights)).toMatchObject({ project_id: s.home, parent_id: null })
+  })
+
+  it('makes a subtask dragged out to the top level a top-level task of the project', async () => {
+    const s = await setup()
+    await dropInViewGroup(s.host, await tasksOf([s.paint, s.step]), s.step, { projectId: s.home, projectName: 'Home', at: { after: s.paint } })
+    expect(await db.tasks.get(s.step)).toMatchObject({ project_id: s.home, parent_id: null })
+  })
+
+  it('refuses a parent that is the task itself or one of its subtasks', async () => {
+    const s = await setup()
+    await db.outbox.clear()
+    expect(await dropInViewGroup(s.host, [], s.paint, { projectId: s.home, projectName: 'Home', parentId: s.step })).toBeNull()
+    expect(await dropInViewGroup(s.host, [], s.paint, { projectId: s.home, projectName: 'Home', parentId: s.paint })).toBeNull()
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('refuses a drop into a project the person only views', async () => {
+    const s = await setup()
+    await db.memberships.put({ projectId: 'launch', role: 'viewer', ownerId: 'ana', members: [] })
+    await db.outbox.clear()
+    expect(await dropInViewGroup(s.host, [], s.paint, { projectId: 'launch', projectName: 'Launch', at: { after: s.report } })).toBeNull()
+    expect((await db.tasks.get(s.paint))?.project_id).toBe(s.home)
+    expect(await db.outbox.count()).toBe(0)
+  })
+})

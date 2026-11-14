@@ -2827,6 +2827,7 @@
   "Moved to {part}": "Passé au moment {part}",
   "Moved to {project}.": "Déplacée vers {project}.",
   "Moved to {project}: {title}.": "Déplacée vers {project} : {title}.",
+  "Move to {project}": "Déplacer vers {project}",
   "Moved to {target}": "Déplacée vers {target}",
   "Moved up: {step}": "Montée : {step}",
   "Moves": "Déplacements",

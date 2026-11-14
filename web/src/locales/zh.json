@@ -2840,6 +2840,7 @@
   "Moved to {part}": "已移至{part}",
   "Moved to {project}.": "已移至 {project}。",
   "Moved to {project}: {title}.": "已移至 {project}：{title}。",
+  "Move to {project}": "移至{project}",
   "Moved to {target}": "已移至 {target}",
   "Moved up: {step}": "已上移：{step}",
   "Moves": "移动",
