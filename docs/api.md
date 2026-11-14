@@ -224,10 +224,14 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/tasks/{id}/page/snapshot` | the publisher, full token | `{ciphertext, version, wrappedKey?}` → 200; an older `version` changes nothing |
 | GET | `/api/v1/tasks/{id}/page/replies` | the publisher, full token | pending encrypted replies `{replies:[{id, ciphertext, createdAt}]}` |
 | DELETE | `/api/v1/tasks/{id}/page/replies/{replyId}` | the publisher, full token | confirm an imported reply → 204 |
-| GET | `/api/v1/pages/{secret}` | none | the page: `mode` `live` (the task's shown fields) or `encrypted` (`snapshot`) |
+| POST | `/api/v1/notes/{id}/page` | the note's author, owner or admin of its project; fresh; full token | `{label?, expiresInDays?, snapshot?, wrappedKey?}` → 201 the page with `link` (shown once), see [Note pages](#note-pages) |
+| GET | `/api/v1/notes/{id}/page` | the same | the active page's status (never the secret or a key) |
+| DELETE | `/api/v1/notes/{id}/page` | the same | revoke → 204 |
+| PUT | `/api/v1/notes/{id}/page/snapshot` | the publisher, full token | `{ciphertext, version, wrappedKey?}` → 200; an older `version` changes nothing |
+| GET | `/api/v1/pages/{secret}` | none | the page: `kind` `task` or `note`, `mode` `live` (the shown fields) or `encrypted` (`snapshot`) |
 | POST | `/api/v1/pages/{secret}/replies` | none (`reply` or `tick` page) | `{name, body}`, or `{ciphertext}` on an encrypted page → 201 |
 | POST | `/api/v1/pages/{secret}/tick` | none (a `tick` page) | `{taskId, completed, name}` → `{taskId, completed_at}` |
-| GET | `/api/v1/pages/{secret}/files/{fileId}` | none | a file of the task, as a download |
+| GET | `/api/v1/pages/{secret}/files/{fileId}` | none | a file of the task, as a download; of a note page, a raster image inline |
 | GET | `/api/v1/pages/{secret}/maps/…` | none | the page's map style, tiles, fonts and sprites, see [Maps](#maps) |
 | GET | `/api/v1/settings/project-invites` | yes | `{membersCanInviteNewPeople}` (the owner switch) |
 | PUT | `/api/v1/settings/project-invites` | owner | `{membersCanInviteNewPeople: true\|false}` → the same shape |
@@ -2330,6 +2334,14 @@ One task published as a page people without an account open at `/t/<secret>[/<la
 **The page** — `GET /api/v1/pages/{secret}` needs no authentication, ignores a session cookie and sets none. A live page returns `id`, `title`, `description`, `due`, `deadline`, `completed_at`, `subtasks` (three levels, with `depth`), `links`, `files`, `location` (when `includeMap` is set and maps are on) and the `comments` written since publishing (`name`, `guest`, `body`, `createdAt`); never labels, the project, notes, the assignee, emails or account ids. An encrypted page returns `snapshot` and `snapshotAt`. Every unusable page (unknown, revoked, expired, its task deleted, the publisher deactivated or no longer allowed, an encrypted page without a snapshot) answers the same 404 `page_invalid`.
 
 **Guests** — replies (`{name, body}`, 1–40 and 1–4000 characters) become comments by the publisher from the device `page:<page-id>` with `guest_name` and `page_id`; on an encrypted page they are `{ciphertext}` (16 KB at most) kept until a device imports and confirms them. Ticks complete or reopen the task or a subtask; reopening only within 24 hours. Limits per page: 120 reads and 60 ticks a minute, 20 replies an hour; 120 requests a minute per address; unknown secrets count against the address's sign-in limit. Responses carry `X-Robots-Tag: noindex, nofollow`, `Referrer-Policy: no-referrer` and `Cache-Control: no-store`, and the request log redacts the secret.
+
+### Note pages
+
+One standalone note published read-only at `/n/<secret>[/<label>]` (OpenSpec `note-public-links`), on the task page machinery: the same secrets, labels, expiry, revocation, headers, lifecycle checks and limits (the 100 active pages and 20 publishes an hour count task and note pages together). `GET /api/v1/task-pages` lists both, each with `kind` and, for a note page, `noteId`.
+
+**Publish** — `POST /api/v1/notes/{id}/page` with `{"label": "wifi", "expiresInDays": 30}`; a `rights` member answers 400 (a note page is read-only). The author of a personal note, or the owner or an admin of a shared project, may publish; an editor or viewer gets 403 `forbidden`, a stranger 404. A note of an end-to-end encrypted personal scope also carries `snapshot` and `wrappedKey`, as for a task.
+
+**The page** — `GET /api/v1/pages/{secret}` answers `kind: "note"`, `rights: "view"` and, live, `title`, `text` (the Markdown with links to notes, tasks and projects reduced to their text), `changedAt`, `links` and `files` (each with `image` for a raster image served inline through `/files/{fileId}`); never labels, the project, account ids or Linked references. An encrypted page returns `snapshot` and `snapshotAt`, and shows no files. Replies and ticks answer 403. The page is invalid once the note is in the Trash or purged, its project deleted or archived, or its publisher no longer allowed.
 
 ## Examples
 

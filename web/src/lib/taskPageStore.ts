@@ -2,10 +2,12 @@
 // (OpenSpec task-pages): filled by the pass after each sync and by publishing or
 // revoking here, read by the task panel's "Published" marker and the comment
 // composer's notice. Pages are server data: nothing is stored on the device.
-import type { TaskPageStatus } from './types'
+import type { NotePageStatus, TaskPageStatus } from './types'
 import { createSignal } from './store'
 
 const pages = new Map<string, TaskPageStatus>()
+/** The note pages (note-public-links), by note id. */
+const notes = new Map<string, NotePageStatus>()
 const changes = createSignal()
 let version = 0
 
@@ -14,11 +16,26 @@ function emit(): void {
   changes.notify()
 }
 
-/** Replaces the known pages with the server's list. */
-export function setKnownTaskPages(list: TaskPageStatus[]): void {
+/** Replaces the known pages with the server's list (task and note pages). */
+export function setKnownTaskPages(list: (TaskPageStatus & { kind?: 'task' | 'note'; noteId?: string })[]): void {
   pages.clear()
-  for (const p of list) pages.set(p.taskId, p)
+  notes.clear()
+  for (const p of list) {
+    if (p.kind === 'note') notes.set(p.noteId ?? '', { ...p, noteId: p.noteId ?? '' })
+    else pages.set(p.taskId, p)
+  }
   emit()
+}
+
+/** Records one note's page (null: none) after publishing, revoking or reading its status. */
+export function setKnownNotePage(noteId: string, status: NotePageStatus | null): void {
+  if (status) notes.set(noteId, status)
+  else notes.delete(noteId)
+  emit()
+}
+
+export function knownNotePage(noteId: string): NotePageStatus | null {
+  return notes.get(noteId) ?? null
 }
 
 /** Records one task's page (null: none) after publishing, revoking or reading its status. */

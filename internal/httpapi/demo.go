@@ -153,6 +153,16 @@ func taskPage(p string) bool {
 	return len(parts) >= 2 && parts[1] == "page"
 }
 
+// notePage matches /api/v1/notes/{id}/page[/...] (OpenSpec `note-public-links`).
+func notePage(p string) bool {
+	rest, ok := strings.CutPrefix(p, "/api/v1/notes/")
+	if !ok {
+		return false
+	}
+	parts := strings.Split(rest, "/")
+	return len(parts) >= 2 && parts[1] == "page"
+}
+
 // demoRules is the lock-down list of design D4. Everything not listed (tasks,
 // projects, labels, views, sections, reminders, comments, sync, export, trash,
 // history, notifications) works as usual; rate limits stay in place.
@@ -194,6 +204,8 @@ var demoRules = []demoRule{
 	{"Public links", false, prefix("/api/v1/public")},
 	// Task pages publish a task to anyone (task-pages D7): every method.
 	{"Task pages", false, taskPage},
+	// Note pages publish a note to anyone (note-public-links): every method.
+	{"Note pages", false, notePage},
 	{"Task pages", false, prefix("/api/v1/task-pages")},
 	{"Task pages", false, prefix("/api/v1/pages")},
 	// The instance's default theme and themes (theme-instance-default D2): changes are refused.

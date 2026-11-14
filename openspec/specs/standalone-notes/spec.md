@@ -25,7 +25,7 @@ The app SHALL have a synced entity `note` with the additive fields `title`, `not
 - **THEN** the project's task list, Today, the calendars, the counts and filter results do not show it
 
 ### Requirement: Notes follow their project
-A note with a project SHALL live in that project's sharing scope and a note without a project in the author's personal scope and workspace. A note SHALL be shared only by being in a shared project: owners, admins and editors of the project may write it, viewers may read it, others SHALL neither see nor write it. Sharing a project SHALL share its notes; deleting a shared project SHALL move them to the Trash and copy the owner's notes into the owner's personal scope without a project. A change of project that would move a note into another scope SHALL be refused by the server as a scope change; the client SHALL move such a note by copying it and deleting the original. Offline, a move is a local batch like any edit; refusals are reported and the device shows the server's value, so all devices converge.
+A note with a project SHALL live in that project's sharing scope and a note without a project in the author's personal scope and workspace. A note SHALL be shared with people only by being in a shared project: owners, admins and editors of the project may write it, viewers may read it, others SHALL neither see nor write it. The one other way a note leaves its scope SHALL be a read-only note page (`note-pages`), which shows it to anyone with its link and gives no access to anything else. Sharing a project SHALL share its notes; deleting a shared project SHALL move them to the Trash and copy the owner's notes into the owner's personal scope without a project. A change of project that would move a note into another scope SHALL be refused by the server as a scope change; the client SHALL move such a note by copying it and deleting the original. Offline, a move is a local batch like any edit; refusals are reported and the device shows the server's value, so all devices converge.
 
 #### Scenario: Share a project with notes
 - **WHEN** the owner shares the project "Renovation" holding two notes with Anna as an editor
@@ -40,8 +40,8 @@ A note with a project SHALL live in that project's sharing scope and a note with
 - **THEN** a copy appears in the shared project with the same title and body, the personal note is removed, and the members see the copy
 
 #### Scenario: One note cannot be shared alone
-- **WHEN** the user looks for a way to share a single note
-- **THEN** there is none; the note's project decides who sees it
+- **WHEN** the user looks for a way to give another account access to a single note
+- **THEN** there is none; the note's project decides who sees and edits it, and "Publish note page…" offers only a read-only link
 
 ### Requirement: Writing a standalone note
 The user SHALL create a note from the Notes page (New note) and edit it in the docked panel on a computer and as a page on a phone, with a title field, the rich-text note editor, a project chosen with the project picker and labels chosen with the label picker. The editor SHALL offer every formatting command of notes except mentions and making a subtask; images SHALL be offered and embed attachments of the same note (`attachments` "Attachments on standalone notes"). An empty title SHALL read "Untitled note". The note's address SHALL be `/notes/<id>`. Edits SHALL save on the device and sync as notes do, offline included.

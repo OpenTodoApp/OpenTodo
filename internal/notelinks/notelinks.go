@@ -200,3 +200,65 @@ func Targets(markdown string) []Link {
 	}
 	return out
 }
+
+// Strip replaces every internal link of a Markdown text with its text as
+// written, so no target id is left (note-public-links D2: a note page shows
+// the publisher's words and leads nowhere). Code spans and fenced blocks are
+// kept as they are, like LinksIn reads them.
+func Strip(markdown string) string {
+	if !strings.Contains(markdown, "](?") {
+		return markdown
+	}
+	text := strings.ReplaceAll(strings.ReplaceAll(markdown, "\r\n", "\n"), "\r", "\n")
+	lines := strings.Split(text, "\n")
+	open := ""
+	for n, line := range lines {
+		if open != "" {
+			if strings.HasPrefix(strings.TrimLeftFunc(line, unicode.IsSpace), open) {
+				open = ""
+			}
+			continue
+		}
+		if f := fence(line); f != "" {
+			open = f
+			continue
+		}
+		if strings.Contains(line, "](?") {
+			lines[n] = stripLine(line, maskCode(line))
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// stripLine rewrites the links found in masked (line with code spans blanked,
+// same length) on line: "[text](?kind=id)" becomes "text".
+func stripLine(line, masked string) string {
+	var b strings.Builder
+	last := 0
+	i := strings.IndexByte(masked, '[')
+	for i >= 0 {
+		back := 0
+		for i-back-1 >= 0 && masked[i-back-1] == '\\' {
+			back++
+		}
+		next := i + 1
+		if back%2 == 0 {
+			if _, end, ok := scanAt(masked, i); ok {
+				close := strings.LastIndex(masked[:end], "](?")
+				b.WriteString(line[last:i])
+				b.WriteString(line[i+1 : close])
+				last, next = end, end
+			}
+		}
+		if next >= len(masked) {
+			break
+		}
+		at := strings.IndexByte(masked[next:], '[')
+		if at < 0 {
+			break
+		}
+		i = next + at
+	}
+	b.WriteString(line[last:])
+	return b.String()
+}

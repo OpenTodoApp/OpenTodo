@@ -39,6 +39,6 @@ Replies from guests are encrypted with the same key and wait on the server until
 
 ## Limits
 
-An account can have 100 active pages and publish 20 an hour. A page takes 20 replies an hour and 60 ticks a minute. Revoking deletes the page's copy and any replies still waiting.
+An account can have 100 active pages and publish 20 an hour, [note pages](note-pages.md) included. A page takes 20 replies an hour and 60 ticks a minute. Revoking deletes the page's copy and any replies still waiting.
 
 See also [Public links](public-links.md) to share a whole project, and [Sharing](sharing.md).

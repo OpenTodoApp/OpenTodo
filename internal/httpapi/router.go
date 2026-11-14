@@ -53,6 +53,7 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	s.registerSignupRoutes(mux)
 	s.registerPublicLinkRoutes(mux)
 	s.registerTaskPageRoutes(mux)
+	s.registerNotePageRoutes(mux)
 
 	mux.handle("GET /api/v1/me", signedIn, s.handleMe)
 	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
@@ -223,6 +224,9 @@ func (s *Server) registerWebAppRoutes(mux *routes, web http.Handler) {
 			web.ServeHTTP(noStoreWriter{w}, r2)
 		}
 		mux.handle("GET /t/", public("a task page; its data comes from the task page API"), taskPage)
+		// A note page (note-public-links D1): the same document; the secret
+		// decides which layout it shows.
+		mux.handle("GET /n/", public("a note page; its data comes from the task page API"), taskPage)
 		// A routine email's stop page (routines-shared-email D5): the same small
 		// document, never the app; its data comes from the stop link API.
 		mux.handle("GET /routine-emails/", public("a routine email's stop page; its data comes from the stop link API"), taskPage)

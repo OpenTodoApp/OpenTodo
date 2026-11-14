@@ -175,7 +175,7 @@ Notes that link to each other, a calm home for them, and a picture of what is co
 | [`note-outline`](openspec/changes/archive/2026-11-13-note-outline/) | **Shipped.** An outline of a long note's headings | |
 | [`note-templates`](openspec/changes/archive/2026-11-13-note-templates/) | **Shipped.** Start a note from a template, with built-in ones and a routine step | |
 | [`daily-notes`](openspec/changes/archive/2026-11-14-daily-notes/) | **Shipped.** One note per day, opened from Today, that routines can add to | |
-| [`note-public-links`](openspec/changes/note-public-links/) | A read-only public link for one note | |
+| [`note-public-links`](openspec/changes/archive/2026-11-14-note-public-links/) | **Shipped.** A read-only public link for one note | |
 | [`note-webhooks`](openspec/changes/archive/2026-11-13-note-webhooks/) | **Shipped.** Opt-in note events for webhooks | |
 | [`vault-notes`](openspec/changes/vault-notes/) | Standalone notes as Markdown files in `ot vault` | |
 

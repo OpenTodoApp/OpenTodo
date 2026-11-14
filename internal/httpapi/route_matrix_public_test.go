@@ -67,6 +67,7 @@ var publicRouteClasses = map[string]publicClass{
 	"POST /share":                     pubStatic,
 	"GET /public/":                    pubStatic,
 	"GET /t/":                         pubStatic,
+	"GET /n/":                         pubStatic,
 	"GET /routine-emails/":            pubStatic,
 	"GET /branding/{file}":            pubStatic,
 	"GET " + mcpProtectedResourcePath: pubStatic,

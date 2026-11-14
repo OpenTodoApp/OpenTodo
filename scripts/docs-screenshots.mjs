@@ -208,13 +208,16 @@ async function plainSetup() {
   const page = await api('POST', `/api/v1/tasks/${fence.id}/page`, { rights: 'tick', label: 'paint-the-fence' })
   const secret = page.link.split('/t/')[1].split('/')[0]
   await api('POST', `/api/v1/pages/${secret}/replies`, { name: 'Marco', body: 'Bought the primer, starting tomorrow morning.' })
+  // A published note page (note-public-links).
+  const sitter = await api('POST', '/api/v1/notes', { title: 'Babysitter how-to', description: 'Bedtime is at **8**. The door code is on the fridge, next to the emergency numbers.\n\n## Evening\n\n- [x] Dinner at 6\n- [ ] Bath\n- [ ] Two stories, then lights out\n\nCall Anna if anything comes up.' })
+  const notePage = await api('POST', `/api/v1/notes/${sitter.id}/page`, { label: 'babysitter' })
   // Automation rules (automation-rules): a label rule, a Sunday sweep and one turned off.
   const waiting = await api('POST', '/api/v1/labels', { name: 'waiting' })
   await api('POST', '/api/v1/rules', { name: 'Waiting for others', trigger: { kind: 'label.added', label_id: waiting.id }, actions: { priority: 3 } })
   await api('POST', '/api/v1/rules', { name: 'Sunday sweep', trigger: { kind: 'schedule', at: '18:00', weekdays: [7] }, condition: { due: 'overdue' }, actions: { due: 'tomorrow' } })
   await api('POST', '/api/v1/rules', { name: 'Due today means urgent', trigger: { kind: 'due.reached' }, actions: { priority: 1, notify: true }, enabled: false })
   await p.reload(); await settle(p, 1500)
-  const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link }
+  const state = await c.storageState(); await c.close(); return { state, home, pageLink: page.link, notePageLink: notePage.link }
 }
 
 // ------------------------------------------------------------------ habits
@@ -944,6 +947,10 @@ const shots = [
   // A task page as a guest sees it (task-pages): its own document at /t/<secret>.
   { name: 'task-page', server: P, async run(p) {
     await p.goto(plain.pageLink); await p.getByRole('heading', { level: 1, name: 'Paint the fence' }).waitFor(); await settle(p, 800)
+  } },
+  // A note page as a guest sees it (note-public-links): the same document at /n/<secret>.
+  { name: 'note-page', server: P, async run(p) {
+    await p.goto(plain.notePageLink); await p.getByRole('heading', { level: 1, name: 'Babysitter how-to' }).waitFor(); await settle(p, 800)
   } },
   { name: 'settings-passkeys', server: P, async run(p) {
     await go(p, plainBase, '/settings/account/security', () => p.getByRole('heading', { name: 'Security', level: 1 }).waitFor())
