@@ -225,7 +225,7 @@ describe('opening a section', () => {
     expect(rows(member, 'appearance')).toEqual(['theme', 'sidebar', 'task-details'])
     expect(rows(member, 'general')).toEqual(['start', 'keyboard', 'focus', 'priorities', 'notes', 'maps'])
     expect(rows(member, 'language')).toEqual(['language', 'date-time', 'calendar'])
-    expect(rows(member, 'notifications')).toEqual(['push', 'channels', 'digest'])
+    expect(rows(member, 'notifications')).toEqual(['reminders', 'push', 'channels', 'digest'])
     expect(rows(member, 'capture')).toEqual(['quick-add', 'voice', 'browser', 'email'])
     expect(rows(member, 'integrations')).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
     expect(rows(owner, 'people')).toEqual(['users', 'access-policies', 'sso'])

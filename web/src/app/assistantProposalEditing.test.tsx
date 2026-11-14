@@ -3,6 +3,7 @@
 // over turns, and before and after (OpenSpec change assistant-proposal-editing,
 // tasks 1.1 to 1.4).
 import 'fake-indexeddb/auto'
+import { useEffect, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyChanges, reviewChangeSet, type Review } from '../lib/assistant'
 import type { ProposedChange } from '../lib/assistantTypes'
@@ -48,17 +49,27 @@ const TUE = '2026-11-17'
 const WED = '2026-11-18'
 const move = (id: string, date: string): ProposedChange => ({ entity: 'task', entityId: id, patch: { due: { date } }, base: { due: null } })
 
-/** The card over a live review that edits like the panel does. */
+/**
+ * The card over a live review that edits like the panel does. The review is React
+ * state: a toggle or an edit renders through React, never through an act() started
+ * from a callback. Such an act() is never awaited, so it never closes its scope; when
+ * it starts between the test's own act() calls (an edit resolving late on a loaded
+ * machine) React's act queue stays open for the rest of the file and nothing renders.
+ */
 async function card(changes: ProposedChange[]) {
-  let review: Review = await reviewChangeSet(changes)
-  const r = await render(<div />)
-  const draw = () => r.rerender(
-    <ChangeSetReview review={review} result={null} busy={false} shapes onApply={noop} onDiscard={noop} onUndo={noop}
-      onToggle={(i, c) => { review = { ...review, items: review.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) }; void draw() }}
-      onEdit={(i, e) => { void editReviewItem(review, i, e).then((next) => { review = next; void draw() }) }} />,
-  )
-  await draw()
-  return { r, review: () => review }
+  const first: Review = await reviewChangeSet(changes)
+  const live = { review: first }
+  function Card() {
+    const [review, setReview] = useState(first)
+    useEffect(() => { live.review = review }, [review])
+    return (
+      <ChangeSetReview review={review} result={null} busy={false} shapes onApply={noop} onDiscard={noop} onUndo={noop}
+        onToggle={(i, c) => setReview((rv) => ({ ...rv, items: rv.items.map((it, j) => (j === i ? { ...it, checked: c } : it)) }))}
+        onEdit={(i, e) => { void editReviewItem(review, i, e).then(setReview) }} />
+    )
+  }
+  const r = await render(<Card />)
+  return { r, review: () => live.review }
 }
 
 describe('edits in every shape (1.1)', () => {
