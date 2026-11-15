@@ -212,6 +212,12 @@ twice as fast (no pattern walks a 10 KB note to find nothing to do), and a row
 lays out a preview of at most 300 characters, not the whole note, and none while
 it shows a search snippet. On the same machine the phone profile's slowest key
 went from 233 ms (median of five runs) to 63 ms.
+The search's suggestions (`kind:` while "ki" is typed) later cost the key that
+opened them a layout of the whole page, from the list setting its scroll position
+to the top it was already at: the phone profile's second key went from about
+55 ms to 135 ms, and the nightly failed at 152 ms
+([#1419](https://github.com/OpenTodoApp/OpenTodo/issues/1419)); a list drawn at
+its top no longer sets it.
 
 `NOTES=1 make perf` runs it (`NOTES_SEED_FLAGS="--notes 50"` for a quick look).
 
