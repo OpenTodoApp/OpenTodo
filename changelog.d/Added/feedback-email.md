@@ -1,1 +1,0 @@
-- **Send feedback by email.** **Something isn't working** now also offers **Send by email**, a message to info@open-todo.app with your text and the few lines the app adds, next to Open on GitHub.

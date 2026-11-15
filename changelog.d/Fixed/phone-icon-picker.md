@@ -1,1 +1,0 @@
-- **Icons and colours are easier to tap on a phone.** The icon picker shows seven larger icons to a row instead of eight small ones, the colour swatches line up with them, and the search field no longer runs to the edges of the sheet. The theme editor's colour picker shows its swatches six to a row. Nothing changes with a mouse (#1369).
