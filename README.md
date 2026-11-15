@@ -185,6 +185,8 @@ To contribute code, read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter 
 
 ## Supporters
 
+OpenTodo is free and always will be. If it helps you, you can [sponsor it](https://github.com/sponsors/pixari) or [buy a coffee](https://buymeacoffee.com/pixari); the [support page](https://open-todo.app/support/) says what it costs to run and where the money goes.
+
 Thank you to everyone who keeps OpenTodo going. Supporters who want to be listed appear here.
 
 <!-- names added with consent -->
