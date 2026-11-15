@@ -4,7 +4,7 @@ import type { Label } from '../lib/types'
 import { LabelChip, ReadAs, Tooltip, watchLayout } from '../ui'
 
 const COUNT = 'shrink-0 whitespace-nowrap text-meta tabular-nums text-muted'
-const FOCUS = 'rounded-chip outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus'
+const FOCUS = 'rounded-chip outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus'
 
 /** Natural chip width, including text that has already been shortened. */
 function chipWidth(chip: HTMLElement): number {
