@@ -5681,6 +5681,9 @@
         "title": "objective_title"
       }
     },
+    "GET /api/v1/openapi.json": {
+      "policy": "public"
+    },
     "GET /api/v1/pages/{secret}": {
       "policy": "public",
       "response": {

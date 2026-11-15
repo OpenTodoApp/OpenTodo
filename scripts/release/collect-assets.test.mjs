@@ -57,11 +57,14 @@ function tree(files) {
 test('only the files a release ships are collected, with their checksums', () => {
   const dir = tree([...shipped, ...stray])
   try {
-    execFileSync('sh', [script, path.join(dir, 'artifacts'), path.join(dir, 'release')], { stdio: 'pipe' })
+    execFileSync('sh', [script, path.join(dir, 'artifacts'), path.join(dir, 'release')], { stdio: 'pipe', cwd: root, env: { ...process.env, GITHUB_REF_NAME: 'v0.20.0' } })
     const got = readdirSync(path.join(dir, 'release')).sort()
-    assert.deepEqual(got, [...shipped.map((f) => path.basename(f)), 'SHA256SUMS'].sort())
+    assert.deepEqual(got, [...shipped.map((f) => path.basename(f)), 'SHA256SUMS', 'openapi.json'].sort())
     const sums = readFileSync(path.join(dir, 'release/SHA256SUMS'), 'utf8').trim().split('\n')
-    assert.equal(sums.length, shipped.length)
+    assert.equal(sums.length, shipped.length + 1)
+    // The API description of the release, with its version (openapi-description).
+    const api = JSON.parse(readFileSync(path.join(dir, 'release/openapi.json'), 'utf8'))
+    assert.equal(api.info.version, '0.20.0')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }

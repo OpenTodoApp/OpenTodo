@@ -135,8 +135,19 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 
 - **Start here:** [getting started](docs/getting-started.md) · [all user guides](docs/README.md#using-opentodo)
 - **Self-hosting:** [handbook](docs/self-hosting/README.md) · [configuration](docs/self-hosting/configuration.md) · [backups](docs/backups.md)
-- **Build on it:** [REST API](docs/api.md) · [CLI](docs/cli.md) · [AI and agents](docs/ai-and-agents.md) · [stability](docs/stability.md)
+- **Build on it:** [REST API](docs/api.md) · [OpenAPI description](docs/openapi.json) · [CLI](docs/cli.md) · [AI and agents](docs/ai-and-agents.md) · [stability](docs/stability.md)
 - **Project:** [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md)
+
+## Build your own client
+
+Every server describes its API at `/api/v1/openapi.json` (OpenAPI 3.1, generated from the code, stable through 1.x). Point a generator at it and you have a typed client:
+
+```sh
+curl -s https://todo.example.com/api/v1/openapi.json -o openapi.json
+npx openapi-typescript openapi.json -o opentodo.d.ts
+```
+
+The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every [release](https://github.com/OpenTodoApp/OpenTodo/releases). Sign in with an API token from Settings → Integrations → API tokens; the [API guide](docs/api.md) has the details, and [`ot`](docs/cli.md), the [Obsidian plugin](obsidian/) and the [n8n nodes](https://github.com/OpenTodoApp/n8n-nodes-opentodo) are clients built on it.
 
 <details>
 <summary><strong>Under the hood</strong></summary>
