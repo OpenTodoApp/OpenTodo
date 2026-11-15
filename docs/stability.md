@@ -26,6 +26,8 @@ Not covered: internal Go packages, the database tables (only upgrading them is p
 
 The surface is recorded in [`internal/httpapi/testdata/v1_surface.json`](../internal/httpapi/testdata/v1_surface.json), generated from the route table, the error codes, the op schema, the export, the MCP tool definitions and the `ot` schema. A test fails when anything recorded disappears or changes, so a breaking change cannot be merged by accident.
 
+The [OpenAPI description](api.md#openapi-description) (`docs/openapi.json`, served at `/api/v1/openapi.json`) is generated from the same analysis of the code, so it follows the surface: within 1.x it only grows.
+
 ## What may change within 1.x
 
 Only additions:

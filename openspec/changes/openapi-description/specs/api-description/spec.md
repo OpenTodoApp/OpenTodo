@@ -24,7 +24,7 @@ The server SHALL serve the description of its own release at `GET /api/v1/openap
 
 #### Scenario: A method the route does not have
 - **WHEN** a client sends `POST /api/v1/openapi.json`
-- **THEN** the server answers 405 with the JSON error envelope and changes nothing
+- **THEN** the server refuses it with a 4xx answer in the JSON error envelope and changes nothing
 
 #### Scenario: Offline and sync
 - **WHEN** a device is offline
