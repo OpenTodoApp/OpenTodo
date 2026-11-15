@@ -30,6 +30,8 @@ vi.mock('./feed', () => ({ sharedProjectIds: async () => ['shared-project'] }))
 vi.mock('./sharing', () => ({ currentUserId: async () => 'me' }))
 
 import { db } from './db'
+import { setDemo } from './demoState'
+import { api } from './api'
 import { mutate, resetDeviceId } from './ops'
 import { decryptReply, decryptSnapshot, encryptReply, generateShareKey, shareKeyFromFragment, unwrapShareKey } from './taskPageCrypto'
 import { importReplies, MAINTAIN_INTERVAL_MS, maintainTaskPages, publishTaskPage, replyCommentId, taskPageEncrypted } from './taskPages'
@@ -169,5 +171,16 @@ describe('keeping an encrypted page current', () => {
     vi.useRealTimers()
     const lastTitle = async () => uploads().length ? (await decryptSnapshot<TaskPageContent>(share, uploads()[uploads().length - 1].ciphertext)).title : null
     await vi.waitFor(async () => expect(await lastTitle()).toBe('Paint the gate'))
+  })
+})
+
+describe('on a demo instance', () => {
+  afterEach(() => setDemo(null))
+
+  it('never asks for the page list, which the demo refuses', async () => {
+    setDemo({ sandboxHours: { idle: 2, max: 24 } } as never)
+    vi.mocked(api.myTaskPages).mockClear()
+    await maintainTaskPages({ force: true })
+    expect(api.myTaskPages).not.toHaveBeenCalled()
   })
 })
