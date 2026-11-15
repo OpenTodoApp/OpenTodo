@@ -1,1 +1,0 @@
-- **`websign verify -require-signed -keys <file>` passes for a server signed with your own key.** It still demanded one of the official keys; with `-keys` it now requires a signature by one of the given keys.

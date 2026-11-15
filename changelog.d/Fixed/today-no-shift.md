@@ -1,1 +1,0 @@
-- **Today opens in place.** The list no longer moves down a moment after Today or Upcoming opens: the sentence under the title is complete, replies included, when the page is first drawn.
