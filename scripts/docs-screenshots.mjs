@@ -226,8 +226,8 @@ async function plainSetup() {
 }
 
 // ------------------------------------------------------------------ habits
-// The habits of the Habits scenes (habits-home), created once on the plain instance
-// and trashed after the last of the two shots, so other plain scenes have none.
+// The habits of the Habits scenes (habits-home), created on the plain instance
+// for each of the two shots and trashed after its dark theme, so other plain scenes have none.
 let habitIds = null
 let habitShots = 0
 async function habitsScene(ctx, remove = false) {
@@ -732,15 +732,15 @@ const shots = [
   { name: 'habits', server: P, async run(p, { ctx }) {
     await habitsScene(ctx)
     await go(p, plainBase, '/habits', () => p.locator('[data-habit-row]').first().waitFor()); await settle(p, 400)
-  }, async after(p, { ctx }) { if (++habitShots === 2) await habitsScene(ctx, true) } },
+  }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   { name: 'habit-page', server: P, async run(p, { ctx }) {
     const [, , read] = await habitsScene(ctx)
-    await go(p, plainBase, `/task/${read}`, () => p.getByRole('button', { name: /every day/ }).first().waitFor())
-    await p.getByRole('button', { name: /every day/ }).first().click(); const editor = p.getByRole('dialog', { name: 'When' }); await editor.waitFor()
-    await editor.locator('[data-habit-streak]').waitFor()
-    const section = editor.locator('[data-habit]'); await section.scrollIntoViewIfNeeded(); await settle(p, 400)
-    return clipOf(p, section, 16)
-  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots === 2) await habitsScene(ctx, true) } },
+    // A habit opens a page of its own (habits-polish D3): its facts with the anchor, the tiny
+    // version, its numbers and month. The other Habits shot keeps Read plain.
+    const r = await ctx.request.fetch(`${plainBase}/api/v1/tasks/${read}`, { method: 'PATCH', headers: { Origin: plainBase, 'Content-Type': 'application/json' }, data: JSON.stringify({ habit_tiny: 'One page', habit_anchor: 'After dinner' }) })
+    if (!r.ok()) throw new Error(`PATCH habit → ${r.status()} ${await r.text()}`)
+    await go(p, plainBase, `/habits/${read}`, () => p.locator('[data-habit-numbers]').waitFor()); await settle(p, 400)
+  }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)
@@ -902,8 +902,8 @@ const shots = [
   { name: 'time-zone', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Get three quotes for the kitchen')
     await detail(p).getByRole('button', { name: /^Do: / }).first().click(); await p.getByRole('dialog', { name: 'When' }).waitFor()
-    // The zone is a quiet "Floating time · Change" line under the due time (task-panel-polish D3).
-    await p.getByRole('dialog', { name: 'When' }).locator('[data-zone-line]').getByRole('button', { name: 'Change' }).click()
+    // The zone is quiet text at the end of the time line, "Floating" or the city (when-picker D3).
+    await p.getByRole('dialog', { name: 'When' }).locator('[data-zone-inline]').click()
     const d = p.getByRole('dialog', { name: 'Time zone' }); await d.waitFor(); await settle(p, 400)
     return clipOf(p, d, 16)
   }, async after(p) { await p.keyboard.press('Escape') } },
