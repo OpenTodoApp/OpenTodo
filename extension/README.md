@@ -57,6 +57,8 @@ Keep `share-url.js` in step with `web/src/lib/share.ts` (limits and the `/share`
 3. `make extension`: tests, both packages, no lint error.
 4. Chrome Web Store: upload `dist/opentodo-browser-extension-chrome.zip`; paste the listing from `store/listing.<lang>.md` per language; answer the privacy tab and the permission justifications from `store/privacy.md`; upload the shots listed in `store/screenshots.md`.
 5. addons.mozilla.org: upload `dist/opentodo-browser-extension-firefox.zip` with the same texts; the review notes are `store/privacy.md`.
-6. Once a listing is live, link it from `docs/capture.md`.
+6. The listings are live and linked from `docs/capture.md` and the README; keep both links working.
+
+The stores follow the extension's own version, not the app's releases: a release whose `manifest.src.json` version did not change needs no upload. When it changed, upload both packages after the release is published (steps 4 and 5), so the store versions match the zips attached to the release.
 
 CI builds and lints both packages on every push and attaches both zips to tagged releases.
