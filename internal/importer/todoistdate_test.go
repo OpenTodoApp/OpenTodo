@@ -42,7 +42,7 @@ func TestTodoistDateVectors(t *testing.T) {
 			}
 		}
 	}
-	for _, l := range []string{"en", "de", "fr", "it", "es", "pt"} {
+	for _, l := range []string{"en", "de", "fr", "it", "es", "pt", "nl"} {
 		if !langs[l] {
 			t.Errorf("no vector for %s", l)
 		}

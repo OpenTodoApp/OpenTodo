@@ -57,6 +57,15 @@ var everyWords = map[string][]string{
 	"it": {"ogni"},
 	"es": {"cada", "todos los", "todas las"},
 	"pt": {"cada", "todos os", "todas as", "toda", "todo"},
+	"nl": {"elke", "elk", "iedere", "ieder"},
+}
+
+// dutchOrdinals maps the ordinal tokens a Dutch recurring phrase can carry
+// ("elke 1e zondag") to the English ordinals the recurrence grammar reads.
+var dutchOrdinals = map[string]string{
+	"1e": "1st", "2e": "2nd", "3e": "3rd", "4e": "4th",
+	"1ste": "1st", "2de": "2nd", "3de": "3rd", "4de": "4th",
+	"laatste": "last",
 }
 
 var englishWeekdays = []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
@@ -107,7 +116,7 @@ func todoistDate(text, lang string, ref time.Time) (*Due, string, error) {
 			order = append(order, lang)
 		}
 	}
-	for _, c := range []string{"en", "de", "fr", "it", "es", "pt"} {
+	for _, c := range []string{"en", "de", "fr", "it", "es", "pt", "nl"} {
 		if len(order) == 0 || order[0] != c {
 			order = append(order, c)
 		}
@@ -327,8 +336,12 @@ func (v *nlpVocab) recurring(code, s string) (string, bool) {
 			out = append(out, unitWord("month", out))
 		case isNumber(tok):
 			out = append(out, tok)
-		case tok == "und" || tok == "et" || tok == "e" || tok == "y":
+		case dutchOrdinals[tok] != "":
+			out = append(out, dutchOrdinals[tok])
+		case tok == "und" || tok == "et" || tok == "e" || tok == "y" || tok == "en":
 			out = append(out, "and")
+		case tok == "in" || tok == "van":
+			out = append(out, "in")
 		default:
 			if m, ok := v.month(tok); ok {
 				out = append(out, strings.ToLower(time.Month(m).String()))
