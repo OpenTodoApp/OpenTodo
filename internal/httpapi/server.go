@@ -58,6 +58,7 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	openAPI openAPIServed // the API description, built on first request (openapi-description)
 	// wrongHosts remembers the hosts already reported as not the base URL's.
 	wrongHosts hostWarnings
 	// blobs stores attachment files (attachments D2); nil without a data directory.

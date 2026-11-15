@@ -32,6 +32,7 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	// The same answer under the API path (OpenSpec health-route-alias): some reverse
 	// proxies and platforms answer /healthz themselves (Pomerium, Cloud Run).
 	mux.handle("GET /api/v1/health", public("health check under the API path, for proxies that reserve /healthz"), s.handleHealth)
+	mux.handle("GET /api/v1/openapi.json", public("the API description of this release: routes and schemas only, no account data (openapi-description)"), s.handleOpenAPI)
 	mux.handle("GET /.well-known/security.txt", public("RFC 9116: security researchers find where to report vulnerabilities in the software this server runs"), s.handleSecurityTxt)
 	mux.handle("GET /api/v1/auth/status", public("sign-in screen bootstrap: tells the app what the server offers"), s.handleAuthStatus)
 	mux.handle("POST /api/v1/auth/register", public("first-run owner setup and sign-up").DemoDenied(), s.handleRegister)

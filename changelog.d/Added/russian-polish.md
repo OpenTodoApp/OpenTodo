@@ -1,0 +1,1 @@
+- **Russian (Русский) as a community translation.** Pick it in Settings → Language and region → Language; it is a machine draft that a native speaker has not read yet, listed after the other languages. Emails, notifications outside the app, the native apps and quick add stay English for now. If you speak it, [become its reviewer](docs/translating.md#maintainers).

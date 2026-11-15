@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import {
   brandFiles, buildManifest, iconSprite, METHOD_FEATURES, methodVocabulary, serverFacts, missingScreenshots, parseChangelog, repoRoot, SCREENSHOTS, SHOTS_DIR, routineTemplateFile, templateLibraryFiles, TEMPLATES_SCHEMA, tokensCss, validateManifest,
+  openAPIFor,
 } from './site-bundle.mjs'
 
 const read = (p) => readFileSync(join(repoRoot, p), 'utf8')
@@ -148,7 +149,7 @@ test('method.json: the app\'s own words in every shipped language (open-loops-me
   const m = methodVocabulary()
   assert.equal(m.schema, 1)
   assert.equal(m.name, 'Open Loops')
-  assert.deepEqual(m.languages, ['en', 'de', 'fr', 'es', 'it', 'pt', 'zh', 'nl'])
+  assert.deepEqual(m.languages, ['en', 'de', 'fr', 'es', 'it', 'pt', 'zh', 'nl', 'pl', 'ru'])
   assert.deepEqual(m.moves.map((x) => x.id), ['catch', 'clarify', 'place', 'do', 'review'])
   const it = JSON.parse(read('web/src/locales/it.json'))
   const vocabulary = JSON.parse(read('web/src/lib/method/vocabulary.json'))
@@ -209,4 +210,11 @@ test('an invalid template fails the bundle and names the template', () => {
   mkdirSync(join(dir, 'broken'))
   writeFileSync(join(dir, 'broken/template.yaml'), 'title: Broken\n')
   assert.throws(() => templateLibraryFiles(repoRoot, { dir, icons: new Set(['leaf']), sectionStyle: false, languages: [] }), /template library: broken\/template\.yaml: summary: is required/)
+})
+
+test('api/openapi.json: the description of this version (openapi-description)', () => {
+  const doc = JSON.parse(openAPIFor('v1.6.0'))
+  assert.equal(doc.openapi, '3.1.1')
+  assert.equal(doc.info.version, '1.6.0')
+  assert.ok(doc.paths['/api/v1/tasks/{id}'], 'the task routes are described')
 })

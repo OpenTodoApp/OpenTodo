@@ -51,23 +51,34 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, renderSe
   // The palette row is 34 px, and the full 44 px touch target on a coarse pointer.
   const rh = palette && rowHeight() < 44 ? 34 : rowHeight()
   const [scrollTop, setScrollTop] = useState(0)
+  // The list element that may have scrolled since it was drawn (by the user or by the
+  // effect below). One that has not is at its top, and setting its scrollTop to 0 would only
+  // lay out the whole page: on a phone the Notes search paid about 75 ms for it on the
+  // key that opened its suggestions (perf: notes-search, issue #1419).
+  const scrolled = useRef<HTMLUListElement | null>(null)
 
   // Keep the active option in view (and, when windowed, rendered).
   useEffect(() => {
+    const list = listRef.current
+    const atTop = !!list && scrolled.current !== list
     if (windowed) {
       const top = activeIndex * rh
       setScrollTop((st) => {
         const next = top < st ? top : top + rh > st + LIST_HEIGHT ? top + rh - LIST_HEIGHT : st
-        if (listRef.current) listRef.current.scrollTop = next
+        if (list && !(next === 0 && atTop)) {
+          list.scrollTop = next
+          scrolled.current = list
+        }
         return next
       })
     } else if (activeIndex <= 0) {
       // The first option (the cursor after every keystroke) shows with the list at its
       // top; scrollIntoView laid out the whole page behind the palette on each key,
       // a 2,000-row list included (list-rendering-at-scale).
-      if (listRef.current) listRef.current.scrollTop = 0
+      if (list && !atTop) list.scrollTop = 0
     } else {
       document.getElementById(optionId(activeIndex))?.scrollIntoView?.({ block: 'nearest' })
+      scrolled.current = list
     }
   }, [activeIndex, windowed, rh, optionId])
 
@@ -105,7 +116,10 @@ export function ComboboxList<T>({ state, renderLeading, renderTrailing, renderSe
       role="listbox"
       aria-label={label}
       aria-multiselectable={state.multiple || undefined}
-      onScroll={windowed ? (e: UIEvent<HTMLUListElement>) => setScrollTop(e.currentTarget.scrollTop) : undefined}
+      onScroll={(e: UIEvent<HTMLUListElement>) => {
+        scrolled.current = e.currentTarget
+        if (windowed) setScrollTop(e.currentTarget.scrollTop)
+      }}
       className={palette ? 'relative max-h-[min(26rem,60vh)] overflow-y-auto overscroll-contain py-1' : 'relative max-h-80 overflow-y-auto overscroll-contain p-1'}
       style={windowed ? { height: LIST_HEIGHT } : undefined}
     >
