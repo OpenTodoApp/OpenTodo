@@ -22,7 +22,7 @@ Pick whichever is quickest:
 - Select a task and press <kbd>L</kbd>, start typing, and press <kbd>Enter</kbd>. The picker stays open so you can add more.
 - Open the task and use **Labels** in the panel.
 
-Press <kbd>Enter</kbd> to create a missing label. Chips show names on a soft tint. One line shows up to two, Detailed as many as fit. Hover or focus the group to read hidden names. In the task panel, select **×** to remove a label.
+Press <kbd>Enter</kbd> to create a missing label. Chips show names on a soft tint. The One line column shows the chips that fit. Hover or focus a shortened name or **+N** to read the full names. In Detailed, hover or focus the group. In the task panel, select **×** to remove a label.
 
 Labels are personal. In a shared project, other members don't see the labels you add.
 
