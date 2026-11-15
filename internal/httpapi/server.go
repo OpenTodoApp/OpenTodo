@@ -273,7 +273,7 @@ func New(set *services.Set, web http.Handler, opts ...Option) http.Handler {
 	mux := &routes{s: s, mux: http.NewServeMux()}
 	s.registerRoutes(mux, web)
 	s.routeTable = mux.table
-	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux.mux)))))
+	return s.securityHeaders(s.logRequests(auditContext(s.cors(s.demoGuard(s.hostGuard(mux.mux))))))
 }
 
 // newServer builds the Server over set with its rate limiters; the options

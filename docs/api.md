@@ -537,6 +537,21 @@ curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempot
 # 409 {"error":{"code":"idempotency_conflict","message":"this Idempotency-Key was already used for a create with different content; …"}}
 ```
 
+### Calling the API from another site
+
+A page on another origin, such as a static dashboard, can call the API with an API token once the operator lists that origin in `OPENTODO_CORS_ORIGINS` ([configuration](self-hosting/configuration.md#server-and-network)): exact origins separated by commas, such as `https://dash.example.com,http://localhost:5173`, with no path and no wildcard. An entry that is not an origin stops startup. Unset, the default, the server sends no CORS headers. It can't be combined with demo or host mode.
+
+- **Tokens only.** A request from a listed origin gets `Access-Control-Allow-Origin` (its own origin) and `Access-Control-Expose-Headers` only when it sends `Authorization: Bearer …`. `Access-Control-Allow-Credentials` is never sent, so the page can't use a signed-in browser's session: a request carrying only the cookie gets no CORS headers, and its writes are still refused with 403 `bad_origin`. The token's scope decides as usual; a `read` token is the right one for a dashboard that only looks. Anyone who can run script on the listed origin can read the token the page holds, so list only origins you control.
+- **Preflights.** `OPTIONS` with `Access-Control-Request-Method` from a listed origin answers 204 with `Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE`, `Access-Control-Allow-Headers: Authorization, Content-Type, Idempotency-Key, If-Match` and `Access-Control-Max-Age: 600`. It never reaches a route. From any other origin it answers as before (405).
+- **Which routes.** Every path under `/api/v1/` except the sign-in flows `/api/v1/auth/*`, `/api/v1/app/*` and `/api/v1/demo/*`, which set the session cookie or exchange a code for a token and stay same-origin. CalDAV (`/dav/`), MCP (`/mcp`), the OAuth endpoints and `/healthz` are unchanged.
+- Responses under `/api/v1/` carry `Vary: Origin` while the list is set. Exposed headers: `ETag`, `Retry-After`, `X-Row-Count`, `Content-Disposition`, `Allow`, `Deprecation`, `Sunset`, `Link`.
+
+```js
+const res = await fetch("https://todo.example.com/api/v1/tasks?project_id=…", {
+  headers: { Authorization: `Bearer ${readToken}` },
+});
+```
+
 ### Credential introspection
 
 `GET /api/v1/me` carries an `auth` object describing the credential of the request. It never contains the secret.
