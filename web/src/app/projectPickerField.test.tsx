@@ -45,6 +45,27 @@ describe('ShareCapture project picker', () => {
 })
 
 describe('ProjectPickerField', () => {
+  it('shows project icons, keeps the dot fallback and keeps the No project symbol', async () => {
+    const projects = [
+      { ...project('work', 'Work'), icon: 'briefcase' },
+      project('home', 'Home'),
+      { ...project('new', 'New'), icon: 'from-a-newer-release' },
+    ]
+    const view = await render(<ProjectPickerField label="Project" projects={projects} value="work" onChange={() => {}}
+      rankContext="task.project" />)
+    const button = document.querySelector('button[aria-label="Project: Work"]')!
+    expect(button.querySelector('[data-icon="briefcase"][aria-hidden="true"]')).not.toBeNull()
+    await click(button)
+    const option = (name: string) => [...document.querySelectorAll('[role="option"]')].find((el) => el.textContent?.trim() === name)!
+    expect(option('Work').querySelector('[data-icon="briefcase"][aria-hidden="true"]')).not.toBeNull()
+    expect(option('No project').querySelector('[data-icon="inbox"]')).not.toBeNull()
+    for (const name of ['Home', 'New']) {
+      expect(option(name).querySelector('.rounded-full[style*="background-color"][aria-hidden="true"]')).not.toBeNull()
+      expect(option(name).querySelector('svg')).toBeNull()
+    }
+    await view.unmount()
+  })
+
   it('as the new-project parent: Top level first, no Inbox, archived projects left out, paths shown', async () => {
     let value: string | null = 'p1'
     const projects = [project('p1', 'Work'), project('p2', 'Acme', 'p1'), { ...project('p3', 'Old'), archived: true }]

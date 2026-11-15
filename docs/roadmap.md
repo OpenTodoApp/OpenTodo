@@ -185,6 +185,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `close-the-day-redesign` | Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | Shipped in 1.4 |
 | `task-progress` | A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | Shipped in 1.4 |
 | `loop-guided-dashboard` | The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | Shipped in 1.4 |
+| `project-icons-in-ui` | Project icons appear at existing project marks across the app and beside tinted project group names | Shipped in 1.5 |
 
 ## Habits area
 

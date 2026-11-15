@@ -9,6 +9,7 @@ import { EmptyState } from '../ui'
 import { ListRow } from '../ui'
 import { t } from '../lib/i18n'
 import { act } from './actionError'
+import { ProjectMark } from './ProjectMark'
 
 /** `bare`: inside a disclosure that already names the list, so no heading of its own. */
 export function ArchivedProjectsSection({ bare = false }: { bare?: boolean } = {}) {
@@ -56,7 +57,7 @@ export function ArchivedProjectsList({ rows, onRestore, listRef, headingRef, bar
           {rows.map((r, i) => (
             <li key={r.project.id}>
               <ListRow
-                leading={<span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: r.project.color }} />}
+                leading={<ProjectMark project={r.project} />}
                 label={r.project.name}
                 meta={[r.parentName ? t('In {name}', { name: r.parentName }) : '', t('{n, plural, one {# open task} other {# open tasks}}', { n: r.open }), r.canRestore ? '' : t('Only the owner or an admin can restore it')].filter(Boolean).join(' · ')}
                 menu={(

@@ -19,7 +19,7 @@ import { ParseChips } from './ParseChips'
 import { QuickAddTint } from './QuickAddTint'
 import { composingEnter } from '../lib/composeKey'
 import { t, preferredLanguages } from '../lib/i18n'
-import { chipRange, type FieldKind, fieldRows, type FieldRow, startToken } from './quickadd/fields'
+import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
 import { usePasteOffer } from './quickadd/PasteOffer'
@@ -127,7 +127,7 @@ function useParseContext(settings: QuickAddSettings, projects: readonly ProjectR
  */
 export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   placeholder: string
-  projects?: readonly ProjectRef[]
+  projects?: readonly QuickAddProject[]
   /** Every label (deleted ones are ignored) for resolving and colouring `@name` chips. */
   labels?: readonly LabelRef[]
   onAdd: (input: QuickAddInput) => Promise<void> | void

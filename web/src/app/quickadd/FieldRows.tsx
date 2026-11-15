@@ -4,13 +4,14 @@
 // (↑/↓ highlight, Tab edits), so they are not in the tab order themselves; a click
 // edits too. The footer reads the title as it will be saved and the keys.
 import type { ReactNode } from 'react'
-import { findLabel, formatMinutes, type LabelRef, type ProjectRef } from '../../lib/nlp'
+import { findLabel, formatMinutes, type LabelRef } from '../../lib/nlp'
 import type { Due } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { Icon } from '../../ui'
 import { priorityName } from '../../lib/priority'
 import { chipText } from '../ParseChips'
-import { FIELD_ICON, FIELD_TOKEN, type FieldKind, type FieldRow, projectColor } from './fields'
+import { ProjectMark } from '../ProjectMark'
+import { FIELD_ICON, FIELD_TOKEN, type FieldKind, type FieldRow, type QuickAddProject } from './fields'
 
 export const FIELD_NAME = translatedMap<FieldKind>({
   when: msg('When'), project: msg('Project'), label: msg('Label'), priority: msg('Priority'), estimate: msg('Estimate'),
@@ -28,12 +29,12 @@ const RING: Record<number, string> = { 1: 'border-p1', 2: 'border-p2', 3: 'borde
 
 interface Line { due: Due | null; datedByPhrase: boolean }
 
-/** A set row's value in words: the project's name and colour, "Priority 2", "30 min". */
-function FieldValue({ row, projects, labels, line }: { row: FieldRow; projects: readonly ProjectRef[]; labels: readonly LabelRef[]; line?: Line }) {
+/** A set row's value in words: the project's name and mark, "Priority 2", "30 min". */
+function FieldValue({ row, projects, labels, line }: { row: FieldRow; projects: readonly QuickAddProject[]; labels: readonly LabelRef[]; line?: Line }) {
   const chip = row.chip!
   if (chip.kind === 'project') {
-    const color = projectColor(projects.find((x) => x.id === chip.value))
-    return <>{color && <span aria-hidden="true" className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />}{chipText(chip, projects, labels, line).slice(1)}</>
+    const project = projects.find((x) => x.id === chip.value)
+    return <>{project?.color && <ProjectMark project={{ color: project.color, icon: project.icon }} size="xs" />}{chipText(chip, projects, labels, line).slice(1)}</>
   }
   if (chip.kind === 'label') {
     const l = findLabel(String(chip.value), labels)
@@ -50,7 +51,7 @@ export function FieldRows({ rows, highlight, chipHighlight, projects, labels, li
   highlight: number | null
   /** The chip Backspace highlighted, about to be dismissed. */
   chipHighlight: number | null
-  projects: readonly ProjectRef[]
+  projects: readonly QuickAddProject[]
   labels: readonly LabelRef[]
   line?: Line
   onEdit: (row: FieldRow) => void

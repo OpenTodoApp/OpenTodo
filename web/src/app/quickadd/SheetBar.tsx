@@ -10,7 +10,8 @@ import type { Due } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { Icon } from '../../ui'
 import { chipText } from '../ParseChips'
-import { FIELD_ICON, fieldOf, type FieldKind, projectColor } from './fields'
+import { ProjectMark } from '../ProjectMark'
+import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
 
 const TOOLS: FieldKind[] = ['when', 'priority', 'label', 'estimate', 'project']
@@ -25,7 +26,7 @@ function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly
 
 export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes }: {
   chips: readonly Chip[]
-  projects: readonly ProjectRef[]
+  projects: readonly QuickAddProject[]
   labels: readonly LabelRef[]
   line?: { due: Due | null; datedByPhrase: boolean }
   onDismiss: (chip: Chip) => void
@@ -44,11 +45,11 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
     <div data-quick-add-sheet-bar>
       <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
-          const color = c.kind === 'project' ? projectColor(projects.find((p) => p.id === c.value)) : undefined
+          const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
           return (
             <span key={c.key} data-sheet-chip={c.kind} className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-default bg-raised pl-2.5 pr-1 text-body text-strong">
-              {color
-                ? <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+              {project?.color
+                ? <ProjectMark project={{ color: project.color, icon: project.icon }} size="xs" />
                 : <Icon name={FIELD_ICON[fieldOf(c.kind)]} size={14} className="text-muted" />}
               <span className="sr-only">{FIELD_NAME[fieldOf(c.kind)]}: </span>
               {chipWords(c, projects, labels, line)}

@@ -5,8 +5,9 @@ import { useMemo } from 'react'
 import { Combobox, LabelChip, SegmentedControl } from '../ui'
 import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../lib/localData'
 import { Partition } from '../lib/workspaces'
-import type { SyncScope } from '../lib/types'
+import type { Project, SyncScope } from '../lib/types'
 import { t } from '../lib/i18n'
+import { ProjectMark } from './ProjectMark'
 
 export const allScope = (): SyncScope => ({ mode: 'all', workspaces: [], projects: [], inboxes: [] })
 
@@ -18,6 +19,7 @@ interface Place {
   id: string
   name: string
   color: string
+  project?: Pick<Project, 'color' | 'icon'>
   group: string
   path: string[]
 }
@@ -41,7 +43,7 @@ export function useScopePlaces(): Place[] {
         if (x.archived || p.project(x.id) !== w.id) continue
         const path: string[] = []
         for (let cur = x.parent_id ? byId.get(x.parent_id) : undefined; cur && path.length < 16; cur = cur.parent_id ? byId.get(cur.parent_id) : undefined) path.unshift(cur.name)
-        out.push({ key: keyOf('projects', x.id), kind: 'projects', id: x.id, name: x.name, color: x.color, group: w.name, path })
+        out.push({ key: keyOf('projects', x.id), kind: 'projects', id: x.id, name: x.name, color: x.color, project: x, group: w.name, path })
       }
     }
     return out
@@ -82,7 +84,8 @@ export function SyncScopeField({ label, value, onChange, disabled }: { label: st
           )}
           <Combobox label={label} placeholder={t('Find a workspace or project…')} source={places} getKey={(p: Place) => p.key}
             getLabel={(p: Place) => p.name} getGroup={(p: Place) => p.group} getPath={(p: Place) => p.path} multiple selected={chosen}
-            renderLeading={(p: Place) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />}
+            renderLeading={(p: Place) => p.project ? <ProjectMark project={p.project} size="xs" />
+              : <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />}
             onPick={toggle} />
         </>
       )}

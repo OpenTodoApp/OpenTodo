@@ -1,0 +1,1 @@
+- Show configured project icons in more places, including project pickers, Notes, Review, and the tinted headers in views grouped by project. Group headers only show a marker when the project has an icon.

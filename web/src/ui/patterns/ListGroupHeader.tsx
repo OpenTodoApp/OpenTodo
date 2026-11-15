@@ -11,11 +11,14 @@
 import type { ReactNode } from 'react'
 import type { HueName } from '../tokens/palette'
 import { Icon } from '../Icon'
+import { CatalogueIcon } from '../CatalogueIcon'
 import { ReadAs } from '../Chips'
 import { t } from '../../lib/i18n'
 
 export interface ListGroupHeaderProps {
   title: ReactNode
+  /** A decorative catalogue icon beside the title, when available. */
+  icon?: string | null
   /** Open tasks beneath the header (omit to show none). */
   count?: number
   /** What the count is read as; "n open tasks" unless the group lists something else (such as completed tasks). */
@@ -53,11 +56,12 @@ export interface ListGroupHeaderProps {
 /** The label's classes (precision-rows D4): one style whether the view or the user named the group; `kind` stays a hook for tests and drop targets. */
 const GROUP_LABEL = 'min-w-0 truncate text-meta font-medium text-default'
 
-export function ListGroupHeader({ title, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true, hue }: ListGroupHeaderProps) {
+export function ListGroupHeader({ title, icon, count, countLabel, countTone = 'faint', kind = 'generated', collapsed, onToggle, actions, actionsAlwaysVisible = false, note, detail, level = 2, testId, className = '', bar = true, hue }: ListGroupHeaderProps) {
   const H = level === 2 ? 'h2' : 'h3'
   const collapsible = onToggle !== undefined
   const text = (
     <>
+      {icon && <CatalogueIcon name={icon} size="xs" className="text-default" />}
       <span className={`${GROUP_LABEL} ${detail ? 'shrink-0' : ''}`} data-group-label={kind}>{title}</span>
       {count !== undefined && <span className={`text-meta tabular-nums ${countTone === 'muted' ? 'text-muted' : 'text-faint'}`} data-group-count><ReadAs label={countLabel ? countLabel(count) : t('{n, plural, one {# open task} other {# open tasks}}', { n: count })}>{count}</ReadAs></span>}
       {detail && <span className="min-w-0 truncate text-meta text-muted" data-group-detail><span aria-hidden="true" className="text-faint">— </span>{detail}</span>}

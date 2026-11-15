@@ -31,8 +31,8 @@ export interface PickerItem {
   meta?: string
   /** Set only for a current value that is no longer a normal choice; listed first. */
   marker?: PickerMarker
-  /** Projects: colour dot. */
-  color?: string
+  /** Existing appearance of a real project option. */
+  project?: Pick<Project, 'color' | 'icon'>
   /** Projects: shared with other people. */
   shared?: boolean
   /** Extra words the search matches, not shown ("inbox" for "No project"). */
@@ -95,13 +95,13 @@ export function projectSource(projects: readonly Project[], opts: ProjectSourceO
   const cur = current ? byId.get(current) : undefined
   if (cur && (cur.archived || cur.deleted_at)) {
     const marker: PickerMarker = cur.deleted_at ? 'deleted' : 'archived'
-    out.push({ key: cur.id, value: cur.id, label: cur.name, path: rawProjectPath(cur.id, byId), meta: marker, marker, color: cur.color, shared: memberships?.has(cur.id) })
+    out.push({ key: cur.id, value: cur.id, label: cur.name, path: rawProjectPath(cur.id, byId), meta: marker, marker, project: cur, shared: memberships?.has(cur.id) })
   }
   if (inbox) out.push({ key: INBOX_KEY, value: null, label: t('No project'), path: [], keywords: `inbox ${t('Inbox')}` })
   const tree = buildProjectTree(projects)
   for (const n of flattenTree(tree.roots)) {
     if (exclude?.has(n.id)) continue
-    out.push({ key: n.id, value: n.id, label: n.item.name, path: pathOf(tree, n.id, (p) => p.name), color: n.item.color, shared: memberships?.has(n.id) })
+    out.push({ key: n.id, value: n.id, label: n.item.name, path: pathOf(tree, n.id, (p) => p.name), project: n.item, shared: memberships?.has(n.id) })
   }
   return out
 }
