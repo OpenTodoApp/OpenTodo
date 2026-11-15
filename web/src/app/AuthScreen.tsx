@@ -262,7 +262,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
           {mode === 'register' && (
             <label className="block text-body">
               <span className="mb-1 block text-muted">{t('Name')}</span>
-              <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus={emailLocked} />
+              <input className="ui-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" autoFocus />
             </label>
           )}
           <label className="block text-body">
@@ -270,7 +270,7 @@ export function AuthScreen({ status, invite, notice, onAuthenticated }: {
             <input
               className={`ui-input ${emailLocked ? 'bg-sunken dark:bg-raised text-muted' : ''}`}
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete={passkeys ? 'username webauthn' : 'email'}
-              readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={!emailLocked}
+              readOnly={emailLocked} aria-readonly={emailLocked} autoFocus={mode !== 'register'}
             />
           </label>
           <label className="block text-body">
