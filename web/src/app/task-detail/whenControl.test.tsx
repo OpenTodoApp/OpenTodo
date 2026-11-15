@@ -301,6 +301,8 @@ describe('WhenControl', () => {
       await click(seg('due').querySelector('[data-date="2026-10-20"]')!)
       await waitFor(async () => (await db.tasks.get(id))?.due?.date === '2026-10-20', 'the date written')
       expect(await db.reminders.where('task_id').equals(id).count()).toBe(0)
+      // The row is enabled once the control has drawn the date, not when it is stored.
+      await waitFor(() => !option(seg, 'time').disabled, 'the row enabled')
       await click(option(seg, 'time'))
       await waitFor(() => !!timeLine(seg)?.querySelector('[data-time-suggestion="09:00"]'), 'the time line')
       await click(timeLine(seg)!.querySelector('[data-time-suggestion="09:00"]')!)
