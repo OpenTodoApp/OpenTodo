@@ -68,6 +68,25 @@ var dutchOrdinals = map[string]string{
 	"laatste": "last",
 }
 
+// andWords join two parts of a recurring phrase, per language. They are keyed by
+// language so a word only counts in the language that spells it: Dutch "en"
+// means "and", French and Spanish "en" means "in".
+var andWords = map[string][]string{
+	"de": {"und"},
+	"fr": {"et"},
+	"it": {"e"},
+	"es": {"y"},
+	"nl": {"en"},
+}
+
+// inWords introduce the month of a recurring phrase, per language, in addition
+// to the English "in".
+var inWords = map[string][]string{
+	"nl": {"van"},
+	"fr": {"en"},
+	"es": {"en"},
+}
+
 var englishWeekdays = []string{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
 
 // diacritics folds the accented letters of the bundled vocabularies (no Unicode
@@ -336,11 +355,11 @@ func (v *nlpVocab) recurring(code, s string) (string, bool) {
 			out = append(out, unitWord("month", out))
 		case isNumber(tok):
 			out = append(out, tok)
-		case dutchOrdinals[tok] != "":
+		case code == "nl" && dutchOrdinals[tok] != "":
 			out = append(out, dutchOrdinals[tok])
-		case tok == "und" || tok == "et" || tok == "e" || tok == "y" || tok == "en":
+		case contains(andWords[code], tok):
 			out = append(out, "and")
-		case tok == "in" || tok == "van":
+		case tok == "in" || contains(inWords[code], tok):
 			out = append(out, "in")
 		default:
 			if m, ok := v.month(tok); ok {
