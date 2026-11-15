@@ -78,6 +78,7 @@ The model describes the code on `main` at the time of writing. An external revie
 - `TestRouteMatrix` (`internal/httpapi/route_matrix_test.go`): every route, anonymous, with each token scope, as a member, as a viewer, cross-site and with a stale session. Public routes are called anonymously, with the owner's and a member's session, with each token scope and cross-site, and each answer is checked against what the route's reason promises (`route_matrix_public_test.go`); a public route without a declared promise fails the test.
 - `TestLoginRateLimit`, `TestCrossSiteCookieWritesAreRejected` (`server_test.go`), including writes without `Origin` or `Sec-Fetch-Site`; the route matrix's pass of a form post with neither header on every write route.
 - `TestSecurityHeaders` (`security_headers_test.go`): no framing, no sniffing, scripts only from the server.
+- `TestCORSOffByDefault`, `TestCORSCookieRequestsStaySameOrigin`, `TestCORSUnlistedOrigin`, `TestCORSOtherRoutesUntouched` (`cors_test.go`): CORS only for listed origins and bearer tokens, never for the session cookie or the sign-in flows.
 - `TestAccountLockout`, `TestForwardedForOnlyFromTrustedPeers`, `TestOriginMustMatchBaseURL` (`client_identity_test.go`).
 - `TestLimitsSurviveRestart` (`internal/tenant/limits_test.go`): a sign-in window used up before the tenant closes still refuses after it opens again, and no stored key holds an address or email. `TestStoredLimiterRestores` (`internal/httpapi/ratelimit_bench_test.go`).
 - `TestSetupHostVerified`, `TestSetupUnderDomainNameNeedsCode`, `TestNoHostCheckWithBaseURL` (`setuphost_test.go`); `TestSetupHostCheck` (`internal/auth/setupcode_test.go`).
@@ -85,7 +86,7 @@ The model describes the code on `main` at the time of writing. An external revie
 
 **Not defended.**
 - Without `OPENTODO_BASE_URL`, the origin check compares against the request's own `Host`, so after setup a rebound name passes it. The session cookie belongs to the server's real name, so such a page has no session; it can reach public routes and try passwords against the rate limits. The docs tell operators to set the base URL.
-- A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants.
+- A JSON write with neither `Origin` nor `Sec-Fetch-Site` is accepted, so that non-browser clients signed in with a password (`ot login`) keep working. From another site it would need a CORS preflight, which the server never grants for a cookie request: with `OPENTODO_CORS_ORIGINS` set it answers preflights from the listed origins, but a browser that preflights also sends `Origin`, which the cookie check refuses, and no `Access-Control-Allow-Credentials` is ever sent.
 - Rate limits count in memory and are written to the database within a second (`internal/ratelimit`), so a crash can forget the last second of attempts. A clean restart forgets nothing.
 - Anyone who knows an email address can keep that account's password sign-in locked. Passkeys, single sign-on and open sessions keep working.
 - The route matrix checks a public route's answer against its declared promise with a wrong secret and with the credentials it holds; what a valid secret unlocks is tested by each feature's own tests.
