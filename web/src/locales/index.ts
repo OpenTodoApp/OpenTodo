@@ -16,6 +16,9 @@ export const SHIPPED = [
   { code: 'pt', name: 'Português' },
   { code: 'zh', name: '简体中文' },
   { code: 'nl', name: 'Nederlands' },
+  // Machine drafts by the maintainer's decision (russian-polish), reviewed as speakers sign up.
+  { code: 'ru', name: 'Русский', community: true },
+  { code: 'pl', name: 'Polski', community: true },
 ] as const satisfies readonly ShippedLanguage[]
 
 /** One entry of SHIPPED. */
