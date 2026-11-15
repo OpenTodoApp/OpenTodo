@@ -1,0 +1,1 @@
+- **A double tap no longer zooms the page on a phone or tablet.** Tapping a row or a button twice quickly used to zoom in by accident; pinch zoom still works everywhere, and drag handles keep their gestures (no-double-tap-zoom, #1386).

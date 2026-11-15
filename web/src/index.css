@@ -728,11 +728,20 @@ html, body, #root {
    pointer the page itself never bounces, shows the pull glow or reloads on a pull: the
    root ends the overscroll chain. Lists, sheets and menus keep scrolling in their own
    scrollers, and a scroller still gets every touch event at its top. Pinch zoom stays
-   (no touch-action, no user-scalable). A mouse or trackpad keeps the browser's
-   overscroll, such as the swipe back in history. */
+   (no user-scalable); a double tap does not zoom (no-double-tap-zoom, below). A mouse or
+   trackpad keeps the browser's overscroll, such as the swipe back in history. */
 html { -webkit-tap-highlight-color: transparent; }
 @media (pointer: coarse) {
   html, body { overscroll-behavior: none; }
+}
+/* No double-tap zoom on touch (no-double-tap-zoom, GitHub issue 1386): panning and pinch
+   zoom stay. On every element, because touch-action does not inherit through the app's
+   own scrollers; in the base layer, so touch-none on drag handles, sheet grips and the
+   graph (the utilities layer) and inline styles still win. */
+@layer base {
+  @media (pointer: coarse) {
+    *, *::before, *::after { touch-action: manipulation; }
+  }
 }
 
 html {
