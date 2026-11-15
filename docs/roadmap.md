@@ -76,6 +76,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Shipped in 1.5 |
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped in 1.5 |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped in 1.5 |
+| `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | Planned |
 | `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
