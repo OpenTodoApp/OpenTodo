@@ -98,7 +98,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `chore-rotation` | Recurring tasks that rotate between members of a group | Shipped in 0.21 |
 | `location-reminders` | Reminders when you arrive at or leave a place | In progress (16 of 18) |
 | `more-languages` | Dutch, quick add in Dutch, and a kit for community languages | Shipped in 1.5 |
-| `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 1.5 |
+| `simplified-chinese` | Simplified Chinese (简体中文) | Shipped in 0.23 |
 | `priority-names` | Rename the four priorities | Shipped in 1.4 |
 | `telegram-channel` | Telegram as a notification channel | Planned |
 
@@ -138,9 +138,9 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `note-links` | Link notes, tasks and projects with `[[`; Linked references on each | Shipped in 1.3 |
 | `notes-home` | The Notes page as a home: write from the search field, pinned notes, unlinked notes | Shipped in 1.3 |
 | `notes-graph` | Connections: a local graph of what links to and from an item | Shipped in 1.4 |
-| `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | Shipped in 1.5 |
+| `notes-graph-page` | The graph of all notes: Graph mode of the Notes page, pan, zoom, topics by project and label | Shipped in 1.4 |
 | `note-pane-width` | A note beside the Notes list resizes by its left edge and keeps a readable column | Shipped in 1.3 |
-| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Shipped in 1.5 |
+| `notes-space` | A Tasks and Notes switch in the sidebar, one-line note rows, and search tokens (`in:`, `@label`, `kind:`, `linked:`, `changed:`) as chips | Shipped in 1.4 |
 | `notes-in-routines` | Routines work with standalone notes: note triggers, Find, Create and Change notes, Turn into task, a Note type | Shipped in 1.5 |
 | `note-attachments` | Images and files in standalone notes | Shipped in 1.5 |
 | `note-checklist-tasks` | Turn checklist lines of a note into tasks, each line becoming a link to its task | Shipped in 1.5 |
@@ -170,7 +170,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Shipped in 1.4 |
 | `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Shipped in 1.4 |
-| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Shipped in 1.5 |
+| `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Shipped in 1.4 |
 | `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | In progress (5 of 6) |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped in 1.4 |
 | `assistant-tool-sources` | Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | Shipped in 1.5 |

@@ -53,6 +53,8 @@ const CHANGELOG = `# Changelog
 - Something else.
 
 ## [0.19.0] - 2026-10-31
+
+- An early fix (named-early, #12).
 `
 
 let root
@@ -89,6 +91,14 @@ describe('roadmap page', () => {
     expect(changeStatus(root, 'telegram-channel', releases)).toBe('Planned')
     write('openspec/changes/archive/2026-12-01-late/tasks.md', '- [x] a\n')
     expect(changeStatus(root, 'late', releases)).toBe('Shipped')
+    // Archived after a later release but named in an older one's section.
+    write('openspec/changes/archive/2026-11-02-named-early/tasks.md', '- [x] a\n')
+    expect(changeStatus(root, 'named-early', releases)).toBe('Shipped in 0.19')
+    // Archived after a later release but shipped in an older one, which the change records.
+    write('openspec/changes/archive/2026-11-02-kept-open/tasks.md', '- [x] a\n')
+    expect(changeStatus(root, 'kept-open', releases)).toBe('Shipped in 0.21')
+    write('openspec/changes/archive/2026-11-02-kept-open/.openspec.yaml', 'schema: spec-driven\nshipped_in: 0.19.0\n')
+    expect(changeStatus(root, 'kept-open', releases)).toBe('Shipped in 0.19')
   })
 
   it('writes one table per milestone, with the status as text', () => {
