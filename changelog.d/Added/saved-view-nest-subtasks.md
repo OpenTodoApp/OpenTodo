@@ -1,1 +1,0 @@
-- Saved views in the List layout have **Display options → Nest subtasks**, as Today and Upcoming do: a matching subtask is listed under its matching parent and folds with it (saved-view-nest-subtasks, #1108).

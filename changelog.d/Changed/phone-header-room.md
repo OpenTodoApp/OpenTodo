@@ -1,1 +1,0 @@
-- **More room for the title on a phone.** Help moved from the bar into the page's "…" menu, as its last item, so a project's name and the Inbox's count are cut less. Pages without a menu, such as Settings, keep the Help button.

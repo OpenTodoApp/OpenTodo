@@ -100,7 +100,8 @@ describe('the y key in Today (time-tracking "Start and stop from the web app")',
     await logTime(a, new Date(2026, 9, 13, 23, 30).getTime(), new Date(2026, 9, 13, 23, 59).getTime())
     await logTime(a, new Date(2026, 9, 14, 9, 0).getTime(), new Date(2026, 9, 14, 10, 20).getTime())
     const r = await render(<TaskListView route={{ view: 'today' }} />)
-    await waitFor(() => !!r.container.querySelector('[data-page-meta]')?.textContent?.includes('tracked'))
+    // The header reads "0m tracked" until the entries have loaded: wait for the figure itself.
+    await waitFor(() => !!r.container.querySelector('[data-page-meta]')?.textContent?.includes('1h 20m tracked'), 'the tracked figure')
     expect(r.container.querySelector('[data-page-meta]')!.textContent).toContain('3h planned · 1h 20m tracked')
   })
 

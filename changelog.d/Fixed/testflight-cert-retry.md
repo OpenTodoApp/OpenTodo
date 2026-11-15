@@ -1,1 +1,0 @@
-- **The iPhone build reaches TestFlight on the first try.** At Apple's limit of distribution certificates, a release revoked an old one and was refused a new one straight away (1.4.2); it now asks again a few times with a short pause.

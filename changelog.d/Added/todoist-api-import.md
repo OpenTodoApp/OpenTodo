@@ -1,1 +1,0 @@
-- Import from Todoist with an API token, no Premium backup needed: Switch from: Todoist → **Or import with a Todoist API token**. The token is used once and never stored. Comments now join their task's notes in JSON imports (todoist-api-import, #1238).
