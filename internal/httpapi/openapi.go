@@ -20,6 +20,9 @@ import (
 //go:embed openapi.json.gz
 var openAPIEmbedded []byte
 
+// openAPIMaxBytes bounds the decompressed description (it is about 1.2 MB).
+const openAPIMaxBytes = 16 << 20
+
 // openAPIServed is the description with this server's version, compressed,
 // and its ETag; built once.
 type openAPIServed struct {
@@ -36,7 +39,7 @@ func (o *openAPIServed) build(version string) {
 			o.err = err
 			return
 		}
-		raw, err := io.ReadAll(zr)
+		raw, err := io.ReadAll(io.LimitReader(zr, openAPIMaxBytes))
 		if err != nil {
 			o.err = err
 			return
@@ -83,5 +86,5 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal", "the API description could not be read")
 		return
 	}
-	_, _ = io.Copy(w, zr)
+	_, _ = io.Copy(w, io.LimitReader(zr, openAPIMaxBytes))
 }
