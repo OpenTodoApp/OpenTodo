@@ -40,7 +40,7 @@
 
 ### 1. Capture
 
-Type a task the way you say it: `Call Sarah next Wed 3pm #work p1` sets the date, time, project and priority. Dictate it, send a page from your phone's share menu, or forward an email. Anything without a home lands in the Inbox. [Quick add](docs/quick-add.md) · [Voice](docs/quick-add.md#voice) · [Capture](docs/capture.md)
+Type a task the way you say it: `Call Sarah next Wed 3pm #work p1` sets the date, time, project and priority. Dictate it, send a page from your phone's share menu or the browser extension ([Chrome](https://chromewebstore.google.com/detail/opentodo-capture/aohlkamgjanbbmkobfhhemdbliadlned), [Firefox](https://addons.mozilla.org/firefox/addon/opentodo-capture/)), or forward an email. Anything without a home lands in the Inbox. [Quick add](docs/quick-add.md) · [Voice](docs/quick-add.md#voice) · [Capture](docs/capture.md)
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/quick-add-dark.webp"><img src="docs/images/quick-add-light.webp" width="640" alt="Quick add with a task typed in plain language and chips for its date, project and priority"></picture>
 
