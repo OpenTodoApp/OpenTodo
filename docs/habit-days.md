@@ -9,15 +9,15 @@ order: 52
 ---
 # A habit's days
 
-<picture><source srcset="images/habit-page-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/habit-page-light.webp" alt="A habit under its repeat rule: Track as a habit on, the strength, kept and streak line, the tiny version and anchor fields, the month grid of done days, and Graduate."></picture>
+<picture><source srcset="images/habit-page-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/habit-page-light.webp" alt="A habit's page: its title with how often, the part of the day and the anchor, Check in, its notes, the tiny version, strength, kept, streak and best, and the month grid of done days."></picture>
 
-A habit's page (open it from its title on the [Habits screen](habits.md)) shows its numbers, its month and its own fields under **Repeat**.
+A habit's page (open it from its title on the [Habits screen](habits.md)) shows how often it repeats and its anchor beside the title, its notes, the tiny version, its numbers and its month. **Edit** in its **⋯** menu changes the habit itself.
 
 ## The tiny version and the anchor
 
 The **tiny version** is the two-minute form of the habit, for the days when the whole thing is too much ("One page", "Shoes on, out the door"). Logging it counts as done for every number, and the day shows half filled. A reminder for a habit with a tiny version says so: "Read", with "One page is enough".
 
-The **anchor** is the moment the habit follows ("After dinner", "After coffee"). It shows under the habit's title. Both are written on the habit's page and are encrypted on an [end-to-end encrypted](e2ee.md) account.
+The **anchor** is the moment the habit follows ("After dinner", "After coffee"). It shows under the habit's title. Both are set with **Edit** in the habit's menu and are encrypted on an [end-to-end encrypted](e2ee.md) account.
 
 ## The thread and the numbers
 
@@ -36,6 +36,6 @@ A past scheduled day in the thread or in the month grid on the habit's page open
 
 ## Graduate a habit
 
-When a habit has stuck, **Graduate** on its page takes it out of every list, the calendar and reminders, and keeps its history. The Habits screen's **Graduated** group lists it with how long it was kept ("Kept for 94 days"). **Resume** brings it back from today: the days in between read as not scheduled, not missed. Graduating never completes or deletes the task.
+When a habit has stuck, **Graduate** in its page's **⋯** menu takes it out of every list, the calendar and reminders, and keeps its history. The Habits screen's **Graduated** group lists it with how long it was kept ("Kept for 94 days"). **Resume** brings it back from today: the days in between read as not scheduled, not missed. Graduating never completes or deletes the task.
 
 Assistants, scripts, the terminal and routines log habits too: [Habits from elsewhere](habits-elsewhere.md).
