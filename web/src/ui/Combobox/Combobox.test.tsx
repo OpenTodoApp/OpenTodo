@@ -150,6 +150,31 @@ describe('ComboboxPanel', () => {
     await unmount()
   })
 
+  it('a list drawn at its top sets no scroll position; one moved away is brought back (issue #1419)', async () => {
+    // Setting scrollTop lays out the whole page: the Notes search paid for it on the key that opened its suggestions.
+    useDatabase(`cb-${Date.now()}-s`)
+    const writes: number[] = []
+    let proto: object | null = HTMLUListElement.prototype
+    while (proto && !Object.getOwnPropertyDescriptor(proto, 'scrollTop')) proto = Object.getPrototypeOf(proto)
+    const desc = Object.getOwnPropertyDescriptor(proto!, 'scrollTop')!
+    const spy = vi.spyOn(proto as HTMLElement, 'scrollTop', 'set').mockImplementation(function (this: HTMLElement, v: number) {
+      if (this instanceof HTMLUListElement) writes.push(v)
+      desc.set!.call(this, v)
+    })
+    try {
+      const { container, unmount } = await render(<ComboboxPanel {...base} source={PEOPLE} onPick={() => {}} />)
+      await type(input(container), 'wo')
+      await type(input(container), 'w')
+      expect(writes).toEqual([])
+      await key(input(container), 'ArrowDown')
+      await type(input(container), 'wo')
+      expect(writes).toEqual([0])
+      await unmount()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('windows large sources: 10,000 options render fewer than 60 rows and keep the active option mounted', async () => {
     useDatabase(`cb-${Date.now()}-8`)
     const many: Item[] = Array.from({ length: 10_000 }, (_, i) => ({ id: `t${i}`, name: `Task ${i}` }))

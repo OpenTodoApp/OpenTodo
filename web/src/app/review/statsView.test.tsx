@@ -127,6 +127,26 @@ describe('Statistics dashboard', () => {
     await r.unmount()
   })
 
+  it('In a column narrower than 40 rem the header is one row: the title, the period button and the menu with the export (tablet-header-room)', async () => {
+    const width = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')!
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 400 })
+    try {
+      await seedWeek()
+      const r = await render(<StatsView />)
+      await waitFor(() => tile(r.container, 'done') === '3')
+      const header = r.container.querySelector('[data-page-header]')!
+      expect(header.querySelector('[data-page-secondary]')).toBeNull()
+      expect(r.container.querySelector('[role="radiogroup"]')).toBeNull()
+      const row = header.querySelector('[data-page-header-row]')!
+      expect([...row.querySelectorAll('button')].map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Period This week', 'More actions'])
+      await click(row.querySelector<HTMLElement>('button[aria-label="More actions"]')!)
+      await waitFor(() => !!document.querySelector('[role="menu"] [data-export-time]'), 'the export in the menu')
+      await r.unmount()
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'clientWidth', width)
+    }
+  })
+
   it('Stored period no longer offered: "last 4 weeks" opens on this week and nothing is written', async () => {
     localStorage.setItem('ot.stats.period', '4-weeks')
     const r = await render(<StatsView />)

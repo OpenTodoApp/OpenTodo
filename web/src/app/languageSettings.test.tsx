@@ -77,7 +77,7 @@ describe('Language panel', () => {
   it('System names the language it resolves to, and every language in its own name', async () => {
     const view = await render(<LanguageView value="system" system="English" onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Русский', 'Polski'])
     await view.unmount()
   })
 
@@ -87,17 +87,17 @@ describe('Language panel', () => {
     const view = await render(<LanguageView value="system" system={system} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
     expect(options[0]).toBe('System (简体中文)')
-    expect(options).toHaveLength(9)
+    expect(options).toHaveLength(11)
     await view.unmount()
   })
 
   // more-languages D4: a community language follows the maintained ones and, once picked, says so.
-  const WITH_POLISH: readonly ShippedLanguage[] = [{ code: 'pl', name: 'Polski', community: true }, ...SHIPPED]
+  const WITH_POLISH: readonly ShippedLanguage[] = SHIPPED
 
   it('a community language is listed after the maintained ones', async () => {
     const view = await render(<LanguageView value="system" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Polski'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Русский', 'Polski'])
     expect(view.container.querySelector('[data-language-community]')).toBeNull()
     await view.unmount()
   })

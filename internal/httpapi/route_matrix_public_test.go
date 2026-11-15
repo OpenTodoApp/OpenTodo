@@ -61,6 +61,7 @@ const (
 var publicRouteClasses = map[string]publicClass{
 	"GET /healthz":                    pubStatic,
 	"GET /api/v1/health":              pubStatic,
+	"GET /api/v1/openapi.json":        pubStatic,
 	"GET /.well-known/security.txt":   pubStatic,
 	"/api/":                           pubStatic,
 	"/":                               pubStatic,

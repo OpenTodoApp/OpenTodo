@@ -104,7 +104,9 @@ Right-click to start from something else with **Add to OpenTodo**: on a link, th
 
 The extension's own texts follow the browser's interface language in English, German, French, Spanish, Italian, Portuguese and Simplified Chinese, and English otherwise; the chips and the capture screen follow your [interface language](language.md).
 
-**Install** (it is not published in the browser stores yet): download `opentodo-browser-extension-chrome.zip` or `opentodo-browser-extension-firefox.zip` from a release (or run `make extension`) and unzip it.
+**Install** from your browser's store: [Chrome Web Store](https://chromewebstore.google.com/detail/opentodo-capture/aohlkamgjanbbmkobfhhemdbliadlned) (Chrome, Edge, Brave and other Chromium browsers) or [Firefox Add-ons](https://addons.mozilla.org/firefox/addon/opentodo-capture/).
+
+To load it without a store, download `opentodo-browser-extension-chrome.zip` or `opentodo-browser-extension-firefox.zip` from a release (or run `make extension`) and unzip it:
 
 - *Chromium*: open `chrome://extensions`, turn on **Developer mode**, **Load unpacked**, pick the unzipped folder.
 - *Firefox*: open `about:debugging#/runtime/this-firefox`, **Load Temporary Add-on…**, pick `manifest.json` in the unzipped folder. Temporary add-ons are removed when Firefox restarts.

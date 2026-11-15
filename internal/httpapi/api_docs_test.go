@@ -43,6 +43,8 @@ type docRoute struct {
 	methods []string // empty: any method
 	path    string   // with every wildcard as {}
 	prefix  bool     // the path ended in "…": it covers everything below it
+	heading string   // the docs/api.md heading the route is described under
+	text    string   // a table row's description cell, or "" for running text
 }
 
 var (
@@ -100,24 +102,34 @@ func docRoutes(t *testing.T) []docRoute {
 		t.Fatal(err)
 	}
 	var out []docRoute
+	heading, text := "", ""
 	add := func(methods []string, raw, prev string) string {
 		paths, prefix := resolvePath(raw, prev)
 		for _, p := range paths {
-			out = append(out, docRoute{methods: methods, path: docWildcard.ReplaceAllString(p, "{}"), prefix: prefix})
+			out = append(out, docRoute{methods: methods, path: docWildcard.ReplaceAllString(p, "{}"), prefix: prefix, heading: heading, text: text})
 		}
 		if len(paths) == 0 {
 			return prev
 		}
 		return paths[0]
 	}
+	fence := false
 	for _, line := range strings.Split(string(b), "\n") {
 		prev := ""
+		text = ""
+		if strings.HasPrefix(line, "```") {
+			fence = !fence
+		}
+		if h, ok := strings.CutPrefix(line, "#"); ok && !fence {
+			heading = strings.TrimSpace(strings.TrimLeft(h, "#"))
+		}
 		// A table row: | METHOD[, METHOD] | `path`[, `…/more`] | …, or
 		// | `GET` / `PUT /path` | …: the methods of the first cell, the paths of
 		// the first cell that has one.
 		if strings.HasPrefix(line, "|") {
 			cells := strings.Split(strings.ReplaceAll(line, `\|`, "\x00"), "|")
 			if len(cells) > 3 {
+				text = strings.TrimSpace(strings.ReplaceAll(cells[len(cells)-2], "\x00", "|"))
 				if methods := docMethod.FindAllString(cells[1], -1); len(methods) > 0 {
 					for _, cell := range cells[1:3] {
 						found := false
@@ -135,6 +147,7 @@ func docRoutes(t *testing.T) []docRoute {
 				}
 			}
 		}
+		text = ""
 		// Running text: `GET /api/v1/x`, `GET|PUT /settings/x`, `PATCH …/grants/{id}`.
 		for _, m := range docSpan.FindAllStringSubmatch(line, -1) {
 			if im := docInline.FindStringSubmatch(m[1]); im != nil {

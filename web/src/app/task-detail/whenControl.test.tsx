@@ -292,6 +292,26 @@ describe('WhenControl', () => {
       await unmount()
     })
 
+    // Issue 1320: the editor sets the date, then the time, in two writes.
+    it('a day picked, then a time: the default for tasks with a time is added when only that default is set', async () => {
+      await db.meta.put({ key: 'userId', value: 'u1' })
+      await mutate('user_prefs', USER_PREFS_ID, { reminder_default_timed: '-30', reminder_default_dated: '' })
+      const id = await createTask({ title: 'Plan' })
+      const { seg, unmount } = await mount(id)
+      await click(seg('due').querySelector('[data-date="2026-10-20"]')!)
+      await waitFor(async () => (await db.tasks.get(id))?.due?.date === '2026-10-20', 'the date written')
+      expect(await db.reminders.where('task_id').equals(id).count()).toBe(0)
+      // The row is enabled once the control has drawn the date, not when it is stored.
+      await waitFor(() => !option(seg, 'time').disabled, 'the row enabled')
+      await click(option(seg, 'time'))
+      await waitFor(() => !!timeLine(seg)?.querySelector('[data-time-suggestion="09:00"]'), 'the time line')
+      await click(timeLine(seg)!.querySelector('[data-time-suggestion="09:00"]')!)
+      await waitFor(async () => (await db.reminders.where('task_id').equals(id).toArray()).some((r) => r.offset_minutes === -30 && !r.deleted_at), 'the default reminder')
+      expect(await db.reminders.where('task_id').equals(id).count()).toBe(1)
+      await mutate('user_prefs', USER_PREFS_ID, { reminder_default_timed: '', reminder_default_dated: '' })
+      await unmount()
+    })
+
     it('a part replaces the time: Afternoon on a task due tomorrow at 19:30, Undo restores 19:30', async () => {
       await partsOn()
       const id = await createTask({ title: 'Plan', due: { date: '2026-10-15', time: '19:30' } })

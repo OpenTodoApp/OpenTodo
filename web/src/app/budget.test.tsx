@@ -363,6 +363,9 @@ describe('on a phone (390 px)', () => {
     expect(content.className).toContain('max-md:pb-(--add-room)')
     const css = (await import('../index.css?raw')).default
     expect(css).toMatch(/--add-room:\s*4\.75rem/)
+    // A page that fills the column and scrolls inside itself takes the room back and ends its scroller with it (phone-fab-scroll-room).
+    expect(css).toContain('#content[data-add-room] > .page-fill { height: calc(100% + var(--add-room)); margin-bottom: calc(-1 * var(--add-room)); }')
+    expect(css).toContain('#content[data-add-room] .add-room-end { padding-bottom: var(--add-room); }')
     // The toast sits above the tab bar (3.5 rem) and the add button's room (4.25 rem), never on a row's last line.
     expect(document.documentElement.style.getPropertyValue('--toast-lift')).toBe('7.75rem')
     await r.unmount()

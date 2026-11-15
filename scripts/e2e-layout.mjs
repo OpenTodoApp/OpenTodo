@@ -20,6 +20,9 @@
 //     or the now line paints over it (GitHub issue 775),
 //   - the floating add button covers the last task row or a form field (at the top or
 //     the end of a page),
+//   - scrolled to its end, a screen or a scroller inside it (the calendar's grid, a board
+//     column) leaves a control under the floating add button, or a screen without the
+//     button keeps empty room for it (phone-fab-scroll-room, GitHub issue 1382),
 //   - on the settings pages that ask for it, two controls overlap or a control touches a
 //     row divider (themes-layout-template),
 //   - any screen or overlay has a serious or critical axe-core issue (colour contrast,
@@ -53,7 +56,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -243,6 +246,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       for (const m of await p.evaluate(rowMisalignment)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(rowCheckReach)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(addButtonCovers)) await fail(p, s.name, null, m)
+      for (const m of await p.evaluate(addButtonRoom)) await fail(p, s.name, null, m)
       // Crowded controls on the settings pages that ask for it (themes-layout-template).
       if (s.gridRoom) for (const m of await p.evaluate(calendarGridRoom)) await fail(p, s.name, null, m)
       if (s.crowded) for (const m of await p.evaluate(crowdedControls, ['main', 4])) await fail(p, s.name, null, `crowded: ${m}`)

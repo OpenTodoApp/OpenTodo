@@ -4,7 +4,8 @@
 # then writes <out>/SHA256SUMS. Only the files a release ships are copied, named
 # exactly: the server and `ot` binaries, the browser extension zips, the agent and
 # MCP skill zips, the signed Android APK and AAB, the site bundle and the web
-# app's signed file list (signed-web-app). Anything
+# app's signed file list (signed-web-app), plus the API description
+# (openapi-description) from the checkout with the release's version. Anything
 # else an artifact holds (the web app's build chunks, reports, a debug APK) stays
 # out, and a release without all twelve binaries fails.
 # Usage: scripts/release/collect-assets.sh <artifacts-dir> <out-dir>
@@ -37,5 +38,12 @@ for b in opentodo ot; do
   done
 done
 [ "$missing" -eq 0 ] || exit 1
+
+# The API description of this release (openapi-description): docs/openapi.json
+# with the tag's version in info.version.
+tag=${GITHUB_REF_NAME:-}
+if [ -f docs/openapi.json ]; then
+  sed "s/\"version\": \"0.0.0-dev\"/\"version\": \"${tag#v}\"/" docs/openapi.json > "$out/openapi.json"
+fi
 
 cd "$out" && sha256sum -- * > SHA256SUMS && cat SHA256SUMS

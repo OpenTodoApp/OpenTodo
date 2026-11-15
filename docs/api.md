@@ -17,6 +17,33 @@ Base path: `/api/v1`. All requests and responses are JSON. Within 1.x the API on
 
 A path under `/api/` that exists, asked with a method it doesn't serve, answers 405 `method_not_allowed` with an `Allow` header listing the methods it does, for example `GET is not allowed on /api/v1/settings/assistant/test; use POST`. A path no route serves answers 404 `not_found` with `unknown API route: <method> <path>`; the query string is never repeated. A switched-off feature's routes are absent, so they answer 404, not 405.
 
+## OpenAPI description
+
+The whole API is also described as **OpenAPI 3.1**, generated from the server's code so it can't drift from it:
+
+- **On your server:** `GET /api/v1/openapi.json` (no sign-in; it describes routes, not your data, and its `info.version` is the server's version).
+- **In each release:** `openapi.json` is attached to the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases), and the latest is in the repository as [`docs/openapi.json`](https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/openapi.json).
+
+It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints).
+
+Use it to:
+
+```sh
+# Browse it: any OpenAPI viewer reads it, for example Swagger Editor, Scalar, Redoc or Stoplight
+curl -s https://todo.example.com/api/v1/openapi.json -o openapi.json
+
+# Generate a client
+npx openapi-typescript openapi.json -o opentodo.d.ts                        # TypeScript types
+openapi-generator-cli generate -i openapi.json -g python -o opentodo-client # Python, Kotlin, Swift, …
+oapi-codegen -generate types,client -package opentodo openapi.json > opentodo.go
+
+# Try it: import openapi.json into Postman, Insomnia, Bruno or Hoppscotch
+```
+
+The server allows any site to read the description (`Access-Control-Allow-Origin: *`), so a browser-based viewer can load it straight from your server; the API itself still needs a token, and other sites only if the owner [allows them](#calling-the-api-from-another-site).
+
+What it does not cover: the op payloads of [`/api/v1/sync`](sync.md) beyond their envelope, [CalDAV](caldav.md), [MCP](mcp.md) and [webhook payloads](webhooks.md). A few fields the generator can't type are left open (`{}`); this page has their shapes. Within 1.x the description only grows, like the API ([stability](stability.md)).
+
 ## Authentication
 
 Two options:
@@ -106,6 +133,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | --- | --- | --- | --- |
 | GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in)); 503 `unhealthy` when the database is unreachable |
 | GET | `/api/v1/health` | none | The same answer as `/healthz`, under the API path, for reverse proxies and platforms that answer `/healthz` themselves (Pomerium, Google Cloud Run). The mobile apps check a server here first, then at `/healthz` |
+| GET | `/api/v1/openapi.json` | none | The [OpenAPI 3.1 description](#openapi-description) of this server's API: `application/json`, gzip when accepted, `ETag` and `Cache-Control: public, max-age=3600`, readable from any site |
 | GET | `/.well-known/security.txt` | none | [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) text: the OpenTodo project's reporting channels (`Contact`), `Expires` 180 days ahead, `Policy` (SECURITY.md), `Canonical` when `OPENTODO_BASE_URL` is set; see [Security](security/README.md) |
 | GET | `/api/v1/auth/status` | none | `{setupRequired, setupTokenRequired, setupCodeRequired, setupCodeForHost, signupAllowed, authenticated, user, version, passkeysAvailable, oidc, outgoingEmail, mfa?, encryption?, minClientVersion?, demo?}`; `outgoingEmail` is `{enabled}`, true when [outgoing email](#outgoing-email) is configured (never on a demo instance); `mfa`, `encryption` and `minClientVersion` only when signed in; `setupCodeRequired` is true while no account exists and no setup token is configured, when either `OPENTODO_SETUP_CODE=required` and the request does not come over a direct loopback connection without forwarding headers, or no `OPENTODO_BASE_URL` is set and the request is addressed to a domain name (not an IP address, a name without a dot or a local-only name such as `*.local`, `*.lan` or `*.home.arpa`); `setupCodeForHost` is true when the second reason alone asks for the code; `demo` (`{token, sandboxHours: {idle, max}, resetsAt}`: a fresh single-use sandbox-creation token valid for 10 minutes, the sandbox lifetimes in hours and the next nightly reset; no credentials) only on a [demo instance](self-hosting/demo.md); `wipeKey` for a signed-in browser session, and `revoked: {proof}` for the cookie of a session ended by sign out everywhere, deactivation or deletion, where `proof` is base64url(HMAC-SHA256(wipe key, `opentodo device revoked v1`)): the web app removes its local copy when it matches the key it stored (see [Two-factor authentication](#two-factor-authentication), [Single sign-on](#single-sign-on), [End-to-end encryption](#end-to-end-encryption)) |
 | POST | `/api/v1/auth/register` | none | `{email, name?, password, invitation?, projectInvite?, setupToken?}` → 201 `{user}` + cookie. The first account becomes owner; when `OPENTODO_SETUP_TOKEN` is set (`setupTokenRequired` in the status), it needs `setupToken` with that value, otherwise 403 `setup_token_invalid`; without a token, a client the status asks for the code (`setupCodeRequired`: from another machine with `OPENTODO_SETUP_CODE=required`, or under a domain name while no `OPENTODO_BASE_URL` is set) sends the one-time setup code from the server log as `setupToken` (case and dashes ignored), otherwise 403 `setup_code_invalid`; afterwards an `invitation` secret admits one member while sign-up is closed, and a `projectInvite` secret creates a member who joins that project (201 `{user, projectId, role}`, see [Project invite links](#project-invite-links)). With open sign-up and [outgoing email](#outgoing-email), a registration without an invitation answers 202 `{verificationRequired: true}` and mails a link instead of creating the account |
@@ -535,6 +563,21 @@ curl -si -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempo
 curl -s -X POST "$OT/api/v1/tasks" -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: run42-milk' \
   -H 'Content-Type: application/json' -d '{"title":"Buy bread"}'
 # 409 {"error":{"code":"idempotency_conflict","message":"this Idempotency-Key was already used for a create with different content; …"}}
+```
+
+### Calling the API from another site
+
+A page on another origin, such as a static dashboard, can call the API with an API token once the operator lists that origin in `OPENTODO_CORS_ORIGINS` ([configuration](self-hosting/configuration.md#server-and-network)): exact origins separated by commas, such as `https://dash.example.com,http://localhost:5173`, with no path and no wildcard. An entry that is not an origin stops startup. Unset, the default, the server sends no CORS headers. It can't be combined with demo or host mode.
+
+- **Tokens only.** A request from a listed origin gets `Access-Control-Allow-Origin` (its own origin) and `Access-Control-Expose-Headers` only when it sends `Authorization: Bearer …`. `Access-Control-Allow-Credentials` is never sent, so the page can't use a signed-in browser's session: a request carrying only the cookie gets no CORS headers, and its writes are still refused with 403 `bad_origin`. The token's scope decides as usual; a `read` token is the right one for a dashboard that only looks. Anyone who can run script on the listed origin can read the token the page holds, so list only origins you control.
+- **Preflights.** `OPTIONS` with `Access-Control-Request-Method` from a listed origin answers 204 with `Access-Control-Allow-Methods: GET, HEAD, POST, PUT, PATCH, DELETE`, `Access-Control-Allow-Headers: Authorization, Content-Type, Idempotency-Key, If-Match` and `Access-Control-Max-Age: 600`. It never reaches a route. From any other origin it answers as before (405).
+- **Which routes.** Every path under `/api/v1/` except the sign-in flows `/api/v1/auth/*`, `/api/v1/app/*` and `/api/v1/demo/*`, which set the session cookie or exchange a code for a token and stay same-origin. CalDAV (`/dav/`), MCP (`/mcp`), the OAuth endpoints and `/healthz` are unchanged.
+- Responses under `/api/v1/` carry `Vary: Origin` while the list is set. Exposed headers: `ETag`, `Retry-After`, `X-Row-Count`, `Content-Disposition`, `Allow`, `Deprecation`, `Sunset`, `Link`.
+
+```js
+const res = await fetch("https://todo.example.com/api/v1/tasks?project_id=…", {
+  headers: { Authorization: `Bearer ${readToken}` },
+});
 ```
 
 ### Credential introspection

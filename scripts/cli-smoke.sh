@@ -21,6 +21,8 @@ export OPENTODO_CONFIG="$WORK/config.json"
 unset OPENTODO_URL OPENTODO_TOKEN OPENTODO_PROFILE
 
 fail() { echo "cli-smoke: FAIL: $*" >&2; exit 1; }
+# Output is searched with `grep >/dev/null`, not `grep -q`: with pipefail, grep -q
+# stopping at the match can break the pipe while ot is still writing (SIGPIPE, exit 141).
 
 OPENTODO_ADDR="127.0.0.1:${PORT}" OPENTODO_DATA_DIR="$WORK/data" OPENTODO_LOG_LEVEL=warn "$SERVER" >"$WORK/server.log" 2>&1 &
 SERVER_PID=$!
@@ -45,7 +47,7 @@ curl -fsS "$URL/api/v1/auth/register" -H 'Content-Type: application/json' \
 printf '%s\n' "$PASSWORD" | "$OT" login "$URL" --email "$EMAIL" >/dev/null || fail "ot login"
 [ -f "$OPENTODO_CONFIG" ] || fail "config file not written"
 grep -q 'ot_' "$OPENTODO_CONFIG" || fail "token not stored"
-"$OT" auth status | grep -q "$EMAIL" || fail "ot auth status"
+"$OT" auth status | grep "$EMAIL" >/dev/null || fail "ot auth status"
 
 # 3. Add a task and a project.
 "$OT" project add "Smoke" >/dev/null || fail "ot project add"
@@ -58,16 +60,16 @@ case "$LIST" in
   \[*\]) ;;
   *) fail "ot list --json did not print a JSON array: $LIST" ;;
 esac
-echo "$LIST" | grep -q "\"id\":\"$ID\"" || fail "new task missing from list --json"
-echo "$LIST" | grep -q '"priority":2' || fail "priority not applied"
+echo "$LIST" | grep "\"id\":\"$ID\"" >/dev/null || fail "new task missing from list --json"
+echo "$LIST" | grep '"priority":2' >/dev/null || fail "priority not applied"
 
 # 5. Complete it with an id prefix (after a dry run that changes nothing), then
 #    it leaves the open views.
-"$OT" done "${ID:0:6}" --dry-run --json | grep -q '"dry_run":true' || fail "ot done --dry-run"
-"$OT" today --json | grep -q "$ID" || fail "a dry run completed the task"
+"$OT" done "${ID:0:6}" --dry-run --json | grep '"dry_run":true' >/dev/null || fail "ot done --dry-run"
+"$OT" today --json | grep "$ID" >/dev/null || fail "a dry run completed the task"
 "$OT" done "${ID:0:6}" >/dev/null || fail "ot done"
-"$OT" today --json | grep -q "$ID" && fail "completed task still in today"
-"$OT" list --completed --json | grep -q "$ID" || fail "completed task not in --completed"
+"$OT" today --json | grep "$ID" >/dev/null && fail "completed task still in today"
+"$OT" list --completed --json | grep "$ID" >/dev/null || fail "completed task not in --completed"
 
 # 6. Exit codes.
 set +e
@@ -89,14 +91,14 @@ VAULT="$WORK/vault"
 [ -f "$VAULT/.opentodo/state.json" ] || fail "vault state not written"
 [ -f "$VAULT/Smoke.md" ] || fail "vault project file not written"
 printf -- '- [ ] Vault smoke line\n' >> "$VAULT/Inbox.md"
-"$OT" vault sync "$VAULT" --json | grep -q '"created":1' || fail "ot vault sync did not create the task"
+"$OT" vault sync "$VAULT" --json | grep '"created":1' >/dev/null || fail "ot vault sync did not create the task"
 VID=$(sed -n 's/^- \[ \] Vault smoke line 🆔 \([A-Za-z0-9_-]*\)$/\1/p' "$VAULT/Inbox.md")
 [ -n "$VID" ] || fail "the line did not get its id"
-"$OT" list --inbox --json | grep -q "\"id\":\"$VID\"" || fail "the vault's task is not in ot list"
+"$OT" list --inbox --json | grep "\"id\":\"$VID\"" >/dev/null || fail "the vault's task is not in ot list"
 "$OT" done "$VID" >/dev/null || fail "ot done (vault task)"
 "$OT" vault sync "$VAULT" >/dev/null || fail "second ot vault sync"
 grep -q -- "- \[x\] Vault smoke line" "$VAULT/Inbox.md" || fail "the completion did not reach the file"
-"$OT" vault status "$VAULT" --json | grep -q '"changed":\[\]' || fail "ot vault status"
+"$OT" vault status "$VAULT" --json | grep '"changed":\[\]' >/dev/null || fail "ot vault status"
 
 # 8. Export includes the task.
 "$OT" export --out "$WORK/export.json" >/dev/null || fail "ot export"

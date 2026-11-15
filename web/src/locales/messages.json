@@ -4819,6 +4819,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "Default reminders, push notifications on this device, delivery channels and the weekly digest": [
+    "web/src/app/settingsSections.ts"
+  ],
   "Default theme": [
     "web/src/lib/settingsCopy.ts"
   ],
@@ -14047,9 +14050,6 @@
   "Push notifications are turned off on this server. Reminders are shown in the app.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "Push notifications for reminders on this device, delivery channels and the weekly digest": [
-    "web/src/app/settingsSections.ts"
-  ],
   "Put in a slot": [
     "web/src/app/focus/focusRequest.tsx"
   ],
@@ -14391,6 +14391,7 @@
   "Reminders": [
     "web/src/app/NotificationChannelEditor.tsx",
     "web/src/app/RemindersField.tsx",
+    "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Reminders are scheduled on this phone and shown without a push service.": [
@@ -16680,6 +16681,9 @@
   ],
   "Small · up to 30 min": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Snooze": [
+    "web/src/app/ReminderToasts.tsx"
   ],
   "Snooze 10 min": [
     "web/public/push-sw.js",

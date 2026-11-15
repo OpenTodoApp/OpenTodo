@@ -57,7 +57,7 @@ How the app behaves: [Settings: App](settings-app.md).
 
 ### Notifications
 
-[Notifications](notifications.md): [default reminders](default-reminders.md), **Push notifications** for reminders on this device with a test, **Delivery channels** such as ntfy, and the [weekly digest](statistics.md#weekly-digest-by-email).
+[Notifications](notifications.md): **Reminders** ([defaults](default-reminders.md)), **Push notifications** for reminders on this device with a test, **Delivery channels** such as ntfy, and the [weekly digest](statistics.md#weekly-digest-by-email).
 
 ### Capture
 

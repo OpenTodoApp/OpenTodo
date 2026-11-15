@@ -1,1 +1,0 @@
-- Drag a task onto **Today** in the sidebar to plan it for today, as one change with Undo (drop-on-today, #1328).

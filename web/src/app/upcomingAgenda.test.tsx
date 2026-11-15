@@ -199,6 +199,9 @@ describe('the days', () => {
 
   it('says how old the cached events are while offline', async () => {
     await seed([ev('review', 'Design review', TOMORROW, '11:00', '12:00')], new Date(2026, 9, 22, 7, 40).getTime())
+    // Offline: no request reaches the server. A fetch that answered would read the switches as
+    // off and empty the cache, racing the status line.
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     await setUpcomingEventsShown(true)
     await createTask({ title: 'Write the report', due: { date: TOMORROW } })

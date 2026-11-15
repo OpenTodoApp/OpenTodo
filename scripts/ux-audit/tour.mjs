@@ -288,6 +288,10 @@ async function runCombo(combo, ids) {
     page.on('dialog', (d) => d.dismiss())
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    // A new browser context is a device that never synced. The screens are measured on one
+    // that has: the first sync ends with the notifications, and a capture taken before it
+    // measured their arrival from the server, not how the screen opens (today-no-shift).
+    await page.waitForFunction(() => performance.getEntriesByName('ot:sync-idle').length > 0, null, { timeout: 30000 })
     for (const e of tourable) {
       if (e.widths && !e.widths.includes(layoutWidth(combo.width))) continue
       if (hostOf(e, ids).widths && !hostOf(e, ids).widths.includes(layoutWidth(combo.width))) continue

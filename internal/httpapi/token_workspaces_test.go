@@ -100,3 +100,64 @@ func TestTokenLimitedToAWorkspace(t *testing.T) {
 		t.Fatalf("unknown workspace = %d %v", resp.StatusCode, out)
 	}
 }
+
+// An agent token limited to a workspace writes through the agent content routes
+// (agent-ready-cli D8) only inside it: the tool registry gets the token's limit,
+// so a task elsewhere answers as missing and an unlimited tool is refused.
+func TestAgentTokenLimitedToAWorkspaceOverREST(t *testing.T) {
+	e := ownerEnv(t)
+	e.allowWrites(true)
+	e.allowMyAssistants(true)
+	resp, out := e.do("POST", "/api/v1/workspaces", map[string]any{"name": "Work"})
+	e.mustStatus(resp, 201, out)
+	work := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Launch", "workspace_id": work})
+	e.mustStatus(resp, 201, out)
+	launch := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Ship it", "project_id": launch})
+	e.mustStatus(resp, 201, out)
+	ship := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Buy milk"})
+	e.mustStatus(resp, 201, out)
+	home := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/projects", map[string]any{"name": "Garden"})
+	e.mustStatus(resp, 201, out)
+	garden := out["id"].(string)
+	resp, out = e.do("POST", "/api/v1/tasks", map[string]any{"title": "Walk", "due": map[string]any{"date": localToday(e.now.Now())}, "recurrence": "every day", "habit": true})
+	e.mustStatus(resp, 201, out)
+	walk := out["id"].(string)
+
+	resp, out = e.do("POST", "/api/v1/tokens", map[string]any{"name": "Work assistant", "scope": "agent", "workspaces": []string{work}})
+	e.mustStatus(resp, 201, out)
+	secret := out["secret"].(string)
+	c := e.bearerClient()
+
+	// Outside Work: nothing is changed, whatever the route.
+	for _, rt := range []struct {
+		method, path string
+		body         map[string]any
+	}{
+		{"PATCH", "/api/v1/tasks/" + home, map[string]any{"title": "Changed by limited agent"}},
+		{"POST", "/api/v1/tasks/" + home + "/comments", map[string]any{"body": "hello"}},
+		{"POST", "/api/v1/tasks", map[string]any{"title": "Planted", "project_id": garden}},
+		{"POST", "/api/v1/habits/" + walk + "/log", map[string]any{"state": "done"}},
+	} {
+		resp, out := c.do(rt.method, rt.path, rt.body, bearer(secret)...)
+		if resp.StatusCode < 400 {
+			t.Fatalf("%s %s outside the workspace = %d %v", rt.method, rt.path, resp.StatusCode, out)
+		}
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+home, nil)
+	e.mustStatus(resp, 200, out)
+	if out["title"] != "Buy milk" {
+		t.Fatalf("Home's task changed: %v", out)
+	}
+	resp, out = e.do("GET", "/api/v1/tasks/"+home+"/comments", nil)
+	e.mustStatus(resp, 200, out)
+	if items, _ := out["comments"].([]any); len(items) != 0 {
+		t.Fatalf("comment added outside the workspace: %v", out)
+	}
+	// Inside Work the same token still writes.
+	resp, out = c.do("PATCH", "/api/v1/tasks/"+ship, map[string]any{"title": "Ship it today"}, bearer(secret)...)
+	e.mustStatus(resp, 200, out)
+}

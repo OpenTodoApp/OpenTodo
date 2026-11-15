@@ -168,12 +168,26 @@ func contains(list []string, s string) bool {
 	return false
 }
 
+// fold is what the web app's normalize does with NFD and dropping combining marks
+// (web/src/lib/nlp/vocab/index.ts), written out so the server needs no Unicode
+// tables: every lower-case letter of Latin-1 Supplement and Latin Extended-A/B that
+// decomposes to plain Latin letters (Polish ą ć ę ń ś ź ż, Czech č ř š ž, Romanian ș ț,
+// …), plus ß and the typographic apostrophes. Letters NFD leaves whole (ł, ø, đ) stay.
+// Regenerate with the loop in vocab_fold_test.go's comment when the range grows.
 var fold = map[rune]string{
-	'à': "a", 'á': "a", 'â': "a", 'ã': "a", 'ä': "a", 'å': "a", 'ā': "a",
-	'ç': "c", 'è': "e", 'é': "e", 'ê': "e", 'ë': "e", 'ē': "e",
-	'ì': "i", 'í': "i", 'î': "i", 'ï': "i", 'ñ': "n",
-	'ò': "o", 'ó': "o", 'ô': "o", 'õ': "o", 'ö': "o", 'ō': "o",
-	'ù': "u", 'ú': "u", 'û': "u", 'ü': "u", 'ū': "u", 'ý': "y", 'ÿ': "y",
+	'à': "a", 'á': "a", 'â': "a", 'ã': "a", 'ä': "a", 'å': "a", 'ç': "c", 'è': "e", 'é': "e", 'ê': "e",
+	'ë': "e", 'ì': "i", 'í': "i", 'î': "i", 'ï': "i", 'ñ': "n", 'ò': "o", 'ó': "o", 'ô': "o", 'õ': "o",
+	'ö': "o", 'ù': "u", 'ú': "u", 'û': "u", 'ü': "u", 'ý': "y", 'ÿ': "y", 'ā': "a", 'ă': "a", 'ą': "a",
+	'ć': "c", 'ĉ': "c", 'ċ': "c", 'č': "c", 'ď': "d", 'ē': "e", 'ĕ': "e", 'ė': "e", 'ę': "e", 'ě': "e",
+	'ĝ': "g", 'ğ': "g", 'ġ': "g", 'ģ': "g", 'ĥ': "h", 'ĩ': "i", 'ī': "i", 'ĭ': "i", 'į': "i", 'ĵ': "j",
+	'ķ': "k", 'ĺ': "l", 'ļ': "l", 'ľ': "l", 'ń': "n", 'ņ': "n", 'ň': "n", 'ō': "o", 'ŏ': "o", 'ő': "o",
+	'ŕ': "r", 'ŗ': "r", 'ř': "r", 'ś': "s", 'ŝ': "s", 'ş': "s", 'š': "s", 'ţ': "t", 'ť': "t", 'ũ': "u",
+	'ū': "u", 'ŭ': "u", 'ů': "u", 'ű': "u", 'ų': "u", 'ŵ': "w", 'ŷ': "y", 'ź': "z", 'ż': "z", 'ž': "z",
+	'ơ': "o", 'ư': "u", 'ǎ': "a", 'ǐ': "i", 'ǒ': "o", 'ǔ': "u", 'ǖ': "u", 'ǘ': "u", 'ǚ': "u", 'ǜ': "u",
+	'ǟ': "a", 'ǡ': "a", 'ǧ': "g", 'ǩ': "k", 'ǫ': "o", 'ǭ': "o", 'ǰ': "j", 'ǵ': "g", 'ǹ': "n", 'ǻ': "a",
+	'ȁ': "a", 'ȃ': "a", 'ȅ': "e", 'ȇ': "e", 'ȉ': "i", 'ȋ': "i", 'ȍ': "o", 'ȏ': "o", 'ȑ': "r", 'ȓ': "r",
+	'ȕ': "u", 'ȗ': "u", 'ș': "s", 'ț': "t", 'ȟ': "h", 'ȧ': "a", 'ȩ': "e", 'ȫ': "o", 'ȭ': "o", 'ȯ': "o",
+	'ȱ': "o", 'ȳ': "y",
 	'ß': "ss", '‘': "'", '’': "'", 'ʼ': "'",
 }
 
