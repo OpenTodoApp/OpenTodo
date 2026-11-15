@@ -18,11 +18,11 @@ A list's rows are `ListRow`s built by `listGroups` (`web/src/lib/listGroups.ts`)
 
 *Alternative:* look the ends up at render time from the next row's depth. The row elements are cached by row identity (`useRowRenderer`), and a row kept while a sibling is added under its parent would keep its old element — with or without the line — wrongly. Marks in the row make the cache correct by construction.
 
-### D2: The line shows for the selected parent and under the pointer
+### D2: The line shows for the selected parent
 
-A line under every expanded parent adds a row and a Tab stop to every list — more than the "calm list" bar allows (review). The marks render in one hidden `<li>` per ending row instead: a line shows when its parent is the selected row (the row under the keyboard cursor or last clicked), and hovering the subtree's last row or the stack itself reveals it (`index.css`, `@media (hover: hover)`), the way the rows' own revealed actions are CSS, not hover state. `SubtaskAddLine` renders the muted "+ Add a subtask" row — a real button, so it is reachable by Tab while it shows — and swaps to `SubtaskInput` on click; Escape hands the ghost back with its button focused, an empty blur hands it back without touching focus. `subtaskAddOpen` holds the one open line (a `a`/`addingBelow` line still closes it), and it clears when the parent's marks leave the rows, so a fold does not bring the input back on unfold.
+A line under every expanded parent adds a row and a Tab stop to every list — more than the "calm list" bar allows (review). Revealing it on pointer hover fared no better: the line switches from `display: none` to a row's height under the pointer or on each `j`/`k` step, and everything below it jumps (review). The marks render in one hidden `<li>` per ending row instead, and a line shows only while its parent is the selected row (the row under the keyboard cursor or last clicked); `:focus-within` keeps the stack up while an input inside has focus, so typing never loses its line (`index.css`). `SubtaskAddLine` renders the muted "+ Add a subtask" row — a real button, so it is reachable by Tab while it shows — and swaps to `SubtaskInput` on click; Escape hands the ghost back with its button focused, an empty blur hands it back without touching focus. `subtaskAddOpen` holds the one open line (a `a`/`addingBelow` line still closes it), and it clears when the parent's marks leave the rows, so a fold does not bring the input back on unfold.
 
-*Alternative:* a hovered-row field in the row context. Rows reveal on `group-hover` precisely so a pointer move never re-renders the list; a field would redraw on every row hover.
+*Alternative:* also revealing on hover, the way the rows' own revealed actions are CSS. Rejected in review: unlike a fading action icon, the line takes a row's height, so the reveal moves every row below it.
 
 ### D3: The same gates as the row menu
 
@@ -30,10 +30,10 @@ The line renders only for a parent that is writable in this list — not complet
 
 ## Data model, size and budget
 
-No op-schema or data change: the line writes `createSubtask` ops like the other ways to add; offline and convergence are inherited. No dependency; the mark pass is O(rows × depth) inside the existing group build, and the render adds a handful of elements per visible parent. Interface budget (`docs/interface-guide.md`): no chrome rows, no new property, destination, scroll region or shortcut — the line is list content that only appears where a subtask list already shows.
+No op-schema or data change: the line writes `createSubtask` ops like the other ways to add; offline and convergence are inherited. No dependency; the mark pass is linear in the rows inside the existing group build (flat groups return before the map is built), and the render adds a handful of elements per visible parent. Interface budget (`docs/interface-guide.md`): no chrome rows, no new property, destination, scroll region or shortcut — the line is list content that only appears where a subtask list already shows.
 
 ## Risks / Trade-offs
 
-- [A line under every expanded parent is chrome] → shown for the selected parent and under the pointer only (D2), and only where a subtask list already exists; childless, folded and flat lists read unchanged.
+- [A line under every expanded parent is chrome] → shown for the selected parent only (D2), and only where a subtask list already exists; childless, folded and flat lists read unchanged.
 - [A departing parent's line flashes during its exit animation] → the marks follow the kept rows, but a ghost's marks do not draw, so the parent's line stays single while the row leaves.
 - [A cursor move redraws the rows whose lines turn on or off] → the mark names the parent but lives on the ending row: `subtaskAddEnds` (parent → ending row, from `useAddLines`) lets `mayChange` add those rows to its set, so a cursor move still compares two lookups per row.

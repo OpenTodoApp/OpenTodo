@@ -1041,7 +1041,13 @@
   "Add a subtask to the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
+  "Add a subtask to this task": [
+    "web/src/app/task-list/TaskListRow.tsx"
+  ],
   "Add a subtask to this task…": [
+    "web/src/app/task-list/TaskListRow.tsx"
+  ],
+  "Add a subtask to {title}": [
     "web/src/app/task-list/TaskListRow.tsx"
   ],
   "Add a subtask to {title}…": [

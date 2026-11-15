@@ -219,7 +219,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           </li>
         )}
         {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
-            until the parent is the selected row or the pointer is over them (index.css); none for a
+            until the parent is the selected row (index.css); none for a
             departing row, and none while a drag runs, so drop zones stay one-line rows (row-expand D4). */}
         {tree && !ghost && !c.draggingId && r.subtaskAdds?.some((a) => !c.isReadOnly(a.task) && !a.task.completed_at) && (
           <li data-subtask-adds>

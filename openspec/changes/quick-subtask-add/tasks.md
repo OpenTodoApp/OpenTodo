@@ -16,5 +16,6 @@
 
 ## 4. Review follow-ups
 
-- [x] 4.1 Show the line only for the selected parent and under the pointer, not under every expanded parent: the marks render in one hidden `<li>` per ending row, revealed by selection, hover or focus (`index.css`), and `subtaskAddEnds` (parent → ending row) keeps the row cache's `mayChange` to a lookup per row
+- [x] 4.1 Show the line only for the selected parent, not under every expanded parent: the marks render in one hidden `<li>` per ending row, revealed by selection or focus (`index.css`), and `subtaskAddEnds` (parent → ending row) keeps the row cache's `mayChange` to a lookup per row
 - [x] 4.2 Lay the line out like a row ("+" in the child's checkbox slot, the label at the title column, time column aware), draw none on a departing row or while a drag runs, hand focus back to the line's button on Escape, clear `subtaskAddOpen` when the parent's marks leave the rows, and cover the viewer case with a test
+- [x] 4.3 Show the line for the selected parent only — hover reveal shifted every row below it — with the "+" drawn by the icon component and the button named without an ellipsis; flat groups skip the mark map; merged `main`'s 148/710 KB bundle budget

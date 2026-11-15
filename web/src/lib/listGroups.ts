@@ -481,6 +481,7 @@ function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => numb
  * chain, innermost first. Flat rows have no parent and mark nothing.
  */
 function markSubtaskAdds(rows: ListRow[]): void {
+  if (!rows.some((r) => r.parent !== null)) return
   const byId = new Map(rows.map((r, i) => [r.task.id, i]))
   for (let i = 0; i < rows.length; i++) {
     const nextDepth = i + 1 < rows.length ? rows[i + 1].depth : -1

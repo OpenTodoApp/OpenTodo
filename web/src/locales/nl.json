@@ -7761,5 +7761,7 @@
   "{kept} of {of} this month": "{kept} van {of} deze maand",
   "{kept} of {of} this week": "{kept} van {of} deze week",
   "{n, plural, one {Once a month} other {# times a month}}": "{n, plural, one {Eén keer per maand} other {# keer per maand}}",
-  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Eén keer per week} other {# keer per week}}"
+  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Eén keer per week} other {# keer per week}}",
+  "Add a subtask to {title}": "Subtaak toevoegen aan {title}",
+  "Add a subtask to this task": "Subtaak toevoegen aan deze taak"
 }

@@ -3,6 +3,7 @@ import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { createSubtask } from '../../lib/ops'
 import type { Label, Task } from '../../lib/types'
+import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
@@ -143,7 +144,7 @@ export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: 
 /**
  * The muted "Add a subtask" line at the end of a parent's visible subtasks
  * (quick-subtask-add): a ghost that swaps to the same input `a` opens, drawn for the
- * selected parent or under the pointer (index.css). Laid out like a row: the "+" in
+ * selected parent (index.css). Laid out like a row: the "+" in
  * the child's checkbox slot and the label at the title column, time column included.
  */
 export function SubtaskAddLine({ parent, depth, timeColumn = false, selected, open, onOpen, onClose }: { parent: Task; depth: number; timeColumn?: boolean; selected: boolean; open: boolean; onOpen: () => void; onClose: () => void }) {
@@ -159,13 +160,13 @@ export function SubtaskAddLine({ parent, depth, timeColumn = false, selected, op
           <button
             ref={button}
             type="button"
-            aria-label={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')}
+            aria-label={parent.title ? t('Add a subtask to {title}', { title: parent.title }) : t('Add a subtask to this task')}
             className="row-pad flex min-h-8 w-full items-start gap-2 rounded-control px-2 text-left text-faint hover:text-default pointer-coarse:min-h-11 pointer-coarse:items-center"
             style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` }}
             onClick={onOpen}
           >
             <span aria-hidden className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center" />
-            <span aria-hidden className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">+</span>
+            <span aria-hidden className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center"><Icon name="plus" size="sm" /></span>
             {timeColumn && <span aria-hidden data-row-time="" className="mt-px flex h-5 w-(--row-time-w) shrink-0 items-center" />}
             <span className="mt-0.5 flex h-5 items-center text-meta">{t('Add a subtask')}</span>
           </button>

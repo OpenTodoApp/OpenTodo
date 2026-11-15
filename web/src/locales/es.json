@@ -7761,5 +7761,7 @@
   "{kept} of {of} this month": "{kept} de {of} este mes",
   "{kept} of {of} this week": "{kept} de {of} esta semana",
   "{n, plural, one {Once a month} other {# times a month}}": "{n, plural, one {Una vez al mes} other {# veces al mes}}",
-  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Una vez a la semana} other {# veces a la semana}}"
+  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Una vez a la semana} other {# veces a la semana}}",
+  "Add a subtask to {title}": "Añadir una subtarea a {title}",
+  "Add a subtask to this task": "Añadir una subtarea a esta tarea"
 }

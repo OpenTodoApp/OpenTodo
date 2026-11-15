@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // quick-subtask-add (GitHub issue 1191): the muted "Add a subtask" line at the end
-// of a parent's visible subtasks in tree lists — shown for the selected parent or
-// under the pointer (index.css), a ghost that swaps to the same input `a` opens;
+// of a parent's visible subtasks in tree lists — shown for the selected parent
+// (index.css), a ghost that swaps to the same input `a` opens;
 // none for childless, folded, completed, read-only or departing rows.
 import 'fake-indexeddb/auto'
 import { act } from 'react'
