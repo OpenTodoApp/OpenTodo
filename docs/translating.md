@@ -99,7 +99,7 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | Deutsch, Français, Español, Italiano, Português | `de`, `fr`, `es`, `it`, `pt` | maintained | the project maintainers |
 | 简体中文 | `zh` | maintained | peilf |
 | Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
-<!-- | Polski | `pl` | community | your GitHub name | — add this row when the catalog is listed -->
+| Polski | `pl` | maintained | nkkfs |
 
 ## Writing a quick-add vocabulary
 

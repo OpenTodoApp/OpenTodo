@@ -1137,5 +1137,193 @@
       "'s middags",
       "'s avonds"
     ]
+  },
+  "pl": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "dzis": 0,
+      "dzisiaj": 0,
+      "dzis wieczorem": 0,
+      "dzisiaj wieczorem": 0,
+      "jutro": 1,
+      "jutra": 1,
+      "pojutrze": 2
+    },
+    "weekdays": [
+      [
+        "poniedziałek",
+        "poniedziałku",
+        "pon.",
+        "pn."
+      ],
+      [
+        "wtorek",
+        "wtorku",
+        "wt."
+      ],
+      [
+        "sroda",
+        "srode",
+        "srody",
+        "sr."
+      ],
+      [
+        "czwartek",
+        "czwartku",
+        "czw."
+      ],
+      [
+        "piatek",
+        "piatku",
+        "pt."
+      ],
+      [
+        "sobota",
+        "sobote",
+        "soboty",
+        "sob."
+      ],
+      [
+        "niedziela",
+        "niedziele",
+        "niedzieli",
+        "niedz.",
+        "nd."
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "styczen",
+          "stycznia"
+        ],
+        "abbr": [
+          "sty"
+        ]
+      },
+      {
+        "names": [
+          "luty",
+          "lutego"
+        ],
+        "abbr": [
+          "lut"
+        ]
+      },
+      {
+        "names": [
+          "marzec",
+          "marca"
+        ],
+        "abbr": [
+          "mar"
+        ]
+      },
+      {
+        "names": [
+          "kwiecien",
+          "kwietnia"
+        ],
+        "abbr": [
+          "kwi"
+        ]
+      },
+      {
+        "names": [
+          "maj",
+          "maja"
+        ],
+        "abbr": []
+      },
+      {
+        "names": [
+          "czerwiec",
+          "czerwca"
+        ],
+        "abbr": [
+          "cze"
+        ]
+      },
+      {
+        "names": [
+          "lipiec",
+          "lipca"
+        ],
+        "abbr": [
+          "lip"
+        ]
+      },
+      {
+        "names": [
+          "sierpien",
+          "sierpnia"
+        ],
+        "abbr": [
+          "sie"
+        ]
+      },
+      {
+        "names": [
+          "wrzesien",
+          "wrzesnia"
+        ],
+        "abbr": [
+          "wrz"
+        ]
+      },
+      {
+        "names": [
+          "pazdziernik",
+          "pazdziernika"
+        ],
+        "abbr": [
+          "paz"
+        ]
+      },
+      {
+        "names": [
+          "listopad",
+          "listopada"
+        ],
+        "abbr": [
+          "lis"
+        ]
+      },
+      {
+        "names": [
+          "grudzien",
+          "grudnia"
+        ],
+        "abbr": [
+          "gru"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "dzien",
+        "dni",
+        "dnia"
+      ],
+      "week": [
+        "tydzien",
+        "tygodnie",
+        "tygodni",
+        "tygodnia"
+      ],
+      "month": [
+        "miesiac",
+        "miesiace",
+        "miesiecy",
+        "miesiaca"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "o"
+    ],
+    "hourWords": [],
+    "am": [],
+    "pm": []
   }
 }
