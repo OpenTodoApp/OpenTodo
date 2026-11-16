@@ -86,6 +86,13 @@ describe('headings and check items', () => {
       { t: 'list', ordered: false, start: 1, checks: [true, false], items: [[{ t: 'p', c: [{ t: 'text', v: 'Passport' }] }], [{ t: 'p', c: [{ t: 'text', v: 'Charger' }] }]] },
     ])
   })
+
+  it('keep a # that belongs to the text, and read a bare # as an empty heading', () => {
+    expect(parseMarkdown('# C#')).toEqual([{ t: 'h', level: 1, c: [{ t: 'text', v: 'C#' }] }])
+    expect(parseMarkdown('# C #')).toEqual([{ t: 'h', level: 1, c: [{ t: 'text', v: 'C' }] }])
+    expect(parseMarkdown('## a ###')).toEqual([{ t: 'h', level: 2, c: [{ t: 'text', v: 'a' }] }])
+    expect(parseMarkdown('#')).toEqual([{ t: 'h', level: 1, c: [] }])
+  })
 })
 
 describe('editor-everywhere additions', () => {
