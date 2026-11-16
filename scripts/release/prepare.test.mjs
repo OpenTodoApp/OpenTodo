@@ -75,6 +75,7 @@ const PATCH_RELEASE_FILES = [
   'docs/self-hosting/dokploy.md',
   'docs/self-hosting/easypanel.md',
   'docs/self-hosting/podman.md',
+  'docs/self-hosting/railway.md',
   'docs/self-hosting/render.md',
   'docs/self-hosting/runtipi.md',
   'docs/self-hosting/synology.md',
