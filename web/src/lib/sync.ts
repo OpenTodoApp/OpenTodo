@@ -4,7 +4,7 @@
 // tells us to run the exchange now).
 import { forgetActivity, markLongPull, withDeferredActivity } from './activity'
 import { api, ApiError } from './api'
-import { isTransientNetworkError } from './http'
+import { isTransientNetworkError, RequestTimeoutError } from './http'
 import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { CLOCK_OFFSET_META, hlcObserveServerTime, hlcOffset } from './hlc'
@@ -84,6 +84,8 @@ let removeListeners: (() => void) | null = null
 
 /** The session's local data went away while an exchange waited (client-sync-robustness). */
 class SessionEnded extends Error {}
+/** The exchange made no progress for EXCHANGE_STALL.ms and was given up (sync-exchange-watchdog). */
+class ExchangeStalled extends Error {}
 
 // Live channel state.
 let source: EventSource | null = null
@@ -214,20 +216,44 @@ async function runOnce(): Promise<void> {
   const epoch = localEpoch()
   // This exchange uploads the whole outbox, a deferred note document included.
   clearNotePush()
-  const signal = (controller ??= new AbortController()).signal
+  const ctl = (controller ??= new AbortController())
+  const signal = ctl.signal
+  // Every step of the exchange checks in through alive(). One that stops checking in
+  // (an await that never settles) is given up: it writes nothing more, and the next
+  // exchange runs, so one hung step never stops this tab's sync (sync-exchange-watchdog D1).
+  let abandoned = false
+  let progressAt = Date.now()
   const alive = () => {
-    if (localEpoch() !== epoch) throw new SessionEnded()
+    if (abandoned || localEpoch() !== epoch) throw new SessionEnded()
+    progressAt = Date.now()
   }
+  let watch: ReturnType<typeof setInterval> | undefined
+  const stalled = new Promise<never>((_, reject) => {
+    watch = setInterval(() => {
+      if (Date.now() - progressAt < EXCHANGE_STALL.ms) return
+      abandoned = true
+      reject(new ExchangeStalled())
+    }, EXCHANGE_STALL.checkMs)
+  })
   try {
     try {
-      await withDeferredActivity(() => exchange(alive, signal), () => localEpoch() === epoch)
+      await Promise.race([withDeferredActivity(() => exchange(alive, signal), () => localEpoch() === epoch), stalled])
     } finally {
+      clearInterval(watch)
       // A long pull held the screen's live data (exchange); it shows the end state now.
       liveHold?.()
       liveHold = null
     }
   } catch (err) {
     if (err instanceof SessionEnded || localEpoch() !== epoch) return
+    if (err instanceof ExchangeStalled) {
+      // Its request (if that is where it hangs) stops too; the next exchange gets a new one.
+      ctl.abort()
+      if (controller === ctl) controller = null
+      publish({ state: 'error', error: new RequestTimeoutError().message })
+      scheduleRetry()
+      return
+    }
     throw err
   }
 }
@@ -834,6 +860,11 @@ const FOLLOWER_WAIT_MS = 15_000
  * misses in a row that make it take over (sync-leader-takeover D1). Tests shorten them.
  */
 export const LEADER_PROBE = { everyMs: 20_000, waitMs: 5_000, misses: 2 }
+/**
+ * An exchange that made no progress for `ms` is given up (sync-exchange-watchdog D1),
+ * checked every `checkMs`. Tests shorten them.
+ */
+export const EXCHANGE_STALL = { ms: 120_000, checkMs: 10_000 }
 
 type Message =
   | { type: 'sync'; id?: string }
