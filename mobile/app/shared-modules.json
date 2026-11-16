@@ -25,6 +25,7 @@
     "web/src/lib/dayParts.ts",
     "web/src/lib/db.ts",
     "web/src/lib/defaultReminder.ts",
+    "web/src/lib/demoState.ts",
     "web/src/lib/dependencies.ts",
     "web/src/lib/deviceStorage.ts",
     "web/src/lib/docfields.ts",

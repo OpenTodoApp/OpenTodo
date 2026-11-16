@@ -231,7 +231,7 @@ func TestDavRootDiscovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if resp.StatusCode != 200 || resp.Header.Get("DAV") != "1, 3, calendar-access" || !strings.Contains(resp.Header.Get("Allow"), "PROPFIND") {
+	if resp.StatusCode != 200 || resp.Header.Get("DAV") != "1, 3, calendar-access, extended-mkcol" || !strings.Contains(resp.Header.Get("Allow"), "PROPFIND") {
 		t.Fatalf("root OPTIONS: %d %v", resp.StatusCode, resp.Header)
 	}
 	// Behind a trusted proxy the Location follows the forwarded host and scheme.
@@ -780,6 +780,41 @@ func TestMkcalendarCreatesProject(t *testing.T) {
 	_, out = p("GET", "/api/v1/projects/B2C7A3F0-1111-4222-8333-944455556666", nil)
 	if out["name"] != "Allotment" || out["color"] != "#ff0000" {
 		t.Fatalf("after proppatch %v", out)
+	}
+}
+
+// iOS Reminders and Planify create a list with extended MKCOL (RFC 5689, #1432):
+// a calendar resource type creates the project like MKCALENDAR; anything else
+// is refused with valid-resourcetype (caldav-extended-mkcol).
+func TestExtendedMkcolCreatesProject(t *testing.T) {
+	e, c := davSetup(t)
+	mk := `<?xml version="1.0" encoding="UTF-8"?><D:mkcol xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:A="http://apple.com/ns/ical/">
+<D:set><D:prop><D:resourcetype><D:collection/><C:calendar/></D:resourcetype><D:displayname>Garden</D:displayname>
+<A:calendar-color>#34C759FF</A:calendar-color><C:supported-calendar-component-set><C:comp name="VTODO"/></C:supported-calendar-component-set></D:prop></D:set></D:mkcol>`
+	id := "C3D8B4A1-2222-4333-8444-A55566667777"
+	c.must("MKCOL", c.cal(id), mk, 201)
+	resp, out := e.do("GET", "/api/v1/projects/"+id, nil)
+	e.mustStatus(resp, 200, out)
+	if out["name"] != "Garden" || out["color"] != "#34c759" {
+		t.Fatalf("project %v", out)
+	}
+	// The same name again: taken, as with MKCALENDAR.
+	c.must("MKCOL", c.cal(id), mk, 405)
+	// A plain MKCOL, or one for another collection type, creates nothing.
+	_, body := c.must("MKCOL", c.cal("plain"), "", 403)
+	if !strings.Contains(body, "valid-resourcetype") {
+		t.Fatalf("plain MKCOL: %s", body)
+	}
+	addressbook := strings.Replace(mk, "<C:calendar/>", `<R:addressbook xmlns:R="urn:ietf:params:xml:ns:carddav"/>`, 1)
+	c.must("MKCOL", c.cal("contacts"), addressbook, 403)
+	for _, name := range []string{"plain", "contacts"} {
+		if p, _ := e.sync.Get(context.Background(), c.uid, "project", name); p != nil {
+			t.Fatalf("project %q was created", name)
+		}
+	}
+	resp, _ = c.must("OPTIONS", c.cal(id), "", 200)
+	if !strings.Contains(resp.Header.Get("DAV"), "extended-mkcol") || !strings.Contains(resp.Header.Get("Allow"), "MKCOL") {
+		t.Fatalf("OPTIONS DAV=%q Allow=%q", resp.Header.Get("DAV"), resp.Header.Get("Allow"))
 	}
 }
 
