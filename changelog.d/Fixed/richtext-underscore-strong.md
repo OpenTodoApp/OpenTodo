@@ -1,0 +1,1 @@
+- **Text written with `__bold__` shows in bold in notes and comments.** The rich-text parser only knew `**` for strong text, so it read the double underscores as a stray italic and shifted the words around them; the Markdown view already read them as bold.
