@@ -391,6 +391,18 @@ Server-side writers (REST, assistant tools, CalDAV, public links, push delivery 
   "features": ["clock_skew", "backfill_ack"], "backfillAck": 0 }
 ```
 
+`device` identifies the client installation; see [Device ids](#device-ids) for its rules and lifecycle.
+
+### Device ids
+
+`device` names one client installation. The session or token authenticates the request; the id is not a credential, and the server does not verify that two requests with the same id come from one installation. Use the same id in the exchange and on every op it writes.
+
+- **Use one id per installation.** A random UUID (v4) is enough; a prefix such as `obsidian:` or `vault:` is only a convention. For example, generate `crypto.randomUUID()` once and send `myclient:<uuid>`. Keep it in storage that belongs to that installation, not in a configuration file a sync service copies to other devices. The server does not enforce uniqueness, so this is a client contract.
+- **Keep it for the life of the installation.** Reuse it across restarts, upgrades, sign-outs and reconnections. An op's `device` must be non-empty and at most 64 bytes; a UUID is a safe choice and the server imposes no other character set.
+- **Never share an id.** A pull skips ops written by the device that asks ([Paging](#paging)); two installations with one id therefore do not see each other's changes. The live stream also uses the id to avoid waking the pusher ([Live updates](#live-updates)). A push-only client does not pull today, but sharing an id still breaks if it later reads or listens.
+- **Changing the id is safe, with these effects.** The server keeps no state that requires the old id, so no data is lost. History attributes the old writes to the old id; a first copy or re-seed from cursor 0 no longer skips the ops written under the old id, and a joined project's catch-up replay is tracked per device, so it replays once under the new id.
+- **Reserved ids.** `/api/v1/sync` refuses these ids, on the request or on any op, with 400 `invalid_op`: `server` and `server:<suffix>`, `agent:`, `caldav:`, `issues:`, `rule:`, `calsync:`, `public:`, `page:`. `assistant:` is not reserved and may be sent by a device. See [`internal/sync/devices.go`](../internal/sync/devices.go).
+
 `features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)), `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)), `latest_docs` ([First copy](#first-copy)) and `push_only` ([Push-only devices](#push-only-devices)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
 
 Response:
