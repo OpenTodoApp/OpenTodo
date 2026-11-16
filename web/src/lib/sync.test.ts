@@ -369,6 +369,50 @@ describe('restore re-seed (log generation)', () => {
     }
   })
 
+  /** The restored server, refusing reserved devices as /api/v1/sync does (mcp-write-tools D4). */
+  function strictRestoredServer() {
+    const reserved = (d: string) => d === 'server' || d.startsWith('server:') || /^(agent|caldav|public|issues|page|rule|calsync):/.test(d)
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const cursor = args[1] as number
+      const ops = args[2] as SentOp[]
+      if (ops.some((o) => reserved(o.device))) throw new ApiError(400, 'invalid_op', 'op device: server and ids starting with agent:, caldav: or public: are reserved')
+      return { applied: ops.length, ops: [], cursor: cursor === 0 ? 2 : cursor, hasMore: false, serverTime: Date.now(), generation: 'gen-after' }
+    }) as never)
+  }
+
+  // reseed-reserved-devices D1: a field last written through REST, an AI assistant or
+  // CalDAV goes back with this device's id and its original time, so the server takes it.
+  it('re-seeds fields last written by the server or an assistant, and the exchange completes', async () => {
+    await applyOps([
+      { id: 'r1', entity: 'task', entityId: 't9', field: 'title', value: 'From n8n', ts: 600, device: 'server' },
+      { id: 'r2', entity: 'task', entityId: 't9', field: 'priority', value: 2, ts: 610, device: 'agent:tok1' },
+      { id: 'r3', entity: 'task', entityId: 't9', field: 'notes', value: 'mine', ts: 620, device: 'devA' },
+    ])
+    await setMeta('generation', 'gen-before')
+    strictRestoredServer()
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(await db.outbox.count()).toBe(0)
+    expect(await getMeta('generation', '')).toBe('gen-after')
+    const ops = sent().flatMap((c) => c[2])
+    const me = sent()[0][0]
+    expect(ops.find((o) => o.field === 'title')).toMatchObject({ value: 'From n8n', ts: 600, device: me })
+    expect(ops.find((o) => o.field === 'priority')).toMatchObject({ value: 2, ts: 610, device: me })
+    // A field this or another device wrote keeps its clock as before.
+    expect(ops.find((o) => o.field === 'notes')).toMatchObject({ ts: 620, device: 'devA' })
+  })
+
+  // reseed-reserved-devices D2: an outbox an earlier build filled with such ops is not stuck for good.
+  it('sends an outbox an earlier re-seed left with reserved devices', async () => {
+    await db.outbox.add({ id: 'stuck-1', entity: 'task', entityId: 't9', field: 'title', value: 'From n8n', ts: 600, device: 'server' })
+    await db.outbox.add({ id: 'stuck-2', entity: 'task', entityId: 't9', field: 'due', value: null, ts: 601, device: 'caldav:pw1' })
+    await setMeta('generation', 'gen-after')
+    strictRestoredServer()
+    await syncNow()
+    expect(syncSnapshot().state).toBe('idle')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
   it('adopts the first generation it sees without re-seeding', async () => {
     await applyOps([{ id: 'a1', entity: 'task', entityId: 't1', field: 'title', value: 'x', ts: 1, device: 'd' }])
     restoredServer()

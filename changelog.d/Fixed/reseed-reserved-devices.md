@@ -1,0 +1,1 @@
+- **Sync no longer stops after a server restore when tasks were written through the API.** A field last changed through REST, n8n, an AI assistant, CalDAV or a rule made the re-sync after a restore fail on every exchange with "op device: server … are reserved"; it is now re-sent as the device's own write at its original time.

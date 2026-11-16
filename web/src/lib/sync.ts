@@ -206,6 +206,15 @@ function isSyncResponse(v: unknown): v is SyncResponse {
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
 
+/**
+ * Whether only the server may write ops with this device id: the client's copy of
+ * internal/sync/devices.go ReservedDevice (mcp-write-tools D4). `assistant:` is a
+ * device's own and is not reserved.
+ */
+export function reservedDevice(device: string): boolean {
+  return device === 'server' || device.startsWith('server:') || /^(agent|caldav|public|issues|page|rule|calsync):/.test(device)
+}
+
 /** Releases the live data a long pull holds (holdLiveSnapshots). */
 let liveHold: (() => void) | null = null
 
@@ -295,7 +304,12 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
-      const sent = batch.map(({ local: _local, ...op }) => op)
+      // A re-seed re-sends each field with the clock it was last written with. A field
+      // written through REST, an AI assistant, CalDAV, a rule … carries a device the
+      // server takes only from itself, and refuses the whole batch for it, so it goes
+      // out as this device's write at its original time (reseed-reserved-devices D1).
+      // The same repairs an outbox an earlier build left that way (D2).
+      const sent = batch.map(({ local: _local, ...op }) => (reservedDevice(op.device) ? { ...op, device } : op))
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
       const backfillAck = await getMeta<number>('backfillAck', 0)
