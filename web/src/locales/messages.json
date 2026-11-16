@@ -2916,6 +2916,7 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/calendar/tapPlace.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/habits/AmountDialog.tsx",
@@ -17466,6 +17467,9 @@
   "Takes turns:": [
     "web/src/app/task-detail/RotationLine.tsx"
   ],
+  "Tap a time to plan {title}": [
+    "web/src/app/calendar/tapPlace.tsx"
+  ],
   "Target URL": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -20700,6 +20704,7 @@
     "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx",
+    "web/src/app/calendar/tapPlace.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",
