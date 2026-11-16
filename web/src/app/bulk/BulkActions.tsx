@@ -23,11 +23,11 @@ import { Tooltip } from '../../ui'
 import { DateField } from '../datetime/DateField'
 import { ActionMenu, type ActionGroup, type ActionItem, type ConfirmSpec } from '../menus/ActionMenu'
 import { openRowSchedule } from '../task-list/RowSwipe'
-import { BulkReview } from './BulkReview'
 import { showBulkToast, showUndoToast } from './toastStore'
 import { navigate } from '../router'
 import { createStore } from '../../lib/store'
 import { startFocusOn } from '../focus/startFocus'
+
 import { t } from '../../lib/i18n'
 import { priorityName } from '../../lib/priority'
 import { withListTransition } from '../motion'
@@ -36,6 +36,10 @@ import { focusMenuLabel, focusMenuState, runFocusPress, type FocusMenuState } fr
 import { useToday } from '../useViews'
 import { UrgencyContext } from '../useUrgency'
 import type { Urgency } from '../../lib/urgency'
+
+// The review of a move or an assignment (bulk-edit D6) renders the assistant's change
+// review; it only opens after such an action, so it loads then (bundle-budget).
+const BulkReview = lazy(() => import('./BulkReview').then((m) => ({ default: m.BulkReview })))
 
 /** Confirm the trash of more than this many ticked tasks (the keyboard's big selection; a menu click stays immediate). */
 export const BULK_TRASH_CONFIRM_ABOVE = 20
@@ -416,7 +420,7 @@ export function BulkDialogHost() {
   const d = bulkDialog.use()
   const close = () => bulkDialog.set(null)
   if (!d) return null
-  if (d.kind === 'review') return <BulkReview title={d.title} plan={d.plan} onClose={close} />
+  if (d.kind === 'review') return <Suspense fallback={null}><BulkReview title={d.title} plan={d.plan} onClose={close} /></Suspense>
   return (
     <Dialog title={t('Date for {tasks}', { tasks: tasksWord(d.n) })} onClose={close}>
       <DateField label={t('Date')} autoFocus value={null} onChange={(iso) => { close(); if (iso) void runBulk(d.ids, { kind: 'due', pick: iso }) }} />
