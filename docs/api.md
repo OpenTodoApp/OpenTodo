@@ -3,7 +3,7 @@ title: HTTP API
 summary: Authentication, every route, entity fields, error codes and examples for scripts and integrations.
 audience: developer
 section: Integrations
-specs: [http-api]
+specs: [http-api, api-description]
 screens: []
 order: 10
 ---
