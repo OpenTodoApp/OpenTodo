@@ -357,6 +357,11 @@ func (c Config) PasskeysAvailable() bool {
 func (c *Config) loadServerVars() error {
 	if v := strings.TrimSpace(os.Getenv("OPENTODO_BASE_URL")); v != "" {
 		u, err := url.Parse(v)
+		if err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host == "" {
+			// "https://" alone: the address was built from a variable that came out empty,
+			// such as a platform's public domain before the service has one.
+			return fmt.Errorf("OPENTODO_BASE_URL has no host name, got %q: if it is built from another variable (such as Railway's ${{RAILWAY_PUBLIC_DOMAIN}}), that variable is empty; give the service a public domain, or set the address itself", v)
+		}
 		if err != nil || u.Scheme == "" || u.Host == "" {
 			return fmt.Errorf("OPENTODO_BASE_URL must be an absolute URL, got %q", v)
 		}
