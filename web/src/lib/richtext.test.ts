@@ -61,6 +61,8 @@ describe('Markdown projection', () => {
     expect(parseMarkdown('__bold__')).toEqual([p('bold', { strong: {} })])
     expect(parseMarkdown('a __b__ c')).toEqual([{ type: 'paragraph', attrs: {}, runs: [{ text: 'a ', marks: {} }, { text: 'b', marks: { strong: {} } }, { text: ' c', marks: {} }] }])
     expect(parseMarkdown('foo__bar__baz')).toEqual([p('foo__bar__baz')])
+    expect(parseMarkdown('__ b__')).toEqual([p('__ b__')])
+    expect(parseMarkdown('__b __')).toEqual([p('__b __')])
   })
 
   it('parse(render(doc)) is stable', () => {
