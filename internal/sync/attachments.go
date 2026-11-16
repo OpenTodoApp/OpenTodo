@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 // Attachments (OpenSpec change `attachments`, design D1, D3). An attachment is the
@@ -112,6 +113,18 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		}
 		switch {
 		case op.Field == "uploaded_at":
+			// Whether a stored row's file is there is the server's word (attachments D3).
+			// A device may only repeat the null of its own create (a retried batch)
+			// while the file is not stored; clearing it would hide the file from
+			// everyone, and the author could not undo it from a device.
+			if !IsServerDevice(op.Device) {
+				if st.author != r.acc.userID {
+					return "", ReasonForbidden, nil
+				}
+				if stored, err := r.storedAttachmentField(st.scope, op.EntityID, "uploaded_at"); err != nil || stored != "null" {
+					return "", ReasonForbidden, err
+				}
+			}
 		case op.Field == "deleted_at":
 			role := r.acc.roleIn(st.scope)
 			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
@@ -212,6 +225,20 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 }
 
 // storedAttachmentNote is the note_id stored for an attachment in scope ("" when none).
+// storedAttachmentField is the stored JSON value of one field of an attachment in
+// its scope ("null" when it has none).
+func (r *resolver) storedAttachmentField(scope, id, field string) (string, error) {
+	var v sql.NullString
+	err := r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = ?`, scope, id, field).Scan(&v)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && (!v.Valid || v.String == "")) {
+		return "null", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("read attachment %s: %w", field, err)
+	}
+	return v.String, nil
+}
+
 func (r *resolver) storedAttachmentNote(scope, id string) string {
 	var v sql.NullString
 	_ = r.tx.QueryRowContext(r.ctx, `SELECT value FROM scope_fields WHERE scope_id = ? AND entity = 'attachment' AND entity_id = ? AND field = 'note_id'`, scope, id).Scan(&v)
