@@ -162,8 +162,8 @@ describe('attribute tokens', () => {
 describe('vocabularies', () => {
   const codes = Object.keys(VOCABULARIES)
 
-  it('bundles en, de, fr, it, es, pt and nl', () => {
-    expect(codes.sort()).toEqual(['de', 'en', 'es', 'fr', 'it', 'nl', 'pt'])
+  it('bundles en, de, fr, it, es, pt, nl and tr', () => {
+    expect(codes.sort()).toEqual(['de', 'en', 'es', 'fr', 'it', 'nl', 'pt', 'tr'])
   })
 
   it('every vocabulary defines the same keys and table shapes', () => {
@@ -748,6 +748,14 @@ describe('someday and evening phrases (OpenSpec someday-and-evening 5.1)', () =>
     expect(at('Chiama Ana stasera', { languages: ['it'] })).toMatchObject({ title: 'Chiama Ana', due: { date: '2026-10-14' }, evening: true })
     expect(at('Segeln lernen irgendwann', { languages: ['de'] })).toMatchObject({ title: 'Segeln lernen', start: 'someday' })
     expect(at('Aprender a navegar algun dia', { languages: ['es'] })).toMatchObject({ title: 'Aprender a navegar', start: 'someday' })
+    expect(at('İspanyolca öğren bir gün', { languages: ['tr'] })).toMatchObject({ title: 'İspanyolca öğren', start: 'someday' })
+  })
+
+  it('parses Turkish natural language dates, times and recurrence', () => {
+    const r = parse('Süt al yarın saat 15:00 p2', ctx({ languages: ['tr'] }))
+    expect(r).toMatchObject({ title: 'Süt al', due: { date: '2026-10-10', time: '15:00' }, priority: 2 })
+    const rec = parse('Rapor hazırla her pazartesi', ctx({ languages: ['tr'] }))
+    expect(rec).toMatchObject({ title: 'Rapor hazırla', recurrence: 'every monday' })
   })
 
   it('a dismissed someday chip keeps the word', () => {

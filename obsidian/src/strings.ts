@@ -13,8 +13,9 @@ import fr from '../locales/fr.json'
 import it from '../locales/it.json'
 import nl from '../locales/nl.json'
 import pt from '../locales/pt.json'
+import tr from '../locales/tr.json'
 
-const catalogs = { en, de, fr, es, it, pt, nl }
+const catalogs = { en, de, fr, es, it, pt, nl, tr }
 
 /** The plugin's languages, derived from the catalogues it imports (English first). */
 export type Language = keyof typeof catalogs

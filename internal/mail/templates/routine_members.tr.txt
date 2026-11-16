@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Bu mesaj {{.Origin}} adresindeki OpenTodo’da üyesi olduğunuz bir projenin "{{.Routine}}" rutini tarafından gönderildi.
+
+Bu çalıştırmayı görün:
+
+{{.Link}}
+
+Bu mesajı, rutinde "Proje üyelerine e-posta gönder" adımı bulunduğu ve {{.Email}} doğrulanmış adresiyle üye olduğunuz için alıyorsunuz. Bu rutinden daha fazla e-posta almamak için açın:
+
+{{.Stop}}

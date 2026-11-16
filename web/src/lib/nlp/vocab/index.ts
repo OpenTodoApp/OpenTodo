@@ -5,12 +5,13 @@ import { fr } from './fr'
 import { it } from './it'
 import { nl } from './nl'
 import { pt } from './pt'
+import { tr } from './tr'
 import type { Vocabulary } from './types'
 
 export type { DayMonthOrder, MonthVocab, Vocabulary } from './types'
 
 /** Every bundled vocabulary, keyed by primary language subtag. */
-export const VOCABULARIES: Record<string, Vocabulary> = { en, de, fr, it, es, pt, nl }
+export const VOCABULARIES: Record<string, Vocabulary> = { en, de, fr, it, es, pt, nl, tr }
 
 export const BUNDLED_LANGUAGES = Object.keys(VOCABULARIES)
 

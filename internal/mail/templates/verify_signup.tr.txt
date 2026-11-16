@@ -1,0 +1,9 @@
+OpenTodo hesabınızı onaylayın
+
+Bu, OpenTodo’dan bir kayıt onayıdır.
+
+Birisi {{.Origin}} adresinde {{.Email}} ile kaydoldu. Hesabı oluşturmak için bu bağlantıyı açın ve sayfadaki düğmeye basın:
+
+{{.Link}}
+
+Bağlantının süresi {{.Expiry}} içinde dolar. Kayıt olmadıysanız bu mesajı yoksayabilirsiniz: hesap oluşturulmaz.

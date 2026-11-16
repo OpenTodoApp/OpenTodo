@@ -1137,5 +1137,165 @@
       "'s middags",
       "'s avonds"
     ]
+  },
+  "tr": {
+    "dayMonthOrder": "DM",
+    "dayWords": {
+      "bugun": 0,
+      "bu aksam": 0,
+      "yarın": 1,
+      "yarin": 1,
+      "obur gun": 2
+    },
+    "weekdays": [
+      [
+        "pazartesi",
+        "pzt"
+      ],
+      [
+        "salı",
+        "sali",
+        "sal"
+      ],
+      [
+        "carsamba",
+        "car"
+      ],
+      [
+        "persembe",
+        "per"
+      ],
+      [
+        "cuma",
+        "cum"
+      ],
+      [
+        "cumartesi",
+        "cmt"
+      ],
+      [
+        "pazar",
+        "paz"
+      ]
+    ],
+    "months": [
+      {
+        "names": [
+          "ocak"
+        ],
+        "abbr": [
+          "oca"
+        ]
+      },
+      {
+        "names": [
+          "subat"
+        ],
+        "abbr": [
+          "sub"
+        ]
+      },
+      {
+        "names": [
+          "mart"
+        ],
+        "abbr": [
+          "mar"
+        ]
+      },
+      {
+        "names": [
+          "nisan"
+        ],
+        "abbr": [
+          "nis"
+        ]
+      },
+      {
+        "names": [
+          "mayıs",
+          "mayis"
+        ],
+        "abbr": [
+          "may"
+        ]
+      },
+      {
+        "names": [
+          "haziran"
+        ],
+        "abbr": [
+          "haz"
+        ]
+      },
+      {
+        "names": [
+          "temmuz"
+        ],
+        "abbr": [
+          "tem"
+        ]
+      },
+      {
+        "names": [
+          "agustos"
+        ],
+        "abbr": [
+          "agu"
+        ]
+      },
+      {
+        "names": [
+          "eylul"
+        ],
+        "abbr": [
+          "eyl"
+        ]
+      },
+      {
+        "names": [
+          "ekim"
+        ],
+        "abbr": [
+          "eki"
+        ]
+      },
+      {
+        "names": [
+          "kasım",
+          "kasim"
+        ],
+        "abbr": [
+          "kas"
+        ]
+      },
+      {
+        "names": [
+          "aralık",
+          "aralik"
+        ],
+        "abbr": [
+          "ara"
+        ]
+      }
+    ],
+    "units": {
+      "day": [
+        "gun"
+      ],
+      "week": [
+        "hafta"
+      ],
+      "month": [
+        "ay"
+      ]
+    },
+    "ofWords": [],
+    "atWords": [
+      "saat"
+    ],
+    "hourWords": [],
+    "am": [],
+    "pm": []
   }
 }
