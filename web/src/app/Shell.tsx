@@ -1,4 +1,5 @@
 import { useHabitsEnabled } from '../lib/habitPrefs'
+import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
@@ -114,7 +115,24 @@ const HabitFormHost = lazy(() => import('./habits/HabitForm'))
 // Calendar, Settings and Import are not on the Inbox's first screen: each loads on first visit.
 const CalendarView = lazy(() => import('./CalendarView').then((m) => ({ default: m.CalendarView })))
 const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default: m.SettingsView })))
-const SavedViewRoute = lazy(() => import('./SavedViewView').then((m) => ({ default: m.SavedViewRoute })))
+// Loaded once the app is idle, and then rendered without Suspense: a lazy component suspends on
+// its first render even when its chunk is in, and React 19 holds a revealed boundary ~300 ms.
+let savedViewModule: typeof import('./SavedViewView') | undefined
+const loadSavedView = () => import('./SavedViewView').then((m) => (savedViewModule = m))
+resettable('shell.savedView', () => { savedViewModule = undefined })
+const LazySavedViewRoute = lazy(() => loadSavedView().then((m) => ({ default: m.SavedViewRoute })))
+function SavedViewRoute({ id }: { id: string }) {
+  const Loaded = savedViewModule?.SavedViewRoute
+  return Loaded ? <Loaded id={id} /> : <Suspense fallback={SCREEN_LOADING}><LazySavedViewRoute id={id} /></Suspense>
+}
+/** Runs `load` once the browser is idle after the shell mounts (within 5 s at the latest). */
+function useIdleLoad(load: () => unknown) {
+  useEffect(() => {
+    if (typeof requestIdleCallback !== 'function') { const h = setTimeout(load, 2000); return () => clearTimeout(h) }
+    const h = requestIdleCallback(() => void load(), { timeout: 5000 })
+    return () => cancelIdleCallback(h)
+  }, [load])
+}
 const ImportScreen = lazy(() => import('./ImportScreen').then((m) => ({ default: m.ImportScreen })))
 
 /** Shown while a screen's chunk is fetched: the page's rows, as the other screens do. */
@@ -175,11 +193,11 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const drawer = usePhoneDrawer(sidebarOpen)
   useSidebarRequests(setSidebarOpen)
+  useIdleLoad(loadSavedView)
   // A right swipe from the left edge opens the closed phone menu, unless a dialog is open (edge-swipe-menu).
   const drawerClosed = useRef(drawer.closed)
   drawerClosed.current = drawer.closed
-  // A page with Back goes back, a top-level page opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe.
-  // Loaded after the first paint: the gesture is not part of the first load.
+  // A page with Back goes back, a top-level page opens the menu (edge-swipe-back); the installed web app on iOS keeps the system's swipe. Loaded after the first paint.
   useEffect(() => {
     let stop: (() => void) | undefined
     let gone = false
@@ -346,7 +364,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
           ) : route.view === 'views' ? (
             <ViewsView />
           ) : route.view === 'view' ? (
-            <Suspense fallback={SCREEN_LOADING}><SavedViewRoute id={route.id} /></Suspense>
+            <SavedViewRoute id={route.id} />
           ) : route.view === 'trash' ? (
             <TrashView />
           ) : route.view === 'task' ? (
