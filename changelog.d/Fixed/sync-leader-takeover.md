@@ -1,0 +1,1 @@
+- **A browser never stops syncing silently.** When the tab that runs sync stops answering (a frozen or half-closed tab holding the sync lock), another open tab takes over within about a minute; and the sync dot reads "Not synced since …" in amber instead of a green "Synced" when nothing has synced for 15 minutes.

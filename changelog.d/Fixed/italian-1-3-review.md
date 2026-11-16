@@ -1,0 +1,1 @@
+- **Italian wording of the 1.3.0 texts reviewed by a native speaker.** The update-check notes, What's new, the feedback form and the Google Calendar errors read more naturally in Italian, and the feedback form writes "email" like the rest of the app. ([#1111](https://github.com/OpenTodoApp/OpenTodo/issues/1111))

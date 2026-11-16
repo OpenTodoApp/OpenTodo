@@ -3,6 +3,7 @@ import { t } from '../../lib/i18n'
 import { resolveLabels } from '../../lib/labels'
 import { createSubtask } from '../../lib/ops'
 import type { Label, Task } from '../../lib/types'
+import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
@@ -98,9 +99,10 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
 
 /**
  * An inline add line in a tree list: stays focused for the next entry, Escape (or
- * leaving it empty) closes it. `add` writes one task from the typed title.
+ * leaving it empty) closes it. `add` writes one task from the typed title; `onClose`
+ * hears whether Escape asked for the close, so the line can take its focus back.
  */
-export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: () => void }) {
+export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
   const [value, setValue] = useState('')
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -124,17 +126,51 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
         aria-label={label}
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(true) } }}
         // Left empty, it closes; not when focus went to the line that took its place
-        // (the "Add task below" line moves down after each add).
-        onBlur={() => { if (!value) requestAnimationFrame(() => { if (!document.activeElement?.closest('[data-add-line]')) onClose() }) }}
+        // (the "Add task below" line moves down after each add, a subtask line opens on a click).
+        onBlur={() => { if (!value) requestAnimationFrame(() => { if (!document.activeElement?.closest('[data-add-line], [data-subtask-add-line]')) onClose(false) }) }}
       />
     </form>
   )
 }
 
 /** Inline "Add subtask" line under a row; each entry is the parent's last subtask. */
-export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: () => void }) {
+export function SubtaskInput({ parent, depth, onClose }: { parent: Task; depth: number; onClose: (escape: boolean) => void }) {
   return <AddLine depth={depth} onClose={onClose} label={t('Add a subtask')} add={(title) => createSubtask(parent.id, title)}
     placeholder={parent.title ? t('Add a subtask to {title}…', { title: parent.title }) : t('Add a subtask to this task…')} />
+}
+
+/**
+ * The muted "Add a subtask" line at the end of a parent's visible subtasks
+ * (quick-subtask-add): a ghost that swaps to the same input `a` opens, drawn for the
+ * selected parent (index.css). Laid out like a row: the "+" in
+ * the child's checkbox slot and the label at the title column, time column included.
+ */
+export function SubtaskAddLine({ parent, depth, timeColumn = false, selected, open, onOpen, onClose }: { parent: Task; depth: number; timeColumn?: boolean; selected: boolean; open: boolean; onOpen: () => void; onClose: () => void }) {
+  const button = useRef<HTMLButtonElement>(null)
+  // Escape hands the muted line back focused; a blur close leaves focus where it went.
+  const returnFocus = useRef(false)
+  useEffect(() => { if (!open && returnFocus.current) { returnFocus.current = false; button.current?.focus() } }, [open])
+  return (
+    <div data-subtask-add-line data-line-selected={selected || open || undefined}>
+      {open
+        ? <SubtaskInput parent={parent} depth={depth} onClose={(escape) => { if (escape) returnFocus.current = true; onClose() }} />
+        : (
+          <button
+            ref={button}
+            type="button"
+            aria-label={parent.title ? t('Add a subtask to {title}', { title: parent.title }) : t('Add a subtask to this task')}
+            className="row-pad flex min-h-8 w-full items-start gap-2 rounded-control px-2 text-left text-faint hover:text-default pointer-coarse:min-h-11 pointer-coarse:items-center"
+            style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 0.5}rem` }}
+            onClick={onOpen}
+          >
+            <span aria-hidden className="mt-0.5 flex h-5 w-4 shrink-0 items-center justify-center" />
+            <span aria-hidden className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center"><Icon name="plus" size="sm" /></span>
+            {timeColumn && <span aria-hidden data-row-time="" className="mt-px flex h-5 w-(--row-time-w) shrink-0 items-center" />}
+            <span className="mt-0.5 flex h-5 items-center text-meta">{t('Add a subtask')}</span>
+          </button>
+        )}
+    </div>
+  )
 }

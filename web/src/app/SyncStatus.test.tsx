@@ -27,7 +27,7 @@ vi.mock('../lib/sync', async (importOriginal) => {
     requestSync: () => {},
   }
 })
-const { SyncStatus } = await import('./SyncStatus')
+const { SyncStatus, syncStale, STALE_SYNC_MS } = await import('./SyncStatus')
 const { ToastActionHost: Toast } = await import('./ToastActionHost')
 const { bulkToast, hideActionToast, hideBulkToast, showBulkToast } = await import('./bulk/toastStore')
 
@@ -123,6 +123,31 @@ describe('SyncStatus words on touch', () => {
     const button = document.querySelector('[data-sync-status]')!
     expect(button.className).toContain('pointer-coarse:w-full')
     expect(button.parentElement!.className).toContain('pointer-coarse:min-w-11')
+    await r.unmount()
+  })
+})
+
+// sync-leader-takeover D4: data that stopped arriving without an error never reads as synced.
+describe('SyncStatus when the sync went quiet', () => {
+  it('says "Not synced since" once the last sync is older than the threshold, in idle or syncing', () => {
+    const now = Date.UTC(2026, 10, 16, 12, 0)
+    expect(syncStale('idle', now - STALE_SYNC_MS + 60_000, now)).toBe(false)
+    expect(syncStale('idle', now - STALE_SYNC_MS - 60_000, now)).toBe(true)
+    expect(syncStale('syncing', now - 3_600_000, now)).toBe(true)
+    // A tab that never synced: counted from when it opened.
+    expect(syncStale('idle', null, now, now - 60_000)).toBe(false)
+    expect(syncStale('idle', null, now, now - STALE_SYNC_MS - 60_000)).toBe(true)
+    // States that already say what is wrong keep their own words.
+    for (const state of ['error', 'offline', 'unauthenticated', 'locked', 'restricted', 'limited']) expect(syncStale(state, now - 3_600_000, now)).toBe(false)
+  })
+
+  it('the dot leaves "Synced" for a named warning after an hour without a sync', async () => {
+    setState({ state: 'idle', error: null, pending: 0, lastSyncedAt: Date.now() - 3_600_000 })
+    const r = await render(<SyncStatus />)
+    const button = r.container.querySelector<HTMLElement>('[data-sync-status]')!
+    await waitFor(() => button.textContent!.startsWith('Not synced since'), 'the stale words')
+    expect(button.querySelector('.bg-warning')).toBeTruthy()
+    expect(button.getAttribute('aria-label')).toMatch(/^Not synced since/)
     await r.unmount()
   })
 })

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Tooltip } from '../ui'
 import { requestSync, useSyncStatus } from '../lib/sync'
 import { useDemo } from '../lib/demo'
@@ -8,11 +9,43 @@ import { showActionToast } from './bulk/toastStore'
 /** Fired to show the two-factor enrolment wizard (App listens; OpenSpec `mfa-totp`). */
 export const ENROLMENT_EVENT = 'opentodo:mfa-enrolment-required'
 
+/**
+ * How long a sync may be missing before the dot says so (sync-leader-takeover D4):
+ * well past the live channel's five-minute check, so a quiet hour reads as synced.
+ */
+export const STALE_SYNC_MS = 15 * 60_000
+/** When this page started: a tab that never synced says so once this long has passed. */
+const OPENED_AT = Date.now()
+
+/** The time, re-read once a minute: a stale sync becomes visible without any other change. */
+function useMinute(): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
+/**
+ * Whether this device has not synced for too long while it says it is fine (idle or
+ * syncing): data stopped arriving without an error, so the dot must not stay green.
+ */
+export function syncStale(state: string, lastSyncedAt: number | null, now: number, openedAt = OPENED_AT): boolean {
+  if (state !== 'idle' && state !== 'syncing') return false
+  return now - (lastSyncedAt ?? openedAt) > STALE_SYNC_MS
+}
+
 export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   const dt = useDateTimeFormat()
   const s = useSyncStatus()
   const demo = !!useDemo()
-  const map = {
+  const now = useMinute()
+  const stale = syncStale(s.state, s.lastSyncedAt, now)
+  const staleText = s.lastSyncedAt
+    ? t('Not synced since {time}', { time: dt.formatInstant(s.lastSyncedAt, now - s.lastSyncedAt > 20 * 3_600_000 ? 'datetime' : 'time') })
+    : t('Not synced yet')
+  const map = stale ? { dot: 'bg-warning', text: staleText } : {
     idle: { dot: 'bg-success', text: s.pending > 0 ? t('{n} pending', { n: s.pending }) : t('Synced') },
     syncing: { dot: 'bg-info animate-pulse', text: t('Syncing…') },
     reseeding: { dot: 'bg-info animate-pulse', text: t('Re-syncing after restore…') },
@@ -28,6 +61,7 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
       ? { dot: 'bg-warning', text: s.pending > 0 ? t('Demo limit · {n} waiting', { n: s.pending }) : t('Demo limit reached') }
       : { dot: 'bg-warning', text: s.pending > 0 ? t('Server limit · {n} waiting', { n: s.pending }) : t('Server limit reached') },
   }[s.state]
+  // (stale above: the dot's state when data stopped arriving without an error.)
   // Live state is secondary information: shown next to the existing text, and only
   // when it says something (offline and signed out already imply "not live").
   const showLive = s.state !== 'offline' && s.state !== 'unauthenticated' && s.state !== 'restricted' && s.state !== 'locked'
@@ -36,7 +70,7 @@ export function SyncStatus({ compact = false }: { compact?: boolean } = {}) {
   // Quiet (ux-overhaul, app-shell "Sync status is quiet"): the text is visible only
   // while something needs attention (offline, error, pending, locked…); when synced
   // the dot alone shows and the text lives in the tooltip and the accessible name.
-  const quiet = s.state === 'idle' && s.pending === 0
+  const quiet = s.state === 'idle' && s.pending === 0 && !stale
   // A sync error is not tooltip-only (compact mode and touch have no hover): the
   // pill keeps its label in compact mode too, so the red dot is always named.
   const failed = s.state === 'error' && !!s.error

@@ -7,6 +7,7 @@ import { t } from '../../lib/i18n'
 import { useProjects } from '../../lib/localData'
 import { INBOX_KEY, itemKeywords, projectSource, type PickerItem } from '../../lib/pickerSources'
 import { Button, ComboboxPanel, Icon } from '../../ui'
+import { ProjectMark } from '../ProjectMark'
 
 export default function CompletedOptionsBody({ value }: { value: CompletedDisplay }) {
   const projects = useProjects()
@@ -43,9 +44,9 @@ export default function CompletedOptionsBody({ value }: { value: CompletedDispla
           multiple
           selected={selected}
           pinned={[INBOX_KEY]}
-          renderLeading={(i) => (i.color
-            ? <span aria-hidden className="flex h-6 w-6 items-center justify-center"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i.color }} /></span>
-            : <span aria-hidden className="flex h-6 w-6 items-center justify-center text-faint"><Icon name={i.key === INBOX_KEY ? 'inbox' : 'circle'} /></span>)}
+          renderLeading={(i) => <span className="flex h-6 w-6 items-center justify-center text-faint">
+            {i.project ? <ProjectMark project={i.project} /> : <Icon name={i.key === INBOX_KEY ? 'inbox' : 'circle'} />}
+          </span>}
           onPick={toggle}
         />
         {value.projects.length > 0 && (

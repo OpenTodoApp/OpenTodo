@@ -7762,5 +7762,10 @@
   "“{title}” already waits for this task, so it cannot block it": "«{title}» уже ждёт эту задачу, поэтому не может её блокировать",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "«{title}» находится в проекте с другим доступом; задача может ждать только задачи с тем же доступом",
   "← → move the selected task, Shift+← → its deadline.": "← → сдвигают выбранную задачу, Shift+← → её крайний срок.",
-  "⤼ Skip": "⤼ Пропустить"
+  "⤼ Skip": "⤼ Пропустить",
+  "Tap a time to plan {title}": "Коснитесь времени, чтобы запланировать {title}",
+  "Not synced since {time}": "Нет синхронизации с {time}",
+  "Not synced yet": "Ещё не синхронизировано",
+  "Add a subtask to {title}": "Добавить подзадачу к {title}",
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
 }

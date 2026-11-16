@@ -15,6 +15,8 @@ import { gapAround, gapDepths, gapRow, gapTarget, indentStep, pointedDepth } fro
 import { dropTasks } from '../taskDrop'
 import type { ViewPlacement } from '../../lib/viewOrder'
 import { t } from '../../lib/i18n'
+import type { GroupDrop } from '../../lib/viewOrderMove'
+import type { DragDepth } from './projectGroupPlacement'
 
 /** What a drag session reads at drop time; the latest render's values. */
 export interface DragSource {
@@ -48,6 +50,10 @@ export interface DragSource {
     canEdit: (projectId: string | null) => boolean
     move: (taskId: string, at: ViewPlacement, groupKey: string) => void
   }
+  today?: {
+    resolve: (task: Task, target: string | null, y: number, gesture: DragDepth) => { indicator?: DropAt; group?: string; drop: GroupDrop } | null
+    move: (id: string, drop: GroupDrop) => Promise<string | undefined>
+  }
   /** A task the user may not change: it can still be ordered in its own list, never dropped on the sidebar. */
   readOnly?: (task: Task) => boolean
 }
@@ -71,6 +77,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
   onDragStart?: () => void
 }) {
   const [dropAt, setDropAt] = useState<DropAt | null>(null)
+  const [dropGroup, setDropGroup] = useState<string | null>(null)
   // The row being dragged lifts (task-list-presentation "Drag feedback").
   const [draggingId, setDraggingId] = useState<string | null>(null)
   // On a board, the column under the pointer and the card's height (surfaces-v2 D7).
@@ -122,6 +129,12 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       onMove: (target, x, y) => {
         // Over a sidebar target the list shows no drop line (the target shows its ring).
         const now = dragState.current
+        if (now.today) {
+          const next = now.today.resolve(task, target, y, { start: startDepth, dx: x - startX, step })
+          setDropGroup(next?.group ?? null)
+          show(next?.indicator ?? null)
+          return
+        }
         let id = manual && target?.startsWith('task:') ? target.slice('task:'.length) : null
         // An own order moves within the task's group only (view-manual-order D4), or into another project's group (view-project-drops).
         let note: string | undefined
@@ -143,12 +156,18 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         // A completed card's own column takes no drop: the column has no order (D3).
         showColumn(manual && now.board && !(over === COMPLETED_COLUMN && now.sectionOfRow.get(task.id) === COMPLETED_COLUMN) ? over : null)
       },
-      onDrop: (target) => {
+      onDrop: (target, x, y) => {
         const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly, groupOf, across } = dragState.current
         if (target.startsWith('drop:')) {
           if (readOnly?.(task)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
           act(withListTransition(ids.length, () => dropTasks(target.slice('drop:'.length), ids)))
+          return
+        }
+        const today = dragState.current.today
+        if (today) {
+          const next = today.resolve(task, target, y, { start: startDepth, dx: x - startX, step })
+          if (next) act(today.move(task.id, next.drop).then((id) => { if (id) onDropped(id) }))
           return
         }
         if (!manual) return
@@ -184,13 +203,13 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
         } else return
         onDropped(task.id)
       },
-      onEnd: () => { show(null); showColumn(null); setDraggingId(null) },
+      onEnd: () => { show(null); setDropGroup(null); showColumn(null); setDraggingId(null) },
     })
   }, [manual, moveToSection, onDropped, onReorder, onDragStart])
 
   /** The section map of the latest render, for code that runs later (an `o` insertion). */
   const latestSectionMap = useCallback(() => dragState.current.sectionMap, [])
-  return { dropAt, draggingId, placeholder, startDrag, latestSectionMap }
+  return { dropAt, dropGroup, draggingId, placeholder, startDrag, latestSectionMap }
 }
 
 /**

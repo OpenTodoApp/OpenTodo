@@ -10,8 +10,9 @@ import { projectSource } from '../../lib/pickerSources'
 import type { Label, Project } from '../../lib/types'
 import { ComboboxList, Icon, useCombobox } from '../../ui'
 import { t } from '../../lib/i18n'
+import { ProjectMark } from '../ProjectMark'
 
-interface Suggestion { key: string; label: string; path: string[]; color?: string; secondary?: string; token?: NoteToken; word?: string }
+interface Suggestion { key: string; label: string; path: string[]; project?: Pick<Project, 'color' | 'icon'>; color?: string; secondary?: string; token?: NoteToken; word?: string }
 
 /** The `changed:` forms offered, each with its meaning; this month and last month as ranges (note-search-operators D3). */
 const CHANGED = (): Suggestion[] => [
@@ -50,7 +51,7 @@ export function NoteSearchField({ text, onText, tokens, onTokens, projects, labe
     if (typing.kind === 'key') return typing.words.map((w) => ({ key: `k:${w}`, label: w, path: [], word: w }))
     switch (typing.key) {
       case 'in': return projectSource(projects.filter((p) => !p.deleted_at && !p.archived), { inbox: false })
-        .map((p) => ({ key: `p:${p.key}`, label: p.label, path: p.path, color: p.color, token: { key: 'in', id: String(p.value), name: p.label } }))
+        .map((p) => ({ key: `p:${p.key}`, label: p.label, path: p.path, project: p.project, token: { key: 'in', id: String(p.value), name: p.label } }))
       case 'label': return labels.filter((l) => !l.deleted_at).map((l) => ({ key: `l:${l.id}`, label: l.name, path: [], color: l.color, token: { key: 'label', id: l.id, name: l.name } }))
       case 'kind': return KIND_VALUES.map((k) => ({ key: `k:${k}`, label: k, secondary: KIND_NAME[k](), path: [], token: { key: 'kind', value: k } }))
       case 'linked': return world.notes.filter((n) => !n.deleted_at).map((n) => ({ key: `n:${n.id}`, label: n.title?.trim() || t('Untitled note'), path: [], token: { key: 'linked', id: n.id, name: n.title ?? '' } }))
@@ -123,7 +124,10 @@ export function NoteSearchField({ text, onText, tokens, onTokens, projects, labe
       {open && (
         <div className="absolute inset-x-0 top-full z-30 mt-1 rounded-popover border border-default bg-pop shadow-3" data-note-suggestions>
           <ComboboxList state={state} label={t('Suggestions')}
-            renderLeading={(s) => (s.color ? <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} /> : null)} />
+            renderLeading={(s) => {
+              if (s.project) return <ProjectMark project={s.project} />
+              return s.color ? <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} /> : null
+            }} />
         </div>
       )}
       <span role="status" aria-live="polite" className="sr-only">{state.announcement}</span>

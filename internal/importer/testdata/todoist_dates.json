@@ -34,5 +34,15 @@
   {"lang": "de", "text": "irgendwann bald", "ref": "2026-09-19", "error": true},
   {"lang": "en", "text": "31 Feb", "ref": "2026-09-19", "error": true},
   {"lang": "en", "text": "every last Sunday in March", "ref": "2026-11-13", "rule": "every last sunday of march"},
-  {"lang": "en", "text": "every 4th Thursday of November", "ref": "2026-11-13", "rule": "every 4th thursday of november"}
+  {"lang": "en", "text": "every 4th Thursday of November", "ref": "2026-11-13", "rule": "every 4th thursday of november"},
+  {"lang": "nl", "text": "21 okt.", "ref": "2026-09-19", "date": "2026-10-21"},
+  {"lang": "nl", "text": "21 oktober 2027 15:00", "ref": "2026-09-19", "date": "2027-10-21", "time": "15:00"},
+  {"lang": "nl", "text": "morgen", "ref": "2026-09-19", "date": "2026-09-20"},
+  {"lang": "nl", "text": "elke vrijdag", "ref": "2026-09-19", "rule": "every friday"},
+  {"lang": "nl", "text": "elke zaterdag", "ref": "2026-09-19", "rule": "every saturday"},
+  {"lang": "nl", "text": "elke dag", "ref": "2026-09-19", "rule": "every day"},
+  {"lang": "nl", "text": "iedere 3 maanden", "ref": "2026-09-19", "rule": "every 3 months"},
+  {"lang": "nl", "text": "iedere 60 dagen", "ref": "2026-09-19", "rule": "every 60 days"},
+  {"lang": "nl", "text": "elke 1e zondag in januari", "ref": "2026-09-19", "rule": "every 1st sunday of january"},
+  {"lang": "nl", "text": "elke laatste vrijdag van maart", "ref": "2026-09-19", "rule": "every last friday of march"}
 ]

@@ -22,6 +22,8 @@ order: 22
 
 Bold is the default. Each view also has **Rows** (One line or Detailed) and, under **More options**, the direction.
 
+With **Group by Project**, headers show configured icons, including in saved views and label pages (List and Board).
+
 ## What stays in place
 
 - **Today:** the chosen grouping lays out only today's own tasks. **Earlier** stays first with **Move all to today** and **Reschedule…**; **Blocked**, **Waiting for a slot** and **Done today** stay at the end. The order applies inside Earlier, each group and Blocked. Waiting for a slot keeps the order its tasks come in, and Done today stays newest first. Under another grouping than Time of day, a row shows its [part of the day](day-parts.md).
@@ -32,6 +34,10 @@ Bold is the default. Each view also has **Rows** (One line or Detailed) and, und
 ## Nest subtasks
 
 With **Nest subtasks** on, Today and Upcoming list a subtask under its parent when both are in the same group, indented, with the fold arrow; <kbd>←</kbd> and <kbd>→</kbd> fold and unfold it. A subtask whose parent is in another group or not in the view stays a row of its own with its parent's name.
+
+## Move tasks between project groups
+
+In Today grouped by **Project**, drop between top-level rows to set the task's place in Today's **Manual order**. Drop on a group heading to change its project and keep the current sort. With **Nest subtasks** on, drop onto any eligible task or subtask to nest under it, or move sideways over a gap to choose the depth shown by the line. Project moves keep dates, including moves into the displayed Inbox group. Use the toast's **Undo** to restore the move and order.
 
 ## Keys and Reset
 

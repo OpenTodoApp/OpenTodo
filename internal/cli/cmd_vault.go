@@ -266,7 +266,7 @@ func vaultInit(a *App, ctx context.Context, g *globalFlags, args []string) error
 
 // syncVault runs one sync of an existing vault with its profile. A folder
 // another installation owns is refused before any request unless takeOver.
-func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string, takeOver bool) (*vault.Report, *vaultSession, error) {
+func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string, takeOver bool, settled func() bool) (*vault.Report, *vaultSession, error) {
 	st, err := vault.LoadState(dir)
 	if err != nil {
 		return nil, nil, vaultErr(dir, err)
@@ -285,7 +285,7 @@ func (a *App) syncVault(ctx context.Context, g *globalFlags, dir string, takeOve
 	if strings.TrimRight(s.target.URL, "/") != strings.TrimRight(st.Server, "/") {
 		return nil, nil, usageErr("%s is a vault of %s, not %s; use --profile to pick its profile", dir, st.Server, s.target.URL)
 	}
-	s.opts.Owner, s.opts.TakeOver = owner, takeOver
+	s.opts.Owner, s.opts.TakeOver, s.opts.Settled = owner, takeOver, settled
 	rep, err := vault.Sync(ctx, s.opts)
 	return rep, s, vaultErr(dir, err)
 }
@@ -297,7 +297,7 @@ func vaultSync(a *App, ctx context.Context, g *globalFlags, args []string) error
 	if err != nil {
 		return a.helpOr("vault", err)
 	}
-	rep, _, err := a.syncVault(ctx, g, dir, *takeOver)
+	rep, _, err := a.syncVault(ctx, g, dir, *takeOver, nil)
 	if err != nil {
 		return err
 	}
@@ -458,7 +458,9 @@ func (a *App) watchLoop(ctx context.Context, g *globalFlags, dir string, takeOve
 		// Taken before the sync: a save that lands while it runs must still look
 		// new afterwards. The sync's own writes cost one more sync, which writes nothing.
 		before := snapshot(dir)
-		rep, _, err := a.syncVault(ctx, g, dir, takeOver)
+		// A save that starts while the sync reads (its empty first step) must not
+		// become ops: the push waits for the folder to still hold what it held here.
+		rep, _, err := a.syncVault(ctx, g, dir, takeOver, func() bool { return sameSnapshot(before, snapshot(dir)) })
 		if ctx.Err() != nil {
 			return
 		}

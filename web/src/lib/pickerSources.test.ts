@@ -15,10 +15,10 @@ const section = (id: string, name: string, position: number, over: Partial<Secti
 describe('projectSource', () => {
   const projects = [
     project('home', 'Home', { position: 1 }),
-    project('work', 'Work', { position: 2 }),
+    project('work', 'Work', { position: 2, icon: 'briefcase' }),
     project('hi', 'Ideas', { parent_id: 'home' }),
     project('wi', 'Ideas', { parent_id: 'work' }),
-    project('old', 'Old stuff', { archived: true, position: 3 }),
+    project('old', 'Old stuff', { archived: true, position: 3, icon: 'archive' }),
     project('gone', 'Gone', { deleted_at: 5 }),
   ]
 
@@ -26,6 +26,7 @@ describe('projectSource', () => {
     const items = projectSource(projects)
     expect(items.map((i) => i.key)).toEqual([INBOX_KEY, 'home', 'hi', 'work', 'wi'])
     expect(items[0]).toMatchObject({ value: null, label: 'No project', keywords: expect.stringContaining('inbox') })
+    expect(items.find((i) => i.key === 'work')?.project).toMatchObject({ color: '#16a34a', icon: 'briefcase' })
   })
 
   it('tells same-name projects apart by path', () => {
@@ -36,7 +37,7 @@ describe('projectSource', () => {
   it('lists an archived project only as the current value, first and marked', () => {
     expect(projectSource(projects).some((i) => i.key === 'old')).toBe(false)
     const items = projectSource(projects, { current: 'old' })
-    expect(items[0]).toMatchObject({ key: 'old', marker: 'archived', meta: 'archived' })
+    expect(items[0]).toMatchObject({ key: 'old', marker: 'archived', meta: 'archived', project: { color: '#16a34a', icon: 'archive' } })
     expect(items.filter((i) => i.key === 'old')).toHaveLength(1)
     expect(projectSource(projects, { current: 'gone' })[0]).toMatchObject({ key: 'gone', marker: 'deleted' })
     expect(projectSource(projects, { current: 'work' })[0].key).toBe(INBOX_KEY)

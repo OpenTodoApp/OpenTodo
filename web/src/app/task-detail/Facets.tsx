@@ -24,6 +24,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { EstimateField } from '../EstimateField'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { originText, originTip } from '../OriginChip'
+import { ProjectMark } from '../ProjectMark'
 import { LocationEditor, useShownLocation } from '../locations/LocationEditor'
 import { LocationPreview } from '../locations/LocationPreview'
 import { setTaskLocation, locationLabel } from '../../lib/locations'
@@ -73,10 +74,6 @@ export const OPTIONAL = new Set<string>(['deadline', 'when', 'evening', 'reminde
 const SEGMENT_OF: Record<string, WhenSegmentId> = { due: 'due', evening: 'due', repeat: 'repeat', deadline: 'deadline', when: 'start', sector: 'sector', reminders: 'reminders' }
 /** The When popover, loaded on first use: the When editor stays out of the first load (when-picker). */
 const WhenEditor = lazy(() => import('./WhenEditor'))
-
-function Dot({ color }: { color?: string }) {
-  return <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: color ?? 'var(--ot-faint)' }} />
-}
 
 /** The facet parts of a task in the list row's words; `revealed` adds empty parts for unset properties. */
 export function useFacetParts(props: PropertiesProps, m: PropertiesModel, revealed: Set<string>) {
@@ -203,7 +200,7 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
           <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find or create a project…')} source={m.projectItems}
             getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords}
             pinned={m.projectPins} selected={[m.currentProject?.key ?? INBOX_KEY]} rankContext="task.project"
-            renderLeading={(i) => (i.key === INBOX_KEY ? <Icon name="inbox" className="text-faint" /> : <Dot color={i.color} />)}
+            renderLeading={(i) => (i.project ? <ProjectMark project={i.project} /> : <Icon name="inbox" className="text-faint" />)}
             onPick={async (i) => { await m.moveTo(i.value); onClose() }}
             onCreate={async (name) => { const pid = await createProject({ name: name.trim() }); await m.moveTo(pid); onClose() }}
             onClose={onClose} />

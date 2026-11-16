@@ -48,7 +48,7 @@ export interface TrashItem {
   deletedAt: number
   /** For tasks: the name of their project ("Inbox" when none); for notes: their project's, if any. */
   projectName?: string
-  color?: string
+  project?: Pick<Project, 'color' | 'icon'>
 }
 
 /** Deleted tasks, projects and standalone notes (notes-overview D10), newest deletion first. */
@@ -57,7 +57,7 @@ export function trashItems(tasks: Iterable<Task>, projects: Iterable<Project>, n
   const out: TrashItem[] = []
   for (const p of projects) {
     byId.set(p.id, p)
-    if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || t('Untitled project'), deletedAt: p.deleted_at, color: p.color })
+    if (p.deleted_at) out.push({ entity: 'project', id: p.id, title: p.name || t('Untitled project'), deletedAt: p.deleted_at, project: p })
   }
   for (const task of tasks) {
     if (!task.deleted_at) continue

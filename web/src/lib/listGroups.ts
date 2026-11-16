@@ -39,6 +39,8 @@ export interface ListRow {
   breadcrumb: string | null
   /** What the row's view or group heading already says, so a Calm row leaves it out (calm-rows D3). */
   implied?: RowImplied
+  /** The parents whose visible subtree ends after this row (quick-subtask-add "Add-subtask line in lists"): their "Add a subtask" line renders here, innermost first. */
+  subtaskAdds?: readonly { task: Task; depth: number }[]
 }
 
 /**
@@ -103,6 +105,8 @@ export interface ListGroup {
   /** On the last day with projections: "Repeating tasks shown up to <date>". */
   projectedNote?: string
 }
+
+export const isTodayProjectGroup = (group: ListGroup) => !!group.project || group.key === 'day:inbox'
 
 /** A waiting task with a time today: its due time in the user's zone, null for a deadline today without one; `passed` once that time is before now (today-waiting-time-passed). */
 export interface WaitingSoon {
@@ -472,8 +476,38 @@ function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => numb
   return flattenTree(roots, (id) => p.collapsed.has(id)).map(nodeRow(p))
 }
 
-/** The list's groups, in render order: one pass, linear in the number of tasks. */
+/**
+ * Marks each row with the parents whose visible subtree it ends (quick-subtask-add
+ * "Add-subtask line in lists"): an ancestor ends after a row when the next row is
+ * shallower than it — or the row is the group's last — walking each row's parent
+ * chain, innermost first. Flat rows have no parent and mark nothing.
+ */
+function markSubtaskAdds(rows: ListRow[]): void {
+  if (!rows.some((r) => r.parent !== null)) return
+  const byId = new Map(rows.map((r, i) => [r.task.id, i]))
+  for (let i = 0; i < rows.length; i++) {
+    const nextDepth = i + 1 < rows.length ? rows[i + 1].depth : -1
+    let adds: { task: Task; depth: number }[] | undefined
+    for (let pid = rows[i].parent; pid !== null;) {
+      const pi = byId.get(pid)
+      if (pi === undefined) break
+      const pr = rows[pi]
+      if (nextDepth > pr.depth) break
+      ;(adds ??= []).push({ task: pr.task, depth: pr.depth })
+      pid = pr.parent
+    }
+    if (adds) rows[i].subtaskAdds = adds
+  }
+}
+
+/** The list's groups, in render order: one pass, linear in the number of tasks, then each row's subtree ends marked. */
 export function listGroups(p: GroupInput): ListGroup[] {
+  const groups = listGroupsInner(p)
+  for (const g of groups) markSubtaskAdds(g.rows)
+  return groups
+}
+
+function listGroupsInner(p: GroupInput): ListGroup[] {
   const toRow = nodeRow(p)
   const isCollapsed = (id: string) => p.collapsed.has(id)
   // Later keeps each subtree together under its top-level task (subtasks-follow-later).
@@ -616,7 +650,8 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   // Today's display options (builtin-view-options D3), also for Upcoming's Today groups (D4):
   // the order applies within Earlier, the day's groups and Blocked.
   const d = inUpcoming ? p.todayDisplay : p.display
-  const order = dayOrder(p, d)
+  const manual = d?.sortBy === 'position'
+  const order = manual ? null : dayOrder(p, d)
   const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
@@ -627,7 +662,9 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   if (groupBy !== 'day') {
     // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
     const own = new Set([...day, ...morning, ...afternoon, ...evening])
-    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, rows))
+    const rank = manual && !inUpcoming ? compareManual(p.manualOrder ?? new Map(), compareDueThenPriority) : null
+    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row) : rows
+    g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, projectRows))
   } else {
     const others = earlier.length || morning.length || afternoon.length || evening.length
     // With day parts on an empty Today group is left out, unless the list would be empty without it.
@@ -701,10 +738,14 @@ export function nextDetail(soon: readonly WaitingSoon[], resolved?: ResolvedDate
 const sameImplied = (a: RowImplied | undefined, b: RowImplied | undefined): boolean =>
   a === b || (!!a && !!b && a.date === b.date && a.evening === b.evening && a.part === b.part && a.someday === b.someday && a.project === b.project)
 
+const sameAdds = (a: ListRow['subtaskAdds'], b: ListRow['subtaskAdds']): boolean =>
+  a === b || (!!a && !!b && a.length === b.length && a.every((x, i) => x.task === b[i].task && x.depth === b[i].depth))
+
 /** Two rows show the same thing: the same task object in the same place. */
 export const sameRow = (a: ListRow, b: ListRow): boolean =>
   a.task === b.task && a.depth === b.depth && a.parent === b.parent && a.hasChildren === b.hasChildren
   && a.collapsed === b.collapsed && a.breadcrumb === b.breadcrumb && sameImplied(a.implied, b.implied)
+  && sameAdds(a.subtaskAdds, b.subtaskAdds)
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))

@@ -391,6 +391,18 @@ Server-side writers (REST, assistant tools, CalDAV, public links, push delivery 
   "features": ["clock_skew", "backfill_ack"], "backfillAck": 0 }
 ```
 
+`device` identifies the client installation; see [Device ids](#device-ids) for its rules and lifecycle.
+
+### Device ids
+
+`device` names one client installation. The session or token authenticates the request; the id is not a credential, and the server does not verify that two requests with the same id come from one installation. Use the same id in the exchange and on every op it writes.
+
+- **Use one id per installation.** A random UUID (v4) is enough; a prefix such as `obsidian:` or `vault:` is only a convention. For example, generate `crypto.randomUUID()` once and send `myclient:<uuid>`. Keep it in storage that belongs to that installation, not in a configuration file a sync service copies to other devices. The server does not enforce uniqueness, so this is a client contract.
+- **Keep it for the life of the installation.** Reuse it across restarts, upgrades, sign-outs and reconnections. An op's `device` must be non-empty and at most 64 bytes; a UUID is a safe choice and the server imposes no other character set.
+- **Never share an id.** A pull skips ops written by the device that asks ([Paging](#paging)); two installations with one id therefore do not see each other's changes. The live stream also uses the id to avoid waking the pusher ([Live updates](#live-updates)). A push-only client does not pull today, but sharing an id still breaks if it later reads or listens.
+- **Changing the id is safe, with these effects.** The server keeps no state that requires the old id, so no data is lost. History attributes the old writes to the old id; a first copy or re-seed from cursor 0 no longer skips the ops written under the old id, and a joined project's catch-up replay is tracked per device, so it replays once under the new id.
+- **Reserved ids.** `/api/v1/sync` refuses these ids, on the request or on any op, with 400 `invalid_op`: `server` and `server:<suffix>`, `agent:`, `caldav:`, `issues:`, `rule:`, `calsync:`, `public:`, `page:`. `assistant:` is not reserved and may be sent by a device. See [`internal/sync/devices.go`](../internal/sync/devices.go).
+
 `features` (optional, additive) names the protocol additions the device handles: `clock_skew` (see [Clocks](#clocks)), `backfill_ack` (see "Catch-up for a new member" under [Sharing scopes](#sharing-scopes)), `latest_docs` ([First copy](#first-copy)) and `push_only` ([Push-only devices](#push-only-devices)). `backfillAck` echoes the `backfillSeq` of the last replay page the device applied.
 
 Response:
@@ -424,7 +436,7 @@ Triggers: 250 ms after a local edit (a note document saved while typing follows 
 Robustness (OpenSpec change `client-sync-robustness`):
 
 - **Deadlines.** Every request has a timeout (`web/src/lib/http.ts`: 30 s, 10 min for file and archive transfers). A timeout or a network failure shows *offline* and retries with jittered backoff (1 s doubling to 30 s); any other failure, including a bug in the client, shows *error*.
-- **One tab syncs.** The tab holding the Web Lock `opentodo-sync` runs the loop, the timer and the live channel; other tabs post `{type: "sync"}` on the `opentodo-sync` BroadcastChannel and show the status the leader broadcasts. When the leader stops or closes, the lock passes to another tab. Without Web Locks every tab syncs on its own.
+- **One tab syncs.** The tab holding the Web Lock `opentodo-sync` runs the loop, the timer and the live channel; other tabs post `{type: "sync"}` on the `opentodo-sync` BroadcastChannel and show the status the leader broadcasts. When the leader stops or closes, the lock passes to another tab. A follower also checks every 20 s that the leader answers a `{type: "ping"}` with `{type: "pong"}`; after two silent checks it takes the lock with `steal` and leads, and a leader whose lock was taken steps down and follows. Without Web Locks every tab syncs on its own. When a tab reads synced or syncing but has not synced for 15 minutes, its status dot turns amber and says "Not synced since …".
 - **Sign-out.** `stopSync()` starts a new local data epoch and aborts the request in flight; the running exchange checks the epoch after every await and stops before its next write. Sign-out waits for it, tells the other tabs (they reload), and clears the local data while holding the lock.
 
 Server (`internal/sync.Apply`): validate the whole batch, then in one transaction resolve each op's scope, refuse the ones the author may not write (reported in `rejected`), `INSERT OR IGNORE` the others into `ops` (duplicate ids are counted, not re-applied) with their scope in `op_scopes`, and upsert `scope_fields` under the winner rule. `Pull` returns ops after the cursor from every scope the caller can see in `seq` order, skipping the caller's own device but still advancing the cursor past them.

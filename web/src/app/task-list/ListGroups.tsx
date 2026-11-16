@@ -22,7 +22,7 @@ import { FieldColumnsRow, FieldColumnsTable } from '../FieldColumns'
 import { SectionHeader, SectionQuickAdd } from '../Sections'
 import { departures$, ghostMemory, isGhost, listCommitted, markGhost, registerList, withGhosts } from '../motion'
 import type { FlowView } from '../../lib/useFlow'
-import { TaskListRow, SubtaskInput, type RowActions } from './TaskListRow'
+import { TaskListRow, SubtaskInput, SubtaskAddLine, type RowActions } from './TaskListRow'
 import type { BelowLine } from './belowLine'
 import { WaitingSoonList } from './WaitingSoon'
 import type { ListRoute } from './useListModel'
@@ -78,6 +78,12 @@ export interface RowContext {
   /** A task the open "Add task below" line added: the line moves under it. */
   onAddedBelow?: (anchor: string, id: string) => void
   onCloseSubtask: () => void
+  /** The parent whose list "Add a subtask" line is open (quick-subtask-add "Add-subtask line in lists"): one at a time. */
+  subtaskAddOpen: string | null
+  /** Opens a list "Add a subtask" line for the parent, closing the row's other add lines. */
+  openSubtaskAdd: (id: string) => void
+  /** Each marked parent's ending row (quick-subtask-add): which row draws its line. */
+  subtaskAddEnds: ReadonlyMap<string, string>
   /** The row being edited in place, and its editor (inline-task-editing). */
   inlineId?: string | null
   renderInline?: (task: Task) => ReactNode
@@ -179,8 +185,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
-          reorderable={!ghost && c.manual}
+          draggable={!ghost && !editing && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
+          reorderable={!ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).
@@ -212,6 +218,18 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
             </Suspense>
           </li>
         )}
+        {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
+            until the parent is the selected row (index.css); none for a
+            departing row, and none while a drag runs, so drop zones stay one-line rows (row-expand D4). */}
+        {tree && !ghost && !c.draggingId && r.subtaskAdds?.some((a) => !c.isReadOnly(a.task) && !a.task.completed_at) && (
+          <li data-subtask-adds>
+            {r.subtaskAdds.map((a) => !c.isReadOnly(a.task) && !a.task.completed_at && (
+              <SubtaskAddLine key={a.task.id} parent={a.task} depth={a.depth + 1} timeColumn={c.timeColumn}
+                selected={c.selectedId === a.task.id} open={c.subtaskAddOpen === a.task.id}
+                onOpen={() => c.openSubtaskAdd(a.task.id)} onClose={c.onCloseSubtask} />
+            ))}
+          </li>
+        )}
       </Fragment>
     )
   }
@@ -225,7 +243,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
  * every row of a 2,000-row list again after each completion (list-rendering-at-scale
  * D6). `siblingPos` is written on the rows by SiblingAria, not drawn.
  */
-const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'addingBelow', 'onAddedBelow', 'onCloseSubtask',
+const ROW_FIELDS = new Set<keyof RowContext>(['selectedId', 'inlineId', 'expandedId', 'dropAt', 'draggingId', 'ticked', 'addingUnder', 'addingBelow', 'onAddedBelow', 'onCloseSubtask', 'subtaskAddOpen', 'openSubtaskAdd', 'subtaskAddEnds',
   'progress', 'blocked', 'flow', 'habits', 'isReadOnly', 'projectMap', 'memberMap', 'siblingPos', 'renderInline'])
 
 const sameProgress = (a: Progress | undefined, b: Progress | undefined): boolean => a === b || (!!a && !!b && a.done === b.done && a.total === b.total)
@@ -242,7 +260,15 @@ const sameHabit = (a: HabitStats | undefined, b: HabitStats | undefined): boolea
 function mayChange(a: RowContext, b: RowContext): ReadonlySet<string> | null {
   if (a.ticked !== b.ticked || !a.draggingId !== !b.draggingId || a.isReadOnly !== b.isReadOnly || a.projectMap !== b.projectMap || a.memberMap !== b.memberMap) return null
   const ids = new Set<string>()
-  for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.addingBelow?.at, b.addingBelow?.at, a.dropAt?.id, b.dropAt?.id]) if (x) ids.add(x)
+  for (const x of [a.selectedId, b.selectedId, a.inlineId, b.inlineId, a.expandedId, b.expandedId, a.draggingId, b.draggingId, a.addingUnder, b.addingUnder, a.addingBelow?.at, b.addingBelow?.at, a.dropAt?.id, b.dropAt?.id, a.subtaskAddOpen, b.subtaskAddOpen]) if (x) ids.add(x)
+  // An "Add a subtask" line names a parent, but the row that draws it is the one its
+  // visible subtree ends at: that row may read differently too (quick-subtask-add).
+  if (a.selectedId !== b.selectedId || a.subtaskAddOpen !== b.subtaskAddOpen) {
+    for (const x of [a.selectedId, b.selectedId, a.subtaskAddOpen, b.subtaskAddOpen]) {
+      const end = x ? (b.subtaskAddEnds.get(x) ?? a.subtaskAddEnds.get(x)) : undefined
+      if (end) ids.add(end)
+    }
+  }
   const maps: [object | undefined, object | undefined][] = [[a.progress, b.progress], [a.blocked, b.blocked], [a.flow, b.flow], [a.habits, b.habits]]
   for (const [x, y] of maps) {
     if (x === y) continue
@@ -265,6 +291,12 @@ function sameForRow(a: RowContext, b: RowContext, r: Row): boolean {
   const is = (x: unknown) => x === id
   if (is(a.selectedId) !== is(b.selectedId) || is(a.inlineId) !== is(b.inlineId) || is(a.expandedId) !== is(b.expandedId)) return false
   if (is(a.draggingId) !== is(b.draggingId) || !a.draggingId !== !b.draggingId || is(a.addingUnder) !== is(b.addingUnder) || is(a.addingBelow?.at) !== is(b.addingBelow?.at)) return false
+  // The row draws a line for each mark whose parent is selected or open (quick-subtask-add).
+  if (r.subtaskAdds) {
+    const role = a.isReadOnly !== b.isReadOnly
+    const marks = (c: RowContext) => r.subtaskAdds!.map((m) => `${m.task.id === c.selectedId ? 's' : ''}${m.task.id === c.subtaskAddOpen ? 'o' : ''}${role && c.isReadOnly(m.task) ? 'r' : ''}`).join()
+    if (marks(a) !== marks(b)) return false
+  }
   if ((is(a.dropAt?.id) ? a.dropAt!.zone : null) !== (is(b.dropAt?.id) ? b.dropAt!.zone : null)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.depth : null) !== (is(b.dropAt?.id) ? b.dropAt!.depth : null)) return false
   if ((is(a.dropAt?.id) ? a.dropAt!.note : null) !== (is(b.dropAt?.id) ? b.dropAt!.note : null)) return false
@@ -326,6 +358,8 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
 }
 
 export interface GroupedListProps {
+  todayDropTarget?: (group: ListGroup) => boolean
+  activeTodayDrop?: string | null
   groups: ListGroup[]
   view: ListRoute['view']
   project?: Project
@@ -618,9 +652,10 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
+  const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
   // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
   const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
@@ -636,15 +671,16 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
   }
   return (
     // Upcoming's day groups take a dragged task anywhere on them (upcoming-drag), resolved by the drag as `drop:day:<date>`.
-    <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
+    <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
+      data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
-        <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
-          hue={g.project ? projectHue(projects.find((pr) => pr.id === g.project)) : undefined}
+        <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
+          hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}

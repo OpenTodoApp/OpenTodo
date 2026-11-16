@@ -168,6 +168,7 @@ The full list of environment variables is in the [configuration reference](self-
 | Guide | What it covers |
 | --- | --- |
 | [HTTP API](api.md) | Authentication, every route, entity fields, error codes, examples |
+| [Build your own client](build-a-client.md) | REST only, push-only sync or full offline: tokens, idempotency, device ids, the outbox, rate limits and the sync contract |
 | [Command-line client](cli.md) | `ot`: install, sign in, commands, JSON output and exit codes |
 | [Markdown vault](vault.md) | `ot vault`: a folder of Markdown files in two-way sync, for Obsidian Tasks and plain text |
 | [Webhooks](webhooks.md) | Events, payload, signature verification, retries, receiver recipes |

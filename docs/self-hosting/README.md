@@ -43,6 +43,7 @@ One image, `ghcr.io/opentodoapp/opentodo` (linux/amd64 and linux/arm64), or one 
 | Home Assistant OS or Supervised | [Running as a Home Assistant add-on](home-assistant-addon.md) |
 | Fly.io | [Running on Fly.io](fly.md) |
 | Render | [Running on Render](render.md) |
+| Railway | [Running on Railway](railway.md) |
 | Caliber Node | [Running on Caliber Node](caliber-node.md) |
 | PikaPods (managed hosting) | [Running on PikaPods](pikapods.md) |
 
