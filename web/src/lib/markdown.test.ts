@@ -92,6 +92,7 @@ describe('headings and check items', () => {
     expect(parseMarkdown('# C #')).toEqual([{ t: 'h', level: 1, c: [{ t: 'text', v: 'C' }] }])
     expect(parseMarkdown('## a ###')).toEqual([{ t: 'h', level: 2, c: [{ t: 'text', v: 'a' }] }])
     expect(parseMarkdown('#')).toEqual([{ t: 'h', level: 1, c: [] }])
+    expect(parseMarkdown('text\n#')).toEqual([{ t: 'p', c: [{ t: 'text', v: 'text' }] }, { t: 'h', level: 1, c: [] }])
   })
 })
 

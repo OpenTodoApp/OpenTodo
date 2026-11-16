@@ -85,7 +85,7 @@ function isTableStart(lines: string[], i: number): boolean {
 
 function startsBlock(lines: string[], i: number): boolean {
   const l = lines[i]
-  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}\s/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
+  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}(?:[ \t]|$)/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
 }
 
 export function parseMarkdown(src: string, depth = 0, opts: MarkdownOptions = {}): Block[] {
