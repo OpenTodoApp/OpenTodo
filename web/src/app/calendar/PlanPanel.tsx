@@ -22,6 +22,8 @@ export interface PlanActions {
   onPointerDown: (e: React.PointerEvent, id: string) => void
   onPlace: (id: string) => void
   onOpen: (id: string) => void
+  /** A tap on a list task where the list covers the calendar (plan-list-tap-to-place D1); absent elsewhere. */
+  onTap?: (id: string) => void
   /** Escape while a task from the list is being placed: cancel the placement, not the list (GitHub issue 352). */
   onEscape?: () => boolean
 }

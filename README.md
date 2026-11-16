@@ -40,7 +40,7 @@
 
 ### 1. Capture
 
-Type a task the way you say it: `Call Sarah next Wed 3pm #work p1` sets the date, time, project and priority. Dictate it, send a page from your phone's share menu, or forward an email. Anything without a home lands in the Inbox. [Quick add](docs/quick-add.md) · [Voice](docs/quick-add.md#voice) · [Capture](docs/capture.md)
+Type a task the way you say it: `Call Sarah next Wed 3pm #work p1` sets the date, time, project and priority. Dictate it, send a page from your phone's share menu or the browser extension ([Chrome](https://chromewebstore.google.com/detail/opentodo-capture/aohlkamgjanbbmkobfhhemdbliadlned), [Firefox](https://addons.mozilla.org/firefox/addon/opentodo-capture/)), or forward an email. Anything without a home lands in the Inbox. [Quick add](docs/quick-add.md) · [Voice](docs/quick-add.md#voice) · [Capture](docs/capture.md)
 
 <picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/quick-add-dark.webp"><img src="docs/images/quick-add-light.webp" width="640" alt="Quick add with a task typed in plain language and chips for its date, project and priority"></picture>
 
@@ -113,7 +113,7 @@ docker compose up -d
 
 Data is kept in the `opentodo-data` volume. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required` ([the setup code](docs/self-hosting/docker.md#the-setup-code)). Behind a reverse proxy, set `OPENTODO_BASE_URL=https://todo.example.com`.
 
-The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the latest release, `:1.1` follows the 1.1 releases (fixes only), `:1.1.1` pins one version, and `:latest` follows the main branch. Upgrades from any release since 0.1.0 work directly, and nothing you rely on breaks within 1.x ([stability](docs/stability.md)). More in [Running with Docker](docs/self-hosting/docker.md).
+The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the latest release, `:1` follows every 1.x release, a minor tag such as `:1.5` gets that line's fixes only, a full version such as `:1.5.0` pins one release, and `:latest` follows the main branch. Upgrades from any release since 0.1.0 work directly, and nothing you rely on breaks within 1.x ([stability](docs/stability.md)). More in [Running with Docker](docs/self-hosting/docker.md).
 
 ### Single binary
 
@@ -135,8 +135,19 @@ Read the docs with screenshots and search at **[open-todo.app/docs](https://open
 
 - **Start here:** [getting started](docs/getting-started.md) · [all user guides](docs/README.md#using-opentodo)
 - **Self-hosting:** [handbook](docs/self-hosting/README.md) · [configuration](docs/self-hosting/configuration.md) · [backups](docs/backups.md)
-- **Build on it:** [REST API](docs/api.md) · [CLI](docs/cli.md) · [AI and agents](docs/ai-and-agents.md) · [stability](docs/stability.md)
+- **Build on it:** [REST API](docs/api.md) · [OpenAPI description](docs/openapi.json) · [CLI](docs/cli.md) · [AI and agents](docs/ai-and-agents.md) · [stability](docs/stability.md)
 - **Project:** [changelog](CHANGELOG.md) · [roadmap](ROADMAP.md) · [security](SECURITY.md)
+
+## Build your own client
+
+Every server describes its API at `/api/v1/openapi.json` (OpenAPI 3.1, generated from the code, stable through 1.x). Point a generator at it and you have a typed client:
+
+```sh
+curl -s https://todo.example.com/api/v1/openapi.json -o openapi.json
+npx openapi-typescript openapi.json -o opentodo.d.ts
+```
+
+The same file is [`docs/openapi.json`](docs/openapi.json) and an asset of every [release](https://github.com/OpenTodoApp/OpenTodo/releases). Sign in with an API token from Settings → Integrations → API tokens; the [API guide](docs/api.md) has the details, and [`ot`](docs/cli.md), the [Obsidian plugin](obsidian/) and the [n8n nodes](https://github.com/OpenTodoApp/n8n-nodes-opentodo) are clients built on it.
 
 <details>
 <summary><strong>Under the hood</strong></summary>

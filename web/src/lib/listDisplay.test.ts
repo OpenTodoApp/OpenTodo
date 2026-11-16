@@ -11,7 +11,7 @@ import { buildTaskTree } from './subtasks'
 import { fieldSortBy, type FieldDef, type Label, type Op, type Project, type Section, type Task } from './types'
 import { compareTasks } from './views'
 import { createField } from './fields'
-import { applyOps, createProject, getDeviceId, resetDeviceId } from './ops'
+import { applyOps, createProject, getDeviceId, mutate, resetDeviceId } from './ops'
 
 const TODAY = '2026-10-14'
 let n = 0
@@ -289,6 +289,15 @@ describe('built-in view options (builtin-view-options)', () => {
     await db.outbox.clear()
     await resetListDisplay({ kind: 'upcoming' })
     expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('offers Today manual order only by project and clears the saved sequence on Reset', async () => {
+    await mutate('user_prefs', 'me', { today_group_by: 'project', today_sort_by: 'position', today_manual_order: ['task'] })
+    expect(listDisplayOf('today', await db.userPrefs.get('me')).sortBy).toBe('position')
+    await setListDisplay({ kind: 'today' }, { groupBy: 'priority' })
+    expect(listDisplayOf('today', await db.userPrefs.get('me')).sortBy).toBe('due')
+    await resetListDisplay({ kind: 'today' })
+    expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([])
   })
 
   it('two devices, two fields: a grouping on one and an order on the other both survive', async () => {

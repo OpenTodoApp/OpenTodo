@@ -33,6 +33,7 @@ A test reads the code and fails when a variable is read but missing here, or lis
 | `OPENTODO_DATA_DIR` | `./data` (binary), `/data` (image) | `/var/lib/opentodo` | [Handbook](README.md#1-install) |
 | `OPENTODO_BASE_URL` | unset, inferred from requests | `https://todo.example.com` | [Behind a reverse proxy](docker.md#behind-a-reverse-proxy) |
 | `OPENTODO_TRUSTED_PROXIES` | loopback and private networks | `cloudflare` | [Behind a reverse proxy](docker.md#behind-a-reverse-proxy) |
+| `OPENTODO_CORS_ORIGINS` | unset, off | `https://dash.example.com,http://localhost:5173` | [Calling the API from another site](../api.md#calling-the-api-from-another-site) |
 | `OPENTODO_LOG_LEVEL` | `info` | `debug` | [Monitoring](README.md#6-monitoring) |
 
 `OPENTODO_BIND` in the `.env` next to `docker-compose.yml` is read by Compose, not by the server: it sets the host address the port is published on (default `0.0.0.0`).

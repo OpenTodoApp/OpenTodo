@@ -21,6 +21,11 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
+// davCompliance is the DAV header of every CalDAV answer. extended-mkcol: iOS
+// Reminders and Planify create a list with MKCOL (RFC 5689, #1432;
+// caldav-extended-mkcol D3).
+const davCompliance = "1, 3, calendar-access, extended-mkcol"
+
 // InboxCalendar is the path segment of the Inbox calendar (tasks without a project).
 const InboxCalendar = "inbox"
 
@@ -101,7 +106,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "CalDAV is not available for accounts with end-to-end encryption", http.StatusForbidden)
 		return
 	}
-	w.Header().Set("DAV", "1, 3, calendar-access")
+	w.Header().Set("DAV", davCompliance)
 	p, ok := parseDavPath(r.URL.Path, u.ID)
 	if !ok {
 		http.NotFound(w, r)
@@ -110,7 +115,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, path: p, scope: ap.Scope, events: ap.Events}
 	switch r.Method {
 	case http.MethodOptions:
-		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR")
+		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, MKCOL")
 		w.WriteHeader(http.StatusOK)
 	case "PROPFIND":
 		d.propfind()
@@ -123,11 +128,13 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 	case http.MethodDelete:
 		d.delete()
 	case "MKCALENDAR":
-		d.mkcalendar()
+		d.mkcalendar(false)
+	case "MKCOL":
+		d.mkcalendar(true)
 	case "PROPPATCH":
 		d.proppatch()
 	default:
-		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR")
+		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, MKCOL")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
@@ -160,7 +167,7 @@ func (s *Server) handleDAVRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodOptions {
-		w.Header().Set("DAV", "1, 3, calendar-access")
+		w.Header().Set("DAV", davCompliance)
 		w.Header().Set("Allow", "OPTIONS, PROPFIND")
 		w.WriteHeader(http.StatusOK)
 		return
@@ -678,7 +685,7 @@ func (d *davRequest) resource(v *davView) (opsync.Entity, error) {
 
 func (d *davRequest) get() {
 	if d.path.kind != kindResource {
-		d.w.Header().Set("Allow", "OPTIONS, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, DELETE")
+		d.w.Header().Set("Allow", "OPTIONS, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, MKCOL, DELETE")
 		http.Error(d.w, "collections have no body; use PROPFIND or REPORT", http.StatusMethodNotAllowed)
 		return
 	}

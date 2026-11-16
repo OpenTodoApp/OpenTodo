@@ -2916,6 +2916,7 @@
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/calendar/tapPlace.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/habits/AmountDialog.tsx",
@@ -8418,6 +8419,7 @@
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/usePropertiesModel.ts",
     "web/src/app/task-list/InlineEditor.tsx",
+    "web/src/app/task-list/todayGroupDrop.ts",
     "web/src/app/titleEdit.ts",
     "web/src/lib/assistant.ts",
     "web/src/lib/assistantBlockData.ts",
@@ -10302,6 +10304,8 @@
     "web/src/app/workspaceNav.ts"
   ],
   "Move to {project}": [
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/todayGroupDrop.ts",
     "web/src/app/task-list/useListDrag.ts",
     "web/src/app/views/useViewOrderDrag.ts"
   ],
@@ -11598,6 +11602,12 @@
   ],
   "Not synced since this screen opened": [
     "web/src/app/display/DisplayScreen.tsx"
+  ],
+  "Not synced since {time}": [
+    "web/src/app/SyncStatus.tsx"
+  ],
+  "Not synced yet": [
+    "web/src/app/SyncStatus.tsx"
   ],
   "Not this evening": [
     "web/src/lib/assistant.ts"
@@ -17463,6 +17473,9 @@
   "Takes turns:": [
     "web/src/app/task-detail/RotationLine.tsx"
   ],
+  "Tap a time to plan {title}": [
+    "web/src/app/calendar/tapPlace.tsx"
+  ],
   "Target URL": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -20697,6 +20710,7 @@
     "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx",
     "web/src/app/calendar/projections.tsx",
+    "web/src/app/calendar/tapPlace.tsx",
     "web/src/app/display/DisplayColumn.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/focus/FocusPicker.tsx",

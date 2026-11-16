@@ -174,17 +174,19 @@ describe('the quick add stays reachable (3.1)', () => {
   it('sticks just below the sticky page header', async () => {
     function Harness() {
       const el = useRef<HTMLDivElement>(null)
-      const top = useStickyQuickAdd(el, true)
+      const { top, gap } = useStickyQuickAdd(el, true)
       return (
         <div data-page-body>
-          <header data-page-header style={{ position: 'sticky' }} />
-          <div ref={el} data-top={top} />
+          <header data-page-header style={{ position: 'sticky', top: '20px', marginBottom: '8px' }} />
+          <div ref={el} data-top={top} data-gap={gap} />
         </div>
       )
     }
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(47)
     const r = await render(<Harness />)
-    await waitFor(() => r.container.querySelector('[data-top]')?.getAttribute('data-top') === '47')
+    // Where it already rests (#1441): the header's own sticky top (20), its height (47) and its margin (8).
+    await waitFor(() => r.container.querySelector('[data-top]')?.getAttribute('data-top') === '75')
+    expect(r.container.querySelector('[data-top]')?.getAttribute('data-gap')).toBe('8')
     await r.unmount()
   })
 })

@@ -2570,6 +2570,7 @@
         "today_events": "string",
         "today_group_by": "string",
         "today_limit": "number",
+        "today_manual_order": "order_list",
         "today_row_layout": "string",
         "today_sort_by": "string",
         "today_sort_dir": "string",
@@ -3707,6 +3708,7 @@
       "today_events": "string",
       "today_group_by": "string",
       "today_limit": "number",
+      "today_manual_order": "order_list",
       "today_row_layout": "string",
       "today_sort_by": "string",
       "today_sort_dir": "string",
@@ -5680,6 +5682,9 @@
         "position": "number",
         "title": "objective_title"
       }
+    },
+    "GET /api/v1/openapi.json": {
+      "policy": "public"
     },
     "GET /api/v1/pages/{secret}": {
       "policy": "public",

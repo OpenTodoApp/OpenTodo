@@ -9,6 +9,43 @@ import { undoBatch } from './undo'
 import { dropInViewGroup, moveInViewOrder, stepInViewOrder } from './viewOrderMove'
 import type { Task } from './types'
 
+describe('Today order', () => {
+  const host = { entity: 'user_prefs', id: 'me' } as const
+
+  it('keeps the keyboard reorder personal and seeds from the shown order while offline', async () => {
+    const project = await createProject({ name: 'Work' })
+    const a = await createTask({ title: 'A', project_id: project })
+    const b = await createTask({ title: 'B', project_id: project })
+    const c = await createTask({ title: 'C', project_id: project })
+    await mutate('user_prefs', 'me', { today_group_by: 'project', today_sort_by: 'title', today_sort_dir: 'desc' })
+    const shown = await tasksOf([c, b, a])
+    await db.outbox.clear()
+    const result = await stepInViewOrder(host, shown, shown, b, -1)
+    expect((await db.userPrefs.get('me'))?.today_manual_order).toEqual([b, c, a])
+    expect((await db.outbox.toArray()).map((op) => op.entity)).toEqual(['user_prefs', 'user_prefs', 'user_prefs'])
+    expect(await tasksOf([c, b, a])).toEqual(shown)
+    await undoBatch(result!.entry!.id)
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title', today_sort_dir: 'desc', today_manual_order: [] })
+  })
+
+  it('carries the rank to the replacement ID on an unanchored transfer across sharing scopes', async () => {
+    const home = await createProject({ name: 'Home' })
+    const work = await createProject({ name: 'Work' })
+    const a = await createTask({ title: 'A', project_id: home })
+    const b = await createTask({ title: 'B', project_id: work })
+    await db.memberships.put({ projectId: work, role: 'editor', ownerId: 'another-user', members: [] })
+    await mutate('user_prefs', 'me', { today_group_by: 'project', today_sort_by: 'position', today_manual_order: [a, b] })
+    const result = await dropInViewGroup(host, await tasksOf([a, b]), a, { projectId: work, projectName: 'Work' })
+    expect(result?.id).toBeTruthy()
+    expect(result?.id).not.toBe(a)
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'position', today_manual_order: [result?.id, b] })
+    expect((await db.tasks.get(a))?.deleted_at).toBeTruthy()
+    await undoBatch(result!.entry!.id)
+    expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [a, b] })
+    expect(await db.tasks.get(a)).toMatchObject({ project_id: home, deleted_at: null })
+  })
+})
+
 let n = 0
 beforeEach(() => {
   useDatabase(`view-order-${Date.now()}-${n++}`)

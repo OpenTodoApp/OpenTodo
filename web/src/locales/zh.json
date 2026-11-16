@@ -7762,5 +7762,8 @@
   "{kept} of {of} this month": "本月 {kept}/{of}",
   "{kept} of {of} this week": "本周 {kept}/{of}",
   "{n, plural, one {Once a month} other {# times a month}}": "{n, plural, other {每月 # 次}}",
-  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, other {每周 # 次}}"
+  "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, other {每周 # 次}}",
+  "Tap a time to plan {title}": "点按一个时间点来安排 {title}",
+  "Not synced since {time}": "自 {time} 起未同步",
+  "Not synced yet": "尚未同步"
 }

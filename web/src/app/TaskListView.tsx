@@ -7,18 +7,19 @@
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
 import { useMemberships, useMembershipMap, useUserPrefsRow } from '../lib/localData'
-import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday } from '../lib/userPrefs'
+import { briefingHidden, preferredPlacement, setBriefingShown, setTodayEventsShown, setTodayHidesOthers, setUpcomingEventsShown, setUpcomingStartsWithToday, todayHidesOthers, upcomingStartsWithToday, USER_PREFS_ID } from '../lib/userPrefs'
 import { useMe } from '../lib/sharing'
-import { completedOpenKey, flatRow, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
+import { completedOpenKey, flatRow, isTodayProjectGroup, sectionOfRows, type ListGroup, type ListRow } from '../lib/listGroups'
 import { moveTaskBy, taskStepEdges, type Step } from '../lib/move'
 import type { ViewPlacement } from '../lib/viewOrder'
 import type { OrderHost } from '../lib/viewOrderMove'
 import { dropInView, reorderInView, stepInView } from './viewOrderActions'
+import type * as TodayDrop from './task-list/todayGroupDrop'
 import { canEditTasks, roleOf } from '../lib/sharing'
 import { LOGBOOK_PAGE } from '../lib/logbook'
 import { isNarrowed, setCompletedDisplay } from '../lib/completedDisplay'
@@ -148,29 +149,41 @@ function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isRea
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
 
-/**
- * A label page's own manual order (view-manual-order): drops and keyboard steps
- * within a row's group, written on the label; null on every other list.
- */
-function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean) {
-  const host = useMemo<OrderHost | null>(() => (route.view === 'label' ? { entity: 'label', id: route.id } : null), [route])
-  const latest = useRef({ rows, groups })
-  latest.current = { rows, groups }
+/** The personal order for a label page or Today grouped by Project. */
+function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean) {
+  const todayModule = useRef<typeof TodayDrop>(undefined)
+  useEffect(() => {
+    if (today && !todayModule.current) void import('./task-list/todayGroupDrop').then((m) => { todayModule.current = m })
+  }, [today])
+  const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
+    : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
+  const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : rows, [today, groups, rows])
+  const latest = useRef({ rows: orderRows, groups })
+  latest.current = { rows: orderRows, groups }
+  const memberships = useMembershipMap()
   const groupOf = useMemo(() => new Map(groups.flatMap((g) => g.rows.map((r) => [r.task.id, g.key] as const))), [groups])
   const reorder = useCallback((id: string, at: ViewPlacement) => {
     if (host) act(reorderInView(host, latest.current.rows.map((r) => r.task), id, at))
   }, [host])
+  const siblingsOf = useCallback((id: string) => {
+    const group = latest.current.groups.find((g) => g.rows.some((r) => r.task.id === id))
+    if (!group || (today && (!isTodayProjectGroup(group) || !canEditTasks(roleOf(group.project, memberships))))) return []
+    return group.rows.filter((r) => !today || (r.depth === 0 && !r.task.completed_at)).map((r) => r.task)
+  }, [today, memberships])
   const step = useCallback((id: string, how: Step) => {
     if (!host) return Promise.resolve(false)
-    const { rows: rs, groups: gs } = latest.current
-    const group = gs.find((g) => g.rows.some((r) => r.task.id === id))
-    return stepInView(host, rs.map((r) => r.task), group ? group.rows.map((r) => r.task) : [], id, how)
-  }, [host])
+    return stepInView(host, latest.current.rows.map((r) => r.task), siblingsOf(id), id, how)
+  }, [host, siblingsOf])
+  const edges = useCallback<ListReorder['edges']>(async (id) => {
+    if (!today) return { first: false, last: false }
+    const siblings = siblingsOf(id)
+    const i = siblings.findIndex((task) => task.id === id)
+    return i < 0 ? null : { first: i === 0, last: i === siblings.length - 1 }
+  }, [today, siblingsOf])
   // Grouped by Project in the List layout (view-project-drops D1): a drop in another project's group moves the task there.
-  const memberships = useMembershipMap()
   const byProject = !board && groups.some((g) => g.project)
   const across = useMemo(() => {
-    if (!host || !byProject) return undefined
+    if (!host || today || !byProject) return undefined
     const projectOf = (key: string) => {
       const g = latest.current.groups.find((x) => x.key === key)
       if (g?.project) return { id: g.project, name: g.heading ?? t('Project') }
@@ -184,17 +197,27 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
         if (into) act(dropInView(host, latest.current.rows.map((r) => r.task), taskId, { projectId: into.id, projectName: into.name, at }))
       },
     }
-  }, [host, byProject, memberships])
-  return useMemo(() => (host ? { reorder, step, groupOf, across } : null), [host, reorder, step, groupOf, across])
+  }, [host, today, byProject, memberships])
+  const todayDrop = useMemo(() => {
+    if (!host || !today) return undefined
+    return {
+      resolve: (task: Task, target: string | null, y: number, gesture: import('./task-list/projectGroupPlacement').DragDepth) =>
+        todayModule.current?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture) ?? null,
+      move: async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
+        todayModule.current?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop),
+      canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
+    }
+  }, [host, today, memberships, nest])
+  return useMemo(() => (host ? { reorder, step, edges, groupOf, across, todayDrop } : null), [host, reorder, step, edges, groupOf, across, todayDrop])
 }
 
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
-function useListReorder(manual: boolean, ownStep: ((id: string, how: Step) => Promise<boolean>) | undefined, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
+function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
-    move: (id, step) => { if (ownStep) act(ownStep(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
-    edges: ownStep ? () => Promise.resolve({ first: false, last: false }) : taskStepEdges,
+    move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
+    edges: ownOrder?.edges ?? taskStepEdges,
     add,
-  }), [manual, ownStep, onReorder, add])
+  }), [manual, ownOrder, onReorder, add])
 }
 
 /**
@@ -284,9 +307,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
   const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder?.step, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
+  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
-  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
+  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   const { latestSectionMap } = drag
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {
@@ -399,7 +422,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} onChoose={chooseViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
-    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={room} className="min-w-0 px-4 py-5 md:px-8">
+    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={room} className="min-w-0 px-4 py-5 [--page-head-top:--spacing(5)] md:px-8">
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
@@ -413,7 +436,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {route.view !== 'completed' && (
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
-            <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
+            <div ref={quickAddRow} style={{ top: quickAddTop.top, '--below-head-gap': `${quickAddTop.gap}px` } as CSSProperties} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
               )}
@@ -444,7 +467,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
             <TimelineView groups={upcomingCal.groups} today={today} zone={m.zone} editable={m.projectEditable} selectedId={selectedId}
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
           ) : (
-            <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={(m.treeView || m.nested) && !board ? m.siblingPos : undefined} reveal={selectedId}
+            <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={(m.treeView || m.nested) && !board ? m.siblingPos : undefined} reveal={selectedId} todayDropTarget={ownOrder?.todayDrop?.canEdit} activeTodayDrop={drag.dropGroup}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)), gotIt: m.reusable } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}

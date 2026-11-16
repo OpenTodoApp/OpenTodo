@@ -819,7 +819,11 @@ var calendarSettable = map[caldav.PropName]string{
 	pn(caldav.NSCalDAV, "calendar-timezone"): "",
 }
 
-func (d *davRequest) mkcalendar() {
+// mkcalendar creates a project for MKCALENDAR (RFC 4791) and, with mkcol, for
+// an extended MKCOL (RFC 5689) whose resource type is a calendar: the same body,
+// the same rules (caldav-extended-mkcol D1). The calendar home holds only
+// calendars, so any other MKCOL is refused (D2).
+func (d *davRequest) mkcalendar(mkcol bool) {
 	if d.path.kind != kindCalendar {
 		http.Error(d.w, "calendars can only be created in the calendar home", http.StatusForbidden)
 		return
@@ -827,6 +831,10 @@ func (d *davRequest) mkcalendar() {
 	body, err := caldav.ParseXML(d.r.Body)
 	if err != nil {
 		http.Error(d.w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mkcol && !mkcolMakesCalendar(body) {
+		d.precondition(http.StatusForbidden, "d", "valid-resourcetype")
 		return
 	}
 	v, err := d.calendars()
@@ -907,6 +915,28 @@ func (d *davRequest) mkcalendar() {
 	}
 	d.w.Header().Set("Cache-Control", "no-store")
 	d.w.WriteHeader(http.StatusCreated)
+}
+
+// mkcolMakesCalendar reports whether an extended MKCOL body asks for a calendar:
+// a DAV:resourcetype under set/prop that holds C:calendar.
+func mkcolMakesCalendar(body *caldav.Node) bool {
+	if body == nil || !body.Is(caldav.NSDAV, "mkcol") {
+		return false
+	}
+	for _, set := range body.Children {
+		if !set.Is(caldav.NSDAV, "set") {
+			continue
+		}
+		for _, props := range set.Children {
+			if !props.Is(caldav.NSDAV, "prop") {
+				continue
+			}
+			if rt := props.Child(caldav.NSDAV, "resourcetype"); rt != nil && rt.Child(caldav.NSCalDAV, "calendar") != nil {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // newCalendarWorkspace is the workspace a calendar made with MKCALENDAR goes
