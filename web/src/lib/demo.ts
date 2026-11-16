@@ -3,7 +3,7 @@ import type { AuthStatus, DemoInfo, User } from './types'
 import { t, msg } from './i18n'
 import { formatClock } from './dates'
 import { createStore } from './store'
-import { readJSON, readString, writeString } from './deviceStorage'
+import { readString, writeString } from './deviceStorage'
 
 /**
  * Demo instance state (OpenSpec `demo-mode`, `demo-sandboxes`): set from
@@ -71,27 +71,7 @@ export const DEMO_RESTRICTED_NOTE = msg('Disabled on this demo instance.')
 /** Shown when the sandbox's write budget is used up (429 demo_limit). */
 export const DEMO_LIMIT_NOTICE = msg('This demo sandbox reached its limit of changes. Your latest edits stay on this device and are saved when the limit allows.')
 
-const KEY = 'opentodo.demo'
-const store = createStore<DemoInfo | null>('demo', read())
-
-function read(): DemoInfo | null {
-  return readJSON<DemoInfo | null>(KEY, null)
-}
-
-/** Record the server's demo state (null when the instance is not a demo). */
-export function setDemo(info: DemoInfo | null | undefined): void {
-  // The creation token changes on every read; only the stable part is kept.
-  const next = info ? { ...info, token: '' } : null
-  if (JSON.stringify(next) === JSON.stringify(store.get())) return
-  // Storage unavailable (private mode): the state still lives in memory.
-  writeString(KEY, next ? JSON.stringify(next) : null)
-  store.set(next)
-}
-
-export const getDemo = store.get
-
-/** The demo state, re-rendering when it changes. */
-export const useDemo = store.use
+export { getDemo, setDemo, useDemo } from './demoState'
 
 /** True for an API error the demo instance answers for a refused feature. */
 export function isDemoRestricted(err: unknown): boolean {
