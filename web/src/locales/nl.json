@@ -7763,5 +7763,7 @@
   "{kept} of {of} this week": "{kept} van {of} deze week",
   "{n, plural, one {Once a month} other {# times a month}}": "{n, plural, one {Eén keer per maand} other {# keer per maand}}",
   "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Eén keer per week} other {# keer per week}}",
-  "Tap a time to plan {title}": "Tik op een tijdstip om {title} in te plannen"
+  "Tap a time to plan {title}": "Tik op een tijdstip om {title} in te plannen",
+  "Not synced since {time}": "Niet gesynchroniseerd sinds {time}",
+  "Not synced yet": "Nog niet gesynchroniseerd"
 }

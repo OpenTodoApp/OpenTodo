@@ -11603,6 +11603,12 @@
   "Not synced since this screen opened": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
+  "Not synced since {time}": [
+    "web/src/app/SyncStatus.tsx"
+  ],
+  "Not synced yet": [
+    "web/src/app/SyncStatus.tsx"
+  ],
   "Not this evening": [
     "web/src/lib/assistant.ts"
   ],

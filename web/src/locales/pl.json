@@ -7763,5 +7763,7 @@
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "„{title}” jest w projekcie udostępnionym inaczej; zadanie może czekać tylko na zadania udostępnione w ten sam sposób",
   "← → move the selected task, Shift+← → its deadline.": "← → przesuwają wybrane zadanie, Shift+← → jego ostateczny termin.",
   "⤼ Skip": "⤼ Pomiń",
-  "Tap a time to plan {title}": "Stuknij godzinę, aby zaplanować {title}"
+  "Tap a time to plan {title}": "Stuknij godzinę, aby zaplanować {title}",
+  "Not synced since {time}": "Brak synchronizacji od {time}",
+  "Not synced yet": "Jeszcze nie zsynchronizowano"
 }
