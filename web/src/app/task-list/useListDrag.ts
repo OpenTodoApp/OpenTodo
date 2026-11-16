@@ -98,6 +98,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
     // A tree list's drop line takes a depth from the pointer's sideways movement (drop-depth).
     const startX = e.clientX
     const startDepth = st.rows.find((r) => r.task.id === task.id)?.depth ?? 0
+    const contextual = st.rows.some((r) => r.task.id === task.id && r.contextual)
     const step = indentStep()
     const height = host?.offsetHeight ?? 0
     let column: string | null = null
@@ -116,7 +117,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
     beginDrag(e, {
       grip,
       label: task.title,
-      taskDrops: true,
+      taskDrops: !contextual,
       // Only the grip's hold selects (bulk-actions on touch); the row body's hold is the menu's.
       onHold: grip && hold ? () => hold(task) : undefined,
       onStart: () => {
@@ -159,7 +160,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
       onDrop: (target, x, y) => {
         const { rows: rs, groups, sectionOfRow: secs, board: b, ticked, reorder, readOnly, groupOf, across } = dragState.current
         if (target.startsWith('drop:')) {
-          if (readOnly?.(task)) return
+          if (contextual || readOnly?.(task) || rs.some((r) => r.task.id === task.id && r.contextual)) return
           const ids = ticked?.has(task.id) ? [...ticked] : [task.id]
           act(withListTransition(ids.length, () => dropTasks(target.slice('drop:'.length), ids)))
           return
@@ -170,7 +171,7 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           if (next) act(today.move(task.id, next.drop).then((id) => { if (id) onDropped(id) }))
           return
         }
-        if (!manual) return
+        if (!manual || contextual) return
         if (target.startsWith('task:') && reorder) {
           if (!current || current.zone === 'inside') return
           const at = current.zone === 'before' ? { before: current.id } : { after: current.id }

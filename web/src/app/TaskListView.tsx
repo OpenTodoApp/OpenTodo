@@ -138,19 +138,20 @@ function useListFrame(layoutPage: boolean, full: boolean, fieldColumns: boolean)
 const earlierActions = (ids: readonly string[]) => <EarlierActions ids={ids} />
 
 /** Bulk selection over the list's rows (bulk-edit D1); read-only tasks cannot be ticked. */
-function useTickedRows(rows: { task: Task }[], taskMap: Map<string, Task>, isReadOnly: (task?: Task) => boolean) {
-  const tickRows = useMemo(() => rows.map((r) => r.task.id), [rows])
-  const readOnlyId = useCallback((id: string) => isReadOnly(taskMap.get(id)), [isReadOnly, taskMap])
+function useTickedRows(rows: ListRow[], taskMap: Map<string, Task>, isReadOnly: (task?: Task) => boolean) {
+  const tickRows = useMemo(() => rows.filter((r) => !r.contextual).map((r) => r.task.id), [rows])
+  const contextIds = useMemo(() => new Set(rows.filter((r) => r.contextual).map((r) => r.task.id)), [rows])
+  const readOnlyId = useCallback((id: string) => contextIds.has(id) || isReadOnly(taskMap.get(id)), [contextIds, isReadOnly, taskMap])
   const selection = useSelection(tickRows, readOnlyId)
   const ticked = useMemo(() => tickRows.filter((id) => selection.ticked.has(id)), [tickRows, selection.ticked])
-  return { tickRows, selection, ticked }
+  return { tickRows, selection, ticked, contextIds }
 }
 
 /** With the Completed group on (project-completed-section), sections offer no "n completed" of their own. */
 const NO_DONE: Map<string, Task[]> = new Map()
 
 /** The personal order for a label page or Today grouped by Project. */
-function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean) {
+function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>) {
   const todayModule = useRef<typeof TodayDrop>(undefined)
   useEffect(() => {
     if (today && !todayModule.current) void import('./task-list/todayGroupDrop').then((m) => { todayModule.current = m })
@@ -158,8 +159,8 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
   const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
     : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
   const orderRows = useMemo(() => today ? groups.filter(isTodayProjectGroup).flatMap((g) => g.rows.filter((r) => r.depth === 0)) : rows, [today, groups, rows])
-  const latest = useRef({ rows: orderRows, groups })
-  latest.current = { rows: orderRows, groups }
+  const latest = useRef({ rows: orderRows, groups, taskMap })
+  latest.current = { rows: orderRows, groups, taskMap }
   const memberships = useMembershipMap()
   const groupOf = useMemo(() => new Map(groups.flatMap((g) => g.rows.map((r) => [r.task.id, g.key] as const))), [groups])
   const reorder = useCallback((id: string, at: ViewPlacement) => {
@@ -200,11 +201,13 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
   }, [host, today, byProject, memberships])
   const todayDrop = useMemo(() => {
     if (!host || !today) return undefined
+    const move = async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
+      todayModule.current?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop)
     return {
       resolve: (task: Task, target: string | null, y: number, gesture: import('./task-list/projectGroupPlacement').DragDepth) =>
-        todayModule.current?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture) ?? null,
-      move: async (id: string, drop: import('../lib/viewOrderMove').GroupDrop) =>
-        todayModule.current?.applyTodayDrop(host, latest.current.rows.map((r) => r.task), latest.current.groups, id, drop),
+        todayModule.current?.todayGroupDrop(latest.current.groups, memberships, nest, task, target, y, gesture, latest.current.taskMap) ?? null,
+      move,
+      contextActions: (task: Task) => nest ? todayModule.current?.contextualMoveItems(task, latest.current.groups, memberships, latest.current.taskMap, move) ?? [] : [],
       canEdit: (group: ListGroup) => isTodayProjectGroup(group) && canEditTasks(roleOf(group.project, memberships)),
     }
   }, [host, today, memberships, nest])
@@ -212,10 +215,11 @@ function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], boa
 }
 
 /** The row menu's Reorder items (accessibility-aa D3): the keyboard move's writes, from a pointer; null without a manual order. */
-function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
+function useListReorder(manual: boolean, ownOrder: Pick<NonNullable<ReturnType<typeof useOwnOrder>>, 'step' | 'edges' | 'todayDrop'> | null, onReorder: (() => void) | undefined, add?: ListReorder['add']): ListReorder | null {
   return useMemo<ListReorder | null>(() => (!manual ? null : {
     move: (id, step) => { if (ownOrder) act(ownOrder.step(id, step)); else { onReorder?.(); act(moveTaskBy(id, step)) } },
     edges: ownOrder?.edges ?? taskStepEdges,
+    contextActions: ownOrder?.todayDrop?.contextActions,
     add,
   }), [manual, ownOrder, onReorder, add])
 }
@@ -250,7 +254,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Calm Upcoming (sidebar-brand-and-row-grid D8): the later days are closed bars unless Later days is In full.
   const { summarised, cursorRows } = useCalmUpcoming(route.view === 'upcoming', groups, rows, !!m.display?.laterInFull, collapsedGroups)
   // Bulk selection (bulk-edit D1): ticked rows, separate from the cursor row.
-  const { tickRows, selection, ticked } = useTickedRows(rows, taskMap, isReadOnly)
+  const { tickRows, selection, ticked, contextIds } = useTickedRows(rows, taskMap, isReadOnly)
   const { ui, actions, actionsFrom, selectMode, setSelectMode, addingTo, expandedId, setExpandedId, rowMenu } = useListUi(selection.ticked, ticked)
   // The open task lives in the shell's panel slot (app-shell D1); the Inbox (inbox-split D1), and every list with the
   // side panel (task-side-panel D2, D7), keep it there beside the list, set up before the bindings' route reset.
@@ -307,10 +311,9 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   const toggleCompleteRef = useRef<(id: string, completed: boolean) => Promise<void>>(async () => {})
   const { toggleSection, moveToSection } = useBoardMoves(projectId, collapsedSections, sectionMap, toggleCompleteRef)
   // Manual ordering (manual-ordering): projects (editors and above) and the Inbox by positions; a label page by its own order (view-manual-order).
-  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
+  const projectManual = (route.view === 'project' && m.projectEditable) || route.view === 'inbox', ownOrder = useOwnOrder(route, rows, upcomingCal.groups, board, route.view === 'today' && m.display?.groupBy === 'project', m.nested, taskMap), manual = projectManual || !!ownOrder, listReorder = useListReorder(manual, ownOrder, m.listDisplay.onReorder, useListAdd(projectManual && m.treeView && !board, ui, m.toggleCollapsed))
   const sectionOfRow = useMemo(() => sectionOfRows(board, dataColumns, upcomingCal.groups), [board, dataColumns, upcomingCal.groups])
-  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => holdSelect(task.id, selection, setSelectMode), openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
-  const { latestSectionMap } = drag
+  const drag = useListDrag({ manual, onReorder: ownOrder ? undefined : m.listDisplay.onReorder, source: { rows, groups: upcomingCal.groups, sectionOfRow, tree: m.tree, board, sectionMap, ticked: selection.ticked, onHold: (task) => { if (!contextIds.has(task.id)) holdSelect(task.id, selection, setSelectMode) }, openRowMenu: rowMenu.open, reorder: ownOrder?.reorder, groupOf: ownOrder?.groupOf, across: ownOrder?.across, readOnly: isReadOnly, today: ownOrder?.todayDrop }, moveToSection, onDropped: setSelectedId, onDragStart: rowMenu.dismiss })
   // The view supplies defaults; attributes typed in the quick-add line override them.
   const withDefaults = useCallback(async (inputs: QuickAddInput[]) => {
     const place = route.view === 'place' ? await getPlace(route.id) : undefined
@@ -336,13 +339,13 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
     const id = await createUnlessReused({ placement, ...task }, createTaskThenSuggest) // null: a reusable list reused an item (reusable-lists D3)
     // The `o` move, the Inbox's note, or the note for a row out of sight (add-position D5).
     const list = listTitle(route.view, m.currentProject?.name, m.currentLabel?.name, m.currentPlace?.name)
-    if (id) await afterListAdd(id, { route, today, insertAfter, sectionMap: latestSectionMap, list, placement: projectManual ? placement : undefined, root: listRoot.current, select: setSelectedId })
-  }, [withDefaults, route, today, latestSectionMap, projectManual, m.currentProject, m.currentLabel, m.currentPlace, setSelectedId])
+    if (id) await afterListAdd(id, { route, today, insertAfter, sectionMap: drag.latestSectionMap, list, placement: projectManual ? placement : undefined, root: listRoot.current, select: setSelectedId })
+  }, [withDefaults, route, today, drag.latestSectionMap, projectManual, m.currentProject, m.currentLabel, m.currentPlace, setSelectedId])
   // A pasted list (paste-to-tasks D3): every line with the view's defaults, one batch, one Undo.
   const onAddMany = useCallback(async (inputs: QuickAddInput[]) => {
     const placement = insertAfter.current ? 'bottom' : await preferredPlacement()
-    await addManyToList(await withDefaults(inputs), async (fresh) => afterListAddMany(await addTasksUndoable(fresh, { placement }), { route, today, insertAfter, sectionMap: latestSectionMap }))
-  }, [withDefaults, route, today, latestSectionMap])
+    await addManyToList(await withDefaults(inputs), async (fresh) => afterListAddMany(await addTasksUndoable(fresh, { placement }), { route, today, insertAfter, sectionMap: drag.latestSectionMap }))
+  }, [withDefaults, route, today, drag.latestSectionMap])
 
   const { setPrompt } = ui
   const rowsById = useRef(taskMap)
@@ -468,6 +471,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
               onSelect={setSelectedId} onOpen={(id) => { setSelectedId(id); setOpenId(id) }} byId={taskMap} hue={hueFor(currentProject.color)} />
           ) : (
             <GroupedList groups={groups} view={route.view} project={currentProject} fieldColumns={m.fieldColumns} projectFieldDefs={m.projectFieldDefs} siblingPos={(m.treeView || m.nested) && !board ? m.siblingPos : undefined} reveal={selectedId} todayDropTarget={ownOrder?.todayDrop?.canEdit} activeTodayDrop={drag.dropGroup}
+              contextualDrag={!!drag.draggingId && contextIds.has(drag.draggingId)}
               editable={m.projectEditable} renderRow={renderRow} addingTo={addingTo} setAddingTo={ui.setAddingTo} onToggleSection={toggleSection}
               doneBySection={m.showCompleted ? NO_DONE : m.doneBySection} revealed={revealed}
               completed={m.showCompleted && projectId ? { tasks: m.completedTasks, open: m.completedOpen, onToggle: () => m.toggleCollapsed(completedOpenKey(projectId)), gotIt: m.reusable } : undefined} toggleCollapsed={m.toggleCollapsed} collapsedGroups={collapsedGroups} projects={m.projects} labels={m.labels}

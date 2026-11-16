@@ -12,8 +12,9 @@ import type { UndoableResult } from './undoActions'
 import { manualSequence, MAX_VIEW_ORDER, orderRank, planViewOrder, stepAnchor, type ViewPlacement, type ViewStep } from './viewOrder'
 import type { Task, UserPrefs, View } from './types'
 import { listDisplayOf } from './listDisplay'
-import { viewOptions } from './views'
-import { planMove, readTicked, toProposed } from './bulk'
+import { inToday, isSomeday, overdueInToday, viewOptions } from './views'
+import { planDue, planMove, readTicked, toProposed } from './bulk'
+import { logicalToday } from './dates'
 import { canEditTasks, currentUserId, membershipMap, roleOf, scopeOf } from './sharing'
 import { isDescendant } from './tree'
 import { compareDueThenPriority, planMove as planPosition, positionAtEnd, type Placement } from './ordering'
@@ -109,6 +110,8 @@ export interface GroupDrop {
   siblingAt?: Placement
   /** Before or after a top-level row, in the view's own order. */
   at?: ViewPlacement
+  /** The contextual row's current parent. Omitting a new parent explicitly promotes it for today. */
+  contextParent?: string
 }
 
 /**
@@ -125,6 +128,13 @@ export async function dropInViewGroup(host: OrderHost, tasks: readonly Task[], m
   const { tasks: picked, all } = await readTicked([moved])
   const task = picked[0]
   if (!task || task.completed_at) return null
+  const contextDay = drop.contextParent ? logicalToday(undefined, now) : null
+  if (contextDay) {
+    if (host.entity !== 'user_prefs' || !listDisplayOf('today', row).subtasks || task.parent_id !== drop.contextParent ||
+      isSomeday(task) || inToday(task, contextDay) || drop.at || drop.siblingAt) return null
+    const previousParent = all.find((x) => x.id === drop.contextParent)
+    if (!previousParent || !inToday(previousParent, contextDay) || overdueInToday(previousParent, contextDay)) return null
+  }
   const memberships = await membershipMap()
   const from = task.project_id ?? null
   const to = drop.projectId
@@ -142,17 +152,20 @@ export async function dropInViewGroup(host: OrderHost, tasks: readonly Task[], m
   if (drop.parentId !== undefined) {
     const parent = all.find((x) => x.id === drop.parentId)
     if (!parent || parent.completed_at || (parent.project_id ?? null) !== to || parent.id === moved || isDescendant(parent.id, moved, all) || cross) return null
+    if (contextDay && (!inToday(parent, contextDay) || overdueInToday(parent, contextDay))) return null
   }
   let changes: Change[] = []
   let id = moved
   if (from !== to) {
     changes = planMove([task], all, { projectId: to, sectionId: null }, memberships, await currentUserId(), now, await keepWorkspaceFor())
+    if (!changes.length) return null
     // Across sharing scopes the task becomes a copy (as every project move): place the copy.
     id = changes.find((c) => c.entity === 'task' && c.patch.title !== undefined && !c.patch.deleted_at && c.entityId !== moved)?.entityId ?? moved
   }
   const own = changes.find((c) => c.entityId === id)
   const patch: Record<string, unknown> = { ...(own?.patch ?? {}) }
   const parent = drop.parentId ?? null
+  if (contextDay && parent === null) Object.assign(patch, planDue([task], 'today', contextDay)[0].patch)
   if ((task.parent_id ?? null) !== parent || (own && own.patch.parent_id === null && parent !== null)) patch.parent_id = parent
   if (parent === null && task.section_id && from === to) patch.section_id = null
   let positions: Change[] = []
@@ -179,7 +192,8 @@ export async function dropInViewGroup(host: OrderHost, tasks: readonly Task[], m
   }
   if (!taskChanges.length && !order) return null
   await getDeviceId()
-  const label = from !== to ? t('Moved to {target}', { target: drop.projectName }) : t('Order changed')
+  const label = contextDay && parent === null ? t('Scheduled for today')
+    : from !== to ? t('Moved to {target}', { target: drop.projectName }) : t('Order changed')
   const proposed = await toProposed(taskChanges, memberships)
   const batch = order ? [...proposed, { entity: host.entity, entityId: host.id, patch: order, base: BASE[host.entity] }] : proposed
   const entry = await applyBatch(batch, { source: 'action', label })

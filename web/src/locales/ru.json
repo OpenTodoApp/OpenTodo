@@ -7767,5 +7767,8 @@
   "Not synced since {time}": "Нет синхронизации с {time}",
   "Not synced yet": "Ещё не синхронизировано",
   "Add a subtask to {title}": "Добавить подзадачу к {title}",
-  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче",
+  "Make top-level for today": "Сделать самостоятельной задачей на сегодня",
+  "Move under task…": "Переместить в подзадачи…",
+  "Subtask shown for context": "Подзадача показана для контекста"
 }

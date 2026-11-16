@@ -47,7 +47,7 @@ Project and Inbox views SHALL render subtasks indented beneath their parent, ord
 - **THEN** the checkboxes of top-level tasks sit at the same horizontal position in both
 
 ### Requirement: Flat display in cross-project and date views
-Views that span projects or filter by date SHALL list each matching task once, flat, with a breadcrumb naming its parent; a parent that does not itself match SHALL not be shown. Today and Upcoming with their Nest subtasks display option on (OpenSpec `builtin-view-options` "Nest subtasks in Today and Upcoming") SHALL instead list a subtask under its parent when both are listed in the same group, and keep the flat row with its breadcrumb otherwise.
+Views that span projects or filter by date SHALL list each matching task once, flat, with a breadcrumb naming its parent; a parent that does not itself match SHALL not be shown. Today and Upcoming with their Nest subtasks display option on (OpenSpec `builtin-view-options` "Nest subtasks in Today and Upcoming") SHALL instead list a subtask under its parent when both are listed in the same group, and keep the flat row with its breadcrumb otherwise. In Today only, the same option can also show undated and future-dated direct subtasks beneath a regular task in a day group, following the eligibility and action rules in that requirement.
 
 #### Scenario: Flat in Today
 - **WHEN** only "Compare prices" is due today
@@ -56,6 +56,11 @@ Views that span projects or filter by date SHALL list each matching task once, f
 #### Scenario: Nested in Today
 - **WHEN** Nest subtasks is on in Today and "Hotel" and its subtask "Compare prices" are both due today
 - **THEN** Today lists "Hotel" with "Compare prices" indented under it, and does not list "Plan trip"
+
+#### Scenario: Context in Today
+
+- **WHEN** Nest subtasks is on in Today and "Hotel" is a regular Today row while its direct subtask "Compare prices" has no date
+- **THEN** "Compare prices" renders as one contextual child and "Hotel" opens and collapses it with the existing tree controls
 
 ### Requirement: Parent progress
 A task with at least one non-deleted subtask SHALL show its progress as "completed/total" over its direct subtasks in list rows and in the detail panel, computed from local data so it is correct offline and updates live when a subtask changes on any device. A subtask's own subtasks SHALL count toward that subtask's progress, not its parent's; a deleted subtask SHALL count nowhere, and a completed parent SHALL keep showing the progress of its subtasks. In a list row and on a card the count SHALL be led by a small progress ring showing the share done, in the count's own colour, decorative, so assistive technology reads the count ("3 of 5 subtasks completed") and nothing more. The detail panel's Subtasks heading SHALL show the count, the bar and the share as a whole percentage ("60%", read "60% done"). Progress is derived, never stored or synced, so it converges whenever the subtasks it counts converge.

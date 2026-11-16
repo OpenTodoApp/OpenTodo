@@ -89,7 +89,7 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
       onOpen={(e) => actions.open(task.id, e)}
       onOpenPage={() => actions.openPage(task.id)}
-      onTick={(range) => actions.tick(task.id, range)}
+      onTick={rest.contextual ? undefined : (range) => actions.tick(task.id, range)}
       onMore={(from) => actions.more(task.id, from)}
       onExpand={expandable ? () => actions.expand(task.id) : undefined}
       score={urgency && !rest.depth && rest.shape !== 'card' ? <UrgencyChip of={urgency} task={task} /> : undefined}

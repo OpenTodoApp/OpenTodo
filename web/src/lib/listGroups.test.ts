@@ -685,6 +685,55 @@ describe('built-in view options (builtin-view-options)', () => {
     const nested = d('today', { subtasks: true })
     const rows = (g: ListGroup) => g.rows.map((r) => [r.task.title, r.depth, r.breadcrumb])
 
+    it.each(['day', 'project'] as const)('adds contextual leaves only to regular Today parents (%s)', (groupBy) => {
+      const plan = task({ title: 'Plan', project_id: home.id, due: { date: TODAY } })
+      const todayChild = task({ title: 'Today child', project_id: home.id, parent_id: plan.id, due: { date: TODAY }, position: 20 })
+      const later = task({ title: 'Later', project_id: home.id, parent_id: plan.id, due: { date: '2026-10-16' }, position: 10 })
+      const undated = task({ title: 'Undated', project_id: home.id, parent_id: todayChild.id })
+      const leafChild = task({ title: 'Hidden grandchild', project_id: home.id, parent_id: later.id })
+      const dueGrandchild = task({ title: 'Due grandchild', project_id: home.id, parent_id: later.id, due: { date: TODAY } })
+      const earlier = task({ title: 'Earlier', project_id: home.id, parent_id: plan.id, due: { date: '2026-10-13' } })
+      const parked = task({ title: 'Parked', project_id: home.id, parent_id: plan.id, start: 'someday' })
+      const done = task({ title: 'Done', project_id: home.id, parent_id: plan.id, completed_at: 1 })
+      const all = [plan, todayChild, later, undated, leafChild, dueGrandchild, earlier, parked, done]
+      const options = { taskMap: new Map(all.map((t) => [t.id, t])), display: { ...nested, groupBy } }
+      const listed = [earlier, plan, todayChild, dueGrandchild]
+      const g = listGroups(today(listed, options))
+      expect(titles(g[0])).toEqual(['Earlier'])
+      expect(g[1].rows.map((r) => [r.task.title, r.depth, !!r.contextual])).toEqual([
+        ['Plan', 0, false], ['Later', 1, true], ['Today child', 1, false],
+        ['Undated', 2, true], ['Due grandchild', 0, false],
+      ])
+      expect(titles(listGroups(today(listed, { ...options, collapsed: new Set([plan.id]) }))[1])).toEqual(['Plan', 'Due grandchild'])
+      expect(titles(listGroups(today(listed, { ...options, display: { ...options.display, subtasks: false } }))[1])).not.toContain('Later')
+      const upcoming = listGroups({ ...today([...listed, later], options), view: 'upcoming', upcomingToday: true, todayDisplay: options.display })
+      expect(upcoming.flatMap((group) => group.rows).filter((r) => r.task.id === later.id).map((r) => r.depth)).toEqual([0])
+    })
+
+    it('keeps reached start and deadline dates ordinary and respects Today visibility for contextual rows', () => {
+      const parent = task({ title: 'Parent', project_id: home.id, due: { date: TODAY } })
+      const step = { project_id: home.id, parent_id: parent.id, due: { date: '2026-10-16' } }
+      const started = task({ ...step, title: 'Started', start: TODAY })
+      const deadline = task({ ...step, title: 'Deadline today', deadline: TODAY })
+      const later = task({ ...step, title: 'Later', start: '2026-10-16' })
+      const filtered = task({ ...step, title: 'Outside duration' })
+      const assigned = task({ ...step, title: 'Other member', assignee_id: 'other' })
+      const all = [parent, started, deadline, later, filtered, assigned]
+      const options = {
+        taskMap: new Map(all.map((item) => [item.id, item])),
+        display: nested,
+        todayContextFilter: { assignees: { shared: new Set([home.id]), me: 'me' }, matches: (item: Task) => item.id !== filtered.id },
+      }
+      const regular = [parent, started, deadline]
+      const rowsOf = (tasks: Task[], over: Partial<GroupInput> = {}) => listGroups(today(tasks, { ...options, ...over })).flatMap((group) => group.rows)
+      const rows = rowsOf(regular)
+      expect(rows.filter((row) => row.contextual).map((row) => row.task.id)).toEqual([later.id])
+      expect(rows.filter((row) => !row.contextual).map((row) => row.task.id)).toEqual(regular.map((item) => item.id))
+      const rescheduled = { ...later, due: { date: TODAY } }
+      const changed = new Map(options.taskMap).set(later.id, rescheduled)
+      expect(rowsOf([...regular, rescheduled], { taskMap: changed }).filter((row) => row.task.id === later.id).map((row) => !!row.contextual)).toEqual([false])
+    })
+
     it('parent and child due today: nested to any depth', () => {
       const plan = task({ title: 'Plan trip', due: { date: TODAY } })
       const book = task({ title: 'Book flights', due: { date: TODAY }, parent_id: plan.id })

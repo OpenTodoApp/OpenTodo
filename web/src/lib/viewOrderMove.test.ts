@@ -8,6 +8,7 @@ import { createView } from './views'
 import { undoBatch } from './undo'
 import { dropInViewGroup, moveInViewOrder, stepInViewOrder } from './viewOrderMove'
 import type { Task } from './types'
+import { addDaysISO, logicalToday } from './dates'
 
 describe('Today order', () => {
   const host = { entity: 'user_prefs', id: 'me' } as const
@@ -43,6 +44,36 @@ describe('Today order', () => {
     await undoBatch(result!.entry!.id)
     expect(await db.userPrefs.get('me')).toMatchObject({ today_manual_order: [a, b] })
     expect(await db.tasks.get(a)).toMatchObject({ project_id: home, deleted_at: null })
+  })
+
+  it('preserves a contextual date on reparenting and refuses cycles and ineligible projects without writes', async () => {
+    const now = Date.now()
+    const today = logicalToday(undefined, now)
+    const home = await createProject({ name: 'Home' })
+    const work = await createProject({ name: 'Work' })
+    const when = { date: today }
+    const parent = await createTask({ title: 'Parent', project_id: home, due: when })
+    const target = await createTask({ title: 'Target', project_id: home, due: when })
+    const due = { date: addDaysISO(today, 3), time: '10:00', tz: 'UTC' }
+    const child = await createTask({ title: 'Future child', project_id: home, parent_id: parent, due })
+    const descendant = await createTask({ title: 'Dated descendant', project_id: home, parent_id: child, due: when })
+    const other = await createTask({ title: 'Shared target', project_id: work, due: when })
+    await mutate('user_prefs', 'me', { today_group_by: 'project', today_subtasks: 'nested' })
+    await db.outbox.clear()
+    const shown = await tasksOf([parent, target, descendant, other])
+    const drop = { projectId: home, projectName: 'Home', contextParent: parent }
+    expect(await dropInViewGroup(host, shown, child, { ...drop, parentId: descendant }, now)).toBeNull()
+    expect(await dropInViewGroup(host, shown, child, { ...drop, at: { before: target } }, now)).toBeNull()
+    const elsewhere = { ...drop, projectId: work, projectName: 'Work', parentId: other }
+    for (const role of ['viewer', 'editor'] as const) {
+      await db.memberships.put({ projectId: work, role, ownerId: 'another-user', members: [] })
+      expect(await dropInViewGroup(host, shown, child, elsewhere, now)).toBeNull()
+    }
+    expect(await db.outbox.count()).toBe(0)
+    const moved = await dropInViewGroup(host, shown, child, { ...drop, parentId: target }, now)
+    expect(await db.tasks.get(child)).toMatchObject({ parent_id: target, due })
+    await undoBatch(moved!.entry!.id)
+    expect(await db.tasks.get(child)).toMatchObject({ parent_id: parent, due })
   })
 })
 

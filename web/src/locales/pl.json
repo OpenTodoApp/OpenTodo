@@ -7767,5 +7767,8 @@
   "Not synced since {time}": "Brak synchronizacji od {time}",
   "Not synced yet": "Jeszcze nie zsynchronizowano",
   "Add a subtask to {title}": "Dodaj podzadanie do {title}",
-  "Add a subtask to this task": "Dodaj podzadanie do tego zadania"
+  "Add a subtask to this task": "Dodaj podzadanie do tego zadania",
+  "Make top-level for today": "Ustaw jako zadanie główne na dziś",
+  "Move under task…": "Przenieś pod zadanie…",
+  "Subtask shown for context": "Podzadanie widoczne dla kontekstu"
 }
