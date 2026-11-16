@@ -117,6 +117,8 @@ class PushTest {
         assertTrue(shown().isEmpty())
         // The registration is untouched: the next good message shows.
         receive(message("token-1"))
+        // Posting is not immediate either: wait for it, as for the reminder above.
+        waitUntil("the good message's notification") { shown().size == 1 }
         assertEquals(1, shown().size)
     }
 
