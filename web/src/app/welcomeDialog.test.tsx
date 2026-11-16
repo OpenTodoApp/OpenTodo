@@ -19,7 +19,7 @@ import { setWelcomeSeen, USER_PREFS_ID } from '../lib/userPrefs'
 import type { User } from '../lib/types'
 import { click, flush, mockFetch, render, waitFor } from '../ui/test-utils'
 import { AboutSection, DOCS_URL, WEBSITE_URL } from './AboutSection'
-import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, WelcomeDialog, X_URL } from './WelcomeDialog'
+import { COFFEE_URL, DISCORD_URL, ISSUES_URL, REPO_URL, SPONSORS_URL, WelcomeDialog, X_URL } from './WelcomeDialog'
 
 const owner: User = { id: 'u1', email: 'ada@example.com', name: 'Ada', role: 'owner', createdAt: Date.now() - 60_000 }
 const member: User = { ...owner, id: 'u2', role: 'member' }
@@ -55,7 +55,7 @@ describe('welcome note', () => {
     await waitFor(() => dialog() !== null)
     expect(dialog()!.textContent).toContain('Thanks for installing OpenTodo')
     const hrefs = [...dialog()!.querySelectorAll('a')].map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual([ISSUES_URL, DISCORD_URL, REPO_URL, COFFEE_URL])
+    expect(hrefs).toEqual([ISSUES_URL, DISCORD_URL, REPO_URL, COFFEE_URL, SPONSORS_URL])
     for (const a of dialog()!.querySelectorAll('a')) {
       expect(a.getAttribute('target')).toBe('_blank')
       expect(a.getAttribute('rel')).toContain('noopener')
@@ -130,6 +130,7 @@ describe('Settings → About', () => {
     expect(document.querySelector('[data-about-feedback]')).not.toBeNull()
     for (const a of document.querySelectorAll('[data-about-link]')) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('[data-welcome-coffee]')!.getAttribute('href')).toBe(COFFEE_URL)
+    expect(document.querySelector('[data-welcome-sponsors]')!.getAttribute('href')).toBe(SPONSORS_URL)
     expect(document.querySelector('[data-about-help]')).not.toBeNull()
     expect(document.querySelector('[data-about-welcome]')).toBeNull()
     await waitFor(() => document.body.textContent!.includes('OpenTodo v0.7.2'))

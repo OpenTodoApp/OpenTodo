@@ -7767,5 +7767,6 @@
   "Not synced since {time}": "Sem sincronizar desde {time}",
   "Not synced yet": "Ainda não sincronizado",
   "Add a subtask to {title}": "Adicionar uma subtarefa a {title}",
-  "Add a subtask to this task": "Adicionar uma subtarefa a esta tarefa"
+  "Add a subtask to this task": "Adicionar uma subtarefa a esta tarefa",
+  "Or sponsor on GitHub": "Ou patrocine no GitHub"
 }

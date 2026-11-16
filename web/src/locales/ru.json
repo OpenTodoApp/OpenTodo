@@ -7767,5 +7767,6 @@
   "Not synced since {time}": "Нет синхронизации с {time}",
   "Not synced yet": "Ещё не синхронизировано",
   "Add a subtask to {title}": "Добавить подзадачу к {title}",
-  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче",
+  "Or sponsor on GitHub": "Или поддержите на GitHub"
 }
