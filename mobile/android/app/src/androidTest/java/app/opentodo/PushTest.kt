@@ -82,8 +82,9 @@ class PushTest {
             first.notification.actions.map { it.title.toString() },
         )
         assertTrue("it does not alert a second time", first.notification.flags and Notification.FLAG_ONLY_ALERT_ONCE != 0)
-        // Its alarm went with it.
-        assertNull(Scheduler.find(context, REMINDER_ID))
+        // Its alarm went with it. The receiver posts the notification before it cancels the
+        // alarm (only a shown reminder gives up its alarm), so the test waits for both.
+        waitUntil("the reminder's alarm to go") { Scheduler.find(context, REMINDER_ID) == null }
 
         // The same message again, and the alarm's path for the same firing: still that one notification.
         receive(message("token-1"))

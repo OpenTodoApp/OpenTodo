@@ -1,0 +1,1 @@
+- **List headers stay put while you scroll.** In Inbox, Today, Upcoming, project and label lists, the page header and the "Add task" field no longer jump up on the first scroll; they stick where they already are, and nothing shows through the space above them (#1441).

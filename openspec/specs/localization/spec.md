@@ -139,7 +139,7 @@ When the server answers with its error envelope, the client SHALL show a transla
 - **THEN** the client shows the server's message as received
 
 ### Requirement: Shipped languages and their catalogs
-English, German, French, Spanish, Italian, Portuguese, Simplified Chinese (`zh`, shown as 简体中文) and Dutch SHALL be maintained in the repository and SHALL be complete in every release. A maintained language SHALL be offered in Settings only when its catalog is complete. A community language (see "Community languages") SHALL be offered when it meets that requirement's threshold. The Simplified Chinese catalog MAY be drafted by machine translation and SHALL be reviewed afterwards by a person who reads Simplified Chinese. The other shipped catalogs, maintained or community, SHALL be written and reviewed by people; machine translation SHALL NOT be used for them.
+English, German, French, Spanish, Italian, Portuguese, Simplified Chinese (`zh`, shown as 简体中文) and Dutch SHALL be maintained in the repository and SHALL be complete in every release. A maintained language SHALL be offered in Settings only when its catalog is complete. A community language (see "Community languages") SHALL be offered when it meets that requirement's threshold. The Simplified Chinese catalog MAY be drafted by machine translation and SHALL be reviewed afterwards by a person who reads Simplified Chinese. Russian (`ru`, shown as Русский) and Polish (`pl`, shown as Polski) SHALL be shipped as community languages; their catalogs MAY be drafted by machine translation, SHALL be listed in the translation guide as machine drafts looking for a reviewer until a speaker has read them, and SHALL be reviewed by a person who reads the language once one signs up. The other shipped catalogs, maintained or community, SHALL be written and reviewed by people; machine translation SHALL NOT be used for them.
 
 Simplified Chinese SHALL be complete on the web app, the service worker's notification texts, the browser extension, the Android shell, server emails, the weekly digest and notification-channel messages.
 
@@ -162,6 +162,10 @@ Simplified Chinese SHALL be complete on the web app, the service worker's notifi
 #### Scenario: Older client receives Dutch
 - **WHEN** a device running a release without Dutch receives `language: "nl"` from another device
 - **THEN** it behaves as `system` and keeps the stored value, and the newer device stays in Dutch
+
+#### Scenario: Russian and Polish as community languages
+- **WHEN** the user opens the Language panel
+- **THEN** `Русский` and `Polski` are listed after the maintained languages with the community caption, and picking `Polski` shows Today's headings in Polish with the root element's `lang` set to `pl`
 
 ### Requirement: Translation checks
 The project's checks SHALL fail when a new user-facing string in the web app is not routed through the message layer (naming the file and line, with an allow-list for proper nouns, codes and samples), when a shipped catalog misses a message or holds one no longer used, when a message is malformed, or when a translation's placeholders differ from the source. The untranslated-string check SHALL also catch a prop value that reads as a phrase without any two-letter word (such as a placeholder "e.g. 45m, 1h30") and text assembled in a template literal under an object key a view shows (such as a group's `note`).

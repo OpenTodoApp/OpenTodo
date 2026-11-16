@@ -1,0 +1,1 @@
+- **Plan from a list works on a phone.** Where the planning list covers the calendar, tap a task and then a time in the Day: it is planned there with Undo, and the list comes back for the next one (#1433).

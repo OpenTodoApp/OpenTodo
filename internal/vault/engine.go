@@ -53,6 +53,12 @@ type Options struct {
 	// TakeOver makes a folder another installation owns this one's: a new
 	// device id and a first sync that keeps the server's values (design D5).
 	TakeOver bool
+	// Settled, when set, is asked right before the push whether the folder
+	// still holds what it held when the run started (ot vault watch). A save
+	// that began during the run (an editor's empty first step, held for longer
+	// than the read) makes it false: the run pushes and writes nothing and the
+	// next one reads the whole save.
+	Settled func() bool
 }
 
 // Event is one line of the sync's output.
@@ -258,6 +264,9 @@ func Sync(ctx context.Context, o Options) (*Report, error) {
 		// so the next sync reads the whole save.
 		if saved := e.savedSinceRead(); len(saved) > 0 {
 			return e.skippedReport(saved), nil
+		}
+		if o.Settled != nil && !o.Settled() {
+			return e.skippedReport(sortedKeys(e.changed)), nil
 		}
 		if err := e.push(ctx, e.ops); err != nil {
 			return nil, err

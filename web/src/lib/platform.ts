@@ -35,7 +35,8 @@ export interface Platform {
    * across tabs), or null when there is no other instance to share with or no
    * channel to reach it: then this one leads at once.
    */
-  readonly leader: { request<T>(name: string, fn: () => Promise<T>, signal?: AbortSignal): Promise<T> } | null
+  /** `steal` takes the lock from a holder that stopped answering (sync-leader-takeover D2); it cannot be combined with `signal`. */
+  readonly leader: { request<T>(name: string, fn: () => Promise<T>, signal?: AbortSignal, steal?: boolean): Promise<T> } | null
   /** A channel to the other instances (BroadcastChannel), or null without one. */
   broadcast(name: string): Channel | null
   /**
@@ -120,7 +121,7 @@ const web: Platform = {
     if (typeof navigator === 'undefined' || typeof BroadcastChannel === 'undefined') return null
     const locks = navigator.locks
     return typeof locks?.request === 'function'
-      ? { request: <T>(name: string, fn: () => Promise<T>, signal?: AbortSignal) => locks.request(name, { signal }, fn) as Promise<T> }
+      ? { request: <T>(name: string, fn: () => Promise<T>, signal?: AbortSignal, steal?: boolean) => locks.request(name, steal ? { steal: true } : { signal }, fn) as Promise<T> }
       : null
   },
   broadcast(name) {

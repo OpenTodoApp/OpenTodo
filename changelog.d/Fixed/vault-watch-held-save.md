@@ -1,0 +1,1 @@
+- **`ot vault watch` never trashes tasks from a file caught mid-save.** When an editor's empty first step lasted through the whole sync, the watch could push every line of the file as removed; it now pushes nothing when the folder changed after the run started, and the next run reads the whole save.

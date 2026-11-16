@@ -8,7 +8,7 @@ import type { GroupDrop, OrderHost } from '../lib/viewOrderMove'
 import { showUndoToast } from './bulk/toastStore'
 import { withListTransition } from './motion'
 
-function offerUndo(r: UndoableResult | null): boolean {
+export function offerUndo(r: UndoableResult | null): boolean {
   if (r?.entry) showUndoToast(r.label, r.entry.id)
   return !!r?.entry
 }

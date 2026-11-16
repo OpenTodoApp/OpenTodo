@@ -1,0 +1,24 @@
+{
+  "$comment": "OpenTodo's Railway template, as it is entered in Railway's template composer (Railway has no template file to import). scripts/deploy/railway.mjs checks it against deploy/deploy.json, and deploy/railway/README.md lists the dashboard steps. Guide: docs/self-hosting/railway.md",
+  "name": "OpenTodo",
+  "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container.",
+  "icon": "https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png",
+  "category": "Productivity",
+  "overview": "deploy/railway/overview.md",
+  "service": {
+    "name": "OpenTodo",
+    "source": { "image": "ghcr.io/opentodoapp/opentodo:stable" },
+    "healthcheckPath": "/healthz",
+    "replicas": 1,
+    "networking": { "http": true, "targetPort": 8080 },
+    "volume": { "mountPath": "/data" },
+    "variables": [
+      { "name": "OPENTODO_BASE_URL", "value": "https://${{RAILWAY_PUBLIC_DOMAIN}}", "description": "The address people open. Passkeys, secure cookies and links in emails use it. Change it if you add a custom domain." },
+      { "name": "OPENTODO_SETUP_TOKEN", "value": "${{secret(32)}}", "description": "Asked once, when you create the owner account. Find it in this service's Variables tab." },
+      { "name": "OPENTODO_ALLOW_SIGNUP", "value": "false", "description": "true lets anyone who can reach the address create an account. Otherwise the owner invites people." },
+      { "name": "OPENTODO_TRUSTED_PROXIES", "value": "", "description": "Leave empty on Railway: its edge proxy is the only hop." },
+      { "name": "PORT", "value": "8080", "description": "The port OpenTodo listens on; Railway routes and health-checks it. Do not change it." },
+      { "name": "RAILWAY_RUN_UID", "value": "0", "description": "Lets OpenTodo write to the volume: the image runs as a non-root user, and Railway's volumes are writable by root." }
+    ]
+  }
+}
