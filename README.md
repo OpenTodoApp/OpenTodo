@@ -119,6 +119,8 @@ The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the lat
 
 Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.26+ and Node 22+).
 
+**Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo). These links support the project: OpenTodo receives a share when you host through them.
+
 ### Configuration
 
 Nothing is required. Every setting is an optional environment variable with a safe default: see the [configuration reference](docs/self-hosting/configuration.md). To add people, keep sign-up closed and send invitation links ([managing users](docs/self-hosting/docker.md#managing-users)).
