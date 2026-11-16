@@ -829,10 +829,18 @@ const LOCK_NAME = 'opentodo-sync'
 const CHANNEL_NAME = 'opentodo-sync'
 /** A follower's syncNow() resolves after the leader answers, or after this long. */
 const FOLLOWER_WAIT_MS = 15_000
+/**
+ * How often a follower checks that the leader answers, how long it waits, and the
+ * misses in a row that make it take over (sync-leader-takeover D1). Tests shorten them.
+ */
+export const LEADER_PROBE = { everyMs: 20_000, waitMs: 5_000, misses: 2 }
 
 type Message =
   | { type: 'sync'; id?: string }
   | { type: 'done'; id: string }
+  // Is the leader still there (sync-leader-takeover D1)? It answers at once, outside any exchange.
+  | { type: 'ping'; id: string }
+  | { type: 'pong'; id: string }
   | { type: 'status'; snapshot: Snapshot }
   | { type: 'signout' }
 
@@ -855,6 +863,14 @@ function post(msg: Message): void {
 function onMessage(msg: Message): void {
   if (msg.type === 'signout') {
     for (const fn of signOutListeners) fn()
+    return
+  }
+  if (leader && msg.type === 'ping') {
+    post({ type: 'pong', id: msg.id })
+    return
+  }
+  if (msg.type === 'pong') {
+    pongs.get(msg.id)?.()
     return
   }
   if (leader) {
@@ -888,20 +904,77 @@ function electLeader(): void {
   }
   leader = false
   channel.on((m) => onMessage(m as Message))
+  requestLock(false)
+  // Until the lock is ours, the leader (if any) syncs for this tab too.
+  post({ type: 'sync' })
+}
+
+/**
+ * Waits for the sync lock (or, with `steal`, takes it from a holder that stopped
+ * answering) and leads once it is ours. A lock taken away from this tab by another
+ * one makes it a follower again (sync-leader-takeover D3).
+ */
+function requestLock(steal: boolean): void {
+  const locks = platform.leader
+  if (!locks) return
   const abort = new AbortController()
   lockAbort = abort
+  missedPongs = 0
+  if (probeTimer) clearInterval(probeTimer)
+  probeTimer = setInterval(() => void checkLeader(), LEADER_PROBE.everyMs)
   locks.request(LOCK_NAME, () => new Promise<void>((resolve) => {
     if (abort.signal.aborted || !started) return resolve()
     releaseLock = resolve
+    if (probeTimer) clearInterval(probeTimer)
+    probeTimer = null
     lead()
-  }), abort.signal).catch(() => undefined)
-  // Until the lock is ours, the leader (if any) syncs for this tab too.
-  post({ type: 'sync' })
+  }), steal ? undefined : abort.signal, steal).catch(() => {
+    if (leader && started && lockAbort === abort) stepDown()
+  })
+}
+
+/** Ping replies a follower waits for, by ping id. */
+const pongs = new Map<string, () => void>()
+let probeTimer: ReturnType<typeof setInterval> | null = null
+let missedPongs = 0
+
+/**
+ * A follower asks the leader whether it is there. A leader that stays silent for
+ * two checks (a frozen or closed-but-not-released tab) loses the lock to this tab
+ * (sync-leader-takeover D1, D2): one silent holder never stops a browser's sync again.
+ */
+async function checkLeader(): Promise<void> {
+  if (leader || !started || !channel) return
+  const id = uuid()
+  const answered = await new Promise<boolean>((resolve) => {
+    const timeout = setTimeout(() => { pongs.delete(id); resolve(false) }, LEADER_PROBE.waitMs)
+    pongs.set(id, () => { clearTimeout(timeout); pongs.delete(id); resolve(true) })
+    post({ type: 'ping', id })
+  })
+  if (leader || !started) return
+  missedPongs = answered ? 0 : missedPongs + 1
+  if (missedPongs < LEADER_PROBE.misses) return
+  lockAbort?.abort()
+  requestLock(true)
+}
+
+/** The lock went to another tab: stop leading, and wait for it again as a follower (D3). */
+function stepDown(): void {
+  leader = false
+  tellLeadership()
+  if (timer) clearInterval(timer)
+  timer = null
+  clearLiveTimers()
+  closeSource()
+  releaseLock = null
+  requestLock(false)
 }
 
 /** Gives up leadership and the channel; the lock is released once the running exchange stopped. */
 function resign(): void {
   leader = false
+  if (probeTimer) clearInterval(probeTimer)
+  probeTimer = null
   tellLeadership()
   lockAbort?.abort()
   lockAbort = null

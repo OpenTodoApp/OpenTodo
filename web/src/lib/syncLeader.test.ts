@@ -8,34 +8,40 @@ import { waitFor as until } from '../ui/test-utils'
 
 type Sync = typeof import('./sync')
 
-/** A minimal exclusive Web Locks manager: FIFO, with abortable requests. */
+/** A minimal exclusive Web Locks manager: FIFO, with abortable requests and `steal`. */
 class FakeLocks {
   private queue: { cb: () => Promise<unknown>; resolve: (v: unknown) => void; reject: (e: unknown) => void }[] = []
-  private held = false
+  private holder: { resolve: (v: unknown) => void; reject: (e: unknown) => void } | null = null
   request(_name: string, a: unknown, b?: unknown): Promise<unknown> {
     const cb = (typeof a === 'function' ? a : b) as () => Promise<unknown>
-    const signal = typeof a === 'function' ? undefined : (a as { signal?: AbortSignal }).signal
+    const opts = (typeof a === 'function' ? {} : a) as { signal?: AbortSignal; steal?: boolean }
     return new Promise((resolve, reject) => {
       const entry = { cb, resolve, reject }
-      signal?.addEventListener('abort', () => {
+      opts.signal?.addEventListener('abort', () => {
         const i = this.queue.indexOf(entry)
         if (i >= 0) {
           this.queue.splice(i, 1)
           reject(new DOMException('aborted', 'AbortError'))
         }
       })
-      this.queue.push(entry)
+      if (opts.steal && this.holder) {
+        // The holder loses the lock at once and its request rejects, as in the browser.
+        this.holder.reject(new DOMException('stolen', 'AbortError'))
+        this.holder = null
+        this.queue.unshift(entry)
+      } else this.queue.push(entry)
       this.pump()
     })
   }
   private pump() {
-    if (this.held) return
+    if (this.holder) return
     const e = this.queue.shift()
     if (!e) return
-    this.held = true
+    const mine = { resolve: e.resolve, reject: e.reject }
+    this.holder = mine
     void Promise.resolve().then(() => e.cb()).then(
-      (v) => { this.held = false; e.resolve(v); this.pump() },
-      (err) => { this.held = false; e.reject(err); this.pump() },
+      (v) => { if (this.holder === mine) { this.holder = null; e.resolve(v); this.pump() } },
+      (err) => { if (this.holder === mine) { this.holder = null; e.reject(err); this.pump() } },
     )
   }
 }
@@ -115,6 +121,33 @@ describe('one tab syncs', () => {
     await b.withSyncLock(async () => { cleared = true })
     expect(cleared).toBe(true)
     expect(a.isSyncLeader()).toBe(false)
+  })
+
+  // sync-leader-takeover D1, D2: a holder that never answers (a frozen tab) does not stop the browser's sync.
+  it('a follower takes the lock from a silent holder and syncs, and a stolen leader steps down', async () => {
+    // A client that took the lock and went quiet: no channel, never releases it.
+    void navigator.locks.request('opentodo-sync', () => new Promise(() => {})).catch(() => undefined)
+    const b = await tab()
+    tabs.push(b)
+    Object.assign(b.LEADER_PROBE, { everyMs: 30, waitMs: 20, misses: 2 })
+    b.startSync()
+    await until(() => b.isSyncLeader() && syncRequests.count >= 1, 'tab B to take over and sync')
+    // A tab that answers keeps the lead: C follows B, and B is not displaced.
+    const c = await tab()
+    tabs.push(c)
+    Object.assign(c.LEADER_PROBE, { everyMs: 30, waitMs: 200, misses: 2 })
+    const watch = new BroadcastChannel('opentodo-sync')
+    let pongs = 0
+    watch.onmessage = (e: MessageEvent<{ type?: string }>) => { if (e.data?.type === 'pong') pongs++ }
+    c.startSync()
+    await until(() => pongs >= 3, 'B to answer three of C\'s checks')
+    watch.close()
+    expect(b.isSyncLeader()).toBe(true)
+    expect(c.isSyncLeader()).toBe(false)
+    // Another silent client steals the lock from B: B steps down, and one working tab leads again.
+    void (navigator.locks.request as (n: string, o: object, f: () => Promise<void>) => Promise<void>)('opentodo-sync', { steal: true }, () => new Promise(() => {})).catch(() => undefined)
+    await until(() => !b.isSyncLeader(), 'B to step down')
+    await until(() => b.isSyncLeader() !== c.isSyncLeader(), 'exactly one working tab to lead again', 5_000)
   })
 
   it('without Web Locks every tab syncs on its own', async () => {

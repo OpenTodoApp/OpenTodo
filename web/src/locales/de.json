@@ -7763,5 +7763,7 @@
   "{kept} of {of} this week": "{kept} von {of} diese Woche",
   "{n, plural, one {Once a month} other {# times a month}}": "{n, plural, one {Einmal im Monat} other {#-mal im Monat}}",
   "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Einmal pro Woche} other {#-mal pro Woche}}",
-  "Tap a time to plan {title}": "Tippe auf eine Uhrzeit, um {title} einzuplanen"
+  "Tap a time to plan {title}": "Tippe auf eine Uhrzeit, um {title} einzuplanen",
+  "Not synced since {time}": "Nicht synchronisiert seit {time}",
+  "Not synced yet": "Noch nicht synchronisiert"
 }
