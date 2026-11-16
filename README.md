@@ -179,7 +179,7 @@ More in [architecture](docs/architecture.md) and [the sync protocol](docs/sync.m
 4. **Review a translation.** The app speaks eight languages; tell us where a word feels wrong ([translating](docs/translating.md)).
 5. **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 6. **Answer questions** from other people in Discussions and on Discord.
-7. **Support it:** [buy me a coffee](https://buymeacoffee.com/pixari) or sponsor on [GitHub Sponsors](https://github.com/sponsors/pixari).
+7. **Sponsor:** [buy me a coffee](https://buymeacoffee.com/pixari) or [GitHub Sponsors](https://github.com/sponsors/pixari).
 
 To contribute code, read [CONTRIBUTING.md](CONTRIBUTING.md): changes that alter behaviour start as an [OpenSpec](openspec/) change. Security issues go to the address in [SECURITY.md](SECURITY.md).
 
