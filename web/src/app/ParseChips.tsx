@@ -134,6 +134,9 @@ export function ParseChips({ chips, misses = [], projects, labels, highlight = n
               type="button"
               className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
               aria-label={t('Keep “{source}” as text', { source })}
+              // A press keeps focus in the field, as the sheet's and the palette's × do: a
+              // title editor that lost focus would save the line as parsed (issue 1463).
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => onDismiss(c)}
             >
               <Icon name="x" size="xs" />
