@@ -7,7 +7,7 @@
 import { TodayStrip } from './habits/TodayStrip'
 import { CloseDayRow } from './CloseDayRow'
 import { useWithMethod } from './help/MethodLink'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ProjectCalendarLayout, useListExtras } from './task-list/listExtras'
 import { t } from '../lib/i18n'
 import { sharedWithSomeoneElse } from '../lib/dayLists'
@@ -422,7 +422,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   if (route.view === 'project' && currentProject && viewMode === 'calendar') return <ProjectCalendarLayout project={currentProject} userId={userId} onCycle={toggleViewMode} onChoose={chooseViewMode} layout={<LayoutSwitch mode={viewMode} onChoose={chooseViewMode} />} />
 
   return (
-    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={room} className="min-w-0 px-4 py-5 md:px-8">
+    <ListReorderContext.Provider value={listReorder}><UrgencyContext.Provider value={m.urgency}><div ref={room} className="min-w-0 px-4 py-5 [--page-head-top:--spacing(5)] md:px-8">
         <div className={PAGE_FRAME} data-page-body={frame.width} data-page-frame={frame.kind} data-page-gutter="outside" data-list-page
           data-page-project={route.view === 'project' ? '' : undefined}>
           {route.view === 'project' && currentProject ? (
@@ -436,7 +436,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
           {route.view === 'completed' && <Suspense fallback={<div className="mb-3 h-9" />}><CompletedSearch value={m.completedQuery} onChange={m.setCompletedQuery} /></Suspense>}
           {route.view !== 'completed' && (
             // Sticks under the page header from 768 px, so adding never needs a scroll back up (add-position D4).
-            <div ref={quickAddRow} style={{ top: quickAddTop }} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
+            <div ref={quickAddRow} style={{ top: quickAddTop.top, '--below-head-gap': `${quickAddTop.gap}px` } as CSSProperties} className={`mb-3 pb-2 ${STICKY_QUICK_ADD}`} data-quick-add-row>
               {m.projectReadOnly ? <ReadOnlyQuickAdd /> : (
                 <QuickAdd ref={quickAddRef} onAdd={onAdd} onAddMany={onAddMany} projects={m.projects} labels={m.labels} placeholder={placeholderFor(route, currentProject, currentLabel, currentPlace ?? undefined, workspaceName, phone)} voiceShortcut />
               )}

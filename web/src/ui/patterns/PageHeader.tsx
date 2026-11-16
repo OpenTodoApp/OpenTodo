@@ -178,7 +178,7 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
   const toolsEnd = <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-1" data-page-actions><PageActions actions={actions} overflow={overflow} menu={menu} help={help} helpInMenu={narrow} /></div>
   return (
     <header ref={room} data-page-header data-page-head={day ? 'day' : 'tool'} data-page-narrow={narrow || undefined} data-testid={testId}
-      className={`${sticky && !phoneDay ? 'sticky top-0 z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
+      className={`${sticky && !phoneDay ? 'sticky top-[var(--page-head-top,0px)] z-10 -mx-4 bg-canvas px-4 md:-mx-8 md:bg-surface md:px-8 before:pointer-events-none before:absolute before:inset-x-0 before:bottom-full before:h-[var(--page-head-top,0px)] before:bg-inherit' : ''} ${ownRow || phoneDay || (actions && !barActions) ? (day ? 'mb-3 pb-3' : 'mb-2 border-b border-soft') : ''} ${level === 1 ? (ownRow || phoneDay ? (day ? 'pt-2' : '') : '') : 'pt-5'}`}>
       {/* The phone's day head scrolls with the list; the bar above it stays (precision-phone D1). */}
       {phoneDay && <>
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1" data-page-header-row>
