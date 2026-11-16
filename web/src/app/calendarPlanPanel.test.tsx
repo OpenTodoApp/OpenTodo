@@ -4,12 +4,15 @@
 // month and switching Day, Week, Month or Plan keep it; its close button, Escape or
 // leaving the Calendar close it. The list's actions follow the view on screen.
 import 'fake-indexeddb/auto'
-import { useEffect } from 'react'
+import { act, useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { getTask } from '../lib/localData'
 import { createTask, resetDeviceId } from '../lib/ops'
 import { click, flush, key, minWidthPx, render, waitFor } from '../ui/test-utils'
+import { bulkToast } from './bulk/toastStore'
+import { PX_PER_MIN } from './calendar/grid'
+import { openPlanPanel } from './calendar/PlanPanel'
 import { CalendarView } from './CalendarView'
 import { MonthView } from './MonthView'
 import { PlanView } from './PlanView'
@@ -217,6 +220,91 @@ describe('the planning list is remembered', () => {
     viewport(390)
     await leaveAndReturn()
     expect(planList()).toBeNull()
+    await r.unmount()
+  })
+})
+
+// On a phone the list covers the calendar: tap a task, then a time (plan-list-tap-to-place, #1433).
+describe('tap to place from the planning list', () => {
+  const original = window.matchMedia
+  function viewport(px: number) {
+    window.matchMedia = ((q: string) => ({
+      matches: minWidthPx(q) <= px, media: q, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+    })) as typeof window.matchMedia
+  }
+  afterEach(() => { window.matchMedia = original })
+  const bar = () => document.querySelector<HTMLElement>('[data-tap-place]')
+  const day = () => document.querySelector<HTMLElement>('[data-drop-day="2026-10-14"]')!
+  /** A tap on the day column at a clock time (the column's top is at 0 in this environment). */
+  const tapAt = (el: HTMLElement, minutes: number) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientY: minutes * PX_PER_MIN + 1 }))
+
+  async function tapFirst(title: string) {
+    // On a phone the menu lives in the shell's bar; open the list as its item does.
+    await waitFor(() => !!document.querySelector('[data-calendar-page]'), 'the calendar')
+    act(() => openPlanPanel())
+    await waitFor(() => planList() !== null, 'the list')
+    await waitFor(() => [...planList()!.querySelectorAll<HTMLElement>('[data-tray-task]')].some((e) => e.textContent?.includes(title)))
+    await click([...planList()!.querySelectorAll<HTMLElement>('[data-tray-task]')].find((e) => e.textContent?.includes(title))!)
+  }
+
+  it('on a phone: a tap on a task, then on 14:30 in the Day, plans it there with Undo and brings the list back', async () => {
+    viewport(390)
+    const id = await createTask({ title: 'Call the plumber' })
+    await createTask({ title: 'Renew passport' })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await tapFirst('Call the plumber')
+    // The list stepped aside; the bar names the task, Cancel has focus, the status is announced.
+    await waitFor(() => !!bar(), 'the bar')
+    expect(planList()).toBeNull()
+    expect(bar()!.querySelector('[role="status"]')!.textContent).toBe('Tap a time to plan Call the plumber')
+    expect(document.activeElement?.textContent).toBe('Cancel')
+    tapAt(day(), 14 * 60 + 30)
+    await waitFor(async () => (await getTask(id))?.due?.time === '14:30', 'planned at 14:30')
+    expect((await getTask(id))?.due).toEqual({ date: '2026-10-14', time: '14:30' })
+    await waitFor(() => !!bulkToast()?.undoId, 'the Undo toast')
+    // The list is back for the next one, and the bar is gone.
+    await waitFor(() => planList() !== null && !bar(), 'the list back')
+    expect(localStorage.getItem('opentodo.calendarPlan.open')).toBe('1')
+    await r.unmount()
+  })
+
+  it('Cancel ends the placement without a change and brings the list back', async () => {
+    viewport(390)
+    const id = await createTask({ title: 'Call the plumber' })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await tapFirst('Call the plumber')
+    await waitFor(() => !!bar(), 'the bar')
+    await click([...bar()!.querySelectorAll('button')].find((b) => b.textContent === 'Cancel')!)
+    await waitFor(() => planList() !== null && !bar(), 'the list back')
+    expect((await getTask(id))?.due).toBeFalsy()
+    await r.unmount()
+  })
+
+  it('a tap on something already in the day does not place', async () => {
+    viewport(390)
+    const id = await createTask({ title: 'Call the plumber' })
+    await createTask({ title: 'Dentist', due: { date: '2026-10-14', time: '09:00' } })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await tapFirst('Call the plumber')
+    await waitFor(() => !!bar(), 'the bar')
+    const block = [...day().querySelectorAll<HTMLElement>('[data-cal-id]')].find((e) => e.textContent?.includes('Dentist'))!
+    block.dispatchEvent(new MouseEvent('click', { bubbles: true, clientY: 9 * 60 * PX_PER_MIN + 1 }))
+    await flush()
+    expect((await getTask(id))?.due).toBeFalsy()
+    expect(bar()).toBeTruthy()
+    await r.unmount()
+  })
+
+  it('from 1024 px a tap on a list task starts nothing', async () => {
+    viewport(1280)
+    await createTask({ title: 'Call the plumber' })
+    const r = await render(<><Calendar /><PanelHost /></>)
+    await tapFirst('Call the plumber')
+    await flush()
+    expect(bar()).toBeNull()
+    expect(planList()).toBeTruthy()
+    expect(header().textContent).not.toContain('Placing')
     await r.unmount()
   })
 })

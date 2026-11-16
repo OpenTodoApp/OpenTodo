@@ -20,9 +20,10 @@ interface RowActions {
   onPointerDown: (e: React.PointerEvent, id: string) => void
   onPlace: (id: string) => void
   onOpen: (id: string) => void
+  onTap?: (id: string) => void
 }
 
-/** One task of the planning list: drag it onto a time, or focus it and press s (or Enter). */
+/** One task of the planning list: drag it onto a time, focus it and press s (or Enter), or on a phone tap it and then a time. */
 export function PlanRow({ task, actions }: { task: Task; actions: () => RowActions | null }) {
   return (
     <button data-drag-id="sector-task"
@@ -36,6 +37,7 @@ export function PlanRow({ task, actions }: { task: Task; actions: () => RowActio
           actions()?.onPlace(task.id)
         }
       }}
+      onClick={() => actions()?.onTap?.(task.id)}
       onDoubleClick={() => actions()?.onOpen(task.id)}
       className="flex w-full min-w-0 cursor-grab touch-manipulation items-center gap-1 rounded-control px-2 py-1.5 text-left text-body hover:bg-sunken dark:hover:bg-raised"
     >
