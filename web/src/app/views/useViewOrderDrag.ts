@@ -10,13 +10,15 @@
 import { useCallback, useRef, useState } from 'react'
 import { beginDrag } from '../../lib/dnd'
 import type { Task } from '../../lib/types'
-import type { OrderHost } from '../../lib/viewOrderMove'
+import type { GroupDrop, OrderHost } from '../../lib/viewOrderMove'
 import { act } from '../actionError'
 import { dropZone, type DropZone } from '../listDrop'
 import { dropTasks } from '../taskDrop'
 import { withListTransition } from '../motion'
 import { dropInView, reorderInView } from '../viewOrderActions'
+import { indentStep } from '../task-list/dropDepth'
 import { t } from '../../lib/i18n'
+import { projectGroupPlacement, type DragDepth } from '../task-list/projectGroupPlacement'
 
 /** A row of the view: its key is `<group key>:<task id>` (a task may be in several groups). */
 export interface ViewRow {
@@ -36,11 +38,14 @@ export interface ProjectGroups {
   projectOf: (groupKey: string) => { id: string | null; name: string } | null
   /** Whether the person may change tasks in that project (D4). */
   canEdit: (projectId: string | null) => boolean
+  canNest: (from: string | null, to: string | null) => boolean
   /** Nest subtasks is on: a drop onto a task nests (D3). */
   nest: boolean
   /** A row's depth under Nest subtasks (0: top level). */
   depthOf: (rowKey: string) => number
 }
+
+type ViewDrop = { key: string; zone: DropZone; depth?: number; note?: string; move?: GroupDrop }
 
 export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[], opts: {
   /** Grouped by Project in the List layout: drops across groups and onto tasks. */
@@ -52,7 +57,7 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
   /** The dropped row, to select it. */
   onDropped: (key: string) => void
 }) {
-  const [dropAt, setDropAt] = useState<{ key: string; zone: DropZone; note?: string } | null>(null)
+  const [dropAt, setDropAt] = useState<ViewDrop | null>(null)
   const [draggingKey, setDraggingKey] = useState<string | null>(null)
   const latest = useRef({ rows, opts })
   latest.current = { rows, opts }
@@ -61,11 +66,13 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
     if (!host) return
     const el = e.currentTarget
     const group = groupOfKey(key)
-    let current: { key: string; zone: DropZone; note?: string } | null = null
-    const show = (d: typeof current) => {
-      if (d?.key === current?.key && d?.zone === current?.zone) return
+    const start = latest.current.opts.projectGroups?.depthOf(key) ?? 0
+    const step = indentStep()
+    let current: ViewDrop | null = null
+    const show = (d: ViewDrop | null) => {
+      const unchanged = d?.key === current?.key && d?.zone === current?.zone && d?.depth === current?.depth && d?.note === current?.note
       current = d
-      setDropAt(d)
+      if (!unchanged) setDropAt(d)
     }
     beginDrag(e, {
       label: task.title,
@@ -73,7 +80,7 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
       onStart: () => setDraggingKey(key),
       onHoldChange: (held) => el.toggleAttribute('data-touch-hold', held),
       onHoldRelease: (x, y) => latest.current.opts.openRowMenu(task, x, y, el),
-      onMove: (target, _x, y) => {
+      onMove: (target, x, y) => {
         const k = target?.startsWith('vrow:') ? target.slice('vrow:'.length) : null
         if (!k || k === key) return show(null)
         const pg = latest.current.opts.projectGroups
@@ -84,15 +91,7 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
           if (groupOfKey(k) !== group) return show(null)
           return show({ key: k, zone: dropZone(y, r.top, r.height, false) })
         }
-        const into = pg.projectOf(groupOfKey(k))
-        if (!into || !pg.canEdit(into.id)) return show(null)
-        const onto = latest.current.rows.find((x) => x.key === k)?.task
-        const inside = pg.nest && !!onto && !withinTask(onto, task.id, latest.current.rows)
-        const zone = dropZone(y, r.top, r.height, inside)
-        // Before or after a subtask's row there is no place of the view's own order.
-        if (zone !== 'inside' && pg.depthOf(k) > 0) return show(null)
-        const moves = groupOfKey(k) !== group
-        show({ key: k, zone, ...(moves ? { note: t('Move to {project}', { project: into.name }) } : {}) })
+        show(viewProjectDrop(pg, latest.current.rows, task, group, k, r, y, { start, dx: x - e.clientX, step }))
       },
       onDrop: (target) => {
         const { rows: rs, opts: o } = latest.current
@@ -102,18 +101,16 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
           return
         }
         const at = current
-        if (!at || !target.startsWith('vrow:')) return
+        if (!at || target !== viewRowTarget(at.key)) return
         const anchor = rs.find((r) => r.key === at.key)?.task.id
         if (!anchor || anchor === task.id) return
         const tasks = rs.map((r) => r.task)
         const pg = o.projectGroups
-        const into = pg?.projectOf(groupOfKey(at.key))
         // A plain reorder within a group keeps D4 of view-manual-order; a move, a nest or a subtask let out goes through the move batch.
-        if (pg && into && (groupOfKey(at.key) !== group || at.zone === 'inside' || pg.depthOf(key) > 0)) {
-          act(dropInView(host, tasks, task.id, { projectId: into.id, projectName: into.name,
-            ...(at.zone === 'inside' ? { parentId: anchor } : { at: at.zone === 'before' ? { before: anchor } : { after: anchor } }) }))
+        if (pg && at.move && (groupOfKey(at.key) !== group || at.move.parentId !== undefined || pg.depthOf(key) > 0)) {
+          act(dropInView(host, tasks, task.id, at.move))
         } else if (at.zone !== 'inside') {
-          act(reorderInView(host, tasks, task.id, at.zone === 'before' ? { before: anchor } : { after: anchor }))
+          act(reorderInView(host, tasks, task.id, at.move?.at ?? (at.zone === 'before' ? { before: anchor } : { after: anchor })))
         } else return
         o.onDropped(key)
       },
@@ -121,12 +118,28 @@ export function useViewOrderDrag(host: OrderHost | null, rows: readonly ViewRow[
     })
   }, [host])
 
-  return { dropAt, draggingKey, startDrag }
+  function feedback(key: string) {
+    if (dropAt?.key !== key) return {}
+    return { dropIndicator: dropAt.zone, dropDepth: dropAt.depth, dropNote: dropAt.note }
+  }
+  return { feedback, draggingKey, startDrag }
 }
 
-/** Whether `task` is `id` or one of its subtasks among the view's rows: a task never nests under itself. */
-function withinTask(task: Task, id: string, rows: readonly ViewRow[]): boolean {
-  const byId = new Map(rows.map((r) => [r.task.id, r.task]))
-  for (let cur: Task | undefined = task; cur; cur = cur.parent_id ? byId.get(cur.parent_id) : undefined) if (cur.id === id) return true
-  return false
+function viewProjectDrop(pg: ProjectGroups, rows: readonly ViewRow[], task: Task, group: string,
+  key: string, rect: Pick<DOMRect, 'top' | 'height'>, y: number, gesture: DragDepth): ViewDrop | null {
+  const destination = groupOfKey(key)
+  const into = pg.projectOf(destination)
+  const onto = rows.find((row) => row.key === key)?.task
+  if (!into || !onto || !pg.canEdit(into.id)) return null
+  const from = task.project_id ?? null
+  if (pg.nest && (task.completed_at || onto.completed_at || !pg.canEdit(from))) return null
+  const tree = rows.filter((row) => groupOfKey(row.key) === destination).map((row) => {
+    const depth = pg.depthOf(row.key)
+    return { id: row.task.id, parent: depth ? row.task.parent_id ?? null : null, depth }
+  })
+  const next = projectGroupPlacement(tree, onto.id, task.id, pg.nest, pg.canNest(from, into.id), rect, y, gesture)
+  if (!next) return null
+  return { key, zone: next.zone, depth: next.depth,
+    ...(destination !== group ? { note: t('Move to {project}', { project: into.name }) } : {}),
+    move: { projectId: into.id, projectName: into.name, ...next.placement } }
 }

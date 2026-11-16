@@ -33,6 +33,10 @@ Bold is the default. Each view also has **Rows** (One line or Detailed) and, und
 
 With **Nest subtasks** on, Today and Upcoming list a subtask under its parent when both are in the same group, indented, with the fold arrow; <kbd>←</kbd> and <kbd>→</kbd> fold and unfold it. A subtask whose parent is in another group or not in the view stays a row of its own with its parent's name.
 
+## Move tasks between project groups
+
+In Today grouped by **Project**, drop between top-level rows to set the task's place in Today's **Manual order**. Drop on a group heading to change its project and keep the current sort. With **Nest subtasks** on, drop onto any eligible task or subtask to nest under it, or move sideways over a gap to choose the depth shown by the line. Project moves keep dates, including moves into the displayed Inbox group. Use the toast's **Undo** to restore the move and order.
+
 ## Keys and Reset
 
 <kbd>r</kbd> <kbd>g</kbd> and <kbd>r</kbd> <kbd>o</kbd> with a letter, and <kbd>r</kbd> <kbd>r</kbd> to reverse, set the same options [from the keyboard](keyboard.md#group-and-order); <kbd>r</kbd> <kbd>g</kbd> <kbd>t</kbd> is Time of day on Today. A key the view doesn't offer does nothing.

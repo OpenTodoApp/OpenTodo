@@ -240,10 +240,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
   const sortFields = route.view === 'project' ? layout.projectFieldDefs : allFieldDefs
-  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account)
-  // A label page's own manual order (view-manual-order D1): the rank of each placed task.
-  const labelOrder = labelRow?.manual_order
-  const manualOrder = useMemo(() => (route.view === 'label' ? orderRank(labelOrder) : undefined), [route.view, labelOrder])
+  const todayOrder = route.view === 'today' ? accountPrefs?.today_manual_order : undefined
+  const listDisplay = useListDisplay(display, displayScope, builtin || route.view === 'label' || layout.viewMode === 'list', sortFields, account, !!todayOrder?.length)
+  const savedOrder = route.view === 'label' ? labelRow?.manual_order : todayOrder
+  const manualOrder = useMemo(() => route.view === 'label' || savedOrder ? orderRank(savedOrder) : undefined, [route.view, savedOrder])
   // The urgency order (urgency-sort D4): scores follow every write and sync, worked out only while it is chosen.
   const scorer = useUrgencyOf(allTasks, today, zone)
   const urgency = display?.sortBy === 'urgency' ? scorer : null

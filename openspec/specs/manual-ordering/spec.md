@@ -92,10 +92,10 @@ When two devices reorder the same list offline, every device SHALL end with the 
 - **THEN** both devices show the same order and every task appears exactly once
 
 ### Requirement: Which views are manually ordered
-Manual ordering SHALL apply to project views (list and board), the Inbox, the project tree in the sidebar, label pages and saved list views. A project list or the Inbox shown in another order (OpenSpec `list-display-options`, `builtin-view-options`) SHALL stay draggable and movable by keyboard, and a move SHALL switch it back to manual order first; label pages and saved list views SHALL behave the same way (see "Manual order of a label page or saved view"). Today, Upcoming, Anytime, Someday, Assigned to me, Completed and place lists SHALL keep their own sort rules, or on Today and Upcoming the order chosen in their display options, offer no Manual order and use position only to break ties; dragging among rows and keyboard moves SHALL be unavailable there, except that Upcoming SHALL take a dragged task onto another day (see "Drag a task to another day in Upcoming"). The unsaved New view page SHALL not offer Manual order.
+Manual ordering SHALL apply to project views (list and board), the Inbox, the project tree in the sidebar, label pages and saved list views. A project list or the Inbox shown in another order (OpenSpec `list-display-options`, `builtin-view-options`) SHALL stay draggable and movable by keyboard, and a move SHALL switch it back to manual order first; label pages and saved list views SHALL behave the same way (see "Manual order of a label page or saved view"). Today under Project grouping SHALL support its own manual order (see "Project-group drops in Today"). Today under other groupings, Upcoming, Anytime, Someday, Assigned to me, Completed and place lists SHALL keep their own sort rules, or on Today and Upcoming the order chosen in their display options, offer no Manual order and use position only to break ties; dragging among rows and keyboard moves SHALL be unavailable there, except that Upcoming SHALL take a dragged task onto another day (see "Drag a task to another day in Upcoming"). The unsaved New view page SHALL not offer Manual order.
 
 #### Scenario: Not draggable in Today
-- **WHEN** the user tries to drag a task in Today or presses Alt+Up there
+- **WHEN** the user tries to reorder a task in Today grouped by Time of day or presses Alt+Up there
 - **THEN** nothing moves and the item is not shown as draggable
 
 #### Scenario: No reordering within a day of Upcoming
@@ -231,20 +231,55 @@ In Upcoming, a task dragged with a mouse or pen, or on touch after the same pres
 - **THEN** the task keeps its date and no operation is queued
 
 ### Requirement: Drops across project groups in a view
-In the List layout of a saved view or label page grouped by Project, a drop of a task into another project's group SHALL move the task, with its subtasks, to that project without a section and SHALL place it in the view's own order at the drop position, in one undoable batch named "Moved to <project>". With Nest subtasks on, a drop onto a task SHALL make the dragged task that task's last subtask, in the target's project. A drop target in a project the person may not edit SHALL show no drop line and refuse the drop. Other groupings and layouts SHALL keep drops within a group.
+In the List layout of a saved view or label page grouped by Project, a drop of a task into another project's group SHALL move the task and its subtasks in one undoable batch named "Moved to <project>". A top-level transfer SHALL clear its section and use the view's own order. In a saved list view with Nest subtasks on, a drop onto a row SHALL append to that row's subtasks. A drop between rows in that tree SHALL choose its depth with the same sideways gesture as a project list, show the line at that depth, and honor the indicated parent and sibling position. Nesting SHALL require an editable destination in the same sharing scope as the source and SHALL prevent cycles. A project the person may not edit SHALL take no drop. Other groupings and layouts SHALL keep drops within a group.
 
 #### Scenario: Move by dropping into another group
-- **WHEN** a view "This week" grouped by Project shows "Buy paint" under Home and the user drops it between two rows of the Work group
-- **THEN** "Buy paint" moves to Work, appears between those two rows, and Undo puts it back in Home at its old place
+- **WHEN** a task from Home is dropped at the top level between two Work rows
+- **THEN** the task moves to Work at that position in the view's order, and Undo restores its old project and order
 
 #### Scenario: Nest onto a task
-- **WHEN** Nest subtasks is on and the user drops "Book flights" onto "Trip to Lisbon" in another project's group
-- **THEN** "Book flights" moves to that project as the last subtask of "Trip to Lisbon"
+- **WHEN** Nest subtasks is on and a task is dropped onto a row in another editable project in the same sharing scope
+- **THEN** it moves there as that row's last subtask
+
+#### Scenario: Place at a nested gap
+- **WHEN** the pointer moves sideways over a gap in a saved view with Nest subtasks on
+- **THEN** the drop line shows the eligible depth and releasing places the task at that sibling position
 
 #### Scenario: Viewer's project
-- **WHEN** the user drags a task over the group of a project shared with them as a viewer
-- **THEN** no drop line shows there and releasing changes nothing
+- **WHEN** the pointer is over the group of a project shared with the person as a viewer
+- **THEN** no drop line shows and releasing changes nothing
 
 #### Scenario: Grouped by label
 - **WHEN** a view is grouped by Label
-- **THEN** a drop stays within the row's group, as before
+- **THEN** a drop stays within the row's group
+
+### Requirement: Project-group drops in Today
+
+In Today under Project grouping, tasks in the editable project groups and the displayed Inbox group SHALL support the rules in "Drops across project groups in a view". A drop line between rows SHALL position the task before or after that row in the destination group's own Today order. A first positional drop or keyboard reorder SHALL switch Today to Manual order and preserve the displayed relative order of the other top-level tasks in the project groups, subject to the existing 500-ID bound. A drop onto a group heading or empty space in a displayed group SHALL transfer the task at the top level, keep the current sort and preserve any personal order rank. With Nest subtasks enabled, a drop onto the middle of a row SHALL nest it as the last subtask of that row under the sharing-scope and permission rules in that requirement. A transfer to Inbox SHALL clear the task's project while preserving dates. The move SHALL preserve the existing Today membership rules and keep Earlier, Blocked, Waiting for a slot and Done today outside these gestures.
+
+Today SHALL store manual order in synced personal preferences. A reorder SHALL update that order only. A transfer or hierarchy change SHALL update the task and any affected Today placement in one undoable batch, carrying any retained rank to the replacement task ID if a transfer crosses sharing scopes. The batch SHALL apply offline and converge per field by last writer wins.
+
+#### Scenario: Place a task in a different project group
+
+- **WHEN** a user drops B from Home between X and Y in the Work group while Today is ordered by title
+- **THEN** B and its subtree move to Work, B appears between X and Y in Today's Manual order, other tasks keep their relative order, and Undo restores the previous project, placement and sort
+
+#### Scenario: Drop without choosing a position
+
+- **WHEN** a user drops a task on the Work heading while Today is ordered by due date
+- **THEN** the task moves to Work without changing its date or Today sort and appears where the destination sort puts it
+
+#### Scenario: Nest under a parent in the destination project
+
+- **WHEN** Nest subtasks is enabled and a user drops a task in the middle of a row in an editable project in the same sharing scope
+- **THEN** the task moves with its subtree as the last subtask of that row and one Undo reverses the structural change and any Today order update
+
+#### Scenario: Nest under an existing subtask
+
+- **WHEN** the user drops onto an existing visible subtask in another editable project in the same sharing scope with Nest subtasks enabled
+- **THEN** the task becomes its child, and a drop between rows with a nested depth places it at the sibling position indicated by the indented line
+
+#### Scenario: Keep a position after sync
+
+- **WHEN** a user places a task in Today while offline, then reconnects
+- **THEN** the placement is visible immediately on that device and syncs as personal Today order

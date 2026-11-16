@@ -329,6 +329,7 @@
       "today_events",
       "today_group_by",
       "today_limit",
+      "today_manual_order",
       "today_row_layout",
       "today_sort_by",
       "today_sort_dir",

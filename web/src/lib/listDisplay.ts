@@ -36,7 +36,7 @@ export type DisplayScope = { kind: 'project' | 'label'; id: string } | { kind: B
 
 /** Order by, as the panel lists them on a project or label page: manual first. */
 export const LIST_SORT_OPTIONS: readonly SortBy[] = ['position', 'priority', 'due', 'created', 'deadline', 'title', 'urgency']
-/** Today and Upcoming keep their own order rules: no manual order (builtin-view-options D2). */
+/** The date views' common orders. Today by project also offers manual order. */
 export const DAY_SORT_OPTIONS: readonly SortBy[] = ['due', 'priority', 'created', 'deadline', 'title']
 /** A project groups by its sections by default; projects make no sense inside one project. */
 export const PROJECT_GROUP_OPTIONS: readonly ListGroupBy[] = ['section', 'none', 'due', 'priority', 'label']
@@ -70,6 +70,12 @@ export const DISPLAY_KINDS: Record<DisplayScope['kind'], DisplayKind> = {
 
 const isBuiltin = (kind: DisplayScope['kind']): kind is BuiltinDisplayKind => kind === 'today' || kind === 'upcoming' || kind === 'inbox'
 
+const TODAY_PROJECT_SORTS: readonly SortBy[] = [...DAY_SORT_OPTIONS, 'position']
+
+export function listSortOptions(kind: DisplayScope['kind'], group: ListGroupBy): readonly SortBy[] {
+  return kind === 'today' && group === 'project' ? TODAY_PROJECT_SORTS : DISPLAY_KINDS[kind].sorts
+}
+
 /** A built-in view's options live in the user's preferences and can be reset. */
 export const isBuiltinScope = (scope: DisplayScope): scope is { kind: BuiltinDisplayKind } => isBuiltin(scope.kind)
 
@@ -101,10 +107,11 @@ export function listDisplayOf(kind: DisplayScope['kind'], row: object | null | u
   const k = DISPLAY_KINDS[kind]
   const f = fieldsOf(kind)
   const r = (row ?? {}) as Record<string, unknown>
-  const sortBy = readSortBy(r[f.sortBy], k.sorts, k.sortBy)
+  const groupBy = pick(r[f.groupBy], k.groups, k.groupBy)
+  const sortBy = readSortBy(r[f.sortBy], listSortOptions(kind, groupBy), k.sortBy)
   return {
     rowLayout: rowLayoutOf(r[f.rowLayout], account),
-    groupBy: pick(r[f.groupBy], k.groups, k.groupBy),
+    groupBy,
     sortBy: !k.fields && sortBy.startsWith('field:') ? k.sortBy : sortBy,
     sortDir: pick(r[f.sortDir], SORT_DIRS, 'asc'),
     ...(k.nest ? { subtasks: r[f.subtasks] === 'nested' } : {}),
@@ -152,8 +159,9 @@ export async function setListDisplay(scope: DisplayScope, patch: Partial<ListDis
 /** Reset (builtin-view-options D7): "" to every option of a built-in view that is not already empty, one op each. */
 export async function resetListDisplay(scope: { kind: BuiltinDisplayKind }): Promise<void> {
   const row = (await db.userPrefs.get(USER_PREFS_ID)) as unknown as Record<string, unknown> | undefined
-  const out: Record<string, string> = {}
+  const out: Record<string, unknown> = {}
   for (const field of Object.values(fieldsOf(scope.kind))) if (row?.[field]) out[field] = ''
+  if (scope.kind === 'today' && Array.isArray(row?.today_manual_order) && row.today_manual_order.length) out.today_manual_order = []
   if (Object.keys(out).length === 0) return
   await mutate('user_prefs', USER_PREFS_ID, out)
 }
