@@ -43,12 +43,13 @@ const card = () => document.querySelector<HTMLElement>('[data-walk-card]')
 describe('Project walk with review intervals', () => {
   it('walks only due projects; e sets the interval, m puts it in maintenance, and Review them too adds the rest', async () => {
     const car = await createProject({ name: 'Car' })
-    const garden = await createProject({ name: 'Garden' })
+    const garden = await createProject({ name: 'Garden', icon: 'briefcase' })
     await mutate('project_prefs', car, { reviewed_at: NOW.getTime() - 30 * DAY, review_every: 'quarter' })
     navigate({ view: 'review', step: 'projects' })
     const r = await render(<Shell user={user} onLogout={() => {}} />)
     await waitFor(() => !!card())
     expect(card()!.getAttribute('data-walk-card')).toBe(garden)
+    expect(card()!.querySelector('[data-icon="briefcase"][aria-hidden="true"]')).not.toBeNull()
     expect(document.querySelector('[data-walk-progress]')!.textContent).toBe('1 of 1')
     expect(document.querySelector('[data-walk-every]')!.textContent).toBe('Every week')
 

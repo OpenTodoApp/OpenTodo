@@ -623,6 +623,7 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
 function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
+  const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
   // Upcoming's Start with Today shares the choice (upcoming-start-with-today D2).
   const earlier = (view === 'today' || view === 'upcoming') && g.key === 'earlier'
@@ -647,7 +648,7 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
         <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
-          hue={g.project ? projectHue(projects.find((pr) => pr.id === g.project)) : undefined}
+          hue={projectHue(project)} icon={project?.icon}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}

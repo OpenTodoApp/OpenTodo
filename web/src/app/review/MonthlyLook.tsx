@@ -16,6 +16,7 @@ import { areasOf, finishMonthlyLook, monthlyDue } from '../../lib/review'
 import { compute, periodFor, sharedIds } from '../../lib/stats'
 import { Badge, Button, Dialog, PageBody, PageHeader, Skeleton } from '../../ui'
 import { act } from '../actionError'
+import { ProjectMark } from '../ProjectMark'
 import { useWithMethod } from '../help/MethodLink'
 import { LabelPicker } from '../LabelPicker'
 import { useMethodInput } from '../method/useMethodInput'
@@ -70,7 +71,7 @@ export function MonthlyLook() {
                   <li key={a.project.id} data-area={a.project.id} className="py-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <button type="button" className="flex min-w-0 items-center gap-2 text-body font-medium text-default hover:underline" onClick={() => navigate({ view: 'project', id: a.project.id })}>
-                        <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: a.project.color }} />
+                        <ProjectMark project={a.project} />
                         <span className="user-text truncate">{a.project.name}</span>
                       </button>
                       <span className="text-meta text-muted">{a.children.length ? t('{n, plural, one {# project} other {# projects}}, {k} need attention', { n: a.children.length, k: a.attention.length }) : t('Area')}</span>

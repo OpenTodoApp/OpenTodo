@@ -5,12 +5,12 @@
 // the list is a folded column on the board and the other way round, per device
 // (OpenSpec change board-polish, design D1).
 import { lazy, Suspense, useMemo, type ReactNode } from 'react'
-import { ListGroupHeader, type HueName } from '../../ui'
-import type { Task } from '../../lib/types'
-import type { ViewLayout } from '../../lib/types'
+import { ListGroupHeader } from '../../ui'
+import type { Project, Task, ViewLayout } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from '../collapsedGroups'
 import { ActionMenu } from '../menus/ActionMenu'
+import { projectHue } from '../projectHue'
 import { useShortcutScope } from '../shortcuts'
 
 // A folded column's button (board-polish D2), loaded with the first fold.
@@ -41,8 +41,8 @@ export function useFoldedGroups<G extends ResultGroup>(scope: string, groups: G[
 export interface ViewResultsProps {
   groups: ResultGroup[]
   layout: ViewLayout
-  /** A group's header tint: a project's colour when grouped by project (project-group-tint). */
-  hueOf?: (key: string) => HueName | undefined
+  /** The project supplying the header's tint and icon, in a view grouped by project. */
+  projectOf?: (key: string) => Project | undefined
   /** A row of the list, or a card of the board; the key is unique across groups. */
   renderTask: (task: Task, key: string, shape: 'row' | 'card') => ReactNode
   /** Where the groups' fold state is kept (see useFoldedGroups); absent: groups do not fold. */
@@ -51,7 +51,7 @@ export interface ViewResultsProps {
   selectedGroup?: string | null
 }
 
-export function ViewResults({ groups, layout, renderTask, foldScope, selectedGroup = null, hueOf }: ViewResultsProps) {
+export function ViewResults({ groups, layout, renderTask, foldScope, selectedGroup = null, projectOf }: ViewResultsProps) {
   const fold = (key: string, on: boolean) => { if (foldScope) setGroupCollapsed(foldScope, key, on) }
   // `z` on a view's board: the selected card's column, else the focused header or strip.
   useShortcutScope('board', {
@@ -62,6 +62,10 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
       fold(g.key, !g.folded)
     },
   }, { enabled: layout === 'board' && !!foldScope })
+  const appearance = (key: string) => {
+    const project = projectOf?.(key)
+    return { hue: projectHue(project), icon: project?.icon }
+  }
   if (layout === 'board') {
     return (
       <div className="-mx-4 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-4 pb-6 md:mx-0 md:snap-none md:px-0" data-board data-view-board data-scroll-x>
@@ -76,7 +80,7 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
           return (
             <section key={g.key} data-group={g.key} data-column={g.key} aria-label={t('{name}, {n, plural, one {# task} other {# tasks}}', { name, n: g.tasks.length })}
               className="ui-column flex max-h-[calc(100dvh-14rem)] w-[88vw] shrink-0 snap-start flex-col sm:w-72 sm:max-w-72">
-              <ListGroupHeader title={name} count={g.tasks.length} countTone="muted" bar={false} actions={menu} hue={hueOf?.(g.key)} />
+              <ListGroupHeader title={name} count={g.tasks.length} countTone="muted" bar={false} actions={menu} {...appearance(g.key)} />
               <ul className="ui-cards--lift min-h-8 space-y-1.5 overflow-y-auto px-0.5 pb-1">
                 {g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'card'))}
               </ul>
@@ -90,7 +94,7 @@ export function ViewResults({ groups, layout, renderTask, foldScope, selectedGro
     <>
       {groups.map((g) => (
         <section key={g.key} data-group={g.key} className="mb-3">
-          {g.heading && <ListGroupHeader title={g.heading} count={g.tasks.length} hue={hueOf?.(g.key)}
+          {g.heading && <ListGroupHeader title={g.heading} count={g.tasks.length} {...appearance(g.key)}
             collapsed={foldScope ? !!g.folded : undefined} onToggle={foldScope ? () => fold(g.key, !g.folded) : undefined} />}
           {!g.folded && <ul>{g.tasks.map((tk) => renderTask(tk, `${g.key}:${tk.id}`, 'row'))}</ul>}
         </section>

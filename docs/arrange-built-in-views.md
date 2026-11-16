@@ -22,6 +22,8 @@ order: 22
 
 Bold is the default. Each view also has **Rows** (One line or Detailed) and, under **More options**, the direction.
 
+With **Group by Project**, headers show configured icons, including in saved views and label pages (List and Board).
+
 ## What stays in place
 
 - **Today:** the chosen grouping lays out only today's own tasks. **Earlier** stays first with **Move all to today** and **Reschedule…**; **Blocked**, **Waiting for a slot** and **Done today** stay at the end. The order applies inside Earlier, each group and Blocked. Waiting for a slot keeps the order its tasks come in, and Done today stays newest first. Under another grouping than Time of day, a row shows its [part of the day](day-parts.md).

@@ -225,6 +225,7 @@ These changes come from the owner's November review of the screens used every da
 | [`close-the-day-redesign`](openspec/changes/archive/2026-11-10-close-the-day-redesign/) | **Shipped.** Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |
 | [`task-progress`](openspec/changes/archive/2026-11-10-task-progress/) | **Shipped.** A parent's progress as a small ring before its subtask count and a percentage in the task panel; a project's progress next to its title | [#1107](https://github.com/OpenTodoApp/OpenTodo/issues/1107) |
 | [`loop-guided-dashboard`](openspec/changes/archive/2026-11-10-loop-guided-dashboard/) | **Shipped.** The Loop home names the next step and why. A stepper shows only the moves with work, and each move opens in place | |
+| [`project-icons-in-ui`](openspec/changes/archive/2026-11-15-project-icons-in-ui/) | **Shipped.** Project icons appear at existing project marks across the app and beside tinted project group names | [#1089](https://github.com/OpenTodoApp/OpenTodo/issues/1089), [#1210](https://github.com/OpenTodoApp/OpenTodo/issues/1210) |
 
 Each change ships on its own, in any order. Only `sidebar-brand-and-row-grid` adds an op field: an additive `user_prefs.upcoming_later`. The others change interface only, and every value they write reads the same in 1.0 clients.
 

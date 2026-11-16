@@ -5,22 +5,12 @@ import { useRef, useState, type FormEvent } from 'react'
 import { t } from '../../../lib/i18n'
 import { createTask } from '../../../lib/ops'
 import type { Project } from '../../../lib/types'
-import { Button, CatalogueIcon, Icon, Input, isCatalogueIcon } from '../../../ui'
+import { Button, Icon, Input } from '../../../ui'
 import { act } from '../../actionError'
+import { ProjectMark } from '../../ProjectMark'
 import { navigate, routePath } from '../../router'
 import type { MoveProps } from '../LoopHome'
 import { GroupHeading } from './rows'
-
-/**
- * The project's mark, as the sidebar's ProjectMark draws it. Kept here because
- * importing the sidebar module from this lazy chunk splits the first load's chunks
- * (bundle-budget), and moving the mark out of it does too.
- */
-function ProjectMark({ project }: { project: Project }) {
-  const dot = <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
-  if (!project.icon || !isCatalogueIcon(project.icon)) return dot
-  return <span style={{ color: project.color }} className="flex items-center"><CatalogueIcon name={project.icon} size="sm" fallback={dot} /></span>
-}
 
 function ProjectLink({ project }: { project: Project }) {
   const route = { view: 'project', id: project.id } as const

@@ -13,6 +13,7 @@ import type { NoteEntry } from '../../lib/noteList'
 import type { Label, Project } from '../../lib/types'
 import { Icon, LabelChips, Menu, MenuGroup, MenuItem, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'
+import { ProjectMark } from '../ProjectMark'
 
 export const SOURCE_ICON: Record<NoteEntry['source'], IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
 const SOURCE_NAME: Record<NoteEntry['source'], () => string> = { note: () => t('Note'), task: () => t('Task note'), project: () => t('Project note') }
@@ -26,7 +27,7 @@ export interface NoteRowProps {
   entry: NoteEntry
   /** While searching: the snippet after the title. */
   snippet?: readonly SnippetSegment[]
-  project?: Pick<Project, 'name' | 'color'>
+  project?: Pick<Project, 'name' | 'color' | 'icon'>
   labels: readonly Pick<Label, 'id' | 'name' | 'color'>[]
   /** "5 min ago", from the page's relative-time helper. */
   updated: string
@@ -79,7 +80,7 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
           {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted max-md:basis-full" data-note-snippet><Snippet segments={snippet} /></span> : null}
         </span>
         <span className="flex min-w-0 max-w-20 items-center justify-end gap-1 text-meta text-faint max-md:col-start-3 max-md:row-start-2 max-md:max-w-none max-md:justify-start @min-[40rem]/note:max-w-none @min-[40rem]/note:justify-start" data-note-place>
-          {project && <span aria-hidden className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />}
+          {project && <ProjectMark project={project} size="xs" />}
           <span className="truncate">{place}</span>
         </span>
         <span className="hidden min-w-0 overflow-hidden @min-[40rem]/note:flex" data-note-labels>{labels.length > 0 && <LabelChips labels={labels} />}</span>

@@ -2,8 +2,12 @@
 // a view of the parsed line, never a second model. When, Project, Label, Priority and
 // Estimate are always listed; the other attributes only when the line sets them. A
 // row edits through the line: its words are selected, or its token is started.
-import type { Chip } from '../../lib/nlp'
+import type { Chip, ProjectRef } from '../../lib/nlp'
+import type { Project } from '../../lib/types'
 import type { IconName } from '../../ui'
+
+/** The parser can take plain references, and the UI can draw any available appearance. */
+export type QuickAddProject = ProjectRef & Partial<Pick<Project, 'color' | 'icon'>>
 
 /** The field a row stands for. */
 export type FieldKind = 'when' | 'project' | 'label' | 'priority' | 'estimate' | 'deadline' | 'recurrence' | 'reminder' | 'spent' | 'energy'
@@ -54,9 +58,4 @@ export function startToken(value: string, kind: FieldKind): { value: string; car
 /** The span of the line a chip came from, from its first word to its last. */
 export function chipRange(chip: Chip): { start: number; end: number } {
   return { start: Math.min(...chip.spans.map((s) => s.start)), end: Math.max(...chip.spans.map((s) => s.end)) }
-}
-
-/** A project's colour when the caller passed full project rows (the parser needs only names). */
-export function projectColor(p: { id: string } | undefined): string | undefined {
-  return (p as { color?: string | null } | undefined)?.color ?? undefined
 }

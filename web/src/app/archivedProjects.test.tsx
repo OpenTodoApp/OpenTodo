@@ -20,7 +20,7 @@ describe('ArchivedProjectsList', () => {
 
   it('lists projects with a named Restore button, parent and open count', () => {
     const html = renderToStaticMarkup(<ArchivedProjectsList onRestore={() => {}} rows={[
-      row({ project: project('g', 'Garden'), parentName: 'Home', open: 2 }),
+      row({ project: { ...project('g', 'Garden'), icon: 'briefcase' }, parentName: 'Home', open: 2 }),
       row({ project: project('t', 'Trip 2026'), open: 1 }),
     ]} />)
     expect(html).toContain('<ul')
@@ -28,6 +28,8 @@ describe('ArchivedProjectsList', () => {
     expect(html).toContain('aria-label="Restore Trip 2026"')
     expect(html).toContain('In Home · 2 open tasks')
     expect(html).toContain('1 open task<')
+    expect(html).toContain('data-icon="briefcase" aria-hidden="true"')
+    expect(html).toMatch(/rounded-full[^>]*background-color:#16a34a/)
     expect(html).not.toMatch(/<button[^>]*disabled/)
   })
 

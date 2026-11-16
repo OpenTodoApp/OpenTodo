@@ -11,6 +11,7 @@ import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useShortcutScope } from './shortcuts'
 import { t } from '../lib/i18n'
 import { messageOf } from '../lib/errorText'
+import { ProjectMark } from './ProjectMark'
 
 const NO_PURGES: PurgeRequest[] = []
 
@@ -108,7 +109,9 @@ export function TrashView() {
             return (
               <li key={`${it.entity}:${it.id}`} data-trash-id={it.id} onClick={() => setSelected(i)}
                 className={`flex flex-wrap items-center gap-x-3 gap-y-1 rounded-control px-2 py-2 text-body ${i === selected ? 'bg-selected-row' : ''}`}>
-                <span className="w-5 text-center" aria-hidden>{it.entity === 'project' ? <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: it.color }} /> : <Icon name={it.entity === 'note' ? 'notebook-pen' : 'circle'} size="xs" />}</span>
+                <span className="flex w-5 items-center justify-center" aria-hidden>
+                  {it.project ? <ProjectMark project={it.project} /> : <Icon name={it.entity === 'note' ? 'notebook-pen' : 'circle'} size="xs" />}
+                </span>
                 {/* At least 12rem for the name: on a phone Restore and Delete permanently wrap under it instead of squeezing it. */}
                 <span className="min-w-0 flex-[1_1_12rem]">
                   <TruncatedText className="block" text={it.title} />
