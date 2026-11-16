@@ -98,7 +98,7 @@
     "description": "Label of the project picker."
   },
   "popupInbox": {
-    "message": "Skrzynka odbiorcza",
+    "message": "Skrzynka",
     "description": "The project picker’s choice for no project."
   },
   "popupLabels": {

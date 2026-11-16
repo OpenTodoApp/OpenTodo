@@ -73,7 +73,7 @@ var digestWords = map[string]struct{ inbox, nothing, more, never string }{
 	"pt": {"Caixa de entrada", "Nada.", "e mais %d", "nunca"},
 	"zh": {"收件箱", "没有。", "以及另外 %d 项", "从未"},
 	"nl": {"Inbox", "Niets.", "en nog %d", "nooit"},
-	"pl": {"Skrzynka odbiorcza", "Nic.", "i jeszcze %d", "nigdy"},
+	"pl": {"Skrzynka", "Nic.", "i jeszcze %d", "nigdy"},
 }
 
 // InboxName is the Inbox's name in a shipped language, the word the app uses

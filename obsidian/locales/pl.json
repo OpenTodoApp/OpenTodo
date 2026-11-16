@@ -30,7 +30,7 @@
   "Folder sync": "Synchronizacja folderu",
   "Folder {folder}": "Folder {folder}",
   "If {label} syncs again, it is refused until it takes over in turn.": "Jeśli {label} znów zacznie synchronizować, zostanie odrzucone, dopóki samo nie przejmie synchronizacji.",
-  "Inbox": "Skrzynka odbiorcza",
+  "Inbox": "Skrzynka",
   "Keeps one folder of this vault in two-way sync with OpenTodo, with the files and rules of ot vault: one file per project, one line per task. It syncs while Obsidian is open and in front: when the plugin starts, a second after you change a file in the folder, every 30 seconds and with “Sync folder now”. It does not sync in the background or while Obsidian is closed.": "Utrzymuje jeden folder tego sejfu w dwukierunkowej synchronizacji z OpenTodo, z plikami i zasadami ot vault: jeden plik na projekt, jeden wiersz na zadanie. Synchronizuje, gdy Obsidian jest otwarty i na wierzchu: przy uruchomieniu wtyczki, sekundę po zmianie pliku w folderze, co 30 sekund i po wybraniu „Synchronizuj folder teraz”. Nie synchronizuje w tle ani gdy Obsidian jest zamknięty.",
   "Label {name}": "Etykieta {name}",
   "Lock": "Zablokuj",

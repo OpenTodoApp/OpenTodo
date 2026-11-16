@@ -122,7 +122,7 @@ Use these terms consistently; they match the quick-add vocabulary and the server
 | Project | Projekt | projet | proyecto | progetto | projeto | 项目 | Project | проект | projekt |
 | Section | Abschnitt | section | sección | sezione | seção | 分组 | Sectie | раздел | sekcja |
 | Label | Label | étiquette | etiqueta | etichetta | etiqueta | 标签 | Label | метка | etykieta |
-| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Входящие | Skrzynka odbiorcza |
+| Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Входящие | Skrzynka |
 | Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag | Сегодня | Dziś |
 | Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort | Предстоящие | Nadchodzące |
 | Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | В любое время | W dowolnym momencie |
