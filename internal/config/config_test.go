@@ -89,6 +89,12 @@ func TestLoadBaseURL(t *testing.T) {
 	if _, err := Load(); err == nil {
 		t.Fatal("relative base URL accepted")
 	}
+	// A scheme alone: built from a variable that came out empty (Railway's
+	// ${{RAILWAY_PUBLIC_DOMAIN}} before the service has a domain); the error says so.
+	t.Setenv("OPENTODO_BASE_URL", "https://")
+	if _, err := Load(); err == nil || !strings.Contains(err.Error(), "no host name") || !strings.Contains(err.Error(), "public domain") {
+		t.Fatalf("scheme-only base URL: err = %v", err)
+	}
 	// An origin only (#1207): a trailing slash is fine, a path, query or fragment is refused.
 	t.Setenv("OPENTODO_BASE_URL", "https://todo.example.com/")
 	if c, err := Load(); err != nil || c.Origin() != "https://todo.example.com" || c.BaseURL.Path != "" {

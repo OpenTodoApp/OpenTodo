@@ -1,0 +1,1 @@
+- **A clearer start-up error for an address without a host name.** When `OPENTODO_BASE_URL` is only `https://`, as when it is built from a platform variable that is still empty (Railway's `${{RAILWAY_PUBLIC_DOMAIN}}` before the service has a domain), the error now names that cause.
