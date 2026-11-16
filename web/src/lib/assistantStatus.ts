@@ -5,6 +5,7 @@
 import { useSyncExternalStore } from 'react'
 import { api, ApiError } from './api'
 import { getMeta, setMeta } from './db'
+import { getDemo } from './demoState'
 import { resettable } from './moduleState'
 
 /** GET /api/v1/me/assistant: what this account may do; never a key. */
@@ -94,6 +95,11 @@ export const DEMO_STATUS: AssistantStatus = {
 
 /** Fetches the status (cached on the device for offline launches; cleared at sign-out with meta). */
 export async function refreshAssistantStatus(): Promise<AssistantStatus | null> {
+  // A demo instance refuses the assistant (demo-mode): its status is known without asking.
+  if (getDemo()) {
+    setAssistantStatus(DEMO_STATUS)
+    return status
+  }
   try {
     setAssistantStatus(await api.getMyAssistant())
   } catch (err) {

@@ -112,6 +112,10 @@ type Config struct {
 	// a request whose nearest hop is a Cloudflare edge may then name the client
 	// with CF-Connecting-IP.
 	TrustCloudflare bool
+	// CORSOrigins are the exact origins whose pages may call /api/v1/ with an
+	// API token (OPENTODO_CORS_ORIGINS, see cors.go; OpenSpec change
+	// cors-for-tokens). Empty, the default, sends no CORS headers.
+	CORSOrigins []string
 	// Host turns on host mode (OPENTODO_HOST_URL; OpenSpec `multi-tenant-host`,
 	// see host.go): many tenants in one process. Nil for a normal server.
 	Host *HostConfig
@@ -282,6 +286,14 @@ func Load() (Config, error) {
 	}
 	if c.Host != nil && c.Demo {
 		return c, fmt.Errorf("OPENTODO_HOST_URL (host mode) and OPENTODO_DEMO cannot be combined")
+	}
+	if err := c.loadCORS(); err != nil {
+		return c, err
+	}
+	// A demo holds no API tokens and a host's tenants have their own owners:
+	// neither has a use for one operator-wide list of origins.
+	if len(c.CORSOrigins) > 0 && (c.Demo || c.Host != nil) {
+		return c, fmt.Errorf("OPENTODO_CORS_ORIGINS cannot be combined with OPENTODO_DEMO or OPENTODO_HOST_URL (host mode)")
 	}
 	return c, nil
 }

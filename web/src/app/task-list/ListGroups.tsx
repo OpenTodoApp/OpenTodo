@@ -179,8 +179,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && (!!c.ownOrder || !c.isReadOnly(r.task))}
-          reorderable={!ghost && c.manual}
+          draggable={!ghost && !editing && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
+          reorderable={!ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).
@@ -326,6 +326,8 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
 }
 
 export interface GroupedListProps {
+  todayDropTarget?: (group: ListGroup) => boolean
+  activeTodayDrop?: string | null
   groups: ListGroup[]
   view: ListRoute['view']
   project?: Project
@@ -618,7 +620,7 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   // Today's Earlier group (page-rhythm D5): folded above five tasks until this device chooses;
@@ -636,14 +638,15 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
   }
   return (
     // Upcoming's day groups take a dragged task anywhere on them (upcoming-drag), resolved by the drag as `drop:day:<date>`.
-    <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
+    <section className={`${summary && collapsed ? 'mb-1' : 'mb-4'}${g.dropDay ? ' rounded-control data-drop-active:ring-2 data-drop-active:ring-accent' : ''}${activeTodayDrop === g.key ? ' rounded-control ring-2 ring-accent' : ''}`} data-group={g.key} data-day-summary-bar={summary && collapsed ? '' : undefined}
+      data-drop-target={todayDropTarget?.(g) ? `today-group:${g.key}` : undefined}
       data-task-drop={g.dropDay ? `day:${g.dropDay}` : undefined}>
       {g.folded !== undefined ? (
         <ListGroupHeader title={g.heading ?? ''} count={g.count} detail={g.folded ? g.detail : undefined} collapsed={g.folded} onToggle={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)}
           actions={view === 'today' && g.key === 'done' ? <LogWinAction /> : undefined}
           actionsAlwaysVisible={g.key === 'done'} />
       ) : g.heading && partDrop(g.dropPart, (
-        <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={g.note} kind={g.named ? 'named' : 'generated'}
+        <ListGroupHeader title={g.heading} count={g.note || (events && liveRows(g.rows) === 0) ? undefined : liveRows(g.rows)} note={activeTodayDrop === g.key ? t('Move to {project}', { project: g.heading }) : g.note} kind={g.named ? 'named' : 'generated'}
           hue={g.project ? projectHue(projects.find((pr) => pr.id === g.project)) : undefined}
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />

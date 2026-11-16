@@ -11,6 +11,7 @@
 //     brand/             the brand mark: source, mono, colour, wordmark, icon-512.png (sidebar-v2), kit/ (bundle-brand-kit)
 //     changelog.json     CHANGELOG.md as data
 //     method.json        the Open Loops vocabulary in every shipped language (open-loops-method D1)
+//     api/openapi.json   the OpenAPI description of the REST API (openapi-description)
 //     templates/         the template library: index.json and <slug>.json (template-library)
 //     README.md          this layout and the stability rule
 //
@@ -157,6 +158,15 @@ export function iconSprite(lucideTs, siteIcons = {}) {
 
 // ---- changelog ----
 
+/**
+ * The OpenAPI description of this version (openapi-description): docs/openapi.json,
+ * generated from the server's code, with the version in info.version.
+ */
+export function openAPIFor(version, root = repoRoot) {
+  const raw = readFileSync(join(root, 'docs/openapi.json'), 'utf8')
+  return raw.replace('"version": "0.0.0-dev"', `"version": ${JSON.stringify(version.replace(/^v/, ''))}`)
+}
+
 /** CHANGELOG.md as [{version, date, intro, sections: {Added: [markdown, ...]}}], newest first. */
 export function parseChangelog(md) {
   const out = []
@@ -278,6 +288,7 @@ tagged commit. Layout version ${LAYOUT}.
 | \`brand/\` | the brand mark: \`mark.svg\` (the source, two symbols), \`mark-mono.svg\` (the tray in \`currentColor\`, the tick in the accent), \`mark-colour.svg\` (the app icon), \`wordmark.svg\`, \`icon-512.png\`, and \`kit/\` (the repository's brand kit: \`README.md\`, \`svg/\`, \`png/\`, the logo files for download), byte-identical to the app's assets of this version; AGPL-3.0 like the rest of OpenTodo |
 | \`changelog.json\` | \`[{version, date, intro, sections: {Added: [markdown, ...]}}]\`, newest first |
 | \`templates/\` | schema ${TEMPLATES_SCHEMA}: \`index.json\` (\`{schema, templates: [{slug, category, icon, languages, title, summary}]}\`) and one \`<slug>.json\` per template (metadata, \`text\`, \`labels\`, \`projects\` with relative \`due\` offsets such as \`+2d\`, \`counts\`), and \`routines.json\` (\`{schema, starters: [...]}\`: the routine starters with \`slug\`, \`category\`, \`icon\`, \`text\`, \`ask\` (the choices), \`trigger\`, \`condition\`, \`steps\` and \`texts\` (the steps' translated texts by path)); every text is \`{en, <lang>: ...}\`, English where a language is missing; compiled from the repository's \`templates/\` folder |
+| \`api/openapi.json\` | the OpenAPI 3.1 description of the REST API of this version, generated from the server's code (\`info.version\` is the version) |
 | \`method.json\` | schema ${METHOD_SCHEMA}: the Open Loops vocabulary, \`{name, languages, tagline, moves, principles, places, rhythms, horizons}\`, each term \`{id, name: {<lang>: text}, description: {<lang>: text}}\` (moves add \`route\` and \`keys\`), in the words the app of this version shows |
 
 ## Stability
@@ -341,6 +352,8 @@ export async function buildBundle({ version, out = 'dist', bin, archive = true }
   const changelog = parseChangelog(readFileSync(join(repoRoot, 'CHANGELOG.md'), 'utf8'))
   writeFileSync(join(dir, 'changelog.json'), JSON.stringify(changelog, null, 2) + '\n')
   writeFileSync(join(dir, 'method.json'), JSON.stringify(methodVocabulary(), null, 2) + '\n')
+  mkdirSync(join(dir, 'api'))
+  writeFileSync(join(dir, 'api/openapi.json'), openAPIFor(version))
   const library = templateLibraryFiles()
   mkdirSync(join(dir, 'templates'))
   writeFileSync(join(dir, 'templates/index.json'), JSON.stringify(library.index, null, 2) + '\n')

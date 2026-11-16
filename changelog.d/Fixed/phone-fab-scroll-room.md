@@ -1,1 +1,0 @@
-- **On a phone the calendar's Day and Week reach the tab bar.** The grid no longer stops short above the add button, and its last hour scrolls clear of it. Screens without the add button (Statistics, the Trash, the Weekly review) no longer end with an empty band.

@@ -1,0 +1,1 @@
+- **Creating a list from iOS Reminders or Planify works.** CalDAV now accepts the extended `MKCOL` these apps send for a new list, and creates the project with its name and colour, as `MKCALENDAR` does (#1432).

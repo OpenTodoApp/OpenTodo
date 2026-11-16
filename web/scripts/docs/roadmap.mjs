@@ -4,9 +4,11 @@
 //   archived (openspec/changes/archive/<date>-<name>/)  "Shipped in x.y"
 //   a folder with some tasks checked                     "In progress (n of m)"
 //   no task checked, or no folder                        "Planned"
-// The version of a shipped change is the oldest release in CHANGELOG.md that
-// names it, else the last release on the first release date on or after its
-// archive date; a change archived after the last release is "Shipped".
+// The version of a shipped change is the release its .openspec.yaml records as
+// `shipped_in` (for a change archived well after it shipped), else the oldest
+// release in CHANGELOG.md that names it, else the last release on the first
+// release date on or after its archive date; a change archived after the last
+// release is "Shipped".
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -54,6 +56,9 @@ export function changeStatus(repoRoot, name, releases) {
   const archive = join(repoRoot, 'openspec/changes/archive')
   const archived = existsSync(archive) ? readdirSync(archive).find((d) => d.slice(11) === name && /^\d{4}-\d{2}-\d{2}-/.test(d)) : undefined
   if (archived) {
+    const meta = join(archive, archived, '.openspec.yaml')
+    const recorded = existsSync(meta) && /^shipped_in:\s*["']?(\d+\.\d+(?:\.\d+)?)["']?\s*$/m.exec(readFileSync(meta, 'utf8'))?.[1]
+    if (recorded) return `Shipped in ${minor(recorded)}`
     const word = new RegExp(`(^|[^a-z0-9-])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z0-9-])`)
     const named = releases.find((r) => word.test(r.text))
     // Several releases can share a date: the last of them carried what was archived that day.

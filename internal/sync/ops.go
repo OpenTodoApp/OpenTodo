@@ -955,16 +955,16 @@ var Schema = map[string]map[string]Field{
 		// with an ellipsis; clients read an empty or unknown value as off and
 		// keep the stored value. Settings, never content.
 		"full_titles": {Kind: kString, Default: `""`},
-		// Today's display options (OpenSpec change builtin-view-options, design
-		// D1, D2): the grouping of the day's own tasks, "day" (Time of day),
-		// "project", "priority", "label" or "none"; Earlier, Blocked, Waiting for
-		// a slot and Done today keep their place. Clients read an empty, unknown
-		// or not-offered value as "day" and keep the stored value. Settings,
-		// never content.
+		// Today's grouping (builtin-view-options D1, D2): "day" (Time of day),
+		// "project", "priority", "label" or "none". Earlier, Blocked, Waiting for
+		// a slot and Done today keep their place. Clients read empty, unknown or unavailable
+		// values as "day" and preserve the stored value. Settings, never content.
 		"today_group_by": {Kind: kString, Default: `""`},
 		// Today's order (builtin-view-options D2): "due", "priority", "created",
 		// "deadline", "title" or "field:<id>"; empty or unknown reads as "due".
 		"today_sort_by": {Kind: kString, Default: `""`},
+		// Task IDs placed by hand in Today's project groups, in personal order.
+		"today_manual_order": {Kind: kOrderList, Default: `[]`},
 		// Today's order direction: "asc" or "desc"; empty or unknown reads as "asc".
 		"today_sort_dir": {Kind: kString, Default: `""`},
 		// Today's row layout (row-layouts): "line" or "detailed"; empty or

@@ -58,6 +58,7 @@ type Server struct {
 	web     http.Handler
 	log     *slog.Logger
 	version string
+	openAPI openAPIServed // the API description, built on first request (openapi-description)
 	// wrongHosts remembers the hosts already reported as not the base URL's.
 	wrongHosts hostWarnings
 	// blobs stores attachment files (attachments D2); nil without a data directory.
@@ -273,7 +274,7 @@ func New(set *services.Set, web http.Handler, opts ...Option) http.Handler {
 	mux := &routes{s: s, mux: http.NewServeMux()}
 	s.registerRoutes(mux, web)
 	s.routeTable = mux.table
-	return s.securityHeaders(s.logRequests(auditContext(s.demoGuard(s.hostGuard(mux.mux)))))
+	return s.securityHeaders(s.logRequests(auditContext(s.cors(s.demoGuard(s.hostGuard(mux.mux))))))
 }
 
 // newServer builds the Server over set with its rate limiters; the options

@@ -9,6 +9,7 @@
 // note pages current through notePages.ts (note-public-links).
 import { api } from './api'
 import { db } from './db'
+import { getDemo } from './demoState'
 import { currentKey, isEnabled } from './e2ee'
 import { sharedProjectIds } from './feed'
 import { nameId, sha256 } from './ids'
@@ -181,7 +182,8 @@ onTestTeardown(async () => {
 })
 
 async function maintain(): Promise<void> {
-  if (!platform.network.online()) return
+  // A demo instance refuses task pages (demo-mode): no request it would answer with 403.
+  if (!platform.network.online() || getDemo()) return
   const { pages } = await api.myTaskPages()
   if (!Array.isArray(pages)) return
   // The panel's "Published" marker reads these (lib/taskPageStore).
