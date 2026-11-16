@@ -1,0 +1,1 @@
+- **One change the server cannot accept no longer stops a device's sync.** The server refuses that change alone and syncs the rest; the app keeps it on the device, says so, and offers it again.

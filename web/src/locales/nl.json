@@ -7767,5 +7767,6 @@
   "Not synced since {time}": "Niet gesynchroniseerd sinds {time}",
   "Not synced yet": "Nog niet gesynchroniseerd",
   "Add a subtask to {title}": "Subtaak toevoegen aan {title}",
-  "Add a subtask to this task": "Subtaak toevoegen aan deze taak"
+  "Add a subtask to this task": "Subtaak toevoegen aan deze taak",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Deze server kon een wijziging van dit apparaat niet accepteren. Die blijft op dit apparaat en al het andere blijft synchroniseren."
 }

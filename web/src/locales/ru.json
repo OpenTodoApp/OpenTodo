@@ -7767,5 +7767,6 @@
   "Not synced since {time}": "Нет синхронизации с {time}",
   "Not synced yet": "Ещё не синхронизировано",
   "Add a subtask to {title}": "Добавить подзадачу к {title}",
-  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Этот сервер не смог принять изменение с этого устройства. Оно остаётся на этом устройстве, а всё остальное продолжает синхронизироваться."
 }

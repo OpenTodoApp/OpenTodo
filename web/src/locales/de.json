@@ -7767,5 +7767,6 @@
   "Not synced since {time}": "Nicht synchronisiert seit {time}",
   "Not synced yet": "Noch nicht synchronisiert",
   "Add a subtask to {title}": "Unteraufgabe zu {title} hinzufügen",
-  "Add a subtask to this task": "Unteraufgabe zu dieser Aufgabe hinzufügen"
+  "Add a subtask to this task": "Unteraufgabe zu dieser Aufgabe hinzufügen",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Dieser Server konnte eine Änderung von diesem Gerät nicht annehmen. Sie bleibt auf diesem Gerät, alles andere wird weiter synchronisiert."
 }
