@@ -41,6 +41,16 @@ test('buildShareUrl caps title and selection length', () => {
   assert.equal(u.searchParams.get('text').length, MAX_TEXT)
 })
 
+test('a title or selection cut at the limit never splits a character', () => {
+  const title = 't'.repeat(MAX_TITLE - 1) + '😀'
+  const text = 's'.repeat(MAX_TEXT - 1) + '😀'
+  const u = new URL(buildShareUrl('https://t.example', { title, text }))
+  assert.equal(u.searchParams.get('title'), 't'.repeat(MAX_TITLE - 1))
+  assert.equal(u.searchParams.get('text'), 's'.repeat(MAX_TEXT - 1))
+  assert.equal(u.searchParams.get('title').includes('\uFFFD'), false)
+  assert.equal(u.searchParams.get('text').includes('\uFFFD'), false)
+})
+
 test('buildShareUrl refuses an invalid server', () => {
   assert.throws(() => buildShareUrl('javascript:alert(1)', { title: 'x' }))
   assert.throws(() => buildShareUrl('', { title: 'x' }))
