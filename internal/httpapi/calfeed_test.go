@@ -164,7 +164,10 @@ func TestCalendarFeedsLimit(t *testing.T) {
 func TestCalendarFeedURL(t *testing.T) {
 	e := ownerEnv(t)
 	feedsOn(t, e)
-	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Dentist", "due": map[string]any{"date": "2026-10-16", "time": "15:00"}, "estimate_minutes": 45})
+	// Two days from now: the feed holds tasks from FeedPastDays ago on, so a fixed
+	// date drops out of it once the calendar passes it.
+	due := e.now.Now().UTC().AddDate(0, 0, 2).Format("2006-01-02")
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Dentist", "due": map[string]any{"date": due, "time": "15:00"}, "estimate_minutes": 45})
 	e.mustStatus(resp, 201, out)
 	resp, out = e.do("GET", "/api/v1/calendar-feeds/feed", nil)
 	e.mustStatus(resp, 200, out)
