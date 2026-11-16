@@ -7765,5 +7765,7 @@
   "⤼ Skip": "⤼ Пропустить",
   "Tap a time to plan {title}": "Коснитесь времени, чтобы запланировать {title}",
   "Not synced since {time}": "Нет синхронизации с {time}",
-  "Not synced yet": "Ещё не синхронизировано"
+  "Not synced yet": "Ещё не синхронизировано",
+  "Add a subtask to {title}": "Добавить подзадачу к {title}",
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
 }

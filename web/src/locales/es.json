@@ -7765,5 +7765,7 @@
   "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Una vez a la semana} other {# veces a la semana}}",
   "Tap a time to plan {title}": "Toca una hora para planificar {title}",
   "Not synced since {time}": "Sin sincronizar desde {time}",
-  "Not synced yet": "Aún sin sincronizar"
+  "Not synced yet": "Aún sin sincronizar",
+  "Add a subtask to {title}": "Añadir una subtarea a {title}",
+  "Add a subtask to this task": "Añadir una subtarea a esta tarea"
 }

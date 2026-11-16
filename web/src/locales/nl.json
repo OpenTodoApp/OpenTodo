@@ -7765,5 +7765,7 @@
   "{n, plural, one {Once a week} other {# times a week}}": "{n, plural, one {Eén keer per week} other {# keer per week}}",
   "Tap a time to plan {title}": "Tik op een tijdstip om {title} in te plannen",
   "Not synced since {time}": "Niet gesynchroniseerd sinds {time}",
-  "Not synced yet": "Nog niet gesynchroniseerd"
+  "Not synced yet": "Nog niet gesynchroniseerd",
+  "Add a subtask to {title}": "Subtaak toevoegen aan {title}",
+  "Add a subtask to this task": "Subtaak toevoegen aan deze taak"
 }
