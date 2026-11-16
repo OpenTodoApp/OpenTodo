@@ -1,4 +1,5 @@
 import { useHabitsEnabled } from '../lib/habitPrefs'
+import { resettable } from '../lib/moduleState'
 import { useHabitForm } from './habits/habitFormStore'
 import { DESKTOP_HEADER_QUERY, IconButton, setSidebarToggle, PageActions, PageBarTitle, Skeleton, TruncatedText, trapTab, useMediaQuery, useOverlay, pageBar, usePageBar, useOverlayDepth } from '../ui'
 import { useCommandBar } from './palette/useCommandBar'
@@ -118,6 +119,7 @@ const SettingsView = lazy(() => import('./SettingsView').then((m) => ({ default:
 // its first render even when its chunk is in, and React 19 holds a revealed boundary ~300 ms.
 let savedViewModule: typeof import('./SavedViewView') | undefined
 const loadSavedView = () => import('./SavedViewView').then((m) => (savedViewModule = m))
+resettable('shell.savedView', () => { savedViewModule = undefined })
 const LazySavedViewRoute = lazy(() => loadSavedView().then((m) => ({ default: m.SavedViewRoute })))
 function SavedViewRoute({ id }: { id: string }) {
   const Loaded = savedViewModule?.SavedViewRoute
