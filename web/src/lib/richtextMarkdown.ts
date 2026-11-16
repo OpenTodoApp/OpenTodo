@@ -396,7 +396,9 @@ function parseBlocks(lines: string[], depth: number, opts: ParseOptions): RNode[
     }
     const h = HEADING.exec(line)
     if (h) {
-      out.push({ type: 'heading', attrs: { level: h[1].length }, runs: parseInline((h[2] ?? '').trim(), {}, 0, opts) })
+      // The closing #s are a sequence only after a space, as CommonMark reads them.
+      const text = (h[2] ?? '').replace(/[ \t]+#+[ \t]*$/, '').trim()
+      out.push({ type: 'heading', attrs: { level: h[1].length }, runs: parseInline(text, {}, 0, opts) })
       i++
       continue
     }
