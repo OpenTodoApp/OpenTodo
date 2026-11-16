@@ -42,9 +42,26 @@ func TestTodoistDateVectors(t *testing.T) {
 			}
 		}
 	}
-	for _, l := range []string{"en", "de", "fr", "it", "es", "pt"} {
+	for _, l := range []string{"en", "de", "fr", "it", "es", "pt", "nl"} {
 		if !langs[l] {
 			t.Errorf("no vector for %s", l)
+		}
+	}
+}
+
+// A language's words only count in that language: the Dutch ordinals and
+// connectors must not be read in another language's recurring phrase.
+func TestRecurringWordsStayInTheirLanguage(t *testing.T) {
+	fr := nlpVocabs["fr"]
+	for _, s := range []string{"chaque 1e lundi", "chaque laatste vendredi"} {
+		if rule, ok := fr.recurring("fr", s); ok {
+			t.Errorf("fr %q = %q, want not understood", s, rule)
+		}
+	}
+	nl := nlpVocabs["nl"]
+	for _, s := range []string{"elke 1e zondag", "elke laatste vrijdag"} {
+		if _, ok := nl.recurring("nl", s); !ok {
+			t.Errorf("nl %q is not understood", s)
 		}
 	}
 }
