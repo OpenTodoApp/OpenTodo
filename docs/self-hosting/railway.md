@@ -10,7 +10,9 @@ order: 36
 
 OpenTodo is one container with one data folder and no required settings. On [Railway](https://railway.com) it runs as one service from the released image, with a volume on `/data` and https on its `up.railway.app` address.
 
-**The template isn't published yet.** It's being prepared for Railway's template marketplace, and this page describes what it sets up. Until it's published, create the same service by hand with the values below. It hasn't been run on Railway yet either; if something here doesn't match what you see, please [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues).
+Deploy it from the template: [railway.com/deploy/opentodo](https://railway.com/deploy/opentodo). It's new; if something here doesn't match what you see, please [open an issue](https://github.com/OpenTodoApp/OpenTodo/issues).
+
+**If the first deploy keeps restarting** with `OPENTODO_BASE_URL must be an absolute URL, got "https://"` (or, from the next release, `OPENTODO_BASE_URL has no host name`), the service has no public address yet: open its **Settings → Networking**, choose **Generate Domain** with port **8080**, then **Deployments → Redeploy**.
 
 ## What the template sets up
 
