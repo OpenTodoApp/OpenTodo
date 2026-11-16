@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -228,5 +229,37 @@ func TestHalfSavedNoteIsNotPushed(t *testing.T) {
 	v.sync(t)
 	if got := noteDesc(t, s, "n-pack"); got != "Socks\nCharger\nPassport" {
 		t.Errorf("after the whole save the note holds %q", got)
+	}
+}
+
+// TestSaveHeldEmptyThroughTheRunIsNotPushed: the save's empty first step lasts
+// through the whole read and the check before the push (the writer was paused
+// between its two steps), so the file reads the same both times. The watch
+// knows the folder changed after its run started (Settled false): nothing is
+// pushed, and the next sync reads the whole save (TestVaultWatch on CI,
+// 16 Nov: Home.md left with only its front matter).
+func TestSaveHeldEmptyThroughTheRunIsNotPushed(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	pay := s.create("tasks", map[string]any{"title": "Pay rent", "project_id": home})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md") + "- [ ] Buy seeds\n"
+	v.write(t, "Home.md", "") // the first step, still on disk at the push
+	rep, err := Sync(context.Background(), v.opts(&Options{Settled: func() bool { return false }}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("report %+v", rep)
+	}
+	if s.get("tasks", pay)["deleted_at"] != nil {
+		t.Fatal("the task was trashed from the half-saved file")
+	}
+	v.write(t, "Home.md", saved)
+	if rep := v.sync(t); rep.Created != 1 {
+		t.Fatalf("second sync %+v", rep)
+	}
+	if s.get("tasks", pay)["deleted_at"] != nil {
+		t.Fatal("the task was trashed")
 	}
 }

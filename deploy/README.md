@@ -15,6 +15,7 @@ One folder per platform, each with its template in that platform's own format. T
 | Kubernetes (Helm) | [`helm/`](helm/) | `release` | Published to `oci://ghcr.io/opentodoapp/charts/opentodo` by `.github/workflows/helm.yml` from the next release; install from a clone meanwhile |
 | Podman Quadlet | [`podman/`](podman/) | `stable` | No store: copy the two unit files; `podman auto-update` follows `stable` |
 | Portainer | [`portainer/`](portainer/) | `stable` | Listed: [portainer-templates.as93.net/opentodo](https://portainer-templates.as93.net/opentodo); also usable as an App Templates URL |
+| Railway | [`railway/`](railway/) | `stable` | Not yet published: made in Railway's template composer from `template.json`; see its README |
 | Render | [`render/`](render/) | `stable` | Usable now with the Deploy to Render button (Blueprint path `deploy/render/render.yaml`) |
 | Runtipi | [`runtipi/`](runtipi/) | `release` | Our own app store, [`OpenTodoApp/opentodo-runtipi`](https://github.com/OpenTodoApp/opentodo-runtipi), published from `upstream/` |
 | Synology (Container Manager) | [`synology/`](synology/) | `stable` | Usable now as a Container Manager project; Synology has no container store |
