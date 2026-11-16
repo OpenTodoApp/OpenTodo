@@ -1,0 +1,1 @@
+- **A guide to building a third-party client.** [Build your own client](docs/build-a-client.md) ties the API and sync documentation into three paths — REST only, push-only sync and a full offline outline — and answers how to pick and keep a device id, what `features` to send on `/api/v1/sync`, how to keep a durable outbox, and what a rate-limited request answers.
