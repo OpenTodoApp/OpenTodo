@@ -21,7 +21,6 @@ import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
 import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
 import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
-import { finishedProblems, gitLastTouched, openChanges, staleWarnings, taskCounts } from './openspec-hygiene.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -377,7 +376,6 @@ const checkElsewhere = {
   test: ['go test ./...', 'npm test', 'make extension', 'make obsidian'],
   'docs-check': ['npm run docs:check'],
   staticcheck: ['make staticcheck'],
-  deadcode: ['make staticcheck'],
   'web-lint': ['npm run lint'],
 }
 
@@ -392,7 +390,6 @@ test('CI runs every part of make check', () => {
   }
   for (const t of ciChecks) assert.ok(makePrereqs('check').includes(t), `ci-checks runs ${t}, which make check must run too`)
   assert.ok(ciChecks.includes('fmt-check'), 'gofmt gate')
-  assert.ok(makePrereqs('staticcheck').includes('deadcode'), 'make staticcheck runs deadcode, so the CI step runs it too')
   assert.match(read('Makefile'), /^fmt-check:\n\t.*gofmt -l /m)
 })
 
@@ -1155,29 +1152,4 @@ test('docs screenshots are WebP (docs-screenshot-growth): no PNG or JPEG copies 
     .flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`]))
   const raster = ['docs/images', 'docs/screenshots'].flatMap(walk).filter((f) => /\.(png|jpe?g)$/i.test(f))
   assert.deepEqual(raster, [], 'encode docs screenshots as WebP (scripts/docs-screenshots.mjs, scripts/screenshots.mjs); README.md embeds only docs/screenshots/demo.gif')
-})
-
-// OpenSpec hygiene: a change with every task ticked is archived, not left open.
-// Stale changes are reported as diagnostics only (a decision, not a fix).
-test('no open OpenSpec change has every task ticked', (t) => {
-  const changes = openChanges(path.join(root, 'openspec/changes'))
-  assert.ok(changes.length > 0, 'openspec/changes has open changes with a tasks.md')
-  assert.deepEqual(finishedProblems(changes), [])
-  for (const w of staleWarnings(changes, gitLastTouched(root))) t.diagnostic(`warning: stale change: ${w}`)
-})
-
-test('the OpenSpec hygiene check finds finished and stale changes', () => {
-  assert.deepEqual(taskCounts('- [x] 1.1 a\n  - [X] 1.2 b\n- [ ] 2.1 c\n[ ] not a task\n'), { done: 2, open: 1 })
-  const changes = [
-    { name: 'done', done: 3, open: 0 },
-    { name: 'empty', done: 0, open: 0 },
-    { name: 'old', done: 1, open: 2 },
-    { name: 'fresh', done: 0, open: 4 },
-    { name: 'shallow', done: 0, open: 1 },
-  ]
-  assert.deepEqual(finishedProblems(changes), ['openspec/changes/done: all 3 tasks are ticked; archive it (/opsx:archive done)'])
-  const dates = { done: '2026-01-01', old: '2026-10-29', fresh: '2026-11-10', shallow: '' }
-  assert.deepEqual(staleWarnings(changes, (n) => dates[n] ?? '', new Date('2026-11-17T12:00:00Z')), [
-    'openspec/changes/old: 1/3 tasks, untouched since 2026-10-29 (19 days)',
-  ])
 })

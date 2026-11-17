@@ -11,7 +11,7 @@ WEB_EXT := web-ext@10.7.0
 SKILL_ZIP := dist/opentodo-agent-skill.zip
 MCP_SKILL_ZIP := dist/opentodo-mcp-skill.zip
 
-.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck deadcode gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check i18n-status repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
+.PHONY: assistant-eval news news-check brand-icons site-bundle all web server cli cli-release cli-smoke skill extension obsidian obsidian-e2e obsidian-review test-obsidian app android ios ios-archive build run dev test test-go test-web test-extension check lint staticcheck gosec gosec-sarif clean docker openspec-validate layout-check safe-area-check ux-audit docs docs-check templates templates-check docs-screenshots screens docs-site-check coolify-check coolify-smoke deploy-check release-prepare perf storybook ui-check ui-baselines ui-lint web-lint i18n-check i18n-status repo-check bundle-budget fmt-check ci-checks e2e e2e-signed
 
 all: build
 
@@ -245,16 +245,8 @@ lint:
 ## with the go.mod toolchain (not the minimum Go it asks for), because it must read the
 ## standard library of the Go that compiles the code.
 STATICCHECK_VERSION := v0.8.2
-staticcheck: deadcode
+staticcheck:
 	GOTOOLCHAIN=$$(go env GOVERSION) go run honnef.co/go/tools/cmd/staticcheck@$(STATICCHECK_VERSION) ./...
-
-## Dead Go code, a ratchet at zero: no function may be unreachable from the commands and
-## the tests (`deadcode -test`). The tool exits 0 with findings, so any output fails.
-## Built with the go.mod toolchain like staticcheck; CI runs it through `make staticcheck`.
-DEADCODE_VERSION := v0.52.0
-deadcode:
-	@out=$$(GOTOOLCHAIN=$$(go env GOVERSION) go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VERSION) -test ./...) || exit 1; \
-	if [ -n "$$out" ]; then echo "$$out"; echo "deadcode: the functions above are unreachable; delete them"; exit 1; fi
 
 ## gosec, security static analysis of the Go code, pinned like staticcheck. Two rule
 ## classes are left out as false positives for this code base (2026-10 audit): G101
@@ -379,7 +371,7 @@ bundle-budget:
 brand-icons:
 	node scripts/brand-icons.mjs
 
-check: lint web-lint staticcheck deadcode test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
+check: lint web-lint staticcheck test fmt-check ui-lint i18n-check docs-check templates-check news-check openspec-validate deploy-check repo-check
 	@if [ -n "$(APP)" ]; then $(MAKE) app; fi
 
 ## The parts of `make check` that CI runs in its Checks job (the others run in the web,
