@@ -24,7 +24,7 @@ The whole API is also described as **OpenAPI 3.1**, generated from the server's 
 - **On your server:** `GET /api/v1/openapi.json` (no sign-in; it describes routes, not your data, and its `info.version` is the server's version).
 - **In each release:** `openapi.json` is attached to the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases), and the latest is in the repository as [`docs/openapi.json`](https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/openapi.json).
 
-It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints).
+It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints). Every request and response body has an example: for tasks, projects, sections, labels, notes, comments and sync what a test server answered, elsewhere one built from the schema.
 
 Use it to:
 

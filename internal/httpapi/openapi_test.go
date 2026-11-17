@@ -130,7 +130,7 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 		tagList = append(tagList, schema{"name": name, "description": desc, "externalDocs": schema{"url": openAPIDocsBase + "#" + openAPISlug(name)}})
 	}
 	dropUnused(schemas, paths)
-	return map[string]any{
+	doc := map[string]any{
 		"openapi":           "3.1.1",
 		"jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
 		"info": schema{
@@ -160,7 +160,9 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 				"Unauthorized": schema{"description": "No valid session or token (`unauthorized`).", "content": schema{"application/json": schema{"schema": ref("Error")}}},
 			},
 		},
-	}, unknown
+	}
+	addExamples(t, paths, doc["components"].(schema))
+	return doc, unknown
 }
 
 const openAPIVersionPlaceholder = "0.0.0-dev"
@@ -608,6 +610,7 @@ func lintOpenAPI(doc map[string]any) []string {
 	}
 	walk(plain, "#")
 	problems = append(problems, untypedProblems(plain)...)
+	problems = append(problems, examplelessProblems(plain, openAPIExamplelessMax)...)
 	declared := map[string]bool{}
 	for _, tg := range plain["tags"].([]any) {
 		declared[tg.(map[string]any)["name"].(string)] = true
