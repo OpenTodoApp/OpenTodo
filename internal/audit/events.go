@@ -295,6 +295,7 @@ var allowedDetailKeys = map[string]bool{
 	"device_count":       true,
 	"token_count":        true,
 	"app_password_count": true,
+	"oauth_grant_count":  true,
 	// Device relay (mcp-device-relay): the device that answers AI connectors.
 	// Not "device_id", which is an op field name.
 	"relay_device_id":    true,
@@ -733,10 +734,10 @@ func PasswordChanged(userID string) Event {
 
 // SignedOutEverywhere records "Sign out everywhere" with how many sessions,
 // remembered browsers, API tokens and app passwords it ended.
-func SignedOutEverywhere(userID string, sessions, devices, tokens, appPasswords int64) Event {
+func SignedOutEverywhere(userID string, sessions, devices, tokens, appPasswords, oauthGrants int64) Event {
 	n := func(v int64) string { return strconv.FormatInt(v, 10) }
 	return ev(SignedOutEverywhereName, Success, userID, "", "session_count", n(sessions), "device_count", n(devices),
-		"token_count", n(tokens), "app_password_count", n(appPasswords))
+		"token_count", n(tokens), "app_password_count", n(appPasswords), "oauth_grant_count", n(oauthGrants))
 }
 
 // OwnerTransferred records the owner handing ownership to another account; the
