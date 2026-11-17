@@ -548,6 +548,21 @@ export function parseInline(s: string, marks: Marks = {}, depth = 0, opts: Parse
         continue
       }
     }
+    if (s.startsWith('__', i) && !isWord(s[i - 1]) && !/\s/.test(s[i + 2] ?? '') && !marks.strong) {
+      const end = findClose(s, i + 2, '__', (at) => !isWord(s[at + 2]) && !/\s/.test(s[at - 1] ?? ''))
+      if (end > i + 2) {
+        nest(s.slice(i + 2, end), withMark(marks, 'strong'))
+        i = end + 2
+        continue
+      }
+    }
+    // A double underscore run is strong or literal: a single _ must not match half of it
+    // (foo__bar__baz keeps its underscores).
+    if (s.startsWith('__', i)) {
+      buf += '__'
+      i += 2
+      continue
+    }
     if (c === '_' && !isWord(s[i - 1]) && !marks.em) {
       const end = findClose(s, i + 1, '_', (at) => !isWord(s[at + 1]))
       if (end > i + 1) {

@@ -57,6 +57,14 @@ describe('Markdown projection', () => {
     expect(parseMarkdown(md)).toEqual([p('# not a heading'), p('- not a list'), p('2. not ordered'), p('5*3 = 15, [x] snake_case _x_ a~~b `c`')])
   })
 
+  it('reads __strong__ as strong, like **strong**, and not inside a word', () => {
+    expect(parseMarkdown('__bold__')).toEqual([p('bold', { strong: {} })])
+    expect(parseMarkdown('a __b__ c')).toEqual([{ type: 'paragraph', attrs: {}, runs: [{ text: 'a ', marks: {} }, { text: 'b', marks: { strong: {} } }, { text: ' c', marks: {} }] }])
+    expect(parseMarkdown('foo__bar__baz')).toEqual([p('foo__bar__baz')])
+    expect(parseMarkdown('__ b__')).toEqual([p('__ b__')])
+    expect(parseMarkdown('__b __')).toEqual([p('__b __')])
+  })
+
   it('reads a heading as CommonMark does: closing #s only after a space, and a bare # is empty', () => {
     const h = (level: number, text: string): RNode => ({ type: 'heading', attrs: { level }, runs: text ? [{ text, marks: {} }] : [] })
     expect(parseMarkdown('# C#')).toEqual([h(1, 'C#')])
