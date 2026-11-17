@@ -395,3 +395,48 @@ func TestAgentDeviceCommentNeverNotifies(t *testing.T) {
 		t.Fatalf("device comment: %+v", rec.events)
 	}
 }
+
+// A comment marked as a guest's reply (guest_name, page_id) comes from a task page:
+// the server writes it, or the publisher's device imports it for an encrypted page
+// (task-pages D4). No other member can mark a comment so, and nobody can add the
+// marks to a stored comment.
+func TestGuestReplyMarksComeOnlyFromThePagesPublisher(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleEditor)
+	if _, err := f.s.db.Exec(`INSERT INTO task_pages(id, task_id, user_id, secret_hash, rights, published_at) VALUES('pg1', 't1', 'alice', 'h', 'reply', 1)`); err != nil {
+		t.Fatal(err)
+	}
+	reply := func(id, task, author, page string) []Op {
+		return f.commentOps(id, task, author, "from the page", f.op("comment", id, "guest_name", `"Marco"`), f.op("comment", id, "page_id", `"`+page+`"`))
+	}
+	// The publisher's device imports a reply to their page of t1.
+	if res := f.apply("alice", "A", reply("c-import", "t1", "alice", "pg1")...); len(res.Rejected) != 0 {
+		t.Fatalf("publisher's import: %+v", res.Rejected)
+	}
+	if got := f.field("bob", "comment", "c-import", "guest_name"); got != `"Marco"` {
+		t.Fatalf("imported reply guest_name = %s", got)
+	}
+	// Another member, or the publisher on another task, cannot mark a comment as a guest's.
+	for _, tc := range []struct{ user, device, id, task, page string }{
+		{"bob", "B", "c-bob", "t1", "pg1"},
+		{"alice", "A", "c-other-task", "t2", "pg1"},
+		{"alice", "A", "c-no-page", "t1", "pg-missing"},
+	} {
+		if res := f.apply(tc.user, tc.device, reply(tc.id, tc.task, tc.user, tc.page)...); len(res.Rejected) != 2 {
+			t.Errorf("%s on %s with page %s: rejected = %+v, want guest_name and page_id", tc.user, tc.task, tc.page, res.Rejected)
+		}
+		if got := f.field(tc.user, "comment", tc.id, "guest_name"); got == `"Marco"` {
+			t.Errorf("%s on %s with page %s: the comment reads as a guest's", tc.user, tc.task, tc.page)
+		}
+		if got := f.field(tc.user, "comment", tc.id, "body"); got != `"from the page"` {
+			t.Errorf("%s: the comment itself should be stored, body = %s", tc.user, got)
+		}
+	}
+	// A stored comment keeps its marks: a repeat is harmless, a change is refused.
+	if res := f.apply("alice", "A", f.op("comment", "c-import", "guest_name", `"Marco"`)); len(res.Rejected) != 0 {
+		t.Fatalf("repeat of the stored guest_name: %+v", res.Rejected)
+	}
+	if res := f.apply("alice", "A", f.op("comment", "c-import", "guest_name", `"Someone else"`)); len(res.Rejected) != 1 {
+		t.Fatalf("changing a stored guest_name: %+v", res.Rejected)
+	}
+}
