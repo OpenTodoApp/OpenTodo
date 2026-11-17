@@ -43,6 +43,8 @@ Web tests never reach the network: mock `fetch` with `mockFetch` from `web/src/u
 
 The notes link grammar (`linksIn`, behind Linked references) is timed in the ordinary web tests by `web/src/lib/notesHotPaths.test.ts`, so a slowdown of it fails on its own pull request rather than only in the nightly [performance budgets](../performance.md). Milliseconds vary too much between CI runners, so it is timed beside a plain line scan of the same 1 MB of generated notes, and the median ratio of seven interleaved pairs is held to its `MAX`. To change a `MAX` on purpose, run the file a few times with `--silent=false`, read the printed ratios, set the new ratio × 1.5 and say why in the pull request.
 
+A client generated from the OpenAPI description must type-check: `web/scripts/openapi-client.test.mjs` generates TypeScript types from `docs/openapi.json` with `openapi-typescript` and runs `tsc` on a small client (`web/scripts/openapi-client/example.ts`: `/me`, tasks, one sync call, the error envelope), so a renamed, removed or loosened field fails the Web job. `openapi-typescript` (pinned exactly) is a devDependency for this test only, never in the bundle or the binary: it is the generator most third-party clients use, so the test sees the description as they do. Its peer range stops at TypeScript 5, so `web/package.json` overrides that one peer to our TypeScript.
+
 The client's sync code also runs against the real server: `npm run test:contract` in `web/`, after `make server`.
 
 ## Shared fixtures
