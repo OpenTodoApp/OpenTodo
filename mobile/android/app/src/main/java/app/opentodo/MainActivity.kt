@@ -19,6 +19,7 @@ import android.util.Base64
 import android.view.View
 import android.view.ViewTreeObserver
 import android.webkit.CookieManager
+import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
@@ -250,6 +251,7 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 allowFileAccess = false
                 allowContentAccess = false
                 setSupportMultipleWindows(false)
+                setGeolocationEnabled(true)
                 userAgentString = "$userAgentString OpenTodoAndroid/${BuildConfig.VERSION_NAME}"
             }
             web.webViewClient = Client()
@@ -456,6 +458,15 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         override fun onPermissionRequestCanceled(request: PermissionRequest) {
             if (webMic === request) webMic = null
         }
+
+        // "Use my location" (android-location-and-map): the server's page gets the position once
+        // Android allows location; any other origin, and the Play build, are refused without a
+        // prompt. Never retained, so the web view asks again and a later refusal in the
+        // system settings holds.
+        override fun onGeolocationPermissionsShowPrompt(requestOrigin: String?, callback: GeolocationPermissions.Callback) {
+            if (!WebLocation.allowed(BuildConfig.PLAY_BUILD, origin, requestOrigin)) { callback.invoke(requestOrigin, false, false); return }
+            requestLocationPermission { granted -> callback.invoke(requestOrigin, granted, false) }
+        }
     }
 
     private fun micAllowed() =
@@ -594,6 +605,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     /** Fine and coarse together (Android 12 lets the user choose approximate). */
     override fun requestLocationPermission(done: (Boolean) -> Unit) {
         if (Geofences.foreground(this)) return done(true)
+        // A second request while Android is asking (the page and location reminders) waits for the same answer.
+        locationDone?.let { first -> locationDone = { granted -> first(granted); done(granted) }; return }
         locationDone = done
         locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
     }
@@ -681,7 +694,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     override fun openExternal(url: String) {
         if (!Bridge.externalLink(url)) return
-        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) { /* nothing can open it */ }
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) {
+            // A `geo:` point without a maps app opens on openstreetmap.org; anything else, nothing can open.
+            val map = WebLocation.fallback(url) ?: return
+            try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(map)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e2: ActivityNotFoundException) { /* no browser either */ }
+        }
     }
 
     companion object {

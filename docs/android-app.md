@@ -122,10 +122,14 @@ The UnifiedPush app and its server see an encrypted message, its size and its ti
 
 - The app uses Android's own proximity alerts, with no Google Play services, so it works on phones without Google.
 - It watches at most 19 places, the nearest to where you are, plus one larger circle around that spot; leaving that circle makes it pick the nearest places again.
-- Your position stays on the phone. It is never sent to your server or anyone else, never passed to the app's pages and never logged; the app keeps only the point it last picked the places from, in its private storage.
+- Your position stays on the phone. A location reminder never sends it to your server or anyone else, never passes it to the app's pages and never logs it; the app keeps only the point it last picked the places from, in its private storage.
 - A notification offers **Done** and **Dismiss**; a crossing fires at most once an hour per reminder.
 - Sign-out, locking an encrypted account and **Change server** remove every watched place.
 - **Only the app from GitHub or F-Droid has location reminders for now.** The Google Play version leaves them out, and doesn't ask for your location at all, until Google has approved the background-location use; there the setting reads "Location reminders come to the Google Play version later". To use them now, install the app from GitHub or F-Droid over the Play one ([switching keeps everything](#switching-between-google-play-f-droid-and-github)).
+
+## A task's location
+
+**Use my location** in a task's [location](locations-and-places.md) asks Android for your location the first time (precise or approximate both work), and only your server's pages get the position, once per tap; the Google Play version doesn't ask and the editor says the position was not shared. **Open in maps** opens your maps app at the point, or the point on openstreetmap.org in the browser when no maps app is installed.
 
 ## Saving files
 
