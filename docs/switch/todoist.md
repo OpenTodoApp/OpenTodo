@@ -36,7 +36,7 @@ Projects that were boards in Todoist open as boards on this device. Your other d
 - Priorities: Todoist's red flag is p1, as you saw it.
 - Labels written in tasks (`@errands`), removed from the title.
 - Descriptions and estimates (task durations in minutes).
-- Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish or Portuguese). Dates without a year take the year of the backup.
+- Due dates and times, in the language you used Todoist in (English, German, French, Italian, Spanish, Portuguese, Dutch or Chinese). Dates without a year take the year of the backup.
 - Recurring dates such as `every monday` or `jeden Montag`, when OpenTodo's [recurrence rules](../recurrence.md) can express them.
 - Reminders with a time or an offset.
 - Deadlines, as the task's [deadline](../deadlines-and-start-dates.md#deadlines), read in the same language as due dates.
