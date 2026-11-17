@@ -253,54 +253,13 @@ func ParseWithLimits(data []byte, lim Limits) (*Component, error) {
 	if err != nil {
 		return nil, err
 	}
-	var root *Component
-	var stack []*Component
+	b := &builder{}
 	for _, line := range lines {
-		p, err := ParseLine(line)
-		if err != nil {
+		if err := b.add(line); err != nil {
 			return nil, err
 		}
-		switch p.Name {
-		case "BEGIN":
-			name := strings.ToUpper(strings.TrimSpace(p.Value))
-			if !validName(name) {
-				return nil, fmt.Errorf("%w: bad component name", ErrInvalid)
-			}
-			if root != nil && len(stack) == 0 {
-				return nil, fmt.Errorf("%w: content after the calendar object", ErrInvalid)
-			}
-			if len(stack) >= maxDepth {
-				return nil, fmt.Errorf("%w: nested too deeply", ErrInvalid)
-			}
-			c := &Component{Name: name}
-			if len(stack) == 0 {
-				root = c
-			} else {
-				parent := stack[len(stack)-1]
-				parent.Children = append(parent.Children, c)
-			}
-			stack = append(stack, c)
-		case "END":
-			name := strings.ToUpper(strings.TrimSpace(p.Value))
-			if len(stack) == 0 || stack[len(stack)-1].Name != name {
-				return nil, fmt.Errorf("%w: unbalanced END:%s", ErrInvalid, textutil.Truncate(name, 40))
-			}
-			stack = stack[:len(stack)-1]
-		default:
-			if len(stack) == 0 {
-				return nil, fmt.Errorf("%w: property outside a component", ErrInvalid)
-			}
-			cur := stack[len(stack)-1]
-			cur.Props = append(cur.Props, p)
-		}
 	}
-	if root == nil || len(stack) != 0 {
-		return nil, fmt.Errorf("%w: incomplete calendar object", ErrInvalid)
-	}
-	if root.Name != "VCALENDAR" {
-		return nil, fmt.Errorf("%w: expected VCALENDAR, got %s", ErrInvalid, textutil.Truncate(root.Name, 40))
-	}
-	return root, nil
+	return b.finish()
 }
 
 // Line serialises one property as an unfolded content line.
