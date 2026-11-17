@@ -6,7 +6,9 @@
 import type { components, paths } from 'opentodo-api'
 
 type Json<R> = R extends { content: { 'application/json': infer T } } ? T : never
-type Ok<P extends keyof paths, M extends keyof paths[P]> = paths[P][M] extends { responses: { 200: infer R } } ? Json<R> : never
+// The success body: 200, or 201 for a create (the server answers 201 and the description says so).
+type Ok<P extends keyof paths, M extends keyof paths[P]> = paths[P][M] extends { responses: { 200: infer R } } ? Json<R>
+  : paths[P][M] extends { responses: { 201: infer R } } ? Json<R> : never
 type Body<P extends keyof paths, M extends keyof paths[P]> = paths[P][M] extends { requestBody?: infer B } ? Json<NonNullable<B>> : never
 type ApiError = components['schemas']['Error']
 
