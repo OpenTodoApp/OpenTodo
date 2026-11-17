@@ -75,12 +75,28 @@ func addExamples(t *testing.T, paths map[string]any, comps map[string]any) {
 func recordedResponse(responses map[string]any, r recordedExample) {
 	st := fmt.Sprint(r.status)
 	if _, ok := responses[st]; !ok {
+		// The server answered with a status the description does not declare (a
+		// handler that picks it at run time, such as 201 for a create): the recorded
+		// status is the real one. A single declared success becomes it; beside several,
+		// it is added with the first one's body.
+		var success []string
 		for _, s := range sortedKeys(responses) {
 			if strings.HasPrefix(s, "2") {
-				st = s
-				break
+				success = append(success, s)
 			}
 		}
+		if len(success) == 0 {
+			return
+		}
+		first, _ := responses[success[0]].(schema)
+		moved := schema{"description": statusText(st)}
+		if first["content"] != nil {
+			moved["content"] = first["content"]
+		}
+		if len(success) == 1 {
+			delete(responses, success[0])
+		}
+		responses[st] = moved
 	}
 	resp, ok := responses[st].(schema)
 	if !ok {
@@ -317,5 +333,24 @@ func TestOpenAPISchemaExample(t *testing.T) {
 	p := examplelessProblems(doc, 1)
 	if len(p) != 2 || !strings.HasPrefix(p[0], "2 operations have no response example (at most 1): DELETE /api/v1/x, GET /api/v1/x") || p[1] != "GET /api/v1/x 200: no example" {
 		t.Errorf("examplelessProblems = %q", p)
+	}
+}
+
+// The recorded status is the real one: a create the analysis described as 200
+// becomes 201 with its body, and a status beside several declared ones is added.
+func TestRecordedResponseStatus(t *testing.T) {
+	body := schema{"application/json": schema{"schema": schema{"type": "object"}}}
+	one := map[string]any{"200": schema{"description": "OK", "content": body}, "4XX": schema{}}
+	recordedResponse(one, recordedExample{status: 201, response: map[string]any{"id": "x"}})
+	if _, ok := one["200"]; ok {
+		t.Fatalf("200 kept: %v", one)
+	}
+	if got := jsonMedia(one["201"].(schema))["example"]; got == nil {
+		t.Fatalf("201 has no example: %v", one)
+	}
+	two := map[string]any{"200": schema{"description": "OK", "content": body}, "202": schema{"description": "Accepted"}}
+	recordedResponse(two, recordedExample{status: 201, response: map[string]any{"id": "x"}})
+	if _, ok := two["200"]; !ok || two["201"] == nil || two["202"] == nil {
+		t.Fatalf("statuses = %v", sortedKeys(two))
 	}
 }
