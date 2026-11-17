@@ -318,6 +318,7 @@ func (w *walker) member(path string, v ast.Expr, scope *ast.BlockStmt, out field
 			describeElemType(u.Elem(), path+"[]", out, map[types.Type]bool{})
 		}
 	}
+	elemType(t, path, out)
 }
 
 // localMap records the keys of a local map variable: its composite literal and
@@ -406,6 +407,7 @@ func describeType(t types.Type, prefix string, out fieldSet, request bool, seen 
 			if s, ok := derefType(f.Type()).Underlying().(*types.Slice); ok {
 				describeElemType(s.Elem(), path+"[]", out, seen)
 			}
+			elemType(f.Type(), path, out)
 		}
 	case *types.Slice:
 		if prefix != "" {
@@ -413,6 +415,38 @@ func describeType(t types.Type, prefix string, out fieldSet, request bool, seen 
 		}
 		describeElemType(u.Elem(), "[]", out, seen)
 	}
+}
+
+// elemType records the JSON type of a list's elements under "path[]", for the
+// OpenAPI description's items. The v1 surface leaves these paths out
+// (surfaceFields): a list's element type is part of the description only.
+func elemType(t types.Type, path string, out fieldSet) {
+	var elem types.Type
+	switch u := derefType(t).Underlying().(type) {
+	case *types.Slice:
+		elem = u.Elem()
+	case *types.Array:
+		elem = u.Elem()
+	default:
+		return
+	}
+	if jsonType(t) == "array" {
+		out[path+"[]"] = elemJSONType(elem)
+	}
+}
+
+// elemJSONType is jsonType, with a list as its element type and "[]" after it
+// ([][]string → "string[]").
+func elemJSONType(t types.Type) string {
+	if jsonType(t) == "array" {
+		switch u := derefType(t).Underlying().(type) {
+		case *types.Slice:
+			return elemJSONType(u.Elem()) + "[]"
+		case *types.Array:
+			return elemJSONType(u.Elem()) + "[]"
+		}
+	}
+	return jsonType(t)
 }
 
 // describeElem records the fields of a list element type.

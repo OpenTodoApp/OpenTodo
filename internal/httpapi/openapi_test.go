@@ -57,7 +57,7 @@ func absoluteLinks(text string) string {
 func buildOpenAPI(t *testing.T) (map[string]any, int) {
 	t.Helper()
 	pkgs := loadStatic(t)
-	routes := surfaceRoutes(t, staticRoutes(pkgs))
+	routes := surfaceRoutes(t, staticRoutes(pkgs), true)
 	errs := surfaceErrors(t, errorStatuses(pkgs))
 	docs := docRoutes(t)
 	entities := entitySchemas(t)
@@ -204,7 +204,7 @@ func openAPIOperation(method, path string, r map[string]any, docs []docRoute, en
 	}
 	unknown := 0
 	if req, ok := r["request"].(map[string]any); ok && len(req) > 0 && method != "GET" {
-		body, n := buildBody(req, true)
+		body, n := buildBody(withFieldTypes(method+" "+path, req), true)
 		unknown += n
 		_, required := body["required"]
 		op["requestBody"] = schema{"required": required, "content": schema{"application/json": schema{"schema": body}}}
@@ -212,7 +212,7 @@ func openAPIOperation(method, path string, r map[string]any, docs []docRoute, en
 	var resBody schema
 	if res, ok := r["response"].(map[string]any); ok && len(res) > 0 {
 		var n int
-		resBody, n = buildBody(res, false)
+		resBody, n = buildBody(withFieldTypes(method+" "+path, res), false)
 		unknown += n
 		resBody = useEntities(resBody, entities)
 	}
@@ -607,6 +607,7 @@ func lintOpenAPI(doc map[string]any) []string {
 		}
 	}
 	walk(plain, "#")
+	problems = append(problems, untypedProblems(plain)...)
 	declared := map[string]bool{}
 	for _, tg := range plain["tags"].([]any) {
 		declared[tg.(map[string]any)["name"].(string)] = true
@@ -645,6 +646,122 @@ func lintOpenAPI(doc map[string]any) []string {
 	}
 	sort.Strings(problems)
 	return problems
+}
+
+// openAPIUntypedMax is the most schemas the description may leave untyped
+// (untypedSchemas). It only goes down.
+const openAPIUntypedMax = 0
+
+// untypedProblems is the ratchet on untyped schemas: more than
+// openAPIUntypedMax fails with where they are, fewer asks to lower it.
+func untypedProblems(doc map[string]any) []string {
+	at := untypedSchemas(doc)
+	switch {
+	case len(at) > openAPIUntypedMax:
+		sort.Strings(at)
+		return []string{fmt.Sprintf("%d schemas have no type, $ref, anyOf, oneOf, allOf, enum, const or description (at most %d); "+
+			"give the field its type in openapi_schema_test.go: %s", len(at), openAPIUntypedMax, strings.Join(at, ", "))}
+	case len(at) < openAPIUntypedMax:
+		return []string{fmt.Sprintf("only %d schemas are untyped: lower openAPIUntypedMax to %d", len(at), len(at))}
+	}
+	return nil
+}
+
+// untypedSchemas lists the schemas of the request and response bodies,
+// parameters and components that say nothing about their values: no type,
+// $ref, anyOf, oneOf, allOf, enum or const, and no description (a schema
+// that accepts any JSON says so in its description). An array counts when
+// its items do (once, as the array).
+func untypedSchemas(doc map[string]any) []string {
+	var out []string
+	said := func(s map[string]any) bool {
+		for _, k := range []string{"type", "$ref", "anyOf", "oneOf", "allOf", "enum", "const", "description"} {
+			if _, ok := s[k]; ok {
+				return true
+			}
+		}
+		return false
+	}
+	var visit func(v any, at string)
+	visit = func(v any, at string) {
+		s, ok := v.(map[string]any)
+		if !ok {
+			return
+		}
+		items, hasItems := s["items"].(map[string]any)
+		if isArraySchema(s) {
+			if !hasItems || !said(items) {
+				out = append(out, at)
+			}
+		} else if !said(s) {
+			out = append(out, at)
+		}
+		props, _ := s["properties"].(map[string]any)
+		for _, k := range sortedKeys(props) {
+			visit(props[k], at+"."+k)
+		}
+		if hasItems && said(items) {
+			visit(items, at+"[]")
+		}
+		visit(s["additionalProperties"], at+"{}")
+		for _, k := range []string{"anyOf", "oneOf", "allOf"} {
+			list, _ := s[k].([]any)
+			for i, c := range list {
+				visit(c, fmt.Sprintf("%s/%s/%d", at, k, i))
+			}
+		}
+	}
+	paths, _ := doc["paths"].(map[string]any)
+	for _, path := range sortedKeys(paths) {
+		item, _ := paths[path].(map[string]any)
+		for _, method := range sortedKeys(item) {
+			op, _ := item[method].(map[string]any)
+			where := strings.ToUpper(method) + " " + path
+			if body, ok := op["requestBody"].(map[string]any); ok {
+				visit(jsonSchemaOf(body), where+" request")
+			}
+			responses, _ := op["responses"].(map[string]any)
+			for _, st := range sortedKeys(responses) {
+				if r, ok := responses[st].(map[string]any); ok && r["content"] != nil {
+					visit(jsonSchemaOf(r), where+" "+st)
+				}
+			}
+			params, _ := op["parameters"].([]any)
+			for _, p := range params {
+				if p, ok := p.(map[string]any); ok {
+					visit(p["schema"], fmt.Sprintf("%s parameter %v", where, p["name"]))
+				}
+			}
+		}
+	}
+	comps, _ := doc["components"].(map[string]any)
+	schemas, _ := comps["schemas"].(map[string]any)
+	for _, name := range sortedKeys(schemas) {
+		visit(schemas[name], "#/components/schemas/"+name)
+	}
+	return out
+}
+
+// isArraySchema reports a schema whose type is, or includes, "array".
+func isArraySchema(s map[string]any) bool {
+	switch t := s["type"].(type) {
+	case string:
+		return t == "array"
+	case []any:
+		for _, e := range t {
+			if e == "array" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// jsonSchemaOf is the application/json schema of a request body or response.
+func jsonSchemaOf(body map[string]any) any {
+	content, _ := body["content"].(map[string]any)
+	media, _ := content["application/json"].(map[string]any)
+	return media["schema"]
 }
 
 func TestOpenAPIShapes(t *testing.T) {
@@ -704,5 +821,30 @@ func TestOpenAPIShapes(t *testing.T) {
 	}
 	if desc, _ := comps["Task"].(map[string]any)["properties"].(map[string]any)["estimate_minutes"].(map[string]any)["description"].(string); desc == "" {
 		t.Errorf("Task.estimate_minutes has no description from internal/sync/ops.go")
+	}
+}
+
+func TestOpenAPIUntypedSchemas(t *testing.T) {
+	body := func(s any) map[string]any {
+		return map[string]any{"content": map[string]any{"application/json": map[string]any{"schema": s}}}
+	}
+	doc := map[string]any{"paths": map[string]any{"/api/v1/x": map[string]any{"get": map[string]any{"responses": map[string]any{
+		"200": body(map[string]any{"type": "object", "properties": map[string]any{
+			"ids":    map[string]any{"type": "array", "items": map[string]any{}},
+			"nested": map[string]any{"type": []any{"array", "null"}},
+			"value":  map[string]any{},
+			"rule":   map[string]any{"description": "Any JSON."},
+			"tags":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+			"due":    map[string]any{"anyOf": []any{map[string]any{"$ref": "#/components/schemas/Due"}, map[string]any{}}},
+		}}),
+	}}}}}
+	got := untypedSchemas(doc)
+	want := []string{"GET /api/v1/x 200.due/anyOf/1", "GET /api/v1/x 200.ids", "GET /api/v1/x 200.nested", "GET /api/v1/x 200.value"}
+	sort.Strings(got)
+	if strings.Join(got, "; ") != strings.Join(want, "; ") {
+		t.Errorf("untypedSchemas = %q, want %q", got, want)
+	}
+	if p := untypedProblems(doc); len(p) != 1 || !strings.Contains(p[0], "4 schemas") {
+		t.Errorf("untypedProblems = %q, want one problem naming 4 schemas", p)
 	}
 }

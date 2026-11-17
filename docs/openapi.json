@@ -1191,7 +1191,9 @@
                             "type": "string"
                           },
                           "opIds": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "projectId": {
@@ -1281,18 +1283,24 @@
                           "scope": {
                             "properties": {
                               "inboxes": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "mode": {
                                 "type": "string"
                               },
                               "projects": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "workspaces": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               }
                             },
@@ -1343,18 +1351,24 @@
                   "scope": {
                     "properties": {
                       "inboxes": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "mode": {
                         "type": "string"
                       },
                       "projects": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "workspaces": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       }
                     },
@@ -1415,18 +1429,24 @@
                         "scope": {
                           "properties": {
                             "inboxes": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "mode": {
                               "type": "string"
                             },
                             "projects": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "workspaces": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             }
                           },
@@ -1520,18 +1540,24 @@
                   "scope": {
                     "properties": {
                       "inboxes": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "mode": {
                         "type": "string"
                       },
                       "projects": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "workspaces": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       }
                     },
@@ -1588,18 +1614,24 @@
                         "scope": {
                           "properties": {
                             "inboxes": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "mode": {
                               "type": "string"
                             },
                             "projects": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "workspaces": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             }
                           },
@@ -2167,7 +2199,12 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "cursor": {},
+                    "cursor": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "events": {
                       "items": {
                         "properties": {
@@ -2662,7 +2699,9 @@
                             "type": "string"
                           },
                           "transports": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           }
                         },
@@ -5090,7 +5129,9 @@
                             "type": "string"
                           },
                           "warnings": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           }
                         },
@@ -5223,7 +5264,9 @@
                           "type": "string"
                         },
                         "warnings": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         }
                       },
@@ -5402,7 +5445,9 @@
                           "type": "string"
                         },
                         "warnings": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         }
                       },
@@ -5512,7 +5557,9 @@
                           "type": "string"
                         },
                         "warnings": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         }
                       },
@@ -5665,24 +5712,32 @@
                             "type": "string"
                           },
                           "read": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "scope": {
                             "properties": {
                               "inboxes": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "mode": {
                                 "type": "string"
                               },
                               "projects": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "workspaces": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               }
                             },
@@ -5882,24 +5937,32 @@
                           "type": "string"
                         },
                         "read": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "scope": {
                           "properties": {
                             "inboxes": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "mode": {
                               "type": "string"
                             },
                             "projects": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "workspaces": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             }
                           },
@@ -6036,24 +6099,32 @@
                     ]
                   },
                   "read": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "scope": {
                     "properties": {
                       "inboxes": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "mode": {
                         "type": "string"
                       },
                       "projects": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "workspaces": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       }
                     },
@@ -6196,24 +6267,32 @@
                           "type": "string"
                         },
                         "read": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "scope": {
                           "properties": {
                             "inboxes": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "mode": {
                               "type": "string"
                             },
                             "projects": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "workspaces": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             }
                           },
@@ -6396,24 +6475,32 @@
                           "type": "string"
                         },
                         "read": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "scope": {
                           "properties": {
                             "inboxes": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "mode": {
                               "type": "string"
                             },
                             "projects": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "workspaces": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             }
                           },
@@ -6830,7 +6917,9 @@
                       ]
                     },
                     "allowlist": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "enabled": {
@@ -6905,7 +6994,9 @@
                       ]
                     },
                     "allowlist": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "enabled": {
@@ -6958,7 +7049,9 @@
                       ]
                     },
                     "allowlist": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "enabled": {
@@ -7141,7 +7234,9 @@
                       "type": "boolean"
                     },
                     "issueConnectionsStopped": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "keys": {
@@ -7248,11 +7343,15 @@
                 "schema": {
                   "properties": {
                     "attachments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "comments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "encryption": {
@@ -7294,45 +7393,63 @@
                       "type": "string"
                     },
                     "habit_tallies": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "memory": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "places": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "project_prefs": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "review": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "themes": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "time_entries": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "userId": {
                       "type": "string"
                     },
                     "user_prefs": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "version": {
                       "type": "number"
                     },
                     "workspaces": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -7657,7 +7774,9 @@
                 "schema": {
                   "properties": {
                     "frames": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -8949,15 +9068,21 @@
                     "columns": {
                       "properties": {
                         "available": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "ignored": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "recognised": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "roles": {
@@ -8976,7 +9101,9 @@
                       "type": "string"
                     },
                     "notes": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "options": {
@@ -9039,7 +9166,9 @@
                             "type": "string"
                           },
                           "warnings": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           }
                         },
@@ -9562,11 +9691,15 @@
                           "filter": {
                             "properties": {
                               "labels": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "repositories": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "scope": {
@@ -9709,11 +9842,15 @@
                   "filter": {
                     "properties": {
                       "labels": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "repositories": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "scope": {
@@ -9805,11 +9942,15 @@
                         "filter": {
                           "properties": {
                             "labels": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "repositories": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "scope": {
@@ -9998,11 +10139,15 @@
                   "filter": {
                     "properties": {
                       "labels": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "repositories": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "scope": {
@@ -10094,11 +10239,15 @@
                         "filter": {
                           "properties": {
                             "labels": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "repositories": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "scope": {
@@ -10266,11 +10415,15 @@
                         "filter": {
                           "properties": {
                             "labels": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "repositories": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "scope": {
@@ -10470,11 +10623,15 @@
                         "filter": {
                           "properties": {
                             "labels": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "repositories": {
-                              "items": {},
+                              "items": {
+                                "type": "string"
+                              },
                               "type": "array"
                             },
                             "scope": {
@@ -11179,7 +11336,9 @@
                 "schema": {
                   "properties": {
                     "agent_excluded_projects": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "attachments": {
@@ -11223,7 +11382,9 @@
                       "items": {
                         "properties": {
                           "ignored": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "message": {
@@ -11591,7 +11752,9 @@
                 "schema": {
                   "properties": {
                     "apps": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -12702,7 +12865,9 @@
                     "type": "string"
                   },
                   "workspaces": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   }
                 },
@@ -12771,7 +12936,9 @@
                 "schema": {
                   "properties": {
                     "invitations": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -13146,7 +13313,9 @@
                             "type": "boolean"
                           },
                           "blocks": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "content": {
@@ -13159,14 +13328,18 @@
                             "items": {
                               "properties": {
                                 "accepts": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "content": {
                                   "type": "boolean"
                                 },
                                 "enum": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "literal": {
@@ -13193,7 +13366,12 @@
                             "type": "string"
                           },
                           "one_of": {
-                            "items": {},
+                            "items": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
                             "type": "array"
                           },
                           "output": {
@@ -13376,7 +13554,9 @@
                                           "type": "string"
                                         },
                                         "TaskIDs": {
-                                          "items": {},
+                                          "items": {
+                                            "type": "string"
+                                          },
                                           "type": "array"
                                         },
                                         "Text": {
@@ -13444,7 +13624,9 @@
                                       ]
                                     },
                                     "members": {
-                                      "items": {},
+                                      "items": {
+                                        "type": "string"
+                                      },
                                       "type": "array"
                                     },
                                     "notice": {
@@ -13649,7 +13831,9 @@
                                     "type": "string"
                                   },
                                   "TaskIDs": {
-                                    "items": {},
+                                    "items": {
+                                      "type": "string"
+                                    },
                                     "type": "array"
                                   },
                                   "Text": {
@@ -13717,7 +13901,9 @@
                                 ]
                               },
                               "members": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "notice": {
@@ -13848,11 +14034,15 @@
                     "type": "array"
                   },
                   "completing": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "items": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "sides": {
@@ -13868,7 +14058,9 @@
                           "type": "string"
                         },
                         "tasks": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "text": {
@@ -13993,7 +14185,9 @@
                                   "type": "string"
                                 },
                                 "ids": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "kind": {
@@ -14110,7 +14304,9 @@
                                               "type": "string"
                                             },
                                             "TaskIDs": {
-                                              "items": {},
+                                              "items": {
+                                                "type": "string"
+                                              },
                                               "type": "array"
                                             },
                                             "Text": {
@@ -14178,7 +14374,9 @@
                                           ]
                                         },
                                         "members": {
-                                          "items": {},
+                                          "items": {
+                                            "type": "string"
+                                          },
                                           "type": "array"
                                         },
                                         "notice": {
@@ -14267,7 +14465,9 @@
                                   "type": "string"
                                 },
                                 "ids": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "index": {
@@ -14378,7 +14578,9 @@
                           "type": "string"
                         },
                         "ids": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "kind": {
@@ -14430,7 +14632,9 @@
                     "type": "array"
                   },
                   "completing": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "duration_ms": {
@@ -14470,7 +14674,9 @@
                           "type": "string"
                         },
                         "tasks": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "text": {
@@ -14502,7 +14708,9 @@
                           "type": "string"
                         },
                         "ids": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "index": {
@@ -14628,7 +14836,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "kind": {
@@ -14742,7 +14952,9 @@
                                             "type": "string"
                                           },
                                           "TaskIDs": {
-                                            "items": {},
+                                            "items": {
+                                              "type": "string"
+                                            },
                                             "type": "array"
                                           },
                                           "Text": {
@@ -14810,7 +15022,9 @@
                                         ]
                                       },
                                       "members": {
-                                        "items": {},
+                                        "items": {
+                                          "type": "string"
+                                        },
                                         "type": "array"
                                       },
                                       "notice": {
@@ -14899,7 +15113,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "index": {
@@ -14988,7 +15204,9 @@
                             "type": "number"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "index": {
@@ -15003,7 +15221,38 @@
                           "output": {
                             "type": "string"
                           },
-                          "preview": {},
+                          "preview": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "additionalProperties": {
+                                  "type": "string"
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "items": {
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  },
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            ],
+                            "description": "A preview of the step's output, by its type: text and a date are a string, lines a list of strings, a number a number, a task or a note {id, title}, a project {id, name}, tasks or notes a list of {id, title}."
+                          },
                           "status": {
                             "type": "string"
                           },
@@ -15114,7 +15363,9 @@
                           "type": "string"
                         },
                         "ids": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "index": {
@@ -15196,7 +15447,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "kind": {
@@ -15310,7 +15563,9 @@
                                             "type": "string"
                                           },
                                           "TaskIDs": {
-                                            "items": {},
+                                            "items": {
+                                              "type": "string"
+                                            },
                                             "type": "array"
                                           },
                                           "Text": {
@@ -15378,7 +15633,9 @@
                                         ]
                                       },
                                       "members": {
-                                        "items": {},
+                                        "items": {
+                                          "type": "string"
+                                        },
                                         "type": "array"
                                       },
                                       "notice": {
@@ -15467,7 +15724,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "index": {
@@ -15682,7 +15941,9 @@
                 "schema": {
                   "properties": {
                     "recoveryCodes": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     }
                   },
@@ -15786,7 +16047,9 @@
                       ]
                     },
                     "recoveryCodes": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     }
                   },
@@ -15993,7 +16256,18 @@
                           {
                             "properties": {
                               "appends": {
-                                "items": {},
+                                "description": "Appends not yet merged into the body, oldest first.",
+                                "items": {
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
                                 "type": "array"
                               },
                               "body_version": {
@@ -16102,7 +16376,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -16193,7 +16478,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -16307,7 +16603,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -16438,7 +16745,9 @@
                 "schema": {
                   "properties": {
                     "attachments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -17075,7 +17384,9 @@
                             "type": "boolean"
                           },
                           "events": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "failures": {
@@ -17129,11 +17440,15 @@
                       "type": "array"
                     },
                     "events": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "kinds": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     }
                   },
@@ -17174,7 +17489,9 @@
                     ]
                   },
                   "events": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "includeTitles": {
@@ -17262,7 +17579,9 @@
                           "type": "boolean"
                         },
                         "events": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "failures": {
@@ -17402,7 +17721,9 @@
                     ]
                   },
                   "events": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "includeTitles": {
@@ -17490,7 +17811,9 @@
                           "type": "boolean"
                         },
                         "events": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "failures": {
@@ -18110,11 +18433,15 @@
                       "type": "number"
                     },
                     "comments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "files": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "id": {
@@ -18130,7 +18457,9 @@
                       ]
                     },
                     "links": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "location": {
@@ -18155,7 +18484,9 @@
                       ]
                     },
                     "subtasks": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "text": {
@@ -18667,7 +18998,9 @@
                             "type": "string"
                           },
                           "transports": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           }
                         },
@@ -18804,7 +19137,9 @@
                           "type": "array"
                         },
                         "pubKeyCredParams": {
-                          "items": {},
+                          "items": {
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "rp": {
@@ -19080,7 +19415,9 @@
                 "schema": {
                   "properties": {
                     "places": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -19661,7 +19998,9 @@
                             "type": "string"
                           },
                           "opIds": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "projectId": {
@@ -19731,7 +20070,12 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "inherited_from": {},
+                    "inherited_from": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "kept_away": {
                       "type": "boolean"
                     }
@@ -19777,7 +20121,12 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "inherited_from": {},
+                    "inherited_from": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "kept_away": {
                       "type": "boolean"
                     }
@@ -20639,7 +20988,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "projectId": {
                       "type": "string"
                     },
@@ -20771,7 +21146,40 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "anyOf": [
+                        {
+                          "description": "The open invitations, shown to the owner and admins.",
+                          "items": {
+                            "properties": {
+                              "createdAt": {
+                                "type": "number"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "expiresAt": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "invitedBy": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    },
                     "projectId": {
                       "type": "string"
                     },
@@ -20887,7 +21295,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "projectId": {
                       "type": "string"
                     },
@@ -21019,7 +21453,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "projectId": {
                       "type": "string"
                     },
@@ -21209,7 +21669,12 @@
                     "id": {
                       "type": "string"
                     },
-                    "lastUsedAt": {},
+                    "lastUsedAt": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "layout": {
                       "type": "string"
                     },
@@ -21469,7 +21934,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "projectId": {
                       "type": "string"
                     },
@@ -21533,14 +22024,18 @@
                       "type": "string"
                     },
                     "sections": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "serverTime": {
                       "type": "number"
                     },
                     "tasks": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -22043,7 +22538,9 @@
                       "type": "string"
                     },
                     "unmatched": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     }
                   },
@@ -22142,7 +22639,9 @@
                       "items": {
                         "properties": {
                           "capabilities": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "connected": {
@@ -23024,7 +23523,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "kind": {
@@ -23138,7 +23639,9 @@
                                             "type": "string"
                                           },
                                           "TaskIDs": {
-                                            "items": {},
+                                            "items": {
+                                              "type": "string"
+                                            },
                                             "type": "array"
                                           },
                                           "Text": {
@@ -23206,7 +23709,9 @@
                                         ]
                                       },
                                       "members": {
-                                        "items": {},
+                                        "items": {
+                                          "type": "string"
+                                        },
                                         "type": "array"
                                       },
                                       "notice": {
@@ -23295,7 +23800,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "index": {
@@ -23384,7 +23891,9 @@
                             "type": "number"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "index": {
@@ -23399,7 +23908,38 @@
                           "output": {
                             "type": "string"
                           },
-                          "preview": {},
+                          "preview": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "additionalProperties": {
+                                  "type": "string"
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "items": {
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  },
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            ],
+                            "description": "A preview of the step's output, by its type: text and a date are a string, lines a list of strings, a number a number, a task or a note {id, title}, a project {id, name}, tasks or notes a list of {id, title}."
+                          },
                           "status": {
                             "type": "string"
                           },
@@ -23774,7 +24314,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "kind": {
@@ -23888,7 +24430,9 @@
                                             "type": "string"
                                           },
                                           "TaskIDs": {
-                                            "items": {},
+                                            "items": {
+                                              "type": "string"
+                                            },
                                             "type": "array"
                                           },
                                           "Text": {
@@ -23956,7 +24500,9 @@
                                         ]
                                       },
                                       "members": {
-                                        "items": {},
+                                        "items": {
+                                          "type": "string"
+                                        },
                                         "type": "array"
                                       },
                                       "notice": {
@@ -24045,7 +24591,9 @@
                                 "type": "string"
                               },
                               "ids": {
-                                "items": {},
+                                "items": {
+                                  "type": "string"
+                                },
                                 "type": "array"
                               },
                               "index": {
@@ -24134,7 +24682,9 @@
                             "type": "number"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "index": {
@@ -24149,7 +24699,38 @@
                           "output": {
                             "type": "string"
                           },
-                          "preview": {},
+                          "preview": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "additionalProperties": {
+                                  "type": "string"
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "items": {
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  },
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            ],
+                            "description": "A preview of the step's output, by its type: text and a date are a string, lines a list of strings, a number a number, a task or a note {id, title}, a project {id, name}, tasks or notes a list of {id, title}."
+                          },
                           "status": {
                             "type": "string"
                           },
@@ -24256,7 +24837,9 @@
                                   "type": "string"
                                 },
                                 "ids": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "kind": {
@@ -24370,7 +24953,9 @@
                                               "type": "string"
                                             },
                                             "TaskIDs": {
-                                              "items": {},
+                                              "items": {
+                                                "type": "string"
+                                              },
                                               "type": "array"
                                             },
                                             "Text": {
@@ -24438,7 +25023,9 @@
                                           ]
                                         },
                                         "members": {
-                                          "items": {},
+                                          "items": {
+                                            "type": "string"
+                                          },
                                           "type": "array"
                                         },
                                         "notice": {
@@ -24527,7 +25114,9 @@
                                   "type": "string"
                                 },
                                 "ids": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "index": {
@@ -24650,7 +25239,9 @@
                             "type": "string"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "kind": {
@@ -24764,7 +25355,9 @@
                                         "type": "string"
                                       },
                                       "TaskIDs": {
-                                        "items": {},
+                                        "items": {
+                                          "type": "string"
+                                        },
                                         "type": "array"
                                       },
                                       "Text": {
@@ -24832,7 +25425,9 @@
                                     ]
                                   },
                                   "members": {
-                                    "items": {},
+                                    "items": {
+                                      "type": "string"
+                                    },
                                     "type": "array"
                                   },
                                   "notice": {
@@ -24921,7 +25516,9 @@
                             "type": "string"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "index": {
@@ -25070,7 +25667,9 @@
                       "type": "number"
                     },
                     "not_undoable": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "restored": {
@@ -25145,7 +25744,9 @@
                       "type": "boolean"
                     },
                     "skipped": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "steps": {
@@ -25184,7 +25785,9 @@
                             "type": "number"
                           },
                           "ids": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "index": {
@@ -25199,7 +25802,38 @@
                           "output": {
                             "type": "string"
                           },
-                          "preview": {},
+                          "preview": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              {
+                                "additionalProperties": {
+                                  "type": "string"
+                                },
+                                "type": "object"
+                              },
+                              {
+                                "items": {
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  },
+                                  "type": "object"
+                                },
+                                "type": "array"
+                              }
+                            ],
+                            "description": "A preview of the step's output, by its type: text and a date are a string, lines a list of strings, a number a number, a task or a note {id, title}, a project {id, name}, tasks or notes a list of {id, title}."
+                          },
                           "status": {
                             "type": "string"
                           },
@@ -25634,11 +26268,15 @@
                         "type": "boolean"
                       },
                       "origins": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       },
                       "providers": {
-                        "items": {},
+                        "items": {
+                          "type": "string"
+                        },
                         "type": "array"
                       }
                     },
@@ -26505,7 +27143,12 @@
                     "redirect_uri": {
                       "type": "string"
                     },
-                    "refused_at": {},
+                    "refused_at": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "secret_set": {
                       "type": "boolean"
                     },
@@ -26583,7 +27226,12 @@
                     "redirect_uri": {
                       "type": "string"
                     },
-                    "refused_at": {},
+                    "refused_at": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "secret_set": {
                       "type": "boolean"
                     },
@@ -26690,7 +27338,9 @@
                       "type": "string"
                     },
                     "locked": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "tiles_url": {
@@ -26776,7 +27426,9 @@
                       "type": "string"
                     },
                     "locked": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "tiles_url": {
@@ -26928,7 +27580,9 @@
                             "type": "string"
                           },
                           "redirect_uris": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "scope": {
@@ -26949,11 +27603,15 @@
                       "type": "string"
                     },
                     "platforms": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     },
                     "redirect_uris": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "resource": {
@@ -27000,7 +27658,9 @@
                     "type": "string"
                   },
                   "redirect_uris": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "scope": {
@@ -27049,7 +27709,9 @@
                           "type": "string"
                         },
                         "redirect_uris": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "scope": {
@@ -27935,7 +28597,9 @@
                       "type": "boolean"
                     },
                     "locked": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "model": {
@@ -28016,7 +28680,9 @@
                       "type": "boolean"
                     },
                     "locked": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "model": {
@@ -28461,7 +29127,9 @@
                 "schema": {
                   "properties": {
                     "slots": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -28775,7 +29443,9 @@
                     "type": "string"
                   },
                   "features": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   },
                   "ops": {
@@ -29025,7 +29695,9 @@
                                   "type": "string"
                                 },
                                 "members": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "name": {
@@ -29252,7 +29924,18 @@
                           {
                             "properties": {
                               "appends": {
-                                "items": {},
+                                "description": "Appends not yet merged into the body, oldest first.",
+                                "items": {
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "type": "object"
+                                },
                                 "type": "array"
                               },
                               "body_version": {
@@ -29583,7 +30266,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -29677,7 +30371,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -30013,7 +30718,18 @@
                     {
                       "properties": {
                         "appends": {
-                          "items": {},
+                          "description": "Appends not yet merged into the body, oldest first.",
+                          "items": {
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
                           "type": "array"
                         },
                         "body_version": {
@@ -30113,7 +30829,9 @@
                             "type": "string"
                           },
                           "opIds": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "projectId": {
@@ -30184,7 +30902,9 @@
                 "schema": {
                   "properties": {
                     "attachments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -30314,7 +31034,9 @@
                 "schema": {
                   "properties": {
                     "comments": {
-                      "items": {},
+                      "items": {
+                        "type": "object"
+                      },
                       "type": "array"
                     }
                   },
@@ -32216,7 +32938,9 @@
                             "type": "string"
                           },
                           "workspaces": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           }
                         },
@@ -32262,7 +32986,9 @@
                     "type": "string"
                   },
                   "workspaces": {
-                    "items": {},
+                    "items": {
+                      "type": "string"
+                    },
                     "type": "array"
                   }
                 },
@@ -32312,7 +33038,9 @@
                           "type": "string"
                         },
                         "workspaces": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         }
                       },
@@ -33446,7 +34174,9 @@
                 "schema": {
                   "properties": {
                     "events": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "webhooks": {
@@ -33468,7 +34198,9 @@
                             "type": "boolean"
                           },
                           "events": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "id": {
@@ -33544,7 +34276,9 @@
                           "type": "boolean"
                         },
                         "events": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "id": {
@@ -33666,7 +34400,9 @@
                           "type": "boolean"
                         },
                         "events": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "id": {
@@ -33753,7 +34489,9 @@
                           "type": "boolean"
                         },
                         "events": {
-                          "items": {},
+                          "items": {
+                            "type": "string"
+                          },
                           "type": "array"
                         },
                         "id": {
@@ -34275,7 +35013,9 @@
                                   "type": "string"
                                 },
                                 "members": {
-                                  "items": {},
+                                  "items": {
+                                    "type": "string"
+                                  },
                                   "type": "array"
                                 },
                                 "name": {
@@ -34398,7 +35138,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -34498,7 +35240,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -34538,7 +35282,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -34597,7 +35367,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -34637,7 +35409,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -34726,7 +35524,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -34766,7 +35566,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -34821,7 +35647,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -34896,7 +35724,9 @@
                       "type": "string"
                     },
                     "members": {
-                      "items": {},
+                      "items": {
+                        "type": "string"
+                      },
                       "type": "array"
                     },
                     "name": {
@@ -34967,7 +35797,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35007,7 +35839,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -35092,7 +35950,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35132,7 +35992,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -35209,7 +36095,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35249,7 +36137,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -35324,7 +36238,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35364,7 +36280,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -35665,7 +36607,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35705,7 +36649,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -35813,7 +36783,33 @@
                       },
                       "type": "array"
                     },
-                    "pending": {}
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
                   },
                   "type": "object"
                 }
@@ -35891,7 +36887,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -35931,7 +36929,40 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "anyOf": [
+                        {
+                          "description": "The open invitations, shown to the owner and admins.",
+                          "items": {
+                            "properties": {
+                              "createdAt": {
+                                "type": "number"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "expiresAt": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "invitedBy": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -36000,7 +37031,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -36040,7 +37073,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -36125,7 +37184,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -36165,7 +37226,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
@@ -36244,7 +37331,9 @@
                             "type": "string"
                           },
                           "members": {
-                            "items": {},
+                            "items": {
+                              "type": "string"
+                            },
                             "type": "array"
                           },
                           "name": {
@@ -36284,7 +37373,33 @@
                     "ownerId": {
                       "type": "string"
                     },
-                    "pending": {},
+                    "pending": {
+                      "description": "The open invitations, shown to the owner and admins.",
+                      "items": {
+                        "properties": {
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "expiresAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "invitedBy": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "role": {
                       "type": "string"
                     }
