@@ -206,7 +206,6 @@ export function ShareCapture() {
           <p className="mb-3 text-body text-muted">{t('Nothing was shared. Type a task to add it anyway.')}</p>
         )}
         {!ready ? <p className="text-body text-muted" role="status">{t('Opening the shared files…')}</p> : (
-        <div className="rounded-control border border-input px-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-focus/30">
           <QuickAdd
             ref={titleRef}
             formId="share-capture"
@@ -220,7 +219,6 @@ export function ShareCapture() {
             onAddMany={saveMany}
             notes={false}
           />
-        </div>
         )}
         <label className="mt-3 block text-body">
           <span className="mb-1 block text-muted">{t('Description')}</span>
