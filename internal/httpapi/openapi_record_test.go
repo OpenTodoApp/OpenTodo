@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -256,15 +255,5 @@ func roundTripAny(t *testing.T, v any) any {
 	if err := json.Unmarshal(raw, &out); err != nil {
 		t.Fatal(err)
 	}
-	return out
-}
-
-// recordedOps lists the recorded operations, for messages.
-func recordedOps(rec map[string]recordedExample) []string {
-	out := make([]string, 0, len(rec))
-	for k := range rec {
-		out = append(out, k)
-	}
-	sort.Strings(out)
 	return out
 }
