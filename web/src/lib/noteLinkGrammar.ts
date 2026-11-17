@@ -91,10 +91,14 @@ function scanAt(line: string, i: number, escaped: boolean): { link: Omit<NoteLin
 export function linksIn(markdown: string): NoteLink[] {
   if (!markdown || markdown.indexOf('](?') < 0) return []
   const out: NoteLink[] = []
-  const text = markdown.replace(/\r\n?/g, '\n')
   let fence: string | null = null
+  const eol = /\r\n|\r|\n/g
   let offset = 0
-  for (const line of text.split('\n')) {
+  for (;;) {
+    eol.lastIndex = offset
+    const next = eol.exec(markdown)
+    const end = next ? next.index : markdown.length
+    const line = markdown.slice(offset, end)
     if (fence !== null) {
       if (line.trimStart().startsWith(fence)) fence = null
     } else {
@@ -102,7 +106,7 @@ export function linksIn(markdown: string): NoteLink[] {
       if (f) fence = f[1]
       else if (line.includes('](?')) scanLine(maskCode(line), offset, out)
     }
-    offset += line.length + 1
+    if (!next) return out
+    offset = next.index + next[0].length
   }
-  return out
 }
