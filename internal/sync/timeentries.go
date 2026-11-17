@@ -133,27 +133,12 @@ func (r *resolver) placeTimeEntry(op Op) (scope, reason string, err error) {
 		return "", "", err
 	}
 	if st.found {
-		if st.scope == "" {
-			return "", ReasonForbidden, nil
+		reason, done := r.existingAuthored(op, st.scope, st.user, map[string]string{"user_id": st.user, "task_id": st.task})
+		if !done && st.user != r.acc.userID {
+			reason = ReasonForbidden
 		}
-		switch op.Field {
-		case "user_id":
-			if idValue(op.Value) != st.user {
-				return "", ReasonForbidden, nil
-			}
-		case "task_id":
-			if idValue(op.Value) != st.task {
-				return "", ReasonForbidden, nil
-			}
-		case "deleted_at":
-			role := r.acc.roleIn(st.scope)
-			if st.user != r.acc.userID && role != RoleOwner && role != RoleAdmin {
-				return "", ReasonForbidden, nil
-			}
-		default:
-			if st.user != r.acc.userID {
-				return "", ReasonForbidden, nil
-			}
+		if reason != "" {
+			return "", reason, nil
 		}
 		return st.scope, "", nil
 	}
