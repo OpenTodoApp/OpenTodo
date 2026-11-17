@@ -7767,5 +7767,6 @@
   "“{title}” already waits for this task, so it cannot block it": "“{title}” zaten bu görevi bekliyor, bu nedenle onu engelleyemez",
   "“{title}” is in a project shared differently; a task can only wait for tasks shared the same way": "“{title}” farklı şekilde paylaşılan bir projede; bir görev yalnızca aynı şekilde paylaşılan görevleri bekleyebilir",
   "← → move the selected task, Shift+← → its deadline.": "← → seçili görevi taşır, Shift+← → son teslim tarihini değiştirir.",
-  "⤼ Skip": "⤼ Atla"
+  "⤼ Skip": "⤼ Atla",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Bu sunucu bu cihazdan gelen bir değişikliği kabul edemedi. Değişiklik bu cihazda kalır ve diğer her şey eşitlenmeye devam eder."
 }
