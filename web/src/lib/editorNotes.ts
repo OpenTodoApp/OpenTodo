@@ -54,15 +54,6 @@ export function checkLineAt(state: EditorState): { pos: number; node: PMNode; ti
   return null
 }
 
-/**
- * The note change of Make subtask: the check-list line becomes a plain line
- * holding a link to the subtask's address (`[title](?task=<id>)`), caret after it.
- */
-export function subtaskLine(state: EditorState, id: string): Transaction | null {
-  const line = checkLineAt(state)
-  return line ? linesToLinks(state, [line], [id]) : null
-}
-
 /** At most this many lines become tasks in one command (note-checklist-tasks D3). */
 export const MAX_LINES = 50
 

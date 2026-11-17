@@ -3443,9 +3443,6 @@
   "Clear conversations on this device?": [
     "web/src/app/assistant/AssistantSettings.tsx"
   ],
-  "Clear due date": [
-    "web/src/app/DueField.tsx"
-  ],
   "Clear filter": [
     "web/src/app/calendar/QueryFilterDialog.tsx",
     "web/src/app/calendar/queryFilter.tsx",
@@ -5483,7 +5480,6 @@
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -5504,7 +5500,6 @@
   ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
@@ -9007,6 +9002,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Labels: {names}": [
+    "web/src/app/OneLineLabels.tsx",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/ui/Chips.tsx"
   ],
@@ -23960,6 +23956,9 @@
   ],
   "the assistant is not set up for you on this server": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": [
+    "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "the changed notes": [
     "web/src/lib/rules/sentence.ts"

@@ -88,8 +88,6 @@ export function askBulkConfirm(spec: ConfirmSpec): void {
   bulkConfirm.set(spec)
 }
 
-/** The confirmation now asked, if any. */
-export const bulkConfirmSpec = bulkConfirm.get
 export const useBulkConfirm = bulkConfirm.use
 export function clearBulkConfirm(): void {
   bulkConfirm.set(null)

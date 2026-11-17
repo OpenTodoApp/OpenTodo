@@ -958,7 +958,6 @@
   "Clear conversations": "Gesprekken wissen",
   "Clear conversations on this device": "Gesprekken op dit apparaat wissen",
   "Clear conversations on this device?": "Gesprekken op dit apparaat wissen?",
-  "Clear due date": "Geplande datum wissen",
   "Clear filter": "Filter wissen",
   "Clear the app": "App wissen",
   "Clear the dashboard selection": "Selectie in het dashboard opheffen",
@@ -7767,5 +7766,6 @@
   "Not synced since {time}": "Niet gesynchroniseerd sinds {time}",
   "Not synced yet": "Nog niet gesynchroniseerd",
   "Add a subtask to {title}": "Subtaak toevoegen aan {title}",
-  "Add a subtask to this task": "Subtaak toevoegen aan deze taak"
+  "Add a subtask to this task": "Subtaak toevoegen aan deze taak",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "de agenda is groter dan {size} MB; koppel hem in plaats daarvan met kalendersynchronisatie"
 }

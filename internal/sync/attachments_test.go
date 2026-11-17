@@ -326,3 +326,34 @@ func TestSharedFileCopies(t *testing.T) {
 		t.Fatalf("copy purged: %v, removed %v", err, blobs.removed)
 	}
 }
+
+// Only the server says whether a stored attachment's file is there: no device, of
+// any role, may clear uploaded_at once it is set (attachments D3).
+func TestUploadedAtOfAStoredAttachmentIsTheServers(t *testing.T) {
+	f := newSharing(t)
+	f.add("alice", "bob", RoleViewer)
+	f.add("alice", "carol", RoleAdmin)
+	if res := f.apply("alice", "A", f.attachmentOps("a1", "t1", "alice", 10)...); len(res.Rejected) != 0 {
+		t.Fatalf("create: %+v", res.Rejected)
+	}
+	// While the file is not stored, the author repeating the null of the create is harmless.
+	if res := f.apply("alice", "A", f.op("attachment", "a1", "uploaded_at", `null`)); len(res.Rejected) != 0 {
+		t.Fatalf("author's repeat of null before the upload: %+v", res.Rejected)
+	}
+	up := f.op("attachment", "a1", "uploaded_at", `5000`)
+	up.Device = ServerDevice
+	if _, err := f.s.ApplyStrict(f.ctx, "alice", []Op{up}); err != nil {
+		t.Fatal(err)
+	}
+	for _, who := range []struct{ user, device string }{{"bob", "B"}, {"carol", "C"}, {"alice", "A"}} {
+		clear := f.op("attachment", "a1", "uploaded_at", `null`)
+		clear.TS = 1 << 50
+		res := f.apply(who.user, who.device, clear)
+		if len(res.Rejected) != 1 || res.Rejected[0].Reason != ReasonForbidden {
+			t.Errorf("%s clearing a stored file's uploaded_at: rejected=%+v, want forbidden", who.user, res.Rejected)
+		}
+		if got := f.field("alice", "attachment", "a1", "uploaded_at"); got != "5000" {
+			t.Fatalf("after %s: uploaded_at = %s, want 5000", who.user, got)
+		}
+	}
+}

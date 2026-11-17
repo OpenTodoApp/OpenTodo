@@ -79,11 +79,6 @@ export function recordsOf(seriesId: string, tasks: Iterable<Task>): OccurrenceRe
   return out
 }
 
-/** The exception dates of a series: the dates of its records, whatever their state (M4). */
-export function exceptionDates(seriesId: string, tasks: Iterable<Task>): Set<string> {
-  return new Set(recordsOf(seriesId, tasks).map((r) => r.date))
-}
-
 export interface Budget {
   /** Occurrences used before the series' current one: done and open records of the lineage, and earlier pieces' remaining occurrences. */
   taken: number
@@ -159,14 +154,6 @@ function remainingOf(piece: Task, end: string | null, used: number, except: Read
 /** The series' rule within its piece of the lineage: `until` no later than the day before the next piece starts. */
 export function pieceRule(rule: Rule, budget: Pick<Budget, 'end'>): Rule {
   return bounded(rule, budget.end)
-}
-
-/**
- * Completed occurrence records of a series, leaving out the one of `exceptDate`. The
- * `for N times` count converges with the records themselves, without a separate counter.
- */
-export function completedOccurrences(seriesId: string, tasks: Iterable<Task>, exceptDate?: string): number {
-  return seriesBudget(seriesId, tasks, exceptDate).done
 }
 
 // ---- dates ----

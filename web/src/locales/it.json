@@ -1009,7 +1009,6 @@
   "Clear conversations": "Cancella conversazioni",
   "Clear conversations on this device": "Cancella le conversazioni su questo dispositivo",
   "Clear conversations on this device?": "Cancellare le conversazioni su questo dispositivo?",
-  "Clear due date": "Rimuovi scadenza",
   "Clear filter": "Cancella filtro",
   "Clear the dashboard selection": "Cancella la selezione della dashboard",
   "Clear the filter": "Cancella il filtro",
@@ -7767,5 +7766,6 @@
   "Not synced since {time}": "Non sincronizzato dalle {time}",
   "Not synced yet": "Non ancora sincronizzato",
   "Add a subtask to {title}": "Aggiungi una sottoattività a {title}",
-  "Add a subtask to this task": "Aggiungi una sottoattività a questa attività"
+  "Add a subtask to this task": "Aggiungi una sottoattività a questa attività",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "il calendario supera {size} MB; collegalo invece con la sincronizzazione del calendario"
 }
