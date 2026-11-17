@@ -72,8 +72,8 @@ export async function updateReminder(id: string, input: ReminderInput): Promise<
   const shape = shapeOf(input, task)
   const patch: Partial<Reminder> = { kind: shape.kind, offset_minutes: shape.offset_minutes, fire_at: shape.fire_at }
   if (shape.radius_m != null || r.radius_m != null) patch.radius_m = shape.radius_m
-  // A moved firing time, or another place or circle, fires again.
-  if (patch.fire_at !== r.fire_at || shape.kind !== r.kind) {
+  // A moved firing time, or another circle, fires again.
+  if (patch.fire_at !== r.fire_at || shape.kind !== r.kind || (shape.radius_m != null && shape.radius_m !== r.radius_m)) {
     patch.delivered_at = null
     patch.dismissed_at = null
   }
