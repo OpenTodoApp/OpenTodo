@@ -150,38 +150,25 @@ func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
 		return "", "", err
 	}
 	if st.found {
-		if st.scope == "" {
-			return "", ReasonForbidden, nil
+		if reason, done := r.existingAuthored(op, st.scope, st.author, map[string]string{"author_id": st.author, "task_id": st.task}); done {
+			if reason != "" {
+				return "", reason, nil
+			}
+			return st.scope, "", nil
 		}
-		switch op.Field {
-		case "author_id":
-			if idValue(op.Value) != st.author {
+		// Reactions (editor-everywhere D8): anyone who sees the comment, viewers
+		// included, writes only their own key; each counts against the comment limit.
+		if account, ok := ReactionAccount(op.Field); ok {
+			if account != r.acc.userID || !r.acc.canSee(st.scope) {
 				return "", ReasonForbidden, nil
 			}
-		case "task_id":
-			if idValue(op.Value) != st.task {
-				return "", ReasonForbidden, nil
+			if r.allowComment != nil && !r.allowComment() {
+				return "", ReasonRateLimited, nil
 			}
-		case "deleted_at":
-			role := r.acc.roleIn(st.scope)
-			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
-				return "", ReasonForbidden, nil
-			}
-		default:
-			// Reactions (editor-everywhere D8): anyone who sees the comment, viewers
-			// included, writes only their own key; each counts against the comment limit.
-			if account, ok := ReactionAccount(op.Field); ok {
-				if account != r.acc.userID || !r.acc.canSee(st.scope) {
-					return "", ReasonForbidden, nil
-				}
-				if r.allowComment != nil && !r.allowComment() {
-					return "", ReasonRateLimited, nil
-				}
-				return st.scope, "", nil
-			}
-			if st.author != r.acc.userID {
-				return "", ReasonForbidden, nil
-			}
+			return st.scope, "", nil
+		}
+		if st.author != r.acc.userID {
+			return "", ReasonForbidden, nil
 		}
 		return st.scope, "", nil
 	}
