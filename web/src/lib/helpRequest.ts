@@ -22,6 +22,8 @@ export const useHelpRequest = store.use
  * topics still open the right place (settings-navigation "Help links name the
  * same screens"): each resolves through the guide's `screens` to an anchor in
  * the section's page. The value is the page's own screen id.
+ * Nothing imports it yet; kept on purpose, so knip skips it.
+ * @public
  */
 export const LEGACY_HELP_SCREENS: Readonly<Record<string, string>> = {
   'settings/session': 'settings/account', 'settings/sessions': 'settings/account', 'settings/password': 'settings/account',
