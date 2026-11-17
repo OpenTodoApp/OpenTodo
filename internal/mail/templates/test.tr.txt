@@ -1,0 +1,5 @@
+OpenTodo test mesajı
+
+Bu, {{.Origin}} adresindeki OpenTodo sunucusundan bir test mesajıdır.
+
+Giden e-posta çalışıyor: parola sıfırlamaları, kayıt onayları ve davetiyeler artık e-posta ile gönderilebilir. İşlem gerekmiyor.

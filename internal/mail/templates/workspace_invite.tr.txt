@@ -1,0 +1,9 @@
+{{.Inviter}} sizi bir çalışma alanına davet etti
+
+Bu, OpenTodo’da paylaşılan bir çalışma alanına davetiyedir.
+
+{{.Inviter}}, {{.Email}} adresini {{.Origin}} adresindeki OpenTodo sunucusunda bir çalışma alanına {{.Role}} olarak katılmaya davet etti. Çalışma alanı üyeleri projeleri birbirleriyle paylaşabilir. Katılmak için bu bağlantıyı açın:
+
+{{.Link}}
+
+Bağlantının süresi {{.Expiry}} içinde dolar. {{.Inviter}} adlı kişiyi tanımıyorsanız bu mesajı yoksayabilirsiniz.

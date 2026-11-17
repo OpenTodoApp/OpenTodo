@@ -1,0 +1,26 @@
+OpenTodo haftanız: {{.Completed}} tamamlandı
+
+Bu, {{.Origin}} adresindeki OpenTodo’dan haftalık özetinizdir.
+
+Geçen hafta ({{.Week}})
+  Tamamlanan: {{.Completed}}
+  Oluşturulan: {{.Created}}
+  Geç tamamlanan: {{.Late}}
+  Ertelenen: {{.Slipped}}
+
+Önceden açık kalanlar
+{{.Overdue}}
+
+Önümüzdeki yedi gün içinde bitişi olanlar
+{{.Ahead}}
+
+Sonraki adımı olmayan projeler
+{{.Idle}}
+
+Son gözden geçirme: {{.LastReview}}
+
+Haftalık gözden geçirmenizi başlatın:
+
+{{.Link}}
+
+Bu mesajı {{.Email}} için Ayarlar, Bildirimler bölümünde haftalık özeti açtığınız için alıyorsunuz. Oradan istediğiniz zaman kapatabilirsiniz.

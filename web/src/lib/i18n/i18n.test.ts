@@ -118,6 +118,16 @@ describe('locale resolution (D4)', () => {
     expect(document.documentElement.lang).toBe('zh')
     expect(document.documentElement.dir).toBe('ltr')
   })
+
+  it('resolves Turkish and loads its catalog offline', async () => {
+    expect(resolveLanguage('system', ['tr-TR', 'en'])).toBe('tr')
+    expect(intlLocale('tr', ['en-US', 'tr-TR'])).toBe('tr-TR')
+    await applyLanguagePreference('tr', ['en-US'])
+    expect(currentLanguage()).toBe('tr')
+    expect(document.documentElement.lang).toBe('tr')
+    expect(t('Inbox')).toBe('Gelen Kutusu')
+    expect(t('{n, plural, one {# task} other {# tasks}}', { n: 2 })).toBe('2 görev')
+  })
 })
 
 describe('quick add and voice follow the interface language (D5)', () => {
@@ -191,7 +201,7 @@ describe('dates in the interface language (D4)', () => {
 // "Words for tasks that are late"): the interface says Earlier, never "overdue". The
 // filter query keyword `overdue` is a language keyword, not a message.
 describe('words for tasks that are late (page-rhythm D8)', () => {
-  const OLD: Record<string, RegExp> = { de: /überfällig/i, fr: /en retard/i, es: /vencid/i, it: /scadut/i, pt: /atrasad/i }
+  const OLD: Record<string, RegExp> = { de: /überfällig/i, fr: /en retard/i, es: /vencid/i, it: /scadut/i, pt: /atrasad/i, tr: /gecikmiş/i }
 
   it('no message of the web app uses "overdue", except the project health word', () => {
     expect(Object.keys(messages).filter((m) => /overdue/i.test(m))).toEqual(['Overdue'])

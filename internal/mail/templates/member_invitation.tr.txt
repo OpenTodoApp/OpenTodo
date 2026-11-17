@@ -1,0 +1,9 @@
+{{.Inviter}} sizinle bir proje veya çalışma alanı paylaşmak istiyor
+
+{{.Inviter}}, {{.Origin}} adresindeki OpenTodo sunucusunda {{.Email}} hesabınızı {{.Role}} olarak eklemek istedi. Siz yanıtlayana kadar sizinle hiçbir şey paylaşılmaz.
+
+Kabul etmek veya reddetmek için oturum açın ve açın:
+
+{{.Link}}
+
+Davetiyenin süresi {{.Expiry}} içinde dolar. {{.Inviter}} adlı kişiyi tanımıyorsanız reddedin veya süresinin dolmasını bekleyin.
