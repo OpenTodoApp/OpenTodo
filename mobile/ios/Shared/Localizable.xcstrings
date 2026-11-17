@@ -51,6 +51,12 @@
             "state": "translated",
             "value": "%lld vandaag"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dziś"
+          }
         }
       }
     },
@@ -103,6 +109,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld vandaag · %lld verouderd"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dziś · %lld po terminie"
           }
         }
       }
@@ -157,6 +169,12 @@
             "state": "translated",
             "value": "Annuleren"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
+          }
         }
       }
     },
@@ -209,6 +227,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Server wijzigen?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienić serwer?"
           }
         }
       }
@@ -263,6 +287,12 @@
             "state": "translated",
             "value": "Wijzigingen die de server nog niet hebben bereikt, gaan verloren. Je taken blijven op de server."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmiany, które nie dotarły do serwera, zostaną utracone. Twoje zadania pozostaną na serwerze."
+          }
         }
       }
     },
@@ -315,6 +345,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Verbinden"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz"
           }
         }
       }
@@ -369,6 +405,12 @@
             "state": "translated",
             "value": "Sluiten"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij"
+          }
         }
       }
     },
@@ -421,6 +463,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tamamlandı"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione"
           }
         }
       }
@@ -475,6 +523,12 @@
             "state": "translated",
             "value": "Vergrendeld. Open OpenTodo om je taken te zien."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowane. Otwórz OpenTodo, aby zobaczyć zadania."
+          }
         }
       }
     },
@@ -527,6 +581,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Geen antwoord van dat adres. Controleer het adres en je verbinding."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak odpowiedzi z tego adresu. Sprawdź adres i połączenie."
           }
         }
       }
@@ -581,6 +641,12 @@
             "state": "translated",
             "value": "Geen verbinding met je server."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak połączenia z twoim serwerem."
+          }
         }
       }
     },
@@ -633,6 +699,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voor vandaag is er niets meer open."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na dziś nic nie zostało."
           }
         }
       }
@@ -687,6 +759,12 @@
             "state": "translated",
             "value": "Open OpenTodo om deze widget te vullen."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz OpenTodo, aby wypełnić ten widżet."
+          }
         }
       }
     },
@@ -739,6 +817,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "OpenTodo-melding"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie OpenTodo"
           }
         }
       }
@@ -793,6 +877,12 @@
             "state": "translated",
             "value": "OpenTodo draait op je eigen server. Voer het adres in dat je in de browser gebruikt."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo działa na twoim własnym serwerze. Wpisz adres, którego używasz w przeglądarce."
+          }
         }
       }
     },
@@ -845,6 +935,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Server en gegevens verwijderen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń serwer i jego dane"
           }
         }
       }
@@ -899,6 +995,12 @@
             "state": "translated",
             "value": "Serveradres"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres serwera"
+          }
         }
       }
     },
@@ -951,6 +1053,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "10 min. later"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odłóż o 10 min"
           }
         }
       }
@@ -1005,6 +1113,12 @@
             "state": "translated",
             "value": "Taak"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadanie"
+          }
         }
       }
     },
@@ -1057,6 +1171,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dat adres antwoordt niet zoals een OpenTodo-server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten adres nie odpowiada jak serwer OpenTodo."
           }
         }
       }
@@ -1111,6 +1231,12 @@
             "state": "translated",
             "value": "Dat is geen bruikbaar adres."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego adresu nie można użyć."
+          }
         }
       }
     },
@@ -1163,6 +1289,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Het certificaat van die server wordt niet vertrouwd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Certyfikat tego serwera nie jest zaufany."
           }
         }
       }
@@ -1217,6 +1349,12 @@
             "state": "translated",
             "value": "De app kon niet worden geladen."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać aplikacji."
+          }
         }
       }
     },
@@ -1269,6 +1407,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Het certificaat van die server wordt op dit apparaat niet vertrouwd."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To urządzenie nie ufa certyfikatowi tego serwera."
           }
         }
       }
@@ -1323,6 +1467,12 @@
             "state": "translated",
             "value": "Deze verbinding is niet versleuteld."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To połączenie nie jest szyfrowane."
+          }
         }
       }
     },
@@ -1375,6 +1525,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zo ziet een melding eruit."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak wygląda przypomnienie."
           }
         }
       }
@@ -1429,6 +1585,12 @@
             "state": "translated",
             "value": "Deze server is alleen via https bereikbaar."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z tym serwerem trzeba łączyć się przez https."
+          }
         }
       }
     },
@@ -1481,6 +1643,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vandaag"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś"
           }
         }
       }
@@ -1535,6 +1703,12 @@
             "state": "translated",
             "value": "Taken van vandaag en verouderd, van je eigen server."
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejsze i zaległe zadania z twojego własnego serwera."
+          }
         }
       }
     },
@@ -1587,6 +1761,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opnieuw proberen"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie"
           }
         }
       }
@@ -1641,6 +1821,12 @@
             "state": "translated",
             "value": "Bijgewerkt %@"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowano %@"
+          }
         }
       }
     },
@@ -1693,6 +1879,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ gebruiken"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj %@"
           }
         }
       }

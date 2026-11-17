@@ -1,0 +1,9 @@
+{{.Inviter}} zaprasza cię do obszaru roboczego
+
+To zaproszenie do udostępnionego obszaru roboczego w OpenTodo.
+
+{{.Inviter}} zaprasza {{.Email}} do obszaru roboczego jako {{.Role}} na serwerze OpenTodo pod adresem {{.Origin}}. Członkowie obszaru roboczego mogą udostępniać sobie nawzajem projekty. Aby dołączyć, otwórz ten link:
+
+{{.Link}}
+
+Link wygasa za {{.Expiry}}. Jeśli nie znasz {{.Inviter}}, możesz zignorować tę wiadomość.

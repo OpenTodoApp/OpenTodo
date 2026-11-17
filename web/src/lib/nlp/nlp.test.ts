@@ -162,8 +162,8 @@ describe('attribute tokens', () => {
 describe('vocabularies', () => {
   const codes = Object.keys(VOCABULARIES)
 
-  it('bundles en, de, fr, it, es, pt, nl and tr', () => {
-    expect(codes.sort()).toEqual(['de', 'en', 'es', 'fr', 'it', 'nl', 'pt', 'tr'])
+  it('bundles en, de, fr, it, es, pt, nl, tr and pl', () => {
+    expect(codes.sort()).toEqual(['de', 'en', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'tr'])
   })
 
   it('every vocabulary defines the same keys and table shapes', () => {

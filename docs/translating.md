@@ -9,7 +9,7 @@ order: 32
 ---
 # Translating OpenTodo
 
-The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese and Dutch, and in Russian and Polish as community translations. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
+The web app ships in English, German, French, Spanish, Italian, Portuguese, Simplified Chinese, Dutch, Turkish and Polish, and in Russian as a community translation. People pick the language in **Settings → Language and region → Language** (see [The app in your language](language.md)); the choice syncs to every device of the account. This page is for contributors who write text in the app or translate it. The documentation and the in-app Help guide stay in English.
 
 ## How text is written
 
@@ -75,7 +75,7 @@ Open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?te
 4. List it: `{ code: 'sv', name: 'Svenska' }` in `SHIPPED`, `web/src/locales/index.ts`, with the name in the language itself.
    - A **maintained** language is complete on every surface, and also goes into `mail.Languages` (`internal/mail/message.go`) with its plural units and role names. The checks fail while a surface is missing.
    - A **community** language adds `community: true`; see [Community languages](#community-languages).
-5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese, Russian and Polish catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
+5. Uncomment the language's row in the maintainer table and name the reviewer in the pull request. A speaker of the language reviews every catalog change; machine translation is not accepted (the Simplified Chinese and Russian catalogs started as machine drafts by the maintainer's decision, and are reviewed as speakers sign up).
 
 [Add a language](contributing/add-a-language.md) lists every file the language touches.
 
@@ -99,7 +99,8 @@ Every listed language has a reviewer who reads each catalog change. A language w
 | Deutsch, Français, Español, Italiano, Português | `de`, `fr`, `es`, `it`, `pt` | maintained | the project maintainers |
 | 简体中文 | `zh` | maintained | peilf |
 | Nederlands | `nl` | maintained, reviewed in [#1077](https://github.com/OpenTodoApp/OpenTodo/pull/1077) | jschreuder |
-| Русский, Polski | `ru`, `pl` | community, machine draft | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review one |
+| Polski | `pl` | maintained | nkkfs |
+| Русский | `ru` | community, machine draft | wanted: open a [Translation issue](https://github.com/OpenTodoApp/OpenTodo/issues/new?template=translation.yml) to review it |
 
 ## Writing a quick-add vocabulary
 
@@ -124,17 +125,17 @@ Use these terms consistently; they match the quick-add vocabulary and the server
 | Inbox | Eingang | Boîte de réception | Bandeja de entrada | In arrivo | Caixa de entrada | 收件箱 | Inbox | Входящие | Skrzynka | Gelen Kutusu |
 | Today | Heute | Aujourd’hui | Hoy | Oggi | Hoje | 今天 | Vandaag | Сегодня | Dziś | Bugün |
 | Upcoming | Demnächst | À venir | Próximo | In programma | Em breve | 即将到来 | Binnenkort | Предстоящие | Nadchodzące | Yaklaşan |
-| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | В любое время | Kiedykolwiek | Her Zaman |
+| Anytime | Jederzeit | N’importe quand | En cualquier momento | In qualsiasi momento | A qualquer hora | 随时 | Altijd | В любое время | W dowolnym momencie | Her Zaman |
 | Someday | Irgendwann | Un jour | Algún día | Un giorno | Algum dia | 将来某天 | Ooit | Когда-нибудь | Kiedyś | Bir Gün |
 | This Evening | Heute Abend | Ce soir | Esta noche | Stasera | Hoje à noite | 今晚 | Vanavond | Этим вечером | Dziś wieczorem | Bu Akşam |
 | Completed | Erledigt | Terminées | Completadas | Completate | Concluídas | 已完成 | Voltooid | Выполненные | Ukończone | Tamamlanan |
 | Trash | Papierkorb | Corbeille | Papelera | Cestino | Lixeira | 废纸篓 | Prullenbak | Корзина | Kosz | Çöp Kutusu |
-| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum | дата выполнения | termin | Bitiş tarihi |
-| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline | крайний срок | ostateczny termin | Son teslim tarihi |
+| Due date | Fälligkeitsdatum | date d’échéance | fecha de vencimiento | data di scadenza | data de vencimento | 截止日期 | Geplande datum | дата выполнения | data wykonania | Bitiş tarihi |
+| Deadline | Frist | date limite | fecha límite | termine | prazo | 最后期限 | Deadline | крайний срок | termin | Son teslim tarihi |
 | Reminder | Erinnerung | rappel | recordatorio | promemoria | lembrete | 提醒 | Herinnering | напоминание | przypomnienie | Hatırlatıcı |
 | Quick add | Schnelleingabe | Ajout rapide | Añadido rápido | Aggiunta rapida | Adição rápida | 快速添加 | Snel toevoegen | Быстрое добавление | Szybkie dodawanie | Hızlı ekle |
 | Settings | Einstellungen | Réglages | Ajustes | Impostazioni | Configurações | 设置 | Instellingen | Настройки | Ustawienia | Ayarlar |
-| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer | владелец, администратор, редактор, читатель | właściciel, administrator, edytor, przeglądający | sahip, yönetici, düzenleyici, izleyici |
+| Owner, admin, editor, viewer | Eigentümer, Admin, Bearbeiter, Betrachter | propriétaire, admin, éditeur, lecteur | propietario, admin, editor, lector | proprietario, admin, editor, visualizzatore | proprietário, admin, editor, leitor | 所有者、管理员、编辑者、查看者 | Eigenaar, beheerder, bewerker, lezer | владелец, администратор, редактор, читатель | właściciel, administrator, edytor, czytelnik | sahip, yönetici, düzenleyici, izleyici |
 | Passkey | Passkey | clé d’accès | llave de acceso | passkey | chave de acesso | 通行密钥 | Passkey | ключ доступа | klucz dostępu | Geçiş anahtarı |
 | Two-factor authentication | Zwei-Faktor-Authentifizierung | authentification à deux facteurs | autenticación en dos pasos | autenticazione a due fattori | autenticação de dois fatores | 双重验证 | Tweestapsverificatie | двухфакторная аутентификация | uwierzytelnianie dwuskładnikowe | İki faktörlü kimlik doğrulama |
-| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik | Еженедельный обзор | Przegląd tygodnia | Haftalık gözden geçirme |
+| Weekly review | Wochenrückblick | revue hebdomadaire | revisión semanal | revisione settimanale | revisão semanal | 每周回顾 | Wekelijkse terugblik | Еженедельный обзор | przegląd tygodnia | Haftalık gözden geçirme |

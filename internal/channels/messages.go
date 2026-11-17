@@ -163,6 +163,18 @@ var texts = map[string]map[string]string{
 		txtPageDoneBy: "{name} görevi sayfasında tamamladı", txtPageReopenedBy: "{name} görevi sayfasında yeniden açtı",
 		txtTestTitle: "OpenTodo’dan test", txtTestBody: "Bu kanal çalışıyor.", txtGuest: "Bir misafir",
 	},
+	"pl": {
+		txtTurn: "Twoja kolej przy zadaniu", txtTurnWith: "Twoja kolej",
+		txtRoutine:       "Rutyna wysłała ci komunikat",
+		txtRoutineFailed: "Rutyna nie powiodła się", txtRoutineFailedWith: "Nie została ukończona. Otwórz uruchomienie, aby zobaczyć dlaczego.",
+		txtReminder: "Czas na przypomnienie", txtAssigned: "Przypisano ci zadanie", txtMentioned: "Wspomniano o tobie",
+		txtUnblocked: "Przypisane do ciebie zadanie jest gotowe do rozpoczęcia", txtPageReplied: "Gość odpowiedział na stronie zadania",
+		txtPageDone: "Gość ukończył stronę zadania", txtPageReopened: "Gość ponownie otworzył stronę zadania",
+		txtReminderWith: "Przypomnienie", txtAssignedBy: "{name} przypisał(a) ci to zadanie", txtMentionedBy: "{name} wspomniał(a) o tobie",
+		txtUnblockedWith: "Gotowe do rozpoczęcia", txtPageRepliedBy: "{name} odpowiedział(a) na stronie zadania",
+		txtPageDoneBy: "{name} ukończył(a) zadanie na jego stronie", txtPageReopenedBy: "{name} ponownie otworzył(a) zadanie na jego stronie",
+		txtTestTitle: "Test z OpenTodo", txtTestBody: "Ten kanał działa.", txtGuest: "Gość",
+	},
 }
 
 func text(lang, key, name string) string {

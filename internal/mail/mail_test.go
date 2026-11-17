@@ -507,7 +507,7 @@ func TestDigestWordsForLateTasks(t *testing.T) {
 	heading := map[string]string{
 		"en": "Still open from earlier", "de": "Noch offen von früher", "fr": "Encore ouvertes d'avant",
 		"es": "Siguen abiertas de antes", "it": "Ancora aperte da prima", "pt": "Ainda abertas de antes",
-		"zh": "更早仍未完成", "nl": "Nog open van eerder", "tr": "Önceden açık kalanlar",
+		"zh": "更早仍未完成", "nl": "Nog open van eerder", "tr": "Önceden açık kalanlar", "pl": "Nadal otwarte z wcześniej",
 	}
 	// The old headings, matched as whole lines where the word also names a measurement.
 	old := map[string]*regexp.Regexp{
@@ -515,6 +515,7 @@ func TestDigestWordsForLateTasks(t *testing.T) {
 		"es": regexp.MustCompile(`(?i)vencid`), "it": regexp.MustCompile(`(?m)^In ritardo$`), "pt": regexp.MustCompile(`(?m)^Atrasadas$`),
 		"zh": regexp.MustCompile(`逾期`), "nl": regexp.MustCompile(`(?i)achterstallig|verlopen|(?m)^Te laat$`),
 		"tr": regexp.MustCompile(`(?i)gecikmi|vadesi geçmiş`),
+		"pl": regexp.MustCompile(`(?i)zaległ|przetermin`),
 	}
 	for _, lang := range Languages {
 		m := Message{Kind: KindDigest, To: "ana@example.com", Lang: lang, Origin: "https://todo.example.com",
