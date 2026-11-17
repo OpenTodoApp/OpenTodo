@@ -16,8 +16,9 @@ order: 4
 | Target | What it checks |
 | --- | --- |
 | `make lint` | `go vet` and the web type check |
-| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests |
-| `make staticcheck` | Go static analysis |
+| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests; then knip (`npm run knip`, config `web/knip.json`): no unused files, dependencies or duplicate exports, and no more unused exports than the count in `web/scripts/knip.mjs` |
+| `make staticcheck` | Go static analysis, after `make deadcode` |
+| `make deadcode` | no Go function unreachable from the commands and tests (`deadcode -test`) |
 | `make test` | `go test ./...`, the web tests (vitest), the extension and the Obsidian plugin |
 | `make fmt-check` | `gofmt` |
 | `make ui-lint` | design-system rules: tokens, `<Icon>`, no untranslated English in JSX |
@@ -26,7 +27,7 @@ order: 4
 | `make templates-check` | project templates |
 | `make openspec-validate` | every spec and change, strict |
 | `make deploy-check` | the platform templates under `deploy/` |
-| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/` |
+| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/`, no open OpenSpec change with every task ticked (stale changes are listed as warnings) |
 
 The Go tests that import the embedded web app need it built once: `make web`.
 
@@ -39,6 +40,10 @@ cd web && npx vitest run -t "keeps the outbox"
 ```
 
 Web tests never reach the network: mock `fetch` with `mockFetch` from `web/src/ui/test-utils.tsx`. Interaction tests opt into `// @vitest-environment happy-dom` and wait with `waitFor`, never a fixed sleep. Module-level state is reset before each test by `resetModuleState()` (`web/src/lib/moduleState.ts`); a module with a top-level `let` registers with `resettable()`.
+
+The notes link grammar (`linksIn`, behind Linked references) is timed in the ordinary web tests by `web/src/lib/notesHotPaths.test.ts`, so a slowdown of it fails on its own pull request rather than only in the nightly [performance budgets](../performance.md). Milliseconds vary too much between CI runners, so it is timed beside a plain line scan of the same 1 MB of generated notes, and the median ratio of seven interleaved pairs is held to its `MAX`. To change a `MAX` on purpose, run the file a few times with `--silent=false`, read the printed ratios, set the new ratio × 1.5 and say why in the pull request.
+
+A client generated from the OpenAPI description must type-check: `web/scripts/openapi-client.test.mjs` generates TypeScript types from `docs/openapi.json` with `openapi-typescript` and runs `tsc` on a small client (`web/scripts/openapi-client/example.ts`: `/me`, tasks, one sync call, the error envelope), so a renamed, removed or loosened field fails the Web job. `openapi-typescript` (pinned exactly) is a devDependency for this test only, never in the bundle or the binary: it is the generator most third-party clients use, so the test sees the description as they do. Its peer range stops at TypeScript 5, so `web/package.json` overrides that one peer to our TypeScript.
 
 The client's sync code also runs against the real server: `npm run test:contract` in `web/`, after `make server`.
 

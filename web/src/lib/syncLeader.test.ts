@@ -73,6 +73,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const s of tabs.splice(0)) s.stopSync()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('one tab syncs', () => {
@@ -148,6 +149,63 @@ describe('one tab syncs', () => {
     void (navigator.locks.request as (n: string, o: object, f: () => Promise<void>) => Promise<void>)('opentodo-sync', { steal: true }, () => new Promise(() => {})).catch(() => undefined)
     await until(() => !b.isSyncLeader(), 'B to step down')
     await until(() => b.isSyncLeader() !== c.isSyncLeader(), 'exactly one working tab to lead again', 5_000)
+  })
+
+  // sync-exchange-watchdog D1: a leader that still answers but whose exchange hangs
+  // (an await that never settles) does not stop the browser's sync.
+  it('a leader whose exchange hangs abandons it and syncs again, and the follower sees it', async () => {
+    const a = await tab()
+    tabs.push(a)
+    Object.assign(a.EXCHANGE_STALL, { ms: 60, checkMs: 10 })
+    a.startSync()
+    await until(() => a.isSyncLeader() && syncRequests.count >= 1, 'tab A to lead and sync')
+    const b = await tab()
+    tabs.push(b)
+    Object.assign(b.LEADER_PROBE, { everyMs: 30, waitMs: 200, misses: 2 })
+    b.startSync()
+    // The next exchange hangs: its request never settles, whatever its signal does.
+    const answer = vi.mocked(fetch)
+    const ok = answer.getMockImplementation()!
+    let hung = 0
+    answer.mockImplementation(async (url, init) => {
+      if (url === '/api/v1/sync' && hung++ === 0) return new Promise<Response>(() => {})
+      return ok(url, init)
+    })
+    const before = syncRequests.count
+    void b.syncNow()
+    await until(() => hung >= 1, 'the exchange to hang')
+    // A keeps answering B's checks, so only A itself can notice: it gives the exchange up
+    // and the next one reaches the server.
+    void b.syncNow()
+    await until(() => syncRequests.count > before, 'an exchange after the hung one', 3_000)
+    expect(a.isSyncLeader()).toBe(true)
+    await until(() => b.syncSnapshot().state === 'idle', 'B to show a working sync again')
+  })
+
+  // sync-exchange-watchdog D1: the watchdog measures progress, so a long pull of many pages is not cut.
+  it('an exchange that is slow in total but answers every page is not given up', async () => {
+    const answer = vi.mocked(fetch)
+    let pages = 0
+    // Each page takes about 75 ms of the watchdog's clock: under its 150 ms, six pages well over it.
+    const real = Date.now.bind(Date)
+    let skew = 0
+    vi.spyOn(Date, 'now').mockImplementation(() => real() + skew)
+    answer.mockImplementation(async (url) => {
+      if (url !== '/api/v1/sync') return new Response('{}', { status: 200 })
+      skew += 40
+      // The server is busy for a few of the watchdog's checks.
+      let ticks = 0
+      await until(() => ticks++ > 2, 'the server to answer')
+      pages++
+      return new Response(JSON.stringify({ applied: 0, ops: [], cursor: pages, hasMore: pages < 6, serverTime: Date.now() }), { status: 200 })
+    })
+    const a = await tab()
+    tabs.push(a)
+    Object.assign(a.EXCHANGE_STALL, { ms: 150, checkMs: 10 })
+    a.startSync()
+    await until(() => a.syncSnapshot().state === 'idle' && a.syncSnapshot().lastSyncedAt !== null, 'the long pull to finish', 3_000)
+    expect(pages).toBeGreaterThanOrEqual(6)
+    expect(skew).toBeGreaterThan(150)
   })
 
   it('without Web Locks every tab syncs on its own', async () => {

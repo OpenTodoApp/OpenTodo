@@ -43,6 +43,7 @@
     pt: { reminder: 'Lembrete', due: 'Vence {date}', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
     zh: { reminder: '提醒', due: '{date} 截止', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
     nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.' },
+    tr: { reminder: 'Hatırlatıcı', due: 'Bitiş: {date}', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.' },
     pl: { reminder: 'Przypomnienie', due: 'Do wykonania {date}', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.' },
   }
   self.__opentodoText = OWN_TEXT

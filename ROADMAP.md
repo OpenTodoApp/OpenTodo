@@ -220,6 +220,7 @@ These changes come from the owner's November review of the screens used every da
 | Change | What | Issues |
 | --- | --- | --- |
 | [`sidebar-brand-and-row-grid`](openspec/changes/archive/2026-11-10-sidebar-brand-and-row-grid/) | **Shipped.** The workspace gets its own picture and OpenTodo a quiet brand line with the version in the sidebar's footer. Task rows get one grid of fixed slots, with marks on the title's baseline. The task panel fits its width, with quieter subtasks and a compact estimate editor. Upcoming summarises later days | |
+| [`one-line-label-fit`](openspec/changes/archive/2026-11-14-one-line-label-fit/) | **Shipped.** One line rows fit labels in their column, with an ellipsis for a long first label and a count for labels that do not fit | [#1089](https://github.com/OpenTodoApp/OpenTodo/issues/1089) |
 | [`when-picker`](openspec/changes/archive/2026-11-10-when-picker/) | **Shipped.** The Do on editor gets a date field that shows an example, one "time of day" row (Any time, Morning, Afternoon, Evening, Time) and the zone beside the time | |
 | [`focus-redesign`](openspec/changes/archive/2026-11-10-focus-redesign/) | **Shipped.** Focus becomes one stage: the task, the time left and one control. Settings, the mode and today's sessions move behind a quiet menu, and breaks are a calm state | |
 | [`close-the-day-redesign`](openspec/changes/archive/2026-11-10-close-the-day-redesign/) | **Shipped.** Close the day becomes three steps (done, what moves, tomorrow's first thing), keyboard-first, with one write and one Undo | |

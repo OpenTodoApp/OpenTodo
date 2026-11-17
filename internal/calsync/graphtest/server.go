@@ -290,20 +290,6 @@ func (s *Server) drop(id string) {
 	s.log[e.Calendar] = append(s.log[e.Calendar], change{seq: s.seq, id: id})
 }
 
-// Events returns a calendar's events by start.
-func (s *Server) Events(cal string) []Event {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	var out []Event
-	for _, e := range s.events {
-		if e.Calendar == cal {
-			out = append(out, *e)
-		}
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Start.DateTime+out[i].ID < out[j].Start.DateTime+out[j].ID })
-	return out
-}
-
 // ByTask returns the events carrying a task's property.
 func (s *Server) ByTask(taskID string) []Event {
 	s.mu.Lock()

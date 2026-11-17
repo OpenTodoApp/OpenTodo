@@ -1,0 +1,9 @@
+Yeni OpenTodo e-posta adresinizi onaylayın
+
+Bu, OpenTodo’dan bir e-posta onay mesajıdır.
+
+Birisi {{.Origin}} adresindeki bir hesabın oturum açma e-postası olarak {{.Email}} adresini kullanmak istedi. Onaylamak için bu hesapta oturum açmışken bu bağlantıyı açın:
+
+{{.Link}}
+
+Bağlantının süresi {{.Expiry}} içinde dolar. Bunu siz istemediyseniz bu mesajı yoksayabilirsiniz: hiçbir şey değişmez.

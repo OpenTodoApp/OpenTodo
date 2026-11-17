@@ -181,11 +181,6 @@ export async function queueFiles(taskId: AttachParent, files: File[], opts: { co
   return commitFiles(await planFiles(taskId, files, opts))
 }
 
-/** Attach one file. Returns its id. */
-export async function queueFile(taskId: string, file: File, commentId?: string | null): Promise<string> {
-  return (await queueFiles(taskId, [file], { commentId }))[0]
-}
-
 /** An http(s) address, or null. */
 export function parseLink(text: string): URL | null {
   try {

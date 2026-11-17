@@ -1,7 +1,7 @@
 // What a click captures (OpenSpec change extension-v2, share-capture "Context menu
 // on links, images and selections"): pure helpers shared by the background script
 // and the popup, tested with `node --test extension/capture.test.js`.
-import { MAX_TEXT, MAX_TITLE, isWebUrl } from './share-url.js'
+import { MAX_TEXT, MAX_TITLE, cut, isWebUrl } from './share-url.js'
 
 /** The storage.session key of the capture a context-menu click hands to the popup. */
 export const PENDING_KEY = 'pendingCapture'
@@ -45,7 +45,7 @@ export function captureFromTab(tab, selection = '') {
 }
 
 function clip(c) {
-  return { ...c, title: c.title.slice(0, MAX_TITLE), text: c.text.slice(0, MAX_TEXT) }
+  return { ...c, title: cut(c.title, MAX_TITLE), text: cut(c.text, MAX_TEXT) }
 }
 
 /**

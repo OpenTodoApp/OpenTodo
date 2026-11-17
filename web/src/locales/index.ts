@@ -16,6 +16,7 @@ export const SHIPPED = [
   { code: 'pt', name: 'Português' },
   { code: 'zh', name: '简体中文' },
   { code: 'nl', name: 'Nederlands' },
+  { code: 'tr', name: 'Türkçe' },
   { code: 'pl', name: 'Polski' },
   // Machine drafts by the maintainer's decision (russian-polish), reviewed as speakers sign up.
   { code: 'ru', name: 'Русский', community: true },

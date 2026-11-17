@@ -1012,7 +1012,6 @@
   "Clear conversations": "Wyczyść rozmowy",
   "Clear conversations on this device": "Wyczyść rozmowy na tym urządzeniu",
   "Clear conversations on this device?": "Wyczyścić rozmowy na tym urządzeniu?",
-  "Clear due date": "Usuń datę wykonania",
   "Clear filter": "Wyczyść filtr",
   "Clear memory?": "Wyczyścić pamięć?",
   "Clear the app": "Wyczyść aplikację",
@@ -7767,5 +7766,7 @@
   "Not synced since {time}": "Brak synchronizacji od {time}",
   "Not synced yet": "Jeszcze nie zsynchronizowano",
   "Add a subtask to {title}": "Dodaj podzadanie do {title}",
-  "Add a subtask to this task": "Dodaj podzadanie do tego zadania"
+  "Add a subtask to this task": "Dodaj podzadanie do tego zadania",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Ten serwer nie mógł przyjąć zmiany z tego urządzenia. Zostaje ona na tym urządzeniu, a cała reszta nadal się synchronizuje.",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "kalendarz ma ponad {size} MB; zamiast tego połącz go przez synchronizację kalendarza"
 }

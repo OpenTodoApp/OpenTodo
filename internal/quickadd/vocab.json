@@ -2637,6 +2637,345 @@
    "later"
   ]
  },
+ "tr": {
+  "code": "tr",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "bugun": 0,
+   "bu aksam": 0,
+   "yarın": 1,
+   "yarin": 1,
+   "obur gun": 2
+  },
+  "weekdays": [
+   [
+    "pazartesi",
+    "pzt"
+   ],
+   [
+    "salı",
+    "sali",
+    "sal"
+   ],
+   [
+    "carsamba",
+    "car"
+   ],
+   [
+    "persembe",
+    "per"
+   ],
+   [
+    "cuma",
+    "cum"
+   ],
+   [
+    "cumartesi",
+    "cmt"
+   ],
+   [
+    "pazar",
+    "paz"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "ocak"
+    ],
+    "abbr": [
+     "oca"
+    ]
+   },
+   {
+    "names": [
+     "subat"
+    ],
+    "abbr": [
+     "sub"
+    ]
+   },
+   {
+    "names": [
+     "mart"
+    ],
+    "abbr": [
+     "mar"
+    ]
+   },
+   {
+    "names": [
+     "nisan"
+    ],
+    "abbr": [
+     "nis"
+    ]
+   },
+   {
+    "names": [
+     "mayıs",
+     "mayis"
+    ],
+    "abbr": [
+     "may"
+    ]
+   },
+   {
+    "names": [
+     "haziran"
+    ],
+    "abbr": [
+     "haz"
+    ]
+   },
+   {
+    "names": [
+     "temmuz"
+    ],
+    "abbr": [
+     "tem"
+    ]
+   },
+   {
+    "names": [
+     "agustos"
+    ],
+    "abbr": [
+     "agu"
+    ]
+   },
+   {
+    "names": [
+     "eylul"
+    ],
+    "abbr": [
+     "eyl"
+    ]
+   },
+   {
+    "names": [
+     "ekim"
+    ],
+    "abbr": [
+     "eki"
+    ]
+   },
+   {
+    "names": [
+     "kasım",
+     "kasim"
+    ],
+    "abbr": [
+     "kas"
+    ]
+   },
+   {
+    "names": [
+     "aralık",
+     "aralik"
+    ],
+    "abbr": [
+     "ara"
+    ]
+   }
+  ],
+  "before": [],
+  "deadlineWords": [
+   "son teslim",
+   "son tarih"
+  ],
+  "byWords": [],
+  "somedayWords": [
+   "bir gun",
+   "birgun"
+  ],
+  "sectorPhrases": {
+   "this-week": [
+    "bu hafta",
+    "bu hafta bir ara"
+   ],
+   "next-week": [
+    "gelecek hafta bir ara"
+   ],
+   "this-month": [
+    "bu ay",
+    "bu ay bir ara"
+   ],
+   "next-month": [
+    "gelecek ay bir ara"
+   ],
+   "this-quarter": [
+    "bu ceyrek",
+    "bu ceyrekte"
+   ],
+   "next-quarter": [
+    "gelecek ceyrek",
+    "gelecek ceyrekte"
+   ]
+  },
+  "eveningWords": [
+   "bu aksam"
+  ],
+  "morningWords": [
+   "bu sabah"
+  ],
+  "afternoonWords": [
+   "bu ogleden sonra"
+  ],
+  "partWords": {
+   "morning": [
+    "sabah"
+   ],
+   "afternoon": [
+    "ogleden sonra"
+   ],
+   "evening": [
+    "aksam"
+   ]
+  },
+  "nextBefore": [
+   "gelecek",
+   "onumuzdeki",
+   "sonraki"
+  ],
+  "nextAfter": [],
+  "thisBefore": [
+   "bu"
+  ],
+  "inWords": [
+   "icinde"
+  ],
+  "oneWords": [
+   "bir"
+  ],
+  "units": {
+   "minute": [
+    "dakika",
+    "dk"
+   ],
+   "hour": [
+    "saat",
+    "sa"
+   ],
+   "day": [
+    "gun"
+   ],
+   "week": [
+    "hafta"
+   ],
+   "month": [
+    "ay"
+   ],
+   "year": [
+    "yıl",
+    "yil",
+    "sene"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "saat"
+  ],
+  "hourWords": [],
+  "hourSuffixH": false,
+  "timeWords": {
+   "ogle": "12:00",
+   "oglen": "12:00",
+   "gece yarısı": "00:00",
+   "gece yarisi": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "halfWords": [],
+  "guardedAbbreviations": [],
+  "every": [
+   "her"
+  ],
+  "everyOne": {
+   "gunluk": "day",
+   "haftalık": "week",
+   "haftalik": "week",
+   "aylık": "month",
+   "aylik": "month",
+   "yıllık": "year",
+   "yillik": "year",
+   "hafta ici": "weekday"
+  },
+  "weekdayAll": [
+   "hafta ici",
+   "hafta ici",
+   "is gunu",
+   "is gunleri"
+  ],
+  "ordinals": {
+   "ilk": 1,
+   "birinci": 1,
+   "ikinci": 2,
+   "ucuncu": 3,
+   "dorduncu": 4,
+   "son": -1
+  },
+  "ordinalArticles": [],
+  "ordinalOf": [],
+  "ofMonthWords": [
+   "ayın",
+   "ayin",
+   "her ayın",
+   "her ayin"
+  ],
+  "ordinalsBeforeWeekday": {},
+  "andWords": [
+   "ve"
+  ],
+  "afterCompletion": [
+   "tamamlandıktan sonra",
+   "tamamlandiktan sonra",
+   "bitince"
+  ],
+  "untilWords": [
+   "kadar"
+  ],
+  "timesWords": {
+   "before": [],
+   "after": [
+    "kez",
+    "defa"
+   ]
+  },
+  "everyOther": [
+   "her iki"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "weekOnWords": [],
+  "repeatWords": [
+   "ve tekrarla",
+   "tekrarla",
+   "tekrar et",
+   "ve sonra",
+   "sonra",
+   "ve"
+  ],
+  "startWords": [
+   "baslangıc",
+   "itibaren"
+  ],
+  "monthTextBefore": [],
+  "remindWords": [
+   "hatırlat",
+   "hatirlat",
+   "bana hatırlat",
+   "bana hatirlat"
+  ],
+  "beforeWords": [
+   "once"
+  ],
+  "afterWords": [
+   "sonra"
+  ]
+ },
  "pl": {
   "code": "pl",
   "dayMonthOrder": "DM",

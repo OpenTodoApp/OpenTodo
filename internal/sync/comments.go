@@ -48,7 +48,8 @@ const (
 // batchComment is what a batch says about a comment it creates.
 type batchComment struct {
 	task, author string
-	limited      int // rate limit decision: 0 not yet taken, 1 allowed, 2 refused
+	page         string // the page_id it names, for a reply imported from a task page
+	limited      int    // rate limit decision: 0 not yet taken, 1 allowed, 2 refused
 }
 
 // commentState is what the resolver learned about one comment id.
@@ -61,7 +62,7 @@ type commentState struct {
 // noteComment collects the winning task_id and author_id of comments in a batch,
 // so a new comment's ops can be placed and checked whatever their order.
 func (r *resolver) noteComment(op Op) {
-	if op.Entity != "comment" || (op.Field != "task_id" && op.Field != "author_id") {
+	if op.Entity != "comment" || (op.Field != "task_id" && op.Field != "author_id" && op.Field != "page_id") {
 		return
 	}
 	b := r.batchComment[op.EntityID]
@@ -69,11 +70,57 @@ func (r *resolver) noteComment(op Op) {
 		b = &batchComment{}
 		r.batchComment[op.EntityID] = b
 	}
-	if op.Field == "task_id" {
+	switch op.Field {
+	case "task_id":
 		b.task = idValue(op.Value)
-	} else {
+	case "page_id":
+		b.page = idValue(op.Value)
+	default:
 		b.author = idValue(op.Value)
 	}
+}
+
+// guestFieldsOK says whether a device may write a comment's guest_name or page_id,
+// which mark a reply a guest sent through a task page (task-pages D4). The server's
+// own writers always may. A device may set them only on a new comment, naming a page
+// of that comment's task the writer published (the publisher's device imports the
+// replies to an encrypted page); on a stored comment it may only repeat their value.
+func (r *resolver) guestFieldsOK(op Op) (bool, error) {
+	if ReservedDevice(op.Device) {
+		return true, nil
+	}
+	st, err := r.comment(op.EntityID)
+	if err != nil || st.found {
+		if err != nil {
+			return false, err
+		}
+		stored, err := r.storedField(st.scope, "comment", op.EntityID, op.Field)
+		same := string(stored) == string(op.Value) || (IsNull(op.Value) && (stored == nil || IsNull(stored)))
+		return err == nil && same, err
+	}
+	page := idValue(op.Value)
+	if op.Field == "guest_name" {
+		if IsNull(op.Value) {
+			return true, nil
+		}
+		page = ""
+		if b := r.batchComment[op.EntityID]; b != nil {
+			page = b.page
+		}
+	}
+	if page == "" {
+		return op.Field == "page_id", nil
+	}
+	b := r.batchComment[op.EntityID]
+	if b == nil {
+		return false, nil
+	}
+	var one int
+	err = r.tx.QueryRowContext(r.ctx, `SELECT 1 FROM task_pages WHERE id = ? AND task_id = ? AND user_id = ?`, page, b.task, r.acc.userID).Scan(&one)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // comment looks a comment up in every scope (once per batch, entity-id-ownership).
@@ -93,43 +140,35 @@ func (r *resolver) comment(id string) (*commentState, error) {
 // resolveComment places a comment op in its task's scope and applies the
 // authorship rules of design D2.
 func (r *resolver) resolveComment(op Op) (scope, reason string, err error) {
+	if op.Field == "guest_name" || op.Field == "page_id" {
+		if ok, err := r.guestFieldsOK(op); err != nil || !ok {
+			return "", ReasonForbidden, err
+		}
+	}
 	st, err := r.comment(op.EntityID)
 	if err != nil {
 		return "", "", err
 	}
 	if st.found {
-		if st.scope == "" {
-			return "", ReasonForbidden, nil
+		if reason, done := r.existingAuthored(op, st.scope, st.author, map[string]string{"author_id": st.author, "task_id": st.task}); done {
+			if reason != "" {
+				return "", reason, nil
+			}
+			return st.scope, "", nil
 		}
-		switch op.Field {
-		case "author_id":
-			if idValue(op.Value) != st.author {
+		// Reactions (editor-everywhere D8): anyone who sees the comment, viewers
+		// included, writes only their own key; each counts against the comment limit.
+		if account, ok := ReactionAccount(op.Field); ok {
+			if account != r.acc.userID || !r.acc.canSee(st.scope) {
 				return "", ReasonForbidden, nil
 			}
-		case "task_id":
-			if idValue(op.Value) != st.task {
-				return "", ReasonForbidden, nil
+			if r.allowComment != nil && !r.allowComment() {
+				return "", ReasonRateLimited, nil
 			}
-		case "deleted_at":
-			role := r.acc.roleIn(st.scope)
-			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
-				return "", ReasonForbidden, nil
-			}
-		default:
-			// Reactions (editor-everywhere D8): anyone who sees the comment, viewers
-			// included, writes only their own key; each counts against the comment limit.
-			if account, ok := ReactionAccount(op.Field); ok {
-				if account != r.acc.userID || !r.acc.canSee(st.scope) {
-					return "", ReasonForbidden, nil
-				}
-				if r.allowComment != nil && !r.allowComment() {
-					return "", ReasonRateLimited, nil
-				}
-				return st.scope, "", nil
-			}
-			if st.author != r.acc.userID {
-				return "", ReasonForbidden, nil
-			}
+			return st.scope, "", nil
+		}
+		if st.author != r.acc.userID {
+			return "", ReasonForbidden, nil
 		}
 		return st.scope, "", nil
 	}

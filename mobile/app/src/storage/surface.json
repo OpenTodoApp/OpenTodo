@@ -10,7 +10,6 @@
     ],
     "Collection.filter": [
       "web/src/lib/localData.ts",
-      "web/src/lib/reminders.ts",
       "web/src/lib/sections.ts"
     ],
     "Collection.first": [
@@ -296,7 +295,6 @@
       "web/src/lib/defaultReminder.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/ops.ts",
-      "web/src/lib/reminders.ts",
       "web/src/lib/sections.ts",
       "web/src/lib/seriesSplitActions.ts",
       "web/src/lib/sharing.ts",

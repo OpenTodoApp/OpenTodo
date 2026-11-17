@@ -40,3 +40,15 @@ func TestHabitsCommands(t *testing.T) {
 		t.Fatalf("unknown habit: exit %d", code)
 	}
 }
+
+// With TZ unset Go names the machine's zone "Local"; the habit routes still get
+// the zone's IANA name (from TZ or /etc/localtime), never the server's UTC (#1500).
+func TestHabitsZoneWhenLocalIsUnnamed(t *testing.T) {
+	a := &App{
+		Now:    func() time.Time { return time.Date(2026, 11, 16, 19, 48, 0, 0, time.FixedZone("Local", -8*3600)) },
+		Getenv: func(k string) string { return map[string]string{"TZ": "America/Los_Angeles"}[k] },
+	}
+	if got := a.habitQuery(nil); got != "?timezone=America%2FLos_Angeles" {
+		t.Fatalf("habitQuery = %q", got)
+	}
+}

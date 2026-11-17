@@ -27,5 +27,7 @@ cat <<NOTES
 - Binary: download \`opentodo-<os>-<arch>\` below, then run it (data goes to \`./data\`).
 - Command-line client: \`ot-<os>-<arch>\`. Browser extension: \`opentodo-browser-extension-chrome.zip\` and \`opentodo-browser-extension-firefox.zip\`.
 
-Verify downloads with \`sha256sum -c SHA256SUMS\`. Self-hosting guides: [docs/self-hosting](https://github.com/OpenTodoApp/OpenTodo/tree/v$version/docs/self-hosting).
+Verify downloads with \`sha256sum -c SHA256SUMS\`. Self-hosting guides: [docs/self-hosting](https://github.com/OpenTodoApp/OpenTodo/tree/v$version/docs/self-hosting). The API description of this release is \`openapi.json\` below.
+
+OpenTodo is free and always will be. If it helps you, you can [buy a coffee](https://buymeacoffee.com/pixari) or [sponsor it](https://github.com/sponsors/pixari); [what it costs and where the money goes](https://open-todo.app/support/).
 NOTES

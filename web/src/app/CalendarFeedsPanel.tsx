@@ -53,11 +53,17 @@ export interface CalendarFeedsViewProps {
   onDismissUrl: () => void
 }
 
+/** A stored fetch reason as words where the code alone does not say what to do. */
+function feedErrorText(reason: string): string {
+  if (reason === 'too_large') return t('the calendar is larger than {size} MB; connect it with calendar sync instead', { size: 32 })
+  return reason
+}
+
 /** One line of status for a subscription row. */
 export function subscriptionStatus(s: CalendarSubscription, now = Date.now()): string {
   const last = s.lastSuccessAt ? t('last success {ago}', { ago: ago(s.lastSuccessAt, now) }) : t('never refreshed')
   if (!s.enabled) return s.stoppedReason ? t('Stopped: {reason}', { reason: s.stoppedReason }) : t('Disabled')
-  if (s.lastError) return t('Failed: {error} · {last}', { error: s.lastError, last })
+  if (s.lastError) return t('Failed: {error} · {last}', { error: feedErrorText(s.lastError), last })
   return s.lastSuccessAt ? t('Refreshed {ago}', { ago: ago(s.lastSuccessAt, now) }) : t('Waiting for the first refresh')
 }
 

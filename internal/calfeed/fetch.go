@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -122,23 +121,22 @@ func (f *Fetcher) Fetch(ctx context.Context, sub *Subscription) (*Result, error)
 	if resp.StatusCode != http.StatusOK {
 		return nil, &FetchError{fmt.Sprintf("http_%d", resp.StatusCode)}
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, MaxFeedBytes+1))
-	if err != nil {
-		return nil, &FetchError{reasonOf(err)}
-	}
-	if len(body) > MaxFeedBytes {
-		return nil, &FetchError{"too_large"}
-	}
-	cal, err := ParseCalendar(body)
-	if err != nil {
-		return nil, &FetchError{"invalid_calendar"}
-	}
 	now := time.Now
 	if f.now != nil {
 		now = f.now
 	}
+	win := StoreWindow(now())
+	cal, err := ReadCalendar(resp.Body, func(ev Event) bool { return Reaches(ev, win) })
+	switch {
+	case errors.Is(err, ErrTooLarge):
+		return nil, &FetchError{"too_large"}
+	case errors.Is(err, ErrInvalid):
+		return nil, &FetchError{"invalid_calendar"}
+	case err != nil:
+		return nil, &FetchError{reasonOf(err)}
+	}
 	ectx, cancel := context.WithTimeout(ctx, MaxExpandTime)
-	occ, warns := ExpandContext(ectx, cal.Events, StoreWindow(now()), MaxOccurrences)
+	occ, warns := ExpandContext(ectx, cal.Events, win, MaxOccurrences)
 	cancel()
 	r := &Result{Replaced: true, Occurrences: occ, Warnings: append(cal.Warnings, warns...), ETag: resp.Header.Get("ETag"),
 		LastModified: resp.Header.Get("Last-Modified"), Name: cal.Name, BrowserAgent: browser}

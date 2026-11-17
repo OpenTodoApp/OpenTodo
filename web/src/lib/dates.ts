@@ -410,9 +410,6 @@ export function setDateLocale(locale: string | undefined): void {
   dateFormatters.clear()
 }
 
-/** The locale dates are written in; undefined means the browser's. */
-export function dateLocaleOf(): string | undefined { return dateLocale }
-
 /** The date locale's order, clock and first day of the week (Monday when the browser cannot tell). */
 export function systemDateTime(): SystemDateTime {
   if (systemCache) return systemCache

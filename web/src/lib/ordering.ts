@@ -23,9 +23,6 @@ export function compareByPosition(a: Positioned, b: Positioned): number {
   return a.position - b.position || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 }
 
-/** Alias kept for board-view call sites. */
-export const byPosition = compareByPosition
-
 /**
  * Date-sorted views (Today, Upcoming, Assigned, filters): due date and time, then
  * priority, then the manual order as the tie-breaker (manual-ordering, "Position as
@@ -43,13 +40,6 @@ export function positionAtEnd(siblings: Iterable<Positioned>, exceptId?: string,
   let max = -Infinity
   for (const s of siblings) if (s.id !== exceptId && s.position > max) max = s.position
   return max === -Infinity ? fallback : max + GAP
-}
-
-/** A position before every sibling. */
-export function positionAtStart(siblings: Iterable<Positioned>, exceptId?: string, fallback = Date.now()): number {
-  let min = Infinity
-  for (const s of siblings) if (s.id !== exceptId && s.position < min) min = s.position
-  return min === Infinity ? fallback : min - GAP
 }
 
 /**

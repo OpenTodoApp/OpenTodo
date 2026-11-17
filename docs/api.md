@@ -24,7 +24,7 @@ The whole API is also described as **OpenAPI 3.1**, generated from the server's 
 - **On your server:** `GET /api/v1/openapi.json` (no sign-in; it describes routes, not your data, and its `info.version` is the server's version).
 - **In each release:** `openapi.json` is attached to the [GitHub release](https://github.com/OpenTodoApp/OpenTodo/releases), and the latest is in the repository as [`docs/openapi.json`](https://github.com/OpenTodoApp/OpenTodo/blob/main/docs/openapi.json).
 
-It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints).
+It lists every `/api/v1` route with its parameters, request and response bodies, the [authentication](#authentication) it accepts, and the error envelope shown above. The synced entities (`Task`, `Project`, `Label`, `Note`, …) are shared schemas whose field descriptions come from the op schema. Each operation links to the section of this page that explains it, and `x-opentodo-policy` names its [route policy](#endpoints). Every request and response body has an example: for tasks, projects, sections, labels, notes, comments and sync what a test server answered, elsewhere one built from the schema.
 
 Use it to:
 
@@ -1379,7 +1379,7 @@ The server records security-relevant events in its own database (never synced to
 | `task_page.published` | success | actor = publisher | `task_page_id`, `link_rights` (`view`, `reply` or `tick`); never the secret, the label or a share key |
 | `task_page.revoked` | success | actor = publisher, or owner or admin of the project (also when a page is replaced by a new one) | `task_page_id` |
 | `password.changed` | success | actor = user | |
-| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`: what "Sign out everywhere" ended |
+| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`, `oauth_grant_count`: what "Sign out everywhere" ended |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
 | `backup.restored` | success | none after `opentodo restore`; the owner who confirmed a web restore | `backup_id` (the archive file name), recorded on the first start after the restore |
@@ -1696,7 +1696,7 @@ The writes are refused on a demo instance. There is no environment variable for 
 
 **Downloads** are served with `Content-Security-Policy: default-src 'none'; sandbox`, `X-Content-Type-Options: nosniff`, `Content-Disposition` with the file name, `Cache-Control: private, no-cache` and the digest as `ETag`, so a browser revalidates its copy (304 while signed in) and shows nothing without a session; signing out answers `Clear-Site-Data: "cache"`. Only images (PNG, JPEG, GIF, WebP, AVIF), PDF, plain text, audio and video are served inline with their type; everything else (HTML and SVG included) and every encrypted file is `application/octet-stream` with `attachment`.
 
-Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 attachment_too_large`, `403 quota_exceeded`, `403 attachments_disabled`, `409 already_uploaded`, `507 insufficient_storage`.
+Errors: `400 attachment_mismatch` (bytes do not match the size or digest), `413 attachment_too_large`, `403 quota_exceeded`, `403 attachments_disabled`, `409 already_uploaded` (the attachment reads uploaded; a file that is stored while the attachment reads not uploaded is marked uploaded again with 204), `507 insufficient_storage`.
 
 ```sh
 curl -sS -X POST "$OT/api/v1/tasks/$TASK/attachments" -H "Authorization: Bearer $TOKEN" -F file=@receipt.pdf
