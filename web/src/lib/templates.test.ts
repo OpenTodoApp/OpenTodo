@@ -203,3 +203,40 @@ describe('the server reads what the client writes (2.2)', () => {
     expect(readFileSync(path, 'utf8')).toBe(text)
   })
 })
+
+// A project from a template starts in the current workspace, as an empty one does (#1510).
+describe('templates and workspaces', () => {
+  const entry = (id: string, isDefault = false) => ({ id, name: id, icon: '', color: '', default: isDefault, role: 'owner' as const, ownerId: 'me', members: [], groups: [] })
+  const bare = (title: string): TTask => ({ title, description: '', priority: 4, due: null, labels: [], estimate_minutes: null, recurrence: null, subtasks: [] })
+
+  it('planTree puts the top-level project and a project-less task in the given workspace; sub-projects follow their parent', () => {
+    const tree: TemplateTree = {
+      labels: [],
+      projects: [{ name: 'Launch', color: '#2563eb', tasks: [], sections: [], children: [{ name: 'Press', color: '#2563eb', tasks: [], sections: [], children: [] }] }],
+      tasks: [{ ...bare('Loose end'), subtasks: [bare('Inner')] }],
+    }
+    const plan = planTree(tree, { labels: [], workspace: { workspace_id: 'w-work' } })
+    const projects = plan.changes.filter((c) => c.entity === 'project')
+    expect(projects.map((c) => c.patch.workspace_id)).toEqual(['w-work', undefined])
+    const tasks = plan.changes.filter((c) => c.entity === 'task')
+    expect(tasks.map((c) => c.patch.workspace_id)).toEqual(['w-work', undefined])
+    // In the default workspace nothing is written, so the op footprint stays.
+    const home = planTree(tree, { labels: [], workspace: {} })
+    expect(home.changes.some((c) => 'workspace_id' in c.patch)).toBe(false)
+  })
+
+  it('a library template started in "Work" lands in "Work"; a duplicate sits beside its source', async () => {
+    const { storeWorkspaces, switchTo } = await import('./workspaces')
+    const { startLibraryTemplate } = await import('./templateLibrary')
+    const library = (await import('../generated/templates.json')).default as unknown as { templates: Parameters<typeof startLibraryTemplate>[0][] }
+    await storeWorkspaces([entry('personal', true), entry('w-work')])
+    await switchTo('w-work')
+    const plan = await startLibraryTemplate(library.templates.find((t) => t.layout !== 'board') ?? library.templates[0])
+    expect((await db.projects.get(plan.projectIds[0]))?.workspace_id).toBe('w-work')
+    await switchTo('personal')
+    const copy = await duplicateProject(plan.projectIds[0])
+    expect((await db.projects.get(copy))?.workspace_id).toBe('w-work')
+    const home = await startLibraryTemplate(library.templates.find((t) => t.layout !== 'board') ?? library.templates[0])
+    expect((await db.projects.get(home.projectIds[0]))?.workspace_id ?? null).toBeNull()
+  })
+})
