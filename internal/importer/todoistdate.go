@@ -126,6 +126,16 @@ func todoistDate(text, lang string, ref time.Time) (*Due, string, error) {
 		d, err := parseDue(s, ref.Location())
 		return d, "", err
 	}
+	if hasHan(s) {
+		// Chinese, whatever the row's language says (todoistdate_zh.go).
+		if rule, ok := zhRecurring(s); ok {
+			return nil, rule, nil
+		}
+		if d, ok := zhDate(s, ref); ok {
+			return d, "", nil
+		}
+		return nil, "", fmt.Errorf("date %q not understood", s)
+	}
 	order := []string{}
 	if lang = strings.ToLower(strings.TrimSpace(lang)); lang != "" {
 		if i := strings.IndexAny(lang, "-_"); i > 0 {

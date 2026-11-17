@@ -1012,7 +1012,6 @@
   "Clear conversations": "Очистить разговоры",
   "Clear conversations on this device": "Очистить разговоры на этом устройстве",
   "Clear conversations on this device?": "Очистить разговоры на этом устройстве?",
-  "Clear due date": "Убрать дату выполнения",
   "Clear filter": "Сбросить фильтр",
   "Clear memory?": "Очистить память?",
   "Clear the app": "Убрать приложение",
@@ -7767,5 +7766,7 @@
   "Not synced since {time}": "Нет синхронизации с {time}",
   "Not synced yet": "Ещё не синхронизировано",
   "Add a subtask to {title}": "Добавить подзадачу к {title}",
-  "Add a subtask to this task": "Добавить подзадачу к этой задаче"
+  "Add a subtask to this task": "Добавить подзадачу к этой задаче",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "календарь больше {size} МБ; подключите его через синхронизацию календаря",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Этот сервер не смог принять изменение с этого устройства. Оно остаётся на этом устройстве, а всё остальное продолжает синхронизироваться."
 }

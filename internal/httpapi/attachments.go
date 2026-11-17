@@ -341,8 +341,20 @@ func (s *Server) handleUploadAttachment(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	if !isNullish(a["uploaded_at"]) || s.blobs.Exists(id) {
+	if !isNullish(a["uploaded_at"]) {
 		writeError(w, http.StatusConflict, "already_uploaded", "this attachment's file is already stored")
+		return
+	}
+	if s.blobs.Exists(id) {
+		// The file is stored (its size and digest were checked when it was written)
+		// but the row reads not uploaded: mark it again, so such a row can always be
+		// repaired by its author (attachments D3). The body is not needed.
+		if err := s.markUploaded(ctx, uid, id); err != nil {
+			s.internal(w, err)
+			return
+		}
+		s.markCopiesUploaded(ctx, id)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	size := int64(numberOf(a["size"]))

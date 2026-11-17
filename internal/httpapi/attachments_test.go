@@ -3,6 +3,7 @@ package httpapi
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/ids"
+	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 func digestOf(b []byte) string {
@@ -518,5 +520,32 @@ func TestEncryptedAttachmentServedAsOctetStream(t *testing.T) {
 	}
 	if ct := resp.Header.Get("Content-Type"); ct != "application/octet-stream" || !strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment;") {
 		t.Fatalf("headers: %s %s", ct, resp.Header.Get("Content-Disposition"))
+	}
+}
+
+// A stored file whose row reads not uploaded (written that way before devices were
+// refused that write) is repaired by its author's next upload (attachments D3).
+func TestAttachmentUploadRepairsAStoredFileMarkedNotUploaded(t *testing.T) {
+	e, uid, task := attachmentSetup(t)
+	png := append([]byte("\x89PNG\r\n\x1a\n"), bytes.Repeat([]byte{9}, 64)...)
+	queueRow(e, "laptop", "a1", task, uid, "photo.png", "image/png", png)
+	if resp, body := e.raw("PUT", "/api/v1/attachments/a1/content", png); resp.StatusCode != 204 {
+		t.Fatalf("upload: %d %s", resp.StatusCode, body)
+	}
+	clear := opsync.Op{ID: "damage-1", Entity: "attachment", EntityID: "a1", Field: "uploaded_at", Value: json.RawMessage(`null`), TS: e.now.Now().UnixMilli() + 1000, Device: opsync.ServerDevice}
+	if _, err := e.sync.ApplyStrict(context.Background(), uid, []opsync.Op{clear}); err != nil {
+		t.Fatal(err)
+	}
+	if resp, _ := e.raw("GET", "/api/v1/attachments/a1/content", nil); resp.StatusCode != 404 {
+		t.Fatalf("damaged row should read not uploaded: %d", resp.StatusCode)
+	}
+	if resp, body := e.raw("PUT", "/api/v1/attachments/a1/content", png); resp.StatusCode != 204 {
+		t.Fatalf("repairing upload: %d %s", resp.StatusCode, body)
+	}
+	if resp, body := e.raw("GET", "/api/v1/attachments/a1/content", nil); resp.StatusCode != 200 || !bytes.Equal(body, png) {
+		t.Fatalf("download after repair: %d", resp.StatusCode)
+	}
+	if resp, _ := e.raw("PUT", "/api/v1/attachments/a1/content", png); resp.StatusCode != 409 {
+		t.Fatalf("upload after repair: %d, want 409", resp.StatusCode)
 	}
 }

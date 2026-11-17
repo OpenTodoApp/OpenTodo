@@ -13,6 +13,7 @@ import { withListTransition } from '../motion'
 import { dropTarget, sameDrop, zoneUnder, type DropAt } from '../listDrop'
 import { gapAround, gapDepths, gapRow, gapTarget, indentStep, pointedDepth } from './dropDepth'
 import { dropTasks } from '../taskDrop'
+import { showBulkToast } from '../bulk/toastStore'
 import type { ViewPlacement } from '../../lib/viewOrder'
 import { t } from '../../lib/i18n'
 import type { GroupDrop } from '../../lib/viewOrderMove'
@@ -202,6 +203,12 @@ export function useListDrag({ manual, source, moveToSection, onDropped, onReorde
           else act(withListTransition(1, () => moveTask(task.id, { parent_id: null, section_id: key, at: 'bottom' })))
         } else return
         onDropped(task.id)
+      },
+      // A list without an order of its own (Today, Upcoming, a filter) takes no drop among
+      // its rows: a release on one says why instead of doing nothing (#1507).
+      onMiss: (x, y) => {
+        if (manual || dragState.current.today) return
+        if (document.elementFromPoint(x, y)?.closest('[data-task-id]')) showBulkToast(t('Lists sorted by date or priority keep their order.'), null)
       },
       onEnd: () => { show(null); setDropGroup(null); showColumn(null); setDraggingId(null) },
     })

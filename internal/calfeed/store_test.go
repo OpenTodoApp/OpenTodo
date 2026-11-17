@@ -152,7 +152,9 @@ func TestFetchOutcomes(t *testing.T) {
 	if res, err := f.Fetch(ctx, &Subscription{URL: ok.URL, ETag: `"v1"`}); err != nil || res.Replaced {
 		t.Fatalf("304 = %+v %v", res, err)
 	}
-	big := serve(t, func(w http.ResponseWriter, r *http.Request) { w.Write(make([]byte, MaxFeedBytes+1)) })
+	big := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(googleHistory(MaxFeedBytes + 1<<20)))
+	})
 	if _, err := f.Fetch(ctx, &Subscription{URL: big.URL}); err == nil || err.Error() != "too_large" {
 		t.Fatalf("too large = %v", err)
 	}

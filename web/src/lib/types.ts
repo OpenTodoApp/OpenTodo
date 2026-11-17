@@ -1842,15 +1842,6 @@ export interface WebhookInput {
 // server refused changes for one of its limits (multi-tenant-host); they are kept.
 export type SyncState = 'idle' | 'syncing' | 'reseeding' | 'offline' | 'error' | 'unauthenticated' | 'restricted' | 'locked' | 'limited'
 
-export const PROJECT_FIELDS = ['name', 'color', 'position', 'archived', 'parent_id', 'created_at', 'deleted_at'] as const
-export const TASK_FIELDS = [
-  'title', 'description', 'project_id', 'parent_id', 'priority', 'due', 'labels',
-  'position', 'created_at', 'completed_at', 'deleted_at', 'estimate_minutes', 'recurrence', 'series_id',
-  'assignee_id', 'section_id', 'notes_doc', 'deadline', 'start', 'evening', 'span', 'blocked_by', 'completed_by', 'note_mentions',
-] as const
-export const SECTION_FIELDS = ['name', 'project_id', 'position', 'created_at', 'deleted_at'] as const
-export const LABEL_FIELDS = ['name', 'color', 'position', 'created_at', 'deleted_at'] as const
-
 // ---- backups (owner-only server settings; never synced) ----
 
 export type BackupDestination = 'local' | 's3' | 'webdav'
@@ -2167,20 +2158,10 @@ export interface ImportJob {
   undoneAt: number | null
 }
 
-export const REMINDER_FIELDS = [
-  'task_id', 'kind', 'offset_minutes', 'fire_at', 'delivered_at', 'dismissed_at', 'created_at', 'deleted_at',
-] as const
-
-export const VIEW_FIELDS = [
-  'name', 'query', 'kind', 'group_by', 'sort_by', 'sort_dir', 'pinned', 'position', 'color', 'panels', 'on_drop',
-  'created_at', 'deleted_at',
-] as const
-
 // ---- project sharing (OpenSpec `project-sharing`) ----
 
 /** A role on a shared project; an unshared project is implicitly the user's own ('owner'). */
 export type ProjectRole = 'owner' | 'admin' | 'editor' | 'viewer'
-export const MEMBER_ROLES: readonly Exclude<ProjectRole, 'owner'>[] = ['viewer', 'editor', 'admin']
 
 export interface ProjectMember {
   userId: string
@@ -2351,8 +2332,6 @@ export interface PurgeCounts {
   /** Time entries of purged tasks (time-tracking; absent on older servers). */
   timeEntries?: number
 }
-
-export const COMMENT_FIELDS = ['task_id', 'parent_id', 'body', 'author_id', 'mentions', 'created_at', 'edited_at', 'deleted_at'] as const
 
 /** Payload of a `mentioned` notification (comments-and-activity); names resolved by the server. */
 export interface MentionedPayload {

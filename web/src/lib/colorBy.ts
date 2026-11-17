@@ -4,7 +4,7 @@
 // and contrast rules (3:1 edge in light and dark, checked by the token tests) hold
 // whichever mode is chosen. A device preference, never synced.
 import { hueFor, type HueName } from '../ui/tokens/palette'
-import { getMeta, setMeta } from './db'
+import { setMeta } from './db'
 import { compareByPosition } from './ordering'
 import type { Label, Project, Task } from './types'
 
@@ -24,10 +24,6 @@ export const PRIORITY_HUE: Readonly<Record<1 | 2 | 3, HueName>> = { 1: 'red', 2:
 /** A stored value as a mode: anything missing or unknown reads as Project. */
 export function normalizeColorBy(v: unknown): ColorByMode {
   return v === 'label' || v === 'priority' ? v : 'project'
-}
-
-export async function loadColorBy(key: string): Promise<ColorByMode> {
-  return normalizeColorBy(await getMeta<unknown>(key, null))
 }
 
 export async function saveColorBy(key: string, mode: ColorByMode): Promise<void> {

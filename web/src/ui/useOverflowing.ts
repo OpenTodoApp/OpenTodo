@@ -19,7 +19,7 @@ export function isOverflowing(el: HTMLElement): boolean {
 }
 
 /** One followed element: what to call with its state. */
-interface Follow { set: (cut: boolean) => void }
+type Follow = () => () => void
 
 /** Followed elements that are drawn: observed for size changes. */
 const watched = new Map<Element, Follow>()
@@ -52,9 +52,9 @@ function observe(el: HTMLElement, f: Follow) {
     // All reads first, then the states: one layout for every changed element.
     const read = entries.flatMap((e) => {
       const w = watched.get(e.target)
-      return w ? [[w, isOverflowing(e.target as HTMLElement)] as const] : []
+      return w ? [w()] : []
     })
-    for (const [w, cut] of read) w.set(cut)
+    for (const apply of read) apply()
   })
   watched.set(el, f)
   observer.observe(el)
@@ -98,16 +98,16 @@ function measureQueued() {
     waiting.set(el, f)
     return false
   }) : batch
-  const cut = drawn.map(([el]) => isOverflowing(el))
+  const apply = drawn.map(([, read]) => read())
   drawn.forEach(([el, f], i) => {
-    f.set(cut[i])
+    apply[i]()
     observe(el, f)
   })
 }
 
 function measureSoon(el: HTMLElement, f: Follow) {
   if (typeof requestAnimationFrame !== 'function') {
-    f.set(isOverflowing(el))
+    f()()
     observe(el, f)
     return
   }
@@ -126,6 +126,12 @@ function forget(el: HTMLElement) {
   unobserve(el)
 }
 
+/** Read layout and return its state update, batched with other visible rows. */
+export function watchLayout(el: HTMLElement, read: Follow): () => void {
+  measureSoon(el, read)
+  return () => forget(el)
+}
+
 /**
  * Follows whether `ref`'s element overflows, re-measuring when it resizes and when
  * `text` changes. `on: false` measures nothing and reads false.
@@ -138,8 +144,10 @@ export function useOverflowing(ref: RefObject<HTMLElement | null>, text: string,
     // Measured with every other element in one frame, all reads before any
     // state is set: measuring here forced a layout per row while a list mounted
     // (performance-10k: 3 s for 2,000 rows).
-    measureSoon(el, { set: setCut })
-    return () => forget(el)
+    return watchLayout(el, () => {
+      const cut = isOverflowing(el)
+      return () => setCut(cut)
+    })
   }, [ref, text, on])
   return cut
 }

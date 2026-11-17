@@ -71,9 +71,6 @@ var reasonText = map[string]string{
 	ReasonDailyNotesOff:      "Daily notes are turned off",
 }
 
-// SettingFor is the setting that fixes a reason ("" when none can).
-func SettingFor(reason string) string { return reasonSettings[reason] }
-
 // ReasonText is a reason as a sentence.
 func ReasonText(reason string) string {
 	if t, ok := reasonText[reason]; ok {

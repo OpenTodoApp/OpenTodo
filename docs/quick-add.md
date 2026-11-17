@@ -1,6 +1,6 @@
 ---
 title: Quick add syntax
-summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, seven languages and voice capture.
+summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, nine languages and voice capture.
 audience: user
 section: Reference
 specs: [natural-language-capture, voice-capture, manual-ordering, task-list-presentation]
@@ -149,7 +149,7 @@ When a line has two dates, the first one counts and the second stays in the titl
 
 ## Languages
 
-Vocabulary is bundled for **English, German, French, Italian, Spanish, Portuguese, Dutch and Polish**. The active languages are the [interface language](language.md) when you picked one, then your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. With the interface language on **System** the order is your browser's, as before. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
+Vocabulary is bundled for **English, German, French, Italian, Spanish, Portuguese, Dutch, Turkish and Polish**. The active languages are the [interface language](language.md) when you picked one, then your browser's preferred languages that are bundled, plus English, which is always on; all of them are matched at the same time. With the interface language on **System** the order is your browser's, as before. Settings → Capture → Quick add can override the list on this device. Where two languages read a word differently, the longer phrase wins (Spanish `mar` alone is Tuesday; `mar 3` is March 3rd).
 
 | | Examples |
 | --- | --- |

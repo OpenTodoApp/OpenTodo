@@ -124,14 +124,6 @@ func RoutineToolDefs(c RoutineCall) []ToolDef {
 	return out
 }
 
-// SummaryInstruction is the instruction of a Summarise step.
-func SummaryInstruction(length string) string {
-	if length == "medium" {
-		return "Summarise the material in about 150 words."
-	}
-	return "Summarise the material in about 50 words."
-}
-
 // RoutineMessage is the user message of a routine call: the instruction, the
 // answer form and the material as untrusted text.
 func RoutineMessage(c RoutineCall) string {

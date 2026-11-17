@@ -14,12 +14,13 @@ import { es } from './es'
 import { fr } from './fr'
 import { it } from './it'
 import { pt } from './pt'
+import { tr } from './tr'
 import type { SpokenTable } from './types'
 
 export type { SpokenTable } from './types'
 
 /** Every spoken table, keyed like the parser's vocabularies. */
-export const SPOKEN_TABLES: Record<string, SpokenTable> = { en, de, fr, it, es, pt }
+export const SPOKEN_TABLES: Record<string, SpokenTable> = { en, de, fr, it, es, pt, tr }
 
 export interface SpokenContext {
   /** Existing projects, for "project <name>" and multi-word "hashtag <name>". */

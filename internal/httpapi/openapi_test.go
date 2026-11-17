@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"regexp"
 	"sort"
@@ -52,12 +53,14 @@ func absoluteLinks(text string) string {
 	})
 }
 
-// buildOpenAPI builds the whole description. It returns the document and the
-// number of fields whose type the analysis could not see.
-func buildOpenAPI(t *testing.T) (map[string]any, int) {
+// buildOpenAPI builds the whole description. It returns the document, the
+// number of fields whose type the analysis could not see, and whether each
+// operation's handler needs its body ("POST /api/v1/tasks" → true), from the
+// reader it calls.
+func buildOpenAPI(t *testing.T) (map[string]any, int, map[string]bool) {
 	t.Helper()
 	pkgs := loadStatic(t)
-	routes := surfaceRoutes(t, staticRoutes(pkgs))
+	routes := surfaceRoutes(t, staticRoutes(pkgs), true)
 	errs := surfaceErrors(t, errorStatuses(pkgs))
 	docs := docRoutes(t)
 	entities := entitySchemas(t)
@@ -85,6 +88,7 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 	ids := map[string]int{}
 	shapes := map[string]string{}
 	unknown := 0
+	bodies := map[string]bool{}
 	patterns := make([]string, 0, len(routes))
 	for p := range routes {
 		patterns = append(patterns, p)
@@ -97,6 +101,14 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 			continue
 		}
 		r, _ := routes[pattern].(map[string]any)
+		if req, ok := r["request"].(map[string]any); ok && len(requestDefaults[pattern]) > 0 {
+			fields, missing := withRequestDefaults(pattern, maps.Clone(req))
+			for _, m := range missing {
+				t.Error(m)
+			}
+			r = maps.Clone(r)
+			r["request"] = fields
+		}
 		op, n := openAPIOperation(method, path, r, docs, entities)
 		unknown += n
 		id := op["operationId"].(string)
@@ -119,6 +131,9 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 			paths[key] = item
 		}
 		item[strings.ToLower(method)] = op
+		if _, ok := op["requestBody"]; ok {
+			bodies[method+" "+key] = r["body"] == "required"
+		}
 	}
 	tagText := docHeadingText(t)
 	tagList := make([]any, 0, len(tags))
@@ -130,7 +145,7 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 		tagList = append(tagList, schema{"name": name, "description": desc, "externalDocs": schema{"url": openAPIDocsBase + "#" + openAPISlug(name)}})
 	}
 	dropUnused(schemas, paths)
-	return map[string]any{
+	doc := map[string]any{
 		"openapi":           "3.1.1",
 		"jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base",
 		"info": schema{
@@ -160,7 +175,9 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 				"Unauthorized": schema{"description": "No valid session or token (`unauthorized`).", "content": schema{"application/json": schema{"schema": ref("Error")}}},
 			},
 		},
-	}, unknown
+	}
+	addExamples(t, paths, doc["components"].(schema))
+	return doc, unknown, bodies
 }
 
 const openAPIVersionPlaceholder = "0.0.0-dev"
@@ -204,15 +221,15 @@ func openAPIOperation(method, path string, r map[string]any, docs []docRoute, en
 	}
 	unknown := 0
 	if req, ok := r["request"].(map[string]any); ok && len(req) > 0 && method != "GET" {
-		body, n := buildBody(req, true)
+		body, n := buildBody(withFieldTypes(method+" "+path, req), true)
 		unknown += n
-		_, required := body["required"]
-		op["requestBody"] = schema{"required": required, "content": schema{"application/json": schema{"schema": body}}}
+		// A handler whose reader refuses an empty body needs one (surfaceRoutes "body").
+		op["requestBody"] = schema{"required": r["body"] == "required", "content": schema{"application/json": schema{"schema": body}}}
 	}
 	var resBody schema
 	if res, ok := r["response"].(map[string]any); ok && len(res) > 0 {
 		var n int
-		resBody, n = buildBody(res, false)
+		resBody, n = buildBody(withFieldTypes(method+" "+path, res), false)
 		unknown += n
 		resBody = useEntities(resBody, entities)
 	}
@@ -546,8 +563,8 @@ func gzipBytes(t *testing.T, b []byte) []byte {
 }
 
 func TestOpenAPIDescription(t *testing.T) {
-	doc, unknown := buildOpenAPI(t)
-	if problems := lintOpenAPI(doc); len(problems) > 0 {
+	doc, unknown, bodies := buildOpenAPI(t)
+	if problems := lintOpenAPI(doc, bodies); len(problems) > 0 {
 		for _, p := range problems {
 			t.Error(p)
 		}
@@ -580,8 +597,10 @@ func TestOpenAPIDescription(t *testing.T) {
 
 // lintOpenAPI checks what makes a description usable by tools: every
 // reference resolves, operation ids are unique, every path parameter is
-// declared, every operation has a summary, a declared tag and responses.
-func lintOpenAPI(doc map[string]any) []string {
+// declared, every operation has a summary, a declared tag and responses,
+// every example fits its schema (exampleProblems), and a request body is
+// required exactly when its handler needs one (bodies, from buildOpenAPI).
+func lintOpenAPI(doc map[string]any, bodies map[string]bool) []string {
 	var problems []string
 	raw, _ := json.Marshal(doc)
 	var plain map[string]any
@@ -607,6 +626,10 @@ func lintOpenAPI(doc map[string]any) []string {
 		}
 	}
 	walk(plain, "#")
+	problems = append(problems, untypedProblems(plain)...)
+	problems = append(problems, examplelessProblems(plain, openAPIExamplelessMax)...)
+	problems = append(problems, exampleProblems(plain)...)
+	problems = append(problems, bodyRequiredProblems(plain, bodies)...)
 	declared := map[string]bool{}
 	for _, tg := range plain["tags"].([]any) {
 		declared[tg.(map[string]any)["name"].(string)] = true
@@ -647,8 +670,124 @@ func lintOpenAPI(doc map[string]any) []string {
 	return problems
 }
 
+// openAPIUntypedMax is the most schemas the description may leave untyped
+// (untypedSchemas). It only goes down.
+const openAPIUntypedMax = 0
+
+// untypedProblems is the ratchet on untyped schemas: more than
+// openAPIUntypedMax fails with where they are, fewer asks to lower it.
+func untypedProblems(doc map[string]any) []string {
+	at := untypedSchemas(doc)
+	switch {
+	case len(at) > openAPIUntypedMax:
+		sort.Strings(at)
+		return []string{fmt.Sprintf("%d schemas have no type, $ref, anyOf, oneOf, allOf, enum, const or description (at most %d); "+
+			"give the field its type in openapi_schema_test.go: %s", len(at), openAPIUntypedMax, strings.Join(at, ", "))}
+	case len(at) < openAPIUntypedMax:
+		return []string{fmt.Sprintf("only %d schemas are untyped: lower openAPIUntypedMax to %d", len(at), len(at))}
+	}
+	return nil
+}
+
+// untypedSchemas lists the schemas of the request and response bodies,
+// parameters and components that say nothing about their values: no type,
+// $ref, anyOf, oneOf, allOf, enum or const, and no description (a schema
+// that accepts any JSON says so in its description). An array counts when
+// its items do (once, as the array).
+func untypedSchemas(doc map[string]any) []string {
+	var out []string
+	said := func(s map[string]any) bool {
+		for _, k := range []string{"type", "$ref", "anyOf", "oneOf", "allOf", "enum", "const", "description"} {
+			if _, ok := s[k]; ok {
+				return true
+			}
+		}
+		return false
+	}
+	var visit func(v any, at string)
+	visit = func(v any, at string) {
+		s, ok := v.(map[string]any)
+		if !ok {
+			return
+		}
+		items, hasItems := s["items"].(map[string]any)
+		if isArraySchema(s) {
+			if !hasItems || !said(items) {
+				out = append(out, at)
+			}
+		} else if !said(s) {
+			out = append(out, at)
+		}
+		props, _ := s["properties"].(map[string]any)
+		for _, k := range sortedKeys(props) {
+			visit(props[k], at+"."+k)
+		}
+		if hasItems && said(items) {
+			visit(items, at+"[]")
+		}
+		visit(s["additionalProperties"], at+"{}")
+		for _, k := range []string{"anyOf", "oneOf", "allOf"} {
+			list, _ := s[k].([]any)
+			for i, c := range list {
+				visit(c, fmt.Sprintf("%s/%s/%d", at, k, i))
+			}
+		}
+	}
+	paths, _ := doc["paths"].(map[string]any)
+	for _, path := range sortedKeys(paths) {
+		item, _ := paths[path].(map[string]any)
+		for _, method := range sortedKeys(item) {
+			op, _ := item[method].(map[string]any)
+			where := strings.ToUpper(method) + " " + path
+			if body, ok := op["requestBody"].(map[string]any); ok {
+				visit(jsonSchemaOf(body), where+" request")
+			}
+			responses, _ := op["responses"].(map[string]any)
+			for _, st := range sortedKeys(responses) {
+				if r, ok := responses[st].(map[string]any); ok && r["content"] != nil {
+					visit(jsonSchemaOf(r), where+" "+st)
+				}
+			}
+			params, _ := op["parameters"].([]any)
+			for _, p := range params {
+				if p, ok := p.(map[string]any); ok {
+					visit(p["schema"], fmt.Sprintf("%s parameter %v", where, p["name"]))
+				}
+			}
+		}
+	}
+	comps, _ := doc["components"].(map[string]any)
+	schemas, _ := comps["schemas"].(map[string]any)
+	for _, name := range sortedKeys(schemas) {
+		visit(schemas[name], "#/components/schemas/"+name)
+	}
+	return out
+}
+
+// isArraySchema reports a schema whose type is, or includes, "array".
+func isArraySchema(s map[string]any) bool {
+	switch t := s["type"].(type) {
+	case string:
+		return t == "array"
+	case []any:
+		for _, e := range t {
+			if e == "array" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// jsonSchemaOf is the application/json schema of a request body or response.
+func jsonSchemaOf(body map[string]any) any {
+	content, _ := body["content"].(map[string]any)
+	media, _ := content["application/json"].(map[string]any)
+	return media["schema"]
+}
+
 func TestOpenAPIShapes(t *testing.T) {
-	doc, _ := buildOpenAPI(t)
+	doc, _, _ := buildOpenAPI(t)
 	raw, _ := json.Marshal(doc)
 	var d map[string]any
 	_ = json.Unmarshal(raw, &d)
@@ -704,5 +843,30 @@ func TestOpenAPIShapes(t *testing.T) {
 	}
 	if desc, _ := comps["Task"].(map[string]any)["properties"].(map[string]any)["estimate_minutes"].(map[string]any)["description"].(string); desc == "" {
 		t.Errorf("Task.estimate_minutes has no description from internal/sync/ops.go")
+	}
+}
+
+func TestOpenAPIUntypedSchemas(t *testing.T) {
+	body := func(s any) map[string]any {
+		return map[string]any{"content": map[string]any{"application/json": map[string]any{"schema": s}}}
+	}
+	doc := map[string]any{"paths": map[string]any{"/api/v1/x": map[string]any{"get": map[string]any{"responses": map[string]any{
+		"200": body(map[string]any{"type": "object", "properties": map[string]any{
+			"ids":    map[string]any{"type": "array", "items": map[string]any{}},
+			"nested": map[string]any{"type": []any{"array", "null"}},
+			"value":  map[string]any{},
+			"rule":   map[string]any{"description": "Any JSON."},
+			"tags":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+			"due":    map[string]any{"anyOf": []any{map[string]any{"$ref": "#/components/schemas/Due"}, map[string]any{}}},
+		}}),
+	}}}}}
+	got := untypedSchemas(doc)
+	want := []string{"GET /api/v1/x 200.due/anyOf/1", "GET /api/v1/x 200.ids", "GET /api/v1/x 200.nested", "GET /api/v1/x 200.value"}
+	sort.Strings(got)
+	if strings.Join(got, "; ") != strings.Join(want, "; ") {
+		t.Errorf("untypedSchemas = %q, want %q", got, want)
+	}
+	if p := untypedProblems(doc); len(p) != 1 || !strings.Contains(p[0], "4 schemas") {
+		t.Errorf("untypedProblems = %q, want one problem naming 4 schemas", p)
 	}
 }

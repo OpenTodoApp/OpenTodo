@@ -202,15 +202,69 @@ describe('one row language (rows-v2)', () => {
   it('Three labels on a row: two chips and "+1", read in full; the open label is left out', async () => {
     const labels = [L('l1', 'errand'), L('l2', 'call'), L('l3', 'home')]
     const r = await row({ labels: ['l1', 'l2', 'l3'] }, { labels })
+    await waitFor(() => !!r.container.querySelector('[data-label-chips][aria-label]'), 'the One line labels')
     const group = r.container.querySelector('[data-row-meta] [data-label-chips]')!
-    expect([...group.querySelectorAll('[data-label-chip]')].map((c) => c.textContent)).toEqual(['errand', 'call'])
+    expect([...group.querySelectorAll(':not([aria-hidden]) > [data-label-chip]')].map((c) => c.textContent)).toEqual(['errand', 'call'])
     expect(visibleText(group.querySelector('[data-label-more]')!)).toBe('+1')
-    expect(spokenText(group)).toBe('Labels: errand, call, home')
+    expect(group.getAttribute('aria-label')).toBe('Labels: errand, call, home')
     await r.unmount()
     const inView = await row({ labels: ['l1', 'l2', 'l3'] }, { labels, omitLabel: 'l1' })
     expect([...inView.container.querySelectorAll('[data-label-chip]')].map((c) => c.textContent)).toEqual(['call', 'home'])
     expect(inView.container.querySelector('[data-label-more]')).toBeNull()
     await inView.unmount()
+  })
+
+  it('fits the fixed label column, showing full names for a cut chip and the overflow count', async () => {
+    const long = 'A label too long for the slot'
+    const labels = [L('l1', long), L('l2', 'call'), L('l3', 'home')]
+    let width = 110
+    let resize: () => void = () => {}
+    const computedStyle = window.getComputedStyle.bind(window)
+    const mockStyle = vi.spyOn(window, 'getComputedStyle').mockImplementation((el) =>
+      el.matches('[data-row-cell="labels"]')
+        ? ({ gridColumnStart: 'labels' } as CSSStyleDeclaration)
+        : computedStyle(el))
+    const mockClientWidth = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.matches('[data-row-cell="labels"]') ? width : 0
+    })
+    const mockWidth = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      if (this.matches('[data-label-chip]')) return this.textContent === long ? 140 : 32
+      return this.textContent === '+' || this.textContent === '0' ? 8 : 0
+    })
+    vi.stubGlobal('ResizeObserver', class {
+      private targets = new Set<Element>()
+      constructor(callback: (entries: { target: Element }[]) => void) {
+        resize = () => callback([...this.targets].map((target) => ({ target })))
+      }
+      observe(target: Element) { this.targets.add(target) }
+      unobserve(target: Element) { this.targets.delete(target) }
+      disconnect() { this.targets.clear() }
+    })
+    try {
+      const r = await row({ labels: labels.map((label) => label.id) }, { labels, layout: 'line' })
+      const group = r.container.querySelector('[data-row-cell="labels"] [data-label-chips]')!
+      const shown = () => [...group.querySelectorAll('[data-label-chip]')]
+        .filter((chip) => !chip.closest('[aria-hidden="true"]')).map((chip) => chip.textContent)
+      const overflow = () => group.querySelector('[data-label-more]')
+      await waitFor(() => overflow()?.textContent?.startsWith('+2') === true, 'fit measured')
+      expect(shown()).toEqual([long])
+      expect(group.querySelector('[data-tip][tabindex="0"]')?.getAttribute('data-tip')).toBe(long)
+      expect(visibleText(overflow()!)).toBe('+2')
+      expect(overflow()!.getAttribute('data-tip')).toBe('call, home')
+      expect(overflow()!.getAttribute('tabindex')).toBe('0')
+      expect(spokenText(group)).toContain(long)
+      expect(spokenText(group)).toContain('call, home')
+      width = 220
+      await act(async () => resize())
+      expect(shown()).toEqual([long, 'call', 'home'])
+      expect(group.querySelector('[data-tip]')).toBeNull()
+      expect(overflow()).toBeNull()
+      await r.unmount()
+    } finally {
+      mockWidth.mockRestore()
+      mockClientWidth.mockRestore()
+      mockStyle.mockRestore()
+    }
   })
 
   it('counts sit beside the title, quiet and read in full; a row with only counts is one line', async () => {

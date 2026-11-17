@@ -191,6 +191,8 @@ export interface PlanOptions {
   projects?: Project[]
   /** Overrides the top-level project's name. */
   name?: string
+  /** The workspace a top-level project, or a task with no project and no parent, starts in (`workspaceFields()`); a sub-project follows its parent. */
+  workspace?: { workspace_id?: string }
 }
 
 export interface Plan {
@@ -256,6 +258,8 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
     if (item.start) patch.start = shiftDate(item.start, days)
     if (item.evening) patch.evening = true
     if (item.notes_doc) patch.notes_doc = item.notes_doc
+    // A task with no project and no parent lives in a workspace of its own, as createTask gives it.
+    if (!place.project_id && !place.parent_id) Object.assign(patch, opts.workspace)
     changes.push({ entity: 'task', entityId: id, patch })
     if (item.blocked_by?.length) pending.push({ id, blockers: item.blocked_by })
     item.subtasks.forEach((s) => addTask(s, { ...place, parent_id: id }, nextPos()))
@@ -267,6 +271,8 @@ export function planTree(tree: TemplateTree, opts: PlanOptions): Plan {
     plan.projectIds.push(id)
     const patch: Record<string, unknown> = { name: name ?? p.name, color: p.color, position, archived: false, parent_id: parentId, created_at: now, deleted_at: null }
     if (p.icon) patch.icon = p.icon
+    // A top-level project starts in the given workspace, as createProject does (#1510); a sub-project follows its parent.
+    if (!parentId) Object.assign(patch, opts.workspace)
     changes.push({ entity: 'project', entityId: id, patch })
     p.tasks.forEach((entry) => addTask(entry, { project_id: id, section_id: null, parent_id: null }, nextPos()))
     for (const s of p.sections) {
@@ -463,7 +469,9 @@ export function today(): string {
 export async function duplicateProject(id: string, opts: { name?: string; parentId?: string | null; startDay?: string | null } = {}): Promise<string> {
   const tree = await treeFromProject(id)
   const projects = await db.projects.toArray()
-  const plan = planTree(tree, { labels: await db.labels.toArray(), projects, parentId: opts.parentId ?? null, startDay: opts.startDay ?? null, name: opts.name?.trim() || undefined })
+  // The copy sits beside its source: the same workspace.
+  const source = projects.find((p) => p.id === id)
+  const plan = planTree(tree, { labels: await db.labels.toArray(), projects, parentId: opts.parentId ?? null, startDay: opts.startDay ?? null, name: opts.name?.trim() || undefined, workspace: source?.workspace_id ? { workspace_id: source.workspace_id } : {} })
   await mutateMany(plan.changes)
   return plan.projectIds[0]
 }
@@ -479,6 +487,7 @@ export async function duplicateTask(id: string, opts: { startDay?: string | null
   const plan = planTree(tree, {
     labels: await db.labels.toArray(), startDay: opts.startDay ?? null,
     projectId: source.project_id ?? null, sectionId: source.section_id ?? null, parentTaskId: source.parent_id ?? null,
+    workspace: source.workspace_id ? { workspace_id: source.workspace_id } : {},
   })
   const copyId = plan.rootTaskIds[0]
   // Right after the original among its siblings, in the same batch.

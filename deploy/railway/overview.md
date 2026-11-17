@@ -21,7 +21,7 @@ This template runs the released OpenTodo image as one service with a volume on /
 
 - Image: https://github.com/OpenTodoApp/OpenTodo/pkgs/container/opentodo
 - Source and documentation: https://github.com/OpenTodoApp/OpenTodo
-- Self-hosting guide: https://open-todo.app/docs/self-hosting/railway/
+- Self-hosting guide: https://open-todo.app/docs/self-hosting/
 
 ### Why Deploy OpenTodo on Railway?
 

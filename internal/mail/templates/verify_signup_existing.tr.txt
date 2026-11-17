@@ -1,0 +1,7 @@
+OpenTodo kaydınız
+
+Bu, OpenTodo’dan bir kayıt mesajıdır.
+
+Birisi {{.Origin}} adresinde {{.Email}} ile kaydolmaya çalıştı ancak bu adresin zaten bir hesabı var. Oturum açmak için yukarıdaki sunucu adresine gidin. Parolanızı unuttuysanız oturum açma ekranında "Parolamı unuttum?" seçeneğini kullanın.
+
+Bu kişi siz değilseniz bu mesajı yoksayabilirsiniz: hiçbir şey değişmedi.

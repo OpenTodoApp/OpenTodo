@@ -84,6 +84,7 @@
     "web/src/lib/nlp/vocab/nl.ts",
     "web/src/lib/nlp/vocab/pl.ts",
     "web/src/lib/nlp/vocab/pt.ts",
+    "web/src/lib/nlp/vocab/tr.ts",
     "web/src/lib/nlp/vocab/types.ts",
     "web/src/lib/noteAppends.ts",
     "web/src/lib/notePages.ts",

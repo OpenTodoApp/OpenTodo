@@ -9,6 +9,26 @@ import (
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
 
+// ReasonInvalid refuses one op the server cannot accept as written (a shape it
+// cannot validate, a device only the server may use), for a client that sends the
+// feature invalid_ops (sync-invalid-op-alone D1). The device keeps the change.
+const ReasonInvalid = "invalid"
+
+// SplitInvalid returns the ops that pass Validate and carry a device a client may
+// use, and a ReasonInvalid refusal for each of the others, so one bad op never
+// refuses the rest of the batch (sync-invalid-op-alone D1).
+func SplitInvalid(ops []Op) (valid []Op, refused []Rejection) {
+	valid = make([]Op, 0, len(ops))
+	for _, op := range ops {
+		if ReservedDevice(op.Device) || Validate(op) != nil {
+			refused = append(refused, Rejection{ID: op.ID, Reason: ReasonInvalid})
+			continue
+		}
+		valid = append(valid, op)
+	}
+	return valid, refused
+}
+
 // Validate checks structure, schema membership and value type of an op.
 func Validate(op Op) error {
 	if op.ID == "" || len(op.ID) > MaxIDLen || op.EntityID == "" || len(op.EntityID) > MaxIDLen {

@@ -99,9 +99,6 @@ export async function unarchiveProject(id: string): Promise<void> {
   await updateProject(id, { archived: false })
 }
 
-/** Undo an automatic archive and never archive that project automatically again on this device. */
-export const undoAutoArchive = unarchiveProject
-
 /** One row of Settings → Data → Archived projects. */
 export interface ArchivedProject {
   project: Project

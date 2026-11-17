@@ -23,6 +23,10 @@ The user SHALL be able to add a subtask from an "Add subtask" input in the paren
 - **WHEN** the user presses and holds "Plan trip" on a phone, chooses Add subtask, types "Book hotel" and sends it
 - **THEN** "Book hotel" appears under "Plan trip" and the line stays open for the next subtask
 
+#### Scenario: Add from the list's add line
+- **WHEN** "Plan trip" shows its subtasks in a project and the user types "Book hotel" in the "Add a subtask" line under them and presses Enter
+- **THEN** "Book hotel" appears indented under "Plan trip", above the line, and the input stays focused for the next entry
+
 #### Scenario: From a checked line
 - **WHEN** the user chooses Make subtask on the checked line "Pack charger" in the notes of "Plan trip"
 - **THEN** "Pack charger" appears under "Plan trip" as a completed subtask and the parent's progress counts it

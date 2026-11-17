@@ -85,6 +85,8 @@ describe('dropUndoable on a day', () => {
     expect((await dayDropUndoable([a, b], '2026-10-18', TODAY)).label).toBe('2 tasks moved')
     await db.outbox.clear()
     expect((await dayDropUndoable([a], '2026-10-18', TODAY)).entry).toBeNull()
+    // Upcoming keeps its date order: a drop on the task's own day says why nothing moved (#1507).
+    expect((await dayDropUndoable([a], '2026-10-18', TODAY)).label).toBe('Lists sorted by date or priority keep their order.')
     expect(await db.outbox.count()).toBe(0)
   })
 

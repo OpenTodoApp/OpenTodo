@@ -112,6 +112,18 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		}
 		switch {
 		case op.Field == "uploaded_at":
+			// Whether a stored row's file is there is the server's word (attachments D3).
+			// A device may only repeat the null of its own create (a retried batch)
+			// while the file is not stored; clearing it would hide the file from
+			// everyone, and the author could not undo it from a device.
+			if !IsServerDevice(op.Device) {
+				if st.author != r.acc.userID {
+					return "", ReasonForbidden, nil
+				}
+				if stored, err := r.storedField(st.scope, "attachment", op.EntityID, "uploaded_at"); err != nil || (stored != nil && !IsNull(stored)) {
+					return "", ReasonForbidden, err
+				}
+			}
 		case op.Field == "deleted_at":
 			role := r.acc.roleIn(st.scope)
 			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {

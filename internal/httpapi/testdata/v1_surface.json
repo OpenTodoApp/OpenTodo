@@ -3756,7 +3756,10 @@
       "policy": "signed-in",
       "response": {
         "uploaded": "boolean"
-      }
+      },
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/backups/restore/safety-copies/{name}": {
       "policy": "owner-only.session-only.recent"
@@ -3774,7 +3777,10 @@
       "policy": "signed-in"
     },
     "DELETE /api/v1/comments/{id}": {
-      "policy": "signed-in"
+      "policy": "signed-in",
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/encryption/keys": {
       "policy": "signed-in.credential.recent"
@@ -3787,7 +3793,10 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/invitations/{id}": {
       "policy": "admins-only.credential"
@@ -3938,7 +3947,10 @@
         "pending": "any",
         "projectId": "string",
         "role": "string"
-      }
+      },
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/projects/{id}/public-links/{linkId}": {
       "policy": "signed-in"
@@ -4017,7 +4029,10 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/tasks/{id}": {
       "policy": "signed-in"
@@ -4065,7 +4080,10 @@
         "taskId": "string",
         "taskTitle": "string",
         "userId": "string"
-      }
+      },
+      "statuses": [
+        "204"
+      ]
     },
     "DELETE /api/v1/tokens/{id}": {
       "policy": "signed-in"
@@ -4750,7 +4768,10 @@
       ]
     },
     "GET /api/v1/habits/{id}": {
-      "policy": "signed-in"
+      "policy": "signed-in",
+      "statuses": [
+        "200"
+      ]
     },
     "GET /api/v1/health": {
       "policy": "public",
@@ -7132,7 +7153,10 @@
         "ownerId": "string",
         "pending": "any",
         "role": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "GET /api/v1/workspaces/{id}/groups": {
       "policy": "signed-in",
@@ -7222,7 +7246,10 @@
       },
       "response": {
         "uploaded": "boolean"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/calendar-feeds/subscriptions/{id}": {
       "policy": "signed-in",
@@ -7314,10 +7341,16 @@
         "connection.target": "string",
         "connection.updated_at": "number",
         "connection.username": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/comments/{id}": {
-      "policy": "signed-in"
+      "policy": "signed-in",
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/email-inbox": {
       "policy": "signed-in.full-tokens",
@@ -7374,7 +7407,10 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/issues/connections/{id}": {
       "policy": "signed-in",
@@ -7681,7 +7717,10 @@
         "pending": "any",
         "projectId": "string",
         "role": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/reminders/{id}": {
       "policy": "signed-in",
@@ -7755,7 +7794,10 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/tasks/{id}": {
       "policy": "signed-in",
@@ -7894,7 +7936,10 @@
         "taskId": "string",
         "taskTitle": "string",
         "userId": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "PATCH /api/v1/views/{id}": {
       "policy": "signed-in",
@@ -8189,7 +8234,10 @@
         "user.id": "string",
         "user.name": "string",
         "user.role": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/auth/passkey": {
       "policy": "public",
@@ -8299,7 +8347,10 @@
         "user.id": "string",
         "user.name": "string",
         "user.role": "string"
-      }
+      },
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/backups/restore": {
       "policy": "owner-only.session-only.recent",
@@ -8526,7 +8577,10 @@
         "connection.target": "string",
         "connection.updated_at": "number",
         "connection.username": "string"
-      }
+      },
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/calendar-sync/connections/{id}/sync": {
       "policy": "signed-in",
@@ -8573,7 +8627,10 @@
         "connection.target": "string",
         "connection.updated_at": "number",
         "connection.username": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/calendar-sync/google/start": {
       "policy": "signed-in.recent",
@@ -8611,7 +8668,10 @@
         "user.id": "string",
         "user.name": "string",
         "user.role": "string"
-      }
+      },
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/email-inbox/rotate": {
       "policy": "signed-in.full-tokens",
@@ -8674,10 +8734,16 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/habits/{id}/log": {
-      "policy": "signed-in"
+      "policy": "signed-in",
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/import": {
       "policy": "signed-in",
@@ -9611,7 +9677,11 @@
         "body_version": "string",
         "entity": "string",
         "entity_id": "string"
-      }
+      },
+      "statuses": [
+        "200",
+        "201"
+      ]
     },
     "POST /api/v1/notes/{id}/attachments": {
       "policy": "signed-in",
@@ -9944,6 +10014,7 @@
         "role": "string"
       },
       "statuses": [
+        "201",
         "202"
       ]
     },
@@ -9995,7 +10066,10 @@
         "pending": "any",
         "projectId": "string",
         "role": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/public/{token}/tick": {
       "policy": "public",
@@ -10134,7 +10208,8 @@
         "reused": "string"
       },
       "statuses": [
-        "200"
+        "200",
+        "201"
       ]
     },
     "POST /api/v1/rules/test": {
@@ -10625,7 +10700,10 @@
       "response": {
         "encrypted": "boolean",
         "id": "string"
-      }
+      },
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/sync": {
       "policy": "signed-in",
@@ -10832,7 +10910,10 @@
       ]
     },
     "POST /api/v1/tasks/{id}/comments": {
-      "policy": "signed-in"
+      "policy": "signed-in",
+      "statuses": [
+        "201"
+      ]
     },
     "POST /api/v1/tasks/{id}/note/append": {
       "policy": "signed-in",
@@ -10845,7 +10926,11 @@
         "body_version": "string",
         "entity": "string",
         "entity_id": "string"
-      }
+      },
+      "statuses": [
+        "200",
+        "201"
+      ]
     },
     "POST /api/v1/tasks/{id}/occurrences/{date}/complete": {
       "policy": "signed-in",
@@ -10918,7 +11003,11 @@
         "taskId": "string",
         "taskTitle": "string",
         "userId": "string"
-      }
+      },
+      "statuses": [
+        "200",
+        "201"
+      ]
     },
     "POST /api/v1/time-entries/stop": {
       "policy": "signed-in",
@@ -10938,7 +11027,10 @@
         "taskId": "string",
         "taskTitle": "string",
         "userId": "string"
-      }
+      },
+      "statuses": [
+        "200"
+      ]
     },
     "POST /api/v1/tokens": {
       "policy": "signed-in.credential.recent",
@@ -11327,7 +11419,8 @@
         "reused": "string"
       },
       "statuses": [
-        "200"
+        "200",
+        "201"
       ]
     },
     "PUT /api/v1/attachments/{id}/content": {
@@ -11400,7 +11493,10 @@
       ]
     },
     "PUT /api/v1/comments/{id}/reactions": {
-      "policy": "signed-in.full-tokens"
+      "policy": "signed-in.full-tokens",
+      "statuses": [
+        "200"
+      ]
     },
     "PUT /api/v1/encryption/keys": {
       "policy": "signed-in.credential",

@@ -130,7 +130,7 @@ var Vocabularies = func() map[string]*Vocab {
 }()
 
 // Bundled lists the bundled language codes in the web app's order.
-var Bundled = []string{"en", "de", "fr", "it", "es", "pt", "nl", "pl"}
+var Bundled = []string{"en", "de", "fr", "it", "es", "pt", "nl", "tr", "pl"}
 
 // ActiveLanguages reduces preferred tags ("de-CH", "ja") to bundled codes in
 // order, always ending with English.

@@ -1,0 +1,1 @@
+- **Changing a location reminder's circle arms it again.** After a dismissed arrival or departure reminder was given a new radius, it stayed dismissed and the phone never watched the new circle; editing the reminder now clears the dismissal, as editing its time already did.
