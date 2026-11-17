@@ -251,9 +251,11 @@ staticcheck: deadcode
 ## Dead Go code, a ratchet at zero: no function may be unreachable from the commands and
 ## the tests (`deadcode -test`). The tool exits 0 with findings, so any output fails.
 ## Built with the go.mod toolchain like staticcheck; CI runs it through `make staticcheck`.
+## web/node_modules is left out: an npm package may ship Go files (flatted does), which
+## `./...` would otherwise count as ours once `npm ci` has run.
 DEADCODE_VERSION := v0.52.0
 deadcode:
-	@out=$$(GOTOOLCHAIN=$$(go env GOVERSION) go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VERSION) -test ./...) || exit 1; \
+	@out=$$(GOTOOLCHAIN=$$(go env GOVERSION) go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VERSION) -test $$(go list ./... | grep -v /node_modules/)) || exit 1; \
 	if [ -n "$$out" ]; then echo "$$out"; echo "deadcode: the functions above are unreachable; delete them"; exit 1; fi
 
 ## gosec, security static analysis of the Go code, pinned like staticcheck. Two rule
