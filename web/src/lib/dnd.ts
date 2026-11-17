@@ -17,6 +17,8 @@ export interface DragOptions {
   onMove?: (target: string | null, x: number, y: number) => void
   /** Called once on release over a target (never for a cancelled drag). */
   onDrop: (target: string, x: number, y: number) => void
+  /** Called once on a lifted release over no target (never for a cancelled drag). */
+  onMiss?: (x: number, y: number) => void
   /** Called when the drag lifts (after the threshold or long-press). */
   onStart?: () => void
   /** Called after a drop or a cancel; the drag is over. */
@@ -273,6 +275,7 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     }
     swallowNextClick()
     if (at !== null) opts.onDrop(at, ev.clientX, ev.clientY)
+    else opts.onMiss?.(ev.clientX, ev.clientY)
     opts.onEnd?.()
   }
   const cancel = () => {
