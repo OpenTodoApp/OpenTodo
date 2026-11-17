@@ -92,13 +92,7 @@ export function linksIn(markdown: string): NoteLink[] {
   if (!markdown || markdown.indexOf('](?') < 0) return []
   const out: NoteLink[] = []
   let fence: string | null = null
-  const eol = /\r\n|\r|\n/g
-  let offset = 0
-  for (;;) {
-    eol.lastIndex = offset
-    const next = eol.exec(markdown)
-    const end = next ? next.index : markdown.length
-    const line = markdown.slice(offset, end)
+  const visit = (line: string, offset: number) => {
     if (fence !== null) {
       if (line.trimStart().startsWith(fence)) fence = null
     } else {
@@ -106,6 +100,23 @@ export function linksIn(markdown: string): NoteLink[] {
       if (f) fence = f[1]
       else if (line.includes('](?')) scanLine(maskCode(line), offset, out)
     }
+  }
+  // Offsets point into the text as written (#1465). A text without \r, nearly every
+  // note, takes the native split, which the note-references budget depends on.
+  if (markdown.indexOf('\r') < 0) {
+    let offset = 0
+    for (const line of markdown.split('\n')) {
+      visit(line, offset)
+      offset += line.length + 1
+    }
+    return out
+  }
+  const eol = /\r\n|\r|\n/g
+  let offset = 0
+  for (;;) {
+    eol.lastIndex = offset
+    const next = eol.exec(markdown)
+    visit(markdown.slice(offset, next ? next.index : markdown.length), offset)
     if (!next) return out
     offset = next.index + next[0].length
   }
