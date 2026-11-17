@@ -97,3 +97,33 @@ describe('drag a task to another day in Upcoming', () => {
     await r.unmount()
   })
 })
+
+// A list without an order of its own looks draggable but cannot reorder (#1507):
+// a drop that changes nothing says why instead of doing nothing.
+describe('a drop where the list keeps its date order', () => {
+  it('Upcoming: a drop on the task\'s own day says the list keeps its order and writes nothing', async () => {
+    const id = await createTask({ title: 'Dentist', due: { date: '2026-10-22' } })
+    await createTask({ title: 'Groceries', due: { date: '2026-10-22' } })
+    const r = await shell()
+    await waitFor(() => !!row(id) && !!day('2026-10-22'))
+    await db.outbox.clear()
+    await drag(row(id), day('2026-10-22')!)
+    await waitFor(() => toast().includes('Lists sorted by date or priority keep their order.'))
+    expect(toast()).not.toContain('Undo')
+    expect(await db.outbox.count()).toBe(0)
+    await r.unmount()
+  })
+
+  it('Today: a drop on another row says the list keeps its order and writes nothing', async () => {
+    const a = await createTask({ title: 'Call Ada', due: { date: '2026-10-21' } })
+    const b = await createTask({ title: 'Pay rent', due: { date: '2026-10-21' } })
+    navigate({ view: 'today' })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(a) && !!row(b))
+    await db.outbox.clear()
+    await drag(row(a), row(b))
+    await waitFor(() => toast().includes('Lists sorted by date or priority keep their order.'))
+    expect(await db.outbox.count()).toBe(0)
+    await r.unmount()
+  })
+})
