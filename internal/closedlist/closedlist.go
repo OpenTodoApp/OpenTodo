@@ -243,17 +243,6 @@ func Next(soon []Sensitive) (Sensitive, bool) {
 	return Sensitive{}, false
 }
 
-// Passed counts the time-sensitive tasks whose time has passed.
-func Passed(soon []Sensitive) int {
-	n := 0
-	for _, s := range soon {
-		if s.Passed {
-			n++
-		}
-	}
-	return n
-}
-
 // WaitingTasks is the waiting tasks of f in fill order, from tasks.
 func (f Fill) WaitingTasks(tasks []Task) []Task {
 	byID := make(map[string]Task, len(tasks))

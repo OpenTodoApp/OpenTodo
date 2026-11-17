@@ -20,7 +20,6 @@ export { eventMinutes }
 
 export type PlanSpan = 7 | 14 | 21
 export const PLAN_SPANS: readonly PlanSpan[] = [7, 14, 21]
-export const DEFAULT_PLAN_DAYS: PlanSpan = 14
 
 /** `days` consecutive ISO dates starting on `anchor`. */
 export function spanDates(anchor: string, days: number): string[] {

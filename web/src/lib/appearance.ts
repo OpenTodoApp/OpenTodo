@@ -52,8 +52,6 @@ export interface Appearance {
   sidebar?: Promotable[]
 }
 
-export const DEFAULT_APPEARANCE: Appearance = { mode: 'system', accent: DEFAULT_ACCENT, density: 'comfortable', sidebar: [] }
-
 /** Reads a stored row: a missing row or an unknown value (from a newer client) is the default. The row is not changed. */
 export function readAppearance(row: Partial<UserPrefs> | null | undefined): Appearance {
   const mode = THEME_MODES.includes(row?.theme_mode as ThemeModePref) ? (row!.theme_mode as ThemeModePref) : 'system'

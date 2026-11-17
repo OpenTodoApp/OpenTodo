@@ -6,7 +6,7 @@
 // internal/digest/testdata/next_action_fixture.json and must agree.
 import { openBlockers } from '../dependencies'
 import { availability, projectFlowOf, type FlowState } from '../flow'
-import { byPosition } from '../ordering'
+import { compareByPosition } from '../ordering'
 import { effectiveSection } from '../sections'
 import { canEditTasks, roleOf } from '../sharing'
 import type { Label, Membership, Project, Section, Task } from '../types'
@@ -96,10 +96,10 @@ export class MethodRules {
 
   /** The project's open top-level tasks in list order: no section first, then sections in order, manual order within. */
   inListOrder(projectId: string): Task[] {
-    const sections = (this.input.sections ?? []).filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
+    const sections = (this.input.sections ?? []).filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
     const rank = new Map<string, number>(sections.map((s, i) => [s.id, i + 1]))
     const sectionRank = (t: Task) => rank.get(effectiveSection(t, this.sectionMap) ?? '') ?? 0
-    return [...(this.openTop.get(projectId) ?? [])].sort((a, b) => sectionRank(a) - sectionRank(b) || byPosition(a, b))
+    return [...(this.openTop.get(projectId) ?? [])].sort((a, b) => sectionRank(a) - sectionRank(b) || compareByPosition(a, b))
   }
 
   /** The project's next action: its first actionable task in list order, or null. */

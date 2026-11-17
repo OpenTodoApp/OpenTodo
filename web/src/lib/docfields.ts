@@ -68,8 +68,3 @@ export function resetRichTextForTests(load?: () => Promise<RichText>): void {
   loading = null
   importer = load ?? (() => import('./richtext'))
 }
-
-/** The module when it is already loaded (synchronous use inside transactions). */
-export function richTextIfLoaded(): RichText | null {
-  return loaded
-}
