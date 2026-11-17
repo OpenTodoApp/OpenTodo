@@ -40,7 +40,7 @@ const surfaceAbout = "The v1 surface (OpenSpec change stability-contract, docs/s
 func buildSurface(t *testing.T) map[string]any {
 	t.Helper()
 	pkgs := loadStatic(t)
-	routes := surfaceRoutes(t, staticRoutes(pkgs))
+	routes := surfaceRoutes(t, staticRoutes(pkgs), false)
 	return map[string]any{
 		"about":  surfaceAbout,
 		"routes": routes,
@@ -54,8 +54,10 @@ func buildSurface(t *testing.T) map[string]any {
 
 // surfaceRoutes lists the /api/v1/ routes of the route table: policy,
 // deprecation, success statuses and fields. The generic collection routes are
-// also listed per collection with the collection's fields.
-func surfaceRoutes(t *testing.T, static map[string]*staticRoute) map[string]any {
+// also listed per collection with the collection's fields. With elems, the
+// fields include the element types of lists ("tags[]"), which only the OpenAPI
+// description uses.
+func surfaceRoutes(t *testing.T, static map[string]*staticRoute, elems bool) map[string]any {
 	t.Helper()
 	out := map[string]any{}
 	table := map[string]routePolicy{}
@@ -76,11 +78,11 @@ func surfaceRoutes(t *testing.T, static map[string]*staticRoute) map[string]any 
 			if len(s.statuses) > 0 {
 				r["statuses"] = slices.Sorted(maps.Keys(s.statuses))
 			}
-			if len(s.request) > 0 {
-				r["request"] = toAny(s.request)
+			if req := surfaceFields(s.request, elems); len(req) > 0 {
+				r["request"] = toAny(req)
 			}
-			if len(s.response) > 0 {
-				r["response"] = toAny(s.response)
+			if res := surfaceFields(s.response, elems); len(res) > 0 {
+				r["response"] = toAny(res)
 			}
 		}
 		out[pattern] = r
@@ -88,6 +90,18 @@ func surfaceRoutes(t *testing.T, static map[string]*staticRoute) map[string]any 
 	for pattern, r := range collectionRoutes(t, table) {
 		if _, explicit := out[pattern]; !explicit {
 			out[pattern] = r
+		}
+	}
+	return out
+}
+
+// surfaceFields is a route's field set, without the element types of lists
+// unless elems is set.
+func surfaceFields(fs fieldSet, elems bool) fieldSet {
+	out := fieldSet{}
+	for k, v := range fs {
+		if elems || !strings.HasSuffix(k, "[]") {
+			out[k] = v
 		}
 	}
 	return out

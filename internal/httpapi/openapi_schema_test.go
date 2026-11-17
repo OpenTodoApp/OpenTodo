@@ -104,6 +104,78 @@ var kindComponents = map[string]schema{
 	}},
 }
 
+// fieldSchemas are the types of fieldTypes that are not op kinds.
+var fieldSchemas = map[string]schema{
+	// rules.StepPreview.Preview: runState.preview of a ruleval.Value.
+	"step_preview": {"description": "A preview of the step's output, by its type: text and a date are a string, lines a list of strings, a number a number, " +
+		"a task or a note {id, title}, a project {id, name}, tasks or notes a list of {id, title}.",
+		"anyOf": []any{
+			schema{"type": "string"}, schema{"type": "number"},
+			schema{"type": "array", "items": schema{"type": "string"}},
+			schema{"type": "object", "additionalProperties": schema{"type": "string"}},
+			schema{"type": "array", "items": schema{"type": "object", "additionalProperties": schema{"type": "string"}}},
+		}},
+	// auth.PendingMember, for a project's or workspace's owner and admins.
+	"pending_members": {"type": "array", "description": "The open invitations, shown to the owner and admins.", "items": schema{"type": "object", "properties": schema{
+		"id": schema{"type": "string"}, "email": schema{"type": "string"}, "role": schema{"type": "string"}, "invitedBy": schema{"type": "string"},
+		"createdAt": schema{"type": "number"}, "expiresAt": schema{"type": "number"},
+	}}},
+	// opsync.PendingAppend.
+	"pending_appends": {"type": "array", "description": "Appends not yet merged into the body, oldest first.", "items": schema{"type": "object", "properties": schema{
+		"id": schema{"type": "string"}, "text": schema{"type": "string"},
+	}}},
+}
+
+// fieldTypes are the fields the static analysis sees as `any` (an interface
+// value, set or left nil) or only as a list (observed on a running server, an
+// empty list), with the type read from the code that sets them. A field named
+// here gets the type while its analysed type is `when`.
+var fieldTypes = map[string]struct{ when, typ string }{
+	// membersView and workspaceView.
+	"pending": {"any", "pending_members"},
+	// handleAuditList: the next page's cursor, null on the last page.
+	"cursor": {"any", "number|null"},
+	// projectAgentAccess: the id of the ancestor project it is kept away by.
+	"inherited_from": {"any", "string|null"},
+	// microsoftClientView: when Microsoft refused the client, Unix ms.
+	"refused_at": {"any", "number|null"},
+	// A new public link: auth.PublicLink.LastUsedAt, null until first used.
+	"lastUsedAt": {"any", "number|null"},
+	"preview":    {"any", "step_preview"},
+	// A task's or note's row (observedRowMembers sees an empty list).
+	"appends": {"array", "pending_appends"},
+}
+
+// routeFieldTypes are fieldTypes for one route, where its answers differ:
+// adding a member answers the project or workspace (201), inviting one
+// {pending: true} (202, inviteMember).
+var routeFieldTypes = map[string]map[string]string{
+	"POST /api/v1/projects/{id}/members":   {"pending": "boolean|pending_members"},
+	"POST /api/v1/workspaces/{id}/members": {"pending": "boolean|pending_members"},
+}
+
+// withFieldTypes gives a route's fields the types of fieldTypes.
+func withFieldTypes(route string, fields map[string]any) map[string]any {
+	out := make(map[string]any, len(fields))
+	for k, v := range fields {
+		out[k] = v
+		typ, _ := v.(string)
+		bare, optional := strings.CutSuffix(typ, "?")
+		ft, ok := fieldTypes[k[strings.LastIndex(k, ".")+1:]]
+		if !ok || bare != ft.when {
+			continue
+		}
+		if t, ok := routeFieldTypes[route][k]; ok {
+			ft.typ = t
+		}
+		if optional {
+			ft.typ += "?"
+		}
+		out[k] = ft.typ
+	}
+	return out
+}
+
 // typeSchema is the schema of one surface field type: a kind name, a JSON
 // type ("string", "boolean", "object", "array", "any"), "nullable_<kind>", or
 // a union such as "string|null". It reports whether the type is known.
@@ -120,6 +192,13 @@ func typeSchema(typ string) (schema, bool) {
 		return schema{"type": "array", "items": schema{}}, true
 	case "any", "":
 		return schema{}, false
+	}
+	if s, ok := fieldSchemas[typ]; ok {
+		return copySchema(s), true
+	}
+	if elem, ok := strings.CutSuffix(typ, "[]"); ok {
+		items, known := typeSchema(elem)
+		return schema{"type": "array", "items": items}, known
 	}
 	if parts := strings.Split(typ, "|"); len(parts) > 1 {
 		var types []any
@@ -160,7 +239,8 @@ type bodyNode struct {
 	typ      string // the surface type of the node itself, if listed
 	optional bool
 	children map[string]*bodyNode
-	array    bool // the path continued with "[]": an array of the children
+	array    bool   // the path continued with "[]": an array of the children
+	elem     string // the type of a list's elements ("tags[]"), when they are not objects
 }
 
 // buildBody turns a surface field set into a schema. In a request, a field
@@ -190,7 +270,10 @@ func buildBody(fields map[string]any, request bool) (schema, int) {
 			if isArray {
 				child.array = true
 			}
-			if i == len(segs)-1 {
+			switch {
+			case i == len(segs)-1 && isArray:
+				child.elem = strings.TrimSuffix(typ, "?")
+			case i == len(segs)-1:
 				child.typ, child.optional = strings.CutSuffix(typ, "?")
 			}
 			n = child
@@ -221,6 +304,12 @@ func (n *bodyNode) schema(request bool, unknown *int) schema {
 		cs := c.schema(request, unknown)
 		if c.array && len(c.children) > 0 {
 			cs = schema{"type": "array", "items": cs}
+		} else if c.array {
+			items, ok := typeSchema(c.elem)
+			if !ok {
+				*unknown++
+			}
+			cs = schema{"type": "array", "items": items}
 		}
 		if strings.Contains(c.typ, "null") && len(c.children) > 0 {
 			cs = nullable(cs)
