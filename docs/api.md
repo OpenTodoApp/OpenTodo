@@ -169,7 +169,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/me/identities/{id}` | credential | 204, or 409 `last_credential` |
 | GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute |
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
-| DELETE | `/api/v1/tokens/{id}` | yes | 204 |
+| DELETE | `/api/v1/tokens/{id}` | yes | 204; deleting a connected AI app's access token also disconnects the app (its refresh token stops working, recorded as `mcp_oauth.disconnected`) |
 | POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; the other devices remove their local copy on their next `auth/status` (`revoked`); a token gets 403 `session_required` |
 | POST | `/api/v1/passkeys/register/options` | credential, fresh | → `{publicKey}` creation options |
 | POST | `/api/v1/passkeys/register` | credential, fresh | `{name, credential}` → 201 `{passkey}` |
@@ -317,6 +317,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/me/mcp-consent` | session only | `{query, allow}` → `{redirect}`: the registered address with `code` and `state` on allow, with `error=access_denied` otherwise |
 | POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the access token stops working after `expires_in` seconds (3600); a refresh returns a new refresh token and retires the one sent, and an already-used refresh token revokes the grant (`400 invalid_grant`, audited as `mcp_oauth.refresh_reused`); a client registered only for Google's connector addresses gets the same refresh token back |
 | POST | `/oauth/revoke` | client secret | RFC 7009: the client's own refresh token, or the access token one of its grants holds, revokes that grant; any other token is left alone and answered 200; 401 `invalid_client` without the client's credentials |
+| GET | `/api/v1/me/oauth-grants` | yes | `{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off |
+| DELETE | `/api/v1/me/oauth-grants/{id}` | yes | 204: disconnects that app; its refresh token gets `invalid_grant` and its access token 401; another person's, a revoked or an unknown id → 404 `not_found`; demo instances → 403 `demo_restricted`; recorded as `mcp_oauth.disconnected` |
 
 #### Administration (owner and admins)
 
@@ -1358,6 +1360,7 @@ The server records security-relevant events in its own database (never synced to
 | `mcp_oauth.granted` | success | actor = the user | `oauth_client_id`, `token_scope`; one per authorization, never a code or token. An [app sign-in](#app-sign-in) confirmed in the browser is recorded the same way, with `oauth_client_id` `opentodo-app` and `token_scope` `app` |
 | `mcp_oauth.revoked` | success | actor = the user | `oauth_client_id`; the grant was ended through `/oauth/revoke`, or for `opentodo-app`, the app was signed out (in the app or in the sessions list) |
 | `mcp_oauth.refresh_reused` | failure | actor = the user | `oauth_client_id`; a refresh token the grant had already exchanged was presented again, so the grant and its access token were revoked (MCP clients and `opentodo-app`) |
+| `mcp_oauth.disconnected` | success | actor = the user | `oauth_client_id`, `method` (`connected_apps`: Disconnect in Settings; `api_token`: its access token was deleted under API tokens); the grant and its access token were ended; never a token or the client's name |
 | `settings.changed` | success | actor = owner (the user for `encryption*`) | `setting` (`audit.retention_days`, `audit.log_ip`, `webhooks_allow_private`, `mfa.required`, `mcp.enabled`, `mcp.writes`, `agent.writes` (actor = the user), `caldav.enabled`, `integrations.issues`, `project_invites.members_create_accounts`, `oidc.*`, `smtp.*` (`smtp.password` only as `set` or empty), `encryption`, `encryption.keys`), `from`, `to` |
 | `export.requested` | success | actor = user | `format` (`json`) |
 | `audit.exported` | success | actor = owner | `format` (`ndjson`), `count` |
