@@ -707,6 +707,41 @@ describe('server limits (multi-tenant-host)', () => {
   })
 })
 
+describe('an op the server cannot accept (sync-invalid-op-alone)', () => {
+  type Sent = { id: string; entityId: string }
+  const accept = async () => ({ applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now() })
+
+  it('keeps it on the device, syncs the rest, says so, and offers it again later', async () => {
+    await mutate('task', 'odd', { title: 'Not accepted' })
+    await mutate('task', 'fine', { title: 'Fits' })
+    syncCalls.mockImplementation((async (...args: unknown[]) => ({
+      ...(await accept()),
+      rejected: (args[2] as Sent[]).filter((o) => o.entityId === 'odd').map((o) => ({ id: o.id, reason: 'invalid' })),
+    })) as never)
+    await syncNow()
+    // The change is not forgotten: the row stays as edited, and the status names it.
+    expect((await db.tasks.get('odd'))?.title).toBe('Not accepted')
+    expect((await db.tasks.get('fine'))?.title).toBe('Fits')
+    expect(await db.outbox.count()).toBe(0)
+    const s = syncSnapshot()
+    expect(s.state).toBe('error')
+    expect(s.error).toContain('could not accept')
+    expect(s.pending).toBeGreaterThan(0)
+    expect(s.rejected).toBeNull()
+
+    // A minute later it goes out again; a server that now accepts it clears the error.
+    syncCalls.mockClear()
+    syncCalls.mockImplementation(accept as never)
+    vi.setSystemTime(Date.now() + 61_000)
+    await syncNow()
+    const resent = (syncCalls.mock.calls.at(-1) as unknown as [string, number, Sent[]])[2]
+    expect(resent.length).toBeGreaterThan(0)
+    expect(resent.every((o) => o.entityId === 'odd')).toBe(true)
+    expect(syncSnapshot().state).toBe('idle')
+    expect(syncSnapshot().pending).toBe(0)
+  })
+})
+
 describe('every entity kind (client-data-safety)', () => {
   type SentOp = { id: string; entity: string; entityId: string; field: string; value: unknown; ts: number; device: string }
   function server(extra: (sent: SentOp[]) => Record<string, unknown>) {

@@ -19493,6 +19493,9 @@
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": [
+    "web/src/lib/limits.ts"
+  ],
   "This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.": [
     "web/src/app/EmailScreens.tsx"
   ],

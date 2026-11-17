@@ -109,7 +109,8 @@ function reauthenticate(): Promise<boolean> {
 interface RequestOptions { signal?: AbortSignal }
 
 /** Sync protocol additions this client supports (POST /api/v1/sync `features`). */
-export const SYNC_FEATURES = ['clock_skew', 'backfill_ack']
+// `invalid_ops` (sync-invalid-op-alone D1): an op the server cannot accept is refused alone.
+export const SYNC_FEATURES = ['clock_skew', 'backfill_ack', 'invalid_ops']
 /**
  * Sent while the device copies the account for the first time (cursor 0 until
  * the last page): the server leaves out note history the copy never needs

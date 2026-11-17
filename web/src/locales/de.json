@@ -7767,5 +7767,6 @@
   "Not synced yet": "Noch nicht synchronisiert",
   "Add a subtask to {title}": "Unteraufgabe zu {title} hinzufügen",
   "Add a subtask to this task": "Unteraufgabe zu dieser Aufgabe hinzufügen",
-  "the calendar is larger than {size} MB; connect it with calendar sync instead": "der Kalender ist größer als {size} MB; verbinde ihn stattdessen über die Kalender-Synchronisation"
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "der Kalender ist größer als {size} MB; verbinde ihn stattdessen über die Kalender-Synchronisation",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Dieser Server konnte eine Änderung von diesem Gerät nicht annehmen. Sie bleibt auf diesem Gerät, alles andere wird weiter synchronisiert."
 }
