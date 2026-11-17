@@ -84,23 +84,45 @@ func surfaceRoutes(t *testing.T, static map[string]*staticRoute, elems bool) map
 			if res := surfaceFields(s.response, elems); len(res) > 0 {
 				r["response"] = toAny(res)
 			}
+			if elems && s.body != "" {
+				r["body"] = s.body
+			}
 		}
 		out[pattern] = r
 	}
 	for pattern, r := range collectionRoutes(t, table) {
 		if _, explicit := out[pattern]; !explicit {
+			if s := static[genericPattern(pattern)]; elems && s != nil && s.body != "" {
+				r.(map[string]any)["body"] = s.body
+			}
 			out[pattern] = r
 		}
 	}
 	return out
 }
 
+// genericPattern is the generic collection route a collection's route is
+// served by: "PATCH /api/v1/tasks/{id}" → "PATCH /api/v1/{collection}/{id}".
+func genericPattern(pattern string) string {
+	method, path, _ := strings.Cut(pattern, " ")
+	rest := strings.SplitN(strings.TrimPrefix(path, "/api/v1/"), "/", 2)
+	rest[0] = "{collection}"
+	return method + " /api/v1/" + strings.Join(rest, "/")
+}
+
 // surfaceFields is a route's field set, without the element types of lists
-// unless elems is set.
+// unless elems is set. Without elems it is the snapshot's form, which records
+// the fields of a request's list elements without their optional mark.
 func surfaceFields(fs fieldSet, elems bool) fieldSet {
 	out := fieldSet{}
 	for k, v := range fs {
-		if elems || !strings.HasSuffix(k, "[]") {
+		switch {
+		case elems:
+			out[k] = v
+		case strings.HasSuffix(k, "[]"):
+		case strings.Contains(k, "[]"):
+			out[k] = strings.TrimSuffix(v, "?")
+		default:
 			out[k] = v
 		}
 	}

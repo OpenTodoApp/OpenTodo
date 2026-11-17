@@ -39,12 +39,14 @@ func nullable(s schema) schema {
 // kindSchemas maps every op kind name (internal/sync kindnames.go) to its
 // schema. The compound shapes are component schemas (kindComponents).
 var kindSchemas = map[string]schema{
-	"string":           {"type": "string"},
-	"id":               {"type": "string", "description": "An id: a UUID, or for some entities a name-based id."},
-	"clock":            {"type": "string", "description": "A wall-clock time, HH:MM.", "pattern": `^\d{2}:\d{2}$`},
-	"weekdays":         {"type": "string", "description": "Weekdays as a string of ISO weekday numbers (1 Monday … 7 Sunday)."},
-	"energy":           {"type": "string", "description": "The energy a task needs: \"\", low, medium or high."},
-	"sector":           {"type": "string", "description": "A time sector: \"\", a week (2026-W45), a month (2026-11) or a quarter (2026-Q4)."},
+	"string":   {"type": "string"},
+	"id":       {"type": "string", "description": "An id: a UUID, or for some entities a name-based id."},
+	"clock":    {"type": "string", "description": "A wall-clock time, HH:MM.", "pattern": `^\d{2}:\d{2}$`},
+	"weekdays": {"type": "string", "description": "Weekdays as a string of ISO weekday numbers (1 Monday … 7 Sunday)."},
+	// A task's energy and sector: REST answers null for none and takes null or
+	// "" to clear (presentEnergy, checkEnergy, presentSector, checkSector).
+	"energy":           {"type": []any{"string", "null"}, "description": "The energy a task needs: deep, medium or low; null for none (a write also takes \"\")."},
+	"sector":           {"type": []any{"string", "null"}, "description": "A time sector: a week (2026-W45), a month (2026-11) or a quarter (2026-Q4); null for none (a write also takes \"\")."},
 	"objective_title":  {"type": "string"},
 	"objective_period": {"type": "string", "description": "An objective's period: a quarter (2026-Q4), a month or a year."},
 	"memory_text":      {"type": "string"},
@@ -120,6 +122,8 @@ var fieldSchemas = map[string]schema{
 		"id": schema{"type": "string"}, "email": schema{"type": "string"}, "role": schema{"type": "string"}, "invitedBy": schema{"type": "string"},
 		"createdAt": schema{"type": "number"}, "expiresAt": schema{"type": "number"},
 	}}},
+	// opsync.Op.Value: a json.RawMessage, which the analysis sees as a string.
+	"op_value": {"description": "The field's value: any JSON value of the field's kind (docs/sync.md \"Schema (v1)\")."},
 	// opsync.PendingAppend.
 	"pending_appends": {"type": "array", "description": "Appends not yet merged into the body, oldest first.", "items": schema{"type": "object", "properties": schema{
 		"id": schema{"type": "string"}, "text": schema{"type": "string"},
@@ -144,6 +148,33 @@ var fieldTypes = map[string]struct{ when, typ string }{
 	"preview":    {"any", "step_preview"},
 	// A task's or note's row (observedRowMembers sees an empty list).
 	"appends": {"array", "pending_appends"},
+	// An op's value (sync), a json.RawMessage the analysis sees as a string.
+	"value": {"string", "op_value"},
+}
+
+// requestDefaults are request fields a handler fills in when they are left
+// out, though their Go type does not say so (no pointer, no omitempty).
+var requestDefaults = map[string][]string{
+	// appendHandler: an empty id gets a new one.
+	"POST /api/v1/notes/{id}/append":      {"id"},
+	"POST /api/v1/tasks/{id}/note/append": {"id"},
+}
+
+// withRequestDefaults marks a route's requestDefaults optional. It reports a
+// listed field the request does not have.
+func withRequestDefaults(route string, fields map[string]any) (map[string]any, []string) {
+	var missing []string
+	for _, f := range requestDefaults[route] {
+		typ, ok := fields[f].(string)
+		if !ok {
+			missing = append(missing, route+": requestDefaults lists "+f+", which the request does not have")
+			continue
+		}
+		if !strings.HasSuffix(typ, "?") {
+			fields[f] = typ + "?"
+		}
+	}
+	return fields, missing
 }
 
 // routeFieldTypes are fieldTypes for one route, where its answers differ:

@@ -799,7 +799,10 @@
           },
           "energy": {
             "description": "The energy the task asks for (OpenSpec change task-energy, design D1): \"\" (none), \"deep\", \"medium\" or \"low\". Chosen from a menu, never written text, so not content (D2); additive.",
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "estimate_minutes": {
             "description": "Duration estimate in minutes (OpenSpec change nlp-quick-add); additive.",
@@ -973,7 +976,10 @@
           },
           "sector": {
             "description": "The period the task is planned for without a date (OpenSpec change time-sectors, design D1): \"\" (none), an ISO week \"2026-W44\", a month \"2026-11\" or a quarter \"2026-Q4\". A sector with no do-on date schedules the task (it leaves the Inbox and Anytime) and is never overdue; clients name it relative to the viewer's date and derive carry-over, never writing it. A scheduling field like start: plaintext, not content; additive.",
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "series_id": {
             "type": [
@@ -1719,7 +1725,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -2254,23 +2260,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "uploaded": false
-                },
-                "schema": {
-                  "properties": {
-                    "uploaded": {
-                      "type": "boolean"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -2320,7 +2311,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -3840,7 +3831,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -3882,7 +3873,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "4XX": {
             "$ref": "#/components/responses/Error"
@@ -6061,7 +6052,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -6270,7 +6261,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -6823,7 +6814,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -7055,7 +7046,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -7231,7 +7222,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -7948,8 +7939,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -8136,7 +8127,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -8178,7 +8169,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "4XX": {
             "$ref": "#/components/responses/Error"
@@ -9202,7 +9193,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -9351,7 +9342,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -9371,7 +9362,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -9405,27 +9396,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "encrypted": false,
-                  "id": "00000000-0000-4000-8000-000000000001"
-                },
-                "schema": {
-                  "properties": {
-                    "encrypted": {
-                      "type": "boolean"
-                    },
-                    "id": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -13116,7 +13088,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -13303,7 +13275,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -14406,7 +14378,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -15048,7 +15020,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -15826,7 +15798,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -16134,7 +16106,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -16890,7 +16862,6 @@
                         }
                       },
                       "required": [
-                        "create",
                         "entity",
                         "fields",
                         "id"
@@ -16938,11 +16909,7 @@
                       },
                       "required": [
                         "kind",
-                        "step",
-                        "task",
-                        "tasks",
-                        "text",
-                        "webhook"
+                        "step"
                       ],
                       "type": "object"
                     },
@@ -17656,12 +17623,7 @@
                         }
                       },
                       "required": [
-                        "date",
-                        "from",
-                        "ids",
-                        "kind",
-                        "span",
-                        "to"
+                        "kind"
                       ],
                       "type": "object"
                     },
@@ -17684,7 +17646,6 @@
                         }
                       },
                       "required": [
-                        "create",
                         "entity",
                         "fields",
                         "id"
@@ -17750,11 +17711,7 @@
                       },
                       "required": [
                         "kind",
-                        "step",
-                        "task",
-                        "tasks",
-                        "text",
-                        "webhook"
+                        "step"
                       ],
                       "type": "object"
                     },
@@ -17799,15 +17756,13 @@
                       },
                       "required": [
                         "duration_ms",
-                        "error",
                         "ids",
                         "index",
                         "items",
                         "kind",
                         "output",
                         "status",
-                        "step_id",
-                        "tokens"
+                        "step_id"
                       ],
                       "type": "object"
                     },
@@ -18646,15 +18601,13 @@
                       },
                       "required": [
                         "duration_ms",
-                        "error",
                         "ids",
                         "index",
                         "items",
                         "kind",
                         "output",
                         "status",
-                        "step_id",
-                        "tokens"
+                        "step_id"
                       ],
                       "type": "object"
                     },
@@ -19804,7 +19757,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -20052,7 +20005,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -20148,7 +20101,6 @@
                   }
                 },
                 "required": [
-                  "id",
                   "text"
                 ],
                 "type": "object"
@@ -20158,6 +20110,36 @@
           "required": true
         },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "append_id": "00000000-0000-4000-8000-000000000001",
+                  "body_version": "example",
+                  "entity": "example",
+                  "entity_id": "00000000-0000-4000-8000-000000000001"
+                },
+                "schema": {
+                  "properties": {
+                    "append_id": {
+                      "type": "string"
+                    },
+                    "body_version": {
+                      "type": "string"
+                    },
+                    "entity": {
+                      "type": "string"
+                    },
+                    "entity_id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
           "201": {
             "content": {
               "application/json": {
@@ -21965,7 +21947,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -22140,7 +22122,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -23639,7 +23621,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -23875,7 +23857,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -25306,6 +25288,152 @@
           "required": true
         },
         "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "grants": [
+                    {
+                      "groupId": "00000000-0000-4000-8000-000000000001",
+                      "name": "Ada",
+                      "role": "member"
+                    }
+                  ],
+                  "members": [
+                    {
+                      "avatarVersion": 1,
+                      "email": "ada@example.com",
+                      "name": "Ada",
+                      "role": "member",
+                      "userId": "00000000-0000-4000-8000-000000000001",
+                      "via": [
+                        {
+                          "id": "00000000-0000-4000-8000-000000000001",
+                          "name": "Ada"
+                        }
+                      ]
+                    }
+                  ],
+                  "ownerId": "00000000-0000-4000-8000-000000000001",
+                  "pending": [
+                    {
+                      "createdAt": 1794906000000,
+                      "email": "ada@example.com",
+                      "expiresAt": 1794906000000,
+                      "id": "00000000-0000-4000-8000-000000000001",
+                      "invitedBy": "example",
+                      "role": "member"
+                    }
+                  ],
+                  "projectId": "00000000-0000-4000-8000-000000000001",
+                  "role": "member"
+                },
+                "schema": {
+                  "properties": {
+                    "grants": {
+                      "items": {
+                        "properties": {
+                          "groupId": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "members": {
+                      "items": {
+                        "properties": {
+                          "avatarVersion": {
+                            "type": "number"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "via": {
+                            "items": {
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "name": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "ownerId": {
+                      "type": "string"
+                    },
+                    "pending": {
+                      "anyOf": [
+                        {
+                          "description": "The open invitations, shown to the owner and admins.",
+                          "items": {
+                            "properties": {
+                              "createdAt": {
+                                "type": "number"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "expiresAt": {
+                                "type": "number"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "invitedBy": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    },
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created"
+          },
           "202": {
             "content": {
               "application/json": {
@@ -25492,144 +25620,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "grants": [
-                    {
-                      "groupId": "00000000-0000-4000-8000-000000000001",
-                      "name": "Ada",
-                      "role": "member"
-                    }
-                  ],
-                  "members": [
-                    {
-                      "avatarVersion": 1,
-                      "email": "ada@example.com",
-                      "name": "Ada",
-                      "role": "member",
-                      "userId": "00000000-0000-4000-8000-000000000001",
-                      "via": [
-                        {
-                          "id": "00000000-0000-4000-8000-000000000001",
-                          "name": "Ada"
-                        }
-                      ]
-                    }
-                  ],
-                  "ownerId": "00000000-0000-4000-8000-000000000001",
-                  "pending": [
-                    {
-                      "createdAt": 1794906000000,
-                      "email": "ada@example.com",
-                      "expiresAt": 1794906000000,
-                      "id": "00000000-0000-4000-8000-000000000001",
-                      "invitedBy": "example",
-                      "role": "member"
-                    }
-                  ],
-                  "projectId": "00000000-0000-4000-8000-000000000001",
-                  "role": "member"
-                },
-                "schema": {
-                  "properties": {
-                    "grants": {
-                      "items": {
-                        "properties": {
-                          "groupId": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "role": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "members": {
-                      "items": {
-                        "properties": {
-                          "avatarVersion": {
-                            "type": "number"
-                          },
-                          "email": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "role": {
-                            "type": "string"
-                          },
-                          "userId": {
-                            "type": "string"
-                          },
-                          "via": {
-                            "items": {
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "name": {
-                                  "type": "string"
-                                }
-                              },
-                              "type": "object"
-                            },
-                            "type": "array"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "ownerId": {
-                      "type": "string"
-                    },
-                    "pending": {
-                      "description": "The open invitations, shown to the owner and admins.",
-                      "items": {
-                        "properties": {
-                          "createdAt": {
-                            "type": "number"
-                          },
-                          "email": {
-                            "type": "string"
-                          },
-                          "expiresAt": {
-                            "type": "number"
-                          },
-                          "id": {
-                            "type": "string"
-                          },
-                          "invitedBy": {
-                            "type": "string"
-                          },
-                          "role": {
-                            "type": "string"
-                          }
-                        },
-                        "type": "object"
-                      },
-                      "type": "array"
-                    },
-                    "projectId": {
-                      "type": "string"
-                    },
-                    "role": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -27817,7 +27809,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -28014,6 +28006,24 @@
               }
             },
             "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "reused": "example"
+                },
+                "schema": {
+                  "properties": {
+                    "reused": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -31503,7 +31513,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -32026,7 +32036,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -32209,7 +32219,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -32641,7 +32651,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -32789,7 +32799,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -33029,7 +33039,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -33828,7 +33838,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -34222,7 +34232,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -34553,7 +34563,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -35045,7 +35055,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -35182,7 +35192,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -35202,7 +35212,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -35236,27 +35246,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "encrypted": false,
-                  "id": "00000000-0000-4000-8000-000000000001"
-                },
-                "schema": {
-                  "properties": {
-                    "encrypted": {
-                      "type": "boolean"
-                    },
-                    "id": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -35497,17 +35488,15 @@
                           "type": "number"
                         },
                         "value": {
-                          "type": "string"
+                          "description": "The field's value: any JSON value of the field's kind (docs/sync.md \"Schema (v1)\")."
                         }
                       },
                       "required": [
-                        "actor",
                         "device",
                         "entity",
                         "entityId",
                         "field",
                         "id",
-                        "seq",
                         "ts",
                         "value"
                       ],
@@ -35688,7 +35677,7 @@
                             "type": "number"
                           },
                           "value": {
-                            "type": "string"
+                            "description": "The field's value: any JSON value of the field's kind (docs/sync.md \"Schema (v1)\")."
                           }
                         },
                         "type": "object"
@@ -36165,8 +36154,11 @@
                     ]
                   },
                   "energy": {
-                    "description": "The energy a task needs: \"\", low, medium or high.",
-                    "type": "string"
+                    "description": "The energy a task needs: deep, medium or low; null for none (a write also takes \"\").",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "estimate_minutes": {
                     "minimum": 1,
@@ -36322,8 +36314,11 @@
                     ]
                   },
                   "sector": {
-                    "description": "A time sector: \"\", a week (2026-W45), a month (2026-11) or a quarter (2026-Q4).",
-                    "type": "string"
+                    "description": "A time sector: a week (2026-W45), a month (2026-11) or a quarter (2026-Q4); null for none (a write also takes \"\").",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "series_id": {
                     "type": [
@@ -36372,7 +36367,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -36669,8 +36664,11 @@
                     ]
                   },
                   "energy": {
-                    "description": "The energy a task needs: \"\", low, medium or high.",
-                    "type": "string"
+                    "description": "The energy a task needs: deep, medium or low; null for none (a write also takes \"\").",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "estimate_minutes": {
                     "minimum": 1,
@@ -36826,8 +36824,11 @@
                     ]
                   },
                   "sector": {
-                    "description": "A time sector: \"\", a week (2026-W45), a month (2026-11) or a quarter (2026-Q4).",
-                    "type": "string"
+                    "description": "A time sector: a week (2026-W45), a month (2026-11) or a quarter (2026-Q4); null for none (a write also takes \"\").",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "series_id": {
                     "type": [
@@ -36876,7 +36877,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -37549,7 +37550,6 @@
                   }
                 },
                 "required": [
-                  "id",
                   "text"
                 ],
                 "type": "object"
@@ -37588,6 +37588,36 @@
               }
             },
             "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "append_id": "00000000-0000-4000-8000-000000000001",
+                  "body_version": "example",
+                  "entity": "example",
+                  "entity_id": "00000000-0000-4000-8000-000000000001"
+                },
+                "schema": {
+                  "properties": {
+                    "append_id": {
+                      "type": "string"
+                    },
+                    "body_version": {
+                      "type": "string"
+                    },
+                    "entity": {
+                      "type": "string"
+                    },
+                    "entity_id": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -38989,7 +39019,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -39080,6 +39110,95 @@
               }
             },
             "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "deviceId": "00000000-0000-4000-8000-000000000001",
+                  "endedAt": 1794906000000,
+                  "focus": {
+                    "mode": "example",
+                    "plannedEndAt": 1794906000000,
+                    "session": 1
+                  },
+                  "id": "00000000-0000-4000-8000-000000000001",
+                  "minutes": 1,
+                  "note": "example",
+                  "projectId": "00000000-0000-4000-8000-000000000001",
+                  "projectName": "Ada",
+                  "startedAt": 1794906000000,
+                  "taskId": "00000000-0000-4000-8000-000000000001",
+                  "taskTitle": "Buy paint for the fence",
+                  "userId": "00000000-0000-4000-8000-000000000001"
+                },
+                "schema": {
+                  "properties": {
+                    "deviceId": {
+                      "type": "string"
+                    },
+                    "endedAt": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "focus": {
+                      "properties": {
+                        "mode": {
+                          "type": "string"
+                        },
+                        "plannedEndAt": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "session": {
+                          "type": "number"
+                        }
+                      },
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "minutes": {
+                      "type": "number"
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "projectId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "startedAt": {
+                      "type": "number"
+                    },
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "taskTitle": {
+                      "type": "string"
+                    },
+                    "userId": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -39349,94 +39468,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "example": {
-                  "deviceId": "00000000-0000-4000-8000-000000000001",
-                  "endedAt": 1794906000000,
-                  "focus": {
-                    "mode": "example",
-                    "plannedEndAt": 1794906000000,
-                    "session": 1
-                  },
-                  "id": "00000000-0000-4000-8000-000000000001",
-                  "minutes": 1,
-                  "note": "example",
-                  "projectId": "00000000-0000-4000-8000-000000000001",
-                  "projectName": "Ada",
-                  "startedAt": 1794906000000,
-                  "taskId": "00000000-0000-4000-8000-000000000001",
-                  "taskTitle": "Buy paint for the fence",
-                  "userId": "00000000-0000-4000-8000-000000000001"
-                },
-                "schema": {
-                  "properties": {
-                    "deviceId": {
-                      "type": "string"
-                    },
-                    "endedAt": {
-                      "type": [
-                        "number",
-                        "null"
-                      ]
-                    },
-                    "focus": {
-                      "properties": {
-                        "mode": {
-                          "type": "string"
-                        },
-                        "plannedEndAt": {
-                          "type": [
-                            "number",
-                            "null"
-                          ]
-                        },
-                        "session": {
-                          "type": "number"
-                        }
-                      },
-                      "type": [
-                        "object",
-                        "null"
-                      ]
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "minutes": {
-                      "type": "number"
-                    },
-                    "note": {
-                      "type": "string"
-                    },
-                    "projectId": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    },
-                    "projectName": {
-                      "type": "string"
-                    },
-                    "startedAt": {
-                      "type": "number"
-                    },
-                    "taskId": {
-                      "type": "string"
-                    },
-                    "taskTitle": {
-                      "type": "string"
-                    },
-                    "userId": {
-                      "type": "string"
-                    }
-                  },
-                  "type": "object"
-                }
-              }
-            },
-            "description": "OK"
+          "204": {
+            "description": "No content"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -39507,7 +39540,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -40055,7 +40088,7 @@
               }
             }
           },
-          "required": true
+          "required": false
         },
         "responses": {
           "200": {
@@ -40239,7 +40272,7 @@
               }
             }
           },
-          "required": true
+          "required": false
         },
         "responses": {
           "201": {
@@ -40790,7 +40823,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -41094,7 +41127,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
@@ -42316,7 +42349,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "201": {
@@ -42802,7 +42835,7 @@
               }
             }
           },
-          "required": false
+          "required": true
         },
         "responses": {
           "200": {
