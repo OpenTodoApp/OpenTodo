@@ -107,12 +107,6 @@ export async function dismissReminder(id: string, now = Date.now()): Promise<voi
   await mutate('reminder', id, { dismissed_at: now })
 }
 
-/** Live reminders of a task, earliest first (undated relative ones last). */
-export async function remindersOf(taskId: string): Promise<Reminder[]> {
-  const list = await db.reminders.where('task_id').equals(taskId).filter((r) => !r.deleted_at).toArray()
-  return sortReminders(list)
-}
-
 export function sortReminders(list: Reminder[]): Reminder[] {
   return [...list].sort((a, b) => (a.fire_at ?? Infinity) - (b.fire_at ?? Infinity) || a.created_at - b.created_at)
 }

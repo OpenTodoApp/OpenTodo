@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { projectFinishedBy, runAutoArchive, undoAutoArchive } from '../lib/archive'
+import { projectFinishedBy, runAutoArchive, unarchiveProject } from '../lib/archive'
 import { archiveProject } from '../lib/ops'
 import type { Project } from '../lib/types'
 import { useShortcutScope } from './shortcuts'
@@ -63,7 +63,7 @@ export function ArchivePrompt() {
       {archived.length > 0 && (
         <div role="status" className="flex items-center gap-2 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2">
           <span className="flex-1">{t('Archived {join}: no open tasks for 30 days.', { join: archived.map((p) => p.name).join(', ') })}</span>
-          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { const list = archived; setArchived([]); for (const p of list) void undoAutoArchive(p.id) }}>{t('Undo')}</button>
+          <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => { const list = archived; setArchived([]); for (const p of list) void unarchiveProject(p.id) }}>{t('Undo')}</button>
           <button className="ui-btn ui-btn--ghost ui-btn--sm px-2 py-0.5 text-meta" onClick={() => setArchived([])}>{t('Dismiss')}</button>
         </div>
       )}

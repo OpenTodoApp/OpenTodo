@@ -156,11 +156,6 @@ function projectSiblings(ctx: ProjectContext, parent: string | null): Project[] 
   return (parent === null ? ctx.tree.roots : ctx.tree.nodes.get(parent)?.children ?? []).map((n) => n.item)
 }
 
-/** Whether the signed-in user may move this project in the sidebar. */
-export async function canReorderProject(id: string): Promise<boolean> {
-  return canEditProject(roleOf(id, await membershipMap()))
-}
-
 /**
  * Drop a project at a place among the sidebar projects of `parent_id`. Re-parenting
  * follows `project-hierarchy` (never under itself, a descendant, or an archived or
@@ -195,14 +190,4 @@ export async function moveProjectBy(id: string, step: Step): Promise<boolean> {
   if (!plan) return false
   await mutateMany(toChanges('project', plan))
   return true
-}
-
-/**
- * Generic entry point named in the change's tasks: move a task or project to
- * `index` (or an anchor) in the list given by its container fields.
- */
-export async function moveItem(entity: 'task' | 'project', id: string, place: { container: { parent_id: string | null; section_id?: string | null }; index: Placement }): Promise<boolean> {
-  return entity === 'task'
-    ? moveTask(id, { ...place.container, at: place.index })
-    : moveProjectTo(id, { parent_id: place.container.parent_id, at: place.index })
 }

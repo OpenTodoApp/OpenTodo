@@ -54,8 +54,3 @@ export function inboxTasks<T extends InboxFields & { id: string }>(tasks: readon
   const parentOf = inboxParents(known)
   return tasks.filter((task) => isInboxTask(task, parentOf))
 }
-
-/** How many of `tasks` are in the Inbox: the sidebar's count. Parents are looked up in `known`. */
-export function countInbox(tasks: readonly (InboxFields & { id: string })[], known: readonly (InboxFields & { id: string })[] = tasks): number {
-  return inboxTasks(tasks, known).length
-}

@@ -36,8 +36,3 @@ export async function installPrompt(): Promise<void> {
 export function useInstallPrompt(): boolean {
   return deferred.use() !== null
 }
-
-/** Tests: pretend the browser offered a prompt. */
-export function setInstallPromptForTests(e: { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> } | null): void {
-  deferred.set(e as BeforeInstallPromptEvent | null)
-}

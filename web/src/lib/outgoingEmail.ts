@@ -10,7 +10,5 @@ export function setOutgoingEmail(on: boolean | undefined): void {
   store.set(on === true)
 }
 
-export const outgoingEmailEnabled = store.get
-
 /** True when the server reported outgoing email as configured. */
 export const useOutgoingEmail = store.use
