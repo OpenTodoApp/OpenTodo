@@ -107,8 +107,17 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 		return "", "", err
 	}
 	if st.found {
-		if st.scope == "" {
-			return "", ReasonForbidden, nil
+		if reason, done := r.existingAuthored(op, st.scope, st.author, map[string]string{"task_id": st.task, "author_id": st.author}); done {
+			if reason == "" && op.Field == "deleted_at" {
+				// A restore from the Trash counts against the author's quota again.
+				if over, err := r.restoreOverQuota(op, st); err != nil || over {
+					return "", ReasonQuotaExceeded, err
+				}
+			}
+			if reason != "" {
+				return "", reason, nil
+			}
+			return st.scope, "", nil
 		}
 		switch {
 		case op.Field == "uploaded_at":
@@ -124,23 +133,14 @@ func (r *resolver) resolveAttachment(op Op) (scope, reason string, err error) {
 					return "", ReasonForbidden, err
 				}
 			}
-		case op.Field == "deleted_at":
-			role := r.acc.roleIn(st.scope)
-			if st.author != r.acc.userID && role != RoleOwner && role != RoleAdmin {
-				return "", ReasonForbidden, nil
-			}
-			if over, err := r.restoreOverQuota(op, st); err != nil || over {
-				return "", ReasonQuotaExceeded, err
-			}
 		case op.Field == "name":
 			if st.author != r.acc.userID {
 				return "", ReasonForbidden, nil
 			}
 		case attachmentImmutable[op.Field]:
-			// Only a repeat of the stored value is harmless (task and author are the
-			// ones the lookup knows); anything else would rewrite a fixed field.
-			if !(op.Field == "task_id" && idValue(op.Value) == st.task) && !(op.Field == "author_id" && idValue(op.Value) == st.author) &&
-				!(op.Field == "note_id" && st.task == "" && idValue(op.Value) != "" && r.storedAttachmentNote(st.scope, op.EntityID) == idValue(op.Value)) {
+			// Fixed at creation (task and author were checked above): only a repeat of a
+			// standalone note's own note_id is harmless.
+			if !(op.Field == "note_id" && st.task == "" && idValue(op.Value) != "" && r.storedAttachmentNote(st.scope, op.EntityID) == idValue(op.Value)) {
 				return "", ReasonForbidden, nil
 			}
 		}
