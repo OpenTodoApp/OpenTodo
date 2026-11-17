@@ -34,6 +34,12 @@
             "value": "%lld hoje"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün %lld"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -79,6 +85,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld hoje · %lld atrasadas"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün %lld · %lld gecikmiş"
           }
         },
         "zh": {
@@ -128,6 +140,12 @@
             "value": "Cancelar"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -173,6 +191,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mudar de servidor?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucu değiştirilsin mi?"
           }
         },
         "zh": {
@@ -222,6 +246,12 @@
             "value": "As alterações que ainda não chegaram ao servidor perdem-se. As suas tarefas ficam no servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuya ulaşmayan değişiklikler kaybolur. Görevleriniz sunucuda kalır."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -269,6 +299,12 @@
             "value": "Conectar"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlan"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -314,6 +350,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dispensar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
           }
         },
         "zh": {
@@ -374,6 +416,12 @@
             "state": "translated",
             "value": "Voltooid"
           }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlandı"
+          }
         }
       }
     },
@@ -408,6 +456,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bloqueado. Abra o OpenTodo para ver as suas tarefas."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilitli. Görevlerinizi görmek için OpenTodo’yu açın."
           }
         },
         "zh": {
@@ -457,6 +511,12 @@
             "value": "Sem resposta nesse endereço. Verifique o endereço e a ligação."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adresten yanıt alınamadı. Adresi ve bağlantınızı kontrol edin."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -502,6 +562,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sem ligação ao seu servidor."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucunuza bağlantı yok."
           }
         },
         "zh": {
@@ -551,6 +617,12 @@
             "value": "Não resta nada para hoje."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün için başka görev kalmadı."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -596,6 +668,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abra o OpenTodo para preencher este widget."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu widget’ı doldurmak için OpenTodo’yu açın."
           }
         },
         "zh": {
@@ -645,6 +723,12 @@
             "value": "Lembrete do OpenTodo"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo hatırlatıcısı"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -690,6 +774,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "O OpenTodo corre no seu próprio servidor. Introduza o endereço que usa no navegador."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenTodo kendi sunucunuzda çalışır. Tarayıcıda kullandığınız adresi girin."
           }
         },
         "zh": {
@@ -739,6 +829,12 @@
             "value": "Remover o servidor e os seus dados"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuyu ve verilerini kaldır"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -784,6 +880,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Endereço do servidor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucu adresi"
           }
         },
         "zh": {
@@ -833,6 +935,12 @@
             "value": "Adiar 10 min"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 dk ertele"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -878,6 +986,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tarefa"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev"
           }
         },
         "zh": {
@@ -927,6 +1041,12 @@
             "value": "Esse endereço não responde como um servidor OpenTodo."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu adres bir OpenTodo sunucusu gibi yanıt vermiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -972,6 +1092,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esse endereço não serve."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kullanılabilir bir adres değil."
           }
         },
         "zh": {
@@ -1021,6 +1147,12 @@
             "value": "O certificado desse servidor não é de confiança."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucunun sertifikasına güvenilmiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1066,6 +1198,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Não foi possível carregar a app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama yüklenemedi."
           }
         },
         "zh": {
@@ -1115,6 +1253,12 @@
             "value": "Este dispositivo não confia no certificado desse servidor."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu cihaz sunucunun sertifikasına güvenmiyor."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1160,6 +1304,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Esta conexão não é criptografada."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bağlantı şifreli değil."
           }
         },
         "zh": {
@@ -1209,6 +1359,12 @@
             "value": "É assim que um lembrete aparece."
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcılar bu şekilde görünür."
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1254,6 +1410,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Este servidor tem de ser alcançado por https."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sunucuya https üzerinden erişilmelidir."
           }
         },
         "zh": {
@@ -1303,6 +1465,12 @@
             "value": "Hoje"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1348,6 +1516,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tarefas de hoje e atrasadas do seu próprio servidor."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendi sunucunuzdan bugünkü ve gecikmiş görevler."
           }
         },
         "zh": {
@@ -1397,6 +1571,12 @@
             "value": "Tentar de novo"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1444,6 +1624,12 @@
             "value": "Atualizado %@"
           }
         },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncellendi: %@"
+          }
+        },
         "zh": {
           "stringUnit": {
             "state": "translated",
@@ -1489,6 +1675,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usar %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kullan"
           }
         },
         "zh": {

@@ -63,7 +63,7 @@ type RoutineVars struct {
 }
 
 // Languages are the supported message languages, English first.
-var Languages = []string{"en", "de", "fr", "es", "it", "pt", "zh", "nl"}
+var Languages = []string{"en", "de", "fr", "es", "it", "pt", "zh", "nl", "tr"}
 
 // Vars are the only values a template sees: the server origin, the link and its
 // expiry, the recipient address, the inviter's display name and a project
@@ -171,6 +171,7 @@ var units = map[string][2][2]string{ // lang → {hours {one, many}, days {one, 
 	"pt": {{"hora", "horas"}, {"dia", "dias"}},
 	"zh": {{"小时", "小时"}, {"天", "天"}},
 	"nl": {{"uur", "uren"}, {"dag", "dagen"}},
+	"tr": {{"saat", "saat"}, {"gün", "gün"}},
 }
 
 // formatExpiry writes a duration in hours up to two days and in whole days beyond.
@@ -202,10 +203,11 @@ var roleNames = map[string]map[string]string{
 	"pt": {"admin": "administrador", "editor": "editor", "viewer": "leitor", "member": "membro"},
 	"zh": {"admin": "管理员", "editor": "编辑者", "viewer": "查看者", "member": "成员"},
 	"nl": {"admin": "beheerder", "editor": "bewerker", "viewer": "lezer", "member": "lid"},
+	"tr": {"admin": "yönetici", "editor": "düzenleyici", "viewer": "izleyici", "member": "üye"},
 }
 
 // someone stands in for an inviter without a display name (the address is never shown).
-var someone = map[string]string{"en": "Someone", "de": "Jemand", "fr": "Quelqu'un", "es": "Alguien", "it": "Qualcuno", "pt": "Alguém", "zh": "有人", "nl": "Iemand"}
+var someone = map[string]string{"en": "Someone", "de": "Jemand", "fr": "Quelqu'un", "es": "Alguien", "it": "Qualcuno", "pt": "Alguém", "zh": "有人", "nl": "Iemand", "tr": "Birisi"}
 
 // langTag is the shipped language of one Accept-Language tag. Simplified Chinese
 // (zh, zh-Hans, zh-CN, zh-SG) is zh. Traditional Chinese and any other zh tag
