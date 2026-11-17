@@ -245,6 +245,8 @@ var demoRules = []demoRule{
 	{"AI assistants (MCP)", false, prefix("/oauth")},
 	{"AI assistants (MCP)", false, exact("/api/v1/me/mcp-consent")},
 	{"AI assistants (MCP)", true, exact("/api/v1/me/agent-access")},
+	// Disconnecting a connected AI app (connected-apps-list); the list stays readable.
+	{"AI assistants (MCP)", true, prefix("/api/v1/me/oauth-grants")},
 	// Keeping a project away from assistants (agent-planning-fields D9).
 	{"AI assistants (MCP)", true, projectAgentAccessPath},
 	// The device relay serves encrypted accounts' MCP calls (mcp-device-relay):

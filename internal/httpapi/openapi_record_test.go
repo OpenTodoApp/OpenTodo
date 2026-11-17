@@ -220,6 +220,10 @@ func recordMore(x *exampleRecorder, note string) {
 	x.call("POST /api/v1/tasks/{id}/occurrences/{date}/complete", occ+"2026-11-20/complete", nil, 200)
 	study := x.create(map[string]any{"title": "Study", "recurrence": "every weekday", "due": map[string]any{"date": "2026-11-23", "time": "18:00"}})
 	x.call("POST /api/v1/tasks/{id}/split", "/api/v1/tasks/"+study+"/split", map[string]any{"from": "2026-11-25", "changes": map[string]any{"title": "Study with Ada"}}, 200)
+	// A connected AI app (connected-apps-list).
+	x.e.enableMCP(true)
+	x.e.connectOAuth(x.e.createOAuthClient("Gemini", "agent"))
+	x.call("GET /api/v1/me/oauth-grants", "/api/v1/me/oauth-grants", nil, 200)
 }
 
 // create makes a task without recording the call and returns its id.

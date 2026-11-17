@@ -34,6 +34,10 @@ Each of them sees every [workspace](workspaces.md) you belong to and can be told
 
 Every option is off until someone says yes, can reach only tasks (with their [custom field](custom-fields.md) values and [tracked time](time-tracking.md), which an assistant over MCP or `ot` can log and time but never delete or rewrite when you tracked it), projects, labels, comments and your reminders, records every change in history where you can undo it, has limits on how much it may change, treats text in tasks as data rather than instructions, and respects end-to-end encryption. The details are in [What AI assistants can and can't do](ai-limits.md).
 
+## See and disconnect connected apps
+
+Apps you connected by signing in, such as Gemini, ChatGPT or Claude, are listed in **Settings → Account → Security → Session**, next to your signed-in OpenTodo apps, with when you connected each, when it was last used, whether it can make changes and which workspaces it can reach. **Disconnect** ends its access at once; connect it again to use it.
+
 ## Privacy
 
 No option sends anything unless it's turned on. When it is, only the assistant you chose receives your task content, and only while you're using it. OpenTodo itself has no telemetry. Conversations with the assistant in the app are kept on your device, not on the server.

@@ -167,6 +167,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Device relay for encrypted accounts' MCP calls (OpenSpec `mcp-device-relay`).
 	s.registerRelayRoutes(mux)
 	s.registerAppSignInRoutes(mux)
+	s.registerConnectedAppsRoutes(mux)
 	// In-app assistant (OpenSpec `in-app-assistant`): settings, consent, usage
 	// and the turn route over the same tool registry.
 	s.registerAssistantRoutes(mux)

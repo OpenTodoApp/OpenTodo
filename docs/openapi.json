@@ -15638,6 +15638,123 @@
         "x-opentodo-policy": "signed-in.full-tokens"
       }
     },
+    "/api/v1/me/oauth-grants": {
+      "get": {
+        "description": "`{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#integrations"
+        },
+        "operationId": "getMeOauthGrants",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "grants": [
+                    {
+                      "clientId": "00000000-0000-4000-8000-000000000019",
+                      "clientName": "Gemini",
+                      "createdAt": 1794906000154,
+                      "id": "00000000-0000-4000-8000-000000000020",
+                      "lastUsedAt": 1794906000157,
+                      "scope": "agent",
+                      "workspaces": []
+                    }
+                  ]
+                },
+                "schema": {
+                  "properties": {
+                    "grants": {
+                      "items": {
+                        "properties": {
+                          "clientId": {
+                            "type": "string"
+                          },
+                          "clientName": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "lastUsedAt": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "scope": {
+                            "type": "string"
+                          },
+                          "workspaces": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "List me oauth grants",
+        "tags": [
+          "Integrations"
+        ],
+        "x-opentodo-policy": "signed-in"
+      }
+    },
+    "/api/v1/me/oauth-grants/{id}": {
+      "delete": {
+        "description": "204: disconnects that app; its refresh token gets `invalid_grant` and its access token 401; another person's, a revoked or an unknown id → 404 `not_found`; demo instances → 403 `demo_restricted`; recorded as `mcp_oauth.disconnected`",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#integrations"
+        },
+        "operationId": "deleteMeOauthGrantsById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete a me oauth grant",
+        "tags": [
+          "Integrations"
+        ],
+        "x-opentodo-policy": "signed-in"
+      }
+    },
     "/api/v1/me/password": {
       "post": {
         "description": "`{currentPassword, newPassword}` → 204; signs out your other sessions\n\nNeeds a session or an admin token; full tokens are refused. Needs a recently confirmed session or second factor.",
@@ -39857,7 +39974,7 @@
     },
     "/api/v1/tokens/{id}": {
       "delete": {
-        "description": "204",
+        "description": "204; deleting a connected AI app's access token also disconnects the app (its refresh token stops working, recorded as `mcp_oauth.disconnected`)",
         "externalDocs": {
           "url": "https://open-todo.app/docs/api/#your-account-and-credentials"
         },

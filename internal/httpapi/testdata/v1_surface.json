@@ -3851,6 +3851,9 @@
     "DELETE /api/v1/me/identities/{id}": {
       "policy": "signed-in.credential"
     },
+    "DELETE /api/v1/me/oauth-grants/{id}": {
+      "policy": "signed-in"
+    },
     "DELETE /api/v1/me/rules/proposals/{id}": {
       "policy": "signed-in.full-tokens"
     },
@@ -5211,6 +5214,22 @@
       "policy": "signed-in.full-tokens",
       "response": {
         "invitations": "array"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/me/oauth-grants": {
+      "policy": "signed-in",
+      "response": {
+        "grants": "array",
+        "grants[].clientId": "string",
+        "grants[].clientName": "string",
+        "grants[].createdAt": "number",
+        "grants[].id": "string",
+        "grants[].lastUsedAt": "number|null",
+        "grants[].scope": "string",
+        "grants[].workspaces": "array"
       },
       "statuses": [
         "200"

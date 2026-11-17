@@ -915,6 +915,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
@@ -2871,6 +2872,7 @@
   ],
   "Can make changes": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx"
   ],
   "Can tick items": [
@@ -5240,6 +5242,12 @@
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "Disconnect": [
+    "web/src/app/ConnectedApps.tsx"
+  ],
+  "Disconnect {name}?": [
+    "web/src/app/ConnectedApps.tsx"
   ],
   "Dismiss": [
     "web/public/push-sw.js",
@@ -8624,6 +8632,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "It can no longer reach your tasks. Connect it again to use it.": [
+    "web/src/app/ConnectedApps.tsx"
   ],
   "It disappears from your devices.": [
     "web/src/app/ShareDialog.tsx"
@@ -14184,6 +14195,7 @@
   ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/TokensSection.tsx"
   ],
