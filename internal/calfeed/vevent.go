@@ -1,8 +1,10 @@
 package calfeed
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -10,16 +12,24 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
 )
 
-// Limits of one subscription (design D3, D4).
+// Limits of one subscription (design D3, D4; OpenSpec change
+// calendar-feed-large-calendars). A calendar is read as it arrives and only
+// the events that can reach the stored window are kept, so the download limit
+// bounds time, not memory: memory holds the event being read and the kept ones.
 const (
-	MaxFeedBytes    = 2 << 20 // a fetched calendar
-	MaxFeedProps    = 200_000 // content lines in it
-	MaxOccurrences  = 5000    // stored occurrences per subscription
-	DefaultDuration = 0       // a timed event without DTEND or DURATION is a point in time
+	MaxFeedBytes    = 32 << 20 // a fetched calendar, as downloaded
+	MaxKeptBytes    = 4 << 20  // the events kept from it (eventBytes)
+	MaxPartBytes    = 1 << 20  // one event (or other component) of it
+	MaxPartLines    = 5000     // content lines in one event
+	MaxOccurrences  = 5000     // stored occurrences per subscription
+	DefaultDuration = 0        // a timed event without DTEND or DURATION is a point in time
 )
 
 // ErrInvalid is a body that is not an iCalendar object (an HTML login page, a 404 page).
 var ErrInvalid = caldav.ErrInvalid
+
+// ErrTooLarge is a calendar over MaxFeedBytes.
+var ErrTooLarge = caldav.ErrTooLarge
 
 // Point is one end of an event: a time in a zone, a floating wall time, or a date.
 type Point struct {
@@ -58,28 +68,68 @@ type Calendar struct {
 	Refresh  time.Duration // REFRESH-INTERVAL or X-PUBLISHED-TTL, 0 when absent
 	Events   []Event
 	Warnings []string
+	loc      *time.Location // the default zone of floating times, from Zone
 }
 
-// ParseCalendar reads a published calendar. Events with a start that does not
-// parse are left out with a warning; a body that is not iCalendar is ErrInvalid.
+// ParseCalendar reads a published calendar held in memory, keeping every
+// event. Events with a start that does not parse are left out with a warning;
+// a body that is not iCalendar is ErrInvalid.
 func ParseCalendar(data []byte) (*Calendar, error) {
-	root, err := caldav.ParseWithLimits(data, caldav.Limits{Bytes: MaxFeedBytes, Props: MaxFeedProps})
+	return ReadCalendar(bytes.NewReader(data), nil)
+}
+
+// ReadCalendar reads a published calendar from r as it arrives and keeps the
+// events keep accepts (every one when keep is nil); kept events past
+// MaxKeptBytes are left out with a warning. Calendar properties apply to the
+// events after them (RFC 5545 puts them first). More than MaxFeedBytes is
+// ErrTooLarge, a body that is not iCalendar ErrInvalid, and a read error is
+// returned as it is.
+func ReadCalendar(r io.Reader, keep func(Event) bool) (*Calendar, error) {
+	cal := &Calendar{}
+	w := warnings{}
+	read, kept, full := 0, 0, false
+	lim := caldav.StreamLimits{Bytes: MaxFeedBytes, PartLines: MaxPartLines, PartBytes: MaxPartBytes}
+	root, err := caldav.Stream(r, lim, func(root, c *caldav.Component) error {
+		if c.Name != "VEVENT" {
+			return nil
+		}
+		if read < len(root.Props) {
+			readHeader(cal, root.Props[read:])
+			read = len(root.Props)
+		}
+		ev, err := parseEvent(c, cal.loc, w)
+		switch {
+		case err != nil:
+			w.add("an event without a readable start was left out")
+		case keep != nil && !keep(ev):
+		case kept+eventBytes(ev) > MaxKeptBytes:
+			full = true
+		default:
+			kept += eventBytes(ev)
+			cal.Events = append(cal.Events, ev)
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if root.Name != "VCALENDAR" {
-		return nil, fmt.Errorf("%w: not a VCALENDAR", ErrInvalid)
+	readHeader(cal, root.Props[read:])
+	if full {
+		w.add(fmt.Sprintf("this calendar has more than %d MB of events near the shown period; some are left out", MaxKeptBytes>>20))
 	}
-	cal := &Calendar{}
-	w := warnings{}
-	var defaultLoc *time.Location
-	for _, p := range root.Props {
+	cal.Warnings = w.list()
+	return cal, nil
+}
+
+// readHeader applies calendar properties: name, default zone, refresh hint.
+func readHeader(cal *Calendar, props []caldav.Prop) {
+	for _, p := range props {
 		switch p.Name {
 		case "X-WR-CALNAME":
 			cal.Name = strings.TrimSpace(caldav.UnescapeText(p.Value))
 		case "X-WR-TIMEZONE":
 			if loc, ok := Resolve(p.Value); ok {
-				cal.Zone, defaultLoc = loc.String(), loc
+				cal.Zone, cal.loc = loc.String(), loc
 			}
 		case "REFRESH-INTERVAL", "X-PUBLISHED-TTL":
 			if d, _, err := parseDuration(p.Value); err == nil && d > 0 && (cal.Refresh == 0 || p.Name == "REFRESH-INTERVAL") {
@@ -87,19 +137,11 @@ func ParseCalendar(data []byte) (*Calendar, error) {
 			}
 		}
 	}
-	for _, c := range root.Children {
-		if c.Name != "VEVENT" {
-			continue
-		}
-		ev, err := parseEvent(c, defaultLoc, w)
-		if err != nil {
-			w.add("an event without a readable start was left out")
-			continue
-		}
-		cal.Events = append(cal.Events, ev)
-	}
-	cal.Warnings = w.list()
-	return cal, nil
+}
+
+// eventBytes estimates the memory an event holds: its text and its dates.
+func eventBytes(ev Event) int {
+	return 256 + len(ev.UID) + len(ev.RecurrenceID) + len(ev.Summary) + len(ev.Location) + len(ev.RRule) + 48*(len(ev.RDates)+len(ev.ExDates))
 }
 
 func parseEvent(c *caldav.Component, defaultLoc *time.Location, w warnings) (Event, error) {

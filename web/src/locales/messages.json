@@ -9007,6 +9007,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Labels: {names}": [
+    "web/src/app/OneLineLabels.tsx",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/ui/Chips.tsx"
   ],
@@ -23960,6 +23961,9 @@
   ],
   "the assistant is not set up for you on this server": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": [
+    "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "the changed notes": [
     "web/src/lib/rules/sentence.ts"
