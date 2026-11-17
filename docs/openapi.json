@@ -13119,7 +13119,7 @@
           "required": false
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -13134,7 +13134,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -19807,7 +19807,7 @@
           "required": false
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -19851,7 +19851,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -20158,7 +20158,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -20186,7 +20186,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -23642,7 +23642,7 @@
           "required": false
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -23674,7 +23674,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -27612,7 +27612,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -27631,7 +27631,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -31315,7 +31315,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -31334,7 +31334,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -36375,7 +36375,7 @@
           "required": false
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -36437,7 +36437,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -37352,7 +37352,7 @@
           "description": "The body's fields are not described yet; the example shows one."
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "example": {
@@ -37377,7 +37377,7 @@
                 }
               }
             },
-            "description": "OK"
+            "description": "Created"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
