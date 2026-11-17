@@ -16,8 +16,9 @@ order: 4
 | Target | What it checks |
 | --- | --- |
 | `make lint` | `go vet` and the web type check |
-| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests |
-| `make staticcheck` | Go static analysis |
+| `make web-lint` | ESLint: Rules of Hooks, effect dependencies, functions over 250 lines, no fixed waits in tests; then knip (`npm run knip`, config `web/knip.json`): no unused files, dependencies or duplicate exports, and no more unused exports than the count in `web/scripts/knip.mjs` |
+| `make staticcheck` | Go static analysis, after `make deadcode` |
+| `make deadcode` | no Go function unreachable from the commands and tests (`deadcode -test`) |
 | `make test` | `go test ./...`, the web tests (vitest), the extension and the Obsidian plugin |
 | `make fmt-check` | `gofmt` |
 | `make ui-lint` | design-system rules: tokens, `<Icon>`, no untranslated English in JSX |
@@ -26,7 +27,7 @@ order: 4
 | `make templates-check` | project templates |
 | `make openspec-validate` | every spec and change, strict |
 | `make deploy-check` | the platform templates under `deploy/` |
-| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/` |
+| `make repo-check` | repository rules: the migration matrix, shared contracts, budgets, the make targets these pages name, the changelog fragments in `changelog.d/`, no open OpenSpec change with every task ticked (stale changes are listed as warnings) |
 
 The Go tests that import the embedded web app need it built once: `make web`.
 

@@ -17,5 +17,5 @@ export function accentName(label: string): string {
   return t(label)
 }
 
-/** Accent labels for extraction (ui/tokens/accents.ts keeps the English labels). */
+/** Accent labels for extraction (ui/tokens/accents.ts keeps the English labels); only the extractor reads them. @public */
 export const ACCENT_LABELS = [msg('Emerald'), msg('Blue'), msg('Indigo'), msg('Violet'), msg('Rose'), msg('Orange'), msg('Teal'), msg('Graphite')]
