@@ -4,6 +4,7 @@
 // tells us to run the exchange now).
 import { forgetActivity, markLongPull, withDeferredActivity } from './activity'
 import { api, ApiError } from './api'
+import { writesOwnRow } from './authored'
 import { isTransientNetworkError, RequestTimeoutError } from './http'
 import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
@@ -576,13 +577,9 @@ export async function reseedAfterRestore(generation: string): Promise<number> {
     for (const entity of ENTITIES) {
       const rows = await tableOf(entity).toArray()
       for (const row of rows) {
-        // Only the author may write a comment (comments-and-activity): other
-        // members' comments come back from their own devices.
-        if (entity === 'comment' && row.author_id !== me) continue
-        // The same for attachments (attachments D1).
-        if (entity === 'attachment' && row.author_id !== me) continue
-        // And for time entries (time-tracking D11): only the author's are re-sent.
-        if (entity === 'time_entry' && row.user_id !== me) continue
+        // Only the author writes a comment, attachment or time entry: other members'
+        // come back from their own devices.
+        if (!writesOwnRow(entity, row, me)) continue
         const clock = (row._clock ?? {}) as Clock
         // A value this device could not decrypt goes back as its envelope, never
         // as the placeholder (OpenSpec e2ee).
