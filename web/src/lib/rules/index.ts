@@ -69,9 +69,6 @@ export function knownRule(rule: unknown): OnDropRule | null {
   return Object.keys(out).length ? out : null
 }
 
-/** Whether a view has a rule a drop can apply (its panel is a drop target). */
-export const hasRule = (view: { on_drop?: unknown }): boolean => knownRule(view.on_drop) !== null
-
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 
 /** Patches without the fields a row already has: a change the task already has is not written. */

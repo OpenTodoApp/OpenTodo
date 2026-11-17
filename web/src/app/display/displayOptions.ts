@@ -24,9 +24,6 @@ export type DisplayTarget =
 
 export const DEFAULT_DISPLAY_OPTIONS: DisplayOptions = { size: 'l', contrast: 'normal', motion: 'normal', seconds: true }
 
-/** The type scale factor per size (design D4): body text (15 px) lands at about 20, 24 and 32 px. */
-export const DISPLAY_SCALE: Record<DisplaySize, number> = { m: 1.35, l: 1.6, xl: 2.15 }
-
 /** Default number of day columns per target. */
 export function defaultDays(target: DisplayTarget): number {
   return target.kind === 'upcoming' ? 7 : 3

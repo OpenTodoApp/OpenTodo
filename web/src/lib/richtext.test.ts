@@ -57,6 +57,14 @@ describe('Markdown projection', () => {
     expect(parseMarkdown(md)).toEqual([p('# not a heading'), p('- not a list'), p('2. not ordered'), p('5*3 = 15, [x] snake_case _x_ a~~b `c`')])
   })
 
+  it('reads a heading as CommonMark does: closing #s only after a space, and a bare # is empty', () => {
+    const h = (level: number, text: string): RNode => ({ type: 'heading', attrs: { level }, runs: text ? [{ text, marks: {} }] : [] })
+    expect(parseMarkdown('# C#')).toEqual([h(1, 'C#')])
+    expect(parseMarkdown('# C #')).toEqual([h(1, 'C')])
+    expect(parseMarkdown('## a ###')).toEqual([h(2, 'a')])
+    expect(parseMarkdown('#')).toEqual([h(1, '')])
+  })
+
   it('parse(render(doc)) is stable', () => {
     const samples = [
       '# Title\n\nSome **bold**, *em*, _em_, ~~gone~~, `code`, [link](https://x.y/z).\n\n- a\n- b\n  1. nested\n  2. more\n- [ ] open\n- [x] closed',

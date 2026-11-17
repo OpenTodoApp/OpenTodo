@@ -51,7 +51,6 @@ const enabled = createStoredValue<boolean>(BADGE_KEY, {
   serialize: (on) => (on ? null : 'off'),
 }, { crossTab: true, server: true })
 
-export const isBadgeEnabled = enabled.get
 export const useBadgeEnabled = enabled.use
 
 /** Turns the badge on or off for this device; off clears it at once. */

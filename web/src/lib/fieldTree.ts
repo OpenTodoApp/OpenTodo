@@ -2,14 +2,14 @@
 // its ancestors' live definitions, farthest first, then its own. Pure, so the
 // filter engine, the panel and the definition checks share one rule; the Go port
 // is internal/sync ApplicableFields, pinned by fields.vectors.json.
-import { byPosition } from './ordering'
+import { compareByPosition } from './ordering'
 import { descendants } from './tree'
 import type { FieldDef, Project } from './types'
 
 /** Live definitions of a project, in position order. Inbox (null) has none. */
 export function liveFields(projectId: string | null | undefined, defs: readonly FieldDef[]): FieldDef[] {
   if (!projectId) return []
-  return defs.filter((d) => d.project_id === projectId && !d.deleted_at).sort(byPosition)
+  return defs.filter((d) => d.project_id === projectId && !d.deleted_at).sort(compareByPosition)
 }
 
 /** The part of a project the inheritance rule reads. */

@@ -7,6 +7,16 @@ export const MAX_TEXT = 16 * 1024
 export const MAX_TITLE = 500
 
 /**
+ * `s` cut to at most `max` UTF-16 units without splitting a surrogate pair, as
+ * web/src/lib/share.ts cuts a shared title and text.
+ */
+export function cut(s, max) {
+  if (s.length <= max) return s
+  const code = s.charCodeAt(max - 1)
+  return s.slice(0, code >= 0xd800 && code <= 0xdbff ? max - 1 : max)
+}
+
+/**
  * The server's origin from what the user typed, or null when it is not an http(s)
  * URL. A bare host gets https://. Paths, queries and fragments are dropped.
  */
@@ -44,8 +54,8 @@ export function buildShareUrl(server, page, files) {
   const origin = normalizeServer(server)
   if (!origin) throw new Error('invalid server URL')
   const q = new URLSearchParams()
-  const title = String(page?.title ?? '').slice(0, MAX_TITLE)
-  const text = String(page?.text ?? '').slice(0, MAX_TEXT)
+  const title = cut(String(page?.title ?? ''), MAX_TITLE)
+  const text = cut(String(page?.text ?? ''), MAX_TEXT)
   if (title) q.set('title', title)
   if (text) q.set('text', text)
   if (page?.url && isWebUrl(page.url)) q.set('url', page.url)

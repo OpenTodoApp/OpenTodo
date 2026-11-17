@@ -85,7 +85,7 @@ function isTableStart(lines: string[], i: number): boolean {
 
 function startsBlock(lines: string[], i: number): boolean {
   const l = lines[i]
-  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}\s/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
+  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}(?:[ \t]|$)/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
 }
 
 export function parseMarkdown(src: string, depth = 0, opts: MarkdownOptions = {}): Block[] {
@@ -114,9 +114,11 @@ export function parseMarkdown(src: string, depth = 0, opts: MarkdownOptions = {}
       out.push({ t: 'quote', c: parseMarkdown(body.join('\n'), depth + 1, opts) })
       continue
     }
-    const heading = /^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line)
+    const heading = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/.exec(line)
     if (heading) {
-      out.push({ t: 'h', level: heading[1].length, c: inline(heading[2]) })
+      // The closing #s are a sequence only after a space: `# C#` keeps its #, as CommonMark reads it.
+      const text = (heading[2] ?? '').replace(/[ \t]+#+[ \t]*$/, '')
+      out.push({ t: 'h', level: heading[1].length, c: inline(text) })
       i++
       continue
     }

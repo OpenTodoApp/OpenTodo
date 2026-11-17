@@ -90,9 +90,3 @@ export function useViewData(): ViewData {
   const ctx = useMemo(() => ({ today, labels, projects, tasks, sections, fields, ...tracked, ...directory, ...ws, score: scoreOf(urgency) }), [today, labels, projects, tasks, sections, fields, tracked, directory, ws, zone, urgency])
   return { views, projects, labels, tasks, ctx, urgency }
 }
-
-/** True when a keyboard event comes from a text field (shortcuts must not fire). */
-export function isTyping(e: KeyboardEvent): boolean {
-  const target = e.target as HTMLElement | null
-  return !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)
-}

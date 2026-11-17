@@ -45,6 +45,12 @@ test('long titles and texts are cut', () => {
   assert.equal(c.text.length, MAX_TEXT)
 })
 
+test('a long title or selection is cut without splitting a character', () => {
+  const c = captureFromTab({ title: 't'.repeat(MAX_TITLE - 1) + '😀', url: tab.url }, 's'.repeat(MAX_TEXT - 1) + '😀')
+  assert.equal(c.title, 't'.repeat(MAX_TITLE - 1))
+  assert.equal(c.text, 's'.repeat(MAX_TEXT - 1))
+})
+
 test('descriptionOf joins the parts with blank lines', () => {
   assert.equal(descriptionOf({ text: ' sel ', url: 'https://a.example' }), 'sel\n\nhttps://a.example')
   assert.equal(descriptionOf({ url: 'https://a.example' }), 'https://a.example')

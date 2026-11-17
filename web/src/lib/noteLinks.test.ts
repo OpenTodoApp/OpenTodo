@@ -95,6 +95,11 @@ describe('link index', () => {
     expect(snippetAround(text, 'note', 'n', 'Holiday')).toEqual({ before: 'book ferry for ', link: 'Holiday', after: ' on Friday' })
   })
 
+  it('a snippet is cut from the right place when the note uses CRLF line endings', () => {
+    const text = 'Intro\r\nsee [Trip](?note=n) on Friday\r\nlast'
+    expect(snippetAround(text, 'note', 'n', 'Holiday')).toEqual({ before: 'see ', link: 'Holiday', after: ' on Friday' })
+  })
+
   it('follows changes incrementally and agrees with a full build (randomized)', () => {
     let seed = 7
     const rand = (n: number) => {

@@ -1379,7 +1379,7 @@ The server records security-relevant events in its own database (never synced to
 | `task_page.published` | success | actor = publisher | `task_page_id`, `link_rights` (`view`, `reply` or `tick`); never the secret, the label or a share key |
 | `task_page.revoked` | success | actor = publisher, or owner or admin of the project (also when a page is replaced by a new one) | `task_page_id` |
 | `password.changed` | success | actor = user | |
-| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`: what "Sign out everywhere" ended |
+| `sessions.revoked` | success | actor = user | `session_count`, `device_count`, `token_count`, `app_password_count`, `oauth_grant_count`: what "Sign out everywhere" ended |
 | `owner.transferred` | success | actor = previous owner, target = new owner | `from` (`owner`), `to` (`admin`): the previous owner's role change |
 | `backup.created` | success or failure | actor = owner for "Back up now", none for scheduled runs | `backup_id` (the run id), `reason` (`run_failed`) on failure |
 | `backup.restored` | success | none after `opentodo restore`; the owner who confirmed a web restore | `backup_id` (the archive file name), recorded on the first start after the restore |

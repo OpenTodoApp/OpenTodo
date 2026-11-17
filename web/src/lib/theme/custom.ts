@@ -14,7 +14,7 @@ import { USER_PREFS_ID } from '../userPrefs'
 import { applyBatch } from '../undo'
 import type { AssistantUndo } from '../db'
 import { choiceField, customChoice, type KnownCustomTheme, type Side } from './choice'
-import { MAX_THEME_BYTES, THEME_FORMAT, validateTheme, type ThemeDocument, type ThemeKind } from './format'
+import { MAX_THEME_BYTES, THEME_FORMAT, validateTheme, type ThemeDocument } from './format'
 
 /** The most live custom themes a user keeps (design D2). */
 export const MAX_CUSTOM_THEMES = 20
@@ -155,6 +155,3 @@ export function newDocument(base: ThemeDocument, author: string, name: string, i
 export function duplicateDocument(doc: ThemeDocument, taken: readonly string[], id = newThemeId()): ThemeDocument {
   return { ...structuredClone(doc), id, name: uniqueName(doc.name, taken) }
 }
-
-/** The kind of the other side. */
-export const otherKind = (k: ThemeKind): ThemeKind => (k === 'light' ? 'dark' : 'light')

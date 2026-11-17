@@ -11,7 +11,7 @@ import { assignedToSomeoneElse, groupToday, groupUpcoming, projectOpenList, toda
 import { appendTo, groupBy } from './collections'
 import { t } from './i18n'
 import { logbookHeading, type LogbookGroup } from './logbook'
-import { byPosition, compareByPosition, compareDueThenPriority } from './ordering'
+import { compareByPosition, compareDueThenPriority } from './ordering'
 import { effectiveSection, groupBySection } from './sections'
 import { breadcrumbOf, buildTaskTree } from './subtasks'
 import { effectiveParents, flattenTree, type Tree, type TreeNode } from './tree'
@@ -183,9 +183,9 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
       return upcomingToday ? upcomingWithToday(all, today) : upcomingList(all, today)
     // Someday and Anytime (someday-and-evening D5), grouped by project in listGroups.
     case 'someday':
-      return all.filter((task) => !task.completed_at && isSomeday(task)).sort(byPosition)
+      return all.filter((task) => !task.completed_at && isSomeday(task)).sort(compareByPosition)
     case 'anytime':
-      return all.filter((task) => inAnytime(task, today)).sort(byPosition)
+      return all.filter((task) => inAnytime(task, today)).sort(compareByPosition)
     case 'completed':
       // The logbook pages through every completion (completed-date-filters D4);
       // a habit's skipped occurrence record is not a completion (habits D6).
@@ -193,10 +193,10 @@ export function tasksForView(scope: ListScope, allTasks: readonly Task[], projec
     case 'project':
       return projectOpenList(all, scope.id)
     case 'label':
-      return all.filter((task) => !task.completed_at && task.labels.includes(scope.id)).sort(byPosition)
+      return all.filter((task) => !task.completed_at && task.labels.includes(scope.id)).sort(compareByPosition)
     // A place's open tasks (task-locations "Places page"): those whose location links to it.
     case 'place':
-      return all.filter((task) => !task.completed_at && linkedPlaceId(task) === scope.id).sort(byPosition)
+      return all.filter((task) => !task.completed_at && linkedPlaceId(task) === scope.id).sort(compareByPosition)
     case 'assigned':
       return all.filter((task) => !task.completed_at && !!userId && task.assignee_id === userId).sort(compareDueThenPriority)
   }
@@ -238,17 +238,17 @@ export function patchViewTasks(prev: Task[], changes: readonly TaskChange[], sco
     case 'upcoming':
       return upcomingToday ? null : patchOrdered(prev, changes, (task) => shown(task) && inUpcoming(task, today), compareDueThenPriority)
     case 'someday':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && isSomeday(task), compareByPosition)
     case 'anytime':
-      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && inAnytime(task, today), compareByPosition)
     case 'completed':
       return patchOrdered(prev, changes, (task) => shown(task) && !!task.completed_at && !task.skipped, byDone)
     case 'project':
       return linked(prev, patchSorted(prev, changes, (task) => shown(task) && !task.completed_at && task.project_id === scope.id))
     case 'label':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && task.labels.includes(scope.id), byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && task.labels.includes(scope.id), compareByPosition)
     case 'place':
-      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && linkedPlaceId(task) === scope.id, byPosition)
+      return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && linkedPlaceId(task) === scope.id, compareByPosition)
     case 'assigned':
       return patchOrdered(prev, changes, (task) => shown(task) && !task.completed_at && !!userId && task.assignee_id === userId, compareDueThenPriority)
   }

@@ -1,0 +1,1 @@
+- **A heading such as "# C#" keeps its words.** The Markdown view and the rich-text editor stripped the trailing # even when it belonged to the heading's text, and a line holding only #s showed as that text instead of an empty heading.
