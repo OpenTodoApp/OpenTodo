@@ -92,7 +92,7 @@ Todoist exports one project as CSV from the project's menu, and keeps backups of
 | `RESPONSIBLE` | dropped with a warning |
 | the row itself | the task's [origin](capture.md#where-a-task-came-from), `{kind: "import", provider: "todoist", id}` with the source id the importer remembers for duplicates (`origin: todoist`) |
 
-`DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish or Portuguese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
+`DATE` is the text Todoist showed, in the language named by `DATE_LANG` (English, German, French, Italian, Spanish, Portuguese, Dutch or Chinese): `Oct 21`, `21 Okt.`, `21 de octubre de 2027 15:00`, `11月21日 下午3点`, `tomorrow`, `every monday`, `jeden Montag`, `alle 2 Wochen`, `每周五`, `每3个月`. Chinese is read in Simplified and Traditional characters, with or without spaces. A date without a year takes the year of the export (the newest file time in the backup, otherwise the day you import). A recurring date becomes a rule whose first date is the next occurrence. A date that cannot be read leaves the task without a due date and adds a warning quoting it.
 
 ### TickTick (`ticktick-csv`)
 
