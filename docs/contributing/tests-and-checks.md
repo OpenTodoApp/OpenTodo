@@ -41,6 +41,8 @@ cd web && npx vitest run -t "keeps the outbox"
 
 Web tests never reach the network: mock `fetch` with `mockFetch` from `web/src/ui/test-utils.tsx`. Interaction tests opt into `// @vitest-environment happy-dom` and wait with `waitFor`, never a fixed sleep. Module-level state is reset before each test by `resetModuleState()` (`web/src/lib/moduleState.ts`); a module with a top-level `let` registers with `resettable()`.
 
+The notes link grammar (`linksIn`, behind Linked references) is timed in the ordinary web tests by `web/src/lib/notesHotPaths.test.ts`, so a slowdown of it fails on its own pull request rather than only in the nightly [performance budgets](../performance.md). Milliseconds vary too much between CI runners, so it is timed beside a plain line scan of the same 1 MB of generated notes, and the median ratio of seven interleaved pairs is held to its `MAX`. To change a `MAX` on purpose, run the file a few times with `--silent=false`, read the printed ratios, set the new ratio × 1.5 and say why in the pull request.
+
 The client's sync code also runs against the real server: `npm run test:contract` in `web/`, after `make server`.
 
 ## Shared fixtures
