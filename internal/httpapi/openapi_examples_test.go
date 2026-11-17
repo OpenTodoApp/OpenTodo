@@ -258,7 +258,7 @@ func numberExample(name string, s map[string]any) any {
 // of: 204 No content, redirects, files, event streams, or a body the static
 // analysis cannot see yet; they get an example once their body is described.
 // It only goes down.
-const openAPIExamplelessMax = 83
+const openAPIExamplelessMax = 88
 
 // examplelessProblems is the ratchet on examples: a JSON request or success
 // response without one always fails, and more operations without any

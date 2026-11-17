@@ -100,6 +100,10 @@ type staticRoute struct {
 	request  fieldSet
 	response fieldSet
 	statuses map[string]bool
+	// body is how the handler reads its body: "required" when it decodes one
+	// with a reader that refuses an empty body, "optional" when any reader it
+	// calls accepts none (readOptionalJSON), "" when it reads no JSON body.
+	body string
 }
 
 // fieldSet maps a JSON path ("user.email", "tasks[].title") to its type.
@@ -193,16 +197,20 @@ func (w *walker) body(b *ast.BlockStmt) {
 // call records one decode (request fields) or JSON answer (status and
 // response fields).
 func (w *walker) call(c *ast.CallExpr, scope *ast.BlockStmt) {
-	switch calleeName(c) {
+	switch name := calleeName(c); name {
 	case "readJSON", "readJSONLoose", "readJSONLimit", "readOptionalJSON", "ReadJSON", "ReadJSONLoose", "ReadJSONLimit", "ReadOptionalJSON":
 		if len(c.Args) >= 2 {
 			w.decoded(c.Args[1], scope)
+			w.reads(!strings.HasSuffix(name, "OptionalJSON"))
 		}
 	case "Decode":
 		if len(c.Args) == 1 {
 			if sel, ok := c.Fun.(*ast.SelectorExpr); ok {
 				if inner, ok := sel.X.(*ast.CallExpr); ok && calleeName(inner) == "NewDecoder" {
 					w.decoded(c.Args[0], scope)
+					if len(inner.Args) == 1 && readsRequestBody(inner.Args[0]) {
+						w.reads(true) // Decode refuses an empty body (io.EOF)
+					}
 				}
 			}
 		}
@@ -212,8 +220,87 @@ func (w *walker) call(c *ast.CallExpr, scope *ast.BlockStmt) {
 		}
 		if v := w.p.info.Types[c.Args[1]].Value; v != nil {
 			w.route.statuses[v.ExactString()] = true
+		} else {
+			w.paramStatuses(c.Args[1], scope)
 		}
 		w.encoded(c.Args[2], scope, "", w.route.response, 0)
+	}
+}
+
+// reads records a body reader: one that accepts no body makes the body
+// optional, whatever else the handler calls.
+func (w *walker) reads(required bool) {
+	switch {
+	case !required:
+		w.route.body = "optional"
+	case w.route.body == "":
+		w.route.body = "required"
+	}
+}
+
+// readsRequestBody reports a decoder source that is the request's body
+// (r.Body, or http.MaxBytesReader(w, r.Body, n)).
+func readsRequestBody(e ast.Expr) bool {
+	found := false
+	ast.Inspect(e, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && sel.Sel.Name == "Body" {
+			found = true
+		}
+		return !found
+	})
+	return found
+}
+
+// paramStatuses records the statuses of an answer whose status is a parameter
+// of the helper that writes it (writeAppended(…, status)): the success
+// constants the route's functions walked so far pass for it.
+func (w *walker) paramStatuses(arg ast.Expr, scope *ast.BlockStmt) {
+	id, ok := arg.(*ast.Ident)
+	if !ok {
+		return
+	}
+	param, _ := w.p.info.Uses[id].(*types.Var)
+	var helper *types.Func
+	index := -1
+	for fn, fd := range w.p.decls {
+		if fd.Body != scope || param == nil {
+			continue
+		}
+		sig := fn.Type().(*types.Signature)
+		for i := range sig.Params().Len() {
+			if sig.Params().At(i) == param {
+				helper, index = fn, i
+			}
+		}
+	}
+	if helper == nil {
+		return
+	}
+	for b := range w.seen {
+		blk, ok := b.(*ast.BlockStmt)
+		if !ok {
+			continue
+		}
+		ast.Inspect(blk, func(n ast.Node) bool {
+			c, ok := n.(*ast.CallExpr)
+			if !ok || len(c.Args) <= index {
+				return true
+			}
+			var fid *ast.Ident
+			switch f := c.Fun.(type) {
+			case *ast.Ident:
+				fid = f
+			case *ast.SelectorExpr:
+				fid = f.Sel
+			}
+			if fid != nil && w.p.info.Uses[fid] == helper {
+				// An error status is the 4XX answer, not a success.
+				if v := w.p.info.Types[c.Args[index]].Value; v != nil && v.ExactString() < "400" {
+					w.route.statuses[v.ExactString()] = true
+				}
+			}
+			return true
+		})
 	}
 }
 
@@ -315,7 +402,7 @@ func (w *walker) member(path string, v ast.Expr, scope *ast.BlockStmt, out field
 		w.encoded(v, scope, path+".", out, depth+1)
 	case *types.Slice:
 		if _, isBytes := u.Elem().Underlying().(*types.Basic); !isBytes {
-			describeElemType(u.Elem(), path+"[]", out, map[types.Type]bool{})
+			describeElemType(u.Elem(), path+"[]", out, false, map[types.Type]bool{})
 		}
 	}
 	elemType(t, path, out)
@@ -405,7 +492,7 @@ func describeType(t types.Type, prefix string, out fieldSet, request bool, seen 
 			out[path] = typ
 			describeType(f.Type(), path, out, request, seen, depth+1)
 			if s, ok := derefType(f.Type()).Underlying().(*types.Slice); ok {
-				describeElemType(s.Elem(), path+"[]", out, seen)
+				describeElemType(s.Elem(), path+"[]", out, request, seen)
 			}
 			elemType(f.Type(), path, out)
 		}
@@ -413,7 +500,7 @@ func describeType(t types.Type, prefix string, out fieldSet, request bool, seen 
 		if prefix != "" {
 			return
 		}
-		describeElemType(u.Elem(), "[]", out, seen)
+		describeElemType(u.Elem(), "[]", out, request, seen)
 	}
 }
 
@@ -449,10 +536,11 @@ func elemJSONType(t types.Type) string {
 	return jsonType(t)
 }
 
-// describeElem records the fields of a list element type.
-func describeElemType(t types.Type, prefix string, out fieldSet, seen map[types.Type]bool) {
+// describeElem records the fields of a list element type; in a request, the
+// fields an element may leave out carry a "?" like the body's own.
+func describeElemType(t types.Type, prefix string, out fieldSet, request bool, seen map[types.Type]bool) {
 	if _, ok := derefType(t).Underlying().(*types.Struct); ok && !customJSON(derefType(t)) {
-		describeType(t, prefix, out, false, seen, 1)
+		describeType(t, prefix, out, request, seen, 1)
 	}
 }
 

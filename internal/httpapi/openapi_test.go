@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"regexp"
 	"sort"
@@ -52,9 +53,11 @@ func absoluteLinks(text string) string {
 	})
 }
 
-// buildOpenAPI builds the whole description. It returns the document and the
-// number of fields whose type the analysis could not see.
-func buildOpenAPI(t *testing.T) (map[string]any, int) {
+// buildOpenAPI builds the whole description. It returns the document, the
+// number of fields whose type the analysis could not see, and whether each
+// operation's handler needs its body ("POST /api/v1/tasks" → true), from the
+// reader it calls.
+func buildOpenAPI(t *testing.T) (map[string]any, int, map[string]bool) {
 	t.Helper()
 	pkgs := loadStatic(t)
 	routes := surfaceRoutes(t, staticRoutes(pkgs), true)
@@ -85,6 +88,7 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 	ids := map[string]int{}
 	shapes := map[string]string{}
 	unknown := 0
+	bodies := map[string]bool{}
 	patterns := make([]string, 0, len(routes))
 	for p := range routes {
 		patterns = append(patterns, p)
@@ -97,6 +101,14 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 			continue
 		}
 		r, _ := routes[pattern].(map[string]any)
+		if req, ok := r["request"].(map[string]any); ok && len(requestDefaults[pattern]) > 0 {
+			fields, missing := withRequestDefaults(pattern, maps.Clone(req))
+			for _, m := range missing {
+				t.Error(m)
+			}
+			r = maps.Clone(r)
+			r["request"] = fields
+		}
 		op, n := openAPIOperation(method, path, r, docs, entities)
 		unknown += n
 		id := op["operationId"].(string)
@@ -119,6 +131,9 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 			paths[key] = item
 		}
 		item[strings.ToLower(method)] = op
+		if _, ok := op["requestBody"]; ok {
+			bodies[method+" "+key] = r["body"] == "required"
+		}
 	}
 	tagText := docHeadingText(t)
 	tagList := make([]any, 0, len(tags))
@@ -162,7 +177,7 @@ func buildOpenAPI(t *testing.T) (map[string]any, int) {
 		},
 	}
 	addExamples(t, paths, doc["components"].(schema))
-	return doc, unknown
+	return doc, unknown, bodies
 }
 
 const openAPIVersionPlaceholder = "0.0.0-dev"
@@ -208,8 +223,8 @@ func openAPIOperation(method, path string, r map[string]any, docs []docRoute, en
 	if req, ok := r["request"].(map[string]any); ok && len(req) > 0 && method != "GET" {
 		body, n := buildBody(withFieldTypes(method+" "+path, req), true)
 		unknown += n
-		_, required := body["required"]
-		op["requestBody"] = schema{"required": required, "content": schema{"application/json": schema{"schema": body}}}
+		// A handler whose reader refuses an empty body needs one (surfaceRoutes "body").
+		op["requestBody"] = schema{"required": r["body"] == "required", "content": schema{"application/json": schema{"schema": body}}}
 	}
 	var resBody schema
 	if res, ok := r["response"].(map[string]any); ok && len(res) > 0 {
@@ -548,8 +563,8 @@ func gzipBytes(t *testing.T, b []byte) []byte {
 }
 
 func TestOpenAPIDescription(t *testing.T) {
-	doc, unknown := buildOpenAPI(t)
-	if problems := lintOpenAPI(doc); len(problems) > 0 {
+	doc, unknown, bodies := buildOpenAPI(t)
+	if problems := lintOpenAPI(doc, bodies); len(problems) > 0 {
 		for _, p := range problems {
 			t.Error(p)
 		}
@@ -582,8 +597,10 @@ func TestOpenAPIDescription(t *testing.T) {
 
 // lintOpenAPI checks what makes a description usable by tools: every
 // reference resolves, operation ids are unique, every path parameter is
-// declared, every operation has a summary, a declared tag and responses.
-func lintOpenAPI(doc map[string]any) []string {
+// declared, every operation has a summary, a declared tag and responses,
+// every example fits its schema (exampleProblems), and a request body is
+// required exactly when its handler needs one (bodies, from buildOpenAPI).
+func lintOpenAPI(doc map[string]any, bodies map[string]bool) []string {
 	var problems []string
 	raw, _ := json.Marshal(doc)
 	var plain map[string]any
@@ -611,6 +628,8 @@ func lintOpenAPI(doc map[string]any) []string {
 	walk(plain, "#")
 	problems = append(problems, untypedProblems(plain)...)
 	problems = append(problems, examplelessProblems(plain, openAPIExamplelessMax)...)
+	problems = append(problems, exampleProblems(plain)...)
+	problems = append(problems, bodyRequiredProblems(plain, bodies)...)
 	declared := map[string]bool{}
 	for _, tg := range plain["tags"].([]any) {
 		declared[tg.(map[string]any)["name"].(string)] = true
@@ -768,7 +787,7 @@ func jsonSchemaOf(body map[string]any) any {
 }
 
 func TestOpenAPIShapes(t *testing.T) {
-	doc, _ := buildOpenAPI(t)
+	doc, _, _ := buildOpenAPI(t)
 	raw, _ := json.Marshal(doc)
 	var d map[string]any
 	_ = json.Unmarshal(raw, &d)
