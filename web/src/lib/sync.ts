@@ -23,7 +23,7 @@ import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
 import { isEnabled, loadEncryptionState, refreshFromServer, syncBlocked } from './e2ee'
-import { HELD_RETRY_MS, heldCount, holdOps, INVALID_REASON, limitMessage, requeueHeld, splitRejected } from './limits'
+import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, UNKNOWN_FIELD_REASON, requeueHeld, splitRejected } from './limits'
 import { catchUpEncryption, decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
 import { uuid } from './ids'
@@ -359,7 +359,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
         // A refused op never happened: drop it from the local activity log too.
         await forgetActivity(refused.map((r) => r.id))
       })
-      if (limited.length > 0) heldReason = limited.find((r) => r.reason === INVALID_REASON)?.reason ?? limited[0].reason
+      if (limited.length > 0) heldReason = limited.find((r) => r.reason === UNKNOWN_FIELD_REASON)?.reason ?? limited[0].reason
       if (notice) addRejected(notice)
       const incoming = await decryptIncoming(res.ops)
       alive()
@@ -486,8 +486,8 @@ async function afterPull(alive: () => void, received: boolean): Promise<void> {
   const held = await heldCount()
   alive()
   if (held > 0) {
-    // Everything else is synced; held changes wait (an invalid one shows as an error: sync-invalid-op-alone D2).
-    publish({ state: heldReason === INVALID_REASON ? 'error' : 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
+    // Everything else is synced; held changes wait (an unknown field shows as an error: invalid-op-ends D2).
+    publish({ state: heldReason === UNKNOWN_FIELD_REASON ? 'error' : 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
   } else {
     heldReason = null
     publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
