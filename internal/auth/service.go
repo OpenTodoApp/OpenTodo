@@ -784,8 +784,25 @@ func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error
 		return err
 	}
 	defer tx.Rollback()
+	if err := s.deleteTokenTx(ctx, tx, userID, tokenID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// DeleteTokenTx deletes userID's token on the caller's transaction, for a
+// change that must end the token in the same commit (revoking an OAuth grant).
+// A token that is already gone is not an error.
+func (s *Service) DeleteTokenTx(ctx context.Context, tx *sql.Tx, userID, tokenID string) error {
+	if err := s.deleteTokenTx(ctx, tx, userID, tokenID); err != nil && !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) deleteTokenTx(ctx context.Context, tx *sql.Tx, userID, tokenID string) error {
 	var name string
-	err = tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
+	err := tx.QueryRowContext(ctx, "SELECT name FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID).Scan(&name)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -795,10 +812,7 @@ func (s *Service) DeleteToken(ctx context.Context, userID, tokenID string) error
 	if _, err := tx.ExecContext(ctx, "DELETE FROM api_tokens WHERE id = ? AND user_id = ?", tokenID, userID); err != nil {
 		return err
 	}
-	if err := s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name)); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return s.audit.RecordTx(ctx, tx, audit.TokenRevoked(userID, tokenID, name))
 }
 
 func hashToken(secret string) string {

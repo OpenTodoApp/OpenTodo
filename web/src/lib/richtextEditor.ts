@@ -25,6 +25,7 @@ import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
 import { refOf, titleOf } from './noteLinks'
 import { tablePlugins, tableShiftTab, tableTab } from './editorTables'
+import { bareLinksPlugin } from './editorBareLinks'
 
 // ---- schema ----
 
@@ -343,6 +344,28 @@ function checkItems(tr: Transaction): Transaction {
   return tr
 }
 
+/**
+ * Bullet list: in a check list it takes the checkboxes away, so a check list becomes a
+ * bullet list again (GitHub issue 1477); anywhere else it wraps the selection as before.
+ */
+export const wrapInBulletList: Command = (state, dispatch) => {
+  const d = listDepth(state)
+  const list = d >= 0 ? state.selection.$from.node(d) : null
+  let checked = false
+  list?.forEach((item) => { if (item.attrs.checked !== null) checked = true })
+  if (!list || list.type !== schema.nodes.bullet_list || !checked) return wrapInList(schema.nodes.bullet_list)(state, dispatch)
+  if (dispatch) {
+    const tr = state.tr
+    let pos = state.selection.$from.start(d)
+    list.forEach((item) => {
+      if (item.attrs.checked !== null) tr.setNodeMarkup(pos, undefined, { checked: null })
+      pos += item.nodeSize
+    })
+    dispatch(tr)
+  }
+  return true
+}
+
 /** Make the selection a check list: wrap it in a bullet list, then add checkboxes. */
 export const wrapInCheckList: Command = (state, dispatch) => {
   if (listDepth(state) >= 0) {
@@ -590,6 +613,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     sizeLimit(hooks.size),
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
     linkSpacePlugin(),
+    bareLinksPlugin(),
     rules(),
     ...tablePlugins(),
     trailingParagraph(),
@@ -600,7 +624,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
       'Mod-Alt-0': setBlockType(nodes.paragraph),
       'Mod-Alt-1': setBlockType(nodes.heading, { level: 1 }), 'Mod-Alt-2': setBlockType(nodes.heading, { level: 2 }),
       'Mod-Alt-3': setBlockType(nodes.heading, { level: 3 }),
-      'Mod-Shift-8': wrapInList(nodes.bullet_list), 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
+      'Mod-Shift-8': wrapInBulletList, 'Mod-Shift-7': wrapInList(nodes.ordered_list), 'Mod-Shift-9': wrapInCheckList,
       'Mod-Enter': toggleCheck,
       'Mod-Shift-Enter': hooks.makeSubtask ?? (() => false),
       'Mod-Shift-o': () => hooks.outline?.() ?? false,
@@ -633,13 +657,14 @@ export function createState(nodes: RNode[], hooks: EditorHooks): EditorState {
 
 /**
  * Pasted plain text is read as Markdown, so pasting a formatted note keeps its
- * structure. A pasted web address (an image's too) becomes a link, never an
- * embed: the app loads nothing from other sites (editor-everywhere D5).
+ * structure. A pasted web address (an image's too) stays the bare address, which
+ * reads as a link (bare-links D2), never an embed: the app loads nothing from other
+ * sites (editor-everywhere D5).
  */
 export function markdownSlice(text: string): Slice {
   const url = text.trim()
   if (/^https?:\/\/\S+$/i.test(url) && safeHref(url)) {
-    return new Slice(Fragment.from(schema.text(url, [schema.marks.link.create({ href: url })])), 0, 0)
+    return new Slice(Fragment.from(schema.text(url)), 0, 0)
   }
   const doc = modelToPm(parseMarkdown(text))
   return new Slice(Fragment.from(doc.content), 1, 1)

@@ -68,6 +68,9 @@
   "(the push service could not be reached)": [
     "web/src/lib/push.ts"
   ],
+  "(this server could not accept the value)": [
+    "web/src/lib/sharing.ts"
+  ],
   "(you)": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -9413,7 +9416,9 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Lists sorted by date or priority keep their order.": [
-    "web/src/lib/settingsCopy.ts"
+    "web/src/app/task-list/useListDrag.ts",
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Lists with method hints": [
     "web/src/lib/settingsCopy.ts"

@@ -482,13 +482,9 @@ func (s *Server) oauthRefreshReused(w http.ResponseWriter, r *http.Request, c mc
 // rotated: the grant, its current refresh token and its access token stop
 // working, and `mcp_oauth.refresh_reused` is recorded.
 func (s *Server) revokeReusedGrant(r *http.Request, g mcpoauth.Grant) {
-	tokenID, err := s.mcpOAuth.RevokeGrant(r.Context(), g.ID)
-	if err != nil {
+	if err := s.revokeGrant(r.Context(), g); err != nil {
 		slog.Error("mcp oauth: revoking a grant after refresh token reuse", "grant", g.ID, "err", err)
 		return
-	}
-	if tokenID != "" {
-		_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
 	}
 	s.audit.Record(r.Context(), audit.MCPOAuthRefreshReused(g.UserID, g.ClientID))
 }
@@ -574,13 +570,9 @@ func (s *Server) handleOAuthRevoke(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
-	tokenID, err := s.mcpOAuth.RevokeGrant(r.Context(), g.ID)
-	if err != nil {
+	if err := s.revokeGrant(r.Context(), g); err != nil {
 		s.internal(w, err)
 		return
-	}
-	if tokenID != "" {
-		_ = s.auth.DeleteToken(r.Context(), g.UserID, tokenID)
 	}
 	s.audit.Record(r.Context(), audit.MCPOAuthRevoked(g.UserID, g.ClientID))
 	w.WriteHeader(http.StatusOK)
