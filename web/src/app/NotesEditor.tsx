@@ -25,7 +25,9 @@ import { habitRowsOf, habitStats } from '../lib/habits'
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useMembershipMap, useProjects } from '../lib/localData'
 import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { hrefOf } from '../lib/noteLinks'
+import { hrefOf, refOf } from '../lib/noteLinks'
+import { linkTaps } from '../lib/linkTap'
+import { safeHref } from '../lib/markdown'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
 import type { Clock, Task } from '../lib/types'
@@ -35,6 +37,7 @@ import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
 import type { CommandEnv, LinkPickerEnv } from './editorCommands'
 import { imageViews } from './editorImage'
 import { refViews } from './editorRef'
+import { openRef } from './RefChip'
 import { LinkDialog } from './LinkDialog'
 import { Markdown } from './Markdown'
 import { useMentionTargets } from './useMentionTargets'
@@ -405,7 +408,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         v.dispatch(v.state.tr.setNodeMarkup(nodePos, undefined, { checked: !node.attrs.checked }))
         return true
       },
-      handleDOMEvents: {
+      handleDOMEvents: { ...linkTapHandlers(),
         click: (_view, event) => {
           // Ctrl/Cmd-click opens a link (plain clicks place the caret).
           const a = (event.target as HTMLElement).closest('a')
@@ -537,6 +540,34 @@ function NoteStatus({ size, error }: { size: string | null; error: string | null
       {error && <p role="alert" className="text-meta text-danger">{error}</p>}
     </>
   )
+}
+
+/**
+ * What a tap on a link does (touch-note-links): a link to a note, task or project
+ * opens it in the app, a web or mail address in a new tab (in the apps, the system
+ * browser); any other address does nothing, as it renders as no link.
+ */
+/** The editor's touch handlers: a tap on a link opens it; the caret and the keyboard stay away. */
+function linkTapHandlers() {
+  const taps = linkTaps()
+  return {
+    touchstart: (pv: EditorView, event: TouchEvent) => { if (pv.editable) taps.start(event); return false },
+    touchend: (pv: EditorView, event: TouchEvent) => {
+      const a = pv.editable ? taps.end(event) : null
+      if (!a) return false
+      event.preventDefault()
+      openTapped(a)
+      return true
+    },
+  }
+}
+
+function openTapped(a: HTMLAnchorElement): void {
+  const href = a.getAttribute('href') ?? ''
+  const ref = refOf(href)
+  if (ref) return openRef(ref.kind, ref.id)
+  const web = safeHref(href)
+  if (web) window.open(web, '_blank', 'noopener,noreferrer')
 }
 
 /** The link dialog of Mod-k, answering the editor's question. */
