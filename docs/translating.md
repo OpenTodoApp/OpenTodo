@@ -113,7 +113,7 @@ Quick add understands dates, times, repeats and reminders in a language only wit
 
 ## Glossary
 
-Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *vous*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы* and Polish *ty*. peilf reviews the Simplified Chinese catalog.
+Use these terms consistently; they match the quick-add vocabulary and the server's email templates. German and Dutch use *du*/*je*, French *tu*, Spanish *tú*, Italian *tu*, Portuguese (Brazil) *você*, Simplified Chinese 你, Russian *вы* and Polish *ty*. peilf reviews the Simplified Chinese catalog.
 
 | English | Deutsch | Français | Español | Italiano | Português | 简体中文 | Nederlands | Русский | Polski | Türkçe |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

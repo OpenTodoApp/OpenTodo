@@ -1,0 +1,1 @@
+- **A checklist can become a bullet list again.** Bullet list on a checklist in a note takes its checkboxes away and keeps the lines (#1477).
