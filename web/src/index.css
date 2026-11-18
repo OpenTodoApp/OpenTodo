@@ -231,6 +231,8 @@
   --duration-moment: 400ms;
   --size-row: 36px;
   --ot-text-list: 0.8125rem;
+  /* The weight of task titles in rows and on cards; a theme may raise it (theme-title-weight). */
+  --ot-title-weight: 400;
   --ot-text-hint: 0.71875rem;
   --ot-text-meta: 0.78125rem;
   --ot-text-prose: 0.9375rem;
@@ -1505,6 +1507,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    wrapped onto as many lines as it takes, instead of two lines and an ellipsis. Outside
    the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+/* A theme may make task titles heavier (theme-title-weight); 400 without one. In the
+   components layer, so a weight utility on a title still wins. */
+@layer components { [data-row-title] { font-weight: var(--ot-title-weight); } }
 
 /* Titles on a phone (OpenSpec change phone-titles-everywhere): the one-line titles of the
    lists that are not the task row (Notes, the calendar's agendas, Close the day, the

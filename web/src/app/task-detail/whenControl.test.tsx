@@ -116,7 +116,7 @@ describe('WhenControl', () => {
     expect(Object.keys(await queuedFields(id, from))).toEqual(['recurrence'])
     expect((await db.tasks.get(id))!.recurrence).toBe('every thursday')
     expect(seg('repeat').querySelector('[data-preset="weekly"]')!.getAttribute('aria-checked')).toBe('true')
-    expect(seg('repeat').querySelector('[data-rule-words]')!.textContent).toContain('every thursday')
+    expect(seg('repeat').querySelector('[data-rule-words]')!.textContent).toBe('Every week on Thursday')
     from = await mark()
     await click(seg('repeat').querySelector('[data-preset="custom"]')!)
     await waitFor(() => !!seg('repeat').querySelector('input[aria-label="Repeat rule"]'), 'the rule field')

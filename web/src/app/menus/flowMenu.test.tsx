@@ -14,6 +14,7 @@ import { projectMenuGroups } from '../ProjectHeader'
 import { commands, type PaletteContext } from '../palette/registry'
 import { ActionMenu, flatItems } from './ActionMenu'
 import { projectFlowItem, sectionFlowItem } from './flowMenu'
+import { undoEntry } from '../../test/undoEntry'
 
 let n = 0
 beforeEach(() => {
@@ -88,7 +89,7 @@ describe('choosing a flow', () => {
     await act(async () => { item('Sequential')!.click() })
     await waitFor(async () => (await db.projects.get(id))?.flow_mode === 'sequential')
     expect(await db.outbox.count()).toBe(before + 1)
-    const entry = (await db.assistantUndo.toArray()).at(-1)!
+    const entry = await undoEntry((e) => e.inverse.some((i) => i.entityId === id))
     await undoBatch(entry.id)
     expect((await db.projects.get(id))?.flow_mode).toBe('')
     await r.unmount()
