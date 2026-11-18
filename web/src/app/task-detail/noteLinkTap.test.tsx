@@ -58,6 +58,17 @@ describe('a tap on a link in the notes', () => {
     await unmount()
   })
 
+  // bare-links: an address typed as text reads as a link, and a tap opens it too.
+  it('opens a bare address the editor shows as a link', async () => {
+    const opened = vi.spyOn(window, 'open').mockReturnValue(null)
+    const { container, unmount } = await taskWithNotes('Ferry times: https://example.com/ferry today')
+    await waitFor(() => !!editorLink(container, 'a.bare-link'), 'the address as a link')
+    tap(editorLink(container, 'a.bare-link')!)
+    await flush()
+    expect(opened).toHaveBeenCalledWith('https://example.com/ferry', '_blank', 'noopener,noreferrer')
+    await unmount()
+  })
+
   it('opens a link to a project in the app', async () => {
     const project = await createProject({ name: 'Lisbon' })
     const { container, unmount } = await taskWithNotes(`Book it with [Lisbon](?project=${project})`)
