@@ -36,6 +36,8 @@ export interface ResolvedTheme {
   font?: string
   /** The list text size in px, only when it is not 13. */
   list?: 14 | 15
+  /** The weight of task titles, only when it is not 400. */
+  titleWeight?: 500 | 600 | 700
   /** Derived tokens (and seeds) that moved away from their starting value to pass their pairs. */
   adjusted: string[]
 }
@@ -498,9 +500,10 @@ export function radiusScale(given: Partial<Record<RadiusStep, number>>): Record<
   return out
 }
 
-function fontOf(doc: ThemeDocument): Pick<ResolvedTheme, 'font' | 'list'> {
+function fontOf(doc: ThemeDocument): Pick<ResolvedTheme, 'font' | 'list' | 'titleWeight'> {
   const f = doc.type?.family
   const font = !f || f === 'inter' ? undefined : typeof f === 'string' ? FONT_STACKS[f] : `"${f.local}", ${FONT_STACKS.system}`
   const list = doc.type?.list === 14 || doc.type?.list === 15 ? doc.type.list : undefined
-  return { ...(font ? { font } : {}), ...(list ? { list } : {}) }
+  const titleWeight = doc.titleWeight === 500 || doc.titleWeight === 600 || doc.titleWeight === 700 ? doc.titleWeight : undefined
+  return { ...(font ? { font } : {}), ...(list ? { list } : {}), ...(titleWeight ? { titleWeight } : {}) }
 }

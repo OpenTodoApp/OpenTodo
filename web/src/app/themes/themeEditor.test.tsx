@@ -211,6 +211,20 @@ describe('the editor page', () => {
     await r.unmount()
   })
 
+  it('the task title weight applies in the preview, and Regular takes the key out again (theme-title-weight)', async () => {
+    await saveCustomTheme('th-e', DOC())
+    const r = await render(<ThemeEditorPage id="th-e" />)
+    await ready()
+    const weights = () => [...document.querySelectorAll<HTMLElement>('[data-theme-title-weight] [role="radio"]')]
+    expect(weights().map((b) => b.textContent)).toEqual(['Regular', 'Medium', 'Semibold', 'Bold'])
+    expect(preview().style.getPropertyValue('--ot-title-weight')).toBe('400')
+    await click(weights()[2])
+    await waitFor(() => preview().style.getPropertyValue('--ot-title-weight') === '600', 'semibold titles in the preview', 20_000)
+    await click(weights()[0])
+    await waitFor(() => preview().style.getPropertyValue('--ot-title-weight') === '400', 'regular titles again', 20_000)
+    await r.unmount()
+  })
+
   it('on an encrypted account says that themes are not encrypted', async () => {
     publishEncryption({ enabled: true })
     await saveCustomTheme('th-e', DOC())
