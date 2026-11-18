@@ -141,8 +141,8 @@ export const useConnectionsRequest = connections.use
 // The probe sits in the Linked references chunk, which already holds the link index.
 // Loaded once; a test ends only once it has arrived, since the chunk pulls in the whole
 // Linked references graph and must not finish loading after the test environment is gone.
-let probeChunk: Promise<typeof import('./LinkedReferences')> | null = null
-const loadProbe = () => (probeChunk ??= import('./LinkedReferences'))
+let probeChunk: Promise<typeof import('./LinkedReferences').watchConnected> | null = null
+const loadProbe = () => (probeChunk ??= import('./LinkedReferences').then(({ watchConnected }) => watchConnected))
 onTestTeardown(() => probeChunk?.catch(() => {}))
 
 /** Whether the item links to, or is linked from, something this device can read (false until known). */
@@ -153,7 +153,7 @@ export function useConnected(kind: ConnectionKind, id: string | undefined): bool
     if (!id) return
     let stop: (() => void) | undefined
     let live = true
-    void loadProbe().then((m) => { if (live) stop = m.watchConnected(kind, id, (v) => setOn(v ? key : '')) })
+    void loadProbe().then((watch) => { if (live) stop = watch(kind, id, (v) => setOn(v ? key : '')) })
     return () => { live = false; stop?.() }
   }, [kind, id, key])
   return !!key && on === key
