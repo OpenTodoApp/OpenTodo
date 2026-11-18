@@ -4,7 +4,7 @@
 import { openBlockers } from '../dependencies'
 import { t } from '../i18n'
 import { memberName } from '../sharing'
-import type { Label, Membership, Project, Task } from '../types'
+import type { Label, Membership, Task } from '../types'
 import { contextsOf, MethodRules, nextActions, waitingTasks, type MethodInput } from './rules'
 
 export interface MethodGroup {
@@ -64,5 +64,3 @@ export function waitingGroups(input: MethodInput): MethodGroup[] {
   return out
 }
 
-/** The project of each task, for rows of cross-project views. */
-export const projectOf = (task: Task, projects: ReadonlyMap<string, Project>): Project | undefined => (task.project_id ? projects.get(task.project_id) : undefined)
