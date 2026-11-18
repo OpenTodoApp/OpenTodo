@@ -236,11 +236,6 @@ export function setAppearanceThemes(t: ThemeCache): void {
   reapplyAppearance()
 }
 
-/** The resolved themes now in use (tests and Settings). */
-export function appearanceThemes(): ThemeCache {
-  return themesNow
-}
-
 /** Applies the last appearance again (the operating system switched between light and dark). */
 export function reapplyAppearance(): void {
   if (lastApplied) applyAppearance(lastApplied.a, lastApplied.doc, lastApplied.derived)
