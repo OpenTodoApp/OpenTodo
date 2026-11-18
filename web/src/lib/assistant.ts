@@ -13,6 +13,7 @@ import { fieldValueId, readField } from './ops'
 import type { ProposedChange, TurnEvent } from './assistantTypes'
 import { applyBatch, undoBatch, type UndoResult } from './undo'
 import { t } from './i18n'
+import { ruleWords } from './recurrenceWords'
 import { priorityName, priorityShort } from './priority'
 import { uuid } from './ids'
 export { UNDO_KEEP } from './undo'
@@ -330,7 +331,7 @@ export function describe(c: ProposedChange, local: Record<string, unknown> | und
       case 'title': case 'name': lines.push(t('Renamed “{from}” → “{to}”', { from: clip(String(old ?? ''), 50), to: clip(String(v ?? ''), 50) })); break
       case 'description': lines.push(t('Description changed')); break
       case 'estimate_minutes': lines.push(v ? (old ? t('Estimate {from} min → {to} min', { from: String(old), to: String(v) }) : t('Estimate {to} min', { to: String(v) })) : t('Estimate removed')); break
-      case 'recurrence': lines.push(v ? t('Repeats {rule}', { rule: String(v) }) : t('Stops repeating')); break
+      case 'recurrence': lines.push(v ? ruleWords(String(v)) : t('Stops repeating')); break
       case 'deleted_at': lines.push(v ? t('Moved to the Trash') : t('Restored')); break
       case 'parent_id': lines.push(v ? t('Subtask of “{task}”', { task: clip(names.tasks.get(String(v)) ?? t('a task'), 50) }) : t('No longer a subtask')); break
       case 'deadline': case 'start': case 'evening': case 'location':

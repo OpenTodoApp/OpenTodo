@@ -17,6 +17,11 @@ of test vectors (`web/src/lib/recurrence.vectors.json`; the projected occurrence
 their own, `web/src/lib/occurrences.vectors.json`), so every device and the
 REST API compute the same dates. Every example on this page is one of those vectors.
 
+The app shows a rule in your interface language (`every 2nd tuesday` reads "Every month on
+the second Tuesday", or "Jeden Monat am zweiten Dienstag" in German). The stored rule, and
+what you type in a task's Repeat field, is the English phrase described here; quick add
+also reads repeat phrases in [its languages](quick-add.md).
+
 ## Grammar
 
 ```
