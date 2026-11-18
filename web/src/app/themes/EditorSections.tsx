@@ -151,8 +151,8 @@ export function ShapeTypeSection({ doc, onChange }: { doc: ThemeDocument; onChan
             options={LIST_SIZES.map((n) => ({ id: String(n), label: `${n} px` }))}
             onChange={(v) => setType(doc.type?.family, Number(v) as 13 | 14 | 15)} />
         </Labelled>
-        <Labelled label={t('Task title weight')}>
-          <SegmentedControl label={t('Task title weight')} value={String(doc.titleWeight ?? 400)} className="w-full" data-theme-title-weight
+        <Labelled label={t('Task title weight')} className="@min-[30rem]/theme-controls:col-span-2">
+          <SegmentedControl label={t('Task title weight')} value={String(doc.titleWeight ?? 400)} fill data-theme-title-weight
             options={TITLE_WEIGHTS.map((n) => ({ id: String(n), label: WEIGHT_LABEL[n]() }))}
             onChange={(v) => {
               const { titleWeight: _w, ...rest } = doc
