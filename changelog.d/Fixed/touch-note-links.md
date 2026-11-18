@@ -1,0 +1,1 @@
+- **Links in notes open with a tap on a phone or tablet.** A tap on a link in a task's or note's text no longer puts the note into editing: a web address opens in a new tab (in the apps, the phone's browser) and a link to a note, task or project opens it (#1529).
