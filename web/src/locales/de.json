@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Jedes Jahr am {ordinal, select, first {ersten} second {zweiten} third {dritten} fourth {vierten} other {letzten}} {wd, select, mon {Montag} tue {Dienstag} wed {Mittwoch} thu {Donnerstag} fri {Freitag} sat {Samstag} other {Sonntag}} im {month}",
   "{rule} after completion": "{rule} nach Erledigung",
   "{rule} until {date}": "{rule} bis {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# Mal} other {# Mal}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# Mal} other {# Mal}}",
+  "Indent": "Einrücken",
+  "Outdent": "Ausrücken"
 }

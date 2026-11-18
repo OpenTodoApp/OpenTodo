@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Ogni anno {wd, select, mon {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} tue {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} wed {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} thu {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} fri {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} sat {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} other {{ordinal, select, first {la prima} second {la seconda} third {la terza} fourth {la quarta} other {l’ultima}}}} {wd, select, mon {lunedì} tue {martedì} wed {mercoledì} thu {giovedì} fri {venerdì} sat {sabato} other {domenica}} di {month}",
   "{rule} after completion": "{rule} dopo il completamento",
   "{rule} until {date}": "{rule} fino al {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
+  "Indent": "Aumenta rientro",
+  "Outdent": "Riduci rientro"
 }

@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Elk jaar op de {ordinal, select, first {eerste} second {tweede} third {derde} fourth {vierde} other {laatste}} {wd, select, mon {maandag} tue {dinsdag} wed {woensdag} thu {donderdag} fri {vrijdag} sat {zaterdag} other {zondag}} van {month}",
   "{rule} after completion": "{rule} na voltooiing",
   "{rule} until {date}": "{rule} tot en met {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}",
+  "Indent": "Inspringen",
+  "Outdent": "Uitspringen"
 }
