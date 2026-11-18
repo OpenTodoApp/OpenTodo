@@ -1,0 +1,1 @@
+- **The notes list shows which notes hold files.** A note with attachments shows a paperclip and how many after its title, as task rows do (#1477).
