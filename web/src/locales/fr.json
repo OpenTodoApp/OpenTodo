@@ -7772,5 +7772,7 @@
   "Add a subtask to this task": "Ajouter une sous-tâche à cette tâche",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "le calendrier dépasse {size} Mo ; connecte-le plutôt avec la synchronisation de calendrier",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Ce serveur n’a pas pu accepter une modification de cet appareil. Elle reste sur cet appareil, et tout le reste continue de se synchroniser.",
-  "(this server could not accept the value)": "(ce serveur n’a pas pu accepter la valeur)"
+  "(this server could not accept the value)": "(ce serveur n’a pas pu accepter la valeur)",
+  "Indent": "Augmenter le retrait",
+  "Outdent": "Diminuer le retrait"
 }

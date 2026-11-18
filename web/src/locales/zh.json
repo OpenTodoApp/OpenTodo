@@ -7772,5 +7772,7 @@
   "Add a subtask to this task": "为此任务添加子任务",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "日历超过 {size} MB；请改用日历同步连接它",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "此服务器无法接受来自此设备的一项更改。它会保留在此设备上，其他内容继续同步。",
-  "(this server could not accept the value)": "（此服务器无法接受该值）"
+  "(this server could not accept the value)": "（此服务器无法接受该值）",
+  "Indent": "增加缩进",
+  "Outdent": "减少缩进"
 }

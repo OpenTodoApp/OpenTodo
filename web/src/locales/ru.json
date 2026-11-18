@@ -7772,5 +7772,7 @@
   "Add a subtask to this task": "Добавить подзадачу к этой задаче",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "календарь больше {size} МБ; подключите его через синхронизацию календаря",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Этот сервер не смог принять изменение с этого устройства. Оно остаётся на этом устройстве, а всё остальное продолжает синхронизироваться.",
-  "(this server could not accept the value)": "(этот сервер не смог принять значение)"
+  "(this server could not accept the value)": "(этот сервер не смог принять значение)",
+  "Indent": "Увеличить отступ",
+  "Outdent": "Уменьшить отступ"
 }

@@ -8477,6 +8477,9 @@
   "Include tasks without a time": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Indent": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Indent list item, or next table cell (Shift-Tab: back)": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -12983,6 +12986,9 @@
   ],
   "Outcomes that take more than one step.": [
     "web/src/lib/method/vocabulary.json"
+  ],
+  "Outdent": [
+    "web/src/app/editorCommands.ts"
   ],
   "Outdent the selected task": [
     "web/src/lib/shortcuts.ts"
@@ -24958,6 +24964,7 @@
   ],
   "{n, plural, one {# attachment} other {# attachments}}": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "{n, plural, one {# block behind} other {# blocks behind}}": [
