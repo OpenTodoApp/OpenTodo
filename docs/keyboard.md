@@ -12,9 +12,9 @@ card: shortcuts
 
 <picture><source srcset="images/shortcuts-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/shortcuts-light.webp" alt="The Keyboard shortcuts dialog open over the Today view."></picture>
 
-Everything in OpenTodo can be done from the keyboard. You don't need to learn it all: <kbd>q</kbd> to add, <kbd>j</kbd> / <kbd>k</kbd> to move, <kbd>c</kbd> to complete and <kbd>?</kbd> to look up the rest gets you a long way.
-
 Shortcuts don't fire while you're typing in a field. Press <kbd>Esc</kbd> to leave the field first.
+
+The typed character takes precedence. On non-Latin layouts, letter shortcuts can use their physical US key positions. On French AZERTY, use the top-row <kbd>1</kbd>–<kbd>4</kbd> positions without Shift to set priority.
 
 A key does one thing at a time: the shortcuts of where you are (the task panel, a board, the calendar, a list) win over the ones that work everywhere, so <kbd>1</kbd> sets the priority of the open task while the panel has focus and of the selected row otherwise. Every action's key is in its tooltip and menu item, and printed in the app with **Settings → General → Keyboard → Show shortcut hints**. Touch-only phones and tablets show keys once a keyboard or mouse is used.
 

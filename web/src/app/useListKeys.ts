@@ -135,8 +135,8 @@ export function useListKeys(opts: ListKeys): void {
       if (!row) return false
       act(setTaskCompleted(row.id, !row.completed_at))
     },
-    'list.priority': (e) => {
-      const priority = Number(e.key) as Priority
+    'list.priority': (_event, _shortcut, chord) => {
+      const priority = Number(chord.key) as Priority
       if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'priority', priority })); return }
       if (!row) return false
       act(updateTask(row.id, { priority }))
