@@ -140,14 +140,19 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const project = projects.find((p) => p.id === note.project_id)
   const [focusBody] = useState(() => takeBodyFocus(note.id))
   const [initialInput] = useState(() => takePendingInput(note.id))
+  // The first code block's Copy button needs the corner's room (copy-code-block D3); a viewer's Copy note needs none.
+  const hasCode = !!note.description && note.description.split('\n').some((l) => /^ {0,3}(```|~~~)/.test(l))
+  const [copied, setCopied] = useState(false)
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
   return (
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
-      <Suspense fallback={<div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div>}>
-        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" />
+      {/* The rendered body sits in a frame of its own, so its first code block can leave the corner its room; the
+          editor keeps its own frame (the outline's). Only a code block takes room: a viewer's Copy note is absolutely placed. */}
+      <Suspense fallback={<div className="notes-frame" data-corner={hasCode ? '' : undefined} style={hasCode ? { '--notes-corner': '2.25rem' } as React.CSSProperties : undefined}><div className="notes-host" aria-busy="true"><div className="notes-editor">{note.description ? <Markdown source={note.description} taskId={noteParent(note.id)} /> : <p className="text-faint">{t('Add notes…')}</p>}</div></div></div>}>
+        <NotesEditor key={note.id} note={{ ...note, entity: 'note' }} readOnly={readOnly} autoFocus={initialInput ?? focusBody} outline="auto" copied={copied} onCopied={() => setCopied(true)} />
       </Suspense>
       {/* Viewers attach too (note-attachments D2); nothing shows until the note has a file. */}
       <Suspense fallback={null}><AttachmentsRow taskId={noteParent(note.id)} note={note} userId={me ?? undefined} role={role} dropTarget={form} /></Suspense>

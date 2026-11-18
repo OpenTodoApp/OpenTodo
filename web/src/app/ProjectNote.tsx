@@ -119,7 +119,9 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
   const outlined = heads.length >= OUTLINE_MIN && !sourceShown
   // A viewer's way to the source (note-markdown-source "Viewer"); an editor has it in the editor.
   const sourceButton = !editable && !coarse
-  const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0)
+  // The first code block's Copy button needs the corner's room (copy-code-block).
+  const codeBlocks = !sourceShown && note.split('\n').some((l) => /^ {0,3}(```|~~~)/.test(l)) ? 1 : 0
+  const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0) + codeBlocks
   return (
     <section aria-label={t('Project note')} className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
       <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}>

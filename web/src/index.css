@@ -998,6 +998,11 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 /* One row at the top end for the Outline button, Markdown and Formatting (note-outline D2,
    note-markdown-source D4); the first block and the formatting row leave it room. */
 .notes-corner { @apply absolute end-0 top-0 z-10 flex items-center; }
+/* A viewer's Copy note control (copy-code-block D4): present for the keyboard and
+   screen readers, out of sight — the corner has no room for another visible button.
+   It takes no room of its own, so a note without a code block reserves no corner. */
+.note-copy-action { @apply absolute size-px overflow-hidden opacity-0; }
+.note-copy-action:focus-visible { @apply relative size-8 overflow-visible opacity-100; }
 .notes-frame[data-corner] .notes-editor > :first-child,
 .notes-frame[data-corner] .editor-toolbar,
 .notes-frame[data-corner] > .notes-source { padding-inline-end: var(--notes-corner); }
