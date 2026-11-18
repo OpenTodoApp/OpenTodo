@@ -6,6 +6,7 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import { localDate } from '../lib/dates'
 import { createStore } from '../lib/store'
+import { resettable } from '../lib/moduleState'
 import { onTestTeardown } from '../lib/testTeardown'
 import type { Task } from '../lib/types'
 import { navigate, routePath } from './router'
@@ -144,6 +145,7 @@ export const useConnectionsRequest = connections.use
 let probeChunk: Promise<typeof import('./LinkedReferences').watchConnected> | null = null
 const loadProbe = () => (probeChunk ??= import('./LinkedReferences').then(({ watchConnected }) => watchConnected))
 onTestTeardown(() => probeChunk?.catch(() => {}))
+resettable('connectionsProbe', () => { probeChunk = null })
 
 /** Whether the item links to, or is linked from, something this device can read (false until known). */
 export function useConnected(kind: ConnectionKind, id: string | undefined): boolean {
