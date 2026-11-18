@@ -53,10 +53,11 @@ var (
 )
 
 var (
-	knownKeys     = []string{"$schema", "opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type"}
+	knownKeys     = []string{"$schema", "opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type", "titleWeight"}
 	requiredSeeds = []string{"canvas", "surface", "text", "accent"}
 	radiusSteps   = []string{"chip", "control", "card", "surface", "popover"}
 	families      = []string{"inter", "system", "serif", "mono"}
+	titleWeights  = []float64{400, 500, 600, 700}
 )
 
 // alphaToken is the only token that may be translucent.
@@ -160,6 +161,11 @@ func validate(v any) {
 	}
 	if t, ok := d["type"]; ok {
 		typ(t)
+	}
+	if w, ok := d["titleWeight"]; ok {
+		if n, ok := w.(float64); !ok || !slices.Contains(titleWeights, n) {
+			fail("type", "titleWeight")
+		}
 	}
 	for _, k := range sortedKeys(d) {
 		if !slices.Contains(knownKeys, k) && !topKeyRe.MatchString(k) {

@@ -18,12 +18,13 @@ export type PreviewTab = 'list' | 'board' | 'calendar' | 'task'
 export const PREVIEW_TABS: readonly PreviewTab[] = ['list', 'board', 'calendar', 'task']
 
 /** The custom properties of a resolved theme, as the app sets them on the root. */
-export function themeStyle(r: Pick<ResolvedTheme, 'tokens' | 'radius' | 'font' | 'list'>): CSSProperties {
+export function themeStyle(r: Pick<ResolvedTheme, 'tokens' | 'radius' | 'font' | 'list' | 'titleWeight'>): CSSProperties {
   const style: Record<string, string> = {}
   for (const n of CSS_TOKENS) if (r.tokens[n]) style[`--ot-${n}`] = r.tokens[n]
   if (r.radius) for (const s of RADIUS_STEPS) style[`--ot-radius-${s}`] = `${r.radius[s]}px`
   if (r.font) style['--ot-font'] = r.font
   style['--ot-text-list'] = `${(r.list ?? 13) / 16}rem`
+  style['--ot-title-weight'] = String(r.titleWeight ?? 400)
   return style as CSSProperties
 }
 
