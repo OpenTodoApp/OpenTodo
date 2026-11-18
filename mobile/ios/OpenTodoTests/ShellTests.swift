@@ -490,3 +490,49 @@ final class PageServer: @unchecked Sendable {
         connection.send(content: Data(head.utf8) + bytes, completion: .contentProcessed { _ in connection.cancel() })
     }
 }
+
+/// app-sso-system-browser: the rules of single sign-on in the system browser.
+final class SystemSignInTests: XCTestCase {
+    private let server = URL(string: "https://todo.example.com")!
+
+    func testChallengeIsS256() {
+        // RFC 7636, appendix B.
+        XCTAssertEqual(SystemSignIn.challenge(for: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+        let p = SystemSignIn.pending()
+        XCTAssertEqual(p.verifier.count, 43)
+        XCTAssertEqual(p.challenge, SystemSignIn.challenge(for: p.verifier))
+        XCTAssertNotEqual(p.state, SystemSignIn.pending().state)
+    }
+
+    func testOnlyTheServersStartRouteGoesToTheSystemBrowser() {
+        XCTAssertTrue(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/start")!, server: server))
+        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=x&app_state=y")!, server: server))
+        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://sso.example.com/api/v1/auth/oidc/start")!, server: server))
+        XCTAssertFalse(SystemSignIn.isStart(URL(string: "https://todo.example.com/api/v1/auth/oidc/callback")!, server: server))
+        let start = SystemSignIn.startURL(server: server, SystemSignIn.Pending(verifier: "v", challenge: "c", state: "s"))
+        XCTAssertEqual(start.absoluteString, "https://todo.example.com/api/v1/auth/oidc/start?app_challenge=c&app_state=s")
+    }
+
+    func testOutcome() {
+        func outcome(_ s: String) -> SystemSignIn.Outcome { SystemSignIn.outcome(of: URL(string: s)!, state: "st") }
+        XCTAssertEqual(outcome("opentodo://sso?code=abc_-1&state=st"), .code("abc_-1"))
+        XCTAssertEqual(outcome("opentodo://sso?error=oidc_failed&state=st"), .error("oidc_failed"))
+        XCTAssertEqual(outcome("opentodo://sso?code=abc&state=other"), .invalid)
+        XCTAssertEqual(outcome("opentodo://sso?code=abc"), .invalid)
+        XCTAssertEqual(outcome("opentodo://task/abc?code=abc&state=st"), .invalid)
+        XCTAssertEqual(outcome("opentodo://sso?code=a'%3Balert(1)&state=st"), .invalid, "only plain tokens reach the page's script")
+    }
+
+    func testHealthAnnouncesAppFlows() {
+        XCTAssertTrue(SystemSignIn.supported(healthBody: Data(#"{"status":"ok","version":"1","app_sso":true}"#.utf8)))
+        XCTAssertFalse(SystemSignIn.supported(healthBody: Data(#"{"status":"ok","version":"1"}"#.utf8)))
+        XCTAssertFalse(SystemSignIn.supported(healthBody: Data("not json".utf8)))
+    }
+
+    func testRedeemScriptNamesTheRouteAndValues() {
+        let script = SystemSignIn.redeemScript(code: "c0de", verifier: "v3r")
+        XCTAssertTrue(script.contains("'/api/v1/auth/oidc/app-session'"))
+        XCTAssertTrue(script.contains("code: 'c0de', code_verifier: 'v3r'"))
+        XCTAssertEqual(SystemSignIn.errorURL(server: server, code: "signup_closed").absoluteString, "https://todo.example.com/?error=signup_closed")
+    }
+}

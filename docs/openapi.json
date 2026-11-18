@@ -2921,6 +2921,55 @@
         "x-opentodo-policy": "public"
       }
     },
+    "/api/v1/auth/oidc/app-session": {
+      "post": {
+        "description": "`{code, code_verifier}` from the OpenTodo app's web view, after [single sign-on in the system browser](https://open-todo.app/docs/api/#single-sign-on-in-the-apps): 303 to `/` + cookie, or the link answers of the callback when the web view is signed in; 400 `oidc_state_invalid` for an unknown, spent, expired or mismatched code; 403 `bad_origin` from another site\n\nNo authentication.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#health-and-authentication"
+        },
+        "operationId": "postAuthOidcAppSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "code": "example",
+                "code_verifier": "example"
+              },
+              "schema": {
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "code_verifier": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "code_verifier"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [],
+        "summary": "Auth oidc app session",
+        "tags": [
+          "Health and authentication"
+        ],
+        "x-opentodo-policy": "public"
+      }
+    },
     "/api/v1/auth/oidc/callback": {
       "get": {
         "description": "provider return: 303 to `/` + cookie, or to `/?error=…`\n\nNo authentication.",
@@ -9760,12 +9809,16 @@
               "application/json": {
                 "example": {
                   "app_sign_in": false,
+                  "app_sso": false,
                   "status": "example",
                   "version": "example"
                 },
                 "schema": {
                   "properties": {
                     "app_sign_in": {
+                      "type": "boolean"
+                    },
+                    "app_sso": {
                       "type": "boolean"
                     },
                     "status": {
