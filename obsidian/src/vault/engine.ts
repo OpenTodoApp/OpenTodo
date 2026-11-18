@@ -22,7 +22,7 @@ export const MAX_TASKS = 20000
 export const MAX_NOTE_BYTES = 64 << 10
 
 /** The protocol additions the vault handles. */
-const FEATURES = ['clock_skew', 'backfill_ack']
+const FEATURES = ['clock_skew', 'backfill_ack', 'invalid_ops']
 
 /** A pending value of a field: what the Go engine keeps in its map[string]any bodies. */
 export type Body = Map<string, unknown>
