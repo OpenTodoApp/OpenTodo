@@ -20,8 +20,8 @@ REST API compute the same dates. Every example on this page is one of those vect
 The app shows a rule in your interface language (`every 2nd tuesday` reads "Every month on
 the second Tuesday", or "Jeden Monat am zweiten Dienstag" in German). The stored rule is
 the English phrase described here. A task's Repeat field takes that phrase in every language,
-and also the repeat phrases quick add reads in [its languages](quick-add.md): "elke vrijdag"
-is stored as `every friday`.
+and also the repeat phrases quick add reads in [its languages](quick-add.md): "elke maandag"
+is stored as `every monday`.
 
 ## Grammar
 
