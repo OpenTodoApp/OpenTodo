@@ -254,13 +254,15 @@ describe('images', () => {
     vi.restoreAllMocks()
   })
 
-  it('Web image stays a link: a pasted image address becomes a link', async () => {
+  it('Web image stays a link: a pasted image address stays the bare address and reads as a link', async () => {
     const id = await createTask({ title: 'Inspiration' })
     const { container, unmount } = await open(id)
     const v = await editorOf(container)
     const slice = v.someProp('clipboardTextParser', (f) => f('https://example.org/photo.jpg', v.state.selection.$from, true, v))!
     v.dispatch(v.state.tr.replaceSelection(slice))
-    expect(md(v)).toBe('[https://example.org/photo.jpg](https://example.org/photo.jpg)')
+    // bare-links D2: the note keeps the address as typed; the editor shows it as a link.
+    expect(md(v)).toBe('https://example.org/photo.jpg')
+    expect(v.dom.querySelector('a.bare-link')?.getAttribute('href')).toBe('https://example.org/photo.jpg')
     expect(v.dom.querySelector('img')).toBeNull()
     await unmount()
   })

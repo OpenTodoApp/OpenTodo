@@ -168,7 +168,7 @@ Dropping or pasting an image into the editor, or choosing Image from the slash m
 
 #### Scenario: Web image stays a link
 - **WHEN** the user pastes `https://example.org/photo.jpg`
-- **THEN** the note gets a link to that address, no image is loaded, and no request is made to example.org
+- **THEN** the note keeps the bare address, which reads as a link, no image is loaded, and no request is made to example.org
 
 ### Requirement: Checklist items become subtasks
 On a check-list line, or a selection holding check-list lines, in a task's notes the editor SHALL offer Make subtask (slash menu, context menu and a key combination registered in the shortcut registry); it SHALL create one subtask of the task per check-list line with the line's text as title, the task's project, and the line's checked state as completion. In a project's note and in a standalone note the same command, the same key and the same menus SHALL offer Make tasks: one task per check-list line, its line read with quick-add syntax (a date, a priority, labels), in the project of the note (a standalone note without a project: the Inbox of the note's workspace), with the line's checked state as completion. Either command SHALL replace each line with a paragraph holding a link to its task, and SHALL be one change that Undo reverts in one step, the tasks and the note together. Lines of the selection that are not check-list lines, and lines that already hold only a link to a task, SHALL be left as they are; one command SHALL turn at most 50 lines and say so when the selection holds more. The link SHALL show the task's current title and done state when the task is on the device, and the stored text otherwise, so the note's Linked references and the task's Linked references connect the two. The tasks and the note change SHALL be written as local operations in one batch, offline included, and SHALL converge like any task creation and note edit: a concurrent edit of the same note on another device merges with the replaced lines. Viewers of a shared project SHALL not be offered either command. The commands SHALL not be offered in comments.
@@ -427,3 +427,18 @@ While Habits is on, in a project note or a standalone note, **Make habits** (the
 #### Scenario: Offline
 - **WHEN** the device is offline and the user makes two habits from a note
 - **THEN** both exist at once and reach the other devices on the next sync
+
+### Requirement: Bare addresses read as links
+In the rich-text editor, an `http(s)` address in a note's text, outside code and outside a link, SHALL read as a link that Ctrl/Cmd-click opens in a new tab, by the same rule the read-only views use, while the note SHALL keep the address as typed. A pasted plain-text address SHALL stay text, and a pasted link whose text is its own address (a trailing slash aside) SHALL be kept as the bare address; a pasted link with other text SHALL stay a link.
+
+#### Scenario: Typed address
+- **WHEN** the user types `see https://example.com today` in a note
+- **THEN** the address reads as a link that Ctrl/Cmd-click opens, and the note's Markdown is `see https://example.com today`
+
+#### Scenario: Pasted link from another app
+- **WHEN** the user pastes a link whose text is `https://example.com` and whose address is `https://example.com/`
+- **THEN** the note holds the bare address `https://example.com` and shows it as a link
+
+#### Scenario: Address in code
+- **WHEN** a note has `https://example.com` inside inline code or a code block
+- **THEN** it does not read as a link

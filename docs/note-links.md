@@ -17,7 +17,7 @@ A link always shows the current title of what it points to, so renaming a task o
 
 While [Habits](habits.md) is on, a habit shows with the habit mark and how many of its last seven days were kept ("6 of 7"), and its links show the habit mark. The stored link is still a task link.
 
-In a note of a shared project, the list offers only that project's notes and tasks, so a private title never ends up in a shared note by accident. You can still paste any link.
+In a note of a shared project, the list offers only that project's notes and tasks, so a private title never ends up in a shared note by accident. You can still paste any link; a web address you type or paste (`https://…`) shows as a link and stays as typed.
 
 ## Linked references
 
