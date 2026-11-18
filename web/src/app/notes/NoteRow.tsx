@@ -5,7 +5,8 @@
 // size container: under 40 rem the labels leave and the place narrows. Below 768 px
 // (phone-titles-everywhere D3) the title takes up to two lines across the row and the
 // time and the place stand on a line under it, the snippet on its own line between. At
-// least 48 px tall on phones; a standalone note's menu holds Pin, Turn into task and Delete (no
+// least 48 px tall on phones; a note with attachments (a standalone note's or a task's) shows
+// a paperclip and their number after its title (GitHub issue 1477); a standalone note's menu holds Pin, Turn into task and Delete (no
 // swipe actions), and a long press opens it.
 import type { ReactNode } from 'react'
 import type { SnippetSegment } from '../../lib/noteSearch'
@@ -14,6 +15,7 @@ import type { Label, Project } from '../../lib/types'
 import { Icon, LabelChips, Menu, MenuGroup, MenuItem, type IconName } from '../../ui'
 import { t } from '../../lib/i18n'
 import { ProjectMark } from '../ProjectMark'
+import { useAttachmentCount, useNoteAttachmentCount } from '../useCommentCounts'
 
 export const SOURCE_ICON: Record<NoteEntry['source'], IconName> = { note: 'notebook-pen', task: 'circle-check-big', project: 'folder' }
 const SOURCE_NAME: Record<NoteEntry['source'], () => string> = { note: () => t('Note'), task: () => t('Task note'), project: () => t('Project note') }
@@ -52,6 +54,9 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
   const title = entry.title.trim() || (entry.source === 'note' ? t('Untitled note') : t('Untitled'))
   // Where the note lives: its project (a task's, or the project of a project note); a task without one is in the Inbox.
   const place = project ? project.name : entry.source === 'task' ? t('Inbox') : ''
+  const noteFiles = useNoteAttachmentCount(entry.source === 'note' ? entry.id : '')
+  const taskFiles = useAttachmentCount(entry.source === 'task' ? entry.id : '')
+  const files = entry.source === 'note' ? noteFiles : entry.source === 'task' ? taskFiles : 0
   return (
     <li className={`group relative flex min-h-12 items-center gap-1 rounded-control @container/note max-md:items-start md:min-h-(--size-row) ${tick?.ticked ? 'bg-accent-soft' : current ? 'bg-selected-row' : cursor ? 'bg-sunken dark:bg-raised' : 'hover:bg-sunken dark:hover:bg-raised'}`}
       data-note-key={entry.key} data-note-source={entry.source} data-cursor={cursor || undefined} data-ticked={tick?.ticked || undefined}
@@ -77,6 +82,9 @@ export function NoteRow({ entry, snippet, project, labels, updated, updatedTitle
           <span className={`user-text title-phone min-w-0 text-body ${snippet?.length ? 'md:max-w-[60%] md:shrink-0' : ''} ${entry.title.trim() ? 'text-default' : 'text-muted'}`} data-note-title>{title}</span>
           {entry.template && <span className="shrink-0 text-meta text-faint" data-note-template>{t('Template')}</span>}
           {entry.marker && <span className="shrink-0 text-meta text-faint" data-note-marker={entry.marker}>{entry.marker === 'completed' ? t('Completed') : t('Archived')}</span>}
+          {files > 0 && <span className="flex shrink-0 items-center gap-0.5 self-center text-meta text-faint" data-note-attachments={files}>
+            <Icon name="paperclip" size="xs" label={t('{n, plural, one {# attachment} other {# attachments}}', { n: files })} /><span aria-hidden>{files}</span>
+          </span>}
           {snippet?.length ? <span className="user-text min-w-0 flex-1 truncate text-meta text-muted max-md:basis-full" data-note-snippet><Snippet segments={snippet} /></span> : null}
         </span>
         <span className="flex min-w-0 max-w-20 items-center justify-end gap-1 text-meta text-faint max-md:col-start-3 max-md:row-start-2 max-md:max-w-none max-md:justify-start @min-[40rem]/note:max-w-none @min-[40rem]/note:justify-start" data-note-place>

@@ -399,6 +399,13 @@ export async function attachmentCounts(): Promise<Map<string, number>> {
   return out
 }
 
+/** Live attachments per standalone note (note-attachments), for the paperclip in the notes list. */
+export async function noteAttachmentCounts(): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  for (const a of await db.attachments.filter((x) => !x.deleted_at && !!x.note_id).toArray()) out.set(a.note_id as string, (out.get(a.note_id as string) ?? 0) + 1)
+  return out
+}
+
 // ---- encryption migration of files (design D8) ----
 
 const K_FILE_MIGRATION = 'e2ee.fileMigration'

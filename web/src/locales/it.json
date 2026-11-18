@@ -3928,7 +3928,6 @@
   "Repeating occurrences": "Ripetizioni",
   "Repeating tasks shown up to {date}": "Attività ricorrenti mostrate fino a {date}",
   "Repeats": "Si ripete",
-  "Repeats {rule}": "Si ripete: {rule}",
   "Replace text": "Sostituisci testo",
   "Replace token": "Sostituisci il token",
   "Replace with": "Sostituisci con",
@@ -7772,5 +7771,18 @@
   "Add a subtask to this task": "Aggiungi una sottoattività a questa attività",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "il calendario supera {size} MB; collegalo invece con la sincronizzazione del calendario",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Questo server non ha potuto accettare una modifica da questo dispositivo. Resta su questo dispositivo e tutto il resto continua a sincronizzarsi.",
-  "(this server could not accept the value)": "(questo server non ha potuto accettare il valore)"
+  "(this server could not accept the value)": "(questo server non ha potuto accettare il valore)",
+  "Every year": "Ogni anno",
+  "Every {n, plural, one {# day} other {# days}}": "{n, plural, one {Ogni giorno} other {Ogni # giorni}}",
+  "Every {n, plural, one {# week} other {# weeks}}": "{n, plural, one {Ogni settimana} other {Ogni # settimane}}",
+  "Every {n, plural, one {# month} other {# months}}": "{n, plural, one {Ogni mese} other {Ogni # mesi}}",
+  "Every {n, plural, one {# year} other {# years}}": "{n, plural, one {Ogni anno} other {Ogni # anni}}",
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": "{n, plural, one {Ogni settimana} other {Ogni # settimane}} di {weekday}",
+  "Every month on the last day": "Ogni mese l’ultimo giorno",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": "Ogni mese {ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}} giorno feriale",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": "Ogni mese {wd, select, mon {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} tue {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} wed {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} thu {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} fri {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} sat {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} other {{ordinal, select, first {la prima} second {la seconda} third {la terza} fourth {la quarta} other {l’ultima}}}} {wd, select, mon {lunedì} tue {martedì} wed {mercoledì} thu {giovedì} fri {venerdì} sat {sabato} other {domenica}}",
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Ogni anno {wd, select, mon {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} tue {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} wed {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} thu {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} fri {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} sat {{ordinal, select, first {il primo} second {il secondo} third {il terzo} fourth {il quarto} other {l’ultimo}}} other {{ordinal, select, first {la prima} second {la seconda} third {la terza} fourth {la quarta} other {l’ultima}}}} {wd, select, mon {lunedì} tue {martedì} wed {mercoledì} thu {giovedì} fri {venerdì} sat {sabato} other {domenica}} di {month}",
+  "{rule} after completion": "{rule} dopo il completamento",
+  "{rule} until {date}": "{rule} fino al {date}",
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}"
 }
