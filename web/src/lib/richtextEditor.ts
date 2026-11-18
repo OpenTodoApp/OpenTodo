@@ -25,6 +25,7 @@ import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
 import { refOf, titleOf } from './noteLinks'
 import { tablePlugins, tableShiftTab, tableTab } from './editorTables'
+import { bareLinksPlugin } from './editorBareLinks'
 
 // ---- schema ----
 
@@ -590,6 +591,7 @@ export function plugins(hooks: EditorHooks): Plugin[] {
     sizeLimit(hooks.size),
     ...(hooks.suggest ? [suggestPlugin(hooks.suggest)] : []),
     linkSpacePlugin(),
+    bareLinksPlugin(),
     rules(),
     ...tablePlugins(),
     trailingParagraph(),
@@ -633,13 +635,14 @@ export function createState(nodes: RNode[], hooks: EditorHooks): EditorState {
 
 /**
  * Pasted plain text is read as Markdown, so pasting a formatted note keeps its
- * structure. A pasted web address (an image's too) becomes a link, never an
- * embed: the app loads nothing from other sites (editor-everywhere D5).
+ * structure. A pasted web address (an image's too) stays the bare address, which
+ * reads as a link (bare-links D2), never an embed: the app loads nothing from other
+ * sites (editor-everywhere D5).
  */
 export function markdownSlice(text: string): Slice {
   const url = text.trim()
   if (/^https?:\/\/\S+$/i.test(url) && safeHref(url)) {
-    return new Slice(Fragment.from(schema.text(url, [schema.marks.link.create({ href: url })])), 0, 0)
+    return new Slice(Fragment.from(schema.text(url)), 0, 0)
   }
   const doc = modelToPm(parseMarkdown(text))
   return new Slice(Fragment.from(doc.content), 1, 1)
