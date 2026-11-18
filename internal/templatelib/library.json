@@ -14,46 +14,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Trip planning",
+     "fr": "Organiser un voyage",
      "it": "Organizzare un viaggio"
     },
     "summary": {
      "en": "Bookings, documents and a packing list with subtasks, for a holiday or a work trip.",
+     "fr": "Réservations, documents et une liste de bagages avec des sous-tâches, pour des vacances ou un déplacement professionnel.",
      "it": "Prenotazioni, documenti e una lista di cose da mettere in valigia con le sottoattività, per una vacanza o un viaggio di lavoro."
     },
     "description": {
      "en": "A trip has three phases: book, sort out the documents, pack. This template gives each a section and uses [subtasks](https://open-todo.app/docs/tasks-and-projects/) for the packing list, so you can tick items off on your phone while you pack.\n\nAdd a [reminder](https://open-todo.app/docs/reminders/) to the passport task if your trip is far away; renewals take time.",
+     "fr": "Un voyage comprend trois phases : réserver, gérer les documents, faire sa valise. Ce modèle attribue une section à chacune et utilise les [sous-tâches](https://open-todo.app/docs/tasks-and-projects/) pour la liste de bagages, afin que tu puisses cocher les éléments depuis ton téléphone pendant que tu te prépares.\n\nAjoute un [rappel](https://open-todo.app/docs/reminders/) à la tâche du passeport si le voyage est lointain : les renouvellements prennent du temps.\n",
      "it": "Un viaggio ha tre fasi: prenotare, sistemare i documenti, fare la valigia. Questo modello dà a ognuna una sezione e usa le [sottoattività](https://open-todo.app/docs/tasks-and-projects/) per la lista della valigia, così puoi spuntare le cose dal telefono mentre prepari.\n\nAggiungi un [promemoria](https://open-todo.app/docs/reminders/) all'attività del passaporto se il viaggio è lontano: i rinnovi richiedono tempo.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the three sections are book, documents and pack.",
+      "fr": "Lance le modèle ; les trois sections sont réserver, documents et valise.",
       "it": "Avvia il modello; le tre sezioni sono prenotare, documenti e valigia."
      },
      {
       "en": "Add a reminder to the passport task if the trip is far away.",
+      "fr": "Ajoute un rappel à la tâche du passeport si le voyage est lointain.",
       "it": "Aggiungi un promemoria all'attività del passaporto se il viaggio è lontano."
      },
      {
       "en": "Tick the packing subtasks off on your phone while you pack.",
+      "fr": "Coche les sous-tâches de la valise depuis ton téléphone pendant que tu te prépares.",
       "it": "Spunta le sottoattività della valigia dal telefono mentre prepari."
      }
     ],
     "makeItYours": [
      {
       "en": "Copy the packing list into a \"Standard packing\" project and reuse it for every trip.",
+      "fr": "Copie la liste de bagages dans un projet \"Valise type\" et réutilise-la pour chaque voyage.",
       "it": "Copia la lista della valigia in un progetto \"Valigia standard\" e riusala per ogni viaggio."
      },
      {
       "en": "Share the project with your travel companions and split the bookings.",
+      "fr": "Partage le projet avec tes compagnons de voyage et répartissez-vous les réservations.",
       "it": "Condividi il progetto con chi viaggia con te e dividetevi le prenotazioni."
      },
      {
       "en": "Add the dates: flights, check-in, the day the insurance must be sorted.",
+      "fr": "Ajoute les dates : vols, enregistrement, la date limite pour souscrire l'assurance.",
       "it": "Aggiungi le date: voli, check-in, il giorno entro cui sistemare l'assicurazione."
      }
     ]
@@ -62,12 +72,14 @@
     {
      "name": {
       "en": "booking",
+      "fr": "réservation",
       "it": "prenotazione"
      }
     },
     {
      "name": {
       "en": "packing",
+      "fr": "valise",
       "it": "valigia"
      }
     }
@@ -76,6 +88,7 @@
     {
      "name": {
       "en": "Trip",
+      "fr": "Voyage",
       "it": "Viaggio"
      },
      "color": "#0891b2",
@@ -83,12 +96,14 @@
       {
        "name": {
         "en": "Book",
+        "fr": "Réserver",
         "it": "Prenotare"
        },
        "tasks": [
         {
          "title": {
           "en": "Flights or train tickets",
+          "fr": "Billet d'avion ou de train",
           "it": "Biglietti aerei o del treno"
          },
          "priority": 1,
@@ -100,6 +115,7 @@
         {
          "title": {
           "en": "Accommodation",
+          "fr": "Hébergement",
           "it": "Alloggio"
          },
          "priority": 1,
@@ -111,6 +127,7 @@
         {
          "title": {
           "en": "Travel insurance",
+          "fr": "Assurance voyage",
           "it": "Assicurazione di viaggio"
          },
          "due": "+1w",
@@ -123,12 +140,14 @@
       {
        "name": {
         "en": "Documents",
+        "fr": "Documents",
         "it": "Documenti"
        },
        "tasks": [
         {
          "title": {
           "en": "Check passport expiry date",
+          "fr": "Vérifier la date d'expiration du passeport",
           "it": "Controllare la scadenza del passaporto"
          },
          "priority": 1,
@@ -137,6 +156,7 @@
         {
          "title": {
           "en": "Print or download tickets",
+          "fr": "Imprimer ou télécharger les billets",
           "it": "Stampare o scaricare i biglietti"
          },
          "due": "+3w"
@@ -146,12 +166,14 @@
       {
        "name": {
         "en": "Pack",
+        "fr": "Valise",
         "it": "Valigia"
        },
        "tasks": [
         {
          "title": {
           "en": "Clothes",
+          "fr": "Vêtements",
           "it": "Vestiti"
          },
          "due": "+4w",
@@ -162,12 +184,14 @@
           {
            "title": {
             "en": "Rain jacket",
+            "fr": "Veste de pluie",
             "it": "Giacca da pioggia"
            }
           },
           {
            "title": {
             "en": "Comfortable shoes",
+            "fr": "Chaussures confortables",
             "it": "Scarpe comode"
            }
           }
@@ -176,6 +200,7 @@
         {
          "title": {
           "en": "Toiletries",
+          "fr": "Articles de toilette",
           "it": "Prodotti per l'igiene"
          },
          "due": "+4w",
@@ -186,6 +211,7 @@
         {
          "title": {
           "en": "Chargers and adapters",
+          "fr": "Chargeurs et adaptateurs",
           "it": "Caricabatterie e adattatori"
          },
          "due": "+4w",
@@ -218,46 +244,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Home maintenance",
+     "fr": "Entretien de la maison",
      "it": "Manutenzione della casa"
     },
     "summary": {
      "en": "The yearly and seasonal jobs every home needs, repeating so you never have to remember them.",
+     "fr": "Les tâches récurrentes annuelles et saisonnières indispensables à tout foyer, évitant ainsi d’avoir à les garder en mémoire.",
      "it": "I lavori stagionali e annuali di cui ogni casa ha bisogno, ripetuti così non devi ricordarli."
     },
     "description": {
      "en": "Some jobs come round only once a season or once a year, which is exactly why they get forgotten. Every task here [repeats](https://open-todo.app/docs/recurrence/) at its own interval; add a [reminder](https://open-todo.app/docs/reminders/) to the ones that need booking a tradesperson.",
+     "fr": "Certains travaux ne se présentent qu'une fois par saison ou par an, et c'est précisément pour cela qu'on les oublie. Chaque tâche [se répète](https://open-todo.app/docs/recurrence/)  à son propre intervalle; ajoute un [rappel](https://open-todo.app/docs/reminders/) à celles qui nécessitent la réservation d'un artisan.\n",
      "it": "Alcuni lavori capitano una volta a stagione o una volta l'anno, ed è proprio per questo che si dimenticano. Ogni attività qui si [ripete](https://open-todo.app/docs/recurrence/) con il suo intervallo; aggiungi un [promemoria](https://open-todo.app/docs/reminders/) a quelle che richiedono di prenotare un tecnico.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; every task repeats at its own interval, from monthly to yearly.",
+      "fr": "Lance le modèle ; chaque tâche se répète selon son propre intervalle, de mensuel à annuel.",
       "it": "Avvia il modello; ogni attività si ripete con il suo intervallo, da mensile ad annuale."
      },
      {
       "en": "Open the ones that need booking a tradesperson and add a reminder a week ahead.",
+      "fr": "Ouvre celles qui nécessitent un technicien et ajoute un rappel une semaine avant.",
       "it": "Apri quelle che richiedono un tecnico e aggiungi un promemoria una settimana prima."
      },
      {
       "en": "Complete a task when it is done and the next occurrence appears.",
+      "fr": "Termine une tâche lorsqu'elle est faite et la prochaine récurrence apparaîtra.",
       "it": "Completa un'attività quando è fatta e compare la prossima ripetizione."
      }
     ],
     "makeItYours": [
      {
       "en": "Delete what your home does not have (no chimney, no garden) and add what it does.",
+      "fr": "Supprime ce que ta maison n'a pas (pas de cheminée, pas de jardin) et ajoute ce qu'elle a.",
       "it": "Elimina quello che la tua casa non ha (niente camino, niente giardino) e aggiungi quello che ha."
      },
      {
       "en": "Adjust intervals to your climate: gutters more often under trees, less in a flat.",
+      "fr": "Adapte les intervalles au climat : les gouttières plus souvent sous les arbres, moins dans un appartement.",
       "it": "Adatta gli intervalli al clima: grondaie più spesso sotto gli alberi, meno in un appartamento."
      },
      {
       "en": "Share it with whoever else looks after the house.",
+      "fr": "Partage-le avec les personnes qui s'occupent de la maison avec toi.",
       "it": "Condividilo con chi si occupa della casa insieme a te."
      }
     ]
@@ -266,12 +302,14 @@
     {
      "name": {
       "en": "outside",
+      "fr": "extérieur",
       "it": "fuori"
      }
     },
     {
      "name": {
       "en": "inside",
+      "fr": "intérieur",
       "it": "dentro"
      }
     }
@@ -280,6 +318,7 @@
     {
      "name": {
       "en": "Home maintenance",
+      "fr": "Entretien de la maison",
       "it": "Manutenzione della casa"
      },
      "color": "#64748b",
@@ -287,12 +326,14 @@
       {
        "name": {
         "en": "Every season",
+        "fr": "Chaque saison",
         "it": "Ogni stagione"
        },
        "tasks": [
         {
          "title": {
           "en": "Clean the gutters",
+          "fr": "Nettoyer les gouttières",
           "it": "Pulire le grondaie"
          },
          "due": "+2w",
@@ -304,6 +345,7 @@
         {
          "title": {
           "en": "Replace the cooker hood filter",
+          "fr": "Changer le filtre de la hotte",
           "it": "Cambiare il filtro della cappa"
          },
          "due": "+1m",
@@ -317,12 +359,14 @@
       {
        "name": {
         "en": "Every year",
+        "fr": "Chaque année",
         "it": "Ogni anno"
        },
        "tasks": [
         {
          "title": {
           "en": "Service the boiler",
+          "fr": "Révision de la chaudière",
           "it": "Revisione della caldaia"
          },
          "priority": 2,
@@ -335,6 +379,7 @@
         {
          "title": {
           "en": "Check the roof and chimney",
+          "fr": "Vérifier le toit et la cheminée",
           "it": "Controllare tetto e camino"
          },
          "due": "+2m",
@@ -346,6 +391,7 @@
         {
          "title": {
           "en": "Bleed the radiators",
+          "fr": "Purger les radiateurs",
           "it": "Sfiatare i termosifoni"
          },
          "due": "+3w",
@@ -379,46 +425,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Household chores",
+     "fr": "Tâches ménagères",
      "it": "Faccende di casa"
     },
     "summary": {
      "en": "Daily, weekly and monthly chores on repeat, ready to share and assign in a household.",
+     "fr": "Tâches quotidiennes, hebdomadaires et mensuelles récurrentes, prêtes à être partagées et assignées au sein du foyer.",
      "it": "Faccende quotidiane, settimanali e mensili che si ripetono, pronte da condividere e assegnare in famiglia."
     },
     "description": {
      "en": "Chores are the reason many households want a shared task list. Every task here [repeats](https://open-todo.app/docs/recurrence/) on its own schedule, and when you complete one the next occurrence appears.\n\n[Share the project](https://open-todo.app/docs/sharing/) with everyone at home and assign tasks to people, or leave them open for whoever gets there first.",
+     "fr": "Les tâches ménagères sont la raison pour laquelle de nombreux foyers souhaitent une liste partagée. Chaque tâche ici se [répète](https://open-todo.app/docs/recurrence/) selon sa propre fréquence, et lorsque tu en termines une, la suivante apparaît.\n\n[Partage le projet](https://open-todo.app/docs/sharing/) avec les personnes qui vivent avec toi et attribue les tâches, ou laisse-les libres pour le premier disponible.\n",
      "it": "Le faccende sono il motivo per cui molte famiglie vogliono una lista condivisa. Ogni attività qui si [ripete](https://open-todo.app/docs/recurrence/) con la sua cadenza, e quando ne completi una compare la successiva.\n\n[Condividi il progetto](https://open-todo.app/docs/sharing/) con chi vive con te e assegna le attività alle persone, o lasciale libere per chi arriva prima.\n"
     },
     "howToUse": [
      {
       "en": "Start the template, then share the project with everyone at home as editors.",
+      "fr": "Lance le modèle, puis partage le projet avec les personnes qui vivent avec toi en tant qu'éditeurs.",
       "it": "Avvia il modello, poi condividi il progetto con chi vive con te come editor."
      },
      {
       "en": "Assign each chore to a person, or leave it open for whoever gets there first.",
+      "fr": "Attribue chaque tâche ménagère à une personne, ou laisse-la libre pour le premier disponible.",
       "it": "Assegna ogni faccenda a una persona, o lasciala libera per chi arriva prima."
      },
      {
       "en": "Tick a chore off and its next occurrence appears on its schedule.",
+      "fr": "Coche une tâche et la suivante apparaît selon sa fréquence.",
       "it": "Spunta una faccenda e la successiva compare secondo la sua cadenza."
      }
     ],
     "makeItYours": [
      {
       "en": "Change the days: your bins may go out on Tuesday, not Thursday.",
+      "fr": "Change les jours : le tri sélectif passe peut-être le mardi chez toi, et non le jeudi.",
       "it": "Cambia i giorni: la tua raccolta differenziata può passare il martedì, non il giovedì."
      },
      {
       "en": "Split the project into sections by room or by person and show it as a board.",
+      "fr": "Divise le projet en sections par pièce ou par personne et affiche-le sous forme de tableau.",
       "it": "Dividi il progetto in sezioni per stanza o per persona e mostralo come bacheca."
      },
      {
       "en": "Add labels like `@10min` so a short gap can be filled from the list.",
+      "fr": "Ajoute des étiquettes comme `@10min` pour occuper un moment libre à partir de la liste.",
       "it": "Aggiungi etichette come `@10min` per riempire un momento libero dalla lista."
      }
     ]
@@ -427,18 +483,21 @@
     {
      "name": {
       "en": "kitchen",
+      "fr": "cuisine",
       "it": "cucina"
      }
     },
     {
      "name": {
       "en": "cleaning",
+      "fr": "nettoyage",
       "it": "pulizie"
      }
     },
     {
      "name": {
       "en": "garden",
+      "fr": "jardin",
       "it": "giardino"
      }
     }
@@ -447,6 +506,7 @@
     {
      "name": {
       "en": "Household",
+      "fr": "Maison",
       "it": "Casa"
      },
      "color": "#16a34a",
@@ -454,12 +514,14 @@
       {
        "name": {
         "en": "Daily",
+        "fr": "Chaque jour",
         "it": "Ogni giorno"
        },
        "tasks": [
         {
          "title": {
           "en": "Load or empty the dishwasher",
+          "fr": "Remplir ou vider le lave-vaisselle",
           "it": "Caricare o svuotare la lavastoviglie"
          },
          "due": "+0d",
@@ -471,6 +533,7 @@
         {
          "title": {
           "en": "Wipe the kitchen counters",
+          "fr": "Nettoyer les plans de travail de la cuisine",
           "it": "Pulire i piani della cucina"
          },
          "due": "+0d",
@@ -484,12 +547,14 @@
       {
        "name": {
         "en": "Weekly",
+        "fr": "Chaque semaine",
         "it": "Ogni settimana"
        },
        "tasks": [
         {
          "title": {
           "en": "Vacuum and mop",
+          "fr": "Passer l'aspirateur et laver les sols",
           "it": "Aspirapolvere e lavare i pavimenti"
          },
          "due": "+0d",
@@ -502,6 +567,7 @@
         {
          "title": {
           "en": "Change the bed sheets",
+          "fr": "Changer les draps",
           "it": "Cambiare le lenzuola"
          },
          "due": "+0d",
@@ -513,6 +579,7 @@
         {
          "title": {
           "en": "Take out recycling",
+          "fr": "Sortir les poubelles de tri",
           "it": "Portare fuori la differenziata"
          },
          "due": "+0d",
@@ -521,6 +588,7 @@
         {
          "title": {
           "en": "Water the plants",
+          "fr": "Arroser les plantes",
           "it": "Annaffiare le piante"
          },
          "due": "+0d",
@@ -534,12 +602,14 @@
       {
        "name": {
         "en": "Monthly",
+        "fr": "Chaque mois",
         "it": "Ogni mese"
        },
        "tasks": [
         {
          "title": {
           "en": "Clean the fridge",
+          "fr": "Nettoyer le réfrigérateur",
           "it": "Pulire il frigorifero"
          },
          "due": "+1w",
@@ -551,6 +621,7 @@
         {
          "title": {
           "en": "Descale the kettle and coffee machine",
+          "fr": "Détartrer la bouilloire et la machine à café",
           "it": "Decalcificare bollitore e macchina del caffè"
          },
          "due": "+2w",
@@ -562,6 +633,7 @@
         {
          "title": {
           "en": "Test the smoke alarms",
+          "fr": "Tester les détecteurs de fumée",
           "it": "Provare i rilevatori di fumo"
          },
          "due": "+3w",
@@ -592,46 +664,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Meal planning",
+     "fr": "Planifier les repas",
      "it": "Pianificare i pasti"
     },
     "summary": {
      "en": "A weekly rhythm for choosing meals, writing the shopping list and prepping ahead.",
+     "fr": "Un rythme hebdomadaire pour choisir les repas, rédiger la liste de courses et cuisiner à l'avance.",
      "it": "Un ritmo settimanale per scegliere i pasti, scrivere la lista della spesa e preparare in anticipo."
     },
     "description": {
      "en": "Planning meals once a week saves both money and evenings. This template sets a Sunday rhythm with [repeating tasks](https://open-todo.app/docs/recurrence/): choose, write the list, shop, prep.\n\nKeep the shopping list in the same [shared project](https://open-todo.app/docs/sharing/) so whoever is in the shop sees it live.",
+     "fr": "Planifier les repas une fois par semaine permet d'économiser de l'argent et des soirées. Ce modèle instaure un rythme le dimanche avec des [tâches récurrentes](https://open-todo.app/docs/recurrence/) : choisir, faire la liste, faire les courses, préparer.\n\nConserve la liste de courses dans le même [projet partagé](https://open-todo.app/docs/sharing/), afin que la personne au supermarché puisse la voir mise à jour.\n",
      "it": "Pianificare i pasti una volta a settimana fa risparmiare soldi e serate. Questo modello imposta un ritmo domenicale con [attività che si ripetono](https://open-todo.app/docs/recurrence/): scegliere, scrivere la lista, fare la spesa, preparare.\n\nTieni la lista della spesa nello stesso [progetto condiviso](https://open-todo.app/docs/sharing/), così chi è al supermercato la vede aggiornata.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the Sunday rhythm repeats every week: choose, write the list, shop, prep.",
+      "fr": "Lance le modèle ; le rythme du dimanche se répète chaque semaine : choisir, rédiger la liste, faire les courses, préparer.",
       "it": "Avvia il modello; il ritmo della domenica si ripete ogni settimana: scegliere, scrivere la lista, fare la spesa, preparare."
      },
      {
       "en": "Share the project so whoever is in the shop sees the list live.",
+      "fr": "Partage le projet pour que la personne au supermarché voie la liste mise à jour.",
       "it": "Condividi il progetto così chi è al supermercato vede la lista aggiornata."
      },
      {
       "en": "Add this week's groceries as subtasks of the shopping task and tick them off in the aisle.",
+      "fr": "Ajoute les achats de la semaine comme sous-tâches des courses et coche-les dans les allées du magasin.",
       "it": "Aggiungi la spesa della settimana come sottoattività della spesa e spuntala tra gli scaffali."
      }
     ],
     "makeItYours": [
      {
       "en": "Move the planning day to whenever your week starts.",
+      "fr": "Déplace le jour de la planification au moment où ta semaine commence.",
       "it": "Sposta il giorno della pianificazione a quando inizia la tua settimana."
      },
      {
       "en": "Add a section per weekday with the dish as the task title, so the plan is visible on the phone.",
+      "fr": "Ajoute une section par jour avec le plat comme titre de la tâche, afin de visualiser le menu sur ton téléphone.",
       "it": "Aggiungi una sezione per giorno con il piatto come titolo dell'attività, così il piano si vede sul telefono."
      },
      {
       "en": "Keep a \"Staples\" section of things you always need and copy from it.",
+      "fr": "Conserve une section \"Réserves\" avec les produits indispensables et pioche dedans.",
       "it": "Tieni una sezione \"Scorte\" con le cose che servono sempre e copia da lì."
      }
     ]
@@ -640,6 +722,7 @@
     {
      "name": {
       "en": "shopping",
+      "fr": "courses",
       "it": "spesa"
      }
     }
@@ -648,6 +731,7 @@
     {
      "name": {
       "en": "Meals",
+      "fr": "Repas",
       "it": "Pasti"
      },
      "color": "#ea580c",
@@ -655,12 +739,14 @@
       {
        "name": {
         "en": "Plan",
+        "fr": "Planifier",
         "it": "Pianificare"
        },
        "tasks": [
         {
          "title": {
           "en": "Choose dinners for the week",
+          "fr": "Choisir les dîners de la semaine",
           "it": "Scegliere le cene della settimana"
          },
          "due": "+0d",
@@ -670,6 +756,7 @@
         {
          "title": {
           "en": "Check the fridge and cupboards",
+          "fr": "Vérifier le réfrigérateur et le garde-manger",
           "it": "Controllare frigo e dispensa"
          },
          "due": "+0d",
@@ -680,12 +767,14 @@
       {
        "name": {
         "en": "Shop",
+        "fr": "Courses",
         "it": "Spesa"
        },
        "tasks": [
         {
          "title": {
           "en": "Write the shopping list",
+          "fr": "Écrire la liste de courses",
           "it": "Scrivere la lista della spesa"
          },
          "due": "+0d",
@@ -697,6 +786,7 @@
         {
          "title": {
           "en": "Big shop",
+          "fr": "Grandes courses",
           "it": "Spesa grande"
          },
          "due": "+1d",
@@ -710,12 +800,14 @@
       {
        "name": {
         "en": "Prep",
+        "fr": "Préparer",
         "it": "Preparare"
        },
        "tasks": [
         {
          "title": {
           "en": "Cook a batch of grains and vegetables",
+          "fr": "Préparer une fournée de céréales et de légumes",
           "it": "Cuocere una scorta di cereali e verdure"
          },
          "due": "+0d",
@@ -747,46 +839,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Moving house",
+     "fr": "Déménagement",
      "it": "Trasloco"
     },
     "summary": {
      "en": "Everything from notice periods to the last box, in sections you can share with everyone who is moving.",
+     "fr": "Tout, de la résiliation au dernier carton, réparti dans des sections à partager avec les personnes qui déménagent.",
      "it": "Tutto, dalla disdetta all'ultimo scatolone, in sezioni da condividere con chi trasloca."
     },
     "description": {
      "en": "Moving is a project with a deadline and a lot of people involved. Start this template, then [share the project](https://open-todo.app/docs/sharing/) with everyone who is moving so each person can pick up tasks.\n\nThe sections follow the calendar, from six weeks before to after the move. Switch the project to a [board](https://open-todo.app/docs/sections-and-boards/) to see the stages side by side. Due dates count from the start day you pick, so adjust the first one and move the rest as needed.",
+     "fr": "Un déménagement est un projet doté d'une échéance et impliquant de nombreuses personnes. Lance ce modèle, puis [partage le projet](https://open-todo.app/docs/sharing/) avec les personnes qui déménagent, afin que chacun puisse prendre en charge des tâches.\n\nLes sections suivent le calendrier, de six semaines avant jusqu'après le déménagement. Affiche le projet sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) pour voir les différentes phases côte à côte. Les dates d'échéance se calculent à partir de la date de début que tu choisis : définis la première, puis décale les autres en conséquence.\n",
      "it": "Un trasloco è un progetto con una scadenza e tante persone coinvolte. Avvia questo modello, poi [condividi il progetto](https://open-todo.app/docs/sharing/) con chi trasloca, così ognuno può prendersi delle attività.\n\nLe sezioni seguono il calendario, da sei settimane prima a dopo il trasloco. Passa il progetto alla [bacheca](https://open-todo.app/docs/sections-and-boards/) per vedere le fasi una accanto all'altra. Le scadenze contano dal giorno di inizio che scegli, quindi sistema la prima e sposta le altre di conseguenza.\n"
     },
     "howToUse": [
      {
       "en": "Start the template, then share the project with everyone who is moving.",
+      "fr": "Lance le modèle, puis partage le projet avec les personnes qui déménagent.",
       "it": "Avvia il modello, poi condividi il progetto con chi trasloca."
      },
      {
       "en": "Due dates count from the start day; set the moving day and move the rest to match.",
+      "fr": "Les dates d'échéance se calculent à partir de la date de début ; fixe le jour du déménagement et décale les autres en conséquence.",
       "it": "Le scadenze contano dal giorno di inizio; fissa il giorno del trasloco e sposta le altre di conseguenza."
      },
      {
       "en": "Switch the project to a board to see the stages side by side.",
+      "fr": "Affiche le projet sous forme de tableau pour voir les différentes phases côte à côte.",
       "it": "Passa il progetto alla bacheca per vedere le fasi una accanto all'altra."
      }
     ],
     "makeItYours": [
      {
       "en": "Delete the tasks that do not apply (no pets, no car) and add the ones that do.",
+      "fr": "Supprime les tâches qui ne te concernent pas (pas d'animaux, pas de voiture) et ajoute celles dont tu as besoin.",
       "it": "Elimina le attività che non ti riguardano (niente animali, niente auto) e aggiungi quelle che servono."
      },
      {
       "en": "Assign the admin tasks to one person and the packing to everyone.",
+      "fr": "Attribue les démarches administratives à une personne et les cartons à tout le monde.",
       "it": "Assegna le pratiche a una persona e gli scatoloni a tutti."
      },
      {
       "en": "Add a label `@call` for the tasks that need a phone call during office hours.",
+      "fr": "Ajoute une étiquette `@appeler` pour les tâches qui nécessitent un appel pendant les heures de bureau.",
       "it": "Aggiungi un'etichetta `@telefonare` per le attività che richiedono una chiamata in orario d'ufficio."
      }
     ]
@@ -795,12 +897,14 @@
     {
      "name": {
       "en": "admin",
+      "fr": "démarches",
       "it": "pratiche"
      }
     },
     {
      "name": {
       "en": "packing",
+      "fr": "cartons",
       "it": "scatoloni"
      }
     }
@@ -809,6 +913,7 @@
     {
      "name": {
       "en": "Moving house",
+      "fr": "Déménagement",
       "it": "Trasloco"
      },
      "color": "#d97706",
@@ -816,12 +921,14 @@
       {
        "name": {
         "en": "Six weeks before",
+        "fr": "Six semaines avant",
         "it": "Sei settimane prima"
        },
        "tasks": [
         {
          "title": {
           "en": "Give notice to the landlord",
+          "fr": "Donner le congé au propriétaire",
           "it": "Dare la disdetta al proprietario"
          },
          "priority": 1,
@@ -833,6 +940,7 @@
         {
          "title": {
           "en": "Book the removal company",
+          "fr": "Réserver l'entreprise de déménagement",
           "it": "Prenotare la ditta di traslochi"
          },
          "priority": 2,
@@ -841,12 +949,14 @@
           {
            "title": {
             "en": "Get three quotes",
+            "fr": "Demander trois devis",
             "it": "Chiedere tre preventivi"
            }
           },
           {
            "title": {
             "en": "Check insurance cover",
+            "fr": "Vérifier la couverture de l'assurance",
             "it": "Verificare la copertura assicurativa"
            }
           }
@@ -855,6 +965,7 @@
         {
          "title": {
           "en": "Declutter one room per weekend",
+          "fr": "Vider une pièce chaque week-end",
           "it": "Svuotare una stanza ogni fine settimana"
          },
          "due": "+1w",
@@ -868,12 +979,14 @@
       {
        "name": {
         "en": "Two weeks before",
+        "fr": "Deux semaines avant",
         "it": "Due settimane prima"
        },
        "tasks": [
         {
          "title": {
           "en": "Redirect post",
+          "fr": "Faire suivre son courrier",
           "it": "Far inoltrare la posta"
          },
          "due": "+4w",
@@ -884,6 +997,7 @@
         {
          "title": {
           "en": "Tell the bank, doctor and employer",
+          "fr": "Prévenir la banque, le médecin et l'employeur",
           "it": "Avvisare banca, medico e datore di lavoro"
          },
          "due": "+4w",
@@ -894,6 +1008,7 @@
         {
          "title": {
           "en": "Order boxes and tape",
+          "fr": "Commander des cartons et du ruban adhésif",
           "it": "Ordinare scatoloni e nastro adesivo"
          },
          "due": "+4w",
@@ -906,12 +1021,14 @@
       {
        "name": {
         "en": "Moving day",
+        "fr": "Le jour du déménagement",
         "it": "Il giorno del trasloco"
        },
        "tasks": [
         {
          "title": {
           "en": "Read the meters and take photos",
+          "fr": "Relever les compteurs et prendre des photos",
           "it": "Leggere i contatori e fare le foto"
          },
          "priority": 1,
@@ -920,6 +1037,7 @@
         {
          "title": {
           "en": "Pack an open-first box",
+          "fr": "Préparer un carton à ouvrir en premier",
           "it": "Preparare uno scatolone da aprire per primo"
          },
          "due": "+6w",
@@ -930,18 +1048,21 @@
           {
            "title": {
             "en": "Kettle, mugs and tea",
+            "fr": "Bouilloire, tasses et thé",
             "it": "Bollitore, tazze e tè"
            }
           },
           {
            "title": {
             "en": "Toilet paper and towels",
+            "fr": "Papier toilette et serviettes",
             "it": "Carta igienica e asciugamani"
            }
           },
           {
            "title": {
             "en": "Phone chargers",
+            "fr": "Chargeurs de téléphone",
             "it": "Caricabatterie del telefono"
            }
           }
@@ -952,12 +1073,14 @@
       {
        "name": {
         "en": "After the move",
+        "fr": "Après le déménagement",
         "it": "Dopo il trasloco"
        },
        "tasks": [
         {
          "title": {
           "en": "Register at the new address",
+          "fr": "Enregistrer sa nouvelle adresse",
           "it": "Registrare il nuovo indirizzo"
          },
          "due": "+7w",
@@ -968,6 +1091,7 @@
         {
          "title": {
           "en": "Update the address everywhere online",
+          "fr": "Mettre à jour son adresse sur tous les sites",
           "it": "Aggiornare l'indirizzo su tutti i siti"
          },
          "due": "+7w",
@@ -1000,46 +1124,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "First 90 days in a new job",
+     "fr": "Les 90 premiers jours dans un nouvel emploi",
      "it": "I primi 90 giorni in un nuovo lavoro"
     },
     "summary": {
      "en": "A plan for your first three months, split into learn, contribute and lead.",
+     "fr": "Un plan pour les trois premiers mois, divisé en apprentissage, contribution et autonomie.",
      "it": "Un piano per i primi tre mesi, diviso in imparare, contribuire e guidare."
     },
     "description": {
      "en": "The first three months in a new job go fast. This template breaks them into learning, contributing and leading, with [subtasks](https://open-todo.app/docs/tasks-and-projects/) for the details and estimates so you can block the time on your [calendar](https://open-todo.app/docs/time-blocking/).",
+     "fr": "Les trois premiers mois dans un nouvel emploi passent vite. Ce modèle les divise en apprentissage, contribution et autonomie, avec des [sous-tâches](https://open-todo.app/docs/tasks-and-projects/) pour les détails et des durées estimées pour bloquer du temps dans le [calendrier](https://open-todo.app/docs/time-blocking/).\n",
      "it": "I primi tre mesi in un nuovo lavoro passano in fretta. Questo modello li divide in imparare, contribuire e guidare, con [sottoattività](https://open-todo.app/docs/tasks-and-projects/) per i dettagli e stime per bloccare il tempo nel [calendario](https://open-todo.app/docs/time-blocking/).\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the three sections cover learning, contributing and leading over three months.",
+      "fr": "Lance le modèle ; les trois sections couvrent l'apprentissage, la contribution et l'autonomie sur trois mois.",
       "it": "Avvia il modello; le tre sezioni coprono imparare, contribuire e guidare in tre mesi."
      },
      {
       "en": "Give the first week's tasks a time on the Week calendar so they do not slip.",
+      "fr": "Planifie les activités de la première semaine dans ton calendrier hebdomadaire pour t'assurer de les réaliser.",
       "it": "Dai un orario alle attività della prima settimana nel calendario settimanale così non scivolano."
      },
      {
       "en": "Complete the subtasks as you go; the parent shows your progress.",
+      "fr": "Coche les sous-tâches au fur et à mesure ; la tâche principale indique ta progression.",
       "it": "Completa le sottoattività man mano; l'attività principale mostra i tuoi progressi."
      }
     ],
     "makeItYours": [
      {
       "en": "Replace the placeholder names with your actual team and systems.",
+      "fr": "Remplace les noms génériques par les membres de ton équipe et vos outils.",
       "it": "Sostituisci i nomi generici con il tuo team e i vostri sistemi."
      },
      {
       "en": "Add the questions you want answered by day 30, 60 and 90 as subtasks.",
+      "fr": "Ajoute sous forme de sous-tâches les questions auxquelles tu souhaites obtenir des réponses aux jours 30, 60 et 90.",
       "it": "Aggiungi come sottoattività le domande a cui vuoi una risposta entro il giorno 30, 60 e 90."
      },
      {
       "en": "Keep it private, or share a copy of the first section with your manager.",
+      "fr": "Garde ce plan pour toi, ou partage une copie de la première section avec ton responsable.",
       "it": "Tienilo privato, o condividi una copia della prima sezione con il tuo responsabile."
      }
     ]
@@ -1048,6 +1182,7 @@
     {
      "name": {
       "en": "people",
+      "fr": "personnes",
       "it": "persone"
      }
     }
@@ -1056,6 +1191,7 @@
     {
      "name": {
       "en": "First 90 days",
+      "fr": "Premiers 90 jours",
       "it": "Primi 90 giorni"
      },
      "color": "#4f46e5",
@@ -1063,12 +1199,14 @@
       {
        "name": {
         "en": "Days 1 to 30, learn",
+        "fr": "Jours 1 à 30, apprentissage",
         "it": "Giorni 1-30, imparare"
        },
        "tasks": [
         {
          "title": {
           "en": "Meet every person on the team one to one",
+          "fr": "Rencontrer individuellement chaque membre de l'équipe",
           "it": "Incontrare ogni persona del team a tu per tu"
          },
          "due": "+2w",
@@ -1079,6 +1217,7 @@
           {
            "title": {
             "en": "Ask what they wish the new person knew",
+            "fr": "Demander ce qu'ils aimeraient que les nouveaux arrivants sachent",
             "it": "Chiedere cosa vorrebbero che sapesse chi arriva"
            }
           }
@@ -1087,6 +1226,7 @@
         {
          "title": {
           "en": "Read the last three months of decisions",
+          "fr": "Lire les comptes rendus de décision des trois derniers mois",
           "it": "Leggere le decisioni degli ultimi tre mesi"
          },
          "due": "+2w",
@@ -1095,6 +1235,7 @@
         {
          "title": {
           "en": "Agree on 90-day goals with your manager",
+          "fr": "Valider les objectifs des 90 premiers jours avec ton responsable",
           "it": "Concordare gli obiettivi dei 90 giorni con il responsabile"
          },
          "priority": 1,
@@ -1105,12 +1246,14 @@
       {
        "name": {
         "en": "Days 31 to 60, contribute",
+        "fr": "Jours 31 à 60, contribution",
         "it": "Giorni 31-60, contribuire"
        },
        "tasks": [
         {
          "title": {
           "en": "Ship a first small improvement",
+          "fr": "Livrer une première petite amélioration",
           "it": "Rilasciare un primo piccolo miglioramento"
          },
          "priority": 2,
@@ -1119,6 +1262,7 @@
         {
          "title": {
           "en": "Write down what confused you in month one",
+          "fr": "Noter ce qui t'a semblé confus pendant ton premier mois",
           "it": "Annotare cosa ti ha confuso nel primo mese"
          },
          "due": "+5w"
@@ -1128,12 +1272,14 @@
       {
        "name": {
         "en": "Days 61 to 90, lead",
+        "fr": "Jours 61 à 90, autonomie",
         "it": "Giorni 61-90, guidare"
        },
        "tasks": [
         {
          "title": {
           "en": "Propose one change to how the team works",
+          "fr": "Proposer une modification des méthodes de travail de l'équipe",
           "it": "Proporre un cambiamento al modo di lavorare del team"
          },
          "due": "+11w"
@@ -1141,6 +1287,7 @@
         {
          "title": {
           "en": "Review the goals with your manager",
+          "fr": "Faire le point sur les objectifs avec ton responsable",
           "it": "Rivedere gli obiettivi con il responsabile"
          },
          "priority": 1,
@@ -1175,46 +1322,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Product launch",
+     "fr": "Lancement d'un produit",
      "it": "Lancio di un prodotto"
     },
     "summary": {
      "en": "A small team's launch plan on a board, from final checks to the announcement and the week after.",
+     "fr": "Le plan de lancement d'une petite équipe sur un tableau, des vérifications finales à l'annonce et à la semaine qui suit.",
      "it": "Il piano di lancio di un piccolo team su una bacheca, dalle verifiche finali all'annuncio e alla settimana dopo."
     },
     "description": {
      "en": "A launch needs everyone to see the same plan. Start this template, [share the project](https://open-todo.app/docs/sharing/) with your team as editors, and show it as a [board](https://open-todo.app/docs/sections-and-boards/): Backlog, This week, Launch day, Week after.\n\nTasks carry estimates, so the [Week calendar](https://open-todo.app/docs/time-blocking/) shows whether the plan fits into the days you have.",
+     "fr": "Un lancement nécessite que tout le monde voie le même plan. Lance ce modèle, [partage le projet](https://open-todo.app/docs/sharing/) avec l'équipe en tant qu'éditeurs et affiche-le sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) : À faire, Cette semaine, Jour du lancement, Semaine suivante.\n\nLes tâches disposent d'estimations, de sorte que le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) indique si le plan tient dans les jours dont tu disposes.\n",
      "it": "Un lancio ha bisogno che tutti vedano lo stesso piano. Avvia questo modello, [condividi il progetto](https://open-todo.app/docs/sharing/) con il team come editor e mostralo come [bacheca](https://open-todo.app/docs/sections-and-boards/): Da fare, Questa settimana, Giorno del lancio, Settimana dopo.\n\nLe attività hanno delle stime, così il [calendario settimanale](https://open-todo.app/docs/time-blocking/) mostra se il piano sta nei giorni che hai.\n"
     },
     "howToUse": [
      {
       "en": "Start the template, share the project with your team as editors, and show it as a board.",
+      "fr": "Lance le modèle, partage le projet avec l'équipe en tant qu'éditeurs et affiche-le sous forme de tableau.",
       "it": "Avvia il modello, condividi il progetto con il team come editor e mostralo come bacheca."
      },
      {
       "en": "Assign the tasks and give each an estimate; the Week calendar then shows whether the plan fits the days you have.",
+      "fr": "Attribue les tâches et donne à chacune une estimation ; le calendrier hebdomadaire indique si le plan tient dans les jours dont tu disposes.",
       "it": "Assegna le attività e dai a ognuna una stima; il calendario settimanale mostra se il piano sta nei giorni che hai."
      },
      {
       "en": "Move cards across Backlog, This week, Launch day and Week after as the launch approaches.",
+      "fr": "Déplace les cartes entre À faire, Cette semaine, Jour du lancement et Semaine suivante au fur et à mesure que le lancement approche.",
       "it": "Sposta le schede tra Da fare, Questa settimana, Giorno del lancio e Settimana dopo man mano che il lancio si avvicina."
      }
     ],
     "makeItYours": [
      {
       "en": "Rename the sections to your own stages, or add a \"Blocked\" column.",
+      "fr": "Renomme les sections selon tes propres phases, ou ajoute une colonne \"Bloqué\".",
       "it": "Rinomina le sezioni con le tue fasi, o aggiungi una colonna \"Bloccato\"."
      },
      {
       "en": "Save a view `#Launch & due <= 7 days` for the stand-up.",
+      "fr": "Enregistre une vue `#Lancement & due <= 7 days` pour la réunion quotidienne.",
       "it": "Salva una vista `#Lancio & due <= 7 days` per la riunione quotidiana."
      },
      {
       "en": "Add a label per workstream (`@marketing`, `@engineering`) and filter the board by it.",
+      "fr": "Ajoute une étiquette par domaine d'activité (`@marketing`, `@développement`) et filtre le tableau.",
       "it": "Aggiungi un'etichetta per area di lavoro (`@marketing`, `@sviluppo`) e filtra la bacheca."
      }
     ]
@@ -1223,18 +1380,21 @@
     {
      "name": {
       "en": "marketing",
+      "fr": "marketing",
       "it": "marketing"
      }
     },
     {
      "name": {
       "en": "engineering",
+      "fr": "développement",
       "it": "sviluppo"
      }
     },
     {
      "name": {
       "en": "support",
+      "fr": "support",
       "it": "assistenza"
      }
     }
@@ -1243,6 +1403,7 @@
     {
      "name": {
       "en": "Product launch",
+      "fr": "Lancement",
       "it": "Lancio"
      },
      "color": "#7c3aed",
@@ -1250,12 +1411,14 @@
       {
        "name": {
         "en": "Backlog",
+        "fr": "À faire",
         "it": "Da fare"
        },
        "tasks": [
         {
          "title": {
           "en": "Write the announcement post",
+          "fr": "Rédiger l'article d'annonce",
           "it": "Scrivere l'articolo di annuncio"
          },
          "estimate": 120,
@@ -1266,6 +1429,7 @@
         {
          "title": {
           "en": "Record a two-minute demo video",
+          "fr": "Enregistrer une vidéo de démonstration de deux minutes",
           "it": "Registrare un video dimostrativo di due minuti"
          },
          "estimate": 90,
@@ -1278,12 +1442,14 @@
       {
        "name": {
         "en": "This week",
+        "fr": "Cette semaine",
         "it": "Questa settimana"
        },
        "tasks": [
         {
          "title": {
           "en": "Freeze features and cut the release candidate",
+          "fr": "Geler les fonctionnalités et préparer la version candidate (release candidate)",
           "it": "Congelare le funzioni e preparare la release candidate"
          },
          "priority": 1,
@@ -1295,6 +1461,7 @@
         {
          "title": {
           "en": "Update the documentation",
+          "fr": "Mettre à jour la documentation",
           "it": "Aggiornare la documentazione"
          },
          "priority": 2,
@@ -1307,6 +1474,7 @@
         {
          "title": {
           "en": "Prepare support answers for the top ten questions",
+          "fr": "Préparer les réponses aux dix questions les plus fréquentes",
           "it": "Preparare le risposte alle dieci domande più frequenti"
          },
          "due": "+4d",
@@ -1319,12 +1487,14 @@
       {
        "name": {
         "en": "Launch day",
+        "fr": "Jour du lancement",
         "it": "Giorno del lancio"
        },
        "tasks": [
         {
          "title": {
           "en": "Publish the release",
+          "fr": "Publier la version",
           "it": "Pubblicare la release"
          },
          "priority": 1,
@@ -1337,6 +1507,7 @@
         {
          "title": {
           "en": "Send the announcement",
+          "fr": "Diffuser l'annonce",
           "it": "Inviare l'annuncio"
          },
          "priority": 1,
@@ -1351,12 +1522,14 @@
       {
        "name": {
         "en": "Week after",
+        "fr": "Semaine suivante",
         "it": "Settimana dopo"
        },
        "tasks": [
         {
          "title": {
           "en": "Collect feedback and file follow-ups",
+          "fr": "Recueillir les retours et noter les suites à donner",
           "it": "Raccogliere i commenti e registrare i seguiti"
          },
          "due": "+2w",
@@ -1367,6 +1540,7 @@
         {
          "title": {
           "en": "Write a short retrospective",
+          "fr": "Rédiger une brève rétrospective",
           "it": "Scrivere una breve retrospettiva"
          },
          "due": "+2w",
@@ -1396,46 +1570,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Study plan",
+     "fr": "Plan d'étude",
      "it": "Piano di studio"
     },
     "summary": {
      "en": "Weekly study blocks, revision and exam dates for a course or certification.",
+     "fr": "Blocs d'étude hebdomadaires, révisions et dates d'examen pour un cours ou une certification.",
      "it": "Blocchi di studio settimanali, ripasso e date d'esame per un corso o una certificazione."
     },
     "description": {
      "en": "Studying works best as a rhythm. This template puts fixed study blocks on your [Week calendar](https://open-todo.app/docs/time-blocking/) with [repeating rules](https://open-todo.app/docs/recurrence/), plus the milestones that keep you on track.",
+     "fr": "On étudie mieux avec un rythme. Ce modèle place des blocs d'étude fixes dans le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) avec des [règles de récurrence](https://open-todo.app/docs/recurrence/), plus les étapes clés qui te maintiennent sur la bonne voie.\n",
      "it": "Si studia meglio con un ritmo. Questo modello mette blocchi di studio fissi nel [calendario settimanale](https://open-todo.app/docs/time-blocking/) con [regole di ripetizione](https://open-todo.app/docs/recurrence/), più le tappe che ti tengono in carreggiata.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the study blocks repeat on fixed days and already carry estimates.",
+      "fr": "Lance le modèle ; les blocs d'étude se répètent à des jours fixes et disposent déjà d'une estimation.",
       "it": "Avvia il modello; i blocchi di studio si ripetono in giorni fissi e hanno già una stima."
      },
      {
       "en": "Open the Week calendar to see the blocks in place, and drag them to the hours that suit you.",
+      "fr": "Ouvre le calendrier hebdomadaire pour voir les blocs à leur place et fais-les glisser vers les horaires de ton choix.",
       "it": "Apri il calendario settimanale per vedere i blocchi al loro posto e trascinali agli orari che preferisci."
      },
      {
       "en": "Milestones count from the start day; set the exam date and move them back from it.",
+      "fr": "Les étapes clés se calculent à partir du jour de début ; fixe la date de l'examen et décale-les à rebours à partir de là.",
       "it": "Le tappe contano dal giorno di inizio; fissa la data dell'esame e spostale a ritroso da lì."
      }
     ],
     "makeItYours": [
      {
       "en": "One project per subject, with the same sections, keeps revision honest.",
+      "fr": "Un projet par matière, avec les mêmes sections, permet une révision honnête.",
       "it": "Un progetto per materia, con le stesse sezioni, rende il ripasso onesto."
      },
      {
       "en": "Shorten the blocks if you work better in short bursts; the Pomodoro guide shows how.",
+      "fr": "Raccourcis les blocs si tu travailles mieux par courtes sessions ; le guide de la méthode Pomodoro explique comment faire.",
       "it": "Accorcia i blocchi se lavori meglio a scatti brevi; la guida al Pomodoro spiega come."
      },
      {
       "en": "Add a `@revise` label and a saved view for the last two weeks.",
+      "fr": "Ajoute une étiquette `@révision` et une vue enregistrée pour les deux dernières semaines.",
       "it": "Aggiungi un'etichetta `@ripasso` e una vista salvata per le ultime due settimane."
      }
     ]
@@ -1444,6 +1628,7 @@
     {
      "name": {
       "en": "study",
+      "fr": "étude",
       "it": "studio"
      }
     }
@@ -1452,6 +1637,7 @@
     {
      "name": {
       "en": "Study plan",
+      "fr": "Plan d'étude",
       "it": "Piano di studio"
      },
      "color": "#db2777",
@@ -1459,12 +1645,14 @@
       {
        "name": {
         "en": "Weekly rhythm",
+        "fr": "Rythme hebdomadaire",
         "it": "Ritmo settimanale"
        },
        "tasks": [
         {
          "title": {
           "en": "Study block, new material",
+          "fr": "Bloc d'étude, nouveaux sujets",
           "it": "Blocco di studio, argomenti nuovi"
          },
          "due": "+1d",
@@ -1478,6 +1666,7 @@
         {
          "title": {
           "en": "Practice questions",
+          "fr": "Exercices",
           "it": "Esercizi"
          },
          "due": "+5d",
@@ -1493,12 +1682,14 @@
       {
        "name": {
         "en": "Milestones",
+        "fr": "Étapes clés",
         "it": "Tappe"
        },
        "tasks": [
         {
          "title": {
           "en": "Finish the first half of the syllabus",
+          "fr": "Terminer la première moitié du programme",
           "it": "Finire la prima metà del programma"
          },
          "priority": 2,
@@ -1507,6 +1698,7 @@
         {
          "title": {
           "en": "Full mock exam",
+          "fr": "Examen blanc complet",
           "it": "Simulazione d'esame completa"
          },
          "priority": 1,
@@ -1516,6 +1708,7 @@
         {
          "title": {
           "en": "Exam day",
+          "fr": "Jour de l'examen",
           "it": "Giorno dell'esame"
          },
          "priority": 1,
@@ -1547,46 +1740,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Getting Things Done setup",
+     "fr": "Configuration Getting Things Done",
      "it": "Configurazione Getting Things Done"
     },
     "summary": {
      "en": "Contexts, a waiting-for list and a someday list, ready for the GTD method in a few minutes.",
+     "fr": "Des contextes, une liste \"en attente\" et une liste \"un jour\", prêts pour la méthode GTD en quelques minutes.",
      "it": "Contesti, una lista delle attese e una lista \"un giorno\", pronti per il metodo GTD in pochi minuti."
     },
     "description": {
      "en": "Getting Things Done works with any tool that has an inbox, contexts and lists. In OpenTodo, contexts are [labels](https://open-todo.app/docs/labels-and-filters/) and each list is a saved filter.\n\nThe template creates the [labels](https://open-todo.app/docs/labels-and-filters/) `@home`, `@computer`, `@phone`, `@errand`, `@waiting` and `@someday`, a GTD project with sections for next actions, waiting-for and someday, and a weekly reminder to check every project for a next action.\n\nCreate views like `@phone & !@waiting` for the moments you have only your phone. [Saved views](https://open-todo.app/docs/views/) can be pinned to the sidebar with live counts.",
+     "fr": "Getting Things Done fonctionne avec n'importe quel outil disposant d'une boîte de réception, de contextes et de listes. Dans OpenTodo, les contextes sont des [étiquettes](https://open-todo.app/docs/labels-and-filters/) et chaque liste est un filtre enregistré.\n\nCe modèle crée les [étiquettes](https://open-todo.app/docs/labels-and-filters/) `@maison`, `@ordinateur`, `@téléphone`, `@courses`, `@en-attente` et `@un-jour`, un projet GTD doté des sections actions suivantes, en attente et un jour, ainsi qu'un rappel hebdomadaire pour vérifier que chaque projet possède une action suivante.\n\nCrée des vues telles que `@téléphone & !@en-attente` pour les moments où tu n'as que ton téléphone. Les [vues enregistrées](https://open-todo.app/docs/views/) peuvent être épinglées dans la barre latérale avec les compteurs mis à jour.\n",
      "it": "Getting Things Done funziona con qualsiasi strumento che abbia una inbox, dei contesti e delle liste. In OpenTodo i contesti sono [etichette](https://open-todo.app/docs/labels-and-filters/) e ogni lista è un filtro salvato.\n\nIl modello crea le [etichette](https://open-todo.app/docs/labels-and-filters/) `@casa`, `@computer`, `@telefono`, `@commissione`, `@in-attesa` e `@un-giorno`, un progetto GTD con le sezioni prossime azioni, in attesa e un giorno, e un promemoria settimanale per controllare che ogni progetto abbia una prossima azione.\n\nCrea viste come `@telefono & !@in-attesa` per i momenti in cui hai solo il telefono. Le [viste salvate](https://open-todo.app/docs/views/) si possono fissare nella barra laterale con i conteggi aggiornati.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; it creates the labels, the GTD project and its sections.",
+      "fr": "Lance le modèle ; crée les étiquettes, le projet GTD et ses sections.",
       "it": "Avvia il modello; crea le etichette, il progetto GTD e le sue sezioni."
      },
      {
       "en": "Save the views the guide suggests, such as `@phone & !@waiting`, and pin them to the sidebar.",
+      "fr": "Enregistre les vues suggérées par le guide, telles que `@téléphone & !@en-attente`, et épingle-les dans la barre latérale.",
       "it": "Salva le viste suggerite dalla guida, come `@telefono & !@in-attesa`, e fissale nella barra laterale."
      },
      {
       "en": "Every Friday, the review task asks you to check each project for a next action.",
+      "fr": "Chaque vendredi, l'activité de révision te demande de vérifier que chaque projet possède une action suivante.",
       "it": "Ogni venerdì l'attività di revisione ti chiede di controllare che ogni progetto abbia una prossima azione."
      }
     ],
     "makeItYours": [
      {
       "en": "Rename the contexts to the places you actually work: `@office`, `@workshop`, `@town`.",
+      "fr": "Renomme les contextes avec les lieux où tu travailles réellement : `@bureau`, `@atelier`, `@centre`.",
       "it": "Rinomina i contesti con i luoghi dove lavori davvero: `@ufficio`, `@laboratorio`, `@centro`."
      },
      {
       "en": "Delete the sections you do not use; a smaller system is one you keep.",
+      "fr": "Supprime les sections dont tu ne te sers pas : un système plus petit est un système que tu maintiens plus facilement.",
       "it": "Elimina le sezioni che non usi: un sistema più piccolo è uno che mantieni."
      },
      {
       "en": "Give the review task a time that fits your week.",
+      "fr": "Programme l'activité de révision à un horaire adapté à ta semaine.",
       "it": "Dai all'attività di revisione un orario adatto alla tua settimana."
      }
     ]
@@ -1595,36 +1798,42 @@
     {
      "name": {
       "en": "home",
+      "fr": "maison",
       "it": "casa"
      }
     },
     {
      "name": {
       "en": "computer",
+      "fr": "ordinateur",
       "it": "computer"
      }
     },
     {
      "name": {
       "en": "phone",
+      "fr": "téléphone",
       "it": "telefono"
      }
     },
     {
      "name": {
       "en": "errand",
+      "fr": "courses",
       "it": "commissione"
      }
     },
     {
      "name": {
       "en": "waiting",
+      "fr": "en-attente",
       "it": "in-attesa"
      }
     },
     {
      "name": {
       "en": "someday",
+      "fr": "un-jour",
       "it": "un-giorno"
      }
     }
@@ -1633,6 +1842,7 @@
     {
      "name": {
       "en": "GTD",
+      "fr": "GTD",
       "it": "GTD"
      },
      "color": "#2563eb",
@@ -1640,12 +1850,14 @@
       {
        "name": {
         "en": "Next actions",
+        "fr": "Actions suivantes",
         "it": "Prossime azioni"
        },
        "tasks": [
         {
          "title": {
           "en": "Call the bank about the new card",
+          "fr": "Appeler la banque pour la nouvelle carte",
           "it": "Chiamare la banca per la nuova carta"
          },
          "labels": [
@@ -1655,6 +1867,7 @@
         {
          "title": {
           "en": "Update the budget spreadsheet",
+          "fr": "Mettre à jour le tableau du budget",
           "it": "Aggiornare il foglio del budget"
          },
          "estimate": 30,
@@ -1665,6 +1878,7 @@
         {
          "title": {
           "en": "Pick up the dry cleaning",
+          "fr": "Récupérer les vêtements au pressing",
           "it": "Ritirare i vestiti in lavanderia"
          },
          "labels": [
@@ -1674,6 +1888,7 @@
         {
          "title": {
           "en": "Fix the squeaky door",
+          "fr": "Réparer la porte qui grince",
           "it": "Sistemare la porta che cigola"
          },
          "labels": [
@@ -1685,12 +1900,14 @@
       {
        "name": {
         "en": "Waiting for",
+        "fr": "En attente",
         "it": "In attesa"
        },
        "tasks": [
         {
          "title": {
           "en": "Quote from the electrician",
+          "fr": "Devis de l'électricien",
           "it": "Preventivo dell'elettricista"
          },
          "due": "+1w",
@@ -1701,6 +1918,7 @@
         {
          "title": {
           "en": "Reply from Sam about the venue",
+          "fr": "Réponse de Sam concernant le local",
           "it": "Risposta di Sam sul locale"
          },
          "due": "+3d",
@@ -1713,12 +1931,14 @@
       {
        "name": {
         "en": "Someday / maybe",
+        "fr": "Un jour / peut-être",
         "it": "Un giorno / forse"
        },
        "tasks": [
         {
          "title": {
           "en": "Learn to make sourdough",
+          "fr": "Apprendre à faire du pain au levain",
           "it": "Imparare a fare il pane con il lievito madre"
          },
          "labels": [
@@ -1728,6 +1948,7 @@
         {
          "title": {
           "en": "Plan a trip to Japan",
+          "fr": "Organiser un voyage au Japon",
           "it": "Organizzare un viaggio in Giappone"
          },
          "labels": [
@@ -1741,6 +1962,7 @@
     {
      "name": {
       "en": "Projects list",
+      "fr": "Liste des projets",
       "it": "Elenco dei progetti"
      },
      "color": "#7c3aed",
@@ -1748,6 +1970,7 @@
       {
        "title": {
         "en": "Review every project for a next action",
+        "fr": "Vérifier que chaque projet possède une action suivante",
         "it": "Controllare che ogni progetto abbia una prossima azione"
        },
        "due": "+0d",
@@ -1778,46 +2001,56 @@
    ],
    "languages": [
     "en",
+    "fr",
     "it"
    ],
    "text": {
     "title": {
      "en": "Weekly review",
+     "fr": "Revue hebdomadaire",
      "it": "Revisione settimanale"
     },
     "summary": {
      "en": "A thirty-minute Friday ritual that empties your inboxes, looks back at the week and plans the next one.",
+     "fr": "Un rituel du vendredi de trente minutes pour vider les boîtes de réception, faire le bilan de la semaine et planifier la suivante.",
      "it": "Un rituale del venerdì di trenta minuti che svuota le inbox, guarda indietro alla settimana e pianifica la prossima."
     },
     "description": {
      "en": "A weekly review keeps a task list trustworthy. Once a week you get everything out of your head, look at what happened, and decide what matters next.\n\nThis template gives you a project with three sections that repeat [every Friday](https://open-todo.app/docs/recurrence/). Each task carries a small estimate, so the whole review fits in about thirty minutes on the [Day and Week calendars](https://open-todo.app/docs/time-blocking/).\n\nPair it with a saved view such as `@review & due <= today`, pinned to the sidebar, and you have a review dashboard in one click. The [filters guide](https://open-todo.app/docs/filters/) explains the query language.",
+     "fr": "Une revue hebdomadaire garantit la fiabilité d'une liste de tâches. Une fois par semaine, tu te vides la tête, tu examines ce qui s'est passé et tu décides de ce qui compte maintenant.\n\nCe modèle te fournit un projet avec trois sections qui se répètent [chaque vendredi](https://open-todo.app/docs/recurrence/). Chaque tâche comporte une petite estimation, de sorte que l'ensemble de la revue prend environ trente minutes dans les [calendriers quotidien et hebdomadaire](https://open-todo.app/docs/time-blocking/).\n\nAssocie-le à une vue enregistrée telle que `@revue & due <= today`, épinglée dans la barre latérale, et tu obtiendras un tableau de bord de revue en un clic. Le [guide des filtres](https://open-todo.app/docs/filters/) explique le langage des requêtes.\n",
      "it": "Una revisione settimanale mantiene affidabile una lista di attività. Una volta a settimana togli tutto dalla testa, guardi cosa è successo e decidi cosa conta adesso.\n\nQuesto modello ti dà un progetto con tre sezioni che si ripetono [ogni venerdì](https://open-todo.app/docs/recurrence/). Ogni attività ha una piccola stima, così l'intera revisione sta in circa trenta minuti nei [calendari giornaliero e settimanale](https://open-todo.app/docs/time-blocking/).\n\nAbbinalo a una vista salvata come `@revisione & due <= today`, fissata nella barra laterale, e hai una dashboard di revisione a un clic. La [guida ai filtri](https://open-todo.app/docs/filters/) spiega il linguaggio delle query.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the review repeats every Friday with small estimates, about thirty minutes in all.",
+      "fr": "Lance le modèle ; la revue se répète chaque vendredi avec de petites estimations, environ trente minutes au total.",
       "it": "Avvia il modello; la revisione si ripete ogni venerdì con piccole stime, circa trenta minuti in tutto."
      },
      {
       "en": "Save a view `@review & due <= today` and pin it: on Friday it is your checklist.",
+      "fr": "Enregistre une vue `@revue & due <= today` et épingle-la : le vendredi, c'est ta liste de contrôle.",
       "it": "Salva una vista `@revisione & due <= today` e fissala: il venerdì è la tua lista di controllo."
      },
      {
       "en": "Work through the three sections in order: get clear, look back, look ahead.",
+      "fr": "Suis les trois sections dans l'ordre : vider la tête, faire le bilan, regarder vers l'avenir.",
       "it": "Segui le tre sezioni in ordine: fare chiarezza, guardare indietro, guardare avanti."
      }
     ],
     "makeItYours": [
      {
       "en": "Move it to the day your week actually ends.",
+      "fr": "Déplace-la au jour où se termine réellement ta semaine.",
       "it": "Spostala al giorno in cui finisce davvero la tua settimana."
      },
      {
       "en": "Add your own inboxes to the first section: a notebook, a chat app, a desk drawer.",
+      "fr": "Ajoute tes boîtes de réception à la première section : un carnet, une messagerie, un tiroir de bureau.",
       "it": "Aggiungi le tue inbox alla prima sezione: un quaderno, una chat, un cassetto della scrivania."
      },
      {
       "en": "Cut anything that does not earn its minutes after a month.",
+      "fr": "Au bout d'un mois, supprime ce qui ne mérite pas d'y consacrer du temps.",
       "it": "Dopo un mese, togli quello che non vale i suoi minuti."
      }
     ]
@@ -1826,6 +2059,7 @@
     {
      "name": {
       "en": "review",
+      "fr": "revue",
       "it": "revisione"
      }
     }
@@ -1834,6 +2068,7 @@
     {
      "name": {
       "en": "Weekly review",
+      "fr": "Revue hebdomadaire",
       "it": "Revisione settimanale"
      },
      "color": "#059669",
@@ -1841,12 +2076,14 @@
       {
        "name": {
         "en": "Get clear",
+        "fr": "Vider la tête",
         "it": "Fare chiarezza"
        },
        "tasks": [
         {
          "title": {
           "en": "Empty the inbox",
+          "fr": "Vider la boîte de réception",
           "it": "Svuotare la inbox"
          },
          "due": "+0d",
@@ -1860,18 +2097,21 @@
           {
            "title": {
             "en": "Paper notes and receipts",
+            "fr": "Notes papier et reçus",
             "it": "Appunti di carta e scontrini"
            }
           },
           {
            "title": {
             "en": "Email flagged for follow-up",
+            "fr": "E-mails marqués à suivre",
             "it": "Email segnate da seguire"
            }
           },
           {
            "title": {
             "en": "Inbox in OpenTodo",
+            "fr": "Boîte de réception OpenTodo",
             "it": "Inbox di OpenTodo"
            }
           }
@@ -1880,6 +2120,7 @@
         {
          "title": {
           "en": "Close open loops from meetings",
+          "fr": "Finaliser les points en suspend des réunions",
           "it": "Chiudere i punti aperti delle riunioni"
          },
          "due": "+0d",
@@ -1894,12 +2135,14 @@
       {
        "name": {
         "en": "Look back",
+        "fr": "Faire le bilan",
         "it": "Guardare indietro"
        },
        "tasks": [
         {
          "title": {
           "en": "Skim what you completed this week",
+          "fr": "Parcourir ce que tu as accompli cette semaine",
           "it": "Scorrere cosa hai completato questa settimana"
          },
          "due": "+0d",
@@ -1912,6 +2155,7 @@
         {
          "title": {
           "en": "Reschedule or drop anything overdue",
+          "fr": "Replanifier ou abandonner ce qui est en retard",
           "it": "Ripianificare o lasciar perdere ciò che è scaduto"
          },
          "due": "+0d",
@@ -1926,12 +2170,14 @@
       {
        "name": {
         "en": "Look ahead",
+        "fr": "Regarder vers l'avenir",
         "it": "Guardare avanti"
        },
        "tasks": [
         {
          "title": {
           "en": "Check next week's calendar",
+          "fr": "Vérifier le calendrier de la semaine prochaine",
           "it": "Controllare il calendario della prossima settimana"
          },
          "due": "+0d",
@@ -1944,6 +2190,7 @@
         {
          "title": {
           "en": "Pick three priorities for next week",
+          "fr": "Choisir trois priorités pour la semaine prochaine",
           "it": "Scegliere tre priorità per la prossima settimana"
          },
          "priority": 1,
