@@ -14,7 +14,7 @@ import { forgetNoiseVolume } from '../lib/focus/prefs'
 import { clearInbox } from '../lib/shareInbox'
 import { unsubscribeOnSignOut } from '../lib/push'
 import { announceSignOut, stopSyncAndWait, syncNow, withSyncLock } from '../lib/sync'
-import { cacheMfa } from './TwoFactorPanel'
+import { cacheMfa } from './mfaCache'
 import { clearVimPref } from './vim/prefs'
 
 /** Clears everything this device holds for the signed-in account (sign-out and an expired demo sandbox). */
