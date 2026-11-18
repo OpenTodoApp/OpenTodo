@@ -11,6 +11,7 @@
     "web/src/lib/assistantTypes.ts",
     "web/src/lib/assistants.ts",
     "web/src/lib/attachments.ts",
+    "web/src/lib/authored.ts",
     "web/src/lib/boardTemplates.ts",
     "web/src/lib/branding.ts",
     "web/src/lib/bulk.ts",
