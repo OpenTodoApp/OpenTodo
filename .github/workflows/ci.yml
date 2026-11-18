@@ -771,8 +771,29 @@ jobs:
             mobile/android/app/build/reports/androidTests/connected/
             mobile/android/app/build/outputs/androidTest-results/connected/
           if-no-files-found: ignore
-      - name: Signed release APK and AAB (tags)
-        if: startsWith(github.ref, 'refs/tags/v')
+
+  # The signed Android release (tags only), in its own job so that the release
+  # keystore can live in the `signing` environment, which the owner approves.
+  android-sign:
+    name: Android app (signed release)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [android]
+    environment: signing
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 21.0.13+9
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: "platforms;android-37.0 build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+      - name: Signed release APK and AAB
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -809,8 +830,7 @@ jobs:
             fi
             echo "::warning::The APK is signed with $cert, not OpenTodo's release certificate (a fork's own key)"
           fi
-      - name: Reproducible build (tags)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Reproducible build
         env:
           REPRO_CLEAN_CACHE: "1"
         run: |
@@ -824,8 +844,7 @@ jobs:
           else
             scripts/android-repro.sh "$GITHUB_REF_NAME"
           fi
-      - if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: opentodo-android
           path: dist/opentodo-android-*
@@ -1025,7 +1044,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, app-check, app-native, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -1116,7 +1135,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, app-check, app-native, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
@@ -1250,6 +1269,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [release]
+    environment: signing
     permissions:
       contents: read
     steps:
@@ -1304,6 +1324,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: [release]
+    environment: signing
     permissions:
       contents: read
     steps:
