@@ -1,0 +1,1 @@
+- **Notes: a web address reads as a link and stays as you typed it.** Typed or pasted addresses show as links in the editor (Ctrl/Cmd-click opens them), and pasting no longer turns an address into a `[url](url)` link.
