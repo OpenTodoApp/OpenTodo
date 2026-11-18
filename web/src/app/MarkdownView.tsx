@@ -1,10 +1,11 @@
 // The Markdown renderer without the local database (the public task page uses it
 // as it is; app/Markdown.tsx adds images and live task links from the device).
-import { type ComponentType, Fragment, type ReactNode, useMemo } from 'react'
+import { type ComponentType, Fragment, type ReactNode, useEffect, useMemo, useState } from 'react'
 import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
 import { originFromUrl } from '../lib/taskOrigin'
+import { copyText } from '../lib/clipboard'
 import { t } from '../lib/i18n'
-import { Icon, Tooltip } from '../ui'
+import { Icon, IconButton, Tooltip } from '../ui'
 
 /** What the app resolves on the device: embedded attachments and links to tasks. */
 export interface MarkdownEmbeds {
@@ -54,7 +55,7 @@ function renderBlock(b: Block, i: number, ctx: Ctx): ReactNode {
     case 'p':
       return <p key={i}>{inl(b.c)}</p>
     case 'pre':
-      return <pre key={i} className="overflow-x-auto rounded-control bg-sunken dark:bg-raised p-2 font-mono text-meta" data-scroll-x data-lang={b.lang}><code>{b.v}</code></pre>
+      return <CodeCopy key={i} text={b.v} lang={b.lang} />
     case 'quote':
       return <blockquote key={i} className="space-y-2 border-l-2 border-input pl-2 text-muted">{b.c.map((x, k) => renderBlock(x, k, ctx))}</blockquote>
     case 'h': {
@@ -131,6 +132,50 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
       return <a key={i} href={n.href} target="_blank" rel={LINK_REL} className="text-accent underline">{inl(n.c)}</a>
     }
   }
+}
+
+/**
+ * The text a rendered code block copies (copy-code-block D2): the block's own text
+ * as the parser kept it (lib/markdown.ts, Block 'pre': no fence lines), without a
+ * trailing newline so a pasted command runs at once. Indentation is kept: it is part
+ * of the code.
+ */
+function codeText(text: string): string {
+  return text.replace(/\n+$/, '')
+}
+
+/**
+ * A fenced code block with its Copy button at the top end corner (copy-code-block
+ * D1, D3): the button copies the block's text as it is shown, so a command pastes
+ * into a terminal without selecting it by hand. The button sits in a bar above the
+ * code, not over it, so it never covers the first line.
+ */
+function CodeCopy({ text, lang }: { text: string; lang?: string }) {
+  const [state, setState] = useState<'ok' | 'failed' | null>(null)
+  useEffect(() => {
+    if (!state) return
+    const id = setTimeout(() => setState(null), 2000)
+    return () => clearTimeout(id)
+  }, [state])
+  const copy = async () => {
+    try {
+      await copyText(codeText(text))
+      setState('ok')
+    } catch {
+      setState('failed')
+    }
+  }
+  const label = state === 'ok' ? t('Copied') : state === 'failed' ? t('Could not copy') : t('Copy code')
+  return (
+    <div className="md-code" data-code-block data-lang={lang}>
+      <div className="md-code__bar">
+        <IconButton icon={state === 'ok' ? 'check' : 'copy'} size="sm" label={label}
+          className="touch-target text-muted" onClick={() => void copy()} data-code-copy="" />
+      </div>
+      <pre className="overflow-x-auto rounded-control bg-sunken dark:bg-raised p-2 font-mono text-meta" data-scroll-x><code>{text}</code></pre>
+      <span className="sr-only" aria-live="polite">{state ? label : ''}</span>
+    </div>
+  )
 }
 
 /** Where an image would be: its state in words, announced with the alternative text. */

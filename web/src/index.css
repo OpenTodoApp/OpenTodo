@@ -1001,6 +1001,14 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .notes-frame[data-corner] .notes-editor > :first-child,
 .notes-frame[data-corner] .editor-toolbar,
 .notes-frame[data-corner] > .notes-source { padding-inline-end: var(--notes-corner); }
+/* A rendered note under a corner (copy-code-block): its first code block leaves the corner its room, so the note's controls and the block's Copy button never overlap. */
+.notes-frame[data-corner] > :first-child:has(.md-code) .md-code__bar { padding-inline-end: var(--notes-corner); }
+/* A code block in rendered Markdown (copy-code-block D3): the Copy button sits in a
+   bar above the code at its end corner, so it never covers the first line and the
+   code keeps its own scroller. */
+.md-code { @apply relative rounded-control bg-sunken dark:bg-raised; }
+.md-code__bar { @apply flex justify-end px-0.5 pt-0.5; }
+.md-code > pre { @apply bg-transparent p-2; }
 /* A note's outline (note-outline D2): the Outline button beside the Formatting toggle,
    or a column in the start margin, sticky inside the note's scroller and never a
    scroller of its own; the room around the note makes space for it. */
