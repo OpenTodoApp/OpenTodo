@@ -1401,7 +1401,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-meta="row"] { display: contents; }
   /* On the title's first baseline, also when the title takes two (task-list-width D1). */
   [data-row-props] {
-    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 6.5rem; --slot-assignee: 2rem;
+    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 7.5rem; --slot-assignee: 2rem;
     grid-area: 1 / 2; display: grid; align-items: baseline; column-gap: 0; white-space: nowrap;
     grid-template-columns: [project] var(--slot-project) [labels] var(--slot-labels) [estimate] var(--slot-estimate) [date] var(--slot-date) [assignee] var(--slot-assignee);
   }
@@ -1415,6 +1415,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   /* `clip` keeps a cut value's text baseline (a scroll container's is its bottom edge), so every slot sits on the title's baseline. */
   [data-row-cell] .truncate { overflow: clip; }
   [data-row-cell="labels"] [data-label-chip] > .truncate { min-width: 0; }
+  /* A date wider than its slot (a part of the day after the date words) ends in an ellipsis. */
+  [data-row-cell] [data-date] > .truncate { min-width: 0; }
   /* Reserve the slot while the code that fits the labels loads. */
   [data-row-label-fallback] { visibility: hidden; }
   /* The trailing row actions can overlap the slot when the later slots are empty. */

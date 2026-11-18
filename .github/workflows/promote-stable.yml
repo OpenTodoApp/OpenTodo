@@ -30,6 +30,8 @@ jobs:
     name: Point stable at ${{ inputs.version }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Moving `stable` moves every install that follows it, so the owner approves it.
+    environment: promote
     steps:
       - name: Check the version
         env:

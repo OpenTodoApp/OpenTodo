@@ -541,27 +541,34 @@ func (s *Store) SwapGrantToken(ctx context.Context, grantID, previous, tokenID s
 	return n == 1, err
 }
 
-// RevokeGrant marks a grant revoked and clears its access token in one
-// transaction, returning the api_tokens id the caller has to delete.
-func (s *Store) RevokeGrant(ctx context.Context, grantID string) (string, error) {
+// RevokeGrant marks a grant revoked and deletes its access token in one
+// transaction: deleteToken removes the api_tokens row of that id (when the
+// grant holds one) on the same transaction, so a revoked grant never leaves a
+// working access token behind.
+func (s *Store) RevokeGrant(ctx context.Context, grantID string, deleteToken func(tx *sql.Tx, tokenID string) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer tx.Rollback()
 	var tokenID string
 	err = tx.QueryRowContext(ctx, `SELECT token_id FROM mcp_oauth_grant WHERE id = ?`, grantID).Scan(&tokenID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNotFound
+		return ErrNotFound
 	}
 	if err != nil {
-		return "", err
+		return err
 	}
 	if _, err := tx.ExecContext(ctx, `UPDATE mcp_oauth_grant SET revoked_at = ?, token_id = '' WHERE id = ?`,
 		s.now().UnixMilli(), grantID); err != nil {
-		return "", err
+		return err
 	}
-	return tokenID, tx.Commit()
+	if tokenID != "" {
+		if err := deleteToken(tx, tokenID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // GrantByID reads one grant.

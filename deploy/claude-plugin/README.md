@@ -26,7 +26,7 @@ When Claude Code is installed, also run `claude plugin validate deploy/claude-pl
 
 ## Publishing
 
-After each release the CI job `claude-plugin` (in `.github/workflows/ci.yml`) copies `upstream/` of the tag into `OpenTodoApp/opentodo-claude`, commits "OpenTodo <version>" and tags `v<version>`. It uses the deploy key in the repository secret `CLAUDE_PLUGIN_DEPLOY_KEY`, which has write access to that one repository. Without the secret the job succeeds and prints these steps instead:
+After each release the CI job `claude-plugin` (in `.github/workflows/ci.yml`) copies `upstream/` of the tag into `OpenTodoApp/opentodo-claude`, commits "OpenTodo <version>" and tags `v<version>`. It runs in the `signing` environment (approved by the maintainer on each release) and uses the deploy key in the secret `CLAUDE_PLUGIN_DEPLOY_KEY`, which has write access to that one repository. Without the secret the job succeeds and prints these steps instead:
 
 ```bash
 git clone git@github.com:OpenTodoApp/opentodo-claude.git /tmp/opentodo-claude
@@ -38,5 +38,5 @@ cd /tmp/opentodo-claude && git add -A && git commit -m "OpenTodo <version>" && g
 
 1. `ssh-keygen -t ed25519 -N "" -C "opentodo-claude publish" -f opentodo-claude-key`
 2. In `OpenTodoApp/opentodo-claude` → Settings → Deploy keys → Add deploy key: paste `opentodo-claude-key.pub`, tick **Allow write access**.
-3. In `OpenTodoApp/OpenTodo` → Settings → Secrets and variables → Actions → New repository secret: name `CLAUDE_PLUGIN_DEPLOY_KEY`, value the content of `opentodo-claude-key` (the private key).
+3. In `OpenTodoApp/OpenTodo` → Settings → Environments → `signing` → Add environment secret: name `CLAUDE_PLUGIN_DEPLOY_KEY`, value the content of `opentodo-claude-key` (the private key).
 4. Delete both key files.

@@ -14,6 +14,7 @@
 import {
   decryptValue, encryptValue, isEnvelope,
 } from './crypto'
+import { writesOwnRow } from './authored'
 import { db, entityTables, getMeta, setMeta, tableOf, type EntityRow } from './db'
 import {
   CONTENT_FIELDS, contentFromString, contentToString, currentKey, isContentField, isEnabled, isRecordMissing, K_DISCARD, publishEncryption, refreshFromServer, syncBlocked, UNDECRYPTABLE,
@@ -303,14 +304,13 @@ async function pending(entity: Entity, mode: MigrationState['mode'], after: stri
   const personal = await personalResolver([])
   const out: { id: string; patch: Record<string, unknown> }[] = []
   const consider = async (row: EntityRow): Promise<void> => {
-    // Only the author may write a comment or a time entry.
-    if (entity === 'comment' && row.author_id !== me) return
-    if (entity === 'time_entry' && row.user_id !== me) return
+    // Only the author writes a comment, attachment or time entry.
+    if (!writesOwnRow(entity, row, me)) return
     if (entity === 'attachment') {
       // Links only: files are re-uploaded by the file phase (attachments D8). The
       // server fixes a link's url and mime at creation, so it moves to the other
       // form as a new attachment that replaces it (client-data-safety).
-      if (!row.url || row.deleted_at || row.author_id !== me) return
+      if (!row.url || row.deleted_at) return
       const wire = row._e2ee?.wire?.url
       if (mode === 'encrypt' ? wire === 'c' || wire === 'x' : wire !== 'c') return
       if (await personal(entity, row.id)) out.push({ id: row.id, patch: Object.fromEntries(LINK_FIELDS.map((f) => [f, row[f] ?? null])) })

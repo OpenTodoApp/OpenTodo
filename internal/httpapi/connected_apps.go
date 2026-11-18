@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -83,15 +84,19 @@ func (s *Server) handleDisconnectApp(w http.ResponseWriter, r *http.Request) {
 // disconnectGrant revokes g, deletes the access token it holds and records
 // mcp_oauth.disconnected with how the person did it.
 func (s *Server) disconnectGrant(ctx context.Context, g mcpoauth.Grant, method string) error {
-	tokenID, err := s.mcpOAuth.RevokeGrant(ctx, g.ID)
-	if err != nil {
+	if err := s.revokeGrant(ctx, g); err != nil {
 		return err
-	}
-	if tokenID != "" {
-		_ = s.auth.DeleteToken(ctx, g.UserID, tokenID)
 	}
 	s.audit.Record(ctx, audit.MCPOAuthDisconnected(g.UserID, g.ClientID, method))
 	return nil
+}
+
+// revokeGrant revokes g and deletes the access token it holds in the same
+// transaction, so the token stops working the moment the grant does.
+func (s *Server) revokeGrant(ctx context.Context, g mcpoauth.Grant) error {
+	return s.mcpOAuth.RevokeGrant(ctx, g.ID, func(tx *sql.Tx, tokenID string) error {
+		return s.auth.DeleteTokenTx(ctx, tx, g.UserID, tokenID)
+	})
 }
 
 // endGrantOfToken ends the grant whose access token the person just deleted
