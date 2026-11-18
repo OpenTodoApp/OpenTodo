@@ -72,11 +72,15 @@ The editor SHALL preview the draft on a task list, a board, the week calendar an
 - **THEN** a new dark draft opens with the same accent and status colours and dark surfaces of the same hues, passing every pair
 
 ### Requirement: Shape and type in the editor
-The editor SHALL let the user choose the corner radius as a preset (Square, Default, Round) or as five values from 0 to 20 px, the font as OpenTodo's bundled typeface, the system, serif or monospace font, or an installed font by name, and the list text size of 13, 14 or 15 px, all shown live in the preview. It SHALL say that an installed font is used only on devices that have it and is never downloaded.
+The editor SHALL let the user choose the corner radius as a preset (Square, Default, Round) or as five values from 0 to 20 px, the font as OpenTodo's bundled typeface, the system, serif or monospace font, or an installed font by name, the list text size of 13, 14 or 15 px, and the weight of task titles (Regular, Medium, Semibold or Bold), all shown live in the preview. It SHALL say that an installed font is used only on devices that have it and is never downloaded.
 
 #### Scenario: An installed font
 - **WHEN** the user chooses Installed font and types "Atkinson Hyperlegible"
 - **THEN** the preview uses that font where it is installed and the system font where it is not, and no font request leaves the device
+
+#### Scenario: Bold task titles
+- **WHEN** the user chooses Bold under Task titles
+- **THEN** the preview's task titles are bold, the details beside them keep their weight, and the saved theme carries `"titleWeight": 700`
 
 ### Requirement: Import and export theme files
 The user SHALL be able to export any theme as a `.opentodo-theme.json` file in the current format, made on the device. The user SHALL be able to import such a file of at most 64 KB by choosing or dropping it; the file MAY carry `//` and `/* */` comments and trailing commas. The device SHALL read, migrate and validate it, open a valid theme as an unsaved draft with a new id (renaming it when its name is taken) and without a `$schema`, and show what is wrong with an invalid one and on which line, writing nothing. No file SHALL be uploaded; only a saved theme is synced.

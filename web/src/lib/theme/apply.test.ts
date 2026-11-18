@@ -18,7 +18,7 @@ const value = (n: string) => getComputedStyle(root()).getPropertyValue(`--ot-${n
 const NORD: ThemeDocument = {
   opentodoTheme: 1, id: 'nord-like', name: 'Nord-like', author: 'Example', licence: 'MIT', kind: 'dark',
   seeds: { canvas: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0' },
-  shape: { radius: { card: 4 } }, type: { family: 'system', list: 14 },
+  shape: { radius: { card: 4 } }, type: { family: 'system', list: 14 }, titleWeight: 700,
 }
 const nord = (): AppliedTheme => toApplied(deriveTheme(NORD), 'h1')
 
@@ -38,6 +38,7 @@ describe('applyTheme', () => {
     expect(value('canvas')).toBe(t.tokens.canvas)
     expect(value('radius-card')).toBe('4px')
     expect(value('text-list')).toBe('0.875rem')
+    expect(value('title-weight')).toBe('700')
     expect(value('font')).toMatch(/^ui-sans-serif/)
   })
 
@@ -69,6 +70,12 @@ describe('applyTheme', () => {
     expect(sheet).not.toContain('display')
     expect(sheet).not.toContain('--ot-canvas')
     expect(validApplied(hostile)).toBe(false)
+  })
+
+  it('accepts only the four title weights (theme-title-weight D2)', () => {
+    expect(validApplied({ ...nord(), titleWeight: 600 })).toBe(true)
+    expect(validApplied({ ...nord(), titleWeight: 650 })).toBe(false)
+    expect(validApplied({ ...nord(), titleWeight: '700;color:red' })).toBe(false)
   })
 
   it('cannot be reached from a document that carries CSS: the validator refuses it first', async () => {

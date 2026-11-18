@@ -1506,6 +1506,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
 
+/* The weight of task titles (OpenSpec change theme-title-weight): a theme's titleWeight
+   sets --ot-title-weight, so a title reads before the details beside it; unset, the
+   row's own weight. */
+[data-row-title] { font-weight: var(--ot-title-weight, inherit); }
+
 /* Titles on a phone (OpenSpec change phone-titles-everywhere): the one-line titles of the
    lists that are not the task row (Notes, the calendar's agendas, Close the day, the
    command bar) follow the row's rule below 768 px: up to two lines, then an ellipsis, and

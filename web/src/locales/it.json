@@ -7772,5 +7772,8 @@
   "Add a subtask to this task": "Aggiungi una sottoattività a questa attività",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "il calendario supera {size} MB; collegalo invece con la sincronizzazione del calendario",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Questo server non ha potuto accettare una modifica da questo dispositivo. Resta su questo dispositivo e tutto il resto continua a sincronizzarsi.",
-  "(this server could not accept the value)": "(questo server non ha potuto accettare il valore)"
+  "(this server could not accept the value)": "(questo server non ha potuto accettare il valore)",
+  "Task titles": "Titoli delle attività",
+  "Regular": "Normale",
+  "Semibold": "Semigrassetto"
 }

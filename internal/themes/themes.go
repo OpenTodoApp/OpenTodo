@@ -53,7 +53,7 @@ var (
 )
 
 var (
-	knownKeys     = []string{"$schema", "opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type"}
+	knownKeys     = []string{"$schema", "opentodoTheme", "id", "name", "author", "licence", "source", "kind", "seeds", "tokens", "bar", "notes", "shape", "type", "titleWeight"}
 	requiredSeeds = []string{"canvas", "surface", "text", "accent"}
 	radiusSteps   = []string{"chip", "control", "card", "surface", "popover"}
 	families      = []string{"inter", "system", "serif", "mono"}
@@ -160,6 +160,14 @@ func validate(v any) {
 	}
 	if t, ok := d["type"]; ok {
 		typ(t)
+	}
+	// The weight of task titles (theme-title-weight D1): a top-level key, so an older
+	// app keeps and ignores it.
+	if w, ok := d["titleWeight"]; ok {
+		n, ok := w.(float64)
+		if !ok || (n != 400 && n != 500 && n != 600 && n != 700) {
+			fail("type", "titleWeight")
+		}
 	}
 	for _, k := range sortedKeys(d) {
 		if !slices.Contains(knownKeys, k) && !topKeyRe.MatchString(k) {

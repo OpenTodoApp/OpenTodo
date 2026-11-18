@@ -1,0 +1,1 @@
+- **Themes: a title weight for task titles.** A theme can show task titles in lists as Regular, Medium, Semibold or Bold (Settings › Theme editor › Shape and type), so titles read before the details beside them.

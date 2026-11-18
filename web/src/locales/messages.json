@@ -2637,6 +2637,7 @@
   "Bold": [
     "web/src/app/EditorChrome.tsx",
     "web/src/app/editorCommands.ts",
+    "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/richtextEditor.ts"
   ],
   "Book the skip": [
@@ -9882,6 +9883,7 @@
   ],
   "Medium": [
     "web/src/app/routines/words.tsx",
+    "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/bentoSlots.ts",
     "web/src/lib/energy.ts"
   ],
@@ -14344,6 +14346,9 @@
   "Registered by the app": [
     "web/src/app/OAuthClients.tsx"
   ],
+  "Regular": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Relative": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -15732,6 +15737,9 @@
   ],
   "Self-built": [
     "web/src/app/AppCodeRow.tsx"
+  ],
+  "Semibold": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
@@ -17576,6 +17584,9 @@
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Task titles": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Task to focus on": [
     "web/src/app/focus/FocusParts.tsx"

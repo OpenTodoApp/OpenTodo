@@ -7772,5 +7772,8 @@
   "Add a subtask to this task": "Subtaak toevoegen aan deze taak",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "de agenda is groter dan {size} MB; koppel hem in plaats daarvan met kalendersynchronisatie",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Deze server kon een wijziging van dit apparaat niet accepteren. Die blijft op dit apparaat en al het andere blijft synchroniseren.",
-  "(this server could not accept the value)": "(deze server kon de waarde niet accepteren)"
+  "(this server could not accept the value)": "(deze server kon de waarde niet accepteren)",
+  "Task titles": "Taaktitels",
+  "Regular": "Normaal",
+  "Semibold": "Halfvet"
 }

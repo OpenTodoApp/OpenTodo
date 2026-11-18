@@ -3,14 +3,14 @@
 // the optional status hues as compact rows (swatch, name, hex) in two columns when
 // the controls are wide enough, each with its contrast warning beside it; every
 // other token following by derivation; the corner radius as a preset or five
-// values, the font (never downloaded) and the list text size, each with a visible
+// values, the font (never downloaded), the list text size and the weight of task titles, each with a visible
 // label; the name's companions (kind, author, licence, notes).
 import { useState, type ReactNode } from 'react'
 import { t } from '../../lib/i18n'
 import type { ContrastFailure } from '../../lib/theme/check'
 import type { ResolvedTheme } from '../../lib/theme/derive'
 import type { FontFamily, ThemeDocument } from '../../lib/theme/format'
-import { DEFAULT_RADIUS, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, type RadiusStep } from '../../lib/theme/tokens'
+import { DEFAULT_RADIUS, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, TITLE_WEIGHTS, type RadiusStep } from '../../lib/theme/tokens'
 import { Field, Input, LazyColourField as ColourField, SegmentedControl, Textarea } from '../../ui'
 import { failingText } from './ContrastPanel'
 import { SEEDS, STATUS_SEEDS, tokenName } from './tokenNames'
@@ -112,6 +112,12 @@ export function ShapeTypeSection({ doc, onChange }: { doc: ThemeDocument; onChan
     const type = { ...(family && family !== 'inter' ? { family } : {}), ...(list && list !== 13 ? { list } : {}) }
     onChange(Object.keys(type).length ? { ...rest, type } : rest)
   }
+  // The weight of task titles (theme-title-weight D1): a top-level key, absent at 400.
+  const setTitleWeight = (w: (typeof TITLE_WEIGHTS)[number]) => {
+    const { titleWeight: _w, ...rest } = doc
+    void _w
+    onChange(w === 400 ? rest : { ...rest, titleWeight: w })
+  }
   const localOk = LOCAL_FONT.test(local)
   return (
     <Section id="shape" title={t('Shape and type')}>
@@ -151,9 +157,18 @@ export function ShapeTypeSection({ doc, onChange }: { doc: ThemeDocument; onChan
             options={LIST_SIZES.map((n) => ({ id: String(n), label: `${n} px` }))}
             onChange={(v) => setType(doc.type?.family, Number(v) as 13 | 14 | 15)} />
         </Labelled>
+        <Labelled label={t('Task titles')}>
+          <SegmentedControl label={t('Task titles')} value={String(doc.titleWeight ?? 400)} className="w-full" data-theme-title-weight
+            options={TITLE_WEIGHTS.map((w) => ({ id: String(w), label: WEIGHT_LABEL[w]() }))}
+            onChange={(v) => setTitleWeight(Number(v) as (typeof TITLE_WEIGHTS)[number])} />
+        </Labelled>
       </div>
     </Section>
   )
+}
+
+const WEIGHT_LABEL: Record<(typeof TITLE_WEIGHTS)[number], () => string> = {
+  400: () => t('Regular'), 500: () => t('Medium'), 600: () => t('Semibold'), 700: () => t('Bold'),
 }
 
 const RADIUS_LABEL: Record<RadiusStep, () => string> = {
