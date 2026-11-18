@@ -9,6 +9,7 @@ import type { CommandEnv } from './editorCommands'
 import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
 import { IconButton } from '../ui'
+import { Markdown } from './Markdown'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
 // a note with a quote, a table, an image whose attachment is gone and a mention;
@@ -125,3 +126,6 @@ function SourceNote({ readOnly = false }: { readOnly?: boolean }) {
 }
 export const SourceMode: StoryObj = { render: () => <SourceNote /> }
 export const SourceModeReadOnly: StoryObj = { render: () => <SourceNote readOnly /> }
+
+/** A code block in rendered Markdown (copy-code-block D3): its Copy button in a bar above the code. */
+export const RenderedCodeBlock: StoryObj = { render: () => <div className="max-w-md bg-canvas p-4"><Markdown source={'Copy the command:\n\n```bash\nmake dev\n```'} /></div> }

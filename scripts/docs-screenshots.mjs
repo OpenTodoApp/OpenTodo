@@ -454,6 +454,21 @@ const shots = [
     await p.keyboard.press('Control+Shift+M'); await p.keyboard.press('Escape')
     await p.evaluate((nid) => fetch(`/api/v1/notes/${nid}`, { method: 'DELETE' }), p.sourceNote).catch(() => {})
   } },
+  // A code block's Copy button (copy-code-block): a project note whose text holds a code
+  // block, as a viewer reads it (the rendered Markdown, not the editor), the pointer on the block.
+  { name: 'copy-code-block', server: D, async run(p) {
+    const note = '## Deploy\n\nRun it from the repository root, then open **localhost:8080**:\n\n```bash\nmake dev\n```'
+    await go(p, demoBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await p.evaluate(async (d) => { const j = await (await fetch('/api/v1/projects')).json(); const home = j.projects.find((x) => x.name === 'Home renovation'); await fetch(`/api/v1/projects/${home.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: d }) }) }, note)
+    await p.reload()
+    await go(p, demoBase, '/inbox', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await openProject(p, 'Home renovation')
+    await p.locator('[data-project-note] [data-code-copy]').first().waitFor()
+    await settle(p, 600)
+    await p.locator('[data-project-note] [data-code-block]').first().hover(); await settle(p, 400)
+  }, async after(p) {
+    await p.evaluate(async () => { const j = await (await fetch('/api/v1/projects')).json(); const home = j.projects.find((x) => x.name === 'Home renovation'); await fetch(`/api/v1/projects/${home.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ description: '' }) }) }).catch(() => {})
+  } },
   // Several notes at once (notes-bulk-actions): three new notes ticked, the Actions menu open; removed after.
   { name: 'notes-bulk', server: D, async run(p) {
     await go(p, demoBase, '/notes', () => p.locator('[data-note-key], [data-empty-state]').first().waitFor())
