@@ -5,20 +5,19 @@ import { Checkbox } from '../ui'
 import { ConfirmDialog } from '../ui'
 import { Notice } from '../ui'
 import { SettingRow, SettingsSection } from '../ui'
-import { ApiError, isNetworkError } from '../lib/api'
-import { MIN_PASSPHRASE_LENGTH, RecoveryKeyFormatError, WrongSecretError } from '../lib/crypto'
+import { MIN_PASSPHRASE_LENGTH } from '../lib/crypto'
 import {
-  changePassphrase, commitEnable, disableEncryption, disableWithoutKey, EncryptionConflictError, lock, prepareEnable, purgeHistory,
-  resetPassphrase, UnlockThrottledError, useEncryption, type EncryptionSnapshot, type PreparedEnable,
+  changePassphrase, commitEnable, disableEncryption, disableWithoutKey, lock, prepareEnable, purgeHistory,
+  resetPassphrase, useEncryption, type EncryptionSnapshot, type PreparedEnable,
 } from '../lib/e2ee'
 import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration, waitForUploads } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
 import { t, msg } from '../lib/i18n'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
-import { messageOf } from '../lib/errorText'
 import { useAction } from '../lib/useAction'
 import { copyText } from '../lib/clipboard'
+import { encryptionMessage, LostKeysConfirm } from './encryptionShared'
 // Loaded with the Encryption page only (routines-ai-step: Run my routines on this device).
 const RoutinesDeviceSettings = lazy(() => import('./routines/RoutinesDevice').then((m) => ({ default: m.RoutinesDeviceSettings })))
 
@@ -30,14 +29,6 @@ const RoutinesDeviceSettings = lazy(() => import('./routines/RoutinesDevice').th
 /** What the server and integrations still see, shown before enabling (design D2). */
 export const PLAINTEXT_FIELDS = msg('due dates, priority, completion and deletion times, ordering, project and parent links, project colours, archived state, label assignments and counts')
 export const ENCRYPTED_FIELDS = msg('task titles, descriptions and calendar extras, project, label, section and saved-view names, saved-view queries and your comments')
-
-export function encryptionMessage(err: unknown): string {
-  if (err instanceof WrongSecretError || err instanceof RecoveryKeyFormatError || err instanceof UnlockThrottledError || err instanceof EncryptionConflictError) return err.message
-  if (err instanceof ApiError) return err.message
-  // fetch() rejects with TypeError when the server is unreachable.
-  if (err instanceof TypeError && isNetworkError(err)) return t('You are offline. This needs a connection to your server.')
-  return messageOf(err)
-}
 
 export type Mode =
   | { kind: 'idle' }
@@ -245,21 +236,6 @@ export function EncryptionView(p: EncryptionViewProps) {
         </Dialog>
       )}
     </SettingsSection>
-  )
-}
-
-/** The "both lost" path, shared with the unlock screen: states the loss plainly before acting. */
-export function LostKeysConfirm({ busy, onConfirm, onCancel }: { busy: boolean; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="space-y-2 rounded-control border border-danger p-3">
-      <p className="text-body">
-        {t('Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.')}
-      </p>
-      <div className="flex gap-2">
-        <button type="button" className="ui-btn ui-btn--danger ui-btn--md" disabled={busy} onClick={onConfirm}>{busy ? t('Deleting…') : t('Turn off and delete encrypted content')}</button>
-        <button type="button" className="ui-btn ui-btn--ghost ui-btn--md" onClick={onCancel}>{t('Cancel')}</button>
-      </div>
-    </div>
   )
 }
 

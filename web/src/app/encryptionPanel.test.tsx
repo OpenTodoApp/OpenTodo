@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { WrongSecretError } from '../lib/crypto'
 import type { EncryptionSnapshot } from '../lib/e2ee'
 import { UnlockThrottledError } from '../lib/e2ee'
-import { encryptionMessage, EncryptionView, type EncryptionViewProps, type Mode } from './EncryptionPanel'
+import { EncryptionView, type EncryptionViewProps, type Mode } from './EncryptionPanel'
+import { encryptionMessage } from './encryptionShared'
 import { RecordMissingView, type RecordMissingViewProps, UnlockView, type UnlockViewProps } from './UnlockScreen'
 
 const noop = () => {}
