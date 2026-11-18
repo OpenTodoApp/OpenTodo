@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Her yıl {month} ayının {ordinal, select, first {ilk} second {ikinci} third {üçüncü} fourth {dördüncü} other {son}} {wd, select, mon {pazartesisi} tue {salısı} wed {çarşambası} thu {perşembesi} fri {cuması} sat {cumartesisi} other {pazarı}}",
   "{rule} after completion": "{rule}, tamamlandıktan sonra",
   "{rule} until {date}": "{rule}, {date} tarihine kadar",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}",
+  "Indent": "Girintiyi artır",
+  "Outdent": "Girintiyi azalt"
 }

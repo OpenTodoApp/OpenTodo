@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "每年{month}的{ordinal, select, first {第一个} second {第二个} third {第三个} fourth {第四个} other {最后一个}}{wd, select, mon {星期一} tue {星期二} wed {星期三} thu {星期四} fri {星期五} sat {星期六} other {星期日}}",
   "{rule} after completion": "完成后{rule}",
   "{rule} until {date}": "{rule}，直到 {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}",
+  "Indent": "增加缩进",
+  "Outdent": "减少缩进"
 }

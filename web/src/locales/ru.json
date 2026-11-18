@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Каждый год {wd, select, mon {{ordinal, select, first {в первый} second {во второй} third {в третий} fourth {в четвёртый} other {в последний}}} tue {{ordinal, select, first {в первый} second {во второй} third {в третий} fourth {в четвёртый} other {в последний}}} thu {{ordinal, select, first {в первый} second {во второй} third {в третий} fourth {в четвёртый} other {в последний}}} wed {{ordinal, select, first {в первую} second {во вторую} third {в третью} fourth {в четвёртую} other {в последнюю}}} fri {{ordinal, select, first {в первую} second {во вторую} third {в третью} fourth {в четвёртую} other {в последнюю}}} sat {{ordinal, select, first {в первую} second {во вторую} third {в третью} fourth {в четвёртую} other {в последнюю}}} other {{ordinal, select, first {в первое} second {во второе} third {в третье} fourth {в четвёртое} other {в последнее}}}} {wd, select, mon {понедельник} tue {вторник} wed {среду} thu {четверг} fri {пятницу} sat {субботу} other {воскресенье}} ({month})",
   "{rule} after completion": "{rule} после выполнения",
   "{rule} until {date}": "{rule} до {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}",
+  "Indent": "Увеличить отступ",
+  "Outdent": "Уменьшить отступ"
 }

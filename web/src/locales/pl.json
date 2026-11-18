@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Co roku w {wd, select, mon {{ordinal, select, first {pierwszy} second {drugi} third {trzeci} fourth {czwarty} other {ostatni}}} tue {{ordinal, select, first {pierwszy} second {drugi} third {trzeci} fourth {czwarty} other {ostatni}}} thu {{ordinal, select, first {pierwszy} second {drugi} third {trzeci} fourth {czwarty} other {ostatni}}} fri {{ordinal, select, first {pierwszy} second {drugi} third {trzeci} fourth {czwarty} other {ostatni}}} other {{ordinal, select, first {pierwszą} second {drugą} third {trzecią} fourth {czwartą} other {ostatnią}}}} {wd, select, mon {poniedziałek} tue {wtorek} wed {środę} thu {czwartek} fri {piątek} sat {sobotę} other {niedzielę}} ({month})",
   "{rule} after completion": "{rule} po ukończeniu",
   "{rule} until {date}": "{rule} do {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# raz} few {# razy} many {# razy} other {# raza}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# raz} few {# razy} many {# razy} other {# raza}}",
+  "Indent": "Zwiększ wcięcie",
+  "Outdent": "Zmniejsz wcięcie"
 }

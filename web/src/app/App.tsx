@@ -22,10 +22,10 @@ import { ResetScreen } from './ResetScreen'
 import { ConfirmEmailScreen, ForgotScreen, VerifyScreen } from './EmailScreens'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
 import { PublicListScreen } from './PublicListScreen'
-import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
+import { ACCOUNT_CHANGED_EVENT } from './accountChanged'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
-import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
+import { cacheMfa } from './mfaCache'
 import { navigate, useRoute } from './router'
 import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
@@ -45,6 +45,8 @@ import { rememberWipeKey, REVOKED_NOTICE, wipeIfRevoked } from '../lib/revocatio
 export { DemoBanner }
 
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
+// The enrolment gate (mfa-totp) is the two-factor panel's wizard: loaded for the restricted session that needs it.
+const EnrolmentGate = lazy(() => import('./TwoFactorPanel').then((m) => ({ default: m.EnrolmentGate })))
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
@@ -235,7 +237,7 @@ export function App() {
       return <ConfirmEmailScreen token={route.token} onDone={() => void refresh()} />
     }
     if (phase.kind === 'restricted' && route.view !== 'invite') {
-      return <EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} />
+      return <Suspense fallback={null}><EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} /></Suspense>
     }
     if (route.view === 'invite') {
       // The invite link works for anonymous visitors, offline visitors (it waits for

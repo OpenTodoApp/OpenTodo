@@ -7790,5 +7790,7 @@
   "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Cada año el {ordinal, select, first {primer} second {segundo} third {tercer} fourth {cuarto} other {último}} {wd, select, mon {lunes} tue {martes} wed {miércoles} thu {jueves} fri {viernes} sat {sábado} other {domingo}} de {month}",
   "{rule} after completion": "{rule} después de completar",
   "{rule} until {date}": "{rule} hasta el {date}",
-  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# veces}}"
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# veces}}",
+  "Indent": "Aumentar sangría",
+  "Outdent": "Reducir sangría"
 }
