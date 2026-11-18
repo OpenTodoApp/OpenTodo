@@ -707,16 +707,16 @@ describe('server limits (multi-tenant-host)', () => {
   })
 })
 
-describe('an op the server cannot accept (sync-invalid-op-alone)', () => {
+describe('an op the server cannot accept (sync-invalid-op-alone, invalid-op-ends)', () => {
   type Sent = { id: string; entityId: string }
   const accept = async () => ({ applied: 0, ops: [], cursor: serverCursor.value, hasMore: false, serverTime: Date.now() })
 
-  it('keeps it on the device, syncs the rest, says so, and offers it again later', async () => {
+  it('keeps a field the server does not know on the device, says so, and offers it again later', async () => {
     await mutate('task', 'odd', { title: 'Not accepted' })
     await mutate('task', 'fine', { title: 'Fits' })
     syncCalls.mockImplementation((async (...args: unknown[]) => ({
       ...(await accept()),
-      rejected: (args[2] as Sent[]).filter((o) => o.entityId === 'odd').map((o) => ({ id: o.id, reason: 'invalid' })),
+      rejected: (args[2] as Sent[]).filter((o) => o.entityId === 'odd').map((o) => ({ id: o.id, reason: 'unknown_field' })),
     })) as never)
     await syncNow()
     // The change is not forgotten: the row stays as edited, and the status names it.
@@ -739,6 +739,50 @@ describe('an op the server cannot accept (sync-invalid-op-alone)', () => {
     expect(resent.every((o) => o.entityId === 'odd')).toBe(true)
     expect(syncSnapshot().state).toBe('idle')
     expect(syncSnapshot().pending).toBe(0)
+  })
+  // invalid-op-ends D2: a value the server will never accept ends like any refused
+  // change: nothing is held, the server's value wins, and the notice says why.
+  it('ends a value the server will never accept: the server value returns and a notice says so', async () => {
+    await applyOps([{ id: 's1', entity: 'task', entityId: 'odd', field: 'title', value: 'Stored', ts: 100, device: 'other' }])
+    await mutate('task', 'odd', { title: 'Refused' })
+    let sentOnce = false
+    syncCalls.mockImplementation((async (...args: unknown[]) => {
+      const sent = args[2] as (Sent & { field: string })[]
+      const refused = sent.filter((o) => o.entityId === 'odd')
+      const first = !sentOnce && refused.length > 0
+      sentOnce ||= first
+      return {
+        ...(await accept()),
+        rejected: refused.map((o) => ({ id: o.id, reason: 'invalid' })),
+        // The server's own value travels with the answer, as for any refused field.
+        ops: first ? [{ id: 's1', entity: 'task', entityId: 'odd', field: 'title', value: 'Stored', ts: 100, device: 'other', seq: 1 }] : [],
+      }
+    }) as never)
+    await syncNow()
+    expect((await db.tasks.get('odd'))?.title).toBe('Stored')
+    expect(await db.outbox.count()).toBe(0)
+    const s = syncSnapshot()
+    expect(s.state).toBe('idle')
+    expect(s.pending).toBe(0)
+    expect(s.rejected?.invalid).toBe(1)
+    expect(describeRejected(s.rejected!)).toContain('could not accept the value')
+    // Nothing is held: a minute later no op is offered again.
+    syncCalls.mockClear()
+    vi.setSystemTime(Date.now() + 61_000)
+    await syncNow()
+    expect((syncCalls.mock.calls.at(-1) as unknown as [string, number, Sent[]])[2]).toEqual([])
+  })
+
+  it('puts a refused field the server has no value for back to its default', async () => {
+    await mutate('task', 'odd2', { title: 'Kept', priority: 1 })
+    syncCalls.mockImplementation((async (...args: unknown[]) => ({
+      ...(await accept()),
+      rejected: (args[2] as (Sent & { field: string })[]).filter((o) => o.entityId === 'odd2' && o.field === 'priority').map((o) => ({ id: o.id, reason: 'invalid' })),
+    })) as never)
+    await syncNow()
+    const row = await db.tasks.get('odd2')
+    expect(row?.title).toBe('Kept')
+    expect(row?.priority).toBe(4)
   })
 })
 

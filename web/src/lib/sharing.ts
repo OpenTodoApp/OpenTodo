@@ -2,6 +2,7 @@
 // server-owned authorization data: every sync response carries the caller's list,
 // which replaces the local cache, so all devices converge on the server's member
 // list and roles. Everything here reads the cache, so roles render the same offline.
+import { OP_DEFAULTS } from '../generated/opSchema'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { forgetEntities } from './activity'
 import { db, entityTables, getMeta, setMeta, syncedTables, tableOf } from './db'
@@ -157,6 +158,8 @@ export interface RejectedNotice {
   tasks: string[]
   /** How many of the refused changes were assignments to a non-member (task-assignment). */
   assignments?: number
+  /** How many were values this server will never accept (invalid-op-ends D2). */
+  invalid?: number
 }
 
 /**
@@ -173,12 +176,14 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
   const tasks = new Set<string>()
   let count = 0
   let assignments = 0
+  let invalid = 0
   await db.transaction('rw', entityTables(), async () => {
     for (const r of rejected) {
       const op = byId.get(r.id)
       if (!op) continue
       count++
       if (r.reason === 'not_a_member') assignments++
+      if (r.reason === 'invalid') invalid++
       const table = tableOf(op.entity)
       const row = await table.get(op.entityId)
       if (!row) continue
@@ -200,14 +205,19 @@ export async function forgetRejected(sent: Op[], rejected: Rejection[]): Promise
         // fall back to "unassigned", which is what every other device shows. The
         // same for blockers refused as a cycle or another scope (task-dependencies):
         // the restore op, if the server has a value, follows in the same response.
+        // A value the server will never accept (invalid-op-ends D2) goes back to the
+        // field's default; the server's own value, when it has one, follows in res.ops.
+        const defaults = (OP_DEFAULTS as Record<string, Record<string, unknown>>)[op.entity] ?? {}
         const reset = op.entity === 'task' && op.field === 'assignee_id' ? { assignee_id: null }
-          : op.entity === 'task' && op.field === 'blocked_by' ? { blocked_by: [] } : {}
+          : op.entity === 'task' && op.field === 'blocked_by' ? { blocked_by: [] }
+            : r.reason === 'invalid' && op.field in defaults ? { [op.field]: defaults[op.field] } : {}
         await table.put({ ...row, ...reset, _clock: clock })
       }
     }
   })
   const notice: RejectedNotice | null = count ? { count, projects: [...projects], tasks: [...tasks] } : null
   if (notice && assignments) notice.assignments = assignments
+  if (notice && invalid) notice.invalid = invalid
   return { keys: [...keys], notice }
 }
 
@@ -234,7 +244,8 @@ export async function dropUnconfirmed(keys: string[]): Promise<void> {
 export function describeRejected(n: RejectedNotice): string {
   const what = t('{n, plural, one {# change was not accepted} other {# changes were not accepted}}', { n: n.count })
   const place = n.projects.join(', ')
-  const where = !n.projects.length ? ''
+  const where = n.invalid === n.count ? ` ${t('(this server could not accept the value)')}`
+    : !n.projects.length ? ''
     : n.assignments === n.count ? ` ${t('(the assignee is no longer a member of {place})', { place })}`
       : ` ${t('(your role in {place} changed)', { place })}`
   const tasks = n.tasks.length ? `: ${n.tasks.slice(0, 5).join(', ')}${n.tasks.length > 5 ? '…' : ''}` : ''

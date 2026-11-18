@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,24 +10,49 @@ import (
 // ErrInvalidOp wraps every validation failure.
 var ErrInvalidOp = errors.New("invalid op")
 
-// ReasonInvalid refuses one op the server cannot accept as written (a shape it
-// cannot validate, a device only the server may use), for a client that sends the
-// feature invalid_ops (sync-invalid-op-alone D1). The device keeps the change.
+// ReasonInvalid refuses one op whose value or device this server will never accept
+// (a value a rule refuses, a device only the server may use), for a client that
+// sends the feature invalid_ops (sync-invalid-op-alone D1). It is a verdict, like
+// forbidden: the server's value comes back and the device drops the change
+// (invalid-op-ends D1).
 const ReasonInvalid = "invalid"
 
+// ReasonUnknownField refuses one op for an entity or field this server does not
+// know: a newer client's field, which a later server may accept, so the device
+// keeps the change and offers it again (invalid-op-ends D1).
+const ReasonUnknownField = "unknown_field"
+
 // SplitInvalid returns the ops that pass Validate and carry a device a client may
-// use, and a ReasonInvalid refusal for each of the others, so one bad op never
-// refuses the rest of the batch (sync-invalid-op-alone D1).
-func SplitInvalid(ops []Op) (valid []Op, refused []Rejection) {
+// use, a refusal for each of the others (ReasonUnknownField for an entity or field
+// the schema lacks, ReasonInvalid for the rest), and the ops refused as invalid, so
+// their fields' server values can be sent back. One bad op never refuses the rest
+// of the batch (sync-invalid-op-alone D1).
+func SplitInvalid(ops []Op) (valid []Op, refused []Rejection, invalid []Op) {
 	valid = make([]Op, 0, len(ops))
 	for _, op := range ops {
-		if ReservedDevice(op.Device) || Validate(op) != nil {
-			refused = append(refused, Rejection{ID: op.ID, Reason: ReasonInvalid})
+		if !ReservedDevice(op.Device) && Validate(op) == nil {
+			valid = append(valid, op)
 			continue
 		}
-		valid = append(valid, op)
+		if _, known := fieldKind(op.Entity, op.Field); !known && !ReservedDevice(op.Device) {
+			refused = append(refused, Rejection{ID: op.ID, Reason: ReasonUnknownField})
+			continue
+		}
+		refused = append(refused, Rejection{ID: op.ID, Reason: ReasonInvalid})
+		invalid = append(invalid, op)
 	}
-	return valid, refused
+	return valid, refused, invalid
+}
+
+type invalidKey struct{}
+
+// WithInvalidRefused hands Apply the ops SplitInvalid refused as invalid, so the
+// answer carries their fields' server values like any refused op's (invalid-op-ends D1).
+func WithInvalidRefused(ctx context.Context, ops []Op) context.Context {
+	if len(ops) == 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, invalidKey{}, ops)
 }
 
 // Validate checks structure, schema membership and value type of an op.

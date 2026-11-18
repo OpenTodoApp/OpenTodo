@@ -7771,5 +7771,6 @@
   "Add a subtask to {title}": "Adicionar uma subtarefa a {title}",
   "Add a subtask to this task": "Adicionar uma subtarefa a esta tarefa",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "o calendário tem mais de {size} MB; ligue-o com a sincronização de calendário",
-  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Este servidor não conseguiu aceitar uma alteração deste dispositivo. Ela fica neste dispositivo e todo o resto continua a sincronizar."
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Este servidor não conseguiu aceitar uma alteração deste dispositivo. Ela fica neste dispositivo e todo o resto continua a sincronizar.",
+  "(this server could not accept the value)": "(este servidor não conseguiu aceitar o valor)"
 }
