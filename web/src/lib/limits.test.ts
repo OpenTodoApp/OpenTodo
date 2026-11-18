@@ -28,4 +28,19 @@ describe('held ops (client-sync-robustness)', () => {
     expect(await requeueHeld()).toBe(0)
     expect((await db.outbox.toArray()).map((o) => o.id).sort()).toEqual(['a', 'b'])
   })
+
+  it('drops a held op whose field was written again or whose row is in the Trash (#1532)', async () => {
+    const clock = (ts: number, device = 'd') => ({ ts, device })
+    await db.tasks.bulkPut([
+      { id: 't1', title: 'newer', _clock: { title: clock(5) } },
+      { id: 't2', title: 'same', _clock: { title: clock(1) } },
+      { id: 't3', title: 'gone', deleted_at: 9, _clock: { title: clock(1), deleted_at: clock(9) } },
+    ] as never)
+    const held = (id: string, entityId: string): Op => ({ ...op(id), entityId })
+    await holdOps([held('a', 't1'), held('b', 't2'), held('c', 't3'), held('d', 'missing')], ['a', 'b', 'c', 'd'].map((id) => ({ id, reason: 'unknown_field' })))
+    // t1's title has a newer write, t3 is in the Trash: only b and d go again.
+    expect(await requeueHeld()).toBe(2)
+    expect((await db.outbox.toArray()).map((o) => o.id).sort()).toEqual(['b', 'd'])
+    expect(await heldCount()).toBe(0)
+  })
 })

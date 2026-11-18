@@ -3,9 +3,10 @@
 // hour, stored changes). Unlike a refusal on the merits, the device keeps its
 // change: the op is held here, the row stays as edited and unsynced, the rest
 // of the outbox keeps syncing, and held ops are sent again later.
-import { db, getMeta, setMeta } from './db'
+import { db, getMeta, setMeta, syncedTables, tableOf } from './db'
+import { wins } from './hlc'
 import { t } from './i18n/catalog'
-import type { Op, Rejection } from './types'
+import { ENTITIES, type Clock, type Entity, type Op, type Rejection } from './types'
 
 const HELD_KEY = 'heldOps'
 /** How often held ops are offered to the server again. */
@@ -72,15 +73,31 @@ export async function heldCount(): Promise<number> {
   return (await getMeta<Op[]>(HELD_KEY, [])).length
 }
 
-/** Moves the held ops back into the outbox (their original clocks), to be sent again. */
+/**
+ * Moves the held ops back into the outbox (their original clocks), to be sent again.
+ * A held op that can no longer change what anyone sees is dropped instead (#1532):
+ * its field was written again since, on this device or another (a newer clock on
+ * the row), or its row is in the Trash. Returns how many were queued again.
+ */
 export async function requeueHeld(): Promise<number> {
   // Read inside the transaction: ops held between a read outside it and the
   // clear below would otherwise be dropped without ever being sent.
-  return db.transaction('rw', db.outbox, db.meta, async () => {
+  return db.transaction('rw', [db.outbox, db.meta, ...syncedTables()], async () => {
     const held = await getMeta<Op[]>(HELD_KEY, [])
     if (held.length === 0) return 0
-    await db.outbox.bulkAdd(held)
+    const live: Op[] = []
+    for (const op of held) if (!(await superseded(op))) live.push(op)
+    if (live.length) await db.outbox.bulkAdd(live)
     await setMeta(HELD_KEY, [])
-    return held.length
+    return live.length
   })
+}
+
+async function superseded(op: Op): Promise<boolean> {
+  if (!(ENTITIES as readonly string[]).includes(op.entity)) return false
+  const row = await tableOf(op.entity as Entity).get(op.entityId)
+  if (!row) return false
+  if (op.field !== 'deleted_at' && row.deleted_at != null) return true
+  const c = ((row._clock ?? {}) as Clock)[op.field]
+  return !!c && wins(c.ts, c.device, op)
 }
