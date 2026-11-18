@@ -2033,7 +2033,7 @@
      },
      {
       "en": "Work through the three sections in order: get clear, look back, look ahead.",
-      "fr": "Suis les trois sections dans l’ordre : Faire le vide, Jours précédents, Jours à venir.",
+      "fr": "Suis les trois sections dans l’ordre : vider la tête, faire le bilan, regarder vers l’avenir.",
       "it": "Segui le tre sezioni in ordine: fare chiarezza, guardare indietro, guardare avanti."
      }
     ],
@@ -2076,7 +2076,7 @@
       {
        "name": {
         "en": "Get clear",
-        "fr": "Faire le vide",
+        "fr": "Vider la tête",
         "it": "Fare chiarezza"
        },
        "tasks": [
@@ -2135,7 +2135,7 @@
       {
        "name": {
         "en": "Look back",
-        "fr": "Jours précédents",
+        "fr": "Faire le bilan",
         "it": "Guardare indietro"
        },
        "tasks": [
@@ -2170,7 +2170,7 @@
       {
        "name": {
         "en": "Look ahead",
-        "fr": "Jours à venir",
+        "fr": "Regarder vers l’avenir",
         "it": "Guardare avanti"
        },
        "tasks": [
@@ -2368,7 +2368,7 @@
     "en": "Weekly review",
     "de": "Wochenrückblick",
     "es": "Revisión semanal",
-    "fr": "Revue hebdomadaire",
+    "fr": "Revue de la semaine",
     "it": "Revisione settimanale",
     "nl": "Weekoverzicht",
     "pt": "Revisão semanal",
