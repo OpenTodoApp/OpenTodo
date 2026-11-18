@@ -3997,7 +3997,6 @@
   "Repeating tasks keep a date": "重复任务保留日期",
   "Repeating tasks shown up to {date}": "重复任务显示至 {date}",
   "Repeats": "重复",
-  "Repeats {rule}": "重复：{rule}",
   "Replace text": "替换文本",
   "Replace token": "替换令牌",
   "Replace with": "替换为",
@@ -7778,5 +7777,18 @@
   "Add a subtask to this task": "为此任务添加子任务",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "日历超过 {size} MB；请改用日历同步连接它",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "此服务器无法接受来自此设备的一项更改。它会保留在此设备上，其他内容继续同步。",
-  "(this server could not accept the value)": "（此服务器无法接受该值）"
+  "(this server could not accept the value)": "（此服务器无法接受该值）",
+  "Every year": "每年",
+  "Every {n, plural, one {# day} other {# days}}": "{n, plural, other {每 # 天}}",
+  "Every {n, plural, one {# week} other {# weeks}}": "{n, plural, other {每 # 周}}",
+  "Every {n, plural, one {# month} other {# months}}": "{n, plural, other {每 # 个月}}",
+  "Every {n, plural, one {# year} other {# years}}": "{n, plural, other {每 # 年}}",
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": "{n, plural, other {每 # 周}}的{weekday}",
+  "Every month on the last day": "每月最后一天",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": "每月{ordinal, select, first {第一个} second {第二个} third {第三个} fourth {第四个} other {最后一个}}工作日",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": "每月{ordinal, select, first {第一个} second {第二个} third {第三个} fourth {第四个} other {最后一个}}{wd, select, mon {星期一} tue {星期二} wed {星期三} thu {星期四} fri {星期五} sat {星期六} other {星期日}}",
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "每年{month}的{ordinal, select, first {第一个} second {第二个} third {第三个} fourth {第四个} other {最后一个}}{wd, select, mon {星期一} tue {星期二} wed {星期三} thu {星期四} fri {星期五} sat {星期六} other {星期日}}",
+  "{rule} after completion": "完成后{rule}",
+  "{rule} until {date}": "{rule}，直到 {date}",
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}"
 }

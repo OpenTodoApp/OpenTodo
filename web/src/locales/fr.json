@@ -3934,7 +3934,6 @@
   "Repeating occurrences": "Occurrences récurrentes",
   "Repeating tasks shown up to {date}": "Tâches récurrentes affichées jusqu’au {date}",
   "Repeats": "Répétition",
-  "Repeats {rule}": "Se répète : {rule}",
   "Replace text": "Remplacer du texte",
   "Replace token": "Remplacer le jeton",
   "Replace with": "Remplacer par",
@@ -7778,5 +7777,18 @@
   "Add a subtask to this task": "Ajouter une sous-tâche à cette tâche",
   "the calendar is larger than {size} MB; connect it with calendar sync instead": "le calendrier dépasse {size} Mo ; connecte-le plutôt avec la synchronisation de calendrier",
   "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Ce serveur n’a pas pu accepter une modification de cet appareil. Elle reste sur cet appareil, et tout le reste continue de se synchroniser.",
-  "(this server could not accept the value)": "(ce serveur n’a pas pu accepter la valeur)"
+  "(this server could not accept the value)": "(ce serveur n’a pas pu accepter la valeur)",
+  "Every year": "Chaque année",
+  "Every {n, plural, one {# day} other {# days}}": "{n, plural, one {Chaque jour} other {Tous les # jours}}",
+  "Every {n, plural, one {# week} other {# weeks}}": "{n, plural, one {Chaque semaine} other {Toutes les # semaines}}",
+  "Every {n, plural, one {# month} other {# months}}": "{n, plural, one {Chaque mois} other {Tous les # mois}}",
+  "Every {n, plural, one {# year} other {# years}}": "{n, plural, one {Chaque année} other {Tous les # ans}}",
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": "{n, plural, one {Chaque semaine} other {Toutes les # semaines}} le {weekday}",
+  "Every month on the last day": "Tous les mois le dernier jour",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": "Tous les mois le {ordinal, select, first {premier} second {deuxième} third {troisième} fourth {quatrième} other {dernier}} jour ouvré",
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": "Tous les mois le {ordinal, select, first {premier} second {deuxième} third {troisième} fourth {quatrième} other {dernier}} {wd, select, mon {lundi} tue {mardi} wed {mercredi} thu {jeudi} fri {vendredi} sat {samedi} other {dimanche}}",
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": "Chaque année en {month}, le {ordinal, select, first {premier} second {deuxième} third {troisième} fourth {quatrième} other {dernier}} {wd, select, mon {lundi} tue {mardi} wed {mercredi} thu {jeudi} fri {vendredi} sat {samedi} other {dimanche}}",
+  "{rule} after completion": "{rule} après achèvement",
+  "{rule} until {date}": "{rule} jusqu’au {date}",
+  "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# fois} other {# fois}}"
 }

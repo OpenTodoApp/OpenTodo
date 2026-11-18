@@ -11,6 +11,7 @@ import { lazy, Suspense, type KeyboardEvent, type RefObject, useEffect, useRef, 
 import { dueFromView, localDueOf, logicalToday, quickChoices, weekday } from '../../lib/dates'
 import { setRecurrence, unparkTask, updateTask } from '../../lib/ops'
 import { parseRule } from '../../lib/recurrence'
+import { ruleWords } from '../../lib/recurrenceWords'
 import type { WhenSegmentId } from '../../lib/facets'
 import type { Task } from '../../lib/types'
 import { Button, Icon, type IconName, SegmentedControl, Switch } from '../../ui'
@@ -227,7 +228,7 @@ function RepeatPresets({ task, onOpen }: { task: Task; onOpen?: (id: string) => 
   const showCustom = custom || (!!task.recurrence && !current)
   return (
     <div className="space-y-3">
-      {task.recurrence && <p className="text-body text-default" data-rule-words>{t('Repeats {rule}', { rule: task.recurrence })}</p>}
+      {task.recurrence && <p className="text-body text-default" data-rule-words>{ruleWords(task.recurrence)}</p>}
       <div role="radiogroup" aria-label={t('Repeat')} className="flex flex-col gap-1" data-repeat-presets>
         {presets.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={current === p.id} data-preset={p.id}
