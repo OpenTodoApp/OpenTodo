@@ -1,0 +1,1 @@
+- **A stuck sync step no longer stops sync for good.** If one step of an exchange never finishes, the tab gives it up after two minutes, shows an error and syncs again, instead of every tab of the browser waiting behind it.

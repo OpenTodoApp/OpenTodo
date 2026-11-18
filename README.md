@@ -119,7 +119,7 @@ The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the lat
 
 Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.26+ and Node 22+).
 
-**Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo). These links support the project: OpenTodo receives a share when you host through them.
+**Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo), [Railway](https://railway.com/deploy/opentodo?referralCode=nbgVDr). These links support the project: OpenTodo receives a share when you host through them.
 
 ### Configuration
 
@@ -178,7 +178,7 @@ More in [architecture](docs/architecture.md) and [the sync protocol](docs/sync.m
 1. **Star and share.** A star on GitHub helps other people find OpenTodo.
 2. **Leave feedback** in [Discussions](https://github.com/OpenTodoApp/OpenTodo/discussions) or on [Discord](https://discord.gg/mmSsuCRduD).
 3. **Report bugs** in [issues](https://github.com/OpenTodoApp/OpenTodo/issues).
-4. **Review a translation.** The app speaks eight languages; tell us where a word feels wrong ([translating](docs/translating.md)).
+4. **Review a translation.** The app speaks eleven languages; tell us where a word feels wrong ([translating](docs/translating.md)).
 5. **Test it on your devices** and report back in the [call for testers](https://github.com/OpenTodoApp/OpenTodo/issues/9).
 6. **Answer questions** from other people in Discussions and on Discord.
 7. **Sponsor:** [buy me a coffee](https://buymeacoffee.com/pixari) or [GitHub Sponsors](https://github.com/sponsors/pixari).

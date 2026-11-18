@@ -4,7 +4,7 @@
 // tells us to run the exchange now).
 import { forgetActivity, markLongPull, withDeferredActivity } from './activity'
 import { api, ApiError } from './api'
-import { isTransientNetworkError } from './http'
+import { isTransientNetworkError, RequestTimeoutError } from './http'
 import { bumpLocalEpoch, db, entityTables, getMeta, localEpoch, setMeta, tableOf } from './db'
 import { ensureFeedBaselines } from './feed'
 import { CLOCK_OFFSET_META, hlcObserveServerTime, hlcOffset } from './hlc'
@@ -22,7 +22,7 @@ import { sweepInbox } from './shareInbox'
 import { refreshEvents } from './calendarFeeds'
 import { ENTITIES, type Clock, type Op, type RowEncryption, type SyncResponse, type SyncState } from './types'
 import { isEnabled, loadEncryptionState, refreshFromServer, syncBlocked } from './e2ee'
-import { HELD_RETRY_MS, heldCount, holdOps, limitMessage, requeueHeld, splitRejected } from './limits'
+import { HELD_RETRY_MS, heldCount, holdOps, INVALID_REASON, limitMessage, requeueHeld, splitRejected } from './limits'
 import { catchUpEncryption, decryptIncoming, LockedError, markSent, normalizeOnSight, prepareOutgoing, reconcileMode, runMigration } from './e2eeSync'
 import { t } from './i18n'
 import { uuid } from './ids'
@@ -84,6 +84,8 @@ let removeListeners: (() => void) | null = null
 
 /** The session's local data went away while an exchange waited (client-sync-robustness). */
 class SessionEnded extends Error {}
+/** The exchange made no progress for EXCHANGE_STALL.ms and was given up (sync-exchange-watchdog). */
+class ExchangeStalled extends Error {}
 
 // Live channel state.
 let source: EventSource | null = null
@@ -204,6 +206,15 @@ function isSyncResponse(v: unknown): v is SyncResponse {
     && ((r.rejected ?? []) as unknown[]).every((x) => typeof x === 'object' && x !== null && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { reason?: unknown }).reason === 'string')
 }
 
+/**
+ * Whether only the server may write ops with this device id: the client's copy of
+ * internal/sync/devices.go ReservedDevice (mcp-write-tools D4). `assistant:` is a
+ * device's own and is not reserved.
+ */
+export function reservedDevice(device: string): boolean {
+  return device === 'server' || device.startsWith('server:') || /^(agent|caldav|public|issues|page|rule|calsync):/.test(device)
+}
+
 /** Releases the live data a long pull holds (holdLiveSnapshots). */
 let liveHold: (() => void) | null = null
 
@@ -214,20 +225,44 @@ async function runOnce(): Promise<void> {
   const epoch = localEpoch()
   // This exchange uploads the whole outbox, a deferred note document included.
   clearNotePush()
-  const signal = (controller ??= new AbortController()).signal
+  const ctl = (controller ??= new AbortController())
+  const signal = ctl.signal
+  // Every step of the exchange checks in through alive(). One that stops checking in
+  // (an await that never settles) is given up: it writes nothing more, and the next
+  // exchange runs, so one hung step never stops this tab's sync (sync-exchange-watchdog D1).
+  let abandoned = false
+  let progressAt = Date.now()
   const alive = () => {
-    if (localEpoch() !== epoch) throw new SessionEnded()
+    if (abandoned || localEpoch() !== epoch) throw new SessionEnded()
+    progressAt = Date.now()
   }
+  let watch: ReturnType<typeof setInterval> | undefined
+  const stalled = new Promise<never>((_, reject) => {
+    watch = setInterval(() => {
+      if (Date.now() - progressAt < EXCHANGE_STALL.ms) return
+      abandoned = true
+      reject(new ExchangeStalled())
+    }, EXCHANGE_STALL.checkMs)
+  })
   try {
     try {
-      await withDeferredActivity(() => exchange(alive, signal), () => localEpoch() === epoch)
+      await Promise.race([withDeferredActivity(() => exchange(alive, signal), () => localEpoch() === epoch), stalled])
     } finally {
+      clearInterval(watch)
       // A long pull held the screen's live data (exchange); it shows the end state now.
       liveHold?.()
       liveHold = null
     }
   } catch (err) {
     if (err instanceof SessionEnded || localEpoch() !== epoch) return
+    if (err instanceof ExchangeStalled) {
+      // Its request (if that is where it hangs) stops too; the next exchange gets a new one.
+      ctl.abort()
+      if (controller === ctl) controller = null
+      publish({ state: 'error', error: new RequestTimeoutError().message })
+      scheduleRetry()
+      return
+    }
     throw err
   }
 }
@@ -269,7 +304,12 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
     for (;;) {
       const cursor = await getMeta<number>('cursor', 0)
       const batch = await db.outbox.orderBy('local').limit(BATCH).toArray()
-      const sent = batch.map(({ local: _local, ...op }) => op)
+      // A re-seed re-sends each field with the clock it was last written with. A field
+      // written through REST, an AI assistant, CalDAV, a rule … carries a device the
+      // server takes only from itself, and refuses the whole batch for it, so it goes
+      // out as this device's write at its original time (reseed-reserved-devices D1).
+      // The same repairs an outbox an earlier build left that way (D2).
+      const sent = batch.map(({ local: _local, ...op }) => (reservedDevice(op.device) ? { ...op, device } : op))
       // The only place ops leave the device: content is encrypted here.
       const wireOps = await prepareOutgoing(sent)
       const backfillAck = await getMeta<number>('backfillAck', 0)
@@ -318,7 +358,7 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
         // A refused op never happened: drop it from the local activity log too.
         await forgetActivity(refused.map((r) => r.id))
       })
-      if (limited.length > 0) heldReason = limited[0].reason
+      if (limited.length > 0) heldReason = limited.find((r) => r.reason === INVALID_REASON)?.reason ?? limited[0].reason
       if (notice) addRejected(notice)
       const incoming = await decryptIncoming(res.ops)
       alive()
@@ -401,81 +441,94 @@ async function exchange(alive: () => void, signal: AbortSignal): Promise<void> {
       publish({ pending: left })
       if (!res.hasMore && left === 0) break
     }
-    // Everything is pulled: the screen shows it now, not after the chores below and
-    // the deferred activity log (which took seconds after a first sync, and the first
-    // things typed then waited for the whole screen to catch up at once).
-    liveHold?.()
-    liveHold = null
-    // Everything is pulled and the outbox is empty: content an older re-write
-    // job left in the wrong form is converted now (encryption-rewrite-coverage)
-    // and uploads in the next exchange.
-    if (await catchUpEncryption()) requestSync(0)
-    alive()
-    if (received) {
-      needNotifications = false
-      await refreshNotifications()
-      alive()
-    }
-    // Permanent deletions requested while offline go out once we are connected.
-    await flushPendingPurges()
-    alive()
-    // Shared projects seen for the first time on this device start with everything
-    // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
-    await ensureFeedBaselines()
-    alive()
-    // Encrypted task pages (task-pages D3, D4): a new snapshot after a change, and the
-    // guests' replies imported. Loaded on demand; it skips itself when there is nothing.
-    // Not once the session ended (sign-out, stopSync) while the module loaded.
-    void import('./taskPages').then((m) => { alive(); return m.maintainTaskPages() }).catch(() => undefined)
-    failures = 0
-    const held = await heldCount()
-    alive()
-    if (held > 0) {
-      // Everything else is synced; the held changes wait for the limit.
-      publish({ state: 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
-    } else {
-      heldReason = null
-      publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
-    }
-    markFirstSyncIdle()
-    // Files wait for their rows to reach the server (attachments D3): send them now.
-    void runUploader().catch(() => undefined)
-    // An encryption change stopped while re-uploading files continues here.
-    void resumeFileMigration().catch(() => undefined)
+    await afterPull(alive, received)
   } catch (err) {
     // The session ended meanwhile (an aborted request lands here): report nothing.
     if (err instanceof SessionEnded) throw err
     alive()
-    if (err instanceof ApiError && err.status === 401) {
-      publish({ state: 'unauthenticated' })
-      return
-    }
-    if (err instanceof ApiError && err.code === 'demo_limit') {
-      // Demo sandbox write budget (OpenSpec `demo-sandboxes`): nothing was
-      // applied, the outbox stays queued and uploads when the budget allows.
-      publish({ state: 'limited', error: err.message })
-      return
-    }
-    if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
-      // The owner now requires a second factor for this account. Nothing was
-      // accepted, so the outbox stays queued and uploads after enrolment.
-      publish({ state: 'restricted', error: t('Set up two-factor authentication to keep syncing.') })
-      return
-    }
-    if (err instanceof LockedError) {
-      publish({ state: 'locked', error: null })
-      return
-    }
-    if (isTransientNetworkError(err) || isOffline()) {
-      // No answer (the network failed, or the request timed out): offline, and
-      // the exchange is tried again with backoff. Any other TypeError is a bug
-      // and shows as an error, not as "offline" (client-sync-robustness).
-      publish({ state: 'offline' })
-      scheduleRetry()
-      return
-    }
-    publish({ state: 'error', error: messageOf(err) })
+    reportFailure(err)
   }
+}
+
+/**
+ * The chores after everything is pulled and the outbox is empty: the screen catches up,
+ * then notifications, purges, feed baselines, task pages, the status and the uploads.
+ */
+async function afterPull(alive: () => void, received: boolean): Promise<void> {
+  // Everything is pulled: the screen shows it now, not after the chores below and
+  // the deferred activity log (which took seconds after a first sync, and the first
+  // things typed then waited for the whole screen to catch up at once).
+  liveHold?.()
+  liveHold = null
+  // Everything is pulled and the outbox is empty: content an older re-write
+  // job left in the wrong form is converted now (encryption-rewrite-coverage)
+  // and uploads in the next exchange.
+  if (await catchUpEncryption()) requestSync(0)
+  alive()
+  if (received) {
+    needNotifications = false
+    await refreshNotifications()
+    alive()
+  }
+  // Permanent deletions requested while offline go out once we are connected.
+  await flushPendingPurges()
+  alive()
+  // Shared projects seen for the first time on this device start with everything
+  // so far marked as seen (activity-feed), so an upgrade is not a wall of unread.
+  await ensureFeedBaselines()
+  alive()
+  // Encrypted task pages (task-pages D3, D4): a new snapshot after a change, and the
+  // guests' replies imported. Loaded on demand; it skips itself when there is nothing.
+  // Not once the session ended (sign-out, stopSync) while the module loaded.
+  void import('./taskPages').then((m) => { alive(); return m.maintainTaskPages() }).catch(() => undefined)
+  failures = 0
+  const held = await heldCount()
+  alive()
+  if (held > 0) {
+    // Everything else is synced; held changes wait (an invalid one shows as an error: sync-invalid-op-alone D2).
+    publish({ state: heldReason === INVALID_REASON ? 'error' : 'limited', lastSyncedAt: Date.now(), error: limitMessage(heldReason ?? ''), pending: (await db.outbox.count()) + held })
+  } else {
+    heldReason = null
+    publish({ state: 'idle', lastSyncedAt: Date.now(), error: null })
+  }
+  markFirstSyncIdle()
+  // Files wait for their rows to reach the server (attachments D3): send them now.
+  void runUploader().catch(() => undefined)
+  // An encryption change stopped while re-uploading files continues here.
+  void resumeFileMigration().catch(() => undefined)
+}
+
+/** Shows why an exchange failed; an answer that never came is retried with backoff. */
+function reportFailure(err: unknown): void {
+  if (err instanceof ApiError && err.status === 401) {
+    publish({ state: 'unauthenticated' })
+    return
+  }
+  if (err instanceof ApiError && err.code === 'demo_limit') {
+    // Demo sandbox write budget (OpenSpec `demo-sandboxes`): nothing was
+    // applied, the outbox stays queued and uploads when the budget allows.
+    publish({ state: 'limited', error: err.message })
+    return
+  }
+  if (err instanceof ApiError && err.code === 'mfa_enrolment_required') {
+    // The owner now requires a second factor for this account. Nothing was
+    // accepted, so the outbox stays queued and uploads after enrolment.
+    publish({ state: 'restricted', error: t('Set up two-factor authentication to keep syncing.') })
+    return
+  }
+  if (err instanceof LockedError) {
+    publish({ state: 'locked', error: null })
+    return
+  }
+  if (isTransientNetworkError(err) || isOffline()) {
+    // No answer (the network failed, or the request timed out): offline, and
+    // the exchange is tried again with backoff. Any other TypeError is a bug
+    // and shows as an error, not as "offline" (client-sync-robustness).
+    publish({ state: 'offline' })
+    scheduleRetry()
+    return
+  }
+  publish({ state: 'error', error: messageOf(err) })
 }
 
 // ---- log generation (server restored from a backup) ----
@@ -834,6 +887,11 @@ const FOLLOWER_WAIT_MS = 15_000
  * misses in a row that make it take over (sync-leader-takeover D1). Tests shorten them.
  */
 export const LEADER_PROBE = { everyMs: 20_000, waitMs: 5_000, misses: 2 }
+/**
+ * An exchange that made no progress for `ms` is given up (sync-exchange-watchdog D1),
+ * checked every `checkMs`. Tests shorten them.
+ */
+export const EXCHANGE_STALL = { ms: 120_000, checkMs: 10_000 }
 
 type Message =
   | { type: 'sync'; id?: string }

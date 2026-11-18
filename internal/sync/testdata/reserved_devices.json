@@ -1,0 +1,5 @@
+{
+  "_comment": "Device ids only the server may write (ReservedDevice in devices.go, reservedDevice in web/src/lib/sync.ts). Both tests read this file.",
+  "reserved": ["server", "server:3f2a", "agent:tok1", "caldav:pw1", "public:link1", "issues:conn1", "page:pg1", "rule:r1", "calsync:conn1"],
+  "allowed": ["0b7c1e2a-9d4f-4c51-8a3e-2f6b7d9e1c40", "devA", "assistant:0b7c1e2a", "serverx", "agentx", "vault:v1", "obsidian:o1", "import", "perfseed"]
+}

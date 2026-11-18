@@ -17,11 +17,15 @@ The client SHALL keep a complete copy of the user's projects and tasks in browse
 - **THEN** it opens to the user's tasks without an error page
 
 ### Requirement: Field-level operations
-Every change SHALL be expressed as operations that each set one field of one entity and carry a unique id, a timestamp in milliseconds from a monotonic hybrid clock, and the id of the device that produced it. The server SHALL validate entity, field and value type against a published schema and SHALL reject a batch containing an invalid operation.
+Every change SHALL be expressed as operations that each set one field of one entity and carry a unique id, a timestamp in milliseconds from a monotonic hybrid clock, and the id of the device that produced it. The server SHALL validate entity, field and value type against a published schema and SHALL reject a batch containing an invalid operation. For a device that announces the feature `invalid_ops`, the server SHALL instead refuse each operation that fails validation, or names a device only the server may write, alone, in `rejected` with reason `invalid`, and SHALL apply and answer the rest of the request as usual. This replaces every whole-batch `invalid_op` refusal of the sync exchange for such a device, except a batch over the size limit.
 
 #### Scenario: Invalid operation in a batch
-- **WHEN** a sync request contains an operation for an unknown field
+- **WHEN** a sync request without the feature `invalid_ops` contains an operation for an unknown field
 - **THEN** the whole request is refused with a 400 `invalid_op` error and no operation from it is stored
+
+#### Scenario: Invalid operation from a device that handles it
+- **WHEN** a sync request with the feature `invalid_ops` contains an operation for an unknown field, one with the device `server`, and a valid one
+- **THEN** the answer is 200, the first two are in `rejected` with reason `invalid`, and the valid one is stored
 
 ### Requirement: Convergence by last-writer-wins per field
 For each field, the value with the greatest timestamp SHALL win; equal timestamps SHALL be broken by comparing device ids. The same rule SHALL run on the server and on every client, so the resulting state depends only on the set of operations seen, not on their order of arrival.
@@ -398,11 +402,15 @@ When a sync answer is accepted, the client SHALL remove the sent batch from the 
 - **THEN** the device shows the locked state, keeps the limited edit as held, counts it as pending, and no longer treats the forbidden edit as the newest value
 
 ### Requirement: Every entity kind is re-seeded and handled when refused
-The client SHALL map every synced entity kind to its local table in one place that has no default table. Re-seeding after a server restore SHALL send every synced entity kind, custom field definitions included, with their original clocks so devices converge as by the normal rule. A refused change to any entity kind SHALL have its local clock forgotten, and a row of any kind that existed only on this device and was refused SHALL be removed without failing the exchange.
+The client SHALL map every synced entity kind to its local table in one place that has no default table. Re-seeding after a server restore SHALL send every synced entity kind, custom field definitions included, with their original clocks so devices converge as by the normal rule. A field whose clock names a device only the server may write (the server itself, an AI assistant, CalDAV, a rule, an issue or calendar connection, a public link or a task page) SHALL be sent with the original timestamp and this device's id, and the same SHALL apply to any such op already waiting in the outbox, so the server never refuses the re-seed. A refused change to any entity kind SHALL have its local clock forgotten, and a row of any kind that existed only on this device and was refused SHALL be removed without failing the exchange.
 
 #### Scenario: Custom field definitions after a restore
 - **WHEN** the server is restored from a backup and the device holds a custom field definition
 - **THEN** the re-seed sends the definition's fields with their original timestamps and devices
+
+#### Scenario: A field written through the API after a restore
+- **WHEN** the server is restored and the device holds a task whose title was last written through the REST API or by an AI assistant
+- **THEN** the re-seed sends the title with its original timestamp and this device's id, the exchange completes, and changes written elsewhere keep arriving
 
 #### Scenario: Refused custom field change
 - **WHEN** the server refuses an offline rename of a custom field definition and sends its own value
@@ -453,3 +461,14 @@ When sync fails with an error, the status control SHALL keep its text label in c
 
 - **WHEN** a later sync succeeds
 - **THEN** the alert disappears and the control returns to its normal presentation
+
+### Requirement: An invalid refusal keeps the change on the device
+The client SHALL announce `invalid_ops`. It SHALL keep an operation the server refused with reason `invalid`: the row SHALL keep its value, the change SHALL count as pending, and it SHALL be offered again with the changes a server limit holds. The rest of the outbox SHALL keep syncing. While such a change is held, the sync status SHALL show the error state with a sentence that says a change could not be accepted and stays on the device.
+
+#### Scenario: One change the server cannot accept
+- **WHEN** the server refuses one of two edits with reason `invalid`
+- **THEN** both tasks keep their edited values, the other edit is synced, the status shows the error with that sentence and one pending change, and the held edit is sent again a minute later
+
+#### Scenario: Accepted later
+- **WHEN** a held invalid change is sent again and the server now accepts it
+- **THEN** the status returns to synced and nothing is pending

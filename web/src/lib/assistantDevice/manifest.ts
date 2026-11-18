@@ -67,10 +67,6 @@ export interface Manifest {
 
 export const manifest = data as unknown as Manifest
 
-export function manifestTool(name: string): ManifestTool | undefined {
-  return manifest.tools.find((t) => t.name === name)
-}
-
 export function manifestSkill(id: string): ManifestSkill | undefined {
   return manifest.skills.find((s) => s.id === id)
 }

@@ -436,3 +436,40 @@ describe('a wrapping line and its notes (quick-add-notes)', () => {
     await s.unmount()
   })
 })
+
+// GitHub issue 1463 (natural-language-capture "Dismiss and escape parsed tokens"): the ×
+// keeps the words as text and sets nothing, and the press leaves the caret in the line so
+// Enter adds the task as typed, in every form of the preview.
+describe('dismissing a chip with the pointer', () => {
+  const X = { line: '[data-chip="due"] button', sheet: '[data-sheet-chip="due"] button', palette: '[data-field-row="when"] [data-keep-text]' } as const
+  /** A press as a browser makes it: focus moves to the button unless mousedown is prevented. */
+  const press = async (el: HTMLElement) => {
+    await act(async () => {
+      const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+      el.dispatchEvent(down)
+      if (!down.defaultPrevented) el.focus()
+    })
+    await act(async () => { el.click() })
+  }
+
+  for (const layout of ['line', 'sheet', 'palette'] as const) {
+    for (const line of ['review order from 10. Oct 2026', 'review order tomorrow', 'call next friday']) {
+      it(`${layout}: the × on the date of "${line}" keeps the text, sets no date and keeps the caret in the line`, async () => {
+        const added: Record<string, unknown>[] = []
+        const r = await render(<QuickAdd layout={layout} placeholder="Add a task" onAdd={async (i) => { added.push(i as never) }} />)
+        const input = r.container.querySelector('textarea')!
+        await act(async () => { input.focus() })
+        await type(input, line)
+        await waitFor(() => !!r.container.querySelector(X[layout]), 'the date chip')
+        await press(r.container.querySelector<HTMLElement>(X[layout])!)
+        await waitFor(() => !r.container.querySelector(X[layout]), 'the chip dismissed')
+        expect(input.value).toBe(line)
+        expect(document.activeElement).toBe(input)
+        await key(input, 'Enter')
+        await waitFor(() => added.length === 1, 'the task added')
+        expect(added[0]).toEqual({ title: line })
+        await r.unmount()
+      })
+    }
+  }
+})

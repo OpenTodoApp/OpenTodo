@@ -144,11 +144,6 @@ export function searchSettings(query: string, user: User): SettingsHit[] {
   return out
 }
 
-/** The entry for a section and anchor, if any. */
-export function entryFor(user: User, section: SettingsSectionId, anchor: string): SettingsEntry | undefined {
-  return resolveSection(user, section) ? visibleEntries(user).find((e) => e.section === section && e.anchor === anchor) : undefined
-}
-
 /** Where an entry lives for this viewer: its sub-page, or the section when it has no overview (settings-subpages D1). */
 export function entryRoute(user: User, e: Pick<SettingsEntry, 'section' | 'page'>): Route & { view: 'settings' } {
   const section = resolveSection(user, e.section)

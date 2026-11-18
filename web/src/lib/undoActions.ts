@@ -135,7 +135,8 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
 export async function dayDropUndoable(ids: readonly string[], date: string, today = logicalToday()): Promise<UndoableResult> {
   const { tasks } = await readTicked(ids)
   const changes = planDayDrop(tasks, date, today)
-  if (!changes.length) return { entry: null, label: '' }
+  // Already on that day: Upcoming keeps its date order, so the drop says why nothing moved (#1507).
+  if (!changes.length) return { entry: null, label: t('Lists sorted by date or priority keep their order.') }
   return apply(changes, changes.length === 1 ? t('Date changed') : t('{n, plural, one {# task moved} other {# tasks moved}}', { n: changes.length }))
 }
 

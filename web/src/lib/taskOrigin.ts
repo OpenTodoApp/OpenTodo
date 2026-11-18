@@ -9,7 +9,6 @@
 import type { Origin, Task } from './types'
 
 export const MAX_ORIGIN_URL = 2048
-export const MAX_ORIGIN_ID = 512
 export const MAX_ORIGIN_TITLE = 500
 
 /** Host-exact, path-anchored rules (design D3); keep in step with internal/origin/recognize.go. */

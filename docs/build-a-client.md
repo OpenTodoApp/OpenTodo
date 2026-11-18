@@ -203,6 +203,7 @@ Persist `last` with the outbox. `clock_skew` is the feature that makes the serve
 | `push_only` | The server applies the ops and returns no pulled page | Any push-only client |
 | `clock_skew` | Ops stamped too far ahead are **refused** with reason `clock_skew` and a `serverTime`, instead of being silently clamped | Any client that can correct and resend its clock |
 | `backfill_ack` | Each catch-up page carries `backfillSeq`, echoed as `backfillAck`; lost pages are resent | Full sync only |
+| `invalid_ops` | An op the server cannot accept (fails validation, or names a reserved device) is refused alone in `rejected` with reason `invalid`, and the rest is applied | Every client; keep such an op and offer it again rather than dropping it |
 | `latest_docs` | A first copy leaves out superseded note history | Full sync only |
 
 The Obsidian plugin sends `["push_only", "clock_skew"]` and nothing else. A server older than `push_only` ignores the feature and answers an ordinary page; a push-only client discards it.

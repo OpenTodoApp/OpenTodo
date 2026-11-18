@@ -108,7 +108,7 @@ export interface TokensViewProps {
 }
 
 /** The names of a token's workspaces, "Only Work, Side" (token-workspaces). */
-function workspaceNames(ids: string[], all: { id: string; name: string }[] = []): string {
+export function workspaceNames(ids: string[], all: { id: string; name: string }[] = []): string {
   const names = ids.map((id) => all.find((w) => w.id === id)?.name ?? t('a removed workspace'))
   return t('Only {names}', { names: names.join(', ') })
 }

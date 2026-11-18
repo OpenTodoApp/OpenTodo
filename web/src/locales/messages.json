@@ -915,6 +915,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
@@ -2871,6 +2872,7 @@
   ],
   "Can make changes": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx"
   ],
   "Can tick items": [
@@ -3442,9 +3444,6 @@
   ],
   "Clear conversations on this device?": [
     "web/src/app/assistant/AssistantSettings.tsx"
-  ],
-  "Clear due date": [
-    "web/src/app/DueField.tsx"
   ],
   "Clear filter": [
     "web/src/app/calendar/QueryFilterDialog.tsx",
@@ -5244,6 +5243,12 @@
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
   ],
+  "Disconnect": [
+    "web/src/app/ConnectedApps.tsx"
+  ],
+  "Disconnect {name}?": [
+    "web/src/app/ConnectedApps.tsx"
+  ],
   "Dismiss": [
     "web/public/push-sw.js",
     "web/src/app/ArchivePrompt.tsx",
@@ -5483,7 +5488,6 @@
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -5504,7 +5508,6 @@
   ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
@@ -8630,6 +8633,9 @@
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
   ],
+  "It can no longer reach your tasks. Connect it again to use it.": [
+    "web/src/app/ConnectedApps.tsx"
+  ],
   "It disappears from your devices.": [
     "web/src/app/ShareDialog.tsx"
   ],
@@ -9007,6 +9013,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Labels: {names}": [
+    "web/src/app/OneLineLabels.tsx",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/ui/Chips.tsx"
   ],
@@ -14191,6 +14198,7 @@
   ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/TokensSection.tsx"
   ],
@@ -19500,6 +19508,9 @@
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": [
+    "web/src/lib/limits.ts"
+  ],
   "This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.": [
     "web/src/app/EmailScreens.tsx"
   ],
@@ -23963,6 +23974,9 @@
   ],
   "the assistant is not set up for you on this server": [
     "web/src/lib/rules/catalogue.ts"
+  ],
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": [
+    "web/src/app/CalendarFeedsPanel.tsx"
   ],
   "the changed notes": [
     "web/src/lib/rules/sentence.ts"

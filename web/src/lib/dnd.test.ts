@@ -156,6 +156,23 @@ describe('the click after a drag (row-and-cursor D1)', () => {
     expect(opened).not.toHaveBeenCalled()
   })
 
+  it('a release over no target calls onMiss, never onDrop; a cancelled drag calls neither (#1507)', () => {
+    const s = spies()
+    const onMiss = vi.fn()
+    beginDrag({ pointerId: 9, pointerType: 'mouse', button: 0, clientX: 50, clientY: 50 }, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, onEnd: s.onEnd, onMiss })
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    expect(onMiss).toHaveBeenCalledWith(50, 140)
+    expect(s.onDrop).not.toHaveBeenCalled()
+    expect(s.onEnd).toHaveBeenCalledTimes(1)
+    const cancelled = vi.fn()
+    beginDrag({ pointerId: 9, pointerType: 'mouse', button: 0, clientX: 50, clientY: 50 }, { label: 'Task', onDrop: vi.fn(), onMiss: cancelled })
+    window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    window.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, pointerType: 'mouse', clientX: 50, clientY: 140 }))
+    expect(cancelled).not.toHaveBeenCalled()
+  })
+
   it('the ring leaves a target with only data-drop-target when the drag ends (a viewer\'s project row)', () => {
     const s = spies()
     const row = document.createElement('li')

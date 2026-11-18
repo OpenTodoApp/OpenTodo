@@ -1009,7 +1009,6 @@
   "Clear conversations": "Unterhaltungen löschen",
   "Clear conversations on this device": "Unterhaltungen auf diesem Gerät löschen",
   "Clear conversations on this device?": "Unterhaltungen auf diesem Gerät löschen?",
-  "Clear due date": "Fälligkeitsdatum entfernen",
   "Clear filter": "Filter zurücksetzen",
   "Clear the dashboard selection": "Auswahl im Dashboard aufheben",
   "Clear the filter": "Den Filter zurücksetzen",
@@ -1465,6 +1464,8 @@
   "Disabled; nothing is synced.": "Deaktiviert; nichts wird synchronisiert.",
   "Discard": "Verwerfen",
   "Discard your changes?": "Deine Änderungen verwerfen?",
+  "Disconnect": "Trennen",
+  "Disconnect {name}?": "{name} trennen?",
   "Dismiss": "Verwerfen",
   "Dismiss {name}": "{name} ausblenden",
   "Display mode": "Anzeigemodus",
@@ -2368,6 +2369,7 @@
   "Issue connections are not enabled on this server.": "Issue-Verbindungen sind auf diesem Server nicht aktiviert.",
   "Issuer URL": "Aussteller-URL",
   "Issues": "Issues",
+  "It can no longer reach your tasks. Connect it again to use it.": "Die App kann deine Aufgaben nicht mehr erreichen. Verbinde sie erneut, um sie zu verwenden.",
   "It disappears from your devices.": "Es verschwindet von deinen Geräten.",
   "It does not match the column’s filter.": "Sie passt nicht zum Filter der Spalte.",
   "It expires {when} and works once.": "Er läuft {when} ab und funktioniert einmal.",
@@ -7768,5 +7770,7 @@
   "Not synced yet": "Noch nicht synchronisiert",
   "Add a subtask to {title}": "Unteraufgabe zu {title} hinzufügen",
   "Add a subtask to this task": "Unteraufgabe zu dieser Aufgabe hinzufügen",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "der Kalender ist größer als {size} MB; verbinde ihn stattdessen über die Kalender-Synchronisation",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Dieser Server konnte eine Änderung von diesem Gerät nicht annehmen. Sie bleibt auf diesem Gerät, alles andere wird weiter synchronisiert.",
   "Or sponsor on GitHub": "Oder auf GitHub sponsern"
 }

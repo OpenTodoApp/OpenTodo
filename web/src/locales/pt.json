@@ -1009,7 +1009,6 @@
   "Clear conversations": "Limpar conversas",
   "Clear conversations on this device": "Limpar conversas neste dispositivo",
   "Clear conversations on this device?": "Limpar as conversas neste dispositivo?",
-  "Clear due date": "Remover data de vencimento",
   "Clear filter": "Limpar filtro",
   "Clear the dashboard selection": "Limpar a seleção do painel",
   "Clear the filter": "Limpar o filtro",
@@ -1465,6 +1464,8 @@
   "Disabled; nothing is synced.": "Desativada; nada é sincronizado.",
   "Discard": "Descartar",
   "Discard your changes?": "Descartar suas alterações?",
+  "Disconnect": "Desconectar",
+  "Disconnect {name}?": "Desconectar {name}?",
   "Dismiss": "Dispensar",
   "Dismiss {name}": "Dispensar {name}",
   "Display mode": "Modo de exibição",
@@ -2368,6 +2369,7 @@
   "Issue connections are not enabled on this server.": "As conexões de issues não estão ativadas neste servidor.",
   "Issuer URL": "URL do emissor",
   "Issues": "Issues",
+  "It can no longer reach your tasks. Connect it again to use it.": "Ela não poderá mais acessar suas tarefas. Conecte-a novamente para usá-la.",
   "It disappears from your devices.": "Ele some dos seus dispositivos.",
   "It does not match the column’s filter.": "Não corresponde ao filtro da coluna.",
   "It expires {when} and works once.": "Ele expira {when} e funciona uma vez.",
@@ -7768,5 +7770,7 @@
   "Not synced yet": "Ainda não sincronizado",
   "Add a subtask to {title}": "Adicionar uma subtarefa a {title}",
   "Add a subtask to this task": "Adicionar uma subtarefa a esta tarefa",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "o calendário tem mais de {size} MB; ligue-o com a sincronização de calendário",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Este servidor não conseguiu aceitar uma alteração deste dispositivo. Ela fica neste dispositivo e todo o resto continua a sincronizar.",
   "Or sponsor on GitHub": "Ou patrocine no GitHub"
 }

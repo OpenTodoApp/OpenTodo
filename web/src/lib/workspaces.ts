@@ -118,12 +118,6 @@ export async function switchTo(id: string): Promise<void> {
   await setMeta(CURRENT_WORKSPACE_KEY, id)
 }
 
-/** The partition of everything cached on this device. */
-export async function loadPartition(): Promise<Partition> {
-  const [all, projects, tasks] = await Promise.all([db.workspaces.toArray(), db.projects.toArray(), db.tasks.toArray()])
-  return new Partition(defaultWorkspaceId(all), all.map((w) => w.id), projects, tasks)
-}
-
 /** Sorts workspaces the way the switcher lists them: the default first, then by name. */
 export function sortWorkspaces(list: readonly Workspace[]): Workspace[] {
   return list.slice().sort((a, b) => Number(b.default) - Number(a.default) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id))

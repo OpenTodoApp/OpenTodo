@@ -1,0 +1,7 @@
+OpenTodo e-posta adresiniz değiştiriliyor
+
+Bu, OpenTodo’dan bir güvenlik bildirimidir.
+
+{{.Origin}} adresinde {{.Email}} hesabında oturum açmış birisi, oturum açma e-posta adresini değiştirmek istedi. Değişiklik yalnızca yeni adrese gönderilen bağlantı açıldığında gerçekleşir.
+
+Bu kişi sizseniz yapmanız gereken bir şey yok. Siz değilseniz oturum açın, parolanızı değiştirin ve her yerden çıkış yapın ya da sunucu sahibinden yardım isteyin.

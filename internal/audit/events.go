@@ -64,6 +64,8 @@ const (
 	// A refresh token that was already exchanged came back, and its grant was
 	// revoked (mcp-oauth-refresh-rotation).
 	MCPOAuthRefreshReusedName Name = "mcp_oauth.refresh_reused"
+	// A person disconnected an AI app from their account (connected-apps-list).
+	MCPOAuthDisconnectedName Name = "mcp_oauth.disconnected"
 	// Notification delivery channels (OpenSpec change notification-channels):
 	// created, deleted, and changed settings or secrets by name.
 	NotificationChannelCreatedName Name = "notification_channel.created"
@@ -165,7 +167,7 @@ var Names = []Name{
 	EmailInboxCreatedName, EmailInboxRotatedName, EmailInboxUpdatedName,
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
-	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName, MCPOAuthRefreshReusedName,
+	MCPOAuthClientCreatedName, MCPOAuthClientDeletedName, MCPOAuthGrantedName, MCPOAuthRevokedName, MCPOAuthRefreshReusedName, MCPOAuthDisconnectedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
 	InvitationCreatedName, InvitationAcceptedName, InvitationRevokedName,
 	ProjectInviteCreatedName, ProjectInviteRevokedName, ProjectInviteAcceptedName,
@@ -207,6 +209,7 @@ var PersonalNames = []Name{
 	IssueConnectionCreatedName, IssueConnectionUpdatedName, IssueConnectionDeletedName,
 	CalendarConnectionCreatedName, CalendarConnectionUpdatedName, CalendarConnectionDeletedName,
 	NotificationChannelCreatedName, NotificationChannelUpdatedName, NotificationChannelDeletedName,
+	MCPOAuthDisconnectedName,
 	IdentityLinkedName, IdentityUnlinkedName,
 	PasswordResetCompletedName, PasswordChangedName,
 	SignedOutEverywhereName,
@@ -295,6 +298,7 @@ var allowedDetailKeys = map[string]bool{
 	"device_count":       true,
 	"token_count":        true,
 	"app_password_count": true,
+	"oauth_grant_count":  true,
 	// Device relay (mcp-device-relay): the device that answers AI connectors.
 	// Not "device_id", which is an op field name.
 	"relay_device_id":    true,
@@ -554,6 +558,21 @@ func MCPOAuthRefreshReused(userID, clientID string) Event {
 	return ev(MCPOAuthRefreshReusedName, Failure, userID, "", "oauth_client_id", clientID)
 }
 
+// Ways a person disconnects an AI app (connected-apps-list).
+const (
+	// DisconnectedInSettings: Disconnect in the list of connected apps.
+	DisconnectedInSettings = "connected_apps"
+	// DisconnectedByToken: the app's access token was deleted under API tokens.
+	DisconnectedByToken = "api_token"
+)
+
+// MCPOAuthDisconnected records a person ending their own grant of a client:
+// the client's id and how (DisconnectedInSettings or DisconnectedByToken),
+// never a token or the name the client chose for itself.
+func MCPOAuthDisconnected(userID, clientID, method string) Event {
+	return ev(MCPOAuthDisconnectedName, Success, userID, "", "oauth_client_id", clientID, "method", method)
+}
+
 // ---- notification channels ----
 
 // NotificationChannelCreated records a new delivery channel: its id and kind.
@@ -733,10 +752,10 @@ func PasswordChanged(userID string) Event {
 
 // SignedOutEverywhere records "Sign out everywhere" with how many sessions,
 // remembered browsers, API tokens and app passwords it ended.
-func SignedOutEverywhere(userID string, sessions, devices, tokens, appPasswords int64) Event {
+func SignedOutEverywhere(userID string, sessions, devices, tokens, appPasswords, oauthGrants int64) Event {
 	n := func(v int64) string { return strconv.FormatInt(v, 10) }
 	return ev(SignedOutEverywhereName, Success, userID, "", "session_count", n(sessions), "device_count", n(devices),
-		"token_count", n(tokens), "app_password_count", n(appPasswords))
+		"token_count", n(tokens), "app_password_count", n(appPasswords), "oauth_grant_count", n(oauthGrants))
 }
 
 // OwnerTransferred records the owner handing ownership to another account; the

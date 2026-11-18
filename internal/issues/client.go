@@ -102,7 +102,7 @@ func rateLimited(h http.Header) bool {
 func resetTime(h http.Header, now time.Time) time.Time {
 	for _, k := range []string{"X-RateLimit-Reset", "RateLimit-Reset"} {
 		if v, err := strconv.ParseInt(strings.TrimSpace(h.Get(k)), 10, 64); err == nil && v > 0 {
-			if t := time.Unix(v, 0); t.After(now) {
+			if t := time.Unix(v, 0).UTC(); t.After(now) {
 				return t
 			}
 		}

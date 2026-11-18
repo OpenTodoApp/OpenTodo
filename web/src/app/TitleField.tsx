@@ -4,7 +4,7 @@
 // the edit began is never re-read), shows the chips quick add shows, and offers the
 // `#` and `@` suggestions; on commit it hands the caller the plan to apply. With
 // parsing off, or for viewers, it is a plain field.
-import { type KeyboardEvent, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { logicalToday } from '../lib/dates'
 import { dismissChip, type Chip, type LabelRef, loadQuickAddSettings, onQuickAddSettingsChange, type ProjectRef, rebaseDismissed, resolveDayMonthOrder, resolveLanguages, type Span } from '../lib/nlp'
 import { editPlan, parseEdit, type EditPlan } from '../lib/nlp/edit'
@@ -51,6 +51,9 @@ function nowHHMM(d = new Date()): string {
 
 export function TitleField({ title, value, onChange, onCommit, onCancel, projects, labels, readOnly = false, multiline = false, className = '', placeholder, ariaLabel, autoFocus, fieldRef, dataAttrs = {}, initialCaret, onKeyDownFirst }: TitleFieldProps) {
   const input = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const root = useRef<HTMLDivElement>(null)
+  // From the field's focus until the edit ends; focus moving to its own chips is still the edit.
+  const editing = useRef(false)
   useImperativeHandle(fieldRef, () => input.current as HTMLInputElement | HTMLTextAreaElement, [])
   const [focused, setFocused] = useState(false)
   // The title the edit began with: only what differs from it is read.
@@ -119,13 +122,30 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
     'aria-label': ariaLabel,
     ...dataAttrs,
     onChange: (e: { target: { value: string } }) => change(e.target.value),
-    onFocus: () => { base.current = title; setDismissed([]); setFocused(true); suggest.fieldProps.onFocus() },
-    // A long title scrolled to its end while edited shows its start again once left.
-    onBlur: () => { suggest.fieldProps.onBlur(); setFocused(false); commit(); if (multiline && input.current) input.current.scrollTop = 0 },
+    onFocus: () => {
+      // Focus back from a chip's × goes on with the same edit and its dismissals (issue 1463).
+      if (!editing.current) { base.current = title; setDismissed([]) }
+      editing.current = true
+      setFocused(true)
+      suggest.fieldProps.onFocus()
+    },
+    onBlur: suggest.fieldProps.onBlur,
     onKeyDown,
   }
+  /** Focus left the field and its chips: the edit ends and is saved. A long title scrolled to its end shows its start again. */
+  const onLeave = (e: FocusEvent<HTMLDivElement>) => {
+    if (!editing.current || root.current?.contains(e.relatedTarget as Node | null)) return
+    editing.current = false
+    setFocused(false)
+    commit()
+    if (multiline && input.current) input.current.scrollTop = 0
+  }
+  const dismiss = (c: Chip) => {
+    setDismissed((d) => dismissChip(d, c))
+    input.current?.focus()
+  }
   return (
-    <div className="relative min-w-0 flex-1" data-title-field>
+    <div ref={root} className="relative min-w-0 flex-1" onBlur={onLeave} data-title-field>
       {multiline
         ? <textarea ref={(el) => { input.current = el }} rows={1} {...common} />
         : <input ref={(el) => { input.current = el }} {...common} />}
@@ -134,7 +154,7 @@ export function TitleField({ title, value, onChange, onCommit, onCancel, project
         <div className="mt-1 flex flex-wrap items-center gap-1.5 text-meta" role="status" aria-live="polite" data-title-chips>
           <ParseChips chips={chips} misses={misses} projects={projects} labels={labels}
             line={parsed ? { due: parsed.due, datedByPhrase: chips.some((x) => x.kind === 'due') } : undefined}
-            onDismiss={(c) => setDismissed((d) => dismissChip(d, c))} onMiss={(m) => suggest.openAt(m.span.end)} />
+            onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} />
         </div>
       )}
     </div>

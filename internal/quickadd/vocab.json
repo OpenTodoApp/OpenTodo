@@ -2636,5 +2636,769 @@
    "daarna",
    "later"
   ]
+ },
+ "tr": {
+  "code": "tr",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "bugun": 0,
+   "bu aksam": 0,
+   "yarın": 1,
+   "yarin": 1,
+   "obur gun": 2
+  },
+  "weekdays": [
+   [
+    "pazartesi",
+    "pzt"
+   ],
+   [
+    "salı",
+    "sali",
+    "sal"
+   ],
+   [
+    "carsamba",
+    "car"
+   ],
+   [
+    "persembe",
+    "per"
+   ],
+   [
+    "cuma",
+    "cum"
+   ],
+   [
+    "cumartesi",
+    "cmt"
+   ],
+   [
+    "pazar",
+    "paz"
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "ocak"
+    ],
+    "abbr": [
+     "oca"
+    ]
+   },
+   {
+    "names": [
+     "subat"
+    ],
+    "abbr": [
+     "sub"
+    ]
+   },
+   {
+    "names": [
+     "mart"
+    ],
+    "abbr": [
+     "mar"
+    ]
+   },
+   {
+    "names": [
+     "nisan"
+    ],
+    "abbr": [
+     "nis"
+    ]
+   },
+   {
+    "names": [
+     "mayıs",
+     "mayis"
+    ],
+    "abbr": [
+     "may"
+    ]
+   },
+   {
+    "names": [
+     "haziran"
+    ],
+    "abbr": [
+     "haz"
+    ]
+   },
+   {
+    "names": [
+     "temmuz"
+    ],
+    "abbr": [
+     "tem"
+    ]
+   },
+   {
+    "names": [
+     "agustos"
+    ],
+    "abbr": [
+     "agu"
+    ]
+   },
+   {
+    "names": [
+     "eylul"
+    ],
+    "abbr": [
+     "eyl"
+    ]
+   },
+   {
+    "names": [
+     "ekim"
+    ],
+    "abbr": [
+     "eki"
+    ]
+   },
+   {
+    "names": [
+     "kasım",
+     "kasim"
+    ],
+    "abbr": [
+     "kas"
+    ]
+   },
+   {
+    "names": [
+     "aralık",
+     "aralik"
+    ],
+    "abbr": [
+     "ara"
+    ]
+   }
+  ],
+  "before": [],
+  "deadlineWords": [
+   "son teslim",
+   "son tarih"
+  ],
+  "byWords": [],
+  "somedayWords": [
+   "bir gun",
+   "birgun"
+  ],
+  "sectorPhrases": {
+   "this-week": [
+    "bu hafta",
+    "bu hafta bir ara"
+   ],
+   "next-week": [
+    "gelecek hafta bir ara"
+   ],
+   "this-month": [
+    "bu ay",
+    "bu ay bir ara"
+   ],
+   "next-month": [
+    "gelecek ay bir ara"
+   ],
+   "this-quarter": [
+    "bu ceyrek",
+    "bu ceyrekte"
+   ],
+   "next-quarter": [
+    "gelecek ceyrek",
+    "gelecek ceyrekte"
+   ]
+  },
+  "eveningWords": [
+   "bu aksam"
+  ],
+  "morningWords": [
+   "bu sabah"
+  ],
+  "afternoonWords": [
+   "bu ogleden sonra"
+  ],
+  "partWords": {
+   "morning": [
+    "sabah"
+   ],
+   "afternoon": [
+    "ogleden sonra"
+   ],
+   "evening": [
+    "aksam"
+   ]
+  },
+  "nextBefore": [
+   "gelecek",
+   "onumuzdeki",
+   "sonraki"
+  ],
+  "nextAfter": [],
+  "thisBefore": [
+   "bu"
+  ],
+  "inWords": [
+   "icinde"
+  ],
+  "oneWords": [
+   "bir"
+  ],
+  "units": {
+   "minute": [
+    "dakika",
+    "dk"
+   ],
+   "hour": [
+    "saat",
+    "sa"
+   ],
+   "day": [
+    "gun"
+   ],
+   "week": [
+    "hafta"
+   ],
+   "month": [
+    "ay"
+   ],
+   "year": [
+    "yıl",
+    "yil",
+    "sene"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "saat"
+  ],
+  "hourWords": [],
+  "hourSuffixH": false,
+  "timeWords": {
+   "ogle": "12:00",
+   "oglen": "12:00",
+   "gece yarısı": "00:00",
+   "gece yarisi": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "halfWords": [],
+  "guardedAbbreviations": [],
+  "every": [
+   "her"
+  ],
+  "everyOne": {
+   "gunluk": "day",
+   "haftalık": "week",
+   "haftalik": "week",
+   "aylık": "month",
+   "aylik": "month",
+   "yıllık": "year",
+   "yillik": "year",
+   "hafta ici": "weekday"
+  },
+  "weekdayAll": [
+   "hafta ici",
+   "hafta ici",
+   "is gunu",
+   "is gunleri"
+  ],
+  "ordinals": {
+   "ilk": 1,
+   "birinci": 1,
+   "ikinci": 2,
+   "ucuncu": 3,
+   "dorduncu": 4,
+   "son": -1
+  },
+  "ordinalArticles": [],
+  "ordinalOf": [],
+  "ofMonthWords": [
+   "ayın",
+   "ayin",
+   "her ayın",
+   "her ayin"
+  ],
+  "ordinalsBeforeWeekday": {},
+  "andWords": [
+   "ve"
+  ],
+  "afterCompletion": [
+   "tamamlandıktan sonra",
+   "tamamlandiktan sonra",
+   "bitince"
+  ],
+  "untilWords": [
+   "kadar"
+  ],
+  "timesWords": {
+   "before": [],
+   "after": [
+    "kez",
+    "defa"
+   ]
+  },
+  "everyOther": [
+   "her iki"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "weekOnWords": [],
+  "repeatWords": [
+   "ve tekrarla",
+   "tekrarla",
+   "tekrar et",
+   "ve sonra",
+   "sonra",
+   "ve"
+  ],
+  "startWords": [
+   "baslangıc",
+   "itibaren"
+  ],
+  "monthTextBefore": [],
+  "remindWords": [
+   "hatırlat",
+   "hatirlat",
+   "bana hatırlat",
+   "bana hatirlat"
+  ],
+  "beforeWords": [
+   "once"
+  ],
+  "afterWords": [
+   "sonra"
+  ]
+ },
+ "pl": {
+  "code": "pl",
+  "dayMonthOrder": "DM",
+  "dayWords": {
+   "dzis": 0,
+   "dzisiaj": 0,
+   "dzis wieczorem": 0,
+   "dzisiaj wieczorem": 0,
+   "jutro": 1,
+   "jutra": 1,
+   "pojutrze": 2
+  },
+  "weekdays": [
+   [
+    "poniedziałek",
+    "poniedziałku",
+    "pon.",
+    "pn."
+   ],
+   [
+    "wtorek",
+    "wtorku",
+    "wt."
+   ],
+   [
+    "sroda",
+    "srode",
+    "srody",
+    "sr."
+   ],
+   [
+    "czwartek",
+    "czwartku",
+    "czw."
+   ],
+   [
+    "piatek",
+    "piatku",
+    "pt."
+   ],
+   [
+    "sobota",
+    "sobote",
+    "soboty",
+    "sob."
+   ],
+   [
+    "niedziela",
+    "niedziele",
+    "niedzieli",
+    "niedz.",
+    "nd."
+   ]
+  ],
+  "months": [
+   {
+    "names": [
+     "styczen",
+     "stycznia"
+    ],
+    "abbr": [
+     "sty"
+    ]
+   },
+   {
+    "names": [
+     "luty",
+     "lutego"
+    ],
+    "abbr": [
+     "lut"
+    ]
+   },
+   {
+    "names": [
+     "marzec",
+     "marca"
+    ],
+    "abbr": [
+     "mar"
+    ]
+   },
+   {
+    "names": [
+     "kwiecien",
+     "kwietnia"
+    ],
+    "abbr": [
+     "kwi"
+    ]
+   },
+   {
+    "names": [
+     "maj",
+     "maja"
+    ],
+    "abbr": []
+   },
+   {
+    "names": [
+     "czerwiec",
+     "czerwca"
+    ],
+    "abbr": [
+     "cze"
+    ]
+   },
+   {
+    "names": [
+     "lipiec",
+     "lipca"
+    ],
+    "abbr": [
+     "lip"
+    ]
+   },
+   {
+    "names": [
+     "sierpien",
+     "sierpnia"
+    ],
+    "abbr": [
+     "sie"
+    ]
+   },
+   {
+    "names": [
+     "wrzesien",
+     "wrzesnia"
+    ],
+    "abbr": [
+     "wrz"
+    ]
+   },
+   {
+    "names": [
+     "pazdziernik",
+     "pazdziernika"
+    ],
+    "abbr": [
+     "paz"
+    ]
+   },
+   {
+    "names": [
+     "listopad",
+     "listopada"
+    ],
+    "abbr": [
+     "lis"
+    ]
+   },
+   {
+    "names": [
+     "grudzien",
+     "grudnia"
+    ],
+    "abbr": [
+     "gru"
+    ]
+   }
+  ],
+  "before": [
+   "w",
+   "we",
+   "dnia"
+  ],
+  "deadlineWords": [
+   "termin",
+   "deadline"
+  ],
+  "byWords": [
+   "do"
+  ],
+  "somedayWords": [
+   "kiedys"
+  ],
+  "sectorPhrases": {
+   "this-week": [
+    "w tym tygodniu",
+    "kiedys w tym tygodniu"
+   ],
+   "next-week": [
+    "kiedys w przyszłym tygodniu"
+   ],
+   "this-month": [
+    "w tym miesiacu",
+    "kiedys w tym miesiacu"
+   ],
+   "next-month": [
+    "kiedys w przyszłym miesiacu"
+   ],
+   "this-quarter": [
+    "w tym kwartale",
+    "kiedys w tym kwartale"
+   ],
+   "next-quarter": [
+    "w przyszłym kwartale",
+    "w nastepnym kwartale",
+    "kiedys w przyszłym kwartale"
+   ]
+  },
+  "eveningWords": [
+   "dzis wieczorem",
+   "dzisiaj wieczorem"
+  ],
+  "morningWords": [
+   "dzis rano",
+   "dzisiaj rano"
+  ],
+  "afternoonWords": [
+   "dzis po południu",
+   "dzisiaj po południu"
+  ],
+  "partWords": {
+   "morning": [
+    "rano"
+   ],
+   "afternoon": [
+    "po południu"
+   ],
+   "evening": [
+    "wieczorem"
+   ]
+  },
+  "nextBefore": [
+   "nastepny",
+   "nastepna",
+   "nastepna",
+   "nastepne",
+   "nastepnym",
+   "przyszły",
+   "przyszła",
+   "przyszła",
+   "przyszłe",
+   "przyszłym"
+  ],
+  "nextAfter": [],
+  "thisBefore": [
+   "ten",
+   "ta",
+   "te",
+   "to",
+   "tym",
+   "tej"
+  ],
+  "inWords": [
+   "za"
+  ],
+  "oneWords": [
+   "jeden",
+   "jedna",
+   "jedna",
+   "jedno"
+  ],
+  "units": {
+   "minute": [
+    "minuta",
+    "minute",
+    "minuty",
+    "minut",
+    "min"
+   ],
+   "hour": [
+    "godzina",
+    "godzine",
+    "godziny",
+    "godzin",
+    "godz"
+   ],
+   "day": [
+    "dzien",
+    "dni",
+    "dnia"
+   ],
+   "week": [
+    "tydzien",
+    "tygodnie",
+    "tygodni",
+    "tygodnia"
+   ],
+   "month": [
+    "miesiac",
+    "miesiace",
+    "miesiecy",
+    "miesiaca"
+   ],
+   "year": [
+    "rok",
+    "lata",
+    "lat",
+    "roku"
+   ]
+  },
+  "ofWords": [],
+  "atWords": [
+   "o"
+  ],
+  "hourWords": [],
+  "hourSuffixH": false,
+  "timeWords": {
+   "południe": "12:00",
+   "w południe": "12:00",
+   "połnoc": "00:00",
+   "o połnocy": "00:00"
+  },
+  "am": [],
+  "pm": [],
+  "halfWords": [],
+  "guardedAbbreviations": [],
+  "every": [
+   "co",
+   "kazdy",
+   "kazda",
+   "kazde",
+   "kazdego"
+  ],
+  "everyOne": {
+   "codziennie": "day",
+   "cotygodniowo": "week",
+   "comiesiecznie": "month",
+   "corocznie": "year"
+  },
+  "weekdayAll": [
+   "dzien roboczy",
+   "dni robocze",
+   "dzien powszedni",
+   "dni powszednie"
+  ],
+  "ordinals": {
+   "pierwszy": 1,
+   "pierwsza": 1,
+   "pierwsze": 1,
+   "pierwszego": 1,
+   "drugi": 2,
+   "druga": 2,
+   "drugie": 2,
+   "drugiego": 2,
+   "trzeci": 3,
+   "trzecia": 3,
+   "trzecie": 3,
+   "trzeciego": 3,
+   "czwarty": 4,
+   "czwarta": 4,
+   "czwarte": 4,
+   "czwartego": 4,
+   "ostatni": -1,
+   "ostatnia": -1,
+   "ostatnie": -1,
+   "ostatniego": -1
+  },
+  "ordinalArticles": [],
+  "ordinalOf": [
+   "w",
+   "we"
+  ],
+  "ofMonthWords": [
+   "miesiaca",
+   "kazdego miesiaca",
+   "w miesiacu"
+  ],
+  "ordinalsBeforeWeekday": {},
+  "andWords": [
+   "i"
+  ],
+  "afterCompletion": [
+   "po ukonczeniu",
+   "po zakonczeniu",
+   "po wykonaniu"
+  ],
+  "untilWords": [
+   "az do",
+   "do"
+  ],
+  "timesWords": {
+   "before": [],
+   "after": [
+    "razy",
+    "raz"
+   ]
+  },
+  "everyOther": [
+   "co drugi",
+   "co druga",
+   "co drugie",
+   "co dwa"
+  ],
+  "everyOtherAround": {
+   "before": [],
+   "after": []
+  },
+  "weekOnWords": [
+   "w",
+   "we"
+  ],
+  "repeatWords": [
+   "i powtarzaj",
+   "powtarzaj",
+   "i potem",
+   "potem",
+   "i"
+  ],
+  "startWords": [
+   "od",
+   "poczawszy od",
+   "zaczynajac od"
+  ],
+  "monthTextBefore": [
+   "od",
+   "z",
+   "dla"
+  ],
+  "remindWords": [
+   "przypomnij mi",
+   "przypomnij"
+  ],
+  "beforeWords": [
+   "wczesniej",
+   "przed"
+  ],
+  "afterWords": [
+   "pozniej",
+   "po"
+  ]
  }
 }

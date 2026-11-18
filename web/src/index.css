@@ -1414,6 +1414,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-cell] { grid-row: 1; overflow: clip; padding-inline-start: 0.75rem; }
   /* `clip` keeps a cut value's text baseline (a scroll container's is its bottom edge), so every slot sits on the title's baseline. */
   [data-row-cell] .truncate { overflow: clip; }
+  [data-row-cell="labels"] [data-label-chip] > .truncate { min-width: 0; }
+  /* Reserve the slot while the code that fits the labels loads. */
+  [data-row-label-fallback] { visibility: hidden; }
+  /* The trailing row actions can overlap the slot when the later slots are empty. */
+  [data-task-id]:has([data-row-cell="labels"]:hover [data-tip]) > [data-row-actions]:not(:focus-within) {
+    opacity: 0; pointer-events: none;
+  }
   /* A value that leads with its icon takes its baseline from its text, not from the icon. */
   [data-row-cell] :is([data-date], [data-estimate]) { align-items: baseline; }
   [data-row-cell] :is([data-date], [data-estimate]) > svg { align-self: center; }

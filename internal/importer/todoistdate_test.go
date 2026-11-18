@@ -3,8 +3,12 @@ package importer
 import (
 	"encoding/json"
 	"os"
+	"regexp"
 	"testing"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence/recurrence10"
 )
 
 // Shared vectors for Todoist's localised date strings (named-importers D7).
@@ -35,6 +39,8 @@ func TestTodoistDateVectors(t *testing.T) {
 		case c.Rule != "":
 			if rule != c.Rule {
 				t.Errorf("%s %q: rule %q, want %q", c.Lang, c.Text, rule, c.Rule)
+			} else if err := recurrence10.Check(recurrence.Compatible(rule, ""), ""); err != nil {
+				t.Errorf("%s %q: stored rule not read by 1.0: %v", c.Lang, c.Text, err)
 			}
 		default:
 			if due == nil || due.Date != c.Date || due.Time != c.Time {
@@ -42,7 +48,7 @@ func TestTodoistDateVectors(t *testing.T) {
 			}
 		}
 	}
-	for _, l := range []string{"en", "de", "fr", "it", "es", "pt", "nl"} {
+	for _, l := range []string{"en", "de", "fr", "it", "es", "pt", "nl", "zh"} {
 		if !langs[l] {
 			t.Errorf("no vector for %s", l)
 		}
@@ -64,4 +70,22 @@ func TestRecurringWordsStayInTheirLanguage(t *testing.T) {
 			t.Errorf("nl %q is not understood", s)
 		}
 	}
+}
+
+// A Chinese date or rule read from a user's export never panics, and a date it
+// accepts is always a real YYYY-MM-DD with an HH:MM time or none.
+func FuzzTodoistDateChinese(f *testing.F) {
+	for _, s := range []string{"明天 15:00", "2026年11月21日 下午3点", "每月最后一个周五", "周一、三、五", "99999999年1月1日", "十十十十月", "下午99:99"} {
+		f.Add(s)
+	}
+	ref := time.Date(2026, 11, 17, 9, 0, 0, 0, time.UTC)
+	f.Fuzz(func(t *testing.T, s string) {
+		d, _, err := todoistDate(s, "zh", ref)
+		if err != nil || d == nil {
+			return
+		}
+		if _, perr := time.Parse("2006-01-02", d.Date); perr != nil || (d.Time != "" && !regexp.MustCompile(`^\d{2}:\d{2}$`).MatchString(d.Time)) {
+			t.Fatalf("%q gave %+v", s, d)
+		}
+	})
 }

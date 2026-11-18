@@ -48,4 +48,12 @@ describe('location reminders', () => {
     await rearmReminder(id)
     expect((await db.reminders.get(id))?.dismissed_at).toBeNull()
   })
+
+  it('a changed circle arms a dismissed reminder again', async () => {
+    const t = await createTask({ title: 'Take the parcel' })
+    const id = await addReminder(t, { kind: 'arrive', radius_m: 300 })
+    await dismissReminder(id, 1234)
+    await updateReminder(id, { kind: 'arrive', radius_m: 500 })
+    expect(await db.reminders.get(id)).toMatchObject({ radius_m: 500, dismissed_at: null, delivered_at: null })
+  })
 })

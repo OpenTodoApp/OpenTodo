@@ -64,7 +64,13 @@ test('slots line up when values are missing, on the title\'s first baseline', as
     // The bottom of a text's first line box: equal bottoms at one size mean one baseline.
     const base = (el: Element | null) => {
       if (!el) return null
-      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, { acceptNode: (n) => (n.textContent!.trim() && !n.parentElement!.closest('.sr-only') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) })
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          const parent = n.parentElement!
+          return n.textContent!.trim() && !parent.closest('.sr-only') && getComputedStyle(parent).visibility === 'visible'
+            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+        },
+      })
       const n = walker.nextNode()
       if (!n) return null
       const r = document.createRange()

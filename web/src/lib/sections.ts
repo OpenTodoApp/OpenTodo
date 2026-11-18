@@ -5,7 +5,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta } from './db'
 import { mutate, mutateMany, type Change } from './ops'
-import { byPosition, planStep, positionAtEnd } from './ordering'
+import { compareByPosition, planStep, positionAtEnd } from './ordering'
 import type { Section, Task } from './types'
 import { t } from './i18n'
 import { uuid } from './ids'
@@ -13,7 +13,7 @@ import { uuid } from './ids'
 /** Live sections of a project, in display order. */
 export async function projectSections(projectId: string): Promise<Section[]> {
   const list = await db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray()
-  return list.sort(byPosition)
+  return list.sort(compareByPosition)
 }
 
 /** A new section goes last in its project. Returns its id. Works offline. */
@@ -139,11 +139,11 @@ export function groupBySection<T extends Pick<Task, 'id' | 'position' | 'created
   projectId: string, tasks: T[], sections: Section[],
 ): SectionGroup<T>[] {
   const map = new Map(sections.map((s) => [s.id, s]))
-  const live = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(byPosition)
+  const live = sections.filter((s) => s.project_id === projectId && !s.deleted_at).sort(compareByPosition)
   const groups: SectionGroup<T>[] = [{ section: null, key: '', tasks: [] }, ...live.map((s) => ({ section: s, key: s.id, tasks: [] as T[] }))]
   const index = new Map(groups.map((g, i) => [g.key, i]))
   for (const task of tasks) groups[index.get(effectiveSection(task, map) ?? '') ?? 0].tasks.push(task)
-  for (const g of groups) g.tasks.sort(byPosition)
+  for (const g of groups) g.tasks.sort(compareByPosition)
   return groups
 }
 

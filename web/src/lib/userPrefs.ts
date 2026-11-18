@@ -3,7 +3,7 @@
 // through ops like any other data, so a change works offline, reaches the user's
 // other devices and converges per field by last-writer-wins.
 import { db } from './db'
-import { mutate, USER_PREFS_DEFAULTS } from './ops'
+import { mutate } from './ops'
 import { formatDefaultReminder, MAX_DEFAULT_OFFSET } from './defaultReminder'
 import { SHIPPED } from '../locales'
 import type { DateFormatPref, LanguagePref, TimeFormatPref, UserPrefs, WeekStartPref } from './types'
@@ -25,10 +25,6 @@ export function readUserPrefs(row: Partial<UserPrefs> | null | undefined): DateT
     time_format: pick(TIME_FORMATS, row?.time_format),
     week_start: pick(WEEK_STARTS, row?.week_start),
   }
-}
-
-export const DEFAULT_PREFS: DateTimePrefs = {
-  date_format: USER_PREFS_DEFAULTS.date_format, time_format: USER_PREFS_DEFAULTS.time_format, week_start: USER_PREFS_DEFAULTS.week_start,
 }
 
 /** The day starts the Settings panel offers (day-boundary D7): whole hours from midnight to 06:00. */
@@ -150,11 +146,6 @@ export function setUpcomingStartsWithToday(on: boolean): Promise<void> {
 /** Upcoming's later days (OpenSpec change sidebar-brand-and-row-grid, D8): summarised unless the account chose "full"; an unknown value reads as summarised. */
 export function upcomingLaterInFull(row: Partial<UserPrefs> | null | undefined): boolean {
   return row?.upcoming_later === 'full'
-}
-
-/** Lists Upcoming's later days in full or summarised: one synced op, offline included. */
-export function setUpcomingLaterInFull(full: boolean): Promise<void> {
-  return mutate('user_prefs', USER_PREFS_ID, { upcoming_later: full ? 'full' : 'summary' })
 }
 
 /** How a task opens from a list (OpenSpec change task-side-panel, D1): its page, or a side panel beside the list. */

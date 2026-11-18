@@ -68,6 +68,12 @@ import { clickExpands, DOUBLE_CLICK_MS } from './rowClick'
 const RowDetails = lazy(() => import('./task-list/RowDetails'))
 // A board card's notes preview (board-polish D6): loaded with the first board that shows it.
 const CardNotes = lazy(() => import('./CardNotes'))
+const OneLineLabels = lazy(() => import('./OneLineLabels'))
+
+function RowLineLabels({ labels, omit, projectColumn }: { labels: Label[]; omit?: string; projectColumn: boolean }) {
+  const fallback = <span className="contents" data-row-label-fallback=""><LabelChips labels={labels} omit={omit} /></span>
+  return <Suspense fallback={fallback}><OneLineLabels labels={labels} omit={omit} projectColumn={projectColumn} /></Suspense>
+}
 
 /** Field values shown on a row before the rest collapse into "+n" (custom-fields). */
 export const MAX_FIELD_BADGES = 3
@@ -818,7 +824,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
     badges: hideFieldBadges ? [] : fieldBadges(task, fieldDefs, dt.resolved, fieldsOf),
     assignee: assignee && task.assignee_id && !hides('assignee') ? <AssigneeChip id={task.assignee_id} name={assignee} me={assignedToMe} turns={rowTakesTurns(task)} /> : null,
     origin: null,
-    labels: <LabelChips labels={labels} omit={omitLabel} />,
+    labels: card ? <LabelChips labels={labels} omit={omitLabel} /> : <RowLineLabels labels={labels} omit={omitLabel} projectColumn={showProject && !hides('project')} />,
     counts: null,
   }
   if (hides('labels') || !labels.some((l) => l.id !== omitLabel)) m.labels = null

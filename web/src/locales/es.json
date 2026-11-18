@@ -1009,7 +1009,6 @@
   "Clear conversations": "Borrar conversaciones",
   "Clear conversations on this device": "Borrar conversaciones en este dispositivo",
   "Clear conversations on this device?": "¿Borrar las conversaciones en este dispositivo?",
-  "Clear due date": "Quitar fecha de vencimiento",
   "Clear filter": "Borrar filtro",
   "Clear the dashboard selection": "Borrar la selección del panel",
   "Clear the filter": "Borrar el filtro",
@@ -1465,6 +1464,8 @@
   "Disabled; nothing is synced.": "Desactivada; no se sincroniza nada.",
   "Discard": "Descartar",
   "Discard your changes?": "¿Descartar tus cambios?",
+  "Disconnect": "Desconectar",
+  "Disconnect {name}?": "¿Desconectar {name}?",
   "Dismiss": "Descartar",
   "Dismiss {name}": "Descartar {name}",
   "Display mode": "Modo pantalla",
@@ -2368,6 +2369,7 @@
   "Issue connections are not enabled on this server.": "Las conexiones de incidencias no están activadas en este servidor.",
   "Issuer URL": "URL del emisor",
   "Issues": "Incidencias",
+  "It can no longer reach your tasks. Connect it again to use it.": "Ya no podrá acceder a tus tareas. Vuelve a conectarla para usarla.",
   "It disappears from your devices.": "Desaparecerá de tus dispositivos.",
   "It does not match the column’s filter.": "No coincide con el filtro de la columna.",
   "It expires {when} and works once.": "Caduca {when} y funciona una vez.",
@@ -7768,5 +7770,7 @@
   "Not synced yet": "Aún sin sincronizar",
   "Add a subtask to {title}": "Añadir una subtarea a {title}",
   "Add a subtask to this task": "Añadir una subtarea a esta tarea",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "el calendario supera los {size} MB; conéctalo con la sincronización de calendario",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Este servidor no pudo aceptar un cambio de este dispositivo. Se queda en este dispositivo y todo lo demás sigue sincronizándose.",
   "Or sponsor on GitHub": "O patrocina en GitHub"
 }

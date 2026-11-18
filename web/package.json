@@ -18,7 +18,9 @@
     "test:contract": "vitest run -c vitest.contract.config.ts",
     "test:contract:record": "RECORD_V1_CLIENTS=1 vitest run -c vitest.contract.config.ts",
     "nlp:vocab": "UPDATE_QUICKADD_VOCAB=1 vitest run src/lib/nlp/vocab.test.ts",
-    "lint": "eslint --max-warnings 0 src",
+    "lint": "eslint --max-warnings 0 src && npm run --silent knip",
+    "preknip": "npm run --silent help",
+    "knip": "node scripts/knip.mjs",
     "pretypecheck": "npm run --silent help",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
     "docs:build": "node scripts/docs/build.mjs",
@@ -42,7 +44,6 @@
     "prosemirror-schema-list": "1.6.0",
     "prosemirror-state": "1.4.4",
     "prosemirror-tables": "1.8.5",
-    "prosemirror-transform": "1.12.5",
     "prosemirror-view": "1.42.9",
     "qrcode-generator": "2.0.4",
     "react": "19.3.1",
@@ -65,7 +66,9 @@
     "eslint-plugin-react-hooks": "7.1.1",
     "fake-indexeddb": "6.2.7",
     "happy-dom": "21.0.4",
+    "knip": "5.88.1",
     "marked": "18.1.3",
+    "openapi-typescript": "7.13.0",
     "storybook": "10.6.6",
     "tailwindcss": "4.3.5",
     "typescript": "npm:@typescript/typescript6@6.0.2",
@@ -73,5 +76,10 @@
     "vite": "8.3.6",
     "vite-plugin-pwa": "2.0.0",
     "vitest": "5.1.0"
+  },
+  "overrides": {
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   }
 }

@@ -2,7 +2,9 @@ name: iOS TestFlight
 
 # The iPhone app to TestFlight (OpenSpec change ios-distribution D5, D9). ci.yml calls this after
 # the GitHub release of every final tag (v1.2.0, never v1.2.0-rc.1); Actions → iOS TestFlight →
-# Run workflow uploads any tag, branch or commit by hand. Nothing is ever submitted for review.
+# Run workflow uploads a release tag by hand. Only a tag is ever checked out: the job holds the
+# App Store Connect key, so it never runs a branch's or a commit's code. Nothing is ever submitted
+# for review.
 #
 # Signing needs no Mac and nothing stored: the archive is built unsigned and signed ad hoc, then
 # scripts/release/appstore.mjs makes an Apple Distribution certificate from a key generated on the
@@ -29,9 +31,8 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Tag, branch or commit to upload (v1.2.0 uploads as 1.2.0; a later commit as its last tag's version)
+        description: Release tag to upload, such as v1.2.0
         required: true
-        default: main
       build_number:
         description: Build number to use instead of the next free one (10200 or 10200.N for 1.2.0); usually empty
         required: false
@@ -57,6 +58,17 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
     steps:
+      # Before anything else: the ref must be a release tag (vMAJOR.MINOR.PATCH, a release
+      # candidate allowed for a hand run), checked out below as refs/tags/<tag>, so a branch or a
+      # pull request's head named like a tag cannot be uploaded with the release key.
+      - name: Release tag only
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          if ! printf '%s' "$REF" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
+            echo "::error::ref must be a release tag such as v1.2.0, got: $REF"
+            exit 1
+          fi
       - name: Secrets
         id: secrets
         run: |
@@ -70,7 +82,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: steps.secrets.outputs.ready == 'true'
         with:
-          ref: ${{ inputs.ref }}
+          ref: refs/tags/${{ inputs.ref }}
           # The version comes from the last tag (git describe), so the history and tags are needed.
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

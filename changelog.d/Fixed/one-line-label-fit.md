@@ -1,0 +1,1 @@
+- **Labels fit the One line task row.** Long names end with an ellipsis, and a `+N` count shows how many labels are hidden. Hover or focus either to read the full names.

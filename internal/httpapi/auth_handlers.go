@@ -499,7 +499,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
-	err := s.auth.DeleteToken(r.Context(), userFrom(r.Context()).ID, r.PathValue("id"))
+	userID, id := userFrom(r.Context()).ID, r.PathValue("id")
+	// A connected app's access token: its grant ends with it (connected-apps-list).
+	grant, lookup := s.mcpOAuth.GrantByToken(r.Context(), id)
+	err := s.auth.DeleteToken(r.Context(), userID, id)
 	if errors.Is(err, auth.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "token not found")
 		return
@@ -508,6 +511,7 @@ func (s *Server) handleDeleteToken(w http.ResponseWriter, r *http.Request) {
 		s.internal(w, err)
 		return
 	}
+	s.endGrantOfToken(r.Context(), userID, grant, lookup)
 	w.WriteHeader(http.StatusNoContent)
 }
 

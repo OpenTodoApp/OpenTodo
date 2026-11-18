@@ -1027,13 +1027,6 @@ export function noticeCopy<I extends SettingsCopyId>(id: I, key: NoticesOf<I>, o
   return t(text, opts.values)
 }
 
-/** A choice card's option label and line, translated. */
-export function optionCopy(id: SettingsCopyId, option: string): { label: string; description: string } {
-  const o = entry(id).options?.[option]
-  if (!o) throw new Error(`settings copy ${id}: no option ${option}`)
-  return { label: t(o.label), description: t(o.description) }
-}
-
 /** Every entry of the table, flattened, for the copy lint: where, kind and the English text. */
 export function copyEntries(): { where: string; kind: 'title' | 'label' | 'description' | 'option' | 'notice'; text: string }[] {
   const out: ReturnType<typeof copyEntries> = []

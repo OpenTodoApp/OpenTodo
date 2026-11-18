@@ -958,7 +958,6 @@
   "Clear conversations": "Gesprekken wissen",
   "Clear conversations on this device": "Gesprekken op dit apparaat wissen",
   "Clear conversations on this device?": "Gesprekken op dit apparaat wissen?",
-  "Clear due date": "Geplande datum wissen",
   "Clear filter": "Filter wissen",
   "Clear the app": "App wissen",
   "Clear the dashboard selection": "Selectie in het dashboard opheffen",
@@ -1426,6 +1425,8 @@
   "Disabled; nothing is synced.": "Uitgeschakeld; er wordt niets gesynchroniseerd.",
   "Discard": "Weggooien",
   "Discard your changes?": "Je wijzigingen weggooien?",
+  "Disconnect": "Ontkoppelen",
+  "Disconnect {name}?": "{name} ontkoppelen?",
   "Dismiss": "Sluiten",
   "Dismiss {name}": "{name} verbergen",
   "Display mode": "Weergavemodus",
@@ -2379,6 +2380,7 @@
   "Issue connections are not enabled on this server.": "Issue-koppelingen zijn op deze server niet ingeschakeld.",
   "Issuer URL": "URL van de uitgever",
   "Issues": "Issues",
+  "It can no longer reach your tasks. Connect it again to use it.": "De app kan je taken niet meer bereiken. Koppel hem opnieuw om hem te gebruiken.",
   "It disappears from your devices.": "Het verdwijnt van al je apparaten.",
   "It does not match the column’s filter.": "Het voldoet niet aan het filter van de kolom.",
   "It expires {when} and works once.": "Het verloopt {when} en werkt één keer.",
@@ -7768,5 +7770,7 @@
   "Not synced yet": "Nog niet gesynchroniseerd",
   "Add a subtask to {title}": "Subtaak toevoegen aan {title}",
   "Add a subtask to this task": "Subtaak toevoegen aan deze taak",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "de agenda is groter dan {size} MB; koppel hem in plaats daarvan met kalendersynchronisatie",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Deze server kon een wijziging van dit apparaat niet accepteren. Die blijft op dit apparaat en al het andere blijft synchroniseren.",
   "Or sponsor on GitHub": "Of sponsor op GitHub"
 }

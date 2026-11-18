@@ -1009,7 +1009,6 @@
   "Clear conversations": "Effacer les conversations",
   "Clear conversations on this device": "Effacer les conversations sur cet appareil",
   "Clear conversations on this device?": "Effacer les conversations sur cet appareil ?",
-  "Clear due date": "Retirer l’échéance",
   "Clear filter": "Effacer le filtre",
   "Clear the dashboard selection": "Effacer la sélection du tableau de bord",
   "Clear the filter": "Effacer le filtre",
@@ -1465,6 +1464,8 @@
   "Disabled; nothing is synced.": "Désactivée ; rien n’est synchronisé.",
   "Discard": "Abandonner",
   "Discard your changes?": "Abandonner vos modifications ?",
+  "Disconnect": "Déconnecter",
+  "Disconnect {name}?": "Déconnecter {name} ?",
   "Dismiss": "Ignorer",
   "Dismiss {name}": "Ignorer {name}",
   "Display mode": "Mode affichage",
@@ -2368,6 +2369,7 @@
   "Issue connections are not enabled on this server.": "Les connexions de tickets ne sont pas activées sur ce serveur.",
   "Issuer URL": "URL de l’émetteur",
   "Issues": "Tickets",
+  "It can no longer reach your tasks. Connect it again to use it.": "Elle ne peut plus accéder à vos tâches. Connectez-la à nouveau pour l’utiliser.",
   "It disappears from your devices.": "Il disparaît de vos appareils.",
   "It does not match the column’s filter.": "Elle ne correspond pas au filtre de la colonne.",
   "It expires {when} and works once.": "Il expire {when} et ne fonctionne qu’une fois.",
@@ -7768,5 +7770,7 @@
   "Not synced yet": "Pas encore synchronisé",
   "Add a subtask to {title}": "Ajouter une sous-tâche à {title}",
   "Add a subtask to this task": "Ajouter une sous-tâche à cette tâche",
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": "le calendrier dépasse {size} Mo ; connectez-le plutôt avec la synchronisation de calendrier",
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": "Ce serveur n’a pas pu accepter une modification de cet appareil. Elle reste sur cet appareil, et tout le reste continue de se synchroniser.",
   "Or sponsor on GitHub": "Ou soutenir sur GitHub Sponsors"
 }

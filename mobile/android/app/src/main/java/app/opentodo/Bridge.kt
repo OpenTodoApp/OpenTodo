@@ -193,7 +193,9 @@ class Bridge(
             return "$scheme://$h" + if (port == -1 || port == def) "" else ":$port"
         }
 
+        /** http(s), mailto and tel, and a `geo:` point for the maps app (android-location-and-map). */
         fun safeExternal(url: String): Boolean {
+            if (WebLocation.mapLink(url)) return true
             val scheme = Uri.parse(url).scheme?.lowercase()
             return scheme == "https" || scheme == "http" || scheme == "mailto" || scheme == "tel"
         }

@@ -58,6 +58,7 @@ import { BrandingPanel } from './BrandingPanel'
 import { YourDataSection } from './DataSettings'
 import { SessionPanel } from './AccountSettings'
 import { AppSessions } from './AppSessions'
+import { ConnectedApps } from './ConnectedApps'
 import { InvitationsPanel } from './MemberInvitations'
 import { ServerArchivePanel } from './ServerArchivePanel'
 import { WorkspacesSettings } from './WorkspacesSettings'
@@ -85,7 +86,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
           <LinkedAccountsPanel />
         </DemoDisabled>
       </Anchor>
-      <SessionPanel onLogout={onLogout}><AppSessions /></SessionPanel>
+      <SessionPanel onLogout={onLogout}><AppSessions /><ConnectedApps /></SessionPanel>
     </>
   ),
   'account/activity': () => <Anchor id="sessions"><ActivityPanel /></Anchor>,

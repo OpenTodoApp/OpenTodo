@@ -1,0 +1,7 @@
+Twoja rejestracja w OpenTodo
+
+To wiadomość o rejestracji od OpenTodo.
+
+Ktoś próbował zarejestrować się na {{.Origin}} adresem {{.Email}}, ale ten adres ma już konto. Aby się zalogować, przejdź pod adres serwera podany powyżej. Jeśli nie pamiętasz hasła, użyj opcji „Nie pamiętasz hasła?” na ekranie logowania.
+
+Jeśli to nie ty, możesz zignorować tę wiadomość: nic się nie zmieniło.

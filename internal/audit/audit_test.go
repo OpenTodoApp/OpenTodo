@@ -45,6 +45,7 @@ func allConstructors() []Event {
 		MCPOAuthGranted("u", "c", "agent"),
 		MCPOAuthRevoked("u", "c"),
 		MCPOAuthRefreshReused("u", "c"),
+		MCPOAuthDisconnected("u", "c", DisconnectedInSettings),
 		AgentWrite("u", "complete_tasks", "t", "Desk assistant", 3),
 		AgentWrite("u", "create_tasks", "t", "Desk assistant", 0).Failed("writes_disabled_by_user"),
 		RelayEnabled("u", "device-1", "Laptop"),
@@ -103,7 +104,7 @@ func allConstructors() []Event {
 		PasswordResetIssued("o", "u", "r1"),
 		PasswordResetCompleted("u", "r1"),
 		PasswordChanged("u"),
-		SignedOutEverywhere("u", 2, 1, 3, 1),
+		SignedOutEverywhere("u", 2, 1, 3, 1, 1),
 		OwnerTransferred("o", "u"),
 	}
 }

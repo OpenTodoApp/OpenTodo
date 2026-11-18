@@ -125,11 +125,15 @@ function SavedViewRoute({ id }: { id: string }) {
   const Loaded = savedViewModule?.SavedViewRoute
   return Loaded ? <Loaded id={id} /> : <Suspense fallback={SCREEN_LOADING}><LazySavedViewRoute id={id} /></Suspense>
 }
-/** Runs `load` once the browser is idle after the shell mounts (within 5 s at the latest). */
-function useIdleLoad(load: () => unknown) {
+/**
+ * Runs `load` once the browser is idle after the shell mounts (within 5 s at the latest). A load
+ * that fails (offline, a new release, the page leaving) is dropped: the route loads it again.
+ */
+function useIdleLoad(load: () => Promise<unknown>) {
   useEffect(() => {
-    if (typeof requestIdleCallback !== 'function') { const h = setTimeout(load, 2000); return () => clearTimeout(h) }
-    const h = requestIdleCallback(() => void load(), { timeout: 5000 })
+    const run = () => { load().catch(() => {}) }
+    if (typeof requestIdleCallback !== 'function') { const h = setTimeout(run, 2000); return () => clearTimeout(h) }
+    const h = requestIdleCallback(run, { timeout: 5000 })
     return () => cancelIdleCallback(h)
   }, [load])
 }
