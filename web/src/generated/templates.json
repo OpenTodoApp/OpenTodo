@@ -260,40 +260,40 @@
     },
     "description": {
      "en": "Some jobs come round only once a season or once a year, which is exactly why they get forgotten. Every task here [repeats](https://open-todo.app/docs/recurrence/) at its own interval; add a [reminder](https://open-todo.app/docs/reminders/) to the ones that need booking a tradesperson.",
-     "fr": "Certains travaux ne se présentent qu'une fois par saison ou par an, et c'est précisément pour cela qu'on les oublie. Chaque tâche [se répète](https://open-todo.app/docs/recurrence/)  à son propre intervalle; ajoutez un [rappel](https://open-todo.app/docs/reminders/) à celles qui nécessitent la réservation d'un artisan.\n",
+     "fr": "Certains travaux ne se présentent qu'une fois par saison ou par an, et c'est précisément pour cela qu'on les oublie. Chaque tâche [se répète](https://open-todo.app/docs/recurrence/)  à son propre intervalle; ajoute un [rappel](https://open-todo.app/docs/reminders/) à celles qui nécessitent la réservation d'un artisan.\n",
      "it": "Alcuni lavori capitano una volta a stagione o una volta l'anno, ed è proprio per questo che si dimenticano. Ogni attività qui si [ripete](https://open-todo.app/docs/recurrence/) con il suo intervallo; aggiungi un [promemoria](https://open-todo.app/docs/reminders/) a quelle che richiedono di prenotare un tecnico.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; every task repeats at its own interval, from monthly to yearly.",
-      "fr": "Lancez le modèle ; chaque tâche se répète selon son propre intervalle, de mensuel à annuel.",
+      "fr": "Lance le modèle ; chaque tâche se répète selon son propre intervalle, de mensuel à annuel.",
       "it": "Avvia il modello; ogni attività si ripete con il suo intervallo, da mensile ad annuale."
      },
      {
       "en": "Open the ones that need booking a tradesperson and add a reminder a week ahead.",
-      "fr": "Ouvrez celles qui nécessitent un technicien et ajoutez un rappel une semaine avant.",
+      "fr": "Ouvre celles qui nécessitent un technicien et ajoute un rappel une semaine avant.",
       "it": "Apri quelle che richiedono un tecnico e aggiungi un promemoria una settimana prima."
      },
      {
       "en": "Complete a task when it is done and the next occurrence appears.",
-      "fr": "Terminez une tâche lorsqu'elle est faite et la prochaine récurrence apparaîtra.",
+      "fr": "Termine une tâche lorsqu'elle est faite et la prochaine récurrence apparaîtra.",
       "it": "Completa un'attività quando è fatta e compare la prossima ripetizione."
      }
     ],
     "makeItYours": [
      {
       "en": "Delete what your home does not have (no chimney, no garden) and add what it does.",
-      "fr": "Supprimez ce que votre maison n'a pas (pas de cheminée, pas de jardin) et ajoutez ce qu'elle a.",
+      "fr": "Supprime ce que ta maison n'a pas (pas de cheminée, pas de jardin) et ajoute ce qu'elle a.",
       "it": "Elimina quello che la tua casa non ha (niente camino, niente giardino) e aggiungi quello che ha."
      },
      {
       "en": "Adjust intervals to your climate: gutters more often under trees, less in a flat.",
-      "fr": "Adaptez les intervalles au climat : les gouttières plus souvent sous les arbres, moins dans un appartement.",
+      "fr": "Adapte les intervalles au climat : les gouttières plus souvent sous les arbres, moins dans un appartement.",
       "it": "Adatta gli intervalli al clima: grondaie più spesso sotto gli alberi, meno in un appartamento."
      },
      {
       "en": "Share it with whoever else looks after the house.",
-      "fr": "Partagez-le avec les personnes qui s'occupent de la maison avec vous.",
+      "fr": "Partage-le avec les personnes qui s'occupent de la maison avec toi.",
       "it": "Condividilo con chi si occupa della casa insieme a te."
      }
     ]
@@ -807,7 +807,7 @@
         {
          "title": {
           "en": "Cook a batch of grains and vegetables",
-          "fr": "Préparez une fournée de céréales et de légumes",
+          "fr": "Préparer une fournée de céréales et de légumes",
           "it": "Cuocere una scorta di cereali e verdure"
          },
          "due": "+0d",
