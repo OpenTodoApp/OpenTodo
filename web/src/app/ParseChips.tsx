@@ -58,7 +58,7 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
   switch (chip.kind) {
     case 'recurrence':
       // Without a typed date the series starts on the rule's first occurrence (quick-add-recurrence D4).
-      return line?.due && !line.datedByPhrase ? `${ruleWords(String(chip.value))} · ${formatDate(line.due.date, 'long')}` : ruleWords(String(chip.value))
+      return line?.due && !line.datedByPhrase ? `${ruleWords(String(chip.value), true)} · ${formatDate(line.due.date, 'long')}` : ruleWords(String(chip.value), true)
     case 'reminder': {
       const r = chip.value as ReminderPhrase
       // Reminders are instants: the calendar date and clock of now, not the logical day (day-boundary D2).

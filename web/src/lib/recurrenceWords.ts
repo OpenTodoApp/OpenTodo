@@ -2,7 +2,7 @@
 // The stored rule stays the canonical English grammar of recurrence.ts; this is
 // only how it reads on screen, built from the parsed rule with whole messages.
 import { formatDate, monthName, weekdayName } from './dates'
-import { formatList, t } from './i18n'
+import { currentLocale, formatList, t } from './i18n'
 import { parseRule, type Rule } from './recurrence'
 
 const ORDINALS: Record<number, string> = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', [-1]: 'last' }
@@ -47,9 +47,10 @@ function patternWords(r: Rule): string {
 
 /**
  * `rule` (a stored repeat rule) in the interface language: "Every 2 weeks on
+ * Saturday", or with `inline` as it reads after other words: "every 2 weeks on
  * Saturday". A rule this version cannot read is shown as stored.
  */
-export function ruleWords(rule: string): string {
+export function ruleWords(rule: string, inline = false): string {
   const parsed = parseRule(rule)
   if (!parsed.ok) return rule
   const r = parsed.rule
@@ -57,5 +58,5 @@ export function ruleWords(rule: string): string {
   if (r.afterCompletion) words = t('{rule} after completion', { rule: words })
   if (r.until) words = t('{rule} until {date}', { rule: words, date: formatDate(r.until, 'compact') })
   if (r.count) words = t('{rule}, {n, plural, one {# time} other {# times}}', { rule: words, n: r.count })
-  return words
+  return inline ? words.charAt(0).toLocaleLowerCase(currentLocale()) + words.slice(1) : words
 }

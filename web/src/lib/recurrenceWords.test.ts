@@ -34,6 +34,12 @@ describe('ruleWords (repeat-rule-words)', () => {
     for (const [rule, words] of cases) expect(ruleWords(rule), rule).toBe(words)
   })
 
+  it('reads inline after other words, with a small first letter', async () => {
+    expect(ruleWords('every 2nd tuesday', true)).toBe('every month on the second Tuesday')
+    await applyLanguagePreference('de', ['de'])
+    expect(ruleWords('every 2 weeks on saturday', true)).toBe('alle 2 Wochen am Samstag')
+  })
+
   it('names the end date', () => {
     expect(ruleWords('every 1st weekday until 2027-03-31')).toMatch(/^Every month on the first weekday until .*31/)
   })

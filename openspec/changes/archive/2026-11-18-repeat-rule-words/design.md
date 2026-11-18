@@ -16,6 +16,8 @@
 
 **D4. Ends wrap the pattern.** "after completion", "until {date}" and "for N times" are three messages with a `{rule}` argument around the pattern's words, so a language can put them before or after ("完成后每 3 天"). The end date is formatted with the user's date format.
 
+**D4a. Two starts.** The messages are sentences ("Every week on Thursday"), as the presets are. The facts line and the quick-add chip write their facts small ("evening", "deadline Fri 23 Oct"), so there `ruleWords(rule, true)` lowers the first letter with the interface locale; nothing else of the sentence changes, so German nouns keep their capitals.
+
 **D5. The Repeat field keeps the stored rule.** While it only accepts English, showing translated text in it would offer text it then refuses. The translated words are the line above the presets. The second half of #1427 changes both together.
 
 Alternatives: printing from the quick-add vocabulary (`web/src/lib/nlp/vocab`), so what is shown is what can be typed. Rejected: the vocabulary lists accepted spellings, not one preferred sentence, has no gender or plural forms, and does not exist for Russian and Chinese. Translating the stored string word by word: rejected, word order and agreement differ.

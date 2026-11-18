@@ -532,11 +532,11 @@ Every writer of a rule (quick add, the repeat field, REST, the AI assistant tool
 - **THEN** the stored rule is `every 3 weeks on monday, thursday`
 
 ### Requirement: A rule reads in the interface language
-Wherever the web app shows a task's repeat rule as text (the Repeat segment of the When popover, the task's facts line, the Repeats chip of quick add and a proposed change in the assistant's review), it SHALL show the rule in words of the interface language, built from the parsed rule: the interval or pattern, then "after completion", the end date in the user's date format or the number of times when the rule has them. Weekday and month names SHALL be those of the interface language, and an ordinal SHALL agree with its weekday where the language requires it. The stored rule SHALL stay the canonical English form and the Repeat field SHALL keep showing and accepting that form; a rule the app cannot parse SHALL be shown as stored. The words SHALL be derived on the device, offline included, and SHALL be written nowhere, so there is nothing to converge beyond the rule itself.
+Wherever the web app shows a task's repeat rule as text (the Repeat segment of the When popover, the task's facts line, the Repeats chip of quick add and a proposed change in the assistant's review), it SHALL show the rule in words of the interface language, built from the parsed rule: the interval or pattern, then "after completion", the end date in the user's date format or the number of times when the rule has them. On its own line the rule SHALL start with a capital letter where the language has one; after other words (the facts line, the chip) it SHALL start small. Weekday and month names SHALL be those of the interface language, and an ordinal SHALL agree with its weekday where the language requires it. The stored rule SHALL stay the canonical English form and the Repeat field SHALL keep showing and accepting that form; a rule the app cannot parse SHALL be shown as stored. The words SHALL be derived on the device, offline included, and SHALL be written nowhere, so there is nothing to converge beyond the rule itself.
 
 #### Scenario: Dutch
 - **WHEN** the interface language is Dutch and a task's rule is `every 3 days after completion`
-- **THEN** the Repeat segment and the task's facts line read "Om de 3 dagen na voltooiing", and the stored rule is unchanged
+- **THEN** the Repeat segment reads "Om de 3 dagen na voltooiing", the task's facts line "om de 3 dagen na voltooiing", and the stored rule is unchanged
 
 #### Scenario: Ordinal weekday
 - **WHEN** the interface language is Italian and a task's rule is `every last sunday`
@@ -552,7 +552,7 @@ Wherever the web app shows a task's repeat rule as text (the Repeat segment of t
 
 #### Scenario: Quick add
 - **WHEN** the interface language is German and the user types "Filter wechseln jeden Montag" in quick add
-- **THEN** the Repeats chip reads "Jede Woche am Montag" and the task is created with the rule `every monday`
+- **THEN** the Repeats chip reads "jede Woche am Montag" and the task is created with the rule `every monday`
 
 #### Scenario: A rule of a newer version
 - **WHEN** a task's stored rule does not parse on this device
