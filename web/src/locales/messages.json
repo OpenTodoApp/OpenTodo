@@ -2639,6 +2639,9 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
+  "Bold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Book the skip": [
     "web/src/app/themes/previewData.ts"
   ],
@@ -7938,6 +7941,9 @@
   "How good are my estimates?": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "How heavy task titles are: 400, 500, 600 or 700.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "How long audit events are kept and whether addresses are recorded": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -9890,6 +9896,9 @@
   ],
   "Medium · 31 to 89 min": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Medium|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -14344,6 +14353,9 @@
   "Registered by the app": [
     "web/src/app/OAuthClients.tsx"
   ],
+  "Regular|weight": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Relative": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -15732,6 +15744,9 @@
   ],
   "Self-built": [
     "web/src/app/AppCodeRow.tsx"
+  ],
+  "Semibold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
@@ -17576,6 +17591,9 @@
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Task title weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Task to focus on": [
     "web/src/app/focus/FocusParts.tsx"
