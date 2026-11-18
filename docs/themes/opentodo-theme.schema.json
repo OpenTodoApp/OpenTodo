@@ -89,7 +89,7 @@
       },
       "additionalProperties": false
     },
-    "titleWeight": { "description": "The weight of task titles in lists, so they stand out from the details beside them; 400 is the default. A top-level key, so an older app keeps and ignores it.", "enum": [400, 500, 600, 700] }
+    "titleWeight": { "description": "The weight of task titles in lists, so they stand out from the details beside them; 400 is the default. A top-level key, so an older app keeps and ignores it.", "enum": [400, 600, 700] }
   },
   "propertyNames": { "pattern": "^([A-Za-z][A-Za-z0-9]{0,39}|\\$schema)$" },
   "$defs": {

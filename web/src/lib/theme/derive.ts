@@ -37,7 +37,7 @@ export interface ResolvedTheme {
   /** The list text size in px, only when it is not 13. */
   list?: 14 | 15
   /** The weight of task titles, only when it is not 400 (theme-title-weight D2). */
-  titleWeight?: 500 | 600 | 700
+  titleWeight?: 600 | 700
   /** Derived tokens (and seeds) that moved away from their starting value to pass their pairs. */
   adjusted: string[]
 }
@@ -505,6 +505,6 @@ function fontOf(doc: ThemeDocument): Pick<ResolvedTheme, 'font' | 'list' | 'titl
   const font = !f || f === 'inter' ? undefined : typeof f === 'string' ? FONT_STACKS[f] : `"${f.local}", ${FONT_STACKS.system}`
   const list = doc.type?.list === 14 || doc.type?.list === 15 ? doc.type.list : undefined
   const w = doc.titleWeight
-  const titleWeight = w === 500 || w === 600 || w === 700 ? w : undefined
+  const titleWeight = w === 600 || w === 700 ? w : undefined
   return { ...(font ? { font } : {}), ...(list ? { list } : {}), ...(titleWeight ? { titleWeight } : {}) }
 }

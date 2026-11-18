@@ -168,7 +168,7 @@ export function ShapeTypeSection({ doc, onChange }: { doc: ThemeDocument; onChan
 }
 
 const WEIGHT_LABEL: Record<(typeof TITLE_WEIGHTS)[number], () => string> = {
-  400: () => t('Regular'), 500: () => t('Medium'), 600: () => t('Semibold'), 700: () => t('Bold'),
+  400: () => t('Regular'), 600: () => t('Semibold'), 700: () => t('Bold'),
 }
 
 const RADIUS_LABEL: Record<RadiusStep, () => string> = {

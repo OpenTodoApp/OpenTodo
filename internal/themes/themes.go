@@ -165,7 +165,7 @@ func validate(v any) {
 	// app keeps and ignores it.
 	if w, ok := d["titleWeight"]; ok {
 		n, ok := w.(float64)
-		if !ok || (n != 400 && n != 500 && n != 600 && n != 700) {
+		if !ok || (n != 400 && n != 600 && n != 700) {
 			fail("type", "titleWeight")
 		}
 	}

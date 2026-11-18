@@ -4,9 +4,9 @@ Issue #1469 (sh0nuff). On a phone, a task row shows its title and its details (d
 
 ## What Changes
 
-- **A theme may carry `titleWeight`:** `400` (the default), `500`, `600` or `700`, the weight of task titles in lists. It's a top-level key, so an app older than this change keeps and ignores it, as the format does for every top-level key it doesn't know. A key inside `type` would make an older app refuse the theme.
+- **A theme may carry `titleWeight`:** `400` (the default), `600` or `700`, the weight of task titles in lists. It's a top-level key, so an app older than this change keeps and ignores it, as the format does for every top-level key it doesn't know. A key inside `type` would make an older app refuse the theme.
 - **The app and the server accept and refuse it alike.** Shared examples: `valid/title-weight.json` and `invalid/title-weight.json` (650 is refused as `type`). The JSON Schema documents it.
-- **The theme editor's Shape and type section gains Task titles,** with Regular, Medium, Semibold and Bold, shown live in the preview.
+- **The theme editor's Shape and type section gains Task titles,** with Regular, Semibold and Bold, shown live in the preview.
 - **Applying a theme** sets `--ot-title-weight`, which task row titles (`[data-row-title]`) use; unset, the row keeps its own weight. The boot script writes the same.
 
 ## Capabilities

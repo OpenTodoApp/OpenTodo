@@ -9883,7 +9883,6 @@
   ],
   "Medium": [
     "web/src/app/routines/words.tsx",
-    "web/src/app/themes/EditorSections.tsx",
     "web/src/lib/bentoSlots.ts",
     "web/src/lib/energy.ts"
   ],

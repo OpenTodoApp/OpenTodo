@@ -52,7 +52,7 @@ export const DEFAULT_RADIUS: Record<RadiusStep, number> = { chip: 6, control: 7,
 export const LIST_SIZES = [13, 14, 15] as const
 
 /** The weights a theme may give task titles in lists (theme-title-weight D1); 400 is the default. */
-export const TITLE_WEIGHTS = [400, 500, 600, 700] as const
+export const TITLE_WEIGHTS = [400, 600, 700] as const
 
 /** The font stacks of the type families other than the bundled Inter (design D1). */
 export const FONT_STACKS = {

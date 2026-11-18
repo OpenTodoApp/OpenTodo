@@ -72,7 +72,7 @@ The editor SHALL preview the draft on a task list, a board, the week calendar an
 - **THEN** a new dark draft opens with the same accent and status colours and dark surfaces of the same hues, passing every pair
 
 ### Requirement: Shape and type in the editor
-The editor SHALL let the user choose the corner radius as a preset (Square, Default, Round) or as five values from 0 to 20 px, the font as OpenTodo's bundled typeface, the system, serif or monospace font, or an installed font by name, the list text size of 13, 14 or 15 px, and the weight of task titles (Regular, Medium, Semibold or Bold), all shown live in the preview. It SHALL say that an installed font is used only on devices that have it and is never downloaded.
+The editor SHALL let the user choose the corner radius as a preset (Square, Default, Round) or as five values from 0 to 20 px, the font as OpenTodo's bundled typeface, the system, serif or monospace font, or an installed font by name, the list text size of 13, 14 or 15 px, and the weight of task titles (Regular, Semibold or Bold), all shown live in the preview. It SHALL say that an installed font is used only on devices that have it and is never downloaded.
 
 #### Scenario: An installed font
 - **WHEN** the user chooses Installed font and types "Atkinson Hyperlegible"

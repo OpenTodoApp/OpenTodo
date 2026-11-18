@@ -72,9 +72,10 @@ describe('applyTheme', () => {
     expect(validApplied(hostile)).toBe(false)
   })
 
-  it('accepts only the four title weights (theme-title-weight D2)', () => {
+  it('accepts only the title weights 600 and 700 (theme-title-weight D2)', () => {
     expect(validApplied({ ...nord(), titleWeight: 600 })).toBe(true)
     expect(validApplied({ ...nord(), titleWeight: 650 })).toBe(false)
+    expect(validApplied({ ...nord(), titleWeight: 500 })).toBe(false)
     expect(validApplied({ ...nord(), titleWeight: '700;color:red' })).toBe(false)
   })
 

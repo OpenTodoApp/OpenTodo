@@ -21,7 +21,7 @@ export interface AppliedTheme {
   radius?: Record<RadiusStep, number>
   font?: string
   list?: 14 | 15
-  titleWeight?: 500 | 600 | 700
+  titleWeight?: 600 | 700
 }
 
 export const THEME_STYLE_ID = 'ot-theme'
@@ -42,7 +42,7 @@ export function validApplied(t: unknown): t is AppliedTheme {
   if (o.radius !== undefined && (typeof o.radius !== 'object' || !RADIUS_STEPS.every((s) => Number.isInteger(o.radius![s]) && o.radius![s] >= 0 && o.radius![s] <= 20))) return false
   if (o.font !== undefined && (typeof o.font !== 'string' || !FONT.test(o.font))) return false
   if (o.list !== undefined && o.list !== 14 && o.list !== 15) return false
-  if (o.titleWeight !== undefined && o.titleWeight !== 500 && o.titleWeight !== 600 && o.titleWeight !== 700) return false
+  if (o.titleWeight !== undefined && o.titleWeight !== 600 && o.titleWeight !== 700) return false
   return true
 }
 
