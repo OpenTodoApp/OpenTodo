@@ -2639,6 +2639,9 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
+  "Bold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Book the skip": [
     "web/src/app/themes/previewData.ts"
   ],
@@ -6200,7 +6203,8 @@
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/habitRule.ts",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/frames.ts"
+    "web/src/lib/frames.ts",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
@@ -6232,10 +6236,21 @@
   ],
   "Every month": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every month on day {day}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the last day": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every other colour follows from these, unless you set it under Advanced.": [
     "web/src/app/themes/EditorSections.tsx"
@@ -6282,19 +6297,28 @@
   ],
   "Every week": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
   ],
   "Every week on {weekday}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every weekday": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every workspace": [
     "web/src/app/routines/StepCard.tsx"
+  ],
+  "Every year": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every year on {date}": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -6304,6 +6328,21 @@
   ],
   "Every {m} minutes": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Every {n, plural, one {# day} other {# days}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# month} other {# months}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# year} other {# years}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every {weekday} at {time}": [
     "web/src/lib/backups.ts"
@@ -7938,6 +7977,9 @@
   "How good are my estimates?": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "How heavy task titles are: 400, 500, 600 or 700.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "How long audit events are kept and whether addresses are recorded": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -8476,6 +8518,9 @@
   ],
   "Include tasks without a time": [
     "web/src/app/CalendarSyncDialogs.tsx"
+  ],
+  "Indent": [
+    "web/src/app/editorCommands.ts"
   ],
   "Indent list item, or next table cell (Shift-Tab: back)": [
     "web/src/lib/richtextEditor.ts"
@@ -9890,6 +9935,9 @@
   ],
   "Medium · 31 to 89 min": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Medium|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -12984,6 +13032,9 @@
   "Outcomes that take more than one step.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Outdent": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Outdent the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -14344,6 +14395,9 @@
   "Registered by the app": [
     "web/src/app/OAuthClients.tsx"
   ],
+  "Regular|weight": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Relative": [
     "web/src/app/RemindersField.tsx"
   ],
@@ -14705,10 +14759,6 @@
   ],
   "Repeats after completion, so made a task, not a habit: {titles}": [
     "web/src/app/NotesEditor.tsx"
-  ],
-  "Repeats {rule}": [
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/assistant.ts"
   ],
   "Replace text": [
     "web/src/lib/rules/sentence.ts"
@@ -15732,6 +15782,9 @@
   ],
   "Self-built": [
     "web/src/app/AppCodeRow.tsx"
+  ],
+  "Semibold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
@@ -17576,6 +17629,9 @@
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Task title weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Task to focus on": [
     "web/src/app/focus/FocusParts.tsx"
@@ -24958,6 +25014,7 @@
   ],
   "{n, plural, one {# attachment} other {# attachments}}": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "{n, plural, one {# block behind} other {# blocks behind}}": [
@@ -26059,6 +26116,15 @@
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "{rule} after completion": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule} until {date}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule}, {n, plural, one {# time} other {# times}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"

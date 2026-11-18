@@ -10,6 +10,7 @@ import { db } from '../../lib/db'
 import { dayPartOf } from '../../lib/dayParts'
 import { undoBatch } from '../../lib/undo'
 import { createTask, mutate } from '../../lib/ops'
+import { applyLanguagePreference } from '../../lib/i18n'
 import { USER_PREFS_ID } from '../../lib/userPrefs'
 import { click, key, render, type, waitFor } from '../../ui/test-utils'
 import { setupTaskDetailTests } from './taskDetail.testkit'
@@ -116,7 +117,7 @@ describe('WhenControl', () => {
     expect(Object.keys(await queuedFields(id, from))).toEqual(['recurrence'])
     expect((await db.tasks.get(id))!.recurrence).toBe('every thursday')
     expect(seg('repeat').querySelector('[data-preset="weekly"]')!.getAttribute('aria-checked')).toBe('true')
-    expect(seg('repeat').querySelector('[data-rule-words]')!.textContent).toContain('every thursday')
+    expect(seg('repeat').querySelector('[data-rule-words]')!.textContent).toBe('Every week on Thursday')
     from = await mark()
     await click(seg('repeat').querySelector('[data-preset="custom"]')!)
     await waitFor(() => !!seg('repeat').querySelector('input[aria-label="Repeat rule"]'), 'the rule field')
@@ -128,6 +129,40 @@ describe('WhenControl', () => {
     expect(Object.keys(fields)).toEqual(['recurrence'])
     expect((await db.tasks.get(id))!.recurrence).toBeTruthy()
     await unmount()
+  })
+
+  it('the rule field reads the interface language as quick add does, and stores the English rule (repeat-field-language)', async () => {
+    await applyLanguagePreference('nl', ['nl'])
+    try {
+      // 2026-10-14 is a Wednesday, so "elke vrijdag" is not the due date's weekday.
+      const id = await createTask({ title: 'Filter vervangen', due: { date: '2026-10-14' } })
+      const { seg, unmount } = await mount(id, 'repeat')
+      await click(seg('repeat').querySelector('[data-preset="custom"]')!)
+      await waitFor(() => !!seg('repeat').querySelector('input[aria-label]'), 'the rule field')
+      const input = seg('repeat').querySelector('input[list="recurrence-suggestions"]') as HTMLInputElement
+      expect(input.placeholder).toContain('elke werkdag')
+      let from = await mark()
+      await type(input, 'elke vrijdag')
+      await waitFor(() => !!seg('repeat').querySelector('[data-recurrence-preview]'), 'the preview of a Dutch rule')
+      await key(input, 'Enter')
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ recurrence: 'every friday' })
+      await waitFor(() => input.value === 'every friday', 'the field shows the stored rule')
+      await waitFor(() => seg('repeat').querySelector('[data-rule-words]')?.textContent === 'Elke week op vrijdag', 'the rule in Dutch above')
+      from = await mark()
+      await type(input, 'elke 3 dagen na voltooiing')
+      await key(input, 'Enter')
+      await queued(id, from)
+      expect(await queuedFields(id, from)).toEqual({ recurrence: 'every 3 days after completion' })
+      // Words that are no rule in any active language keep the previous rule.
+      await type(input, 'elke blursdag')
+      await key(input, 'Enter')
+      await waitFor(() => !!seg('repeat').querySelector('[role="alert"]'), 'the refusal')
+      expect((await db.tasks.get(id))!.recurrence).toBe('every 3 days after completion')
+      await unmount()
+    } finally {
+      await applyLanguagePreference('en', ['en-US'])
+    }
   })
 
   it('a custom every 2 weeks on <the due date’s weekday> is written as every 2 weeks, which 1.0 reads (recurrence-1-0-compatible)', async () => {

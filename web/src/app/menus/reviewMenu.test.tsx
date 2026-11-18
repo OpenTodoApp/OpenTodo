@@ -15,6 +15,7 @@ import { projectMenuGroups } from '../ProjectHeader'
 import { commands, type PaletteContext } from '../palette/registry'
 import { ActionMenu, flatItems } from './ActionMenu'
 import { maintenanceItem, reviewEveryItem } from './reviewMenu'
+import { undoEntry } from '../../test/undoEntry'
 
 let n = 0
 beforeEach(() => {
@@ -80,7 +81,7 @@ describe('choosing', () => {
     await act(async () => { item('Put in maintenance')!.click() })
     await waitFor(async () => (await db.projects.get(id))?.status === 'maintenance')
     expect(await db.outbox.count()).toBe(before + 1)
-    await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id)
+    await undoBatch((await undoEntry((e) => e.inverse.some((i) => i.entityId === id))).id)
     expect((await db.projects.get(id))?.status).toBe('')
     await r.unmount()
   })
@@ -96,7 +97,7 @@ describe('choosing', () => {
     await waitFor(async () => (await db.prefs.get(id))?.review_every === 'quarter')
     const queued = (await db.outbox.toArray()).filter((o) => o.entity === 'project_prefs')
     expect(queued.map((o) => [o.entityId, o.field, o.value])).toEqual([[id, 'review_every', 'quarter']])
-    await undoBatch((await db.assistantUndo.toArray()).at(-1)!.id)
+    await undoBatch((await undoEntry((e) => e.inverse.some((i) => i.entityId === id))).id)
     expect((await db.prefs.get(id))?.review_every).toBe('')
     await r.unmount()
   })

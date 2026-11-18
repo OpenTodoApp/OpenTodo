@@ -72,7 +72,7 @@ The editor is a page of its own: **Settings → Appearance → Theme and density
 
 - **Contrast** lists every pair of colours below AA, with both colours' names, the measured and required ratio and a sample. **Fix** on a pair keeps the colour's hue and moves only its lightness, to the nearest value at which every pair that colour is in passes. When no lightness can (a grey surface halfway between dark and light text), it moves the other colour of the pair instead and says so. **Fix all** fixes every pair as one change. A screen reader hears the number of failing pairs when it changes, and the result of each fix ("Muted text now 4.6 to 1 on Canvas").
 - **Base colours** are the canvas, surface, text and accent, and **Status colours** four optional ones (success, warning, danger, info) that are **Derived** until you set them. Each is one line: its swatch, its name with **Derived** or **Set**, and its hex value, which you can type over (<kbd>Enter</kbd> or leaving the field applies it; a value that is not a colour says so and changes nothing). A colour in a pair below AA says how many under its name, for example *2 pairs below AA*. A set status colour has **Reset**. The colours sit two to a line when there is room. The swatch opens a colour picker with swatches, a hex field, and sliders for lightness, chroma and hue. The sliders work with the arrow keys (one step), Page Up and Page Down (ten steps), and Home and End, and they are read out in words. A colour a screen cannot show keeps its lightness and hue with less chroma, and the picker says *Adjusted to a displayable colour*. Changing a base colour changes every derived colour at once. Colours you set stay as you set them.
-- **Shape and type**: the corners as **Square**, **Default**, **Round** or **Custom** (five values from 0 to 20 px), and the font (**OpenTodo Inter**, **System**, **Serif**, **Monospace**, or **Installed font** with its name). An installed font is used only on devices that have it, others show the system font, and it is never downloaded. Last comes the list text size (13, 14 or 15 px).
+- **Shape and type**: the corners as **Square**, **Default**, **Round** or **Custom** (five values from 0 to 20 px), and the font (**OpenTodo Inter**, **System**, **Serif**, **Monospace**, or **Installed font** with its name). An installed font is used only on devices that have it, others show the system font, and it is never downloaded. Then come the list text size (13, 14 or 15 px) and the **Task title weight** (**Regular**, **Medium**, **Semibold** or **Bold**): how heavy task titles are in every list, on cards and in Today, so a title stands out from its date, project and labels.
 - **Advanced** is folded, with how many colours are set and how many have warnings beside it; it opens by itself while a colour has a warning. It lists every colour of the theme in its group (surfaces, text, lines, accent, status, priorities, labels, other). Each one shows whether it is **Derived** or **Set**, its value, its worst pair ("4.2:1 on Canvas"), **Undo** for its last change and **Reset**, which makes it derived again. Each group counts its set colours and its warnings. The filter finds colours by their name in your language, their English name or their id (`muted`).
 - **About this theme**: its kind (**Light** or **Dark**), the author, the licence and notes.
 
@@ -154,7 +154,8 @@ A theme is a small JSON file (`.opentodo-theme.json`). It names a few **seeds**,
   "tokens": { "muted": "#d8dee9" },
   "bar": "#2e3440",
   "shape": { "radius": { "card": 6 } },
-  "type": { "family": "system", "list": 14 }
+  "type": { "family": "system", "list": 14 },
+  "titleWeight": 600
 }
 ```
 
@@ -176,6 +177,7 @@ A theme is a small JSON file (`.opentodo-theme.json`). It names a few **seeds**,
 | `shape.radius` | no | Corner radii in whole pixels, 0 to 20: `chip`, `control`, `card`, `surface`, `popover`. A step left out keeps OpenTodo's proportion to the nearest given step. |
 | `type.family` | no | `inter` (the bundled typeface, the default), `system`, `serif`, `mono`, or `{ "local": "Font name" }` for a font installed on the device (letters, digits, spaces and hyphens). Never a font from another host. |
 | `type.list` | no | The list text size in pixels: `13` (the default), `14` or `15`. It scales with the browser's font size. |
+| `titleWeight` | no | How heavy task titles are: `400` (the default), `500`, `600` or `700`. A version of OpenTodo from before this key keeps it and shows regular titles. |
 
 A colour is `#rrggbb` or `oklch(L C H)` with L from 0 to 1, C from 0 to 0.4 and H from 0 to 360, inside the sRGB gamut. Only `scrim` may be translucent (`#rrggbbaa` or `oklch(L C H / a)`). Nothing else is accepted, so a theme can never carry CSS, a `url()` or a reference to another value. A file is at most 16 KB. The app and the server accept and refuse exactly the same files.
 

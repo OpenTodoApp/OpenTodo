@@ -7,7 +7,7 @@
 // validator in Go; both accept and refuse exactly the files of
 // internal/themes/testdata (format.test.ts, docs/contracts.md).
 import { labToRgbRaw, lchToLab } from '../colourMath'
-import { ALPHA_TOKEN, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, type RadiusStep } from './tokens'
+import { ALPHA_TOKEN, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, TITLE_WEIGHTS, type RadiusStep } from './tokens'
 
 /** The format this app reads and writes. */
 export const THEME_FORMAT = 1
@@ -43,6 +43,8 @@ export interface ThemeDocument {
   notes?: { adapted?: Record<string, string>; text?: string }
   shape?: { radius?: Partial<Record<RadiusStep, number>> }
   type?: { family?: FontFamily; list?: (typeof LIST_SIZES)[number] }
+  /** How heavy task titles are in lists and on cards. A top-level key, so an app from before it keeps and ignores it. */
+  titleWeight?: (typeof TITLE_WEIGHTS)[number]
   [key: string]: unknown
 }
 
@@ -67,7 +69,7 @@ const SEEDS_REQUIRED = ['canvas', 'surface', 'text', 'accent'] as const
 /** How far outside 0..1 a channel may land and still count as inside the sRGB gamut (rounding of written values). */
 export const GAMUT_TOLERANCE = 0.001
 
-const KNOWN_KEYS = new Set(['$schema', 'opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type'])
+const KNOWN_KEYS = new Set(['$schema', 'opentodoTheme', 'id', 'name', 'author', 'licence', 'source', 'kind', 'seeds', 'tokens', 'bar', 'notes', 'shape', 'type', 'titleWeight'])
 
 class Refused extends Error {
   constructor(readonly code: ThemeError, readonly at: string) {
@@ -198,6 +200,7 @@ export function validateTheme(value: unknown): ThemeResult {
     if ('notes' in d) checkNotes(d.notes)
     if ('shape' in d) checkShape(d.shape)
     if ('type' in d) checkType(d.type)
+    if ('titleWeight' in d && !(TITLE_WEIGHTS as readonly unknown[]).includes(d.titleWeight)) fail('type', 'titleWeight')
     // A key a newer app adds is kept and ignored, as long as it is a plain name.
     for (const k of sorted(d)) if (!KNOWN_KEYS.has(k) && !TOP_KEY.test(k)) fail('key', k)
     return { ok: true, doc: migrate(d as ThemeDocument) }
