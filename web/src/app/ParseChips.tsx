@@ -9,6 +9,7 @@ import type { Unmatched } from '../lib/nlp/parse'
 import type { Due } from '../lib/types'
 import { Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
+import { ruleWords } from '../lib/recurrenceWords'
 import { energyChipLabel, isEnergy } from '../lib/energy'
 import { isNoPriority, priorityName, priorityShort } from '../lib/priority'
 
@@ -57,7 +58,7 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
   switch (chip.kind) {
     case 'recurrence':
       // Without a typed date the series starts on the rule's first occurrence (quick-add-recurrence D4).
-      return line?.due && !line.datedByPhrase ? `${String(chip.value)} · ${formatDate(line.due.date, 'long')}` : String(chip.value)
+      return line?.due && !line.datedByPhrase ? `${ruleWords(String(chip.value))} · ${formatDate(line.due.date, 'long')}` : ruleWords(String(chip.value))
     case 'reminder': {
       const r = chip.value as ReminderPhrase
       // Reminders are instants: the calendar date and clock of now, not the logical day (day-boundary D2).

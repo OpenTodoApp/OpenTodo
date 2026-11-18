@@ -6200,7 +6200,8 @@
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/habitRule.ts",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/frames.ts"
+    "web/src/lib/frames.ts",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
@@ -6232,10 +6233,21 @@
   ],
   "Every month": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every month on day {day}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the last day": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every other colour follows from these, unless you set it under Advanced.": [
     "web/src/app/themes/EditorSections.tsx"
@@ -6282,19 +6294,28 @@
   ],
   "Every week": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
   ],
   "Every week on {weekday}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every weekday": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every workspace": [
     "web/src/app/routines/StepCard.tsx"
+  ],
+  "Every year": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every year on {date}": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -6304,6 +6325,21 @@
   ],
   "Every {m} minutes": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Every {n, plural, one {# day} other {# days}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# month} other {# months}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# year} other {# years}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every {weekday} at {time}": [
     "web/src/lib/backups.ts"
@@ -14705,10 +14741,6 @@
   ],
   "Repeats after completion, so made a task, not a habit: {titles}": [
     "web/src/app/NotesEditor.tsx"
-  ],
-  "Repeats {rule}": [
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/assistant.ts"
   ],
   "Replace text": [
     "web/src/lib/rules/sentence.ts"
@@ -26059,6 +26091,15 @@
     "web/src/app/palette/routineCommand.ts",
     "web/src/app/routines/ProposalReview.tsx",
     "web/src/app/routines/RunHistory.tsx"
+  ],
+  "{rule} after completion": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule} until {date}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule}, {n, plural, one {# time} other {# times}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
