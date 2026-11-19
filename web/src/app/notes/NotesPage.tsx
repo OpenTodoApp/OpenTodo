@@ -53,6 +53,7 @@ import { useNoteBulk } from './NoteBulkActions'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
+import { loadNoteFormChunks } from './noteEditorChunks'
 import { graphShow } from '../../lib/notesGraphPrefs'
 import type { GraphHandle } from '../notes-graph/GraphView'
 
@@ -287,8 +288,9 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
   const list = useRef<HTMLUListElement>(null)
   const index = useRef<NoteIndex | null>(null)
 
-  // A note opened from here paints its Linked references without waiting on their chunk (linkedRefsChunk.ts).
-  useEffect(() => { void loadLinkedReferences() }, [])
+  // A note opened from here paints its form and Linked references without waiting on their
+  // chunks, so no fallback holds back the reveal (linkedRefsChunk.ts, noteEditorChunks.ts).
+  useEffect(() => { void loadLinkedReferences(); void loadNoteFormChunks() }, [])
   // On a computer the note is docked beside the list; on a phone it is the page.
   const phonePage = (!!id || !!day) && !docks
   useDockedNote(id && docks ? id : null, day && docks ? day : null)
