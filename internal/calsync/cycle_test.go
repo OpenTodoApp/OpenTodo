@@ -180,6 +180,34 @@ func TestConflictNewestChangeWins(t *testing.T) {
 	})
 }
 
+// Google's CalDAV ignores If-None-Match and answers 409 when the event exists
+// (GitHub issue 1573): a connection made again finds its earlier events.
+func TestExistingEventIsAdoptedWhenCreationAnswers409(t *testing.T) {
+	h := newHarness(t)
+	h.srv.ConflictOnExisting = true
+	h.task("alice", "t1", map[string]any{"title": "Plan", "due": map[string]string{"date": "2026-11-03", "time": "09:00"}})
+	h.task("alice", "t2", map[string]any{"title": "Call", "due": map[string]string{"date": "2026-11-04", "time": "10:00"}})
+	first := h.connect(false)
+	if n := h.cycle(first); n.Written != 2 {
+		t.Fatalf("first connection = %+v", n)
+	}
+	if err := h.w.Store.Delete(h.ctx, "alice", first.ID); err != nil {
+		t.Fatal(err)
+	}
+	h.edit("alice", "t1", map[string]any{"title": "Plan the week"})
+	c := h.connect(false)
+	n, err := h.w.Cycle(h.ctx, c)
+	if err != nil {
+		t.Fatalf("cycle: %v", err)
+	}
+	if n.Written != 2 || !strings.Contains(h.srv.Get("work", "t1.ics"), "SUMMARY:Plan the week") || len(h.srv.Members("work")) != 2 {
+		t.Fatalf("counts = %+v, members = %v\n%s", n, h.srv.Members("work"), h.srv.Get("work", "t1.ics"))
+	}
+	if n := h.cycle(h.conn(c.ID)); n.Written != 0 || n.Moved != 0 || n.Renamed != 0 {
+		t.Fatalf("second cycle = %+v", n)
+	}
+}
+
 func TestExistingEventIsAdoptedAndServerWithoutETags(t *testing.T) {
 	h := newHarness(t)
 	h.srv.NoETagOnPut = true

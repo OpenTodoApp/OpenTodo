@@ -1,0 +1,1 @@
+- **Calendar sync: a Google Calendar connection no longer stops with `http_409`.** When a task's event is already in the calendar (the connection was made again, or the server was restored from a backup), Google answers 409 instead of CalDAV's 412; the event is now taken over and updated instead of ending the sync (#1573).

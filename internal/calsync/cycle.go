@@ -340,8 +340,10 @@ func (r *cycle) write(ctx context.Context, t calfeed.FeedTask, want Snapshot, li
 		if status, href, etag, err = r.tr.create(ctx, r.target, t, opts, ""); err != nil {
 			return err
 		}
-		if status == http.StatusPreconditionFailed {
-			// It exists (a link lost in a restore): adopt it and replace it.
+		if status == http.StatusPreconditionFailed || status == http.StatusConflict && href != "" {
+			// It exists (a link lost in a restore, a connection made again):
+			// adopt it and replace it. Google ignores If-None-Match and
+			// answers 409 (GitHub issue 1573).
 			if _, etag, err = r.tr.current(ctx, href); err != nil {
 				return err
 			}

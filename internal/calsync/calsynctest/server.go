@@ -58,6 +58,10 @@ type Server struct {
 	NoSyncToken bool
 	// NoETagOnPut answers PUT without an ETag header.
 	NoETagOnPut bool
+	// ConflictOnExisting ignores If-None-Match and answers 409 to a PUT
+	// without If-Match onto an existing object, as Google's CalDAV does (it
+	// supports no If* header but If-Match).
+	ConflictOnExisting bool
 	// Prefix is where the account lives ("/dav" by default).
 	Prefix string
 
@@ -490,6 +494,13 @@ func (s *Server) object(w http.ResponseWriter, r *http.Request, c *Calendar, id,
 		if c.ReadOnly {
 			http.Error(w, "read-only", http.StatusForbidden)
 			return
+		}
+		if s.ConflictOnExisting {
+			r.Header.Del("If-None-Match")
+			if o != nil && r.Header.Get("If-Match") == "" {
+				w.WriteHeader(http.StatusConflict)
+				return
+			}
 		}
 		if !precondition(w, r, o) {
 			return

@@ -27,7 +27,7 @@ type transport interface {
 	// window reads every event of cal that touches win.
 	window(ctx context.Context, cal string, win calfeed.Window) ([]remote, error)
 	// create writes a new event for t into cal and returns its address; a
-	// 412 means one already exists there (WebDAV only). again is the address
+	// 412 or 409 means one already exists there (WebDAV only). again is the address
 	// of an event that was deleted since it was written, "" for a first write.
 	create(ctx context.Context, cal string, t calfeed.FeedTask, opts calfeed.FeedOptions, again string) (status int, href, etag string, err error)
 	// current reads the ETag of the event at href.
