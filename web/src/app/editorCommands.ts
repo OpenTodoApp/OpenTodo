@@ -3,7 +3,7 @@
 // menu, so every action is reachable from the keyboard and works the same in
 // the notes and in the comment composer. Lazy chunk only.
 import { setBlockType, toggleMark, wrapIn } from 'prosemirror-commands'
-import { wrapInList } from 'prosemirror-schema-list'
+import { liftListItem, sinkListItem, wrapInList } from 'prosemirror-schema-list'
 import type { Command } from 'prosemirror-state'
 import type { EditorView } from 'prosemirror-view'
 import { formatDate } from '../lib/dates'
@@ -114,6 +114,9 @@ export function editorCommands(): EditorCommand[] {
     { id: 'bullet', label: t('Bullet list'), icon: 'list', keywords: 'ul unordered', run: exec(wrapInBulletList) },
     { id: 'numbered', label: t('Numbered list'), icon: 'list-ordered', keywords: 'ol ordered', run: exec(wrapInList(nodes.ordered_list)) },
     { id: 'checklist', label: t('Checklist'), icon: 'list-checks', keywords: 'todo check task', run: exec(wrapInCheckList) },
+    // Tab and Shift-Tab without a keyboard (GitHub issue 1477): only where the line can move.
+    { id: 'indent', label: t('Indent'), icon: 'arrow-right', keywords: 'tab nest sink', available: (view) => sinkListItem(nodes.list_item)(view.state), run: exec(sinkListItem(nodes.list_item)) },
+    { id: 'outdent', label: t('Outdent'), icon: 'arrow-left', keywords: 'shift tab lift unnest', available: (view) => liftListItem(nodes.list_item)(view.state), run: exec(liftListItem(nodes.list_item)) },
     { id: 'table', label: t('Table'), icon: 'table', keywords: 'grid', available: (view) => !isInTable(view.state), run: exec(insertTable(2, 2)) },
     ...tableCommands(),
     { id: 'quote', label: t('Quote'), icon: 'text-quote', keywords: 'blockquote', run: exec(wrapIn(nodes.blockquote)) },

@@ -191,18 +191,6 @@ export function builderQuery(g: BGroup): string {
   return n ? formatQuery(n) : ''
 }
 
-/** Depth of a group within the root (the root is 1). */
-export function depthOf(root: BGroup, id: string): number {
-  const walk = (g: BGroup, d: number): number => {
-    if (g.id === id) return d
-    for (const it of g.items) if (it.type === 'group') {
-      const found = walk(it, d + 1)
-      if (found) return found
-    }
-    return 0
-  }
-  return walk(root, 1)
-}
 
 /** A copy of the tree with `fn` applied to the group with `id`. */
 export function updateGroup(root: BGroup, id: string, fn: (g: BGroup) => BGroup): BGroup {

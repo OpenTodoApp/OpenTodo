@@ -33,6 +33,25 @@ describe('outbox', () => {
     expect(box.waiting).toBe(0)
   })
 
+  it('drops an entry the server will never accept and sends the rest (invalid_ops, #1532)', async () => {
+    const box = new Outbox(memoryStorage())
+    box.add([
+      { id: 'e1', taskId: 't-a', title: 'a', note: 'n.md', project: null, ops: [op('a')] },
+      { id: 'e2', taskId: 't-b', title: 'b', note: 'n.md', project: null, ops: [op('b')] },
+    ])
+    const sent: string[][] = []
+    const request: Request = async (req) => {
+      const body = JSON.parse(String(req.body))
+      sent.push(body.features)
+      const answer = { applied: 1, duplicates: 0, rejected: [{ id: 'a', reason: 'invalid' }], cursor: 1, serverTime: Date.now() }
+      return { status: 200, text: JSON.stringify(answer), json: answer, headers: {}, arrayBuffer: new ArrayBuffer(0) }
+    }
+    const res = await box.push(new Client('https://t.example', 'tok', request), 'obsidian:x')
+    expect(sent[0]).toContain('invalid_ops')
+    expect(res).toMatchObject({ kind: 'pushed', sent: [{ id: 'e2' }], refused: [{ entry: { id: 'e1' }, reason: 'invalid' }] })
+    expect(box.waiting).toBe(0)
+  })
+
   it('splits a long queue into batches of whole entries', async () => {
     const box = new Outbox(memoryStorage())
     box.add(Array.from({ length: 3 }, (_, i) => ({ id: `e${i}`, taskId: `t${i}`, title: '', note: '', project: null, ops: Array.from({ length: 200 }, (_, j) => op(`${i}-${j}`)) })))

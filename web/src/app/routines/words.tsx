@@ -308,8 +308,3 @@ export function inputDefs(step: RoutineStep, names: readonly string[]): StepInpu
   const k = stepKind(step.kind)
   return names.map((n) => k?.inputs.find((d) => d.name === n)).filter((d): d is StepInput => !!d)
 }
-
-/** A small wrapper giving a label to a group of words. */
-export function Words({ children }: { children: ReactNode }) {
-  return <span className="text-body text-default">{children}</span>
-}

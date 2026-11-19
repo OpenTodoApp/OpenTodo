@@ -92,4 +92,5 @@
   "bar": "#047857", // Bar.
   // "shape": {"radius":{"chip":6,"control":7,"card":8,"surface":10,"popover":12}}, // Corners.
   // "type": {"family":"inter","list":13}, // Type.
+  // "titleWeight": 400, // Weight.
 }

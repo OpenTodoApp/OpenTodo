@@ -14,6 +14,7 @@ import { undoBatch } from '../lib/undo'
 import { click, flush, key, render, waitFor } from '../ui/test-utils'
 import { resetPanel } from './panel'
 import { TaskListView } from './TaskListView'
+import { undoCount, undoEntry } from '../test/undoEntry'
 
 beforeEach(async () => {
   await db.delete()
@@ -95,8 +96,8 @@ describe('the Completed column on a project board', () => {
     const before = await db.assistantUndo.count()
     await dragOnto(r.container.querySelector<HTMLElement>(`[data-task-id="${tiles}"]`)!, target)
     await waitFor(async () => { const x = (await db.tasks.get(tiles))!; return !x.completed_at && x.section_id === doing }, 'reopened in Doing')
-    expect(await db.assistantUndo.count()).toBe(before + 1)
-    const entry = (await db.assistantUndo.toArray()).at(-1)!
+    await undoCount(before + 1)
+    const entry = await undoEntry()
     await undoBatch(entry.id)
     const back = (await db.tasks.get(tiles))!
     expect(!!back.completed_at).toBe(true)
