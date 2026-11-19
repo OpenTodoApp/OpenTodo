@@ -64,6 +64,20 @@ export function allZones(viewer: string, inUse: readonly string[] = []): string[
 
 interface ZoneItem { zone: string; city: string; secondary: string }
 
+type DateTimeFormat = ReturnType<typeof useDateTimeFormat>
+
+/** "15:00 in New York = 21:00 your time (Berlin)" for `due` fixed (or about to be fixed) to `z`; '' without a time. */
+export function zonePreview(due: Due | null | undefined, z: string, viewer: string, dt: DateTimeFormat): string {
+  if (!due?.time) return ''
+  const fixed = setDueZone(due, z)
+  if (!fixed) return ''
+  const local = localDueOf(fixed, viewer)
+  const there = t('{time} in {city}', { time: dt.formatTime(due.time), city: zoneCity(z) })
+  if (z === viewer) return t('{there}, your zone', { there })
+  const day = local.date !== due.date ? ` (${dt.formatDate(local.date, 'compact')})` : ''
+  return t('{there} = {time}{day} your time ({city})', { there, time: dt.formatTime(local.time!), day, city: zoneCity(viewer) })
+}
+
 export interface ZoneControlProps {
   task: Task
   readOnly?: boolean
@@ -109,17 +123,7 @@ export function ZoneControl({ task, readOnly = false, viewerZone, defaultOpen = 
   const reason = t('Set a time to fix this due to a time zone')
   const text = zoneChipText(due)
 
-  // "15:00 in New York = 21:00 your time (Berlin)" for a due fixed (or about to be fixed) to `z`.
-  const preview = (z: string) => {
-    if (!due?.time) return ''
-    const fixed = setDueZone(due, z)
-    if (!fixed) return ''
-    const local = localDueOf(fixed, zone)
-    const there = t('{time} in {city}', { time: dt.formatTime(due.time), city: zoneCity(z) })
-    if (z === zone) return t('{there}, your zone', { there })
-    const day = local.date !== due.date ? ` (${dt.formatDate(local.date, 'compact')})` : ''
-    return t('{there} = {time}{day} your time ({city})', { there, time: dt.formatTime(local.time!), day, city: zoneCity(zone) })
-  }
+  const preview = (z: string) => zonePreview(due, z, zone, dt)
 
   // At the end of the Do on segment's time line (when-picker D3): the behaviour as quiet
   // text, "Floating" or the city, opening the choices. Named "Time zone: Floating", so the

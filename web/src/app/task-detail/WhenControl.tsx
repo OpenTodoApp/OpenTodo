@@ -20,7 +20,7 @@ import { useDateTimeFormat } from '../DateTimePrefsProvider'
 import { RecurrenceField } from '../RecurrenceField'
 import { RemindersField } from '../RemindersField'
 import { doOnWithUndo, parkWithUndo, setDueWithUndo } from '../undoable'
-import { ZoneControl } from './ZoneControl'
+import { ZoneControl, zonePreview } from './ZoneControl'
 import { useViewerZone } from '../useViews'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
@@ -106,7 +106,7 @@ const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home
  * line's end, the zone. Disabled until the task has a do date (with nothing chosen,
  * so the row reads as waiting), and for a reader.
  */
-function TimeOfDay({ task, readOnly, zone }: { task: Task; readOnly: boolean; zone: string }) {
+function TimeOfDay({ task, readOnly, zone, viewer }: { task: Task; readOnly: boolean; zone: string; viewer: string }) {
   const dt = useDateTimeFormat()
   const parts = dayPartsOn(useUserPrefsRow())
   const view = localDueOf(task.due, zone)
@@ -151,9 +151,10 @@ function TimeOfDay({ task, readOnly, zone }: { task: Task; readOnly: boolean; zo
               className="touch-target inline-flex min-h-7 items-center rounded-control px-2 text-meta tabular-nums text-muted transition duration-(--duration-ui) hover:bg-sunken hover:text-default dark:hover:bg-raised"
               onClick={() => write({ time: tm })}>{dt.formatTime(tm)}</button>
           ))}
-          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={zone} variant="inline" /></span>}
+          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={viewer} variant="inline" /></span>}
         </div>
       )}
+      {view && time && zone !== viewer && <p className="text-meta text-muted" data-zone-hint>{zonePreview(task.due, zone, viewer, dt)}</p>}
     </div>
   )
 }
@@ -188,14 +189,16 @@ function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolea
  * line with its zone. Clear is the popover's footer.
  */
 function DoOn({ task, readOnly }: { task: Task; readOnly: boolean }) {
-  const zone = useViewerZone()
+  const viewer = useViewerZone()
+  // A due fixed to a zone is shown and edited in that zone (zone-own-time D1, issue 1581).
+  const zone = task.due?.tz && task.due.time ? task.due.tz : viewer
   const view = localDueOf(task.due, zone)
   const setDate = (date: string | null) => act(setDueWithUndo(task.id, dueFromView(task.due, date ? { date, ...(view?.time ? { time: view.time } : {}) } : null, zone)))
   return (
     <div className="space-y-3">
       <DatePicker compact label={t('Due date')} value={view?.date ?? null} choices={quickChoices('due')} emptyText={t('tomorrow 3pm, next fri')}
         onChange={setDate} onChangeTimed={(date, time) => act(doOnWithUndo(task.id, { date, time }, zone))} />
-      <TimeOfDay task={task} readOnly={readOnly} zone={zone} />
+      <TimeOfDay task={task} readOnly={readOnly} zone={zone} viewer={viewer} />
     </div>
   )
 }

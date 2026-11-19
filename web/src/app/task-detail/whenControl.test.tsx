@@ -292,6 +292,34 @@ describe('WhenControl', () => {
       await unmount()
     })
 
+    // Issue 1581 (zone-own-time): a due fixed to another zone is shown and edited in that
+    // zone, with the viewer's time as the hint; typing the same time again changes nothing.
+    it('a due fixed to Mexico City reads and edits Mexico City time, with the viewer time as the hint', async () => {
+      const id = await createTask({ title: 'Call', due: { date: '2026-11-02', time: '20:00', tz: 'America/Mexico_City' } })
+      const { seg, unmount } = await mount(id)
+      await waitFor(() => !!timeLine(seg)?.querySelector('input'), 'the time line')
+      const input = timeLine(seg)!.querySelector('input')!
+      expect(input.value).toBe('20:00')
+      expect((seg('due').querySelector('input') as HTMLInputElement).value).not.toMatch(/3/)
+      expect(seg('due').querySelector('[data-zone-hint]')?.textContent).toBe('20:00 in Mexico City = 02:00 (3 Nov) your time (UTC)')
+      const from = await mark()
+      await type(input, '20:30')
+      await key(input, 'Enter')
+      await waitFor(async () => (await db.tasks.get(id))?.due?.time === '20:30', 'the time written')
+      expect((await db.tasks.get(id))!.due).toEqual({ date: '2026-11-02', time: '20:30', tz: 'America/Mexico_City' })
+      expect((await queuedFields(id, from)).due).toEqual({ date: '2026-11-02', time: '20:30', tz: 'America/Mexico_City' })
+      await unmount()
+    })
+
+    it('a due fixed to the viewer zone shows no hint', async () => {
+      const id = await createTask({ title: 'Call', due: { date: '2026-11-02', time: '20:00', tz: 'UTC' } })
+      const { seg, unmount } = await mount(id)
+      await waitFor(() => !!timeLine(seg)?.querySelector('input'), 'the time line')
+      expect(timeLine(seg)!.querySelector('input')!.value).toBe('20:00')
+      expect(seg('due').querySelector('[data-zone-hint]')).toBeNull()
+      await unmount()
+    })
+
     // Issue 1320: the editor sets the date, then the time, in two writes.
     it('a day picked, then a time: the default for tasks with a time is added when only that default is set', async () => {
       await db.meta.put({ key: 'userId', value: 'u1' })

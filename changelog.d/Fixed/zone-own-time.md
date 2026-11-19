@@ -1,0 +1,1 @@
+- **A task fixed to another time zone keeps the time you typed.** The task's date and time fields now show and edit the time in the task's own zone, with your own time under them, instead of showing your time next to the other zone's name ([#1581](https://github.com/OpenTodoApp/OpenTodo/issues/1581)).

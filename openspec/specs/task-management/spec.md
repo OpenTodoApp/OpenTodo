@@ -168,7 +168,7 @@ A due value MAY carry a `tz` naming an IANA time zone together with a time. Such
 - **THEN** the write is rejected as invalid and the due is unchanged
 
 ### Requirement: Display in the viewer's zone
-A zoned due SHALL be shown converted to the viewer's local time zone in every list, heading, sort order and date grouping. When the task's zone differs from the viewer's, the original wall time and zone SHALL be shown as a hint. Conversion SHALL happen on the device from local data and SHALL not require the network.
+A zoned due SHALL be shown converted to the viewer's local time zone in every list, heading, sort order and date grouping. The date and time fields of the task's own Do on editor are the exception: they SHALL show and edit the due in its own zone, with the viewer's time under them as a hint (see "Fix a due to any zone"). When the task's zone differs from the viewer's, the original wall time and zone SHALL be shown as a hint. Conversion SHALL happen on the device from local data and SHALL not require the network.
 
 #### Scenario: Viewed from another zone
 - **WHEN** a task due `09:00 Europe/Berlin` on the 11th is viewed from Los Angeles
@@ -243,7 +243,7 @@ A due fixed to a zone SHALL read its zone's city as a suffix of the Do on part (
 - **THEN** the panel shows no zone text at rest, and in the Do on segment the zone control is disabled and states that a time is needed to fix a zone
 
 ### Requirement: Fix a due to any zone
-Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
+Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. While a due is fixed to a zone other than the viewer's, the Do on editor's date and time fields SHALL show and edit its wall-clock date and time in that zone, and under them a hint SHALL say how it reads in the viewer's zone ("20:00 in Mexico City = 02:00 (3 Nov) your time (Berlin)"); a time typed there SHALL keep the zone. With the viewer's own zone, or a floating due, the fields show the viewer's time and no hint. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
 
 #### Scenario: Meeting in another city
 - **WHEN** a Berlin user with a floating due `15:00` on 2026-11-02 picks "America/New_York"
@@ -256,6 +256,10 @@ Choosing a zone from the zone control SHALL keep the wall-clock date and time cu
 #### Scenario: Recently used zone
 - **WHEN** the user picked "Asia/Tokyo" on a previous task and opens the zone control of another task
 - **THEN** "Tokyo" is listed right after the viewer's own zone
+
+#### Scenario: Editing the time of a due in another zone
+- **WHEN** a Berlin user's task is due `20:00 America/Mexico_City` and they open its Do on editor
+- **THEN** the time field reads `20:00` with the hint "20:00 in Mexico City = 03:00 (3 Nov) your time (Berlin)", and typing `20:30` stores `20:30 America/Mexico_City`
 
 ### Requirement: Who completed a task
 A task SHALL record in `completed_by` the account id of whoever completed it, or null when unknown. Every write that completes a task SHALL set it in the same batch as the completion time, and every reopen SHALL clear it. Server writes on a user's behalf SHALL set it to that user; public link ticks SHALL record null. It SHALL be an ordinary, unencrypted task field: written offline, synced, converged by last-writer-wins with the completion time, and exported.
