@@ -75,9 +75,9 @@ export async function heldCount(): Promise<number> {
 
 /**
  * Moves the held ops back into the outbox (their original clocks), to be sent again.
- * A held op that can no longer change what anyone sees is dropped instead (#1532):
- * its field was written again since, on this device or another (a newer clock on
- * the row), or its row is in the Trash. Returns how many were queued again.
+ * A held op whose field was written again since, on this device or another (a
+ * newer clock on the row), is dropped instead (#1532). One whose row is in the
+ * Trash stays held until the row is restored. Returns how many were queued again.
  */
 export async function requeueHeld(): Promise<number> {
   // Most syncs hold nothing: they open no transaction, and one with held ops
@@ -92,10 +92,15 @@ export async function requeueHeld(): Promise<number> {
     const held = await getMeta<Op[]>(HELD_KEY, [])
     if (held.length === 0) return 0
     const live: Op[] = []
+    const kept: Op[] = []
     const locked = new Set(before.map((o) => o.entity))
-    for (const op of held) if (!(await superseded(op, locked))) live.push(op)
+    for (const op of held) {
+      const fate = await fateOf(op, locked)
+      if (fate === 'send') live.push(op)
+      else if (fate === 'keep') kept.push(op)
+    }
     if (live.length) await db.outbox.bulkAdd(live)
-    await setMeta(HELD_KEY, [])
+    await setMeta(HELD_KEY, kept)
     return live.length
   })
 }
@@ -104,12 +109,17 @@ function isEntity(e: string): e is Entity {
   return (ENTITIES as readonly string[]).includes(e)
 }
 
-async function superseded(op: Op, tables: ReadonlySet<string>): Promise<boolean> {
+/**
+ * What happens to a held op now: offered again, dropped because a newer write of its
+ * field wins, or kept held while its row is in the Trash, so a restore does not lose it.
+ */
+async function fateOf(op: Op, tables: ReadonlySet<string>): Promise<'send' | 'drop' | 'keep'> {
   // An op held after the first read may name a table outside the transaction: it goes again.
-  if (!isEntity(op.entity) || !tables.has(op.entity)) return false
+  if (!isEntity(op.entity) || !tables.has(op.entity)) return 'send'
   const row = await tableOf(op.entity).get(op.entityId)
-  if (!row) return false
-  if (op.field !== 'deleted_at' && row.deleted_at != null) return true
+  if (!row) return 'send'
   const c = ((row._clock ?? {}) as Clock)[op.field]
-  return !!c && wins(c.ts, c.device, op)
+  if (c && wins(c.ts, c.device, op)) return 'drop'
+  if (op.field !== 'deleted_at' && row.deleted_at != null) return 'keep'
+  return 'send'
 }

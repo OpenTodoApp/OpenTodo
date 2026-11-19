@@ -29,7 +29,7 @@ describe('held ops (client-sync-robustness)', () => {
     expect((await db.outbox.toArray()).map((o) => o.id).sort()).toEqual(['a', 'b'])
   })
 
-  it('drops a held op whose field was written again or whose row is in the Trash (#1532)', async () => {
+  it('drops a held op whose field was written again; keeps one whose row is in the Trash (#1532)', async () => {
     const clock = (ts: number, device = 'd') => ({ ts, device })
     await db.tasks.bulkPut([
       { id: 't1', title: 'newer', _clock: { title: clock(5) } },
@@ -38,9 +38,23 @@ describe('held ops (client-sync-robustness)', () => {
     ] as never)
     const held = (id: string, entityId: string): Op => ({ ...op(id), entityId })
     await holdOps([held('a', 't1'), held('b', 't2'), held('c', 't3'), held('d', 'missing')], ['a', 'b', 'c', 'd'].map((id) => ({ id, reason: 'unknown_field' })))
-    // t1's title has a newer write, t3 is in the Trash: only b and d go again.
+    // t1's title has a newer write: a is dropped. t3 is in the Trash: c stays held. b and d go again.
     expect(await requeueHeld()).toBe(2)
     expect((await db.outbox.toArray()).map((o) => o.id).sort()).toEqual(['b', 'd'])
+    expect((await getMeta<Op[]>('heldOps', [])).map((o) => o.id)).toEqual(['c'])
+  })
+
+  it('a held op of a trashed row is offered again once the row is restored', async () => {
+    const clock = (ts: number, device = 'd') => ({ ts, device })
+    await db.tasks.put({ id: 't1', title: 'edited', deleted_at: 9, _clock: { title: clock(1), deleted_at: clock(9) } } as never)
+    await holdOps([op('a')], [{ id: 'a', reason: 'limit_storage' }])
+    // In the Trash: nothing is offered, the change stays on the device.
+    expect(await requeueHeld()).toBe(0)
+    expect(await heldCount()).toBe(1)
+    // Restored from the Trash: the edited title goes to the server.
+    await db.tasks.update('t1', { deleted_at: null, _clock: { title: clock(1), deleted_at: clock(10) } } as never)
+    expect(await requeueHeld()).toBe(1)
+    expect((await db.outbox.toArray()).map((o) => o.id)).toEqual(['a'])
     expect(await heldCount()).toBe(0)
   })
 })
