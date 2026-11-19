@@ -118,7 +118,9 @@ Signing out of OpenTodo always ends the OpenTodo session only. With **Sign out o
 
 ## In the Android and iPhone apps
 
-The [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) and the [iPhone app](../ios-app.md#single-sign-on-and-login-walls) complete **Sign in with &lt;name&gt;** inside the app: the provider's page opens in the app, with its address shown above it, and sends the person back signed in. Some providers refuse sign-in inside an app's web view (Google answers "Error 403: disallowed_useragent"); with those, people sign in to the apps with their password or a passkey.
+In the [Android app](../android-app.md#behind-a-login-page-pangolin-authelia-and-others) and the [iPhone app](../ios-app.md#single-sign-on-and-login-walls), **Sign in with &lt;name&gt;** opens the provider's page in the system's sign-in sheet (a Custom Tab on Android, Safari's sheet on iPhone) and brings the person back to the app signed in. The sheet shares the browser's cookies, so someone already signed in to the provider there only picks the account. This is what lets providers that refuse sign-in inside an app work, Google among them ("Error 403: disallowed_useragent"). Linking the provider from **Settings → Account → Security → Linked accounts** in an app works the same way, and links it to the account signed in in the app.
+
+Nothing needs configuring: the redirect URI stays the one above, and the server tells the apps it supports this in its health answer. Behind a reverse proxy, let `/api/v1/health` through. A server older than this (or one whose health answer the apps can't read) keeps the provider's page inside the app's web view, where such providers still refuse.
 
 ## Offline
 

@@ -123,6 +123,7 @@ var publicRouteClasses = map[string]publicClass{
 	"GET " + mcpAuthorizePath:     pubBrowserStep,
 	"GET /api/v1/auth/oidc/start": pubBrowserStep,
 	"GET " + oidcCallbackPath:     pubBrowserStep,
+	"POST " + appSSOSessionPath:   pubSessionWrite,
 }
 
 // tokenCredential are the handler-authenticated routes whose credential is an
