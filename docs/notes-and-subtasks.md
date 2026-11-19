@@ -34,6 +34,8 @@ To turn an existing task into a subtask, select it and press <kbd>Tab</kbd>: it 
 
 Completing a parent completes all its open subtasks too. When you tick off the last open subtask, OpenTodo asks whether to complete the parent as well; press <kbd>Enter</kbd> for yes.
 
+In a terminal: [`ot` subtasks](cli.md#subtasks).
+
 ## Wait for another task
 
 Some tasks can't start until another is done: you can't book flights before the dates are confirmed. Open the task, choose **Add › Blocked by** (or select it in a list and press <kbd>b</kbd>) and pick the tasks it waits for. The list offers open tasks you can link: the task itself, tasks that already wait for it and tasks shared differently are left out, so you can't make two tasks wait for each other.

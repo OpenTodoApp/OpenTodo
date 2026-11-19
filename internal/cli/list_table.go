@@ -8,12 +8,13 @@ import (
 // renderTasks prints tasks as the list table: ID, priority, due, the deadline
 // and origin columns when a listed task has one, project and title.
 func (a *App) renderTasks(tasks []task, projects []project, all []task, today string) {
-	a.renderTable(tasks, projects, all, today, nil)
+	a.renderTable(tasks, projects, all, today, nil, nil)
 }
 
 // renderTable is renderTasks with the urgency score as a URG column when scores
-// is set (`ot list --sort urgency`, urgency-sort).
-func (a *App) renderTable(tasks []task, projects []project, all []task, today string, scores map[string]float64) {
+// is set (`ot list --sort urgency`, urgency-sort). titles, when set, replaces
+// the TITLE cell of the tasks it names (the nested list, cli-subtasks).
+func (a *App) renderTable(tasks []task, projects []project, all []task, today string, scores map[string]float64, titles map[string]string) {
 	byID := map[string]project{}
 	for _, p := range projects {
 		byID[p.ID] = p
@@ -73,6 +74,9 @@ func (a *App) renderTable(tasks []task, projects []project, all []task, today st
 		title := t.Title
 		if t.CompletedAt != nil {
 			title = "[done] " + title
+		}
+		if nested, ok := titles[t.ID]; ok {
+			title = nested
 		}
 		cells := []cell{{text: shortID(t.ID), style: styleCyan}}
 		if scores != nil {

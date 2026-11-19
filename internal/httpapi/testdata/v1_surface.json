@@ -23,6 +23,7 @@
           "no-span": "bool",
           "note": "string",
           "origin-url": "string",
+          "parent": "string",
           "part": "string",
           "priority": "int",
           "project": "string",
@@ -75,6 +76,9 @@
         "args": {
           "ref": "required"
         },
+        "flags": {
+          "subtasks": "bool"
+        },
         "output": {
           "(type)": "any"
         }
@@ -96,6 +100,7 @@
           "no-span": "bool",
           "note": "string",
           "origin-url": "string",
+          "parent": "string",
           "part": "string",
           "priority": "int",
           "project": "string",
@@ -104,6 +109,7 @@
           "sector": "string",
           "span": "bool",
           "start": "string",
+          "subtasks": "bool",
           "time": "string",
           "title": "string"
         },
@@ -252,6 +258,7 @@
           "completed-before": "string",
           "inbox": "bool",
           "limit": "int",
+          "parent": "string",
           "project": "string",
           "sector": "string",
           "someday": "bool",
@@ -535,6 +542,7 @@
           "ref": "required"
         },
         "flags": {
+          "subtasks": "bool",
           "yes": "bool"
         },
         "output": {
@@ -1485,6 +1493,7 @@
         "reminders[].offset_minutes": "integer|null",
         "reminders[].radius_m": "integer|null",
         "reminders[].task_id": "string",
+        "subtasks": "array",
         "task": "ref:task"
       },
       "task_result": {
