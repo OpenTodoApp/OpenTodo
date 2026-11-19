@@ -54,8 +54,9 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	// A client that handles a refusal per op (sync-invalid-op-alone D1) gets an op the
 	// server cannot accept refused alone; the others keep the whole-batch 400.
 	var invalid []opsync.Rejection
+	var invalidOps []opsync.Op
 	if in.supports("invalid_ops") && len(in.Ops) <= opsync.MaxOpsPerRequest {
-		in.Ops, invalid = opsync.SplitInvalid(in.Ops)
+		in.Ops, invalid, invalidOps = opsync.SplitInvalid(in.Ops)
 	} else {
 		for _, op := range in.Ops {
 			if opsync.ReservedDevice(op.Device) {
@@ -66,7 +67,7 @@ func (s *Server) handleSync(w http.ResponseWriter, r *http.Request) {
 	}
 	uid := userFrom(r.Context()).ID
 	s.recordTZOffset(r.Context(), uid, in.TZOffset)
-	applyCtx := r.Context()
+	applyCtx := opsync.WithInvalidRefused(r.Context(), invalidOps)
 	if in.supports("clock_skew") {
 		applyCtx = opsync.WithClockSkewRefusal(applyCtx)
 	}

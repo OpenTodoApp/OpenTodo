@@ -21,7 +21,7 @@ const dir = join(__dirname, '../../../../internal/themes/testdata/template')
 /** English notes, fixed, so the shared files do not follow a catalogue's wording. */
 const EN: TemplateText = {
   header: ['OpenTodo theme template.', 'Lines that start with // are notes.'],
-  key: { opentodoTheme: 'Keep 1.', id: 'An id.', name: 'A name.', author: 'You.', licence: 'SPDX.', source: 'Text.', kind: 'light or dark.', bar: 'Bar.', notes: 'Notes.', shape: 'Corners.', type: 'Type.' },
+  key: { opentodoTheme: 'Keep 1.', id: 'An id.', name: 'A name.', author: 'You.', licence: 'SPDX.', source: 'Text.', kind: 'light or dark.', bar: 'Bar.', notes: 'Notes.', shape: 'Corners.', type: 'Type.', titleWeight: 'Weight.' },
   seeds: 'Base colours.',
   statusSeeds: 'Status colours.',
   seed: (s) => `The ${s} seed.`,

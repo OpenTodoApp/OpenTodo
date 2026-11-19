@@ -231,6 +231,8 @@
   --duration-moment: 400ms;
   --size-row: 36px;
   --ot-text-list: 0.8125rem;
+  /* The weight of task titles in rows and on cards; a theme may raise it (theme-title-weight). */
+  --ot-title-weight: 400;
   --ot-text-hint: 0.71875rem;
   --ot-text-meta: 0.78125rem;
   --ot-text-prose: 0.9375rem;
@@ -1401,7 +1403,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   [data-row-meta="row"] { display: contents; }
   /* On the title's first baseline, also when the title takes two (task-list-width D1). */
   [data-row-props] {
-    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 6.5rem; --slot-assignee: 2rem;
+    --slot-project: 0rem; --slot-labels: 7.625rem; --slot-estimate: 4.75rem; --slot-date: 7.5rem; --slot-assignee: 2rem;
     grid-area: 1 / 2; display: grid; align-items: baseline; column-gap: 0; white-space: nowrap;
     grid-template-columns: [project] var(--slot-project) [labels] var(--slot-labels) [estimate] var(--slot-estimate) [date] var(--slot-date) [assignee] var(--slot-assignee);
   }
@@ -1415,6 +1417,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   /* `clip` keeps a cut value's text baseline (a scroll container's is its bottom edge), so every slot sits on the title's baseline. */
   [data-row-cell] .truncate { overflow: clip; }
   [data-row-cell="labels"] [data-label-chip] > .truncate { min-width: 0; }
+  /* A date wider than its slot (a part of the day after the date words) ends in an ellipsis. */
+  [data-row-cell] [data-date] > .truncate { min-width: 0; }
   /* Reserve the slot while the code that fits the labels loads. */
   [data-row-label-fallback] { visibility: hidden; }
   /* The trailing row actions can overlap the slot when the later slots are empty. */
@@ -1503,6 +1507,9 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    wrapped onto as many lines as it takes, instead of two lines and an ellipsis. Outside
    the layers, so it wins over the title's clamp at every width. */
 :root[data-titles="full"] [data-row-title] { -webkit-line-clamp: none; line-clamp: none; }
+/* A theme may make task titles heavier (theme-title-weight); 400 without one. In the
+   components layer, so a weight utility on a title still wins. */
+@layer components { [data-row-title] { font-weight: var(--ot-title-weight); } }
 
 /* Titles on a phone (OpenSpec change phone-titles-everywhere): the one-line titles of the
    lists that are not the task row (Notes, the calendar's agendas, Close the day, the

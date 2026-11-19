@@ -73,6 +73,8 @@ The tag runs the full CI matrix (`.github/workflows/ci.yml`: every binary, the W
 
 **Approve the web app's signature.** The `web-sign` job (Web app signature) waits in the protected `web-signing` environment until the maintainer approves it: open the run, **Review deployments**, tick `web-signing`, **Approve and deploy**. It signs the web app's file list with `WEB_SIGNING_KEY` after checking every file and that the version matches the tag; the binaries and the image are built around what it signed, and the image job checks the files the image serves against the list. Without the secret (before the keys exist) it warns and passes the release on unsigned ([Signed app code](docs/security/signed-app.md)).
 
+**Approve the release keys.** The jobs that read a release key wait in the `signing` environment the same way: `android-sign` (the signed Android APK and AAB, before the release), and `claude-plugin` and `obsidian-plugin` (after it). Approve each under **Review deployments**. A manual **Promote stable** run waits in the `promote` environment.
+
 Only when every gate passes:
 
 - the image is pushed to `ghcr.io/opentodoapp/opentodo` as `0.15.0`, `0.15` and `stable`, signed with its SBOM and provenance;

@@ -320,17 +320,6 @@ export function serverPreview(r: RoutineStepRecord): Preview {
   return { state: 'effect', text: r.status === 'ok' ? t('Would run') : t('Would not run') }
 }
 
-/** Titles a server preview carries (tasks created by the test have no local row). */
-export function serverTitles(records: readonly RoutineStepRecord[]): Map<string, string> {
-  const out = new Map<string, string>()
-  for (const r of records) {
-    const p = r.preview as unknown
-    const list = Array.isArray(p) ? p : p && typeof p === 'object' ? [p] : []
-    for (const x of list as { id?: string; title?: string; name?: string }[]) if (x?.id && (x.title || x.name)) out.set(x.id, (x.title || x.name)!)
-  }
-  return out
-}
-
 /** The lines a card shows for a value: at most five items, and how many more. */
 export function previewLines(v: StepValue, title: (id: string) => string, project: (id: string) => string): { items: string[]; more: number; single?: string } {
   switch (v.type) {

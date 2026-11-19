@@ -73,7 +73,7 @@ describe('appearance.js with a cached theme', () => {
   const palette = (kind: 'light' | 'dark'): AppliedTheme => toApplied(deriveTheme({
     opentodoTheme: 1, id: `test-${kind}`, name: 'Test', author: '', licence: '', kind,
     seeds: kind === 'dark' ? { canvas: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0' } : { canvas: '#fdf6e3', surface: '#fffdf5', text: '#30363d', accent: '#268bd2' },
-    bar: kind === 'dark' ? '#2e3440' : '#268bd2', shape: { radius: { card: 3 } }, type: { family: 'mono', list: 15 },
+    bar: kind === 'dark' ? '#2e3440' : '#268bd2', shape: { radius: { card: 3 } }, type: { family: 'mono', list: 15 }, titleWeight: 600,
   }), 'h')
   const style = () => document.getElementById('ot-theme')?.textContent ?? null
 

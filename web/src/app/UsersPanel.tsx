@@ -25,9 +25,8 @@ import { t } from '../lib/i18n'
 import { ACCOUNT_ROLE_LABEL } from '../lib/roleNames'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
 import { copyText } from '../lib/clipboard'
+import { ACCOUNT_CHANGED_EVENT } from './accountChanged'
 
-/** Dispatched after the viewer's own role changed (ownership transfer): the app re-reads its profile. */
-export const ACCOUNT_CHANGED_EVENT = 'opentodo:account-changed'
 
 export type UsersDialog =
   | { kind: 'delete'; user: AdminUser }

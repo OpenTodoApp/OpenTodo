@@ -15,6 +15,13 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 	if err := s.checkReach(ctx, userID, ops); err != nil {
 		return ApplyResult{}, err
 	}
+	// Ops refused as invalid before the batch get their fields' server values back
+	// like any refused op (invalid-op-ends D1); never for a request limited to
+	// workspaces, whose reach those ops were not checked against.
+	pre, _ := ctx.Value(invalidKey{}).([]Op)
+	if reachOf(ctx) != nil {
+		pre = nil
+	}
 	if r := reachOf(ctx); r != nil {
 		defer r.stale()
 	}
@@ -57,6 +64,7 @@ func (s *Service) apply(ctx context.Context, userID string, ops []Op, strict boo
 			return b.res, err
 		}
 	}
+	b.refused = append(b.refused, pre...)
 	return b.finish(guard)
 }
 

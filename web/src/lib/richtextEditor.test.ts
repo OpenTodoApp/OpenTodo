@@ -3,7 +3,7 @@ import { TextSelection, type EditorState, type Transaction } from 'prosemirror-s
 import type { EditorView } from 'prosemirror-view'
 import * as Y from 'yjs'
 import { activeBody, DEFAULT_BODY, encodeDoc, insertModel, MAX_DOC_CHARS, newDoc, renderMarkdown, toModel, type RNode } from './richtext'
-import { applyBody, createState, linkCommand, markdownSlice, modelToPm, pmToModel, schema, toggleCheck, wrapInCheckList, writeBody, type EditorHooks } from './richtextEditor'
+import { applyBody, createState, linkCommand, markdownSlice, modelToPm, pmToModel, schema, toggleCheck, wrapInBulletList, wrapInCheckList, writeBody, type EditorHooks } from './richtextEditor'
 
 const p = (text: string): RNode => ({ type: 'paragraph', attrs: {}, runs: [{ text, marks: {} }] })
 const hooks = (size = () => 0): EditorHooks => ({ askLink: () => null, onEscape: () => {}, size })
@@ -95,6 +95,22 @@ describe('notes editor core', () => {
     expect(renderMarkdown(pmToModel(state.doc))).toBe('- [ ] buy milk')
     toggleCheck(state, (tr) => (state = state.apply(tr)))
     expect(renderMarkdown(pmToModel(state.doc))).toBe('- [x] buy milk')
+  })
+
+  it('Bullet list turns a check list back into a bullet list (GitHub issue 1477)', () => {
+    let state = createState([p('buy milk'), p('bread')], hooks())
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 1, state.doc.content.size - 1)))
+    wrapInCheckList(state, (tr) => (state = state.apply(tr)))
+    toggleCheck(state, (tr) => (state = state.apply(tr)))
+    expect(renderMarkdown(pmToModel(state.doc))).toBe('- [x] buy milk\n- [ ] bread')
+    // From the caret in one item: the whole list loses its checkboxes, the text stays.
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 4)))
+    expect(wrapInBulletList(state, (tr) => (state = state.apply(tr)))).toBe(true)
+    expect(renderMarkdown(pmToModel(state.doc))).toBe('- buy milk\n- bread')
+    // Outside a list it wraps the line as before.
+    let plain = createState([p('eggs')], hooks())
+    wrapInBulletList(plain, (tr) => (plain = plain.apply(tr)))
+    expect(renderMarkdown(pmToModel(plain.doc))).toBe('- eggs')
   })
 
   describe('keyboard and input rules (headless view)', () => {

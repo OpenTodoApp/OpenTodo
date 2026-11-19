@@ -1,6 +1,6 @@
 import { liveQuery, type Subscription } from 'dexie'
 import { useSyncExternalStore } from 'react'
-import { attachmentCounts } from '../lib/attachments'
+import { attachmentCounts, noteAttachmentCounts } from '../lib/attachments'
 import { commentCounts } from '../lib/comments'
 import { membershipMap } from '../lib/sharing'
 
@@ -35,6 +35,7 @@ function sharedCounts<V = number>(query: () => Promise<Map<string, V>>) {
 
 const comments = sharedCounts(commentCounts)
 const attachments = sharedCounts(attachmentCounts)
+const noteAttachments = sharedCounts(noteAttachmentCounts)
 const memberships = sharedCounts(membershipMap)
 const noSubscribe = () => () => undefined
 
@@ -46,6 +47,11 @@ export function useCommentCount(taskId: string): number {
 /** Live number of attachments on a task (0 when none; OpenSpec attachments). */
 export function useAttachmentCount(taskId: string): number {
   return useSyncExternalStore(attachments.subscribe, () => attachments.get(taskId) ?? 0, () => 0)
+}
+
+/** Live number of attachments on a standalone note (0 when none; note-attachments). */
+export function useNoteAttachmentCount(noteId: string): number {
+  return useSyncExternalStore(noteAttachments.subscribe, () => noteAttachments.get(noteId) ?? 0, () => 0)
 }
 
 /**

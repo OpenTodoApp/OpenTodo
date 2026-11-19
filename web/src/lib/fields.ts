@@ -43,17 +43,6 @@ export function parseOptions(options: string | null | undefined): string[] {
 }
 
 
-/** Live definitions by lower-cased name, across every project (filter terms). */
-export function fieldsByName(defs: readonly FieldDef[]): Map<string, FieldDef[]> {
-  const out = new Map<string, FieldDef[]>()
-  for (const d of defs) {
-    if (d.deleted_at) continue
-    const k = d.name.trim().toLocaleLowerCase()
-    out.set(k, [...(out.get(k) ?? []), d])
-  }
-  return out
-}
-
 /** A task's values (rows synced before the change hold none). */
 export function taskFields(task: Pick<Task, 'fields'>): Record<string, FieldValue> {
   return task.fields ?? {}

@@ -21,7 +21,7 @@ The control at the top of the sidebar switches it between **Tasks** (Inbox, Toda
 
 Notes you pin come first, under **Pinned**; every other note follows under **Recent**, the latest change first unless you [sort them](notes-sort.md), 50 at a time; **Show more** adds the next 50, and the count beside it says how many there are in all. A note counts as changed when its text changes: moving a task to another day does not move its note up the list.
 
-Each note is one line: its kind (task, project or standalone note), its title, where it lives (its project, or Inbox for a task without one), its labels and when it last changed. On a phone a long title takes two lines, above the time and place. A completed task and an archived project are marked. Open a row: a task's note opens the task, a project's note opens the project with its note ready, and a standalone note opens beside the list, or as its own page on a phone.
+Each note is one line: its kind, its title (with a paperclip and a count when it holds files), where it lives (its project, or Inbox), its labels and when it last changed. On a phone a long title takes two lines, above the time and place. A completed task and an archived project are marked. Open a row: a task's note opens the task, a project's note opens the project with its note ready, and a standalone note opens beside the list, or as its own page on a phone.
 
 Narrow the list with tokens such as `in:Renovation` or `@errand`: see [Narrow notes with tokens](note-tokens.md).
 
