@@ -3,7 +3,7 @@
 // hour, stored changes). Unlike a refusal on the merits, the device keeps its
 // change: the op is held here, the row stays as edited and unsynced, the rest
 // of the outbox keeps syncing, and held ops are sent again later.
-import { db, getMeta, setMeta, syncedTables, tableOf } from './db'
+import { db, getMeta, setMeta, tableOf } from './db'
 import { wins } from './hlc'
 import { t } from './i18n/catalog'
 import { ENTITIES, type Clock, type Entity, type Op, type Rejection } from './types'
@@ -80,22 +80,34 @@ export async function heldCount(): Promise<number> {
  * the row), or its row is in the Trash. Returns how many were queued again.
  */
 export async function requeueHeld(): Promise<number> {
-  // Read inside the transaction: ops held between a read outside it and the
-  // clear below would otherwise be dropped without ever being sent.
-  return db.transaction('rw', [db.outbox, db.meta, ...syncedTables()], async () => {
+  // Most syncs hold nothing: they open no transaction, and one with held ops
+  // locks only the tables of its rows. An op held after this read is offered at
+  // the next retry.
+  const before = await getMeta<Op[]>(HELD_KEY, [])
+  if (before.length === 0) return 0
+  const tables = [...new Set(before.map((o) => o.entity).filter(isEntity))].map(tableOf)
+  return db.transaction('rw', [db.outbox, db.meta, ...tables], async () => {
+    // Read again inside the transaction: ops held between the read above and
+    // the clear below would otherwise be dropped without ever being sent.
     const held = await getMeta<Op[]>(HELD_KEY, [])
     if (held.length === 0) return 0
     const live: Op[] = []
-    for (const op of held) if (!(await superseded(op))) live.push(op)
+    const locked = new Set(before.map((o) => o.entity))
+    for (const op of held) if (!(await superseded(op, locked))) live.push(op)
     if (live.length) await db.outbox.bulkAdd(live)
     await setMeta(HELD_KEY, [])
     return live.length
   })
 }
 
-async function superseded(op: Op): Promise<boolean> {
-  if (!(ENTITIES as readonly string[]).includes(op.entity)) return false
-  const row = await tableOf(op.entity as Entity).get(op.entityId)
+function isEntity(e: string): e is Entity {
+  return (ENTITIES as readonly string[]).includes(e)
+}
+
+async function superseded(op: Op, tables: ReadonlySet<string>): Promise<boolean> {
+  // An op held after the first read may name a table outside the transaction: it goes again.
+  if (!isEntity(op.entity) || !tables.has(op.entity)) return false
+  const row = await tableOf(op.entity).get(op.entityId)
   if (!row) return false
   if (op.field !== 'deleted_at' && row.deleted_at != null) return true
   const c = ((row._clock ?? {}) as Clock)[op.field]
