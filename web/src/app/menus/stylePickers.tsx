@@ -2,7 +2,7 @@
 // (OpenSpec change icons-and-section-style). In a menu they render as the icon grid
 // and the colour swatches (step items); the command palette, which lists every menu
 // item as a command, runs them as these Combobox pickers instead.
-import { CatalogueIcon, categoryLabel, HUES, loadCatalogue, searchIcons, type CatalogueEntry } from '../../ui'
+import { CatalogueIcon, categoryLabel, HUES, hueFor, loadCatalogue, searchIcons, type CatalogueEntry } from '../../ui'
 import { hueName } from '../../lib/colourNames'
 import { t } from '../../lib/i18n'
 import type { PickerSpec } from './ActionMenu'
@@ -41,7 +41,7 @@ export function colourPickerSpec(current: string | null | undefined, onPick: (he
     getLabel: (i) => i.name,
     pinned: ['none'],
     selected: [current ?? 'none'],
-    renderLeading: (i) => (i.hex ? <span className="block h-3 w-3 rounded-full" style={{ backgroundColor: i.hex }} /> : <span className="block h-3 w-3 rounded-full border border-dashed border-default" />),
+    renderLeading: (i) => (i.hex ? <span className="block h-3 w-3 rounded-full bg-hue-solid" data-hue={hueFor(i.hex)} /> : <span className="block h-3 w-3 rounded-full border border-dashed border-default" />),
     onPick: (i) => { void onPick(i.hex) },
   }
 }

@@ -369,7 +369,7 @@ describe('one row language (rows-v2)', () => {
     const r = await row({ project_id: project.id }, { showProject: true, project })
     const cell = r.container.querySelector('[data-row-cell="project"]')!
     expect(cell.querySelector('svg')).toBeNull()
-    expect(cell.querySelector<HTMLElement>('.rounded-full')?.style.backgroundColor).toBe(project.color)
+    expect(cell.querySelector<HTMLElement>('.rounded-full.bg-hue-solid')?.dataset.hue).toBe('red')
     expect(spokenText(cell)).toBe(project.name)
     await r.unmount()
   })
