@@ -12,7 +12,7 @@ import { priorityName } from '../lib/priority'
 import type { LabelRef, ProjectRef } from '../lib/nlp'
 import { t } from '../lib/i18n'
 import { energyName } from '../lib/energy'
-import { Icon } from '../ui'
+import { hueFor, Icon } from '../ui'
 
 interface Item { key: string; label: string; secondary?: string; color?: string; level?: number; create?: boolean; run: () => Promise<string> | string }
 
@@ -149,7 +149,7 @@ export function useTokenSuggest({ input, value, setValue, projects, labels, enab
               ? <Icon name="zap" size="xs" className="text-faint" />
               : at!.kind === 'priority'
               ? <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full border-[1.5px] ${PRIORITY_RING[item.level ?? 4]}`} />
-              : <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color ?? 'var(--ot-faint)' }} />}
+              : <span aria-hidden="true" data-hue={item.color ? hueFor(item.color) : undefined} className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${item.color ? 'bg-hue-solid' : 'bg-faint'}`} />}
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           {item.secondary && <span className="shrink-0 truncate text-meta text-faint">{item.secondary}</span>}
         </li>

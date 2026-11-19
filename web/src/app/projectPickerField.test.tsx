@@ -60,7 +60,7 @@ describe('ProjectPickerField', () => {
     expect(option('Work').querySelector('[data-icon="briefcase"][aria-hidden="true"]')).not.toBeNull()
     expect(option('No project').querySelector('[data-icon="inbox"]')).not.toBeNull()
     for (const name of ['Home', 'New']) {
-      expect(option(name).querySelector('.rounded-full[style*="background-color"][aria-hidden="true"]')).not.toBeNull()
+      expect(option(name).querySelector('.rounded-full.bg-hue-solid[data-hue][aria-hidden="true"]')).not.toBeNull()
       expect(option(name).querySelector('svg')).toBeNull()
     }
     await view.unmount()

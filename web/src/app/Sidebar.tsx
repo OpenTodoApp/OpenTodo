@@ -1,6 +1,6 @@
 import { useHabitsEnabled } from '../lib/habitPrefs'
 import { useWorkspaceFilter } from './useWorkspaceFilter'
-import { Button, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
+import { Button, hueFor, Icon, type IconName, MenuItem, MenuSeparator, pushOverlay, ReadAs, SIDEBAR_GROUP_ACTION, SIDEBAR_HEADING, SidebarGroup, SidebarGroupAction, SidebarHeader, SidebarItem, StatusDot, Menu, Tooltip, useMediaQuery, useScrollEdges } from '../ui'
 import { ProjectMark } from './ProjectMark'
 // ProjectHeader imports through this re-export to preserve the entry chunk split (see the bundle budget).
 export { ProjectMark } from './ProjectMark'
@@ -576,7 +576,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
             <div key={v.id} data-menu-row className={`group flex items-center${countsAll ? ' ui-swap-row' : ''}`}>
               <SidebarItem data-view-id={v.id} active={active} collapsed={collapsed} onClick={() => navigate({ view: 'view', id: v.id })} label={v.name}
                 data-find-active={isActiveMatch('view', v.id) || undefined} className={isActiveMatch('view', v.id) ? 'ring-2 ring-focus' : undefined}
-                leading={<span style={{ color: v.color }}><ViewMark view={v} /></span>}
+                leading={<span data-hue={v.color ? hueFor(v.color) : undefined} className={v.color ? 'text-hue-solid' : undefined}><ViewMark view={v} /></span>}
                 count={!isDashboard(v) && c && c.ok ? c.count : undefined} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(c && c.ok ? c.count : undefined)}
                 badge={!isDashboard(v) && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
               {!collapsed && <ViewMenu view={v} className={countsAll ? 'ui-swap-menu' : 'hover-reveal'} />}

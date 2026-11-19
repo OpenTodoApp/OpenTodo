@@ -8,7 +8,7 @@ import { addTokens, chipText, commitTokens, KIND_VALUES, missing, monthRange, re
 import { logicalToday } from '../../lib/dates'
 import { projectSource } from '../../lib/pickerSources'
 import type { Label, Project } from '../../lib/types'
-import { ComboboxList, Icon, useCombobox } from '../../ui'
+import { ComboboxList, hueFor, Icon, useCombobox } from '../../ui'
 import { t } from '../../lib/i18n'
 import { ProjectMark } from '../ProjectMark'
 
@@ -126,7 +126,7 @@ export function NoteSearchField({ text, onText, tokens, onTokens, projects, labe
           <ComboboxList state={state} label={t('Suggestions')}
             renderLeading={(s) => {
               if (s.project) return <ProjectMark project={s.project} />
-              return s.color ? <span aria-hidden className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} /> : null
+              return s.color ? <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-hue-solid" data-hue={hueFor(s.color)} /> : null
             }} />
         </div>
       )}
