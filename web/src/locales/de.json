@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} bis {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# Mal} other {# Mal}}",
   "Indent": "Einrücken",
-  "Outdent": "Ausrücken"
+  "Outdent": "Ausrücken",
+  "{time}{day} your time": "{time}{day} deine Zeit"
 }

@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule}，直到 {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}",
   "Indent": "增加缩进",
-  "Outdent": "减少缩进"
+  "Outdent": "减少缩进",
+  "{time}{day} your time": "你的时间 {time}{day}"
 }

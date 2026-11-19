@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} do {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# raz} few {# razy} many {# razy} other {# raza}}",
   "Indent": "Zwiększ wcięcie",
-  "Outdent": "Zmniejsz wcięcie"
+  "Outdent": "Zmniejsz wcięcie",
+  "{time}{day} your time": "{time}{day} twojego czasu"
 }

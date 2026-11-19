@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} до {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}",
   "Indent": "Увеличить отступ",
-  "Outdent": "Уменьшить отступ"
+  "Outdent": "Уменьшить отступ",
+  "{time}{day} your time": "{time}{day} по вашему времени"
 }

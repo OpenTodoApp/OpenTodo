@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} fino al {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
   "Indent": "Aumenta rientro",
-  "Outdent": "Riduci rientro"
+  "Outdent": "Riduci rientro",
+  "{time}{day} your time": "{time}{day} ora tua"
 }

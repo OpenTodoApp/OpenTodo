@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule}, {date} tarihine kadar",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}",
   "Indent": "Girintiyi artır",
-  "Outdent": "Girintiyi azalt"
+  "Outdent": "Girintiyi azalt",
+  "{time}{day} your time": "sizin saatinizle {time}{day}"
 }

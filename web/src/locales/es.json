@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} hasta el {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# veces}}",
   "Indent": "Aumentar sangría",
-  "Outdent": "Reducir sangría"
+  "Outdent": "Reducir sangría",
+  "{time}{day} your time": "{time}{day} tu hora"
 }
