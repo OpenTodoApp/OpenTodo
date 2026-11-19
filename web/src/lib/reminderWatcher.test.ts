@@ -55,6 +55,21 @@ describe('reminder watcher', () => {
     w.stop()
   })
 
+  // Issue 1535: Done on an Android notification completes the task in another page of the
+  // app (the shell's hidden web view). The card goes as soon as the store changes, not at
+  // the next interval; Dexie delivers another page's writes as storagemutated here too.
+  it('a task completed elsewhere takes its reminder away at once, without waiting for the interval', async () => {
+    const now = Date.now()
+    const id = await createTask({ title: 'Pay rent' })
+    await addReminder(id, { kind: 'absolute', fire_at: now - 60_000 })
+    const seen: DueReminder[][] = []
+    const w = startReminderWatcher((d) => seen.push(d), { intervalMs: 3_600_000 })
+    await vi.waitFor(() => expect(seen.at(-1)?.map((d) => d.task.title)).toEqual(['Pay rent']))
+    await setTaskCompleted(id, true)
+    await vi.waitFor(() => expect(seen.at(-1)).toEqual([]), { timeout: 2_000 })
+    w.stop()
+  })
+
   it('a snoozed reminder disappears and returns at the new time', async () => {
     const now = Date.now()
     const t = await createTask({ title: 'Stretch' })
