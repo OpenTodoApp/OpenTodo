@@ -155,3 +155,70 @@ describe('the quiet checklist', () => {
     await unmount()
   })
 })
+
+// OpenSpec change subtask-panel-order (GitHub issue 1577): subtasks change places where the task lists them.
+describe('moving a subtask', () => {
+  const titles = (root: ParentNode) => [...section(root).querySelectorAll('li')].map((li) => li.textContent)
+  const handleOf = (root: ParentNode, title: string) => section(root).querySelector<HTMLButtonElement>(`button[aria-label="Move ${title} (Alt+Up or Alt+Down)"]`)
+  const three = async () => {
+    const id = await createTask({ title: 'Renovate' })
+    const subs: string[] = []
+    for (const title of ['Paint', 'Sand', 'Prime']) subs.push(await createSubtask(id, title))
+    return { id, subs }
+  }
+
+  it('Alt+Down on the handle moves it one place, says so, writes only positions and keeps focus on the handle', async () => {
+    const { id, subs } = await three()
+    const { container, unmount } = await open(id)
+    await waitFor(() => titles(container).length === 3)
+    const before = await db.outbox.count()
+    await key(handleOf(container, 'Paint')!, 'ArrowDown', { altKey: true })
+    await waitFor(() => titles(container).join() === 'Sand,Paint,Prime')
+    await waitFor(() => section(container).querySelector('[role="status"]')!.textContent === 'Paint moved to position 2 of 3')
+    const ops = (await db.outbox.toArray()).slice(before)
+    expect(ops.length).toBeGreaterThan(0)
+    expect(ops.every((o) => o.field === 'position' && subs.includes(o.entityId))).toBe(true)
+    await waitFor(() => document.activeElement === handleOf(container, 'Paint'))
+    await key(handleOf(container, 'Prime')!, 'ArrowUp', { altKey: true, shiftKey: true })
+    await waitFor(() => titles(container).join() === 'Prime,Sand,Paint')
+    // At the edge nothing moves and nothing is written.
+    const count = await db.outbox.count()
+    await key(handleOf(container, 'Prime')!, 'ArrowUp', { altKey: true })
+    expect(await db.outbox.count()).toBe(count)
+    await unmount()
+  })
+
+  it('the handle opens Move up and Move down, the first one cannot move up', async () => {
+    const { id } = await three()
+    const { container, unmount } = await open(id)
+    await waitFor(() => titles(container).length === 3)
+    await click(handleOf(container, 'Paint')!)
+    await waitFor(() => !!document.querySelector('[role="menuitem"]'))
+    const item = (name: string) => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent!.includes(name))!
+    expect(item('Move up').matches('[aria-disabled="true"], :disabled')).toBe(true)
+    await click(item('Move down'))
+    await waitFor(() => titles(container).join() === 'Sand,Paint,Prime')
+    await unmount()
+  })
+
+  it('a completed subtask has no handle and keeps its place; one open subtask has none either', async () => {
+    const { id, subs } = await three()
+    await db.tasks.update(subs[1], { completed_at: 1 })
+    const { container, unmount } = await open(id)
+    await waitFor(() => titles(container).length === 3)
+    expect(handleOf(container, 'Sand')).toBeNull()
+    await key(handleOf(container, 'Paint')!, 'ArrowDown', { altKey: true })
+    await waitFor(() => titles(container).join() === 'Sand,Prime,Paint')
+    await db.tasks.update(subs[2], { completed_at: 1 })
+    await waitFor(() => section(container).querySelectorAll('[data-move-handle]').length === 0)
+    await unmount()
+  })
+
+  it('a viewer has no handles', async () => {
+    const { id } = await three()
+    const { container, unmount } = await open(id, { readOnly: true })
+    await waitFor(() => titles(container).length === 3)
+    expect(section(container).querySelector('[data-move-handle]')).toBeNull()
+    await unmount()
+  })
+})
