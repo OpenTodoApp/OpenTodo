@@ -60,9 +60,14 @@ type Server struct {
 	NoETagOnPut bool
 	// Prefix is where the account lives ("/dav" by default).
 	Prefix string
+	// KeepDeletedUIDs acts like Google Calendar, whose Bin keeps a deleted
+	// event for 30 days: its UID stays taken, and creating an object with a
+	// UID that is taken (in the Bin or by another member) answers 409.
+	KeepDeletedUIDs bool
 
 	mu        sync.Mutex
 	cals      map[string]*Calendar
+	binned    map[string]bool // UIDs of deleted objects, with KeepDeletedUIDs
 	seq       int
 	Requests  map[string]int
 	etagCount int
@@ -136,8 +141,20 @@ func (s *Server) Delete(cal, member string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c := s.cals[cal]
+	s.bin(c.objects[member])
 	delete(c.objects, member)
 	s.record(c, member, true)
+}
+
+// bin keeps a deleted object's UID taken, with KeepDeletedUIDs.
+func (s *Server) bin(o *Object) {
+	if !s.KeepDeletedUIDs || o == nil {
+		return
+	}
+	if s.binned == nil {
+		s.binned = map[string]bool{}
+	}
+	s.binned[uidOf(o.Data)] = true
 }
 
 // Get returns a stored object ("" when missing).
@@ -494,6 +511,10 @@ func (s *Server) object(w http.ResponseWriter, r *http.Request, c *Calendar, id,
 		if !precondition(w, r, o) {
 			return
 		}
+		if o == nil && s.KeepDeletedUIDs && s.uidTaken(c, uidOf(string(body))) {
+			http.Error(w, "uid in use", http.StatusConflict)
+			return
+		}
 		n := &Object{Data: string(body), ETag: s.nextETag(string(body))}
 		c.objects[member] = n
 		s.record(c, member, false)
@@ -513,12 +534,36 @@ func (s *Server) object(w http.ResponseWriter, r *http.Request, c *Calendar, id,
 		if !precondition(w, r, o) {
 			return
 		}
+		s.bin(o)
 		delete(c.objects, member)
 		s.record(c, member, true)
 		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.Error(w, "no", http.StatusMethodNotAllowed)
 	}
+}
+
+// uidTaken reports whether uid is in the Bin or used by a member of c.
+func (s *Server) uidTaken(c *Calendar, uid string) bool {
+	if s.binned[uid] {
+		return true
+	}
+	for _, o := range c.objects {
+		if uidOf(o.Data) == uid {
+			return true
+		}
+	}
+	return false
+}
+
+// uidOf is the first UID of a calendar object.
+func uidOf(data string) string {
+	for _, line := range strings.Split(data, "\n") {
+		if v, ok := strings.CutPrefix(strings.TrimRight(line, "\r"), "UID:"); ok {
+			return v
+		}
+	}
+	return ""
 }
 
 // precondition applies If-None-Match: * and If-Match.
