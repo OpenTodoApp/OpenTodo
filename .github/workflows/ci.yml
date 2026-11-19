@@ -587,7 +587,9 @@ jobs:
         working-directory: scripts/ui-check
         env:
           SHARD: ${{ matrix.shard }}
-        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --shard="$SHARD/3"
+        # Every core (ci-speed): Playwright's default is half of them, and the screenshots are
+        # CPU-bound; the same 346 stories took 2.9 min with 2 workers and 2.1 min with 4.
+        run: NODE_PATH=$(npm root -g) playwright test -c playwright.config.ts --shard="$SHARD/3" --workers=100%
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
