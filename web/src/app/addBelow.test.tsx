@@ -39,6 +39,12 @@ afterEach(() => {
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)
 const menuItem = (id: string) => document.querySelector<HTMLElement>(`[data-action="${id}"]`)
 const line = () => document.querySelector<HTMLInputElement>('[data-add-line] input')
+/** The task row drawn before the line (the hidden "Add a subtask" lines of the subtree it closes are skipped). */
+const rowBefore = (el: Element) => {
+  let at = el.closest('li')!.previousElementSibling
+  while (at && !at.hasAttribute('data-task-id')) at = at.previousElementSibling
+  return at
+}
 const titles = async (parent: string | null) => (await db.tasks.toArray()).filter((t) => (t.parent_id ?? null) === parent && !t.deleted_at).sort(compareByPosition).map((t) => t.title)
 
 /** The issue's outline: A with B and B's C, then E. */
@@ -80,7 +86,7 @@ describe('add below (issue 1036)', () => {
     await openMenuItem(t.a, 'add-below')
     // Drawn after C, the last row of A's subtree, at A's level.
     await waitFor(() => !!line(), 'the line')
-    expect(line()!.closest('li')!.previousElementSibling?.getAttribute('data-task-id')).toBe(t.c)
+    expect(rowBefore(line()!)?.getAttribute('data-task-id')).toBe(t.c)
     await typeLine('Prepare')
     await waitFor(async () => (await titles(null)).join() === 'A,Prepare,E', 'Prepare after A')
     // The line is drawn again under the new task: typing into the one it replaces is lost.
@@ -91,6 +97,26 @@ describe('add below (issue 1036)', () => {
     await waitFor(() => line()?.closest('li')?.previousElementSibling?.textContent?.includes('Buy paint') ?? false, 'the line under Buy paint')
     act(() => { line()!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
     await waitFor(() => !line(), 'the line closed')
+    await r.unmount()
+  })
+
+  // Issue 1551: iOS keeps the keyboard's lower case when a new field takes the focus from
+  // code after the Enter, so the line is one field that moves down, never a new one.
+  it('the line stays the same field as it moves down, keeping the focus', async () => {
+    const t = await outline()
+    navigate({ view: 'project', id: t.project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(t.c), 'the outline')
+    await openMenuItem(t.e, 'add-below')
+    await waitFor(() => !!line() && document.activeElement === line(), 'the focused line')
+    const field = line()
+    await typeLine('Paint')
+    await waitFor(() => line()?.closest('li')?.previousElementSibling?.textContent?.includes('Paint') ?? false, 'the line under Paint')
+    expect(line()).toBe(field)
+    expect(document.activeElement).toBe(field)
+    await typeLine('Varnish')
+    await waitFor(() => line()?.closest('li')?.previousElementSibling?.textContent?.includes('Varnish') ?? false, 'the line under Varnish')
+    expect(line()).toBe(field)
     await r.unmount()
   })
 
