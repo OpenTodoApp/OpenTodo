@@ -14,7 +14,11 @@ import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
 
-const TOOLS: FieldKind[] = ['when', 'priority', 'label', 'estimate', 'project']
+// The tools that start a token the line understands. "When" (a date) has no token —
+// dates are typed in words ("tomorrow") — so its tool only inserted a space and opened
+// nothing (#1624); it is left out until the phone gets a date picker (a separate
+// proposal). Priority, label, estimate and project each start a token the field reads.
+const TOOLS: FieldKind[] = ['priority', 'label', 'estimate', 'project']
 const keepFocus = (e: React.MouseEvent) => e.preventDefault()
 
 function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[], line?: { due: Due | null; datedByPhrase: boolean }): string {

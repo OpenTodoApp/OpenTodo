@@ -24,7 +24,7 @@ Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), 
 - **Additive data model.** Adding fields is fine. Renaming or removing an op field is a breaking change and needs a migration plan in the design.
 - **The v1 surface only grows.** Routes, fields, error codes, MCP tools and `ot` flags are kept within 1.x ([stability](docs/stability.md)).
 - **Private by default.** No telemetry, no third-party scripts or fonts, no outbound request the user did not configure.
-- **Small footprint.** A new dependency justifies its size. The server stays one static binary; the web app's first load has a budget.
+- **Small footprint, sensible dependencies.** Use a library when it makes our code simpler or smaller (AGPL-compatible licence, no network calls of its own) and say what it costs in size. The server stays one static binary; the web app's first load has a budget.
 
 ## Workflow
 
