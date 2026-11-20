@@ -121,7 +121,7 @@ The settings:
 | `server-start` Start to healthy | ms | 2,000 | 8,000 |
 | `server-idle-rss` Memory when idle | MB | 60 | 240 |
 | `server-pull-rss` Peak memory during one device's first sync | MB | 150 | 600 |
-| `server-export-rss` Peak memory during the JSON export | MB | 200 | 800 |
+| `server-export-rss` Peak memory during the JSON export | MB | 110 | 440 |
 | `server-pull-page` A sync page of 1,000 operations (95th percentile) | ms | 80 | 320 |
 | `server-push` A push of 100 operations (95th percentile) | ms | 100 | 400 |
 | `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 150 | 600 |

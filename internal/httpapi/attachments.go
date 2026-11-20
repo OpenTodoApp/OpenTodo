@@ -681,7 +681,7 @@ func (s *Server) receiveMultipart(w http.ResponseWriter, r *http.Request, id str
 // writeExportZip streams the export document and every readable, uploaded
 // attachment file as a ZIP (design D12): export.json first, then
 // attachments/<id>/<name>. Nothing is buffered: entries use data descriptors.
-func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[string]any, attachments []opsync.Entity) {
+func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, uid string) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.zip"`)
 	zw := zip.NewWriter(w)
@@ -690,14 +690,16 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, doc map[
 	if err != nil {
 		return
 	}
-	enc := json.NewEncoder(jw)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(doc); err != nil {
+	// Streamed one collection at a time (see streamExport), so a large account's
+	// ZIP export never holds the whole document in memory either. The attachment
+	// metadata it lists is reused for the file entries below.
+	attachments, _, err := s.streamExport(r.Context(), r, jw, uid, true)
+	if err != nil {
 		s.log.Error("export zip: document", "err", err)
 		return
 	}
 	// The account's profile picture (settings-refresh D10).
-	s.exportAvatar(zw, userFrom(r.Context()).ID)
+	s.exportAvatar(zw, uid)
 	if s.blobs == nil {
 		return
 	}
