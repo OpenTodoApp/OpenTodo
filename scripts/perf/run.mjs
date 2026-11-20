@@ -186,8 +186,10 @@ async function session(browser, profileName) {
     if (prof.throttle > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: prof.throttle })
 
     debug('First sync of a new device')
-    // First sync of a new device: from the navigation to everything pulled.
-    await page.goto(`${server.base}/today`)
+    // First sync of a new device: from the navigation to everything pulled, on the
+    // Inbox, where a person lands after signing in (inbox-first-sync: a whole-table
+    // query of the Inbox's menu made it three times slower there than on Today).
+    await page.goto(`${server.base}/inbox`)
     const synced = await markAfter(page, 'ot:sync-idle', 0, 300_000)
     out['first-sync'] = synced / 1000
     out['first-sync-long-task'] = await page.evaluate((end) => Math.max(0, ...window.__perf.longtasks.filter((t) => t.start < end).map((t) => t.duration)), synced)
@@ -200,8 +202,8 @@ async function session(browser, profileName) {
     out.indexeddb = await page.evaluate(async () => (await navigator.storage.estimate()).usage / 2 ** 20)
 
     debug('Cold start with the data local')
-    // Cold start with the data local: a reload, to the Today list.
-    await page.reload()
+    // Cold start with the data local: a new load of the Today list.
+    await page.goto(`${server.base}/today`)
     out['cold-start'] = await markAfter(page, 'ot:list-ready', 0)
     if (enough(out)) return out
     await page.waitForTimeout(1000) // the start-up sync settles
