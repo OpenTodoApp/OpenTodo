@@ -55,7 +55,8 @@
       "web/src/lib/seriesSplitActions.ts",
       "web/src/lib/sync.ts",
       "web/src/lib/taskPages.ts",
-      "web/src/lib/trash.ts"
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts"
     ],
     "Dexie.close": [
       "web/src/lib/db.ts"
@@ -177,7 +178,8 @@
       "web/src/lib/notifications.ts",
       "web/src/lib/ops.ts",
       "web/src/lib/sharing.ts",
-      "web/src/lib/trash.ts"
+      "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts"
     ],
     "Table.get": [
       "web/src/lib/agentAccess.ts",
