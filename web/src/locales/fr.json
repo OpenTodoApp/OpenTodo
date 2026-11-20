@@ -7794,5 +7794,7 @@
   "Redone.": "Rétabli.",
   "Redone: {n} restored.": "Rétabli : {n} restaurés.",
   "Undo the last change": "Annuler la dernière modification",
-  "Redo the change undone last": "Rétablir la dernière modification annulée"
+  "Redo the change undone last": "Rétablir la dernière modification annulée",
+  "Undo: {step}": "Annuler : {step}",
+  "Redo: {step}": "Rétablir : {step}"
 }

@@ -7794,5 +7794,7 @@
   "Redone.": "Ripetuto.",
   "Redone: {n} restored.": "Ripetuto: {n} ripristinati.",
   "Undo the last change": "Annulla l’ultima modifica",
-  "Redo the change undone last": "Ripeti l’ultima modifica annullata"
+  "Redo the change undone last": "Ripeti l’ultima modifica annullata",
+  "Undo: {step}": "Annulla: {step}",
+  "Redo: {step}": "Ripeti: {step}"
 }

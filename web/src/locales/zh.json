@@ -7794,5 +7794,7 @@
   "Redone.": "已重做。",
   "Redone: {n} restored.": "已重做：已恢复 {n} 项。",
   "Undo the last change": "撤销上一次更改",
-  "Redo the change undone last": "重做上次撤销的更改"
+  "Redo the change undone last": "重做上次撤销的更改",
+  "Undo: {step}": "撤销：{step}",
+  "Redo: {step}": "重做：{step}"
 }

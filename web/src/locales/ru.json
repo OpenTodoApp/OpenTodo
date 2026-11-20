@@ -7794,5 +7794,7 @@
   "Redone.": "Повторено.",
   "Redone: {n} restored.": "Повторено: восстановлено {n}.",
   "Undo the last change": "Отменить последнее изменение",
-  "Redo the change undone last": "Повторить последнее отменённое изменение"
+  "Redo the change undone last": "Повторить последнее отменённое изменение",
+  "Undo: {step}": "Отменить: {step}",
+  "Redo: {step}": "Повторить: {step}"
 }

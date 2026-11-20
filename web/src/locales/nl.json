@@ -7794,5 +7794,7 @@
   "Redone.": "Opnieuw gedaan.",
   "Redone: {n} restored.": "Opnieuw gedaan: {n} hersteld.",
   "Undo the last change": "Laatste wijziging ongedaan maken",
-  "Redo the change undone last": "De laatst ongedaan gemaakte wijziging opnieuw doen"
+  "Redo the change undone last": "De laatst ongedaan gemaakte wijziging opnieuw doen",
+  "Undo: {step}": "Ongedaan maken: {step}",
+  "Redo: {step}": "Opnieuw: {step}"
 }

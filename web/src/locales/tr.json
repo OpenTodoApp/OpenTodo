@@ -7794,5 +7794,7 @@
   "Redone.": "Yinelendi.",
   "Redone: {n} restored.": "Yinelendi: {n} öğe geri yüklendi.",
   "Undo the last change": "Son değişikliği geri al",
-  "Redo the change undone last": "Son geri alınan değişikliği yinele"
+  "Redo the change undone last": "Son geri alınan değişikliği yinele",
+  "Undo: {step}": "Geri al: {step}",
+  "Redo: {step}": "Yinele: {step}"
 }

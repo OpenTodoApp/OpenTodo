@@ -7794,5 +7794,7 @@
   "Redone.": "Ponowiono.",
   "Redone: {n} restored.": "Ponowiono: przywrócono {n}.",
   "Undo the last change": "Cofnij ostatnią zmianę",
-  "Redo the change undone last": "Ponów ostatnio cofniętą zmianę"
+  "Redo the change undone last": "Ponów ostatnio cofniętą zmianę",
+  "Undo: {step}": "Cofnij: {step}",
+  "Redo: {step}": "Ponów: {step}"
 }

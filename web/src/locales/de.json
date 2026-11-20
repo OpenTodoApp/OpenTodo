@@ -7794,5 +7794,7 @@
   "Redone.": "Wiederholt.",
   "Redone: {n} restored.": "Wiederholt: {n} wiederhergestellt.",
   "Undo the last change": "Letzte Änderung rückgängig machen",
-  "Redo the change undone last": "Zuletzt rückgängig gemachte Änderung wiederholen"
+  "Redo the change undone last": "Zuletzt rückgängig gemachte Änderung wiederholen",
+  "Undo: {step}": "Rückgängig: {step}",
+  "Redo: {step}": "Wiederholen: {step}"
 }

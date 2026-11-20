@@ -14374,7 +14374,11 @@
     "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Redo the change undone last": [
+    "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
+  ],
+  "Redo: {step}": [
+    "web/src/app/palette/registry.ts"
   ],
   "Redone.": [
     "web/src/app/bulk/UndoToast.tsx"
@@ -20605,6 +20609,7 @@
     "web/src/app/routines/RunHistory.tsx"
   ],
   "Undo the last change": [
+    "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Undo the last restore": [
@@ -20615,6 +20620,9 @@
   ],
   "Undo {name}": [
     "web/src/ui/TokenRow.tsx"
+  ],
+  "Undo: {step}": [
+    "web/src/app/palette/registry.ts"
   ],
   "Undoing…": [
     "web/src/app/assistant/AssistantRoot.tsx"

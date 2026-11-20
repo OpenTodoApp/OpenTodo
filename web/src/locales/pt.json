@@ -7794,5 +7794,7 @@
   "Redone.": "Refeito.",
   "Redone: {n} restored.": "Refeito: {n} restaurados.",
   "Undo the last change": "Desfazer a última alteração",
-  "Redo the change undone last": "Refazer a última alteração desfeita"
+  "Redo the change undone last": "Refazer a última alteração desfeita",
+  "Undo: {step}": "Desfazer: {step}",
+  "Redo: {step}": "Refazer: {step}"
 }
