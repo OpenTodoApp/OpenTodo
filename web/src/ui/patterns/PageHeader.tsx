@@ -189,12 +189,8 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
         {briefing && <div className="mt-2 text-prose text-muted" data-page-briefing>{briefing}</div>}
       </>}
       {!ownRow && actions && !barActions && <div className="flex flex-wrap items-center gap-1 pt-2" data-page-actions>{actions}</div>}
-      {ownRow && day && <>
-        <div className="flex min-h-9 items-center gap-2" data-page-top-row>
-          <SidebarToggleButton />
-          {backLink}
-          {toolsEnd}
-        </div>
+      {/* The title comes first in reading order, the top row's buttons after it; the top row is still drawn first (order-first). */}
+      {ownRow && day && <div className="flex flex-col">
         <div className="mt-3 flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1" data-page-header-row>
           {icon && <span className="flex h-6 w-6 shrink-0 items-center justify-center self-center text-muted" aria-hidden="true"><Icon name={icon} size="md" /></span>}
           {leading}
@@ -202,7 +198,12 @@ export function PageHeader({ title, subtitle, meta, leading, actions, barActions
           {lead}
         </div>
         {briefing && <div className="mt-2 max-w-[72ch] text-prose text-muted" data-page-briefing>{briefing}</div>}
-      </>}
+        <div className="order-first flex min-h-9 items-center gap-2" data-page-top-row>
+          <SidebarToggleButton />
+          {backLink}
+          {toolsEnd}
+        </div>
+      </div>}
       {ownRow && !day && <div className="flex min-h-[2.875rem] min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-1" data-page-header-row>
         <SidebarToggleButton />
         {backLink}

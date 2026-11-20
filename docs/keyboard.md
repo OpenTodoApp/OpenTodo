@@ -64,7 +64,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Esc</kbd> | Close the panel or the picker, else clear the selection |
 | <kbd>?</kbd> | Toggle this cheat sheet |
 | <kbd>[</kbd> | Collapse or expand the sidebar (from 1024 px) |
-| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | While its notice is shown: undo the last bulk action |
+| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Undo the last change |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd> | Redo the change undone last |
 
 ### Go to a view
 
@@ -84,6 +85,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>g</kbd> then <kbd>d</kbd> | Go to the Calendar as Day (the sidebar opens it as last used) |
 | <kbd>g</kbd> then <kbd>w</kbd> | Go to the Calendar as Week |
 | <kbd>g</kbd> then <kbd>m</kbd> | Go to the Calendar as Month |
+| <kbd>g</kbd> then <kbd>q</kbd> | Go to the Calendar as Quarter: three months at a glance |
 | <kbd>g</kbd> then <kbd>Shift+C</kbd> | Go to the Calendar as Plan: the next days as columns with their capacity |
 | <kbd>g</kbd> then <kbd>y</kbd> | Go to the Calendar as Year: twelve months with how busy each day is |
 | <kbd>g</kbd> then <kbd>x</kbd> | Go to the Trash |
@@ -177,7 +179,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>]</kbd> | Timeline: show the next week (or four) |
 | <kbd>t</kbd> | Timeline: back to today |
 
-### Day, Week, Month, Plan and Year calendar
+### Calendar
 
 | Keys | What it does |
 | --- | --- |
@@ -216,6 +218,13 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>[</kbd> | In Year: previous year, keeping the day |
 | <kbd>]</kbd> | In Year: next year, keeping the day |
 | <kbd>t</kbd> | In Year: back to today |
+| <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Quarter: move the focused day a day or a week, across month edges |
+| <kbd>PageUp</kbd> / <kbd>PageDown</kbd> | In Quarter: the same day of the previous or next month |
+| <kbd>Home</kbd> / <kbd>End</kbd> | In Quarter: the first or last day of the focused month |
+| <kbd>Enter</kbd> | In Quarter: open the focused day in Day view |
+| <kbd>[</kbd> | In Quarter: previous quarter, keeping the day |
+| <kbd>]</kbd> | In Quarter: next quarter, keeping the day |
+| <kbd>t</kbd> | In Quarter: back to today |
 | <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> | In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time) |
 | <kbd>j</kbd> | In Plan: select the next task, column by column (projected and event rows are skipped) |
 | <kbd>k</kbd> | In Plan: select the previous task |
@@ -401,7 +410,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>e</kbd> | Focused table: Settings → Server → Audit log: export with the current filters while the table has focus |
 | <kbd>Tab</kbd> | Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
 | <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Theme editor: undo the last change |
-| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> | Theme editor: redo the change undone last |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd> | Theme editor: redo the change undone last |
 | <kbd>Ctrl+S</kbd> / <kbd>⌘+S</kbd> | Theme editor: save the theme |
 
 ### Vim keybindings

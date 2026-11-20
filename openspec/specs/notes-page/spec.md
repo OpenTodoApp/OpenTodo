@@ -6,11 +6,11 @@ The Notes page: one place that lists task notes, project notes and standalone no
 ## Requirements
 
 ### Requirement: Notes page
-The app SHALL have a Notes page at `/notes`, loaded on first use, that lists task notes (tasks not deleted with a non-empty note, completed ones marked), project notes (projects not deleted with a non-empty note, archived ones marked) and standalone notes (not deleted) of the current workspace, from local data only, sorted by the time the note itself last changed, newest first. With no words and no token in the search field, pinned standalone notes SHALL be listed first under a **Pinned** heading in the user's favourites order, and every other note under a **Recent** heading in that sorted order; without pinned notes the list SHALL have no headings. It SHALL show the first 50 of the sorted notes and a Show more control that adds the next 50, with the number shown and the total beside it. Each row SHALL be one line on a row grid shared by every row: the kind icon, the title, where the note lives (the standalone note's project, the task's project or Inbox, the project of a project note), its labels as at most two chips then "+n" in the style of task rows, and the relative time of the last change, right-aligned. Opening a row SHALL open the task with its note, the project with its note open for editing, or the standalone note. The page SHALL work offline and SHALL send nothing to the server. An empty page SHALL show one sentence and the New note action. The header SHALL hold the title, the note count, New note and Help, and SHALL keep a place among its actions for a view switch of the Notes page.
+The app SHALL have a Notes page at `/notes`, loaded on first use, that lists standalone notes (not deleted) and project notes (projects not deleted with a non-empty note, archived ones marked) of the current workspace, and task notes (tasks not deleted with a non-empty note, completed ones marked) only while the search field holds a `kind:task` chip, so a task's description, which is the task's details, never crowds out the notes the user wrote unless asked for; searching words SHALL look among the same notes, from local data only, sorted by the time the note itself last changed, newest first. With no words and no token in the search field, pinned standalone notes SHALL be listed first under a **Pinned** heading in the user's favourites order, and every other note under a **Recent** heading in that sorted order; without pinned notes the list SHALL have no headings. It SHALL show the first 50 of the sorted notes and a Show more control that adds the next 50, with the number shown and the total beside it. Each row SHALL be one line on a row grid shared by every row: the kind icon, the title, where the note lives (the standalone note's project, the task's project or Inbox, the project of a project note), its labels as at most two chips then "+n" in the style of task rows, and the relative time of the last change, right-aligned. Opening a row SHALL open the task with its note, the project with its note open for editing, or the standalone note. The page SHALL work offline and SHALL send nothing to the server. An empty page SHALL show one sentence and the New note action. The header SHALL hold the title, the note count, New note and Help, and SHALL keep a place among its actions for a view switch of the Notes page.
 
 #### Scenario: Default list
-- **WHEN** the user has 312 notes of all three kinds, none pinned, and opens Notes
-- **THEN** the 50 most recently changed notes are listed, newest first, without headings, with "50 of 312" and Show more
+- **WHEN** the user has 312 standalone and project notes and 900 tasks with a description, none pinned, and opens Notes
+- **THEN** the 50 most recently changed standalone and project notes are listed, newest first, without headings, with "50 of 312" and Show more, and no task is listed
 
 #### Scenario: Pinned first
 - **WHEN** the user has pinned the notes "Wi-Fi" and "Packing list" and opens Notes
@@ -21,15 +21,15 @@ The app SHALL have a Notes page at `/notes`, loaded on first use, that lists tas
 - **THEN** the results are one ranked list without the Pinned and Recent headings
 
 #### Scenario: One line per note
-- **WHEN** a task note of "Call the plumber" in the project "Home" with the labels "errand" and "phone", changed two hours ago, is listed on a 1280 px screen
+- **WHEN** the field holds the chip "kind: task" and a task note of "Call the plumber" in the project "Home" with the labels "errand" and "phone", changed two hours ago, is listed on a 1280 px screen
 - **THEN** its row is one line with the task icon, "Call the plumber", "Home", the chips "errand" and "phone", and "2 h ago" at the row's end, aligned with the same columns of the rows above and below
 
 #### Scenario: Where a note lives
-- **WHEN** the list holds a standalone note in "Renovation", a task note of a task without a project and a project note of "Garden"
+- **WHEN** the field holds the chips "kind: note", "kind: task" and "kind: project", and the list holds a standalone note in "Renovation", a task note of a task without a project and a project note of "Garden"
 - **THEN** their rows read "Renovation", "Inbox" and "Garden" in the place column
 
 #### Scenario: A task's other change does not count
-- **WHEN** the user changes the due date of a task whose note was last edited a month ago
+- **WHEN** the field holds the chip "kind: task" and the user changes the due date of a task whose note was last edited a month ago
 - **THEN** the task's note keeps its place in the list
 
 #### Scenario: Offline
@@ -39,6 +39,14 @@ The app SHALL have a Notes page at `/notes`, loaded on first use, that lists tas
 #### Scenario: Open a project note
 - **WHEN** the user opens a project note from the list
 - **THEN** the project opens with its note in edit mode
+
+#### Scenario: Task descriptions one chip away
+- **WHEN** the user picks `kind:task` in the search field and reopens Notes the next day on the same device
+- **THEN** both times the list shows task notes, completed ones marked, because the chip is remembered on the device
+
+#### Scenario: A word in a task description
+- **WHEN** a task "Charge headphones" has the description "the battery is at 37%" and the user types `battery` with no chip
+- **THEN** the task is not listed; with the chip "kind: task" it is
 
 ### Requirement: Searching notes on the device
 The page SHALL have a search field that finds notes whose title or text contains every word typed, ignoring case and accents, with quoted words matched as a phrase and Markdown syntax ignored, among the notes the field's tokens keep. The search SHALL run on the device over the decrypted text, offline included, and SHALL send nothing to the server. Each result SHALL show, on its one line after the title, a snippet of the text around the first match with every matched word highlighted, as plain text. Results SHALL list title matches first, then by the number of matched words, then by the last change, paginated 50 at a time.

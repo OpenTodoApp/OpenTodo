@@ -78,13 +78,18 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped in 1.5 |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped in 1.5 |
 | `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | Planned |
+| `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | In progress (7 of 8) |
+| `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped |
+| `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped |
+| `spans-stay-in-sections` | A multi-day task stays in its section with its dates instead of folding into Later before its first day | Shipped |
+| `notes-page-own-notes` | The Notes page lists your notes and project notes; task descriptions are one `kind:task` chip away | Shipped |
 | `calsync-repeat-marker` | Repeating tasks show 🔁 before their title in a synced calendar; the marker never comes back as a rename | Shipped |
 | `cli-subtasks` | Subtasks in `ot`: `--parent` on `add`, `edit` and `list`, `--subtasks` cascades on `done`, `rm` and `edit`, and the tree in `list` and `task show` | Shipped |
 | `repeat-field-language` | A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | Shipped |
 | `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped |
 | `theme-title-weight` | A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | Shipped |
 | `subtask-panel-order` | Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | Shipped |
-| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
+| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Shipped |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
 | `voice-ramble` | Speak a brain dump or drop a photo of notes; review the proposed tasks | Shipped in 0.20 |

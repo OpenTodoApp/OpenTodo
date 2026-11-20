@@ -2515,6 +2515,7 @@
       },
       "user_prefs": {
         "add_position": "string",
+        "app_link_schemes": "string",
         "bento_order": "string",
         "briefing": "string",
         "daily_notes": "bool",
@@ -3654,6 +3655,7 @@
     },
     "user_prefs": {
       "add_position": "string",
+      "app_link_schemes": "string",
       "bento_order": "string",
       "briefing": "string",
       "daily_notes": "bool",
@@ -6403,6 +6405,9 @@
       ]
     },
     "GET /api/v1/settings/caldav": {
+      "policy": "signed-in"
+    },
+    "GET /api/v1/settings/caldav/push": {
       "policy": "signed-in"
     },
     "GET /api/v1/settings/calendar-feeds": {
@@ -11748,6 +11753,9 @@
       ]
     },
     "PUT /api/v1/settings/caldav": {
+      "policy": "owner-only"
+    },
+    "PUT /api/v1/settings/caldav/push": {
       "policy": "owner-only"
     },
     "PUT /api/v1/settings/calendar-feeds": {

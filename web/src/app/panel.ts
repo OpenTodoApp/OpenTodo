@@ -30,13 +30,13 @@ const emit = () => listeners.forEach((fn) => fn())
 const QUERY = 'task'
 
 /**
- * The page a panel belongs to. The Calendar's Day, Week, Month and Plan, at any date,
- * are one page: the planning list stays open while the user moves through days and
- * switches range (time-blocking "Planning list and phone agenda", GitHub issue 350).
+ * The page a panel belongs to. The Calendar's Day, Week, Month, Quarter, Plan and Year,
+ * at any date, are one page: the planning list stays open while the user moves through days
+ * and switches range (time-blocking "Planning list and phone agenda", GitHub issue 350).
  */
 export function panelPage(pathname: string): string {
   const first = pathname.split('/')[1]
-  return first === 'day' || first === 'week' || first === 'month' || first === 'plan' || first === 'year' ? '/calendar' : pathname
+  return first === 'day' || first === 'week' || first === 'month' || first === 'quarter' || first === 'plan' || first === 'year' ? '/calendar' : pathname
 }
 
 function currentPath(): string {

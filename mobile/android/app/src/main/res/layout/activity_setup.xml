@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/setup_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,9 +24,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:accessibilityHeading="true"
             android:text="@string/setup_title"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="@color/text" />
+            android:textColor="@color/text"
+            tools:targetApi="p" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -34,13 +37,20 @@
             android:text="@string/setup_intro"
             android:textColor="@color/text_muted" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:labelFor="@id/address"
+            android:text="@string/setup_address_label"
+            android:textColor="@color/text" />
+
         <EditText
             android:id="@+id/address"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:autofillHints="url"
-            android:hint="@string/setup_hint"
             android:imeOptions="actionGo"
             android:inputType="textUri"
             android:minHeight="48dp" />
