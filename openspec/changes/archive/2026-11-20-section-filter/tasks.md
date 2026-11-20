@@ -9,7 +9,7 @@
 ## 2. Builder
 
 - [x] 2.1 Section condition with the Combobox, chip icon and words (`ConditionEditor.tsx`, `FilterBuilder.tsx`, `conditionText.ts`, `FilterChips.tsx`, `FilterView.tsx`, `SavedViewView.tsx`). Verify: `cd web && npx vitest run src/app/filter src/app/views`.
-- [ ] 2.2 Check in a browser: add a Section condition in a saved view and see the list narrow.
+- [x] 2.2 Check in a browser: add a Section condition and see the list narrow. Verify: built app, seeded account with a "Review" and a "Backlog" section in two projects: `section: Review` lists the Work and the Home task, `section: Review | section: Backlog | no section` lists six tasks and leaves the "Doing" one out, the builder shows "Section is Review", and the picker offers one "Review" for both projects.
 
 ## 3. Docs and release
 
