@@ -13,6 +13,7 @@ import { forgetMemoryKeys } from '../lib/e2ee'
 import { forgetNoiseVolume } from '../lib/focus/prefs'
 import { clearInbox } from '../lib/shareInbox'
 import { unsubscribeOnSignOut } from '../lib/push'
+import { currentUserId } from '../lib/sharing'
 import { announceSignOut, stopSyncAndWait, syncNow, withSyncLock } from '../lib/sync'
 import { cacheMfa } from './mfaCache'
 import { clearVimPref } from './vim/prefs'
@@ -36,6 +37,22 @@ export async function clearDeviceData(): Promise<void> {
   cacheMfa(null)
   // The background noise volume is per device (focus-everywhere D6).
   forgetNoiseVolume()
+}
+
+/**
+ * A different account has signed in on this device while the previous one's
+ * session ended without a sign-out (an expired or revoked cookie, so its local
+ * copy was left in place). Clear that copy — under the sync lock, before anything
+ * new is stored or pulled — so it is neither shown to nor uploaded for the new
+ * account (client-data-safety). The first sign-in on a device, and the same
+ * account signing back in, both do nothing, so a re-auth keeps its unsynced work.
+ * Returns whether a clear happened.
+ */
+export async function clearIfDifferentAccount(userId: string): Promise<boolean> {
+  const previous = await currentUserId()
+  if (previous === null || previous === userId) return false
+  await clearDeviceData()
+  return true
 }
 
 /**

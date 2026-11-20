@@ -9,7 +9,7 @@ import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
 import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
-import { onSignOutElsewhere, startSync, stopSync, useSyncStatus } from '../lib/sync'
+import { onSignOutElsewhere, setSyncAccount, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
 import { AppBadgeSync } from './AppBadge'
@@ -36,7 +36,7 @@ import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
 import { useOauthAuthorizeReturn } from './oauthReturn'
 import { OAuthConsentHost } from './OAuthConsentHost'
-import { clearDeviceData, useSignOut, wipeRevokedDevice } from './signOut'
+import { clearDeviceData, clearIfDifferentAccount, useSignOut, wipeRevokedDevice } from './signOut'
 import { rememberWipeKey, REVOKED_NOTICE, wipeIfRevoked } from '../lib/revocation'
 
 export { DemoBanner }
@@ -61,6 +61,18 @@ type Phase =
   // The owner's policy requires a second factor this account lacks (OpenSpec `mfa-totp`).
   | { kind: 'restricted'; user: User }
 
+/**
+ * Before a signed-in account's data is stored, adopted or pulled: a device whose
+ * stored account differs from the one signing in clears its local copy (an
+ * expired or revoked session left it in place), and the session's account is
+ * remembered so the restore reseed refuses to run under a mismatch. Together they
+ * keep one account's data off another on a shared device (client-data-safety).
+ */
+async function prepareAccount(id: string): Promise<void> {
+  await clearIfDifferentAccount(id)
+  setSyncAccount(id)
+}
+
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
   const route = useRoute()
@@ -83,6 +95,7 @@ export function App() {
       rememberServerVersion(status.version)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
+        await prepareAccount(status.user.id)
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
         // The key a later revocation proof is checked with (revoked-device-wipe D3).
