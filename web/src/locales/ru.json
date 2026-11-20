@@ -2735,6 +2735,7 @@
   "List at most {n} labels.": "Укажите не больше {n} меток.",
   "List at most {n} repositories or projects.": "Укажите не больше {n} репозиториев или проектов.",
   "List text size": "Размер текста в списках",
+  "Show Markdown source": "Показать исходный Markdown",
   "Task title weight": "Насыщенность названий задач",
   "Regular|weight": "Обычный",
   "Medium|weight": "Средний",

@@ -119,7 +119,7 @@ The image is published for `linux/amd64` and `linux/arm64`. `:stable` is the lat
 
 ### Single binary
 
-Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.26+ and Node 22+).
+Download `opentodo-<os>-<arch>` for Linux, macOS or Windows from the [latest release](https://github.com/OpenTodoApp/OpenTodo/releases/latest) and run it. It serves on port 8080 and keeps its data in `./data`. To build from source: `make build && ./bin/opentodo` (Go 1.27+ and Node 22+).
 
 **Managed hosting:** [PikaPods](https://www.pikapods.com/apps/opentodo), [Railway](https://railway.com/deploy/opentodo?referralCode=nbgVDr). These links support the project: OpenTodo receives a share when you host through them.
 

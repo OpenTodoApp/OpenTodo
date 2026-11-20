@@ -2737,6 +2737,7 @@
   "List at most {n} labels.": "En fazla {n} etiket listeleyin.",
   "List at most {n} repositories or projects.": "En fazla {n} depo veya proje listeleyin.",
   "List text size": "Liste metin boyutu",
+  "Show Markdown source": "Markdown kaynağını göster",
   "Task title weight": "Görev başlığı kalınlığı",
   "Regular|weight": "Normal",
   "Medium|weight": "Orta",
