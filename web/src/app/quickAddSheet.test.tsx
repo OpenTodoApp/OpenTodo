@@ -164,4 +164,16 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect((await db.tasks.toArray()).map((t) => [t.title, t.description])).toEqual([['Read the article', 'https://example.com/article']])
     await r.unmount()
   })
+
+  // #1624: a date has no token to start, so the "when" tool only added a space and opened
+  // nothing — a dead button. It is removed until the phone gets a date picker (a proposal);
+  // the tools that start a token the field reads stay.
+  it('offers no dead due-date tool; the token tools remain', async () => {
+    const r = await openSheet()
+    expect(document.querySelector('[data-sheet-tool="when"]')).toBeNull()
+    for (const k of ['priority', 'label', 'estimate', 'project']) {
+      expect(document.querySelector(`[data-sheet-tool="${k}"]`)).toBeTruthy()
+    }
+    await r.unmount()
+  })
 })
