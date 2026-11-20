@@ -63,7 +63,7 @@ export const SHORTCUT_SECTIONS: { id: ShortcutSection; title: string }[] = [
   { id: 'go', title: 'Go to a view' },
   { id: 'tasks', title: 'Tasks in a list' },
   { id: 'board', title: 'Board and timeline' },
-  { id: 'calendar', title: 'Day, Week, Month, Plan and Year calendar' },
+  { id: 'calendar', title: 'Calendar' },
   { id: 'filter', title: 'Views and boards' },
   { id: 'arrange', title: 'Group and order' },
   { id: 'trash', title: 'Trash and projects' },
@@ -88,7 +88,7 @@ export const VIEW_SCOPES: Record<string, ShortcutScope[]> = {
   inbox: ['list'], today: ['list'], upcoming: ['list'], anytime: ['list'], someday: ['list'], completed: ['list'], assigned: ['list'],
   project: ['list', 'board', 'timeline', 'calendar'], label: ['list'], filter: ['list'], view: ['list', 'board'], views: [], labels: [],
   // The Month view keys are its own `view` entries (month-and-timeline-views): it hosts no lane-and-blocks calendar.
-  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], plan: [], year: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
+  dashboard: [], day: ['calendar'], week: ['calendar'], month: [], quarter: [], plan: [], year: [], trash: [], feed: [], ask: [], import: [], settings: [], share: [], task: ['panel'], help: [],
   // Process the Inbox (inbox-triage): one card, no task list; its keys are `view` entries.
   triage: [],
   // Display mode (display-mode D5): no shell, no list; its keys are `view` entries.
@@ -163,6 +163,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'go.day', keys: ['g d'], label: 'Day', description: 'Go to the Calendar as Day (the sidebar opens it as last used)', section: 'go', scope: 'global' },
   { id: 'go.week', keys: ['g w'], label: 'Week', description: 'Go to the Calendar as Week', section: 'go', scope: 'global' },
   { id: 'go.month', keys: ['g m'], label: 'Month', description: 'Go to the Calendar as Month', section: 'go', scope: 'global' },
+  { id: 'go.quarter', keys: ['g q'], label: 'Quarter', description: 'Go to the Calendar as Quarter: three months at a glance', section: 'go', scope: 'global' },
   // The Plan (planner-view D1): `g p` is the Inbox's triage and `g Shift+P` All projects, so the Calendar's plan takes the shifted C.
   { id: 'go.plan', keys: ['g Shift+C'], label: 'Plan', description: 'Go to the Calendar as Plan: the next days as columns with their capacity', section: 'go', scope: 'global' },
   { id: 'go.year', keys: ['g y'], label: 'Year', description: 'Go to the Calendar as Year: twelve months with how busy each day is', section: 'go', scope: 'global' },
@@ -316,6 +317,15 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'year.range-next', keys: [']'], description: 'In Year: next year, keeping the day', section: 'calendar', scope: 'view', views: ['year'] },
   { id: 'year.today', keys: ['t'], description: 'In Year: back to today', section: 'calendar', scope: 'view', views: ['year'] },
   { id: 'year.escape', keys: ['Esc'], description: 'In Year: return the focus to the page header', section: 'calendar', scope: 'view', views: ['year'], hidden: true },
+  // The Quarter (quarter-view-and-plan-spans D3): the Year's grid over three months, stepping a quarter at a time.
+  { id: 'quarter.move', keys: ['←', '→', '↑', '↓'], description: 'In Quarter: move the focused day a day or a week, across month edges', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.month', keys: ['PageUp', 'PageDown'], description: 'In Quarter: the same day of the previous or next month', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.edge', keys: ['Home', 'End'], description: 'In Quarter: the first or last day of the focused month', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.open', keys: ['Enter'], description: 'In Quarter: open the focused day in Day view', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.range-prev', keys: ['['], description: 'In Quarter: previous quarter, keeping the day', section: 'calendar', scope: 'view', views: ['quarter'], overrides: ['global.sidebar'] },
+  { id: 'quarter.range-next', keys: [']'], description: 'In Quarter: next quarter, keeping the day', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.today', keys: ['t'], description: 'In Quarter: back to today', section: 'calendar', scope: 'view', views: ['quarter'] },
+  { id: 'quarter.escape', keys: ['Esc'], description: 'In Quarter: return the focus to the page header', section: 'calendar', scope: 'view', views: ['quarter'], hidden: true },
   { id: 'month.escape', keys: ['Esc'], description: 'In Month: close the "+N more" list or the panel, else clear the selection', section: 'calendar', scope: 'view', views: ['month'], hidden: true },
   // The Plan (planner-view D6): the Month's model over the span's columns; projected and event rows are never selected.
   { id: 'plan.move', keys: ['←', '→', '↑', '↓'], description: 'In Plan: move the focused day; with a task selected, move it a day or a week (keeps its time)', section: 'calendar', scope: 'view', views: ['plan'] },
@@ -500,7 +510,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'vim.open-below', keys: ['o'], description: 'Quick add; in project lists and the Inbox the new task lands after the selection', section: 'vim', scope: 'vim', overrides: ['dashboard.open-view'] },
   { id: 'vim.insert', keys: ['i'], description: 'Open the selected task and edit its title (Insert mode)', section: 'vim', scope: 'vim' },
   { id: 'vim.priority', keys: ['1', '2', '3', '4'], description: 'Priority, applied after 1 s or at the next key (a digit followed by a motion is a count)', section: 'vim', scope: 'vim', overrides: ['list.priority', 'panel.priority'] },
-  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit', 'close.leave'] },
+  { id: 'vim.leave-field', keys: ['Esc'], description: 'In a field: leave it and return to Normal mode; the text is kept, the panel stays open. In Normal mode Esc closes the panel and clears the selection as usual', section: 'vim', scope: 'vim', typing: true, overrides: ['list.escape', 'list.dictate-stop', 'calendar.escape', 'month.escape', 'plan.escape', 'year.escape', 'quarter.escape', 'panel.escape', 'trash.escape', 'dashboard.escape', 'share.escape', 'triage.escape', 'focus.escape', 'task.escape', 'routines.escape', 'display.exit', 'close.leave'] },
   { id: 'vim.command', keys: [':'], description: 'Open the command line (Tab completes, Enter runs, Esc cancels)', section: 'vim', scope: 'vim' },
 ]
 
@@ -543,7 +553,7 @@ export type SpotlightGroup = 'views' | 'calendar' | 'method' | 'arrange' | 'grou
 const SPOTLIGHT_GROUPS: Record<string, SpotlightGroup> = {
   'go.inbox': 'views', 'go.today': 'views', 'go.upcoming': 'views', 'go.anytime': 'views', 'go.someday': 'views', 'go.assigned': 'views',
   'go.completed': 'views', 'go.labels': 'views', 'go.projects': 'views', 'go.filter': 'views', 'go.views': 'views', 'go.trash': 'views', 'go.feed': 'views',
-  'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.plan': 'calendar', 'go.year': 'calendar',
+  'go.day': 'calendar', 'go.week': 'calendar', 'go.month': 'calendar', 'go.quarter': 'calendar', 'go.plan': 'calendar', 'go.year': 'calendar',
   'go.triage': 'method', 'go.review': 'method', 'go.loop': 'method', 'go.next': 'method', 'go.waiting': 'method', 'go.daily': 'method',
   'go.close': 'method', 'go.focus': 'method', 'go.stats': 'method', 'go.notes': 'views', 'go.habits': 'method', 'go.dailyNote': 'views',
 }
@@ -646,9 +656,9 @@ export interface KeyLike {
 }
 
 /** Whether a key press is this chord. */
-export function matchesChord(c: Chord, e: KeyLike): boolean {
-  const letter = e.key.length === 1 && /[a-z]/i.test(e.key)
-  const key = e.key.toLowerCase()
+export function matchesChord(c: Chord, e: KeyLike, keyValue = e.key): boolean {
+  const letter = keyValue.length === 1 && /[a-z]/i.test(keyValue)
+  const key = keyValue.toLowerCase()
   if (c.key !== key) return false
   const ctrl = !!e.ctrlKey, meta = !!e.metaKey
   if (c.ctrl === false && (ctrl || meta)) return false
@@ -660,10 +670,23 @@ export function matchesChord(c: Chord, e: KeyLike): boolean {
   // A capital letter is the shifted key whatever the modifier flag says (Caps Lock, a
   // synthetic press); a lower-case one needs Shift off.
   if (letter) {
-    const upper = e.key !== key
+    const upper = keyValue !== key
     return c.shift ? upper || !!e.shiftKey : !upper && !e.shiftKey
   }
   return c.shift === !!e.shiftKey
+}
+
+/** The physical fallback for localized printable keys, after typed bindings have had their turn. */
+export function physicalShortcutKey(e: KeyboardEvent): string | undefined {
+  if (e.isComposing || e.getModifierState?.('AltGraph')) return undefined
+  const { code, key } = e
+  if (/^Key[A-Z]$/.test(code) && /^\p{L}$/u.test(key) && !/\p{Script=Latin}/u.test(key)) {
+    return code.slice(3).toLowerCase()
+  }
+  if (/^Digit[1-9]$/.test(code) && /^[\p{L}\p{N}\p{P}\p{S}]$/u.test(key) && !/^\p{Nd}$/u.test(key)) {
+    return code.slice(5)
+  }
+  return undefined
 }
 
 /** The chord sequences of an entry, parsed once; notes have none. */

@@ -1,0 +1,1 @@
+- **Accepting an invitation to a large project no longer fails with an internal error on the Home Assistant app.** The server keeps SQLite's temporary storage in memory, so it no longer needs a writable system temp directory.

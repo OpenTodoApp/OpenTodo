@@ -805,3 +805,47 @@ func TestProjectFlowInFrontMatter(t *testing.T) {
 		t.Fatalf("the unknown value left the file:\n%s", v.read(t, "Move house.md"))
 	}
 }
+
+// spoil is a transport that turns the priority of one task into a value the
+// server refuses, as a vault from before a stricter server could send.
+type spoil struct {
+	Transport
+	id string
+}
+
+func (s spoil) Exchange(ctx context.Context, req Request) (Reply, error) {
+	for i, op := range req.Ops {
+		if op.EntityID == s.id && op.Field == "priority" {
+			req.Ops[i].Value = json.RawMessage("9")
+		}
+	}
+	return s.Transport.Exchange(ctx, req)
+}
+
+// The vault opts in to invalid_ops (#1532): a change the server will never
+// accept is refused alone, the rest of the sync applies, and the file takes
+// the server's value back instead of the whole sync failing with invalid_op.
+func TestInvalidOpRefusedAlone(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	call := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
+	v := s.vault(t)
+	v.edit(t, "Home.md", "- [ ] Call mum", "- [ ] ⏫ Call mum 📅 2026-10-26")
+	rep, err := Sync(context.Background(), v.opts(&Options{Transport: spoil{Transport: &HTTPTransport{URL: s.url, Token: s.token}, id: call}}))
+	if err != nil {
+		t.Fatalf("sync failed instead of refusing one op: %v", err)
+	}
+	if all := strings.Join(rep.Warnings, "\n"); !strings.Contains(all, "refused the priority") || !strings.Contains(all, "(invalid)") {
+		t.Errorf("warnings %v", rep.Warnings)
+	}
+	c := s.get("tasks", call)
+	if c["priority"].(float64) != 4 || c["due"].(map[string]any)["date"] != "2026-10-26" {
+		t.Errorf("server task = %v", c)
+	}
+	if l := lineOf(t, v.read(t, "Home.md"), "Call mum"); strings.Contains(l, "⏫") || !strings.Contains(l, "📅 2026-10-26") {
+		t.Errorf("line = %q, want the server's priority and the new date", l)
+	}
+	if rep := v.sync(t); rep.Updated != 0 || len(rep.Warnings) != 0 {
+		t.Errorf("next sync not idle: %+v", rep)
+	}
+}

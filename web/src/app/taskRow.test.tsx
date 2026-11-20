@@ -369,7 +369,7 @@ describe('one row language (rows-v2)', () => {
     const r = await row({ project_id: project.id }, { showProject: true, project })
     const cell = r.container.querySelector('[data-row-cell="project"]')!
     expect(cell.querySelector('svg')).toBeNull()
-    expect(cell.querySelector<HTMLElement>('.rounded-full')?.style.backgroundColor).toBe(project.color)
+    expect(cell.querySelector<HTMLElement>('.rounded-full.bg-hue-solid')?.dataset.hue).toBe('red')
     expect(spokenText(cell)).toBe(project.name)
     await r.unmount()
   })
@@ -715,8 +715,15 @@ describe('the touch grip', () => {
     const css = (await import('../index.css?raw')).default
     // The row body is unselectable on a coarse pointer — the source of the Android
     // word-selection — with form controls exempt so the inline editor still selects.
-    expect(css).toMatch(/li\[data-task-id\] \{ -webkit-user-select: none; user-select: none; \}/)
+    // The callout is off with it (#1346): without `-webkit-touch-callout: none` iOS's
+    // long-press recognizer fires on the body and cancels the drag's pointer mid-hold,
+    // so a hold on the row body often selected text or did nothing instead of dragging,
+    // while the grip (a button, already callout-off) worked. Keep both on the one rule.
+    expect(css).toMatch(/li\[data-task-id\] \{ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; \}/)
     expect(css).toMatch(/li\[data-task-id\] :is\(input, textarea, \[contenteditable="true"\]\) \{ -webkit-user-select: text; user-select: text; \}/)
+    // The reading text inside an expanded row keeps its callout, so a link in notes still
+    // offers its long-press menu.
+    expect(css).toMatch(/li\[data-task-id\] \[data-row-details\] \{ -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; \}/)
     // The box is drawn by the app, not the platform: no native control's sizing or offset.
     expect(css).toMatch(/\.row-tick \{\s*appearance: none;/)
     expect(css).toMatch(/\.row-tick:checked \{[^}]*--ot-accent/)

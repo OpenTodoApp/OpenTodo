@@ -33,7 +33,11 @@ export function parseFrontMatter(src) {
     if (!m) { errors.push(`front matter line ${i + 2}: expected "key: value"`); continue }
     const [, key, raw] = m
     if (!KEYS.has(key)) { errors.push(`front matter: unknown key "${key}"`); continue }
-    data[key] = parseValue(raw.replace(/\s+#.*$/, '').trim())
+    const val = raw.replace(/\s+#.*$/, '').trim()
+    if (!/^(["']).*\1$/.test(val) && !(val.startsWith('[') && val.endsWith(']')) && /:(?:\s|$)/.test(val)) {
+      errors.push(`front matter line ${i + 2}: quote "${key}" value containing ":" for valid YAML`)
+    }
+    data[key] = parseValue(val)
   }
   return { data, body: text.slice(end + 5), errors }
 }

@@ -4,10 +4,19 @@
 // the matching and its toast load lazily (app/reuseList.ts).
 import { createTask, type NewTaskInput } from '../lib/ops'
 import { inReusableList } from '../lib/reuseGate'
+import { created } from './motion'
 
 /** Adds one item, reusing an item of a reusable list it matches; returns the id of the item now on the list. */
 export async function addToList<T extends NewTaskInput>(input: T, create: (input: T) => Promise<string>): Promise<string> {
-  if (!(await inReusableList([input]))) return create(input)
+  // The quick-add chokepoint (the command bar, the phone sheet, the list and section
+  // add lines): a single task added here gives the create tap (#1445). A pasted list
+  // goes through addManyToList, and a reusable list that reuses an item takes the
+  // branch below, so neither taps.
+  if (!(await inReusableList([input]))) {
+    const id = await create(input)
+    created()
+    return id
+  }
   return (await import('./reuseList')).addToList(input, create)
 }
 

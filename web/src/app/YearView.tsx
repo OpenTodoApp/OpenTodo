@@ -3,98 +3,41 @@
 // dot, for seeing a year at a glance and going from it to a month or a day. It reads
 // local rows only, writes nothing and works offline. One keyboard grid across the
 // months (D5); below 640 px a month is the touch target (D6). Loads on first use.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button, PageBody, useMediaQuery } from '../ui'
-import { calendarTasks, eventsByDay } from '../lib/calendar'
 import { useOnline } from '../lib/online'
 import { CalendarsToggle } from './calendar/CalendarsToggle'
 import { CalendarStatus } from './calendar/CalendarStatus'
-import { useCalendarFeeds } from './calendar/useCalendarFeeds'
 import { rememberCalendarMode } from '../lib/calendarMode'
-import { addDaysISO, formatDateParts, monthName, viewedTask } from '../lib/dates'
+import { addDaysISO, formatDateParts, monthName } from '../lib/dates'
 import { t } from '../lib/i18n'
 import { useGridPrefs } from '../lib/liveData'
-import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
-import { useProjects } from '../lib/localData'
 import { addMonthsISO, monthEnd, monthGrid } from '../lib/month'
-import { planSeries } from '../lib/plan'
-import { slotCapacity, slotsByDate, useSlots } from '../lib/slots'
-import { densityStep, yearCounts, type YearDay } from '../lib/yearView'
+import type { YearDay } from '../lib/yearView'
+import { MonthCells, tipText } from './calendar/MonthDensityCells'
+import { useRangeCounts, useRangeEvents } from './calendar/useRangeDensity'
 import { CalendarRangeSwitch } from './CalendarRange'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
-import { CalendarPageHeader, useCalendarChrome } from './calendar/useCalendarChrome'
-import { useCalendarProjectionsOn } from './calendar/projectionSwitches'
+import { CalendarPageHeader } from './calendar/useCalendarChrome'
 import { useCalendarGo } from './calendar/scope'
 import { focusHeading, pageHeading } from './pageFocus'
 import { useShortcutScope } from './shortcuts'
-import { useToday, useViewerZone } from './useViews'
+import { useToday } from './useViews'
 import { useResetOnChange } from '../lib/useResetOnChange'
 
 const NO_DAY: YearDay = { count: 0, minutes: 0, titles: [] }
-// A step's mark (D3): the chart ramp's fill, a longer bar and a heavier numeral, so no step rests on colour alone.
-const STEP_BAR = ['', 'w-1/3 bg-chart-seq-3', 'w-2/3 bg-chart-seq-4', 'w-full bg-chart-seq-5']
-const STEP_WEIGHT = ['font-normal', 'font-medium', 'font-semibold', 'font-bold']
-
-/** "4 tasks" and up to three titles, then "+1 more", then "2 events" (the day's tip). */
-function tipText(day: YearDay, events: number): string[] {
-  const rest = day.count - day.titles.length
-  const tasks = day.count > 0 ? [t('{n, plural, one {# task} other {# tasks}}', { n: day.count }), ...day.titles.map((x) => x || t('Untitled')), ...(rest > 0 ? [t('+{hidden} more', { hidden: rest })] : [])] : []
-  return [...tasks, ...(events > 0 ? [t('{n, plural, one {# event} other {# events}}', { n: events })] : [])]
-}
-
-/**
- * The number of shown events per day of the year (calendar-events-all-views): the
- * enabled calendars while the Calendars toggle shows them; a mark of their own, never
- * part of the density.
- */
-function useYearEvents(year: string) {
-  const zone = useViewerZone()
-  const from = `${year}-01-01`, to = `${year}-12-31`
-  const feeds = useCalendarFeeds(from, to)
-  const counts = useMemo(() => {
-    const out = new Map<string, number>()
-    for (const [d, x] of eventsByDay(feeds.visibleEvents, from, to, zone)) out.set(d, x.allDay.length + x.timed.length)
-    return out
-  }, [feeds.visibleEvents, from, to, zone])
-  return { feeds, counts }
-}
-
-/** The counts of the shown year: the calendar's selection, the scope and filter, and the projections while they are shown. */
-function useYearCounts(year: string, today: string) {
-  const zone = useViewerZone()
-  const projects = useProjects()
-  const rawTasks = useLiveTasks() ?? NO_TASKS
-  const viewed = useMemo(() => rawTasks.map((task) => viewedTask(task, zone)), [rawTasks, zone])
-  const viewedMap = useMemo(() => new Map(viewed.map((task) => [task.id, task])), [viewed])
-  const chrome = useCalendarChrome(viewed, projects, { projections: true, colorBy: false })
-  const projectionsOn = useCalendarProjectionsOn()
-  const keeps = chrome.keeps
-  const from = `${year}-01-01`, to = `${year}-12-31`
-  const shown = useMemo(() => calendarTasks(viewed, projects, from, to), [viewed, projects, from, to])
-  const series = useMemo(() => (projectionsOn ? planSeries(rawTasks, projects).filter((s) => keeps(viewedMap.get(s.id) ?? s)) : []), [projectionsOn, rawTasks, projects, keeps, viewedMap])
-  // Slots count once toward a day's capacity, as in Month (calendar-slots D6).
-  const slotRows = useSlots()
-  const days = useMemo(() => {
-    const out: string[] = []
-    for (let d = from; d <= to; d = addDaysISO(d, 1)) out.push(d)
-    return out
-  }, [from, to])
-  const slotViews = useMemo(() => slotsByDate(slotRows, days, viewedMap), [slotRows, days, viewedMap])
-  const counts = useMemo(() => yearCounts({ tasks: shown, keeps, series, records: rawTasks, today, from, to, zone }), [shown, keeps, series, rawTasks, today, from, to, zone])
-  const extra = useCallback((d: string) => slotCapacity(slotViews.get(d)).extra, [slotViews])
-  return { chrome, counts, extra }
-}
 
 export default function YearView({ date }: { date?: string }) {
   const today = useToday()
   const anchor = date ?? today
   const year = anchor.slice(0, 4)
+  const from = `${year}-01-01`, to = `${year}-12-31`
   const { resolved } = useDateTimeFormat()
   const prefs = useGridPrefs()
   const narrow = useMediaQuery('(max-width: 39.99rem)')
   useEffect(() => rememberCalendarMode('year'), [])
-  const { chrome, counts, extra } = useYearCounts(year, today)
-  const { feeds, counts: eventCounts } = useYearEvents(year)
+  const { chrome, counts, extra } = useRangeCounts(from, to, today)
+  const { feeds, counts: eventCounts } = useRangeEvents(from, to)
   const online = useOnline()
 
   const [focused, setFocused] = useState(anchor)
@@ -221,60 +164,5 @@ export default function YearView({ date }: { date?: string }) {
       </p>
       {chrome.element}
     </PageBody>
-  )
-}
-
-/**
- * One compact month (D3): weekday initials and six weeks of plain day cells, no hooks or
- * state per cell (D7). On a phone the cells are drawn inside the month's button, without
- * grid roles.
- */
-function MonthCells({ weeks, month, today, focused, tipped, weekdays, interactive, day, events, over, label }: {
-  weeks: string[][]
-  month: string
-  today: string
-  focused: string
-  /** The day whose tip is open. */
-  tipped?: string
-  weekdays: string[]
-  interactive: boolean
-  day: (d: string) => YearDay
-  /** The shown calendar events of a day (calendar-events-all-views): a ring of its own, not part of the density. */
-  events: (d: string) => number
-  over: (d: string, day: YearDay) => boolean
-  label: string
-}) {
-  const g = interactive
-  return (
-    <div role={g ? 'grid' : undefined} aria-label={g ? t('{title} calendar', { title: label }) : undefined} aria-readonly={g ? true : undefined} className="w-full select-none" data-year-cells={month}>
-      <div role={g ? 'row' : undefined} className="grid grid-cols-7">
-        {weekdays.map((w, i) => <div key={i} role={g ? 'columnheader' : undefined} className="text-center text-hint text-faint">{w}</div>)}
-      </div>
-      {weeks.map((week) => (
-        <div key={week[0]} role={g ? 'row' : undefined} className="grid grid-cols-7">
-          {week.map((d) => {
-            if (d.slice(0, 7) !== month) return <div key={d} role={g ? 'gridcell' : undefined} className="min-h-6" />
-            const x = day(d)
-            const step = densityStep(x.count)
-            const isOver = over(d, x)
-            const isFocused = g && d === focused
-            const evs = events(d)
-            const name = [formatDateParts(d, { day: 'numeric', month: 'long' }), x.count ? t('{n, plural, one {# task} other {# tasks}}', { n: x.count }) : '', evs ? t('{n, plural, one {# event} other {# events}}', { n: evs }) : '', isOver ? t('over capacity') : ''].filter(Boolean).join(', ')
-            return (
-              <div key={d} role={g ? 'gridcell' : undefined} tabIndex={g ? (isFocused ? 0 : -1) : undefined} data-year-day={g ? d : undefined} data-density={step}
-                aria-selected={g ? isFocused : undefined} aria-current={d === today ? 'date' : undefined} aria-describedby={g && d === tipped && (x.count > 0 || evs > 0) ? 'year-day-tip' : undefined}
-                {...(isOver ? { 'data-over': '' } : {})} {...(evs ? { 'data-events': evs } : {})}
-                className={`relative flex min-h-6 min-w-0 flex-col items-center justify-center rounded-chip py-0.5 outline-none ${g ? 'cursor-pointer pointer-fine:hover:bg-hover focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-[-2px] focus-visible:outline-focus' : ''} ${isFocused ? 'bg-accent-soft/40' : ''}`}>
-                <span className="sr-only">{name}</span>
-                <span aria-hidden className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-0.5 text-hint tabular-nums ${STEP_WEIGHT[step]} ${d === today ? 'bg-accent text-on-accent' : d < today ? 'text-faint' : 'text-default'}`}>{Number(d.slice(8))}</span>
-                <span aria-hidden className="flex h-1 w-4/5 justify-center">{step > 0 && <span data-density-mark className={`h-1 rounded-full ${STEP_BAR[step]}`} />}</span>
-                {isOver && <span aria-hidden data-over-mark className="absolute end-0.5 top-0.5 size-1.5 rounded-full bg-danger" />}
-                {evs > 0 && <span aria-hidden data-event-mark className="ui-event-mark absolute start-0.5 top-0.5" />}
-              </div>
-            )
-          })}
-        </div>
-      ))}
-    </div>
   )
 }

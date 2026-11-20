@@ -1,6 +1,6 @@
 ---
 title: Public demo instance
-summary: Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off.
+summary: "Run a public demo with a private sandbox per visitor: limits, expiry, the nightly reset and what is switched off."
 audience: admin
 specs: [demo-mode]
 screens: []

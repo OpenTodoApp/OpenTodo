@@ -225,8 +225,8 @@ export function useListShortcuts(c: ShortcutContext) {
       if (completing && !row.task.recurrence) setSelectedId((rows[idx + 1] ?? rows[idx - 1])?.task.id ?? null)
       act(c.toggleComplete(row.task.id, completing))
     },
-    'list.priority': (e) => {
-      const priority = Number(e.key) as Priority
+    'list.priority': (_event, _shortcut, chord) => {
+      const priority = Number(chord.key) as Priority
       if (ticked.length) { act(runBulk(ticked, { kind: 'priority', priority })); return }
       if (!selectedId || (row && !writable)) return false
       act(updateTask(selectedId, { priority }))

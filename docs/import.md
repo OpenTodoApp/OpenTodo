@@ -1,6 +1,6 @@
 ---
 title: Import formats
-summary: Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo.
+summary: "Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo."
 audience: user
 section: Reference
 specs: [data-import]

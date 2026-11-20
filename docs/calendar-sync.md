@@ -1,6 +1,6 @@
 ---
 title: Calendar sync
-summary: Two-way sync with your own calendar: dated tasks become events in iCloud, Fastmail, Nextcloud, Google, Outlook, Microsoft 365 or any CalDAV calendar, and moving an event moves the task.
+summary: "Two-way sync with your own calendar: dated tasks become events in iCloud, Fastmail, Nextcloud, Google, Outlook, Microsoft 365 or any CalDAV calendar, and moving an event moves the task."
 audience: user
 section: Integrations
 specs: [calendar-sync, calendar-feeds, end-to-end-encryption]
@@ -23,7 +23,7 @@ The server owner turns calendar sync on under **Settings → Integrations → Ca
 | A task due at a time without an estimate | A 30-minute event |
 | A task due on a day without a time | An all-day event, only with **Include tasks without a time** on |
 | A multi-day task, from its start date to its due date | One all-day event over those days, whatever **Include tasks without a time** says; a due time is not shown |
-| A repeating task | One event for its next occurrence |
+| A repeating task | One event for its next occurrence, titled with 🔁 before the task's title (the marker is ignored when the event is read back) |
 | A completed, deleted or undated task | Its event is removed |
 
 And back:

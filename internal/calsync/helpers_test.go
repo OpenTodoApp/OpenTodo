@@ -14,6 +14,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/calsync/calsynctest"
 	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
@@ -90,6 +91,9 @@ func (h *harness) feedTasks(ctx context.Context, userID string, scope syncscope.
 		ft := calfeed.FeedTask{ID: id, Title: str(t["title"]), Description: str(t["description"]), Date: due.Date, Time: due.Time, TZ: due.TZ, Modified: mod[id]}
 		_ = json.Unmarshal(t["estimate_minutes"], &ft.Estimate)
 		ft.Start = calfeed.SpanStart(string(t["span"]) == "true", str(t["start"]), due.Date)
+		if rule, err := recurrence.Parse(str(t["recurrence"])); str(t["recurrence"]) != "" && err == nil {
+			ft.RRULE = rule.RRULE()
+		}
 		if p := str(t["project_id"]); p != "" {
 			ft.Places = []string{p}
 		} else {

@@ -1,6 +1,6 @@
 ---
 title: Narrow notes with tokens
-summary: Type in:, @label, kind:, linked:, orphan, pinned or changed: in the Notes search field to narrow the list; each becomes a chip, with suggestions as you type.
+summary: "Type in:, @label, kind:, linked:, orphan, pinned or changed: in the Notes search field to narrow the list; each becomes a chip, with suggestions as you type."
 audience: user
 section: Guides
 specs: [notes-page]
@@ -17,7 +17,7 @@ Type a token in the search field to narrow the list; when it is complete and you
 | --- | --- |
 | `in:Renovation` or `#Renovation` | Notes in that project or one of its sub-projects: standalone notes in it, the notes of its tasks and its own project note |
 | `@errand` or `label:errand` | Standalone notes and task notes with that label |
-| `kind:note`, `kind:task`, `kind:project` | Standalone notes, task notes or project notes |
+| `kind:note`, `kind:task`, `kind:project` | Standalone notes, task notes or project notes (without a `kind:` chip, task notes are left out) |
 | `linked:Trip` | What links to the note "Trip" and what it links to |
 | `orphan` | Standalone notes nothing links to |
 | `pinned` | Your pinned notes |

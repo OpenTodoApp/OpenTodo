@@ -3,7 +3,7 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Se connecter à votre serveur</string>
     <string name="setup_intro">Saisissez l’adresse de votre serveur OpenTodo, celle que vous ouvrez dans le navigateur.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Adresse du serveur</string>
     <string name="setup_connect">Se connecter</string>
     <string name="setup_connect_anyway">Se connecter quand même</string>
     <string name="setup_try">Essayer %1$s</string>

@@ -13,7 +13,7 @@ import { planNote } from '../../lib/noteOps'
 import { setCurrentUserId } from '../../lib/sharing'
 import { click, flush, key, minWidthPx, render, waitFor } from '../../ui/test-utils'
 import { resetPanel } from '../panel'
-import { NotesPage } from './NotesPage'
+import { NOTE_TOKENS_KEY, NotesPage } from './NotesPage'
 
 const original = window.matchMedia
 let run = 0
@@ -46,6 +46,7 @@ describe('ticking notes', () => {
     await inOrder('Agenda 5 Nov')
     await createTask({ title: 'Call the plumber', description: 'the boiler' })
     await inOrder('Agenda 4 Nov', 'Agenda 3 Nov')
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'note' }, { key: 'kind', value: 'task' }]))
     const { container } = await render(<NotesPage />)
     await waitFor(() => container.querySelectorAll('[data-note-key]').length === 4, 'four rows')
     const start = button(container, 'Agenda 3 Nov')

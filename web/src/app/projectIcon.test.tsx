@@ -34,11 +34,16 @@ describe('project mark', () => {
   it('is the colour dot by default, the icon in the project colour once set, and the dot again for a name this client does not know', () => {
     const dot = renderToStaticMarkup(<ProjectMark project={{ color: '#22c55e', icon: null }} />)
     expect(dot).toContain('rounded-full')
-    expect(dot).toContain('background-color:#22c55e')
+    // The theme's shade of the stored colour, never the stored hex itself (GitHub issue 1579).
+    expect(dot).toContain('data-hue="green"')
+    expect(dot).toContain('bg-hue-solid')
+    expect(dot).not.toContain('#22c55e')
     expect(dot).not.toContain('<svg')
     const icon = renderToStaticMarkup(<ProjectMark project={{ color: '#22c55e', icon: 'briefcase' }} />)
     expect(icon).toContain('<svg')
-    expect(icon).toContain('color:#22c55e')
+    expect(icon).toContain('data-hue="green"')
+    expect(icon).toContain('text-hue-solid')
+    expect(icon).not.toContain('#22c55e')
     expect(renderToStaticMarkup(<ProjectMark project={{ color: '#000', icon: 'from-a-newer-release' }} />)).not.toContain('<svg')
     expect(renderToStaticMarkup(<ProjectMark project={{ color: '#000' }} />)).toContain('rounded-full')
   })

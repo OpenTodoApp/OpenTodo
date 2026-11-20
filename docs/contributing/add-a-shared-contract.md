@@ -22,7 +22,7 @@ When the server has to compute something the app already computes (or the other 
 3. **The fixture**: `web/src/lib/<name>.vectors.json`, a list of cases `{name, input, expected}`. Cover the edges: time zones and daylight saving, empty values, the limits.
 4. **Both tests read it**: `internal/<name>/<name>_test.go` and `web/src/lib/<name>.test.ts` load the same file and assert every case.
 5. **The row**: add the contract to the table in [docs/contracts.md](../contracts.md) with both files, the fixture, both tests and how the fixture is written (`hand`, or the command that regenerates it).
-6. **The layout note**: name the Go package in `AGENTS.md` (Go ports of web logic) and in [Architecture](../architecture.md#server-packages-cmdopentodo-internal).
+6. **The layout note**: name the Go package in [Packages and rules in full](packages.md) (Go ports of web logic) and in [Architecture](../architecture.md#server-packages-cmdopentodo-internal).
 
 ## Check it
 

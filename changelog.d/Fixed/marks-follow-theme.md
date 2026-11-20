@@ -1,0 +1,1 @@
+- **Project colours follow the theme.** A project's dot or icon in the sidebar, the lists and the pickers, a label's dot in the pickers and a view's mark now use the theme's shade of their colour, in light and in dark and in a custom theme, as label chips and calendar blocks already did. The stored colour is unchanged (#1579).

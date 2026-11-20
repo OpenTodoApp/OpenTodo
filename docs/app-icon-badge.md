@@ -20,7 +20,7 @@ Completing, adding, deleting or rescheduling a task changes the number at once, 
 - The app added to the home screen on iPhone and iPad, with iOS or iPadOS 16.4 or later ([Install on your phone](install-phone.md#iphone-and-ipad)).
 - Apps installed from Chrome or Edge on a computer or on Android ([Installing the app](install-app.md)).
 
-The switch, **Show today's count** under **Settings → Notifications → App icon badge**, only appears on a device that can show badges. It is on by default and applies to this device only. Turning it off, or signing out, removes the badge.
+**Count** under **Settings → Notifications → App icon badge** chooses what the badge counts: **Today** (the default, as above), **Earlier** (only the tasks in Today's Earlier group: due on an earlier day, or with a deadline that has passed) or **Off**. It only appears on a device that can show badges and applies to this device only. Off, or signing out, removes the badge.
 
 ## On iPhone and iPad
 

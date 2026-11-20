@@ -243,7 +243,7 @@ A due fixed to a zone SHALL read its zone's city as a suffix of the Do on part (
 - **THEN** the panel shows no zone text at rest, and in the Do on segment the zone control is disabled and states that a time is needed to fix a zone
 
 ### Requirement: Fix a due to any zone
-Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
+Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. While a due is fixed to a zone other than the viewer's, the Do on segment of the task panel SHALL show and edit the due's date and time in that zone (its stored wall-clock date and time), and the time line SHALL show the same moment in the viewer's zone as a hint ("03:00 your time", with the date when it differs); a typed date or time there SHALL mean that zone's clock. Lists, headings and the panel's summary SHALL keep showing the viewer's time ("Display in the viewer's zone"). For a floating due, or one fixed to the viewer's own zone, the fields SHALL read as before and show no hint. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
 
 #### Scenario: Meeting in another city
 - **WHEN** a Berlin user with a floating due `15:00` on 2026-11-02 picks "America/New_York"
@@ -256,6 +256,14 @@ Choosing a zone from the zone control SHALL keep the wall-clock date and time cu
 #### Scenario: Recently used zone
 - **WHEN** the user picked "Asia/Tokyo" on a previous task and opens the zone control of another task
 - **THEN** "Tokyo" is listed right after the viewer's own zone
+
+#### Scenario: Edit the time in the task's zone
+- **WHEN** a Madrid user has a due `20:00 America/Mexico_City` on 2026-11-20 and opens the Do on segment
+- **THEN** the time field reads `20:00`, the date reads 2026-11-20 and the hint reads `03:00 (21 Nov) your time`; typing `21:00` stores `21:00 America/Mexico_City`
+
+#### Scenario: Zone first, time second
+- **WHEN** a Madrid user fixes a floating `09:00` due to "America/Mexico_City" and then types `20:00` in the time field
+- **THEN** the due becomes `20:00 America/Mexico_City`, and the row shows `03:00` the next day for the Madrid user
 
 ### Requirement: Who completed a task
 A task SHALL record in `completed_by` the account id of whoever completed it, or null when unknown. Every write that completes a task SHALL set it in the same batch as the completion time, and every reopen SHALL clear it. Server writes on a user's behalf SHALL set it to that user; public link ticks SHALL record null. It SHALL be an ordinary, unencrypted task field: written offline, synced, converged by last-writer-wins with the completion time, and exported.

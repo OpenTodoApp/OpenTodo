@@ -1,0 +1,1 @@
+- **Reorder subtasks from the task.** In the task panel and on the task page each open subtask has a handle: drag it, press Alt+Up or Alt+Down on it, or click it for Move up and Move down. The order is the one the project's list shows (#1577).

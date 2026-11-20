@@ -128,7 +128,7 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
         {corner > 0 && (
           <div className="notes-corner">
             {outlined && <Suspense fallback={null}><OutlineButton items={heads} current={-1} onGo={goTo} open={outlineOpen} onOpenChange={setOutlineOpen} /></Suspense>}
-            {sourceButton && <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={sourceShown} className="ui-reveal source-toggle" onClick={() => setSourceShown(!sourceShown)} data-notes-source-toggle="" />}
+            {sourceButton && <IconButton icon="code" size="sm" label={t('Show Markdown source')} aria-pressed={sourceShown} className="ui-reveal source-toggle" onClick={() => setSourceShown(!sourceShown)} data-notes-source-toggle="" />}
           </div>
         )}
         {sourceShown

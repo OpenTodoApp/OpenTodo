@@ -1,6 +1,6 @@
 ---
 title: Project notes
-summary: The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it.
+summary: "The note at the top of a project: what it is for, who can edit it, Shift+P, folding long notes, and how the API and history see it."
 audience: user
 section: Guides
 specs: [project-notes, project-organization, rich-text-editing]

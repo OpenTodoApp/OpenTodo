@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "task_detail",
-  "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders).",
+  "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders), and its live direct subtasks in position order (OpenSpec cli-subtasks).",
   "type": "object",
   "required": ["task", "reminders"],
   "properties": {
     "task": {"$ref": "#/schemas/task"},
+    "subtasks": {"type": "array", "items": {"$ref": "#/schemas/task"}, "description": "the live direct subtasks, completed ones included; empty when there are none"},
     "reminders": {
       "type": "array",
       "items": {

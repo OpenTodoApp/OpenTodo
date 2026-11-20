@@ -11,6 +11,7 @@ import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
 import { IconButton } from '../ui'
 import { Markdown } from './Markdown'
+import { PendingUntil } from './stories/pendingUntil'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
 // a note with a quote, a table, an image whose attachment is gone and a mention;
@@ -84,14 +85,20 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       nodeViews: imageViews(null),
     })
     setView(v)
-    if (slash) {
+    let live = true
+    // The menu is placed at the caret once, when it opens: open it after the web font is in,
+    // or the text reflows under a menu placed with the fallback font's widths.
+    if (slash) void document.fonts.load('1em "OpenTodo Inter"').then(() => document.fonts.ready).then(() => {
+      if (!live) return
       v.focus()
       const end = v.state.doc.child(0).nodeSize - 1
       const tr = v.state.tr.insertText(' /', end)
       v.dispatch(tr.setSelection(TextSelection.create(tr.doc, end + 2)))
-    }
-    const t = setTimeout(() => setReady(true), 50)
+    })
+    // With the slash menu, settled once its rows are drawn (PendingUntil below); else after a frame.
+    const t = slash ? undefined : setTimeout(() => setReady(true), 50)
     return () => {
+      live = false
       clearTimeout(t)
       v.destroy()
     }
@@ -101,7 +108,7 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       {toolbar && <EditorToolbar view={view} env={env} visible coarse onMenu={() => {}} />}
       <div ref={host} className="notes-host" data-notes-editing />
       {chrome.overlays}
-      {!ready && <span data-story-pending />}
+      {slash ? <PendingUntil selector='[data-suggest="slash"] [role="option"]' /> : !ready && <span data-story-pending />}
     </div>
   )
 }

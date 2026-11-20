@@ -58,8 +58,9 @@ describe('preference', () => {
     const at = css.indexOf('@media screen and (width < 48rem) {\n  .row-pad')
     expect(at).toBeGreaterThan(0)
     const phone = css.slice(at, css.indexOf('\n}\n', at))
-    // No clamp of its own: RowTitle's two lines (above) are the only one.
-    expect(phone).toContain('[data-row-title] { font-size: 0.90625rem; }')
+    // No clamp of its own: RowTitle's two lines (above) are the only one. The size follows
+    // the theme's list token (type.list), a touch larger for the phone (Discord: iOS PWA list size).
+    expect(phone).toContain('[data-row-title] { font-size: calc(var(--ot-text-list) + 0.09375rem); }')
     expect(phone).not.toContain('line-clamp')
     expect(phone).toMatch(/\[data-row-props\] \{ grid-area: 1 \/ 2; [^}]*align-self: start; min-height: 1\.25rem;/)
     // The row keeps its 44 px and the controls before the title stay on its first line.

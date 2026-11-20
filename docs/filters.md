@@ -1,6 +1,6 @@
 ---
 title: Filter queries
-summary: The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples.
+summary: "The filter language in full: terms, operators, dates, saved views, dashboards and ten worked examples."
 audience: user
 section: Reference
 specs: [filter-queries, custom-views]

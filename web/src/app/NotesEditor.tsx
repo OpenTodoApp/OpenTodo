@@ -611,7 +611,7 @@ function LinkAsk({ ask, onDone }: { ask: { current: string; answer: (href: strin
 
 /** Markdown beside the Formatting toggle on a fine pointer (note-markdown-source D4): the source, or back to rich text. */
 function SourceButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return <IconButton icon="code" size="sm" label={t('Markdown')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
+  return <IconButton icon="code" size="sm" label={t('Show Markdown source')} aria-pressed={on} shortcut={keysOf('editor.source')} className="ui-reveal source-toggle" onClick={onToggle} data-notes-source-toggle="" />
 }
 
 /** Images belong to the task or the standalone note (note-attachments); a project's notes have none. */

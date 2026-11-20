@@ -107,7 +107,7 @@ const ARROWS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home
  * line's end, the zone. Disabled until the task has a do date (with nothing chosen,
  * so the row reads as waiting), and for a reader.
  */
-function TimeOfDay({ task, readOnly, zone }: { task: Task; readOnly: boolean; zone: string }) {
+function TimeOfDay({ task, readOnly, zone, viewer }: { task: Task; readOnly: boolean; zone: string; viewer: string }) {
   const dt = useDateTimeFormat()
   const parts = dayPartsOn(useUserPrefsRow())
   const view = localDueOf(task.due, zone)
@@ -152,7 +152,8 @@ function TimeOfDay({ task, readOnly, zone }: { task: Task; readOnly: boolean; zo
               className="touch-target inline-flex min-h-7 items-center rounded-control px-2 text-meta tabular-nums text-muted transition duration-(--duration-ui) hover:bg-sunken hover:text-default dark:hover:bg-raised"
               onClick={() => write({ time: tm })}>{dt.formatTime(tm)}</button>
           ))}
-          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={zone} variant="inline" /></span>}
+          {time && zone !== viewer && <YourTime due={task.due} viewer={viewer} />}
+          {time && <span className="ml-auto"><ZoneControl task={task} readOnly={readOnly} viewerZone={viewer} variant="inline" /></span>}
         </div>
       )}
     </div>
@@ -182,6 +183,15 @@ function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolea
   )
 }
 
+/** The same moment in the viewer's zone, for a due fixed to another zone (zone-time-field). */
+function YourTime({ due, viewer }: { due: Task['due']; viewer: string }) {
+  const dt = useDateTimeFormat()
+  const local = localDueOf(due, viewer)
+  if (!due || !local?.time) return null
+  const day = local.date !== due.date ? ` (${dt.formatDate(local.date, 'compact')})` : ''
+  return <span className="text-meta tabular-nums text-faint" data-your-time>{t('{time}{day} your time', { time: dt.formatTime(local.time), day })}</span>
+}
+
 /**
  * The Do on segment (when-picker D1–D5): the date field, whose placeholder is an
  * example and which takes a date with a time ("tomorrow 3pm"), the quick choices on
@@ -189,14 +199,17 @@ function MultiDaySwitch({ task, readOnly, root }: { task: Task; readOnly: boolea
  * line with its zone. Clear is the popover's footer.
  */
 function DoOn({ task, readOnly }: { task: Task; readOnly: boolean }) {
-  const zone = useViewerZone()
+  const viewer = useViewerZone()
+  // A due fixed to a zone is read and edited in that zone's clock (zone-time-field);
+  // a floating one in the viewer's.
+  const zone = task.due?.tz ?? viewer
   const view = localDueOf(task.due, zone)
   const setDate = (date: string | null) => act(setDueWithUndo(task.id, dueFromView(task.due, date ? { date, ...(view?.time ? { time: view.time } : {}) } : null, zone)))
   return (
     <div className="space-y-3">
       <DatePicker compact label={t('Due date')} value={view?.date ?? null} choices={quickChoices('due')} emptyText={t('tomorrow 3pm, next fri')}
         onChange={setDate} onChangeTimed={(date, time) => act(doOnWithUndo(task.id, { date, time }, zone))} />
-      <TimeOfDay task={task} readOnly={readOnly} zone={zone} />
+      <TimeOfDay task={task} readOnly={readOnly} zone={zone} viewer={viewer} />
     </div>
   )
 }

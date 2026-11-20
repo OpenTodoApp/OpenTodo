@@ -244,7 +244,12 @@ export const WorkspaceControl: StoryObj = {
   render: () => <Column><Sidebar route={{ view: 'inbox' }} user={storyUser} onSearch={noop} onShortcuts={noop} onToggleCollapse={noop} /></Column>,
 }
 
-const workspaceTrigger = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-workspace-trigger]')
+// Only once the seeded workspaces are loaded (the trigger names the current one, Family):
+// opened earlier, the menu has no rows yet and focus lands on New workspace.
+const workspaceTrigger = (root: HTMLElement) => {
+  const el = root.querySelector<HTMLElement>('[data-workspace-trigger]')
+  return el?.querySelector('[data-workspace-name]')?.textContent === 'Family' ? el : null
+}
 const press = (el: HTMLElement) => el.click()
 /** The switcher open: the workspaces with their Inbox and Today counts, the current one checked, New workspace and Manage workspaces. */
 export const SwitcherOpen: StoryObj = {
