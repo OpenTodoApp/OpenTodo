@@ -1,0 +1,1 @@
+- **A change held on a device ends once it no longer matters.** If the field was edited again or the item was moved to the Trash, the held change is dropped and the sync error clears.

@@ -195,6 +195,7 @@
       "web/src/lib/feed.ts",
       "web/src/lib/focus/prefs.ts",
       "web/src/lib/labels.ts",
+      "web/src/lib/limits.ts",
       "web/src/lib/localData.ts",
       "web/src/lib/locations.ts",
       "web/src/lib/notePages.ts",

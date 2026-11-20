@@ -463,7 +463,7 @@ When sync fails with an error, the status control SHALL keep its text label in c
 - **THEN** the alert disappears and the control returns to its normal presentation
 
 ### Requirement: A refusal on an unknown field keeps the change on the device
-The client SHALL announce `invalid_ops`. It SHALL keep an operation the server refused with reason `unknown_field`: the row SHALL keep its value, the change SHALL count as pending, and it SHALL be offered again with the changes a server limit holds. The rest of the outbox SHALL keep syncing. While such a change is held, the sync status SHALL show the error state with a sentence that says a change could not be accepted and stays on the device. An operation refused with reason `invalid` SHALL end like any refused change: it SHALL NOT be held or offered again, the field SHALL take the server's value, or its default when the server has none, and the not-accepted notice SHALL say that the server could not accept the value.
+The client SHALL announce `invalid_ops`. It SHALL keep an operation the server refused with reason `unknown_field`: the row SHALL keep its value, the change SHALL count as pending, and it SHALL be offered again with the changes a server limit holds. A held change, of either kind, SHALL be dropped instead of offered again once its field was written again since (the row's clock for the field wins over the change's under the last-writer-wins rule, whether the newer write was made on this device or pulled from another) or its row is in the Trash; a held change of `deleted_at` itself SHALL be kept. The rest of the outbox SHALL keep syncing. While such a change is held, the sync status SHALL show the error state with a sentence that says a change could not be accepted and stays on the device. An operation refused with reason `invalid` SHALL end like any refused change: it SHALL NOT be held or offered again, the field SHALL take the server's value, or its default when the server has none, and the not-accepted notice SHALL say that the server could not accept the value.
 
 #### Scenario: One change the server cannot accept
 - **WHEN** the server refuses one of two edits with reason `unknown_field`
@@ -476,3 +476,7 @@ The client SHALL announce `invalid_ops`. It SHALL keep an operation the server r
 #### Scenario: A value the server will never accept
 - **WHEN** the server refuses an edit of a task's title with reason `invalid` and sends its stored title
 - **THEN** the task shows the stored title, nothing is pending or offered again, the status reads synced, and a notice says one change was not accepted because the server could not accept the value
+
+#### Scenario: Written again before it is accepted
+- **WHEN** a held change of a task's title is waiting and the user edits the title again, and the server applies the new edit
+- **THEN** the held change is not offered again, and once nothing else is held the status returns to synced
