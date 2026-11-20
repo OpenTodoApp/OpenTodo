@@ -37,9 +37,15 @@ func TestOriginURL(t *testing.T) {
 		t.Fatalf("page origin = %v", o)
 	}
 
+	// A link into another app is a plain url origin (app-links D5).
+	paper := strings.TrimSpace(h.mustRun("add", "Read the paper", "--origin-url", "zotero://select/items/ABC"))
+	if o := h.task(paper)["origin"].(map[string]any); !sameMap(o, map[string]any{"kind": "url", "url": "zotero://select/items/ABC"}) {
+		t.Fatalf("app link origin = %v", o)
+	}
+
 	h.requestLog()
-	if code, _, errb := h.run("add", "Nope", "--origin-url", "ftp://files.example/x"); code != ExitUsage || !strings.Contains(errb, "--origin-url") {
-		t.Fatalf("ftp: %d %q", code, errb)
+	if code, _, errb := h.run("add", "Nope", "--origin-url", "javascript:alert(1)"); code != ExitUsage || !strings.Contains(errb, "--origin-url") {
+		t.Fatalf("javascript: %d %q", code, errb)
 	}
 	if code, _, _ := h.run("add", "Nope", "--origin-url", "none"); code != ExitUsage {
 		t.Fatalf("add none: %d", code)
@@ -49,7 +55,7 @@ func TestOriginURL(t *testing.T) {
 	}
 
 	// The table shows the origin column only when a listed task has one.
-	if list := h.mustRun("list"); !strings.Contains(list, "ORIGIN") || !strings.Contains(list, "o/r#7") || !strings.Contains(list, "example.org") {
+	if list := h.mustRun("list"); !strings.Contains(list, "ORIGIN") || !strings.Contains(list, "o/r#7") || !strings.Contains(list, "example.org") || !strings.Contains(list, "Zotero") {
 		t.Fatalf("list = %q", list)
 	}
 
@@ -66,6 +72,7 @@ func TestOriginURL(t *testing.T) {
 		t.Fatalf("cleared = %v", edited)
 	}
 	h.mustRun("edit", id, "--origin-url", "none")
+	h.mustRun("edit", paper, "--origin-url", "none")
 	if list := h.mustRun("list"); strings.Contains(list, "ORIGIN") {
 		t.Fatalf("a list without origins has an origin column: %q", list)
 	}

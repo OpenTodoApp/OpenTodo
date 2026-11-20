@@ -18,8 +18,10 @@ import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment 
 import { liftListItem, sinkListItem, splitListItem, wrapInList } from 'prosemirror-schema-list'
 import { type Command, EditorState, Plugin, PluginKey, type Transaction } from 'prosemirror-state'
 import { tableNodes } from 'prosemirror-tables'
+import { Decoration, type EditorView } from 'prosemirror-view'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
+import { APP_HREF, canOpenAppLink, isAppLink } from './appLinks'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
@@ -105,9 +107,21 @@ export const schema = new Schema({
     },
     link: {
       attrs: { href: {} }, inclusive: false,
-      parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
-      // A link to a task of this app (Make subtask) keeps its relative address.
-      toDOM: (m) => ['a', { href: safeHref(m.attrs.href as string) ?? (/^\?task=[\w-]+$/.test(m.attrs.href as string) ? m.attrs.href : undefined), title: m.attrs.href, rel: LINK_REL, target: '_blank' }, 0],
+      parseDOM: [
+        { tag: `a[${APP_HREF}]`, priority: 55, getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute(APP_HREF) ?? '' }) },
+        { tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) },
+      ],
+      // A link to a task of this app (Make subtask) keeps its relative address. A
+      // link into another app never has one (app-links D3): its address is in
+      // data-app-href, and it opens only through openAppLink (NotesEditor), as a
+      // link for a viewer who allowed its scheme and as text for anyone else.
+      toDOM: (m) => {
+        const href = m.attrs.href as string
+        if (isAppLink(href)) {
+          return ['a', { [APP_HREF]: href, title: href, 'data-app-link': canOpenAppLink(href) ? 'open' : 'text' }, 0]
+        }
+        return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : undefined), title: href, rel: LINK_REL, target: '_blank' }, 0]
+      },
     },
     strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: () => ['strong', 0] },
     em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: () => ['em', 0] },
@@ -682,4 +696,28 @@ export function insertBlocks(state: EditorState, nodes: PMNode[]): Transaction {
   let tr = state.tr
   for (const n of [...nodes].reverse()) tr = tr.replaceSelectionWith(n)
   return tr
+}
+
+/**
+ * In a read-only note, the app links the viewer may open take focus as links, so
+ * Enter opens them (app-links D3); an editable note keeps the caret's rules.
+ */
+export function appLinkStops(doc: PMNode): Decoration[] {
+  const out: Decoration[] = []
+  doc.descendants((node, pos) => {
+    const href = node.isText ? node.marks.find((m) => m.type.name === 'link')?.attrs.href : undefined
+    if (typeof href === 'string' && isAppLink(href) && canOpenAppLink(href)) out.push(Decoration.inline(pos, pos + node.nodeSize, { tabindex: '0', role: 'link' }))
+  })
+  return out
+}
+
+/** The address of the link at a DOM node of the editor, read from the document, never from the page. */
+export function linkHrefAt(view: EditorView, el: Node): string {
+  try {
+    const $pos = view.state.doc.resolve(view.posAtDOM(el, 0))
+    const mark = [...$pos.marks(), ...($pos.nodeAfter?.marks ?? [])].find((m) => m.type.name === 'link')
+    return typeof mark?.attrs.href === 'string' ? mark.attrs.href : ''
+  } catch {
+    return ''
+  }
 }

@@ -23,6 +23,7 @@ import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
+import { AppLinkConfirm } from './AppLinkConfirm'
 import { FramesHost } from './calendar/framesRequest'
 import { FocusPickerHost } from './focus/focusRequest'
 import { useConsentPending } from './OAuthConsentHost'
@@ -438,7 +439,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <ActionToasts />
       <DailyCheckToast />
       <TemplateDialogHost />
-      <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
+      <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} /><AppLinkConfirm />
       <FramesHost /><FocusPickerHost />
     </div>
   )

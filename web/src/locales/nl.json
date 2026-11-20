@@ -7807,6 +7807,17 @@
   "In Quarter: the same day of the previous or next month": "In Kwartaal: dezelfde dag van de vorige of volgende maand",
   "Plan length": "Planduur",
   "Previous quarter": "Vorig kwartaal",
+  "Add an app": "App toevoegen",
+  "Already on the list": "Staat al in de lijst",
+  "At most {n} apps": "Hoogstens {n} apps",
+  "Don’t ask again for {scheme}: on this device": "Niet meer vragen voor {scheme}: op dit apparaat",
+  "Links to other apps": "Links naar andere apps",
+  "Links to these apps open after you confirm. Other links stay text.": "Links naar deze apps openen na bevestiging. Andere links blijven tekst.",
+  "Open in another app?": "Openen in een andere app?",
+  "Open links to Zotero, mail or other apps from your notes": "Open links naar Zotero, mail of andere apps vanuit je notities",
+  "Remove {scheme}": "{scheme} verwijderen",
+  "This kind of link can never open": "Dit soort link opent nooit",
+  "Use the app’s scheme, like zotero": "Gebruik het schema van de app, zoals zotero",
   "Push to calendar apps": "Push naar agenda-apps",
   "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst."
 }

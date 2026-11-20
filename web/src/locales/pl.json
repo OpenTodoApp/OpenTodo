@@ -7807,6 +7807,17 @@
   "In Quarter: the same day of the previous or next month": "W widoku Kwartał: ten sam dzień poprzedniego lub następnego miesiąca",
   "Plan length": "Długość planu",
   "Previous quarter": "Poprzedni kwartał",
+  "Add an app": "Dodaj aplikację",
+  "Already on the list": "Już jest na liście",
+  "At most {n} apps": "Najwyżej {n} aplikacji",
+  "Don’t ask again for {scheme}: on this device": "Nie pytaj więcej o {scheme}: na tym urządzeniu",
+  "Links to other apps": "Linki do innych aplikacji",
+  "Links to these apps open after you confirm. Other links stay text.": "Linki do tych aplikacji otwierają się po potwierdzeniu. Inne zostają tekstem.",
+  "Open in another app?": "Otworzyć w innej aplikacji?",
+  "Open links to Zotero, mail or other apps from your notes": "Otwieraj linki do Zotero, poczty lub innych aplikacji z notatek",
+  "Remove {scheme}": "Usuń {scheme}",
+  "This kind of link can never open": "Taki link nigdy się nie otworzy",
+  "Use the app’s scheme, like zotero": "Użyj schematu aplikacji, np. zotero",
   "Push to calendar apps": "Push do aplikacji kalendarza",
   "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Aplikacje takie jak DAVx⁵ synchronizują się zaraz po zmianie, przez własną usługę push."
 }

@@ -67,6 +67,32 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheWidget() = checkWidget("widget-signed-out.json")
 
+    /** app-links D6: the link the web app hands openAppLink opens with its list, and the shared vectors hold. */
+    @Test fun appLinks() {
+        val f = fixture("app-links.json")
+        val handed = f.getJSONArray("handed")
+        assertEquals(1, handed.length())
+        val call = handed.getJSONObject(0)
+        assertTrue(AppLink.allows(AppLink.list(call.getString("schemes")), call.getString("url")))
+        val v = f.getJSONObject("vectors")
+        val links = v.getJSONArray("links")
+        for (i in 0 until links.length()) {
+            val c = links.getJSONObject(i)
+            assertEquals(c.getString("url"), if (c.isNull("scheme")) null else c.getString("scheme"), AppLink.scheme(c.getString("url")))
+        }
+        val entries = v.getJSONArray("entries")
+        for (i in 0 until entries.length()) {
+            val c = entries.getJSONObject(i)
+            assertEquals(c.getString("entry"), c.getBoolean("ok"), AppLink.validEntry(c.getString("entry")))
+        }
+        val allows = v.getJSONArray("allows")
+        for (i in 0 until allows.length()) {
+            val c = allows.getJSONObject(i)
+            val list = c.getJSONArray("list").let { a -> (0 until a.length()).map { a.getString(it) } }
+            assertEquals("$list ${c.getString("url")}", c.getBoolean("ok"), AppLink.allows(list, c.getString("url")))
+        }
+    }
+
     /** obsidian-origin: the note link the web app hands openExternal is accepted, and only the D2 shape is. */
     @Test fun obsidianNoteLinks() {
         val f = fixture("external-links.json")

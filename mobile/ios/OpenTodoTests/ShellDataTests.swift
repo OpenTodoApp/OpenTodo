@@ -314,7 +314,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "pull-refresh", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -484,6 +484,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(Bridge.safeExternal("mailto:a@example.com"))
         XCTAssertFalse(Bridge.safeExternal("javascript:alert(1)"))
         XCTAssertFalse(Bridge.safeExternal("file:///etc/passwd"))
+    }
+
+    /// app-links D6: the link the web app hands openAppLink opens with its list, and the
+    /// shared vectors (the bridge fixture app-links.json) hold for the shell's rules.
+    func testAppLinksFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/app-links.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let handed = try XCTUnwrap(fixture["handed"] as? [[String: String]])
+        XCTAssertEqual(handed.count, 1)
+        for call in handed { XCTAssertTrue(AppLink.allows(AppLink.list(call["schemes"] ?? ""), call["url"] ?? "")) }
+        let vectors = try XCTUnwrap(fixture["vectors"] as? [String: Any])
+        for c in try XCTUnwrap(vectors["links"] as? [[String: Any]]) {
+            let url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.scheme(url), c["scheme"] as? String, url)
+        }
+        for c in try XCTUnwrap(vectors["entries"] as? [[String: Any]]) {
+            let entry = try XCTUnwrap(c["entry"] as? String)
+            XCTAssertEqual(AppLink.validEntry(entry), c["ok"] as? Bool, entry)
+        }
+        for c in try XCTUnwrap(vectors["allows"] as? [[String: Any]]) {
+            let list = try XCTUnwrap(c["list"] as? [String]), url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.allows(list, url), c["ok"] as? Bool, "\(list) \(url)")
+        }
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(AppLink.capability))
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(AppLink.capability))
     }
 
     /// obsidian-origin: the bridge fixture the web app writes (shared with the Android

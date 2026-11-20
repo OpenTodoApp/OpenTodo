@@ -7807,6 +7807,17 @@
   "In Quarter: the same day of the previous or next month": "В режиме «Квартал»: тот же день предыдущего или следующего месяца",
   "Plan length": "Длина плана",
   "Previous quarter": "Предыдущий квартал",
+  "Add an app": "Добавить приложение",
+  "Already on the list": "Уже в списке",
+  "At most {n} apps": "Не больше {n} приложений",
+  "Don’t ask again for {scheme}: on this device": "Больше не спрашивать для {scheme}: на этом устройстве",
+  "Links to other apps": "Ссылки на другие приложения",
+  "Links to these apps open after you confirm. Other links stay text.": "Ссылки на эти приложения открываются после подтверждения. Остальные остаются текстом.",
+  "Open in another app?": "Открыть в другом приложении?",
+  "Open links to Zotero, mail or other apps from your notes": "Открывайте ссылки на Zotero, почту и другие приложения из заметок",
+  "Remove {scheme}": "Убрать {scheme}",
+  "This kind of link can never open": "Такая ссылка никогда не открывается",
+  "Use the app’s scheme, like zotero": "Укажите схему приложения, например zotero",
   "Push to calendar apps": "Push для приложений календаря",
   "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Приложения вроде DAVx⁵ синхронизируются сразу после изменения через свой push-сервис."
 }

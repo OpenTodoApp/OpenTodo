@@ -2515,6 +2515,7 @@
       },
       "user_prefs": {
         "add_position": "string",
+        "app_link_schemes": "string",
         "bento_order": "string",
         "briefing": "string",
         "daily_notes": "bool",
@@ -3654,6 +3655,7 @@
     },
     "user_prefs": {
       "add_position": "string",
+      "app_link_schemes": "string",
       "bento_order": "string",
       "briefing": "string",
       "daily_notes": "bool",

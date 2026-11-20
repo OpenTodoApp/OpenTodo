@@ -92,8 +92,9 @@ func (o Origin) Validate() error {
 		if err := o.validateObsidian(); err != nil {
 			return err
 		}
-	} else if o.URL != "" && !ValidURL(o.URL) {
-		return fmt.Errorf("origin url must be an http or https URL of at most %d bytes", MaxURL)
+	} else if o.URL != "" && !ValidURL(o.URL) && (o.Kind != KindURL || !IsAppLink(o.URL)) {
+		// A url origin may also be an app link (app-links D5).
+		return fmt.Errorf("origin url must be an http or https URL of at most %d bytes, or an app link for an origin of kind \"url\"", MaxURL)
 	}
 	if utf8.RuneCountInString(o.Title) > MaxTitle {
 		return fmt.Errorf("origin title must be at most %d characters", MaxTitle)
@@ -188,9 +189,9 @@ func CheckValue(raw json.RawMessage) error {
 }
 
 // Host is the lower-cased host name of o.URL without "www.", or "" when it has
-// none (web/src/lib/taskOrigin.ts originHost reads it the same way).
+// none or is an app link (web/src/lib/taskOrigin.ts originHost reads it the same way).
 func (o Origin) Host() string {
-	if o.URL == "" {
+	if o.URL == "" || IsAppLink(o.URL) {
 		return ""
 	}
 	u, err := url.Parse(o.URL)
@@ -237,6 +238,10 @@ func (o Origin) Label() string {
 	}
 	if o.ID != "" {
 		return o.ID
+	}
+	if scheme, ok := AppLinkScheme(o.URL); ok {
+		// An app link reads as its app's scheme, "Zotero" (app-links D5).
+		return strings.ToUpper(scheme[:1]) + scheme[1:]
 	}
 	return o.Host()
 }
