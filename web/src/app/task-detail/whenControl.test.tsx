@@ -471,3 +471,36 @@ describe('WhenControl', () => {
     })
   })
 })
+
+// OpenSpec change zone-time-field (GitHub issue 1581): a due fixed to another zone is read
+// and edited in that zone's clock, with the viewer's time as the hint. The tests run in UTC.
+describe('Do on: a due fixed to another zone', () => {
+  const MX = 'America/Mexico_City'
+  const timeInput = (seg: (n: string) => HTMLElement) => seg('due').querySelector<HTMLInputElement>('[data-due-time] input')!
+  const hint = (seg: (n: string) => HTMLElement) => seg('due').querySelector('[data-your-time]')?.textContent
+
+  it("shows the time there, the viewer's time as the hint, and a typed time means that zone's clock", async () => {
+    const id = await createTask({ title: 'Call Ana', due: { date: '2026-11-20', time: '20:00', tz: MX } })
+    const { seg, unmount } = await mount(id)
+    expect(timeInput(seg).value).toBe('20:00')
+    // 20:00 in Mexico City is 02:00 the next day in UTC.
+    expect(hint(seg)).toMatch(/^02:00 \(.+\) your time$/)
+    const from = await mark()
+    await type(timeInput(seg), '21:00')
+    await key(timeInput(seg), 'Enter')
+    await queued(id, from)
+    expect((await queuedFields(id, from)).due).toEqual({ date: '2026-11-20', time: '21:00', tz: MX })
+    await waitFor(() => /^03:00 \(.+\) your time$/.test(hint(seg) ?? ''), 'the hint follows')
+    await unmount()
+  })
+
+  it("a floating due and one fixed to the viewer's zone show no hint", async () => {
+    for (const due of [{ date: '2026-11-20', time: '20:00' }, { date: '2026-11-20', time: '20:00', tz: 'UTC' }]) {
+      const id = await createTask({ title: 'Plan', due })
+      const { seg, unmount } = await mount(id)
+      expect(timeInput(seg).value).toBe('20:00')
+      expect(seg('due').querySelector('[data-your-time]')).toBeNull()
+      await unmount()
+    }
+  })
+})

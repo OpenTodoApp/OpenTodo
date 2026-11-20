@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} tot en met {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}",
   "Indent": "Inspringen",
-  "Outdent": "Uitspringen"
+  "Outdent": "Uitspringen",
+  "{time}{day} your time": "{time}{day} jouw tijd"
 }

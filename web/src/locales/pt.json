@@ -7792,5 +7792,6 @@
   "{rule} until {date}": "{rule} até {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# vezes}}",
   "Indent": "Aumentar recuo",
-  "Outdent": "Diminuir recuo"
+  "Outdent": "Diminuir recuo",
+  "{time}{day} your time": "{time}{day} seu horário"
 }
