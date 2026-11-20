@@ -332,6 +332,14 @@ var cmdSpecs = []cmdSpec{
 	{Name: "frames rm", Aliases: []string{"frames delete"}, Summary: "delete a calendar frame", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("frame")},
 	{Name: "habits list", Aliases: []string{"habits ls"}, Summary: "list open habits with kept, strength and streak, as every device computes them", Output: arrayOf("habit")},
 	{Name: "habits show", Summary: "print one habit's numbers and its last 31 days with their states and notes", Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}}, Output: ref("habit_detail")},
+	{Name: "away", Summary: "set an away period: skip the occurrences of repeating tasks from one day to another and pause reminders and the digest; or end it with --end (its skips stay)",
+		Args: []argSpec{{Name: "from"}, {Name: "to"}},
+		Flags: []flagSpec{
+			{Name: "project", Type: "string_list", Description: "only repeating tasks in this project (repeatable)"},
+			{Name: "label", Type: "string_list", Description: "only repeating tasks with this label (repeatable)"},
+			{Name: "keep-reminders", Type: "bool", Description: "keep reminders and the digest during the period"},
+			{Name: "end", Type: "bool", Description: "end the away period now; its skips stay"},
+		}, Writes: true, DryRun: true, Output: ref("away")},
 	{Name: "habits log", Summary: "log a habit for today or an earlier day (done unless --tiny, --skip or --clear) and print its new kept and strength",
 		Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}},
 		Flags: []flagSpec{

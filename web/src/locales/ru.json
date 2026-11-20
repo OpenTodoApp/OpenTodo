@@ -7832,5 +7832,22 @@
   "This kind of link can never open": "Такая ссылка никогда не открывается",
   "Use the app’s scheme, like zotero": "Укажите схему приложения, например zotero",
   "Push to calendar apps": "Push для приложений календаря",
-  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Приложения вроде DAVx⁵ синхронизируются сразу после изменения через свой push-сервис."
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Приложения вроде DAVx⁵ синхронизируются сразу после изменения через свой push-сервис.",
+  "At most 90 days": "Не больше 90 дней",
+  "Away": "Отсутствие",
+  "Away set": "Отсутствие задано",
+  "Away until {day}": "Нет на месте до {day}",
+  "Away…": "Отсутствие…",
+  "Choose the first and the last day": "Выберите первый и последний день",
+  "End now": "Закончить сейчас",
+  "Everything": "Всё",
+  "Not sent {day}: you were away": "Не отправлено {day}: вас не было",
+  "Nothing repeats in these days": "В эти дни ничего не повторяется",
+  "Pause reminders": "Приостановить напоминания",
+  "Projects and labels": "Проекты и метки",
+  "Repeating tasks": "Повторяющиеся задачи",
+  "Search projects and labels": "Искать проекты и метки",
+  "Set away": "Задать отсутствие",
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Пропускает {occurrences, plural, one {# повтор} few {# повтора} many {# повторов} other {# повтора}} у {series, plural, one {# повторяющейся задачи} few {# повторяющихся задач} many {# повторяющихся задач} other {# повторяющейся задачи}}",
+  "The last day comes before the first": "Последний день раньше первого"
 }

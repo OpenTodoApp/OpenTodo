@@ -2953,6 +2953,7 @@
     "web/src/app/assistant/AssistantSettings.tsx",
     "web/src/app/assistant/ComposerCapture.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
@@ -9031,6 +9032,7 @@
     "web/src/app/LabelPicker.tsx",
     "web/src/app/ParseChips.tsx",
     "web/src/app/TaskListView.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
@@ -12559,6 +12561,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Only": [
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "Only a recurring task in a project shared with others can take turns, with up to 20 different people.": [
@@ -26534,5 +26537,57 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
+  ],
+  "At most 90 days": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Away": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Away set": [
+    "web/src/lib/awayActions.ts"
+  ],
+  "Away until {day}": [
+    "web/src/app/away/AwayMenu.tsx"
+  ],
+  "Away…": [
+    "web/src/app/away/AwayMenu.tsx",
+    "web/src/app/palette/registry.ts"
+  ],
+  "Choose the first and the last day": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "End now": [
+    "web/src/app/away/AwayMenu.tsx"
+  ],
+  "Everything": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Not sent {day}: you were away": [
+    "web/src/app/DigestCard.tsx"
+  ],
+  "Nothing repeats in these days": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Pause reminders": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Projects and labels": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Repeating tasks": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Search projects and labels": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Set away": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "The last day comes before the first": [
+    "web/src/app/away/AwayDialog.tsx"
   ]
 }

@@ -7832,5 +7832,22 @@
   "tracked {time}": "heeft {time} bijgehouden",
   "{label}: {kinds}": "{label}: {kinds}",
   "{n, plural, one {# kind} other {# kinds}}": "{n, plural, one {# soort} other {# soorten}}",
-  "{name} activity": "Activiteit van {name}"
+  "{name} activity": "Activiteit van {name}",
+  "At most 90 days": "Hoogstens 90 dagen",
+  "Away": "Afwezig",
+  "Away set": "Afwezigheid ingesteld",
+  "Away until {day}": "Afwezig tot {day}",
+  "Away…": "Afwezig…",
+  "Choose the first and the last day": "Kies de eerste en de laatste dag",
+  "End now": "Nu beëindigen",
+  "Everything": "Alles",
+  "Not sent {day}: you were away": "Niet verstuurd op {day}: je was afwezig",
+  "Nothing repeats in these days": "Niets herhaalt zich op deze dagen",
+  "Pause reminders": "Herinneringen pauzeren",
+  "Projects and labels": "Projecten en labels",
+  "Repeating tasks": "Herhalende taken",
+  "Search projects and labels": "Projecten en labels zoeken",
+  "Set away": "Afwezigheid instellen",
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Slaat {occurrences, plural, one {# keer} other {# keer}} over van {series, plural, one {# herhalende taak} other {# herhalende taken}}",
+  "The last day comes before the first": "De laatste dag ligt vóór de eerste"
 }

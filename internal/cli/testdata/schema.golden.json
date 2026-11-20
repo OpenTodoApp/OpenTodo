@@ -235,6 +235,51 @@
       }
     },
     {
+      "name": "away",
+      "summary": "set an away period: skip the occurrences of repeating tasks from one day to another and pause reminders and the digest; or end it with --end (its skips stay)",
+      "args": [
+        {
+          "name": "from",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "name": "to",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "project",
+          "type": "string_list",
+          "description": "only repeating tasks in this project (repeatable)"
+        },
+        {
+          "name": "label",
+          "type": "string_list",
+          "description": "only repeating tasks with this label (repeatable)"
+        },
+        {
+          "name": "keep-reminders",
+          "type": "bool",
+          "description": "keep reminders and the digest during the period"
+        },
+        {
+          "name": "end",
+          "type": "bool",
+          "description": "end the away period now; its skips stay"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/away"
+      }
+    },
+    {
       "name": "completion",
       "summary": "print the completion script for bash, zsh or fish (works offline)",
       "args": [
@@ -3381,6 +3426,24 @@
         "writes_denied": {
           "type": "string",
           "description": "agent tokens: the first switch that is off"
+        }
+      }
+    },
+    "away": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "away",
+      "description": "ot away <from> <to> --json: the stored period and how many occurrences were skipped; ot away --end --json: away is empty.",
+      "type": "object",
+      "required": [
+        "away"
+      ],
+      "properties": {
+        "away": {
+          "type": "string",
+          "description": "YYYY-MM-DD..YYYY-MM-DD, followed by \" quiet\" when reminders are paused; empty once ended"
+        },
+        "skipped": {
+          "type": "integer"
         }
       }
     },

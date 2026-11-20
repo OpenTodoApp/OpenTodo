@@ -7832,5 +7832,22 @@
   "This kind of link can never open": "Taki link nigdy się nie otworzy",
   "Use the app’s scheme, like zotero": "Użyj schematu aplikacji, np. zotero",
   "Push to calendar apps": "Push do aplikacji kalendarza",
-  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Aplikacje takie jak DAVx⁵ synchronizują się zaraz po zmianie, przez własną usługę push."
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Aplikacje takie jak DAVx⁵ synchronizują się zaraz po zmianie, przez własną usługę push.",
+  "At most 90 days": "Najwyżej 90 dni",
+  "Away": "Nieobecność",
+  "Away set": "Ustawiono nieobecność",
+  "Away until {day}": "Nieobecność do {day}",
+  "Away…": "Nieobecność…",
+  "Choose the first and the last day": "Wybierz pierwszy i ostatni dzień",
+  "End now": "Zakończ teraz",
+  "Everything": "Wszystko",
+  "Not sent {day}: you were away": "Nie wysłano {day}: byłeś nieobecny",
+  "Nothing repeats in these days": "W te dni nic się nie powtarza",
+  "Pause reminders": "Wstrzymaj przypomnienia",
+  "Projects and labels": "Projekty i etykiety",
+  "Repeating tasks": "Zadania cykliczne",
+  "Search projects and labels": "Szukaj projektów i etykiet",
+  "Set away": "Ustaw nieobecność",
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Pomija {occurrences, plural, one {# wystąpienie} few {# wystąpienia} many {# wystąpień} other {# wystąpienia}} z {series, plural, one {# zadania cyklicznego} few {# zadań cyklicznych} many {# zadań cyklicznych} other {# zadania cyklicznego}}",
+  "The last day comes before the first": "Ostatni dzień jest przed pierwszym"
 }

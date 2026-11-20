@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "away",
+  "description": "ot away <from> <to> --json: the stored period and how many occurrences were skipped; ot away --end --json: away is empty.",
+  "type": "object",
+  "required": ["away"],
+  "properties": {
+    "away": {"type": "string", "description": "YYYY-MM-DD..YYYY-MM-DD, followed by \" quiet\" when reminders are paused; empty once ended"},
+    "skipped": {"type": "integer"}
+  }
+}

@@ -273,6 +273,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
+| POST | `/api/v1/away` | yes (not `read`, not `agent`) | set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](#away) |
+| DELETE | `/api/v1/away` | yes (not `read`, not `agent`) | end the away period now; its skips stay → 204 |
 | POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
 | POST | `/api/v1/time-entries` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
@@ -760,6 +762,15 @@ Errors: `400 invalid_input` for a malformed date, `from` after `to` or a range o
 curl -sS "$OT/api/v1/tasks/<id>/occurrences?from=2026-10-12&to=2026-10-18" -H "Authorization: Bearer $TOKEN"
 # {"series_id":"<id>","rule":"every weekday","capped":false,"occurrences":[{"date":"2026-10-12","time":"18:00","state":"current"},{"date":"2026-10-13","time":"18:00","state":"projected"}, ...]}
 ```
+
+### Away
+
+An away period ([away](away.md)) skips the occurrences of your repeating tasks from `from` to `to` (both included, at most 90 days, past or future) and, unless `pauseReminders` is `false`, holds reminders and the email digest while it lasts:
+
+- `POST /api/v1/away` with `{"from": "2026-11-24", "to": "2026-11-30"}` covers every repeating task of your own; `projects` and `labels` (ids) narrow it to those in the projects or with the labels. A task assigned to someone else is never covered, and one in a shared project only when its project is in `projects`. Each occurrence in the period is skipped as `…/occurrences/{date}/skip` skips it; a task that repeats after completion and is due in the period moves to the day after it. The answer is `{"away": "2026-11-24..2026-11-30 quiet", "skipped": 8}`, the stored period (`user_prefs.away`) and how many occurrences were skipped. Setting the same period again skips nothing more; a new period replaces the stored one. Today is yours: the day in your zone and with your start of day, as reminders read it. The changes are written in batches of at most 1,000 operations, the stored period in the last; when one fails, the earlier skips stay and the period is not stored, and sending it again finishes it. There is no Undo for a period set through the API.
+- `DELETE /api/v1/away` clears the period (`204`). The skips stay; they are ordinary records.
+
+The routes are ordinary task writes (`read` and `agent` tokens and tokens limited to workspaces are refused). Errors: `400 invalid_input` naming `from` or `to` for a malformed date, `from` after `to` or a period over 90 days; `400 too_large` when the period would make more than 20,000 changes, before anything is written (choose projects or labels, or a shorter period); `404 not_found` for a project or label you can't see; `401` without credentials; `403 demo_restricted` on a demo.
 
 ### One occurrence alone
 
@@ -2722,7 +2733,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
-| `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels |
+| `too_large` | 413, 400 | 413: a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels. 400: an [away period](#away) that would make more than 20,000 changes |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |
