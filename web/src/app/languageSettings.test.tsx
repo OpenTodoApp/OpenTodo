@@ -77,7 +77,7 @@ describe('Language panel', () => {
   it('System names the language it resolves to, and every language in its own name', async () => {
     const view = await render(<LanguageView value="system" system="English" onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Русский', 'Polski'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский'])
     await view.unmount()
   })
 
@@ -87,26 +87,26 @@ describe('Language panel', () => {
     const view = await render(<LanguageView value="system" system={system} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
     expect(options[0]).toBe('System (简体中文)')
-    expect(options).toHaveLength(11)
+    expect(options).toHaveLength(12)
     await view.unmount()
   })
 
   // more-languages D4: a community language follows the maintained ones and, once picked, says so.
-  const WITH_POLISH: readonly ShippedLanguage[] = SHIPPED
+  const WITH_RUSSIAN: readonly ShippedLanguage[] = SHIPPED
 
   it('a community language is listed after the maintained ones', async () => {
-    const view = await render(<LanguageView value="system" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    const view = await render(<LanguageView value="system" system="English" languages={WITH_RUSSIAN} onChange={vi.fn()} />)
     const options = [...view.container.querySelectorAll('#language-select option')].map((o) => o.textContent)
-    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Русский', 'Polski'])
+    expect(options).toEqual(['System (English)', 'English', 'Deutsch', 'Français', 'Español', 'Italiano', 'Português', '简体中文', 'Nederlands', 'Türkçe', 'Polski', 'Русский'])
     expect(view.container.querySelector('[data-language-community]')).toBeNull()
     await view.unmount()
   })
 
   it('picking a community language shows the community caption', async () => {
-    const view = await render(<LanguageView value={'pl' as never} system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    const view = await render(<LanguageView value="ru" system="English" languages={WITH_RUSSIAN} onChange={vi.fn()} />)
     expect(view.container.querySelector('[data-language-community]')?.textContent).toBe('Community translation, some text in English')
     await view.unmount()
-    const maintained = await render(<LanguageView value="de" system="English" languages={WITH_POLISH} onChange={vi.fn()} />)
+    const maintained = await render(<LanguageView value="de" system="English" languages={WITH_RUSSIAN} onChange={vi.fn()} />)
     expect(maintained.container.querySelector('[data-language-community]')).toBeNull()
     await maintained.unmount()
   })

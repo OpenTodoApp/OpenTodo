@@ -116,4 +116,86 @@ describe('TitleField', () => {
     expect(field.scrollTop).toBe(0)
     await r.unmount()
   })
+
+  // GitHub issue 1463: the × on a chip keeps the words as text and sets nothing, in
+  // the title editors as in quick add (natural-language-capture "Dismiss and escape
+  // parsed tokens", "Parsing while editing a title").
+  describe('dismissing a chip', () => {
+    const dismissed = async (title: string, line: string, kind: string) => {
+      const plans: EditPlan[] = []
+      const r = await render(<Harness title={title} onCommit={(p) => plans.push(p)} />)
+      const field = r.container.querySelector('input')!
+      await edit(field, line)
+      await waitFor(() => !!r.container.querySelector(`[data-chip="${kind}"]`), `the ${kind} chip`)
+      await press(r.container.querySelector(`[data-chip="${kind}"] button`)!)
+      return { r, plans, field }
+    }
+
+    it('the × on the date keeps the text as typed, sets no due date and does not end the edit', async () => {
+      const { r, plans, field } = await dismissed('review order', 'review order from 10. Oct 2026', 'due')
+      expect(plans).toEqual([])
+      expect(document.activeElement).toBe(field)
+      expect(field.value).toBe('review order from 10. Oct 2026')
+      expect(r.container.querySelector('[data-chip="due"]')).toBeNull()
+      await commit(field)
+      await flush()
+      expect(plans).toEqual([{ patch: { title: 'review order from 10. Oct 2026' }, labels: [], reminders: [] }])
+      await r.unmount()
+    })
+
+    it('the dismissed date stays dismissed while typing goes on; a new token still parses', async () => {
+      const { r, plans, field } = await dismissed('Call', 'Call next friday', 'due')
+      await type(field, 'Call next friday p1')
+      await flush()
+      expect(r.container.querySelector('[data-chip="due"]')).toBeNull()
+      expect(r.container.querySelector('[data-chip="priority"]')).toBeTruthy()
+      await commit(field)
+      await flush()
+      expect(plans.at(-1)).toEqual({ patch: { title: 'Call next friday', priority: 1 }, labels: [], reminders: [] })
+      await r.unmount()
+    })
+
+    it.each([
+      ['due', 'Water plants tomorrow'],
+      ['priority', 'Water plants p2'],
+      ['label', 'Water @garden plants'],
+      ['project', 'Water #Work plants'],
+      ['recurrence', 'Water plants every Monday'],
+      ['estimate', 'Water plants +30m'],
+    ])('the × on a %s chip saves the line as typed and nothing else', async (kind, line) => {
+      const { r, plans, field } = await dismissed('Water plants', line, kind)
+      await commit(field)
+      await flush()
+      expect(plans.at(-1)).toEqual({ patch: { title: line }, labels: [], reminders: [] })
+      await r.unmount()
+    })
+
+    it('Tab to the × and Enter on it dismisses within the same edit', async () => {
+      const plans: EditPlan[] = []
+      const r = await render(<Harness title="Pay" onCommit={(p) => plans.push(p)} />)
+      const field = r.container.querySelector('input')!
+      await edit(field, 'Pay tomorrow')
+      const x = r.container.querySelector<HTMLButtonElement>('[data-chip="due"] button')!
+      await act(async () => { x.focus() })
+      expect(plans).toEqual([])
+      await act(async () => { x.click() })
+      expect(document.activeElement).toBe(field)
+      await commit(field)
+      await flush()
+      expect(plans).toEqual([{ patch: { title: 'Pay tomorrow' }, labels: [], reminders: [] }])
+      await r.unmount()
+    })
+  })
 })
+
+/** A mouse press as a browser makes it: focus moves to the button unless mousedown is prevented, then the click. */
+async function press(el: HTMLElement) {
+  await act(async () => {
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    el.dispatchEvent(down)
+    if (!down.defaultPrevented) el.focus()
+    el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }))
+  })
+  // The press may have ended the edit and removed the chips: the click lands only if the button is still there.
+  await act(async () => { if (el.isConnected) el.click() })
+}

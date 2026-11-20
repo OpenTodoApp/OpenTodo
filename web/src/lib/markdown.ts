@@ -58,6 +58,33 @@ export function safeHref(url: string): string | null {
   return /^(https?:\/\/|mailto:)[^\s]+$/i.test(u) ? u : null
 }
 
+/**
+ * The bare http(s) address that starts at s[i], if one does: at the start or after a
+ * space or `(`, up to the next space or `<`, without trailing punctuation. Raw
+ * addresses read as links wherever notes are shown, in this renderer and in the
+ * editor (bare-links D1).
+ */
+export function bareUrlAt(s: string, i: number): string | null {
+  if (!/^https?:\/\//i.test(s.slice(i, i + 8)) || (i > 0 && !/[\s(]/.test(s[i - 1]))) return null
+  const url = /^[^\s<]+/.exec(s.slice(i))![0].replace(/[.,:;!?)]+$/, '')
+  return safeHref(url)
+}
+
+/** Every bare http(s) address in a text, with its offsets (bare-links D1). */
+export function bareUrls(s: string): { from: number; to: number; href: string }[] {
+  const out: { from: number; to: number; href: string }[] = []
+  for (let i = s.search(/https?:\/\//i); i >= 0 && i < s.length; ) {
+    const url = bareUrlAt(s, i)
+    if (url) {
+      out.push({ from: i, to: i + url.length, href: url })
+      i += url.length
+    } else i++
+    const next = s.slice(i).search(/https?:\/\//i)
+    i = next < 0 ? -1 : i + next
+  }
+  return out
+}
+
 /** Table cells: split on unescaped `|`, outer pipes dropped, `\|` read as `|`. */
 function cells(line: string): string[] {
   let s = line.trim()
@@ -85,7 +112,7 @@ function isTableStart(lines: string[], i: number): boolean {
 
 function startsBlock(lines: string[], i: number): boolean {
   const l = lines[i]
-  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}\s/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
+  return FENCE.test(l) || /^ {0,3}>/.test(l) || !!LIST.exec(l) || /^ {0,3}#{1,6}(?:[ \t]|$)/.test(l) || IMAGE.test(l) || isTableStart(lines, i)
 }
 
 export function parseMarkdown(src: string, depth = 0, opts: MarkdownOptions = {}): Block[] {
@@ -114,9 +141,11 @@ export function parseMarkdown(src: string, depth = 0, opts: MarkdownOptions = {}
       out.push({ t: 'quote', c: parseMarkdown(body.join('\n'), depth + 1, opts) })
       continue
     }
-    const heading = /^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line)
+    const heading = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?[ \t]*$/.exec(line)
     if (heading) {
-      out.push({ t: 'h', level: heading[1].length, c: inline(heading[2]) })
+      // The closing #s are a sequence only after a space: `# C#` keeps its #, as CommonMark reads it.
+      const text = (heading[2] ?? '').replace(/[ \t]+#+[ \t]*$/, '')
+      out.push({ t: 'h', level: heading[1].length, c: inline(text) })
       i++
       continue
     }
@@ -227,13 +256,11 @@ export function parseInline(s: string, depth = 0, opts: MarkdownOptions = {}): I
         continue
       }
     }
-    if ((ch === 'h' || ch === 'H') && /^https?:\/\//i.test(s.slice(i, i + 8)) && (i === 0 || /[\s(]/.test(s[i - 1]))) {
-      let url = /^[^\s<]+/.exec(s.slice(i))![0]
-      url = url.replace(/[.,:;!?)]+$/, '')
-      const href = safeHref(url)
-      if (href) {
+    if (ch === 'h' || ch === 'H') {
+      const url = bareUrlAt(s, i)
+      if (url) {
         flush()
-        out.push({ t: 'link', href, c: [{ t: 'text', v: url }] })
+        out.push({ t: 'link', href: url, c: [{ t: 'text', v: url }] })
         i += url.length
         continue
       }

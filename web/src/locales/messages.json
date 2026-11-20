@@ -68,6 +68,9 @@
   "(the push service could not be reached)": [
     "web/src/lib/push.ts"
   ],
+  "(this server could not accept the value)": [
+    "web/src/lib/sharing.ts"
+  ],
   "(you)": [
     "web/src/app/UsersPanel.tsx"
   ],
@@ -915,6 +918,7 @@
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
     "web/src/app/CalendarSyncPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/IssuesPanel.tsx",
     "web/src/app/NotificationChannels.tsx",
     "web/src/app/SecurityPanel.tsx",
@@ -2635,6 +2639,9 @@
     "web/src/app/editorCommands.ts",
     "web/src/lib/richtextEditor.ts"
   ],
+  "Bold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
+  ],
   "Book the skip": [
     "web/src/app/themes/previewData.ts"
   ],
@@ -2871,6 +2878,7 @@
   ],
   "Can make changes": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx"
   ],
   "Can tick items": [
@@ -2923,6 +2931,7 @@
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/calendar/tapPlace.tsx",
+    "web/src/app/encryptionShared.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/habits/AmountDialog.tsx",
@@ -3442,9 +3451,6 @@
   ],
   "Clear conversations on this device?": [
     "web/src/app/assistant/AssistantSettings.tsx"
-  ],
-  "Clear due date": [
-    "web/src/app/DueField.tsx"
   ],
   "Clear filter": [
     "web/src/app/calendar/QueryFilterDialog.tsx",
@@ -5030,7 +5036,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Deleting…": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Deliver instantly through UnifiedPush": [
     "web/src/lib/settingsCopy.ts"
@@ -5243,6 +5249,12 @@
   ],
   "Discard your changes?": [
     "web/src/app/routines/RoutineEditor.tsx"
+  ],
+  "Disconnect": [
+    "web/src/app/ConnectedApps.tsx"
+  ],
+  "Disconnect {name}?": [
+    "web/src/app/ConnectedApps.tsx"
   ],
   "Dismiss": [
     "web/public/push-sw.js",
@@ -5483,7 +5495,6 @@
   ],
   "Due date": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/ImportScreen.tsx",
     "web/src/app/ScheduleSheet.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -5504,7 +5515,6 @@
   ],
   "Due time": [
     "web/src/app/DateTimeSettings.tsx",
-    "web/src/app/DueField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
   "Due today": [
@@ -6194,7 +6204,8 @@
     "web/src/app/habits/HabitForm.tsx",
     "web/src/app/habits/habitRule.ts",
     "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/frames.ts"
+    "web/src/lib/frames.ts",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every day at {time}": [
     "web/src/lib/backups.ts"
@@ -6226,10 +6237,21 @@
   ],
   "Every month": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every month on day {day}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the last day": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} weekday": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every month on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every other colour follows from these, unless you set it under Advanced.": [
     "web/src/app/themes/EditorSections.tsx"
@@ -6276,19 +6298,28 @@
   ],
   "Every week": [
     "web/src/app/rules/RuleFields.tsx",
+    "web/src/lib/recurrenceWords.ts",
     "web/src/lib/reviewCadence.ts"
   ],
   "Every week at {time}": [
     "web/src/lib/backups.ts"
   ],
   "Every week on {weekday}": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every weekday": [
-    "web/src/app/task-detail/WhenControl.tsx"
+    "web/src/app/task-detail/WhenControl.tsx",
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every workspace": [
     "web/src/app/routines/StepCard.tsx"
+  ],
+  "Every year": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every year on the {ordinal, select, first {first} second {second} third {third} fourth {fourth} other {last}} {wd, select, mon {Monday} tue {Tuesday} wed {Wednesday} thu {Thursday} fri {Friday} sat {Saturday} other {Sunday}} of {month}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every year on {date}": [
     "web/src/app/task-detail/WhenControl.tsx"
@@ -6298,6 +6329,21 @@
   ],
   "Every {m} minutes": [
     "web/src/app/IssueEditor.tsx"
+  ],
+  "Every {n, plural, one {# day} other {# days}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# month} other {# months}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# week} other {# weeks}} on {weekday}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "Every {n, plural, one {# year} other {# years}}": [
+    "web/src/lib/recurrenceWords.ts"
   ],
   "Every {weekday} at {time}": [
     "web/src/lib/backups.ts"
@@ -7932,6 +7978,9 @@
   "How good are my estimates?": [
     "web/src/app/review/StatsView.tsx"
   ],
+  "How heavy task titles are: 400, 500, 600 or 700.": [
+    "web/src/app/themes/templateText.ts"
+  ],
   "How long audit events are kept and whether addresses are recorded": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -8471,6 +8520,9 @@
   "Include tasks without a time": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
+  "Indent": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Indent list item, or next table cell (Shift-Tab: back)": [
     "web/src/lib/richtextEditor.ts"
   ],
@@ -8629,6 +8681,9 @@
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "It can no longer reach your tasks. Connect it again to use it.": [
+    "web/src/app/ConnectedApps.tsx"
   ],
   "It disappears from your devices.": [
     "web/src/app/ShareDialog.tsx"
@@ -9007,6 +9062,7 @@
     "web/src/lib/assistant.ts"
   ],
   "Labels: {names}": [
+    "web/src/app/OneLineLabels.tsx",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/ui/Chips.tsx"
   ],
@@ -9406,7 +9462,9 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Lists sorted by date or priority keep their order.": [
-    "web/src/lib/settingsCopy.ts"
+    "web/src/app/task-list/useListDrag.ts",
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/undoActions.ts"
   ],
   "Lists with method hints": [
     "web/src/lib/settingsCopy.ts"
@@ -9882,6 +9940,9 @@
   ],
   "Medium · 31 to 89 min": [
     "web/src/lib/bentoSlots.ts"
+  ],
+  "Medium|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Member": [
     "web/src/lib/roleNames.ts"
@@ -12980,6 +13041,9 @@
   "Outcomes that take more than one step.": [
     "web/src/lib/method/vocabulary.json"
   ],
+  "Outdent": [
+    "web/src/app/editorCommands.ts"
+  ],
   "Outdent the selected task": [
     "web/src/lib/shortcuts.ts"
   ],
@@ -14196,6 +14260,7 @@
   ],
   "Read only": [
     "web/src/app/AssistantsPanel.tsx",
+    "web/src/app/ConnectedApps.tsx",
     "web/src/app/OAuthClients.tsx",
     "web/src/app/TokensSection.tsx"
   ],
@@ -14338,6 +14403,9 @@
   ],
   "Registered by the app": [
     "web/src/app/OAuthClients.tsx"
+  ],
+  "Regular|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Relative": [
     "web/src/app/RemindersField.tsx"
@@ -14700,10 +14768,6 @@
   ],
   "Repeats after completion, so made a task, not a habit: {titles}": [
     "web/src/app/NotesEditor.tsx"
-  ],
-  "Repeats {rule}": [
-    "web/src/app/task-detail/WhenControl.tsx",
-    "web/src/lib/assistant.ts"
   ],
   "Replace text": [
     "web/src/lib/rules/sentence.ts"
@@ -15728,6 +15792,9 @@
   ],
   "Self-built": [
     "web/src/app/AppCodeRow.tsx"
+  ],
+  "Semibold|weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Send": [
     "web/src/app/NotificationChannelEditor.tsx",
@@ -17575,6 +17642,9 @@
   ],
   "Task title": [
     "web/src/app/ShareCapture.tsx"
+  ],
+  "Task title weight": [
+    "web/src/app/themes/EditorSections.tsx"
   ],
   "Task to focus on": [
     "web/src/app/focus/FocusParts.tsx"
@@ -19509,6 +19579,9 @@
   "This server cannot email links until the owner sets its public address (OPENTODO_BASE_URL).": [
     "web/src/lib/i18n/errors.ts"
   ],
+  "This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.": [
+    "web/src/lib/limits.ts"
+  ],
   "This server does not send email. Password resets go through an administrator: ask the server owner or an admin for a reset link.": [
     "web/src/app/EmailScreens.tsx"
   ],
@@ -20273,7 +20346,7 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Turn off and delete encrypted content": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Turn off and erase": [
     "web/src/app/AuditPanel.tsx"
@@ -21577,7 +21650,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Words": [
     "web/src/lib/rules/sentence.ts"
@@ -21828,7 +21901,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. This needs a connection to your server.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "You are offline. Tokens are managed on your server.": [
     "web/src/app/TokensSection.tsx"
@@ -23974,6 +24047,9 @@
   "the assistant is not set up for you on this server": [
     "web/src/lib/rules/catalogue.ts"
   ],
+  "the calendar is larger than {size} MB; connect it with calendar sync instead": [
+    "web/src/app/CalendarFeedsPanel.tsx"
+  ],
   "the changed notes": [
     "web/src/lib/rules/sentence.ts"
   ],
@@ -24952,6 +25028,7 @@
   ],
   "{n, plural, one {# attachment} other {# attachments}}": [
     "web/src/app/TaskRow.tsx",
+    "web/src/app/notes/NoteRow.tsx",
     "web/src/app/task-list/RowDetails.tsx"
   ],
   "{n, plural, one {# block behind} other {# blocks behind}}": [
@@ -26054,6 +26131,15 @@
     "web/src/app/routines/ProposalReview.tsx",
     "web/src/app/routines/RunHistory.tsx"
   ],
+  "{rule} after completion": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule} until {date}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
+  "{rule}, {n, plural, one {# time} other {# times}}": [
+    "web/src/lib/recurrenceWords.ts"
+  ],
   "{secret} (stored; type to replace)": [
     "web/src/app/SsoPanel.tsx"
   ],
@@ -26143,6 +26229,9 @@
   ],
   "{time}, no estimate": [
     "web/src/app/calendar/DayColumn.tsx"
+  ],
+  "{time}{day} your time": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "{tiny} is enough": [
     "web/public/push-sw.js",

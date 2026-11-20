@@ -1,0 +1,12 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Bu mesaj {{.Origin}} adresindeki OpenTodo’da "{{.Routine}}" rutininiz tarafından gönderildi.
+
+Bu çalıştırmayı görün:
+
+{{.Link}}
+
+Bu mesajı, rutininizde "Bana e-posta gönder" adımı olduğu ve {{.Email}} adresine gönderildiği için alıyorsunuz. Durdurmak için Rutinler sayfasından rutini kapatın veya adımı kaldırın.

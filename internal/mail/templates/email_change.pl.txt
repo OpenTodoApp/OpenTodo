@@ -1,0 +1,9 @@
+Potwierdź nowy adres e-mail w OpenTodo
+
+To wiadomość z potwierdzeniem adresu e-mail od OpenTodo.
+
+Ktoś poprosił o użycie {{.Email}} jako adresu logowania konta na {{.Origin}}. Aby to potwierdzić, otwórz ten link po zalogowaniu na to konto:
+
+{{.Link}}
+
+Link wygasa za {{.Expiry}}. Jeśli to nie ty o to prosisz, możesz zignorować tę wiadomość: nic się nie zmieni.

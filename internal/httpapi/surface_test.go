@@ -40,7 +40,7 @@ const surfaceAbout = "The v1 surface (OpenSpec change stability-contract, docs/s
 func buildSurface(t *testing.T) map[string]any {
 	t.Helper()
 	pkgs := loadStatic(t)
-	routes := surfaceRoutes(t, staticRoutes(pkgs))
+	routes := surfaceRoutes(t, staticRoutes(pkgs), false)
 	return map[string]any{
 		"about":  surfaceAbout,
 		"routes": routes,
@@ -54,8 +54,10 @@ func buildSurface(t *testing.T) map[string]any {
 
 // surfaceRoutes lists the /api/v1/ routes of the route table: policy,
 // deprecation, success statuses and fields. The generic collection routes are
-// also listed per collection with the collection's fields.
-func surfaceRoutes(t *testing.T, static map[string]*staticRoute) map[string]any {
+// also listed per collection with the collection's fields. With elems, the
+// fields include the element types of lists ("tags[]"), which only the OpenAPI
+// description uses.
+func surfaceRoutes(t *testing.T, static map[string]*staticRoute, elems bool) map[string]any {
 	t.Helper()
 	out := map[string]any{}
 	table := map[string]routePolicy{}
@@ -76,18 +78,52 @@ func surfaceRoutes(t *testing.T, static map[string]*staticRoute) map[string]any 
 			if len(s.statuses) > 0 {
 				r["statuses"] = slices.Sorted(maps.Keys(s.statuses))
 			}
-			if len(s.request) > 0 {
-				r["request"] = toAny(s.request)
+			if req := surfaceFields(s.request, elems); len(req) > 0 {
+				r["request"] = toAny(req)
 			}
-			if len(s.response) > 0 {
-				r["response"] = toAny(s.response)
+			if res := surfaceFields(s.response, elems); len(res) > 0 {
+				r["response"] = toAny(res)
+			}
+			if elems && s.body != "" {
+				r["body"] = s.body
 			}
 		}
 		out[pattern] = r
 	}
 	for pattern, r := range collectionRoutes(t, table) {
 		if _, explicit := out[pattern]; !explicit {
+			if s := static[genericPattern(pattern)]; elems && s != nil && s.body != "" {
+				r.(map[string]any)["body"] = s.body
+			}
 			out[pattern] = r
+		}
+	}
+	return out
+}
+
+// genericPattern is the generic collection route a collection's route is
+// served by: "PATCH /api/v1/tasks/{id}" → "PATCH /api/v1/{collection}/{id}".
+func genericPattern(pattern string) string {
+	method, path, _ := strings.Cut(pattern, " ")
+	rest := strings.SplitN(strings.TrimPrefix(path, "/api/v1/"), "/", 2)
+	rest[0] = "{collection}"
+	return method + " /api/v1/" + strings.Join(rest, "/")
+}
+
+// surfaceFields is a route's field set, without the element types of lists
+// unless elems is set. Without elems it is the snapshot's form, which records
+// the fields of a request's list elements without their optional mark.
+func surfaceFields(fs fieldSet, elems bool) fieldSet {
+	out := fieldSet{}
+	for k, v := range fs {
+		switch {
+		case elems:
+			out[k] = v
+		case strings.HasSuffix(k, "[]"):
+		case strings.Contains(k, "[]"):
+			out[k] = strings.TrimSuffix(v, "?")
+		default:
+			out[k] = v
 		}
 	}
 	return out

@@ -50,7 +50,7 @@ describe('the vault exchange', () => {
     const state = newState('default', 'https://todo.example.com', 'vault:paged')
     await sync({ files, transport, userID: 'u1', zone: 'UTC', now: () => NOW, state })
     expect(reqs.map((r) => r.cursor)).toEqual([0, 2])
-    expect(reqs.every((r) => r.device === 'vault:paged' && r.features?.join() === 'clock_skew,backfill_ack')).toBe(true)
+    expect(reqs.every((r) => r.device === 'vault:paged' && r.features?.join() === 'clock_skew,backfill_ack,invalid_ops')).toBe(true)
     expect(files.files.get('Inbox.md')).toBe('- [ ] Water 🆔 t1\n- [ ] Rent 🆔 t2\n')
     // The server is 10 s ahead: the vault adopts the offset.
     expect(state.offset).toBe(10_000)

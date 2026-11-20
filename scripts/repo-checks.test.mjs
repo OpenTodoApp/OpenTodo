@@ -21,6 +21,7 @@ import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
 import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
 import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
+import { finishedProblems, gitLastTouched, openChanges, staleWarnings, taskCounts } from './openspec-hygiene.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -264,8 +265,10 @@ test('every workflow has a concurrency group and every job a timeout', () => {
       assert.match(block, /^ {4}timeout-minutes: \d+$/m, `${f}: job ${id} needs timeout-minutes`)
     }
   }
-  // Pull requests cancel superseded runs; main and tags never cancel a run in progress.
-  assert.match(read('.github/workflows/ci.yml'), /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/)
+  // Pull requests and pushes to main cancel superseded runs; tags, the nightly and a run by hand never do.
+  const ci = read('.github/workflows/ci.yml')
+  assert.match(ci, /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event_name \}\}-\$\{\{ github\.ref \}\}/, 'the nightly never shares a group with a push')
+  assert.match(ci, /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| \(github\.event_name == 'push' && !startsWith\(github\.ref, 'refs\/tags\/'\)\) \}\}/)
 })
 
 test('base and job images are pinned by digest', () => {
@@ -308,6 +311,23 @@ test('Playwright jobs run in the pinned image at one version', () => {
   }
 })
 
+// CI capacity: a push to main runs the pull request tier for what it changed; release
+// tags, the nightly schedule and a run by hand run every job and matrix leg; a draft
+// skips the browser, workbench, accessibility and phone jobs until it is marked ready.
+test('the full matrix runs on tags, nightly and by hand; main pushes and drafts run less', () => {
+  const ci = read('.github/workflows/ci.yml')
+  assert.match(ci, /^ {2}schedule:\n {4}- cron: "[^"]+"$/m, 'a nightly full run')
+  assert.match(ci, /^ {2}workflow_dispatch:$/m, 'a full run by hand')
+  assert.match(ci, /types: \[opened, synchronize, reopened, ready_for_review\]/, 'marking a draft ready runs the rest')
+  const jobs = jobsOf(ci)
+  assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
+  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
+  assert.match(jobs.changes, /DRAFT: \$\{\{ github\.event\.pull_request\.draft \}\}/)
+  assert.match(jobs.changes, /\(ui\|layout\|a11y\|mobile\|ios\|app\|app_native\)=true/, 'a draft turns the heavy jobs off')
+  for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
+  assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
+})
+
 test('the image, stable tag and release are published only after every gate', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))
   // claude-plugin publishes the Claude Code marketplace after the release (claude-plugin D5).
@@ -329,7 +349,7 @@ test('the image, stable tag and release are published only after every gate', ()
   assert.ok(needsOf(jobs.release).includes('docker'), 'the release waits for the image')
   // Pull requests never publish; a gate skipped by the pull request tier never blocks
   // publishing, a failed or cancelled one always does (ci-speed).
-  assert.match(jobs.docker, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && github\.event_name != 'pull_request' \}\}$/m, 'pull requests never publish, and a failed gate stops publishing')
+  assert.match(jobs.docker, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && github\.event_name == 'push' \}\}$/m, 'only a push (main or a tag) publishes, and a failed gate stops publishing')
   assert.match(jobs.release, /^ {4}if: \$\{\{ !cancelled\(\) && !failure\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\) \}\}$/m, 'a failed gate stops the release')
   assert.match(jobs.docker, /type=raw,value=stable,/, 'stable moves only in the gated publish job')
 })
@@ -376,6 +396,7 @@ const checkElsewhere = {
   test: ['go test ./...', 'npm test', 'make extension', 'make obsidian'],
   'docs-check': ['npm run docs:check'],
   staticcheck: ['make staticcheck'],
+  deadcode: ['make staticcheck'],
   'web-lint': ['npm run lint'],
 }
 
@@ -390,6 +411,7 @@ test('CI runs every part of make check', () => {
   }
   for (const t of ciChecks) assert.ok(makePrereqs('check').includes(t), `ci-checks runs ${t}, which make check must run too`)
   assert.ok(ciChecks.includes('fmt-check'), 'gofmt gate')
+  assert.ok(makePrereqs('staticcheck').includes('deadcode'), 'make staticcheck runs deadcode, so the CI step runs it too')
   assert.match(read('Makefile'), /^fmt-check:\n\t.*gofmt -l /m)
 })
 
@@ -597,10 +619,10 @@ test('the release APK carries no dependency block or commit file', () => {
 })
 
 test('release tags prove the Android build reproducible, and anyone can run it on demand', () => {
-  const android = jobsOf(read('.github/workflows/ci.yml')).android
+  const android = jobsOf(read('.github/workflows/ci.yml'))['android-sign']
   const step = android.split(/\n(?= {6}- )/).find((s) => s.includes('scripts/android-repro.sh'))
-  assert.ok(step, 'the android job runs scripts/android-repro.sh')
-  assert.match(step, /^ {8}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'on every release tag')
+  assert.ok(step, 'the android-sign job runs scripts/android-repro.sh')
+  assert.match(android, /^ {4}if: startsWith\(github\.ref, 'refs\/tags\/v'\)$/m, 'on every release tag')
   assert.match(step, /REPRO_CLEAN_CACHE: "1"/, 'the second build has no Gradle cache')
   assert.match(step, /--require-hashes -r scripts\/release\/requirements-repro\.txt/, 'apksigcopier pinned by hash')
   assert.ok(android.indexOf('scripts/android-repro.sh') > android.indexOf('Signed release APK and AAB'), 'after the signed build, before the upload')
@@ -612,14 +634,13 @@ test('release tags prove the Android build reproducible, and anyone can run it o
 })
 
 test('the Play AAB is the build without location, checked on every Android run (play-location-later)', () => {
-  const android = jobsOf(read('.github/workflows/ci.yml')).android
-  const steps = android.split(/\n(?= {6}- )/)
-  const check = steps.find((s) => s.includes('Play AAB without location'))
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const check = jobs.android.split(/\n(?= {6}- )/).find((s) => s.includes('Play AAB without location'))
   assert.ok(check, 'a step checks the two builds')
   assert.doesNotMatch(check, /^ {8}if:/m, 'on every run, not only tags')
   assert.match(check, /-Popentodo\.play=true :app:bundleRelease\n/)
   assert.match(check, /scripts\/android-store-check\.sh /)
-  const signed = steps.find((s) => s.includes('Signed release APK and AAB'))
+  const signed = jobs['android-sign'].split(/\n(?= {6}- )/).find((s) => s.includes('Signed release APK and AAB'))
   assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon -Popentodo\.play=true :app:bundleRelease\n/, 'the release AAB is the Play build')
   assert.match(signed, /OPENTODO_VERSION="\$version" \.\/gradlew --no-daemon :app:assembleRelease\n/, 'the release APK is the plain build')
   assert.match(signed, /android-store-check\.sh "\.\.\/\.\.\/dist\/opentodo-android-\$version\.aab"/, 'the signed files are checked too')
@@ -649,6 +670,29 @@ test('only web-sign reads the web signing key, on release tags, in the web-signi
     assert.ok(needsOf(jobs[id]).includes('web-sign'), `${id} waits for the signed web app`)
     assert.match(jobs[id], /web-dist-signed/, `${id} embeds the signed web app on release tags`)
   }
+})
+
+// Release keys (Android keystore, plugin deploy keys) are read only by the release-tag
+// jobs that use them, in the `signing` environment the owner approves; moving `stable`
+// by hand runs in the `promote` environment.
+test('only the signing jobs read the release keys, on release tags, in the signing environment', () => {
+  const jobs = jobsOf(read('.github/workflows/ci.yml'))
+  const keys = { 'android-sign': /secrets\.ANDROID_KEYSTORE_BASE64/, 'claude-plugin': /secrets\.CLAUDE_PLUGIN_DEPLOY_KEY/, 'obsidian-plugin': /secrets\.OBSIDIAN_DEPLOY_KEY/ }
+  for (const [id, key] of Object.entries(keys)) {
+    assert.ok(jobs[id], `ci.yml has a ${id} job`)
+    assert.match(jobs[id], key)
+    assert.match(jobs[id], /^ {4}environment: signing$/m, `${id} runs in the signing environment`)
+    assert.match(jobs[id], /^ {4}if: .*startsWith\(github\.ref, 'refs\/tags\/v'\)/m, `${id} runs on release tags only`)
+  }
+  for (const f of workflowFiles()) {
+    for (const [id, block] of Object.entries(jobsOf(read(f)))) {
+      if (/environment: signing|secrets\.(ANDROID_KEY|CLAUDE_PLUGIN_DEPLOY_KEY|OBSIDIAN_DEPLOY_KEY)/.test(block)) {
+        assert.ok(f.endsWith('ci.yml') && id in keys, `${f}: only ${Object.keys(keys).join(', ')} use the signing environment or a release key (${id})`)
+      }
+    }
+  }
+  assert.ok(needsOf(jobs.release).includes('android-sign'), 'the release attaches the signed Android build')
+  assert.match(jobsOf(read('.github/workflows/promote-stable.yml')).promote, /^ {4}environment: promote$/m, 'moving stable by hand waits for the owner')
 })
 
 test('the official web app keys are published, and the test key is never one of them', async () => {
@@ -1152,4 +1196,29 @@ test('docs screenshots are WebP (docs-screenshot-growth): no PNG or JPEG copies 
     .flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : [`${dir}/${e.name}`]))
   const raster = ['docs/images', 'docs/screenshots'].flatMap(walk).filter((f) => /\.(png|jpe?g)$/i.test(f))
   assert.deepEqual(raster, [], 'encode docs screenshots as WebP (scripts/docs-screenshots.mjs, scripts/screenshots.mjs); README.md embeds only docs/screenshots/demo.gif')
+})
+
+// OpenSpec hygiene: a change with every task ticked is archived, not left open.
+// Stale changes are reported as diagnostics only (a decision, not a fix).
+test('no open OpenSpec change has every task ticked', (t) => {
+  const changes = openChanges(path.join(root, 'openspec/changes'))
+  assert.ok(changes.length > 0, 'openspec/changes has open changes with a tasks.md')
+  assert.deepEqual(finishedProblems(changes), [])
+  for (const w of staleWarnings(changes, gitLastTouched(root))) t.diagnostic(`warning: stale change: ${w}`)
+})
+
+test('the OpenSpec hygiene check finds finished and stale changes', () => {
+  assert.deepEqual(taskCounts('- [x] 1.1 a\n  - [X] 1.2 b\n- [ ] 2.1 c\n[ ] not a task\n'), { done: 2, open: 1 })
+  const changes = [
+    { name: 'done', done: 3, open: 0 },
+    { name: 'empty', done: 0, open: 0 },
+    { name: 'old', done: 1, open: 2 },
+    { name: 'fresh', done: 0, open: 4 },
+    { name: 'shallow', done: 0, open: 1 },
+  ]
+  assert.deepEqual(finishedProblems(changes), ['openspec/changes/done: all 3 tasks are ticked; archive it (/opsx:archive done)'])
+  const dates = { done: '2026-01-01', old: '2026-10-29', fresh: '2026-11-10', shallow: '' }
+  assert.deepEqual(staleWarnings(changes, (n) => dates[n] ?? '', new Date('2026-11-17T12:00:00Z')), [
+    'openspec/changes/old: 1/3 tasks, untouched since 2026-10-29 (19 days)',
+  ])
 })

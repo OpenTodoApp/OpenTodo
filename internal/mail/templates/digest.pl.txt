@@ -1,0 +1,26 @@
+Twój tydzień w OpenTodo: ukończono {{.Completed}}
+
+To twoje cotygodniowe podsumowanie z OpenTodo pod adresem {{.Origin}}.
+
+Ostatni tydzień ({{.Week}})
+  Ukończone: {{.Completed}}
+  Utworzone: {{.Created}}
+  Ukończone po terminie: {{.Late}}
+  Przełożone: {{.Slipped}}
+
+Nadal otwarte z wcześniej
+{{.Overdue}}
+
+Do wykonania w najbliższych siedmiu dniach
+{{.Ahead}}
+
+Projekty bez następnego kroku
+{{.Idle}}
+
+Ostatni przegląd: {{.LastReview}}
+
+Rozpocznij przegląd tygodnia:
+
+{{.Link}}
+
+Otrzymujesz tę wiadomość, ponieważ cotygodniowe podsumowanie dla {{.Email}} jest włączone w Ustawieniach, w sekcji Powiadomienia. W każdej chwili możesz je tam wyłączyć.

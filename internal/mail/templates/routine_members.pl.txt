@@ -1,0 +1,14 @@
+{{.Subject}}
+
+{{.Text}}
+
+--
+Tę wiadomość wysłała rutyna „{{.Routine}}” projektu, którego jesteś członkiem, w OpenTodo pod adresem {{.Origin}}.
+
+Zobacz to uruchomienie:
+
+{{.Link}}
+
+Otrzymujesz tę wiadomość, ponieważ rutyna ma krok Wyślij e-mail do członków projektu, a ty jesteś członkiem ze zweryfikowanym adresem {{.Email}}. Aby nie otrzymywać więcej e-maili z tej rutyny, otwórz:
+
+{{.Stop}}

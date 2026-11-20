@@ -297,7 +297,7 @@ The person turned on end-to-end encryption and does not trust the server, its op
 - `internal/outbound`. Addresses are resolved, filtered and pinned. Loopback, private, link-local, CGNAT, ULA, multicast, NAT64 and 6to4 embeddings and metadata addresses are refused. With "allow private networks" on, metadata, link-local and `0.0.0.0/8` stay refused.
 - Redirects are not followed, or followed at most 3 times with every hop re-checked. No environment proxy is used.
 - Size and time limits:
-  - calendar feeds: 2 MiB, 200,000 content lines, 5,000 occurrences, an expansion work budget and 5 seconds;
+  - calendar feeds: 32 MiB read as it arrives (one event at a time, at most 1 MiB and 5,000 content lines each, at most 4 MiB of events kept), 5,000 occurrences, an expansion work budget and 5 seconds;
   - issues: 2 MiB, 10 pages;
   - calendar sync: 4 MiB, 3 redirects, never to another site;
   - email: 10 MiB, MIME depth 12, 500 parts.

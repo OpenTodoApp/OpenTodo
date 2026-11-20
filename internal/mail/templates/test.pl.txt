@@ -1,0 +1,5 @@
+Wiadomość testowa OpenTodo
+
+To wiadomość testowa z serwera OpenTodo pod adresem {{.Origin}}.
+
+Poczta wychodząca działa: resety haseł, potwierdzenia rejestracji i zaproszenia mogą być teraz wysyłane e-mailem. Nie musisz nic robić.

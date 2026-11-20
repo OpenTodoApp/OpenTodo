@@ -109,6 +109,7 @@ describe('calendar feeds panel', () => {
   it('words a disabled and a waiting subscription', () => {
     expect(subscriptionStatus({ ...failing, enabled: false, stoppedReason: 'the address was not found (404)' }, NOW)).toBe('Stopped: the address was not found (404)')
     expect(subscriptionStatus({ ...failing, lastError: undefined, lastSuccessAt: null }, NOW)).toBe('Waiting for the first refresh')
+    expect(subscriptionStatus({ ...failing, lastError: 'too_large', lastSuccessAt: null }, NOW)).toBe('Failed: the calendar is larger than 32 MB; connect it with calendar sync instead · never refreshed')
     expect(subscriptionStatus({ ...failing, lastError: undefined, lastSuccessAt: NOW - 5 * 60_000 }, NOW)).toBe('Refreshed 5 min ago')
   })
 })

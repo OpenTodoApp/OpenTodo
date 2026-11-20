@@ -1,0 +1,9 @@
+{{.Inviter}} sizi OpenTodo’ya davet etti
+
+Bu bir OpenTodo davetiyesidir.
+
+{{.Inviter}}, {{.Email}} adresini {{.Origin}} adresindeki OpenTodo sunucusuna davet etti. Hesabınızı oluşturmak için bu bağlantıyı açın:
+
+{{.Link}}
+
+Bağlantının süresi {{.Expiry}} içinde dolar. {{.Inviter}} adlı kişiyi tanımıyorsanız bu mesajı yoksayabilirsiniz.

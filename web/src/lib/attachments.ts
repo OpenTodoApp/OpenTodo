@@ -181,11 +181,6 @@ export async function queueFiles(taskId: AttachParent, files: File[], opts: { co
   return commitFiles(await planFiles(taskId, files, opts))
 }
 
-/** Attach one file. Returns its id. */
-export async function queueFile(taskId: string, file: File, commentId?: string | null): Promise<string> {
-  return (await queueFiles(taskId, [file], { commentId }))[0]
-}
-
 /** An http(s) address, or null. */
 export function parseLink(text: string): URL | null {
   try {
@@ -401,6 +396,13 @@ export async function attachmentCounts(): Promise<Map<string, number>> {
   const commentIds = [...new Set(rows.map((a) => a.comment_id).filter((c): c is string => !!c))]
   const deadComments = new Set((await db.comments.bulkGet(commentIds)).filter((c) => !c || c.deleted_at).map((c, i) => c?.id ?? commentIds[i]))
   for (const a of rows) if (!a.note_id && (!a.comment_id || !deadComments.has(a.comment_id))) out.set(a.task_id, (out.get(a.task_id) ?? 0) + 1)
+  return out
+}
+
+/** Live attachments per standalone note (note-attachments), for the paperclip in the notes list. */
+export async function noteAttachmentCounts(): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  for (const a of await db.attachments.filter((x) => !x.deleted_at && !!x.note_id).toArray()) out.set(a.note_id as string, (out.get(a.note_id as string) ?? 0) + 1)
   return out
 }
 

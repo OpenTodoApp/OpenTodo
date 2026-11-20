@@ -13,9 +13,6 @@ import { patchSorted } from './taskDelta'
 export type ProjectFlow = 'parallel' | 'sequential' | 'area'
 export type SectionFlow = '' | 'parallel' | 'sequential'
 
-export const PROJECT_FLOWS: readonly ProjectFlow[] = ['parallel', 'sequential', 'area']
-export const SECTION_FLOWS: readonly SectionFlow[] = ['', 'parallel', 'sequential']
-
 /** A project's flow: empty, missing or unknown values read as Parallel (stored values are never rewritten). */
 export function projectFlowOf(p: Pick<Project, 'flow_mode'> | undefined | null): ProjectFlow {
   const v = p?.flow_mode

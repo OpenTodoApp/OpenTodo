@@ -4,7 +4,7 @@
 // follows the scroll and names the current column, which also goes to the page bar.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Project, Section, Task } from '../lib/types'
-import { click, flush, render, minWidthPx } from '../ui/test-utils'
+import { click, flush, render, minWidthPx, waitFor } from '../ui/test-utils'
 import { BoardView, type BoardColumn } from './BoardView'
 
 const original = window.matchMedia
@@ -96,7 +96,8 @@ describe('a folded column on a phone (board-polish D9)', () => {
     await flush()
     expect(document.querySelector('[data-board-dot="current"]')!.getAttribute('aria-label')).toBe('Doing, column 2 of 2')
     expect(names[names.length - 1]).toBe('Doing')
-    // A tap unfolds it.
+    // A tap unfolds it. The strip's button is a lazy chunk: wait for it rather than for a fixed flush.
+    await waitFor(() => !!document.querySelector('[data-column-strip="s2"]'), 'the folded strip')
     await click(document.querySelector<HTMLButtonElement>('[data-column-strip="s2"]')!)
     expect(folds).toEqual([['s2', false]])
     await r.unmount()

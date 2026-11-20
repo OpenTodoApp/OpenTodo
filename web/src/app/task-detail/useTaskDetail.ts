@@ -117,9 +117,9 @@ export function useTaskDetail({ taskId, initial, readOnly, projects, labelMap, o
   // The `panel` scope while focus is inside (keyboard-shortcuts "Innermost scope
   // wins"): 1–4 set the open task's priority, y tracks time, Shift+K skips its occurrence.
   useShortcutScope('panel', {
-    'panel.priority': (e) => {
+    'panel.priority': (_event, _shortcut, chord) => {
       if (!task || readOnly) return false
-      act(updateTask(task.id, { priority: Number(e.key) as Priority }))
+      act(updateTask(task.id, { priority: Number(chord.key) as Priority }))
     },
     'panel.track': () => {
       if (!task || readOnly || task.deleted_at) return false

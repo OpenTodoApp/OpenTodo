@@ -1,0 +1,9 @@
+{{.Inviter}} zaprasza cię do OpenTodo
+
+To zaproszenie do OpenTodo.
+
+{{.Inviter}} zaprasza {{.Email}} na serwer OpenTodo pod adresem {{.Origin}}. Aby założyć konto, otwórz ten link:
+
+{{.Link}}
+
+Link wygasa za {{.Expiry}}. Jeśli nie znasz {{.Inviter}}, możesz zignorować tę wiadomość.

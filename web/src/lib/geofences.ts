@@ -140,8 +140,3 @@ export async function setShellGeofences(on: boolean): Promise<ShellLocationPermi
   }
   return answer
 }
-
-/** The background location state without asking (Settings shows it while the switch is off too). */
-export async function geofencePermission(): Promise<ShellLocationPermission | null> {
-  return publishGeofences('check')
-}

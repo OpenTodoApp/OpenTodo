@@ -64,6 +64,13 @@ describe('the slots (D2)', () => {
     await dated.unmount(); await labelled.unmount()
   }))
 
+  it('A long date fits its slot: a date in another year or in ISO form is not cut, a longer one ends in an ellipsis', () => {
+    // 7.5 rem holds the cell's padding, icon and gap and "30. Sept. 2027" (89 px of Inter at the metadata size).
+    expect(wide).toMatch(/--slot-date: 7\.5rem;/)
+    // The text's span may shrink below its content inside the cell, so `truncate` cuts it with an ellipsis.
+    expect(wide).toContain('[data-row-cell] [data-date] > .truncate { min-width: 0; }')
+  })
+
   it('A slot no row uses takes no width: decided from the list\'s rows', () => {
     const rows = [task({ id: 'a', labels: ['x'], due: { date: '2026-10-20' } }), task({ id: 'b', project_id: 'p' })]
     expect(unusedSlots(rows)).toBe('estimate assignee')

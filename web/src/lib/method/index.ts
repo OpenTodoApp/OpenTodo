@@ -14,7 +14,7 @@ export type HorizonId = 'step' | 'project' | 'area'
 
 export interface Term<Id extends string = string> {
   id: Id
-  /** English name and description; translate with termName / termDescription. */
+  /** English name and description; translate the name with termName. */
   name: string
   description: string
   route?: string
@@ -27,11 +27,8 @@ export const PLACES = vocabulary.places as Term<PlaceId>[]
 export const RHYTHMS = vocabulary.rhythms as Term<RhythmId>[]
 export const HORIZONS = vocabulary.horizons as Term<HorizonId>[]
 
-/** The tagline in the interface language. */
-export const methodTagline = (): string => t(vocabulary.tagline)
 /** A term's name in the interface language (English when a catalog lacks it), in the `method` context the extractor gives it. */
 export const termName = (term: Term): string => t(term.name, { context: 'method' })
-export const termDescription = (term: Term): string => t(term.description)
 
 /** A move by id. */
 export function move(id: MoveId): Term<MoveId> {

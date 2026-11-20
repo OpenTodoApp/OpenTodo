@@ -57,8 +57,13 @@ type Transport interface {
 	Exchange(ctx context.Context, req Request) (Reply, error)
 }
 
-// features are the protocol additions the vault handles.
-var features = []string{"clock_skew", "backfill_ack"}
+// features are the protocol additions the vault handles. With invalid_ops an
+// op the server cannot accept is refused alone: push reports it like any other
+// refusal (a warning naming the field and the reason), and the file shows the
+// server's value again. The vault keeps no outbox: a change refused as
+// `unknown_field` (a field this server is too old for) is typed again once the
+// server is upgraded. Without it one such op failed the whole sync.
+var features = []string{"clock_skew", "backfill_ack", "invalid_ops"}
 
 // clock stamps the vault's ops: strictly increasing, following the server's
 // clock (docs/sync.md "Clocks").

@@ -16,9 +16,24 @@ export function isLimitReason(reason: string): boolean {
   return reason.startsWith('limit_')
 }
 
+/**
+ * An op for a field this server does not know (a newer client's field): not a verdict
+ * on the change, so the device keeps it, held like a limited one, and offers it again,
+ * since a later server may accept it (invalid-op-ends D2). An `invalid` refusal is a
+ * verdict and ends like any refused change (sharing.ts forgetRejected).
+ */
+export const UNKNOWN_FIELD_REASON = 'unknown_field'
+
+/** Whether a refusal keeps the change on this device, held and offered again later. */
+export function isHeldReason(reason: string): boolean {
+  return isLimitReason(reason) || reason === UNKNOWN_FIELD_REASON
+}
+
 /** The sentence the sync status shows for a limit. */
 export function limitMessage(reason: string): string {
   switch (reason) {
+    case UNKNOWN_FIELD_REASON:
+      return t('This server could not accept a change from this device. It stays on this device, and everything else keeps syncing.')
     case 'limit_storage':
       return t('This server is full. Your latest changes stay on this device until there is room: empty the Trash or ask your provider for more space.')
     case 'limit_ops_hour':
@@ -29,11 +44,11 @@ export function limitMessage(reason: string): string {
   return t('This server reached a limit. Your latest changes stay on this device and upload later.')
 }
 
-/** Splits a response's refusals into limit refusals and the rest. */
+/** Splits a response's refusals into the ones that hold the change (limits, unknown fields) and the rest. */
 export function splitRejected(rejected: Rejection[]): { limited: Rejection[]; refused: Rejection[] } {
   const limited: Rejection[] = []
   const refused: Rejection[] = []
-  for (const r of rejected) (isLimitReason(r.reason) ? limited : refused).push(r)
+  for (const r of rejected) (isHeldReason(r.reason) ? limited : refused).push(r)
   return { limited, refused }
 }
 

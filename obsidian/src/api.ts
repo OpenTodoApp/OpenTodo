@@ -117,8 +117,12 @@ export class Client {
     return this.call('POST', '/api/v1/sync', req)
   }
 
-  /** A push-only exchange (D4): the server applies the ops and pulls nothing. */
+  /**
+   * A push-only exchange (D4): the server applies the ops and pulls nothing. With
+   * invalid_ops an op the server cannot accept is refused alone (#1532), so one bad
+   * entry is reported and dropped instead of a 400 holding the whole outbox.
+   */
   sync(device: string, ops: Op[]): Promise<SyncAnswer> {
-    return this.call('POST', '/api/v1/sync', { device, cursor: 0, ops, features: ['push_only', 'clock_skew'] })
+    return this.call('POST', '/api/v1/sync', { device, cursor: 0, ops, features: ['push_only', 'clock_skew', 'invalid_ops'] })
   }
 }

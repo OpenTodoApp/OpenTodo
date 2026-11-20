@@ -51,11 +51,6 @@ export async function createSampleTasks(today = logicalToday()): Promise<string[
   return ids
 }
 
-/** The live tasks still marked sample, open or completed. */
-export async function liveSampleTasks(): Promise<Task[]> {
-  return db.tasks.filter((task) => !task.deleted_at && isSample(task)).toArray()
-}
-
 /** Whether any live sample task exists (the "Remove sample tasks" actions show while it does). */
 export function useHasSampleTasks(): boolean {
   return useLiveQuery(async () => !!(await db.tasks.filter((task) => !task.deleted_at && isSample(task)).first()), [], false)

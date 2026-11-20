@@ -327,5 +327,3 @@ export function useListModel(route: ListRoute, userId?: string) {
     todayHabits,
   }
 }
-
-export type ListModel = ReturnType<typeof useListModel>

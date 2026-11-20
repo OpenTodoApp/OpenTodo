@@ -7,8 +7,9 @@ import { sectorLabel } from '../lib/sectorNames'
 import { type Chip, describeOffset, findLabel, formatMinutes, type LabelRef, type ProjectRef, type ReminderPhrase, resolveReminder } from '../lib/nlp'
 import type { Unmatched } from '../lib/nlp/parse'
 import type { Due } from '../lib/types'
-import { Icon, Tooltip, type HueName } from '../ui'
+import { hueFor, Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
+import { ruleWords } from '../lib/recurrenceWords'
 import { energyChipLabel, isEnergy } from '../lib/energy'
 import { isNoPriority, priorityName, priorityShort } from '../lib/priority'
 
@@ -57,7 +58,7 @@ export function chipText(chip: Chip, projects: readonly ProjectRef[], labels: re
   switch (chip.kind) {
     case 'recurrence':
       // Without a typed date the series starts on the rule's first occurrence (quick-add-recurrence D4).
-      return line?.due && !line.datedByPhrase ? `${String(chip.value)} · ${formatDate(line.due.date, 'long')}` : String(chip.value)
+      return line?.due && !line.datedByPhrase ? `${ruleWords(String(chip.value), true)} · ${formatDate(line.due.date, 'long')}` : ruleWords(String(chip.value), true)
     case 'reminder': {
       const r = chip.value as ReminderPhrase
       // Reminders are instants: the calendar date and clock of now, not the logical day (day-boundary D2).
@@ -125,7 +126,7 @@ export function ParseChips({ chips, misses = [], projects, labels, highlight = n
             className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
           >
             <span className="sr-only">{KIND_NAME[c.kind]}: </span>
-            {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}
+            {label?.color && <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} aria-hidden="true" />}
             {c.kind === 'deadline' && <Icon name="hourglass" size="xs" />}
             {c.kind === 'someday' && <Icon name="archive" size="xs" />}
             {c.kind === 'evening' && <Icon name="moon" size="xs" />}
@@ -134,6 +135,9 @@ export function ParseChips({ chips, misses = [], projects, labels, highlight = n
               type="button"
               className="-my-1 inline-flex h-6 w-6 items-center justify-center rounded-full leading-none text-muted hover:bg-sunken hover:text-default"
               aria-label={t('Keep “{source}” as text', { source })}
+              // A press keeps focus in the field, as the sheet's and the palette's × do: a
+              // title editor that lost focus would save the line as parsed (issue 1463).
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => onDismiss(c)}
             >
               <Icon name="x" size="xs" />

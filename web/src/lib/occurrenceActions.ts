@@ -12,7 +12,7 @@ import { lineageRows } from './lineageRows'
 import { dueFromView, logicalToday } from './dates'
 import { getDeviceId, mutateMany, type Change } from './ops'
 import { planActOn, type OccurrenceAction } from './seriesPlan'
-import type { Due, Task } from './types'
+import type { Due } from './types'
 import { applyBatch } from './undo'
 import { t } from './i18n'
 
@@ -92,11 +92,4 @@ export async function moveOccurrenceFromView(seriesId: string, occurrence: strin
   if (!series?.due) return null
   const viewed = time === undefined ? (series.due.time ? { date, time: series.due.time } : { date }) : time ? { date, time } : { date }
   return actOnOccurrenceUndoable(seriesId, occurrence, { kind: 'move', due: dueFromView(series.due, viewed) as Due })
-}
-
-/** The series of an occurrence record, when it is still an open series. */
-export async function seriesOf(task: Pick<Task, 'series_id'>): Promise<Task | null> {
-  if (!task.series_id) return null
-  const s = await db.tasks.get(task.series_id)
-  return s && s.recurrence && !s.completed_at && !s.deleted_at ? s : null
 }

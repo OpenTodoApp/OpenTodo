@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { archiveCandidates, archivedProjects, getAutoArchive, projectFinishedBy, runAutoArchive, setAutoArchive, unarchiveProject, undoAutoArchive } from './archive'
+import { archiveCandidates, archivedProjects, getAutoArchive, projectFinishedBy, runAutoArchive, setAutoArchive, unarchiveProject } from './archive'
 import { db, useDatabase } from './db'
 import { archiveProject, createProject, createTask, resetDeviceId, setTaskCompleted } from './ops'
 import type { Membership, Project, Task } from './types'
@@ -60,7 +60,7 @@ describe('auto-archive on this device', () => {
     // Written as an ordinary op, so other devices converge.
     expect((await db.outbox.toArray()).some((o) => o.entityId === trip && o.field === 'archived' && o.value === true)).toBe(true)
     // Undo un-archives and keeps the project out of later passes.
-    await undoAutoArchive(trip)
+    await unarchiveProject(trip)
     expect((await db.projects.get(trip))?.archived).toBe(false)
     expect(await runAutoArchive(NOW + 2 * DAY)).toEqual([])
   })

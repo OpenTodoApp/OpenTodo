@@ -37,12 +37,14 @@
   const OWN_TEXT = {
     en: { reminder: 'Reminder', due: 'Due {date}', tiny: '{tiny} is enough', generic: 'You have a reminder', done: 'Done|task', snooze: 'Snooze 10 min', dismiss: 'Dismiss', test: 'Test notification: push works on this device.' },
     de: { reminder: 'Erinnerung', due: 'Fällig {date}', tiny: '{tiny} reicht', generic: 'Du hast eine Erinnerung', done: 'Erledigt', snooze: '10 Min. später', dismiss: 'Verwerfen', test: 'Testbenachrichtigung: Push funktioniert auf diesem Gerät.' },
-    fr: { reminder: 'Rappel', due: 'Échéance {date}', tiny: '{tiny} suffit', generic: 'Vous avez un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
+    fr: { reminder: 'Rappel', due: 'Échéance {date}', tiny: '{tiny} suffit', generic: 'Tu as un rappel', done: 'Terminé', snooze: 'Reporter de 10 min', dismiss: 'Ignorer', test: 'Notification de test : les notifications push fonctionnent sur cet appareil.' },
     es: { reminder: 'Recordatorio', due: 'Vence {date}', tiny: 'Con {tiny} basta', generic: 'Tienes un recordatorio', done: 'Hecho', snooze: 'Posponer 10 min', dismiss: 'Descartar', test: 'Notificación de prueba: las notificaciones push funcionan en este dispositivo.' },
     it: { reminder: 'Promemoria', due: 'Scadenza {date}', tiny: 'Basta {tiny}', generic: 'Hai un promemoria', done: 'Fatto', snooze: 'Posticipa di 10 min', dismiss: 'Ignora', test: 'Notifica di prova: le notifiche push funzionano su questo dispositivo.' },
     pt: { reminder: 'Lembrete', due: 'Vence {date}', tiny: '{tiny} já basta', generic: 'Você tem um lembrete', done: 'Concluído', snooze: 'Adiar 10 min', dismiss: 'Dispensar', test: 'Notificação de teste: as notificações push funcionam neste dispositivo.' },
     zh: { reminder: '提醒', due: '{date} 截止', tiny: '{tiny}就够了', generic: '你有一条提醒', done: '完成', snooze: '延后 10 分钟', dismiss: '忽略', test: '测试通知：推送在此设备上正常工作。' },
     nl: { reminder: 'Herinnering', due: 'Gepland {date}', tiny: '{tiny} is genoeg', generic: 'Je hebt een herinnering', done: 'Voltooid', snooze: '10 min. later', dismiss: 'Sluiten', test: 'Testmelding: push werkt op dit apparaat.' },
+    tr: { reminder: 'Hatırlatıcı', due: 'Bitiş: {date}', tiny: '{tiny} yeterli', generic: 'Bir hatırlatıcınız var', done: 'Tamamlandı', snooze: '10 dk ertele', dismiss: 'Kapat', test: 'Test bildirimi: bu cihazda anlık bildirimler çalışıyor.' },
+    pl: { reminder: 'Przypomnienie', due: 'Do wykonania {date}', tiny: '{tiny} wystarczy', generic: 'Masz przypomnienie', done: 'Zrobione', snooze: 'Odłóż o 10 min', dismiss: 'Zamknij', test: 'Powiadomienie testowe: powiadomienia push działają na tym urządzeniu.' },
   }
   self.__opentodoText = OWN_TEXT
   const TEXT = {}

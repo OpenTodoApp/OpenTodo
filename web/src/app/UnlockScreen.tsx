@@ -3,7 +3,7 @@ import { biometricUnlockState, disableWithoutKey, enableBiometricUnlock, restore
 import { startMigration } from '../lib/e2eeSync'
 import { FileMigrationPaused, runFileMigration } from '../lib/attachments'
 import { requestSync } from '../lib/sync'
-import { encryptionMessage, LostKeysConfirm } from './EncryptionPanel'
+import { encryptionMessage, LostKeysConfirm } from './encryptionShared'
 import { t } from '../lib/i18n'
 import { useAction } from '../lib/useAction'
 

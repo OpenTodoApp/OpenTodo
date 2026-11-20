@@ -1,0 +1,9 @@
+{{.Inviter}} chce udostępnić ci projekt albo obszar roboczy
+
+{{.Inviter}} prosi o dodanie twojego konta {{.Email}} jako {{.Role}} na serwerze OpenTodo pod adresem {{.Origin}}. Nic nie zostanie ci udostępnione, dopóki nie odpowiesz.
+
+Aby przyjąć albo odrzucić, zaloguj się i otwórz:
+
+{{.Link}}
+
+Zaproszenie wygasa za {{.Expiry}}. Jeśli nie znasz {{.Inviter}}, odrzuć je albo pozwól mu wygasnąć.

@@ -3,7 +3,7 @@
   "name": "OpenTodo",
   "description": "Open-source, local-first task manager. Works offline and syncs every device from one small container.",
   "icon": "https://raw.githubusercontent.com/OpenTodoApp/OpenTodo/main/web/public/pwa-512.png",
-  "category": "Productivity",
+  "category": "Other",
   "overview": "deploy/railway/overview.md",
   "service": {
     "name": "OpenTodo",

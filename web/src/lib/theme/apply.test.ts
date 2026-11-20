@@ -18,7 +18,7 @@ const value = (n: string) => getComputedStyle(root()).getPropertyValue(`--ot-${n
 const NORD: ThemeDocument = {
   opentodoTheme: 1, id: 'nord-like', name: 'Nord-like', author: 'Example', licence: 'MIT', kind: 'dark',
   seeds: { canvas: '#2e3440', surface: '#3b4252', text: '#eceff4', accent: '#88c0d0' },
-  shape: { radius: { card: 4 } }, type: { family: 'system', list: 14 },
+  shape: { radius: { card: 4 } }, type: { family: 'system', list: 14 }, titleWeight: 600,
 }
 const nord = (): AppliedTheme => toApplied(deriveTheme(NORD), 'h1')
 
@@ -38,6 +38,7 @@ describe('applyTheme', () => {
     expect(value('canvas')).toBe(t.tokens.canvas)
     expect(value('radius-card')).toBe('4px')
     expect(value('text-list')).toBe('0.875rem')
+    expect(value('title-weight')).toBe('600')
     expect(value('font')).toMatch(/^ui-sans-serif/)
   })
 
@@ -52,6 +53,16 @@ describe('applyTheme', () => {
     expect(value('radius-card')).toBe('4px')
     root().removeAttribute('data-contrast')
     expect(value('canvas')).toBe(nord().tokens.canvas)
+  })
+
+  it('writes a title weight only from the closed list (theme-title-weight)', () => {
+    expect(themeCss(nord())).toContain('--ot-title-weight:600')
+    expect(themeCss(toApplied(deriveTheme({ ...NORD, titleWeight: 400 }), 'h2'))).not.toContain('--ot-title-weight')
+    // The stylesheet: 400 unless a theme says otherwise, on every row, card and Today title.
+    expect(css).toContain('--ot-title-weight: 400;')
+    expect(css).toContain('@layer components { [data-row-title] { font-weight: var(--ot-title-weight); } }')
+    expect(validApplied({ ...nord(), titleWeight: 650 })).toBe(false)
+    expect(validApplied({ ...nord(), titleWeight: '600;color:red' })).toBe(false)
   })
 
   it('removes the sheet for an OpenTodo theme', () => {

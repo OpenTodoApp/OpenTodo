@@ -23,7 +23,7 @@ export function ProjectIconPicker({ icon, color, onPick, onClose }: {
   onClose: () => void
 }) {
   return <IconPicker value={icon} color={color} onClose={onClose}
-    noneMark={<span className="block size-2.5 rounded-full bg-faint" style={{ backgroundColor: color }} />} onPick={onPick} />
+    noneMark={<span data-hue={color ? hueFor(color) : undefined} className={`block size-2.5 rounded-full ${color ? 'bg-hue-solid' : 'bg-faint'}`} />} onPick={onPick} />
 }
 
 export function projectIconItem(project: Project): ActionItem {

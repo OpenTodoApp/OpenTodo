@@ -293,6 +293,12 @@ func TestContentPolicyAndLanguages(t *testing.T) {
 	if got := e.render("nl", "", false).Body; got != "Er is een geplande datum bereikt" || strings.Contains(got, "Call the plumber") {
 		t.Fatalf("Dutch: %q", got)
 	}
+	if got := e.render("tr", "", false).Body; got != "Bir hatırlatıcının zamanı geldi" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Turkish: %q", got)
+	}
+	if got := e.render("pl", "", false).Body; got != "Czas na przypomnienie" || strings.Contains(got, "A reminder is due") || strings.Contains(got, "Call the plumber") {
+		t.Fatalf("Polish: %q", got)
+	}
 	if got := e.render("xx", "", false).Body; got != "A reminder is due" {
 		t.Fatalf("fallback: %q", got)
 	}

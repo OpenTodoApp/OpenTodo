@@ -17,6 +17,7 @@ import { undoBatch } from '../lib/undo'
 import { mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { SavedViewRoute } from './SavedViewView'
 import { TaskListView } from './TaskListView'
+import { undoEntry } from '../test/undoEntry'
 
 describe('Today grouped by Project', () => {
   async function todayFixture() {
@@ -77,7 +78,7 @@ describe('Today grouped by Project', () => {
       await waitFor(() => order(f.work).join() === [f.x, f.b, f.y, f.z].join())
       expect(await db.tasks.get(f.b)).toMatchObject({ project_id: f.work, due: f.due })
       expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'position' })
-      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work')!
+      const entry = await undoEntry((e) => e.label === 'Moved to Work')
       await act(async () => { await undoBatch(entry.id) })
       await waitFor(() => order(f.home).join() === [f.a, f.b].join())
       expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title', today_manual_order: [] })
@@ -225,8 +226,7 @@ describe('a view grouped by Project', () => {
     await waitFor(async () => (await db.tasks.get(s.paint))?.project_id === s.work, 'moved to Work')
     const order = (await db.views.get(view))?.manual_order as string[]
     expect(order.indexOf(s.paint)).toBe(order.indexOf(s.report) + 1)
-    await waitFor(async () => (await db.assistantUndo.toArray()).some((e) => e.label === 'Moved to Work'), 'the undo entry')
-    const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work')!
+    const entry = await undoEntry((e) => e.label === 'Moved to Work')
     await undoBatch(entry.id)
     expect((await db.tasks.get(s.paint))?.project_id).toBe(s.home)
     await r.unmount()
@@ -259,7 +259,7 @@ describe('a view grouped by Project', () => {
       const task = (await db.tasks.get(s.paint))!
       expect(task.project_id).toBe(s.work)
       expect(task.position).toBeLessThan((await db.tasks.get(first))!.position)
-      const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Moved to Work')!
+      const entry = await undoEntry((e) => e.label === 'Moved to Work')
       await undoBatch(entry.id)
       expect(await db.tasks.get(s.paint)).toMatchObject({ project_id: s.home, parent_id: null })
     } finally { await r.unmount() }

@@ -7,7 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta } from './db'
 import { cachedWindow, showEvents, type EventsWindow } from './calendarFeeds'
 import { CALENDAR_COMPLETED_META_KEY, DEFAULT_GRID_PREFS, GRID_PREFS_META_KEY, normalizeGridPrefs, type GridPrefs } from './calendar'
-import { byPosition } from './ordering'
+import { compareByPosition } from './ordering'
 import { loadCollapsedSections, loadListColumns, loadShowCompleted, loadViewMode, type ProjectViewMode } from './sections'
 import type { CalendarEvent, CalendarSubscription, ProjectPrefs, Section, Task } from './types'
 
@@ -34,7 +34,7 @@ export function useProjectSectionRows(projectId: string | null): Section[] {
 /** The live sections of a project, by position. */
 export function useProjectLiveSections(projectId: string | null): Section[] {
   return useLiveQuery(
-    () => (projectId ? db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray().then((l) => l.sort(byPosition)) : Promise.resolve(NO_SECTIONS)),
+    () => (projectId ? db.sections.where('project_id').equals(projectId).filter((s) => !s.deleted_at).toArray().then((l) => l.sort(compareByPosition)) : Promise.resolve(NO_SECTIONS)),
     [projectId], NO_SECTIONS,
   )
 }
