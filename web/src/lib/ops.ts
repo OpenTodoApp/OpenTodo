@@ -228,6 +228,7 @@ export async function applyOps(
     for (const r of recorded) {
       if (r.op.entity === 'task') r.taskId = r.op.entityId
       else if (r.op.entity === 'comment') r.taskId = (rows.get(`comment:${r.op.entityId}`) as Comment | undefined)?.task_id || undefined
+      else if (r.op.entity === 'time_entry') r.taskId = (rows.get(`time_entry:${r.op.entityId}`) as TimeEntry | undefined)?.task_id || undefined
     }
     const missing = [...new Set(recorded.map((r) => r.taskId).filter((id): id is string => !!id && !rows.has(`task:${id}`)))]
     const loaded = missing.length ? await db.tasks.bulkGet(missing) : []

@@ -1857,7 +1857,6 @@
   "Filter activity by person": "Filtrar a atividade por pessoa",
   "Filter by duration": "Filtrar por duração",
   "Filter colours": "Filtrar cores",
-  "Filter feed by kind": "Filtrar o feed por tipo",
   "Filter feed by person": "Filtrar o feed por pessoa",
   "Filter feed by project": "Filtrar o feed por projeto",
   "Filter on": "Filtrar por",
@@ -7823,5 +7822,13 @@
   "Plan length": "Duração do plano",
   "Previous quarter": "Trimestre anterior",
   "Push to calendar apps": "Push para apps de calendário",
-  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps como o DAVx⁵ sincronizam logo após uma alteração, através do seu próprio serviço push."
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps como o DAVx⁵ sincronizam logo após uma alteração, através do seu próprio serviço push.",
+  "Filter activity by project": "Filtrar atividade por projeto",
+  "Time tracked": "Tempo registado",
+  "changed tracked time": "alterou o tempo registado",
+  "tracked time": "registou tempo",
+  "tracked {time}": "registou {time}",
+  "{label}: {kinds}": "{label}: {kinds}",
+  "{n, plural, one {# kind} other {# kinds}}": "{n, plural, one {# tipo} other {# tipos}}",
+  "{name} activity": "Atividade de {name}"
 }

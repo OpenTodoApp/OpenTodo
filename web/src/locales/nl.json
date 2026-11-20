@@ -1831,7 +1831,6 @@
   "Filter activity by person": "Activiteit filteren op persoon",
   "Filter by duration": "Filteren op duur",
   "Filter colours": "Kleuren filteren",
-  "Filter feed by kind": "Feed filteren op soort",
   "Filter feed by person": "Feed filteren op persoon",
   "Filter feed by project": "Feed filteren op project",
   "Filter on": "Filteren op",
@@ -7823,5 +7822,13 @@
   "This kind of link can never open": "Dit soort link opent nooit",
   "Use the app’s scheme, like zotero": "Gebruik het schema van de app, zoals zotero",
   "Push to calendar apps": "Push naar agenda-apps",
-  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst."
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst.",
+  "Filter activity by project": "Activiteit filteren op project",
+  "Time tracked": "Bijgehouden tijd",
+  "changed tracked time": "heeft bijgehouden tijd gewijzigd",
+  "tracked time": "heeft tijd bijgehouden",
+  "tracked {time}": "heeft {time} bijgehouden",
+  "{label}: {kinds}": "{label}: {kinds}",
+  "{n, plural, one {# kind} other {# kinds}}": "{n, plural, one {# soort} other {# soorten}}",
+  "{name} activity": "Activiteit van {name}"
 }

@@ -13,6 +13,7 @@ import { api } from './api'
 import { decryptActivityPage } from './e2ee'
 import { db } from './db'
 import { fieldValueLabel } from './fieldNames'
+import { formatMinutes } from './duration'
 import type { ActivityChange, ActivityEntry, ActivityEvent, ActivityKind, ActivityPage, Op } from './types'
 import { t, msg, translatedMap, translatedList } from './i18n'
 import { resettable } from './moduleState'
@@ -65,7 +66,7 @@ export const WINDOW_MS = 5000
 /** Local events kept per project (a constant, not a setting). */
 export const LOCAL_RETENTION = 500
 
-const COUNTED = new Set(['task', 'project', 'comment'])
+const COUNTED = new Set(['task', 'project', 'comment', 'time_entry'])
 /**
  * Opaque document fields (collaborative-rich-text): never recorded or shown. Their
  * readable projection (`description`) is written in the same batch and counts.
@@ -74,11 +75,13 @@ const COUNTED = new Set(['task', 'project', 'comment'])
 export const OPAQUE = new Set(['task.notes_doc', 'project.notes_doc', 'note.notes_doc'])
 /**
  * Ops that never form or join an event (editor-everywhere): a comment's reactions,
- * and a task's note_mentions, which travel with the note edit. Same as `quiet` in
+ * a task's note_mentions, which travel with the note edit, and a time entry's
+ * note, which may be encrypted (workspace-activity D3). Same as `quiet` in
  * internal/activity.
  */
 const quiet = (op: { entity: string; field: string }) =>
-  OPAQUE.has(`${op.entity}.${op.field}`) || (op.entity === 'task' && op.field === 'note_mentions') || (op.entity === 'comment' && op.field.startsWith('reactions.')) || op.field.startsWith('appends.')
+  OPAQUE.has(`${op.entity}.${op.field}`) || (op.entity === 'task' && op.field === 'note_mentions') || (op.entity === 'comment' && op.field.startsWith('reactions.')) || op.field.startsWith('appends.') ||
+  (op.entity === 'time_entry' && op.field === 'note')
 const counts = (op: { entity: string; field: string }) => COUNTED.has(op.entity) && !quiet(op)
 
 /** An op as the rule needs it; `from` is an optional known old value (local rows). */
@@ -95,6 +98,9 @@ interface Group {
   ev: ActivityEvent
   order: string[]
   changes: Map<string, ActivityChange>
+  /** A time entry's started_at and ended_at after the group's last op. */
+  start?: unknown
+  end?: unknown
 }
 
 /**
@@ -106,14 +112,16 @@ interface Group {
  */
 export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>): ActivityEvent[] {
   const list: ActivityOp[] = []
-  const commentTask = new Map<string, string>()
+  // A comment's or a time entry's task.
+  const parentTask = new Map<string, string>()
   for (const op of ops) {
     if (!counts(op)) continue
     list.push(op)
-    if (op.entity === 'comment' && op.field === 'task_id' && typeof op.value === 'string') commentTask.set(op.entityId, op.value)
+    if ((op.entity === 'comment' || op.entity === 'time_entry') && op.field === 'task_id' && typeof op.value === 'string') parentTask.set(`${op.entity}:${op.entityId}`, op.value)
   }
   list.sort((a, b) => (a.ts !== b.ts ? a.ts - b.ts : a.device < b.device ? -1 : a.device > b.device ? 1 : 0))
   const last = new Map<string, unknown>()
+  const value = (fk: string) => (last.has(fk) ? last.get(fk) : prior?.has(fk) ? prior.get(fk) : null)
   const open = new Map<string, Group>()
   const groups: Group[] = []
   for (const op of list) {
@@ -145,16 +153,20 @@ export function deriveActivity(ops: ActivityOp[], prior?: Map<string, unknown>):
       g.order.push(op.field)
     }
     c.to = op.value ?? null
+    if (op.entity === 'time_entry') {
+      g.start = value(key(op.entity, op.entityId, 'started_at'))
+      g.end = value(key(op.entity, op.entityId, 'ended_at'))
+    }
   }
   const out: ActivityEvent[] = []
   for (const g of groups) {
-    const ev = finish(g, commentTask)
+    const ev = finish(g, parentTask)
     if (ev) out.push(ev)
   }
   return out
 }
 
-function finish(g: Group, commentTask: Map<string, string>): ActivityEvent | null {
+function finish(g: Group, parentTask: Map<string, string>): ActivityEvent | null {
   const ev = g.ev
   const fields = [...g.order].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
   let changed = false
@@ -167,12 +179,14 @@ function finish(g: Group, commentTask: Map<string, string>): ActivityEvent | nul
   const isNull = (f: string) => g.changes.get(f)?.to === null
   let kind: ActivityKind
   if (ev.entity === 'comment') {
-    const item = commentTask.get(ev.entityId)
+    const item = parentTask.get(`comment:${ev.entityId}`)
     if (item !== undefined) ev.taskId = item
     if (has('created_at') || has('author_id') || has('task_id')) kind = 'commented'
     else if (has('deleted_at') && !isNull('deleted_at')) kind = 'comment_deleted'
     else kind = 'comment_edited'
     ev.changes = []
+  } else if (ev.entity === 'time_entry') {
+    return finishTime(ev, g, changed, parentTask)
   } else {
     if (ev.entity === 'task') ev.taskId = ev.entityId
     if (has('created_at')) kind = 'created'
@@ -189,6 +203,23 @@ function finish(g: Group, commentTask: Map<string, string>): ActivityEvent | nul
   if (!changed && kind !== 'created' && kind !== 'commented') return null
   return ev
 }
+
+/**
+ * A time entry's group (workspace-activity D3): a running entry has no event;
+ * logging an ended entry or ending a running one is time_tracked; any other
+ * change, deletion included, is time_changed. Same as finishTime on the server.
+ */
+function finishTime(ev: ActivityEvent, g: Group, changed: boolean, parentTask: Map<string, string>): ActivityEvent | null {
+  const item = parentTask.get(`time_entry:${ev.entityId}`)
+  if (item !== undefined) ev.taskId = item
+  if (typeof g.end !== 'number' || !changed) return null
+  if (typeof g.start === 'number') ev.minutes = Math.max(0, Math.floor((g.end - g.start + 30000) / 60000))
+  const ended = g.changes.get('ended_at')
+  ev.kind = has(g, 'created_at') || (ended && ended.from === null) ? 'time_tracked' : 'time_changed'
+  return ev
+}
+
+const has = (g: Group, f: string) => g.changes.has(f)
 
 /** Newest first: by ts, then id, both descending (the server's page order). */
 export function newestFirst(events: ActivityEvent[]): ActivityEvent[] {
@@ -483,6 +514,8 @@ export function describeEvent(ev: ActivityEvent, name: (id: string) => string, p
     case 'commented': return t('commented')
     case 'comment_edited': return t('edited a comment')
     case 'comment_deleted': return t('deleted a comment')
+    case 'time_tracked': return ev.minutes !== undefined ? t('tracked {time}', { time: formatMinutes(ev.minutes) }) : t('tracked time')
+    case 'time_changed': return t('changed tracked time')
     default: {
       const fields = ev.changes.filter((c) => canon(c.from) !== canon(c.to)).map((c) => FIELD_LABELS[c.field] ?? fieldValueLabel(c.field) ?? c.field)
       return fields.length ? t('changed {fields}', { fields: fields.join(', ') }) : t('edited')
@@ -509,6 +542,7 @@ export const KIND_FILTERS: KindFilter[] = translatedList<KindFilter, 'label'>([
   { value: 'dependencies', label: msg('Waiting for'), kinds: ['dependencies'] },
   { value: 'comments', label: msg('Comments'), kinds: ['commented', 'comment_edited', 'comment_deleted'] },
   { value: 'deleted', label: msg('Deleted / restored'), kinds: ['deleted', 'restored'] },
+  { value: 'time', label: msg('Time tracked'), kinds: ['time_tracked', 'time_changed'] },
   { value: 'edited', label: msg('Other edits'), kinds: ['edited', 'archived', 'unarchived'] },
 ], 'label')
 

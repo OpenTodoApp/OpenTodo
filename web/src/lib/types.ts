@@ -1087,6 +1087,7 @@ export interface Review extends ReviewFields {
 export type ActivityKind =
   | 'created' | 'completed' | 'reopened' | 'deleted' | 'restored' | 'rescheduled' | 'assigned' | 'unassigned'
   | 'moved' | 'dependencies' | 'archived' | 'unarchived' | 'edited' | 'commented' | 'comment_edited' | 'comment_deleted'
+  | 'time_tracked' | 'time_changed'
 
 /** One field transition inside an activity event. */
 export interface ActivityChange {
@@ -1105,9 +1106,11 @@ export interface ActivityEvent {
   id: string
   kind: ActivityKind
   actor: string
-  entity: 'task' | 'project' | 'comment'
+  entity: 'task' | 'project' | 'comment' | 'time_entry'
   entityId: string
   taskId?: string
+  /** A time entry's event: the tracked length in whole minutes (workspace-activity D3). */
+  minutes?: number
   ts: number
   opIds: string[]
   changes: ActivityChange[]
@@ -1130,7 +1133,7 @@ export interface ActivityEvent {
 export interface ActivityEntry {
   id: string
   actor: string
-  entity: 'task' | 'project' | 'comment'
+  entity: 'task' | 'project' | 'comment' | 'time_entry'
   entityId: string
   field: string
   value: unknown
