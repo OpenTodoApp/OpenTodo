@@ -64,7 +64,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Esc</kbd> | Close the panel or the picker, else clear the selection |
 | <kbd>?</kbd> | Toggle this cheat sheet |
 | <kbd>[</kbd> | Collapse or expand the sidebar (from 1024 px) |
-| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | While its notice is shown: undo the last bulk action |
+| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Undo the last change |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd> | Redo the change undone last |
 
 ### Go to a view
 
