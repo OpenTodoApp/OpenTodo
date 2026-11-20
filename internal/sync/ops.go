@@ -1019,9 +1019,9 @@ var Schema = map[string]map[string]Field{
 		// to ("" for none) and their template: "" the built-in Daily, "none" no
 		// template, otherwise a template note's id (an unknown id reads as the
 		// built-in Daily and is kept).
-		"daily_notes":          {Kind: kBool, Default: `false`},
-		"daily_notes_project":  {Kind: kString, Default: `""`},
-		"daily_notes_template": {Kind: kString, Default: `""`},
+		"daily_notes":         {Kind: kBool, Default: `false`},
+		"daily_notes_project": {Kind: kString, Default: `""`}, "daily_notes_template": {Kind: kString, Default: `""`},
+		"app_link_schemes": {Kind: kString, Default: `""`, Content: true}, // app-links D1: schemes that open in other apps, a JSON array, read only on the person's devices
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the

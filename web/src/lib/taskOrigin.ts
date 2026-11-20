@@ -7,6 +7,7 @@
 // origin. Nothing here makes a request: only the URL's host and path are read.
 // (lib/origin.ts is unrelated: it explains a refusal for the page's own host.)
 import type { Origin, Task } from './types'
+import { appLinkScheme, isAppLink } from './appLinkGrammar'
 
 export const MAX_ORIGIN_URL = 2048
 export const MAX_ORIGIN_TITLE = 500
@@ -83,9 +84,9 @@ export function originOf(task: Pick<Task, 'origin'> | null | undefined): Origin 
   return o && typeof o === 'object' && typeof o.kind === 'string' ? o : null
 }
 
-/** The URL's host without "www.", or "" when there is none. */
+/** The URL's host without "www.", or "" when there is none or it is a link into another app. */
 export function originHost(origin: Origin): string {
-  if (!origin.url) return ''
+  if (!origin.url || isAppLink(origin.url)) return ''
   try {
     return new URL(origin.url).hostname.toLowerCase().replace(/^www\./, '')
   } catch {
@@ -202,7 +203,10 @@ export function originLabel(origin: Origin): string {
   if (origin.kind === 'import') return importApp(origin.provider)
   if (origin.kind === 'obsidian') return origin.title || obsidianNoteName(origin.id ?? '')
   if (origin.kind === 'email') return origin.url && origin.provider ? origin.provider.charAt(0).toUpperCase() + origin.provider.slice(1) : ''
-  return origin.id || originHost(origin)
+  if (origin.id) return origin.id
+  // A link into another app reads as its app's scheme, "Zotero" (app-links D5).
+  const scheme = origin.url ? appLinkScheme(origin.url) : null
+  return scheme ? scheme.charAt(0).toUpperCase() + scheme.slice(1) : originHost(origin)
 }
 
 /**

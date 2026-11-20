@@ -28,6 +28,7 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { hrefOf, refOf } from '../lib/noteLinks'
 import { linkTaps } from '../lib/linkTap'
 import { safeHref } from '../lib/markdown'
+import { isAppLink, openAppLink } from '../lib/appLinks'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
 import type { Clock, Task } from '../lib/types'
@@ -413,7 +414,9 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
           // Ctrl/Cmd-click opens a link (plain clicks place the caret).
           const a = (event.target as HTMLElement).closest('a')
           if (a && (event.metaKey || event.ctrlKey) && a.getAttribute('href')) {
-            window.open(a.getAttribute('href') as string, '_blank', 'noopener,noreferrer')
+            const href = a.getAttribute('href') as string
+            if (isAppLink(href)) openAppLink(href)
+            else window.open(href, '_blank', 'noopener,noreferrer')
             return true
           }
           return false
@@ -568,6 +571,7 @@ function openTapped(a: HTMLAnchorElement): void {
   if (ref) return openRef(ref.kind, ref.id)
   const web = safeHref(href)
   if (web) window.open(web, '_blank', 'noopener,noreferrer')
+  else if (isAppLink(href)) openAppLink(href)
 }
 
 /** The link dialog of Mod-k, answering the editor's question. */

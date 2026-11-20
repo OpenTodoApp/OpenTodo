@@ -23,6 +23,7 @@ import { shell } from '../lib/shell'
 import { originText } from '../lib/originText'
 import { obsidianPlace, originIcon } from '../lib/taskOrigin'
 import { openOrigin, originLink } from '../lib/originOpen'
+import { isAppLink, useAppLinkSchemes } from '../lib/appLinks'
 import type { Origin } from '../lib/types'
 import { act } from './actionError'
 
@@ -35,7 +36,9 @@ export { originText }
  */
 export function originTip(origin: Origin): string | undefined {
   const place = obsidianPlace(origin)
-  return place ? t('Open in Obsidian: {vault} › {path}', place) : origin.title || undefined
+  if (place) return t('Open in Obsidian: {vault} › {path}', place)
+  // A link into another app shows its address (app-links D5).
+  return origin.title || (origin.kind === 'url' && origin.url && isAppLink(origin.url) ? origin.url : undefined)
 }
 
 const QUIET = 'inline-flex max-w-40 min-w-0 items-center gap-1 text-meta text-faint transition-colors duration-(--duration-ui) group-hover:text-muted group-focus-within:text-muted'
@@ -52,6 +55,8 @@ const stop = (e: SyntheticEvent) => e.stopPropagation()
 export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin: Origin; quiet?: boolean; iconOnly?: boolean }) {
   const text = originText(origin)
   const icon = originIcon(origin)
+  // Re-reads when the viewer changes their list of app link schemes (app-links D5).
+  useAppLinkSchemes()
   // The stored page title or the Obsidian note's place, as a tooltip (never a second line).
   const tip = originTip(origin)
   const withTip = (el: ReactElement<Record<string, unknown>>) => (tip ? <Tooltip label={tip}>{el}</Tooltip> : el)
@@ -63,6 +68,16 @@ export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin
   const label = imported ? text : t('Opens the source {text}', { text })
   const from = imported ? text : t('From {text}', { text })
   const link = originLink(origin)
+  if (link?.app) {
+    // A link into another app this viewer allowed: through openAppLink, which asks
+    // the first time on this device, never as a tab.
+    return withTip(
+      <a href={link.href} rel="noreferrer" data-origin={origin.kind} data-app-link="open" aria-label={label} className={`mt-0.5 shrink-0 ${LINK}`}
+        onClick={(e) => { stop(e); e.preventDefault(); openOrigin(origin) }} onPointerDown={stop}>
+        {face}
+      </a>,
+    )
+  }
   if (link?.obsidian) {
     // A same-page link activation: the browser asks before it opens Obsidian and
     // leaves no tab. A shell never navigates its web view to it: it hands it over.

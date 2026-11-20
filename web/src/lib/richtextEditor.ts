@@ -20,6 +20,7 @@ import { type Command, EditorState, Plugin, PluginKey, type Transaction } from '
 import { tableNodes } from 'prosemirror-tables'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
+import { canOpenAppLink, isAppLink } from './appLinks'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
@@ -106,8 +107,14 @@ export const schema = new Schema({
     link: {
       attrs: { href: {} }, inclusive: false,
       parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
-      // A link to a task of this app (Make subtask) keeps its relative address.
-      toDOM: (m) => ['a', { href: safeHref(m.attrs.href as string) ?? (/^\?task=[\w-]+$/.test(m.attrs.href as string) ? m.attrs.href : undefined), title: m.attrs.href, rel: LINK_REL, target: '_blank' }, 0],
+      // A link to a task of this app (Make subtask) keeps its relative address; a
+      // link into another app has one only for a viewer who allowed its scheme
+      // (app-links D3), and opens through openAppLink, never in a tab.
+      toDOM: (m) => {
+        const href = m.attrs.href as string
+        const app = isAppLink(href)
+        return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : app && canOpenAppLink(href) ? href : undefined), title: href, rel: LINK_REL, target: app ? undefined : '_blank', 'data-app-link': app ? '' : undefined }, 0]
+      },
     },
     strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: () => ['strong', 0] },
     em: { parseDOM: [{ tag: 'em' }, { tag: 'i' }], toDOM: () => ['em', 0] },
