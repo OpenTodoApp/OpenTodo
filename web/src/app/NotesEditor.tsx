@@ -35,6 +35,7 @@ import { logicalToday } from '../lib/dates'
 import { EditorToolbar, openCellMenu, useEditorChrome } from './EditorChrome'
 import { FormattingToggle, useFormattingToggle } from './FormattingToggle'
 import type { CommandEnv, LinkPickerEnv } from './editorCommands'
+import { codeViews } from './editorCode'
 import { imageViews } from './editorImage'
 import { refViews } from './editorRef'
 import { openRef } from './RefChip'
@@ -400,7 +401,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       // A read-only note's headings take focus from the outline (note-outline D3).
       decorations: (state) => (readOnly ? headingStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
-      nodeViews: { ...imageViews(imageParent), ...refViews },
+      nodeViews: { ...imageViews(imageParent), ...refViews, ...codeViews },
       clipboardTextParser: (text) => markdownSlice(text),
       ...(imageParent && !readOnly ? imageHandlers(imageParent) : {}),
       handleClickOn: (_view, _pos, node, nodePos, event) => {

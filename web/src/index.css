@@ -1014,6 +1014,10 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .md-code { @apply relative rounded-control bg-sunken dark:bg-raised; }
 .md-code__bar { @apply flex justify-end px-0.5 pt-0.5; }
 .md-code > pre { @apply bg-transparent p-2; }
+/* The same block inside the editor (editor-copy-code-block D1): its node view draws
+   the bar and the code, so it takes the rendered block's look and keeps the editor's
+   own code typography. */
+.notes-editor .md-code > pre { @apply m-0; }
 /* A note's outline (note-outline D2): the Outline button beside the Formatting toggle,
    or a column in the start margin, sticky inside the note's scroller and never a
    scroller of its own; the room around the note makes space for it. */

@@ -444,11 +444,23 @@ In the rich-text editor, an `http(s)` address in a note's text, outside code and
 - **THEN** it does not read as a link
 
 ### Requirement: Copying a code block
-Every fenced code block shown as formatted text SHALL have a Copy button in its top end corner, on every surface that renders notes, comments or answers as text, for every reader including viewers of a shared project. Activating it SHALL put the block's text on the clipboard as plain text, without the fence lines, with its own indentation and with no trailing newline, and SHALL announce that it was copied, or that it could not be copied when the browser refuses the clipboard. A note the reader may not edit SHALL also offer a **Copy note** action, reachable with the keyboard, that copies the note's Markdown. Nothing about either is stored or synced.
+Every fenced code block SHALL have a Copy button in its top end corner, on every surface that shows one: rendered notes, comments, answers and public pages, and the rich-text editor where notes and comments are written. Activating it SHALL put the block's text on the clipboard as plain text, without the fence lines, with its own indentation and with no trailing newline, and SHALL announce that it was copied, or that it could not be copied when the browser refuses the clipboard. The button SHALL behave the same in the editor as in rendered text: activating it SHALL NOT move the caret or change the selection, and SHALL NOT write to the note. A note the reader may not edit SHALL also offer a **Copy note** action, reachable with the keyboard, that copies the note's Markdown. Nothing about either is stored or synced.
 
 #### Scenario: Copy a command
 - **WHEN** a note shows a code block containing `docker compose up -d` and the user activates its Copy button
 - **THEN** the clipboard holds `docker compose up -d` and the button announces "Copied"
+
+#### Scenario: Copy a command while editing the note
+- **WHEN** the task page shows the notes in the editor, the caret is in the title's paragraph, and the user activates the Copy button of a code block in the notes
+- **THEN** the clipboard holds the block's text without its fences or trailing newline, the button announces "Copied", and the caret is still in the paragraph it was in
+
+#### Scenario: The editor and the rendered text agree
+- **WHEN** the same fenced block is copied once in the editor and once in a comment that renders it
+- **THEN** the clipboard holds the same text both times
+
+#### Scenario: The block stays writable
+- **WHEN** the caret is in a code block in the editor and the user types
+- **THEN** the characters reach the block's text, as they do in any other block, and the block still shows its Copy button
 
 #### Scenario: Indentation is kept
 - **WHEN** a code block holds a Python snippet whose body lines are indented
