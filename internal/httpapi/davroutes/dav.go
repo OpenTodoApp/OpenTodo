@@ -130,7 +130,7 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		sw := &statusWriter{ResponseWriter: w}
 		d.w = sw
 		defer func() {
-			if sw.status >= 200 && sw.status < 300 {
+			if sw.succeeded() {
 				d.pushDontNotify()
 			}
 		}()

@@ -197,7 +197,9 @@ func (d *davRequest) pushDontNotify() {
 	}
 }
 
-// statusWriter remembers the status of an answer (for Push-Dont-Notify).
+// statusWriter remembers the status of an answer (for Push-Dont-Notify). The
+// body passes straight to the embedded writer; an answer written without
+// WriteHeader is a 200 (succeeded).
 type statusWriter struct {
 	http.ResponseWriter
 	status int
@@ -210,12 +212,8 @@ func (w *statusWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func (w *statusWriter) Write(b []byte) (int, error) {
-	if w.status == 0 {
-		w.status = http.StatusOK
-	}
-	return w.ResponseWriter.Write(b)
-}
+// succeeded reports a 2xx answer, or one written without WriteHeader.
+func (w *statusWriter) succeeded() bool { return w.status == 0 || (w.status >= 200 && w.status < 300) }
 
 // PushChanges reports what changed for one of the user's app passwords since a
 // cursor, as its sync-collection reports would list it (caldav-push D5): the
