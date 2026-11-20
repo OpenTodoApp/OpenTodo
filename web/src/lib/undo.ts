@@ -77,6 +77,39 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
   return entry
 }
 
+type FieldClock = { ts: number; device: string }
+const clockKey = (entity: string, entityId: string, field: string) => `${entity}\u0000${entityId}\u0000${field}`
+
+/**
+ * After an undo rewrote `batch`'s fields, point every other still-undoable batch that
+ * recorded one of those fields at the new clock, so the next undo of an earlier change to
+ * that field recognises it as ours rather than as "changed again since" (#1488, D4).
+ */
+async function refreshUndoClocks(undoneId: string, batch: Change[]): Promise<void> {
+  const fresh = new Map<string, FieldClock>()
+  for (const c of batch) {
+    const row = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, FieldClock> } | undefined
+    for (const f of Object.keys(c.patch)) {
+      const ck = row?._clock?.[f]
+      if (ck) fresh.set(clockKey(c.entity, c.entityId, f), ck)
+    }
+  }
+  if (fresh.size === 0) return
+  const others = await db.assistantUndo.filter((e) => e.id !== undoneId && !e.undone_at).toArray()
+  for (const e of others) {
+    let changed = false
+    for (const clk of e.clocks) {
+      const nk = fresh.get(clockKey(clk.entity, clk.entityId, clk.field))
+      if (nk && (clk.ts !== nk.ts || clk.device !== nk.device)) {
+        clk.ts = nk.ts
+        clk.device = nk.device
+        changed = true
+      }
+    }
+    if (changed) await db.assistantUndo.update(e.id, { clocks: e.clocks })
+  }
+}
+
 export interface UndoResult {
   restored: number
   /** Titles of items whose field was changed again after the batch. */
@@ -125,7 +158,16 @@ export async function undoBatch(id: string): Promise<UndoResult> {
   }
   const assistant = (entry.source ?? 'assistant') === 'assistant'
   // Undo puts back earlier values: no default reminder (default-reminders D6).
-  if (batch.length) await mutateMany(batch, assistant ? { origin: 'assistant', restore: true } : { restore: true })
+  if (batch.length) {
+    await mutateMany(batch, assistant ? { origin: 'assistant', restore: true } : { restore: true })
+    // D4 (undo-redo-history, #1488): this undo rewrote these fields with new clocks, so
+    // an earlier batch that also changed one of them now sees a clock that is not its own
+    // and would wrongly skip it. Refresh the recorded clock of every other batch still on
+    // the undo stack that touched the same field, so undoing our earlier change is still
+    // recognised as ours. A field the user changed by hand in between was skipped above
+    // (not in `batch`), so it is never refreshed and stays respected.
+    await refreshUndoClocks(id, batch)
+  }
   await db.assistantUndo.update(id, { undone_at: Date.now() })
   // The review row in a Close/Reopen the day batch is bookkeeping, not an item the person changed.
   return { restored: batch.filter((c) => c.entity !== 'review').length - followUps, skipped }
