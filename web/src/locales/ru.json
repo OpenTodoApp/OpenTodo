@@ -5184,6 +5184,7 @@
   "That date is not a coming occurrence of this repeating task.": "Эта дата не является предстоящим повторением этой задачи.",
   "That day’s daily note, created from your Daily notes settings when needed": "Ежедневная заметка за этот день; создаётся по настройкам ежедневных заметок, когда нужно",
   "That did not go through. Check the connection and try again.": "Не получилось. Проверьте подключение и попробуйте снова.",
+  "That file could not be read. Choose it again, or copy it to this device first.": "Не удалось прочитать этот файл. Выберите его снова или сначала скопируйте на это устройство.",
   "That identity is already linked to another account on this server.": "Эта учётная запись уже привязана к другому аккаунту на этом сервере.",
   "That is a lot of drafts in an hour. Try again later.": "Слишком много черновиков за час. Попробуйте позже.",
   "That is more than {max} lines. Use Import for long lists.": "Больше {max} строк. Для длинных списков используйте импорт.",
