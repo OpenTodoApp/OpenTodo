@@ -4,7 +4,7 @@
 // bulk.test.)
 import { describe, expect, it } from 'vitest'
 import type { AssistantUndo } from './db'
-import { topRedo, topUndo } from './undoHistory'
+import { topRedo, topUndo } from './undo'
 
 const entry = (over: Partial<AssistantUndo>): AssistantUndo =>
   ({ id: 'x', created_at: 0, count: 1, inverse: [], clocks: [], source: 'action', ...over })

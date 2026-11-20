@@ -14465,6 +14465,9 @@
   "Redone: {n} restored.": [
     "web/src/app/bulk/UndoToast.tsx"
   ],
+  "Redone: {step}.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
   "Refresh": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -20735,6 +20738,9 @@
     "web/src/app/assistant/useAssistantConversation.ts",
     "web/src/app/bulk/UndoToast.tsx"
   ],
+  "Undone: {step}.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
   "Unestimated": [
     "web/src/lib/filters.ts"
   ],
@@ -25549,6 +25555,7 @@
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/rules/sentence.ts"
