@@ -531,11 +531,33 @@ jobs:
   # or the "UI baselines" workflow. The two gates run as separate jobs, and the
   # visual comparison is split into three shards (Playwright --shard) that run side
   # by side; every part must pass. Diffs are uploaded as ui-check-report-<shard>.
+  # The design workbench, built once for the five UI check shards below (ci-speed): each
+  # shard built the same Storybook again, about a minute apiece. Built in the same pinned
+  # Playwright image the shards run in, so its output is what they built before.
+  ui-storybook:
+    name: UI check (workbench build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - run: npm run build-storybook
+        working-directory: web
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: storybook-static
+          path: web/storybook-static
+          retention-days: 1
+
   ui-a11y:
     name: UI check (workbench a11y ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: changes
+    needs: [changes, ui-storybook]
     if: needs.changes.outputs.ui == 'true'
     # Split in two like the visual comparison (ci-speed); every part must pass.
     strategy:
@@ -546,10 +568,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: npm i -g --no-audit --no-fund playwright@1.56.1
+      # axe-core (a web devDependency) for the check; the workbench comes built.
       - run: npm ci --no-audit --no-fund
         working-directory: web
-      - run: npm run build-storybook
-        working-directory: web
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: storybook-static
+          path: web/storybook-static
       - name: Accessibility (axe-core on every story, light and dark)
         env:
           SHARD: ${{ matrix.shard }}/2
@@ -562,7 +587,7 @@ jobs:
     name: UI check (visual regression ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: changes
+    needs: [changes, ui-storybook]
     if: needs.changes.outputs.ui == 'true'
     strategy:
       fail-fast: false
@@ -577,10 +602,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: npm i -g --no-audit --no-fund playwright@1.56.1 @playwright/test@1.56.1
-      - run: npm ci --no-audit --no-fund
-        working-directory: web
-      - run: npm run build-storybook
-        working-directory: web
+      # The workbench comes built; nothing here reads web's node_modules.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: storybook-static
+          path: web/storybook-static
       - name: Baselines
         run: node scripts/ui-check/baselines.mjs fetch
       - name: Visual regression
@@ -1076,7 +1102,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image]
     permissions:
       contents: read
       packages: write
@@ -1167,7 +1193,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
