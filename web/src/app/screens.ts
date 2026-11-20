@@ -23,6 +23,7 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   day: 'calendar',
   week: 'calendar',
   month: 'calendar',
+  quarter: 'calendar',
   plan: 'calendar',
   year: 'calendar',
   completed: 'completed',
