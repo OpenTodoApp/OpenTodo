@@ -77,6 +77,21 @@ async function prepareAccount(id: string): Promise<void> {
   setSyncAccount(id)
 }
 
+// Re-read the auth status whenever a window event fires — and, where a library
+// exposes its own subscription (onEnrolmentRequired), when that calls back —
+// removing both on unmount.
+function useRefreshOnEvent(event: string, refresh: () => void, subscribe?: (again: () => void) => () => void) {
+  useEffect(() => {
+    const again = () => void refresh()
+    window.addEventListener(event, again)
+    const off = subscribe?.(again)
+    return () => {
+      window.removeEventListener(event, again)
+      off?.()
+    }
+  }, [event, refresh, subscribe])
+}
+
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
   const route = useRoute()
@@ -144,22 +159,10 @@ export function App() {
 
   // A request refused with mfa_enrolment_required (policy changed while signed
   // in), or a click on the sync status, re-reads the status and shows the gate.
-  useEffect(() => {
-    const again = () => void refresh()
-    window.addEventListener(ENROLMENT_EVENT, again)
-    const off = onEnrolmentRequired(again)
-    return () => {
-      window.removeEventListener(ENROLMENT_EVENT, again)
-      off()
-    }
-  }, [refresh])
+  useRefreshOnEvent(ENROLMENT_EVENT, refresh, onEnrolmentRequired)
 
   // Ownership moved (Settings → People → Users): re-read the profile so the role is current.
-  useEffect(() => {
-    const again = () => void refresh()
-    window.addEventListener(ACCOUNT_CHANGED_EVENT, again)
-    return () => window.removeEventListener(ACCOUNT_CHANGED_EVENT, again)
-  }, [refresh])
+  useRefreshOnEvent(ACCOUNT_CHANGED_EVENT, refresh)
 
   // The server refused this device's session: show the signed-out screen. Local
   // data is left alone, as on any expired session or password change, unless
