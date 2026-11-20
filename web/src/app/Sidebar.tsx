@@ -402,8 +402,8 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
   }
 
   const item = (r: Route, label: string, icon: IconName, count?: number, badge?: ReactNode, tip?: string) => {
-    // Day, Week, Month and Plan are one Calendar destination (ux-overhaul, planner-view).
-    const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'plan' || v === 'year'
+    // Day, Week, Month, Quarter, Plan and Year are one Calendar destination (ux-overhaul, planner-view).
+    const calendar = (v: string) => v === 'day' || v === 'week' || v === 'month' || v === 'quarter' || v === 'plan' || v === 'year'
     // A Loop home address with a move open (/loop/<move>) is still the Loop home.
     // All notes and Graph: the Notes page's two modes, a note open beside them or not (notes-graph-page D1).
     const active = calendar(r.view) ? calendar(route.view) : r.view === 'loop' ? route.view === 'loop' : r.view === 'notes' && route.view === 'notes' ? (r.day ? route.day === r.day : !route.day && !!r.graph === !!route.graph) : JSON.stringify(r) === JSON.stringify(route)

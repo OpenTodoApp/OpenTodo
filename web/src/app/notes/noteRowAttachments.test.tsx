@@ -11,7 +11,7 @@ import { applyOps, createTask, resetDeviceId } from '../../lib/ops'
 import { setCurrentUserId } from '../../lib/sharing'
 import type { Op } from '../../lib/types'
 import { flush, minWidthPx, render, waitFor } from '../../ui/test-utils'
-import { NotesPage } from './NotesPage'
+import { NOTE_TOKENS_KEY, NotesPage } from './NotesPage'
 
 const original = window.matchMedia
 let run = 0
@@ -52,6 +52,7 @@ describe('the paperclip in the notes list', () => {
     await file('r2', { note_id: recipe })
     await file('t1', { task_id: trip })
     await file('r3', { note_id: recipe }, true)
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'note' }, { key: 'kind', value: 'task' }]))
     const r = await render(<NotesPage />)
     await flush()
     await waitFor(() => !!row(r.container, 'Recipe')?.querySelector('[data-note-attachments]'), 'the paperclip')
