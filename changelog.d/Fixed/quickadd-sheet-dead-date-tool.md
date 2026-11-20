@@ -1,0 +1,1 @@
+- Quick add on a phone: the Add-task sheet no longer shows a due-date tool that did nothing. A date has no token to start (dates are typed in words, like "tomorrow"), so tapping it only added a space and opened no picker; it is removed until a phone date picker is added (#1624).
