@@ -40,7 +40,7 @@ func TestAwayPlanFixture(t *testing.T) {
 				"due": JSONOf(map[string]string{"date": r.Date}), "completed_at": JSONOf(1), "skipped": JSONOf(r.State == "skipped")}
 			tasks = append(tasks, rec)
 		}
-		plan, err := PlanAway(tasks, AwayScope{All: true}, c.From, c.To, func(Entity) bool { return true }, 5, c.Today)
+		plan, err := PlanAway(tasks, AwayScope{All: true}, c.From, c.To, func(Entity) bool { return true }, 5, c.Today, 0)
 		if err != nil {
 			t.Fatalf("%s: %v", c.Name, err)
 		}

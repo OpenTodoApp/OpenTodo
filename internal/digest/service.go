@@ -65,7 +65,14 @@ type Service struct {
 	origin string
 	log    *slog.Logger
 	now    func() time.Time
+	// zone is the user's own time zone (nil: the digest's), for the logical day
+	// of an away period, as reminders read it (away-periods D4).
+	zone func(ctx context.Context, uid string) *time.Location
 }
+
+// SetUserZone installs the user's time zone, the one reminders read, for the
+// logical day of an away period.
+func (s *Service) SetUserZone(f func(ctx context.Context, uid string) *time.Location) { s.zone = f }
 
 // New wires the digest over the database, the sync service and outgoing email.
 func New(db *sql.DB, syncSvc *opsync.Service, m Mailer, o Options) *Service {
@@ -282,7 +289,8 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 }
 
 // awayQuiet reports whether the user's away period pauses reminders on their
-// logical today at now, in the digest's zone.
+// logical today at now, in the user's own zone (SetUserZone, the one reminders
+// read), else the digest's.
 func (s *Service) awayQuiet(ctx context.Context, st Settings, now time.Time) (bool, error) {
 	prefs, err := s.sync.Get(ctx, st.UserID, "user_prefs", "me")
 	if err != nil || prefs == nil {
@@ -291,6 +299,9 @@ func (s *Service) awayQuiet(ctx context.Context, st Settings, now time.Time) (bo
 	loc, err := time.LoadLocation(st.TimeZone)
 	if err != nil {
 		loc = time.UTC
+	}
+	if s.zone != nil {
+		loc = s.zone(ctx, st.UserID)
 	}
 	return opsync.QuietOn(str(prefs, "away"), LogicalDay(now, loc, DayStart(str(prefs, "day_start")))), nil
 }

@@ -199,6 +199,9 @@ var demoRules = []demoRule{
 	{"Routine emails", false, prefix("/api/v1/routine-emails")},
 	// The weekly digest sends mail (stats-and-review): changing it is refused.
 	{"Email digest", true, exact("/api/v1/me/email-digest")},
+	// An away period plans over every series of the account (away-periods):
+	// heavy on purpose and of no use in a sandbox.
+	{"Away periods", true, exact("/api/v1/away")},
 	// Public links publish data to anyone (public-links D9): every method.
 	{"Public links", false, projectPublicLinks},
 	{"Public links", false, prefix("/api/v1/public")},

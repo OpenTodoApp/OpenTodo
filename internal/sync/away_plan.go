@@ -2,6 +2,7 @@ package sync
 
 import (
 	"encoding/json"
+	"errors"
 	"slices"
 
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
@@ -16,17 +17,28 @@ import (
 // a habit also gets the skipped record of that date.
 
 // AwayScope is what a period covers: every series, or those in the projects
-// or with the labels chosen.
+// or with the labels chosen. A series assigned to someone other than Me is
+// never covered, and one of a Shared project only when its project is chosen:
+// a person's time away never moves a teammate's work.
 type AwayScope struct {
 	All              bool
 	Projects, Labels []string
+	Me               string
+	Shared           map[string]bool
 }
 
 func (sc AwayScope) covers(row Entity) bool {
+	if a := StringOf(row["assignee_id"]); a != "" && a != sc.Me {
+		return false
+	}
+	p := StringOf(row["project_id"])
+	if p != "" && sc.Shared[p] {
+		return !sc.All && slices.Contains(sc.Projects, p)
+	}
 	if sc.All {
 		return true
 	}
-	if p := StringOf(row["project_id"]); p != "" && slices.Contains(sc.Projects, p) {
+	if p != "" && slices.Contains(sc.Projects, p) {
 		return true
 	}
 	var labels []string
@@ -55,10 +67,19 @@ type AwayPlan struct {
 	Series      int
 }
 
+// ErrAwayTooLarge is PlanAway's answer when the plan's changes would pass the limit.
+var ErrAwayTooLarge = errors.New("the period would change too many occurrences")
+
 // PlanAway plans the skips of the period from..to over the user's live tasks
 // (SeriesTasks). canEdit excludes a series the user may not edit (a viewer).
-func PlanAway(tasks []Entity, scope AwayScope, from, to string, canEdit func(Entity) bool, now int64, today string) (AwayPlan, error) {
+// Each series is planned over its own lineage only (awayLineages), so the
+// work grows with the series and their records, not with every task; with a
+// limit above 0 it stops with ErrAwayTooLarge as soon as the plan's changed
+// fields pass it.
+func PlanAway(tasks []Entity, scope AwayScope, from, to string, canEdit func(Entity) bool, now int64, today string, limit int) (AwayPlan, error) {
 	var plan AwayPlan
+	lineages := awayLineages(tasks)
+	fields := 0
 	for _, row := range tasks {
 		id := StringOf(row["id"])
 		if id == "" || StringOf(row["series_id"]) != "" || !scope.covers(row) || !canEdit(row) {
@@ -67,18 +88,61 @@ func PlanAway(tasks []Entity, scope AwayScope, from, to string, canEdit func(Ent
 		if _, ok := openSeries(id, row); !ok {
 			continue
 		}
-		writes, n, err := planSeriesAway(id, row, from, to, tasks, now, today)
+		writes, n, err := planSeriesAway(id, row, from, to, lineages(id, row), now, today)
 		if err != nil {
 			return AwayPlan{}, err
 		}
 		if n == 0 {
 			continue
 		}
+		for _, w := range writes {
+			fields += len(w.Fields)
+		}
+		if limit > 0 && fields > limit {
+			return AwayPlan{}, ErrAwayTooLarge
+		}
 		plan.Writes = append(plan.Writes, writes...)
 		plan.Occurrences += n
 		plan.Series++
 	}
 	return plan, nil
+}
+
+// awayLineages indexes tasks once and answers, for a series, the rows its plan
+// reads (lineageOf, RecordsOf): the series, every piece of a split series and
+// the rows the pieces continue, and the records of all of them.
+func awayLineages(tasks []Entity) func(id string, row Entity) []Entity {
+	records := map[string][]Entity{}
+	var related []Entity
+	named := map[string]bool{}
+	for _, t := range tasks {
+		if sid := StringOf(t["series_id"]); sid != "" {
+			records[sid] = append(records[sid], t)
+		}
+		if s, ok := splitOf(t); ok && isPieceRow(t) {
+			related = append(related, t)
+			named[s.Series] = true
+		}
+	}
+	for _, t := range tasks {
+		if _, piece := splitOf(t); !piece && named[idValue(t["id"])] && isPieceRow(t) {
+			related = append(related, t)
+		}
+	}
+	return func(id string, row Entity) []Entity {
+		out := []Entity{row}
+		ids := []string{id}
+		for _, t := range related {
+			if tid := idValue(t["id"]); tid != id {
+				out = append(out, t)
+				ids = append(ids, tid)
+			}
+		}
+		for _, sid := range ids {
+			out = append(out, records[sid]...)
+		}
+		return out
+	}
 }
 
 // planSeriesAway is the skips of one series and how many occurrences they are.

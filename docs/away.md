@@ -18,7 +18,7 @@ Tell OpenTodo you are away and your repeating tasks skip those days, as if you h
 Open Today's menu (**⋯**) and choose **Away…**, or type *away* in the command palette.
 
 - **From** and **To**: the first and last day, both included, at most 90 days. The days can be in the past: set Away after a few ill days and the overdue occurrences of those days are skipped.
-- **Everything** covers every repeating task you may edit. **Only** covers the ones in the projects, or with the labels, you choose.
+- **Everything** covers every repeating task of your own. **Only** covers the ones in the projects, or with the labels, you choose. Your time away never moves someone else's work: a task assigned to someone else is never covered, and one in a shared project only when you choose that project under **Only**.
 - **Pause reminders** (on by default) holds every reminder and the email digest while the period lasts.
 
 Before anything changes, the dialog says what it will do, for example *Skips 23 occurrences of 6 repeating tasks*. Choose **Set away**. **Undo** in the message that follows puts every occurrence back.
@@ -39,10 +39,10 @@ Setting the same period again skips nothing more. Setting a new period replaces 
 
 ## While you are away
 
-Today's title reads *Away until Friday*. With reminders paused, no reminder arrives on any device or channel, and no digest is sent. Reminders held this way are dropped, not delivered later; each one is still listed on its task. From the day after the period, everything goes out as usual.
+Today's title reads *Away until Friday*. With reminders paused, no reminder arrives on any device or channel, and no digest is sent. Reminders held this way are dropped, not delivered later; each one is still listed on its task. From the day after the period, everything goes out as usual. A calendar app that syncs your tasks over [CalDAV](caldav.md) keeps its own alarms: turn them off there while you are away.
 
 To come back early, choose **End now** in Today's menu. The period ends on every device; the days already skipped stay skipped.
 
 ## From a script
 
-`ot away 2026-11-24 2026-11-30` sets a period, with `--project` and `--label` to narrow it and `--keep-reminders` to leave reminders on. `ot away --end` ends it. Scripts use `POST` and `DELETE /api/v1/away` ([API](api.md#away)).
+`ot away 2026-11-24 2026-11-30` sets a period, with `--project` and `--label` to narrow it and `--keep-reminders` to leave reminders on. `ot away --end` ends it. Scripts use `POST` and `DELETE /api/v1/away` ([API](api.md#away)). A period set this way has no Undo; `ot away --end` keeps the skips.

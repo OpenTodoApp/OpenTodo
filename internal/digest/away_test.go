@@ -3,6 +3,7 @@ package digest
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 // An away period that pauses reminders (away-periods "Quiet while away"): the
@@ -32,5 +33,19 @@ func TestAwayHoldsTheDigest(t *testing.T) {
 	e2.apply("u1", map[string]map[string]any{"user_prefs:me": {"away": "2026-10-20..2026-10-26"}})
 	if n := e2.tick(e2.service(), "2026-10-23 07:03"); n != 1 {
 		t.Fatalf("a period keeping reminders held the digest: %d", n)
+	}
+}
+
+// The away check reads the user's own today, in the zone their reminders use
+// (SetUserZone), not the digest's: at 07:03 on Friday in UTC it is still
+// Thursday evening ten hours west, inside a period that ends on Thursday.
+func TestAwayReadsTheUsersZone(t *testing.T) {
+	e := newEnv(t)
+	e.enable("u1")
+	e.apply("u1", map[string]map[string]any{"user_prefs:me": {"away": "2026-10-20..2026-10-22 quiet"}})
+	s := e.service()
+	s.SetUserZone(func(context.Context, string) *time.Location { return time.FixedZone("", -10*3600) })
+	if n := e.tick(s, "2026-10-23 07:03"); n != 0 {
+		t.Fatalf("sent %d while the user's own day is still inside the period", n)
 	}
 }

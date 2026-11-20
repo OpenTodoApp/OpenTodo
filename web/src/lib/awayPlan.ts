@@ -21,8 +21,20 @@ export function isOpenSeries(task: Task): boolean {
   return !task.deleted_at && !task.completed_at && !isOccurrenceRecord(task) && !!seriesRule(task)
 }
 
-/** Whether the scope covers the series. */
-export function covers(scope: AwayScope, task: Task): boolean {
+/** Whose work a period may move: the person's own id and which projects are shared. */
+export interface AwayWhose {
+  me: string | null
+  shared: (projectId: string) => boolean
+}
+
+/**
+ * Whether the scope covers the series. A person's time away never moves a
+ * teammate's work: a series assigned to someone else is never covered, and one in
+ * a shared project only when that project is chosen. The server's is AwayScope.covers.
+ */
+export function covers(scope: AwayScope, task: Task, whose: AwayWhose = { me: null, shared: () => false }): boolean {
+  if (task.assignee_id && task.assignee_id !== whose.me) return false
+  if (task.project_id && whose.shared(task.project_id)) return !scope.all && scope.projects.includes(task.project_id)
   if (scope.all) return true
   return (!!task.project_id && scope.projects.includes(task.project_id)) || task.labels.some((l) => scope.labels.includes(l))
 }
@@ -112,17 +124,18 @@ export interface AwayPlan {
 
 /**
  * The skips of the period over every covered series. `rowsOf` gives a series'
- * lineage rows; `canEdit` excludes a series the user may not edit (a viewer).
+ * lineage rows; `canEdit` excludes a series the user may not edit (a viewer);
+ * `whose` keeps other people's work out (covers).
  */
 export function planAway(
   tasks: readonly Task[], scope: AwayScope, from: string, to: string, rowsOf: (seriesId: string) => readonly Task[],
-  canEdit: (task: Task) => boolean, now: number, today: string,
+  canEdit: (task: Task) => boolean, now: number, today: string, whose?: AwayWhose,
 ): AwayPlan {
   const changes: Change[] = []
   let occurrences = 0
   let series = 0
   for (const task of tasks) {
-    if (!isOpenSeries(task) || !covers(scope, task) || !canEdit(task)) continue
+    if (!isOpenSeries(task) || !covers(scope, task, whose) || !canEdit(task)) continue
     const s = planSeriesAway(task, from, to, rowsOf(task.id), now, today)
     if (s.skipped === 0) continue
     changes.push(...s.changes)

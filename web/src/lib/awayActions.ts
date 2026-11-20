@@ -9,7 +9,7 @@ import { db, type AssistantUndo } from './db'
 import { t } from './i18n'
 import { lineageRows, lineageScan } from './lineageRows'
 import { getDeviceId, mutate } from './ops'
-import { canEditTask, membershipMap } from './sharing'
+import { canEditTask, currentUserId, membershipMap } from './sharing'
 import type { Task } from './types'
 import { applyBatch } from './undo'
 import { USER_PREFS_ID } from './userPrefs'
@@ -30,7 +30,9 @@ export async function planAwayLocal(input: AwayInput, opts: { now?: number; toda
   const scanned = await lineageScan(series.map((s) => s.id))
   const rows = new Map<string, Task[]>()
   for (const s of series) rows.set(s.id, await lineageRows(s.id, scanned))
-  return planAway(series, input.scope, input.from, input.to, (id) => rows.get(id) ?? [], (tk) => canEditTask(tk, memberships), now, today)
+  // Other people's work stays out (covers): a project with members is shared.
+  const whose = { me: await currentUserId(), shared: (projectId: string) => memberships.has(projectId) }
+  return planAway(series, input.scope, input.from, input.to, (id) => rows.get(id) ?? [], (tk) => canEditTask(tk, memberships), now, today, whose)
 }
 
 export interface AwayResult {

@@ -1,23 +1,35 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/OpenTodoApp/opentodo/internal/digest"
 
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
 
 // Away periods through the API (OpenSpec change away-periods, design D5):
 // POST stores user_prefs.away and applies the period's skips (opsync.PlanAway,
-// the port of the app's planAway) in one strict batch; DELETE clears the
-// period and leaves the skips. Ordinary task writes: signed in, refused for
-// read and agent tokens by the auth middleware and for tokens limited to
-// workspaces (the period covers the whole account), not demo-denied.
+// the port of the app's planAway) in strict batches of at most
+// MaxOpsPerRequest ops each, the stored period in the last, so a period that
+// fails part-way stores nothing and sending it again finishes it (a date with a
+// record is never planned twice). DELETE clears the period and leaves the
+// skips. Ordinary task writes: signed in, refused for read and agent tokens by
+// the auth middleware and for tokens limited to workspaces (the period covers
+// the whole account), and on a demo (demo.go).
+
+// maxAwayOps bounds one period's changes: planning stops, and nothing is
+// written, once the plan would pass it.
+const maxAwayOps = 20 * opsync.MaxOpsPerRequest
 
 func (s *Server) registerAwayRoutes(mux *routes) {
-	mux.handle("POST /api/v1/away", signedIn, s.setAway)
-	mux.handle("DELETE /api/v1/away", signedIn, s.endAway)
+	mux.handle("POST /api/v1/away", signedIn.DemoDenied(), s.setAway)
+	mux.handle("DELETE /api/v1/away", signedIn.DemoDenied(), s.endAway)
 }
 
 type awayInput struct {
@@ -72,48 +84,105 @@ func (s *Server) setAway(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	away := opsync.Away{From: in.From, To: in.To, Quiet: in.PauseReminders == nil || *in.PauseReminders}
+	plan, ok := s.planAway(w, r, uid, in)
+	if !ok {
+		return
+	}
+	batches, err := s.awayBatches(ctx, uid, plan, away)
+	if err != nil {
+		s.internal(w, err)
+		return
+	}
+	for _, ops := range batches {
+		if _, ok := s.applyREST(w, ctx, uid, ops, "", nil); !ok {
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"away": away.String(), "skipped": plan.Occurrences})
+}
+
+// planAway plans the period's skips over the user's series, on the user's own
+// today, leaving out what is not theirs to move; false when it answered.
+func (s *Server) planAway(w http.ResponseWriter, r *http.Request, uid string, in awayInput) (opsync.AwayPlan, bool) {
+	ctx := r.Context()
 	tasks, err := s.sync.SeriesTasks(ctx, uid)
 	if err != nil {
 		s.internal(w, err)
-		return
+		return opsync.AwayPlan{}, false
 	}
-	scope := opsync.AwayScope{All: len(in.Projects) == 0 && len(in.Labels) == 0, Projects: in.Projects, Labels: in.Labels}
-	roles := map[string]bool{}
-	canEdit := func(row opsync.Entity) bool {
+	scope := opsync.AwayScope{All: len(in.Projects) == 0 && len(in.Labels) == 0, Projects: in.Projects, Labels: in.Labels, Me: uid, Shared: map[string]bool{}}
+	editable := map[string]bool{}
+	for _, row := range tasks {
 		pid := idOf(row["project_id"])
-		if pid == "" {
-			return true
+		if _, seen := editable[pid]; seen || pid == "" {
+			continue
 		}
-		if ok, seen := roles[pid]; seen {
-			return ok
+		_, shared, role, err := s.sync.ProjectStatus(ctx, uid, pid)
+		if err != nil {
+			s.internal(w, err)
+			return opsync.AwayPlan{}, false
 		}
-		_, _, role, err := s.sync.ProjectStatus(ctx, uid, pid)
-		roles[pid] = err == nil && role != opsync.RoleViewer
-		return roles[pid]
+		editable[pid], scope.Shared[pid] = role != opsync.RoleViewer, shared
 	}
-	plan, err := opsync.PlanAway(tasks, scope, in.From, in.To, canEdit, s.now().UnixMilli(), localToday(s.now()))
+	canEdit := func(row opsync.Entity) bool { pid := idOf(row["project_id"]); return pid == "" || editable[pid] }
+	today, err := s.userToday(ctx, uid)
 	if err != nil {
 		s.internal(w, err)
-		return
+		return opsync.AwayPlan{}, false
 	}
+	plan, err := opsync.PlanAway(tasks, scope, in.From, in.To, canEdit, s.now().UnixMilli(), today, maxAwayOps)
+	if errors.Is(err, opsync.ErrAwayTooLarge) {
+		writeError(w, http.StatusBadRequest, "too_large", fmt.Sprintf("the period would make more than %d changes; choose projects or labels, or a shorter period", maxAwayOps))
+		return opsync.AwayPlan{}, false
+	}
+	if err != nil {
+		s.internal(w, err)
+		return opsync.AwayPlan{}, false
+	}
+	return plan, true
+}
+
+// userToday is the user's logical today in their own zone (the one reminders
+// and digests read, tzLocation) and their start of day.
+func (s *Server) userToday(ctx context.Context, uid string) (string, error) {
+	prefs, err := s.sync.Get(ctx, uid, "user_prefs", "me")
+	if err != nil {
+		return "", err
+	}
+	start := ""
+	if prefs != nil {
+		start = opsync.StringOf(prefs["day_start"])
+	}
+	return digest.LogicalDay(s.now(), s.tzLocation(ctx, uid), digest.DayStart(start)), nil
+}
+
+// awayBatches is the plan's ops in batches of at most MaxOpsPerRequest, a
+// task's fields and the reminders that follow them always in one batch, and the
+// stored period at the end of the last.
+func (s *Server) awayBatches(ctx context.Context, uid string, plan opsync.AwayPlan, away opsync.Away) ([][]opsync.Op, error) {
 	ts := s.opTS()
-	var ops []opsync.Op
+	var batches [][]opsync.Op
+	var cur []opsync.Op
+	add := func(ops []opsync.Op) {
+		if len(cur) > 0 && len(cur)+len(ops) > opsync.MaxOpsPerRequest {
+			batches, cur = append(batches, cur), nil
+		}
+		cur = append(cur, ops...)
+	}
 	for _, wr := range plan.Writes {
-		ops = append(ops, fieldOps("task", wr.ID, wr.Fields, ts)...)
+		ops := fieldOps("task", wr.ID, wr.Fields, ts)
 		if wr.Series {
 			rops, err := s.reminderOpsForTaskAs(ctx, uid, wr.ID, wr.Fields, ts, serverDevice)
 			if err != nil {
-				s.internal(w, err)
-				return
+				return nil, err
 			}
 			ops = append(ops, rops...)
 		}
+		// Stamped here (completed_by), as ApplyStrict would, so the batch counts those ops too.
+		add(opsync.StampCompletedBy(uid, ops))
 	}
-	ops = append(ops, fieldOps("user_prefs", "me", map[string]json.RawMessage{"away": mustJSON(away.String())}, ts)...)
-	if _, ok := s.applyREST(w, ctx, uid, ops, "", nil); !ok {
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"away": away.String(), "skipped": plan.Occurrences})
+	add(fieldOps("user_prefs", "me", map[string]json.RawMessage{"away": mustJSON(away.String())}, ts))
+	return append(batches, cur), nil
 }
 
 func (s *Server) endAway(w http.ResponseWriter, r *http.Request) {
