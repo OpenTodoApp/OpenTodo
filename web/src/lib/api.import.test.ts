@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { api, ApiError } from './api'
+import { api, ApiError, FileReadError, NetworkError } from './api'
 
 type Call = { url: string; init: RequestInit }
 let calls: Call[]
@@ -34,6 +34,25 @@ describe('import API client', () => {
     const sent = form.get('file') as File
     expect(sent.name).toBe('tasks.csv')
     expect(await sent.text()).toBe('title\nA\n')
+  })
+
+  it('reads the file into memory before sending it, so a picker file is not streamed during the request', async () => {
+    // A content:// file from Android's picker can fail to stream while fetch sends it; reading
+    // it first means the request body is already in memory (#1606).
+    let read = false
+    const file = new Blob(['title\nA\n'], { type: 'text/csv' })
+    const spied = Object.assign(file, { arrayBuffer: () => { read = true; return Blob.prototype.arrayBuffer.call(file) } })
+    respond = () => json(200, { format: 'csv', totals: { rows: 1 }, rows: [], truncated: false, options: {} })
+    await api.previewImport(spied, 'tasks.csv', {})
+    expect(read).toBe(true)
+    expect(await ((calls[0].init.body as FormData).get('file') as File).text()).toBe('title\nA\n')
+  })
+
+  it('a file that cannot be read is a FileReadError, not a dropped connection (#1606)', async () => {
+    const unreadable = Object.assign(new Blob(['x']), { arrayBuffer: () => Promise.reject(new DOMException('denied', 'NotReadableError')) })
+    await expect(api.previewImport(unreadable, 'tasks.zip', {})).rejects.toBeInstanceOf(FileReadError)
+    await expect(api.previewImport(unreadable, 'tasks.zip', {})).rejects.not.toBeInstanceOf(NetworkError)
+    expect(calls).toHaveLength(0) // never reached fetch
   })
 
   it('sends a Notion column mapping with the options, null for "not imported" (migration-everywhere D3)', async () => {

@@ -4763,6 +4763,7 @@
   "That code is not valid. Type the newest code from your app.": "Dieser Code ist ungültig. Gib den neuesten Code aus deiner App ein.",
   "That date is not a coming occurrence of this repeating task.": "Dieses Datum ist kein kommender Termin dieser wiederkehrenden Aufgabe.",
   "That did not go through. Check the connection and try again.": "Das hat nicht geklappt. Prüf die Verbindung und versuch es noch einmal.",
+  "That file could not be read. Choose it again, or copy it to this device first.": "Diese Datei konnte nicht gelesen werden. Wähle sie erneut aus oder kopiere sie zuerst auf dieses Gerät.",
   "That identity is already linked to another account on this server.": "Diese Identität ist bereits mit einem anderen Konto auf diesem Server verknüpft.",
   "That is a lot of drafts in an hour. Try again later.": "Das sind viele Entwürfe in einer Stunde. Versuche es später noch einmal.",
   "That is more than {max} lines. Use Import for long lists.": "Das sind mehr als {max} Zeilen. Lange Listen über Import hinzufügen.",

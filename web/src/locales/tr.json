@@ -5189,6 +5189,7 @@
   "That date is not a coming occurrence of this repeating task.": "Bu tarih, bu yinelenen görevin yaklaşan bir tekrarı değil.",
   "That day’s daily note, created from your Daily notes settings when needed": "O günün günlük notu, gerektiğinde Günlük notlar ayarlarınızdan oluşturulur",
   "That did not go through. Check the connection and try again.": "İşlem tamamlanamadı. Bağlantıyı kontrol edip tekrar deneyin.",
+  "That file could not be read. Choose it again, or copy it to this device first.": "Bu dosya okunamadı. Yeniden seçin ya da önce bu cihaza kopyalayın.",
   "That identity is already linked to another account on this server.": "Bu kimlik zaten bu sunucudaki başka bir hesaba bağlı.",
   "That is a lot of drafts in an hour. Try again later.": "Bir saatte çok fazla taslak oluşturuldu. Daha sonra tekrar deneyin.",
   "That is more than {max} lines. Use Import for long lists.": "Bu {max} satırdan fazla. Uzun listeler için İçe Aktar’ı kullanın.",

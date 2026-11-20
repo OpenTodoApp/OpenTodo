@@ -4854,6 +4854,7 @@
   "That code is not valid. Type the newest code from your app.": "验证码无效。请输入你应用中显示的最新验证码。",
   "That date is not a coming occurrence of this repeating task.": "该日期不是此重复任务即将到来的发生日期。",
   "That did not go through. Check the connection and try again.": "未能成功发送。请检查网络连接后重试。",
+  "That file could not be read. Choose it again, or copy it to this device first.": "无法读取该文件。请重新选择，或先将其复制到此设备。",
   "That identity is already linked to another account on this server.": "该身份已关联到此服务器上的另一个账户。",
   "That is a lot of drafts in an hour. Try again later.": "一小时内生成的草稿过多，请稍后再试。",
   "That is more than {max} lines. Use Import for long lists.": "已超过 {max} 行。长列表请使用“导入”功能。",

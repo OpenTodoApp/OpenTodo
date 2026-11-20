@@ -10409,7 +10409,8 @@
   "Move {name} (Alt+Up or Alt+Down)": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FieldsDialog.tsx",
-    "web/src/app/task-detail/RotationEditor.tsx"
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts"
   ],
   "Move {name} down": [
     "web/src/app/FieldsDialog.tsx"
@@ -17868,6 +17869,9 @@
   "That did not go through. Check the connection and try again.": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "That file could not be read. Choose it again, or copy it to this device first.": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "That identity is already linked to another account on this server.": [
     "web/src/app/sso.ts"
   ],
@@ -20818,6 +20822,7 @@
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/TaskPath.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -25788,7 +25793,8 @@
   "{name} moved to position {n} of {count}": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
-    "web/src/app/task-detail/RotationEditor.tsx"
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts"
   ],
   "{name} no longer exists": [
     "web/src/lib/rules/fixes.ts"
