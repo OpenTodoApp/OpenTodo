@@ -1363,7 +1363,6 @@
   "Day reopened": "Gün yeniden açıldı",
   "Day skipped": "Gün atlandı",
   "Day {n} of {m}": "Gün {n} / {m}",
-  "Day, Week, Month, Plan and Year calendar": "Gün, Hafta, Ay, Plan ve Yıl takvimi",
   "Day-month": "Gün-ay",
   "Day-month, month-day or ISO": "Gün-ay, ay-gün veya ISO",
   "Day: closed {time}": "Gün: {time} itibarıyla kapatıldı",
@@ -7795,5 +7794,17 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}",
   "Indent": "Girintiyi artır",
   "Outdent": "Girintiyi azalt",
-  "{time}{day} your time": "sizin saatinizle {time}{day}"
+  "{time}{day} your time": "sizin saatinizle {time}{day}",
+  "Go to Calendar (Quarter)": "Takvim’e git (Çeyrek)",
+  "Go to the Calendar as Quarter: three months at a glance": "Takvim’i Çeyrek olarak aç: bir bakışta üç ay",
+  "In Quarter: back to today": "Çeyrek görünümünde: bugüne dön",
+  "In Quarter: move the focused day a day or a week, across month edges": "Çeyrek görünümünde: odaktaki günü ay sınırlarını aşarak bir gün veya bir hafta taşı",
+  "In Quarter: next quarter, keeping the day": "Çeyrek görünümünde: günü koruyarak sonraki çeyrek",
+  "In Quarter: open the focused day in Day view": "Çeyrek görünümünde: odaktaki günü Gün görünümünde aç",
+  "In Quarter: previous quarter, keeping the day": "Çeyrek görünümünde: günü koruyarak önceki çeyrek",
+  "In Quarter: return the focus to the page header": "Çeyrek görünümünde: odağı sayfa başlığına geri döndür",
+  "In Quarter: the first or last day of the focused month": "Çeyrek görünümünde: odaktaki ayın ilk veya son günü",
+  "In Quarter: the same day of the previous or next month": "Çeyrek görünümünde: önceki veya sonraki ayın aynı günü",
+  "Plan length": "Plan uzunluğu",
+  "Previous quarter": "Önceki çeyrek"
 }

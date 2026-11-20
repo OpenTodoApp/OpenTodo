@@ -280,7 +280,12 @@ describe('grid preferences', () => {
     expect(normalizeGridPrefs({ dayLength: 480 }).planDays).toBe(14)
     expect(normalizeGridPrefs({ planDays: 21 }).planDays).toBe(21)
     expect(normalizeGridPrefs({ planDays: 7 }).planDays).toBe(7)
-    expect(normalizeGridPrefs({ planDays: 10 }).planDays).toBe(14)
+    expect(normalizeGridPrefs({ planDays: 3 }).planDays).toBe(3)
+    expect(normalizeGridPrefs({ planDays: 10 }).planDays).toBe(10)
+    expect(normalizeGridPrefs({ planDays: 90 }).planDays).toBe(90)
+    expect(normalizeGridPrefs({ planDays: 91 }).planDays).toBe(14)
+    expect(normalizeGridPrefs({ planDays: 0 }).planDays).toBe(14)
+    expect(normalizeGridPrefs({ planDays: 2.5 }).planDays).toBe(14)
     expect(normalizeGridPrefs({ planDays: '21' }).planDays).toBe(14)
   })
 
