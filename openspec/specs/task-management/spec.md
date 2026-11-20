@@ -320,7 +320,7 @@ A task SHALL have an optional `origin`: where it came from, as one value `{kind,
 - **THEN** that client shows the chip with the note's path and no link, and after sync every device still holds the same `obsidian` origin and the new title
 
 ### Requirement: Origin validation
-The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host, `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` (with `.md` appended when it has no extension) or, when the decoded `file` has a `#` with text on both sides, the part before the first `#` (with `.md` appended the same way): Obsidian's `open` action reads `Plan#Next steps` and `Plan#^abc123` as the note `Plan` at a heading or block, while a note whose own name has a `#` keeps the whole `file`; an `obsidian` origin SHALL carry no `provider`. Every other kind SHALL keep the `http(s)` rule, so an `obsidian:` URL on any other kind is refused. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
+The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host or, for `kind: "url"` alone, an app link (OpenSpec `app-links`: a scheme of the RFC 3986 grammar that is not denied and not `http`, `https` or `mailto`, a colon and a rest without whitespace or control characters, at most 2048 bytes), `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` (with `.md` appended when it has no extension) or, when the decoded `file` has a `#` with text on both sides, the part before the first `#` (with `.md` appended the same way): Obsidian's `open` action reads `Plan#Next steps` and `Plan#^abc123` as the note `Plan` at a heading or block, while a note whose own name has a `#` keeps the whole `file`; an `obsidian` origin SHALL carry no `provider`. Every kind but `url` and `obsidian` SHALL keep the `http(s)` rule, so an `obsidian:` URL on an `issue`, `email` or `import` origin is refused; on a `url` origin it is an app link, which opens only for a viewer whose own list allows it. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
 
 #### Scenario: Provider shape
 - **WHEN** a client submits `origin: {kind: "issue", provider: "My Tracker", id: "1"}`
@@ -355,8 +355,12 @@ The sync and API write paths SHALL accept an origin only when `kind` is from the
 - **THEN** the write is rejected as invalid
 
 #### Scenario: Obsidian scheme on another kind
-- **WHEN** a client submits `origin: {kind: "url", url: "obsidian://open?vault=Notes&file=a"}`
+- **WHEN** a client submits `origin: {kind: "issue", provider: "github", id: "o/r#1", url: "obsidian://open?vault=Notes&file=a"}`
 - **THEN** the write is rejected as invalid
+
+#### Scenario: App link on a url origin
+- **WHEN** a client submits `origin: {kind: "url", url: "zotero://select/items/ABC"}`
+- **THEN** the write is accepted, every device receives it unchanged, and its chip reads "Zotero"
 
 #### Scenario: Link to a block or heading
 - **WHEN** a client submits `origin: {kind: "obsidian", id: "Projects/Plan.md", url: "obsidian://open?vault=Notes&file=Projects%2FPlan%23%5Eabc123"}`

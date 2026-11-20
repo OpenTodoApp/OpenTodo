@@ -632,6 +632,16 @@ const shots = [
   } },
   // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
   // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  { name: 'app-links', server: D, async run(p) {
+    // Links to other apps (app-links): two schemes added through the page, as a person adds them.
+    await go(p, demoBase, '/settings/integrations/app-links', () => p.locator('[data-app-link-input]').waitFor())
+    for (const scheme of ['zotero', 'obsidian:open']) {
+      if (await p.locator(`[data-app-link-remove="${scheme}"]`).count()) continue
+      await p.locator('[data-app-link-input]').fill(scheme); await p.locator('[data-app-link-add]').click()
+      await p.locator(`[data-app-link-remove="${scheme}"]`).waitFor()
+    }
+    await p.mouse.move(900, 600); await settle(p, 500)
+  } },
   { name: 'priorities', server: D, async run(p) {
     await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-name="1"]').waitFor())
     for (const [n, name] of [[1, 'Must'], [2, 'Should'], [3, 'Could']]) await p.locator(`[data-priority-name="${n}"]`).fill(name)

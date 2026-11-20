@@ -21,7 +21,8 @@ Some schemes act instead of opening, and encrypted content can only be checked o
 
 ### Modified Capabilities
 
-- `task-management`: Origin validation accepts a `url` origin with a well-formed non-denied scheme (written into the Origin validation requirement when this change is implemented).
+- `task-management`: Origin validation accepts a `url` origin with a well-formed non-denied scheme; an Obsidian link on a `url` origin is such an app link.
+- `cli-client`: `--origin-url` takes an app link as a `url` origin, and `javascript:` is the refused example. The agent tools' `origin_url` stays `http(s)` (design D5).
 
 ## Impact
 

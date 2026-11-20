@@ -64,7 +64,8 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>Esc</kbd> | Close the panel or the picker, else clear the selection |
 | <kbd>?</kbd> | Toggle this cheat sheet |
 | <kbd>[</kbd> | Collapse or expand the sidebar (from 1024 px) |
-| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | While its notice is shown: undo the last bulk action |
+| <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Undo the last change |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd> | Redo the change undone last |
 
 ### Go to a view
 
@@ -409,7 +410,7 @@ On a Mac, use <kbd>⌘</kbd> where this page says <kbd>Ctrl</kbd>, and <kbd>Opti
 | <kbd>e</kbd> | Focused table: Settings → Server → Audit log: export with the current filters while the table has focus |
 | <kbd>Tab</kbd> | Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys |
 | <kbd>Ctrl+Z</kbd> / <kbd>⌘+Z</kbd> | Theme editor: undo the last change |
-| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> | Theme editor: redo the change undone last |
+| <kbd>Ctrl+Shift+Z</kbd> / <kbd>⌘+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd> | Theme editor: redo the change undone last |
 | <kbd>Ctrl+S</kbd> / <kbd>⌘+S</kbd> | Theme editor: save the theme |
 
 ### Vim keybindings

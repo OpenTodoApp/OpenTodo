@@ -37,6 +37,10 @@ Opening an app link shows a dialog with the full link and the app's scheme, with
 
 A `url` origin may carry an app link (D2). The chip shows the scheme's name, opens through D3 and D4, and is plain text for a viewer who did not allow the scheme. A CalDAV VTODO `URL` that is an app link becomes the task's origin when the task has none, and a later `URL` updates an origin CalDAV set; an `http(s)` `URL` keeps today's handling.
 
+As built:
+- **Marking a CalDAV origin:** the origin CalDAV writes is `{kind: "url", provider: "caldav", url}`. The provider is how a later `URL` knows it may update it; any other origin is never replaced. The `URL` line also stays client data, so it is served back as it came.
+- **Typed links:** `ot add --origin-url` takes an app link (`origin.FromLink`), because a person typed it. The agent tools' `origin_url` stays `http(s)` only (`origin.FromURL`, `mcp-server` unchanged): an assistant never writes a link into another app, so a prompt injection cannot plant one.
+
 ### D6. Shells
 
 New capability `app-links`: the page passes the link and the viewer's list; the shell refuses a denied scheme or one not on the list, then hands the link to the system (`Intent.ACTION_VIEW` with no component; `UIApplication.open`). The list comes from the page, which the shell already trusts with the session; the deny list is the shell's own.
@@ -44,5 +48,5 @@ New capability `app-links`: the page passes the link and the viewer's list; the 
 ## Risks / Trade-offs
 
 - **A scheme that acts** (`tel:`, a custom `deleteall:`): only on a device whose person allowed it, after a confirmation that shows the full link. Documented in the setting.
-- **Older clients:** a `url` origin with an app link fails their `http(s)` check, so they show a plain label; Markdown shows the text. To verify against 1.0.0 before implementing (`compat-older-clients`).
+- **Older clients (checked against v1.0.0's `web/src/lib/taskOrigin.ts`):** `originOf` accepts any object with a kind; the label is `originHost`, which reads `zotero://select/items/ABC` as "select" and `mid:…` as "". The link goes through `httpURL`, which refuses any other scheme, so the chip is a plain label that opens nothing. Markdown shows the link's text, as for any scheme it does not know. Nothing opens on an older client.
 - **Spam in shared projects:** links never open without the viewer's list and confirmation, and keep `rel="nofollow ugc noopener noreferrer"`.

@@ -460,3 +460,53 @@ describe('keyboard layouts', () => {
     expect(add).not.toHaveBeenCalled()
   })
 })
+
+describe('undo and redo guards (#1488)', () => {
+  const scope = (): (() => void) => registerShortcutScope({ scope: 'global', handlers: { 'global.undo': () => { ran.push('undo') }, 'global.redo': () => { ran.push('redo') } } })
+  let ran: string[] = []
+  beforeEach(() => { ran = [] })
+
+  it('Ctrl+Y redoes', () => {
+    const off = scope()
+    press('y', { ctrlKey: true })
+    expect(ran).toEqual(['redo'])
+    off()
+  })
+
+  it('a control that handled the key first (preventDefault) stops the dispatcher', () => {
+    const off = scope()
+    const el = document.createElement('div')
+    document.body.append(el)
+    el.addEventListener('keydown', (e) => e.preventDefault())
+    press('z', { ctrlKey: true }, el)
+    expect(ran).toEqual([])
+    el.remove()
+    off()
+  })
+
+  it('does not undo while typing in a text field', () => {
+    const off = scope()
+    const input = document.createElement('input')
+    document.body.append(input)
+    input.focus()
+    press('z', { ctrlKey: true }, input)
+    expect(ran).toEqual([])
+    input.remove()
+    off()
+  })
+
+  it('does not undo or redo behind an open dialog', () => {
+    const off = scope()
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    document.body.append(dialog)
+    press('z', { ctrlKey: true })
+    press('y', { ctrlKey: true })
+    expect(ran).toEqual([])
+    dialog.remove()
+    // With the dialog gone, undo fires again.
+    press('z', { ctrlKey: true })
+    expect(ran).toEqual(['undo'])
+    off()
+  })
+})

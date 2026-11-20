@@ -200,6 +200,12 @@ func (d *decoder) prop(master *Component, i int) {
 		if p.Name == "DTEND" {
 			d.dtend = &master.Props[i]
 		}
+	case "URL":
+		// Kept as client data, and read for the origin (app-links D5).
+		if d.in.URL == "" {
+			d.in.URL = strings.TrimSpace(p.Value)
+		}
+		d.keep(p)
 	case "X-OPENTODO-ALARMS":
 		// The count this server served, echoed back; consumed, never stored.
 		if n, err := strconv.Atoi(strings.TrimSpace(p.Value)); err == nil && n >= 0 {

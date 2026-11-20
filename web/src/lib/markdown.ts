@@ -9,15 +9,20 @@
 //
 // The parser produces plain data; the React renderer (app/Markdown.tsx) turns it
 // into elements, so raw HTML can never reach the DOM: `<script>` stays text.
-// Links are kept only for http(s) and mailto URLs; anything else (javascript:,
-// data:, relative paths) is shown as its text. No image is ever loaded from an
+// Links are kept for http(s) and mailto URLs, and links to other apps
+// (zotero://…, app-links D3) are kept with `app`: they open only for a viewer who
+// allowed their scheme. Anything else (javascript:, data:, relative paths) is
+// shown as its text. No image is ever loaded from an
 // address: `![x](https://…)` is a link named x. No dependency.
+
+import { isAppLink } from './appLinkGrammar'
 
 export type Inline =
   | { t: 'text'; v: string }
   | { t: 'code'; v: string }
   | { t: 'em' | 'strong' | 'strike'; c: Inline[] }
-  | { t: 'link'; href: string; c: Inline[] }
+  /** `app`: a link into another app (app-links D3), clickable only for a viewer who allowed its scheme. */
+  | { t: 'link'; href: string; c: Inline[]; app?: true }
   /** A link to a task, note or project of this app (Make subtask, note-links D1). */
   | { t: 'ref'; kind: 'task' | 'note' | 'project'; id: string; c: Inline[] }
   /** `@token` of a member the caller resolved. */
@@ -247,10 +252,12 @@ export function parseInline(s: string, depth = 0, opts: MarkdownOptions = {}): I
         const target = s.slice(close + 2, end).trim()
         const ref = REF_HREF.exec(target)
         const href = safeHref(target)
+        const app = !href && isAppLink(target)
         const label = parseInline(s.slice(at + 1, close), depth + 1, opts)
         flush()
         if (ref) out.push({ t: 'ref', kind: ref[1] as 'task', id: ref[2], c: label })
         else if (href) out.push({ t: 'link', href, c: label })
+        else if (app) out.push({ t: 'link', href: target, c: label, app: true })
         else out.push(...label)
         i = end + 1
         continue
