@@ -1,8 +1,9 @@
-// App icon badge (OpenSpec change `app-icon-badge`): the number of today's open
-// tasks on the installed app's icon, through the Badging API. Per device: a flag in
-// localStorage (on by default), never synced. The count is the sidebar's Today
-// count (every task Today lists, not the Today limit's slots), set on every local
-// change and sync while the app runs, and cleared at zero.
+// App icon badge (OpenSpec changes `app-icon-badge`, `badge-overdue`): the number of
+// today's open tasks on the installed app's icon, through the Badging API. Per device:
+// what it counts, in localStorage (Today by default, Earlier or Off; stored `overdue` for
+// Earlier), never synced. Today is the sidebar's Today count (every task Today lists, not
+// the Today limit's slots); Earlier is Today's Earlier group (overdueInToday). Set on every local change and sync while the app
+// runs, and cleared at zero.
 //
 // While the app is closed only a push can wake it: the app keeps the counts of the
 // next days in the `meta` row BADGE_META, and the service worker (public/push-sw.js)
@@ -17,7 +18,7 @@ import type { TodayAssigneeFilter } from './dayLists'
 import { assignedToSomeoneElse } from './dayLists'
 import type { Task } from './types'
 import { Derived, type TaskChange } from './taskDelta'
-import { inToday } from './views'
+import { inToday, overdueInToday } from './views'
 
 export const BADGE_KEY = 'opentodo.appBadge'
 /** The `meta` row the service worker reads: `{ dayStart, counts: { 'YYYY-MM-DD': n } }`. */
@@ -45,24 +46,34 @@ export function badgeSupported(n: BadgeNavigator | null = nav()): boolean {
   return !!n && typeof n.setAppBadge === 'function' && typeof n.clearAppBadge === 'function'
 }
 
-// Another tab turning it off applies here too (the storage event).
-const enabled = createStoredValue<boolean>(BADGE_KEY, {
-  parse: (raw) => raw !== 'off',
-  serialize: (on) => (on ? null : 'off'),
-}, { crossTab: true, server: true })
+/** What the badge counts on this device: Today's open tasks, only its overdue ones, or nothing. */
+export type BadgeMode = 'today' | 'overdue' | 'off'
+export const BADGE_MODES: readonly BadgeMode[] = ['today', 'overdue', 'off']
 
-export const useBadgeEnabled = enabled.use
+// Another tab changing it applies here too (the storage event). The stored values
+// of the on/off switch before badge-overdue read the same: nothing is Today, `off` Off.
+const mode = createStoredValue<BadgeMode>(BADGE_KEY, {
+  parse: (raw) => (raw === 'off' || raw === 'overdue' ? raw : 'today'),
+  serialize: (m) => (m === 'today' ? null : m),
+}, { crossTab: true, server: 'today' })
 
-/** Turns the badge on or off for this device; off clears it at once. */
-export function setBadgeEnabled(on: boolean): void {
-  enabled.set(on)
-  if (!on) void clearBadge()
+export const useBadgeMode = mode.use
+
+/** Sets what the badge counts on this device; Off clears it at once. */
+export function setBadgeMode(m: BadgeMode): void {
+  mode.set(m)
+  if (m === 'off') void clearBadge()
 }
 
-/** Today's open tasks: what the sidebar's Today count shows. `hide` is the same set Today lists. */
-export function todayCount(openTasks: readonly Task[], today: string, hide?: TodayAssigneeFilter | null): number {
+/** Whether `task` counts on `day`: Today lists it (and, for Overdue, in its Overdue group). */
+function counts(task: Task, day: string, hide: TodayAssigneeFilter | null | undefined, m: BadgeMode): boolean {
+  return inToday(task, day) && !assignedToSomeoneElse(task, hide) && (m !== 'overdue' || overdueInToday(task, day))
+}
+
+/** Today's open tasks: what the sidebar's Today count shows, or Today's Overdue group. `hide` is the same set Today lists. */
+export function todayCount(openTasks: readonly Task[], today: string, hide?: TodayAssigneeFilter | null, m: BadgeMode = 'today'): number {
   let n = 0
-  for (const task of openTasks) if (inToday(task, today) && !assignedToSomeoneElse(task, hide)) n++
+  for (const task of openTasks) if (counts(task, today, hide, m)) n++
   return n
 }
 
@@ -70,26 +81,26 @@ export function todayCount(openTasks: readonly Task[], today: string, hide?: Tod
  * The Today count of each of the next `days` days as the local data stands now:
  * a task due today and still open counts as overdue tomorrow.
  */
-export function badgeCounts(openTasks: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null): Record<string, number> {
-  const counts: Record<string, number> = {}
+export function badgeCounts(openTasks: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null, m: BadgeMode = 'today'): Record<string, number> {
+  const out: Record<string, number> = {}
   for (let i = 0; i < days; i++) {
     const day = addDaysISO(today, i)
-    counts[day] = todayCount(openTasks, day, hide)
+    out[day] = todayCount(openTasks, day, hide, m)
   }
-  return counts
+  return out
 }
 
 /** badgeCounts after `changes` to the open tasks (incremental-list-updates D2): plus and minus per changed row and day. */
-export function patchBadgeCounts(prev: Record<string, number>, changes: readonly TaskChange[], _open: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null): Record<string, number> {
-  const counts = { ...prev }
+export function patchBadgeCounts(prev: Record<string, number>, changes: readonly TaskChange[], _open: readonly Task[], today: string, days = BADGE_DAYS, hide?: TodayAssigneeFilter | null, m: BadgeMode = 'today'): Record<string, number> {
+  const out = { ...prev }
   for (let i = 0; i < days; i++) {
     const day = addDaysISO(today, i)
     for (const c of changes) {
-      if (c.before && inToday(c.before, day) && !assignedToSomeoneElse(c.before, hide)) counts[day]--
-      if (c.after && inToday(c.after, day) && !assignedToSomeoneElse(c.after, hide)) counts[day]++
+      if (c.before && counts(c.before, day, hide, m)) out[day]--
+      if (c.after && counts(c.after, day, hide, m)) out[day]++
     }
   }
-  return counts
+  return out
 }
 
 /** Shows `count` on the icon, or clears it at zero. Never throws (no permission, not installed). */
@@ -125,17 +136,17 @@ async function storeCounts(row: BadgeRow): Promise<void> {
  * only re-runs it when the viewer's time zone changes (zoned dues move days).
  */
 export function useAppBadge(openTasks: readonly Task[], loaded: boolean, today: string, dayStart: number, zone: string, hide?: TodayAssigneeFilter | null): void {
-  const on = useBadgeEnabled()
+  const m = useBadgeMode()
   const supported = badgeSupported()
-  // Counted from the rows each write changed (incremental-list-updates D2); a zone change counts again.
-  const countsOf = useRef(new Derived<Record<string, number>, [string, number, TodayAssigneeFilter | null, string]>(
-    (open, today, days, hide) => badgeCounts(open, today, days, hide),
-    (prev, changes, open, today, days, hide) => patchBadgeCounts(prev, changes, open, today, days, hide),
+  // Counted from the rows each write changed (incremental-list-updates D2); a zone or mode change counts again.
+  const countsOf = useRef(new Derived<Record<string, number>, [string, number, TodayAssigneeFilter | null, BadgeMode, string]>(
+    (open, today, days, hide, m) => badgeCounts(open, today, days, hide, m),
+    (prev, changes, open, today, days, hide, m) => patchBadgeCounts(prev, changes, open, today, days, hide, m),
   )).current
   useEffect(() => {
-    if (!supported || !on || !loaded) return
-    const counts = countsOf.get(openTasks, today, BADGE_DAYS, hide ?? null, zone)
+    if (!supported || m === 'off' || !loaded) return
+    const counts = countsOf.get(openTasks, today, BADGE_DAYS, hide ?? null, m, zone)
     void showBadge(counts[today] ?? 0)
     void storeCounts({ dayStart, counts })
-  }, [supported, on, loaded, openTasks, today, dayStart, zone, hide, countsOf])
+  }, [supported, m, loaded, openTasks, today, dayStart, zone, hide, countsOf])
 }

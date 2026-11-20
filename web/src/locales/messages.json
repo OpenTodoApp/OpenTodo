@@ -4204,7 +4204,8 @@
     "web/src/app/NotesEditor.tsx"
   ],
   "Count": [
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Count meetings in capacity": [
     "web/src/app/CalendarSettings.tsx",
@@ -5612,6 +5613,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
@@ -12090,6 +12092,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Off": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
@@ -16372,10 +16375,6 @@
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
-  "Show today's count": [
-    "web/src/app/AppBadge.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -19200,9 +19199,6 @@
   "This device only.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "This device only. The count matches Today in the sidebar.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "This device was signed out and its data was removed.": [
     "web/src/lib/revocation.ts"
   ],
@@ -19996,6 +19992,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
