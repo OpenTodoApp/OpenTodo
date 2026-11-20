@@ -15,6 +15,8 @@
   <a href="https://open-todo.app"><strong>Website</strong></a>
 </p>
 
+<p align="center"><strong>5 minutes to help shape OpenTodo:</strong> <a href="https://tally.so/r/1W41xQ">take the anonymous survey</a></p>
+
 <p align="center">
   <a href="LICENSE"><img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg"></a>
   <a href="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/OpenTodoApp/OpenTodo/actions/workflows/ci.yml/badge.svg"></a>
