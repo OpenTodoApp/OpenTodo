@@ -21,6 +21,7 @@ import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
+import { spanOf } from './span'
 import { locateById, noteChanges, patchOrdered, patchSorted, type TaskChange } from './taskDelta'
 
 /** The list views TaskListView renders, as the router names them. */
@@ -350,7 +351,9 @@ export function splitLater(tasks: readonly Task[], today: string): { active: Tas
   }
   const active: Task[] = []
   const later: Task[] = []
-  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  // A task drawn as a span is placed in time, not hidden until then: it stays with its section (spans-stay-in-sections).
+  const deferred = (root: Task) => inLater(root, today) && !spanOf(root)
+  for (const task of tasks) (deferred(rootOf(task.id)) ? later : active).push(task)
   return { active, later }
 }
 
