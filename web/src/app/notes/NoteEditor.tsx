@@ -34,12 +34,14 @@ import { openConnections, useConnected } from '../signals'
 import { useRules } from '../../lib/rules/store'
 import { useOnline } from '../../lib/online'
 import { knownNotePage, subscribeTaskPages, taskPagesVersion } from '../../lib/taskPages'
+import { attachmentsRowChunk, notesEditorChunk } from './noteEditorChunks'
 
-const NotesEditor = lazy(() => import('../NotesEditor'))
+// The editor and a standalone note's files (note-attachments D5) load with chunks of their
+// own; once in, the form renders them without suspending (noteEditorChunks.ts, issue 1580).
+const LazyNotesEditor = lazy(() => notesEditorChunk.load().then((c) => ({ default: c })))
+const LazyAttachmentsRow = lazy(() => attachmentsRowChunk.load().then((c) => ({ default: c })))
 // Publishing a note page (note-public-links): loaded when the dialog opens.
 const NotePageDialog = lazy(() => import('./NotePageDialog'))
-// A standalone note's files (note-attachments D5): the task detail's list, below the text.
-const AttachmentsRow = lazy(() => import('../task-detail/AttachmentsRow').then((m) => ({ default: m.AttachmentsRow })))
 
 /** The note whose body takes the caret when it opens next (a note written from the search field, notes-home D3). */
 let bodyFocus: string | null = null
@@ -143,6 +145,11 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
+  // Chosen once per form: a form first drawn with the lazy component keeps it, since a
+  // switch to the kept one later would be another component type and remount the editor
+  // (the caret or a composition in progress would be lost).
+  const [NotesEditor] = useState(() => notesEditorChunk.loaded() ?? LazyNotesEditor)
+  const [AttachmentsRow] = useState(() => attachmentsRowChunk.loaded() ?? LazyAttachmentsRow)
   return (
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
