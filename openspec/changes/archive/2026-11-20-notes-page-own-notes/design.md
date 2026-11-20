@@ -29,7 +29,7 @@ A word search looks among the notes the chips keep, as it does today. The defaul
 
 ### D3. Counts and other parts
 
-The header count, Show more, the Graph view, the bulk actions and Templates already follow the filtered list, so they follow D1 with no extra rule.
+The header count, Show more, the empty page, the bulk actions and Templates follow the list D1 keeps. The Graph keeps every item as a node, as before: it draws links, and a task linked to a note belongs in that picture; its chips still pick the topic.
 
 ## Risks / Trade-offs
 

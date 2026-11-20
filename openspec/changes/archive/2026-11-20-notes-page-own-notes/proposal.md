@@ -7,7 +7,7 @@ The search chips are already remembered on the device, so `kind:note` works once
 ## What Changes
 
 - **Notes shows notes.** By default the page lists standalone notes and project notes only. Task descriptions appear when the search field holds the `kind:task` chip, which, like every chip, is remembered on the device. Word searches look among the same notes.
-- The count, Pinned and Recent headings, Show more, the Graph and the bulk actions follow the same list, as they follow every chip today.
+- The count, Pinned and Recent headings, Show more, the empty page and the bulk actions follow the same list. The Graph keeps every item as a node, because it draws links.
 - Nothing else changes:
   - task descriptions stay where they are;
   - the app's global search still finds tasks by their description;
