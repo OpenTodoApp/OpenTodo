@@ -107,11 +107,13 @@ export async function feedEvents(ids?: string[]): Promise<ActivityEvent[]> {
 export interface FeedFilter {
   project?: string
   actor?: string
-  kind?: FeedKind | ''
+  /** Feed categories, any of them (workspace-activity D4); empty or absent: all. */
+  kinds?: readonly FeedKind[]
 }
 
 export function filterFeed(events: ActivityEvent[], f: FeedFilter): ActivityEvent[] {
-  return events.filter((e) => (!f.project || e.projectId === f.project) && (!f.actor || e.actor === f.actor) && (!f.kind || feedKindOf(e.kind) === f.kind))
+  const kinds = f.kinds?.length ? new Set(f.kinds) : null
+  return events.filter((e) => (!f.project || e.projectId === f.project) && (!f.actor || e.actor === f.actor) && (!kinds || kinds.has(feedKindOf(e.kind))))
 }
 
 /** Local calendar day (YYYY-MM-DD) of an event time. */
@@ -135,7 +137,8 @@ export function groupByDay(events: ActivityEvent[]): { day: string; events: Acti
 /** One page of the cross-project feed from the server. */
 export async function fetchFeed(opts: FeedFilter & { cursor?: string } = {}): Promise<ActivityPage> {
   // Ciphertext values (OpenSpec e2ee) are decrypted for display.
-  return decryptActivityPage(await api.feed(opts))
+  const { kinds, ...rest } = opts
+  return decryptActivityPage(await api.feed({ ...rest, kind: kinds?.join(',') }))
 }
 
 // ---- unread ----

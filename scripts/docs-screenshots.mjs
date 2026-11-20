@@ -889,6 +889,11 @@ const shots = [
     return { x, y: 0, width: vp.width - x, height: Math.min(vp.height, b.y + b.height + 24) }
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { level: 1, name: 'Updates' }).waitFor()) } },
+  { name: 'workspace-activity', server: D, async run(p) {
+    // Opened from the workspace menu (workspace-activity D1).
+    await go(p, demoBase, '/inbox'); await p.locator('[data-workspace-trigger]').click(); await p.locator('[data-workspace-activity]').click()
+    await p.getByRole('heading', { level: 1, name: /activity$/ }).waitFor(); await p.mouse.move(900, 400); await settle(p, 800)
+  } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
     // History is a tab of the panel (task-detail-redesign); expand the newest version.

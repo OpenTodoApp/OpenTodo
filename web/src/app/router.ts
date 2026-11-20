@@ -61,6 +61,8 @@ export type Route =
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
+  // A workspace's activity (workspace-activity): /workspaces/<id>/activity.
+  | { view: 'workspace-activity'; id: string }
   | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
   // A chrome-free display of one view (display-mode): /display[/today|/upcoming|/project/<id>|/view/<id>]?<options>.
@@ -103,7 +105,7 @@ export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
-  trash: false, feed: false, ask: false, display: false, stats: false, habits: false,
+  trash: false, feed: false, 'workspace-activity': false, ask: false, display: false, stats: false, habits: false,
 }
 
 /**
@@ -219,6 +221,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'share' }
     case 'trash':
       return { view: 'trash' }
+    case 'workspaces':
+      return parts[1] && parts[2] === 'activity' ? { view: 'workspace-activity', id: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'updates':
     case 'activity':
       // "Updates" (ux-overhaul vocabulary); /activity is the old address.
@@ -377,6 +381,8 @@ export function routePath(r: Route): string {
       return r.archived ? '/projects#archived' : '/projects'
     case 'feed':
       return '/updates'
+    case 'workspace-activity':
+      return `/workspaces/${encodeURIComponent(r.id)}/activity`
     case 'ask':
       return '/ask'
     case 'filter':
