@@ -9,6 +9,7 @@ import type { CommandEnv } from './editorCommands'
 import { imageViews } from './editorImage'
 import { FormattingToggle } from './FormattingToggle'
 import { IconButton } from '../ui'
+import { PendingUntil } from './stories/pendingUntil'
 
 // The rich-text editor of notes and comments (OpenSpec change editor-everywhere):
 // a note with a quote, a table, an image whose attachment is gone and a mention;
@@ -88,7 +89,8 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       const tr = v.state.tr.insertText(' /', end)
       v.dispatch(tr.setSelection(TextSelection.create(tr.doc, end + 2)))
     }
-    const t = setTimeout(() => setReady(true), 50)
+    // With the slash menu, settled once its rows are drawn (PendingUntil below); else after a frame.
+    const t = slash ? undefined : setTimeout(() => setReady(true), 50)
     return () => {
       clearTimeout(t)
       v.destroy()
@@ -99,7 +101,7 @@ function Editor({ text, slash = false, toolbar = false }: { text: string; slash?
       {toolbar && <EditorToolbar view={view} env={env} visible coarse onMenu={() => {}} />}
       <div ref={host} className="notes-host" data-notes-editing />
       {chrome.overlays}
-      {!ready && <span data-story-pending />}
+      {slash ? <PendingUntil selector='[data-suggest="slash"] [role="option"]' /> : !ready && <span data-story-pending />}
     </div>
   )
 }
