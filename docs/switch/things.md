@@ -39,7 +39,7 @@ The file is read on your server from a private copy, read-only, and deleted righ
 
 ## What carries over
 
-- Areas become parent projects; projects stay inside them.
+- Areas become parent projects; projects stay inside them. Completed and canceled projects are [archived](../archived-projects.md).
 - Headings become sections; to-dos keep their heading.
 - Checklist items become subtasks, completed ones included.
 - Tags become labels (nested tags as `parent/child`).
