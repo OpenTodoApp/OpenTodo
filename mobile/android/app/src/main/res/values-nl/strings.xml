@@ -4,7 +4,6 @@
     <string name="setup_title">Verbind met je server</string>
     <string name="setup_intro">Voer het adres van je OpenTodo-server in, het adres dat je in de browser opent.</string>
     <string name="setup_address_label">Serveradres</string>
-    <string name="setup_hint">todo.example.com</string>
     <string name="setup_connect">Verbinden</string>
     <string name="setup_connect_anyway">Toch verbinden</string>
     <string name="setup_try">%1$s proberen</string>

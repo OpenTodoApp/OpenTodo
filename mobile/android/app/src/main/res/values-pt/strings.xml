@@ -4,7 +4,6 @@
     <string name="setup_title">Ligue-se ao seu servidor</string>
     <string name="setup_intro">Introduza o endereço do seu servidor OpenTodo, o que abre no navegador.</string>
     <string name="setup_address_label">Endereço do servidor</string>
-    <string name="setup_hint">todo.example.com</string>
     <string name="setup_connect">Ligar</string>
     <string name="setup_connect_anyway">Ligar mesmo assim</string>
     <string name="setup_try">Experimentar %1$s</string>

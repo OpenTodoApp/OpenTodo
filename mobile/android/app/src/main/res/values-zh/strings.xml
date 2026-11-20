@@ -4,7 +4,6 @@
     <string name="setup_title">连接到你的服务器</string>
     <string name="setup_intro">输入你的 OpenTodo 服务器地址，也就是你在浏览器中打开的那个。</string>
     <string name="setup_address_label">服务器地址</string>
-    <string name="setup_hint">todo.example.com</string>
     <string name="setup_connect">连接</string>
     <string name="setup_connect_anyway">仍然连接</string>
     <string name="setup_try">尝试 %1$s</string>
