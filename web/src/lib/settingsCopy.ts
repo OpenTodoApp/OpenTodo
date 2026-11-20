@@ -384,7 +384,7 @@ export const SETTINGS_COPY = {
     icon: 'bell',
     description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'),
     learnMore: 'app-icon-badge',
-    rows: { show: { label: msg('Show today\'s count'), description: msg('This device only. The count matches Today in the sidebar.') } },
+    rows: { count: { label: msg('Count'), description: msg('This device only.') } },
     notices: { permission: msg('On iPhone and iPad the badge appears only once notifications are allowed.') },
   },
   // Settings → Notifications → Delivery channels (notification-channels).

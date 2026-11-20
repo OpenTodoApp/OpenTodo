@@ -9,7 +9,7 @@ import { db } from '../lib/db'
 import { createProject, createTask, resetDeviceId } from '../lib/ops'
 import { compareByPosition } from '../lib/ordering'
 import type { Task, User } from '../lib/types'
-import { render, waitFor } from '../ui/test-utils'
+import { key, render, type, waitFor } from '../ui/test-utils'
 import { addItems, type ListReorder } from './bulk/BulkActions'
 import { resetPanel } from './panel'
 import { navigate } from './router'
@@ -38,7 +38,7 @@ afterEach(() => {
 
 const row = (id: string) => document.querySelector<HTMLElement>(`[data-task-id="${id}"]`)
 const menuItem = (id: string) => document.querySelector<HTMLElement>(`[data-action="${id}"]`)
-const line = () => document.querySelector<HTMLInputElement>('[data-add-line] input')
+const line = () => document.querySelector<HTMLTextAreaElement>('[data-add-line] textarea')
 /** The task row drawn before the line (the hidden "Add a subtask" lines of the subtree it closes are skipped). */
 const rowBefore = (el: Element) => {
   let at = el.closest('li')!.previousElementSibling
@@ -70,7 +70,7 @@ async function typeLine(title: string) {
   await waitFor(() => !!line() && document.activeElement === line(), 'the focused add line')
   const input = line()!
   await act(async () => {
-    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
     set.call(input, title)
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
@@ -117,6 +117,23 @@ describe('add below (issue 1036)', () => {
     await typeLine('Varnish')
     await waitFor(() => line()?.closest('li')?.previousElementSibling?.textContent?.includes('Varnish') ?? false, 'the line under Varnish')
     expect(line()).toBe(field)
+    await r.unmount()
+  })
+
+  it('a long title wraps in the line and Enter adds it whole, a line break as a space (issue 1549)', async () => {
+    const t = await outline()
+    navigate({ view: 'project', id: t.project })
+    const r = await render(<Shell user={user} onLogout={() => {}} />)
+    await waitFor(() => !!row(t.c), 'the outline')
+    await openMenuItem(t.e, 'add-below')
+    await waitFor(() => !!line() && document.activeElement === line(), 'the focused add line')
+    const field = line()!
+    expect(field.getAttribute('rows')).toBe('1')
+    expect(field.parentElement!.querySelector('[data-line-field-copy]')).not.toBeNull()
+    await type(field, 'Ask the hotel whether the late check-in\non Friday still works')
+    expect(field.value).toBe('Ask the hotel whether the late check-in on Friday still works')
+    await key(field, 'Enter')
+    await waitFor(async () => (await titles(null)).join() === 'A,E,Ask the hotel whether the late check-in on Friday still works', 'the task after E')
     await r.unmount()
   })
 

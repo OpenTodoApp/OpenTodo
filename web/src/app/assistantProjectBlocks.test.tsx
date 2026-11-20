@@ -155,7 +155,14 @@ describe('task block', () => {
     const id = await createTask({ title: 'Write the brief', description: 'Keep it **short**.' })
     await createTask({ title: 'Outline', parent_id: id })
     await createTask({ title: 'Draft', parent_id: id, completed: true })
-    for (const body of ['First', 'Second', 'Third', 'Fourth']) await createComment({ taskId: id, body })
+    // One millisecond apart (written in a loop they can share one, and an equal time falls
+    // back to the random id), with ids that sort the other way round: the latest is by time.
+    const now = vi.spyOn(Date, 'now')
+    for (const [n, body] of ['First', 'Second', 'Third', 'Fourth'].entries()) {
+      now.mockReturnValue(1_700_000_000_000 + n)
+      await createComment({ taskId: id, body, id: `0000000${4 - n}-c` })
+    }
+    now.mockRestore()
     const r = await render(<AssistantPanelBody {...props([{ kind: 'task', id }])} />)
     await waitFor(() => r.container.querySelectorAll('[data-task-comments] li').length === 3, 'three comments')
     expect(r.container.querySelector('[data-task-notes]')!.textContent).toBe('Keep it short.')

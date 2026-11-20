@@ -4477,7 +4477,6 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": "De sneltoetsen tonen; met een onderwerp de help daarover openen (:help board)",
   "Show the map": "De kaart tonen",
   "Show times": "Tijden tonen",
-  "Show today's count": "Aantal voor vandaag tonen",
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": "Je andere kalenders naast je taken tonen, en je taken in een agenda-app abonneren",
   "Show {name} among the primary items": "{name} onder de hoofditems tonen",
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": "De eerste rijen worden getoond; rijen met fouten, overgeslagen items en waarschuwingen staan eerst. De totalen tellen elke rij.",
@@ -5298,7 +5297,6 @@
   "This device now opens on the Loop home.": "Dit apparaat opent nu met de Loop-startpagina",
   "This device only": "Alleen dit apparaat",
   "This device only.": "Alleen dit apparaat",
-  "This device only. The count matches Today in the sidebar.": "Alleen dit apparaat. Het aantal komt overeen met Vandaag in de zijbalk",
   "This device was signed out and its data was removed.": "Dit apparaat is afgemeld en zijn gegevens zijn verwijderd.",
   "This device: after an add, the assistant proposes a title, project, subtasks. You review.": "Dit apparaat: na een toevoeging stelt de assistent een titel, project en subtaken voor. Jij controleert.",
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": "Dit apparaat: maximaal 3 bestaande taken, af, datums, prioriteit of labels. Ongedaan maken verschijnt",
@@ -7792,5 +7790,6 @@
   "{rule} until {date}": "{rule} tot en met {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}",
   "Indent": "Inspringen",
-  "Outdent": "Uitspringen"
+  "Outdent": "Uitspringen",
+  "{time}{day} your time": "{time}{day} jouw tijd"
 }

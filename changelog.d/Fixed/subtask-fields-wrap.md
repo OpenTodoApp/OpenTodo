@@ -1,0 +1,1 @@
+- **A long subtask wraps while you type it.** The "Add subtask" field of a task (on its page, in the panel and in Focus) and the list's "Add a subtask" and "Add task below" lines grow to five lines like quick add instead of scrolling sideways; Enter still adds (#1549).

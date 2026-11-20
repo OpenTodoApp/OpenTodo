@@ -4371,7 +4371,6 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": "Afficher les raccourcis clavier ; avec un sujet, ouvrir l’aide correspondante (:help board)",
   "Show the map": "Afficher la carte",
   "Show times": "Afficher les heures",
-  "Show today's count": "Afficher le nombre du jour",
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": "Afficher tes autres calendriers à côté de tes tâches, et t’abonner à tes tâches depuis une application de calendrier",
   "Show {name} among the primary items": "Afficher {name} parmi les éléments principaux",
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": "Affichage des premières lignes ; les lignes avec erreurs, ignorées ou avec avertissements sont listées en premier. Les totaux comptent chaque ligne.",
@@ -5168,7 +5167,6 @@
   "This device is signed in to your server.": "Cet appareil est connecté à ton serveur.",
   "This device now opens on the Loop home.": "Cet appareil s’ouvre désormais sur l’accueil Loop.",
   "This device only.": "Cet appareil seulement.",
-  "This device only. The count matches Today in the sidebar.": "Cet appareil uniquement. Le nombre correspond à Aujourd’hui dans la barre latérale.",
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": "Cet appareil : jusqu’à 3 tâches existantes, terminées, dates, priorité ou étiquettes. Annuler apparaît.",
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": "L’horloge de cet appareil est très décalée et le serveur continue de refuser ses modifications. Tes modifications restent sur cet appareil.",
   "This device’s sync state": "État de synchronisation de cet appareil",
@@ -7792,5 +7790,6 @@
   "{rule} until {date}": "{rule} jusqu’au {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# fois} other {# fois}}",
   "Indent": "Augmenter le retrait",
-  "Outdent": "Diminuer le retrait"
+  "Outdent": "Diminuer le retrait",
+  "{time}{day} your time": "{time}{day} à ton heure"
 }

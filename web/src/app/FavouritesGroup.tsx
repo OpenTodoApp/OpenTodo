@@ -108,7 +108,7 @@ export function FavouritesGroup({ favourites, route, collapsed, projects, tree, 
           const c = viewCounts.get(f.id)
           const list = !isDashboard(f.item)
           item = <SidebarItem {...common} label={f.item.name}
-            leading={<span style={{ color: f.item.color }}><ViewMark view={f.item} /></span>}
+            leading={<span data-hue={f.item.color ? hueFor(f.item.color) : undefined} className={f.item.color ? 'text-hue-solid' : undefined}><ViewMark view={f.item} /></span>}
             count={list && c && c.ok ? c.count : undefined} countMode={countsAll ? 'swap' : 'hidden'} countLabel={openTasksLabel(list && c && c.ok ? c.count : undefined)}
             badge={list && c && !c.ok ? <span className="text-meta text-danger"><ReadAs label={c.error}>!</ReadAs></span> : undefined} />
           menu = <ViewMenu view={f.item} within="favourites" className={menuClass} />

@@ -14,6 +14,7 @@ import { ThemeEditor } from './ThemeEditor'
 import { PreviewSurface, type PreviewTab } from './ThemePreview'
 import type { ThemeEditorActions, ThemeEditorState } from './useThemeEditor'
 import { YourThemes } from './YourThemes'
+import { PendingUntil } from '../stories/pendingUntil'
 
 // The theme editor (OpenSpec change theme-editor, design D3, D8, D9, D12): the page
 // with two pairs below AA (two columns from 64 rem, the preview strip above the
@@ -38,7 +39,8 @@ function Editor({ doc }: { doc: ThemeDocument }) {
     status: 'ready', doc, saved: true, dirty: true, conflict: false, resolution: resolveDraft(doc), pending: false,
     canUndo: true, canRedo: false, history: startHistory(doc),
   }))
-  return <ThemeEditor id={doc.id} state={state} actions={actions} />
+  // The controls load in a chunk of their own (a skeleton until then): captured once they are in.
+  return <><ThemeEditor id={doc.id} state={state} actions={actions} /><PendingUntil selector='[data-theme-controls]' /></>
 }
 
 /** A light theme with two set tokens below AA, the Contrast panel listing them with Fix. */

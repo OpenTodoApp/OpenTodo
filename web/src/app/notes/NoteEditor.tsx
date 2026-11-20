@@ -18,7 +18,7 @@ import { pushPendingNotes } from '../../lib/sync'
 import type { Label, Note } from '../../lib/types'
 import { resettable } from '../../lib/moduleState'
 import { useResetOnChange } from '../../lib/useResetOnChange'
-import { Button, Combobox, Icon, LabelChip, PageBody, PageHeader, Tooltip } from '../../ui'
+import { Button, Combobox, hueFor, Icon, LabelChip, PageBody, PageHeader, Tooltip } from '../../ui'
 import { t } from '../../lib/i18n'
 import { act } from '../actionError'
 import { LinkedRefs, Markdown } from '../Markdown'
@@ -125,7 +125,7 @@ function LabelsField({ note, readOnly, labels }: { note: Note; readOnly: boolean
       {!readOnly && (
         <Combobox<Label> label={t('Labels')} placeholder={t('Add label…')} emptyText={t('No labels yet. Type a name and press Enter.')}
           source={labels.filter((l) => !l.deleted_at)} getKey={(l) => l.id} getLabel={(l) => l.name} multiple selected={note.labels ?? []} rankContext="label"
-          renderLeading={(l) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />}
+          renderLeading={(l) => <span aria-hidden="true" className="h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(l.color)} />}
           onPick={(l) => act(toggleNoteLabel(note.id, l.id))}
           onCreate={(name) => act((async () => toggleNoteLabel(note.id, await createLabel({ name })))())} />
       )}

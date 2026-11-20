@@ -781,8 +781,9 @@ body {
     input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"]),
     textarea, select, [contenteditable]:not([contenteditable="false"]),
     /* The copies of quick add's text behind its fields (QuickAddTint, the notes sizer)
-       wrap and tint the same text, so they take the same size (GitHub issue 1051). */
-    [data-quick-add-tints], .quick-add-notes-sizer {
+       and of the add lines' text (LineField) wrap the same text, so they take the same
+       size (GitHub issues 1051, 1549). */
+    [data-quick-add-tints], .quick-add-notes-sizer, [data-line-field-copy] {
       --ot-text-hint: 16px; --ot-text-meta: 16px; --ot-text-list: 16px;
       --ot-text-prose: 16px; --ot-text-h3: 16px;
       font-size: max(16px, 1em);

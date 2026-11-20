@@ -32,12 +32,12 @@ afterEach(() => {
 
 const row = (title: string) => [...document.querySelectorAll<HTMLElement>('li[data-task-id]')].find((li) => li.querySelector('[data-row-title]')?.textContent === title)!
 const addLines = () => [...document.querySelectorAll<HTMLElement>('[data-subtask-add-line]')]
-const addInput = () => document.querySelector<HTMLInputElement>('[data-add-line] input')
+const addInput = () => document.querySelector<HTMLTextAreaElement>('[data-add-line] textarea')
 const shownLine = () => document.querySelector<HTMLElement>('[data-subtask-add-line][data-line-selected]')
 
-async function typeLine(input: HTMLInputElement, title: string) {
+async function typeLine(input: HTMLTextAreaElement, title: string) {
   await act(async () => {
-    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!
     set.call(input, title)
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })

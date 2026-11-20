@@ -7,7 +7,7 @@ import { sectorLabel } from '../lib/sectorNames'
 import { type Chip, describeOffset, findLabel, formatMinutes, type LabelRef, type ProjectRef, type ReminderPhrase, resolveReminder } from '../lib/nlp'
 import type { Unmatched } from '../lib/nlp/parse'
 import type { Due } from '../lib/types'
-import { Icon, Tooltip, type HueName } from '../ui'
+import { hueFor, Icon, Tooltip, type HueName } from '../ui'
 import { msg, t, translatedMap } from '../lib/i18n'
 import { ruleWords } from '../lib/recurrenceWords'
 import { energyChipLabel, isEnergy } from '../lib/energy'
@@ -126,7 +126,7 @@ export function ParseChips({ chips, misses = [], projects, labels, highlight = n
             className={`inline-flex items-center gap-1 rounded-full border border-hue-solid/40 bg-hue-soft py-0.5 pl-2 pr-1 text-hue ${highlight === i ? 'ring-2 ring-focus' : ''}`}
           >
             <span className="sr-only">{KIND_NAME[c.kind]}: </span>
-            {label?.color && <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: label.color }} aria-hidden="true" />}
+            {label?.color && <span className="inline-block h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} aria-hidden="true" />}
             {c.kind === 'deadline' && <Icon name="hourglass" size="xs" />}
             {c.kind === 'someday' && <Icon name="archive" size="xs" />}
             {c.kind === 'evening' && <Icon name="moon" size="xs" />}

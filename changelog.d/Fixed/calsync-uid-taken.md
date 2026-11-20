@@ -1,0 +1,1 @@
+- **Google Calendar sync no longer stops with `http_409`.** Google keeps a deleted event in its Bin for 30 days and refuses its UID, so a task written again after its event was removed (reopened, dated again) failed every cycle; such an event now gets a UID of its own ([#1573](https://github.com/OpenTodoApp/OpenTodo/issues/1573)).

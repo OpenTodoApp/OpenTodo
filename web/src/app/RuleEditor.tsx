@@ -8,7 +8,7 @@ import { activeLabels } from '../lib/labels'
 import { describeRule, knownRule } from '../lib/rules'
 import { RULE_DUE, RULE_START, RULE_STATE, type Label, type OnDropRule, type Priority, type Project, type Section, type View } from '../lib/types'
 import { setOnDrop } from '../lib/views'
-import { Button, Combobox, Dialog, LabelChip } from '../ui'
+import { Button, Combobox, Dialog, hueFor, LabelChip } from '../ui'
 import { ProjectPickerField } from './ProjectPickerField'
 import { ruleDraftFromView } from './rules/convertDraft'
 import { openRoutineDraft } from './routines/routineNav'
@@ -56,7 +56,7 @@ export function LabelsField({ title, ids, labels, onChange, titleHidden }: {
       )}
       <Combobox label={title} placeholder={t('Find a label…')} source={live} getKey={(l: Label) => l.id} getLabel={(l: Label) => l.name}
         multiple selected={ids} rankContext="label" emptyText={t('No labels yet.')}
-        renderLeading={(l: Label) => <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ backgroundColor: l.color }} />}
+        renderLeading={(l: Label) => <span aria-hidden="true" className="h-2 w-2 rounded-full bg-hue-solid" data-hue={hueFor(l.color)} />}
         onPick={(l: Label) => toggle(l.id)} />
     </fieldset>
   )

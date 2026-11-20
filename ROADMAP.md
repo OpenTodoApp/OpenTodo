@@ -88,6 +88,7 @@ Phones, Apple, Obsidian and voice.
 | [`repeat-field-language`](openspec/changes/archive/2026-11-18-repeat-field-language/) | **Shipped.** A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | [#1427](https://github.com/OpenTodoApp/OpenTodo/issues/1427) |
 | [`repeat-rule-words`](openspec/changes/archive/2026-11-18-repeat-rule-words/) | **Shipped.** A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | [#1427](https://github.com/OpenTodoApp/OpenTodo/issues/1427) |
 | [`theme-title-weight`](openspec/changes/archive/2026-11-18-theme-title-weight/) | **Shipped.** A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | [#1469](https://github.com/OpenTodoApp/OpenTodo/issues/1469) |
+| [`subtask-panel-order`](openspec/changes/archive/2026-11-19-subtask-panel-order/) | **Shipped.** Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | [#1577](https://github.com/OpenTodoApp/OpenTodo/issues/1577) |
 | [`app-links`](openspec/changes/app-links/) | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | [#1287](https://github.com/OpenTodoApp/OpenTodo/issues/1287) |
 | [`obsidian-plugin`](openspec/changes/obsidian-plugin/) | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | [#606](https://github.com/OpenTodoApp/OpenTodo/issues/606) |
 | [`obsidian-vault-sync`](openspec/changes/obsidian-vault-sync/) | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | [#607](https://github.com/OpenTodoApp/OpenTodo/issues/607) |
@@ -305,6 +306,7 @@ In order. No op field changes; the server gains only app sign-in.
 | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See [docs/sync.md](docs/sync.md) |
 | Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 34 MB with the web app embedded, distroless image of about 40 MB (about 13 MB to download) |
 | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
+| Keyboard shortcuts across layouts | `keyboard-layout-shortcuts` | Letter shortcuts on non-Latin layouts and number-row shortcuts on French AZERTY. |
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
 | Vim-style modal navigation option | `vim-keybindings` | |

@@ -4371,7 +4371,6 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": "Mostra le scorciatoie da tastiera; con un argomento, apri la guida su di esso (:help board)",
   "Show the map": "Mostra la mappa",
   "Show times": "Mostra orari",
-  "Show today's count": "Mostra il numero di oggi",
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": "Mostra gli altri calendari accanto alle attività e abbonati alle tue attività da un’app di calendario",
   "Show {name} among the primary items": "Mostra {name} tra gli elementi principali",
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": "Vengono mostrate le prime righe; righe con errori, saltate e con avvisi sono elencate per prime. I totali contano ogni riga.",
@@ -5168,7 +5167,6 @@
   "This device is signed in to your server.": "Questo dispositivo ha effettuato l’accesso al tuo server.",
   "This device now opens on the Loop home.": "Questo dispositivo ora si apre sulla home Loop.",
   "This device only.": "Solo questo dispositivo.",
-  "This device only. The count matches Today in the sidebar.": "Solo questo dispositivo. Il numero corrisponde a Oggi nella barra laterale.",
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": "Questo dispositivo: fino a 3 attività esistenti, fatte, date, priorità o etichette. Compare Annulla.",
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": "L’orologio di questo dispositivo è molto sfasato e il server continua a rifiutarne le modifiche. Le tue modifiche restano su questo dispositivo.",
   "This device’s sync state": "Stato di sincronizzazione di questo dispositivo",
@@ -7792,5 +7790,6 @@
   "{rule} until {date}": "{rule} fino al {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
   "Indent": "Aumenta rientro",
-  "Outdent": "Riduci rientro"
+  "Outdent": "Riduci rientro",
+  "{time}{day} your time": "{time}{day} ora tua"
 }

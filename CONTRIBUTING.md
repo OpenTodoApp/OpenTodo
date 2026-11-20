@@ -15,7 +15,7 @@ Thanks for helping build a task manager people can own. This page is the rules; 
 | [Add a shared contract](docs/contributing/add-a-shared-contract.md) | Logic that must match in Go and TypeScript |
 | [Work on the native app](docs/contributing/native-app.md) | `mobile/app` without a Mac, `make app`, the shared library, its CI lanes |
 
-Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the same ground in the dense form AI agents read.
+Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the short form AI agents read on every task; [Packages and rules in full](docs/contributing/packages.md) is its long form.
 
 ## Ground rules
 

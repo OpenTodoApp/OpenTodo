@@ -3,18 +3,21 @@
 // borderless 32 px rows with a 16 px checkbox, and the add field as the last row. On the
 // task page the list keeps its bordered block (task-full-page D1) with the same rows.
 // With two subtasks or more the head has "One at a time" (subtask-flow): the task's
-// subtasks are then offered in list order, each after the one before.
+// subtasks are then offered in list order, each after the one before. Where the list
+// has its add line, each open subtask has a handle that moves it (subtask-panel-order).
 import { type FormEvent, useRef, useState } from 'react'
 import { createSubtask } from '../../lib/ops'
 import type { Task } from '../../lib/types'
 import { t } from '../../lib/i18n'
-import { Icon, ReadAs, Switch } from '../../ui'
+import { Icon, MoveHandle, ReadAs, Switch } from '../../ui'
 import { taskFlowOf } from '../../lib/flow'
 import { flowUndoable } from '../../lib/undoActions'
 import { showUndoToast } from '../bulk/toastStore'
 import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
 import { showBulkToast } from '../bulk/toastStore'
 import { usePasteOffer } from '../quickadd/PasteOffer'
+import { LineField } from '../LineField'
+import { useSubtaskOrder } from './subtaskOrder'
 
 export interface SubtasksProps {
   task: Task
@@ -31,11 +34,14 @@ export interface SubtasksProps {
 
 export function Subtasks({ task, items, progress, readOnly, boxed = false, add = true, onToggle, onOpen }: SubtasksProps) {
   // 32 px rows (44 px on a coarse pointer), no border, no background of their own.
-  const row = `flex min-h-8 items-center gap-2 rounded-control pointer-coarse:min-h-11 hover:bg-sunken dark:hover:bg-raised ${boxed ? 'mx-1 px-2' : 'px-1'}`
+  const row = `group flex min-h-8 items-center gap-2 rounded-control pointer-coarse:min-h-11 hover:bg-sunken dark:hover:bg-raised ${boxed ? 'mx-1 px-2' : 'px-1'}`
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0
   const inOrder = taskFlowOf(task) === 'sequential'
   // Where subtasks are listed with their add line, in every mode: it is about what the page shows.
   const flow = add && items.length > 1 && (inOrder || !readOnly)
+  // Two open subtasks or more can change places, where the task itself can still be worked on.
+  const order = useSubtaskOrder(task, items)
+  const movable = add && !readOnly && !task.completed_at && items.filter((c) => !c.completed_at).length > 1
   const setInOrder = async (on: boolean) => {
     const r = await flowUndoable('task', task.id, on ? 'sequential' : '', on ? t('Subtasks one at a time') : t('Subtasks in any order'))
     if (r.entry) showUndoToast(r.label, r.entry.id)
@@ -63,9 +69,9 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
           {items.length > 0 && <span className="w-9 shrink-0 text-right tabular-nums text-faint" data-subtask-percent><ReadAs label={t('{n}% done', { n: pct })}>{`${pct}%`}</ReadAs></span>}
         </div>
       )}
-      <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')}>
-        {items.map((c) => (
-          <li key={c.id} className={row}>
+      <ul className={`empty:hidden ${boxed ? 'pb-1' : ''}`} aria-label={t('Subtasks')} {...order.listProps}>
+        {order.list.map((c, i) => (
+          <li key={c.id} ref={(el) => { order.rows.current[i] = el }} data-subtask-row={c.id} className={`${row}${order.dragging === c.id ? ' bg-sunken dark:bg-raised' : ''}`}>
             <button
               type="button"
               aria-label={c.completed_at ? t('Reopen {title}', { title: c.title }) : t('Complete {title}', { title: c.title })}
@@ -82,18 +88,21 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
             <button type="button" className={`min-w-0 flex-1 truncate text-left text-body ${c.completed_at ? 'text-faint line-through' : 'text-default'}`} onClick={() => onOpen?.(c.id)}>
               {c.title || <span className="italic text-faint">{t('Untitled')}</span>}
             </button>
+            {/* Shown with the row under a mouse, always on a touch screen (hover-reveal). */}
+            {movable && !c.completed_at && <MoveHandle className="hover-reveal" data-drag-id="subtask" {...order.handle(c)} />}
           </li>
         ))}
       </ul>
+      <span role="status" aria-live="polite" className="sr-only">{order.announce}</span>
       {!readOnly && add && <div className={boxed ? 'border-t border-soft px-2' : undefined}><AddSubtask parent={task} /></div>}
     </section>
   )
 }
 
-/** "Add subtask" input: creates on Enter and stays focused for the next entry. */
+/** "Add subtask" field: creates on Enter and stays focused for the next entry; a long title wraps (LineField). */
 export function AddSubtask({ parent }: { parent: Task }) {
   const [value, setValue] = useState('')
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   async function submit(e: FormEvent) {
     e.preventDefault()
     const title = value.trim()
@@ -114,17 +123,20 @@ export function AddSubtask({ parent }: { parent: Task }) {
     onPasteAsLine: (text) => { setValue(text); ref.current?.focus() },
   })
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex min-h-8 items-center gap-2 px-1 pointer-coarse:min-h-11" data-add-subtask>
-      <span className="flex size-5 shrink-0 items-center justify-center text-faint"><Icon name="plus" size="xs" /></span>
-      <input
+    // The plus keeps to the field's first line when the title wraps: its box is one line of
+    // the field (28 px; 44 px on a touch screen, where a field is at least 44 px tall and
+    // its padding keeps one line in the middle, as the one-line input had it).
+    <form onSubmit={(e) => void submit(e)} className="flex min-h-8 items-start gap-2 px-1 py-0.5 pointer-coarse:min-h-11 pointer-coarse:py-0" data-add-subtask>
+      <span className="flex h-7 w-5 shrink-0 items-center justify-center text-faint pointer-coarse:h-11"><Icon name="plus" size="xs" /></span>
+      <LineField
         ref={ref}
-        className="min-w-0 flex-1 rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30"
+        className="rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30 pointer-coarse:py-3"
         placeholder={t('Add a subtask')}
         aria-label={t('Add subtask')}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onValue={setValue}
         onPaste={paste.onPaste}
-        onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+        onKeyDown={(e) => { if (e.key === 'Escape') e.currentTarget.blur() }}
       />
       {paste.offer}
     </form>

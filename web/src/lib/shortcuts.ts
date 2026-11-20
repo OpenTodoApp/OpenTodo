@@ -646,9 +646,9 @@ export interface KeyLike {
 }
 
 /** Whether a key press is this chord. */
-export function matchesChord(c: Chord, e: KeyLike): boolean {
-  const letter = e.key.length === 1 && /[a-z]/i.test(e.key)
-  const key = e.key.toLowerCase()
+export function matchesChord(c: Chord, e: KeyLike, keyValue = e.key): boolean {
+  const letter = keyValue.length === 1 && /[a-z]/i.test(keyValue)
+  const key = keyValue.toLowerCase()
   if (c.key !== key) return false
   const ctrl = !!e.ctrlKey, meta = !!e.metaKey
   if (c.ctrl === false && (ctrl || meta)) return false
@@ -660,10 +660,23 @@ export function matchesChord(c: Chord, e: KeyLike): boolean {
   // A capital letter is the shifted key whatever the modifier flag says (Caps Lock, a
   // synthetic press); a lower-case one needs Shift off.
   if (letter) {
-    const upper = e.key !== key
+    const upper = keyValue !== key
     return c.shift ? upper || !!e.shiftKey : !upper && !e.shiftKey
   }
   return c.shift === !!e.shiftKey
+}
+
+/** The physical fallback for localized printable keys, after typed bindings have had their turn. */
+export function physicalShortcutKey(e: KeyboardEvent): string | undefined {
+  if (e.isComposing || e.getModifierState?.('AltGraph')) return undefined
+  const { code, key } = e
+  if (/^Key[A-Z]$/.test(code) && /^\p{L}$/u.test(key) && !/\p{Script=Latin}/u.test(key)) {
+    return code.slice(3).toLowerCase()
+  }
+  if (/^Digit[1-9]$/.test(code) && /^[\p{L}\p{N}\p{P}\p{S}]$/u.test(key) && !/^\p{Nd}$/u.test(key)) {
+    return code.slice(5)
+  }
+  return undefined
 }
 
 /** The chord sequences of an entry, parsed once; notes have none. */

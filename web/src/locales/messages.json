@@ -2931,6 +2931,7 @@
     "web/src/app/calendar/ReplanPreview.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/calendar/tapPlace.tsx",
+    "web/src/app/encryptionShared.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/habits/AmountDialog.tsx",
@@ -4203,7 +4204,8 @@
     "web/src/app/NotesEditor.tsx"
   ],
   "Count": [
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Count meetings in capacity": [
     "web/src/app/CalendarSettings.tsx",
@@ -5035,7 +5037,7 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "Deleting…": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Deliver instantly through UnifiedPush": [
     "web/src/lib/settingsCopy.ts"
@@ -5611,6 +5613,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
@@ -12089,6 +12092,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Off": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
@@ -16371,10 +16375,6 @@
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
-  "Show today's count": [
-    "web/src/app/AppBadge.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -19199,9 +19199,6 @@
   "This device only.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "This device only. The count matches Today in the sidebar.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "This device was signed out and its data was removed.": [
     "web/src/lib/revocation.ts"
   ],
@@ -19995,6 +19992,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
@@ -20333,7 +20331,7 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Turn off and delete encrypted content": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Turn off and erase": [
     "web/src/app/AuditPanel.tsx"
@@ -21636,7 +21634,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Without your passphrase or recovery key, encrypted content cannot be recovered: not by you, not by the server owner. The only way forward is to turn encryption off and delete the encrypted content (it moves to the Trash). Plaintext data (due dates, structure) is kept.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "Words": [
     "web/src/lib/rules/sentence.ts"
@@ -21887,7 +21885,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "You are offline. This needs a connection to your server.": [
-    "web/src/app/EncryptionPanel.tsx"
+    "web/src/app/encryptionShared.tsx"
   ],
   "You are offline. Tokens are managed on your server.": [
     "web/src/app/TokensSection.tsx"
@@ -26215,6 +26213,9 @@
   ],
   "{time}, no estimate": [
     "web/src/app/calendar/DayColumn.tsx"
+  ],
+  "{time}{day} your time": [
+    "web/src/app/task-detail/WhenControl.tsx"
   ],
   "{tiny} is enough": [
     "web/public/push-sw.js",

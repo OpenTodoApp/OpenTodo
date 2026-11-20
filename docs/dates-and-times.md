@@ -39,7 +39,7 @@ At 04:00 the views move on by themselves. Nothing stored changes: due dates stay
 Once a due has a time, the end of its time line says how the time is meant: **Floating** (the same clock time wherever you are) or a city such as **New York** (one moment worldwide). Choose it to:
 
 - **Fix to my zone:** tie the time to your current time zone, for things that happen at a fixed moment. Press <kbd>z</kbd> with the panel open to do the same, and again to release it.
-- **Fix to another time zone:** search any city or zone, for example a call at 15:00 in New York. The panel shows how that reads for you ("15:00 in New York = 21:00 your time (Berlin)") before you choose **Fix to New York**. Your own zone is listed first, then the zones you used recently.
+- **Fix to another time zone:** search any city or zone, for example a call at 15:00 in New York. The panel previews how that reads for you before you choose **Fix to New York**. Your zone comes first, then recent ones.
 - **Make floating:** release a fixed time to the clock time you currently see.
 
-Devices elsewhere show a fixed time converted to their local time, with the original time and city as a hint. Without a time nothing about zones is shown: a due date alone always stays floating.
+In the panel, a time fixed to another zone reads and is typed in that zone's clock, with yours beside it ("21:00 your time"). Lists and other devices show it converted to local time, with the original time and city as a hint. Without a time nothing about zones is shown: a due date alone always stays floating.

@@ -4371,7 +4371,6 @@
   "Show the keyboard shortcuts; with a topic, open Help on it (:help board)": "Mostrar os atalhos de teclado; com um tópico, abrir a Ajuda sobre ele (:help board)",
   "Show the map": "Mostrar o mapa",
   "Show times": "Mostrar horários",
-  "Show today's count": "Mostrar o número de hoje",
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": "Mostrar seus outros calendários ao lado das tarefas e assinar suas tarefas em um app de calendário",
   "Show {name} among the primary items": "Mostrar {name} entre os itens principais",
   "Showing the first rows; rows with errors, skips and warnings are listed first. The totals count every row.": "Mostrando as primeiras linhas; linhas com erros, puladas e com avisos aparecem primeiro. Os totais contam todas as linhas.",
@@ -5168,7 +5167,6 @@
   "This device is signed in to your server.": "Este dispositivo está conectado ao seu servidor.",
   "This device now opens on the Loop home.": "Este dispositivo agora abre no início Loop.",
   "This device only.": "Só neste dispositivo.",
-  "This device only. The count matches Today in the sidebar.": "Somente este dispositivo. O número corresponde a Hoje na barra lateral.",
   "This device: up to 3 existing tasks, done, dates, priority or labels. Undo appears.": "Este dispositivo: até 3 tarefas existentes, concluídas, datas, prioridade ou etiquetas. Aparece Desfazer.",
   "This device’s clock is far off and the server keeps refusing its changes. Your changes stay on this device.": "O relógio deste dispositivo está muito errado e o servidor continua a recusar as suas alterações. As suas alterações ficam neste dispositivo.",
   "This device’s sync state": "Estado de sincronização deste dispositivo",
@@ -7792,5 +7790,6 @@
   "{rule} until {date}": "{rule} até {date}",
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# vezes}}",
   "Indent": "Aumentar recuo",
-  "Outdent": "Diminuir recuo"
+  "Outdent": "Diminuir recuo",
+  "{time}{day} your time": "{time}{day} seu horário"
 }

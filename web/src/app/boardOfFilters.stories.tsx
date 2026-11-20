@@ -7,6 +7,7 @@ import { createBoardFromTemplate, createView, setOnDrop } from '../lib/views'
 import { DashboardView } from './DashboardView'
 import { RuleEditor } from './RuleEditor'
 import { seeded, TODAY, withSeed } from './stories/fixtures'
+import { PendingUntil } from './stories/pendingUntil'
 import { useViewData } from './useViews'
 
 // Core screen: a board of filters with on-drop rules (OpenSpec change rule-boards,
@@ -50,5 +51,6 @@ export const RuleEditorDialog: StoryObj = {
     seeded.errands = await createView({ name: 'Errands', query: '@errand', pinned: false })
     await setOnDrop(seeded.errands, { add_labels: [errand], due: 'today' })
   }),
-  render: () => <Editor id={seeded.errands} />,
+  // The dialog opens once the view has loaded: captured only then.
+  render: () => <><Editor id={seeded.errands} /><PendingUntil selector='[data-overlay="dialog"]' /></>,
 }
