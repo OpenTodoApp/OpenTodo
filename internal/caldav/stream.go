@@ -22,10 +22,13 @@ type builder struct {
 	root  *Component
 	stack []*Component
 	emit  func(root, child *Component) error
-	// Bounds of one child of the root (or of the root's own properties) when
-	// streaming; zero means no bound.
+	// Bounds of one child of the root, and of the root's own properties in
+	// all, when streaming; zero means no bound. The child's count starts again
+	// at each child; the root's runs over the whole stream, since the root's
+	// properties are kept until the end.
 	partLines, partBytes int
 	lines, bytes         int
+	rootLines, rootBytes int
 }
 
 func (b *builder) add(line string) error {
@@ -78,6 +81,13 @@ func (b *builder) add(line string) error {
 		if len(b.stack) == 0 {
 			return fmt.Errorf("%w: property outside a component", ErrInvalid)
 		}
+		if len(b.stack) == 1 && b.emit != nil && b.partLines > 0 {
+			b.rootLines++
+			b.rootBytes += len(line)
+			if b.rootLines > b.partLines || b.rootBytes > b.partBytes {
+				return fmt.Errorf("%w: too many calendar properties", ErrTooLarge)
+			}
+		}
 		cur := b.stack[len(b.stack)-1]
 		cur.Props = append(cur.Props, p)
 	}
@@ -94,8 +104,9 @@ func (b *builder) finish() (*Component, error) {
 	return b.root, nil
 }
 
-// StreamLimits bounds a streamed parse: the bytes read in all, and the content
-// lines and bytes of each child of the root (and of the root's own properties).
+// StreamLimits bounds a streamed parse: the bytes read in all, the content
+// lines and bytes of each child of the root, and those of the root's own
+// properties in all (ErrTooLarge past them).
 type StreamLimits struct {
 	Bytes, PartLines, PartBytes int
 }

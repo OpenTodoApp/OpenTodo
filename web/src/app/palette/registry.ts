@@ -31,6 +31,7 @@ import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
+import { requestAway } from '../away/AwayMenu'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
@@ -414,6 +415,9 @@ export function commands(ctx: PaletteContext): Command[] {
       run: () => switchWorkspace(w.id, ctx.route, true),
     })),
     { id: 'workspace:new', label: t('New workspace'), icon: 'plus', keywords: 'workspace add create', run: () => requestNewWorkspace() },
+    // Away (away-periods D4): opens the dialog on Today, where its line and End now live.
+    { id: 'away:set', label: t('Away…'), icon: 'plane', keywords: 'away holiday vacation ill sick pause skip repeating habits reminders',
+      run: () => { if (ctx.route.view !== 'today') navigate({ view: 'today' }); requestAway() } },
     { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
     // Undo and Redo (multi-step undo/redo, #1488): offered when the device has history, named for the step.
     ...(ctx.history?.undo ? [{ id: 'app:undo', label: ctx.history.undo.label ? t('Undo: {step}', { step: ctx.history.undo.label }) : t('Undo the last change'), icon: 'undo-2' as const, shortcut: keysOf('global.undo'), keywords: 'undo revert back mistake', run: () => undoToast(ctx.history!.undo!.id, { latest: true }) }] : []),

@@ -7835,5 +7835,22 @@
   "tracked {time}": "ha registrato {time}",
   "{label}: {kinds}": "{label}: {kinds}",
   "{n, plural, one {# kind} other {# kinds}}": "{n, plural, one {# tipo} other {# tipi}}",
-  "{name} activity": "Attività di {name}"
+  "{name} activity": "Attività di {name}",
+  "At most 90 days": "Al massimo 90 giorni",
+  "Away": "Assente",
+  "Away set": "Assenza impostata",
+  "Away until {day}": "Assente fino a {day}",
+  "Away…": "Assente…",
+  "Choose the first and the last day": "Scegli il primo e l’ultimo giorno",
+  "End now": "Termina ora",
+  "Everything": "Tutto",
+  "Not sent {day}: you were away": "Non inviato il {day}: eri assente",
+  "Nothing repeats in these days": "Nulla si ripete in questi giorni",
+  "Pause reminders": "Metti in pausa i promemoria",
+  "Projects and labels": "Progetti ed etichette",
+  "Repeating tasks": "Attività ricorrenti",
+  "Search projects and labels": "Cerca progetti ed etichette",
+  "Set away": "Imposta assenza",
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Salta {occurrences, plural, one {# occorrenza} other {# occorrenze}} di {series, plural, one {# attività ricorrente} other {# attività ricorrenti}}",
+  "The last day comes before the first": "L’ultimo giorno viene prima del primo"
 }

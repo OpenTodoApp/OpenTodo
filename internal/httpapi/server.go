@@ -289,6 +289,14 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		ruleSwitch: set.RuleSwitch, oidc: set.OIDC, blobs: set.Blobs, maps: set.Maps, stt: set.STT, hosted: set.Hosted != nil,
 		caldavOn: set.CalDAV, caldavPushOn: set.CalDAVPush, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
 		membersInviteOn: set.MembersInvite}
+	// An away period's today is the user's own, the same for reminders, digests
+	// and POST /api/v1/away (away-periods D4).
+	if set.Push != nil {
+		set.Push.SetUserZone(s.tzLocation)
+	}
+	if set.Digest != nil {
+		set.Digest.SetUserZone(s.reportedZone)
+	}
 	if set.Hosted != nil {
 		s.assistantSlots = set.Hosted.AssistantSlots
 	}
