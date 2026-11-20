@@ -16,7 +16,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/digest"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/habits"
 	"github.com/OpenTodoApp/opentodo/internal/ids"
 	"github.com/OpenTodoApp/opentodo/internal/recurrence"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
@@ -80,6 +82,10 @@ type Service struct {
 	// onDue receives every firing before the devices are pushed (OpenSpec
 	// notification-channels D1): delivery channels queue it once per firing.
 	onDue func(ctx context.Context, r DueReminder)
+
+	// zone is the user's time zone (nil: UTC), for the logical day an away
+	// period is read on (away-periods D4).
+	zone func(ctx context.Context, uid string) *time.Location
 }
 
 // DueReminder is a firing as the scheduler hands it to other consumers. Title
@@ -94,6 +100,28 @@ type DueReminder struct {
 // each pass, before the devices are pushed; it must be idempotent per firing,
 // because a reminder whose pushes are retried is handed over again.
 func (s *Service) SetReminderHook(f func(ctx context.Context, r DueReminder)) { s.onDue = f }
+
+// SetUserZone installs the user's time zone, read for the logical day of an
+// away period (away-periods D4).
+func (s *Service) SetUserZone(f func(ctx context.Context, uid string) *time.Location) { s.zone = f }
+
+// awayQuiet reports whether the user's away period pauses reminders on their
+// logical today at now (away-periods D4).
+func (s *Service) awayQuiet(ctx context.Context, uid string, now time.Time) (bool, error) {
+	prefs, err := s.sync.Get(ctx, uid, "user_prefs", "me")
+	if err != nil || prefs == nil {
+		return false, err
+	}
+	away := jsonString(prefs["away"])
+	if away == "" {
+		return false, nil
+	}
+	var loc *time.Location
+	if s.zone != nil {
+		loc = s.zone(ctx, uid)
+	}
+	return opsync.QuietOn(away, habits.LogicalToday(now, loc, digest.DayStart(jsonString(prefs["day_start"])))), nil
+}
 
 // New wires a Service. Keys are created on first need, not here.
 func New(db *sql.DB, syncSvc *opsync.Service, dataDir string, o Options) *Service {
@@ -299,6 +327,7 @@ const scanPage = 500
 func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder, error) {
 	var out []dueReminder
 	quiet := map[string]bool{} // "<user>\x00<project>" -> in the Trash or archived (this pass)
+	away := map[string]bool{}  // user -> away with reminders paused (this pass)
 	var after *dueReminder
 	for {
 		cands, err := s.candidates(ctx, nowMs, scanPage, after)
@@ -320,6 +349,21 @@ func (s *Service) dueReminders(ctx context.Context, nowMs int64) ([]dueReminder,
 				continue
 			}
 			if !ok {
+				continue
+			}
+			held, seen := away[d.UserID]
+			if !seen {
+				if held, err = s.awayQuiet(ctx, d.UserID, time.UnixMilli(nowMs)); err != nil {
+					return nil, err
+				}
+				away[d.UserID] = held
+			}
+			if held {
+				// Away with reminders paused: dropped, not delivered later
+				// (away-periods D4); the reminder stays on the task.
+				if err := s.recordDismissed(ctx, d.UserID, d.ID, nowMs); err != nil {
+					return nil, err
+				}
 				continue
 			}
 			out = append(out, d)

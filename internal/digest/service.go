@@ -25,8 +25,10 @@ const (
 
 // Outcomes recorded in last_outcome besides a failed stage.
 const (
-	OutcomeSent      = "sent"
-	OutcomeSkipped   = "skipped"
+	OutcomeSent    = "sent"
+	OutcomeSkipped = "skipped"
+	// OutcomeAway: not sent, the user was away with reminders paused (away-periods D4).
+	OutcomeAway      = "away"
 	OutcomeEncrypted = "encrypted_account"
 	OutcomeLimited   = "rate_limited"
 )
@@ -219,6 +221,15 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 		return false, err
 	}
 	stub := mail.Message{Kind: mail.KindDigest, To: to, UserID: st.UserID, Lang: st.Lang}
+	if act == actSend {
+		// Away with reminders paused: no digest for that date, nor later (away-periods D4).
+		if away, err := s.awayQuiet(ctx, st, now); err != nil || away {
+			if err != nil {
+				return false, err
+			}
+			return false, s.store.MarkOutcome(ctx, st.UserID, OutcomeAway, date)
+		}
+	}
 	if act == actSkip {
 		s.mail.RecordFailure(ctx, stub, OutcomeSkipped)
 		return false, s.store.MarkOutcome(ctx, st.UserID, OutcomeSkipped, date)
@@ -268,6 +279,20 @@ func (s *Service) handle(ctx context.Context, st Settings, act action, date stri
 	}
 	// Retried at the next pass until the window closes (mail.Send audited it).
 	return false, s.store.MarkOutcome(octx, st.UserID, stage, "")
+}
+
+// awayQuiet reports whether the user's away period pauses reminders on their
+// logical today at now, in the digest's zone.
+func (s *Service) awayQuiet(ctx context.Context, st Settings, now time.Time) (bool, error) {
+	prefs, err := s.sync.Get(ctx, st.UserID, "user_prefs", "me")
+	if err != nil || prefs == nil {
+		return false, err
+	}
+	loc, err := time.LoadLocation(st.TimeZone)
+	if err != nil {
+		loc = time.UTC
+	}
+	return opsync.QuietOn(str(prefs, "away"), LogicalDay(now, loc, DayStart(str(prefs, "day_start")))), nil
 }
 
 // recipient is the account's address and whether it may receive mail

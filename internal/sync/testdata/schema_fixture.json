@@ -266,6 +266,7 @@
     ],
     "user_prefs": [
       "add_position",
+      "away",
       "bento_order",
       "briefing",
       "daily_notes",
