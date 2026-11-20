@@ -306,6 +306,7 @@ In order. No op field changes; the server gains only app sign-in.
 | Conflict-free multi-device sync | `bootstrap-core-platform` | Field-level last-writer-wins op log, convergent by construction. See [docs/sync.md](docs/sync.md) |
 | Single small container, runs on a Raspberry Pi | `bootstrap-core-platform` | Static Go binary of about 34 MB with the web app embedded, distroless image of about 40 MB (about 13 MB to download) |
 | Keyboard navigation (q, j/k, c, 1–4, g+key, ?) | `bootstrap-core-platform` | |
+| Keyboard shortcuts across layouts | `keyboard-layout-shortcuts` | Letter shortcuts on non-Latin layouts and number-row shortcuts on French AZERTY. |
 | Live push of changes between devices | `realtime-sync-channel` | Server-sent event wake-ups; the protocol stays op-based, polling is the fallback |
 | Rich text with collaborative editing for task notes | `collaborative-rich-text` | Yjs document in `task.notes_doc`, editor lazy-loaded; comments stay Markdown |
 | Vim-style modal navigation option | `vim-keybindings` | |

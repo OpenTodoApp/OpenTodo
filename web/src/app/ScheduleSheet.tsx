@@ -27,8 +27,8 @@ export function ScheduleSheet({ task, onPick, onClose }: ScheduleSheetProps) {
   const relative = relativeDoOn(deadline, today)
   // `1` to `6` while the sheet is open (registry entry triage.relative); never in the date field.
   useShortcutScope('view', {
-    'triage.relative': (e) => {
-      const c = relative.find((x) => x.key === e.key)
+    'triage.relative': (_event, _shortcut, chord) => {
+      const c = relative.find((x) => x.key === chord.key)
       if (!c) return false
       onPick(c.date)
     },
