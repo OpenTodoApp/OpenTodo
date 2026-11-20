@@ -66,6 +66,7 @@ import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
 // Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
 // or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
 type Scroller = { scroller: RefObject<HTMLElement | null> }
@@ -393,8 +394,8 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
           ) : route.view === 'notes' ? <Suspense fallback={null}><NotesPage id={route.id} day={route.day} /></Suspense> : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
-          ) : route.view === 'feed' ? (
-            <FeedView />
+          ) : route.view === 'feed' ? <FeedView /> : route.view === 'workspace-activity' ? (
+            <Suspense fallback={SCREEN_LOADING}><WorkspaceActivity id={route.id} /></Suspense>
           ) : route.view === 'ask' ? (
             <AskScreen role={user.role} name={user.name} />
           ) : route.view === 'day' || route.view === 'week' ? (

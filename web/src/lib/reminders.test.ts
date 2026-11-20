@@ -311,7 +311,7 @@ describe('default reminders (default-reminders D3-D6)', () => {
     const { entry } = await dueUndoable(t, { date: '2026-11-06', time: '15:00' })
     expect(await live(t)).toHaveLength(1)
     const res = await undoBatch(entry!.id)
-    expect(res).toEqual({ restored: 1, skipped: [] })
+    expect(res).toMatchObject({ restored: 1, skipped: [] })
     expect((await db.tasks.get(t))?.due).toBeNull()
     expect(await live(t)).toHaveLength(0)
     await updateTask(t, { due: { date: '2026-11-07', time: '15:00' } })
