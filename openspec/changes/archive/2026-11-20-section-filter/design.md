@@ -21,3 +21,16 @@ As for labels and projects: `No section named "X"`, and the server still accepts
 ### D4. Builder
 
 One Section condition with the Combobox; choices are one per name, since the query cannot tell two same-named sections apart.
+
+## Alternatives rejected
+
+- **Match by section id.** Ids differ between users and devices, so a saved filter would hit one project's section only. The rules matcher uses ids because its picker is project-aware; a cross-project filter cannot.
+- **`in: Review`.** Shorter, but diverges from the `label:`, `project:` and `assigned:` prefixes.
+- **No `no section` keyword.** `!section: X` cannot express "no section at all" next to a named one.
+
+## Impact
+
+- **Data model:** none. A query is plain text; no op field, no migration. Sections reach both evaluators through contexts they already take (the calendar and palette filters now pass them too).
+- **Offline and convergence:** evaluated on the device from local data, offline included; the server only validates the grammar when a view is saved.
+- **Size:** a few hundred bytes of existing filter code and four strings per catalog; no dependency, no change to image size or memory.
+- **Interface budget:** the Section condition is one more choice in the existing condition dialog. No new chrome, task property, sidebar destination, scroll region or shortcut.

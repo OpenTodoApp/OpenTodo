@@ -11,7 +11,11 @@ Sections group the tasks of one project, but a person's work spans projects: "ev
 - **The builder gets a Section condition**, picked from a searchable list of section names, with a chip like every other condition.
 - The word `section` becomes reserved, like `assigned`.
 
-No schema or op change: a query is plain text and sections are already available to both evaluators.
+No schema or op change: a query is plain text and sections are already available to both evaluators. Nothing is **BREAKING**: the only reading that changes is `no section`, which was "a custom field named section is empty" and stays reachable as `no "section"`.
+
+Out of scope: grouping a saved view or a project's board by section (#898), a picker that tells two same-named sections apart, a section term in rules (they already match by id), and any change to how sections are stored or synced.
+
+Advances the ROADMAP capability "Filter query language" (section 3, Organisation, views and GTD); closes [#1640](https://github.com/OpenTodoApp/OpenTodo/issues/1640).
 
 ## Capabilities
 
