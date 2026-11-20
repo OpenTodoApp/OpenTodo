@@ -39,7 +39,7 @@ Out of scope (for v1):
 - "tap your name, see your chores" on a shared screen (a display-mode follow-up);
 - switching features from the CLI or MCP (both stay complete).
 
-It advances the ROADMAP item `workspace-features` (a new row) for #1637. No **BREAKING** change:
+It advances the ROADMAP item `workspace-features` (a new row), tracked in #1644, with feedback in #1637. No **BREAKING** change:
 - one additive server column and one additive `user_prefs` field;
 - no op field renamed or removed (the six old fields stay in the schema);
 - no new environment variable.
