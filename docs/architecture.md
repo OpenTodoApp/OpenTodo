@@ -1,6 +1,6 @@
 ---
 title: Architecture
-summary: How data flows from a tap on the screen to every device: server packages, tables, client modules and the build.
+summary: "How data flows from a tap on the screen to every device: server packages, tables, client modules and the build."
 audience: developer
 section: Internals
 specs: [site-bundle]

@@ -1,6 +1,6 @@
 ---
 title: Translating OpenTodo
-summary: For contributors: how the app's text is written for translation, the catalog format, the checks, how to add a language, and the product glossary.
+summary: "For contributors: how the app's text is written for translation, the catalog format, the checks, how to add a language, and the product glossary."
 audience: developer
 section: Internals
 specs: [localization]

@@ -1,6 +1,6 @@
 ---
 title: Task history
-summary: Every change to a task is kept: see who changed what and from where, restore one value or a whole version, and follow the activity of a task.
+summary: "Every change to a task is kept: see who changed what and from where, restore one value or a whole version, and follow the activity of a task."
 audience: user
 section: Guides
 specs: [trash-and-history, activity-log]

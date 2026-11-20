@@ -1,6 +1,6 @@
 ---
 title: The Android app
-summary: The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock.
+summary: "The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock."
 audience: user
 section: Reference
 specs: []

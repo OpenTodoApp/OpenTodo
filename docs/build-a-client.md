@@ -1,6 +1,6 @@
 ---
 title: Build your own OpenTodo client
-summary: Build a third-party OpenTodo client: REST only, push-only sync or full offline, covering tokens, idempotency, device ids, the outbox and rate limits.
+summary: "Build a third-party OpenTodo client: REST only, push-only sync or full offline, covering tokens, idempotency, device ids, the outbox and rate limits."
 audience: developer
 section: Integrations
 specs: []

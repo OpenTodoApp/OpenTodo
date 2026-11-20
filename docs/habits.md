@@ -1,6 +1,6 @@
 ---
 title: Habits
-summary: A calm place for habits: a row each with the last seven days, a line in Today, a page per habit with its notes, a forgiving measure, a tiny version for hard days and graduating a habit that has stuck.
+summary: "A calm place for habits: a row each with the last seven days, a line in Today, a page per habit with its notes, a forgiving measure, a tiny version for hard days and graduating a habit that has stuck."
 audience: user
 section: Guides
 specs: [habits]

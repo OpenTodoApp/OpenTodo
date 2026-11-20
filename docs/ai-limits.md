@@ -1,6 +1,6 @@
 ---
 title: What AI assistants can and can't do
-summary: The rules shared by the in-app assistant, MCP and the ot command: who switches them on, what they can reach, how changes are recorded and limited, and prompt injection.
+summary: "The rules shared by the in-app assistant, MCP and the ot command: who switches them on, what they can reach, how changes are recorded and limited, and prompt injection."
 audience: user
 section: Guides
 specs: []

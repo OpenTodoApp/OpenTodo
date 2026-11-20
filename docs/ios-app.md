@@ -1,6 +1,6 @@
 ---
 title: The iOS app
-summary: The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock.
+summary: "The OpenTodo app for iPhone and iPad, from the App Store or built from source: connect it to your server, reminders without push, sharing, widgets and Face ID unlock."
 audience: user
 section: Reference
 specs: []
