@@ -1,0 +1,1 @@
+- You can turn pinch zoom off per device for a more app-like feel: **Settings → Appearance → Allow pinch zoom** (on by default). Your device's own system text size and accessibility zoom are unaffected (#1386).

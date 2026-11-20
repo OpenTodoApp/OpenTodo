@@ -78,6 +78,7 @@ describe('the list', () => {
   it('A task\'s other change does not move its note', async () => {
     const old = await createTask({ title: 'Old', description: 'written first' })
     await createNote({ title: 'Newer', description: 'written later' })
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'note' }, { key: 'kind', value: 'task' }]))
     const { container } = await page()
     await waitFor(() => rows(container).length === 2, 'two rows')
     expect(titles(container)).toEqual(['Newer', 'Old'])
@@ -115,7 +116,7 @@ describe('filters', () => {
     await createNote({ title: 'Elsewhere' })
     await createTask({ title: 'Task in Renovation', project_id: reno, description: 'a task note' })
     const { container, unmount } = await page()
-    await waitFor(() => rows(container).length === 3, 'three rows')
+    await waitFor(() => rows(container).length === 2, 'the two notes, not the task')
     const field = container.querySelector<HTMLInputElement>('[data-note-search]')!
     await act(async () => field.focus())
     await type(field, 'kind:note ')
@@ -156,17 +157,71 @@ describe('filters', () => {
     expect(container.querySelector('[data-note-chip]')).toBeNull()
   })
 
-  it('Label filter: task notes and standalone notes with the label, no project notes', async () => {
+  it('Label filter: task notes (with kind:task) and standalone notes with the label, no project notes', async () => {
     await db.labels.put({ id: 'l-ref', name: 'reference', color: '#0aa', position: 0, created_at: 0, deleted_at: null, _clock: {} })
     const p = await createProject({ name: 'House' })
     await mutate('project', p, { description: 'project note' })
     await createNote({ title: 'Labelled note', labels: ['l-ref'] })
     await createTask({ title: 'Labelled task', labels: ['l-ref'], description: 'task note' })
     await createNote({ title: 'Plain' })
-    localStorage.setItem(NOTE_FILTERS_KEY, JSON.stringify({ source: 'all', projectId: null, labelId: 'l-ref' }))
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'label', id: 'l-ref', name: 'reference' }, { key: 'kind', value: 'note' }, { key: 'kind', value: 'task' }]))
     const { container } = await page()
     await waitFor(() => rows(container).length === 2, 'two rows')
     expect(titles(container).sort()).toEqual(['Labelled note', 'Labelled task'])
+  })
+})
+
+// GitHub issue 1478 (notes-page-own-notes): a task's description is its details, not a note.
+describe('task descriptions', () => {
+  it('Default list: notes and project notes only, the count without tasks, nothing grouped', async () => {
+    const p = await createProject({ name: 'House' })
+    await mutate('project', p, { description: 'project note' })
+    await createNote({ title: 'Wi-Fi', description: 'the code' })
+    await createTask({ title: 'Charge headphones', description: 'the battery is at 37%' })
+    const { container } = await page()
+    await waitFor(() => rows(container).length === 2, 'two rows')
+    expect(titles(container).sort()).toEqual(['House', 'Wi-Fi'])
+    expect(container.textContent).toContain('2 notes')
+  })
+
+  it('Task descriptions one chip away: kind:task lists them and is remembered on the device', async () => {
+    await createNote({ title: 'Wi-Fi' })
+    await createTask({ title: 'Charge headphones', description: 'the battery is at 37%' })
+    const { container, unmount } = await page()
+    await waitFor(() => rows(container).length === 1, 'the note only')
+    const field = container.querySelector<HTMLInputElement>('[data-note-search]')!
+    await act(async () => field.focus())
+    await type(field, 'kind:task ')
+    await waitFor(() => titles(container).join() === 'Charge headphones', 'the task note')
+    await unmount()
+    const again = await page()
+    await waitFor(() => titles(again.container).join() === 'Charge headphones', 'remembered')
+  })
+
+  it('A word in a task description: not found without the chip, found with it', async () => {
+    await createNote({ title: 'Wi-Fi' })
+    await createTask({ title: 'Charge headphones', description: 'the battery is at 37%' })
+    const { container, unmount } = await page()
+    await waitFor(() => rows(container).length === 1, 'the note')
+    const field = container.querySelector<HTMLInputElement>('[data-note-search]')!
+    await act(async () => field.focus())
+    await type(field, 'battery')
+    await flush()
+    expect(titles(container)).not.toContain('Charge headphones')
+    await unmount()
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'task' }]))
+    const again = await page()
+    await waitFor(() => rows(again.container).length === 1, 'the task note')
+    const field2 = again.container.querySelector<HTMLInputElement>('[data-note-search]')!
+    await act(async () => field2.focus())
+    await type(field2, 'battery')
+    await waitFor(() => titles(again.container).includes('Charge headphones'), 'found with the chip')
+  })
+
+  it('Only task descriptions: the empty page, with New note', async () => {
+    await createTask({ title: 'Charge headphones', description: 'the battery is at 37%' })
+    const { container } = await page()
+    await waitFor(() => !!container.querySelector('[data-empty-state="notes"]'), 'the empty state')
   })
 })
 
@@ -427,6 +482,7 @@ describe('pinned notes', () => {
 
   it('task notes are not pinnable: their rows have no menu', async () => {
     await createTask({ title: 'Task', description: 'a task note' })
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'task' }]))
     const { container } = await page()
     await waitFor(() => rows(container).length === 1, 'one row')
     expect(container.querySelector('[data-note-menu]')).toBeNull()
@@ -461,6 +517,7 @@ describe('Unlinked', () => {
     const trip = await createNote({ title: 'Trip' })
     await createNote({ title: 'Ideas', description: `go on [Trip](?note=${trip})` })
     await createTask({ title: 'Book', description: `see [Trip](?note=${trip})` })
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'note' }, { key: 'kind', value: 'task' }]))
     const { container } = await page()
     await waitFor(() => rows(container).length === 3, 'three rows')
     const field = container.querySelector<HTMLInputElement>('[data-note-search]')!
@@ -490,6 +547,7 @@ describe('the row (notes-space D5)', () => {
     const p = await createProject({ name: 'Home' })
     await createTask({ title: 'Call the plumber', project_id: p, labels: ['l-err'], description: 'ask about the boiler' })
     await createTask({ title: 'Loose', description: 'no project' })
+    localStorage.setItem(NOTE_TOKENS_KEY, JSON.stringify([{ key: 'kind', value: 'task' }]))
     const { container } = await page()
     await waitFor(() => rows(container).length === 2, 'two rows')
     const row = container.querySelector('[data-note-key^="task:"][data-note-key]')!
