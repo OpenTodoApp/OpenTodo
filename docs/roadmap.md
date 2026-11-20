@@ -89,7 +89,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped |
 | `theme-title-weight` | A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | Shipped |
 | `subtask-panel-order` | Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | Shipped |
-| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Planned |
+| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Shipped |
 | `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
 | `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
 | `voice-ramble` | Speak a brain dump or drop a photo of notes; review the proposed tasks | Shipped in 0.20 |

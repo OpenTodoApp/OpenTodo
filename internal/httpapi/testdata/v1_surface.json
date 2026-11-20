@@ -2536,6 +2536,7 @@
       },
       "user_prefs": {
         "add_position": "string",
+        "app_link_schemes": "string",
         "away": "string",
         "bento_order": "string",
         "briefing": "string",
@@ -3676,6 +3677,7 @@
     },
     "user_prefs": {
       "add_position": "string",
+      "app_link_schemes": "string",
       "away": "string",
       "bento_order": "string",
       "briefing": "string",

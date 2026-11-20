@@ -215,7 +215,9 @@ function resolve(e: KeyboardEvent, key: string, active: ScopeFrame[], pend: Chor
     for (const c of byOverride(found)) {
       const s = c.entry
       if (typing && !s.typing) continue
-      if (dialog && s.scope !== 'global' && !s.dialog) continue
+      // A dialog mutes scoped shortcuts (unless they opt in) and the global undo/redo, which
+      // must not change data behind a modal (#1488); other global shortcuts still work.
+      if (dialog && ((s.scope !== 'global' && !s.dialog) || s.notInDialog)) continue
       const r = c.frame.handlers[s.id]!(e, s, c.seq[pend.length])
       if (r === false) continue
       if (!s.passive) e.preventDefault()
@@ -235,6 +237,9 @@ function resolve(e: KeyboardEvent, key: string, active: ScopeFrame[], pend: Chor
 /** Resolves one key press; returns whether a shortcut ran (or a prefix was armed). */
 export function dispatch(e: KeyboardEvent): boolean {
   if (MODIFIERS.has(e.key) || e.isComposing) return false
+  // A control that already handled the key (a routine editor's own Ctrl+Z, an editor's
+  // keymap) calls preventDefault; the dispatcher then stands back so one press is one action.
+  if (e.defaultPrevented) return false
   const pend = pending
   const typing = isTypingTarget(e.target)
   const dialog = dialogOpen()

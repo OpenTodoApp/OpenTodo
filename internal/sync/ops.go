@@ -974,9 +974,9 @@ var Schema = map[string]map[string]Field{
 		// to ("" for none) and their template: "" the built-in Daily, "none" no
 		// template, otherwise a template note's id (an unknown id reads as the
 		// built-in Daily and is kept).
-		"daily_notes":          {Kind: kBool, Default: `false`},
-		"daily_notes_project":  {Kind: kString, Default: `""`},
-		"daily_notes_template": {Kind: kString, Default: `""`},
+		"daily_notes":         {Kind: kBool, Default: `false`},
+		"daily_notes_project": {Kind: kString, Default: `""`}, "daily_notes_template": {Kind: kString, Default: `""`},
+		"app_link_schemes": {Kind: kString, Default: `""`, Content: true}, // app-links D1: schemes that open in other apps, a JSON array, read only on the person's devices
 		// The away period (OpenSpec change away-periods, design D3): "" or
 		// "YYYY-MM-DD..YYYY-MM-DD", inclusive, followed by " quiet" when
 		// reminders and the digest are paused. One value, so two devices never

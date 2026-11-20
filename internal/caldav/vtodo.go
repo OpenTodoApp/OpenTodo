@@ -167,6 +167,10 @@ type Inbound struct {
 	// line is part of Extra and the task keeps no rule of its own.
 	RRULE string
 	Rule  string
+	// URL is the VTODO's URL value ("" when none). The line stays in Extra as
+	// client data; a link into another app also becomes the task's origin
+	// (app-links D5, decided by the caller).
+	URL   string
 	Extra string
 	// Overrides are the RECURRENCE-ID overrides the client sent beside the
 	// series (Thunderbird completes one occurrence of a repeating task that

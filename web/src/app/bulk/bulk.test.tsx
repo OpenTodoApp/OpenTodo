@@ -263,4 +263,21 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone'), 'Undone in the toast')
     await waitFor(async () => (await priority()) === 4, 'priority 4 back')
   })
+
+  // #1488: redo reaches the batch log, not only the toast; Ctrl+Shift+Z re-applies the undo.
+  it('Ctrl+Shift+Z redoes the change undone last', async () => {
+    const { ids } = await inbox('One', 'Two')
+    const priority = async () => (await db.tasks.get(ids[0]))!.priority
+    await key(document.body, 'j'); await key(document.body, 'x')
+    await waitFor(() => bar() === '1 selected', 'one row ticked')
+    await key(document.body, '1')
+    await waitFor(async () => (await priority()) === 1, 'priority 1 stored')
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]'), 'the undo offer')
+    await key(document.body, 'z', { ctrlKey: true })
+    await waitFor(() => document.querySelector('[data-bulk-toast]')?.textContent?.includes('Undone') ?? false, 'Undone in the toast')
+    await waitFor(async () => (await priority()) === 4, 'undone to 4')
+    await key(document.body, 'z', { ctrlKey: true, shiftKey: true })
+    await waitFor(() => document.querySelector('[data-bulk-toast]')?.textContent?.includes('Redone') ?? false, 'Redone in the toast')
+    await waitFor(async () => (await priority()) === 1, 'priority 1 re-applied')
+  })
 })

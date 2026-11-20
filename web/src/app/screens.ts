@@ -74,7 +74,7 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
  * equal to SETTINGS_SECTIONS.
  */
 export const SETTINGS_SCREENS: readonly string[] = [
-  'settings/about', 'settings/access', 'settings/account', 'settings/activity', 'settings/appearance',
+  'settings/about', 'settings/access', 'settings/account', 'settings/activity', 'settings/app-links', 'settings/appearance',
   'settings/assistant', 'settings/assistants', 'settings/attachments', 'settings/backups', 'settings/branding',
   'settings/caldav', 'settings/calendar', 'settings/calendar-feeds', 'settings/calendar-sync', 'settings/capture',
   'settings/data', 'settings/date-time', 'settings/default-reminders', 'settings/digest', 'settings/email', 'settings/encryption', 'settings/focus',
