@@ -10,8 +10,12 @@ enum Origin {
     }
 
     /// The same string from the parts WebKit reports for a frame or a security origin.
+    /// WebKit keeps no port for the scheme's own default one, so `WKSecurityOrigin.port`
+    /// reports it as 0: that is 443 for https and 80 for http, never another port.
     static func signature(scheme: String, host: String, port: Int) -> String {
-        "\(scheme.lowercased())://\(host.lowercased()):\(port)"
+        let scheme = scheme.lowercased()
+        let port = port == 0 ? (scheme == "https" ? 443 : 80) : port
+        return "\(scheme)://\(host.lowercased()):\(port)"
     }
 
     static func same(_ a: URL, _ b: URL) -> Bool {
