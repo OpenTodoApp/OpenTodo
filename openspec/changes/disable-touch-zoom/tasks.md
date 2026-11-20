@@ -2,11 +2,14 @@
 
 ## 1. Setting and viewport
 
-- [ ] 1.1 A device-storage key for "Disable zoom on this device" (default off), with its getter/setter and a change event, beside the other per-device appearance settings. Verify: unit test of default and round-trip.
-- [ ] 1.2 A module that writes the `<meta name="viewport">` content from the setting (default, or default + `maximum-scale=1, user-scalable=no`) at startup and on change. Verify: unit test that the string follows the setting both ways.
-- [ ] 1.3 The Appearance toggle, off by default, with a one-line note that zoom stays on unless turned off. Verify: interaction test toggles it and the viewport module is called; a story in light and dark.
+- [x] 1.1 A device-local stored value (`web/src/lib/touchZoom.ts`, default on, never synced), a viewport applier that writes `<meta name="viewport">`, and a hook that keeps the viewport in step with the setting, mounted in `App`. Verified: `web/src/lib/touchZoom.test.ts`.
+- [x] 1.2 The Appearance toggle **Allow pinch zoom**, on by default, shown only on a touch device, with its settings copy and search. Verified: `appearance.test.tsx`, `settingsCopy.test.ts`.
 
 ## 2. Release
 
-- [ ] 2.1 Changelog fragment `changelog.d/Added/disable-touch-zoom.md`. Verify: `make repo-check`.
-- [ ] 2.2 Docs: a line in the appearance/phone docs that the setting exists, is per device and off by default. Verify: `make docs-check`.
+- [x] 2.1 Changelog fragment `changelog.d/Added/allow-pinch-zoom.md`.
+- [x] 2.2 Docs: the apps' touch sections name the setting (`docs/ios-app.md`, `docs/android-app.md`).
+
+## 3. Confirm on a device (post-merge, before archive)
+
+- [ ] 3.1 On a real iPhone and Android, turning the switch off stops pinch zoom and a field still never zooms on focus; the switch is absent on desktop. Then archive the change.

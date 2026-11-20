@@ -1,4 +1,6 @@
 {
+  "Allow pinch zoom": "Autoriser le zoom par pincement",
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Zoomez dans l’app par pincement sur cet appareil. Désactivez pour un rendu plus proche d’une app.",
   "\"after completion\" only applies to day, week, month and year intervals": "« after completion » ne s’applique qu’aux intervalles en jours, semaines, mois et années",
   "(10+ characters)": "(10 caractères minimum)",
   "(archived)": "(archivé)",
