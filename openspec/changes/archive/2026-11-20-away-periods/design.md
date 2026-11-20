@@ -2,7 +2,7 @@
 
 - **Skips.** A skip already exists for every repeating task. Skipping the current occurrence moves the series on; for a habit it also writes a skipped occurrence record. Skipping a later occurrence writes a skipped record. Records are exceptions: the series never lands on them (`recurring-tasks` "Act on one occurrence", "Exceptions come from the records").
 - **Habits.** A habit's streak counts skipped records as kept, and they never count as done (`habits`).
-- **Delivery.** Reminders go out from the server (push, channels) and from the device (local notifications). The digest is sent by a server job.
+- **Delivery.** Reminders go out from the server (push, and the notification channels through the same pass) and from the device (in-app reminders and local notifications, and the shells' scheduled alarms). The weekly email digest is sent by a server job.
 
 ## Goals / Non-Goals
 
@@ -39,15 +39,15 @@ The choice is **Everything** or **Only**, with projects and labels picked with t
 
 Away holds while the user's logical today (`date-time-preferences`) is within the range.
 - **Today:** the title's meta reads "Away until Friday". **End now** in Today's menu clears the field; its skips stay, and Undo of the original batch is the way to take them back.
-- **With ` quiet`:** the server delivers no reminder (push, email, channels) and sends no daily digest. Devices show no local reminder notification.
-- **Held reminders are dropped, not queued:** their occurrences were skipped anyway, and a non-repeating task's reminder is still listed on the task. The day after the period, delivery resumes.
+- **With ` quiet`:** the server delivers no reminder (push, channels) and sends no email digest; a reminder it holds is marked dismissed, and a held digest is recorded with the outcome `away` for its date. Devices show no in-app or local reminder for a firing on a day of the period, and the shells are not handed one. The day is the user's logical day (their zone and day start).
+- **Held reminders are dropped, not queued (on the server dismissed, on a device judged by the firing's day):** their occurrences were skipped anyway, and a non-repeating task's reminder is still listed on the task. The day after the period, delivery resumes.
 
 ### D5. Route and CLI
 
 `POST /api/v1/away {from, to, projects?, labels?, pauseReminders?}`:
 - sets the field and applies the D1 skips through `ApplyStrict`, using the server's own occurrence code, the same as the occurrence skip route;
 - answers `{away, skipped}`;
-- needs a session or a token allowed to write tasks, and refuses read and agent tokens (the policy is declared in `policy.go`);
+- needs a session or a token allowed to write tasks, and refuses read and agent tokens like every other task write, and tokens limited to workspaces, since the period covers the whole account (the policy, `signedIn`, is declared where the route is registered and checked by `policy.go`);
 - answers 400 `invalid_input` naming the field for a malformed date, `from > to` or a range over 90 days, and 404 for a project or label the caller cannot see.
 
 `DELETE /api/v1/away` clears the field and answers 204. In the CLI, `ot away <from> <to> [--project …] [--label …] [--keep-reminders]` and `ot away --end` call them.

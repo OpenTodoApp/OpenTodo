@@ -31,6 +31,7 @@ import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
+import { requestAway } from '../away/AwayMenu'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
@@ -380,6 +381,10 @@ export function commands(ctx: PaletteContext): Command[] {
     out.push({ id: 'replan:day', label: t('Re-plan the rest of the day'), icon: 'calendar-clock', keywords: 'replan reschedule behind missed blocks time blocking afternoon',
       run: () => openReplan(ctx.route.view === 'day' || ctx.route.view === 'week') })
   }
+
+  // Away (away-periods D4): opens the dialog on Today, where its line and End now live.
+  out.push({ id: 'away:set', label: t('Away…'), icon: 'plane', keywords: 'away holiday vacation ill sick pause skip repeating habits reminders',
+    run: () => { if (ctx.route.view !== 'today') navigate({ view: 'today' }); requestAway() } })
 
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery

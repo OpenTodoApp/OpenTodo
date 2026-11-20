@@ -12,7 +12,7 @@ Issue #805. During a holiday or an illness, repeating tasks and habits keep comi
   - Past days work the same way, so the overdue pile disappears.
 - **The period is stored on the account** (one additive `user_prefs` field, synced like other preferences).
   - While today is inside it, Today's title reads "Away until Friday", with **End now**.
-  - With **Pause reminders** (on by default), no reminder is delivered, on any device or channel, and no daily digest is sent.
+  - With **Pause reminders** (on by default), no reminder is delivered, on any device or channel, and no email digest is sent.
 - **API and CLI:**
   - `POST /api/v1/away` sets a period and applies the same skips through the op log; `DELETE /api/v1/away` ends it.
   - In the CLI, `ot away <from> <to>` and `ot away --end`.

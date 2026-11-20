@@ -741,6 +741,16 @@ const shots = [
     if (!r.ok()) throw new Error(`PATCH habit → ${r.status()} ${await r.text()}`)
     await go(p, plainBase, `/habits/${read}`, () => p.locator('[data-habit-numbers]').waitFor()); await settle(p, 400)
   }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Away (away-periods): the dialog over the three daily habits, from Today's menu.
+  { name: 'away', server: P, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/today', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').click()
+    await p.locator('[data-away-item]').click()
+    const dialog = p.getByTestId('away')
+    await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
+    return clipOf(p, dialog, 16)
+  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)

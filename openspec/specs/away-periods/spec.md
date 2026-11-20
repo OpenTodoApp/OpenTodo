@@ -1,4 +1,9 @@
-## ADDED Requirements
+# away-periods Specification
+
+## Purpose
+Away periods: one action that skips the occurrences of the user's repeating tasks over a range of days, also after the fact, keeps habit streaks, and pauses reminders and the email digest while the user is away; the same through the API and the CLI.
+
+## Requirements
 
 ### Requirement: Set an away period
 The user SHALL be able to set an away period from Today's menu and the command palette. The period SHALL have a start and an end day, inclusive, in the past, the present or the future, at most 90 days long, and SHALL cover either every repeating task the user may edit or only those in chosen projects or with chosen labels. Before anything is written the dialog SHALL show how many occurrences of how many repeating tasks it will skip. Setting it SHALL store the period in the user's preferences (`user_prefs.away`, one value holding the range and whether reminders are paused) and SHALL apply the skips of "Skipping inside the period" in the same batch, offered with one Undo. It SHALL work offline; the stored period converges by last-writer-wins as one value, so two devices never mix one period's start with another's end. One period SHALL be stored at a time; setting a new one replaces it.
@@ -31,7 +36,7 @@ For each covered series with a calendar rule, every occurrence whose date is wit
 - **THEN** each skipped occurrence has one record and the series has one due date
 
 ### Requirement: While away
-While the user's logical today (OpenSpec `date-time-preferences`) is within the stored period, Today's title SHALL read "Away until <day>", and Today's menu SHALL offer **End now**, which clears the stored period and leaves the skips in place. When the period pauses reminders (the default), no reminder SHALL be delivered for the user by the server on any channel or by any device as a local notification, and no daily digest SHALL be sent; reminders held this way SHALL be dropped, not delivered later. From the day after the period, reminders and the digest SHALL resume. A malformed stored value SHALL read as no period and SHALL be kept.
+While the user's logical today (OpenSpec `date-time-preferences`) is within the stored period, Today's title SHALL read "Away until <day>", and Today's menu SHALL offer **End now**, which clears the stored period and leaves the skips in place. When the period pauses reminders (the default), no reminder SHALL be delivered for the user by the server on any channel or by any device as a local notification, and no email digest SHALL be sent; reminders held this way SHALL be dropped, not delivered later. From the day after the period, reminders and the digest SHALL resume. A malformed stored value SHALL read as no period and SHALL be kept.
 
 #### Scenario: Away until Friday
 - **WHEN** today is Wednesday and the period ends on Friday

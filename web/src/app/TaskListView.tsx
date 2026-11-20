@@ -33,6 +33,7 @@ import type { AccountRole, Label, Task } from '../lib/types'
 import { Button, frameKind, hueFor, MenuGroup, MenuItem, MenuSeparator, PAGE_FRAME, PageHeader, useFinePointer } from '../ui'
 import { openAssistantWith, useAssistantStatus } from '../lib/assistantStatus'
 import { act } from './actionError'
+import { AwayHost, AwayMenuItems, useAwayMeta } from './away/AwayMenu'
 import { offerArchiveAfterCompletion } from './ArchivePrompt'
 import { useWorkspaceName } from './workspaceNav'
 import { BoardView } from './BoardView'
@@ -405,7 +406,7 @@ export function TaskListView({ route, userId, userRole }: { route: ListRoute; us
   // Today's planned and tracked totals sit in the header's meta, not a new row (time-tracking D4).
   const listedTasks = useMemo(() => (route.view === 'today' ? m.ownRows.map((r) => r.task) : []), [route.view, m.ownRows])
   const totals = useDayTotals(listedTasks, today, route.view === 'today')
-  const todayMeta /* with the closed list's "3 of 5 · 4 done" (today-closed-list D1, D6) */ = [m.dt.formatDate(today, 'heading'), closedListMeta(m.closed), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
+  const todayMeta /* with the closed list's "3 of 5 · 4 done" (today-closed-list D1, D6) and "Away until Friday" (away-periods D4) */ = [m.dt.formatDate(today, 'heading'), useAwayMeta(today, route.view === 'today'), closedListMeta(m.closed), dayTotalsText(totals.planned, totals.tracked)].filter(Boolean).join(' · ')
   const meta = useWithMethod(methodMove, route.view === 'today' ? todayMeta : route.view === 'label' ? rows.length : route.view === 'inbox' ? inbox.meta : undefined)
   const methodSubtitle = useWithMethod(methodMove, undefined)
   const title = listTitle(route.view, currentProject?.name, currentLabel?.name, currentPlace?.name)
@@ -577,14 +578,17 @@ function ListHeader({ route, title, label, meta, subtitle, briefing, actions, ph
     </MenuGroup>
   )
   const phoneItems = route.view !== 'inbox' && route.view !== 'label' && items.length > 0 ? <PhoneMenuItems items={items} /> : null
-  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <ReplanTodayItem />}{briefItem}</> : briefItem || null
+  const own = phoneItems || toggle ? <>{phoneItems}{phoneItems && toggle && <MenuSeparator />}{toggle}{startItem}{route.view === 'upcoming' && <ProjectionsMenuItem surface="upcoming" />}{upcomingItem}{agendaItem}{assigneesItem}{partsItem}{closedItems}{route.view === 'today' && <><ReplanTodayItem /><AwayMenuItems /></>}{briefItem}</> : briefItem || null
   // Print… ends every list's menu (print-lists); the Inbox and a label have their own menu.
   return (
-    <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
-      overflow={menu || (!own && !canPrint()) ? undefined : <>{own}{own && canPrint() && <MenuSeparator />}<PrintMenuItem /></>}
-      leading={label && <span className="h-3 w-3 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} />}
-      meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
-      briefing={briefing && <BriefingText briefing={briefing} />} />
+    <>
+      <PageHeader title={title} help={HELP_SCREENS[route.view] ?? 'inbox'} actions={phone ? phone.slots : actions} barActions={!!phone}
+        overflow={menu || (!own && !canPrint()) ? undefined : <>{own}{own && canPrint() && <MenuSeparator />}<PrintMenuItem /></>}
+        leading={label && <span className="h-3 w-3 rounded-full bg-hue-solid" data-hue={hueFor(label.color)} />}
+        meta={meta} subtitle={subtitle} menu={menu} kind={route.view === 'today' || route.view === 'upcoming' ? 'day' : 'tool'}
+        briefing={briefing && <BriefingText briefing={briefing} />} />
+      {route.view === 'today' && <AwayHost />}
+    </>
   )
 }
 
