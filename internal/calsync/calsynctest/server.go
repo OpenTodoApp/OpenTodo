@@ -37,7 +37,11 @@ type Calendar struct {
 	Comps    []string // VEVENT by default
 	ReadOnly bool
 	TimeZone string // IANA, sent as calendar-timezone
-	objects  map[string]*Object
+	// QueryStatus, when non-zero, is the HTTP status a calendar-query (REPORT)
+	// answers with, to model a calendar that cannot be read — like Google's
+	// virtual Week Numbers/Holidays calendars answering 409 (see #1627).
+	QueryStatus int
+	objects     map[string]*Object
 	// log records changes for sync-collection: seq → member, deleted.
 	log []change
 }
@@ -328,6 +332,10 @@ func (s *Server) collection(w http.ResponseWriter, r *http.Request, id string, c
 		}
 		s.multistatus(w, inner.String())
 	case "REPORT":
+		if c.QueryStatus != 0 {
+			http.Error(w, "forced", c.QueryStatus)
+			return
+		}
 		s.report(w, base, c, body)
 	default:
 		http.Error(w, "no", http.StatusMethodNotAllowed)
