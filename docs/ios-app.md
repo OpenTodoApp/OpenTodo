@@ -50,7 +50,7 @@ The app opens on its background colour, light or dark with the phone, and shows 
 
 ## Offline
 
-The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker, so it needs the network to start and says so when there is none. For an offline start, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
+The app from TestFlight or the App Store opens any server, and iOS gives such an app no service worker. When the server is unreachable at launch, the app opens from its last copy in the web view's cache and reads the tasks it already holds, and syncs once the server answers again; the first launch, before the app has loaded once, still needs the network, and says so when there is none. For a full offline start with the precache, use the [installed web app](install-phone.md#iphone-and-ipad), or build the app for your one server: set `OPENTODO_APP_BOUND_HOST=todo.example.com` when you build, and it gets the whole installed-web-app treatment, the service worker, the precache and an offline start.
 
 ## Sharing into OpenTodo
 
