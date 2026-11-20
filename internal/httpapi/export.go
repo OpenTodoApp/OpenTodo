@@ -43,7 +43,9 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	// writes exactly these members (the per-entity REST collections keep the
 	// loop-derived keys the analyzer could never read, unchanged from before).
 	surfaceJSON(w, http.StatusOK, map[string]any{
-		"format": "", "version": 0, "exportedAt": "", "userId": "",
+		// Real scalar values: the site bundle reads the export's format and version
+		// from this line (scripts/site-bundle.mjs), and streamExport writes them.
+		"format": "opentodo-export", "version": 1, "exportedAt": "", "userId": "",
 		"comments": []opsync.Entity(nil), "attachments": []opsync.Entity(nil),
 		"time_entries": []opsync.Entity(nil), "habit_tallies": []opsync.Entity(nil),
 		"places": []opsync.Entity(nil), "themes": []opsync.Entity(nil),
