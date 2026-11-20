@@ -202,8 +202,10 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	}
 	s.MCPOAuth = mcpoauth.New(db)
 	s.Push = openPush(cfg, o, db, s.Sync, log)
-	if s.Push != nil {
-		s.DavPush.Send = s.Push
+	if s.Push != nil && s.Hooks != nil {
+		// One outbound policy for registering and sending (caldav-push): the
+		// webhook client, which honours "allow private targets" like CheckTarget.
+		s.DavPush.Send = s.Push.Through(s.Hooks.Client())
 	}
 	s.Channels = openChannels(ctx, cfg, o, db, s.Sync, s.Push, s.Hooks, log)
 	if s.Channels != nil {

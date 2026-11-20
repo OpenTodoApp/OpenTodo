@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
@@ -17,6 +19,13 @@ import (
 // MaxUsersPerRun caps the accounts one run looks at, so a server with many
 // subscriptions never spins; the rest are due again on the next run.
 const MaxUsersPerRun = 50
+
+// The run's time limits, so push resources that accept a connection and never
+// answer cannot stall the tenant's other jobs (reminders run in the same
+// scheduler). Accounts are served by push.SendWorkers workers at once; one
+// account's sends stop after push.UserSendBudget, the whole run after RunBudget,
+// and what is left is due again on the next run.
+const RunBudget = time.Minute
 
 // Changes is what changed in the calendars an app password sees since a cursor,
 // as a sync-collection report would list it (design D5).
@@ -50,6 +59,8 @@ type Job struct {
 	Changes ChangesFunc
 	Send    Sender
 	Log     *slog.Logger
+	// UserBudget and RunLimit are push.UserSendBudget and RunBudget; tests shorten them.
+	UserBudget, RunLimit time.Duration
 }
 
 func (j *Job) log() *slog.Logger {
@@ -114,19 +125,40 @@ func (j *Job) RunOnce(ctx context.Context) {
 		users = append(users, uid)
 	}
 	sort.Strings(users)
-	done := 0
-	for _, uid := range users {
-		if done >= MaxUsersPerRun || ctx.Err() != nil {
-			return
-		}
-		ran, err := j.runUser(ctx, uid, live[uid])
-		if err != nil && ctx.Err() == nil {
-			log.Warn("davpush: user", "user", uid, "err", err)
-		}
-		if ran {
-			done++
-		}
+	limit := j.RunLimit
+	if limit <= 0 {
+		limit = RunBudget
 	}
+	ctx, cancel := context.WithTimeout(ctx, limit)
+	defer cancel()
+	var done atomic.Int64
+	var wg sync.WaitGroup
+	work := make(chan string)
+	for range min(push.SendWorkers, len(users)) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for uid := range work {
+				// An account that ran, without an error, counts toward the cap; one
+				// whose changes cannot be read does not take another's place.
+				ran, err := j.runUser(ctx, uid, live[uid])
+				if err != nil && ctx.Err() == nil {
+					log.Warn("davpush: user", "user", uid, "err", err)
+				}
+				if ran && err == nil {
+					done.Add(1)
+				}
+			}
+		}()
+	}
+	for _, uid := range users {
+		if done.Load() >= MaxUsersPerRun || ctx.Err() != nil {
+			break
+		}
+		work <- uid
+	}
+	close(work)
+	wg.Wait()
 }
 
 // runUser handles one account's due subscriptions; ran is false when none was due.
@@ -142,9 +174,18 @@ func (j *Job) runUser(ctx context.Context, uid string, subs []*Subscription) (bo
 	}
 	seen := map[key]Changes{}
 	ran := false
+	budget := j.UserBudget
+	if budget <= 0 {
+		budget = push.UserSendBudget
+	}
+	start := time.Now()
 	for _, x := range subs {
 		if cursor <= x.LastNotifiedSeq || now.Before(time.UnixMilli(x.LastSentAt).Add(MinGap)) {
 			continue
+		}
+		// Out of this account's budget or the run's: the rest wait for the next run.
+		if time.Since(start) >= budget || ctx.Err() != nil {
+			break
 		}
 		ran = true
 		k := key{x.AppPasswordID, x.LastNotifiedSeq}

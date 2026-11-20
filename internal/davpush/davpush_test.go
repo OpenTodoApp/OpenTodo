@@ -101,27 +101,52 @@ func TestRegisterLimitRenewAndExpire(t *testing.T) {
 	}
 }
 
-func TestSilenceOnlyTheUsersOwn(t *testing.T) {
+// TestSilenceOnlyTheWritersOwn (security read of caldav-push): Push-Dont-Notify
+// moves only the writing app password's subscriptions, and only past the
+// write's own ops: another password's, another user's, and one with changes
+// pending from before the write are left as they were.
+func TestSilenceOnlyTheWritersOwn(t *testing.T) {
 	s, _ := testStore(t)
 	ctx := context.Background()
-	a, _, _ := s.Register(ctx, "u1", "ap1", "inbox", reg("https://up.example.net/a"), s.Expiry(time.Time{}), 1)
-	b, _, _ := s.Register(ctx, "u1", "ap1", "inbox", reg("https://up.example.net/b"), s.Expiry(time.Time{}), 1)
-	if err := s.Silence(ctx, "someone-else", []string{a.ID}, false, 9); err != nil {
+	if _, err := s.db.Exec(`INSERT INTO app_passwords(id,user_id,name,hash,created_at) VALUES('ap2','u1','Tablet','h2',1)`); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Silence(ctx, "u1", []string{a.ID}, false, 9); err != nil {
+	exp := s.Expiry(time.Time{})
+	a, _, _ := s.Register(ctx, "u1", "ap1", "inbox", reg("https://up.example.net/a"), exp, 5)
+	b, _, _ := s.Register(ctx, "u1", "ap1", "inbox", reg("https://up.example.net/b"), exp, 5)
+	other, _, _ := s.Register(ctx, "u1", "ap2", "inbox", reg("https://up.example.net/other"), exp, 5)
+	behind, _, _ := s.Register(ctx, "u1", "ap1", Home, reg("https://up.example.net/behind"), exp, 3)
+	seq := func(id string) int64 { x, _ := s.get(ctx, id); return x.LastNotifiedSeq }
+	// Another user's request matches nothing; a listed subscription moves, the rest wait.
+	if err := s.Silence(ctx, "someone-else", "ap1", []string{a.ID}, false, 5, 9); err != nil {
 		t.Fatal(err)
 	}
-	ga, _ := s.get(ctx, a.ID)
-	gb, _ := s.get(ctx, b.ID)
-	if ga.LastNotifiedSeq != 9 || gb.LastNotifiedSeq != 1 {
-		t.Fatalf("a %d b %d", ga.LastNotifiedSeq, gb.LastNotifiedSeq)
-	}
-	if err := s.Silence(ctx, "u1", nil, true, 12); err != nil {
+	if err := s.Silence(ctx, "u1", "ap1", []string{a.ID}, false, 5, 9); err != nil {
 		t.Fatal(err)
 	}
-	if gb, _ = s.get(ctx, b.ID); gb.LastNotifiedSeq != 12 {
-		t.Fatalf("all: b %d", gb.LastNotifiedSeq)
+	if seq(a.ID) != 9 || seq(b.ID) != 5 {
+		t.Fatalf("listed: a %d b %d", seq(a.ID), seq(b.ID))
+	}
+	// "*" from ap1: its own up-to-date ones move; ap2's never; one behind keeps its pending changes.
+	if err := s.Silence(ctx, "u1", "ap1", nil, true, 5, 12); err != nil {
+		t.Fatal(err)
+	}
+	if seq(b.ID) != 12 || seq(other.ID) != 5 || seq(behind.ID) != 3 {
+		t.Fatalf("all: b %d other %d behind %d", seq(b.ID), seq(other.ID), seq(behind.ID))
+	}
+	// A subscription of another password cannot be named either.
+	if err := s.Silence(ctx, "u1", "ap1", []string{other.ID}, false, 5, 15); err != nil {
+		t.Fatal(err)
+	}
+	if seq(other.ID) != 5 {
+		t.Fatalf("named other password: %d", seq(other.ID))
+	}
+	// DELETE is the registering password's own too.
+	if ok, _ := s.Delete(ctx, "u1", "ap1", other.ID); ok {
+		t.Fatal("deleted another password's subscription")
+	}
+	if ok, _ := s.Delete(ctx, "u1", "ap2", other.ID); !ok {
+		t.Fatal("could not delete its own")
 	}
 }
 

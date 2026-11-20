@@ -150,7 +150,7 @@ func (d *davRequest) pushUnregister() {
 		http.NotFound(d.w, d.r)
 		return
 	}
-	ok, err := d.s.Push.Store.Delete(d.ctx(), d.user.ID, d.path.name)
+	ok, err := d.s.Push.Store.Delete(d.ctx(), d.user.ID, d.appPassword, d.path.name)
 	if err != nil {
 		d.fail(err)
 		return
@@ -163,10 +163,11 @@ func (d *davRequest) pushUnregister() {
 }
 
 // pushDontNotify applies a successful write's Push-Dont-Notify header: the
-// user's listed registrations (all of them for *) are told about the write's
-// cursor, so the writer is not woken by its own change. Other users'
-// registration URLs match nothing.
-func (d *davRequest) pushDontNotify() {
+// listed registrations of the writing app password (all of its own for *) move
+// past the write's own ops, from before (the cursor when the write began), so
+// the writer is not woken by its own change. Another password's registrations,
+// and changes other devices made before the write, are never skipped.
+func (d *davRequest) pushDontNotify(before int64) {
 	h := d.r.Header.Get("Push-Dont-Notify")
 	if h == "" || d.s.Push.Store == nil {
 		return
@@ -190,7 +191,7 @@ func (d *davRequest) pushDontNotify() {
 	}
 	cursor, err := d.s.sync.Cursor(d.ctx(), d.user.ID)
 	if err == nil {
-		err = d.s.Push.Store.Silence(d.ctx(), d.user.ID, subIDs, all, cursor)
+		err = d.s.Push.Store.Silence(d.ctx(), d.user.ID, d.appPassword, subIDs, all, before, cursor)
 	}
 	if err != nil {
 		d.s.log.Warn("caldav push-dont-notify", "err", err)

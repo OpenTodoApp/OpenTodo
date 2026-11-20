@@ -129,9 +129,16 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		// A write that names registrations in Push-Dont-Notify does not wake them (caldav-push D5).
 		sw := &statusWriter{ResponseWriter: w}
 		d.w = sw
+		// The cursor before the write: only the write's own ops are skipped.
+		var before int64 = -1
+		if r.Header.Get("Push-Dont-Notify") != "" {
+			if c, err := s.sync.Cursor(d.ctx(), d.user.ID); err == nil {
+				before = c
+			}
+		}
 		defer func() {
-			if sw.succeeded() {
-				d.pushDontNotify()
+			if sw.succeeded() && before >= 0 {
+				d.pushDontNotify(before)
 			}
 		}()
 	}

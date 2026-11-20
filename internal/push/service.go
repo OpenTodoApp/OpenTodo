@@ -175,7 +175,7 @@ func (s *Service) Send(ctx context.Context, sub *Subscription, payload []byte, t
 		_ = s.RecordFailure(ctx, sub.ID, "stored keys are invalid")
 		return Failed, errors.New("push: stored subscription keys are invalid")
 	}
-	status, err := s.post(ctx, k, sub.Endpoint, Message{Payload: payload, P256DH: p256dh, Auth: auth, Topic: topic, TTL: MessageTTL, Urgency: "high"})
+	status, err := s.post(ctx, s.client, k, sub.Endpoint, Message{Payload: payload, P256DH: p256dh, Auth: auth, Topic: topic, TTL: MessageTTL, Urgency: "high"})
 	switch {
 	case err != nil:
 		_ = s.RecordFailure(context.WithoutCancel(ctx), sub.ID, err.Error())
@@ -210,10 +210,30 @@ func (s *Service) SendMessage(ctx context.Context, endpoint string, m Message) (
 	if err != nil {
 		return 0, err
 	}
-	return s.post(ctx, k, endpoint, m)
+	return s.post(ctx, s.client, k, endpoint, m)
 }
 
-func (s *Service) post(ctx context.Context, k *Keys, endpoint string, m Message) (int, error) {
+// Through is a sender that posts with the server's keys through another client,
+// one with another outbound policy (caldav-push: the webhook client, which
+// honours the owner's "allow private targets" as the registration check does).
+func (s *Service) Through(client *http.Client) *Through { return &Through{s: s, client: client} }
+
+// Through sends like SendMessage, through its own client.
+type Through struct {
+	s      *Service
+	client *http.Client
+}
+
+// SendMessage is Service.SendMessage through t's client.
+func (t *Through) SendMessage(ctx context.Context, endpoint string, m Message) (int, error) {
+	k, err := t.s.Keys()
+	if err != nil {
+		return 0, err
+	}
+	return t.s.post(ctx, t.client, k, endpoint, m)
+}
+
+func (s *Service) post(ctx context.Context, client *http.Client, k *Keys, endpoint string, m Message) (int, error) {
 	body, err := Encrypt(m.Payload, m.P256DH, m.Auth)
 	if err != nil {
 		return 0, err
@@ -236,7 +256,7 @@ func (s *Service) post(ctx context.Context, k *Keys, endpoint string, m Message)
 	if m.Topic != "" {
 		req.Header.Set("Topic", m.Topic)
 	}
-	resp, err := s.client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return 0, err
 	}

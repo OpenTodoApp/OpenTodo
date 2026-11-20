@@ -186,8 +186,8 @@ func (s *Store) get(ctx context.Context, id string) (*Subscription, error) {
 
 // Delete removes one of the user's subscriptions; false when it is unknown or
 // another user's.
-func (s *Store) Delete(ctx context.Context, userID, id string) (bool, error) {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM dav_push_subscriptions WHERE id = ? AND user_id = ?`, id, userID)
+func (s *Store) Delete(ctx context.Context, userID, appPasswordID, id string) (bool, error) {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM dav_push_subscriptions WHERE id = ? AND user_id = ? AND app_password_id = ?`, id, userID, appPasswordID)
 	if err != nil {
 		return false, err
 	}
@@ -195,15 +195,20 @@ func (s *Store) Delete(ctx context.Context, userID, id string) (bool, error) {
 	return n > 0, err
 }
 
-// Silence moves the user's listed subscriptions (all of them for all) to seq,
-// so a client's own write (Push-Dont-Notify) does not wake it.
-func (s *Store) Silence(ctx context.Context, userID string, subIDs []string, all bool, seq int64) error {
+// Silence keeps a client's own write (Push-Dont-Notify) from waking it: the
+// listed subscriptions (all for all) of the writing app password alone move from
+// before, the cursor when the write began, to after, its cursor once written.
+// A subscription with changes still pending from before the write keeps them,
+// so other devices' changes are never skipped; another password's subscriptions
+// are never touched.
+func (s *Store) Silence(ctx context.Context, userID, appPasswordID string, subIDs []string, all bool, before, after int64) error {
+	const set = `UPDATE dav_push_subscriptions SET last_notified_seq = ? WHERE user_id = ? AND app_password_id = ? AND last_notified_seq >= ? AND last_notified_seq < ?`
 	if all {
-		_, err := s.db.ExecContext(ctx, `UPDATE dav_push_subscriptions SET last_notified_seq = MAX(last_notified_seq, ?) WHERE user_id = ?`, seq, userID)
+		_, err := s.db.ExecContext(ctx, set, after, userID, appPasswordID, before, after)
 		return err
 	}
 	for _, id := range subIDs {
-		if _, err := s.db.ExecContext(ctx, `UPDATE dav_push_subscriptions SET last_notified_seq = MAX(last_notified_seq, ?) WHERE id = ? AND user_id = ?`, seq, id, userID); err != nil {
+		if _, err := s.db.ExecContext(ctx, set+` AND id = ?`, after, userID, appPasswordID, before, after, id); err != nil {
 			return err
 		}
 	}
