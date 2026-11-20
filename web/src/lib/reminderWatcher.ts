@@ -3,6 +3,7 @@
 // It publishes the reminders that are due right now; the UI renders them as
 // toasts. A reminder the service worker already showed as a system notification
 // for the same firing time is skipped (the shared "shown" set below).
+import Dexie, { type ObservabilitySet } from 'dexie'
 import { db, getMeta, setMeta } from './db'
 import { isDue } from './reminderTime'
 import type { Project, Reminder, Task } from './types'
@@ -156,14 +157,26 @@ export function startReminderWatcher(onChange: Listener, opts: { intervalMs?: nu
     if (upcoming?.fire_at != null && !stopped) next = setTimeout(() => void run(), Math.max(0, upcoming.fire_at - t) + 50)
   }
 
+  // A change to reminders or tasks, here or in another page of the app (Dexie forwards
+  // those as storagemutated), is looked at once: Done on an Android notification completes
+  // the task in the shell's hidden web view while this page shows its card (issue 1535).
+  const onMutated = (parts: ObservabilitySet) => { if (touchesReminders(parts)) void run() }
+  Dexie.on.storagemutated.subscribe(onMutated)
   const timer = setInterval(() => void run(), interval)
   void run()
   return {
     poke: () => void run(),
     stop() {
       stopped = true
+      Dexie.on.storagemutated.unsubscribe(onMutated)
       clearInterval(timer)
       if (next) clearTimeout(next)
     },
   }
+}
+
+/** Whether a change set names this database's reminders or tasks (keys read `idb://<db>/<table>/…`). */
+function touchesReminders(parts: ObservabilitySet): boolean {
+  const base = `idb://${db.name}/`
+  return Object.keys(parts).some((k) => k.startsWith(`${base}reminders/`) || k.startsWith(`${base}tasks/`))
 }
