@@ -109,7 +109,8 @@ ot today --all                 # with a Today limit: every task, no "Waiting for
 ot inbox                       # the Inbox: no project and no date
 ot upcoming                    # due after today
 ot list                        # every open task, soonest first
-ot list --project Home         # one project (name or id)
+ot list --project Home         # one project (name or id), subtasks under their parent
+ot list --parent 3f1d          # the direct subtasks of a task
 ot list --completed            # most recently completed first
 ot list --all --limit 20       # open and completed
 ot list --completed-after 2026-10-05 --completed-before 2026-10-12   # completed that week
@@ -158,6 +159,7 @@ ot edit bins --no-rotate                             # stop taking turns
 | Flag | Meaning |
 | --- | --- |
 | `--project <name-or-id>` | Project; `none` (edit) takes the task out of its project (into the Inbox while it has no date) |
+| `--parent <ref>` | Make the task a [subtask](#subtasks) of an open task, by id or unique id prefix; `none` (edit) moves it back to the top level |
 | `--due <when>` | `YYYY-MM-DD`, `today`, `tomorrow` or an English weekday name (next occurrence; `monday` on a Monday means next week); `none` (edit) clears the date |
 | `--time HH:MM` | Due time, 24-hour; with `ot add` and no `--due` the date is today |
 | `--priority 1..4` | 1 is highest, 4 is the default |
@@ -201,14 +203,37 @@ A `<ref>` is a full task id or an id prefix that matches exactly one non-deleted
 
 A task that is already in the requested state (`ot done` on a completed task, `ot reopen` on an open one) is reported as `unchanged`, keeps its completion time and nothing is sent; the command still exits 0. `ot edit` with values equal to the current ones sends nothing either.
 
+### Subtasks
+
+```bash
+ot add "Book hotel" --parent 3f1d          # a subtask, in its parent's project
+ot edit 8c2a --parent 3f1d                 # put an existing task under another one
+ot edit 8c2a --parent none                 # back to the top level
+ot list --parent 3f1d --json               # the direct subtasks of 3f1d
+ot done 3f1d --subtasks                    # complete it and its open subtasks
+ot rm 3f1d --subtasks                      # delete it and its subtasks
+ot edit 3f1d --project Work --subtasks     # move it and its subtasks
+```
+
+`--parent` takes an open task by id or unique id prefix. Without `--project`, `ot add` puts the subtask in its parent's project (or its Inbox). A completed parent, or a `--project` that is not the parent's, exits 2 before any request. With `ot edit`, a parent in another project moves the task to that project in the same request. The server refuses a deleted parent and a parent that is the task itself or one of its subtasks (exit 1, `invalid_input`), and nothing changes.
+
+`ot done`, `ot rm` and `ot edit` change only the tasks you name, as the [REST API](api.md#subtasks) does. Add `--subtasks` for what the app does:
+- `ot done --subtasks` completes the open subtasks at every depth;
+- `ot rm --subtasks` deletes all of them;
+- `ot edit --subtasks`, when the edit changes the project, moves them too.
+
+Each task is its own request: the subtasks before the task for `done` and `rm`, after it for `edit`. `--dry-run` lists them all, and `ot rm` asks once for the whole list. `ot reopen` reopens only the tasks named, like the app.
+
+`ot list --project` and `ot list --inbox` print each subtask under its parent, indented, and add the parent's progress (`Plan trip 1/3`: one of its three direct subtasks done). A subtask whose parent isn't listed, because it is completed for example, is printed at the top level. Other lists stay flat, and `--json` keeps the position order with `parent_id` on every task. `ot list --parent <ref>` lists the direct subtasks of a task and combines with the other list flags (`--all` adds the completed ones).
+
 ### One task's details
 
 ```bash
-ot task show 8c2a          # title, due date, deadline, location and reminders
-ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}]}
+ot task show 8c2a          # title, due date, deadline, location, parent, subtasks and reminders
+ot task show 8c2a --json   # {"task": {…}, "reminders": [{…}], "subtasks": [{…}]}
 ```
 
-`ot task show <ref>` prints a task with its due date, deadline, location and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
+`ot task show <ref>` prints a task with its due date, deadline, location, its parent path (`Parent: Plan trip › Book hotel`), its subtasks with their progress, and your reminders, one per line: "30 minutes before the due time", "At 2026-10-13 09:00", and [location reminders](location-reminders.md) as "When I arrive at Post office (150 m)" or "When I leave Home (300 m)". It only reads, so a `read` token will do. Location reminders are created in the app or through [`POST /api/v1/reminders`](api.md#reminders-and-push), not with `ot`.
 
 ### Repeating tasks ahead
 
