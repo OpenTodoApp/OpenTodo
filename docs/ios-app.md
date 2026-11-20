@@ -76,11 +76,11 @@ Whatever the app saves opens the system's save dialog, where you choose a place 
 
 ## Haptic feedback
 
-Completing a task gives the phone's success tap and picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
+Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
 
 ## Touch
 
-Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere.
+Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
 
 ## Face ID unlock
 

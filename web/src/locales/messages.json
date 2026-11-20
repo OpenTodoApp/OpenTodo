@@ -1627,6 +1627,10 @@
   "Allow notifications first.": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Allow pinch zoom": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -9917,8 +9921,6 @@
     "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "Markdown": [
-    "web/src/app/NotesEditor.tsx",
-    "web/src/app/ProjectNote.tsx",
     "web/src/app/editorCommands.ts"
   ],
   "Markdown source of the note": [
@@ -13498,6 +13500,9 @@
   "Pin {name}": [
     "web/src/app/ViewsView.tsx"
   ],
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Ping delivered: {outcome}": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -16234,6 +16239,10 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
+  "Show Markdown source": [
+    "web/src/app/NotesEditor.tsx",
+    "web/src/app/ProjectNote.tsx"
   ],
   "Show Today’s tasks before Tomorrow": [
     "web/src/app/TaskListView.tsx"

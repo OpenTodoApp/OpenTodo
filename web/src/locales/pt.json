@@ -1,4 +1,6 @@
 {
+  "Allow pinch zoom": "Permitir zoom com os dedos",
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Use os dedos para ampliar o app neste dispositivo. Desative para uma sensação mais de app.",
   "\"after completion\" only applies to day, week, month and year intervals": "“after completion” só se aplica a intervalos de dias, semanas, meses e anos",
   "(10+ characters)": "(pelo menos 10 caracteres)",
   "(archived)": "(arquivado)",
@@ -588,6 +590,7 @@
   "Publish note page…": "Publicar a página da nota…",
   "Remove {scheme}": "Remover {scheme}",
   "Select notes": "Selecionar notas",
+  "Show Markdown source": "Mostrar a fonte Markdown",
   "Show as graph": "Mostrar como grafo",
   "Show as list": "Mostrar como lista",
   "Show notes as": "Mostrar as notas como",
