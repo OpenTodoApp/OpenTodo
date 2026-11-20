@@ -13,7 +13,7 @@ Issue #1498. Ticked tasks already travel together when dragged onto the sidebar 
   - a ticked task carries its unticked subtasks;
   - a ticked subtask of a ticked task lands as a sibling right after its parent.
 - **One change.** The move is one batch with one Undo in the bulk toast ("4 tasks moved"). It is applied locally first and works offline. The ticks stay.
-- **The preview** shows the count, for example "3 tasks", on the dragged row.
+- **The preview** reads the count, for example "3 tasks", instead of the row's title.
 - A row that isn't ticked still moves alone. Sidebar drops, section headings and board columns are unchanged.
 
 Out of scope:
@@ -22,7 +22,7 @@ Out of scope:
 - label pages and saved views (their own order);
 - Today and Upcoming.
 
-No **BREAKING** change: no op field, no setting. One new string, the count on the preview, in every locale.
+No **BREAKING** change: no op field, no setting, and no new string: the preview reads "3 tasks" and the toast "3 tasks moved", both already translated.
 
 ## Capabilities
 

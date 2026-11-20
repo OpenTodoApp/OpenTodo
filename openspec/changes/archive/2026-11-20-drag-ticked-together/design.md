@@ -21,7 +21,7 @@
 When the dragged row is ticked, the moved set is the ticked tasks of the list that are shown, open and editable, in display order.
 - Each is a root of the move unless an ancestor is also ticked: then it pops out (rule 3), landing right after its ticked ancestor's block in display order.
 - A root carries its unticked descendants (rule 2).
-- If any ticked task cannot be edited, nothing moves and the bulk toast says why. This is the same rule as the sidebar drop.
+- A project's tasks share one role, so a list the user may not edit takes no drop at all, as today; `planTasksMove` refuses anything else (another list, a completed or deleted task).
 
 ### D2. Targets
 
@@ -38,7 +38,7 @@ The excluded rows (`own`) become the union of the carried subtrees, minus the ti
 
 ### D4. Preview
 
-While a ticked row is dragged with others, the drag ghost carries a count chip ("3 tasks"). The drop line is unchanged. No other chrome is added.
+While a ticked row is dragged with others, the drag ghost reads the count ("3 tasks") in place of the title. The drop line is unchanged. No other chrome is added.
 
 ## Risks / Trade-offs
 
@@ -48,4 +48,4 @@ While a ticked row is dragged with others, the drag ghost carries a count chip (
 
 ## Interface budget
 
-One count chip on the drag preview. No new control, menu item or shortcut.
+The drag preview's text. No new control, menu item, string or shortcut.
