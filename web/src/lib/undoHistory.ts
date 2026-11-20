@@ -4,37 +4,11 @@
 // recorded action clears the redo stack (applyBatch, D3), so history stays linear — you
 // cannot redo past a new edit. The batches are the last 20 the device kept, and go with
 // the rest of the local data on sign-out (signOut `clearDeviceData`).
+// The stack tops themselves (topUndo, topRedo) live in lib/undo.ts, next to the steps that
+// re-read them when they run (a fast second press, StepOptions.latest).
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type AssistantUndo } from './db'
-
-/** One step of history, named for a control or the feedback ("Undo: complete 3 tasks"). */
-export interface UndoStep {
-  id: string
-  /** What the action was ("3 tasks completed"), when the batch recorded one. */
-  label?: string
-  /** How many changes the batch made. */
-  count: number
-}
-
-const stepOf = (e: AssistantUndo): UndoStep => ({ id: e.id, ...(e.label ? { label: e.label } : {}), count: e.count })
-
-/** The batch the next Undo reverses: the most recent one not yet undone, or null. */
-export function topUndo(entries: readonly AssistantUndo[]): UndoStep | null {
-  let top: AssistantUndo | undefined
-  for (const e of entries) if (!e.undone_at && (!top || e.created_at > top.created_at)) top = e
-  return top ? stepOf(top) : null
-}
-
-/** The batch the next Redo re-applies: the one undone most recently, or null. */
-export function topRedo(entries: readonly AssistantUndo[]): UndoStep | null {
-  let top: AssistantUndo | undefined
-  for (const e of entries) {
-    // A batch undone before this feature shipped has no redo payload and cannot be redone.
-    if (e.undone_at == null || !e.redo) continue
-    if (!top || e.undone_at > top.undone_at!) top = e
-  }
-  return top ? stepOf(top) : null
-}
+import { db } from './db'
+import { topRedo, topUndo, type UndoStep } from './undo'
 
 /** The live tops of the undo and redo stacks for this device. */
 export interface History {

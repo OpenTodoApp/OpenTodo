@@ -1203,6 +1203,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -1260,6 +1261,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -24064,6 +24071,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -24121,6 +24129,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -37188,6 +37202,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -37245,6 +37260,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -43172,6 +43193,160 @@
           "Workspaces"
         ],
         "x-opentodo-policy": "signed-in.full-tokens"
+      }
+    },
+    "/api/v1/workspaces/{id}/activity": {
+      "get": {
+        "description": "every actor's events in the workspace's projects and Inbox that you can read; `?cursor=\u0026limit=\u0026from=\u0026to=\u0026project=\u0026actor=\u0026kind=`; see [Workspace activity](https://open-todo.app/docs/api/#workspace-activity)",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "getWorkspacesByIdActivity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "cursor": "example",
+                  "events": [
+                    {
+                      "actor": "example",
+                      "actorName": "Ada",
+                      "changes": [
+                        {
+                          "field": "example",
+                          "from": "example",
+                          "to": "example"
+                        }
+                      ],
+                      "device": "example",
+                      "entity": "example",
+                      "entityId": "00000000-0000-4000-8000-000000000001",
+                      "id": "00000000-0000-4000-8000-000000000001",
+                      "kind": "example",
+                      "minutes": 1,
+                      "opIds": [
+                        "00000000-0000-4000-8000-000000000001"
+                      ],
+                      "projectId": "00000000-0000-4000-8000-000000000001",
+                      "projectName": "Ada",
+                      "taskId": "00000000-0000-4000-8000-000000000001",
+                      "taskTitle": "Buy paint for the fence",
+                      "ts": 1794906000000
+                    }
+                  ],
+                  "more": false
+                },
+                "schema": {
+                  "properties": {
+                    "cursor": {
+                      "type": "string"
+                    },
+                    "events": {
+                      "items": {
+                        "properties": {
+                          "actor": {
+                            "type": "string"
+                          },
+                          "actorName": {
+                            "type": "string"
+                          },
+                          "changes": {
+                            "items": {
+                              "properties": {
+                                "field": {
+                                  "type": "string"
+                                },
+                                "from": {
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "device": {
+                            "type": "string"
+                          },
+                          "entity": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "opIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "taskTitle": {
+                            "type": "string"
+                          },
+                          "ts": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "more": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get workspace activity",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
       }
     },
     "/api/v1/workspaces/{id}/groups": {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"net/url"
 	"runtime"
@@ -151,7 +152,14 @@ func TestFeedPagesMatchWholeHistory(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				got, gotNext, _, err := (&Server{sync: se.alice.sync}).feedPage(ctx, c.uid, c.project, c.actor, c.kind, cursor, limit)
+				open := func(upTo int64) (*opsync.FeedReader, error) {
+					return se.alice.sync.FeedReader(ctx, c.uid, c.project, upTo)
+				}
+				f := feedFilter{actor: c.actor, kinds: map[string]bool{}, from: math.MinInt64, to: math.MaxInt64}
+				if c.kind != "" {
+					f.kinds[c.kind] = true
+				}
+				got, gotNext, _, err := feedPage(ctx, open, f, cursor, limit)
 				if err != nil {
 					t.Fatal(err)
 				}

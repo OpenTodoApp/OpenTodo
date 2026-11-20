@@ -29,13 +29,15 @@ export interface MenuItemProps {
   checked?: boolean
   /** With `checked`: one choice of a group (a sort order), announced as a radio item. */
   radio?: boolean
+  /** The menu stays open after the item is chosen (a choice of several kinds). */
+  keepOpen?: boolean
   /** A small visual marker after the label (a status dot, an unread count, sidebar-v2 D7); its meaning belongs in `description`. */
   marker?: ReactNode
   /** Test and script hooks (`data-help-button`). */
   [hook: `data-${string}`]: string | boolean | undefined
 }
 
-export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, radio, marker, ...hooks }: MenuItemProps) {
+export function MenuItem({ label, onSelect, icon, shortcut, description, danger, disabled, checked, radio, marker, keepOpen, ...hooks }: MenuItemProps) {
   const close = useContext(MenuCloseContext)
   const id = useId()
   const describedBy = [shortcut && `${id}-k`, description && `${id}-d`].filter(Boolean).join(' ') || undefined
@@ -51,7 +53,7 @@ export function MenuItem({ label, onSelect, icon, shortcut, description, danger,
       aria-keyshortcuts={shortcut}
       disabled={disabled}
       data-menu-label={label}
-      onClick={() => { onSelect(); close?.() }}
+      onClick={() => { onSelect(); if (!keepOpen) close?.() }}
       className={`flex w-full items-start gap-2.5 rounded-control px-2.5 py-2 text-left text-body outline-none transition duration-(--duration-ui)
         hover:bg-hover focus-visible:bg-selected focus-visible:outline-2 focus-visible:outline-solid focus-visible:-outline-offset-2 focus-visible:outline-focus
         disabled:cursor-not-allowed disabled:text-faint disabled:hover:bg-transparent

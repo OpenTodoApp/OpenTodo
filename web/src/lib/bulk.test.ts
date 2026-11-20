@@ -117,7 +117,7 @@ describe('undo store (4.1)', () => {
     const r = await applyBulk(ids, { kind: 'due', pick: 'tomorrow' }, { today: '2026-10-14' })
     await updateTask(ids[0], { due: { date: '2026-11-01' } })
     const u = await undoBatch(r.undoId!)
-    expect(u).toEqual({ restored: 7, skipped: ['t0'] })
+    expect(u).toMatchObject({ restored: 7, skipped: ['t0'] })
     expect((await db.tasks.get(ids[1]))!.due).toEqual({ date: '2026-10-12' })
     expect((await db.tasks.get(ids[0]))!.due).toEqual({ date: '2026-11-01' })
     const row = (await db.assistantUndo.get(r.undoId!))!

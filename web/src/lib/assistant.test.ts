@@ -182,7 +182,8 @@ describe('undo', () => {
     const undo = await applyChanges(ids.map((id) => reschedule(id, '2026-10-14', '2026-10-16')))
     await db.outbox.clear()
     const res = await undoChanges(undo!.id)
-    expect(res).toEqual({ restored: 12, skipped: [] })
+    // The result also names the batch it reversed (its id), which the feedback uses.
+    expect(res).toEqual({ restored: 12, skipped: [], id: undo!.id })
     for (const id of ids) expect((await db.tasks.get(id))!.due).toEqual(due('2026-10-14'))
     const queued = await db.outbox.toArray()
     expect(queued).toHaveLength(12)

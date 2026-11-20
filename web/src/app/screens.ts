@@ -45,6 +45,7 @@ export const ROUTE_SCREENS: Record<Route['view'], string | null> = {
   triage: 'inbox/triage',
   trash: 'trash',
   feed: 'updates',
+  'workspace-activity': 'workspace-activity',
   ask: 'ask',
   display: 'display',
   review: 'review',
