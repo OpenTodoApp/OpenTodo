@@ -7806,5 +7806,16 @@
   "In Quarter: the first or last day of the focused month": "在季视图中：当前聚焦月份的第一天或最后一天",
   "In Quarter: the same day of the previous or next month": "在季视图中：上个月或下个月的同一天",
   "Plan length": "规划天数",
-  "Previous quarter": "上个季度"
+  "Previous quarter": "上个季度",
+  "Add an app": "添加应用",
+  "Already on the list": "已在列表中",
+  "At most {n} apps": "最多 {n} 个应用",
+  "Don’t ask again for {scheme}: on this device": "在此设备上不再询问 {scheme}:",
+  "Links to other apps": "指向其他应用的链接",
+  "Links to these apps open after you confirm. Other links stay text.": "指向这些应用的链接在你确认后打开。其他链接仍为文本。",
+  "Open in another app?": "在其他应用中打开？",
+  "Open links to Zotero, mail or other apps from your notes": "从笔记中打开指向 Zotero、邮件或其他应用的链接",
+  "Remove {scheme}": "移除 {scheme}",
+  "This kind of link can never open": "此类链接永远不会打开",
+  "Use the app’s scheme, like zotero": "使用应用的协议名，例如 zotero"
 }

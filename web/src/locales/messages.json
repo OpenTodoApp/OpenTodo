@@ -960,6 +960,7 @@
     "web/src/app/themes/ThemePreview.tsx"
   ],
   "Add": [
+    "web/src/app/AppLinksSettings.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/assistant/MemorySettings.tsx",
@@ -1147,6 +1148,9 @@
   ],
   "Add an Ask AI or Summarise step first": [
     "web/src/lib/rules/ai.ts"
+  ],
+  "Add an app": [
+    "web/src/app/AppLinksSettings.tsx"
   ],
   "Add an estimate": [
     "web/src/app/task-detail/TaskFacts.tsx"
@@ -1683,6 +1687,9 @@
     "web/src/app/ViewsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/ui/MoveHandle.tsx"
+  ],
+  "Already on the list": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Also past ones": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -2307,6 +2314,9 @@
   "At most {MAX_FIELDS} fields": [
     "web/src/app/FieldsDialog.tsx"
   ],
+  "At most {n} apps": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "At most {n} characters": [
     "web/src/app/routines/DescribeIt.tsx",
     "web/src/lib/settingsCopy.ts"
@@ -2895,6 +2905,7 @@
     "web/src/lib/push.ts"
   ],
   "Cancel": [
+    "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/AppSignIn.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -5400,6 +5411,9 @@
   ],
   "Done|task": [
     "web/public/push-sw.js"
+  ],
+  "Don’t ask again for {scheme}: on this device": [
+    "web/src/app/AppLinkConfirm.tsx"
   ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
@@ -9458,6 +9472,14 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/attachments.ts"
   ],
+  "Links to other apps": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Links to these apps open after you confirm. Other links stay text.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "List": [
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -12612,6 +12634,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Open": [
+    "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
@@ -12691,6 +12714,9 @@
   "Open in Obsidian: {vault} › {path}": [
     "web/src/app/OriginChip.tsx"
   ],
+  "Open in another app?": [
+    "web/src/app/AppLinkConfirm.tsx"
+  ],
   "Open in graph": [
     "web/src/app/connections/ConnectionsDialog.tsx"
   ],
@@ -12710,6 +12736,9 @@
   ],
   "Open link {name}": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Open links to Zotero, mail or other apps from your notes": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Open me: I have a subtask": [
     "web/src/lib/sampleTasks.ts"
@@ -14647,6 +14676,9 @@
   ],
   "Remove {name} from {group}": [
     "web/src/app/WorkspaceGroups.tsx"
+  ],
+  "Remove {scheme}": [
+    "web/src/app/AppLinksSettings.tsx"
   ],
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
@@ -19385,6 +19417,9 @@
   "This is your only way to sign in. Add a passkey or another linked account first.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "This kind of link can never open": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "This label no longer exists.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -21123,6 +21158,9 @@
   ],
   "Use template": [
     "web/src/app/notes/NoteEditor.tsx"
+  ],
+  "Use the app’s scheme, like zotero": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Use the keyboard": [
     "web/src/app/help/HelpView.tsx"

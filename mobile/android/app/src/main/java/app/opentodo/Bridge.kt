@@ -40,6 +40,8 @@ class Bridge(
         fun biometricStore(key: ByteArray, done: (Boolean) -> Unit)
         fun biometricRead(done: (ByteArray?) -> Unit)
         fun openExternal(url: String)
+        /** app-links D6: a link into another app the page's list allows (checked by the bridge). */
+        fun openAppLink(url: String) {}
         /** theme-engine D8: colour the status and navigation bars (main thread). */
         fun setSystemBars(bars: SystemBars) {}
         /** location-reminders D4: fine (with coarse) location; done(true) when either is granted. */
@@ -108,6 +110,8 @@ class Bridge(
             }
             "biometricForget" -> BiometricKeyStore.forget(context)
             "openExternal" -> args.optString(0).takeIf { externalLink(it) }?.let { host?.openExternal(it) }
+            // app-links D6: only a scheme on the viewer's list the page passes, never a denied one.
+            "openAppLink" -> args.optString(0).takeIf { AppLink.allows(AppLink.list(args.optString(1, "[]")), it) }?.let { url -> main.post { host?.openAppLink(url) } }
             "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
             "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
             // An unknown kind is ignored, and so is every kind without a screen.
@@ -170,7 +174,7 @@ class Bridge(
             if (!play) caps += "geofences"
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
-            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "system-bars", "microphone", "files", "haptics")
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
@@ -231,6 +235,7 @@ class Bridge(
                 biometricRead: function () { return call('biometricRead', []) },
                 biometricForget: function () { send('biometricForget', []) },
                 openExternal: function (url) { send('openExternal', [String(url)]) },
+                openAppLink: function (url, schemes) { send('openAppLink', [String(url), String(schemes)]) },
                 setSystemBars: function (json) { send('setSystemBars', [String(json)]) },
                 requestMicrophone: function () { return call('requestMicrophone', []) },
                 saveFile: function (json) { return call('saveFile', [String(json)]) },

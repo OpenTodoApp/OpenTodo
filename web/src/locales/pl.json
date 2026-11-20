@@ -7806,5 +7806,16 @@
   "In Quarter: the first or last day of the focused month": "W widoku Kwartał: pierwszy lub ostatni dzień wyróżnionego miesiąca",
   "In Quarter: the same day of the previous or next month": "W widoku Kwartał: ten sam dzień poprzedniego lub następnego miesiąca",
   "Plan length": "Długość planu",
-  "Previous quarter": "Poprzedni kwartał"
+  "Previous quarter": "Poprzedni kwartał",
+  "Add an app": "Dodaj aplikację",
+  "Already on the list": "Już jest na liście",
+  "At most {n} apps": "Najwyżej {n} aplikacji",
+  "Don’t ask again for {scheme}: on this device": "Nie pytaj więcej o {scheme}: na tym urządzeniu",
+  "Links to other apps": "Linki do innych aplikacji",
+  "Links to these apps open after you confirm. Other links stay text.": "Linki do tych aplikacji otwierają się po potwierdzeniu. Inne zostają tekstem.",
+  "Open in another app?": "Otworzyć w innej aplikacji?",
+  "Open links to Zotero, mail or other apps from your notes": "Otwieraj linki do Zotero, poczty lub innych aplikacji z notatek",
+  "Remove {scheme}": "Usuń {scheme}",
+  "This kind of link can never open": "Taki link nigdy się nie otworzy",
+  "Use the app’s scheme, like zotero": "Użyj schematu aplikacji, np. zotero"
 }

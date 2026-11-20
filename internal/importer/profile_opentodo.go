@@ -122,6 +122,9 @@ func (opentodoProfile) Read(r io.Reader, opts Options) (*Parsed, error) {
 			}
 			if kind == KindUserPrefs {
 				row.Title = "Preferences"
+				// The apps a person's links may open are chosen by the person who
+				// clicks, never restored by an import (app-links D1).
+				delete(e, "app_link_schemes")
 			}
 			if kind == KindReview {
 				row.Title = "Last weekly review"
