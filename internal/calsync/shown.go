@@ -51,7 +51,13 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 				if reasonOf(err) == ReasonCalendarMissing {
 					continue // a read calendar that is gone shows nothing
 				}
-				return err
+				// A shown read calendar we cannot read must not stop the cycle:
+				// skip it this cycle and keep syncing the rest (#1627). Google's
+				// virtual calendars (Week Numbers, Holidays) answer 409 to a
+				// calendar query, so merely showing one would otherwise fail
+				// every cycle and stop all task sync.
+				r.skipShown(u, err)
+				continue
 			}
 		}
 		m, err := feeds.EnsureManaged(ctx, r.c.UserID, r.c.ID, u, strings.TrimSpace(r.c.Name+" · "+cal.Name), cal.Color)
@@ -67,6 +73,10 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		}
 		objs, err := r.tr.window(ctx, u, calfeed.StoreWindow(r.w.clock()))
 		if err != nil {
+			if u != r.c.TargetURL {
+				r.skipShown(u, err) // one unreadable shown calendar never takes the rest down (#1627)
+				continue
+			}
 			return err
 		}
 		var events []calfeed.Event
@@ -94,6 +104,12 @@ func (r *cycle) readCalendars(ctx context.Context) error {
 		r.w.Notify(r.c.UserID)
 	}
 	return nil
+}
+
+// skipShown logs that a shown read calendar could not be read this cycle and
+// was skipped, so one bad calendar never stops the task sync (#1627).
+func (r *cycle) skipShown(u string, err error) {
+	r.w.log().Warn("calendar sync: shown calendar skipped", "connection", r.c.ID, "calendar", u, "reason", reasonOf(err), "err", err)
 }
 
 func dedupe(l []string) []string {
