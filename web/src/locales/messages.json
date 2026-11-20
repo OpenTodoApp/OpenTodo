@@ -1623,6 +1623,10 @@
   "Allow notifications first.": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Allow pinch zoom": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -13506,6 +13510,9 @@
   ],
   "Pin {name}": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Ping delivered: {outcome}": [
     "web/src/app/WebhooksPanel.tsx"

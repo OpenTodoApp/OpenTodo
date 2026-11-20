@@ -284,6 +284,16 @@ export function compileTokens(tokens: readonly NoteToken[], ctx: MatchContext): 
   return (e) => all.every((any) => any.some((f) => f(e)))
 }
 
+/**
+ * The notes the page lists before the other chips apply (notes-page-own-notes D1):
+ * every kind a `kind:` chip names, or without one standalone and project notes only,
+ * since a task's description is the task's details, not a note.
+ */
+export function listedByKind(entries: readonly NoteEntry[], tokens: readonly NoteToken[]): NoteEntry[] {
+  if (tokens.some((t) => t.key === 'kind')) return entries as NoteEntry[]
+  return entries.filter((e) => e.source !== 'task')
+}
+
 /** The entries the chips keep, in the same order; null while a chip waits for the link index. */
 export function filterByTokens(entries: readonly NoteEntry[], tokens: readonly NoteToken[], ctx: MatchContext): NoteEntry[] | null {
   if (tokens.length === 0) return entries as NoteEntry[]
