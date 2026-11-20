@@ -55,13 +55,17 @@ func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	})
 	if _, started, err := s.streamExport(r.Context(), r, w, uid, false); err != nil {
 		if !started {
+			// Nothing was written: answer as a normal error, not as a file, so a
+			// browser does not save the error body as opentodo-export.json.
+			w.Header().Del("Content-Disposition")
 			s.internal(w, err)
 			return
 		}
-		// The response is already on the wire: leave the JSON object unterminated
-		// so the client rejects a truncated export rather than importing it.
+		// The object is already partly on the wire: abort the connection so the
+		// client sees a broken transfer, not a truncated document that looks
+		// complete (`curl -o` would otherwise exit 0 on an unterminated file).
 		s.log.Error("export: stream", "err", err)
-		return
+		panic(http.ErrAbortHandler)
 	}
 	s.audit.Record(r.Context(), audit.ExportRequested(uid, "json"))
 }

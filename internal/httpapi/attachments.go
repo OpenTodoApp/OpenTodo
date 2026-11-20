@@ -685,10 +685,15 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, uid stri
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="opentodo-export.zip"`)
 	zw := zip.NewWriter(w)
-	defer zw.Close()
+	// The archive is finished with its central directory only on full success (the
+	// Close at the end). Any error once bytes are on the wire aborts the connection
+	// — panic(http.ErrAbortHandler), which net/http turns into a reset — instead of
+	// a deferred Close that would hand the client a valid-looking zip whose
+	// export.json is truncated or empty (client-data-safety).
 	jw, err := zw.Create("export.json")
 	if err != nil {
-		return
+		s.log.Error("export zip: create", "err", err)
+		panic(http.ErrAbortHandler)
 	}
 	// Streamed one collection at a time (see streamExport), so a large account's
 	// ZIP export never holds the whole document in memory either. The attachment
@@ -696,35 +701,38 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, uid stri
 	attachments, _, err := s.streamExport(r.Context(), r, jw, uid, true)
 	if err != nil {
 		s.log.Error("export zip: document", "err", err)
-		return
+		panic(http.ErrAbortHandler)
 	}
 	// The account's profile picture (settings-refresh D10).
 	s.exportAvatar(zw, uid)
-	if s.blobs == nil {
-		return
+	if s.blobs != nil {
+		for _, a := range attachments {
+			id := idOf(a["id"])
+			if a.Deleted() || isNullish(a["uploaded_at"]) || !blobs.ValidID(id) {
+				continue
+			}
+			f, _, err := s.blobs.Open(storedFile(a))
+			if err != nil {
+				continue
+			}
+			name := path.Base(strings.ReplaceAll(idOf(a["name"]), "\\", "/"))
+			if name == "" || name == "." || name == "/" || strings.HasPrefix(name, "enc:") {
+				name = "file"
+			}
+			fw, err := zw.CreateHeader(&zip.FileHeader{Name: "attachments/" + id + "/" + name, Method: zip.Store})
+			if err == nil {
+				_, err = io.Copy(fw, f)
+			}
+			f.Close()
+			if err != nil {
+				s.log.Error("export zip: file", "id", id, "err", err)
+				panic(http.ErrAbortHandler)
+			}
+		}
 	}
-	for _, a := range attachments {
-		id := idOf(a["id"])
-		if a.Deleted() || isNullish(a["uploaded_at"]) || !blobs.ValidID(id) {
-			continue
-		}
-		f, _, err := s.blobs.Open(storedFile(a))
-		if err != nil {
-			continue
-		}
-		name := path.Base(strings.ReplaceAll(idOf(a["name"]), "\\", "/"))
-		if name == "" || name == "." || name == "/" || strings.HasPrefix(name, "enc:") {
-			name = "file"
-		}
-		fw, err := zw.CreateHeader(&zip.FileHeader{Name: "attachments/" + id + "/" + name, Method: zip.Store})
-		if err == nil {
-			_, err = io.Copy(fw, f)
-		}
-		f.Close()
-		if err != nil {
-			s.log.Error("export zip: file", "id", id, "err", err)
-			return
-		}
+	if err := zw.Close(); err != nil {
+		s.log.Error("export zip: close", "err", err)
+		panic(http.ErrAbortHandler)
 	}
 }
 
