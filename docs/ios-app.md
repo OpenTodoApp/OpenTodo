@@ -76,7 +76,7 @@ Whatever the app saves opens the system's save dialog, where you choose a place 
 
 ## Haptic feedback
 
-Completing a task gives the phone's success tap and picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
+Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
 
 ## Touch
 
