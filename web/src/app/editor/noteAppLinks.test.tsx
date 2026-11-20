@@ -50,6 +50,36 @@ describe('an app link the viewer allowed', () => {
     await unmount()
   })
 
+  it('opens the address the note holds, whatever the page says', async () => {
+    setAppLinkSchemes(['zotero'])
+    const id = await createNote({ title: 'Reading' })
+    const { container, unmount } = await render(<NotesEditor note={{ entity: 'note', id, notes_doc: docOf([paper]) }} readOnly />)
+    await waitFor(() => !!container.querySelector('.notes-editor [data-app-link="open"]'), 'the link')
+    const a = container.querySelector<HTMLElement>('.notes-editor [data-app-link="open"]')!
+    a.setAttribute('data-app-href', 'zotero://select/items/OTHER')
+    await click(a)
+    expect(pendingAppLink.get()?.url).toBe(url)
+    await unmount()
+  })
+
+  it('follows the note becoming editable: a plain click places the caret, and nothing takes focus', async () => {
+    setAppLinkSchemes(['zotero'])
+    const id = await createNote({ title: 'Reading' })
+    const note = { entity: 'note' as const, id, notes_doc: docOf([paper]) }
+    const r = await render(<NotesEditor note={note} readOnly />)
+    await waitFor(() => !!r.container.querySelector('.notes-editor [data-app-link="open"]'), 'the link')
+    expect(r.container.querySelector('.notes-editor [data-app-link] [tabindex="0"], .notes-editor [data-app-link][tabindex="0"]')).not.toBeNull()
+    await r.rerender(<NotesEditor note={note} readOnly={false} />)
+    await waitFor(() => r.container.querySelector('.notes-editor')?.getAttribute('contenteditable') === 'true', 'editable')
+    expect(r.container.querySelector('.notes-editor [tabindex="0"]')).toBeNull()
+    const a = r.container.querySelector<HTMLElement>('.notes-editor [data-app-link]')!
+    await click(a)
+    a.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' }))
+    await flush()
+    expect(pendingAppLink.get()).toBeNull()
+    await r.unmount()
+  })
+
   it('in an editable note keeps the link while it is typed around, and Ctrl-click asks first', async () => {
     setAppLinkSchemes(['zotero'])
     const id = await createNote({ title: 'Reading' })

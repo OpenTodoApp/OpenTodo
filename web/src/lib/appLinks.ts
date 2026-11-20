@@ -75,14 +75,13 @@ export function openAppLink(url: string): boolean {
 // ---- activation: never a native navigation (D3) ----
 
 /**
- * Where an app link's address lives on the page. An app link never carries an
+ * Where an app link's address is shown on the page. An app link never carries an
  * href, so no click, middle click, drag or read-only view can follow it past
- * openAppLink and its confirmation.
+ * openAppLink and its confirmation; what opens is always read from the data the
+ * page was drawn from (a note's document, a view's props), never this attribute.
  */
 export const APP_HREF = 'data-app-href'
 
-/** The address of a link element: an app link's, else its href. */
-export const linkHref = (a: Element): string => a.getAttribute(APP_HREF) ?? a.getAttribute('href') ?? ''
 
 type Activation = { preventDefault(): void; stopPropagation(): void }
 

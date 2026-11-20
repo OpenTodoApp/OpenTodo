@@ -18,6 +18,7 @@ import { type Mark, type MarkType, type Node as PMNode, Schema, Slice, Fragment 
 import { liftListItem, sinkListItem, splitListItem, wrapInList } from 'prosemirror-schema-list'
 import { type Command, EditorState, Plugin, PluginKey, type Transaction } from 'prosemirror-state'
 import { tableNodes } from 'prosemirror-tables'
+import { Decoration, type EditorView } from 'prosemirror-view'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
 import { APP_HREF, canOpenAppLink, isAppLink } from './appLinks'
@@ -117,8 +118,7 @@ export const schema = new Schema({
       toDOM: (m) => {
         const href = m.attrs.href as string
         if (isAppLink(href)) {
-          const open = canOpenAppLink(href)
-          return ['a', { [APP_HREF]: href, title: href, 'data-app-link': open ? 'open' : 'text', role: open ? 'link' : undefined, tabindex: open ? '0' : undefined }, 0]
+          return ['a', { [APP_HREF]: href, title: href, 'data-app-link': canOpenAppLink(href) ? 'open' : 'text' }, 0]
         }
         return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : undefined), title: href, rel: LINK_REL, target: '_blank' }, 0]
       },
@@ -696,4 +696,28 @@ export function insertBlocks(state: EditorState, nodes: PMNode[]): Transaction {
   let tr = state.tr
   for (const n of [...nodes].reverse()) tr = tr.replaceSelectionWith(n)
   return tr
+}
+
+/**
+ * In a read-only note, the app links the viewer may open take focus as links, so
+ * Enter opens them (app-links D3); an editable note keeps the caret's rules.
+ */
+export function appLinkStops(doc: PMNode): Decoration[] {
+  const out: Decoration[] = []
+  doc.descendants((node, pos) => {
+    const href = node.isText ? node.marks.find((m) => m.type.name === 'link')?.attrs.href : undefined
+    if (typeof href === 'string' && isAppLink(href) && canOpenAppLink(href)) out.push(Decoration.inline(pos, pos + node.nodeSize, { tabindex: '0', role: 'link' }))
+  })
+  return out
+}
+
+/** The address of the link at a DOM node of the editor, read from the document, never from the page. */
+export function linkHrefAt(view: EditorView, el: Node): string {
+  try {
+    const $pos = view.state.doc.resolve(view.posAtDOM(el, 0))
+    const mark = [...$pos.marks(), ...($pos.nodeAfter?.marks ?? [])].find((m) => m.type.name === 'link')
+    return typeof mark?.attrs.href === 'string' ? mark.attrs.href : ''
+  } catch {
+    return ''
+  }
 }

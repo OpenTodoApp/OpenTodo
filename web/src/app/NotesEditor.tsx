@@ -15,7 +15,7 @@ import { checkLinesIn, linesToLinks, mentionIds, sameIds } from '../lib/editorNo
 import { planLineHabits, planLineTasks, type NoteTaskHome } from '../lib/noteTasks'
 import { foldNote, mutateMany, saveNote, type Change, type PushTiming } from '../lib/ops'
 import { activeBody, activeBodyName, decodeDoc, docBytes, encodeDoc, MAX_DOC_CHARS, renderMarkdown, toModel, WARN_DOC_CHARS } from '../lib/richtext'
-import { applyBody, createState, insertBlocks, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
+import { appLinkStops, applyBody, createState, insertBlocks, linkHrefAt, linkSpaceKey, markdownSlice, pmToModel, remoteKey, schema, writeBody, type EditorHooks } from '../lib/richtextEditor'
 import { pushPendingNotes } from '../lib/sync'
 import { useMe } from '../lib/timeEntries'
 import type { Suggest } from '../lib/editorSuggest'
@@ -28,7 +28,7 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { hrefOf, refOf } from '../lib/noteLinks'
 import { linkTaps } from '../lib/linkTap'
 import { safeHref } from '../lib/markdown'
-import { APP_HREF, isAppLink, linkHref, openAppLink } from '../lib/appLinks'
+import { APP_HREF, isAppLink, openAppLink } from '../lib/appLinks'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
 import type { Clock, Task } from '../lib/types'
@@ -396,7 +396,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
       state: createState(toModel(activeBody(doc)), hooks),
       editable: () => !readOnly,
       // A read-only note's headings take focus from the outline (note-outline D3).
-      decorations: (state) => (readOnly ? headingStops(state.doc) : null),
+      decorations: (state) => (readOnly ? readOnlyStops(state.doc) : null),
       attributes: { 'aria-label': t('Notes'), 'aria-multiline': 'true', role: 'textbox', class: 'notes-editor' },
       nodeViews: { ...imageViews(imageParent), ...refViews },
       clipboardTextParser: (text) => markdownSlice(text),
@@ -410,7 +410,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         return true
       },
       handleDOMEvents: { ...linkTapHandlers(),
-        ...linkClicks(readOnly),
+        ...linkClicks(),
         contextmenu: (pv, event) => !readOnly && openCellMenu(pv, event, chrome.openTableMenu),
         focus: () => {
           setEditing(true)
@@ -456,7 +456,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
   }, [taskId, unreadable]) // eslint-disable-line react-hooks/exhaustive-deps -- one editor per task; later notes_doc/readOnly values arrive through the merge effect
 
   useEffect(() => {
-    view.current?.setProps({ editable: () => !readOnly, decorations: (state) => (readOnly ? headingStops(state.doc) : null) })
+    view.current?.setProps({ editable: () => !readOnly, decorations: (state) => (readOnly ? readOnlyStops(state.doc) : null) })
   }, [readOnly])
 
   // A newer stored document (a remote merge, or our own save coming back) is
@@ -549,36 +549,48 @@ function linkTapHandlers() {
       const a = pv.editable ? taps.end(event) : null
       if (!a) return false
       event.preventDefault()
-      openTapped(a)
+      openTapped(pv, a)
       return true
     },
   }
+}
+
+/** What takes focus in a read-only note: its headings (the outline) and the app links the viewer may open. */
+function readOnlyStops(doc: import('prosemirror-model').Node) {
+  return headingStops(doc).add(doc, appLinkStops(doc))
 }
 
 /**
  * Clicks on links: Ctrl/Cmd-click opens one (a plain click places the caret). An
  * app link has no href to follow (app-links D3): in a read-only note a plain click
- * opens it, and a middle click or Enter on one with focus asks first as a click does.
+ * opens it, and a middle click, or Enter on one with focus, asks first as a click
+ * does. Its address is read from the note, never from the page (linkHrefAt), and
+ * whether the note is read-only from the view as it is now.
  */
-function linkClicks(readOnly: boolean) {
-  const appLink = (event: Event) => (event.target as HTMLElement).closest?.(`a[${APP_HREF}]`)?.getAttribute(APP_HREF) ?? ''
+function linkClicks() {
+  const appLink = (pv: EditorView, event: Event) => {
+    const a = (event.target as HTMLElement).closest?.(`a[${APP_HREF}]`)
+    return a ? linkHrefAt(pv, a) : ''
+  }
   const open = (event: Event, href: string) => { event.preventDefault(); openAppLink(href); return true }
   return {
-    click: (_pv: EditorView, event: MouseEvent) => {
+    click: (pv: EditorView, event: MouseEvent) => {
       const a = (event.target as HTMLElement).closest('a')
-      const href = a ? linkHref(a) : ''
-      if (!href || !(event.metaKey || event.ctrlKey || (readOnly && a?.hasAttribute(APP_HREF)))) return false
+      if (!a) return false
+      const app = a.hasAttribute(APP_HREF)
+      const href = app ? linkHrefAt(pv, a) : a.getAttribute('href') ?? ''
+      if (!href || !(event.metaKey || event.ctrlKey || (app && !pv.editable))) return false
       event.preventDefault()
       openHref(href)
       return true
     },
-    auxclick: (_pv: EditorView, event: MouseEvent) => { const href = appLink(event); return event.button === 1 && !!href && open(event, href) },
-    keydown: (_pv: EditorView, event: KeyboardEvent) => { const href = appLink(event); return event.key === 'Enter' && !!href && open(event, href) },
+    auxclick: (pv: EditorView, event: MouseEvent) => { const href = appLink(pv, event); return event.button === 1 && !!href && open(event, href) },
+    keydown: (pv: EditorView, event: KeyboardEvent) => { const href = !pv.editable && event.key === 'Enter' ? appLink(pv, event) : ''; return !!href && open(event, href) },
   }
 }
 
-function openTapped(a: HTMLAnchorElement): void {
-  const href = linkHref(a)
+function openTapped(pv: EditorView, a: HTMLAnchorElement): void {
+  const href = a.hasAttribute(APP_HREF) ? linkHrefAt(pv, a) : a.getAttribute('href') ?? ''
   const ref = refOf(href)
   if (ref) return openRef(ref.kind, ref.id)
   const web = safeHref(href)
