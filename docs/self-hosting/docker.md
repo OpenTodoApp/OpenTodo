@@ -17,14 +17,14 @@ cp .env.example .env        # optional
 docker compose up -d
 ```
 
-Open <http://localhost:8080>. The first visitor creates the owner account. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`. Until the owner exists, the log repeats at every start that the first person to open the server becomes its owner.
+Open <http://localhost:8080>. The first visitor creates the owner account. On a server reachable from the internet, finish setup right after starting it, or set `OPENTODO_SETUP_CODE=required`. Until the owner exists, the log repeats at every start that the first person to open the server becomes its owner. On a fresh install you may also see, once, `a request came from a trusted proxy address without X-Forwarded-For`: Docker's port publishing hands the connection over from its bridge address. With no reverse proxy in front, it is harmless; behind one, make the proxy add `X-Forwarded-For` ([Behind a reverse proxy](#behind-a-reverse-proxy)).
 
 ### The setup code
 
 The setup code is off by default. Set `OPENTODO_SETUP_CODE=required` (in `.env`, or `-e OPENTODO_SETUP_CODE=required`) to turn it on: then, while no owner exists, the setup screen asks for a **setup code** when it is opened from another machine or through a reverse proxy, so nobody can claim a fresh server before you do. Your local network is not exempt: behind Docker's port publishing, a NAT or a rootless container, a visitor from the internet can look like a local address. Only a browser on the server itself, connecting directly, needs no code. The server generates the code when it starts without an owner and prints it once in its log:
 
 ```bash
-docker logs opentodo            # or: docker compose logs opentodo
+docker compose logs opentodo    # or, without Compose: docker logs opentodo
 ```
 
 ```text

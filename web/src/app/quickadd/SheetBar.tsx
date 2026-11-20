@@ -64,8 +64,10 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             </span>
           )
         })}
+        {/* A tap target for the same action as the toolbar's Project and Label below, so hidden from
+            assistive technology and the tab order: a screen reader met each name twice. */}
         {placeholders.map((k) => (
-          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)}
+          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-hidden="true" tabIndex={-1}
             className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-input px-2.5 text-body text-faint">
             <Icon name={FIELD_ICON[k]} size={14} />{FIELD_NAME[k]}
           </button>

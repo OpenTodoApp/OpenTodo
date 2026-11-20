@@ -87,7 +87,7 @@
     "web/src/app/routines/StepCard.tsx"
   ],
   "+{hidden} more": [
-    "web/src/app/YearView.tsx",
+    "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/MonthWeek.tsx"
   ],
   "+{n}": [
@@ -606,6 +606,7 @@
     "web/src/lib/slots.ts"
   ],
   "A small ring marks a day with calendar events.": [
+    "web/src/app/QuarterView.tsx",
     "web/src/app/YearView.tsx"
   ],
   "A source that no longer exists": [
@@ -2097,6 +2098,7 @@
     "web/src/app/PlanView.tsx"
   ],
   "Arrows move the focused day, {pgup} / {pgdn} a month, {open} opens it in Day. Marks count open tasks, repeating occurrences while shown and every day of a multi-day task.": [
+    "web/src/app/QuarterView.tsx",
     "web/src/app/YearView.tsx"
   ],
   "As a page": [
@@ -2766,7 +2768,8 @@
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/shortcuts/Spotlight.tsx",
     "web/src/app/task-list/ListChrome.tsx",
-    "web/src/lib/settingsCopy.ts"
+    "web/src/lib/settingsCopy.ts",
+    "web/src/lib/shortcuts.ts"
   ],
   "Calendar accounts": [
     "web/src/lib/settingsCopy.ts"
@@ -2912,6 +2915,7 @@
     "web/src/app/OAuthConsent.tsx",
     "web/src/app/PasswordSection.tsx",
     "web/src/app/PendingInvitations.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/ReauthDialog.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RestoreSection.tsx",
@@ -4521,6 +4525,7 @@
   "Custom…": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/DefaultRemindersSettings.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -4709,9 +4714,6 @@
     "web/src/app/calendar/SpanBand.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
   ],
-  "Day, Week, Month, Plan and Year calendar": [
-    "web/src/lib/shortcuts.ts"
-  ],
   "Day-month": [
     "web/src/app/DateTimeSettings.tsx"
   ],
@@ -4722,6 +4724,7 @@
     "web/src/app/method/loop/ReviewMove.tsx"
   ],
   "Days": [
+    "web/src/app/PlanView.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
@@ -7348,6 +7351,9 @@
   "Go to Calendar (Plan)": [
     "web/src/app/palette/registry.ts"
   ],
+  "Go to Calendar (Quarter)": [
+    "web/src/app/palette/registry.ts"
+  ],
   "Go to Calendar (Week)": [
     "web/src/app/palette/registry.ts"
   ],
@@ -7476,6 +7482,9 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Go to the Calendar as Plan: the next days as columns with their capacity": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Go to the Calendar as Quarter: three months at a glance": [
     "web/src/lib/shortcuts.ts"
   ],
   "Go to the Calendar as Week": [
@@ -8266,6 +8275,30 @@
     "web/src/lib/shortcuts.ts"
   ],
   "In Plan: the span one week later": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: back to today": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: move the focused day a day or a week, across month edges": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: next quarter, keeping the day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: open the focused day in Day view": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: previous quarter, keeping the day": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: return the focus to the page header": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: the first or last day of the focused month": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "In Quarter: the same day of the previous or next month": [
     "web/src/lib/shortcuts.ts"
   ],
   "In Reminders and to-do apps: tick tasks off there.": [
@@ -9899,8 +9932,6 @@
     "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "Markdown": [
-    "web/src/app/NotesEditor.tsx",
-    "web/src/app/ProjectNote.tsx",
     "web/src/app/editorCommands.ts"
   ],
   "Markdown source of the note": [
@@ -10857,6 +10888,7 @@
     "web/src/lib/sectorNames.ts"
   ],
   "Next quarter": [
+    "web/src/app/QuarterView.tsx",
     "web/src/lib/sectorNames.ts"
   ],
   "Next run:": [
@@ -12024,6 +12056,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Number of days": [
+    "web/src/app/PlanView.tsx",
     "web/src/app/filter/ConditionEditor.tsx"
   ],
   "Number of months": [
@@ -13530,6 +13563,9 @@
   "Plan from this frame": [
     "web/src/app/calendar/FrameBand.tsx"
   ],
+  "Plan length": [
+    "web/src/app/PlanView.tsx"
+  ],
   "Plan next week instead": [
     "web/src/app/objectives/ReviewObjectives.tsx"
   ],
@@ -13680,6 +13716,9 @@
   ],
   "Previous project": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Previous quarter": [
+    "web/src/app/QuarterView.tsx"
   ],
   "Previous task": [
     "web/src/app/task-detail/TaskPageView.tsx"
@@ -14150,7 +14189,9 @@
     "web/src/app/QrCode.tsx"
   ],
   "Quarter": [
-    "web/src/app/task-detail/SectorChoice.tsx"
+    "web/src/app/CalendarRange.tsx",
+    "web/src/app/task-detail/SectorChoice.tsx",
+    "web/src/lib/shortcuts.ts"
   ],
   "Query": [
     "web/src/app/calendar/QueryFilterDialog.tsx"
@@ -14204,6 +14245,7 @@
     "web/src/app/FieldsDialog.tsx"
   ],
   "Q{n} {year}": [
+    "web/src/app/QuarterView.tsx",
     "web/src/lib/sectorNames.ts"
   ],
   "Radius": [
@@ -14222,6 +14264,7 @@
     "web/src/app/CalendarView.tsx",
     "web/src/app/MonthView.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/QuarterView.tsx",
     "web/src/app/YearView.tsx"
   ],
   "Re-enable": [
@@ -15384,6 +15427,7 @@
     "web/src/app/LocationReminderEditor.tsx",
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NotificationChannelEditor.tsx",
+    "web/src/app/PlanView.tsx",
     "web/src/app/RemindersField.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/SavedViewView.tsx",
@@ -16209,6 +16253,10 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
+  "Show Markdown source": [
+    "web/src/app/NotesEditor.tsx",
+    "web/src/app/ProjectNote.tsx"
   ],
   "Show Today’s tasks before Tomorrow": [
     "web/src/app/TaskListView.tsx"
@@ -20011,6 +20059,7 @@
     "web/src/app/ParseChips.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/PreferencesPanels.tsx",
+    "web/src/app/QuarterView.tsx",
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/TabBar.tsx",
@@ -20778,7 +20827,6 @@
     "web/src/app/TimelineView.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
-    "web/src/app/YearView.tsx",
     "web/src/app/assistant/blocks/DeadlinesBlock.tsx",
     "web/src/app/assistant/blocks/HabitBlock.tsx",
     "web/src/app/assistant/blocks/SourcesLine.tsx",
@@ -20787,6 +20835,7 @@
     "web/src/app/calendar/DeadlineMarker.tsx",
     "web/src/app/calendar/FrameBand.tsx",
     "web/src/app/calendar/FramesDialog.tsx",
+    "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/MonthRow.tsx",
     "web/src/app/calendar/PlanRow.tsx",
     "web/src/app/calendar/ReplanPreview.tsx",
@@ -23687,8 +23736,8 @@
   ],
   "over capacity": [
     "web/src/app/PlanView.tsx",
-    "web/src/app/YearView.tsx",
     "web/src/app/calendar/CapacityLine.tsx",
+    "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/PlanRow.tsx"
   ],
   "over with meetings": [
@@ -25097,6 +25146,7 @@
     "web/src/lib/facets.ts"
   ],
   "{n, plural, one {# day with events} other {# days with events}}": [
+    "web/src/app/QuarterView.tsx",
     "web/src/app/YearView.tsx"
   ],
   "{n, plural, one {# day} other {# days}}": [
@@ -25118,8 +25168,8 @@
     "web/src/app/EncryptionPanel.tsx"
   ],
   "{n, plural, one {# event} other {# events}}": [
-    "web/src/app/YearView.tsx",
     "web/src/app/auditFormat.ts",
+    "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/MonthWeek.tsx"
   ],
   "{n, plural, one {# graduated habit} other {# graduated habits}}": [
@@ -25438,9 +25488,11 @@
   "{n, plural, one {# task} other {# tasks}}": [
     "web/src/app/ClosedListSettings.tsx",
     "web/src/app/PlanView.tsx",
+    "web/src/app/QuarterView.tsx",
     "web/src/app/TemplateDialogs.tsx",
     "web/src/app/YearView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
+    "web/src/app/calendar/MonthDensityCells.tsx",
     "web/src/app/calendar/MonthWeek.tsx",
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
@@ -26239,7 +26291,7 @@
   ],
   "{title} calendar": [
     "web/src/app/MonthView.tsx",
-    "web/src/app/YearView.tsx"
+    "web/src/app/calendar/MonthDensityCells.tsx"
   ],
   "{title} is already on the list": [
     "web/src/app/reuseList.ts"
