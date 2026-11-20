@@ -23,6 +23,9 @@ final class ShellController: NSObject, ObservableObject {
     let flow: SignInFlow
     /// A main-frame navigation started and not yet committed: a policy decision now is its redirect.
     private var provisional = false
+    /// The first load of this launch has already fallen back to the web view's cache, so a
+    /// second offline failure is a real failure, not another reason to retry (#1458).
+    private var triedCache = false
     private var bridge: Bridge?
     private let refresher = UIRefreshControl()
     /// Whether that control is on, or the page handles the pull itself (pull-to-sync D4).
@@ -147,9 +150,29 @@ final class ShellController: NSObject, ObservableObject {
 
     func load() {
         flow.started(origin)
+        triedCache = false
         var request = URLRequest(url: origin)
         request.cachePolicy = .useProtocolCachePolicy
         webView.load(request)
+    }
+
+    /// Opens the app from the web view's own cache, without the network. The portable build
+    /// (the App Store one) has no service worker, so when the server is unreachable at launch
+    /// this is its offline start: the cached page boots and reads its IndexedDB, and the web
+    /// app syncs once the server answers again (#1458). A first-ever launch with nothing cached
+    /// still fails, and then the offline screen is shown.
+    private func loadFromCache() {
+        triedCache = true
+        var request = URLRequest(url: origin)
+        request.cachePolicy = .returnCacheDataDontLoad
+        webView.load(request)
+    }
+
+    /// Whether an errored load should fall back to the cache instead of showing the failure:
+    /// only an offline failure of the first load of this launch, and only once. Pinned by
+    /// ShellTests.testOfflineFirstLoadFallsBackToTheCacheOnce.
+    static func shouldRetryFromCache(kind: Failure.Kind, triedCache: Bool, loaded: Bool) -> Bool {
+        kind == .offline && !triedCache && !loaded
     }
 
     /// Opens a path of the web app in the same web view, e.g. `/?task=…` from a widget or a reminder.
@@ -192,7 +215,12 @@ final class ShellController: NSObject, ObservableObject {
     private func record(_ error: Error) {
         let nsError = error as NSError
         if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
-        failure = Failure(kind: Self.kind(of: nsError), detail: nsError.localizedDescription)
+        let kind = Self.kind(of: nsError)
+        if Self.shouldRetryFromCache(kind: kind, triedCache: triedCache, loaded: loaded) {
+            loadFromCache()
+            return
+        }
+        failure = Failure(kind: kind, detail: nsError.localizedDescription)
         reveal()
     }
 
