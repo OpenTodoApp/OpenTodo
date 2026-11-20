@@ -3887,6 +3887,117 @@
         "x-opentodo-policy": "public"
       }
     },
+    "/api/v1/away": {
+      "delete": {
+        "description": "end the away period now; its skips stay → 204",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "deleteAway",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete away",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "post": {
+        "description": "set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](https://open-todo.app/docs/api/#away)",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "postAway",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "from": "2026-12-21",
+                "to": "2026-12-27"
+              },
+              "schema": {
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pauseReminders": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "projects": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "away": "2026-12-21..2026-12-27 quiet",
+                  "skipped": 13
+                },
+                "schema": {
+                  "properties": {
+                    "away": {
+                      "type": "string"
+                    },
+                    "skipped": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Away",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
+      }
+    },
     "/api/v1/backups": {
       "get": {
         "description": "backup status, see [Backups](https://open-todo.app/docs/api/#backups)\n\nOnly the server's owner.",
@@ -15654,9 +15765,9 @@
                     {
                       "clientId": "00000000-0000-4000-8000-000000000019",
                       "clientName": "Gemini",
-                      "createdAt": 1794906000154,
+                      "createdAt": 1794906000162,
                       "id": "00000000-0000-4000-8000-000000000020",
-                      "lastUsedAt": 1794906000157,
+                      "lastUsedAt": 1794906000165,
                       "scope": "agent",
                       "workspaces": []
                     }

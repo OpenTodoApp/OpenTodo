@@ -2515,6 +2515,7 @@
       },
       "user_prefs": {
         "add_position": "string",
+        "away": "string",
         "bento_order": "string",
         "briefing": "string",
         "daily_notes": "bool",
@@ -3654,6 +3655,7 @@
     },
     "user_prefs": {
       "add_position": "string",
+      "away": "string",
       "bento_order": "string",
       "briefing": "string",
       "daily_notes": "bool",
@@ -3769,6 +3771,9 @@
       "statuses": [
         "204"
       ]
+    },
+    "DELETE /api/v1/away": {
+      "policy": "signed-in"
     },
     "DELETE /api/v1/backups/restore/safety-copies/{name}": {
       "policy": "owner-only.session-only.recent"
@@ -8378,6 +8383,23 @@
       },
       "statuses": [
         "201"
+      ]
+    },
+    "POST /api/v1/away": {
+      "policy": "signed-in",
+      "request": {
+        "from": "string",
+        "labels": "array?",
+        "pauseReminders": "boolean|null?",
+        "projects": "array?",
+        "to": "string"
+      },
+      "response": {
+        "away": "string",
+        "skipped": "number"
+      },
+      "statuses": [
+        "200"
       ]
     },
     "POST /api/v1/backups/restore": {

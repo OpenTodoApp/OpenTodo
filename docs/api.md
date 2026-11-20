@@ -272,6 +272,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
+| POST | `/api/v1/away` | yes (not `read`, not `agent`) | set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](#away) |
+| DELETE | `/api/v1/away` | yes (not `read`, not `agent`) | end the away period now; its skips stay → 204 |
 | POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
 | POST | `/api/v1/time-entries` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
@@ -757,6 +759,15 @@ Errors: `400 invalid_input` for a malformed date, `from` after `to` or a range o
 curl -sS "$OT/api/v1/tasks/<id>/occurrences?from=2026-10-12&to=2026-10-18" -H "Authorization: Bearer $TOKEN"
 # {"series_id":"<id>","rule":"every weekday","capped":false,"occurrences":[{"date":"2026-10-12","time":"18:00","state":"current"},{"date":"2026-10-13","time":"18:00","state":"projected"}, ...]}
 ```
+
+### Away
+
+An away period ([away](away.md)) skips the occurrences of your repeating tasks from `from` to `to` (both included, at most 90 days, past or future) and, unless `pauseReminders` is `false`, holds reminders and the email digest while it lasts:
+
+- `POST /api/v1/away` with `{"from": "2026-11-24", "to": "2026-11-30"}` covers every repeating task you may edit; `projects` and `labels` (ids) narrow it to those in the projects or with the labels. Each occurrence in the period is skipped as `…/occurrences/{date}/skip` skips it; a task that repeats after completion and is due in the period moves to the day after it. The answer is `{"away": "2026-11-24..2026-11-30 quiet", "skipped": 8}`, the stored period (`user_prefs.away`) and how many occurrences were skipped. Setting the same period again skips nothing more; a new period replaces the stored one.
+- `DELETE /api/v1/away` clears the period (`204`). The skips stay; they are ordinary records.
+
+The routes are ordinary task writes (`read` and `agent` tokens and tokens limited to workspaces are refused). Errors: `400 invalid_input` naming `from` or `to` for a malformed date, `from` after `to` or a period over 90 days; `404 not_found` for a project or label you can't see; `401` without credentials.
 
 ### One occurrence alone
 

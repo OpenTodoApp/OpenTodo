@@ -4,9 +4,12 @@
 // toasts. A reminder the service worker already showed as a system notification
 // for the same firing time is skipped (the shared "shown" set below).
 import Dexie, { type ObservabilitySet } from 'dexie'
+import { quietOn } from './away'
+import { logicalDay } from './dates'
 import { db, getMeta, setMeta } from './db'
 import { isDue } from './reminderTime'
 import type { Project, Reminder, Task } from './types'
+import { USER_PREFS_ID } from './userPrefs'
 
 /** How often the watcher looks (the spec allows up to a minute of delay). */
 export const WATCH_INTERVAL_MS = 15_000
@@ -47,6 +50,10 @@ export function inQuietProject(projectId: string | null | undefined, projects: M
   return false
 }
 
+/** Whether a firing at `fireAt` falls on a day of an away period that pauses reminders (away-periods D4). */
+export const heldAway = (away: string | undefined, fireAt: number | null): boolean =>
+  !!away && fireAt != null && quietOn(away, logicalDay(fireAt))
+
 /**
  * The reminders due at `now`: fired, live, not dismissed for this firing, on an open
  * task outside any trashed or archived project, and not already shown by the service
@@ -59,11 +66,14 @@ export function dueReminders(
   now: number,
   shown: ShownSet = {},
   projects: Map<string, ProjectLink> = new Map(),
+  away = '',
 ): DueReminder[] {
   const out: DueReminder[] = []
   for (const r of reminders) {
     const task = tasks.get(r.task_id)
     if (!isDue(r, task, now)) continue
+    // Away with reminders paused (away-periods D4): dropped, also once the period ends.
+    if (heldAway(away, r.fire_at)) continue
     // A graduated habit fires no reminder (habits-home D7).
     if (task?.habit_graduated_at != null) continue
     if (inQuietProject(task?.project_id, projects)) continue
@@ -85,7 +95,8 @@ export async function checkReminders(now = Date.now()): Promise<DueReminder[]> {
   if ([...tasks.values()].some((t) => t.project_id)) {
     for (const p of await db.projects.toArray()) projects.set(p.id, p)
   }
-  return dueReminders(reminders, tasks, now, await getMeta<ShownSet>(SHOWN_KEY, {}), projects)
+  const prefs = await db.userPrefs.get(USER_PREFS_ID)
+  return dueReminders(reminders, tasks, now, await getMeta<ShownSet>(SHOWN_KEY, {}), projects, prefs?.away ?? '')
 }
 
 /** Record that this device showed a reminder for its current firing time. */

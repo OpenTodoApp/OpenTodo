@@ -10,7 +10,9 @@ import { db, useDatabase } from './db'
 import { habitStats } from './habits'
 import { occurrenceId } from './ids'
 import { applyOps, completeTask, createProject, createTask, getDeviceId, resetDeviceId, updateTask } from './ops'
-import type { Op, Task } from './types'
+import { dueReminders } from './reminderWatcher'
+import { shellReminders } from './shellPublish'
+import type { Op, Reminder, Task } from './types'
 import { undoBatch } from './undo'
 import { USER_PREFS_ID } from './userPrefs'
 
@@ -47,8 +49,8 @@ const live = (seriesId: string) => db.tasks.filter((t) => t.series_id === series
 const skippedDates = async (seriesId: string) => (await live(seriesId)).filter((t) => t.skipped).map((t) => t.occurrence_date).sort()
 const dueOf = async (id: string) => (await db.tasks.get(id))?.due?.date
 
-async function habit(title: string, rule: string, due: string, extra: Partial<Task> = {}): Promise<string> {
-  const id = await createTask({ title, due: { date: due }, recurrence: rule, ...extra })
+async function habit(title: string, rule: string, due: string): Promise<string> {
+  const id = await createTask({ title, due: { date: due }, recurrence: rule })
   await updateTask(id, { habit: true })
   return id
 }
@@ -171,5 +173,24 @@ describe('Skipping inside the period', () => {
     expect(a.map((t) => t.id).sort()).toEqual([occurrenceId(stretch, '2026-11-24'), occurrenceId(stretch, '2026-11-25'), occurrenceId(stretch, '2026-11-26')].sort())
     expect(b.map((t) => t.id).sort()).toEqual(a.map((t) => t.id).sort())
     expect(await dueOf(stretch)).toBe('2026-11-27')
+  })
+})
+
+describe('While away: local notifications', () => {
+  const task = { id: 't1', title: 'Call the dentist', completed_at: null, deleted_at: null, project_id: null } as unknown as Task
+  const at = (iso: string) => new Date(`${iso}T09:00:00`).getTime()
+  const reminder = (fireAt: number) => ({ id: 'r1', task_id: 't1', kind: 'absolute', offset_minutes: null, fire_at: fireAt, delivered_at: null, dismissed_at: null, created_at: 0, deleted_at: null }) as unknown as Reminder
+  const tasks = new Map([['t1', task]])
+
+  it('a reminder inside a quiet period is not shown, then or after the period', () => {
+    const quiet = '2026-11-24..2026-11-30 quiet'
+    expect(dueReminders([reminder(at('2026-11-26'))], tasks, at('2026-11-26') + 1000, {}, new Map(), quiet)).toEqual([])
+    expect(dueReminders([reminder(at('2026-11-26'))], tasks, at('2026-12-02'), {}, new Map(), quiet)).toEqual([])
+    expect(dueReminders([reminder(at('2026-12-01'))], tasks, at('2026-12-01') + 1000, {}, new Map(), quiet)).toHaveLength(1)
+    expect(shellReminders([reminder(at('2026-11-26'))], [task], at('2026-11-25'), { titles: true, encrypted: false, away: quiet })).toEqual([])
+  })
+
+  it('a period that keeps reminders shows them', () => {
+    expect(dueReminders([reminder(at('2026-11-26'))], tasks, at('2026-11-26') + 1000, {}, new Map(), '2026-11-24..2026-11-30')).toHaveLength(1)
   })
 })
