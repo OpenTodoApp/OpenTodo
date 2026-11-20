@@ -9,6 +9,7 @@ import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
 import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
+import { setCurrentUserId } from '../lib/sharing'
 import { onSignOutElsewhere, setSyncAccount, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
@@ -70,6 +71,9 @@ type Phase =
  */
 async function prepareAccount(id: string): Promise<void> {
   await clearIfDifferentAccount(id)
+  // Stamp the owner right after the clear, before any sync, so data pulled for
+  // this account is never left under a null marker (client-data-safety).
+  await setCurrentUserId(id)
   setSyncAccount(id)
 }
 

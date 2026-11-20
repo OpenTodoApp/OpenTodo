@@ -8,7 +8,7 @@ import { useCallback } from 'react'
 import { clearBadge } from '../lib/appBadge'
 import { api } from '../lib/api'
 import { clearOwnAvatar } from '../lib/avatars'
-import { clearLocalData } from '../lib/db'
+import { clearLocalData, hasLocalData } from '../lib/db'
 import { forgetMemoryKeys } from '../lib/e2ee'
 import { forgetNoiseVolume } from '../lib/focus/prefs'
 import { clearInbox } from '../lib/shareInbox'
@@ -45,14 +45,19 @@ export async function clearDeviceData(): Promise<void> {
  * copy was left in place). Clear that copy — under the sync lock, before anything
  * new is stored or pulled — so it is neither shown to nor uploaded for the new
  * account (client-data-safety). The first sign-in on a device, and the same
- * account signing back in, both do nothing, so a re-auth keeps its unsynced work.
- * Returns whether a clear happened.
+ * account signing back in does nothing, so a re-auth keeps its unsynced work.
+ * Data left with no recorded owner (a lost marker write) is cleared too, since it
+ * cannot be shown to belong to the account signing in. Returns whether a clear
+ * happened.
  */
 export async function clearIfDifferentAccount(userId: string): Promise<boolean> {
   const previous = await currentUserId()
-  if (previous === null || previous === userId) return false
-  await clearDeviceData()
-  return true
+  if (previous === userId) return false
+  if (previous !== null || (await hasLocalData())) {
+    await clearDeviceData()
+    return true
+  }
+  return false
 }
 
 /**

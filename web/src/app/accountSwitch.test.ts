@@ -44,4 +44,17 @@ describe('a different account signing in on this device', () => {
     resetDeviceId()
     expect(await clearIfDifferentAccount('A')).toBe(false)
   })
+
+  it('clears data left with no recorded owner (a lost marker write)', async () => {
+    useDatabase(`acct-${Date.now()}-${n++}`)
+    resetDeviceId()
+    // Data on the device but no userId marker: its owner is unknown.
+    await createTask({ title: 'Ownerless task' })
+    expect(await currentUserId()).toBeNull()
+    expect(await db.tasks.count()).toBe(1)
+
+    const cleared = await clearIfDifferentAccount('A')
+    expect(cleared).toBe(true)
+    expect(await db.tasks.count()).toBe(0)
+  })
 })
