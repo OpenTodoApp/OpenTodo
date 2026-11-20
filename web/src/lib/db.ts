@@ -94,6 +94,15 @@ export interface AssistantUndo {
   inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; /** A default reminder the batch added (default-reminders): undone with it, not counted. */ followUp?: boolean }[]
   /** The clock each applied field got, to skip fields changed again since. */
   clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
+  /**
+   * Redo payload (undo-redo-history, #1488): once this batch is undone, the values to put
+   * back on redo (what the fields held before the undo) and the clock each got from the
+   * undo, so redo replays only what the undo actually changed and nothing changed since.
+   */
+  redo?: {
+    inverse: { entity: string; entityId: string; patch: Record<string, unknown>; created?: boolean; followUp?: boolean }[]
+    clocks: { entity: string; entityId: string; field: string; ts: number; device: string }[]
+  }
   undone_at?: number
   /** Who applied it (bulk-edit D5; `action` is one task's own action, ux-overhaul); rows without it come from the assistant. */
   source?: 'assistant' | 'bulk' | 'action'
