@@ -1,6 +1,6 @@
 import { errorMessage } from './i18n/errors'
 import { t } from './i18n/catalog'
-import { fetchWithTimeout, NetworkError, RequestTimeoutError, timeouts } from './http'
+import { fetchWithTimeout, FileReadError, NetworkError, RequestTimeoutError, timeouts } from './http'
 import type { Branding } from './branding'
 import type { AssistantSkill } from './assistantSkills'
 import type { AgentAccess, ApiToken, McpConsentInfo, McpOAuthClient, McpOAuthClients, McpOAuthTarget, McpStatus, TokenScope } from './assistants'
@@ -28,7 +28,7 @@ import type {
 } from './types'
 import { createSignal } from './store'
 
-export { fetchWithTimeout, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
+export { fetchWithTimeout, FileReadError, isTransientNetworkError, NetworkError, RequestTimeoutError, setRequestTimeouts, transferTimeoutMs } from './http'
 
 export class ApiError extends Error {
   /** The server's own message (English, a machine contract). */
@@ -145,9 +145,20 @@ async function send<T>(method: string, path: string, body?: unknown, opts: Reque
 
 /** Multipart upload for the import routes: the file plus the options as one JSON part. */
 async function upload<T>(path: string, file: Blob, filename: string, options: ImportOptions): Promise<T> {
+  // Read the bytes before the request. A file the system picker handed over (a content://
+  // URI on Android) can fail to stream while fetch sends it; the browser then rejects fetch
+  // with a TypeError that looks like a dropped connection, so the screen says "offline"
+  // when the real trouble is reading the file (#1606). Reading it here reports that as a
+  // file problem and sends a body already in memory.
+  let bytes: ArrayBuffer
+  try {
+    bytes = await file.arrayBuffer()
+  } catch (err) {
+    throw new FileReadError(err)
+  }
   const form = new FormData()
   form.append('options', JSON.stringify(options))
-  form.append('file', file, filename)
+  form.append('file', new Blob([bytes], { type: file.type }), filename)
   const res = await fetchWithTimeout(path, { method: 'POST', body: form, credentials: 'same-origin', timeoutMs: timeouts.transfer })
   return parse<T>(res)
 }
