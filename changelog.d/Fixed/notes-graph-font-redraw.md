@@ -1,0 +1,1 @@
+- **Notes graph: labels redraw when the web font loads.** The graph draws its labels on the canvas, so a font arriving after the first frame left them on the fallback font until the next pan or hover; the graph now redraws once the font is ready.

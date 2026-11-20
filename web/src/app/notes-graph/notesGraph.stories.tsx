@@ -37,14 +37,20 @@ for (const titles of Object.keys(TITLES)) {
 LINKS.push(['note:trip-1', 'note:home-4'], ['note:work-2', 'note:reading-1'], ['note:trip-6', 'task:secondary'], ['note:trip-0', 'task:secondary'])
 const GRAPH = buildGraph(ENTRIES, (fn) => { for (const [a, b] of LINKS) fn(a, b) }, (kind, id) => (kind === 'task' && id === 'secondary' ? { title: 'Book the ferry', projectId: 'trip', done: false } : null))
 
-/** Waits for the canvas's first frame before the visual check captures it. */
+/**
+ * Waits for the canvas's first frame before the visual check captures it, and for the web
+ * font to load first: the labels are drawn on the canvas with the font's metrics, so a font
+ * arriving after the first frame would redraw them and leave the capture non-deterministic.
+ */
 function Drawn({ children }: { children: ReactNode }) {
   const root = useRef<HTMLDivElement>(null)
   const [drawn, setDrawn] = useState(false)
   useEffect(() => {
     let frame = 0
+    let fonts = typeof document === 'undefined' || !document.fonts || document.fonts.status !== 'loading'
+    if (!fonts && document.fonts) void document.fonts.ready.then(() => { fonts = true })
     const check = () => {
-      if (root.current?.querySelector('[data-notes-graph][data-ready]')) frame = requestAnimationFrame(() => requestAnimationFrame(() => setDrawn(true)))
+      if (fonts && root.current?.querySelector('[data-notes-graph][data-ready]')) frame = requestAnimationFrame(() => requestAnimationFrame(() => setDrawn(true)))
       else frame = requestAnimationFrame(check)
     }
     check()
