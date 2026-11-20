@@ -1319,7 +1319,6 @@
   "Day reopened": "Giornata riaperta",
   "Day skipped": "Giorno saltato",
   "Day {n} of {m}": "Giorno {n} di {m}",
-  "Day, Week, Month, Plan and Year calendar": "Calendario Giorno, Settimana, Mese, Piano e Anno",
   "Day-month": "Giorno-mese",
   "Day-month, month-day or ISO": "Giorno-mese, mese-giorno o ISO",
   "Day: closed {time}": "Giornata: chiusa {time}",
@@ -7792,5 +7791,17 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
   "Indent": "Aumenta rientro",
   "Outdent": "Riduci rientro",
-  "{time}{day} your time": "{time}{day} ora tua"
+  "{time}{day} your time": "{time}{day} ora tua",
+  "Go to Calendar (Quarter)": "Vai al Calendario (Trimestre)",
+  "Go to the Calendar as Quarter: three months at a glance": "Vai al Calendario come Trimestre: tre mesi a colpo d'occhio",
+  "In Quarter: back to today": "In Trimestre: torna a oggi",
+  "In Quarter: move the focused day a day or a week, across month edges": "In Trimestre: sposta il giorno selezionato di un giorno o una settimana, anche oltre i mesi",
+  "In Quarter: next quarter, keeping the day": "In Trimestre: trimestre successivo, mantenendo il giorno",
+  "In Quarter: open the focused day in Day view": "In Trimestre: apri il giorno selezionato nella vista Giorno",
+  "In Quarter: previous quarter, keeping the day": "In Trimestre: trimestre precedente, mantenendo il giorno",
+  "In Quarter: return the focus to the page header": "In Trimestre: riporta il focus all'intestazione della pagina",
+  "In Quarter: the first or last day of the focused month": "In Trimestre: primo o ultimo giorno del mese selezionato",
+  "In Quarter: the same day of the previous or next month": "In Trimestre: lo stesso giorno del mese precedente o successivo",
+  "Plan length": "Lunghezza del piano",
+  "Previous quarter": "Trimestre precedente"
 }

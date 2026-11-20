@@ -1279,7 +1279,6 @@
   "Day reopened": "Dag opnieuw geopend",
   "Day skipped": "Dag overgeslagen",
   "Day {n} of {m}": "Dag {n} van {m}",
-  "Day, Week, Month, Plan and Year calendar": "Kalender in dag-, week-, maand-, plan- en jaarweergave",
   "Day-month": "Dag-maand",
   "Day-month, month-day or ISO": "Dag-maand, maand-dag of ISO",
   "Day: closed {time}": "Dag: afgesloten {time}",
@@ -7792,5 +7791,17 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}",
   "Indent": "Inspringen",
   "Outdent": "Uitspringen",
-  "{time}{day} your time": "{time}{day} jouw tijd"
+  "{time}{day} your time": "{time}{day} jouw tijd",
+  "Go to Calendar (Quarter)": "Ga naar Kalender (Kwartaal)",
+  "Go to the Calendar as Quarter: three months at a glance": "Ga naar de Kalender als Kwartaal: drie maanden in één oogopslag",
+  "In Quarter: back to today": "In Kwartaal: terug naar vandaag",
+  "In Quarter: move the focused day a day or a week, across month edges": "In Kwartaal: verplaats de gefocuste dag een dag of een week, ook over maandgrenzen heen",
+  "In Quarter: next quarter, keeping the day": "In Kwartaal: volgend kwartaal, dezelfde dag",
+  "In Quarter: open the focused day in Day view": "In Kwartaal: open de gefocuste dag in Dagweergave",
+  "In Quarter: previous quarter, keeping the day": "In Kwartaal: vorig kwartaal, dezelfde dag",
+  "In Quarter: return the focus to the page header": "In Kwartaal: geef de focus terug aan de paginakop",
+  "In Quarter: the first or last day of the focused month": "In Kwartaal: de eerste of laatste dag van de gefocuste maand",
+  "In Quarter: the same day of the previous or next month": "In Kwartaal: dezelfde dag van de vorige of volgende maand",
+  "Plan length": "Planduur",
+  "Previous quarter": "Vorig kwartaal"
 }

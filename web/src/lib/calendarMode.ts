@@ -1,15 +1,16 @@
-// The Calendar destination remembers Day, Week, Month, Plan or Year per device (OpenSpec
-// changes ux-overhaul, month-and-timeline-views, planner-view and year-view): `/calendar`,
-// the sidebar item and the Day | Week | Month | Plan | Year control all go through this.
+// The Calendar destination remembers Day, Week, Month, Quarter, Plan or Year per device (OpenSpec
+// changes ux-overhaul, month-and-timeline-views, planner-view, year-view and
+// quarter-view-and-plan-spans): `/calendar`, the sidebar item and the
+// Day | Week | Month | Quarter | Plan | Year control all go through this.
 // Month's "Months shown" (year-view D1) is a device choice beside it, never synced.
 import { createStoredValue, readEnum, writeString } from './deviceStorage'
 
-export type CalendarMode = 'day' | 'week' | 'month' | 'plan' | 'year'
+export type CalendarMode = 'day' | 'week' | 'month' | 'quarter' | 'plan' | 'year'
 
 const KEY = 'ot.calendar.mode'
 
 export function readCalendarMode(): CalendarMode {
-  return readEnum<CalendarMode>(KEY, ['day', 'week', 'month', 'plan', 'year'], 'day')
+  return readEnum<CalendarMode>(KEY, ['day', 'week', 'month', 'quarter', 'plan', 'year'], 'day')
 }
 
 export function rememberCalendarMode(mode: CalendarMode): void {

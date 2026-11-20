@@ -61,9 +61,9 @@ describe('the calendar on a phone', () => {
     const view = row.querySelector<HTMLElement>('[data-calendar-range]')!
     expect(view.getAttribute('aria-haspopup')).toBe('menu')
     await click(view)
-    await waitFor(() => items().length === 5, 'the five views')
+    await waitFor(() => items().length === 6, 'the six views')
     expect(items().map((i) => `${i.textContent}:${i.getAttribute('role')}:${i.getAttribute('aria-checked')}`))
-      .toEqual(['Day:menuitemradio:false', 'Week:menuitemradio:true', 'Month:menuitemradio:false', 'Plan:menuitemradio:false', 'Year:menuitemradio:false'])
+      .toEqual(['Day:menuitemradio:false', 'Week:menuitemradio:true', 'Month:menuitemradio:false', 'Quarter:menuitemradio:false', 'Plan:menuitemradio:false', 'Year:menuitemradio:false'])
     // By keyboard: the arrows move, Enter chooses; the anchor date is kept.
     await key(items()[0], 'ArrowDown')
     await key(document.activeElement!, 'ArrowDown')
@@ -103,10 +103,10 @@ describe('the calendar on a phone', () => {
     await r.unmount()
   })
 
-  it('is unchanged from 768 px: the switch of five and the Calendars button', async () => {
+  it('is unchanged from 768 px: the switch of six and the Calendars button', async () => {
     const r = await render(<CalendarView mode="week" date="2026-10-14" />)
     const header = r.container.querySelector('[data-page-header]')!
-    expect([...header.querySelectorAll('[role="group"][aria-label="Calendar range"] button')].map((b) => b.textContent)).toEqual(['Day', 'Week', 'Month', 'Plan', 'Year'])
+    expect([...header.querySelectorAll('[role="group"][aria-label="Calendar range"] button')].map((b) => b.textContent)).toEqual(['Day', 'Week', 'Month', 'Quarter', 'Plan', 'Year'])
     expect(header.querySelector('[data-calendar-range]')).toBeNull()
     await r.unmount()
   })
