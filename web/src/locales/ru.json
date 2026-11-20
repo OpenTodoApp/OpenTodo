@@ -1361,7 +1361,6 @@
   "Day reopened": "День снова открыт",
   "Day skipped": "День пропущен",
   "Day {n} of {m}": "День {n} из {m}",
-  "Day, Week, Month, Plan and Year calendar": "Календарь: день, неделя, месяц, план и год",
   "Day-month": "День-месяц",
   "Day-month, month-day or ISO": "День-месяц, месяц-день или ISO",
   "Day: closed {time}": "День: закрыт {time}",
@@ -7802,5 +7801,17 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}",
   "Indent": "Увеличить отступ",
   "Outdent": "Уменьшить отступ",
-  "{time}{day} your time": "{time}{day} по вашему времени"
+  "{time}{day} your time": "{time}{day} по вашему времени",
+  "Go to Calendar (Quarter)": "Перейти в календарь (квартал)",
+  "Go to the Calendar as Quarter: three months at a glance": "Перейти в календарь в режиме квартала: три месяца на одном экране",
+  "In Quarter: back to today": "В режиме «Квартал»: вернуться к сегодня",
+  "In Quarter: move the focused day a day or a week, across month edges": "В режиме «Квартал»: сдвинуть выбранный день на день или неделю, через границы месяцев",
+  "In Quarter: next quarter, keeping the day": "В режиме «Квартал»: следующий квартал с сохранением дня",
+  "In Quarter: open the focused day in Day view": "В режиме «Квартал»: открыть выбранный день в режиме «День»",
+  "In Quarter: previous quarter, keeping the day": "В режиме «Квартал»: предыдущий квартал с сохранением дня",
+  "In Quarter: return the focus to the page header": "В режиме «Квартал»: вернуть фокус в заголовок страницы",
+  "In Quarter: the first or last day of the focused month": "В режиме «Квартал»: первый или последний день выбранного месяца",
+  "In Quarter: the same day of the previous or next month": "В режиме «Квартал»: тот же день предыдущего или следующего месяца",
+  "Plan length": "Длина плана",
+  "Previous quarter": "Предыдущий квартал"
 }
