@@ -2,7 +2,7 @@
 
 ## 1. iOS shell
 
-- [x] 1.1 `ShellDataTests.testTheDefaultPortAsWebKitReportsItIsTheConfiguredOrigin`: a frame on port 0 is the configured `https://host`, `https://host:443` and `http://host`; never `:8443`, `:80` over https, another scheme or a sub-frame. Verify: fails on the iOS job before 1.2.
+- [x] 1.1 `ShellDataTests.testTheDefaultPortAsWebKitReportsItIsTheConfiguredOrigin`: a frame on port 0 is the configured `https://host`, `https://host:443` and `http://host`; never `:8443`, `:80` over https, another scheme or a sub-frame. Verify: before 1.2 `signature` gives `https://todo.example.com:0` for the frame and `:443` for the server, so the first assertion fails (drafts skip the iOS job and this machine has no Swift, so this was read, not run).
 - [x] 1.2 `Origin.signature(scheme:host:port:)` reads port 0 as the scheme's own default. Verify: `make ios` passes on the iOS job.
 
 ## 2. Release
