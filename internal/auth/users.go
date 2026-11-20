@@ -290,6 +290,8 @@ func (s *Service) Deactivate(ctx context.Context, actorID, targetID string) (*Ad
 			{"DELETE FROM app_sign_in_grant WHERE user_id = ?", []any{target.ID}},
 			// CalDAV app passwords are revoked too (OpenSpec `caldav`).
 			{"UPDATE app_passwords SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL", []any{now, target.ID}},
+			// Their calendar apps' push subscriptions go with them (caldav-push).
+			{"DELETE FROM dav_push_subscriptions WHERE user_id = ?", []any{target.ID}},
 			{"UPDATE invitations SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
 			// Project invite links too (OpenSpec `project-invite-links`).
 			{"UPDATE project_invites SET revoked_at = ? WHERE created_by = ? AND accepted_at IS NULL AND revoked_at IS NULL", []any{now, target.ID}},
@@ -642,6 +644,10 @@ func (s *Service) SignOutEverywhere(ctx context.Context, userID string) error {
 			return fmt.Errorf("sign out everywhere: %w", err)
 		}
 		counts[i+1], _ = res.RowsAffected()
+	}
+	// The revoked app passwords' push subscriptions go with them (caldav-push).
+	if _, err := tx.ExecContext(ctx, `DELETE FROM dav_push_subscriptions WHERE user_id = ?`, userID); err != nil {
+		return fmt.Errorf("sign out everywhere: %w", err)
 	}
 	if err := endAppSessionsTx(ctx, tx, userID); err != nil {
 		return fmt.Errorf("sign out everywhere: %w", err)

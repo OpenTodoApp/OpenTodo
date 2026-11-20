@@ -113,6 +113,7 @@ export function WorkspaceControl({ route, collapsed = false }: { route: Route; c
           )
         })}
         <MenuSeparator />
+        <MenuItem icon="activity" label={t('Activity')} onSelect={() => navigate({ view: 'workspace-activity', id: state.current })} data-workspace-activity />
         <MenuItem icon="plus" label={t('New workspace')} onSelect={requestNewWorkspace} data-new-workspace />
         <MenuItem icon="settings" label={t('Manage workspaces')} onSelect={() => navigate({ view: 'settings', section: 'workspaces' })} data-manage-workspaces />
       </Menu>

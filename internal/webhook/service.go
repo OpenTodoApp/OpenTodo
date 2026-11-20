@@ -136,6 +136,11 @@ func (s *Service) nowMs() int64 { return s.now().UnixMilli() }
 
 // ---- owner policy ----
 
+// Client is the delivery client: no proxy, no redirects, and private targets
+// refused unless the owner allowed them, as CheckTarget decides (caldav-push
+// sends through it so that registration and sending agree).
+func (s *Service) Client() *http.Client { return s.client }
+
 // AllowPrivate reports whether the owner allowed private network targets.
 func (s *Service) AllowPrivate(ctx context.Context) bool {
 	var v sql.NullString
