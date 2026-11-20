@@ -5529,7 +5529,6 @@
   "Undo is available.": "Puedes deshacerlo.",
   "Undo last restore": "Deshacer la última restauración",
   "Undo run": "Deshacer ejecución",
-  "Undo the last bulk action": "Deshacer la última acción en bloque",
   "Undo the last restore": "Deshacer la última restauración",
   "Undo this import?": "¿Deshacer esta importación?",
   "Undo {name}": "Deshacer {name}",
@@ -6608,7 +6607,6 @@
   "when label {label} is added": "cuando se añade la etiqueta {label}",
   "when label {label} is removed": "cuando se quita la etiqueta {label}",
   "when something this version does not know happens": "cuando pasa algo que esta versión no conoce",
-  "while its notice is shown": "mientras se muestra su aviso",
   "within the week": "menos de una semana",
   "without {labels}": "sin {labels}",
   "workspace, project, section and label names, and project descriptions": "nombres de espacios de trabajo, proyectos, secciones y etiquetas, y descripciones de proyectos",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# veces}}",
   "Indent": "Aumentar sangría",
   "Outdent": "Reducir sangría",
-  "{time}{day} your time": "{time}{day} tu hora"
+  "{time}{day} your time": "{time}{day} tu hora",
+  "Redone.": "Rehecho.",
+  "Redone: {n} restored.": "Rehecho: {n} restaurados.",
+  "Undo the last change": "Deshacer el último cambio",
+  "Redo the change undone last": "Rehacer el último cambio deshecho"
 }

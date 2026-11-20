@@ -1,21 +1,10 @@
-// @vitest-environment happy-dom
-// The undo/redo history controller (OpenSpec change undo-redo-history, #1488): the batch
-// log read as two stacks. Undo takes the most recent batch not yet undone; redo the one
-// undone most recently; a new action clears the redo stack.
-import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { db, type AssistantUndo } from './db'
-import { createTask, mutate, resetDeviceId } from './ops'
-import { applyBatch } from './undo'
-import { runRedo, runUndo, topRedo, topUndo } from './undoHistory'
-
-beforeEach(async () => {
-  await db.delete()
-  await db.open()
-  resetDeviceId()
-  vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('offline') }))
-})
-afterEach(() => { vi.unstubAllGlobals() })
+// The undo/redo history model (OpenSpec change undo-redo-history, #1488): the batch log read
+// as two stacks. Undo takes the most recent batch not yet undone; redo the one undone most
+// recently. (Reversal itself is covered by undo.test / undoRedo.test; the keyboard surface by
+// bulk.test.)
+import { describe, expect, it } from 'vitest'
+import type { AssistantUndo } from './db'
+import { topRedo, topUndo } from './undoHistory'
 
 const entry = (over: Partial<AssistantUndo>): AssistantUndo =>
   ({ id: 'x', created_at: 0, count: 1, inverse: [], clocks: [], source: 'action', ...over })
@@ -43,49 +32,9 @@ describe('the stack tops', () => {
     expect(topUndo([])).toBeNull()
     expect(topRedo([])).toBeNull()
   })
-})
 
-describe('runUndo / runRedo over the live log', () => {
-  it('undo reverses the most recent batch, redo re-applies it', async () => {
-    const id = await createTask({ title: 'T', priority: 1 })
-    await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action', label: 'raise priority' })
-    expect((await db.tasks.get(id))!.priority).toBe(2)
-
-    const u = await runUndo()
-    expect(u?.restored).toBe(1)
-    expect(u?.step.label).toBe('raise priority')
-    expect((await db.tasks.get(id))!.priority).toBe(1)
-    expect(await runUndo()).toBeNull() // nothing left to undo
-
-    const r = await runRedo()
-    expect(r?.restored).toBe(1)
-    expect((await db.tasks.get(id))!.priority).toBe(2)
-    expect(await runRedo()).toBeNull()
-  })
-
-  it('undoes in reverse order (newest first), then redoes in order', async () => {
-    const id = await createTask({ title: 'T', priority: 1 })
-    await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' })
-    await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 3 } }], { source: 'action' })
-
-    await runUndo() // undoes the priority-3 batch
-    expect((await db.tasks.get(id))!.priority).toBe(2)
-    await runUndo() // undoes the priority-2 batch
-    expect((await db.tasks.get(id))!.priority).toBe(1)
-
-    await runRedo() // re-applies priority-2
-    expect((await db.tasks.get(id))!.priority).toBe(2)
-    await runRedo() // re-applies priority-3
-    expect((await db.tasks.get(id))!.priority).toBe(3)
-  })
-
-  it('a new action clears the redo stack', async () => {
-    const id = await createTask({ title: 'T', priority: 1 })
-    await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' })
-    await runUndo()
-    // A fresh edit while something is undone drops the redo stack (D3).
-    await mutate('task', id, { priority: 4 })
-    await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 3 } }], { source: 'action' })
-    expect(await runRedo()).toBeNull()
+  it('carries the label only when the batch had one', () => {
+    expect(topUndo([entry({ id: 'a', created_at: 1 })])).toEqual({ id: 'a', count: 1 })
+    expect(topUndo([entry({ id: 'a', created_at: 1, label: 'Complete 2 tasks', count: 2 })])).toEqual({ id: 'a', label: 'Complete 2 tasks', count: 2 })
   })
 })

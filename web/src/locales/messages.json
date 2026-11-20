@@ -14373,6 +14373,15 @@
   "Redo": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
+  "Redo the change undone last": [
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Redone.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
+  "Redone: {n} restored.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
   "Refresh": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -20595,7 +20604,7 @@
   "Undo run": [
     "web/src/app/routines/RunHistory.tsx"
   ],
-  "Undo the last bulk action": [
+  "Undo the last change": [
     "web/src/lib/shortcuts.ts"
   ],
   "Undo the last restore": [
@@ -24590,9 +24599,6 @@
   ],
   "when something this version does not know happens": [
     "web/src/lib/rules/summary.ts"
-  ],
-  "while its notice is shown": [
-    "web/src/lib/shortcuts.ts"
   ],
   "with a note": [
     "web/src/app/habits/habitText.ts"

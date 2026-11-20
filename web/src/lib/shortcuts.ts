@@ -146,7 +146,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.escape', keys: ['Esc'], description: 'Close the panel or the picker, else clear the selection', section: 'everywhere', scope: 'list', typing: true },
   { id: 'global.help', keys: ['?'], description: 'Toggle this cheat sheet', section: 'everywhere', scope: 'global' },
   { id: 'global.sidebar', keys: ['['], description: 'Collapse or expand the sidebar (from 1024 px)', section: 'everywhere', scope: 'global' },
-  { id: 'global.undo-bulk', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last bulk action', section: 'everywhere', scope: 'global', when: 'while its notice is shown' },
+  { id: 'global.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last change', section: 'everywhere', scope: 'global' },
+  { id: 'global.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z', 'Ctrl+Y'], description: 'Redo the change undone last', section: 'everywhere', scope: 'global' },
 
   // ---- go to
   { id: 'go.inbox', keys: ['g i'], label: 'Inbox', description: 'Go to Inbox', section: 'go', scope: 'global' },
@@ -469,8 +470,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'settings.audit-export', keys: ['e'], description: 'Settings → Server → Audit log: export with the current filters while the table has focus', section: 'settings', scope: 'view', views: ['settings'], local: true, when: 'focused table' },
   { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
   // The theme editor (theme-editor D3): only while the editor is open; text fields keep their own undo.
-  { id: 'themes.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Theme editor: undo the last change', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.undo-bulk'] },
-  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'] },
+  { id: 'themes.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Theme editor: undo the last change', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.undo'] },
+  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.redo'] },
   { id: 'themes.save', keys: ['Ctrl+S', '⌘+S'], description: 'Theme editor: save the theme', section: 'settings', scope: 'view', views: ['theme-editor'], typing: true },
 
   // ---- comments and notes

@@ -6026,7 +6026,6 @@
   "Undo is available.": "Geri alma kullanılabilir.",
   "Undo last restore": "Son geri yüklemeyi geri al",
   "Undo run": "Çalıştırmayı geri al",
-  "Undo the last bulk action": "Son toplu işlemi geri al",
   "Undo the last restore": "Son geri yüklemeyi geri al",
   "Undo this import?": "Bu içe aktarma geri alınsın mı?",
   "Undo {name}": "{name} işlemini geri al",
@@ -7223,7 +7222,6 @@
   "when label {label} is added": "{label} etiketi eklendiğinde",
   "when label {label} is removed": "{label} etiketi kaldırıldığında",
   "when something this version does not know happens": "bu sürümün tanımadığı bir şey gerçekleştiğinde",
-  "while its notice is shown": "bildirimi gösterilirken",
   "with a note": "bir notla",
   "within the week": "hafta içinde",
   "without {labels}": "{labels} olmadan",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}",
   "Indent": "Girintiyi artır",
   "Outdent": "Girintiyi azalt",
-  "{time}{day} your time": "sizin saatinizle {time}{day}"
+  "{time}{day} your time": "sizin saatinizle {time}{day}",
+  "Redone.": "Yinelendi.",
+  "Redone: {n} restored.": "Yinelendi: {n} öğe geri yüklendi.",
+  "Undo the last change": "Son değişikliği geri al",
+  "Redo the change undone last": "Son geri alınan değişikliği yinele"
 }

@@ -5529,7 +5529,6 @@
   "Undo is available.": "É possível desfazer.",
   "Undo last restore": "Desfazer a última restauração",
   "Undo run": "Desfazer execução",
-  "Undo the last bulk action": "Desfazer a última ação em massa",
   "Undo the last restore": "Desfazer a última restauração",
   "Undo this import?": "Desfazer esta importação?",
   "Undo {name}": "Desfazer {name}",
@@ -6608,7 +6607,6 @@
   "when label {label} is added": "quando a etiqueta {label} é adicionada",
   "when label {label} is removed": "quando a etiqueta {label} é removida",
   "when something this version does not know happens": "quando acontece algo que esta versão não conhece",
-  "while its notice is shown": "enquanto o aviso é exibido",
   "within the week": "menos de uma semana",
   "without {labels}": "sem {labels}",
   "workspace, project, section and label names, and project descriptions": "nomes de espaços de trabalho, projetos, seções e etiquetas, e descrições de projetos",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# vez} other {# vezes}}",
   "Indent": "Aumentar recuo",
   "Outdent": "Diminuir recuo",
-  "{time}{day} your time": "{time}{day} seu horário"
+  "{time}{day} your time": "{time}{day} seu horário",
+  "Redone.": "Refeito.",
+  "Redone: {n} restored.": "Refeito: {n} restaurados.",
+  "Undo the last change": "Desfazer a última alteração",
+  "Redo the change undone last": "Refazer a última alteração desfeita"
 }

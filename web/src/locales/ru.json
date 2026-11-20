@@ -6021,7 +6021,6 @@
   "Undo is available.": "Можно отменить.",
   "Undo last restore": "Отменить последнее восстановление",
   "Undo run": "Отменить запуск",
-  "Undo the last bulk action": "Отменить последнее массовое действие",
   "Undo the last restore": "Отменить последнее восстановление",
   "Undo this import?": "Отменить этот импорт?",
   "Undo {name}": "Отменить {name}",
@@ -7217,7 +7216,6 @@
   "when label {label} is added": "когда добавляется метка {label}",
   "when label {label} is removed": "когда убирается метка {label}",
   "when something this version does not know happens": "когда происходит что-то, неизвестное этой версии",
-  "while its notice is shown": "пока отображается её уведомление",
   "with a note": "с заметкой",
   "within the week": "в течение недели",
   "without {labels}": "без {labels}",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}",
   "Indent": "Увеличить отступ",
   "Outdent": "Уменьшить отступ",
-  "{time}{day} your time": "{time}{day} по вашему времени"
+  "{time}{day} your time": "{time}{day} по вашему времени",
+  "Redone.": "Повторено.",
+  "Redone: {n} restored.": "Повторено: восстановлено {n}.",
+  "Undo the last change": "Отменить последнее изменение",
+  "Redo the change undone last": "Повторить последнее отменённое изменение"
 }

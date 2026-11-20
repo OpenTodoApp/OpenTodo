@@ -5647,7 +5647,6 @@
   "Undo is available.": "可撤销。",
   "Undo last restore": "撤销上次恢复",
   "Undo run": "撤销运行",
-  "Undo the last bulk action": "撤销上一次批量操作",
   "Undo the last restore": "撤销上一次恢复",
   "Undo this import?": "要撤销此次导入吗？",
   "Undo {name}": "撤销 {name}",
@@ -6748,7 +6747,6 @@
   "when label {label} is added": "添加标签 {label} 时",
   "when label {label} is removed": "移除标签 {label} 时",
   "when something this version does not know happens": "发生此版本未知的事件时",
-  "while its notice is shown": "显示其通知期间",
   "within the week": "一周内",
   "without {labels}": "不含 {labels}",
   "workspace, project, section and label names, and project descriptions": "工作区、项目、分组和标签名称，以及项目描述",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}",
   "Indent": "增加缩进",
   "Outdent": "减少缩进",
-  "{time}{day} your time": "你的时间 {time}{day}"
+  "{time}{day} your time": "你的时间 {time}{day}",
+  "Redone.": "已重做。",
+  "Redone: {n} restored.": "已重做：已恢复 {n} 项。",
+  "Undo the last change": "撤销上一次更改",
+  "Redo the change undone last": "重做上次撤销的更改"
 }

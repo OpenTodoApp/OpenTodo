@@ -5529,7 +5529,6 @@
   "Undo is available.": "È possibile annullare.",
   "Undo last restore": "Annulla l’ultimo ripristino",
   "Undo run": "Annulla esecuzione",
-  "Undo the last bulk action": "Annulla l’ultima azione di gruppo",
   "Undo the last restore": "Annulla l’ultimo ripristino",
   "Undo this import?": "Annullare questa importazione?",
   "Undo {name}": "Annulla {name}",
@@ -6608,7 +6607,6 @@
   "when label {label} is added": "quando viene aggiunta l'etichetta {label}",
   "when label {label} is removed": "quando viene rimossa l'etichetta {label}",
   "when something this version does not know happens": "quando succede qualcosa che questa versione non conosce",
-  "while its notice is shown": "finché il suo avviso è visibile",
   "within the week": "entro una settimana",
   "without {labels}": "senza {labels}",
   "workspace, project, section and label names, and project descriptions": "nomi di spazi di lavoro, progetti, sezioni ed etichette, e descrizioni dei progetti",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
   "Indent": "Aumenta rientro",
   "Outdent": "Riduci rientro",
-  "{time}{day} your time": "{time}{day} ora tua"
+  "{time}{day} your time": "{time}{day} ora tua",
+  "Redone.": "Ripetuto.",
+  "Redone: {n} restored.": "Ripetuto: {n} ripristinati.",
+  "Undo the last change": "Annulla l’ultima modifica",
+  "Redo the change undone last": "Ripeti l’ultima modifica annullata"
 }

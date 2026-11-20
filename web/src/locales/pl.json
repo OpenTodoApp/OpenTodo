@@ -6021,7 +6021,6 @@
   "Undo is available.": "Można cofnąć.",
   "Undo last restore": "Cofnij ostatnie przywrócenie",
   "Undo run": "Cofnij uruchomienie",
-  "Undo the last bulk action": "Cofnij ostatnią akcję zbiorczą",
   "Undo the last restore": "Cofnij ostatnie przywrócenie",
   "Undo this import?": "Cofnąć ten import?",
   "Undo {name}": "Cofnij: {name}",
@@ -7217,7 +7216,6 @@
   "when label {label} is added": "gdy zostanie dodana etykieta {label}",
   "when label {label} is removed": "gdy zostanie usunięta etykieta {label}",
   "when something this version does not know happens": "gdy wydarzy się coś, czego ta wersja nie zna",
-  "while its notice is shown": "dopóki widoczny jest jego komunikat",
   "with a note": "z notatką",
   "within the week": "w ciągu tygodnia",
   "without {labels}": "bez {labels}",
@@ -7792,5 +7790,9 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# raz} few {# razy} many {# razy} other {# raza}}",
   "Indent": "Zwiększ wcięcie",
   "Outdent": "Zmniejsz wcięcie",
-  "{time}{day} your time": "{time}{day} twojego czasu"
+  "{time}{day} your time": "{time}{day} twojego czasu",
+  "Redone.": "Ponowiono.",
+  "Redone: {n} restored.": "Ponowiono: przywrócono {n}.",
+  "Undo the last change": "Cofnij ostatnią zmianę",
+  "Redo the change undone last": "Ponów ostatnio cofniętą zmianę"
 }

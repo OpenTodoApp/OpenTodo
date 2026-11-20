@@ -6,7 +6,6 @@
 // the rest of the local data on sign-out (signOut `clearDeviceData`).
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, type AssistantUndo } from './db'
-import { redoBatch, undoBatch, type UndoResult } from './undo'
 
 /** One step of history, named for a control or the feedback ("Undo: complete 3 tasks"). */
 export interface UndoStep {
@@ -50,19 +49,4 @@ export function useUndoHistory(): History {
     const entries = await db.assistantUndo.toArray()
     return { undo: topUndo(entries), redo: topRedo(entries) }
   }, [], EMPTY) ?? EMPTY
-}
-
-/** The outcome of an undo or redo, carrying the step it acted on for the feedback. */
-export type HistoryResult = UndoResult & { step: UndoStep }
-
-/** Reverses the top of the undo stack; null when there is nothing to undo. */
-export async function runUndo(): Promise<HistoryResult | null> {
-  const top = topUndo(await db.assistantUndo.toArray())
-  return top ? { ...(await undoBatch(top.id)), step: top } : null
-}
-
-/** Re-applies the top of the redo stack; null when there is nothing to redo. */
-export async function runRedo(): Promise<HistoryResult | null> {
-  const top = topRedo(await db.assistantUndo.toArray())
-  return top ? { ...(await redoBatch(top.id)), step: top } : null
 }
