@@ -78,7 +78,7 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped in 1.5 |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped in 1.5 |
 | `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | Planned |
-| `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Planned |
+| `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped |
 | `cli-subtasks` | Subtasks in `ot`: `--parent` on `add`, `edit` and `list`, `--subtasks` cascades on `done`, `rm` and `edit`, and the tree in `list` and `task show` | Shipped |
 | `repeat-field-language` | A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | Shipped |
 | `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped |

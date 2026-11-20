@@ -4,12 +4,12 @@ summary: Going on holiday, or ill for a few days? One action skips your repeatin
 audience: user
 section: Guides
 specs: [away-periods]
-screens: [today]
+screens: []
 order: 52
 ---
 # Away
 
-<picture><source srcset="images/away-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/away-light.webp" alt="The Away dialog: from today to next Tuesday, Everything chosen, Pause reminders on, and the line Skips 21 occurrences of 3 repeating tasks above Set away."></picture>
+<picture><source srcset="images/away-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/away-light.webp" alt="The Away dialog: from today to six days later, Everything chosen, Pause reminders on, and the line Skips 21 occurrences of 3 repeating tasks above Set away."></picture>
 
 Tell OpenTodo you are away and your repeating tasks skip those days, as if you had skipped each one yourself. Habit streaks survive, nothing piles up as overdue, and reminders stay quiet until you are back.
 

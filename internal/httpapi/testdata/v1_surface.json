@@ -64,6 +64,21 @@
           "(type)": "ref:auth_status"
         }
       },
+      "away": {
+        "args": {
+          "from": "optional",
+          "to": "optional"
+        },
+        "flags": {
+          "end": "bool",
+          "keep-reminders": "bool",
+          "label": "string_list",
+          "project": "string_list"
+        },
+        "output": {
+          "(type)": "ref:away"
+        }
+      },
       "completion": {
         "args": {
           "shell": "required"
@@ -1055,6 +1070,11 @@
         "user.role": "string",
         "writes_allowed": "boolean",
         "writes_denied": "string"
+      },
+      "away": {
+        "(type)": "object",
+        "away": "string",
+        "skipped": "integer"
       },
       "comment": {
         "(type)": "object",
