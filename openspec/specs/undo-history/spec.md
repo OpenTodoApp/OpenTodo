@@ -1,6 +1,9 @@
-# Spec Delta
+# undo-history Specification
 
-## ADDED Requirements
+## Purpose
+Multi-step undo and redo on the client, free of the undo toast's deadline: the device's local log of the last 20 action batches (each with its inverse and the field clock every change got) is walked as real undo and redo stacks, reached by keyboard and from the command palette, with named steps, field-level skip when something changed again, and descriptive feedback.
+
+## Requirements
 
 ### Requirement: Undo and redo stacks free of the toast
 The client SHALL keep a local undo stack and redo stack over its stored action batches (the last 20, as today), so a person can undo recorded actions in reverse order and redo them in original order regardless of whether the undo toast has expired, been dismissed, or the view has changed. A bulk action SHALL remain one step. Undo SHALL act on the most recent not-yet-undone batch; redo SHALL act on the most recently undone batch. Recording a new action SHALL clear the redo stack. The stacks SHALL survive reloads and SHALL be cleared on sign-out. History SHALL be this device's own and SHALL NOT include other devices' or other users' actions.
@@ -22,15 +25,15 @@ The client SHALL keep a local undo stack and redo stack over its stored action b
 - **THEN** the undo and redo stacks are empty
 
 ### Requirement: Undo and redo shortcuts and controls
-Ctrl/Cmd-Z SHALL undo and Ctrl/Cmd-Shift-Z SHALL redo whenever that direction has history, and Ctrl-Y SHALL also redo on Windows and Linux. These SHALL NOT fire while focus is in a text field, text area, editable area, or an editor that owns its own undo and redo, where the platform's text undo SHALL stand instead. The client SHALL offer accessible Undo and Redo controls on desktop and on a phone, disabled when their stack is empty, each naming the next step and its task or count, for example "Undo: complete 'Pay rent'" or "Undo: 3 tasks completed". The undo toast's button SHALL use the same history.
+Ctrl/Cmd-Z SHALL undo and Ctrl/Cmd-Shift-Z SHALL redo whenever that direction has history, and Ctrl-Y SHALL also redo on Windows and Linux. These SHALL NOT fire while focus is in a text field, text area, editable area, or an editor that owns its own undo and redo, where the platform's text undo SHALL stand instead. The client SHALL also offer Undo and Redo as commands in the command palette — which is reachable on desktop (the shortcut) and on a phone (the tab bar's Search), so a person can still undo after the toast is gone — each offered while that direction has history and naming the next step and its task or count, for example "Undo: complete 'Pay rent'" or "Undo: 3 tasks completed". The undo toast's button SHALL use the same history.
 
 #### Scenario: Shortcut leaves text editing alone
 - **WHEN** the person is typing in a task's title field and presses Ctrl/Cmd-Z
 - **THEN** the field's own text is undone and no task action is undone
 
-#### Scenario: A control names the next step
+#### Scenario: A command names the next step
 - **WHEN** the most recent action completed the task "Pay rent" and nothing is being edited
-- **THEN** the Undo control reads "Undo: complete 'Pay rent'", and with no history it is present but disabled
+- **THEN** the command palette offers "Undo: complete 'Pay rent'", and with nothing left to undo it offers no Undo command
 
 ### Requirement: Descriptive feedback without a deadline
 After an undo or redo the client SHALL show a descriptive message of what it did, for example "Undid completion of 'Pay rent'", and SHALL name anything it skipped, without starting a new timed deadline for further action.
