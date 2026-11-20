@@ -11,7 +11,7 @@ import { Icon, Tooltip, ToastRegion, useToastClearance } from '../../ui'
 import { redoBatch, undoBatch, undoTaskCount } from '../../lib/undo'
 import { useUndoHistory } from '../../lib/undoHistory'
 import { cancelDepartures, emphasisMs, noMotion, withListTransition } from '../motion'
-import { ACTION_TOAST_MS, hideBulkToast, updateBulkToast, useBulkToast, useToastTimer, type BulkToast } from './toastStore'
+import { ACTION_TOAST_MS, bulkToast, hideBulkToast, showBulkToast, updateBulkToast, useBulkToast, useToastTimer, type BulkToast } from './toastStore'
 import { useShortcutScope } from '../shortcuts'
 import { t } from '../../lib/i18n'
 import { useResetOnChange } from '../../lib/useResetOnChange'
@@ -27,7 +27,12 @@ export async function undoToast(undoId: string): Promise<void> {
   // The rows Undo brings back or moves slide into place, up to the cap (motion-v2 D4).
   const r = await withListTransition(await undoTaskCount(undoId), () => undoBatch(undoId))
   const base = r.restored === 1 && r.skipped.length === 0 ? t('Undone.') : t('Undone: {n} restored.', { n: r.restored })
-  updateBulkToast({ undoId: null, result: r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base })
+  const message = r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base
+  // The toast is still up (the button was used): show the result and keep the redo offer.
+  // The toast is gone (a keyboard or palette undo past its deadline): a fresh message with
+  // no button and no new deadline, so the change is never silent (undo-history D7).
+  if (bulkToast()) updateBulkToast({ undoId: null, result: message })
+  else showBulkToast(message, null, { ttl: ACTION_TOAST_MS })
 }
 
 /** Redo (multi-step undo/redo, #1488): re-applies the batch undone last, with the same motion and feedback as Undo. */
@@ -37,7 +42,10 @@ export async function redoToast(redoId: string): Promise<void> {
   updateBulkToast({ undoId: redoId, redoId: null })
   const r = await withListTransition(await undoTaskCount(redoId), () => redoBatch(redoId))
   const base = r.restored === 1 && r.skipped.length === 0 ? t('Redone.') : t('Redone: {n} restored.', { n: r.restored })
-  updateBulkToast({ result: r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base })
+  const message = r.skipped.length ? `${base} ${t('Kept because they were changed again since: {items}.', { items: r.skipped.join(', ') })}` : base
+  // Keep the undo offer on a toast that is still up; otherwise a fresh button-less message.
+  if (bulkToast()) updateBulkToast({ result: message })
+  else showBulkToast(message, null, { ttl: ACTION_TOAST_MS })
 }
 
 const TOAST_CLASS = 'ui-toast pointer-events-auto flex items-center gap-3 rounded-control border border-default bg-surface px-3 py-2 text-body shadow-2'

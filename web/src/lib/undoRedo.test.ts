@@ -5,7 +5,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from './db'
-import { createTask, mutate, resetDeviceId } from './ops'
+import { applyOps, createTask, mutate, resetDeviceId } from './ops'
 import { applyBatch, redoBatch, undoBatch } from './undo'
 
 beforeEach(async () => {
@@ -31,6 +31,44 @@ describe('D4: undo our later change, then the earlier one', () => {
     expect(r1.skipped).toEqual([])
     expect(r1.restored).toBe(1)
     expect((await db.tasks.get(id))!.priority).toBe(1)
+  })
+
+  it('skips the earlier batch when the field was changed by hand between the two batches', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b1 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' }))!
+    // A hand edit between the two batches: the chain is broken.
+    await mutate('task', id, { priority: 3 })
+    const b2 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 4 } }], { source: 'action' }))!
+    expect((await db.tasks.get(id))!.priority).toBe(4)
+
+    const r2 = await undoBatch(b2.id)
+    expect(r2.restored).toBe(1)
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+
+    // B1 no longer owns the field (the hand edit sits on top), so undoing it is skipped
+    // and the hand edit's value is kept, not overwritten back to 1.
+    const r1 = await undoBatch(b1.id)
+    expect(r1.restored).toBe(0)
+    expect(r1.skipped).toEqual(['T'])
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+  })
+
+  it('skips the earlier batch when another device changed the field between the two batches', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b1 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' }))!
+    // Another device sets priority to 3 with a later clock, so it wins.
+    await applyOps([{ id: 'remote', entity: 'task', entityId: id, field: 'priority', value: 3, ts: Date.now() + 10_000_000, device: 'other' }])
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+    const b2 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 4 } }], { source: 'action' }))!
+
+    const r2 = await undoBatch(b2.id)
+    expect(r2.restored).toBe(1)
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+
+    const r1 = await undoBatch(b1.id)
+    expect(r1.restored).toBe(0)
+    expect(r1.skipped).toEqual(['T'])
+    expect((await db.tasks.get(id))!.priority).toBe(3)
   })
 })
 
@@ -72,6 +110,19 @@ describe('redo', () => {
     expect(await db.assistantUndo.get(b.id)).toBeUndefined()
     const r = await redoBatch(b.id)
     expect(r.restored).toBe(0)
+  })
+
+  it('a rapid second undo of the same batch does not overwrite its redo payload', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' }))!
+    // Two undos fired back-to-back, before the first records undone_at.
+    const [r1, r2] = await Promise.all([undoBatch(b.id), undoBatch(b.id)])
+    expect(r1.restored + r2.restored).toBe(1) // one did the work, the other a clean no-op
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+    // The redo payload survives, so redo still works.
+    const r = await redoBatch(b.id)
+    expect(r.restored).toBe(1)
+    expect((await db.tasks.get(id))!.priority).toBe(2)
   })
 
   it('redo skips a field changed by hand since the undo', async () => {

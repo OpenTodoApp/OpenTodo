@@ -19,13 +19,24 @@ describe('the stack tops', () => {
     expect(topUndo(entries)).toEqual({ id: 'b', label: 'B', count: 1 })
   })
 
+  const redo = { inverse: [], clocks: [] }
+
   it('topRedo is the batch undone most recently; null when none is undone', () => {
     expect(topRedo([entry({ id: 'a', created_at: 10 })])).toBeNull()
     const entries = [
-      entry({ id: 'a', created_at: 10, undone_at: 50 }),
-      entry({ id: 'b', created_at: 20, undone_at: 70 }),
+      entry({ id: 'a', created_at: 10, undone_at: 50, redo }),
+      entry({ id: 'b', created_at: 20, undone_at: 70, redo }),
     ]
     expect(topRedo(entries)).toEqual({ id: 'b', count: 1 })
+  })
+
+  it('skips an undone batch with no redo payload (undone before the feature shipped)', () => {
+    const entries = [
+      entry({ id: 'old', created_at: 10, undone_at: 70 }), // no redo: cannot be redone
+      entry({ id: 'new', created_at: 20, undone_at: 50, redo }),
+    ]
+    expect(topRedo(entries)).toEqual({ id: 'new', count: 1 })
+    expect(topRedo([entry({ id: 'old', created_at: 10, undone_at: 70 })])).toBeNull()
   })
 
   it('both are null on an empty history', () => {

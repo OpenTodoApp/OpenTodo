@@ -37,14 +37,21 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
       if (!c.patch.deleted_at) inverse.push({ entity: c.entity, entityId: c.entityId, patch: { deleted_at: Date.now() }, created: true })
       continue
     }
-    const local = (await tableOf(c.entity).get(c.entityId)) as Record<string, unknown> | undefined
+    const local = (await tableOf(c.entity).get(c.entityId)) as (Record<string, unknown> & { _clock?: Record<string, FieldClock> }) | undefined
     const patch: Record<string, unknown> = {}
-    for (const f of Object.keys(c.patch)) patch[f] = norm((local ? readField(local, f) : undefined) ?? c.base?.[f])
+    // The clock each field held before this batch overwrote it (#1488 D4), so a later reversal
+    // refreshes only the batches this one sat directly on top of.
+    const prev: Record<string, FieldClock> = {}
+    for (const f of Object.keys(c.patch)) {
+      patch[f] = norm((local ? readField(local, f) : undefined) ?? c.base?.[f])
+      const ck = local?._clock?.[f]
+      if (ck) prev[f] = ck
+    }
     // A task stored before task.energy has none: its undo writes '' (none), never null, which the field refuses.
     if (c.entity === 'task' && 'energy' in patch && patch.energy === null) patch.energy = ''
     // Likewise task.sector (time-sectors): a task stored before it has none, which is ''.
     if (c.entity === 'task' && 'sector' in patch && patch.sector === null) patch.sector = ''
-    inverse.push({ entity: c.entity, entityId: c.entityId, patch })
+    inverse.push({ entity: c.entity, entityId: c.entityId, patch, ...(Object.keys(prev).length ? { prev } : {}) })
   }
   const batch: Change[] = changes.map((c) => ({ entity: c.entity, entityId: c.entityId, patch: { ...c.patch } }))
   // Default reminders join the batch here, so one Undo removes them with the dates
@@ -83,16 +90,21 @@ export async function applyBatch(changes: ProposedChange[], opts: BatchOptions):
 
 type FieldClock = { ts: number; device: string }
 const clockKey = (entity: string, entityId: string, field: string) => `${entity}\u0000${entityId}\u0000${field}`
+const stamp = (ck: FieldClock) => `${ck.ts}\u0000${ck.device}`
 
 /**
  * After a reversal rewrote `batch`'s fields with new clocks, point every other batch that
- * expects one of those fields at the new clock, so the next reversal of it recognises the
- * field as ours rather than as "changed again since" (#1488, D4). A batch still on the
- * undo stack expects its field through `clocks` (what undo checks); a batch on the redo
- * stack expects it through `redo.clocks` (what redo checks). A field the user changed by
- * hand was skipped by the reversal (not in `batch`), so it is never refreshed.
+ * sat directly on top of what this reversal overwrote at the new clock, so the next reversal
+ * of it recognises the field as ours rather than as "changed again since" (#1488, D4). The
+ * test is exact: an other batch is refreshed only when its recorded clock equals this
+ * reversal's pre-batch clock for the field (`actingPrev` — the clock it overwrote). A field
+ * a hand edit or another device changed in between has a different clock, so the chain is
+ * broken and the batch is left to skip. A batch on the undo stack expects its field through
+ * `clocks` (what undo checks); one on the redo stack through `redo.clocks`. A batch whose
+ * recorded clock matches neither (a foreign edit broke its chain, or it predates this fix)
+ * is never refreshed and is left to skip.
  */
-async function refreshUndoClocks(actingId: string, batch: Change[]): Promise<void> {
+async function refreshUndoClocks(actingId: string, batch: Change[], canMatch: Map<string, Set<string>>): Promise<void> {
   const fresh = new Map<string, FieldClock>()
   for (const c of batch) {
     const row = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, FieldClock> } | undefined
@@ -107,8 +119,9 @@ async function refreshUndoClocks(actingId: string, batch: Change[]): Promise<voi
     if (!list) continue
     let changed = false
     for (const clk of list) {
-      const nk = fresh.get(clockKey(clk.entity, clk.entityId, clk.field))
-      if (nk && (clk.ts !== nk.ts || clk.device !== nk.device)) {
+      const key = clockKey(clk.entity, clk.entityId, clk.field)
+      const nk = fresh.get(key)
+      if (nk && canMatch.get(key)?.has(stamp(clk)) && (clk.ts !== nk.ts || clk.device !== nk.device)) {
         clk.ts = nk.ts
         clk.device = nk.device
         changed = true
@@ -158,6 +171,20 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
   const back: NonNullable<AssistantUndo['redo']>['inverse'] = []
   const skipped: string[] = []
   let followUps = 0
+  // The clocks a field may still hold for another batch to be refreshed (#1488 D4): this
+  // direction's own pre-batch clock (a batch it sat directly on top of) and the clock it
+  // overwrites (a batch that owns the current value). A hand edit or another device's clock
+  // in between matches neither, so that batch is left to skip.
+  const canMatch = new Map<string, Set<string>>()
+  const allow = (entity: string, entityId: string, field: string, ck?: FieldClock) => {
+    if (!ck) return
+    const k = clockKey(entity, entityId, field)
+    let set = canMatch.get(k)
+    if (!set) { set = new Set(); canMatch.set(k, set) }
+    set.add(stamp(ck))
+  }
+  for (const inv of src.inverse) if (inv.prev) for (const [f, ck] of Object.entries(inv.prev)) allow(inv.entity, inv.entityId, f, ck)
+  for (const c of src.clocks) allow(c.entity, c.entityId, c.field, c)
   for (const inv of src.inverse) {
     const row = (await tableOf(inv.entity as Entity).get(inv.entityId)) as (Record<string, unknown> & { _clock?: Record<string, { ts: number; device: string }> }) | undefined
     const patch: Record<string, unknown> = {}
@@ -194,22 +221,39 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
   // A reversal puts back earlier values: no default reminder (default-reminders D6).
   if (batch.length) {
     await mutateMany(batch, assistant ? { origin: 'assistant', restore: true } : { restore: true })
+    const fresh = new Map<string, FieldClock>()
     for (const c of batch) {
-      const r = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, { ts: number; device: string }> } | undefined
+      const r = (await tableOf(c.entity).get(c.entityId)) as { _clock?: Record<string, FieldClock> } | undefined
       for (const f of Object.keys(c.patch)) {
         const ck = r?._clock?.[f]
-        if (ck) clocks.push({ entity: c.entity, entityId: c.entityId, field: f, ts: ck.ts, device: ck.device })
+        if (ck) { clocks.push({ entity: c.entity, entityId: c.entityId, field: f, ts: ck.ts, device: ck.device }); fresh.set(clockKey(c.entity, c.entityId, f), ck) }
       }
     }
-    // D4 (#1488): this reversal rewrote these fields with new clocks, so an earlier batch
-    // that also changed one of them now sees a clock that is not its own and would wrongly
-    // skip it. Point every other batch still on the undo stack that recorded one of these
-    // fields at the new clock, so undoing our earlier change is still recognised as ours. A
-    // field the user changed by hand in between was skipped above, so it is never refreshed.
-    await refreshUndoClocks(entry.id, batch)
+    // The opposite direction, stored for the next reversal, expects each field at the clock
+    // this reversal just set: that is its pre-batch clock.
+    for (const b of back) {
+      const prev: Record<string, FieldClock> = {}
+      for (const f of Object.keys(b.patch)) { const ck = fresh.get(clockKey(b.entity, b.entityId, f)); if (ck) prev[f] = ck }
+      if (Object.keys(prev).length) b.prev = prev
+    }
+    // D4 (#1488): this reversal rewrote these fields with new clocks. Refresh every other
+    // batch that sat directly on top of what it overwrote (its recorded clock equals this
+    // reversal's pre-batch clock), so undoing our earlier change is still recognised as ours;
+    // a hand edit or another device's change in between broke the chain and is left to skip.
+    await refreshUndoClocks(entry.id, batch, canMatch)
   }
   // The review row in a Close/Reopen the day batch is bookkeeping, not an item the person changed.
   return { restored: batch.filter((c) => c.entity !== 'review').length - followUps, skipped, back: { inverse: back, clocks } }
+}
+
+// Undo and redo run one at a time (#1488): a rapid second press (Ctrl+Z twice) must wait
+// for the first to record its result, or it reads the stale live query, reverses the same
+// batch again as a no-op and overwrites the real redo payload with an empty one.
+let chain: Promise<unknown> = Promise.resolve()
+function serialize<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn)
+  chain = run.catch(() => undefined)
+  return run
 }
 
 /**
@@ -218,12 +262,14 @@ async function reverse(entry: AssistantUndo, src: Reversal): Promise<{ restored:
  * newer value and is named as skipped. The forward values and their new clocks are stored
  * so the batch can be redone.
  */
-export async function undoBatch(id: string): Promise<UndoResult> {
-  const entry = await db.assistantUndo.get(id)
-  if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
-  const r = await reverse(entry, { inverse: entry.inverse, clocks: entry.clocks })
-  await db.assistantUndo.update(id, { undone_at: Date.now(), redo: r.back })
-  return { restored: r.restored, skipped: r.skipped }
+export function undoBatch(id: string): Promise<UndoResult> {
+  return serialize(async () => {
+    const entry = await db.assistantUndo.get(id)
+    if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
+    const r = await reverse(entry, { inverse: entry.inverse, clocks: entry.clocks })
+    await db.assistantUndo.update(id, { undone_at: Date.now(), redo: r.back })
+    return { restored: r.restored, skipped: r.skipped }
+  })
 }
 
 /**
@@ -231,10 +277,12 @@ export async function undoBatch(id: string): Promise<UndoResult> {
  * changed again since the undo. Its clocks become the batch's recorded clocks, so a later
  * undo of it is recognised as ours.
  */
-export async function redoBatch(id: string): Promise<UndoResult> {
-  const entry = await db.assistantUndo.get(id)
-  if (!entry || !entry.undone_at || !entry.redo) return { restored: 0, skipped: [] }
-  const r = await reverse(entry, entry.redo)
-  await db.assistantUndo.update(id, { undone_at: undefined, clocks: mergeClocks(entry.clocks, r.back.clocks) })
-  return { restored: r.restored, skipped: r.skipped }
+export function redoBatch(id: string): Promise<UndoResult> {
+  return serialize(async () => {
+    const entry = await db.assistantUndo.get(id)
+    if (!entry || !entry.undone_at || !entry.redo) return { restored: 0, skipped: [] }
+    const r = await reverse(entry, entry.redo)
+    await db.assistantUndo.update(id, { undone_at: undefined, clocks: mergeClocks(entry.clocks, r.back.clocks) })
+    return { restored: r.restored, skipped: r.skipped }
+  })
 }

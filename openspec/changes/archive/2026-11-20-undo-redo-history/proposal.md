@@ -39,4 +39,4 @@ None. (`bulk-edit` and `in-app-assistant` keep recording batches as they do; thi
 ## Impact
 
 - Web only, reusing `mutateMany` and the existing store, so undo and redo stay offline-capable synced operations. Adds a redo payload to each entry (additive to the stored shape), a `redoBatch`, a small history controller feeding the shortcuts, the palette commands and the feedback, and reusing the batch's stored label for step names. No server, op-schema, API or dependency change. New code loads with the controls, not on first paint.
-- Honours the end-of-November feature freeze: this is design only; implementation waits for the freeze to lift and the owner's go-ahead.
+- Proposed under the end-of-November feature freeze and implemented once it lifted with the owner's go-ahead.

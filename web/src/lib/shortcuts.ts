@@ -45,6 +45,8 @@ export interface Shortcut {
   typing?: boolean
   /** Fires while a dialog is open (global shortcuts always do). */
   dialog?: boolean
+  /** A global shortcut that must NOT fire while a dialog is open (undo/redo behind a modal). */
+  notInDialog?: boolean
   /** Does not call `preventDefault` after running (the key keeps its default too). */
   passive?: boolean
   /** Handled by the control itself (an input's Enter, the notes editor's keymap), never by the dispatcher; listed for the sheet and the guide. */
@@ -146,8 +148,8 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'list.escape', keys: ['Esc'], description: 'Close the panel or the picker, else clear the selection', section: 'everywhere', scope: 'list', typing: true },
   { id: 'global.help', keys: ['?'], description: 'Toggle this cheat sheet', section: 'everywhere', scope: 'global' },
   { id: 'global.sidebar', keys: ['['], description: 'Collapse or expand the sidebar (from 1024 px)', section: 'everywhere', scope: 'global' },
-  { id: 'global.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last change', section: 'everywhere', scope: 'global' },
-  { id: 'global.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z', 'Ctrl+Y'], description: 'Redo the change undone last', section: 'everywhere', scope: 'global' },
+  { id: 'global.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Undo the last change', section: 'everywhere', scope: 'global', notInDialog: true },
+  { id: 'global.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z', 'Ctrl+Y'], description: 'Redo the change undone last', section: 'everywhere', scope: 'global', notInDialog: true },
 
   // ---- go to
   { id: 'go.inbox', keys: ['g i'], label: 'Inbox', description: 'Go to Inbox', section: 'go', scope: 'global' },
@@ -471,7 +473,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'settings.passkeys', keys: ['Tab'], description: 'Settings → Account → Security → Passkeys: add, rename (Enter saves, Esc cancels) or remove passkeys', section: 'settings', scope: 'view', views: ['settings'], local: true },
   // The theme editor (theme-editor D3): only while the editor is open; text fields keep their own undo.
   { id: 'themes.undo', keys: ['Ctrl+Z', '⌘+Z'], description: 'Theme editor: undo the last change', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.undo'] },
-  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.redo'] },
+  { id: 'themes.redo', keys: ['Ctrl+Shift+Z', '⌘+Shift+Z', 'Ctrl+Y'], description: 'Theme editor: redo the change undone last', section: 'settings', scope: 'view', views: ['theme-editor'], overrides: ['global.redo'] },
   { id: 'themes.save', keys: ['Ctrl+S', '⌘+S'], description: 'Theme editor: save the theme', section: 'settings', scope: 'view', views: ['theme-editor'], typing: true },
 
   // ---- comments and notes

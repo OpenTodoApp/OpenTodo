@@ -29,7 +29,8 @@ export function topUndo(entries: readonly AssistantUndo[]): UndoStep | null {
 export function topRedo(entries: readonly AssistantUndo[]): UndoStep | null {
   let top: AssistantUndo | undefined
   for (const e of entries) {
-    if (e.undone_at == null) continue
+    // A batch undone before this feature shipped has no redo payload and cannot be redone.
+    if (e.undone_at == null || !e.redo) continue
     if (!top || e.undone_at > top.undone_at!) top = e
   }
   return top ? stepOf(top) : null
