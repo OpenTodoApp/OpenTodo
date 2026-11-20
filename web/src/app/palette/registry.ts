@@ -382,10 +382,6 @@ export function commands(ctx: PaletteContext): Command[] {
       run: () => openReplan(ctx.route.view === 'day' || ctx.route.view === 'week') })
   }
 
-  // Away (away-periods D4): opens the dialog on Today, where its line and End now live.
-  out.push({ id: 'away:set', label: t('Away…'), icon: 'plane', keywords: 'away holiday vacation ill sick pause skip repeating habits reminders',
-    run: () => { if (ctx.route.view !== 'today') navigate({ view: 'today' }); requestAway() } })
-
   if (ctx.route.view === 'filter' && ctx.filterQuery) {
     const q = ctx.filterQuery
     out.push({ id: 'filter:save', label: t('Save as view'), icon: 'filter', shortcut: keysOf('filter.save'), run: () => prompt(t('Save view'), t('View name'), '', async (name) => {
@@ -414,6 +410,9 @@ export function commands(ctx: PaletteContext): Command[] {
       run: () => switchWorkspace(w.id, ctx.route, true),
     })),
     { id: 'workspace:new', label: t('New workspace'), icon: 'plus', keywords: 'workspace add create', run: () => requestNewWorkspace() },
+    // Away (away-periods D4): opens the dialog on Today, where its line and End now live.
+    { id: 'away:set', label: t('Away…'), icon: 'plane', keywords: 'away holiday vacation ill sick pause skip repeating habits reminders',
+      run: () => { if (ctx.route.view !== 'today') navigate({ view: 'today' }); requestAway() } },
     { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
