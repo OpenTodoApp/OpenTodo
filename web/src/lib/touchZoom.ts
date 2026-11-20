@@ -27,11 +27,6 @@ const allowZoom = createStoredValue<boolean>(ZOOM_KEY, {
   serialize: (on) => (on ? null : 'off'),
 }, { crossTab: true, server: true })
 
-/** Whether pinch zoom is allowed on this device (default true). */
-export function allowZoomOn(): boolean {
-  return allowZoom.get()
-}
-
 export const useAllowZoom = allowZoom.use
 
 /** Turns pinch zoom on or off for this device; the viewport follows through the hook. */
