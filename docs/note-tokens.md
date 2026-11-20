@@ -1,6 +1,6 @@
 ---
 title: Narrow notes with tokens
-summary: Type in:, @label, kind:, linked:, orphan, pinned or changed: in the Notes search field to narrow the list; each becomes a chip, with suggestions as you type.
+summary: "Type in:, @label, kind:, linked:, orphan, pinned or changed: in the Notes search field to narrow the list; each becomes a chip, with suggestions as you type."
 audience: user
 section: Guides
 specs: [notes-page]

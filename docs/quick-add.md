@@ -1,6 +1,6 @@
 ---
 title: Quick add syntax
-summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, nine languages and voice capture.
+summary: "Every word quick add understands: dates, times, projects, labels, priorities, estimates, nine languages and voice capture."
 audience: user
 section: Reference
 specs: [natural-language-capture, voice-capture, manual-ordering, task-list-presentation]

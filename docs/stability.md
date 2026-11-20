@@ -1,6 +1,6 @@
 ---
 title: Stability and compatibility
-summary: What every 1.x release keeps: the v1 API, the sync protocol and op schema, the export format, MCP tools and the ot CLI; deprecation, upgrades and versioning.
+summary: "What every 1.x release keeps: the v1 API, the sync protocol and op schema, the export format, MCP tools and the ot CLI; deprecation, upgrades and versioning."
 audience: developer
 section: Integrations
 specs: [api-stability]

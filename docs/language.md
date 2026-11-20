@@ -1,6 +1,6 @@
 ---
 title: The app in your language
-summary: Pick the language of the app once and every device follows: ten languages, plus Russian as a community translation, with dates and notifications to match.
+summary: "Pick the language of the app once and every device follows: ten languages, plus Russian as a community translation, with dates and notifications to match."
 audience: user
 section: Guides
 specs: [localization]

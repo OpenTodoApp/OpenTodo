@@ -1,6 +1,6 @@
 ---
 title: Accessibility
-summary: OpenTodo's accessibility statement: WCAG 2.2 Level AA, what is covered and how it is tested, the result for every criterion and screen, and how to report a barrier.
+summary: "OpenTodo's accessibility statement: WCAG 2.2 Level AA, what is covered and how it is tested, the result for every criterion and screen, and how to report a barrier."
 audience: user
 section: Reference
 specs: [accessibility]

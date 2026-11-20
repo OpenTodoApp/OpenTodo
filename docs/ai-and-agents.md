@@ -1,6 +1,6 @@
 ---
 title: Use AI with OpenTodo
-summary: Three ways to bring an AI assistant to your tasks: the assistant in the app, an assistant you already use over MCP, or a coding agent with the ot command. Which to pick and what each can touch.
+summary: "Three ways to bring an AI assistant to your tasks: the assistant in the app, an assistant you already use over MCP, or a coding agent with the ot command. Which to pick and what each can touch."
 audience: user
 section: Guides
 specs: [in-app-assistant, mcp-server, cli-client]

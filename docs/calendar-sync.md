@@ -1,6 +1,6 @@
 ---
 title: Calendar sync
-summary: Two-way sync with your own calendar: dated tasks become events in iCloud, Fastmail, Nextcloud, Google, Outlook, Microsoft 365 or any CalDAV calendar, and moving an event moves the task.
+summary: "Two-way sync with your own calendar: dated tasks become events in iCloud, Fastmail, Nextcloud, Google, Outlook, Microsoft 365 or any CalDAV calendar, and moving an event moves the task."
 audience: user
 section: Integrations
 specs: [calendar-sync, calendar-feeds, end-to-end-encryption]

@@ -1,6 +1,6 @@
 ---
 title: The task page
-summary: A task's page: the breadcrumb, the next and previous task, the title and menu, the notes, the facts, what a viewer can do, going back, and the side panel beside the list.
+summary: "A task's page: the breadcrumb, the next and previous task, the title and menu, the notes, the facts, what a viewer can do, going back, and the side panel beside the list."
 audience: user
 section: Guides
 specs: [task-management, entity-pickers, web-app]
