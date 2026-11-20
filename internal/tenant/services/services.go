@@ -194,6 +194,11 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	}
 	wireObserver(s.Sync, s.Hooks, s.Rules, s.Signal, s.CalSync)
 	s.DavPush = &davpush.Job{Store: davpush.NewStore(db, cfg.DataDir, o.Now), Cursor: s.Sync.Cursor, Log: log}
+	if o.Hosted != nil {
+		// A host runs a tenant's jobs one after another in one pass: a short run
+		// keeps that pass moving; what is left is sent on the next one.
+		s.DavPush.RunLimit = davpush.HostRunBudget
+	}
 	if s.Backups, err = openBackups(ctx, cfg, o, db, s.Auth, log); err != nil {
 		return nil, err
 	}

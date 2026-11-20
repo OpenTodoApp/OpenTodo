@@ -27,6 +27,10 @@ const MaxUsersPerRun = 50
 // and what is left is due again on the next run.
 const RunBudget = time.Minute
 
+// HostRunBudget is RunBudget for a tenant of a multi-tenant host, whose jobs
+// share one serial pass (internal/host/scheduler.go).
+const HostRunBudget = 10 * time.Second
+
 // Changes is what changed in the calendars an app password sees since a cursor,
 // as a sync-collection report would list it (design D5).
 type Changes struct {
