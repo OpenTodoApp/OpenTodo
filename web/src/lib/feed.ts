@@ -22,7 +22,7 @@ import { msg, translatedList } from './i18n'
 
 // ---- kinds (same table as internal/activity/feed.go) ----
 
-export type FeedKind = 'completed' | 'created' | 'commented' | 'assigned' | 'rescheduled' | 'other'
+export type FeedKind = 'completed' | 'created' | 'commented' | 'assigned' | 'rescheduled' | 'time' | 'other'
 
 export const FEED_KINDS: { value: FeedKind; label: string }[] = translatedList<{ value: FeedKind; label: string }, 'label'>([
   { value: 'completed', label: msg('Completed') },
@@ -30,6 +30,7 @@ export const FEED_KINDS: { value: FeedKind; label: string }[] = translatedList<{
   { value: 'commented', label: msg('Commented') },
   { value: 'assigned', label: msg('Assigned') },
   { value: 'rescheduled', label: msg('Rescheduled') },
+  { value: 'time', label: msg('Time tracked') },
   { value: 'other', label: msg('Other') },
 ], 'label')
 
@@ -40,6 +41,7 @@ export function feedKindOf(kind: ActivityKind): FeedKind {
     case 'commented': case 'comment_edited': case 'comment_deleted': return 'commented'
     case 'assigned': case 'unassigned': return 'assigned'
     case 'rescheduled': return 'rescheduled'
+    case 'time_tracked': case 'time_changed': return 'time'
     default: return 'other'
   }
 }

@@ -4224,6 +4224,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -5884,6 +5885,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -6772,6 +6774,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -7181,6 +7184,35 @@
         "ownerId": "string",
         "pending": "any",
         "role": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/workspaces/{id}/activity": {
+      "policy": "signed-in",
+      "response": {
+        "cursor": "string",
+        "events": "array",
+        "events[].actor": "string",
+        "events[].actorName": "string",
+        "events[].changes": "array",
+        "events[].changes[].field": "string",
+        "events[].changes[].from": "string",
+        "events[].changes[].to": "string",
+        "events[].device": "string",
+        "events[].entity": "string",
+        "events[].entityId": "string",
+        "events[].id": "string",
+        "events[].kind": "string",
+        "events[].minutes": "number|null",
+        "events[].opIds": "array",
+        "events[].projectId": "string",
+        "events[].projectName": "string",
+        "events[].taskId": "string",
+        "events[].taskTitle": "string",
+        "events[].ts": "number",
+        "more": "boolean"
       },
       "statuses": [
         "200"
