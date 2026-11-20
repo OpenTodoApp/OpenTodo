@@ -23,7 +23,7 @@ import { shell } from '../lib/shell'
 import { originText } from '../lib/originText'
 import { obsidianPlace, originIcon } from '../lib/taskOrigin'
 import { openOrigin, originLink } from '../lib/originOpen'
-import { isAppLink, useAppLinkSchemes } from '../lib/appLinks'
+import { appLinkActivation, isAppLink, useAppLinkSchemes } from '../lib/appLinks'
 import type { Origin } from '../lib/types'
 import { act } from './actionError'
 
@@ -72,8 +72,8 @@ export function OriginChip({ origin, quiet = false, iconOnly = false }: { origin
     // A link into another app this viewer allowed: through openAppLink, which asks
     // the first time on this device, never as a tab.
     return withTip(
-      <a href={link.href} rel="noreferrer" data-origin={origin.kind} data-app-link="open" aria-label={label} className={`mt-0.5 shrink-0 ${LINK}`}
-        onClick={(e) => { stop(e); e.preventDefault(); openOrigin(origin) }} onPointerDown={stop}>
+      <a data-origin={origin.kind} data-app-link="open" aria-label={label} className={`mt-0.5 shrink-0 cursor-pointer ${LINK}`}
+        {...appLinkActivation(link.href, () => openOrigin(origin))} onPointerDown={stop}>
         {face}
       </a>,
     )

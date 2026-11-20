@@ -20,7 +20,7 @@ import { type Command, EditorState, Plugin, PluginKey, type Transaction } from '
 import { tableNodes } from 'prosemirror-tables'
 import type * as Y from 'yjs'
 import { LINK_REL, safeHref } from './markdown'
-import { canOpenAppLink, isAppLink } from './appLinks'
+import { APP_HREF, canOpenAppLink, isAppLink } from './appLinks'
 import { MAX_DOC_CHARS, parseMarkdown, toModel, updateBody, type Marks, type RNode, type Run } from './richtext'
 import { msg, translatedList } from './i18n'
 import { suggestPlugin, type SuggestBridge } from './editorSuggest'
@@ -106,14 +106,21 @@ export const schema = new Schema({
     },
     link: {
       attrs: { href: {} }, inclusive: false,
-      parseDOM: [{ tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) }],
-      // A link to a task of this app (Make subtask) keeps its relative address; a
-      // link into another app has one only for a viewer who allowed its scheme
-      // (app-links D3), and opens through openAppLink, never in a tab.
+      parseDOM: [
+        { tag: `a[${APP_HREF}]`, priority: 55, getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute(APP_HREF) ?? '' }) },
+        { tag: 'a[href]', getAttrs: (d) => ({ href: (d as HTMLElement).getAttribute('href') ?? '' }) },
+      ],
+      // A link to a task of this app (Make subtask) keeps its relative address. A
+      // link into another app never has one (app-links D3): its address is in
+      // data-app-href, and it opens only through openAppLink (NotesEditor), as a
+      // link for a viewer who allowed its scheme and as text for anyone else.
       toDOM: (m) => {
         const href = m.attrs.href as string
-        const app = isAppLink(href)
-        return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : app && canOpenAppLink(href) ? href : undefined), title: href, rel: LINK_REL, target: app ? undefined : '_blank', 'data-app-link': app ? '' : undefined }, 0]
+        if (isAppLink(href)) {
+          const open = canOpenAppLink(href)
+          return ['a', { [APP_HREF]: href, title: href, 'data-app-link': open ? 'open' : 'text', role: open ? 'link' : undefined, tabindex: open ? '0' : undefined }, 0]
+        }
+        return ['a', { href: safeHref(href) ?? (/^\?task=[\w-]+$/.test(href) ? href : undefined), title: href, rel: LINK_REL, target: '_blank' }, 0]
       },
     },
     strong: { parseDOM: [{ tag: 'strong' }, { tag: 'b' }], toDOM: () => ['strong', 0] },

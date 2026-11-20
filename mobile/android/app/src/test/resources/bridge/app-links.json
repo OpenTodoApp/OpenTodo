@@ -120,6 +120,118 @@
       {
         "url": "",
         "scheme": null
+      },
+      {
+        "url": "chrome:x/y",
+        "scheme": null
+      },
+      {
+        "url": "chrome-extension:x/y",
+        "scheme": null
+      },
+      {
+        "url": "moz-extension:x/y",
+        "scheme": null
+      },
+      {
+        "url": "resource:x/y",
+        "scheme": null
+      },
+      {
+        "url": "jar:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-appx:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-appx-web:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-msdt:x/y",
+        "scheme": null
+      },
+      {
+        "url": "search-ms:x/y",
+        "scheme": null
+      },
+      {
+        "url": "Search-MS:x/y",
+        "scheme": null
+      },
+      {
+        "url": "search:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-officecmd:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-cxh:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-cxh-full:x/y",
+        "scheme": null
+      },
+      {
+        "url": "jnlp:x/y",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a\nb",
+        "scheme": null
+      },
+      {
+        "url": "zotero://ab",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a‮b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a​b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a　b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a﻿b",
+        "scheme": null
+      },
+      {
+        "url": "mid:a\u0000b",
+        "scheme": null
+      },
+      {
+        "url": "ms-word:ofe|u|https://a/b.docx",
+        "scheme": "ms-word"
+      },
+      {
+        "url": "zotero://select/items/Ünïcödé",
+        "scheme": "zotero"
+      },
+      {
+        "url": "ms-cxhx:y",
+        "scheme": null
       }
     ],
     "entries": [
@@ -177,6 +289,58 @@
       },
       {
         "entry": "a-scheme-name-that-is-far-too-long",
+        "ok": false
+      },
+      {
+        "entry": "chrome",
+        "ok": false
+      },
+      {
+        "entry": "chrome-extension",
+        "ok": false
+      },
+      {
+        "entry": "search-ms",
+        "ok": false
+      },
+      {
+        "entry": "search",
+        "ok": false
+      },
+      {
+        "entry": "ms-cxh",
+        "ok": false
+      },
+      {
+        "entry": "ms-cxh-full",
+        "ok": false
+      },
+      {
+        "entry": "ms-msdt",
+        "ok": false
+      },
+      {
+        "entry": "ms-officecmd",
+        "ok": false
+      },
+      {
+        "entry": "jnlp",
+        "ok": false
+      },
+      {
+        "entry": "jar",
+        "ok": false
+      },
+      {
+        "entry": "resource",
+        "ok": false
+      },
+      {
+        "entry": "moz-extension",
+        "ok": false
+      },
+      {
+        "entry": "ms-appx",
         "ok": false
       }
     ],

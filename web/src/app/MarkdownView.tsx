@@ -3,7 +3,7 @@
 import { type ComponentType, Fragment, type ReactNode, useMemo } from 'react'
 import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
 import { originFromUrl } from '../lib/taskOrigin'
-import { allowsAppLink, openAppLink, useAppLinkSchemes } from '../lib/appLinks'
+import { allowsAppLink, appLinkActivation, useAppLinkSchemes } from '../lib/appLinks'
 import { t } from '../lib/i18n'
 import { Icon, Tooltip } from '../ui'
 
@@ -129,8 +129,7 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
         }
         return (
           <Tooltip key={i} label={n.href}>
-            <a key={i} href={n.href} rel={LINK_REL} className="text-accent underline" data-app-link="open"
-              onClick={(e) => { e.preventDefault(); openAppLink(n.href) }}>
+            <a key={i} className="cursor-pointer text-accent underline" data-app-link="open" {...appLinkActivation(n.href)}>
               {inl(n.c)}<Icon name="external-link" size="xs" className="ml-0.5 inline" />
             </a>
           </Tooltip>

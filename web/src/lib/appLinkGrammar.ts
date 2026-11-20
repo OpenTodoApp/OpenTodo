@@ -7,10 +7,15 @@ import type { UserPrefs } from './types'
 export const MAX_APP_LINK_SCHEMES = 20
 const MAX_URL = 2048
 
-/** Schemes that never open as app links and are refused in the list (D2). */
-export const DENIED_SCHEMES: readonly string[] = ['javascript', 'data', 'vbscript', 'file', 'blob', 'about', 'filesystem', 'view-source', 'intent', 'opentodo']
+/** Schemes that never open as app links and are refused in the list (D2); every "ms-cxh…" too. */
+export const DENIED_SCHEMES: readonly string[] = ['javascript', 'data', 'vbscript', 'file', 'blob', 'about', 'filesystem', 'view-source', 'intent', 'opentodo',
+  'chrome', 'chrome-extension', 'moz-extension', 'resource', 'jar', 'ms-appx', 'ms-appx-web',
+  'ms-msdt', 'search-ms', 'search', 'ms-officecmd', 'jnlp']
 /** Schemes with their own rules, never app links. */
 const OWN_RULES: readonly string[] = ['http', 'https', 'mailto']
+const denied = (s: string): boolean => DENIED_SCHEMES.includes(s) || s.startsWith('ms-cxh') || OWN_RULES.includes(s)
+/** A character that does not show as itself: control, format (bidi overrides), separator, space or a lone surrogate. */
+const HIDDEN = /[\p{Cc}\p{Cf}\p{Cs}\p{Zl}\p{Zp}\p{Zs}]/u
 
 const APP_LINK = /^([A-Za-z][A-Za-z0-9+.-]{0,31}):(.+)$/
 const ENTRY = /^([a-z][a-z0-9+.-]{0,31})(?::([a-z0-9][a-z0-9-]{0,31}))?$/
@@ -18,12 +23,12 @@ const ENTRY = /^([a-z][a-z0-9+.-]{0,31})(?::([a-z0-9][a-z0-9-]{0,31}))?$/
 /** The lower-cased scheme of an app link, or null when `raw` is not one. */
 export function appLinkScheme(raw: string): string | null {
   if (!raw || new TextEncoder().encode(raw).length > MAX_URL) return null
-  // No whitespace or control character anywhere.
-  if (/[\u0000- \u007f]/.test(raw)) return null
+  // No whitespace, control, format or separator character anywhere.
+  if (HIDDEN.test(raw)) return null
   const m = APP_LINK.exec(raw)
   if (!m) return null
   const scheme = m[1].toLowerCase()
-  return DENIED_SCHEMES.includes(scheme) || OWN_RULES.includes(scheme) ? null : scheme
+  return denied(scheme) ? null : scheme
 }
 
 export const isAppLink = (raw: string): boolean => appLinkScheme(raw) !== null
@@ -31,7 +36,7 @@ export const isAppLink = (raw: string): boolean => appLinkScheme(raw) !== null
 /** Whether an entry may be on the list: a lower-case scheme, optionally `scheme:action`, not denied. */
 export function validSchemeEntry(entry: string): boolean {
   const m = ENTRY.exec(entry)
-  return !!m && !DENIED_SCHEMES.includes(m[1]) && !OWN_RULES.includes(m[1])
+  return !!m && !denied(m[1])
 }
 
 /** Whether the list lets `raw` open: its scheme, or `scheme:action` matching the part before `?`, `/` or `#`. */
@@ -65,7 +70,7 @@ export const appLinkSchemesValue = (list: readonly string[]): string => (list.le
 export function schemeEntryProblem(entry: string, list: readonly string[]): 'denied' | 'invalid' | 'duplicate' | 'full' | null {
   const e = entry.trim().toLowerCase().replace(/:\/*$/, '')
   const base = e.split(':')[0]
-  if (DENIED_SCHEMES.includes(base) || OWN_RULES.includes(base)) return 'denied'
+  if (denied(base)) return 'denied'
   if (!validSchemeEntry(e)) return 'invalid'
   if (list.includes(e)) return 'duplicate'
   if (list.length >= MAX_APP_LINK_SCHEMES) return 'full'

@@ -8,8 +8,15 @@ import Foundation
 enum AppLink {
     static let capability = "app-links"
     private static let maxURL = 2048
-    private static let denied: Set<String> = ["javascript", "data", "vbscript", "file", "blob", "about", "filesystem", "view-source", "intent", "opentodo"]
+    private static let deniedSchemes: Set<String> = [
+        "javascript", "data", "vbscript", "file", "blob", "about", "filesystem", "view-source", "intent", "opentodo",
+        "chrome", "chrome-extension", "moz-extension", "resource", "jar", "ms-appx", "ms-appx-web",
+        "ms-msdt", "search-ms", "search", "ms-officecmd", "jnlp",
+    ]
     private static let ownRules: Set<String> = ["http", "https", "mailto"]
+    private static let hiddenCategories: Set<Unicode.GeneralCategory> = [.control, .format, .surrogate, .lineSeparator, .paragraphSeparator, .spaceSeparator]
+
+    private static func denied(_ s: String) -> Bool { deniedSchemes.contains(s) || s.hasPrefix("ms-cxh") || ownRules.contains(s) }
     private static let linkPattern = try! NSRegularExpression(pattern: "^([A-Za-z][A-Za-z0-9+.-]{0,31}):(.+)$", options: [.dotMatchesLineSeparators])
     private static let entryPattern = try! NSRegularExpression(pattern: "^([a-z][a-z0-9+.-]{0,31})(?::([a-z0-9][a-z0-9-]{0,31}))?$")
 
@@ -22,16 +29,17 @@ enum AppLink {
     /// The lower-cased scheme when `url` is a link into another app, else nil.
     static func scheme(_ url: String) -> String? {
         guard !url.isEmpty, url.utf8.count <= maxURL else { return nil }
-        guard !url.unicodeScalars.contains(where: { $0.value <= 0x20 || $0.value == 0x7f }) else { return nil }
+        // No control, format (bidi overrides), separator or space character anywhere.
+        guard !url.unicodeScalars.contains(where: { hiddenCategories.contains($0.properties.generalCategory) }) else { return nil }
         guard let g = groups(linkPattern, url) else { return nil }
         let s = g[1].lowercased()
-        return denied.contains(s) || ownRules.contains(s) ? nil : s
+        return denied(s) ? nil : s
     }
 
     /// Whether `entry` may be on a person's list.
     static func validEntry(_ entry: String) -> Bool {
         guard let g = groups(entryPattern, entry) else { return false }
-        return !denied.contains(g[1]) && !ownRules.contains(g[1])
+        return !denied(g[1])
     }
 
     /// Whether `list` lets `url` open: its scheme, or `scheme:action` matching the part before `?`, `/` or `#`.

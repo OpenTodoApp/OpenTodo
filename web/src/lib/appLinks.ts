@@ -71,3 +71,30 @@ export function openAppLink(url: string): boolean {
   pendingAppLink.set({ url, scheme })
   return true
 }
+
+// ---- activation: never a native navigation (D3) ----
+
+/**
+ * Where an app link's address lives on the page. An app link never carries an
+ * href, so no click, middle click, drag or read-only view can follow it past
+ * openAppLink and its confirmation.
+ */
+export const APP_HREF = 'data-app-href'
+
+/** The address of a link element: an app link's, else its href. */
+export const linkHref = (a: Element): string => a.getAttribute(APP_HREF) ?? a.getAttribute('href') ?? ''
+
+type Activation = { preventDefault(): void; stopPropagation(): void }
+
+/** The props of an element that opens an app link: a click, a middle click or Enter, each through `open` (openAppLink). */
+export function appLinkActivation(url: string, open: () => void = () => { openAppLink(url) }) {
+  const go = (e: Activation) => { e.preventDefault(); e.stopPropagation(); open() }
+  return {
+    role: 'link' as const,
+    tabIndex: 0,
+    [APP_HREF]: url,
+    onClick: go,
+    onAuxClick: (e: Activation & { button: number }) => { if (e.button === 1) go(e) },
+    onKeyDown: (e: Activation & { key: string }) => { if (e.key === 'Enter') go(e) },
+  }
+}

@@ -28,7 +28,7 @@ import { NO_TASKS, useLiveTasks } from '../lib/liveTasks'
 import { hrefOf, refOf } from '../lib/noteLinks'
 import { linkTaps } from '../lib/linkTap'
 import { safeHref } from '../lib/markdown'
-import { isAppLink, openAppLink } from '../lib/appLinks'
+import { APP_HREF, isAppLink, linkHref, openAppLink } from '../lib/appLinks'
 import { planNote } from '../lib/noteOps'
 import { useNoteRows } from '../lib/noteRows'
 import type { Clock, Task } from '../lib/types'
@@ -410,15 +410,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
         return true
       },
       handleDOMEvents: { ...linkTapHandlers(),
-        click: (_view, event) => {
-          // Ctrl/Cmd-click opens a link (plain clicks place the caret).
-          const a = (event.target as HTMLElement).closest('a')
-          if (a && (event.metaKey || event.ctrlKey) && a.getAttribute('href')) {
-            openHref(a.getAttribute('href') as string)
-            return true
-          }
-          return false
-        },
+        ...linkClicks(readOnly),
         contextmenu: (pv, event) => !readOnly && openCellMenu(pv, event, chrome.openTableMenu),
         focus: () => {
           setEditing(true)
@@ -563,8 +555,30 @@ function linkTapHandlers() {
   }
 }
 
+/**
+ * Clicks on links: Ctrl/Cmd-click opens one (a plain click places the caret). An
+ * app link has no href to follow (app-links D3): in a read-only note a plain click
+ * opens it, and a middle click or Enter on one with focus asks first as a click does.
+ */
+function linkClicks(readOnly: boolean) {
+  const appLink = (event: Event) => (event.target as HTMLElement).closest?.(`a[${APP_HREF}]`)?.getAttribute(APP_HREF) ?? ''
+  const open = (event: Event, href: string) => { event.preventDefault(); openAppLink(href); return true }
+  return {
+    click: (_pv: EditorView, event: MouseEvent) => {
+      const a = (event.target as HTMLElement).closest('a')
+      const href = a ? linkHref(a) : ''
+      if (!href || !(event.metaKey || event.ctrlKey || (readOnly && a?.hasAttribute(APP_HREF)))) return false
+      event.preventDefault()
+      openHref(href)
+      return true
+    },
+    auxclick: (_pv: EditorView, event: MouseEvent) => { const href = appLink(event); return event.button === 1 && !!href && open(event, href) },
+    keydown: (_pv: EditorView, event: KeyboardEvent) => { const href = appLink(event); return event.key === 'Enter' && !!href && open(event, href) },
+  }
+}
+
 function openTapped(a: HTMLAnchorElement): void {
-  const href = a.getAttribute('href') ?? ''
+  const href = linkHref(a)
   const ref = refOf(href)
   if (ref) return openRef(ref.kind, ref.id)
   const web = safeHref(href)

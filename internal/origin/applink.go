@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // App links (OpenSpec change app-links, design D2): a link that opens an item
@@ -19,8 +21,24 @@ const (
 	MaxSchemeLen      = 32
 )
 
-// DeniedSchemes never open as app links and are refused in the list.
-var DeniedSchemes = []string{"javascript", "data", "vbscript", "file", "blob", "about", "filesystem", "view-source", "intent", "opentodo"}
+// DeniedSchemes never open as app links and are refused in the list: script,
+// file and browser-internal schemes, and the system handlers known to run code
+// (ms-msdt, search-ms, ms-officecmd, jnlp). Every scheme starting "ms-cxh" is
+// denied too.
+var DeniedSchemes = []string{"javascript", "data", "vbscript", "file", "blob", "about", "filesystem", "view-source", "intent", "opentodo",
+	"chrome", "chrome-extension", "moz-extension", "resource", "jar", "ms-appx", "ms-appx-web",
+	"ms-msdt", "search-ms", "search", "ms-officecmd", "jnlp"}
+
+// deniedScheme reports whether a lower-cased scheme is denied or has its own rules.
+func deniedScheme(s string) bool {
+	return slices.Contains(DeniedSchemes, s) || strings.HasPrefix(s, "ms-cxh") || slices.Contains(ownRules, s)
+}
+
+// hiddenRune reports a character that does not show as itself: a control or
+// format character (bidi overrides included), a line or paragraph separator, or a space.
+func hiddenRune(r rune) bool {
+	return unicode.In(r, unicode.Cc, unicode.Cf, unicode.Zl, unicode.Zp, unicode.Zs)
+}
 
 // ownRules are the schemes that keep their own handling and are never app links.
 var ownRules = []string{"http", "https", "mailto"}
@@ -33,23 +51,19 @@ var (
 
 // AppLinkScheme is the lower-cased scheme of raw when raw is an app link: a
 // scheme of the RFC 3986 grammar (at most MaxSchemeLen characters), a colon and
-// a non-empty rest, at most MaxURL bytes in all, with no whitespace or control
-// character, whose scheme is neither denied nor one of http, https and mailto.
+// a non-empty rest, at most MaxURL bytes of valid UTF-8 in all, with no
+// whitespace, control, format or separator character, whose scheme is neither
+// denied nor one of http, https and mailto.
 func AppLinkScheme(raw string) (string, bool) {
-	if raw == "" || len(raw) > MaxURL {
+	if raw == "" || len(raw) > MaxURL || !utf8.ValidString(raw) || strings.ContainsFunc(raw, hiddenRune) {
 		return "", false
-	}
-	for i := 0; i < len(raw); i++ {
-		if c := raw[i]; c <= ' ' || c == 0x7f {
-			return "", false
-		}
 	}
 	m := appLinkRe.FindStringSubmatch(raw)
 	if m == nil {
 		return "", false
 	}
 	scheme := strings.ToLower(m[1])
-	if slices.Contains(DeniedSchemes, scheme) || slices.Contains(ownRules, scheme) {
+	if deniedScheme(scheme) {
 		return "", false
 	}
 	return scheme, true
@@ -69,7 +83,7 @@ func ValidSchemeEntry(entry string) bool {
 	if m == nil || !schemeRe.MatchString(m[1]) {
 		return false
 	}
-	return !slices.Contains(DeniedSchemes, m[1]) && !slices.Contains(ownRules, m[1])
+	return !deniedScheme(m[1])
 }
 
 // AllowsAppLink reports whether a list of entries lets raw open: raw is an app
