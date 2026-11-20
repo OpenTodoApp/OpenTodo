@@ -7828,5 +7828,7 @@
   "Open links to Zotero, mail or other apps from your notes": "Otwieraj linki do Zotero, poczty lub innych aplikacji z notatek",
   "Remove {scheme}": "Usuń {scheme}",
   "This kind of link can never open": "Taki link nigdy się nie otworzy",
-  "Use the app’s scheme, like zotero": "Użyj schematu aplikacji, np. zotero"
+  "Use the app’s scheme, like zotero": "Użyj schematu aplikacji, np. zotero",
+  "Push to calendar apps": "Push do aplikacji kalendarza",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Aplikacje takie jak DAVx⁵ synchronizują się zaraz po zmianie, przez własną usługę push."
 }

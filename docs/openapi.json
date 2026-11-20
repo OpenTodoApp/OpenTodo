@@ -15661,9 +15661,9 @@
                     {
                       "clientId": "00000000-0000-4000-8000-000000000019",
                       "clientName": "Gemini",
-                      "createdAt": 1794906000154,
+                      "createdAt": 1794906000156,
                       "id": "00000000-0000-4000-8000-000000000020",
-                      "lastUsedAt": 1794906000157,
+                      "lastUsedAt": 1794906000159,
                       "scope": "agent",
                       "workspaces": []
                     }
@@ -21024,14 +21024,14 @@
                       "text": "- decided: green"
                     }
                   ],
-                  "body_version": "1794906000101:server:0a1b2c3d",
-                  "created_at": 1794906000100,
+                  "body_version": "1794906000103:server:0a1b2c3d",
+                  "created_at": 1794906000102,
                   "description": "- fence\n- beds",
                   "energy": null,
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000011",
                   "origin": null,
-                  "position": 1794906000100,
+                  "position": 1794906000102,
                   "priority": 4,
                   "rotation": [],
                   "sector": null,
@@ -32552,6 +32552,79 @@
         "x-opentodo-policy": "owner-only"
       }
     },
+    "/api/v1/settings/caldav/push": {
+      "get": {
+        "description": "`{enabled, available}`",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "getSettingsCaldavPush",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "available": true,
+                  "enabled": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get settings caldav push",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "put": {
+        "description": "`{enabled}` → the same shape\n\nOnly the server's owner.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "putSettingsCaldavPush",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "enabled": false
+              }
+            }
+          },
+          "description": "The body's fields are not described yet; the example shows one."
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "enabled": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update settings caldav push",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "owner-only"
+      }
+    },
     "/api/v1/settings/calendar-feeds": {
       "get": {
         "description": "`{enabled}`; off by default, `OPENTODO_CALENDAR_FEEDS=true` presets it on first start; a change is recorded as `settings.changed`",
@@ -37912,7 +37985,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000122,
+                  "created_at": 1794906000124,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-27"
@@ -37922,7 +37995,7 @@
                   "id": "00000000-0000-4000-8000-000000000013",
                   "occurrence_date": "2026-11-27",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -37982,9 +38055,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000132,
+                  "completed_at": 1794906000134,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000132,
+                  "created_at": 1794906000134,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-20"
@@ -37994,7 +38067,7 @@
                   "id": "00000000-0000-4000-8000-000000000016",
                   "occurrence_date": "2026-11-20",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -38054,9 +38127,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000127,
+                  "completed_at": 1794906000129,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000127,
+                  "created_at": 1794906000129,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-12-04"
@@ -38066,7 +38139,7 @@
                   "id": "00000000-0000-4000-8000-000000000015",
                   "occurrence_date": "2026-12-04",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -38719,7 +38792,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000141,
+                  "created_at": 1794906000143,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-25",
@@ -38729,7 +38802,7 @@
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000017",
                   "origin": null,
-                  "position": 1794906000137,
+                  "position": 1794906000139,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": "every weekday",
