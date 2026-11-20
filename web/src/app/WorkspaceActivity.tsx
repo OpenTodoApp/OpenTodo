@@ -147,7 +147,7 @@ export default function WorkspaceActivity({ id }: { id: string }) {
                 const task = e.taskId ? titles.get(e.taskId) || e.taskTitle || t('a task') : null
                 return (
                   <li key={e.id} data-event={e.kind} data-actor={e.actor} className="flex items-baseline gap-2 px-2 py-1.5 text-body">
-                    <span className="min-w-0 flex-1">
+                    <span className="user-text min-w-0 flex-1">
                       <strong className="font-medium text-default">{guestActorLabel(e) ?? name(e.actor)}</strong>{' '}
                       <span className="text-muted">{describeEvent(e, name, (pid) => projectName(pid))}</span>
                       {task && e.entity !== 'project' && (
