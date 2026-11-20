@@ -1,62 +1,95 @@
 ## Why
 
-OpenTodo shows every feature to everyone. A person who wants "a self-hosted Todoist alternative" meets Notes, Open Loops, Objectives, Energy, Routines and an assistant on day one ("Notes is useless for me", Discord, #1637). A family sharing chores on a kitchen iPad needs even less. Today six account-wide switches hide a few features (`method_mode`, `habits`, `objectives`, `time_sectors`, `energy`, `day_parts`). Each one is read at its own call sites and shown on its own settings card, and the rest of the app cannot be switched off at all.
+OpenTodo shows every feature to everyone, so a person who wants "a self-hosted Todoist alternative" meets Notes, Open Loops, Objectives, Energy, Routines and an assistant on day one ("Notes is useless for me", Discord, #1637). A family sharing chores on a kitchen iPad needs even less.
 
-The owner's principle: **users start simple and switch complexity on themselves, easily.** That needs one registry of switchable features, one place to switch them, and one rule every screen follows.
+What exists is scattered:
+- Six account-wide switches hide a few features (`habits`, `energy`, `day_parts`, `objectives`, `time_sectors`, `method_mode`). Each is read at its own call sites and shown on Settings → How you work.
+- The sidebar page also hides and promotes destinations.
+- The Open Loops method is a mode that overrides the sidebar.
+- The rest of the app cannot be switched off.
+
+The owner's principle: **a new workspace starts simple, and its managers switch complexity on, easily. Nothing is duplicated: one thing lives in one place.**
 
 ## What Changes
 
-- **One registry of switchable features** (D2), for example Notes, Next, Weekly review, Open Loops, Objectives, Calendar, Board, Day parts, Estimates, Energy, Time sectors, Custom fields, Habits, Time tracking, Focus, Activity, Rules, Routines, Assistant and Agents. Each entry has its group, one line, a help link, the features it needs, and the places it appears.
-- **The basics can never be switched off:** tasks, projects, labels, subtasks, the Inbox, Today, Upcoming, search, sharing, reminders, recurrence, priority and deadlines.
-- **The state belongs to the workspace** (D1): one `features` map on the workspace, set only by its managers (owner and admins), delivered to every member through sync and cached for offline use. There is no personal override in v1.
-- **The Features page is the first page of Settings.** It shows cards grouped by purpose: Plan, Consistency, Write, Together, and Automation and AI. Each card has one line, a switch and a help link. Members see the page read-only.
-- **Settings follow features:** a feature's settings section appears only while the feature is on. Every Settings section shows its scope: this workspace, you, this device, or the server.
-- **Turn it on where you need it:** search and the command palette offer "Turn on Habits" to managers while Habits is off. Others see nothing.
-- **Dependencies switch on together**, and the app says so in one line ("Objectives also turns on Weekly review"). Switching off a feature others need switches them off too, with the same line.
-- **Off hides, never deletes.** Data stays, and sync, the REST API, the CLI, MCP, the export, reminders and recurrence keep working on everything.
-- **The six existing switches fold in** (D4): each workspace's initial state comes from its owner's current values, so nobody loses or gains a screen at upgrade. Personal choices that sat in the same fields (Open Loops first or as a companion, Today grouped by part of the day) stay personal.
-- **Existing workspaces stay as they are**, every other feature on ("Full"). **New workspaces start Essential** (the basics only). The first run and New workspace ask **"Who is it for?"**: Essential (preselected), Family, or Full.
-- **Views that span workspaces follow the open workspace** (D7). The palette, the bell and reminders show an entity from another workspace with its full words and features.
-- **API:** `GET /api/v1/workspaces` carries `features`. `PATCH /api/v1/workspaces/{id}` accepts `features`, merged per key, from managers only.
+- **One registry** of switchable features. Each declares its id, the features it needs, and every place it appears: sidebar destinations, palette commands, shortcuts, quick-add tokens, task fields, its settings section and its routes. The basics are not in it and can never be switched off.
+- **One switch per feature, in one place, per workspace.**
+  - Only the workspace's managers (owner and admins) change it; there is no personal override in v1.
+  - The six account switches move into the registry and leave their old place.
+  - Off hides, never deletes. Sync, the export, the API, the CLI and MCP stay complete.
+- **The Features page is the first page of Settings and replaces "How you work".**
+  - Rows are worded by intention ("Build habits", "Plan my week", "Share chores"), grouped as Plan, Consistency, Write, Together, and Automation and AI.
+  - Each row has one line, a switch and a help link.
+  - Dependencies switch on automatically, and the app says so in one line.
+- **Settings follow features.** A feature's settings section exists only while the feature is on. Every setting shows its scope: this workspace, you, this device, or the server.
+- **Switch on from where you need it.** Search and the palette offer "Turn on Habits" to managers only. There are no prompts or suggestions.
+- **The sidebar page only orders.** Features decide whether a destination exists; Settings → Appearance → Sidebar decides only where it sits.
+  - It is one draggable list of what is on, with one divider between "shown" and "under More". It has no hide control and one link, "Turn on more features".
+  - Turning a feature on places its destinations at their default position; turning it off removes them.
+  - The order stays personal, per account.
+- **The Open Loops method stops being a mode.** It becomes features plus a navigation order, shipped as an official template in `workspace-templates`. Today's Open Loops users keep exactly what they see (D6).
+- **Existing workspaces keep everything they show today on. New workspaces start Essential** (the basics only). The first run asks one question, "How do you want to use it?", with Essential preselected.
+- **Views across workspaces follow the open workspace.** An item from another workspace shows complete.
+- **API:** the workspace carries `features`. `PATCH /api/v1/workspaces/{id}` sets it, merged per key, for managers only.
 
 Out of scope (for v1):
-- a personal override of a workspace's features;
-- modes as files, saving, importing and applying them (the next change, `workspace-modes`);
-- renaming words ("Projects" → "Lists", #779);
-- the kitchen-iPad display mode ("tap your name, see your chores");
-- switching features from the CLI or MCP (both stay full; a later change can add `ot workspaces features`).
+- a personal override;
+- templates of a whole workspace (the next change, `workspace-templates`);
+- renamed words (#779);
+- "tap your name, see your chores" on a shared screen (a display-mode follow-up);
+- switching features from the CLI or MCP (both stay complete).
 
-It advances the ROADMAP item `workspace-features` (a new row) for #1637. No **BREAKING** change: one additive server column, op fields are kept as they are (the six `user_prefs` fields stay in the schema), and no new environment variable.
+It advances the ROADMAP item `workspace-features` (a new row) for #1637. No **BREAKING** change:
+- one additive server column and one additive `user_prefs` field;
+- no op field renamed or removed (the six old fields stay in the schema);
+- no new environment variable.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `workspace-features`: the registry, the basics, per-workspace state set by managers, the Features page, settings that follow features, turning on from the palette, dependencies, hiding without deleting, presets for new workspaces, the migration of the six switches, and the API.
+- `workspace-features`:
+  - the registry and the basics;
+  - per-workspace switches set by managers;
+  - the Features page;
+  - settings that follow features, and scopes;
+  - Turn on from search and the palette;
+  - dependencies, and hiding without deleting;
+  - the ordering-only sidebar page;
+  - the migration of the six switches, Open Loops and the sidebar;
+  - Essential for new workspaces;
+  - the API.
 
 ### Modified Capabilities
 
 The build adds MODIFIED deltas, each copying the requirement whole (task 1.3):
-- `habits`, `plan-objectives`, `time-sectors`, `task-energy`, `day-parts` and `open-loops`: availability comes from the workspace feature instead of the account switch;
-- `first-run`: step 2 becomes "Who is it for?", and Open Loops is a feature turned on from the Features page;
-- `settings-navigation`: Features is the first page; sections carry a feature and a scope;
+- `habits`, `plan-objectives`, `time-sectors`, `task-energy`, `day-parts`: availability comes from the workspace feature;
+- `open-loops` and `method-views`: no method mode; the method is features plus an order;
+- `app-shell`: sidebar structure from the registry and the personal order;
+- `settings-navigation`: Features first, How you work removed, sections carry a feature and a scope;
+- `first-run`: one question;
 - `workspaces`: the `features` field and its PATCH.
 
 ## Impact
 
 - Server:
-  - migration `00xx_workspace_features.sql` (a nullable `features` JSON column);
-  - `internal/sync/workspaces.go` (the field, the one-time initial state);
-  - `internal/httpapi/workspaces.go` (PATCH, validation against the registry ids);
-  - the sync response, API docs, OpenAPI and the v1 surface.
-- One registry of ids and dependencies, `internal/features/registry.json`, read by Go and the web. It is pinned by vectors, and the Dockerfile copies it.
+  - a migration (a nullable `features` JSON column on `workspaces`) and the one-time upgrade map;
+  - `internal/sync/workspaces.go`;
+  - `internal/httpapi/workspaces.go` (PATCH, validation against the registry);
+  - the sync response, MCP `list_workspaces`, API docs, OpenAPI and the v1 surface.
+- One registry file of ids and dependencies, `internal/features/registry.json`:
+  - Go embeds it and the web imports it;
+  - pinned by vectors;
+  - copied by the Dockerfile.
+- `user_prefs.sidebar_layout`, the personal order with its divider, computed once from `sidebar_destinations`, `sidebar_order` and `method_mode`.
 - Web:
-  - `web/src/lib/features.ts` (`useFeature`, presets);
-  - the hook points listed in the design (D6);
-  - the Features page (lazy);
-  - the palette's Turn on entries;
-  - the New workspace dialog and the first run;
+  - `web/src/lib/features.ts`;
+  - the hook points (design D7);
+  - the Features page (lazy) replacing How you work;
+  - the Sidebar page;
+  - Turn on in search and the palette;
+  - the first run;
   - strings in every locale.
-- Docs (a "Features" guide), a changelog fragment.
+- Docs: a "Features" guide, the sidebar, method and first-run guides, and a changelog fragment.
 
-No dependency. The registry and the hook read about 2 KB gzip on first load; the Features page loads lazily.
+No dependency. The registry and the hook add about 2 KB gzip to the first load; the Features page loads lazily.
