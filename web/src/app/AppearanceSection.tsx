@@ -28,6 +28,7 @@ import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
 import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
+import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
 import { readTaskOpen, setTaskOpen, type TaskOpenPref } from '../lib/userPrefs'
 import { accountRowLayout, ROW_LAYOUTS, setAccountRowLayout, type RowLayout } from '../lib/rowLayout'
 import { ROW_LAYOUT_LABEL } from './views/DisplayPanel'
@@ -63,6 +64,8 @@ export interface AppearanceViewProps {
   titles?: { on: boolean; onChange: (on: boolean) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
+  /** The pinch-zoom switch, only on a touch device (design-system "Fields never zoom the screen on touch", #1386). */
+  zoom?: { on: boolean; onChange: (on: boolean) => void }
   /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
   themes?: ThemeSettingsProps
 }
@@ -117,7 +120,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, zoom, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -191,6 +194,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
           control={<Switch id="appearance-haptics-switch" checked={haptics.on} onChange={haptics.onChange} label={t('Haptic feedback')} hideLabel />} />
+      )}
+      {zoom && (
+        <SettingRow id="appearance-zoom" {...rowCopy('appearance', 'zoom')} htmlFor="appearance-zoom-switch"
+          control={<Switch id="appearance-zoom-switch" checked={zoom.on} onChange={zoom.onChange} label={t('Allow pinch zoom')} hideLabel />} />
       )}
     </SettingsSection>
   )
@@ -323,6 +330,7 @@ function useCustomValues(hex: string | undefined): CustomAccentValues | null {
 export function AppearanceSection({ author = '' }: { author?: string }) {
   const row = usePrefsRow()
   const value = readAppearance(row)
+  const allowZoom = useAllowZoom()
   const values = useCustomValues(value.custom)
   const catalogue = useCatalogue()
   // The server's default and themes (theme-instance-default): re-rendered when they change.
@@ -334,7 +342,8 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     onDensity={(d) => act(setAppearance('density', d))}
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
-    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined} />
+    haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
+    zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined} />
 }
 
 export function SidebarSection() {

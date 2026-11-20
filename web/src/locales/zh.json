@@ -1,4 +1,6 @@
 {
+  "Allow pinch zoom": "允许双指缩放",
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "在此设备上用双指缩放应用。关闭后更有原生应用的感觉。",
   "\"after completion\" only applies to day, week, month and year intervals": "“完成后”仅适用于按天、周、月和年的重复间隔",
   "(10+ characters)": "（至少 10 个字符）",
   "(archived)": "（已归档）",

@@ -1,4 +1,6 @@
 {
+  "Allow pinch zoom": "Разрешить масштабирование щипком",
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Масштабируйте приложение щипком на этом устройстве. Отключите для ощущения нативного приложения.",
   "\"after completion\" only applies to day, week, month and year intervals": "«после выполнения» работает только с интервалами в днях, неделях, месяцах и годах",
   "(10+ characters)": "(не меньше 10 символов)",
   "(added this turn)": "(добавлено в этом шаге)",
