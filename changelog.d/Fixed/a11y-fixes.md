@@ -1,0 +1,6 @@
+- **Accessibility fixes.**
+  - The Android app's connect screen names its address field and marks its title as a heading.
+  - The phone's quick-add sheet no longer reads Project and Label twice.
+  - Today and Upcoming read their title before the buttons above it.
+  - A task's page offers Previous before Next.
+  - The notes' Markdown toggle is called "Show Markdown source".

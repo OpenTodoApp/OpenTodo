@@ -1,4 +1,6 @@
 {
+  "Allow pinch zoom": "Autoriser le zoom par pincement",
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": "Zoomez dans l’app par pincement sur cet appareil. Désactivez pour un rendu plus proche d’une app.",
   "\"after completion\" only applies to day, week, month and year intervals": "« after completion » ne s’applique qu’aux intervalles en jours, semaines, mois et années",
   "(10+ characters)": "(10 caractères minimum)",
   "(archived)": "(archivé)",
@@ -579,6 +581,7 @@
   "Publish note page": "Publier la page de la note",
   "Publish note page…": "Publier la page de la note…",
   "Select notes": "Sélectionner des notes",
+  "Show Markdown source": "Afficher la source Markdown",
   "Show as graph": "Afficher en graphe",
   "Show as list": "Afficher en liste",
   "Show notes as": "Afficher les notes en",
@@ -1319,7 +1322,6 @@
   "Day reopened": "Journée rouverte",
   "Day skipped": "Jour passé",
   "Day {n} of {m}": "Jour {n} sur {m}",
-  "Day, Week, Month, Plan and Year calendar": "Calendrier Jour, Semaine, Mois, Plan et Année",
   "Day-month": "Jour-mois",
   "Day-month, month-day or ISO": "Jour-mois, mois-jour ou ISO",
   "Day: closed {time}": "Journée : clôturée {time}",
@@ -7796,5 +7798,17 @@
   "Undo the last change": "Annuler la dernière modification",
   "Redo the change undone last": "Rétablir la dernière modification annulée",
   "Undo: {step}": "Annuler : {step}",
-  "Redo: {step}": "Rétablir : {step}"
+  "Redo: {step}": "Rétablir : {step}",
+  "Go to Calendar (Quarter)": "Aller au Calendrier (Trimestre)",
+  "Go to the Calendar as Quarter: three months at a glance": "Aller au Calendrier en Trimestre : trois mois d'un coup d'œil",
+  "In Quarter: back to today": "Dans Trimestre : revenir à aujourd'hui",
+  "In Quarter: move the focused day a day or a week, across month edges": "Dans Trimestre : déplacer le jour ciblé d'un jour ou d'une semaine, en franchissant les mois",
+  "In Quarter: next quarter, keeping the day": "Dans Trimestre : trimestre suivant, en gardant le jour",
+  "In Quarter: open the focused day in Day view": "Dans Trimestre : ouvrir le jour ciblé dans la vue Jour",
+  "In Quarter: previous quarter, keeping the day": "Dans Trimestre : trimestre précédent, en gardant le jour",
+  "In Quarter: return the focus to the page header": "Dans Trimestre : rendre le focus à l'en-tête de la page",
+  "In Quarter: the first or last day of the focused month": "Dans Trimestre : premier ou dernier jour du mois ciblé",
+  "In Quarter: the same day of the previous or next month": "Dans Trimestre : le même jour du mois précédent ou suivant",
+  "Plan length": "Durée du plan",
+  "Previous quarter": "Trimestre précédent"
 }

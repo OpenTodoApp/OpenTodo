@@ -11,7 +11,7 @@ order: 15
 
 <picture><source srcset="images/notes-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/notes-light.webp" alt="The Notes page: the search field, then one line per note with its kind, title, project, labels and when it changed."></picture>
 
-The **Notes** page lists everything you have written: the notes of your tasks and projects, and notes that are not tasks at all, such as meeting notes or a packing list. Switch the sidebar to **Notes** with the control under the workspace name, or press `g` then `e`.
+The **Notes** page lists your notes, such as a packing list, and your projects' notes; type `kind:task` in its search field to add tasks' notes. Switch the sidebar to **Notes** with the control under the workspace name, or press `g` then `e`.
 
 ## Tasks and Notes in the sidebar
 
