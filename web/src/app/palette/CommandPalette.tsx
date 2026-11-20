@@ -13,7 +13,7 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { useLabels, useLiveSections, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
 import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
@@ -77,6 +77,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
   const labels = useLabels()
+  const sections = useLiveSections()
   const prefs = useUserPrefsRow()
   const views = useViews()
   const memberships = useMembershipMapOrLoading()
@@ -151,7 +152,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   }, [ctx, scores, source])
   const fieldDefs = useFieldDefs()
   const wsFilter = useWorkspaceFilter()
-  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, wsFilter, taskEntry])
+  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, sections, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, sections, fieldDefs, wsFilter, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   // Notes (notes-overview D5): after the text matches, before the trailing commands.

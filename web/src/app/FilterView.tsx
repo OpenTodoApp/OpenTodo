@@ -288,7 +288,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
         onAdd={() => document.querySelector<HTMLButtonElement>('[data-filter-panel] [data-add-condition]')?.click()} />
       {filterOpen && (
         <FilterPanel count={count} onClose={() => setFilterOpen(false)} inputRef={inputRef} onClear={() => { setHistIdx(-1); draftWs.clear(); focusQuery() }}
-          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
+          builder={<FilterBuilder query={query} onChange={(q) => { setQuery(q); setHistIdx(-1) }} labels={labels} projects={projects} sections={flow.sections} fields={fieldDefs} workspaces={ws.workspaces} members={directory.members} />}
           formula={(
             <input
               ref={inputRef}

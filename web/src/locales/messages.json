@@ -3302,6 +3302,7 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a section": [
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/rules/RuleFields.tsx"
   ],
   "Choose a slot": [
@@ -6481,6 +6482,9 @@
     "web/src/lib/filter/parse.ts"
   ],
   "Expected a provider or kind after \"origin:\" at position {pos}": [
+    "web/src/lib/filter/parse.ts"
+  ],
+  "Expected a section name after \"section:\" at position {pos}": [
     "web/src/lib/filter/parse.ts"
   ],
   "Expected a term after \"{after}\" at position {pos}": [
@@ -11335,6 +11339,7 @@
     "web/src/app/RuleEditor.tsx",
     "web/src/app/Sections.tsx",
     "web/src/app/assistant/blocks/BoardBlock.tsx",
+    "web/src/app/filter/conditionText.ts",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/HistoryTab.tsx",
     "web/src/app/task-detail/TaskFacts.tsx",
@@ -11345,6 +11350,9 @@
     "web/src/lib/facets.ts",
     "web/src/lib/listGroups.ts",
     "web/src/lib/pickerSources.ts"
+  ],
+  "No section named \"{name}\"": [
+    "web/src/lib/filter/evaluate.ts"
   ],
   "No sections in this project.": [
     "web/src/app/routines/words.tsx"
@@ -15627,6 +15635,9 @@
   "Search results": [
     "web/src/app/help/HelpView.tsx"
   ],
+  "Search sections": [
+    "web/src/app/filter/ConditionEditor.tsx"
+  ],
   "Search settings": [
     "web/src/app/SettingsView.tsx"
   ],
@@ -15672,6 +15683,7 @@
   "Section": [
     "web/src/app/RuleEditor.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/routines/words.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -15683,6 +15695,9 @@
   ],
   "Section flow changed": [
     "web/src/app/menus/flowMenu.ts"
+  ],
+  "Section is {name}": [
+    "web/src/app/filter/conditionText.ts"
   ],
   "Section menu for {title}": [
     "web/src/app/Sections.tsx"

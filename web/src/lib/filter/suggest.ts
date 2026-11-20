@@ -26,7 +26,7 @@ export function fieldSuggestions(query: string, defs: readonly FieldDef[], limit
   }
   if (open < 0) return []
   const before = query.slice(0, open).trimEnd()
-  if (/[@#]$/.test(query.slice(0, open)) || /search:$/i.test(before)) return []
+  if (/[@#]$/.test(query.slice(0, open)) || /(search|section):$/i.test(before)) return []
   const prefix = query.slice(open + 1).toLocaleLowerCase()
   const seen = new Set<string>()
   const out: FieldSuggestion[] = []
