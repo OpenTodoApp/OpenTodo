@@ -1696,12 +1696,18 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (pointer: coarse) {
   /* A held row is the menu's gesture, never a text selection (task-row-context-menu
      follow-up): a long press on a phone must not select words under the finger.
-     Editing controls keep text selection — the inline editor still selects its text. */
-  li[data-task-id] { -webkit-user-select: none; user-select: none; }
+     Editing controls keep text selection — the inline editor still selects its text.
+     The callout is off too (#1346): on iOS `user-select: none` stops the selection
+     sticking, but only `-webkit-touch-callout: none` stops WebKit's own long-press
+     recognizer engaging on the body and cancelling the drag's pointer part way through
+     the hold — which is why the grip (a button, so already callout-off) picks up a drag
+     reliably and the body did not, text under the finger or none. */
+  li[data-task-id] { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   /* The expanded row's notes and its detailed facts line are reading text, not part of
      the gesture: the whole `li` is unselectable on a phone so a hold cannot hand words to
-     the browser, but `RowDetails` and that facts line must stay selectable and copyable. */
-  li[data-task-id] [data-row-details] { -webkit-user-select: text; user-select: text; }
+     the browser, but `RowDetails` and that facts line must stay selectable and copyable,
+     and keep their callout so a link in notes still offers its long-press menu. */
+  li[data-task-id] [data-row-details] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
   li[data-task-id] :is(input, textarea, [contenteditable="true"]) { -webkit-user-select: text; user-select: text; }
   :where(button, [role="button"], summary, select, a.ui-btn) { min-height: 44px; min-width: 44px; }
   :where(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="range"], [type="color"]), textarea) { min-height: 44px; }
