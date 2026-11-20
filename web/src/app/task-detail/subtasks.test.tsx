@@ -7,7 +7,7 @@ import { act } from 'react'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../lib/db'
 import { createSubtask, createTask } from '../../lib/ops'
-import { click, key, spokenText, type, visibleText } from '../../ui/test-utils'
+import { click, flush, key, spokenText, type, visibleText } from '../../ui/test-utils'
 import { open, setupTaskDetailTests, waitFor } from './taskDetail.testkit'
 
 setupTaskDetailTests()
@@ -20,12 +20,11 @@ describe('subtasks', () => {
     const { container, unmount } = await open(id)
     const s = section(container)
     expect(s.querySelector('h3')).toBeNull()
-    expect(s.querySelector('input')).toBeTruthy()
-    expect(s.querySelector('input')!.className).not.toContain('input')
-    const input = s.querySelector('input[aria-label="Add subtask"]') as HTMLInputElement
+    expect(s.querySelector('textarea')).toBeTruthy()
+    expect(s.querySelector('textarea')!.className).not.toContain('input')
+    const input = s.querySelector('textarea[aria-label="Add subtask"]') as HTMLTextAreaElement
     await type(input, 'Paint')
     await key(input, 'Enter')
-    input.form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
     await waitFor(() => s.querySelectorAll('li').length === 1)
     expect(s.querySelector('h3')!.textContent).toContain('Subtasks')
     expect(s.querySelector('h3')!.textContent).toContain('0 of 1')
@@ -56,14 +55,51 @@ describe('subtasks', () => {
     await createSubtask(id, 'Paint')
     const { container, unmount } = await open(id, { readOnly: true })
     await waitFor(() => section(container).querySelectorAll('li').length === 1)
-    expect(section(container).querySelector('input')).toBeNull()
+    expect(section(container).querySelector('textarea')).toBeNull()
+    await unmount()
+  })
+})
+
+// GitHub issue 1549: a long subtask wraps while it is typed, like quick add's line.
+describe('a long subtask wraps', () => {
+  it('the field is one row with a hidden copy of its text that sets its height; a line break becomes a space and Enter adds the whole title', async () => {
+    const id = await createTask({ title: 'Plan trip' })
+    const { container, unmount } = await open(id)
+    const s = section(container)
+    const field = s.querySelector('textarea[aria-label="Add subtask"]') as HTMLTextAreaElement
+    expect(field.getAttribute('rows')).toBe('1')
+    const copy = s.querySelector<HTMLElement>('[data-add-subtask] [data-line-field-copy]')!
+    expect(copy.getAttribute('aria-hidden')).toBe('true')
+    expect(copy.parentElement).toBe(field.parentElement)
+    await type(field, 'Ask the hotel whether the late check-in\non Friday still works')
+    expect(field.value).toBe('Ask the hotel whether the late check-in on Friday still works')
+    expect(copy.textContent).toBe('Ask the hotel whether the late check-in on Friday still works\u200b')
+    field.focus()
+    await key(field, 'Enter')
+    await waitFor(() => s.querySelectorAll('li').length === 1)
+    expect(s.querySelector('li')!.textContent).toBe('Ask the hotel whether the late check-in on Friday still works')
+    expect(field.value).toBe('')
+    await waitFor(() => document.activeElement === field)
+    await unmount()
+  })
+
+  it('Enter that confirms an input method character adds nothing', async () => {
+    const id = await createTask({ title: 'Plan trip' })
+    const { container, unmount } = await open(id)
+    const s = section(container)
+    const field = s.querySelector('textarea[aria-label="Add subtask"]') as HTMLTextAreaElement
+    await type(field, '荷物')
+    await key(field, 'Enter', { isComposing: true })
+    await flush()
+    expect(s.querySelectorAll('li')).toHaveLength(0)
+    expect(field.value).toBe('荷物')
     await unmount()
   })
 })
 
 // OpenSpec change paste-to-tasks, task 4.1: a pasted list in Add subtask.
 describe('pasting several subtasks', () => {
-  async function paste(input: HTMLInputElement, text: string) {
+  async function paste(input: HTMLTextAreaElement, text: string) {
     const e = new Event('paste', { bubbles: true, cancelable: true })
     Object.defineProperty(e, 'clipboardData', { value: { files: [], getData: (kind: string) => (kind === 'text/plain' ? text : '') } })
     await act(async () => { input.dispatchEvent(e) })
@@ -74,7 +110,7 @@ describe('pasting several subtasks', () => {
     const id = await createTask({ title: 'Plan trip' })
     const { container, unmount } = await open(id)
     const s = section(container)
-    const input = s.querySelector('input[aria-label="Add subtask"]') as HTMLInputElement
+    const input = s.querySelector('textarea[aria-label="Add subtask"]') as HTMLTextAreaElement
     input.focus()
     expect(await paste(input, '1. Passport\n2. Charger\n3. Tickets tomorrow p1')).toBe(true)
     await waitFor(() => !!document.querySelector('[data-paste-add]'))
@@ -97,7 +133,7 @@ describe('pasting several subtasks', () => {
   it('a field with text is left alone', async () => {
     const id = await createTask({ title: 'Plan trip' })
     const { container, unmount } = await open(id)
-    const input = section(container).querySelector('input[aria-label="Add subtask"]') as HTMLInputElement
+    const input = section(container).querySelector('textarea[aria-label="Add subtask"]') as HTMLTextAreaElement
     await type(input, 'Pack ')
     await act(async () => { input.setSelectionRange(5, 5) })
     expect(await paste(input, 'one\ntwo')).toBe(false)
@@ -140,7 +176,7 @@ describe('the quiet checklist', () => {
     const done = [...section(container).querySelectorAll('li')].filter((li) => li.querySelector('button[aria-pressed="true"]'))
     expect(done).toHaveLength(2)
     for (const li of done) expect(li.querySelectorAll('button')[1].className).toMatch(/text-faint line-through/)
-    expect(section(container).querySelector<HTMLInputElement>('input[aria-label="Add subtask"]')!.placeholder).toBe('Add a subtask')
+    expect(section(container).querySelector<HTMLTextAreaElement>('textarea[aria-label="Add subtask"]')!.placeholder).toBe('Add a subtask')
     await unmount()
   })
 

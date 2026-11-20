@@ -210,8 +210,8 @@ describe('a running session', () => {
     const r = await shell()
     await waitFor(() => shownTask() === 'A')
     await click(q('[data-focus-details-toggle]')!)
-    await waitFor(() => !!q('[data-add-subtask] input'), 'the subtask field')
-    const input = q<HTMLInputElement>('[data-add-subtask] input')!
+    await waitFor(() => !!q('[data-add-subtask] textarea'), 'the subtask field')
+    const input = q<HTMLTextAreaElement>('[data-add-subtask] textarea')!
     input.focus()
     await key(input, ' ')
     await flush()

@@ -16,6 +16,7 @@ import { showUndoToast } from '../bulk/toastStore'
 import { addTasksUndoable, subtaskInputs } from '../../lib/pasteTasks'
 import { showBulkToast } from '../bulk/toastStore'
 import { usePasteOffer } from '../quickadd/PasteOffer'
+import { LineField } from '../LineField'
 import { useSubtaskOrder } from './subtaskOrder'
 
 export interface SubtasksProps {
@@ -98,10 +99,10 @@ export function Subtasks({ task, items, progress, readOnly, boxed = false, add =
   )
 }
 
-/** "Add subtask" input: creates on Enter and stays focused for the next entry. */
+/** "Add subtask" field: creates on Enter and stays focused for the next entry; a long title wraps (LineField). */
 export function AddSubtask({ parent }: { parent: Task }) {
   const [value, setValue] = useState('')
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   async function submit(e: FormEvent) {
     e.preventDefault()
     const title = value.trim()
@@ -122,17 +123,20 @@ export function AddSubtask({ parent }: { parent: Task }) {
     onPasteAsLine: (text) => { setValue(text); ref.current?.focus() },
   })
   return (
-    <form onSubmit={(e) => void submit(e)} className="flex min-h-8 items-center gap-2 px-1 pointer-coarse:min-h-11" data-add-subtask>
-      <span className="flex size-5 shrink-0 items-center justify-center text-faint"><Icon name="plus" size="xs" /></span>
-      <input
+    // The plus keeps to the field's first line when the title wraps: its box is one line of
+    // the field (28 px; 44 px on a touch screen, where a field is at least 44 px tall and
+    // its padding keeps one line in the middle, as the one-line input had it).
+    <form onSubmit={(e) => void submit(e)} className="flex min-h-8 items-start gap-2 px-1 py-0.5 pointer-coarse:min-h-11 pointer-coarse:py-0" data-add-subtask>
+      <span className="flex h-7 w-5 shrink-0 items-center justify-center text-faint pointer-coarse:h-11"><Icon name="plus" size="xs" /></span>
+      <LineField
         ref={ref}
-        className="min-w-0 flex-1 rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30"
+        className="rounded-chip bg-transparent py-1 text-body text-default placeholder:text-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-focus/30 pointer-coarse:py-3"
         placeholder={t('Add a subtask')}
         aria-label={t('Add subtask')}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onValue={setValue}
         onPaste={paste.onPaste}
-        onKeyDown={(e) => { if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+        onKeyDown={(e) => { if (e.key === 'Escape') e.currentTarget.blur() }}
       />
       {paste.offer}
     </form>
