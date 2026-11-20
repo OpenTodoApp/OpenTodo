@@ -211,13 +211,6 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
             <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
           </li>
         )}
-        {c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board && (
-          <li>
-            <Suspense fallback={null}>
-              <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
-            </Suspense>
-          </li>
-        )}
         {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
             until the parent is the selected row (index.css); none for a
             departing row, and none while a drag runs, so drop zones stay one-line rows (row-expand D4). */}
@@ -233,7 +226,32 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       </Fragment>
     )
   }
-  return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
+  // The "Add task below" line is the row's sibling with one key of its own, not part of
+  // the row: as it moves under each task it adds, React moves the same field and its focus
+  // instead of drawing a new one (issue 1551: iOS kept lower case for a field focused from
+  // code after the Enter). The row list flattens it into place (flatRows).
+  const below = (r: Row) => (c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board
+    ? (
+      <li key={ADD_BELOW_KEY}>
+        <Suspense fallback={null}>
+          <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
+        </Suspense>
+      </li>
+    )
+    : null)
+  return (r) => {
+    const row = c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r)
+    const add = below(r)
+    return add ? [row, add] : row
+  }
+}
+
+/** The key of the "Add task below" line, the same under whichever row it is drawn. */
+const ADD_BELOW_KEY = 'add-below'
+
+/** A group's rows with a row's "Add task below" line taken out of its pair, so it is their sibling. */
+function flatRows(children: ReactNode[]): ReactNode[] {
+  return children.some(Array.isArray) ? children.flatMap((n) => (Array.isArray(n) ? n : [n])) : children
 }
 
 /**
@@ -435,8 +453,8 @@ export function GroupedList(p: GroupedListProps) {
   }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
   const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
-    ? <div role="rowgroup" {...extra}>{children}</div>
-    : <RowList extra={extra}>{children}</RowList>)
+    ? <div role="rowgroup" {...extra}>{flatRows(children)}</div>
+    : <RowList extra={extra}>{flatRows(children)}</RowList>)
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
   const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
