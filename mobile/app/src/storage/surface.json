@@ -153,6 +153,7 @@
     ],
     "Table.count": [
       "web/src/lib/attachments.ts",
+      "web/src/lib/db.ts",
       "web/src/lib/e2eeSync.ts",
       "web/src/lib/sync.ts"
     ],
