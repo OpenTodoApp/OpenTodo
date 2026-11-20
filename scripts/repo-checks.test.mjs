@@ -5,7 +5,7 @@
 // gates (ci-release-gates): pinned actions and images, timeouts, publishing only
 // after every gate, signed and attested artefacts, CI running `make check`.
 // Contributor docs (contributor-docs-and-template-checks): every internal/ package
-// and token scope named in AGENTS.md and docs/architecture.md.
+// and token scope named in docs/contributing/packages.md (the long form of AGENTS.md) and docs/architecture.md.
 // Run: node --test scripts/repo-checks.test.mjs
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -543,12 +543,13 @@ function internalPackages(dir = 'internal') {
   return out
 }
 
-test('AGENTS.md names every internal/ package', () => {
-  const agents = read('AGENTS.md')
+// The package map is the long form of AGENTS.md (docs/contributing/packages.md).
+test('the package map names every internal/ package', () => {
+  const agents = read('docs/contributing/packages.md')
   const pkgs = internalPackages()
   assert.ok(pkgs.length > 30, `expected the internal/ packages, found ${pkgs.length}`)
   const missing = pkgs.filter((p) => !agents.includes('`' + p + '`'))
-  assert.deepEqual(missing, [], 'add each package to the Layout section of AGENTS.md as `internal/<path>` with what it does')
+  assert.deepEqual(missing, [], 'add each package to "Where things are" in docs/contributing/packages.md as `internal/<path>` with what it does')
 })
 
 test('docs/architecture.md has a row for every internal/ package', () => {
@@ -561,12 +562,12 @@ test('docs/architecture.md has a row for every internal/ package', () => {
   assert.deepEqual(missing, [], 'add a row (or, for a sub-package, a mention in its parent row) to "Server packages" in docs/architecture.md')
 })
 
-test('AGENTS.md lists every API token scope and does not call the MCP server read-only', () => {
-  const agents = read('AGENTS.md')
+test('the rules in full list every API token scope and do not call the MCP server read-only', () => {
+  const agents = read('docs/contributing/packages.md')
   const scopes = [...read('internal/auth/service.go').matchAll(/^\s*Scope[A-Z]\w*\s*=\s*"([a-z]+)"/gm)].map((m) => m[1])
   assert.ok(scopes.length >= 4, `expected the token scopes, found ${scopes.join(', ')}`)
   const listed = agents.match(/API tokens have a scope (`[a-z]+`(?:\|`[a-z]+`)*)/)
-  assert.ok(listed, 'AGENTS.md names the token scopes as `a`|`b`|...')
+  assert.ok(listed, 'docs/contributing/packages.md names the token scopes as `a`|`b`|...')
   assert.deepEqual(listed[1].split('|').map((s) => s.slice(1, -1)).sort(), [...scopes].sort())
   assert.doesNotMatch(agents, /`internal\/mcp` read-only/, 'the MCP server has write tools (agent tokens)')
   assert.match(agents, /`internal\/mcp`[^;]*write tools/)
