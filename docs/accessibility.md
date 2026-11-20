@@ -146,6 +146,7 @@ The automated gate runs on every pull request; "not toured" screens are only rea
 | `notes` | core | pass | 2 of 6 passes done, 4 pending |
 | `trash` | core | pass | 2 of 6 passes done, 4 pending |
 | `feed` | core | pass | 2 of 6 passes done, 4 pending |
+| `workspace-activity` | rare | pass | not in the manual audit |
 | `ask` | core | pass | 2 of 6 passes done, 4 pending |
 | `filter` | core | pass | 2 of 6 passes done, 4 pending |
 | `views` | core | pass | 2 of 6 passes done, 4 pending |

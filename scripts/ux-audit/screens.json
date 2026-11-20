@@ -565,6 +565,19 @@
   "story": "Screens/Updates"
  },
  {
+  "id": "workspace-activity",
+  "route": "workspace-activity",
+  "kind": "screen",
+  "seed": "layout-check",
+  "frequency": "rare",
+  "core": false,
+  "layoutCheck": null,
+  "layoutCheckReason": "opened from the workspace menu with a workspace id; the layout of Updates, which the layout check covers",
+  "story": "Screens/Workspace activity",
+  "path": "/workspaces/{workspace}/activity",
+  "ready": "[data-workspace-activity]"
+ },
+ {
   "id": "ask",
   "route": "ask",
   "kind": "screen",
