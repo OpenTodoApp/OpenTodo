@@ -252,6 +252,7 @@
       "web/src/lib/sync.ts",
       "web/src/lib/taskPages.ts",
       "web/src/lib/trash.ts",
+      "web/src/lib/undo.ts",
       "web/src/lib/views.ts",
       "web/src/lib/workspaces.ts"
     ],

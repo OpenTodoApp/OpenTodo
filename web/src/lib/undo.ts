@@ -136,6 +136,57 @@ export interface UndoResult {
   restored: number
   /** Titles of items whose field was changed again after the batch. */
   skipped: string[]
+  /** The batch this step reversed, when it reversed one. */
+  id?: string
+  /** What that batch did ("3 tasks completed"), when it recorded it: the feedback names it. */
+  label?: string
+}
+
+/** How an undo or redo picks its batch. */
+export interface StepOptions {
+  /**
+   * Keyboard and palette steps (#1488): `id` is the stack's top as the caller last read it
+   * from a live query, which lags a fast second press. When an earlier step already reversed
+   * that batch, take the top as it stands when this step runs, so the second press reverses
+   * the next batch instead of nothing. The toast's own button names its exact batch and
+   * leaves this off.
+   */
+  latest?: boolean
+}
+
+const named = (e: AssistantUndo) => ({ id: e.id, ...(e.label ? { label: e.label } : {}) })
+
+// The undo and redo stacks (OpenSpec change undo-redo-history, #1488): the batch log read as
+// two stacks. lib/undoHistory.ts follows their tops live; the steps below re-read them when
+// they run, so a fast second press is not fooled by a live query that has not caught up.
+
+/** One step of history, named for a control or the feedback ("Undo: complete 3 tasks"). */
+export interface UndoStep {
+  id: string
+  /** What the action was ("3 tasks completed"), when the batch recorded one. */
+  label?: string
+  /** How many changes the batch made. */
+  count: number
+}
+
+const stepOf = (e: AssistantUndo): UndoStep => ({ ...named(e), count: e.count })
+
+/** The batch the next Undo reverses: the most recent one not yet undone, or null. */
+export function topUndo(entries: readonly AssistantUndo[]): UndoStep | null {
+  let top: AssistantUndo | undefined
+  for (const e of entries) if (!e.undone_at && (!top || e.created_at > top.created_at)) top = e
+  return top ? stepOf(top) : null
+}
+
+/** The batch the next Redo re-applies: the one undone most recently, or null. */
+export function topRedo(entries: readonly AssistantUndo[]): UndoStep | null {
+  let top: AssistantUndo | undefined
+  for (const e of entries) {
+    // A batch undone before this feature shipped has no redo payload and cannot be redone.
+    if (e.undone_at == null || !e.redo) continue
+    if (!top || e.undone_at > top.undone_at!) top = e
+  }
+  return top ? stepOf(top) : null
 }
 
 /** How many tasks an Undo would touch (the list reflows only up to a cap, motion-v2 D4). */
@@ -267,13 +318,17 @@ resettable('undo', () => {
  * newer value and is named as skipped. The forward values and their new clocks are stored
  * so the batch can be redone.
  */
-export function undoBatch(id: string): Promise<UndoResult> {
+export function undoBatch(id: string, opts: StepOptions = {}): Promise<UndoResult> {
   return serialize(async () => {
-    const entry = await db.assistantUndo.get(id)
+    let entry = await db.assistantUndo.get(id)
+    if ((!entry || entry.undone_at) && opts.latest) {
+      const top = topUndo(await db.assistantUndo.toArray())
+      entry = top ? await db.assistantUndo.get(top.id) : undefined
+    }
     if (!entry || entry.undone_at) return { restored: 0, skipped: [] }
     const r = await reverse(entry, { inverse: entry.inverse, clocks: entry.clocks })
-    await db.assistantUndo.update(id, { undone_at: Date.now(), redo: r.back })
-    return { restored: r.restored, skipped: r.skipped }
+    await db.assistantUndo.update(entry.id, { undone_at: Date.now(), redo: r.back })
+    return { restored: r.restored, skipped: r.skipped, ...named(entry) }
   })
 }
 
@@ -282,12 +337,16 @@ export function undoBatch(id: string): Promise<UndoResult> {
  * changed again since the undo. Its clocks become the batch's recorded clocks, so a later
  * undo of it is recognised as ours.
  */
-export function redoBatch(id: string): Promise<UndoResult> {
+export function redoBatch(id: string, opts: StepOptions = {}): Promise<UndoResult> {
   return serialize(async () => {
-    const entry = await db.assistantUndo.get(id)
+    let entry = await db.assistantUndo.get(id)
+    if ((!entry || !entry.undone_at || !entry.redo) && opts.latest) {
+      const top = topRedo(await db.assistantUndo.toArray())
+      entry = top ? await db.assistantUndo.get(top.id) : undefined
+    }
     if (!entry || !entry.undone_at || !entry.redo) return { restored: 0, skipped: [] }
     const r = await reverse(entry, entry.redo)
-    await db.assistantUndo.update(id, { undone_at: undefined, clocks: mergeClocks(entry.clocks, r.back.clocks) })
-    return { restored: r.restored, skipped: r.skipped }
+    await db.assistantUndo.update(entry.id, { undone_at: undefined, clocks: mergeClocks(entry.clocks, r.back.clocks) })
+    return { restored: r.restored, skipped: r.skipped, ...named(entry) }
   })
 }

@@ -136,3 +136,50 @@ describe('redo', () => {
     expect((await db.tasks.get(id))!.priority).toBe(3)
   })
 })
+
+// Keyboard and palette steps read the stack's top from a live query, which lags a fast
+// second press (security read of #1616): both presses name the same batch. With `latest`
+// the step takes the top as it stands when it runs, so the second press reverses the next
+// batch instead of doing nothing; the toast's own button keeps its exact batch.
+describe('a fast second press reads the stack as it stands', () => {
+  it('two fast undos of the same stale top undo two batches, newest first', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b1 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action', label: 'raise to 2' }))!
+    const b2 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 3 } }], { source: 'action', label: 'raise to 3' }))!
+    // Both presses saw b2 on top before the first one recorded its undo.
+    const [r1, r2] = await Promise.all([undoBatch(b2.id, { latest: true }), undoBatch(b2.id, { latest: true })])
+    expect([r1.id, r2.id]).toEqual([b2.id, b1.id])
+    expect([r1.restored, r2.restored]).toEqual([1, 1])
+    expect((await db.tasks.get(id))!.priority).toBe(1)
+  })
+
+  it('two fast redos of the same stale top redo two batches, in original order', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b1 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' }))!
+    const b2 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 3 } }], { source: 'action' }))!
+    await undoBatch(b2.id)
+    await undoBatch(b1.id)
+    // b1 was undone last, so both presses saw it on top of the redo stack.
+    const [r1, r2] = await Promise.all([redoBatch(b1.id, { latest: true }), redoBatch(b1.id, { latest: true })])
+    expect([r1.id, r2.id]).toEqual([b1.id, b2.id])
+    expect((await db.tasks.get(id))!.priority).toBe(3)
+  })
+
+  it('without latest an already reversed batch stays a no-op (the toast button)', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b1 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action' }))!
+    const b2 = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 3 } }], { source: 'action' }))!
+    await undoBatch(b2.id)
+    const again = await undoBatch(b2.id)
+    expect(again.restored).toBe(0)
+    expect((await db.tasks.get(id))!.priority).toBe(2)
+    expect((await db.assistantUndo.get(b1.id))!.undone_at).toBeUndefined()
+  })
+
+  it('names the step it reversed', async () => {
+    const id = await createTask({ title: 'T', priority: 1 })
+    const b = (await applyBatch([{ entity: 'task', entityId: id, patch: { priority: 2 } }], { source: 'action', label: 'Priority changed' }))!
+    expect(await undoBatch(b.id)).toMatchObject({ id: b.id, label: 'Priority changed' })
+    expect(await redoBatch(b.id)).toMatchObject({ id: b.id, label: 'Priority changed' })
+  })
+})
