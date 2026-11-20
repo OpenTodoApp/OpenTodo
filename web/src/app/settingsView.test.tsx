@@ -68,7 +68,7 @@ describe('from 1024 px', () => {
     await waitFor(() => !!r.container.querySelector('aside [data-settings-pane-page="webhooks"]'), 'the pane pages')
     const aside = r.container.querySelector('aside')!
     const pane = [...aside.querySelectorAll<HTMLAnchorElement>('[data-settings-pane-pages="integrations"] a[data-settings-pane-page]')]
-    expect(pane.map((a) => a.getAttribute('data-settings-pane-page'))).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp'])
+    expect(pane.map((a) => a.getAttribute('data-settings-pane-page'))).toEqual(['caldav', 'calendar-feeds', 'calendar-sync', 'issues', 'webhooks', 'tokens', 'assistant', 'mcp', 'app-links'])
     expect(pane.find((a) => a.getAttribute('data-settings-pane-page') === 'webhooks')?.getAttribute('aria-current')).toBe('page')
     expect(aside.querySelector('a[data-settings-link="integrations"]')?.getAttribute('aria-current')).toBe('true')
     // Only the open section lists its pages.

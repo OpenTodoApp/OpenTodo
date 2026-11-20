@@ -22,6 +22,7 @@ COPY internal/digest/testdata/next_action_fixture.json /src/internal/digest/test
 COPY internal/flow/testdata/flow_fixture.json /src/internal/flow/testdata/flow_fixture.json
 COPY internal/sync/testdata/schema_fixture.json /src/internal/sync/testdata/schema_fixture.json
 COPY internal/origin/testdata/origin_vectors.json /src/internal/origin/testdata/origin_vectors.json
+COPY internal/origin/testdata/app_links.vectors.json /src/internal/origin/testdata/app_links.vectors.json
 COPY internal/sync/testdata/workspaces_fixture.json /src/internal/sync/testdata/workspaces_fixture.json
 COPY internal/sync/testdata/reserved_devices.json /src/internal/sync/testdata/reserved_devices.json
 COPY internal/filter/testdata/limits.json /src/internal/filter/testdata/limits.json

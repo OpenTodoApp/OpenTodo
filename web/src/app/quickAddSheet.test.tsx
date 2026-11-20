@@ -140,6 +140,9 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect(document.querySelector('[data-sheet-chip="project"]')!.textContent).toContain('Home renovation')
     expect(document.querySelector('[data-sheet-placeholder="label"]')).toBeTruthy()
     expect(document.querySelector('[data-sheet-placeholder="project"]')).toBeNull()
+    // The placeholder repeats the toolbar's Label, so a screen reader does not meet it twice.
+    expect(document.querySelector('[data-sheet-placeholder="label"]')!.getAttribute('aria-hidden')).toBe('true')
+    expect(document.querySelector('[data-sheet-tool="label"]')!.getAttribute('aria-label')).toBe('Label')
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])

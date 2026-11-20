@@ -107,7 +107,7 @@ The settings:
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
 | `complete-task` Completing a task in the 2,000-row list, from the click to the paint that shows the tick, as INP measures it (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
-| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
+| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it, starting on the Inbox | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |
 | `remote-edit` An edit on another device, painted here | ms | 1,000 | — | — | — |
 | `js-heap` JavaScript heap after the session | MB | 150 | 150 | — | — |
