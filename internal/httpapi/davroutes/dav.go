@@ -16,6 +16,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
 	"github.com/OpenTodoApp/opentodo/internal/caldav"
+	"github.com/OpenTodoApp/opentodo/internal/davpush"
 	"github.com/OpenTodoApp/opentodo/internal/daypart"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
@@ -57,6 +58,8 @@ func parseDavPath(p, uid string) (davPath, bool) {
 	}
 	seg := strings.Split(rest, "/")
 	switch {
+	case seg[0] == "push" && len(seg) == 2 && seg[1] != "":
+		return davPath{kind: kindPush, name: seg[1]}, true
 	case seg[0] == "principals" && len(seg) == 2 && seg[1] == uid:
 		return davPath{kind: kindPrincipal}, true
 	case seg[0] == "calendars" && len(seg) >= 2 && seg[1] == uid:
@@ -106,13 +109,39 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "CalDAV is not available for accounts with end-to-end encryption", http.StatusForbidden)
 		return
 	}
-	w.Header().Set("DAV", davCompliance)
+	w.Header().Set("DAV", s.davHeader(r.Context()))
 	p, ok := parseDavPath(r.URL.Path, u.ID)
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, path: p, scope: ap.Scope, events: ap.Events}
+	d := &davRequest{s: s, w: w, r: r, user: u, device: "caldav:" + ap.ID, appPassword: ap.ID, path: p, scope: ap.Scope, events: ap.Events}
+	if p.kind == kindPush {
+		if r.Method != http.MethodDelete {
+			w.Header().Set("Allow", "DELETE")
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		d.pushUnregister()
+		return
+	}
+	if r.Method == http.MethodPut || r.Method == http.MethodDelete {
+		// A write that names registrations in Push-Dont-Notify does not wake them (caldav-push D5).
+		sw := &statusWriter{ResponseWriter: w}
+		d.w = sw
+		// The cursor before the write: only the write's own ops are skipped.
+		var before int64 = -1
+		if r.Header.Get("Push-Dont-Notify") != "" {
+			if c, err := s.sync.Cursor(d.ctx(), d.user.ID); err == nil {
+				before = c
+			}
+		}
+		defer func() {
+			if sw.succeeded() && before >= 0 {
+				d.pushDontNotify(before)
+			}
+		}()
+	}
 	switch r.Method {
 	case http.MethodOptions:
 		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, MKCOL")
@@ -133,6 +162,8 @@ func (s *Server) handleDAV(w http.ResponseWriter, r *http.Request) {
 		d.mkcalendar(true)
 	case "PROPPATCH":
 		d.proppatch()
+	case http.MethodPost:
+		d.pushRegister()
 	default:
 		w.Header().Set("Allow", "OPTIONS, GET, HEAD, PUT, DELETE, PROPFIND, PROPPATCH, REPORT, MKCALENDAR, MKCOL")
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -182,8 +213,10 @@ type davRequest struct {
 	r      *http.Request
 	user   *auth.User
 	device string
-	path   davPath
-	view   *davView
+	// appPassword is the id of the app password the request signed in with.
+	appPassword string
+	path        davPath
+	view        *davView
 	// scope is the app password's part of the account (sync-scope): calendars
 	// outside it are not listed and answer 404, so nothing in them is read or
 	// written.
@@ -506,6 +539,7 @@ func (d *davRequest) homeProps() map[caldav.PropName]propFunc {
 		pReports:      func() string { return reportSet },
 	}
 	d.commonProps(m)
+	d.pushProps(m, davpush.Home)
 	return m
 }
 
@@ -552,6 +586,7 @@ func (d *davRequest) calendarProps(v *davView, cal string) map[caldav.PropName]p
 		}
 	}
 	d.commonProps(m)
+	d.pushProps(m, cal)
 	return m
 }
 

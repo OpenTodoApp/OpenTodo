@@ -7822,6 +7822,8 @@
   "Remove {scheme}": "移除 {scheme}",
   "This kind of link can never open": "此类链接永远不会打开",
   "Use the app’s scheme, like zotero": "使用应用的协议名，例如 zotero",
+  "Push to calendar apps": "推送到日历应用",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "像 DAVx⁵ 这样的应用会在更改后立即通过自己的推送服务同步。",
   "At most 90 days": "最多 90 天",
   "Away": "外出",
   "Away set": "已设置外出",

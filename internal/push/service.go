@@ -203,49 +203,94 @@ func (s *Service) Send(ctx context.Context, sub *Subscription, payload []byte, t
 		_ = s.RecordFailure(ctx, sub.ID, "stored keys are invalid")
 		return Failed, errors.New("push: stored subscription keys are invalid")
 	}
-	body, err := Encrypt(payload, p256dh, auth)
-	if err != nil {
-		_ = s.RecordFailure(ctx, sub.ID, err.Error())
-		return Failed, err
-	}
-	authz, err := VAPIDAuthorization(sub.Endpoint, s.subject, k, s.now())
-	if err != nil {
-		_ = s.RecordFailure(ctx, sub.ID, err.Error())
-		return Failed, err
-	}
-	ctx, cancel := context.WithTimeout(ctx, SendTimeout)
-	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sub.Endpoint, bytes.NewReader(body))
-	if err != nil {
-		_ = s.RecordFailure(ctx, sub.ID, err.Error())
-		return Failed, err
-	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Encoding", "aes128gcm")
-	req.Header.Set("TTL", fmt.Sprint(MessageTTL))
-	req.Header.Set("Urgency", "high")
-	req.Header.Set("Authorization", authz)
-	if topic != "" {
-		req.Header.Set("Topic", topic)
-	}
-	resp, err := s.client.Do(req)
-	if err != nil {
+	status, err := s.post(ctx, s.client, k, sub.Endpoint, Message{Payload: payload, P256DH: p256dh, Auth: auth, Topic: topic, TTL: MessageTTL, Urgency: "high"})
+	switch {
+	case err != nil:
 		_ = s.RecordFailure(context.WithoutCancel(ctx), sub.ID, err.Error())
 		return Failed, err
-	}
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
-	switch {
-	case resp.StatusCode >= 200 && resp.StatusCode < 300:
+	case status >= 200 && status < 300:
 		return Sent, s.recordOK(context.WithoutCancel(ctx), sub.ID)
-	case resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusGone:
-		s.log.Info("push subscription gone; removed", "subscription", sub.ID, "status", resp.StatusCode)
+	case status == http.StatusNotFound || status == http.StatusGone:
+		s.log.Info("push subscription gone; removed", "subscription", sub.ID, "status", status)
 		return Gone, s.removeGone(context.WithoutCancel(ctx), sub.ID)
 	default:
-		serr := &StatusError{Code: resp.StatusCode}
+		serr := &StatusError{Code: status}
 		_ = s.RecordFailure(context.WithoutCancel(ctx), sub.ID, serr.Error())
 		return Failed, serr
 	}
+}
+
+// Message is one Web Push message for a subscription the caller keeps
+// (caldav-push: the WebDAV-Push subscriptions of calendar apps).
+type Message struct {
+	Payload      []byte
+	P256DH, Auth []byte // the subscription's keys, decoded
+	Topic        string // collapses undelivered messages at the push service ("" for none)
+	TTL          int    // seconds the push service keeps it undelivered
+	Urgency      string // RFC 8030: very-low, low, normal or high
+}
+
+// SendMessage encrypts m (RFC 8291) and posts it to endpoint with the server's
+// VAPID key (RFC 8292), through the same client as reminders, and returns the
+// push service's status. It keeps no bookkeeping: the caller does.
+func (s *Service) SendMessage(ctx context.Context, endpoint string, m Message) (int, error) {
+	k, err := s.Keys()
+	if err != nil {
+		return 0, err
+	}
+	return s.post(ctx, s.client, k, endpoint, m)
+}
+
+// Through is a sender that posts with the server's keys through another client,
+// one with another outbound policy (caldav-push: the webhook client, which
+// honours the owner's "allow private targets" as the registration check does).
+func (s *Service) Through(client *http.Client) *Through { return &Through{s: s, client: client} }
+
+// Through sends like SendMessage, through its own client.
+type Through struct {
+	s      *Service
+	client *http.Client
+}
+
+// SendMessage is Service.SendMessage through t's client.
+func (t *Through) SendMessage(ctx context.Context, endpoint string, m Message) (int, error) {
+	k, err := t.s.Keys()
+	if err != nil {
+		return 0, err
+	}
+	return t.s.post(ctx, t.client, k, endpoint, m)
+}
+
+func (s *Service) post(ctx context.Context, client *http.Client, k *Keys, endpoint string, m Message) (int, error) {
+	body, err := Encrypt(m.Payload, m.P256DH, m.Auth)
+	if err != nil {
+		return 0, err
+	}
+	authz, err := VAPIDAuthorization(endpoint, s.subject, k, s.now())
+	if err != nil {
+		return 0, err
+	}
+	ctx, cancel := context.WithTimeout(ctx, SendTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Encoding", "aes128gcm")
+	req.Header.Set("TTL", fmt.Sprint(m.TTL))
+	req.Header.Set("Urgency", m.Urgency)
+	req.Header.Set("Authorization", authz)
+	if m.Topic != "" {
+		req.Header.Set("Topic", m.Topic)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+	return resp.StatusCode, nil
 }
 
 // StatusError is a push service's answer other than success or gone.

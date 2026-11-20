@@ -7822,6 +7822,8 @@
   "Remove {scheme}": "Убрать {scheme}",
   "This kind of link can never open": "Такая ссылка никогда не открывается",
   "Use the app’s scheme, like zotero": "Укажите схему приложения, например zotero",
+  "Push to calendar apps": "Push для приложений календаря",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Приложения вроде DAVx⁵ синхронизируются сразу после изменения через свой push-сервис.",
   "At most 90 days": "Не больше 90 дней",
   "Away": "Отсутствие",
   "Away set": "Отсутствие задано",

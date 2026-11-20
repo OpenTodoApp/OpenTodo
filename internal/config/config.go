@@ -67,6 +67,10 @@ type Config struct {
 	// OPENTODO_CALDAV is unset; OpenSpec `caldav`). Afterwards the value set in
 	// Settings is authoritative.
 	CalDAV *bool
+	// CalDAVPush presets the owner's switch for push to calendar apps
+	// (WebDAV-Push) on first start only (nil when OPENTODO_CALDAV_PUSH is unset;
+	// OpenSpec caldav-push).
+	CalDAVPush *bool
 	// CalendarFeeds presets the owner's calendar feeds switch on first start only
 	// (nil when OPENTODO_CALENDAR_FEEDS is unset; OpenSpec calendar-feeds).
 	CalendarFeeds *bool
@@ -424,6 +428,9 @@ func (c *Config) loadToggles() error {
 		return err
 	}
 	if c.CalDAV, err = optionalBool("OPENTODO_CALDAV"); err != nil {
+		return err
+	}
+	if c.CalDAVPush, err = optionalBool("OPENTODO_CALDAV_PUSH"); err != nil {
 		return err
 	}
 	if c.CalendarFeeds, err = optionalBool("OPENTODO_CALENDAR_FEEDS"); err != nil {

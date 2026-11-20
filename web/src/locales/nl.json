@@ -7822,6 +7822,8 @@
   "Remove {scheme}": "{scheme} verwijderen",
   "This kind of link can never open": "Dit soort link opent nooit",
   "Use the app’s scheme, like zotero": "Gebruik het schema van de app, zoals zotero",
+  "Push to calendar apps": "Push naar agenda-apps",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst.",
   "At most 90 days": "Hoogstens 90 dagen",
   "Away": "Afwezig",
   "Away set": "Afwezigheid ingesteld",
