@@ -44,8 +44,22 @@ func TestAwayReadsTheUsersZone(t *testing.T) {
 	e.enable("u1")
 	e.apply("u1", map[string]map[string]any{"user_prefs:me": {"away": "2026-10-20..2026-10-22 quiet"}})
 	s := e.service()
-	s.SetUserZone(func(context.Context, string) *time.Location { return time.FixedZone("", -10*3600) })
+	s.SetUserZone(func(context.Context, string) (*time.Location, bool) { return time.FixedZone("", -10*3600), true })
 	if n := e.tick(s, "2026-10-23 07:03"); n != 0 {
 		t.Fatalf("sent %d while the user's own day is still inside the period", n)
+	}
+}
+
+// A user whose devices never reported a zone (only the CLI or the API) keeps the
+// digest's own zone for the away check: at 07:03 on Friday in Zurich, with the
+// day starting at 06:00, it is Friday there but still Thursday in UTC.
+func TestAwayKeepsTheDigestZoneWithoutAReportedOne(t *testing.T) {
+	e := newEnv(t)
+	e.enable("u1")
+	e.apply("u1", map[string]map[string]any{"user_prefs:me": {"away": "2026-10-20..2026-10-22 quiet", "day_start": "06:00"}})
+	s := e.service()
+	s.SetUserZone(func(context.Context, string) (*time.Location, bool) { return nil, false })
+	if n := e.tick(s, "2026-10-23 07:03"); n != 1 {
+		t.Fatalf("sent %d on the first day after the period, in the digest's zone", n)
 	}
 }

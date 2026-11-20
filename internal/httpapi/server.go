@@ -293,7 +293,7 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		set.Push.SetUserZone(s.tzLocation)
 	}
 	if set.Digest != nil {
-		set.Digest.SetUserZone(s.tzLocation)
+		set.Digest.SetUserZone(s.reportedZone)
 	}
 	if set.Hosted != nil {
 		s.assistantSlots = set.Hosted.AssistantSlots
