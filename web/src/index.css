@@ -1484,8 +1484,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
     [data-row-open] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 0.75rem; }
     [data-row-head] { grid-area: 1 / 1; }
     /* The title keeps the row's two lines (phone-row-titles): a phone's title column holds
-       about 15 characters a line beside a time and a date. */
-    [data-row-title] { font-size: 0.90625rem; }
+       about 15 characters a line beside a time and a date. A touch larger than the list
+       size for a phone, but still from --ot-text-list, so a theme's list size (type.list)
+       reaches task titles as it reaches the sidebar (Discord: iOS PWA list size). */
+    [data-row-title] { font-size: calc(var(--ot-text-list) + 0.09375rem); }
     [data-row-meta="row"] { display: contents; }
     /* On the title's first line, not in the middle of a two-line title. */
     [data-row-props] { grid-area: 1 / 2; display: flex; align-items: center; align-self: start; min-height: 1.25rem; white-space: nowrap; }
