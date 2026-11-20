@@ -154,7 +154,11 @@ const NO_DONE: Map<string, Task[]> = new Map()
 function useOwnOrder(route: ListRoute, rows: ListRow[], groups: ListGroup[], board: boolean, today: boolean, nest: boolean, taskMap: Map<string, Task>) {
   const todayModule = useRef<typeof TodayDrop>(undefined)
   useEffect(() => {
-    if (today && !todayModule.current) void import('./task-list/todayGroupDrop').then((m) => { todayModule.current = m })
+    if (today && !todayModule.current) {
+      void import('./task-list/todayGroupDrop').then(({ applyTodayDrop, todayGroupDrop, contextualMoveItems }) => {
+        todayModule.current = { applyTodayDrop, todayGroupDrop, contextualMoveItems }
+      })
+    }
   }, [today])
   const host = useMemo<OrderHost | null>(() => route.view === 'label' ? { entity: 'label', id: route.id }
     : today ? { entity: 'user_prefs', id: USER_PREFS_ID } : null, [route, today])
