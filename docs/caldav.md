@@ -176,6 +176,15 @@ Upgrading from a server without this mapping: alarms set earlier in a calendar a
 - **CTag and sync token** (`urn:opentodo:sync:<n>`) are the position of your op log, shared by all your lists; incremental `sync-collection` reports list changed tasks and the removed ones (deleted, purged or moved away). Tokens never expire; a token from a future position (after restoring an older backup) is refused so the client starts over.
 - Supported: `PROPFIND` (Depth 0 and 1), `REPORT` `calendar-query` (VTODO, `time-range`, `prop-filter` with `is-not-defined` and `text-match`), `calendar-multiget` and `sync-collection`, `GET`, `HEAD`, `PUT`, `DELETE`, `MKCALENDAR`, extended `MKCOL` for a calendar (RFC 5689), `PROPPATCH`, `OPTIONS` (`DAV: 1, 3, calendar-access, extended-mkcol`). A resource is at most 1 MB and its preserved properties at most about 60 KB; one content line may be at most 64 KB after unfolding.
 
+## Push to calendar apps
+
+Calendar apps normally learn about a change only when they poll. With **Push to calendar apps** on (Settings → Integrations → Calendar apps, owner only, off by default; `OPENTODO_CALDAV_PUSH=true` presets it on first start), apps that speak [WebDAV-Push](https://github.com/bitfireAT/webdav-push) sync within about a minute of a change made on any device. DAVx⁵ (4.4.10 and later) does, through a [UnifiedPush](https://unifiedpush.org/) distributor or Google's push service; turn on push in its account settings.
+
+- **What the push service sees.** The app chooses the push service. It receives one encrypted message per change, at most one per subscription every 30 seconds, holding only the list's topic (a random-looking id) and its new sync token: never a task, a list name or a person. It does learn *when* your lists change, which is why the switch is off by default.
+- **Subscriptions.** The app subscribes with its app password, to the lists that password syncs. A subscription lasts 3 to 7 days and the app renews it; at most 20 per user. Revoking the app password ends its subscriptions, and so does the push service saying the subscription is gone.
+- **Needs web push.** The server's VAPID key signs the messages, so the switch is offered only while [web push](push-notifications.md) is on (`OPENTODO_PUSH` not `off`). Not on the public demo.
+- The endpoint answers `DAV: …, webdav-push`, the `transports`, `topic` and `supported-triggers` properties on the calendar home and each list, `POST` with a `push-register` body there (201 or 204 with `Location` and `Expires`; 403 `push-not-available`, `invalid-subscription` or `no-supported-trigger`), `DELETE` on the registration URL, and `Push-Dont-Notify` on `PUT` and `DELETE`.
+
 ## Limits
 
 Not supported: events (VEVENT; to see other calendars' events in Day and Week, or to subscribe to your tasks from a calendar app that has no CalDAV, see [Calendar feeds](calendar-feeds.md)), scheduling and invitations, free/busy, calendar sharing through CalDAV (use project sharing), CardDAV, attachments, "this and following" changes of a series, server-side recurrence expansion, and OpenTodo acting as a client of another CalDAV server.

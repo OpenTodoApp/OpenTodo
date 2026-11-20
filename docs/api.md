@@ -350,6 +350,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/caldav/push` | yes | `{enabled, available}` |
+| PUT | `/api/v1/settings/caldav/push` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
@@ -2021,6 +2023,8 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
+| `GET` | `/api/v1/settings/caldav/push` | any user | `{"enabled":false,"available":true}`: push to calendar apps (WebDAV-Push, OpenSpec `caldav-push`); `available` is false while web push is off (`OPENTODO_PUSH=off`), when nothing is advertised whatever `enabled` says. |
+| `PUT` | `/api/v1/settings/caldav/push` | owner | `{"enabled":true}` → `{"enabled":true,"available":true}`. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members, `409 set_by_environment` on a demo. Recorded as `settings.changed` (`caldav.push`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 

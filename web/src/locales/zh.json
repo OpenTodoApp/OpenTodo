@@ -7792,5 +7792,7 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}，共 {n, plural, other {# 次}}",
   "Indent": "增加缩进",
   "Outdent": "减少缩进",
-  "{time}{day} your time": "你的时间 {time}{day}"
+  "{time}{day} your time": "你的时间 {time}{day}",
+  "Push to calendar apps": "推送到日历应用",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "像 DAVx⁵ 这样的应用会在更改后立即通过自己的推送服务同步。"
 }

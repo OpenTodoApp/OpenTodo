@@ -7792,5 +7792,7 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# kez} other {# kez}}",
   "Indent": "Girintiyi artır",
   "Outdent": "Girintiyi azalt",
-  "{time}{day} your time": "sizin saatinizle {time}{day}"
+  "{time}{day} your time": "sizin saatinizle {time}{day}",
+  "Push to calendar apps": "Takvim uygulamalarına push",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "DAVx⁵ gibi uygulamalar bir değişiklikten hemen sonra kendi push hizmetleriyle eşitlenir."
 }

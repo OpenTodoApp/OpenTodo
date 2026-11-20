@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/OpenTodoApp/opentodo/internal/davpush"
 	"github.com/OpenTodoApp/opentodo/internal/deliveryq"
 	"github.com/OpenTodoApp/opentodo/internal/jobs"
 	"github.com/OpenTodoApp/opentodo/internal/push"
@@ -43,6 +44,11 @@ func (t *Tenant) buildJobs() []jobs.Job {
 			jobs.Job{Name: jobs.Webhooks, Next: t.nextDelivery, Run: t.deliver, Retry: deliveryq.Retry},
 			jobs.Job{Name: jobs.Calendars, Next: t.nextCalendars, Run: t.calendars, Check: calendarsCheck},
 			jobs.Job{Name: jobs.Issues, Next: t.nextIssues, Run: t.Issues.RunOnce})
+		if t.DavPush != nil {
+			// Push to calendar apps (caldav-push D5): woken by every change, at
+			// most once per subscription each davpush.MinGap.
+			list = append(list, jobs.Job{Name: jobs.DavPush, Next: t.DavPush.NextDue, Run: t.DavPush.RunOnce, Retry: davpush.MinGap})
+		}
 	}
 	if t.Digest != nil {
 		list = append(list, jobs.Job{Name: jobs.Digest, Next: t.Digest.NextDue, Run: t.digest})

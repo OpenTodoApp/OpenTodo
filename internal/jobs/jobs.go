@@ -30,6 +30,7 @@ const (
 	Writes       = "writes"       // writes by another process (self-hosted only)
 	Checkpoint   = "checkpoint"   // the write-ahead log copied back into the database
 	Limits       = "limits"       // rate limit and agent limit windows written to the database (persistent-limits)
+	DavPush      = "davpush"      // pushes to subscribed calendar apps (caldav-push)
 )
 
 // Timing defaults (design D2).

@@ -38,6 +38,16 @@ describe('CaldavView', () => {
     expect(render({ isOwner: false })).toContain('CalDAV is on for this server.')
   })
 
+  // OpenSpec caldav-push: the owner's Push to calendar apps switch, only with web push.
+  it('offers the owner Push to calendar apps while CalDAV is on and web push is available', () => {
+    const on = render({ push: { enabled: true, available: true } })
+    expect(on).toContain('Push to calendar apps')
+    expect((on.match(/role="switch"/g) ?? []).length).toBe(2)
+    expect(render({ push: { enabled: false, available: false } })).not.toContain('Push to calendar apps')
+    expect(render({ isOwner: false, push: { enabled: true, available: true } })).not.toContain('Push to calendar apps')
+    expect(render({ setting: { enabled: false, url: 'https://x/dav/', secure: true }, push: { enabled: false, available: true } })).not.toContain('Push to calendar apps')
+  })
+
   it('warns when the address is not https', () => {
     const html = render({ setting: { enabled: true, url: 'http://192.168.1.10:8080/dav/', secure: false } })
     expect(html).toContain('role="alert"')
@@ -91,9 +101,11 @@ describe('caldav API client', () => {
     const work = { mode: 'only' as const, workspaces: ['w'], projects: [], inboxes: [] }
     await api.createAppPassword('Work phone', work)
     await api.setAppPasswordScope('a1', work)
+    await api.caldavPushSwitch.get()
+    await api.caldavPushSwitch.put(true)
     expect(calls.map(([m, u]) => `${m} ${u}`)).toEqual([
       'GET /api/v1/settings/caldav', 'PUT /api/v1/settings/caldav', 'GET /api/v1/app-passwords', 'POST /api/v1/app-passwords', 'DELETE /api/v1/app-passwords/a1',
-      'POST /api/v1/app-passwords', 'PATCH /api/v1/app-passwords/a1',
+      'POST /api/v1/app-passwords', 'PATCH /api/v1/app-passwords/a1', 'GET /api/v1/settings/caldav/push', 'PUT /api/v1/settings/caldav/push',
     ])
     expect(calls[5][2]).toEqual({ name: 'Work phone', scope: work })
     expect(calls[6][2]).toEqual({ scope: work })

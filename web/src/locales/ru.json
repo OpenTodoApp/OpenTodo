@@ -7792,5 +7792,7 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# раз} few {# раза} many {# раз} other {# раза}}",
   "Indent": "Увеличить отступ",
   "Outdent": "Уменьшить отступ",
-  "{time}{day} your time": "{time}{day} по вашему времени"
+  "{time}{day} your time": "{time}{day} по вашему времени",
+  "Push to calendar apps": "Push для приложений календаря",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Приложения вроде DAVx⁵ синхронизируются сразу после изменения через свой push-сервис."
 }

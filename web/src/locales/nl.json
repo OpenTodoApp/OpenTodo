@@ -7792,5 +7792,7 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# keer} other {# keer}}",
   "Indent": "Inspringen",
   "Outdent": "Uitspringen",
-  "{time}{day} your time": "{time}{day} jouw tijd"
+  "{time}{day} your time": "{time}{day} jouw tijd",
+  "Push to calendar apps": "Push naar agenda-apps",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst."
 }

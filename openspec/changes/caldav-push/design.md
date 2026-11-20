@@ -40,7 +40,7 @@ Resources (single VTODOs) advertise nothing: a client subscribes to a calendar o
 
 ### D4. Data model
 
-One migration adds `dav_push_subscriptions` (server configuration like app passwords, never an op): `id`, `user_id`, `app_password_id`, `collection` (the calendar path or `home`), `push_resource`, `p256dh`, `auth`, `expires_at`, `created_at`, `last_notified_seq`, `last_ok_at`, `failures`, `last_error`. No new op field, no change to the op schema. Purge and account deletion delete the user's rows; backup and export leave them out, as they do app passwords.
+One migration adds `dav_push_subscriptions` (server configuration like app passwords, never an op): `id`, `user_id`, `app_password_id`, `collection` (the calendar path or `home`), `push_resource`, `p256dh`, `auth`, `expires_at`, `created_at`, `last_notified_seq`, `last_sent_at` (for the 30-second minimum), `last_ok_at`, `failures`, `last_error`. No new op field, no change to the op schema. Account deletion removes the user's rows (through the app password's foreign key); the user's export leaves them out, as it does app passwords, and a server backup keeps them with the rest of the database.
 
 ### D5. When a push is sent
 
@@ -48,12 +48,15 @@ A new job `dav-push` in `internal/tenant/jobs.go`, woken by `Changed`:
 1. For each user with live subscriptions whose op cursor moved past the lowest `last_notified_seq` of their subscriptions, build the password's DAV view once (the same `davView` CalDAV serves, so scope, Inbox membership and moves are counted exactly as a sync-collection report counts them).
 2. A calendar subscription is due when the calendar's resources changed since its `last_notified_seq` (what a sync-collection report with that token would list); a home subscription when any calendar in scope changed or a calendar appeared or disappeared.
 3. Each due subscription gets one message and its `last_notified_seq` moves to the cursor. Several commits before the job runs give one message (merging, as the draft allows). A subscription is sent to at most once per 30 seconds; a later change waits for the next run.
+4. One run looks at no more than 50 accounts with due subscriptions (`davpush.MaxUsersPerRun`); the others are due again on the next run, 30 seconds later, so a server with many subscriptions never spins.
+
+The changes are read through the endpoint itself (`davroutes.Server.PushChanges`), with the app password's scope and its to-dos or events setting, as a `sync-collection` report reads them. A task's calendar is the one it is in now; a task deleted, purged or moved (its project, workspace or parent changed after it was created) may have left any calendar, so every subscription of that password is due.
 
 `Push-Dont-Notify` on a CalDAV write: after the write commits, every listed registration of the same user (or all of the user's, for `*`) has `last_notified_seq` set to the new cursor, so the writer's own change does not wake it; a change from elsewhere still does. Registration URLs of another user are ignored.
 
 ### D6. The message
 
-Body (UTF-8 XML): `push-message` with `topic` and `content-update` holding the calendar's `DAV:sync-token`; for a home subscription, the home's topic. Encrypted with `push.Encrypt`, sent with `VAPIDAuthorization` (the existing subject), `Content-Encoding: aes128gcm`, `TTL: 86400`, `Urgency: normal`, and `Topic:` the subscription's topic, so the push service replaces an undelivered older message. All through `internal/outbound`, with the push package's timeout. The message names no task, project or person.
+Body (UTF-8 XML): `push-message` with `topic` and `content-update` holding the calendar's `DAV:sync-token`; for a home subscription, the home's topic. Encrypted with `push.Encrypt`, sent with `VAPIDAuthorization` (the existing subject), `Content-Encoding: aes128gcm`, `TTL: 86400`, `Urgency: normal`, and `Topic:` the subscription's topic, so the push service replaces an undelivered older message. All through the client of `internal/push` (the outbound dialer of webhooks, which refuses private targets unless the owner allowed them), with its timeout; `push.Service.SendMessage` encrypts and signs, and the job keeps the bookkeeping. The message names no task, project or person.
 
 ### D7. Failures and expiry
 

@@ -7792,5 +7792,7 @@
   "{rule}, {n, plural, one {# time} other {# times}}": "{rule}, {n, plural, one {# volta} other {# volte}}",
   "Indent": "Aumenta rientro",
   "Outdent": "Riduci rientro",
-  "{time}{day} your time": "{time}{day} ora tua"
+  "{time}{day} your time": "{time}{day} ora tua",
+  "Push to calendar apps": "Push alle app di calendario",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "App come DAVx⁵ si sincronizzano subito dopo una modifica, tramite il proprio servizio push."
 }
