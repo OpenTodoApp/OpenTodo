@@ -339,6 +339,11 @@ export function success(): void {
   haptic('success')
 }
 
+/** A light tap when the person adds a task (#1445): the same tick as a lifted row, a deliberate moment, not every tap. */
+export function created(): void {
+  haptic('tick')
+}
+
 /** Tests: forget the cached preference. */
 export function resetHaptics(): void {
   hapticsOn = null
