@@ -145,8 +145,11 @@ export function NoteForm({ note, readOnly }: { note: Note; readOnly: boolean }) 
   const form = useRef<HTMLDivElement>(null)
   const me = useMe()
   const role = roleOf(note.project_id, useMembershipMap())
-  const NotesEditor = notesEditorChunk.loaded() ?? LazyNotesEditor
-  const AttachmentsRow = attachmentsRowChunk.loaded() ?? LazyAttachmentsRow
+  // Chosen once per form: a form first drawn with the lazy component keeps it, since a
+  // switch to the kept one later would be another component type and remount the editor
+  // (the caret or a composition in progress would be lost).
+  const [NotesEditor] = useState(() => notesEditorChunk.loaded() ?? LazyNotesEditor)
+  const [AttachmentsRow] = useState(() => attachmentsRowChunk.loaded() ?? LazyAttachmentsRow)
   return (
     <div ref={form} className="space-y-4" data-note-form={note.id}>
       <TitleInput note={note} readOnly={readOnly} />
