@@ -9899,8 +9899,6 @@
     "web/src/app/objectives/ObjectiveCards.tsx"
   ],
   "Markdown": [
-    "web/src/app/NotesEditor.tsx",
-    "web/src/app/ProjectNote.tsx",
     "web/src/app/editorCommands.ts"
   ],
   "Markdown source of the note": [
@@ -16209,6 +16207,10 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/announceAdded.ts",
     "web/src/app/views/DisplayOptionsBody.tsx"
+  ],
+  "Show Markdown source": [
+    "web/src/app/NotesEditor.tsx",
+    "web/src/app/ProjectNote.tsx"
   ],
   "Show Today’s tasks before Tomorrow": [
     "web/src/app/TaskListView.tsx"
