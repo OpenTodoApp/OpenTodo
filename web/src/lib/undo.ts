@@ -5,6 +5,7 @@
 // can be undone in one step, skipping fields changed again since. The device keeps
 // the last 20 batches, from the assistant and from bulk actions alike.
 import { db, tableOf, type AssistantUndo } from './db'
+import { resettable } from './moduleState'
 import { mutateMany, readField, unfoldFieldPatches, type Change } from './ops'
 import { defaultReminderChanges } from './defaultReminder'
 import { withSectorClears } from './sectorWrites'
@@ -255,6 +256,10 @@ function serialize<T>(fn: () => Promise<T>): Promise<T> {
   chain = run.catch(() => undefined)
   return run
 }
+// A fresh import has nothing queued; tests start each case from that (improvement plan T1).
+resettable('undo', () => {
+  chain = Promise.resolve()
+})
 
 /**
  * Undoes one batch as one new batch: previous values come back, created entities go to
