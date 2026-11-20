@@ -414,9 +414,7 @@ export default function NotesEditor({ note, readOnly, autoFocus = false, onEscap
           // Ctrl/Cmd-click opens a link (plain clicks place the caret).
           const a = (event.target as HTMLElement).closest('a')
           if (a && (event.metaKey || event.ctrlKey) && a.getAttribute('href')) {
-            const href = a.getAttribute('href') as string
-            if (isAppLink(href)) openAppLink(href)
-            else window.open(href, '_blank', 'noopener,noreferrer')
+            openHref(a.getAttribute('href') as string)
             return true
           }
           return false
@@ -572,6 +570,12 @@ function openTapped(a: HTMLAnchorElement): void {
   const web = safeHref(href)
   if (web) window.open(web, '_blank', 'noopener,noreferrer')
   else if (isAppLink(href)) openAppLink(href)
+}
+
+/** A Ctrl/Cmd-clicked link: an app link through its confirmation (app-links), anything else in a new tab. */
+function openHref(href: string): void {
+  if (isAppLink(href)) openAppLink(href)
+  else window.open(href, '_blank', 'noopener,noreferrer')
 }
 
 /** The link dialog of Mod-k, answering the editor's question. */
