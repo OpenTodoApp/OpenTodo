@@ -13,7 +13,7 @@ export const BRIDGE_VERSION = 1
 /** The oldest shell app version this web app expects (bumped when a shell bug needs a forced update). */
 export const MIN_SHELL_APP = '0.10.0'
 
-export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push'
+export type ShellCapability = 'reminders' | 'share' | 'widgets' | 'biometric' | 'links' | 'obsidian-links' | 'system-bars' | 'microphone' | 'geofences' | 'files' | 'haptics' | 'alarm-settings' | 'background' | 'pull-refresh' | 'push' | 'app-links'
 
 /**
  * One location reminder handed to the shell (location-reminders D3): the circle
@@ -85,6 +85,12 @@ export interface OpenTodoShell {
   biometricRead?(): Promise<string | null> | string | null
   biometricForget?(): void
   openExternal?(url: string): void
+  /**
+   * app-links D6: hands a link into another app to the system when its scheme is
+   * on `schemes` (the viewer's list, a JSON array) and not on the shell's own deny
+   * list; opens nothing otherwise.
+   */
+  openAppLink?(url: string, schemes: string): void
   /** theme-engine D8: the status and navigation bar colour, `{"color":"#rrggbb","dark":bool}` (dark: light icons). */
   setSystemBars?(json: string): void
   /**

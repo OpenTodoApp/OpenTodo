@@ -4,6 +4,7 @@
 // app, which shares lib/taskOrigin.ts (native-app-foundation D2), does not import it.
 import { has, openObsidian, shell } from './shell'
 import { httpURL, obsidianURL } from './taskOrigin'
+import { canOpenAppLink, isAppLink, openAppLink } from './appLinks'
 import type { Origin } from './types'
 
 /**
@@ -13,8 +14,12 @@ import type { Origin } from './types'
  * note link opens only when the shell lists `obsidian-links`. Null otherwise: the
  * chip then has no link, and its menu offers Copy link when there is a URL.
  */
-export function originLink(origin: Origin): { href: string; obsidian: boolean } | null {
+export function originLink(origin: Origin): { href: string; obsidian: boolean; app?: true } | null {
   if (!origin.url) return null
+  // A url origin into another app (app-links D5): only for a viewer who allowed its scheme.
+  if (origin.kind === 'url' && isAppLink(origin.url)) {
+    return canOpenAppLink(origin.url) && (!shell() || has('app-links')) ? { href: origin.url, obsidian: false, app: true } : null
+  }
   if (origin.kind === 'obsidian') {
     if (!obsidianURL(origin.url, origin.id)) return null
     return !shell() || has('obsidian-links') ? { href: origin.url, obsidian: true } : null
@@ -32,7 +37,9 @@ export function originLink(origin: Origin): { href: string; obsidian: boolean } 
 export function openOrigin(origin: Origin): void {
   const link = originLink(origin)
   if (!link) return
-  if (!link.obsidian) {
+  if (link.app) {
+    openAppLink(link.href)
+  } else if (!link.obsidian) {
     window.open(link.href, '_blank', 'noopener,noreferrer')
   } else if (shell()) {
     openObsidian(link.href)

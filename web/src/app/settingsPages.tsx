@@ -44,6 +44,7 @@ import { ConfigWarningsNotice } from './ConfigWarnings'
 import { EmailInboxPanel } from './EmailInboxPanel'
 import { BriefingSection, DayPartsSection, FocusSection, KeyboardSection, LanguageSection, StartViewSection } from './PreferencesPanels'
 import { PrioritiesSection } from './PrioritiesSettings'
+import { AppLinksSection } from './AppLinksSettings'
 import { DailyNotesSection } from './DailyNotesSettings'
 // Daily notes (daily-notes): loaded when the page opens.
 import { ClosedListSection } from './ClosedListSettings'
@@ -122,6 +123,7 @@ const PAGES: Record<string, (p: PageProps) => ReactNode> = {
   'integrations/assistant': ({ user, demo, hosted }) => (
     <Anchor id="ai"><DemoDisabled on={demo}><Suspense fallback={null}><AssistantSettingsSection isOwner={user.role === 'owner' && !hosted} /></Suspense></DemoDisabled></Anchor>
   ),
+  'integrations/app-links': () => <AppLinksSection />,
   'integrations/mcp': ({ user, demo, hosted }) => <DemoDisabled on={demo}><AssistantsPanel isOwner={user.role === 'owner' && !hosted} /></DemoDisabled>,
   'people/users': ({ user, demo }) => <><ConfigWarningsNotice user={user} /><DemoDisabled on={demo}><AdministrationSections user={user} /></DemoDisabled></>,
   'people/access-policies': ({ demo }) => <Anchor id="access-policies"><DemoDisabled on={demo}><MfaPolicyPanel /><ProjectInvitePolicyPanel /></DemoDisabled></Anchor>,

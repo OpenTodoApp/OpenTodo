@@ -59,7 +59,7 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** only the undated task is printed
 
 ### Requirement: Add and edit tasks
-`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>`, `--origin-url <url>`, `--deadline <date>`, `--start <date|someday>`, `--evening`, repeatable `--blocked-by <ref>` and `--location <where>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`, `--evening=false`) clears one, and `--blocked-by` on edit replaces the whole list. `--due`, `--deadline` and `--start` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays, `--start` also `someday`; a value that is not one of these SHALL exit with code 2 before any request. `--blocked-by` SHALL take a task id or an unambiguous id prefix of a task the account can see and send the resolved ids; `--location` SHALL take the name or id of one of the account's saved locations (sent as a link to it with its current values), a `lat,lon` pair (sent as coordinates), or `none`, and an unknown name SHALL exit with code 1 naming it before the task is written. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL, derive the provider and issue id for a recognised host on the client, and send the origin with the task; `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id or host as a column of the table when any listed task has one.
+`ot add <title>` SHALL create a task with optional `--project`, `--due`, `--time`, `--priority 1..4`, repeatable `--label`, `--note`, `--repeat <rule>`, repeatable `--remind <phrase>`, `--origin-url <url>`, `--deadline <date>`, `--start <date|someday>`, `--evening`, repeatable `--blocked-by <ref>` and `--location <where>`, and print its id. `ot edit <ref>` SHALL change the same fields except `--remind`; `none` (or `--note ""`, `--evening=false`) clears one, and `--blocked-by` on edit replaces the whole list. `--due`, `--deadline` and `--start` SHALL accept `YYYY-MM-DD`, `today`, `tomorrow` and weekdays, `--start` also `someday`; a value that is not one of these SHALL exit with code 2 before any request. `--blocked-by` SHALL take a task id or an unambiguous id prefix of a task the account can see and send the resolved ids; `--location` SHALL take the name or id of one of the account's saved locations (sent as a link to it with its current values), a `lat,lon` pair (sent as coordinates), or `none`, and an unknown name SHALL exit with code 1 naming it before the task is written. `--repeat` SHALL send the canonical rule; `--remind` SHALL resolve a phrase like `30 min before` against the due date. `--origin-url` SHALL accept only an `http` or `https` URL or an app link (OpenSpec `app-links`), derive the provider and issue id for a recognised host on the client, and send the origin with the task (an app link as `kind: "url"`); `ot list` and its siblings SHALL carry `origin` in `--json` output and print the origin's id, host or app (an app link's scheme, capitalised) as a column of the table when any listed task has one.
 
 #### Scenario: Add with attributes
 - **WHEN** the user runs `ot add "Call the plumber" --project Home --due tomorrow --time 09:00 --priority 2`
@@ -102,8 +102,12 @@ The client SHALL read a configuration file from the platform's user configuratio
 - **THEN** the task's origin is `{kind: "url", url: "https://example.org/post"}`
 
 #### Scenario: Unsafe origin URL
-- **WHEN** `--origin-url ftp://files.example/x` is given
+- **WHEN** `--origin-url javascript:alert(1)` is given
 - **THEN** the command exits with code 2 before any request is sent
+
+#### Scenario: Link into another app
+- **WHEN** the user runs `ot add "Read the paper" --origin-url zotero://select/items/ABC`
+- **THEN** the task's origin is `{kind: "url", url: "zotero://select/items/ABC"}` (OpenSpec `app-links`), and the list's origin column reads "Zotero"
 
 #### Scenario: Clear the origin
 - **WHEN** the user runs `ot edit 8c2a --origin-url none`

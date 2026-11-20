@@ -5,6 +5,7 @@
     "web/src/lib/activity.ts",
     "web/src/lib/agentAccess.ts",
     "web/src/lib/api.ts",
+    "web/src/lib/appLinkGrammar.ts",
     "web/src/lib/assistantDevice/manifest.ts",
     "web/src/lib/assistantSkills.ts",
     "web/src/lib/assistantStatus.ts",

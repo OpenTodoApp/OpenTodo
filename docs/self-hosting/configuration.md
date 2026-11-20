@@ -60,6 +60,7 @@ A test reads the code and fails when a variable is read but missing here, or lis
 | `OPENTODO_MCP` | unset, off (preset) | `true` | [AI assistants (MCP)](../mcp.md#1-enable-it-owner) |
 | `OPENTODO_MCP_WRITES` | unset, off (preset) | `true` | [AI assistants (MCP)](../mcp.md#letting-an-assistant-make-changes) |
 | `OPENTODO_CALDAV` | unset, off (preset) | `true` | [Calendar apps (CalDAV)](../caldav.md) |
+| `OPENTODO_CALDAV_PUSH` | unset, off (preset) | `true` | [Push to calendar apps](../caldav.md#push-to-calendar-apps) |
 | `OPENTODO_CALENDAR_FEEDS` | unset, off (preset) | `true` | [Calendar feeds](../calendar-feeds.md) |
 | `OPENTODO_AUTOMATIONS` | unset, on (locks) | `off` | [Automations](../automations.md) |
 | `OPENTODO_WEBHOOKS_ALLOW_PRIVATE` | unset, off (preset) | `true` | [Webhooks](../webhooks.md#private-network-protection) |

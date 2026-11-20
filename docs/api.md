@@ -227,6 +227,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/comments/{id}/reactions` | yes | `{reactions: [names]}` replaces your own reactions → 200 comment; 400 `invalid_input` naming an unknown name or a duplicate; 404 for an unreadable or deleted comment; `read` and `agent` tokens get 403 `insufficient_scope` |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
+| GET | `/api/v1/workspaces/{id}/activity` | yes | every actor's events in the workspace's projects and Inbox that you can read; `?cursor=&limit=&from=&to=&project=&actor=&kind=`; see [Workspace activity](#workspace-activity) |
 | GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}], pending?}`; `pending` (owners and admins only) lists the open [invitations](#membership-invitations) `[{id,email,role,invitedBy,createdAt,expiresAt}]`, see [Sharing](#sharing) |
 | POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) when the account already shares a project or workspace with you, otherwise **202 `{pending: true}`**, also for an address without an account: the person is invited and becomes a member when they accept (see [Membership invitations](#membership-invitations)); 400 `invalid_input` for anything but one address; recorded as `project.member_added` or `member_invitation.created`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
 | DELETE | `/api/v1/projects/{id}/member-invitations/{invitationId}` | owner, admin of the project | cancel an open invitation → 204; 404 `not_found` |
@@ -350,6 +351,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/caldav/push` | yes | `{enabled, available}` |
+| PUT | `/api/v1/settings/caldav/push` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
@@ -1836,7 +1839,7 @@ Query parameters, all optional:
 - `limit` — 1–200, default 50.
 - `project` — a project id; a project you are not a member of yields no events.
 - `actor` — an account id.
-- `kind` — a feed category: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `other` (every other kind).
+- `kind` — one or more feed categories, comma-separated, an event matching any of them: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `time` (time_tracked, time_changed), `other` (every other kind).
 
 ```sh
 curl -sS "$OT/api/v1/activity?kind=completed&limit=1" -H "Authorization: Bearer $TOKEN"
@@ -1851,6 +1854,28 @@ curl -sS "$OT/api/v1/activity?cursor=junk" -H "Authorization: Bearer $TOKEN"
 ```
 
 Without credentials the route answers `401 unauthorized`; an unknown `kind`, a malformed cursor or a `limit` outside 1–200 answers `400 invalid_input`. What a user has already seen is not stored by this route: it is the `project_prefs.feed_seen_at` field in the user's personal scope, written through sync like any other op (see [sync](sync.md#project-preferences-and-the-activity-feed)). REST clients may write it with `POST /api/v1/sync` but have no collection route for it.
+
+### Workspace activity
+
+`GET /api/v1/workspaces/{id}/activity` (OpenSpec `workspace-activity`) returns the events of every project of the workspace and of its Inbox, newest first, in the feed's shape and with its cursor, every actor's changes including your own. It reads only scopes you belong to: the shared projects of the workspace you are a member of, and your own projects and Inbox tasks in it. Another member's personal projects and shared projects you are not in never appear, whatever the filters. Inbox events have no `projectId`.
+
+Query parameters, all optional: `cursor`, `limit` and `actor` as in the feed; `kind` as in the feed, comma-separated; `project`, one or more project ids, comma-separated; `from` and `to`, Unix milliseconds, inclusive bounds on the event time.
+
+A time entry's events are `time_tracked` (an entry logged, or a running one stopped) and `time_changed` (an ended entry edited or deleted), on the entry's task, with `minutes`, the entry's length rounded to whole minutes. A running entry has no event until it stops, and the entry's note is never part of an event.
+
+```sh
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?kind=time&limit=1" -H "Authorization: Bearer $TOKEN"
+# 200 {"events":[
+#   {"id":"…","kind":"time_tracked","actor":"<bob>","actorName":"Bob","entity":"time_entry","entityId":"<entry>","taskId":"<task>",
+#    "taskTitle":"Fix the login page","projectId":"<project>","projectName":"Website","ts":1760090500000,"opIds":["…"],
+#    "changes":[{"field":"ended_at","from":null,"to":1760090500000}],"minutes":42}],
+#  "more":true,"cursor":"1760090500000:…"}
+
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?from=20&to=10" -H "Authorization: Bearer $TOKEN"
+# 400 {"error":{"code":"invalid_input","message":"from must not be after to"}}
+```
+
+Without credentials the route answers `401 unauthorized`; a workspace you do not belong to answers `404 not_found`, like an unknown one; an unknown `kind`, a malformed `from`, `to` or cursor, `from` after `to` or a `limit` outside 1–200 answers `400 invalid_input`.
 
 ### Import
 
@@ -2021,6 +2046,8 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
+| `GET` | `/api/v1/settings/caldav/push` | any user | `{"enabled":false,"available":true}`: push to calendar apps (WebDAV-Push, OpenSpec `caldav-push`); `available` is false while web push is off (`OPENTODO_PUSH=off`), when nothing is advertised whatever `enabled` says. |
+| `PUT` | `/api/v1/settings/caldav/push` | owner | `{"enabled":true}` → `{"enabled":true,"available":true}`. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members, `409 set_by_environment` on a demo. Recorded as `settings.changed` (`caldav.push`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 

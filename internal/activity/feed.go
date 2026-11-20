@@ -9,11 +9,13 @@ const (
 	FeedCommented   = "commented"
 	FeedAssigned    = "assigned"
 	FeedRescheduled = "rescheduled"
-	FeedOther       = "other"
+	// FeedTime: time tracked or changed (workspace-activity D3).
+	FeedTime  = "time"
+	FeedOther = "other"
 )
 
 // FeedKinds lists the categories in display order.
-var FeedKinds = []string{FeedCompleted, FeedCreated, FeedCommented, FeedAssigned, FeedRescheduled, FeedOther}
+var FeedKinds = []string{FeedCompleted, FeedCreated, FeedCommented, FeedAssigned, FeedRescheduled, FeedTime, FeedOther}
 
 // FeedKindOf maps an event kind to its feed category.
 func FeedKindOf(kind string) string {
@@ -28,6 +30,8 @@ func FeedKindOf(kind string) string {
 		return FeedAssigned
 	case KindRescheduled:
 		return FeedRescheduled
+	case KindTimeTracked, KindTimeChanged:
+		return FeedTime
 	}
 	return FeedOther
 }

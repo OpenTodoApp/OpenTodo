@@ -157,8 +157,10 @@ export async function seed({ base, pw, lang = '', now = Date.now() }) {
     // like any device would, so every screen of the run opens in it.
     await A('POST', '/api/v1/sync', { device: 'layout-check', cursor: 0, ops: [{ id: `lang-${Date.now()}`, entity: 'user_prefs', entityId: 'me', field: 'language', value: lang, ts: Date.now(), device: 'layout-check' }] })
   }
+  // The default workspace, for its Activity page (workspace-activity).
+  const workspace = (await A('GET', '/api/v1/workspaces')).workspaces.find((w) => w.default).id
   // One session for every browser context: logging in per context trips the rate limit.
   const storageState = await ctx.storageState()
   await browser.close()
-  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, repeating: repeating.id, deep: deep.id, llm }
+  return { storageState, projectInvite: projectLink.split('/invite/p/')[1], publicLink: publicLink.split('/public/')[1], pageSecret, home: home.id, work: work.id, view: v1.id, dashboard: dash.id, label: L.errand, quotes: quotes.id, routine: routine.id, repeating: repeating.id, deep: deep.id, workspace, llm }
 }

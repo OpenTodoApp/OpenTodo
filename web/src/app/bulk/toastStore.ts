@@ -9,6 +9,8 @@ export interface BulkToast {
   key: number
   label: string
   undoId: string | null
+  /** After Undo: the batch that can now be redone (multi-step undo/redo, #1488), so Ctrl+Shift+Z fires at once. */
+  redoId?: string | null
   /** After Undo: what came back, and what was kept because it changed since. */
   result?: string
   /** How long the offer stays, in milliseconds (the renderer's default otherwise). */

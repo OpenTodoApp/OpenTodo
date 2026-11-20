@@ -632,6 +632,16 @@ const shots = [
   } },
   // Priority names (priority-names): three levels named in Settings → General → Priorities, then Home renovation
   // grouped by priority under those names. Names and grouping sync, so the scene puts both back.
+  { name: 'app-links', server: D, async run(p) {
+    // Links to other apps (app-links): two schemes added through the page, as a person adds them.
+    await go(p, demoBase, '/settings/integrations/app-links', () => p.locator('[data-app-link-input]').waitFor())
+    for (const scheme of ['zotero', 'obsidian:open']) {
+      if (await p.locator(`[data-app-link-remove="${scheme}"]`).count()) continue
+      await p.locator('[data-app-link-input]').fill(scheme); await p.locator('[data-app-link-add]').click()
+      await p.locator(`[data-app-link-remove="${scheme}"]`).waitFor()
+    }
+    await p.mouse.move(900, 600); await settle(p, 500)
+  } },
   { name: 'priorities', server: D, async run(p) {
     await go(p, demoBase, '/settings/general/priorities', () => p.locator('[data-priority-name="1"]').waitFor())
     for (const [n, name] of [[1, 'Must'], [2, 'Should'], [3, 'Could']]) await p.locator(`[data-priority-name="${n}"]`).fill(name)
@@ -889,6 +899,11 @@ const shots = [
     return { x, y: 0, width: vp.width - x, height: Math.min(vp.height, b.y + b.height + 24) }
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { level: 1, name: 'Updates' }).waitFor()) } },
+  { name: 'workspace-activity', server: D, async run(p) {
+    // Opened from the workspace menu (workspace-activity D1).
+    await go(p, demoBase, '/inbox'); await p.locator('[data-workspace-trigger]').click(); await p.locator('[data-workspace-activity]').click()
+    await p.getByRole('heading', { level: 1, name: /activity$/ }).waitFor(); await p.mouse.move(900, 400); await settle(p, 800)
+  } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
     // History is a tab of the panel (task-detail-redesign); expand the newest version.

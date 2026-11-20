@@ -50,7 +50,8 @@
   ],
   "(pending)": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "(set by the invitation)": [
     "web/src/app/AuthScreen.tsx"
@@ -951,6 +952,8 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
     "web/src/app/ProjectHeader.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
+    "web/src/app/WorkspaceControl.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx",
@@ -960,6 +963,7 @@
     "web/src/app/themes/ThemePreview.tsx"
   ],
   "Add": [
+    "web/src/app/AppLinksSettings.tsx",
     "web/src/app/PlanView.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/assistant/MemorySettings.tsx",
@@ -1147,6 +1151,9 @@
   ],
   "Add an Ask AI or Summarise step first": [
     "web/src/lib/rules/ai.ts"
+  ],
+  "Add an app": [
+    "web/src/app/AppLinksSettings.tsx"
   ],
   "Add an estimate": [
     "web/src/app/task-detail/TaskFacts.tsx"
@@ -1495,7 +1502,7 @@
     "web/src/ui/Combobox/useCombobox.ts"
   ],
   "All changes": [
-    "web/src/app/FeedView.tsx",
+    "web/src/app/KindsMenu.tsx",
     "web/src/app/ProjectActivity.tsx"
   ],
   "All clear": [
@@ -1544,6 +1551,7 @@
   "All projects": [
     "web/src/app/Sidebar.tsx",
     "web/src/app/WebhooksPanel.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -1683,6 +1691,9 @@
     "web/src/app/ViewsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/ui/MoveHandle.tsx"
+  ],
+  "Already on the list": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Also past ones": [
     "web/src/app/task-detail/OccurrenceScope.tsx"
@@ -1993,6 +2004,9 @@
   ],
   "Apply without asking was turned off because an AI assistant changed this routine": [
     "web/src/lib/rules/ai.ts"
+  ],
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Apps that sign in with OAuth": [
     "web/src/app/OAuthClients.tsx"
@@ -2306,6 +2320,9 @@
   ],
   "At most {MAX_FIELDS} fields": [
     "web/src/app/FieldsDialog.tsx"
+  ],
+  "At most {n} apps": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "At most {n} characters": [
     "web/src/app/routines/DescribeIt.tsx",
@@ -2895,6 +2912,7 @@
     "web/src/lib/push.ts"
   ],
   "Cancel": [
+    "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/AppSignIn.tsx",
     "web/src/app/CaldavPanel.tsx",
     "web/src/app/CalendarFeedsPanel.tsx",
@@ -5401,6 +5419,9 @@
   "Done|task": [
     "web/public/push-sw.js"
   ],
+  "Don’t ask again for {scheme}: on this device": [
+    "web/src/app/AppLinkConfirm.tsx"
+  ],
   "Down": [
     "web/src/app/palette/BarParts.tsx"
   ],
@@ -6359,7 +6380,8 @@
   ],
   "Everyone": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "Everyone in the project takes turns.": [
     "web/src/app/task-detail/RotationEditor.tsx"
@@ -6613,7 +6635,8 @@
     "web/src/app/AuditPanel.tsx"
   ],
   "Fetching older activity…": [
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "Fetching older updates…": [
     "web/src/app/FeedView.tsx"
@@ -6682,16 +6705,17 @@
     "web/src/app/ProjectActivity.tsx"
   ],
   "Filter activity by person": [
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
+  ],
+  "Filter activity by project": [
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "Filter by duration": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
   "Filter colours": [
     "web/src/app/themes/TokenList.tsx"
-  ],
-  "Filter feed by kind": [
-    "web/src/app/FeedView.tsx"
   ],
   "Filter feed by person": [
     "web/src/app/FeedView.tsx"
@@ -7149,6 +7173,7 @@
   ],
   "From": [
     "web/src/app/AuditPanel.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "From Obsidian": [
@@ -8498,6 +8523,7 @@
     "web/src/app/TabBar.tsx",
     "web/src/app/TaskListView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
@@ -8995,6 +9021,7 @@
   "Kind": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/themes/EditorSections.tsx"
   ],
   "Kitchen plan": [
@@ -9458,6 +9485,14 @@
     "web/src/app/task-detail/AttachmentsRow.tsx",
     "web/src/lib/attachments.ts"
   ],
+  "Links to other apps": [
+    "web/src/app/settingsIndex.ts",
+    "web/src/app/settingsSections.ts",
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Links to these apps open after you confirm. Other links stay text.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "List": [
     "web/src/app/PublicLinksSection.tsx",
     "web/src/app/assistant/ChangeSetReview.tsx",
@@ -9519,6 +9554,7 @@
   ],
   "Load older activity": [
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "Load older updates": [
@@ -9533,7 +9569,8 @@
   ],
   "Loading activity": [
     "web/src/app/ActivityPanel.tsx",
-    "web/src/app/FeedView.tsx"
+    "web/src/app/FeedView.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "Loading archives…": [
     "web/src/app/RestoreSection.tsx"
@@ -10982,11 +11019,13 @@
   ],
   "No activity matches these filters.": [
     "web/src/app/FeedView.tsx",
-    "web/src/app/ProjectActivity.tsx"
+    "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "No activity on this device yet.": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx"
   ],
   "No activity yet": [
@@ -11741,6 +11780,7 @@
   "Not yet synced": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "Not you? <a>Sign out</a> and use another account.": [
@@ -12281,6 +12321,7 @@
   ],
   "Older activity could not be loaded.": [
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
   "Older changes": [
@@ -12620,6 +12661,7 @@
     "web/src/app/TokensSection.tsx"
   ],
   "Open": [
+    "web/src/app/AppLinkConfirm.tsx",
     "web/src/app/TrackingIndicator.tsx",
     "web/src/app/TriageView.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
@@ -12699,6 +12741,9 @@
   "Open in Obsidian: {vault} › {path}": [
     "web/src/app/OriginChip.tsx"
   ],
+  "Open in another app?": [
+    "web/src/app/AppLinkConfirm.tsx"
+  ],
   "Open in graph": [
     "web/src/app/connections/ConnectionsDialog.tsx"
   ],
@@ -12718,6 +12763,9 @@
   ],
   "Open link {name}": [
     "web/src/app/task-detail/AttachmentsRow.tsx"
+  ],
+  "Open links to Zotero, mail or other apps from your notes": [
+    "web/src/app/settingsIndex.ts"
   ],
   "Open me: I have a subtask": [
     "web/src/lib/sampleTasks.ts"
@@ -13422,7 +13470,8 @@
   "Person": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
-    "web/src/app/ShareDirectory.tsx"
+    "web/src/app/ShareDirectory.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "Person added to a project": [
     "web/src/app/auditFormat.ts"
@@ -13869,6 +13918,7 @@
     "web/src/app/ThemeAbout.tsx",
     "web/src/app/TrashView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx",
@@ -14182,6 +14232,9 @@
   "Push notifications are turned off on this server. Reminders are shown in the app.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Push to calendar apps": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Put in a slot": [
     "web/src/app/focus/focusRequest.tsx"
   ],
@@ -14431,6 +14484,22 @@
   "Redo": [
     "web/src/app/themes/ThemeEditor.tsx"
   ],
+  "Redo the change undone last": [
+    "web/src/app/palette/registry.ts",
+    "web/src/lib/shortcuts.ts"
+  ],
+  "Redo: {step}": [
+    "web/src/app/palette/registry.ts"
+  ],
+  "Redone.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
+  "Redone: {n} restored.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
+  "Redone: {step}.": [
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
   "Refresh": [
     "web/src/app/WebhooksPanel.tsx"
   ],
@@ -14655,6 +14724,9 @@
   ],
   "Remove {name} from {group}": [
     "web/src/app/WorkspaceGroups.tsx"
+  ],
+  "Remove {scheme}": [
+    "web/src/app/AppLinksSettings.tsx"
   ],
   "Remove {title} from This Evening": [
     "web/src/app/palette/registry.ts"
@@ -16910,6 +16982,7 @@
     "web/src/app/MemberInvitations.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/assistant/blocks/TaskBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
@@ -19397,6 +19470,9 @@
   "This is your only way to sign in. Add a passkey or another linked account first.": [
     "web/src/app/SsoPanel.tsx"
   ],
+  "This kind of link can never open": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "This label no longer exists.": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -19917,6 +19993,10 @@
     "web/src/app/quickadd/FieldRows.tsx",
     "web/src/app/task-detail/TimeTab.tsx"
   ],
+  "Time tracked": [
+    "web/src/lib/activity.ts",
+    "web/src/lib/feed.ts"
+  ],
   "Time zone": [
     "web/src/app/task-detail/ZoneControl.tsx"
   ],
@@ -20033,7 +20113,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "To": [
-    "web/src/app/AuditPanel.tsx"
+    "web/src/app/AuditPanel.tsx",
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "To answer, the assistant sends what you type and the task data it needs from this server to <strong>{provider}</strong>{model}, with your own API key. You chose it in Settings → Integrations → Assistant. Nothing is sent before you accept.": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -20078,6 +20159,7 @@
     "web/src/app/TaskListView.tsx",
     "web/src/app/TimelineView.tsx",
     "web/src/app/TriageView.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/YearView.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
@@ -20663,7 +20745,8 @@
   "Undo run": [
     "web/src/app/routines/RunHistory.tsx"
   ],
-  "Undo the last bulk action": [
+  "Undo the last change": [
+    "web/src/app/palette/registry.ts",
     "web/src/lib/shortcuts.ts"
   ],
   "Undo the last restore": [
@@ -20674,6 +20757,9 @@
   ],
   "Undo {name}": [
     "web/src/ui/TokenRow.tsx"
+  ],
+  "Undo: {step}": [
+    "web/src/app/palette/registry.ts"
   ],
   "Undoing…": [
     "web/src/app/assistant/AssistantRoot.tsx"
@@ -20693,6 +20779,9 @@
   "Undone: {n} restored.": [
     "web/src/app/assistant/ChangeSetReview.tsx",
     "web/src/app/assistant/useAssistantConversation.ts",
+    "web/src/app/bulk/UndoToast.tsx"
+  ],
+  "Undone: {step}.": [
     "web/src/app/bulk/UndoToast.tsx"
   ],
   "Unestimated": [
@@ -21136,6 +21225,9 @@
   ],
   "Use template": [
     "web/src/app/notes/NoteEditor.tsx"
+  ],
+  "Use the app’s scheme, like zotero": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Use the keyboard": [
     "web/src/app/help/HelpView.tsx"
@@ -21880,6 +21972,7 @@
   ],
   "Yesterday": [
     "web/src/app/FeedView.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/auditFormat.ts",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/notes/NoteSearchField.tsx",
@@ -21892,6 +21985,7 @@
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/WorkspaceMembers.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/assistant/blocks/TaskBlock.tsx",
@@ -22438,6 +22532,7 @@
     "web/src/app/FeedView.tsx",
     "web/src/app/NotificationBell.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/lib/assistant.ts",
     "web/src/lib/rules/proposal.ts"
@@ -22523,6 +22618,7 @@
   ],
   "another project": [
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
     "web/src/app/task-detail/ActivityTab.tsx"
   ],
@@ -22668,6 +22764,9 @@
   ],
   "changed the {fields}": [
     "web/src/lib/activityRuns.ts"
+  ],
+  "changed tracked time": [
+    "web/src/lib/activity.ts"
   ],
   "changed what this task waits for": [
     "web/src/lib/activity.ts"
@@ -23704,6 +23803,7 @@
   "on|comment": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
+    "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx"
   ],
   "open": [
@@ -24457,8 +24557,15 @@
   "tracked at least {n} min": [
     "web/src/lib/rules/summary.ts"
   ],
+  "tracked time": [
+    "web/src/lib/activity.ts",
+    "web/src/lib/activityRuns.ts"
+  ],
   "tracked time and its notes": [
     "web/src/lib/assistantDisclosure.ts"
+  ],
+  "tracked {time}": [
+    "web/src/lib/activity.ts"
   ],
   "turn on Run my routines on a device with the on-device assistant set up": [
     "web/src/lib/rules/catalogue.ts"
@@ -24659,9 +24766,6 @@
   ],
   "when something this version does not know happens": [
     "web/src/lib/rules/summary.ts"
-  ],
-  "while its notice is shown": [
-    "web/src/lib/shortcuts.ts"
   ],
   "with a note": [
     "web/src/app/habits/habitText.ts"
@@ -25007,6 +25111,9 @@
   "{label} removed from {notes}": [
     "web/src/lib/noteBulk.ts"
   ],
+  "{label}: {kinds}": [
+    "web/src/app/KindsMenu.tsx"
+  ],
   "{mapped, plural, one {# colour was taken from the file} other {# colours were taken from the file}}; {derived, plural, one {# follows} other {# follow}} from them.": [
     "web/src/app/themes/ImportReport.tsx"
   ],
@@ -25217,6 +25324,9 @@
   ],
   "{n, plural, one {# key ignored} other {# keys ignored}}": [
     "web/src/app/themes/ImportReport.tsx"
+  ],
+  "{n, plural, one {# kind} other {# kinds}}": [
+    "web/src/app/KindsMenu.tsx"
   ],
   "{n, plural, one {# label} other {# labels}}": [
     "web/src/app/TemplateDialogs.tsx",
@@ -25510,6 +25620,7 @@
     "web/src/app/palette/filterEntries.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-list/EarlierActions.tsx",
+    "web/src/app/task-list/useListDrag.ts",
     "web/src/app/templates/TemplateLibrary.tsx",
     "web/src/lib/assistantBlocks.ts",
     "web/src/lib/rules/sentence.ts"
@@ -25809,6 +25920,9 @@
   ],
   "{name} Light": [
     "web/src/app/themes/ThemeEditor.tsx"
+  ],
+  "{name} activity": [
+    "web/src/app/WorkspaceActivity.tsx"
   ],
   "{name} answered about <task>{title}</task>": [
     "web/src/app/Briefing.tsx"

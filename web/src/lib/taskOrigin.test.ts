@@ -5,6 +5,7 @@ import { originText } from './originText'
 import { cutOriginTitle, importApp, obsidianLink, obsidianURL, originFromUrl, originIcon, originLabel, originMatches, originOf, obsidianPlace } from './taskOrigin'
 import { openOrigin, originLink } from './originOpen'
 import type { Origin } from './types'
+import { setAppLinkSchemes } from './appLinks'
 
 describe('originFromUrl (shared vectors with internal/origin)', () => {
   it('has the same cases as the Go test', () => {
@@ -99,6 +100,16 @@ describe('Obsidian note origins (shared vectors with internal/origin)', () => {
       // Only a valid origin is a link on the device, whatever the kind says.
       if (!c.valid && !(o.kind === 'obsidian' && o.provider)) expect(originLink(o)).toBeNull()
       if (!c.valid) return
+      if (o.kind === 'url') {
+        // An Obsidian link on a url origin is an app link (app-links D5): it opens
+        // only for a viewer whose own list allows the scheme.
+        expect(originLink(o)).toBeNull()
+        setAppLinkSchemes(['obsidian:open'])
+        expect(originLink(o)).toEqual({ href: o.url, obsidian: false, app: true })
+        setAppLinkSchemes([])
+        expect(originLabel(o)).toBe(c.label)
+        return
+      }
       expect(originLink(o)).toEqual({ href: o.url, obsidian: true })
       expect(originLabel(o)).toBe(c.label)
       const place = obsidianPlace(o)

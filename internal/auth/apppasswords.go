@@ -124,6 +124,10 @@ func (s *Service) RevokeAppPassword(ctx context.Context, userID, id string) erro
 	if _, err := tx.ExecContext(ctx, `UPDATE app_passwords SET revoked_at = ? WHERE id = ?`, s.clock().UnixMilli(), id); err != nil {
 		return err
 	}
+	// Its push subscriptions end with it (caldav-push D3).
+	if _, err := tx.ExecContext(ctx, `DELETE FROM dav_push_subscriptions WHERE app_password_id = ?`, id); err != nil {
+		return err
+	}
 	if err := s.audit.RecordTx(ctx, tx, audit.AppPasswordRevoked(userID, id, name)); err != nil {
 		return err
 	}
