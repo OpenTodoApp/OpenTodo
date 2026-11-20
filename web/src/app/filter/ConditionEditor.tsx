@@ -6,8 +6,9 @@ import { parse, type DateExpr } from '../../lib/filter'
 import { formatDate, formatMinutes, type Leaf } from '../../lib/filter/builder'
 import { type Cmp, type DateField, type Keyword, type Priority } from '../../lib/filter/parse'
 import { durationMinutes } from '../../lib/time'
+import { nameKey } from '../../lib/fieldNames'
 import { ancestors } from '../../lib/tree'
-import type { FieldDef, Label, Project } from '../../lib/types'
+import type { FieldDef, Label, Project, Section } from '../../lib/types'
 import { msg, t, translatedMap } from '../../lib/i18n'
 import { priorityAccessibleName, priorityShort } from '../../lib/priority'
 import { KEYWORD_NAME } from './conditionText'
@@ -15,10 +16,10 @@ import { ENERGY_LEVELS, energyName, type Energy } from '../../lib/energy'
 import { SECTOR_WORDS } from '../../lib/sectors'
 import { sectorWordName } from '../../lib/sectorNames'
 
-export type ConditionKind = 'label' | 'project' | 'priority' | DateField | 'state' | 'assignee' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy' | 'sector'
+export type ConditionKind = 'label' | 'project' | 'section' | 'priority' | DateField | 'state' | 'assignee' | 'search' | 'notes' | 'origin' | 'workspace' | 'tracked' | 'field' | 'nofield' | 'energy' | 'sector'
 
 const KIND_NAME = translatedMap<ConditionKind>({
-  label: msg('Label'), project: msg('Project'), priority: msg('Priority'),
+  label: msg('Label'), project: msg('Project'), section: msg('Section'), priority: msg('Priority'),
   due: msg('Due date'), deadline: msg('Deadline'), start: msg('Start date'), created: msg('Created'), completed: msg('Completed date'),
   state: msg('State'), assignee: msg('Assignee'), search: msg('Title or notes'), notes: msg('Note'), origin: msg('Origin'), workspace: msg('Workspace'), tracked: msg('Tracked time'),
   field: msg('Custom field'), nofield: msg('Custom field is empty'), energy: msg('Energy'), sector: msg('Time sector'),
@@ -123,6 +124,7 @@ export function draftOf(leaf: Leaf | null): Draft {
     case 'sector': return { ...d, kind: 'sector', text: leaf.value }
     case 'energy': return { ...d, kind: 'energy', energy: leaf.value }
     case 'workspace': return { ...d, kind: 'workspace', name: leaf.name }
+    case 'section': return { ...d, kind: 'section', name: leaf.name }
     case 'tracked': return { ...d, kind: 'tracked', op: leaf.op, duration: formatMinutes(leaf.minutes), occurrence: !!leaf.occurrence }
     case 'field': {
       const v = leaf.value
@@ -154,6 +156,7 @@ export function leafOf(d: Draft): Leaf | null {
     case 'energy': return { kind: 'energy', value: d.energy }
     case 'sector': return { kind: 'sector', value: d.text || 'this-week' }
     case 'workspace': return name ? { kind: 'workspace', name, pos: 0 } : null
+    case 'section': return name ? { kind: 'section', name, pos: 0 } : null
     case 'tracked': {
       const minutes = durationMinutes(d.duration)
       if (minutes === null) return null
@@ -186,6 +189,8 @@ export interface ConditionEditorProps {
   not: boolean
   labels: readonly Label[]
   projects: readonly Project[]
+  /** Sections of every project, for the Section condition (section-filter). */
+  sections: readonly Section[]
   fields: readonly FieldDef[]
   /** The cached workspaces (group-mentions D6): the Workspace condition is offered with more than one. */
   workspaces?: readonly { id: string; name: string }[]
@@ -198,15 +203,17 @@ export interface ConditionEditorProps {
 
 
 
-export function ConditionEditor({ leaf, not: initialNot, labels, projects, fields, workspaces = [], members = [], onSave, onRemove, onClose }: ConditionEditorProps) {
+export function ConditionEditor({ leaf, not: initialNot, labels, projects, sections, fields, workspaces = [], members = [], onSave, onRemove, onClose }: ConditionEditorProps) {
   const [draft, setDraft] = useState<Draft>(() => draftOf(leaf))
   const [not, setNot] = useState(initialNot)
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }))
   const result = leafOf(draft)
   const fieldNames = useMemo(() => [...new Set(fields.filter((f) => !f.deleted_at).map((f) => f.name))].sort((a, b) => a.localeCompare(b)), [fields])
-  const kinds: ConditionKind[] = ['label', 'project', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'assignee', 'search', 'notes', 'origin', 'tracked', 'energy', 'sector']
+  const kinds: ConditionKind[] = ['label', 'project', 'section', 'priority', 'due', 'deadline', 'start', 'created', 'completed', 'state', 'assignee', 'search', 'notes', 'origin', 'tracked', 'energy', 'sector']
   if (workspaces.length > 1 || draft.kind === 'workspace') kinds.splice(kinds.indexOf('origin') + 1, 0, 'workspace')
   if (fieldNames.length || draft.kind === 'field' || draft.kind === 'nofield') kinds.push('field', 'nofield')
+  // One choice per name: a section is matched by name in every project (section-filter).
+  const sectionChoices = useMemo(() => [...new Map(sections.filter((s) => !s.deleted_at).map((s) => [nameKey(s.name), s])).values()], [sections])
   const projectMap = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const isDate = DATE_KINDS.includes(draft.kind)
   const save = () => { if (result) onSave(result, not) }
@@ -220,13 +227,17 @@ export function ConditionEditor({ leaf, not: initialNot, labels, projects, field
           </Select>
         </Field>
 
-        {(draft.kind === 'label' || draft.kind === 'project') && (
+        {(draft.kind === 'label' || draft.kind === 'project' || draft.kind === 'section') && (
           <div className="space-y-2">
             {draft.name && <p className="text-meta text-muted">{t('Chosen:')} <NeutralChip>{draft.name}</NeutralChip></p>}
             {draft.kind === 'label' ? (
               <Combobox label={t('Choose a label')} placeholder={t('Search labels')} source={labels.filter((l) => !l.deleted_at)}
                 getKey={(l) => l.id} getLabel={(l) => l.name} rankContext="label" selected={labels.filter((l) => l.name === draft.name).map((l) => l.id)}
                 onPick={(l) => set({ name: l.name })} />
+            ) : draft.kind === 'section' ? (
+              <Combobox label={t('Choose a section')} placeholder={t('Search sections')} source={sectionChoices}
+                getKey={(s) => s.id} getLabel={(s) => s.name} selected={sectionChoices.filter((s) => nameKey(s.name) === nameKey(draft.name)).map((s) => s.id)}
+                onPick={(s) => set({ name: s.name })} />
             ) : (
               <Combobox label={t('Choose a project')} placeholder={t('Search projects')} source={projects.filter((p) => !p.deleted_at)}
                 getKey={(p) => p.id} getLabel={(p) => p.name} getPath={(p) => ancestors(p.id, projectMap).reverse().map((a) => a.name)}

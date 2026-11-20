@@ -19,7 +19,7 @@ function Harness({ initial, workspaces }: { initial: string; workspaces?: { id: 
   current = q
   return (
     <div>
-      <FilterBuilder query={q} onChange={setQ} count={3} labels={[]} projects={[]} fields={[]} workspaces={workspaces} />
+      <FilterBuilder query={q} onChange={setQ} count={3} labels={[]} projects={[]} sections={[]} fields={[]} workspaces={workspaces} />
       <input aria-label="Filter query" value={q} onChange={(e) => setQ(e.target.value)} />
     </div>
   )
@@ -140,7 +140,7 @@ describe('condition dialog model', () => {
 
   it('reads back every kind of condition it edits', () => {
     for (const q of ['@work', '#Work', '##Work', 'p2', 'due <= tomorrow', 'deadline < 3 days', 'start = next week', 'created > 2 months ago',
-      'completed = last week', 'due before friday', 'due = 2026-11-01', 'overdue', 'no date', 'search: "oat milk"', 'origin: github', 'workspace: "Side projects"',
+      'completed = last week', 'due before friday', 'due = 2026-11-01', 'overdue', 'no date', 'search: "oat milk"', 'origin: github', 'workspace: "Side projects"', 'section: Review', 'section: "In review"',
       'tracked > 1h30', '"cost" > 100', '"client" = "Acme Inc"', '"paid" = true', '"order date" <= 3 days', 'no "cost"']) {
       const back = leafOf(draftOf(leaf(q)))
       expect(back && stripPositions(back), q).toEqual(stripPositions(leaf(q)))
@@ -178,6 +178,8 @@ describe('conditionText', () => {
     expect(words('search: "oat milk"')).toBe('Title or notes contain oat milk')
     expect(words('origin: github')).toBe('Origin is github')
     expect(words('workspace: Home')).toBe('Workspace is Home')
+    expect(words('section: Review')).toBe('Section is Review')
+    expect(words('no section')).toBe('No section')
     expect(words('tracked > 90')).toBe('Tracked time is more than 1h30')
     expect(words('"cost" >= 100')).toBe('cost is at least 100')
     expect(words('no "cost"')).toBe('cost is empty')

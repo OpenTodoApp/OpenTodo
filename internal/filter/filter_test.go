@@ -60,6 +60,9 @@ func TestFilterParserAcceptsDocsExamples(t *testing.T) {
 		// Assignee terms (today-assigned-filter).
 		"assigned", "unassigned", "!assigned", "assigned: me", "assigned:me", `assigned: "Sam Lee"`, "ASSIGNED: sam",
 		"today & (assigned: me | unassigned)", `"assigned" = x`,
+		// Section terms (section-filter).
+		"section: Review", "section:Review", `section: "In review"`, "SECTION: backlog", "no section", "!section: Review",
+		"section: Review | section: Backlog", "section: Backlog | no section", "#Work & section: Review", `"section" = x`,
 		// Workspace terms (group-mentions).
 		"workspace: Home", "workspace:Home", `workspace:"Side projects"`, `workspace: "Side projects" & p1`, "WORKSPACE: work",
 		"(workspace: Home | workspace: Work) & due = this week", "!workspace: Home", "workspace: home & no project",
@@ -128,6 +131,8 @@ func TestFilterParserRejects(t *testing.T) {
 		"p1 & sector: soon":  `Unknown time sector "soon" at position 6; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
 		"sector: this year":  `Unknown time sector "this year" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44`,
 		"assigned:":          `Expected a name after "assigned:" at position 1`,
+		"section:":           `Expected a section name after "section:" at position 1`,
+		"p1 & section: ":     `Expected a section name after "section:" at position 6`,
 		"p1 & assigned: ":    `Expected a name after "assigned:" at position 6`,
 		"notes:":             `Expected text after "notes:" at position 1`,
 		"p1 & notes: ":       `Expected text after "notes:" at position 6`,

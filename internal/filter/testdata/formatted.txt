@@ -30,6 +30,7 @@ energy: low & unblocked & today
 notes & #Renovation
 no notes & p1
 assigned: me | unassigned
+section: Review | section: Backlog
 tracked occurrence > 30m & no date
 @work & due <= tomorrow & p1
 @errand | @call & p1
@@ -115,6 +116,16 @@ assigned: "Sam Lee"
 assigned: sam
 today & (assigned: me | unassigned)
 "assigned" = "x"
+section: Review
+section: Review
+section: "In review"
+section: backlog
+no section
+!section: Review
+section: Review | section: Backlog
+section: Backlog | no section
+#Work & section: Review
+"section" = "x"
 "paid" = false
 "cost" >= -2.5
 "status" = "Ordered"
