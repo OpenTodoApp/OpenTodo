@@ -1,0 +1,1 @@
+- **The app icon badge can count only the tasks from earlier days.** Settings → Notifications → App icon badge → Count: Today (as before), Earlier (Today's Earlier group: overdue tasks) or Off, per device ([#1548](https://github.com/OpenTodoApp/OpenTodo/issues/1548)).

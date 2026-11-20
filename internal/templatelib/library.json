@@ -58,12 +58,12 @@
      },
      {
       "en": "Share the project with your travel companions and split the bookings.",
-      "fr": "Partage le projet avec tes compagnons de voyage et répartissez-vous les réservations.",
+      "fr": "Partage le projet avec tes compagnons de voyage et attribue une réservation à chacun.",
       "it": "Condividi il progetto con chi viaggia con te e dividetevi le prenotazioni."
      },
      {
       "en": "Add the dates: flights, check-in, the day the insurance must be sorted.",
-      "fr": "Ajoute les dates : vols, enregistrement, la date limite pour souscrire l'assurance.",
+      "fr": "Ajoute les dates : vols, enregistrement, la date limite pour souscrire l’assurance.",
       "it": "Aggiungi le date: voli, check-in, il giorno entro cui sistemare l'assicurazione."
      }
     ]
@@ -103,7 +103,7 @@
         {
          "title": {
           "en": "Flights or train tickets",
-          "fr": "Billet d'avion ou de train",
+          "fr": "Billet d’avion ou de train",
           "it": "Biglietti aerei o del treno"
          },
          "priority": 1,
@@ -147,7 +147,7 @@
         {
          "title": {
           "en": "Check passport expiry date",
-          "fr": "Vérifier la date d'expiration du passeport",
+          "fr": "Vérifier la date d’expiration du passeport",
           "it": "Controllare la scadenza del passaporto"
          },
          "priority": 1,
@@ -260,7 +260,7 @@
     },
     "description": {
      "en": "Some jobs come round only once a season or once a year, which is exactly why they get forgotten. Every task here [repeats](https://open-todo.app/docs/recurrence/) at its own interval; add a [reminder](https://open-todo.app/docs/reminders/) to the ones that need booking a tradesperson.",
-     "fr": "Certains travaux ne se présentent qu'une fois par saison ou par an, et c'est précisément pour cela qu'on les oublie. Chaque tâche [se répète](https://open-todo.app/docs/recurrence/)  à son propre intervalle; ajoute un [rappel](https://open-todo.app/docs/reminders/) à celles qui nécessitent la réservation d'un artisan.\n",
+     "fr": "Certains travaux ne se présentent qu’une fois par saison ou par an, et c’est précisément pour cela qu’on les oublie. Chaque tâche [se répète](https://open-todo.app/docs/recurrence/)  à son propre intervalle; ajoute un [rappel](https://open-todo.app/docs/reminders/) à celles qui nécessitent la réservation d’un artisan.\n",
      "it": "Alcuni lavori capitano una volta a stagione o una volta l'anno, ed è proprio per questo che si dimenticano. Ogni attività qui si [ripete](https://open-todo.app/docs/recurrence/) con il suo intervallo; aggiungi un [promemoria](https://open-todo.app/docs/reminders/) a quelle che richiedono di prenotare un tecnico.\n"
     },
     "howToUse": [
@@ -276,14 +276,14 @@
      },
      {
       "en": "Complete a task when it is done and the next occurrence appears.",
-      "fr": "Termine une tâche lorsqu'elle est faite et la prochaine récurrence apparaîtra.",
+      "fr": "Termine une tâche lorsqu’elle est faite et la prochaine récurrence apparaîtra.",
       "it": "Completa un'attività quando è fatta e compare la prossima ripetizione."
      }
     ],
     "makeItYours": [
      {
       "en": "Delete what your home does not have (no chimney, no garden) and add what it does.",
-      "fr": "Supprime ce que ta maison n'a pas (pas de cheminée, pas de jardin) et ajoute ce qu'elle a.",
+      "fr": "Supprime ce que ta maison n’a pas (pas de cheminée, pas de jardin) et ajoute ce qu’elle a.",
       "it": "Elimina quello che la tua casa non ha (niente camino, niente giardino) e aggiungi quello che ha."
      },
      {
@@ -293,7 +293,7 @@
      },
      {
       "en": "Share it with whoever else looks after the house.",
-      "fr": "Partage-le avec les personnes qui s'occupent de la maison avec toi.",
+      "fr": "Partage-le avec les personnes qui s’occupent de la maison avec toi.",
       "it": "Condividilo con chi si occupa della casa insieme a te."
      }
     ]
@@ -447,7 +447,7 @@
     "howToUse": [
      {
       "en": "Start the template, then share the project with everyone at home as editors.",
-      "fr": "Lance le modèle, puis partage le projet avec les personnes qui vivent avec toi en tant qu'éditeurs.",
+      "fr": "Lance le modèle, puis partage le projet avec les personnes qui vivent avec toi en tant qu’éditeurs.",
       "it": "Avvia il modello, poi condividi il progetto con chi vive con te come editor."
      },
      {
@@ -554,7 +554,7 @@
         {
          "title": {
           "en": "Vacuum and mop",
-          "fr": "Passer l'aspirateur et laver les sols",
+          "fr": "Passer l’aspirateur et laver les sols",
           "it": "Aspirapolvere e lavare i pavimenti"
          },
          "due": "+0d",
@@ -675,12 +675,12 @@
     },
     "summary": {
      "en": "A weekly rhythm for choosing meals, writing the shopping list and prepping ahead.",
-     "fr": "Un rythme hebdomadaire pour choisir les repas, rédiger la liste de courses et cuisiner à l'avance.",
+     "fr": "Un rythme hebdomadaire pour choisir les repas, rédiger la liste de courses et cuisiner à l’avance.",
      "it": "Un ritmo settimanale per scegliere i pasti, scrivere la lista della spesa e preparare in anticipo."
     },
     "description": {
      "en": "Planning meals once a week saves both money and evenings. This template sets a Sunday rhythm with [repeating tasks](https://open-todo.app/docs/recurrence/): choose, write the list, shop, prep.\n\nKeep the shopping list in the same [shared project](https://open-todo.app/docs/sharing/) so whoever is in the shop sees it live.",
-     "fr": "Planifier les repas une fois par semaine permet d'économiser de l'argent et des soirées. Ce modèle instaure un rythme le dimanche avec des [tâches récurrentes](https://open-todo.app/docs/recurrence/) : choisir, faire la liste, faire les courses, préparer.\n\nConserve la liste de courses dans le même [projet partagé](https://open-todo.app/docs/sharing/), afin que la personne au supermarché puisse la voir mise à jour.\n",
+     "fr": "Planifier les repas une fois par semaine permet d’économiser de l’argent et des soirées. Ce modèle instaure un rythme le dimanche avec des [tâches récurrentes](https://open-todo.app/docs/recurrence/) : choisir, faire la liste, faire les courses, préparer.\n\nConserve la liste de courses dans le même [projet partagé](https://open-todo.app/docs/sharing/), afin que la personne au supermarché puisse la voir mise à jour.\n",
      "it": "Pianificare i pasti una volta a settimana fa risparmiare soldi e serate. Questo modello imposta un ritmo domenicale con [attività che si ripetono](https://open-todo.app/docs/recurrence/): scegliere, scrivere la lista, fare la spesa, preparare.\n\nTieni la lista della spesa nello stesso [progetto condiviso](https://open-todo.app/docs/sharing/), così chi è al supermercato la vede aggiornata.\n"
     },
     "howToUse": [
@@ -855,7 +855,7 @@
     },
     "description": {
      "en": "Moving is a project with a deadline and a lot of people involved. Start this template, then [share the project](https://open-todo.app/docs/sharing/) with everyone who is moving so each person can pick up tasks.\n\nThe sections follow the calendar, from six weeks before to after the move. Switch the project to a [board](https://open-todo.app/docs/sections-and-boards/) to see the stages side by side. Due dates count from the start day you pick, so adjust the first one and move the rest as needed.",
-     "fr": "Un déménagement est un projet doté d'une échéance et impliquant de nombreuses personnes. Lance ce modèle, puis [partage le projet](https://open-todo.app/docs/sharing/) avec les personnes qui déménagent, afin que chacun puisse prendre en charge des tâches.\n\nLes sections suivent le calendrier, de six semaines avant jusqu'après le déménagement. Affiche le projet sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) pour voir les différentes phases côte à côte. Les dates d'échéance se calculent à partir de la date de début que tu choisis : définis la première, puis décale les autres en conséquence.\n",
+     "fr": "Un déménagement est un projet doté d’une échéance et impliquant de nombreuses personnes. Lance ce modèle, puis [partage le projet](https://open-todo.app/docs/sharing/) avec les personnes qui déménagent, afin que chacun puisse prendre en charge des tâches.\n\nLes sections suivent le calendrier, de six semaines avant jusqu’après le déménagement. Affiche le projet sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) pour voir les différentes phases côte à côte. Les dates d’échéance se calculent à partir de la date de début que tu choisis : définis la première, puis décale les autres en conséquence.\n",
      "it": "Un trasloco è un progetto con una scadenza e tante persone coinvolte. Avvia questo modello, poi [condividi il progetto](https://open-todo.app/docs/sharing/) con chi trasloca, così ognuno può prendersi delle attività.\n\nLe sezioni seguono il calendario, da sei settimane prima a dopo il trasloco. Passa il progetto alla [bacheca](https://open-todo.app/docs/sections-and-boards/) per vedere le fasi una accanto all'altra. Le scadenze contano dal giorno di inizio che scegli, quindi sistema la prima e sposta le altre di conseguenza.\n"
     },
     "howToUse": [
@@ -866,7 +866,7 @@
      },
      {
       "en": "Due dates count from the start day; set the moving day and move the rest to match.",
-      "fr": "Les dates d'échéance se calculent à partir de la date de début ; fixe le jour du déménagement et décale les autres en conséquence.",
+      "fr": "Les dates d’échéance se calculent à partir de la date de début ; fixe le jour du déménagement et décale les autres en conséquence.",
       "it": "Le scadenze contano dal giorno di inizio; fissa il giorno del trasloco e sposta le altre di conseguenza."
      },
      {
@@ -878,7 +878,7 @@
     "makeItYours": [
      {
       "en": "Delete the tasks that do not apply (no pets, no car) and add the ones that do.",
-      "fr": "Supprime les tâches qui ne te concernent pas (pas d'animaux, pas de voiture) et ajoute celles dont tu as besoin.",
+      "fr": "Supprime les tâches qui ne te concernent pas (pas d’animaux, pas de voiture) et ajoute celles dont tu as besoin.",
       "it": "Elimina le attività che non ti riguardano (niente animali, niente auto) e aggiungi quelle che servono."
      },
      {
@@ -940,7 +940,7 @@
         {
          "title": {
           "en": "Book the removal company",
-          "fr": "Réserver l'entreprise de déménagement",
+          "fr": "Réserver l’entreprise de déménagement",
           "it": "Prenotare la ditta di traslochi"
          },
          "priority": 2,
@@ -956,7 +956,7 @@
           {
            "title": {
             "en": "Check insurance cover",
-            "fr": "Vérifier la couverture de l'assurance",
+            "fr": "Vérifier la couverture de l’assurance",
             "it": "Verificare la copertura assicurativa"
            }
           }
@@ -997,7 +997,7 @@
         {
          "title": {
           "en": "Tell the bank, doctor and employer",
-          "fr": "Prévenir la banque, le médecin et l'employeur",
+          "fr": "Prévenir la banque, le médecin et l’employeur",
           "it": "Avvisare banca, medico e datore di lavoro"
          },
          "due": "+4w",
@@ -1146,12 +1146,12 @@
     "howToUse": [
      {
       "en": "Start the template; the three sections cover learning, contributing and leading over three months.",
-      "fr": "Lance le modèle ; les trois sections couvrent l'apprentissage, la contribution et l'autonomie sur trois mois.",
+      "fr": "Lance le modèle ; les trois sections couvrent l’apprentissage, la contribution et l’autonomie sur trois mois.",
       "it": "Avvia il modello; le tre sezioni coprono imparare, contribuire e guidare in tre mesi."
      },
      {
       "en": "Give the first week's tasks a time on the Week calendar so they do not slip.",
-      "fr": "Planifie les activités de la première semaine dans ton calendrier hebdomadaire pour t'assurer de les réaliser.",
+      "fr": "Planifie les activités de la première semaine dans ton calendrier hebdomadaire pour t’assurer de les réaliser.",
       "it": "Dai un orario alle attività della prima settimana nel calendario settimanale così non scivolano."
      },
      {
@@ -1163,7 +1163,7 @@
     "makeItYours": [
      {
       "en": "Replace the placeholder names with your actual team and systems.",
-      "fr": "Remplace les noms génériques par les membres de ton équipe et vos outils.",
+      "fr": "Remplace les noms génériques par les membres de ton équipe et tes outils.",
       "it": "Sostituisci i nomi generici con il tuo team e i vostri sistemi."
      },
      {
@@ -1206,7 +1206,7 @@
         {
          "title": {
           "en": "Meet every person on the team one to one",
-          "fr": "Rencontrer individuellement chaque membre de l'équipe",
+          "fr": "Rencontrer individuellement chaque membre de l’équipe",
           "it": "Incontrare ogni persona del team a tu per tu"
          },
          "due": "+2w",
@@ -1217,7 +1217,7 @@
           {
            "title": {
             "en": "Ask what they wish the new person knew",
-            "fr": "Demander ce qu'ils aimeraient que les nouveaux arrivants sachent",
+            "fr": "Demander ce qu’ils aimeraient que les nouveaux arrivants sachent",
             "it": "Chiedere cosa vorrebbero che sapesse chi arriva"
            }
           }
@@ -1262,7 +1262,7 @@
         {
          "title": {
           "en": "Write down what confused you in month one",
-          "fr": "Noter ce qui t'a semblé confus pendant ton premier mois",
+          "fr": "Noter ce qui t’a semblé confus pendant ton premier mois",
           "it": "Annotare cosa ti ha confuso nel primo mese"
          },
          "due": "+5w"
@@ -1279,7 +1279,7 @@
         {
          "title": {
           "en": "Propose one change to how the team works",
-          "fr": "Proposer une modification des méthodes de travail de l'équipe",
+          "fr": "Proposer une modification des méthodes de travail de l’équipe",
           "it": "Proporre un cambiamento al modo di lavorare del team"
          },
          "due": "+11w"
@@ -1328,23 +1328,23 @@
    "text": {
     "title": {
      "en": "Product launch",
-     "fr": "Lancement d'un produit",
+     "fr": "Lancement d’un produit",
      "it": "Lancio di un prodotto"
     },
     "summary": {
      "en": "A small team's launch plan on a board, from final checks to the announcement and the week after.",
-     "fr": "Le plan de lancement d'une petite équipe sur un tableau, des vérifications finales à l'annonce et à la semaine qui suit.",
+     "fr": "Le plan de lancement d’une petite équipe sur un tableau, des vérifications finales à l’annonce et à la semaine qui suit.",
      "it": "Il piano di lancio di un piccolo team su una bacheca, dalle verifiche finali all'annuncio e alla settimana dopo."
     },
     "description": {
      "en": "A launch needs everyone to see the same plan. Start this template, [share the project](https://open-todo.app/docs/sharing/) with your team as editors, and show it as a [board](https://open-todo.app/docs/sections-and-boards/): Backlog, This week, Launch day, Week after.\n\nTasks carry estimates, so the [Week calendar](https://open-todo.app/docs/time-blocking/) shows whether the plan fits into the days you have.",
-     "fr": "Un lancement nécessite que tout le monde voie le même plan. Lance ce modèle, [partage le projet](https://open-todo.app/docs/sharing/) avec l'équipe en tant qu'éditeurs et affiche-le sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) : À faire, Cette semaine, Jour du lancement, Semaine suivante.\n\nLes tâches disposent d'estimations, de sorte que le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) indique si le plan tient dans les jours dont tu disposes.\n",
+     "fr": "Un lancement nécessite que tout le monde voie le même plan. Lance ce modèle, [partage le projet](https://open-todo.app/docs/sharing/) avec l’équipe en tant qu’éditeurs et affiche-le sous forme de [tableau](https://open-todo.app/docs/sections-and-boards/) : À faire, Cette semaine, Jour du lancement, Semaine suivante.\n\nLes tâches disposent d’estimations, de sorte que le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) indique si le plan tient dans les jours dont tu disposes.\n",
      "it": "Un lancio ha bisogno che tutti vedano lo stesso piano. Avvia questo modello, [condividi il progetto](https://open-todo.app/docs/sharing/) con il team come editor e mostralo come [bacheca](https://open-todo.app/docs/sections-and-boards/): Da fare, Questa settimana, Giorno del lancio, Settimana dopo.\n\nLe attività hanno delle stime, così il [calendario settimanale](https://open-todo.app/docs/time-blocking/) mostra se il piano sta nei giorni che hai.\n"
     },
     "howToUse": [
      {
       "en": "Start the template, share the project with your team as editors, and show it as a board.",
-      "fr": "Lance le modèle, partage le projet avec l'équipe en tant qu'éditeurs et affiche-le sous forme de tableau.",
+      "fr": "Lance le modèle, partage le projet avec l’équipe en tant qu’éditeurs et affiche-le sous forme de tableau.",
       "it": "Avvia il modello, condividi il progetto con il team come editor e mostralo come bacheca."
      },
      {
@@ -1371,7 +1371,7 @@
      },
      {
       "en": "Add a label per workstream (`@marketing`, `@engineering`) and filter the board by it.",
-      "fr": "Ajoute une étiquette par domaine d'activité (`@marketing`, `@développement`) et filtre le tableau.",
+      "fr": "Ajoute une étiquette par domaine d’activité (`@marketing`, `@développement`) et filtre le tableau.",
       "it": "Aggiungi un'etichetta per area di lavoro (`@marketing`, `@sviluppo`) e filtra la bacheca."
      }
     ]
@@ -1418,7 +1418,7 @@
         {
          "title": {
           "en": "Write the announcement post",
-          "fr": "Rédiger l'article d'annonce",
+          "fr": "Rédiger l’article d’annonce",
           "it": "Scrivere l'articolo di annuncio"
          },
          "estimate": 120,
@@ -1507,7 +1507,7 @@
         {
          "title": {
           "en": "Send the announcement",
-          "fr": "Diffuser l'annonce",
+          "fr": "Diffuser l’annonce",
           "it": "Inviare l'annuncio"
          },
          "priority": 1,
@@ -1576,23 +1576,23 @@
    "text": {
     "title": {
      "en": "Study plan",
-     "fr": "Plan d'étude",
+     "fr": "Plan d’étude",
      "it": "Piano di studio"
     },
     "summary": {
      "en": "Weekly study blocks, revision and exam dates for a course or certification.",
-     "fr": "Blocs d'étude hebdomadaires, révisions et dates d'examen pour un cours ou une certification.",
+     "fr": "Blocs d’étude hebdomadaires, révisions et dates d’examen pour un cours ou une certification.",
      "it": "Blocchi di studio settimanali, ripasso e date d'esame per un corso o una certificazione."
     },
     "description": {
      "en": "Studying works best as a rhythm. This template puts fixed study blocks on your [Week calendar](https://open-todo.app/docs/time-blocking/) with [repeating rules](https://open-todo.app/docs/recurrence/), plus the milestones that keep you on track.",
-     "fr": "On étudie mieux avec un rythme. Ce modèle place des blocs d'étude fixes dans le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) avec des [règles de récurrence](https://open-todo.app/docs/recurrence/), plus les étapes clés qui te maintiennent sur la bonne voie.\n",
+     "fr": "On étudie mieux avec un rythme. Ce modèle place des blocs d’étude fixes dans le [calendrier hebdomadaire](https://open-todo.app/docs/time-blocking/) avec des [règles de récurrence](https://open-todo.app/docs/recurrence/), plus les étapes clés qui te maintiennent sur la bonne voie.\n",
      "it": "Si studia meglio con un ritmo. Questo modello mette blocchi di studio fissi nel [calendario settimanale](https://open-todo.app/docs/time-blocking/) con [regole di ripetizione](https://open-todo.app/docs/recurrence/), più le tappe che ti tengono in carreggiata.\n"
     },
     "howToUse": [
      {
       "en": "Start the template; the study blocks repeat on fixed days and already carry estimates.",
-      "fr": "Lance le modèle ; les blocs d'étude se répètent à des jours fixes et disposent déjà d'une estimation.",
+      "fr": "Lance le modèle ; les blocs d’étude se répètent à des jours fixes et disposent déjà d’une estimation.",
       "it": "Avvia il modello; i blocchi di studio si ripetono in giorni fissi e hanno già una stima."
      },
      {
@@ -1602,7 +1602,7 @@
      },
      {
       "en": "Milestones count from the start day; set the exam date and move them back from it.",
-      "fr": "Les étapes clés se calculent à partir du jour de début ; fixe la date de l'examen et décale-les à rebours à partir de là.",
+      "fr": "Les étapes clés se calculent à partir du jour de début ; fixe la date de l’examen et décale-les à rebours à partir de là.",
       "it": "Le tappe contano dal giorno di inizio; fissa la data dell'esame e spostale a ritroso da lì."
      }
     ],
@@ -1637,7 +1637,7 @@
     {
      "name": {
       "en": "Study plan",
-      "fr": "Plan d'étude",
+      "fr": "Plan d’étude",
       "it": "Piano di studio"
      },
      "color": "#db2777",
@@ -1652,7 +1652,7 @@
         {
          "title": {
           "en": "Study block, new material",
-          "fr": "Bloc d'étude, nouveaux sujets",
+          "fr": "Bloc d’étude, nouveaux sujets",
           "it": "Blocco di studio, argomenti nuovi"
          },
          "due": "+1d",
@@ -1708,7 +1708,7 @@
         {
          "title": {
           "en": "Exam day",
-          "fr": "Jour de l'examen",
+          "fr": "Jour de l’examen",
           "it": "Giorno dell'esame"
          },
          "priority": 1,
@@ -1756,7 +1756,7 @@
     },
     "description": {
      "en": "Getting Things Done works with any tool that has an inbox, contexts and lists. In OpenTodo, contexts are [labels](https://open-todo.app/docs/labels-and-filters/) and each list is a saved filter.\n\nThe template creates the [labels](https://open-todo.app/docs/labels-and-filters/) `@home`, `@computer`, `@phone`, `@errand`, `@waiting` and `@someday`, a GTD project with sections for next actions, waiting-for and someday, and a weekly reminder to check every project for a next action.\n\nCreate views like `@phone & !@waiting` for the moments you have only your phone. [Saved views](https://open-todo.app/docs/views/) can be pinned to the sidebar with live counts.",
-     "fr": "Getting Things Done fonctionne avec n'importe quel outil disposant d'une boîte de réception, de contextes et de listes. Dans OpenTodo, les contextes sont des [étiquettes](https://open-todo.app/docs/labels-and-filters/) et chaque liste est un filtre enregistré.\n\nCe modèle crée les [étiquettes](https://open-todo.app/docs/labels-and-filters/) `@maison`, `@ordinateur`, `@téléphone`, `@courses`, `@en-attente` et `@un-jour`, un projet GTD doté des sections actions suivantes, en attente et un jour, ainsi qu'un rappel hebdomadaire pour vérifier que chaque projet possède une action suivante.\n\nCrée des vues telles que `@téléphone & !@en-attente` pour les moments où tu n'as que ton téléphone. Les [vues enregistrées](https://open-todo.app/docs/views/) peuvent être épinglées dans la barre latérale avec les compteurs mis à jour.\n",
+     "fr": "Getting Things Done fonctionne avec n’importe quel outil disposant d’une boîte de réception, de contextes et de listes. Dans OpenTodo, les contextes sont des [étiquettes](https://open-todo.app/docs/labels-and-filters/) et chaque liste est un filtre enregistré.\n\nCe modèle crée les [étiquettes](https://open-todo.app/docs/labels-and-filters/) `@maison`, `@ordinateur`, `@téléphone`, `@courses`, `@en-attente` et `@un-jour`, un projet GTD doté des sections actions suivantes, en attente et un jour, ainsi qu’un rappel hebdomadaire pour vérifier que chaque projet possède une action suivante.\n\nCrée des vues telles que `@téléphone & !@en-attente` pour les moments où tu n’as que ton téléphone. Les [vues enregistrées](https://open-todo.app/docs/views/) peuvent être épinglées dans la barre latérale avec les compteurs mis à jour.\n",
      "it": "Getting Things Done funziona con qualsiasi strumento che abbia una inbox, dei contesti e delle liste. In OpenTodo i contesti sono [etichette](https://open-todo.app/docs/labels-and-filters/) e ogni lista è un filtro salvato.\n\nIl modello crea le [etichette](https://open-todo.app/docs/labels-and-filters/) `@casa`, `@computer`, `@telefono`, `@commissione`, `@in-attesa` e `@un-giorno`, un progetto GTD con le sezioni prossime azioni, in attesa e un giorno, e un promemoria settimanale per controllare che ogni progetto abbia una prossima azione.\n\nCrea viste come `@telefono & !@in-attesa` per i momenti in cui hai solo il telefono. Le [viste salvate](https://open-todo.app/docs/views/) si possono fissare nella barra laterale con i conteggi aggiornati.\n"
     },
     "howToUse": [
@@ -1772,7 +1772,7 @@
      },
      {
       "en": "Every Friday, the review task asks you to check each project for a next action.",
-      "fr": "Chaque vendredi, l'activité de révision te demande de vérifier que chaque projet possède une action suivante.",
+      "fr": "Chaque vendredi, l’activité de révision te demande de vérifier que chaque projet possède une action suivante.",
       "it": "Ogni venerdì l'attività di revisione ti chiede di controllare che ogni progetto abbia una prossima azione."
      }
     ],
@@ -1789,7 +1789,7 @@
      },
      {
       "en": "Give the review task a time that fits your week.",
-      "fr": "Programme l'activité de révision à un horaire adapté à ta semaine.",
+      "fr": "Programme l’activité de révision à un horaire adapté à ta semaine.",
       "it": "Dai all'attività di revisione un orario adatto alla tua settimana."
      }
     ]
@@ -1907,7 +1907,7 @@
         {
          "title": {
           "en": "Quote from the electrician",
-          "fr": "Devis de l'électricien",
+          "fr": "Devis de l’électricien",
           "it": "Preventivo dell'elettricista"
          },
          "due": "+1w",
@@ -2017,7 +2017,7 @@
     },
     "description": {
      "en": "A weekly review keeps a task list trustworthy. Once a week you get everything out of your head, look at what happened, and decide what matters next.\n\nThis template gives you a project with three sections that repeat [every Friday](https://open-todo.app/docs/recurrence/). Each task carries a small estimate, so the whole review fits in about thirty minutes on the [Day and Week calendars](https://open-todo.app/docs/time-blocking/).\n\nPair it with a saved view such as `@review & due <= today`, pinned to the sidebar, and you have a review dashboard in one click. The [filters guide](https://open-todo.app/docs/filters/) explains the query language.",
-     "fr": "Une revue hebdomadaire garantit la fiabilité d'une liste de tâches. Une fois par semaine, tu te vides la tête, tu examines ce qui s'est passé et tu décides de ce qui compte maintenant.\n\nCe modèle te fournit un projet avec trois sections qui se répètent [chaque vendredi](https://open-todo.app/docs/recurrence/). Chaque tâche comporte une petite estimation, de sorte que l'ensemble de la revue prend environ trente minutes dans les [calendriers quotidien et hebdomadaire](https://open-todo.app/docs/time-blocking/).\n\nAssocie-le à une vue enregistrée telle que `@revue & due <= today`, épinglée dans la barre latérale, et tu obtiendras un tableau de bord de revue en un clic. Le [guide des filtres](https://open-todo.app/docs/filters/) explique le langage des requêtes.\n",
+     "fr": "Une revue hebdomadaire garantit la fiabilité d’une liste de tâches. Une fois par semaine, tu te vides la tête, tu examines ce qui s’est passé et tu décides de ce qui compte maintenant.\n\nCe modèle te fournit un projet avec trois sections qui se répètent [chaque vendredi](https://open-todo.app/docs/recurrence/). Chaque tâche comporte une petite estimation, de sorte que l’ensemble de la revue prend environ trente minutes dans les [calendriers quotidien et hebdomadaire](https://open-todo.app/docs/time-blocking/).\n\nAssocie-le à une vue enregistrée telle que `@revue & due <= today`, épinglée dans la barre latérale, et tu obtiendras un tableau de bord de revue en un clic. Le [guide des filtres](https://open-todo.app/docs/filters/) explique le langage des requêtes.\n",
      "it": "Una revisione settimanale mantiene affidabile una lista di attività. Una volta a settimana togli tutto dalla testa, guardi cosa è successo e decidi cosa conta adesso.\n\nQuesto modello ti dà un progetto con tre sezioni che si ripetono [ogni venerdì](https://open-todo.app/docs/recurrence/). Ogni attività ha una piccola stima, così l'intera revisione sta in circa trenta minuti nei [calendari giornaliero e settimanale](https://open-todo.app/docs/time-blocking/).\n\nAbbinalo a una vista salvata come `@revisione & due <= today`, fissata nella barra laterale, e hai una dashboard di revisione a un clic. La [guida ai filtri](https://open-todo.app/docs/filters/) spiega il linguaggio delle query.\n"
     },
     "howToUse": [
@@ -2028,12 +2028,12 @@
      },
      {
       "en": "Save a view `@review & due <= today` and pin it: on Friday it is your checklist.",
-      "fr": "Enregistre une vue `@revue & due <= today` et épingle-la : le vendredi, c'est ta liste de contrôle.",
+      "fr": "Enregistre une vue `@revue & due <= today` et épingle-la : le vendredi, c’est ta liste de contrôle.",
       "it": "Salva una vista `@revisione & due <= today` e fissala: il venerdì è la tua lista di controllo."
      },
      {
       "en": "Work through the three sections in order: get clear, look back, look ahead.",
-      "fr": "Suis les trois sections dans l'ordre : vider la tête, faire le bilan, regarder vers l'avenir.",
+      "fr": "Suis les trois sections dans l’ordre : vider la tête, faire le bilan, regarder vers l’avenir.",
       "it": "Segui le tre sezioni in ordine: fare chiarezza, guardare indietro, guardare avanti."
      }
     ],
@@ -2050,7 +2050,7 @@
      },
      {
       "en": "Cut anything that does not earn its minutes after a month.",
-      "fr": "Au bout d'un mois, supprime ce qui ne mérite pas d'y consacrer du temps.",
+      "fr": "Au bout d’un mois, supprime ce qui ne mérite pas d’y consacrer du temps.",
       "it": "Dopo un mese, togli quello che non vale i suoi minuti."
      }
     ]
@@ -2170,7 +2170,7 @@
       {
        "name": {
         "en": "Look ahead",
-        "fr": "Regarder vers l'avenir",
+        "fr": "Regarder vers l’avenir",
         "it": "Guardare avanti"
        },
        "tasks": [
@@ -2368,7 +2368,7 @@
     "en": "Weekly review",
     "de": "Wochenrückblick",
     "es": "Revisión semanal",
-    "fr": "Revue de la semaine",
+    "fr": "Revue hebdomadaire",
     "it": "Revisione settimanale",
     "nl": "Weekoverzicht",
     "pt": "Revisão semanal",

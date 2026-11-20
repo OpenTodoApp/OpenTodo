@@ -42,7 +42,7 @@ The splash and the skeleton are fixed by `shell-first-paint`; each still needs i
 | Finding | Where |
 | --- | --- |
 | No splash on either platform: a blank screen until the page paints; a slow server shows nothing. | `themes.xml`, `Info.plist:65` |
-| The iOS store build has no service worker, so it cannot start offline and fetches on every cold start. Android serves a stored copy offline. | `AppBoundDomains.swift`, `ShellCache.kt` |
+| ~~The iOS store build has no service worker, so it cannot start offline.~~ Fixed (#1458): when the server is unreachable at launch the shell opens the app from the web view's cache. WKWebView cannot intercept the real origin's requests the way Android's `ShellCache` does, so this uses the web view's own HTTP cache (`.returnCacheDataDontLoad`); a cold cache still needs the network once. | `ShellView.swift`, `ShellCache.kt` |
 | The loading skeleton does not show the phone's tab bar and header. | `web/src/app/App.tsx:191` |
 
 ### Web giveaways
@@ -83,7 +83,7 @@ Sixth round (2026-11-14, the first tour at 768 px with touch, a tablet held upri
 Open:
 
 - **Push to the iPhone app**: an iPhone only takes pushes signed with the app's key, so a self-hosted server needs a relay the project would run, or an app signed by whoever runs the server. Not planned. Android is `shell-push` ([#1344](https://github.com/OpenTodoApp/OpenTodo/issues/1344)).
-- The iOS store build cannot start offline (no service worker without app-bound domains).
+- The iOS store build opens offline from the web view's cache after one successful load (#1458); a first-ever launch with nothing cached still needs the network.
 - Still open after the third round: display options are a button in the phone bar, so a very long project name is cut at about 24 characters; windowed lists; universal links; lock-screen widgets.
 
 ## Device check, after each step

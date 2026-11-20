@@ -1,6 +1,6 @@
 ---
 title: n8n
-summary: The n8n community nodes: install them, the token to use, the task, project, label and comment operations, the signed trigger, example workflows, AI agents and limits.
+summary: "The n8n community nodes: install them, the token to use, the task, project, label and comment operations, the signed trigger, example workflows, AI agents and limits."
 audience: developer
 section: Integrations
 specs: []

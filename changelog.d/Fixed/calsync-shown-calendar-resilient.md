@@ -1,0 +1,1 @@
+- Calendar sync: a "shown" calendar that cannot be read — for example Google's virtual "Week Numbers" or "Holidays" calendars, which answer 409 to a calendar query — is now skipped for that cycle instead of stopping all task sync (#1627).

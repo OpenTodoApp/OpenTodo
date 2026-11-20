@@ -1,6 +1,6 @@
 ---
 title: Capturing pages
-summary: Save pages, selected text, files and screenshots from other apps: the share sheet, the bookmarklet and the browser extension.
+summary: "Save pages, selected text, files and screenshots from other apps: the share sheet, the bookmarklet and the browser extension."
 audience: user
 section: Reference
 specs: [share-capture]

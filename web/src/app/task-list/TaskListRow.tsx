@@ -8,6 +8,7 @@ import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
 import { UrgencyChip, UrgencyContext } from '../useUrgency'
+import { LineField } from '../LineField'
 
 /** The list's row handlers, stable for the life of the list (large-list-performance D1). */
 export interface RowActions {
@@ -104,7 +105,7 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
  */
 export function AddLine({ depth, placeholder, label, add, onClose }: { depth: number; placeholder: string; label: string; add: (title: string) => Promise<unknown>; onClose: (escape: boolean) => void }) {
   const [value, setValue] = useState('')
-  const ref = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     ref.current?.focus()
   }, [])
@@ -117,15 +118,18 @@ export function AddLine({ depth, placeholder, label, add, onClose }: { depth: nu
     ref.current?.focus()
   }
   return (
-    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-center gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
-      <span className="text-accent">+</span>
-      <input
+    // The "+" keeps to the field's first line when the title wraps: its box is one line of
+    // the field (30 px; 44 px on a touch screen, where a field is at least 44 px tall and
+    // its padding keeps one line in the middle, as the one-line input had it).
+    <form data-add-line onSubmit={(e) => act(submit(e))} className="flex items-start gap-2 py-1 pr-2" style={{ paddingLeft: `${Math.min(depth, MAX_INDENT) * 1.5 + 2}rem` }}>
+      <span className="flex h-7.5 items-center text-accent pointer-coarse:h-11">+</span>
+      <LineField
         ref={ref}
-        className="ui-input py-1"
+        className="ui-input py-1 pointer-coarse:py-[11px]"
         placeholder={placeholder}
         aria-label={label}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onValue={setValue}
         onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose(true) } }}
         // Left empty, it closes; not when focus went to the line that took its place
         // (the "Add task below" line moves down after each add, a subtask line opens on a click).

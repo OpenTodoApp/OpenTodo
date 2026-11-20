@@ -292,6 +292,26 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: true, configured: custom))
     }
 
+    /// WebKit reports the scheme's own default port as 0 in a frame's security origin
+    /// (`WKSecurityOrigin.port`; WebKit keeps no port for it). A server on the standard
+    /// port is the configured origin, so its pages are answered (GitHub issues 1534, 1563,
+    /// 1569, 1574: links, the widget and reminders on every server at https://host).
+    func testTheDefaultPortAsWebKitReportsItIsTheConfiguredOrigin() throws {
+        let server = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        let explicit = try XCTUnwrap(URL(string: "https://todo.example.com:443/today"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: explicit))
+        let local = try XCTUnwrap(URL(string: "http://nas.local"))
+        XCTAssertTrue(Bridge.accepts(scheme: "http", host: "nas.local", port: 0, mainFrame: true, configured: local))
+        // 0 is the default port of the frame's own scheme, never another port.
+        let custom = try XCTUnwrap(URL(string: "https://todo.example.com:8443"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: custom))
+        let onEighty = try XCTUnwrap(URL(string: "https://todo.example.com:80"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: onEighty))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: false, configured: server))
+    }
+
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
                        ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "pull-refresh", "haptics"])

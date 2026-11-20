@@ -161,8 +161,12 @@ class SetupActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** The oldest WebView (Chromium) major version the shell is tested with. */
-        const val MIN_WEBVIEW_MAJOR = 100
+        /**
+         * The oldest WebView (Chromium) major version the web app draws in: oklch() and
+         * color-mix() need 111, the same line as web/public/browser-check.js, so the shell
+         * warns before connecting instead of after.
+         */
+        const val MIN_WEBVIEW_MAJOR = 111
         private const val STATE_SIGN_IN = "signInOrigin"
     }
 }

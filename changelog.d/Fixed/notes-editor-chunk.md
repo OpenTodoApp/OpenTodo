@@ -1,0 +1,1 @@
+- **A linked note opens its Linked references sooner.** The first note opened on the Notes page no longer shows a placeholder while its editor loads, which could hold back the Linked references by up to 300 ms ([#1580](https://github.com/OpenTodoApp/OpenTodo/issues/1580)).

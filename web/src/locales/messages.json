@@ -1623,6 +1623,10 @@
   "Allow notifications first.": [
     "web/src/app/NotificationsSettings.tsx"
   ],
+  "Allow pinch zoom": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Allow plain http (the password is sent unencrypted; only on a trusted network)": [
     "web/src/app/BackupsPanel.tsx"
   ],
@@ -4204,7 +4208,8 @@
     "web/src/app/NotesEditor.tsx"
   ],
   "Count": [
-    "web/src/lib/rules/sentence.ts"
+    "web/src/lib/rules/sentence.ts",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Count meetings in capacity": [
     "web/src/app/CalendarSettings.tsx",
@@ -5612,6 +5617,7 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Earlier": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/assistant/blocks/StatsBlock.tsx",
     "web/src/app/calendar/planSource.ts",
     "web/src/app/display/DisplayScreen.tsx",
@@ -10415,7 +10421,8 @@
   "Move {name} (Alt+Up or Alt+Down)": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/FieldsDialog.tsx",
-    "web/src/app/task-detail/RotationEditor.tsx"
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts"
   ],
   "Move {name} down": [
     "web/src/app/FieldsDialog.tsx"
@@ -12098,6 +12105,7 @@
     "web/src/lib/rules/sentence.ts"
   ],
   "Off": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AssistantsPanel.tsx",
     "web/src/app/BackupsPanel.tsx",
     "web/src/app/CaldavPanel.tsx",
@@ -13472,6 +13480,9 @@
   ],
   "Pin {name}": [
     "web/src/app/ViewsView.tsx"
+  ],
+  "Pinch to zoom the app on this device. Turn it off for a more app-like feel.": [
+    "web/src/lib/settingsCopy.ts"
   ],
   "Ping delivered: {outcome}": [
     "web/src/app/WebhooksPanel.tsx"
@@ -16381,10 +16392,6 @@
   "Show times": [
     "web/src/app/datetime/TimeField.tsx"
   ],
-  "Show today's count": [
-    "web/src/app/AppBadge.tsx",
-    "web/src/lib/settingsCopy.ts"
-  ],
   "Show your other calendars beside your tasks, and subscribe to your tasks from a calendar app": [
     "web/src/app/settingsIndex.ts"
   ],
@@ -17881,6 +17888,9 @@
   "That did not go through. Check the connection and try again.": [
     "web/src/page/TaskPageScreen.tsx"
   ],
+  "That file could not be read. Choose it again, or copy it to this device first.": [
+    "web/src/app/ImportScreen.tsx"
+  ],
   "That identity is already linked to another account on this server.": [
     "web/src/app/sso.ts"
   ],
@@ -19212,9 +19222,6 @@
   "This device only.": [
     "web/src/lib/settingsCopy.ts"
   ],
-  "This device only. The count matches Today in the sidebar.": [
-    "web/src/lib/settingsCopy.ts"
-  ],
   "This device was signed out and its data was removed.": [
     "web/src/lib/revocation.ts"
   ],
@@ -20008,6 +20015,7 @@
     "web/src/app/CaldavPanel.tsx"
   ],
   "Today": [
+    "web/src/app/AppBadge.tsx",
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/CalendarView.tsx",
     "web/src/app/FeedView.tsx",
@@ -20833,6 +20841,7 @@
     "web/src/app/task-detail/TaskHead.tsx",
     "web/src/app/task-detail/TaskPageView.tsx",
     "web/src/app/task-detail/TaskPath.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts",
     "web/src/app/task-list/InlineEditor.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/ListGroups.tsx",
@@ -25804,7 +25813,8 @@
   "{name} moved to position {n} of {count}": [
     "web/src/app/AppearanceSection.tsx",
     "web/src/app/LabelsView.tsx",
-    "web/src/app/task-detail/RotationEditor.tsx"
+    "web/src/app/task-detail/RotationEditor.tsx",
+    "web/src/app/task-detail/subtaskOrder.ts"
   ],
   "{name} no longer exists": [
     "web/src/lib/rules/fixes.ts"

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"modernc.org/sqlite"
+
+	"github.com/OpenTodoApp/opentodo/internal/store"
 	sqlite3 "modernc.org/sqlite/lib"
 )
 
@@ -69,7 +71,7 @@ func openSQLiteCopy(data, wal []byte, opts Options, app string) (*sqliteCopy, er
 		}
 		dsn = "file:" + file + "?mode=ro" // the private copy may grow a -shm file next to it
 	}
-	db, err := sql.Open("sqlite", dsn)
+	db, err := sql.Open("sqlite", dsn+"&"+store.TempInMemory)
 	if err != nil {
 		closeAll()
 		return nil, &FileError{fmt.Sprintf("cannot open the database: %v", err)}

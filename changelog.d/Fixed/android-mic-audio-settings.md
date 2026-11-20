@@ -1,0 +1,1 @@
+- **Dictation works in the Android app.** Quick Add's microphone failed at once with "voice capture is unavailable" although the microphone was allowed: the app now also declares the audio permission the system web view needs to record ([#1582](https://github.com/OpenTodoApp/OpenTodo/issues/1582)).

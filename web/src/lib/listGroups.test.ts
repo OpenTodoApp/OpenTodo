@@ -2,6 +2,7 @@
 // web-component-structure): what TaskListView renders, tested without a DOM.
 import { describe, expect, it } from 'vitest'
 import { currentDateTime } from './dates'
+import { isDeferred } from './views'
 import { BLOCKED_OPEN_KEY, DONE_OPEN_KEY, WAITING_OPEN_KEY, EARLIER_KEY, EARLIER_OPEN_KEY, earlierCollapsed, boardColumns, completedBySection, flatRow, keepGroups, laterOpenKey, listGroups, sectionBuckets, sectionOfRows, siblingPositions, splitLater, tasksForView, type GroupInput, type ListGroup } from './listGroups'
 import { defaultListDisplay, type ListDisplay } from './listDisplay'
 import { setPriorityNames } from './priority'
@@ -224,6 +225,21 @@ describe('listGroups', () => {
     // Folding the parent in Later hides its subtasks like anywhere else in the tree.
     const folded = listGroups(input({ view: 'project', tree: buildTaskTree(active), laterTasks: later, collapsed: new Set([parent.id]) }))
     expect(titles(folded[1])).toEqual(['Paint fence'])
+  })
+
+  // GitHub issue 1572 (spans-stay-in-sections): a span's first day places it in time, it does not hide it.
+  it('A span in a section stays among its tasks before its first day; a start without a span still defers', () => {
+    const call = task({ title: 'Call the hotel', project_id: 'p', section_id: 's' })
+    const conference = task({ title: 'Conference', project_id: 'p', section_id: 's', start: '2026-11-24', span: true, due: { date: '2026-11-26' } })
+    const agenda = task({ title: 'Agenda', project_id: 'p', parent_id: conference.id })
+    const passport = task({ title: 'Renew passport', project_id: 'p', section_id: 's', start: '2026-11-24', due: { date: '2026-11-30' } })
+    const flagOnly = task({ title: 'Not a span', project_id: 'p', start: '2026-11-24', span: true, due: { date: '2026-11-24' } })
+    const someday = task({ title: 'Someday span', project_id: 'p', start: 'someday', span: true, due: { date: '2026-11-30' } })
+    const { active, later } = splitLater([call, conference, agenda, passport, flagOnly, someday], TODAY)
+    expect(active.map((x) => x.title)).toEqual(['Call the hotel', 'Conference', 'Agenda'])
+    expect(later.map((x) => x.title)).toEqual(['Renew passport', 'Not a span', 'Someday span'])
+    // Today, Anytime and the counts still wait for its first day.
+    expect(isDeferred(conference, TODAY)).toBe(true)
   })
 
   it('a deferred or parked subtask of an active parent stays under it; grouping by date keeps the subtree together', () => {

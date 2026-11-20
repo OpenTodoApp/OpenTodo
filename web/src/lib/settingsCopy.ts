@@ -201,6 +201,7 @@ export const SETTINGS_COPY = {
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
+      zoom: { label: msg('Allow pinch zoom'), description: msg('Pinch to zoom the app on this device. Turn it off for a more app-like feel.') },
     },
   },
   sidebar: {
@@ -384,7 +385,7 @@ export const SETTINGS_COPY = {
     icon: 'bell',
     description: msg('The installed app\'s icon shows how many of today\'s tasks are open.'),
     learnMore: 'app-icon-badge',
-    rows: { show: { label: msg('Show today\'s count'), description: msg('This device only. The count matches Today in the sidebar.') } },
+    rows: { count: { label: msg('Count'), description: msg('This device only.') } },
     notices: { permission: msg('On iPhone and iPad the badge appears only once notifications are allowed.') },
   },
   // Settings → Notifications → Delivery channels (notification-channels).

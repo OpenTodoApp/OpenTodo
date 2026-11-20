@@ -3,9 +3,10 @@
 // hour, stored changes). Unlike a refusal on the merits, the device keeps its
 // change: the op is held here, the row stays as edited and unsynced, the rest
 // of the outbox keeps syncing, and held ops are sent again later.
-import { db, getMeta, setMeta } from './db'
+import { db, getMeta, setMeta, tableOf } from './db'
+import { wins } from './hlc'
 import { t } from './i18n/catalog'
-import type { Op, Rejection } from './types'
+import { ENTITIES, type Clock, type Entity, type Op, type Rejection } from './types'
 
 const HELD_KEY = 'heldOps'
 /** How often held ops are offered to the server again. */
@@ -72,15 +73,53 @@ export async function heldCount(): Promise<number> {
   return (await getMeta<Op[]>(HELD_KEY, [])).length
 }
 
-/** Moves the held ops back into the outbox (their original clocks), to be sent again. */
+/**
+ * Moves the held ops back into the outbox (their original clocks), to be sent again.
+ * A held op whose field was written again since, on this device or another (a
+ * newer clock on the row), is dropped instead (#1532). One whose row is in the
+ * Trash stays held until the row is restored. Returns how many were queued again.
+ */
 export async function requeueHeld(): Promise<number> {
-  // Read inside the transaction: ops held between a read outside it and the
-  // clear below would otherwise be dropped without ever being sent.
-  return db.transaction('rw', db.outbox, db.meta, async () => {
+  // Most syncs hold nothing: they open no transaction, and one with held ops
+  // locks only the tables of its rows. An op held after this read is offered at
+  // the next retry.
+  const before = await getMeta<Op[]>(HELD_KEY, [])
+  if (before.length === 0) return 0
+  const tables = [...new Set(before.map((o) => o.entity).filter(isEntity))].map(tableOf)
+  return db.transaction('rw', [db.outbox, db.meta, ...tables], async () => {
+    // Read again inside the transaction: ops held between the read above and
+    // the clear below would otherwise be dropped without ever being sent.
     const held = await getMeta<Op[]>(HELD_KEY, [])
     if (held.length === 0) return 0
-    await db.outbox.bulkAdd(held)
-    await setMeta(HELD_KEY, [])
-    return held.length
+    const live: Op[] = []
+    const kept: Op[] = []
+    const locked = new Set(before.map((o) => o.entity))
+    for (const op of held) {
+      const fate = await fateOf(op, locked)
+      if (fate === 'send') live.push(op)
+      else if (fate === 'keep') kept.push(op)
+    }
+    if (live.length) await db.outbox.bulkAdd(live)
+    await setMeta(HELD_KEY, kept)
+    return live.length
   })
+}
+
+function isEntity(e: string): e is Entity {
+  return (ENTITIES as readonly string[]).includes(e)
+}
+
+/**
+ * What happens to a held op now: offered again, dropped because a newer write of its
+ * field wins, or kept held while its row is in the Trash, so a restore does not lose it.
+ */
+async function fateOf(op: Op, tables: ReadonlySet<string>): Promise<'send' | 'drop' | 'keep'> {
+  // An op held after the first read may name a table outside the transaction: it goes again.
+  if (!isEntity(op.entity) || !tables.has(op.entity)) return 'send'
+  const row = await tableOf(op.entity).get(op.entityId)
+  if (!row) return 'send'
+  const c = ((row._clock ?? {}) as Clock)[op.field]
+  if (c && wins(c.ts, c.device, op)) return 'drop'
+  if (op.field !== 'deleted_at' && row.deleted_at != null) return 'keep'
+  return 'send'
 }
