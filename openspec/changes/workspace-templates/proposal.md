@@ -7,7 +7,7 @@
 
 The project template library already solves the same problem one level down.
 
-This change takes **the project-template idea one level up**: a whole workspace's setup in the same library, with the same preview and the same "Use this". People set a workspace up with the ordinary tools, then "Save as kit". **Kit** is a placeholder for the user-facing name (the owner has not chosen it yet). It is defined once in the spec, so changing it touches only that definition and the strings. The change id stays neutral: `workspace-templates`.
+This change takes **the project-template idea one level up**: a whole workspace's setup in the same library, with the same preview and the same "Use this". People set a workspace up with the ordinary tools, then "Save as kit". **Kit** is the user-facing name, chosen by the owner ("Family kit"). It is defined once in the spec, and the change id stays `workspace-templates`.
 
 ## What Changes
 
@@ -39,7 +39,7 @@ Out of scope:
 - "tap your name, see your chores" on a shared screen (a display-mode follow-up on Family);
 - a kit editor, a separate gallery, and "linked" kits that update later.
 
-It advances the ROADMAP item `workspace-templates` (a new row) for #1637. It is built on `workspace-features`, which ships first. No **BREAKING** change:
+It advances the ROADMAP item `workspace-templates` (a new row), tracked in #1644, with feedback in #1637. It is built on `workspace-features`, which ships first. No **BREAKING** change:
 - no new op field: views, projects, routines and themes are created with the fields they have, and features through the workspace route;
 - no new environment variable.
 

@@ -30,9 +30,9 @@ The other formats a kit wraps:
 
 ## Decisions
 
-### D1. The name is a placeholder
+### D1. The name
 
-The spec defines **Kit** once, in its first requirement, as the user-facing name of a workspace template. Strings use it as one message each ("Save as kit", "Family kit"), so another name changes the definition and the catalog only. Code and files use the neutral `kit` or `workspace template`; the change id is `workspace-templates`.
+The user-facing name is **Kit** ("Family kit", "Save as kit"), defined once in the spec's first requirement; strings use it through the catalog. Code and files use `kit`; the change id is `workspace-templates`.
 
 ### D2. The envelope
 
