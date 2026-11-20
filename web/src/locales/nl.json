@@ -7821,5 +7821,7 @@
   "Open links to Zotero, mail or other apps from your notes": "Open links naar Zotero, mail of andere apps vanuit je notities",
   "Remove {scheme}": "{scheme} verwijderen",
   "This kind of link can never open": "Dit soort link opent nooit",
-  "Use the app’s scheme, like zotero": "Gebruik het schema van de app, zoals zotero"
+  "Use the app’s scheme, like zotero": "Gebruik het schema van de app, zoals zotero",
+  "Push to calendar apps": "Push naar agenda-apps",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "Apps zoals DAVx⁵ synchroniseren direct na een wijziging, via hun eigen pushdienst."
 }

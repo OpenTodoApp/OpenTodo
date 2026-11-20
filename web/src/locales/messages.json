@@ -2001,6 +2001,9 @@
   "Apply without asking was turned off because an AI assistant changed this routine": [
     "web/src/lib/rules/ai.ts"
   ],
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Apps that sign in with OAuth": [
     "web/src/app/OAuthClients.tsx"
   ],
@@ -14201,6 +14204,9 @@
     "web/src/app/settingsSections.ts"
   ],
   "Push notifications are turned off on this server. Reminders are shown in the app.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
+  "Push to calendar apps": [
     "web/src/lib/settingsCopy.ts"
   ],
   "Put in a slot": [

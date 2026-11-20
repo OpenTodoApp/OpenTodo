@@ -7821,5 +7821,7 @@
   "In Quarter: the first or last day of the focused month": "In Trimestre: primo o ultimo giorno del mese selezionato",
   "In Quarter: the same day of the previous or next month": "In Trimestre: lo stesso giorno del mese precedente o successivo",
   "Plan length": "Lunghezza del piano",
-  "Previous quarter": "Trimestre precedente"
+  "Previous quarter": "Trimestre precedente",
+  "Push to calendar apps": "Push alle app di calendario",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "App come DAVx⁵ si sincronizzano subito dopo una modifica, tramite il proprio servizio push."
 }

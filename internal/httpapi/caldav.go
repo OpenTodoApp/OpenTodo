@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/httpapi/davroutes"
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
 )
 
@@ -29,7 +31,29 @@ func (s *Server) registerCaldavRoutes(mux *routes) {
 			return body
 		},
 		putMore: s.caldavSettingBody})
+	// Push to calendar apps (caldav-push D1): the owner's choice, read by every user.
+	s.switchRoutes(mux, "/api/v1/settings/caldav/push", switchRoute{sw: s.caldavPushOn,
+		get: signedIn, put: ownerOnly("manage push to calendar apps").DemoDenied(),
+		more: func(*http.Request) map[string]any { return map[string]any{"available": s.push != nil} }})
 	s.dav.Register(mux)
+}
+
+// davPushDeps is push to calendar apps on the CalDAV endpoint: off without web
+// push (no VAPID key) and on a demo instance, where the switch is fixed off.
+func (s *Server) davPushDeps() davroutes.PushDeps {
+	if s.set.DavPush == nil || s.push == nil {
+		return davroutes.PushDeps{}
+	}
+	return davroutes.PushDeps{On: s.caldavPushOn, Store: s.set.DavPush.Store,
+		VAPIDKey: func() (string, error) {
+			k, err := s.push.Keys()
+			if err != nil {
+				return "", err
+			}
+			return k.PublicKey(), nil
+		},
+		CheckTarget:   s.hooks.CheckTarget,
+		AllowRegister: s.limit("dav-push", 30, time.Hour).allow}
 }
 
 // caldavURL is the address clients are configured with.

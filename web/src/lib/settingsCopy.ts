@@ -546,6 +546,10 @@ export const SETTINGS_COPY = {
       },
       address: { label: msg('Server address') },
       user: { label: msg('User name'), description: msg('Sign in with an app password, never your account password.') },
+      push: {
+        label: msg('Push to calendar apps'),
+        description: msg('Apps such as DAVx⁵ sync right after a change, through their own push service.'),
+      },
     },
     notices: {
       offline: msg('CalDAV status is available when you are online.'),

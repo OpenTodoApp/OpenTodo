@@ -7821,5 +7821,7 @@
   "Open links to Zotero, mail or other apps from your notes": "Notlarınızdan Zotero, posta veya diğer uygulamalara bağlantılar açın",
   "Remove {scheme}": "{scheme} kaldır",
   "This kind of link can never open": "Bu tür bağlantı asla açılmaz",
-  "Use the app’s scheme, like zotero": "Uygulamanın şemasını kullanın, ör. zotero"
+  "Use the app’s scheme, like zotero": "Uygulamanın şemasını kullanın, ör. zotero",
+  "Push to calendar apps": "Takvim uygulamalarına push",
+  "Apps such as DAVx⁵ sync right after a change, through their own push service.": "DAVx⁵ gibi uygulamalar bir değişiklikten hemen sonra kendi push hizmetleriyle eşitlenir."
 }

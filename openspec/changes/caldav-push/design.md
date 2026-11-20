@@ -1,0 +1,75 @@
+## Context
+
+CalDAV is served by `internal/httpapi/davroutes`, authenticated by app passwords (`internal/auth/apppasswords.go`), narrowed by each password's scope (`internal/syncscope`). Every calendar's sync token is the account's op cursor (`urn:opentodo:sync:<seq>`), so a token says "nothing changed for this account since", and a calendar's CTag changes only when one of its resources does. Web Push already exists for reminders: `internal/push` holds the server's VAPID key pair, `Encrypt` (RFC 8291, aes128gcm) and `VAPIDAuthorization` (RFC 8292). Background work is a `jobs.Job` woken by `jobs.Signal` (`Changed` after every commit). Requests to addresses a user supplied go through `internal/outbound`.
+
+The draft (draft-bitfire-webdav-push-00, namespace `https://bitfire.at/webdav-push`) defines discovery properties, a `push-register` POST, a `DELETE` on the registration URL, and an encrypted `push-message` body. It is experimental and may change; this design keeps every draft-specific name in one place (`internal/caldav/push.go`) so a later revision is a small diff.
+
+## Goals / Non-Goals
+
+**Goals:** DAVx⁵ (and any client that follows the draft) stops polling short intervals: a change on any device reaches a subscribed calendar app within seconds. No task data leaves the server in a push. Nothing is sent unless the owner turned it on and a user's client subscribed.
+
+**Non-Goals:** property-update triggers; CardDAV; a push service operated by OpenTodo; VAPID key rotation messages; push for calendar feeds or calendar sync connections.
+
+## Decisions
+
+### D1. An owner switch, off by default
+
+`caldav.push` is a `settings.Switch` (default off, `OPENTODO_CALDAV_PUSH` override), shown under CalDAV in Settings as **Push to calendar apps**, with routes and the 404 gate from `internal/httpapi/switch.go`. It only matters while CalDAV is on. Off by default because a push goes to a third-party push service the client chose (often Google's FCM through DAVx⁵), which AGENTS.md rule 5 allows only as a target the user configured, and the owner decides whether the server sends anywhere at all. While it is off, nothing is advertised and registration answers 403 `push-not-available`.
+
+### D2. What is advertised
+
+While on, `OPTIONS` on any `/dav/` resource adds `webdav-push` to `DAV`. The calendar home and every calendar in the password's scope answer PROPFIND with:
+- `transports` → `web-push` → `vapid-public-key type="p256ecdsa"` (the existing VAPID public key, base64url);
+- `topic`: base64url of the first 16 bytes of HMAC-SHA256(key, user id ‖ calendar path), the key a random 32-byte secret in `<data>/secrets/dav-push.json` created on first use. Stable for the calendar, unique across the server, meaningless outside it, so it reveals nothing to the push service;
+- `supported-triggers` → `content-update` with `DAV:depth` 1.
+
+Resources (single VTODOs) advertise nothing: a client subscribes to a calendar or the home.
+
+### D3. Registration
+
+`POST` on a calendar or the calendar home with `Content-Type: application/xml` and a `push-register` root: one `subscription` with one `web-push-subscription` (`push-resource`, `content-encoding` `aes128gcm`, `subscription-public-key type="p256dh"`, `auth-secret`), one `trigger`, an optional `expires`.
+
+- The push resource must be an absolute `https` URL that `internal/outbound` accepts (no private targets unless the owner allowed them); the keys must decode to a P-256 point and 16 bytes. Anything else is 403 `invalid-subscription`.
+- A trigger without `content-update` is 403 `no-supported-trigger`; a deeper depth is lowered to 1, `property-update` is ignored.
+- Expiry: the requested `expires`, clamped to between 3 and 7 days from now; 7 days when absent. The response carries `Expires`.
+- Same user, same collection, same push resource: the row is updated and the answer is 204 with the same `Location`. Otherwise a new row and 201 with `Location: <base>/dav/push/<id>` (an `ids.Secret`).
+- Limits: at most 20 live subscriptions per user; the 21st is 403 `push-not-available`. Registration is rate-limited with `s.limit("dav-push", 30, time.Hour)` per app password.
+- Refused on the public demo (`OPENTODO_DEMO`), like other routes that make the server send outbound requests.
+
+`DELETE /dav/push/<id>` with the same app password's credentials removes it (204); another user's or an unknown id is 404. A registration is tied to its app password: revoking the password removes its subscriptions, and only calendars inside the password's scope can be subscribed (outside: 404, as every request there).
+
+### D4. Data model
+
+One migration adds `dav_push_subscriptions` (server configuration like app passwords, never an op): `id`, `user_id`, `app_password_id`, `collection` (the calendar path or `home`), `push_resource`, `p256dh`, `auth`, `expires_at`, `created_at`, `last_notified_seq`, `last_sent_at` (for the 30-second minimum), `last_ok_at`, `failures`, `last_error`. No new op field, no change to the op schema. Account deletion removes the user's rows (through the app password's foreign key); the user's export leaves them out, as it does app passwords, and a server backup keeps them with the rest of the database.
+
+### D5. When a push is sent
+
+A new job `dav-push` in `internal/tenant/jobs.go`, woken by `Changed`:
+1. For each user with live subscriptions whose op cursor moved past the lowest `last_notified_seq` of their subscriptions, build the password's DAV view once (the same `davView` CalDAV serves, so scope, Inbox membership and moves are counted exactly as a sync-collection report counts them).
+2. A calendar subscription is due when the calendar's resources changed since its `last_notified_seq` (what a sync-collection report with that token would list); a home subscription when any calendar in scope changed or a calendar appeared or disappeared.
+3. Each due subscription gets one message and its `last_notified_seq` moves to the cursor. Several commits before the job runs give one message (merging, as the draft allows). A subscription is sent to at most once per 30 seconds; a later change waits for the next run.
+4. One run looks at no more than 50 accounts with due subscriptions (`davpush.MaxUsersPerRun`); an account whose changes cannot be read does not count. The others are due again on the next run, 30 seconds later, so a server with many subscriptions never spins.
+5. Time limits, as reminders have them (`internal/push`): accounts are served by `push.SendWorkers` workers at once, one account's sends stop after `push.UserSendBudget` (20 s), and the whole run after `davpush.RunBudget` (1 minute). What is left is sent on the next run, so push resources that accept a connection and never answer cannot stall the tenant's other jobs.
+
+The changes are read through the endpoint itself (`davroutes.Server.PushChanges`), with the app password's scope and its to-dos or events setting, as a `sync-collection` report reads them. A task's calendar is the one it is in now; a task deleted, purged or moved (its project, workspace or parent changed after it was created) may have left any calendar, so every subscription of that password is due.
+
+`Push-Dont-Notify` on a CalDAV write: the cursor is read before the write and again after it commits. Every listed registration of the writing app password (all of its own, for `*`) whose `last_notified_seq` was at or past the first moves to the second, so the writer's own change does not wake it. One with changes pending from before the write keeps them, and is sent the next time with the write included. Registrations of another app password or another user are never touched, so a narrowly scoped password cannot silence the user's other devices.
+
+### D6. The message
+
+Body (UTF-8 XML): `push-message` with `topic` and `content-update` holding the calendar's `DAV:sync-token`; for a home subscription, the home's topic. Encrypted with `push.Encrypt`, sent with `VAPIDAuthorization` (the existing subject), `Content-Encoding: aes128gcm`, `TTL: 86400`, `Urgency: normal`, and `Topic:` the subscription's topic, so the push service replaces an undelivered older message. All through the webhook service's client (`webhook.Service.Client`: no proxy, no redirects, and private targets refused unless the owner allowed them), the same policy the registration check (`CheckTarget`) applies, so a subscription that registers can also be sent to; `push.Service.Through(client)` encrypts and signs with the server's keys, with its timeout, and the job keeps the bookkeeping. The message names no task, project or person.
+
+### D7. Failures and expiry
+
+2xx resets `failures`. 404 or 410 deletes the row. Any other answer or a transport error increments `failures` and records `last_error`; a row whose `failures` reached 10 and whose `last_ok_at` is older than 3 days is deleted (the draft's tolerance window). Expired rows are never sent to and are deleted by the job. Nothing here changes a task.
+
+## Risks / Trade-offs
+
+- **An experimental draft.** Names may change; they are confined to `internal/caldav/push.go`, and the feature is off by default.
+- **Metadata at the push service.** The push service sees when a calendar changed and the topic, not what changed. That is why the switch is off by default and the docs say it.
+- **Load.** Building a DAV view per user per run costs what one sync-collection report costs; the 30-second minimum per subscription and the per-user cursor check bound it.
+- **Size.** No new dependency; a few hundred lines of Go; image size unchanged within rounding. Runtime memory: one small row per subscription.
+
+## Interface budget
+
+One toggle on the existing CalDAV settings section (no new screen, no list chrome, no shortcut, no task property).
