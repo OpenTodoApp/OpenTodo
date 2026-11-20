@@ -124,7 +124,10 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
   const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0) + codeBlocks
   return (
     <section aria-label={t('Project note')} className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
-      <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}>
+      {/* The corner's width as a variable, so the note's own content and a code block's
+          Copy button both leave it room (copy-code-block); the bar reads it in index.css. */}
+      <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}
+        style={corner ? { '--notes-corner': `${corner * 2.25}rem` } as React.CSSProperties : undefined}>
         {corner > 0 && (
           <div className="notes-corner">
             {outlined && <Suspense fallback={null}><OutlineButton items={heads} current={-1} onGo={goTo} open={outlineOpen} onOpenChange={setOutlineOpen} /></Suspense>}

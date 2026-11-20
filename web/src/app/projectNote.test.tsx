@@ -79,6 +79,19 @@ describe('project note', () => {
     await r.unmount()
   })
 
+  // copy-code-block: the corner's width is a variable on the frame, so a code block's
+  // Copy button leaves the corner its room instead of sliding under the note's controls.
+  it("a code block's Copy button leaves the note's corner its room", async () => {
+    const p = await createProject({ name: 'Deploy' })
+    await updateProject(p, { description: 'Run:\n\n```bash\nmake dev\n```' })
+    const r = await render(<TaskListView route={{ view: 'project', id: p }} />)
+    await waitFor(() => !!r.container.querySelector('[data-project-note] [data-code-copy]'))
+    const frame = r.container.querySelector<HTMLElement>('[data-project-note] .notes-frame')!
+    expect(frame.getAttribute('data-corner')).not.toBeNull()
+    expect(frame.style.getPropertyValue('--notes-corner')).toBe('2.25rem')
+    await r.unmount()
+  })
+
   // note-outline "Read-only": a viewer's rendered note has the Outline button too.
   it('a viewer chooses a heading in the outline: focus moves to it and the note stays read-only', async () => {
     const p = await createProject({ name: 'Brief' })
