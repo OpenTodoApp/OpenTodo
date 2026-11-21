@@ -140,6 +140,9 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect(document.querySelector('[data-sheet-chip="project"]')!.textContent).toContain('Home renovation')
     expect(document.querySelector('[data-sheet-placeholder="label"]')).toBeTruthy()
     expect(document.querySelector('[data-sheet-placeholder="project"]')).toBeNull()
+    // The placeholder repeats the toolbar's Label, so a screen reader does not meet it twice.
+    expect(document.querySelector('[data-sheet-placeholder="label"]')!.getAttribute('aria-hidden')).toBe('true')
+    expect(document.querySelector('[data-sheet-tool="label"]')!.getAttribute('aria-label')).toBe('Label')
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])
@@ -162,6 +165,18 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.description])).toEqual([['Read the article', 'https://example.com/article']])
+    await r.unmount()
+  })
+
+  // #1624: a date has no token to start, so the "when" tool only added a space and opened
+  // nothing — a dead button. It is removed until the phone gets a date picker (a proposal);
+  // the tools that start a token the field reads stay.
+  it('offers no dead due-date tool; the token tools remain', async () => {
+    const r = await openSheet()
+    expect(document.querySelector('[data-sheet-tool="when"]')).toBeNull()
+    for (const k of ['priority', 'label', 'estimate', 'project']) {
+      expect(document.querySelector(`[data-sheet-tool="${k}"]`)).toBeTruthy()
+    }
     await r.unmount()
   })
 })

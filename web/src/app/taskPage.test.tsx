@@ -75,6 +75,9 @@ describe('the task page', () => {
     await key(document.body, 'j')
     await waitFor(() => location.pathname === `/task/${ids[2]}` && position() === '3 / 3')
     expect(document.querySelector<HTMLButtonElement>('[data-task-next]')!.disabled).toBe(true)
+    // Previous before Next, in reading order as on screen.
+    const prev = document.querySelector('[data-task-prev]')!
+    expect(prev.compareDocumentPosition(document.querySelector('[data-task-next]')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     // At the end of the list j does nothing.
     await key(document.body, 'j')
     expect(location.pathname).toBe(`/task/${ids[2]}`)

@@ -1,6 +1,6 @@
 ---
 title: Home Assistant
-summary: The Home Assistant integration: install it from HACS, the token to use, the lists, counts, calendar and events, Assist, automations and limits.
+summary: "The Home Assistant integration: install it from HACS, the token to use, the lists, counts, calendar and events, Assist, automations and limits."
 audience: developer
 section: Integrations
 specs: []

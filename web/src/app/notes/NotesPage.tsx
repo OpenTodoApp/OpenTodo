@@ -23,7 +23,7 @@ import { useLabels, useMembershipMap, useProjects, useUserPrefsRow } from '../..
 import { useLinkedTargets, useLinkIndex } from '../../lib/noteLinks'
 import { useLiveTasks, NO_TASKS } from '../../lib/liveTasks'
 import { homeGroups, NO_NOTE_FILTERS, NOTES_PAGE, NoteIndex, noteEntries, sameEntries, type NoteEntry, type NoteFilters } from '../../lib/noteList'
-import { filterByTokens, parseStoredTokens, replaceTyping, tokensFromFilters, typingOf, type NoteToken, type TokenWorld } from '../../lib/noteQuery'
+import { filterByTokens, listedByKind, parseStoredTokens, replaceTyping, tokensFromFilters, typingOf, type NoteToken, type TokenWorld } from '../../lib/noteQuery'
 import { createNote } from '../../lib/noteOps'
 import { NOTE_SORTS, pickNoteSort, readNoteSort, sortNotes, writeNoteSort, type NoteSort, type NoteSortBy } from '../../lib/noteSort'
 import { useNoteRows } from '../../lib/noteRows'
@@ -53,6 +53,7 @@ import { useNoteBulk } from './NoteBulkActions'
 import { openNote } from './openNote'
 import { LIST_READY, perfMark, SEARCH_RESULTS } from '../../lib/perfMarks'
 import { loadLinkedReferences } from '../linkedRefsChunk'
+import { loadNoteFormChunks } from './noteEditorChunks'
 import { graphShow } from '../../lib/notesGraphPrefs'
 import type { GraphHandle } from '../notes-graph/GraphView'
 
@@ -287,8 +288,9 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
   const list = useRef<HTMLUListElement>(null)
   const index = useRef<NoteIndex | null>(null)
 
-  // A note opened from here paints its Linked references without waiting on their chunk (linkedRefsChunk.ts).
-  useEffect(() => { void loadLinkedReferences() }, [])
+  // A note opened from here paints its form and Linked references without waiting on their
+  // chunks, so no fallback holds back the reveal (linkedRefsChunk.ts, noteEditorChunks.ts).
+  useEffect(() => { void loadLinkedReferences(); void loadNoteFormChunks() }, [])
   // On a computer the note is docked beside the list; on a phone it is the page.
   const phonePage = (!!id || !!day) && !docks
   useDockedNote(id && docks ? id : null, day && docks ? day : null)
@@ -299,10 +301,12 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
   // The link index is read only for a chip that needs it.
   const linked = useLinkedTargets(tokens.some((x) => x.key === 'orphan'))
   const links = useLinkIndex(tokens.some((x) => x.key === 'linked'))
-  const filtered = useMemo(() => filterByTokens(entries, tokens, {
+  // Task notes only with a kind: chip (notes-page-own-notes); the Graph keeps every node, it draws links.
+  const listed = useMemo(() => listedByKind(entries, tokens), [entries, tokens])
+  const filtered = useMemo(() => filterByTokens(listed, tokens, {
     projects, pinnedIds, linked, now: Date.now(),
     linkedWith: (noteId) => (links ? new Set([...links.index.references('note', noteId), ...links.index.links('note', noteId)].map((r) => `${r.kind}:${r.id}`)) : null),
-  }), [entries, tokens, projects, pinnedIds, linked, links])
+  }), [listed, tokens, projects, pinnedIds, linked, links])
   const pending = filtered === null
   const kept = useMemo(() => filtered ?? [], [filtered])
   // The list without words in the chosen order; search results keep their ranking (notes-sort D3).
@@ -474,12 +478,12 @@ export function NotesPage({ id, day }: { id?: string; day?: string }) {
 
   return (
     <PageBody width="list" data-page="notes" flush={graphMode} className={graphMode ? 'page-fill flex flex-col' : undefined} data-notes-mode={mode}>
-      <NotesHeader count={entries.length} desktop={desktop} onNew={newNote} onFromTemplate={fromTemplate.open} templateAnchor={fromTemplate.anchor} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
+      <NotesHeader count={listed.length} desktop={desktop} onNew={newNote} onFromTemplate={fromTemplate.open} templateAnchor={fromTemplate.anchor} viewSwitch={<NotesModeSwitch mode={mode} onChange={switchMode} compact={!desktop} />} overflow={overflow}>
         <NoteSearchField text={text} onText={changeText} tokens={tokens} onTokens={changeTokens} projects={projects} labels={labels} world={world}
           inputRef={search} onListKey={onFieldKey} label={graphMode ? t('Find a note') : t('Search notes')} shortcut={keysOf('notes.search')} />
       </NotesHeader>
       {fromTemplate.picker}
-      {entries.length === 0 && !typed && tokens.length === 0 ? <NotesEmpty onNew={newNote} /> : graphMode ? (
+      {listed.length === 0 && !typed && tokens.length === 0 ? <NotesEmpty onNew={newNote} /> : graphMode ? (
         <Suspense fallback={<div className="notes-graph" data-notes-graph />}>
           <NotesGraph entries={entries} topic={topic} topicKey={JSON.stringify(tokens)} matches={matches} openId={id} handle={graph} />
         </Suspense>

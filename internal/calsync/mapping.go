@@ -27,6 +27,10 @@ type Snapshot struct {
 	// of a span are the task's due time, which the event does not show.
 	Start string `json:"start,omitempty"`
 	Title string `json:"title"`
+	// Repeats records that the event was written with calfeed.RepeatMarker
+	// (OpenSpec change calsync-repeat-marker); Title stays the hash of the
+	// title without it, and the marker is removed again when read back.
+	Repeats bool `json:"repeats,omitempty"`
 }
 
 // SameTimes reports whether two snapshots place the event the same way.
@@ -51,7 +55,7 @@ const bodyVersion = "task-link-1"
 // TaskSnapshot is the event a task should have: a span is all-day from its
 // start to its due date whatever its due time (multi-day-tasks D7).
 func TaskSnapshot(t calfeed.FeedTask, encrypted bool) Snapshot {
-	s := Snapshot{Date: t.Date, Title: hash16(calfeed.EventTitle(t, encrypted))}
+	s := Snapshot{Date: t.Date, Title: hash16(calfeed.EventTitle(t, encrypted)), Repeats: calfeed.Marked(t, encrypted)}
 	if t.Start != "" {
 		s.Start, s.AllDay = t.Start, true
 		if t.Time != nil {
@@ -81,7 +85,7 @@ func TaskSnapshot(t calfeed.FeedTask, encrypted bool) Snapshot {
 // written: a zoned task keeps its zone; a floating task takes the wall time of
 // the event's own zone, or of the calendar's zone (calZone) for UTC times.
 func EventSnapshot(ev calfeed.Event, prev Snapshot, calZone *time.Location) Snapshot {
-	s := Snapshot{Title: hash16(ev.Summary)}
+	s := Snapshot{Title: hash16(readTitle(ev.Summary, prev.Repeats)), Repeats: prev.Repeats}
 	start := ev.Start
 	if start.AllDay {
 		s.Date, s.AllDay = start.T.Format("2006-01-02"), true
@@ -157,6 +161,15 @@ func (s Snapshot) Due() json.RawMessage {
 	return b
 }
 
+// readTitle is an event's SUMMARY in task terms: without the repeat marker
+// when the event was written with one.
+func readTitle(summary string, marked bool) string {
+	if marked {
+		return calfeed.StripRepeatMarker(summary)
+	}
+	return summary
+}
+
 // MaxTitle bounds a title taken from the calendar.
 const MaxTitle = 500
 
@@ -210,7 +223,7 @@ func EventOps(connID, taskID, version string, from, to Snapshot, summary string,
 		ch.Moved = true
 	}
 	if !encrypted && to.Title != from.Title {
-		if title := cleanTitle(summary); title != "" {
+		if title := cleanTitle(readTitle(summary, to.Repeats)); title != "" {
 			b, _ := json.Marshal(title)
 			add("title", b)
 			ch.Renamed = true

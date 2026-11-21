@@ -181,6 +181,24 @@
   ],
   "labels": [
     {
+      "name": "a link into another app reads as its scheme (app-links D5)",
+      "origin": {
+        "kind": "url",
+        "url": "zotero://select/items/ABC"
+      },
+      "valid": true,
+      "label": "Zotero"
+    },
+    {
+      "name": "a denied scheme is no app link",
+      "origin": {
+        "kind": "url",
+        "url": "data:text/html,hi"
+      },
+      "valid": false,
+      "label": null
+    },
+    {
       "name": "gmail message",
       "origin": {
         "kind": "email",
@@ -675,12 +693,13 @@
       "link": false
     },
     {
-      "name": "obsidian link on a url origin",
+      "name": "obsidian link on a url origin: an app link (app-links D5), opened only by the viewer's own list",
       "origin": {
         "kind": "url",
         "url": "obsidian://open?vault=Notes&file=a"
       },
-      "valid": false,
+      "valid": true,
+      "label": "Obsidian",
       "link": true
     }
   ]

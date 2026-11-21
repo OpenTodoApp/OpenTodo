@@ -15,7 +15,7 @@ Thanks for helping build a task manager people can own. This page is the rules; 
 | [Add a shared contract](docs/contributing/add-a-shared-contract.md) | Logic that must match in Go and TypeScript |
 | [Work on the native app](docs/contributing/native-app.md) | `mobile/app` without a Mac, `make app`, the shared library, its CI lanes |
 
-Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the same ground in the dense form AI agents read.
+Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), [Design system](docs/design-system.md), [Translating](docs/translating.md), [Shared contracts](docs/contracts.md). `AGENTS.md` is the short form AI agents read on every task; [Packages and rules in full](docs/contributing/packages.md) is its long form.
 
 ## Ground rules
 
@@ -24,7 +24,7 @@ Reference: [Architecture](docs/architecture.md), [Sync protocol](docs/sync.md), 
 - **Additive data model.** Adding fields is fine. Renaming or removing an op field is a breaking change and needs a migration plan in the design.
 - **The v1 surface only grows.** Routes, fields, error codes, MCP tools and `ot` flags are kept within 1.x ([stability](docs/stability.md)).
 - **Private by default.** No telemetry, no third-party scripts or fonts, no outbound request the user did not configure.
-- **Small footprint.** A new dependency justifies its size. The server stays one static binary; the web app's first load has a budget.
+- **Small footprint, sensible dependencies.** Use a library when it makes our code simpler or smaller (AGPL-compatible licence, no network calls of its own) and say what it costs in size. The server stays one static binary; the web app's first load has a budget.
 
 ## Workflow
 

@@ -292,9 +292,29 @@ final class BridgeTests: XCTestCase {
         XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 443, mainFrame: true, configured: custom))
     }
 
+    /// WebKit reports the scheme's own default port as 0 in a frame's security origin
+    /// (`WKSecurityOrigin.port`; WebKit keeps no port for it). A server on the standard
+    /// port is the configured origin, so its pages are answered (GitHub issues 1534, 1563,
+    /// 1569, 1574: links, the widget and reminders on every server at https://host).
+    func testTheDefaultPortAsWebKitReportsItIsTheConfiguredOrigin() throws {
+        let server = try XCTUnwrap(URL(string: "https://todo.example.com"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        let explicit = try XCTUnwrap(URL(string: "https://todo.example.com:443/today"))
+        XCTAssertTrue(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: explicit))
+        let local = try XCTUnwrap(URL(string: "http://nas.local"))
+        XCTAssertTrue(Bridge.accepts(scheme: "http", host: "nas.local", port: 0, mainFrame: true, configured: local))
+        // 0 is the default port of the frame's own scheme, never another port.
+        let custom = try XCTUnwrap(URL(string: "https://todo.example.com:8443"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: custom))
+        let onEighty = try XCTUnwrap(URL(string: "https://todo.example.com:80"))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: true, configured: onEighty))
+        XCTAssertFalse(Bridge.accepts(scheme: "http", host: "todo.example.com", port: 0, mainFrame: true, configured: server))
+        XCTAssertFalse(Bridge.accepts(scheme: "https", host: "todo.example.com", port: 0, mainFrame: false, configured: server))
+    }
+
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "system-bars", "pull-refresh", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -464,6 +484,33 @@ final class BridgeTests: XCTestCase {
         XCTAssertTrue(Bridge.safeExternal("mailto:a@example.com"))
         XCTAssertFalse(Bridge.safeExternal("javascript:alert(1)"))
         XCTAssertFalse(Bridge.safeExternal("file:///etc/passwd"))
+    }
+
+    /// app-links D6: the link the web app hands openAppLink opens with its list, and the
+    /// shared vectors (the bridge fixture app-links.json) hold for the shell's rules.
+    func testAppLinksFollowTheBridgeFixture() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/app-links.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let handed = try XCTUnwrap(fixture["handed"] as? [[String: String]])
+        XCTAssertEqual(handed.count, 1)
+        for call in handed { XCTAssertTrue(AppLink.allows(AppLink.list(call["schemes"] ?? ""), call["url"] ?? "")) }
+        let vectors = try XCTUnwrap(fixture["vectors"] as? [String: Any])
+        for c in try XCTUnwrap(vectors["links"] as? [[String: Any]]) {
+            let url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.scheme(url), c["scheme"] as? String, url)
+        }
+        for c in try XCTUnwrap(vectors["entries"] as? [[String: Any]]) {
+            let entry = try XCTUnwrap(c["entry"] as? String)
+            XCTAssertEqual(AppLink.validEntry(entry), c["ok"] as? Bool, entry)
+        }
+        for c in try XCTUnwrap(vectors["allows"] as? [[String: Any]]) {
+            let list = try XCTUnwrap(c["list"] as? [String]), url = try XCTUnwrap(c["url"] as? String)
+            XCTAssertEqual(AppLink.allows(list, url), c["ok"] as? Bool, "\(list) \(url)")
+        }
+        XCTAssertTrue(Bridge.capabilities(biometric: false, share: true).contains(AppLink.capability))
+        XCTAssertFalse(Bridge.backgroundCapabilities.contains(AppLink.capability))
     }
 
     /// obsidian-origin: the bridge fixture the web app writes (shared with the Android

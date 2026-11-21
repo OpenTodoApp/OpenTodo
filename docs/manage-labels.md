@@ -1,6 +1,6 @@
 ---
 title: Manage labels
-summary: The labels page: rename, recolour and reorder labels, merge two into one, delete a label, and what happens when two devices create the same one.
+summary: "The labels page: rename, recolour and reorder labels, merge two into one, delete a label, and what happens when two devices create the same one."
 audience: user
 section: Guides
 specs: [labels, action-menus]

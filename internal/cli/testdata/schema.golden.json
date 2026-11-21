@@ -18,6 +18,11 @@
           "description": "project name or id (edit: none moves to the Inbox)"
         },
         {
+          "name": "parent",
+          "type": "string",
+          "description": "the parent task, an open task: id or unique id prefix; without --project the task takes the parent's project (edit: none moves to the top level)"
+        },
+        {
           "name": "due",
           "type": "string",
           "description": "YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"
@@ -230,6 +235,51 @@
       }
     },
     {
+      "name": "away",
+      "summary": "set an away period: skip the occurrences of repeating tasks from one day to another and pause reminders and the digest; or end it with --end (its skips stay)",
+      "args": [
+        {
+          "name": "from",
+          "required": false,
+          "repeatable": false
+        },
+        {
+          "name": "to",
+          "required": false,
+          "repeatable": false
+        }
+      ],
+      "flags": [
+        {
+          "name": "project",
+          "type": "string_list",
+          "description": "only repeating tasks in this project (repeatable)"
+        },
+        {
+          "name": "label",
+          "type": "string_list",
+          "description": "only repeating tasks with this label (repeatable)"
+        },
+        {
+          "name": "keep-reminders",
+          "type": "bool",
+          "description": "keep reminders and the digest during the period"
+        },
+        {
+          "name": "end",
+          "type": "bool",
+          "description": "end the away period now; its skips stay"
+        }
+      ],
+      "writes": true,
+      "destructive": false,
+      "dry_run": true,
+      "idempotency_key": false,
+      "output_schema": {
+        "$ref": "#/schemas/away"
+      }
+    },
+    {
       "name": "completion",
       "summary": "print the completion script for bash, zsh or fish (works offline)",
       "args": [
@@ -259,7 +309,13 @@
           "repeatable": true
         }
       ],
-      "flags": [],
+      "flags": [
+        {
+          "name": "subtasks",
+          "type": "bool",
+          "description": "also complete each task's open subtasks at every depth, before the task (one request each)"
+        }
+      ],
       "writes": true,
       "destructive": false,
       "dry_run": true,
@@ -298,6 +354,11 @@
           "name": "project",
           "type": "string",
           "description": "project name or id (edit: none moves to the Inbox)"
+        },
+        {
+          "name": "parent",
+          "type": "string",
+          "description": "the parent task, an open task: id or unique id prefix; without --project the task takes the parent's project (edit: none moves to the top level)"
         },
         {
           "name": "due",
@@ -416,6 +477,11 @@
           "name": "no-rotate",
           "type": "bool",
           "description": "stop taking turns (the assignee stays)"
+        },
+        {
+          "name": "subtasks",
+          "type": "bool",
+          "description": "when the edit changes the project, move the task's subtasks at every depth too (one request each)"
         }
       ],
       "writes": true,
@@ -861,6 +927,11 @@
           "name": "project",
           "type": "string",
           "description": "tasks of one project (name or id)"
+        },
+        {
+          "name": "parent",
+          "type": "string",
+          "description": "only the direct subtasks of this task: id or unique id prefix (combines with the other flags)"
         },
         {
           "name": "someday",
@@ -1710,6 +1781,11 @@
           "short": "y",
           "type": "bool",
           "description": "confirm a destructive command (required off a terminal and with --json)"
+        },
+        {
+          "name": "subtasks",
+          "type": "bool",
+          "description": "also delete each task's subtasks at every depth, before the task (one request each)"
         }
       ],
       "writes": true,
@@ -2364,7 +2440,7 @@
     },
     {
       "name": "task show",
-      "summary": "print a task's details and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only",
+      "summary": "print a task's details, its parent and subtasks, and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only",
       "args": [
         {
           "name": "ref",
@@ -3350,6 +3426,24 @@
         "writes_denied": {
           "type": "string",
           "description": "agent tokens: the first switch that is off"
+        }
+      }
+    },
+    "away": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "away",
+      "description": "ot away <from> <to> --json: the stored period and how many occurrences were skipped; ot away --end --json: away is empty.",
+      "type": "object",
+      "required": [
+        "away"
+      ],
+      "properties": {
+        "away": {
+          "type": "string",
+          "description": "YYYY-MM-DD..YYYY-MM-DD, followed by \" quiet\" when reminders are paused; empty once ended"
+        },
+        "skipped": {
+          "type": "integer"
         }
       }
     },
@@ -5383,7 +5477,7 @@
     "task_detail": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "title": "task_detail",
-      "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders).",
+      "description": "What ot task show prints with --json: the task and its live reminders as GET /api/v1/reminders returns them, location reminders (kind arrive or leave, radius_m in metres, no fire_at) included (OpenSpec location-reminders), and its live direct subtasks in position order (OpenSpec cli-subtasks).",
       "type": "object",
       "required": [
         "task",
@@ -5392,6 +5486,13 @@
       "properties": {
         "task": {
           "$ref": "#/schemas/task"
+        },
+        "subtasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/schemas/task"
+          },
+          "description": "the live direct subtasks, completed ones included; empty when there are none"
         },
         "reminders": {
           "type": "array",

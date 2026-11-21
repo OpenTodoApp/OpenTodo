@@ -23,6 +23,18 @@ export class NetworkError extends TypeError {
   }
 }
 
+/**
+ * The browser could not read the local file being uploaded (a picker file whose
+ * bytes fail to stream, for example a content:// URI on Android: #1606). It is
+ * not a network failure, so it is reported as a file problem, not as "offline".
+ */
+export class FileReadError extends Error {
+  constructor(cause?: unknown) {
+    super('could not read the file', cause === undefined ? undefined : { cause })
+    this.name = 'FileReadError'
+  }
+}
+
 /** Whether an error means "no answer from the server": try again later, with backoff. */
 export function isTransientNetworkError(err: unknown): boolean {
   return err instanceof NetworkError || err instanceof RequestTimeoutError

@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:built": "REQUIRE_BUILT=1 vitest run src/lib/serviceWorker.test.ts src/ui/workbench.test.ts",
     "pretest:perf": "npm run --silent help",
-    "test:perf": "vitest run -c vitest.perf.config.ts",
+    "test:perf": "NODE_OPTIONS=--max-old-space-size=4096 vitest run -c vitest.perf.config.ts",
     "pretest:contract": "npm run --silent help",
     "test:contract": "vitest run -c vitest.contract.config.ts",
     "test:contract:record": "RECORD_V1_CLIENTS=1 vitest run -c vitest.contract.config.ts",

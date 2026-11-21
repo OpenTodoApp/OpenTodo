@@ -163,6 +163,16 @@ func (s *Service) release(uid string) {
 	s.mu.Unlock()
 }
 
+// releaseJob frees the user's slot only while it is still this job's, so a job
+// freeing it a second time never frees a newer job's.
+func (s *Service) releaseJob(uid, jobID string) {
+	s.mu.Lock()
+	if s.active[uid] == jobID {
+		delete(s.active, uid)
+	}
+	s.mu.Unlock()
+}
+
 // prepare validates options and builds the plan for a file.
 func (s *Service) prepare(ctx context.Context, uid string, data []byte, opts Options, write bool) (*Plan, error) {
 	if err := opts.Normalize(); err != nil {
@@ -293,7 +303,10 @@ func (s *Service) insertJob(ctx context.Context, uid string, j *Job) error {
 	return err
 }
 
-func (s *Service) finish(ctx context.Context, j *Job, status, message string) {
+// finish frees the user's slot, then stores the job's final status: a client
+// that reads it as finished can start the next import straight away.
+func (s *Service) finish(ctx context.Context, uid string, j *Job, status, message string) {
+	s.releaseJob(uid, j.ID)
 	j.Status, j.Message = status, message
 	now := s.now().UnixMilli()
 	j.FinishedAt = &now
@@ -310,7 +323,7 @@ func (s *Service) finish(ctx context.Context, j *Job, status, message string) {
 // failure never leaves half an entity behind.
 func (s *Service) run(uid string, job *Job, plan *Plan) {
 	defer s.wg.Done()
-	defer s.release(uid)
+	defer s.releaseJob(uid, job.ID)
 	ctx := context.Background()
 	tl := newTally()
 	// One summary per job, whatever its outcome (harden-server-edges).
@@ -319,7 +332,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 			Message: job.Message, Totals: job.Totals, Counts: tl.counts, ProjectIDs: tl.projectIDs()})
 	}()
 	if plan.Options.Errors == "abort" && len(plan.errors) > 0 {
-		s.finish(ctx, job, StatusFailed, "aborted before writing anything: "+plan.errors[0].String())
+		s.finish(ctx, uid, job, StatusFailed, "aborted before writing anything: "+plan.errors[0].String())
 		return
 	}
 	var batch []change
@@ -341,7 +354,7 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 		if size+len(c.fields) > opsync.MaxOpsPerRequest {
 			if err := flush(); err != nil {
 				s.log.Error("import: batch failed", "job", job.ID, "err", err)
-				s.finish(ctx, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
+				s.finish(ctx, uid, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
 				return
 			}
 		}
@@ -350,10 +363,10 @@ func (s *Service) run(uid string, job *Job, plan *Plan) {
 	}
 	if err := flush(); err != nil {
 		s.log.Error("import: batch failed", "job", job.ID, "err", err)
-		s.finish(ctx, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
+		s.finish(ctx, uid, job, StatusFailed, "writing failed after "+fmt.Sprint(job.Totals.Written)+" items: "+err.Error())
 		return
 	}
-	s.finish(ctx, job, StatusDone, "")
+	s.finish(ctx, uid, job, StatusDone, "")
 }
 
 // SetBlobs lets own ZIP exports import their attachment files, within the

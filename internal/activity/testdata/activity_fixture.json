@@ -787,6 +787,48 @@
       "events": [
         {"id":"y1","kind":"edited","actor":"alice","entity":"task","entityId":"t9","taskId":"t9","ts":1000,"opIds":["y1"],"changes":[{"field":"description","from":null,"to":"Ask @bob about the tiles"}]}
       ]
+    },
+    {
+      "name": "a timer stopped after 42 minutes (workspace-activity D3): the running entry has no event, the stop is time_tracked, the note never appears",
+      "ops": [
+        {"id":"t1","seq":1,"actor":"bob","entity":"time_entry","entityId":"run","field":"task_id","value":"fix","ts":1700000000000,"device":"db"},
+        {"id":"t2","seq":2,"actor":"bob","entity":"time_entry","entityId":"run","field":"user_id","value":"bob","ts":1700000000000,"device":"db"},
+        {"id":"t3","seq":3,"actor":"bob","entity":"time_entry","entityId":"run","field":"started_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"t4","seq":4,"actor":"bob","entity":"time_entry","entityId":"run","field":"ended_at","value":null,"ts":1700000000000,"device":"db"},
+        {"id":"t5","seq":5,"actor":"bob","entity":"time_entry","entityId":"run","field":"note","value":"secret words","ts":1700000000000,"device":"db"},
+        {"id":"t6","seq":6,"actor":"bob","entity":"time_entry","entityId":"run","field":"created_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"t7","seq":7,"actor":"bob","entity":"time_entry","entityId":"run","field":"ended_at","value":1700002540000,"ts":1700002540000,"device":"db"}
+      ],
+      "events": [
+        {"id":"t7","kind":"time_tracked","actor":"bob","entity":"time_entry","entityId":"run","taskId":"fix","ts":1700002540000,"opIds":["t7"],"changes":[{"field":"ended_at","from":null,"to":1700002540000}],"minutes":42}
+      ]
+    },
+    {
+      "name": "a logged entry, then edited, its note changed and deleted: time_tracked, time_changed, nothing for the note, time_changed",
+      "ops": [
+        {"id":"m1","seq":1,"actor":"bob","entity":"time_entry","entityId":"log","field":"task_id","value":"fix","ts":1700000000000,"device":"db"},
+        {"id":"m2","seq":2,"actor":"bob","entity":"time_entry","entityId":"log","field":"started_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"m3","seq":3,"actor":"bob","entity":"time_entry","entityId":"log","field":"ended_at","value":1700005400000,"ts":1700000000000,"device":"db"},
+        {"id":"m4","seq":4,"actor":"bob","entity":"time_entry","entityId":"log","field":"created_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"m5","seq":5,"actor":"bob","entity":"time_entry","entityId":"log","field":"ended_at","value":1700004500000,"ts":1700000100000,"device":"db"},
+        {"id":"m6","seq":6,"actor":"bob","entity":"time_entry","entityId":"log","field":"note","value":"only the note","ts":1700000200000,"device":"db"},
+        {"id":"m7","seq":7,"actor":"bob","entity":"time_entry","entityId":"log","field":"deleted_at","value":1700000300000,"ts":1700000300000,"device":"db"}
+      ],
+      "events": [
+        {"id":"m1","kind":"time_tracked","actor":"bob","entity":"time_entry","entityId":"log","taskId":"fix","ts":1700000000000,"opIds":["m1","m2","m3","m4"],"changes":[{"field":"created_at","from":null,"to":1700000000000},{"field":"ended_at","from":null,"to":1700005400000},{"field":"started_at","from":null,"to":1700000000000},{"field":"task_id","from":null,"to":"fix"}],"minutes":90},
+        {"id":"m5","kind":"time_changed","actor":"bob","entity":"time_entry","entityId":"log","taskId":"fix","ts":1700000100000,"opIds":["m5"],"changes":[{"field":"ended_at","from":1700005400000,"to":1700004500000}],"minutes":75},
+        {"id":"m7","kind":"time_changed","actor":"bob","entity":"time_entry","entityId":"log","taskId":"fix","ts":1700000300000,"opIds":["m7"],"changes":[{"field":"deleted_at","from":null,"to":1700000300000}],"minutes":75}
+      ]
+    },
+    {
+      "name": "a running timer discarded: no event",
+      "ops": [
+        {"id":"r1","seq":1,"actor":"bob","entity":"time_entry","entityId":"gone","field":"task_id","value":"fix","ts":1700000000000,"device":"db"},
+        {"id":"r2","seq":2,"actor":"bob","entity":"time_entry","entityId":"gone","field":"started_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"r3","seq":3,"actor":"bob","entity":"time_entry","entityId":"gone","field":"created_at","value":1700000000000,"ts":1700000000000,"device":"db"},
+        {"id":"r4","seq":4,"actor":"bob","entity":"time_entry","entityId":"gone","field":"deleted_at","value":1700000060000,"ts":1700000060000,"device":"db"}
+      ],
+      "events": []
     }
   ]
 }

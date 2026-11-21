@@ -14,6 +14,7 @@ import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import { originOf } from '../../lib/taskOrigin'
 import { openOrigin, originLink } from '../../lib/originOpen'
+import { useAppLinkSchemes } from '../../lib/appLinks'
 import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
@@ -80,6 +81,7 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
   const { task, parent } = props
   const dt = useDateTimeFormat()
   const origin = originOf(task)
+  useAppLinkSchemes() // an app link origin opens for this viewer's list (app-links D5)
   const shownLocation = useShownLocation(task)
   const facets = facetsOf(task, {
     local: m.local,

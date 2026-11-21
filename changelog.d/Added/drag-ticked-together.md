@@ -1,0 +1,1 @@
+- **Drag several ticked tasks within a list.** In a project or the Inbox, dragging a ticked task among the rows, or onto a task to nest them, now moves every ticked task there in their order, each with its subtasks, as one change with one Undo. A drop on one of the ticked tasks gathers the rest after it ([#1498](https://github.com/OpenTodoApp/OpenTodo/issues/1498)).

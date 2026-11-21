@@ -145,8 +145,11 @@ func (t *thingsReader) read(opts Options) error {
 			if row.Title == "" {
 				row.fail("project title is required")
 			}
+			// Completed (3) or canceled (2) in Things: archived, as OmniFocus's done and
+			// dropped projects are, so it neither shows as active nor loses its tasks (#1659).
 			if k.status == 3 || k.status == 2 {
-				row.warn("completed project imported as an open project")
+				row.Archived = true
+				row.warn("finished project imported as an archived project")
 			}
 			t.out.Rows = append(t.out.Rows, row)
 		case 2: // heading

@@ -21,6 +21,8 @@ describe('front matter', () => {
   it('reports a missing block, unknown keys and invalid values', () => {
     expect(parseFrontMatter('# Title\n').errors[0]).toMatch(/missing front matter/)
     expect(parseFrontMatter('---\ncolour: red\n---\n').errors[0]).toMatch(/unknown key "colour"/)
+    expect(parseFrontMatter('---\ntitle: T\nsummary: Unquoted: colon\n---\n').errors[0]).toMatch(/quote "summary" value containing ":"/)
+    expect(parseFrontMatter('---\ntitle: T\nsummary: Trailing colon:\n---\n').errors[0]).toMatch(/quote "summary" value containing ":"/)
     expect(validateFrontMatter({ title: 'T', summary: 'S', audience: 'everyone', specs: [], order: 1 })).toEqual([expect.stringMatching(/audience must be one of/)])
     expect(validateFrontMatter({ title: 'T', summary: 'S', audience: 'user', order: 1 })).toEqual([expect.stringMatching(/specs is required/)])
   })

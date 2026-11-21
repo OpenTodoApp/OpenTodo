@@ -2,9 +2,13 @@ package calsync
 
 import (
 	"context"
+	"net/http"
 	"net/url"
+	"path"
+	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
+	"github.com/OpenTodoApp/opentodo/internal/ids"
 )
 
 // transport is how a cycle reaches the calendars of one account (OpenSpec
@@ -142,7 +146,33 @@ func (t davTransport) window(ctx context.Context, cal string, win calfeed.Window
 func (t davTransport) create(ctx context.Context, cal string, task calfeed.FeedTask, opts calfeed.FeedOptions, _ string) (int, string, string, error) {
 	href := cal + url.PathEscape(task.ID) + ".ics"
 	status, etag, err := t.d.put(ctx, href, "*", calfeed.WriteEvent(task, opts))
+	if err != nil || status != http.StatusConflict {
+		return status, href, etag, err
+	}
+	// The task's UID is taken: Google keeps a deleted event in its Bin for 30
+	// days and refuses its UID (GitHub issue 1573). The event gets a UID of its
+	// own, <task-id>-<random>, at the address of the same name (calsync-uid-taken D1).
+	task.UID = task.ID + "-" + ids.Hex(4)
+	href = cal + url.PathEscape(task.UID) + ".ics"
+	status, etag, err = t.d.put(ctx, href, "*", calfeed.WriteEvent(task, opts))
 	return status, href, etag, err
+}
+
+// eventUID is the UID of the event at href: the task's id, or the UID of its
+// own an event got when the task's was taken (create), read from its address.
+func eventUID(href, taskID string) string {
+	name := href
+	if u, err := url.Parse(href); err == nil {
+		name = u.Path
+	}
+	name = path.Base(name)
+	if n, err := url.PathUnescape(name); err == nil {
+		name = n
+	}
+	if uid := strings.TrimSuffix(name, ".ics"); strings.HasPrefix(uid, taskID+"-") {
+		return uid
+	}
+	return ""
 }
 
 func (t davTransport) current(ctx context.Context, href string) (int, string, error) {
@@ -150,6 +180,7 @@ func (t davTransport) current(ctx context.Context, href string) (int, string, er
 }
 
 func (t davTransport) replace(ctx context.Context, href, etag string, task calfeed.FeedTask, opts calfeed.FeedOptions) (int, string, error) {
+	task.UID = eventUID(href, task.ID)
 	return t.d.put(ctx, href, etag, calfeed.WriteEvent(task, opts))
 }
 

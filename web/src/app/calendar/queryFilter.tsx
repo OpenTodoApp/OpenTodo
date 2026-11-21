@@ -6,7 +6,7 @@
 import { lazy, Suspense, useCallback, useMemo } from 'react'
 import { compile, parse, type FilterContext } from '../../lib/filter'
 import { t } from '../../lib/i18n'
-import { useAllLabels, useAllProjects, useMetaRead } from '../../lib/localData'
+import { useAllLabels, useAllProjects, useLiveSections, useMetaRead } from '../../lib/localData'
 import { CALENDAR_FILTER_KEY, saveQueryFilter, UPCOMING_FILTER_KEY } from '../../lib/deviceFilters'
 import type { Task } from '../../lib/types'
 import { Icon } from '../../ui'
@@ -52,9 +52,10 @@ export function useQueryFilter(key: string, tasks: readonly Task[]): QueryFilter
   const query = typeof stored === 'string' ? stored : ''
   const labels = useAllLabels()
   const projects = useAllProjects()
+  const sections = useLiveSections()
   const today = useToday()
   const directory = useAssigneeDirectory()
-  const ctx = useMemo<FilterContext>(() => ({ today, labels, projects, tasks, ...directory }), [today, labels, projects, tasks, directory])
+  const ctx = useMemo<FilterContext>(() => ({ today, labels, projects, sections, tasks, ...directory }), [today, labels, projects, sections, tasks, directory])
   const test = useMemo(() => {
     if (loading) return NONE
     if (!query.trim()) return null

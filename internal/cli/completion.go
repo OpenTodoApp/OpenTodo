@@ -320,7 +320,7 @@ func flagKind(f flagSpec) valueKind {
 		return kindProjects
 	case "label":
 		return kindLabels
-	case "task", "blocked-by":
+	case "task", "blocked-by", "parent":
 		return kindTasks
 	case "out", "passphrase-file", "body-file", "file":
 		return kindFile

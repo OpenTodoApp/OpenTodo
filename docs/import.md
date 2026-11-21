@@ -1,6 +1,6 @@
 ---
 title: Import formats
-summary: Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo.
+summary: "Every import format in detail: your own export, CSV and other apps' JSON exports, mapping rules, duplicates and undo."
 audience: user
 section: Reference
 specs: [data-import]
@@ -144,7 +144,7 @@ The file is read from a private copy on the server, read-only, using only Things
 | Things | Becomes |
 | --- | --- |
 | area | a parent project |
-| project | a project inside its area |
+| project | a project inside its area; a completed or canceled one is [archived](archived-projects.md) |
 | heading | a section of its project |
 | to-do | a task in its project (or area, or your Inbox) |
 | checklist item | a subtask; checked items are completed |

@@ -59,6 +59,7 @@ export function digestOutcome(d: Pick<EmailDigest, 'lastOutcome' | 'lastSentFor'
     case undefined: case '': return null
     case 'sent': return { text: t('Last sent {day}', { day }), tone: 'ok' }
     case 'skipped': return { text: t('Skipped {day}: the mail server could not be reached for six hours', { day }), tone: 'warn' }
+    case 'away': return { text: t('Not sent {day}: you were away', { day }), tone: 'ok' }
     case 'encrypted_account': return { text: t('Not sent: the account uses end-to-end encryption'), tone: 'warn' }
     case 'rate_limited': return { text: t('The last attempt hit the sending limit; it is retried'), tone: 'warn' }
     default: return { text: t('The last attempt failed ({outcome}); it is retried for six hours', { outcome: d.lastOutcome }), tone: 'warn' }

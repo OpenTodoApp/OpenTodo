@@ -5,12 +5,12 @@
 // registry (`web/src/lib/shortcuts.ts`) in the innermost active scope first, and
 // runs once. No DOM beyond the event and `document.activeElement`, so tests drive
 // it with plain frames and synthetic events.
-import { type Chord, chordKey, chordsOf, matchesChord, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
+import { type Chord, chordKey, chordsOf, matchesChord, physicalShortcutKey, SEQUENCE_STEPS, SHORTCUTS, type Shortcut, type ShortcutScope } from '../../lib/shortcuts'
 import { resettable } from '../../lib/moduleState'
 import { createSignal } from '../../lib/store'
 import { isCharacterKey, singleKeysOn } from './singleKeys'
 
-export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut) => boolean | void
+export type ShortcutHandler = (e: KeyboardEvent, s: Shortcut, chord: Chord) => boolean | void
 
 export interface ScopeFrame {
   scope: ShortcutScope
@@ -163,10 +163,10 @@ function prefixMatches(seq: Chord[], pend: Chord[]): boolean {
 interface Candidate { entry: Shortcut; frame: ScopeFrame; seq: Chord[] }
 
 /** Entries of a frame whose chord completes with this key, given the pending prefix. */
-function candidatesOf(frame: ScopeFrame, e: KeyboardEvent, pend: Chord[]): { done: Candidate[]; longer: boolean } {
+function candidatesOf(frame: ScopeFrame, e: KeyboardEvent, key: string, pend: Chord[]): { done: Candidate[]; longer?: Chord } {
   const singleKeys = singleKeysOn()
   const done: Candidate[] = []
-  let longer = false
+  let longer: Chord | undefined
   for (const entry of byScope.get(frame.scope) ?? []) {
     if (frame.scope === 'view' && entry.views && (!frame.view || !entry.views.includes(frame.view))) continue
     if (!frame.handlers[entry.id]) continue
@@ -174,9 +174,9 @@ function candidatesOf(frame: ScopeFrame, e: KeyboardEvent, pend: Chord[]): { don
       // Single-key shortcuts turned off (accessibility-aa, WCAG 2.1.4): a sequence that starts with a character key does nothing.
       if (!singleKeys && isCharacterKey(seq[0])) continue
       if (!prefixMatches(seq, pend)) continue
-      if (!matchesChord(seq[pend.length], e)) continue
+      if (!matchesChord(seq[pend.length], e, key)) continue
       if (seq.length === pend.length + 1) done.push({ entry, frame, seq })
-      else longer = true
+      else longer ??= seq[pend.length]
     }
   }
   return { done, longer }
@@ -196,19 +196,8 @@ function byOverride(list: Candidate[]): Candidate[] {
   return [...list].sort((a, b) => rank(b) - rank(a))
 }
 
-/** Resolves one key press; returns whether a shortcut ran (or a prefix was armed). */
-export function dispatch(e: KeyboardEvent): boolean {
-  if (MODIFIERS.has(e.key) || e.isComposing) return false
-  const pend = pending
-  const typing = isTypingTarget(e.target)
-  const dialog = dialogOpen()
-  const active = sortedFrames()
-  let longer = false
-  // `any` hooks of capturing frames (the Vim machine, "any key dismisses") see the key first.
-  for (const frame of active) {
-    if (!frame.capture || !frame.any || !focusInside(frame)) continue
-    if (frame.any(e) === true) { clearPrefix(); return true }
-  }
+function resolve(e: KeyboardEvent, key: string, active: ScopeFrame[], pend: Chord[], typing: boolean, dialog: boolean): boolean {
+  let longer: Chord | undefined
   // Then scope by scope, innermost first; frames of one scope share an override order.
   let i = 0
   while (i < active.length) {
@@ -218,16 +207,18 @@ export function dispatch(e: KeyboardEvent): boolean {
     const found: Candidate[] = []
     for (const frame of group) {
       if (!focusInside(frame)) continue
-      if (!frame.capture && frame.any && frame.any(e) === true) { clearPrefix(); return true }
-      const c = candidatesOf(frame, e, pend)
+      if (key === e.key && !frame.capture && frame.any && frame.any(e) === true) { clearPrefix(); return true }
+      const c = candidatesOf(frame, e, key, pend)
       found.push(...c.done)
-      longer ||= c.longer
+      longer ??= c.longer
     }
     for (const c of byOverride(found)) {
       const s = c.entry
       if (typing && !s.typing) continue
-      if (dialog && s.scope !== 'global' && !s.dialog) continue
-      const r = c.frame.handlers[s.id]!(e, s)
+      // A dialog mutes scoped shortcuts (unless they opt in) and the global undo/redo, which
+      // must not change data behind a modal (#1488); other global shortcuts still work.
+      if (dialog && ((s.scope !== 'global' && !s.dialog) || s.notInDialog)) continue
+      const r = c.frame.handlers[s.id]!(e, s, c.seq[pend.length])
       if (r === false) continue
       if (!s.passive) e.preventDefault()
       clearPrefix()
@@ -236,16 +227,35 @@ export function dispatch(e: KeyboardEvent): boolean {
   }
   if (longer && !typing) {
     // The key starts (or extends) a sequence: wait for the rest.
-    armPrefix([...pend, chordOf(e)])
+    armPrefix([...pend, longer])
     e.preventDefault()
     return true
   }
-  if (pend.length) {
-    // A sequence nothing completes ends here; the key does nothing else (as `g` then a stray key always did).
-    clearPrefix()
-    return true
-  }
   return false
+}
+
+/** Resolves one key press; returns whether a shortcut ran (or a prefix was armed). */
+export function dispatch(e: KeyboardEvent): boolean {
+  if (MODIFIERS.has(e.key) || e.isComposing) return false
+  // A control that already handled the key (a routine editor's own Ctrl+Z, an editor's
+  // keymap) calls preventDefault; the dispatcher then stands back so one press is one action.
+  if (e.defaultPrevented) return false
+  const pend = pending
+  const typing = isTypingTarget(e.target)
+  const dialog = dialogOpen()
+  const active = sortedFrames()
+  // `any` hooks of capturing frames (the Vim machine, "any key dismisses") see the key first.
+  for (const frame of active) {
+    if (!frame.capture || !frame.any || !focusInside(frame)) continue
+    if (frame.any(e) === true) { clearPrefix(); return true }
+  }
+  if (resolve(e, e.key, active, pend, typing, dialog)) return true
+  const fallback = physicalShortcutKey(e)
+  if (fallback && resolve(e, fallback, active, pend, typing, dialog)) return true
+  if (!pend.length) return false
+  // A sequence nothing completes ends here; the key does nothing else.
+  clearPrefix()
+  return true
 }
 
 /** One way to finish the pending sequence: the entry and the chord that completes it. */
@@ -285,11 +295,6 @@ const steps = new Map(SEQUENCE_STEPS.flatMap((s) => chordsOf(s).map((c) => [chor
 /** The named middle step of a longer sequence, if the registry names it. */
 function stepOf(seq: Chord[]): Shortcut | undefined {
   return steps.get(chordKey(seq))
-}
-
-function chordOf(e: KeyboardEvent): Chord {
-  const letter = e.key.length === 1 && /[a-z]/i.test(e.key)
-  return { key: letter ? e.key.toLowerCase() : e.key.toLowerCase(), ctrl: e.ctrlKey ? 'ctrl' : e.metaKey ? 'meta' : false, alt: e.altKey, shift: e.shiftKey, symbol: e.key.length === 1 && !letter && !/[0-9]/.test(e.key) }
 }
 
 let installed = 0

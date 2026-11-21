@@ -1,0 +1,1 @@
+- **Attachments open in the iPhone app.** Tapping an attachment's view or download button in the iPhone app did nothing, because the app has no tabs to open the file in. In the iPhone and Android apps both buttons now open the phone's save dialog (#1654).
