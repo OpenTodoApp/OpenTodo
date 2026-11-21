@@ -37,35 +37,9 @@ func (s *Server) registerRoutineDraft(mux *routes) {
 
 func (s *Server) handleRoutineDraft(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	set := s.assistantSettings(ctx)
-	if !set.Enabled {
-		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
-		return
-	}
-	u := userFrom(ctx)
-	if enc, err := s.keys().Enabled(ctx, u.ID); err != nil {
-		s.internal(w, err)
-		return
-	} else if enc {
-		writeError(w, http.StatusConflict, "encryption_enabled", "an encrypted account describes routines on its device; nothing is sent through the server")
-		return
-	}
-	if !set.Active() {
-		writeError(w, http.StatusNotFound, "not_found", "the assistant is not enabled on this server")
-		return
-	}
-	route, err := s.assistant.Store.Resolve(ctx, u.ID, set)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	consent, err := s.assistant.Store.Consent(ctx, u.ID)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if !consent.Valid(route.Provider) {
-		writeError(w, http.StatusForbidden, "consent_required", "read which data is sent to "+assistant.ProviderLabel(route.Provider)+" and accept before describing a routine")
+	set, u, route, ok := s.assistantAccess(w, r,
+		"an encrypted account describes routines on its device; nothing is sent through the server", "before describing a routine")
+	if !ok {
 		return
 	}
 	var in struct {
@@ -88,26 +62,8 @@ func (s *Server) handleRoutineDraft(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", fmt.Sprintf("describe the routine in at most %d characters", assistant.MaxDraftText))
 		return
 	}
-	usage, err := s.assistant.Store.Usage(ctx, u.ID, set.MonthlyTokenCap)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	capped := set.MonthlyTokenCap > 0 && (!route.Own || set.CapMemberKeys)
-	if capped && usage.Counted(set.CapMemberKeys) >= set.MonthlyTokenCap {
-		writeErrorWith(w, http.StatusTooManyRequests, "assistant_quota",
-			fmt.Sprintf("you have used this month's assistant allowance of %d tokens; it resets on %s", set.MonthlyTokenCap, usage.ResetsAt),
-			map[string]any{"resets_at": usage.ResetsAt})
-		return
-	}
-	release, err := s.assistant.Acquire(u.ID)
-	switch {
-	case errors.Is(err, assistant.ErrTurnInProgress):
-		writeError(w, http.StatusConflict, "turn_in_progress", "another answer is still being written; wait for it or stop it first")
-		return
-	case errors.Is(err, assistant.ErrBusy):
-		w.Header().Set("Retry-After", "5")
-		writeError(w, http.StatusServiceUnavailable, "assistant_busy", "the assistant is busy on this server; try again in a few seconds")
+	usage, capped, release, ok := s.assistantSlot(w, ctx, u.ID, set, route)
+	if !ok {
 		return
 	}
 	defer release()
