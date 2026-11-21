@@ -12,7 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/mcpoauth"
 )
 
-// App sign-in (OpenSpec change native-app-foundation, design D5). The OpenTodo
+// App sign-in (OpenSpec change app-sign-in). The OpenTodo
 // app opens /app/sign-in in the system's authentication sheet, which shares the
 // browser's cookies and passkeys: the server's own sign-in runs when there is
 // no session, then the web app asks to confirm, and Confirm sends the sheet to

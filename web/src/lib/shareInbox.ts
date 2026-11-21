@@ -4,8 +4,7 @@
 // screen reads the entry and deletes it on Save or Cancel. A separate IndexedDB
 // database with the raw API, so the service worker needs no Dexie. Each call takes
 // the IndexedDB to use: the worker and the page pass theirs, and sync's sweep asks
-// the platform port (native-app-foundation D3), so the app, which has no share
-// inbox, sweeps nothing.
+// the platform port, so a host without a share inbox sweeps nothing.
 
 export const INBOX_DB = 'opentodo-share'
 const STORE = 'inbox'

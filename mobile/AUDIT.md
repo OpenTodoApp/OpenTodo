@@ -1,6 +1,6 @@
 # Mobile audit: why the apps feel like a website, and the plan
 
-2026-11-13. The Android and iOS apps are shells around the web app. The owner decided to keep that and make the shells feel native; the React Native app (`mobile/app`, `native-app-*`) is paused, its code kept.
+2026-11-13. The Android and iOS apps are shells around the web app. The owner decided to keep that and make the shells feel native; the React Native app that was tried in `mobile/app` was removed on 2026-11-21.
 
 The audit read both shells and the web app on a phone. Paths are from the repository root.
 

@@ -1,5 +1,4 @@
-// The OpenTodo app's sign-ins (OpenSpec change native-app-foundation, design
-// D5): the confirmation the app's sign-in sheet shows, and the signed-in apps
+// The OpenTodo app's sign-ins (OpenSpec change app-sign-in): the confirmation the app's sign-in sheet shows, and the signed-in apps
 // listed with the sessions in Settings → Account. Only the lazily loaded
 // consent and settings screens import this module.
 import { request } from './api'

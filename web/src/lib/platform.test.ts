@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-// The platform port (native-app-foundation D3): the web implementation is the
-// browser's behaviour, and the shared modules use whatever host is installed.
+// The platform port: the web implementation is the browser's behaviour, and the
+// modules behind the port use whatever host is installed.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installPlatform, platform, type Platform } from './platform'
 import { resetModuleState } from './moduleState'
@@ -14,7 +14,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** A host with no browser behind it, as the native app's. */
+/** A host with no browser behind it. */
 function fakeHost(over: Partial<Platform> = {}): Platform {
   return {
     visibility: { visible: () => true, onChange: () => () => undefined },

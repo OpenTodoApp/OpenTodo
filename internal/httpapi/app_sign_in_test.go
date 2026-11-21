@@ -12,7 +12,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/webauthn/testauth"
 )
 
-// App sign-in (native-app-foundation D5, the account-access spec delta).
+// App sign-in (app-sign-in, the account-access spec delta).
 
 // appQuery is the sign-in request the app opens, and the verifier it keeps.
 func appQuery(t *testing.T, state, device string) (string, string) {
