@@ -119,10 +119,15 @@ export function ProjectNote({ project, phone = false }: { project: Project; phon
   const outlined = heads.length >= OUTLINE_MIN && !sourceShown
   // A viewer's way to the source (note-markdown-source "Viewer"); an editor has it in the editor.
   const sourceButton = !editable && !coarse
-  const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0)
+  // The first code block's Copy button needs the corner's room (copy-code-block).
+  const codeBlocks = !sourceShown && note.split('\n').some((l) => /^ {0,3}(```|~~~)/.test(l)) ? 1 : 0
+  const corner = (outlined ? 1 : 0) + (sourceButton ? 1 : 0) + codeBlocks
   return (
     <section aria-label={t('Project note')} className="mb-4" data-project-note={clipped ? 'folded' : 'open'}>
-      <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}>
+      {/* The corner's width as a variable, so the note's own content and a code block's
+          Copy button both leave it room (copy-code-block); the bar reads it in index.css. */}
+      <div className="notes-frame" data-outline={outlined ? 'menu' : undefined} data-corner={corner || undefined}
+        style={corner ? { '--notes-corner': `${corner * 2.25}rem` } as React.CSSProperties : undefined}>
         {corner > 0 && (
           <div className="notes-corner">
             {outlined && <Suspense fallback={null}><OutlineButton items={heads} current={-1} onGo={goTo} open={outlineOpen} onOpenChange={setOutlineOpen} /></Suspense>}
