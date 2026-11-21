@@ -99,13 +99,13 @@ func TestHandoffsHeldUntilConfirmed(t *testing.T) {
 	s := NewHandoffs(func() time.Time { return now })
 	yes := func(string) bool { return true }
 
-	ticket := s.Hold(Handoff{Claims: Claims{Subject: "a"}, AppState: "st"})
+	s.Hold(Handoff{Claims: Claims{Subject: "a"}, AppState: "st"})
 	for code := range s.codes {
 		if _, ok := s.Take(code, yes); ok {
 			t.Fatal("a held hand-off cannot be redeemed before the confirmation")
 		}
 	}
-	ticket = s.Hold(Handoff{Claims: Claims{Subject: "a"}, AppState: "st"})
+	ticket := s.Hold(Handoff{Claims: Claims{Subject: "a"}, AppState: "st"})
 	code, h, ok := s.Release(ticket)
 	if !ok || code == "" || h.AppState != "st" {
 		t.Fatalf("release = %q %v %v", code, h, ok)
