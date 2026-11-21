@@ -1358,3 +1358,10 @@ With a mouse or trackpad as the main pointer, selection, callouts and the browse
 #### Scenario: A selectable control fails the check
 - **WHEN** a button on a screen of the layout check's touch emulation can be text-selected
 - **THEN** the check fails naming the screen and the button
+
+### Requirement: Haptics for switches, segments, failures and lifts
+With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A switch by keyboard
+- **WHEN** a person flips the "Show full task titles" switch with Space on a hardware keyboard
+- **THEN** no haptic plays
