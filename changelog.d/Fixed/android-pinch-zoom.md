@@ -1,0 +1,1 @@
+- **Pinch to zoom now works in the Android app.** The web view had zoom gestures switched off, so pinching did nothing. It is on by default and follows **Settings → Appearance → Allow pinch zoom**, like the rest of the app.
