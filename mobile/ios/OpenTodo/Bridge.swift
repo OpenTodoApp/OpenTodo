@@ -30,19 +30,26 @@ struct SystemBars: Equatable {
     }
 }
 
-/// Haptic feedback through the bridge (shell-repairs D5, capability `haptics`): WebKit has
-/// no `navigator.vibrate`, so the web app names a kind and the shell plays the platform's
-/// own feedback. The kinds are pinned by the shared bridge fixture haptics.json.
+/// Haptic feedback through the bridge (shell-repairs D5, haptic-kinds D1, capability
+/// `haptics`): WebKit has no `navigator.vibrate`, so the web app names a kind and the shell
+/// plays the platform's own feedback. The kinds are pinned by the shared bridge fixture
+/// haptics.json.
 enum Haptics {
     enum Kind: String, CaseIterable {
-        /// A light tap: a toggle, a step of a drag.
+        /// A light tap: a step of a drag, a lifted row.
         case tick
         /// A task was completed.
         case success
+        /// Something needs attention.
+        case warning
+        /// Something failed (a failure toast).
+        case error
+        /// A switch flipped or a segment chosen.
+        case selection
     }
 
-    /// The kind of a handed-over name; any other name is ignored.
-    static func kind(_ name: String) -> Kind? { Kind(rawValue: name) }
+    /// The kind of a handed-over name; a name this shell does not know plays `tick`, so a newer page never fails.
+    static func kind(_ name: String) -> Kind { Kind(rawValue: name) ?? .tick }
 
     /// Only an iPhone has the engine; an iPad would show a switch that does nothing.
     @MainActor static var available: Bool { UIDevice.current.userInterfaceIdiom == .phone }
@@ -51,6 +58,9 @@ enum Haptics {
         switch kind {
         case .tick: UIImpactFeedbackGenerator(style: .light).impactOccurred()
         case .success: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .warning: UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case .error: UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case .selection: UISelectionFeedbackGenerator().selectionChanged()
         }
     }
 }

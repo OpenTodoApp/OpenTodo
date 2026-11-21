@@ -36,13 +36,22 @@ export function readEnum<T extends string>(key: string, allowed: readonly T[], f
  * `accept` (a type check that may also normalise; null refuses).
  */
 export function readJSON<T>(key: string, fallback: T, accept?: (v: unknown) => T | null, which: StorageArea = 'local'): T {
-  const raw = readString(key, which)
-  if (raw === null) return fallback
-  try {
-    const v = JSON.parse(raw) as unknown
-    return accept ? accept(v) ?? fallback : (v as T)
-  } catch {
-    return fallback
+  return jsonCodec(fallback, accept).parse(readString(key, which))
+}
+
+/** The codec of a JSON value, read as in readJSON. */
+export function jsonCodec<T>(fallback: T, accept?: (v: unknown) => T | null): StoredCodec<T> {
+  return {
+    parse: (raw) => {
+      if (raw === null) return fallback
+      try {
+        const v = JSON.parse(raw) as unknown
+        return accept ? accept(v) ?? fallback : (v as T)
+      } catch {
+        return fallback
+      }
+    },
+    serialize: (value) => JSON.stringify(value),
   }
 }
 

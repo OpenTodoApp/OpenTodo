@@ -1369,3 +1369,10 @@ A hover look SHALL only apply on a device whose pointer can hover. A focus ring 
 #### Scenario: Tab after taps
 - **WHEN** a person who has been tapping presses Tab on an iPad's hardware keyboard
 - **THEN** the focused control shows its focus ring
+
+### Requirement: Haptics for switches, segments, failures and lifts
+With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A switch by keyboard
+- **WHEN** a person flips the "Show full task titles" switch with Space on a hardware keyboard
+- **THEN** no haptic plays
