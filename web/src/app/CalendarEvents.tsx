@@ -3,7 +3,7 @@
 // summary, time, location and calendar name; they never start a drag, are never
 // selected with j/k and are never drop targets.
 import { hueFor, Icon, Tooltip, Popover } from '../ui'
-import { useRef, useState } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import { formatTime as toHHMM, type EventBlock } from '../lib/calendar'
 import { formatShort, formatTime as formatWallTime, localDueOf } from '../lib/dates'
 import type { CalendarEvent, CalendarSubscription, CalendarWhen } from '../lib/types'
@@ -27,7 +27,7 @@ export function eventLabel(ev: CalendarEvent, sub: CalendarSubscription | undefi
   return [ev.summary || t('Busy'), eventTimeText(ev, zone), ev.location, sub?.name].filter(Boolean).join(', ')
 }
 
-export function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
+function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
   return (
     <div className="space-y-1 text-body" data-event-details>
       <p className="font-medium text-strong">{ev.summary || t('Busy')}</p>
@@ -44,6 +44,25 @@ export function EventDetails({ ev, sub, zone }: { ev: CalendarEvent; sub?: Calen
   )
 }
 
+/** An event's details popover, anchored to the button that toggles it. */
+export function useEventDetails(ev: CalendarEvent, sub?: CalendarSubscription, zone?: string) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+  const popover = (
+    <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
+      <EventDetails ev={ev} sub={sub} zone={zone} />
+    </Popover>
+  )
+  const toggle = () => setOpen((o) => !o)
+  // A block, chip or row: read-only, never a drag source (the grid's pointer handling never sees it).
+  const trigger = {
+    ref, type: 'button' as const, 'aria-haspopup': 'dialog' as const,
+    'data-free': ev.free || undefined, 'data-hue': hueFor(sub?.color),
+    onPointerDown: (e: PointerEvent) => e.stopPropagation(), onClick: toggle,
+  }
+  return { ref, open, toggle, trigger, popover }
+}
+
 /** One timed event in a day column, laid out with the task blocks. */
 export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHeight, sub, zone }: {
   block: EventBlock
@@ -55,24 +74,16 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
   sub?: CalendarSubscription
   zone?: string
 }) {
-  const ref = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState(false)
   const ev = block.event
+  const details = useEventDetails(ev, sub, zone)
   const height = Math.max(minHeight, (block.end - block.start) * pxPerMinute)
   return (
     <>
       <Tooltip label={eventLabel(ev, sub, zone)} side="right">
       <button
-        ref={ref}
-        type="button"
+        {...details.trigger}
         data-event={ev.id}
-        data-free={ev.free || undefined}
         data-overlap={overlap || undefined}
-        data-hue={hueFor(sub?.color)}
-        aria-haspopup="dialog"
-        // Not a drag source: the grid's pointer handling never sees it.
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setOpen((o) => !o)}
         className={`absolute z-10 overflow-hidden px-1.5 text-left ${height < 20 ? 'py-0 text-hint leading-none' : 'py-0.5 text-meta'} ${ev.free ? 'rounded-control border border-dashed border-hue-solid bg-transparent text-hue' : 'ui-block ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
         style={{
           top: block.start * pxPerMinute, height,
@@ -86,37 +97,26 @@ export function EventBlockView({ block, lane, lanes, overlap, pxPerMinute, minHe
         {height >= 30 && <span aria-hidden className="block truncate text-hint tabular-nums" data-event-time>{formatWallTime(toHHMM(block.start))}{ev.location ? ` · ${ev.location}` : ''}</span>}
       </button>
       </Tooltip>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
-        <EventDetails ev={ev} sub={sub} zone={zone} />
-      </Popover>
+      {details.popover}
     </>
   )
 }
 
 /** One all-day or multi-day event in a day's all-day strip. */
 export function EventChip({ ev, sub, zone }: { ev: CalendarEvent; sub?: CalendarSubscription; zone?: string }) {
-  const ref = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState(false)
+  const details = useEventDetails(ev, sub, zone)
   return (
     <>
       <button
-        ref={ref}
-        type="button"
+        {...details.trigger}
         data-event-chip={ev.id}
-        data-free={ev.free || undefined}
-        data-hue={hueFor(sub?.color)}
         aria-label={eventLabel(ev, sub, zone)}
-        aria-haspopup="dialog"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={() => setOpen((o) => !o)}
         className={`flex w-full min-w-0 items-center gap-1 px-1.5 py-0.5 text-left text-hint ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {!ev.free && <span aria-hidden className="ui-block-dot" />}
         <span className="truncate">{ev.summary || t('Busy')}</span>
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
-        <EventDetails ev={ev} sub={sub} zone={zone} />
-      </Popover>
+      {details.popover}
     </>
   )
 }
@@ -137,24 +137,18 @@ const ROW_CLASS: Record<EventRowVariant, string> = {
  * reachable with Tab, Enter opens the same details.
  */
 export function EventRow({ ev, start, end, sub, zone, variant = 'plan' }: { ev: CalendarEvent; start?: number; end?: number; sub?: CalendarSubscription; zone?: string; variant?: EventRowVariant }) {
-  const ref = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState(false)
+  const details = useEventDetails(ev, sub, zone)
   const timed = start !== undefined
   const time = timed ? formatWallTime(toHHMM(start)) : t('all day')
   const length = timed && variant !== 'cell' ? formatMinutes(Math.max(0, (end ?? start) - start)) : ''
   return (
     <>
       <button
-        ref={ref}
-        type="button"
+        {...details.trigger}
         data-plan-event={variant === 'plan' ? ev.id : undefined}
         data-agenda-event={variant === 'agenda' ? ev.id : undefined}
         data-month-event={variant === 'cell' ? ev.id : undefined}
-        data-free={ev.free || undefined}
-        data-hue={hueFor(sub?.color)}
-        aria-haspopup="dialog"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+        onClick={(e) => { e.stopPropagation(); details.toggle() }}
         className={`flex w-full min-w-0 items-center text-left ${ROW_CLASS[variant]} ${ev.free ? 'rounded-chip border border-dashed border-hue-solid text-hue' : 'ui-block ui-block--row ui-block--event'} focus-visible:outline-2 focus-visible:outline-focus`}
       >
         {/* Named by its visible content (WCAG 2.5.3 Label in Name); the location and calendar are not shown, so they follow as hidden text. */}
@@ -164,9 +158,7 @@ export function EventRow({ ev, start, end, sub, zone, variant = 'plan' }: { ev: 
         {length && <span className="shrink-0 text-hint tabular-nums">{length}</span>}
         {(ev.location || sub?.name) && <span className="sr-only">{`, ${[ev.location, sub?.name].filter(Boolean).join(', ')}`}</span>}
       </button>
-      <Popover open={open} onClose={() => setOpen(false)} anchor={ref} label={ev.summary || t('Event')} width="sm:w-72" className="p-3" align="start">
-        <EventDetails ev={ev} sub={sub} zone={zone} />
-      </Popover>
+      {details.popover}
     </>
   )
 }

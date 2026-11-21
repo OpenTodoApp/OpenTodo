@@ -314,7 +314,7 @@ final class BridgeTests: XCTestCase {
 
     func testCapabilitiesFollowTheDevice() {
         XCTAssertEqual(Bridge.capabilities(biometric: false, share: true),
-                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "haptics"])
+                       ["reminders", "widgets", "share", "links", "obsidian-links", "app-links", "system-bars", "pull-refresh", "completion-sound", "haptics"])
         XCTAssertTrue(Bridge.capabilities(biometric: true, share: true).contains("biometric"))
     }
 
@@ -345,6 +345,7 @@ final class BridgeTests: XCTestCase {
         let both = Set(try XCTUnwrap(fixture["both"] as? [String])).subtracting(["push"])
         let methods = try XCTUnwrap(fixture["methods"] as? [String: String])
         XCTAssertEqual(methods["backgroundDone"], "background")
+        XCTAssertEqual(methods["playCompletionSound"], "completion-sound")
         XCTAssertTrue(backgroundOnly.contains("background"))
         XCTAssertTrue(visibleOnly.contains("links"))
 
@@ -397,6 +398,23 @@ final class BridgeTests: XCTestCase {
         let script = Bridge.script(origin: origin, app: "1.2.3", capabilities: ["haptics"])
         XCTAssertTrue(script.contains("haptic: function (kind) { call('haptic', [String(kind)]) }"))
         XCTAssertFalse(script.contains("saveFile"))
+    }
+
+    func testCompletionSoundMatchesWebSamples() throws {
+        let file = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("android/app/src/test/resources/bridge/completion-sound.json")
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let rate = try XCTUnwrap(fixture["sampleRate"] as? Int)
+        let frames = try XCTUnwrap(fixture["frames"] as? Int)
+        let wave = BridgeHost.completionWave()
+        guard wave.count == 44 + frames * 2 else { return XCTFail("Incorrect WAV length") }
+        XCTAssertEqual(Int(wave[24]) | (Int(wave[25]) << 8) | (Int(wave[26]) << 16) | (Int(wave[27]) << 24), rate)
+        for pair in try XCTUnwrap(fixture["samples"] as? [[Int]]) {
+            let offset = 44 + pair[0] * 2
+            let sample = Int16(bitPattern: UInt16(wave[offset]) | (UInt16(wave[offset + 1]) << 8))
+            XCTAssertLessThanOrEqual(abs(Int(sample) - pair[1]), 1, "frame \(pair[0])")
+        }
     }
 
     /// shell-repairs D5: the kinds the web app hands over (the shared bridge fixture, with
