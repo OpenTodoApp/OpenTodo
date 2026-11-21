@@ -1,7 +1,7 @@
 // Per-device quick-add preferences. Stored only in this browser's localStorage and
 // never synced (natural-language-capture: "Per-device parsing toggle").
 import { activeLanguages, VOCABULARIES, type DayMonthOrder } from './vocab'
-import { readJSON, writeJSON } from '../deviceStorage'
+import { createStoredValue, jsonCodec, writeJSON } from '../deviceStorage'
 
 export interface QuickAddSettings {
   /** Parse natural language in quick add. */
@@ -13,39 +13,28 @@ export interface QuickAddSettings {
 export const DEFAULT_QUICK_ADD_SETTINGS: QuickAddSettings = { enabled: true, languages: null }
 
 const KEY = 'opentodo.quickadd'
-const EVENT = 'opentodo:quickadd-settings'
 
-export function loadQuickAddSettings(): QuickAddSettings {
-  // Private mode, blocked storage or an unreadable value: parsing still works with the defaults.
-  const v = readJSON<(Partial<QuickAddSettings> & { dayMonthOrder?: unknown }) | null>(KEY, null, (x) => (x !== null && typeof x === 'object' ? x : null))
-  if (!v) return { ...DEFAULT_QUICK_ADD_SETTINGS }
+// Private mode, blocked storage or an unreadable value: parsing still works with the defaults.
+const stored = createStoredValue(KEY, jsonCodec<QuickAddSettings>(DEFAULT_QUICK_ADD_SETTINGS, (v) => {
+  if (v === null || typeof v !== 'object') return null
+  const o = v as Partial<QuickAddSettings> & { dayMonthOrder?: unknown }
   const s: QuickAddSettings = {
-    enabled: typeof v.enabled === 'boolean' ? v.enabled : true,
-    languages: Array.isArray(v.languages) ? v.languages.filter((l): l is string => typeof l === 'string' && l in VOCABULARIES) : null,
+    enabled: typeof o.enabled === 'boolean' ? o.enabled : true,
+    languages: Array.isArray(o.languages) ? o.languages.filter((l): l is string => typeof l === 'string' && l in VOCABULARIES) : null,
   }
   // The device-level numeric order of earlier versions is ignored and dropped
   // from the key (settings-refresh D6): numeric dates follow the date format.
-  if ('dayMonthOrder' in v) writeJSON(KEY, s)
+  if ('dayMonthOrder' in o) writeJSON(KEY, s)
   return s
-}
+}), { crossTab: true })
 
-export function saveQuickAddSettings(s: QuickAddSettings): void {
-  writeJSON(KEY, s) // per-device convenience only
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENT))
-}
+export const loadQuickAddSettings: () => QuickAddSettings = stored.get
+
+/** Stores the settings on this device (a per-device convenience only). */
+export const saveQuickAddSettings: (s: QuickAddSettings) => void = stored.set
 
 /** Call `fn` whenever the settings change in this tab or another tab. */
-export function onQuickAddSettingsChange(fn: () => void): () => void {
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY) fn()
-  }
-  window.addEventListener(EVENT, fn)
-  window.addEventListener('storage', onStorage)
-  return () => {
-    window.removeEventListener(EVENT, fn)
-    window.removeEventListener('storage', onStorage)
-  }
-}
+export const onQuickAddSettingsChange: (fn: () => void) => () => void = stored.subscribe
 
 /**
  * The language tags handed to the parser: the device's explicit list, else the
