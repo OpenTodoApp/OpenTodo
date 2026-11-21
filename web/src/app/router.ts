@@ -445,6 +445,20 @@ resettable('leaveGuard', () => { leaveGuard = null })
 
 const listeners = new Set<() => void>()
 let current = typeof location !== 'undefined' ? addressOf(location) : '/'
+const emit = () => listeners.forEach((fn) => fn())
+
+/**
+ * How a route change reaches the screen (page-transitions D1): `apply` renders it, `from`
+ * and `to` are the addresses, `popped` a step through history. app/pageTransition.ts
+ * installs the animated one after the first paint; until then the page swaps at once.
+ */
+type ShowRouteChange = (apply: () => void, from: string, to: string, popped: boolean) => void
+const swap: ShowRouteChange = (apply) => apply()
+let show: ShowRouteChange = swap
+export function setRouteShow(fn: ShowRouteChange | null): void {
+  show = fn ?? swap
+}
+resettable('routeShow', () => { show = swap })
 // The last address outside the Focus screen, where its Esc returns (focus-mode D7).
 let beforeFocus = current.startsWith('/focus') ? '/' : current
 const isFocusPath = (p: string) => p === '/focus' || p.startsWith('/focus/')
@@ -468,8 +482,11 @@ if (typeof window !== 'undefined') {
       leaveGuard(() => { leaveGuard = null; history.back() })
       return
     }
+    const from = current
     track(addressOf(location))
-    listeners.forEach((fn) => fn())
+    // An overlay's marker entry shares the page's address: stepping over it changes no page.
+    if (from === current) emit()
+    else show(emit, from, current, true)
   })
 }
 
@@ -486,8 +503,9 @@ export function navigate(r: Route, opts: { replace?: boolean } = {}): void {
   const onMarker = ((history.state as { overlay?: number } | null)?.overlay ?? 0) > 0
   if (opts.replace || onMarker) history.replaceState(null, '', path)
   else history.pushState(null, '', path)
+  const from = current
   track(path)
-  listeners.forEach((fn) => fn())
+  show(emit, from, path, false)
 }
 
 export function useRoute(): Route {

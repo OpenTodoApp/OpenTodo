@@ -318,6 +318,11 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       if (s.anon) await p.close()
     }
+    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone).
+    if (engine === 'chromium' && width < 768 && !ONLY && !OTHER_LANG) {
+      run.step = 'page transitions'
+      for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
+    }
     for (const e of pageErrors) failures.push(`page error [${tag}]: ${e}`)
   } catch (e) {
     failures.push(`[${tag}] aborted: ${e.message.split('\n')[0]}`)
@@ -329,6 +334,70 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
   return engine === 'webkit' && failures.some((f) => ENGINE_DB_LOST.test(f))
 }
 
+
+// page-transitions D4: opens a task's page from the Inbox and goes back, recording each
+// view transition the route change starts (its direction, and the opacity the old page's
+// animation ends at) and awaiting it, so the check stays deterministic; then the same with
+// reduced motion, where no page transition may run. Returns the problems.
+async function pageTransitions(p, base) {
+  const problems = []
+  const record = () => p.evaluate(() => {
+    const w = window
+    w.__navs = []
+    const start = document.startViewTransition?.bind(document)
+    if (!start || w.__navWrapped) return
+    w.__navWrapped = true
+    document.startViewTransition = (update) => {
+      const vt = start(update)
+      const dir = document.documentElement.dataset.nav
+      if (!dir) return vt
+      const rec = { dir, oldEnd: null, done: false }
+      w.__navs.push(rec)
+      vt.ready.then(() => {
+        const old = document.getAnimations().find((a) => a.effect?.pseudoElement === '::view-transition-old(page)')
+        const frames = old?.effect?.getKeyframes() ?? []
+        rec.oldEnd = frames.length ? Number(frames[frames.length - 1].opacity ?? 1) : null
+      }).catch(() => {})
+      vt.finished.finally(() => { rec.done = true })
+      return vt
+    }
+  })
+  const settledNavs = async () => {
+    await p.waitForFunction(() => (window.__navs ?? []).every((r) => r.done) && !document.documentElement.dataset.nav, null, { timeout: 5000 })
+    return p.evaluate(() => window.__navs)
+  }
+  const round = async (reduced) => {
+    await p.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' })
+    await openScreen(p, base + '/inbox')
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
+    // The transitions load after the first paint (the page-transitions spec).
+    await p.waitForTimeout(300)
+    await record()
+    // A tap: a change made from the keyboard happens at once (the page-transitions spec).
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').click()
+    await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
+    const forward = await settledNavs()
+    await p.evaluate(() => { window.__navs = [] })
+    await p.goBack()
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
+    const back = await settledNavs()
+    return { forward, back }
+  }
+  try {
+    const moving = await round(false)
+    const f = moving.forward
+    const b = moving.back
+    if (f.length !== 1 || f[0].dir !== 'forward' || f[0].oldEnd !== 0) problems.push(`opening a task's page: expected one forward transition whose old page ends at opacity 0, got ${JSON.stringify(f)}`)
+    if (b.length !== 1 || b[0].dir !== 'back' || b[0].oldEnd !== 0) problems.push(`going back: expected one back transition whose old page ends at opacity 0, got ${JSON.stringify(b)}`)
+    const still = await round(true)
+    if (still.forward.length || still.back.length) problems.push(`with reduced motion a page transition ran: ${JSON.stringify(still)}`)
+  } catch (e) {
+    problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
+  } finally {
+    await p.emulateMedia({ reducedMotion: 'no-preference' }).catch(() => {})
+  }
+  return problems
+}
 
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
 /**
