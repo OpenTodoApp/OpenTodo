@@ -7857,5 +7857,9 @@
   "Set away": "Fijar ausencia",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Omite {occurrences, plural, one {# repetición} other {# repeticiones}} de {series, plural, one {# tarea repetida} other {# tareas repetidas}}",
   "The last day comes before the first": "El último día es anterior al primero",
-  "Or sponsor on GitHub": "O patrocina en GitHub"
+  "Or sponsor on GitHub": "O patrocina en GitHub",
+  "Select projects": "Seleccionar proyectos",
+  "Archive {projects}?": "¿Archivar {projects}?",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Salen de la barra lateral con sus subproyectos. Puedes desarchivarlos desde Ajustes → Datos.",
+  "Archived {projects}": "Archivado: {projects}"
 }

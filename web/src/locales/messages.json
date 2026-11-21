@@ -2014,6 +2014,7 @@
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/menus/projectMenu.tsx",
+    "web/src/app/projectBulk.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Archive <strong>{name}</strong>? {kbd}": [
@@ -2049,6 +2050,9 @@
   "Archive with sub-projects": [
     "web/src/app/menus/projectMenu.tsx"
   ],
+  "Archive {projects}?": [
+    "web/src/app/projectBulk.tsx"
+  ],
   "Archive “{name}”?": [
     "web/src/app/menus/projectMenu.tsx"
   ],
@@ -2067,6 +2071,9 @@
   ],
   "Archived {name}.": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Archived {projects}": [
+    "web/src/lib/undoActions.ts"
   ],
   "Archives are encrypted with your passphrase": [
     "web/src/app/BackupsPanel.tsx"
@@ -3478,6 +3485,7 @@
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx",
     "web/src/app/views/ViewToolbar.tsx"
@@ -11540,7 +11548,8 @@
     "web/src/app/themes/YourThemes.tsx"
   ],
   "No time of day": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/quickadd/LineDatePicker.tsx"
   ],
   "No time sector": [
     "web/src/app/filter/conditionText.ts",
@@ -14344,7 +14353,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Quick dates": [
-    "web/src/app/datetime/DatePicker.tsx"
+    "web/src/app/datetime/DatePicker.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx"
   ],
   "Quick wins": [
     "web/src/lib/filters.ts"
@@ -15937,6 +15947,9 @@
   ],
   "Select notes": [
     "web/src/app/notes/NoteBulkActions.tsx"
+  ],
+  "Select projects": [
+    "web/src/app/projectBulk.tsx"
   ],
   "Select tasks": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -19198,6 +19211,9 @@
   "They go to the Trash with their subtasks. You can restore them from the Trash.": [
     "web/src/app/bulk/BulkActions.tsx"
   ],
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": [
+    "web/src/app/projectBulk.tsx"
+  ],
   "Things 3 database": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -20009,6 +20025,7 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -21743,6 +21760,7 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/task-detail/Facets.tsx",
@@ -25549,7 +25567,9 @@
   ],
   "{n, plural, one {# project} other {# projects}}": [
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/templates/TemplateLibrary.tsx"
+    "web/src/app/projectBulk.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {# project} other {# projects}}, {k} need attention": [
     "web/src/app/review/MonthlyLook.tsx"

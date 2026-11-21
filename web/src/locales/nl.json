@@ -7857,5 +7857,9 @@
   "Set away": "Afwezigheid instellen",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Slaat {occurrences, plural, one {# keer} other {# keer}} over van {series, plural, one {# herhalende taak} other {# herhalende taken}}",
   "The last day comes before the first": "De laatste dag ligt vóór de eerste",
-  "Or sponsor on GitHub": "Of sponsor op GitHub"
+  "Or sponsor on GitHub": "Of sponsor op GitHub",
+  "Select projects": "Projecten selecteren",
+  "Archive {projects}?": "{projects} archiveren?",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Ze verdwijnen met hun subprojecten uit de zijbalk. Je kunt ze terughalen uit het archief via Instellingen → Gegevens.",
+  "Archived {projects}": "{projects} gearchiveerd"
 }

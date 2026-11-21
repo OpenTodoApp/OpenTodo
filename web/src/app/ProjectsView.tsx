@@ -17,6 +17,7 @@ import { t } from '../lib/i18n'
 import { Button, EmptyState, MenuItem, PageBody, PageHeader, Skeleton, Tabs } from '../ui'
 import { ArchivedProjectsSection } from './ArchivedProjects'
 import { NamePrompt } from './NamePrompt'
+import { useProjectBulk } from './projectBulk'
 import { ProjectsTable, type ProjectsSort } from './ProjectsTable'
 import { navigate } from './router'
 import { requestTemplateDialog } from './TemplateDialogs'
@@ -73,6 +74,9 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
     return found ? shown.filter((n) => found.projects.has(n.id)) : shown
   }, [tree, sort, summaries, zone, folded, found])
   const dimmed = useMemo(() => (found ? new Set(rows.filter((n) => !found.matched.has(n.id)).map((n) => n.id)) : undefined), [found, rows])
+  // Archive several at once (archive-several-projects): the projects the user may archive can be ticked.
+  const rowIds = useMemo(() => rows.map((n) => n.id), [rows])
+  const bulk = useProjectBulk(rowIds, (id) => canEditProject(roleOf(id, memberMap)))
 
   const fold = (id: string, on: boolean) => setFolded((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n })
   // First click sorts in the column's natural direction, the second reverses it, the third returns to your own order.
@@ -96,6 +100,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
         overflow={<>
           <MenuItem label={t('Collapse all')} icon="chevrons-down-up" onSelect={() => setFolded(new Set(tree.nodes.keys()))} />
           <MenuItem label={t('Expand all')} icon="chevrons-up-down" onSelect={() => setFolded(new Set())} />
+          {tab === 'active' && projects.length > 0 && bulk.selectItem}
         </>} />
       <Tabs label={t('Projects')} value={tab} rowClassName="ui-tab-row-soft"
         onChange={(id) => {
@@ -114,7 +119,8 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           {!loaded && <Skeleton shape="row" count={5} label={t('Loading the list…')} />}
           {loaded && projects.length > 0 && <ProjectsTable rows={rows} summaries={summaries} memberships={memberMap} dimmed={dimmed}
             folded={folded} foldable={!found} onFold={fold} sort={sort} onSort={onSort} today={today} now={now}
-            canMove={(n) => canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)} />}
+            canMove={(n) => canEditProject(roleOf(n.id, memberMap))} edges={(n) => siblingEdges(tree, n)}
+            tick={bulk.tickOf} onSelectKey={bulk.onKey} />}
           {loaded && projects.length === 0 && (
             <EmptyState icon="folder" title={t('No projects yet')}
               body={t('Projects hold tasks; labels describe them. Create a project to group work in the sidebar.')}
@@ -125,6 +131,7 @@ export function ProjectsView({ archived }: { archived?: boolean }) {
           </p>}
         </> : <div data-archived-tab><ArchivedProjectsSection bare /></div>}
       </Tabs>
+      {tab === 'active' && bulk.bar}
       {creating && (
         <NamePrompt title={t('New project')} label={t('Project name')} confirm={t('Create')} onCancel={() => setCreating(false)}
           onSubmit={async (name) => {
