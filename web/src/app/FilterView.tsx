@@ -323,10 +323,10 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
 
       {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
       <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('Filter results')}>
-        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape) => (
+        <ViewResults groups={groups} layout={display.layout} foldScope="filter" selectedGroup={selected ? selected.slice(0, selected.lastIndexOf(':')) : null} renderTask={(tk, key, shape, groupSeparator) => (
           <TaskRow
             key={key}
-            shape={shape}
+            shape={shape} groupSeparator={groupSeparator}
             task={tk}
             project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
             labels={resolveLabels(tk.labels, labelMap)}

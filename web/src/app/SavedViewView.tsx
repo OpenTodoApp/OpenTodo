@@ -312,10 +312,10 @@ export function SavedViewView({ view, data }: { view: View; data: ViewData }) {
 
           {bulk.render(rows.find((r) => r.key === selected)?.task.id ?? null)}
           <div ref={listRef} tabIndex={-1} className="outline-none" role="region" aria-label={t('View results')}>
-            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} projectOf={opts.groupBy === 'project' ? (key) => projectMap.get(key) : undefined} selectedGroup={selected ? groupOfKey(selected) : null} renderTask={(tk, key, shape) => (
+            <ViewResults groups={groups} layout={display.layout} foldScope={`view:${view.id}`} projectOf={opts.groupBy === 'project' ? (key) => projectMap.get(key) : undefined} selectedGroup={selected ? groupOfKey(selected) : null}
+              isNested={(key) => !!nested.get(key)?.depth} renderTask={(tk, key, shape, groupSeparator) => (
               <TaskRow
-                key={key}
-                shape={shape}
+                key={key} shape={shape} groupSeparator={groupSeparator}
                 task={tk}
                 project={tk.project_id ? projectMap.get(tk.project_id) : undefined}
                 labels={resolveLabels(tk.labels, labelMap)}
