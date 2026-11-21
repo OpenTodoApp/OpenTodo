@@ -1,1 +1,0 @@
-- **A task moves to another workspace from its Project picker.** With several workspaces, the task's Project picker now lists every workspace's projects, grouped by workspace with the current one first. Picking a project in another workspace moves the task there, and another workspace's "No project" moves it to that workspace's Inbox, with Undo (#1662).
