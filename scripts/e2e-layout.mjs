@@ -15,6 +15,8 @@
 //     navigation can be text-selected, or a field, editable area or comment cannot
 //     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
 //     (touch-pressed-states, GitHub issue 1349),
+//   - a task row held for 300 ms does not rise, does not settle after an early release,
+//     or rises under reduced motion (row-lift-overscroll),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
@@ -209,6 +211,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    run.step = 'row lift'
+    for (const m of await rowLift(page)) await fail(page, 'inbox', null, `hold: ${m}`)
     for (const s of screens(ids, base)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
@@ -319,6 +323,40 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
 
 
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
+/**
+ * A held row rises before its hold arms and settles after an early release; under
+ * reduced motion it does not move (row-lift-overscroll). The touch is a pointer event
+ * of type touch on the row's title, so the same code runs in every engine.
+ */
+async function rowLift(p) {
+  const out = []
+  const row = p.locator('li[data-task-id]').first()
+  const title = row.locator('[data-row-open]').first()
+  const scale = () => row.evaluate((el) => {
+    const t = getComputedStyle(el).transform
+    return t === 'none' ? 1 : new DOMMatrixReadOnly(t).a
+  })
+  const hold = async (ms) => {
+    const box = await title.boundingBox()
+    const at = { pointerId: 41, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: box.x + 8, clientY: box.y + box.height / 2 }
+    await title.evaluate((el, at) => el.dispatchEvent(new PointerEvent('pointerdown', at)), at)
+    await p.waitForTimeout(ms)
+    const held = await scale()
+    await p.evaluate((at) => window.dispatchEvent(new PointerEvent('pointerup', at)), at)
+    return held
+  }
+  const lifted = await hold(300)
+  if (!(lifted > 1.001)) out.push(`a row held for 300 ms has not risen (scale ${lifted})`)
+  await p.waitForTimeout(400)
+  const settled = await scale()
+  if (Math.abs(settled - 1) > 0.0005) out.push(`a row released early has not settled (scale ${settled})`)
+  await p.emulateMedia({ reducedMotion: 'reduce' })
+  const still = await hold(300)
+  await p.emulateMedia({ reducedMotion: null })
+  if (Math.abs(still - 1) > 0.0005) out.push(`under reduced motion a held row moves (scale ${still})`)
+  return out
+}
+
 async function settledBox(p, overlay) {
   let prev = await overlay.boundingBox()
   for (let i = 0; i < 20; i++) {

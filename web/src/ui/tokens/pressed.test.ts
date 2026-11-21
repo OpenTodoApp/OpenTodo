@@ -31,6 +31,17 @@ describe('pressed states on touch', () => {
     expect(css.lastIndexOf('@media (pointer: coarse) {', row)).toBeGreaterThan(css.lastIndexOf('}\n', row) - 400)
   })
 
+  it('a held row rises from 150 ms over the 200 ms before the hold arms, on touch, with motion (row-lift-overscroll)', () => {
+    const at = css.indexOf(':root:not([data-motion="none"]) :is(li[data-task-id], [data-sidebar-scroll] [data-sidebar-item])[data-touch-press] {')
+    expect(at).toBeGreaterThan(0)
+    expect(css.lastIndexOf('@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {', at)).toBeGreaterThan(at - 120)
+    const rule = block(css.slice(at), '[data-touch-press] {').body
+    expect(rule).toContain('transform: scale(1.01);')
+    expect(rule).toContain('box-shadow: var(--shadow-2);')
+    expect(rule).toContain('transform 200ms var(--ease-spring) 150ms')
+    expect(rule).toContain('box-shadow 200ms var(--ease-spring) 150ms')
+  })
+
   it('the generic dim stays, as the fallback', () => {
     expect(css).toMatch(/:where\(:not\(\.ui-btn\):not\(:disabled\):not\(\[aria-disabled="true"\]\)\):active \{\s*opacity: 0\.6;/)
   })

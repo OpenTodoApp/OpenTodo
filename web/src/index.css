@@ -1222,6 +1222,19 @@ li[data-subtask-adds]:focus-within > [data-subtask-add-line] { display: block; }
   li[data-task-id] > [data-row-open]:active { opacity: 1; }
 }
 li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
+/* A held row rises (row-lift-overscroll D1): from 150 ms into the press it eases to the
+   dragged look (lib/dnd's `data-touch-press`, set from the touch until the hold ends) over
+   the 200 ms left before the hold arms, so the lift shows before the drag; an early release
+   eases it back through the row's own transition. A scroll ends the press before it rises.
+   Under reduced motion only the hold's tint shows. The background keeps the 60 ms wait of
+   the pressed look (press-feedback-delay). */
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="none"]) :is(li[data-task-id], [data-sidebar-scroll] [data-sidebar-item])[data-touch-press] {
+    transform: scale(1.01);
+    box-shadow: var(--shadow-2);
+    transition: transform 200ms var(--ease-spring) 150ms, box-shadow 200ms var(--ease-spring) 150ms, background-color 0s 60ms;
+  }
+}
 /* The bulk-selection box (bulk-actions): drawn by us, not by the platform, so it fills
    the same 20 px slot as the completion circle it stands in for on every device — the
    native control's size and alignment vary per browser and read as off-centre on a phone. */

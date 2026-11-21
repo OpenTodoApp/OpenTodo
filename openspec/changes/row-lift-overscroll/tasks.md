@@ -1,11 +1,11 @@
 ## 1. Web
 
-- [ ] 1.1 Hold rise on `[data-touch-hold]` for task and sidebar rows; vitest pins the CSS; layout check reads the transform at 300 ms
-- [ ] 1.2 Reduced motion: tint only; layout check with `reducedMotion: 'reduce'`
+- [x] 1.1 Hold rise on `[data-touch-hold]` for task and sidebar rows; vitest pins the CSS; layout check reads the transform at 300 ms
+- [x] 1.2 Reduced motion: tint only; layout check with `reducedMotion: 'reduce'`
 
 ## 2. Android
 
-- [ ] 2.1 `overScrollMode = OVER_SCROLL_NEVER` in `MainActivity.kt`; JVM test
+- [x] 2.1 `overScrollMode = OVER_SCROLL_NEVER` in `MainActivity.kt`; JVM test
 
 ## 3. Check
 
