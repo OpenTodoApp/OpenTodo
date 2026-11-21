@@ -124,11 +124,13 @@ The settings:
 | `server-export-rss` Peak memory during the JSON export | MB | 200 | 800 |
 | `server-pull-page` A sync page of 1,000 operations (95th percentile) | ms | 80 | 320 |
 | `server-push` A push of 100 operations (95th percentile) | ms | 100 | 400 |
-| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 150 | 600 |
+| `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 170 | 600 |
 | `server-get-task` `GET /api/v1/tasks/{id}` (95th percentile) | ms | 10 | 40 |
 | `server-export` The full JSON export | ms | 3,000 | 12,000 |
 | `server-mcp-search` The MCP `search_tasks` tool (95th percentile) | ms | 200 | 800 |
 | `server-db-size` The database file | MB | 150 | 150 |
+
+`server-list-project` is 170 ms for now, temporarily: the CI runner's floor is about 156 ms (95 to 161 on unchanged code), against 117 ms on a developer machine. It goes back to 150 under #1656 once the runner profile explains the floor.
 
 ### The native app
 
