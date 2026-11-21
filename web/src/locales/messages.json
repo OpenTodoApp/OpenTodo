@@ -3478,6 +3478,7 @@
   "Clear": [
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/habits/DayMenu.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/task-detail/FacetEditor.tsx",
     "web/src/app/task-detail/FieldsGroup.tsx",
     "web/src/app/views/ViewToolbar.tsx"
@@ -6767,6 +6768,9 @@
   ],
   "Filter the calendar": [
     "web/src/app/calendar/useCalendarChrome.tsx"
+  ],
+  "Filter {name}": [
+    "web/src/app/task-list/listExtras.tsx"
   ],
   "Filter: {words}. Edit the filter": [
     "web/src/app/calendar/queryFilter.tsx"
@@ -11540,7 +11544,8 @@
     "web/src/app/themes/YourThemes.tsx"
   ],
   "No time of day": [
-    "web/src/app/filter/conditionText.ts"
+    "web/src/app/filter/conditionText.ts",
+    "web/src/app/quickadd/LineDatePicker.tsx"
   ],
   "No time sector": [
     "web/src/app/filter/conditionText.ts",
@@ -14344,7 +14349,8 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Quick dates": [
-    "web/src/app/datetime/DatePicker.tsx"
+    "web/src/app/datetime/DatePicker.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx"
   ],
   "Quick wins": [
     "web/src/lib/filters.ts"
@@ -18409,7 +18415,7 @@
   "The file matches no supported format.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "The filter language of saved views, for example ##Work & p1 or @errand.": [
+  "The filter language of saved views, for example search: milk & p1 or @errand.": [
     "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
   "The first": [
@@ -20009,6 +20015,7 @@
     "web/src/app/DigestCard.tsx",
     "web/src/app/assistant/ItemEditor.tsx",
     "web/src/app/calendar/occurrenceMenu.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/rules/RuleFields.tsx",
     "web/src/app/task-detail/WhenControl.tsx"
   ],
@@ -21743,6 +21750,7 @@
     "web/src/app/AuditPanel.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
     "web/src/app/quickadd/FieldRows.tsx",
+    "web/src/app/quickadd/LineDatePicker.tsx",
     "web/src/app/routines/Starters.tsx",
     "web/src/app/routines/StepCard.tsx",
     "web/src/app/task-detail/Facets.tsx",

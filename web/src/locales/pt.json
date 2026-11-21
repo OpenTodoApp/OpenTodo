@@ -4880,7 +4880,6 @@
   "The file is not valid JSON.": "O ficheiro não é JSON válido.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "O arquivo é reduzido uma vez, num momento tranquilo; versões antigas já são removidas.",
   "The file matches no supported format.": "O arquivo não corresponde a nenhum formato suportado.",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "A linguagem de filtros das visualizações salvas, por exemplo ##Work & p1 ou @errand.",
   "The first": "A primeira",
   "The first N…": "As primeiras N…",
   "The first, the last, all, or the ones that match": "A primeira, a última, todas ou as que correspondem",
@@ -7857,5 +7856,7 @@
   "Set away": "Definir ausência",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Salta {occurrences, plural, one {# ocorrência} other {# ocorrências}} de {series, plural, one {# tarefa repetida} other {# tarefas repetidas}}",
   "The last day comes before the first": "O último dia é anterior ao primeiro",
-  "Or sponsor on GitHub": "Ou patrocine no GitHub"
+  "Or sponsor on GitHub": "Ou patrocine no GitHub",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "A linguagem de filtros das visualizações salvas, por exemplo search: milk & p1 ou @errand.",
+  "Filter {name}": "Filtrar “{name}”"
 }
