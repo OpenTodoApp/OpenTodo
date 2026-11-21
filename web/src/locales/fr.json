@@ -7857,6 +7857,10 @@
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Saute {occurrences, plural, one {# occurrence} other {# occurrences}} de {series, plural, one {# tâche récurrente} other {# tâches récurrentes}}",
   "The last day comes before the first": "Le dernier jour précède le premier",
   "Or sponsor on GitHub": "Ou soutenir sur GitHub Sponsors",
+  "Select projects": "Sélectionner des projets",
+  "Archive {projects}?": "Archiver {projects} ?",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Ils quittent la barre latérale avec leurs sous-projets. Tu peux les désarchiver depuis Réglages → Données.",
+  "Archived {projects}": "Archivé : {projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Le langage de filtre des vues enregistrées, par exemple search: milk & p1 ou @errand.",
   "Filter {name}": "Filtrer « {name} »"
 }

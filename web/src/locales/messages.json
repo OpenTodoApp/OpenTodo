@@ -2014,6 +2014,7 @@
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
     "web/src/app/menus/projectMenu.tsx",
+    "web/src/app/projectBulk.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Archive <strong>{name}</strong>? {kbd}": [
@@ -2049,6 +2050,9 @@
   "Archive with sub-projects": [
     "web/src/app/menus/projectMenu.tsx"
   ],
+  "Archive {projects}?": [
+    "web/src/app/projectBulk.tsx"
+  ],
   "Archive “{name}”?": [
     "web/src/app/menus/projectMenu.tsx"
   ],
@@ -2067,6 +2071,9 @@
   ],
   "Archived {name}.": [
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "Archived {projects}": [
+    "web/src/lib/undoActions.ts"
   ],
   "Archives are encrypted with your passphrase": [
     "web/src/app/BackupsPanel.tsx"
@@ -15944,6 +15951,9 @@
   "Select notes": [
     "web/src/app/notes/NoteBulkActions.tsx"
   ],
+  "Select projects": [
+    "web/src/app/projectBulk.tsx"
+  ],
   "Select tasks": [
     "web/src/app/task-list/ListChrome.tsx"
   ],
@@ -19203,6 +19213,9 @@
   ],
   "They go to the Trash with their subtasks. You can restore them from the Trash.": [
     "web/src/app/bulk/BulkActions.tsx"
+  ],
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": [
+    "web/src/app/projectBulk.tsx"
   ],
   "Things 3 database": [
     "web/src/app/ImportScreen.tsx"
@@ -25557,7 +25570,9 @@
   ],
   "{n, plural, one {# project} other {# projects}}": [
     "web/src/app/TemplateDialogs.tsx",
-    "web/src/app/templates/TemplateLibrary.tsx"
+    "web/src/app/projectBulk.tsx",
+    "web/src/app/templates/TemplateLibrary.tsx",
+    "web/src/lib/undoActions.ts"
   ],
   "{n, plural, one {# project} other {# projects}}, {k} need attention": [
     "web/src/app/review/MonthlyLook.tsx"

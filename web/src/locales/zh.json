@@ -7857,6 +7857,10 @@
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "跳过 {series, plural, other {# 个重复任务}}的 {occurrences, plural, other {# 次}}",
   "The last day comes before the first": "最后一天早于第一天",
   "Or sponsor on GitHub": "或在 GitHub 上赞助",
+  "Select projects": "选择项目",
+  "Archive {projects}?": "归档{projects}？",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
+  "Archived {projects}": "已归档{projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
   "Filter {name}": "筛选“{name}”"
 }

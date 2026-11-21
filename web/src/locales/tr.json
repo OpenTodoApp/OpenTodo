@@ -7857,6 +7857,10 @@
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "{series, plural, one {# tekrarlanan görevin} other {# tekrarlanan görevin}} {occurrences, plural, one {# tekrarını} other {# tekrarını}} atlar",
   "The last day comes before the first": "Son gün ilk günden önce",
   "Or sponsor on GitHub": "Ya da GitHub’da sponsor ol",
+  "Select projects": "Projeleri seç",
+  "Archive {projects}?": "{projects} arşivlensin mi?",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Alt projeleriyle birlikte kenar çubuğundan ayrılırlar. Ayarlar → Veri bölümünden arşivden çıkarabilirsiniz.",
+  "Archived {projects}": "{projects} arşivlendi",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin search: milk & p1 veya @errand.",
   "Filter {name}": "“{name}” filtrele"
 }

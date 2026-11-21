@@ -26,6 +26,10 @@ The active projects form a table, with sub-projects indented under their parent.
 
 A folded project includes its sub-projects in these figures; an unfolded one counts only its own tasks, as in the sidebar. **Collapse all** and **Expand all** are in the page's **⋯** menu. Select a row to open the project.
 
+## Archive several at once
+
+Tick rows with <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click, <kbd>Shift</kbd>+click or <kbd>Space</kbd> (on a phone, **Select projects** in **⋯**), then choose **Archive**: they go with their sub-projects, with one **Undo**.
+
 ## Health
 
 Health is one word, worked out on your device from rules you can check, the first that applies:
