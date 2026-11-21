@@ -77,6 +77,8 @@ export function TaskFacts({ stacked = false, ...props }: PropertiesProps & { sta
     { id: 'deadline', label: t('Deadline'), icon: 'hourglass', value: text('deadline'), empty: t('Set a deadline'), tone: tone('deadline') },
     { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock', value: text('reminders'), empty: t('Add a reminder') },
     { id: 'repeat', label: t('Repeat'), icon: 'repeat', value: text('repeat'), empty: t('Doesn’t repeat') },
+    // When the task was completed (GitHub issue 1667): only a completed plain task has the part.
+    { id: 'completed', label: t('Completed'), icon: 'check', value: text('completed'), empty: '', onlySet: true },
   ]
   const details: Fact[] = [
     { id: 'priority', label: t('Priority'), icon: 'flag', empty: t('Set a priority'),
