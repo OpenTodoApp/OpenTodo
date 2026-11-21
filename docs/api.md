@@ -131,7 +131,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in)); 503 `unhealthy` when the database is unreachable |
+| GET | `/healthz` | none | `{"status":"ok","version":"…","app_sign_in":true,"app_sso":true}` (`app_sign_in`: the server has [app sign-in](#app-sign-in); `app_sso`: the Android and iPhone apps can run [single sign-on in the system browser](#single-sign-on-in-the-apps)); 503 `unhealthy` when the database is unreachable |
 | GET | `/api/v1/health` | none | The same answer as `/healthz`, under the API path, for reverse proxies and platforms that answer `/healthz` themselves (Pomerium, Google Cloud Run). The mobile apps check a server here first, then at `/healthz` |
 | GET | `/api/v1/openapi.json` | none | The [OpenAPI 3.1 description](#openapi-description) of this server's API: `application/json`, gzip when accepted, `ETag` and `Cache-Control: public, max-age=3600`, readable from any site |
 | GET | `/.well-known/security.txt` | none | [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116) text: the OpenTodo project's reporting channels (`Contact`), `Expires` 180 days ahead, `Policy` (SECURITY.md), `Canonical` when `OPENTODO_BASE_URL` is set; see [Security](security/README.md) |
@@ -146,6 +146,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/demo/sandbox` | none | [demo instance](self-hosting/demo.md) only (absent otherwise): `{token}` from `auth/status` → 201 `{user}` + cookie for a new private sandbox. Requires a same-origin `Origin` header; 403 `demo_token` (missing, forged, expired or used token), 403 `bad_origin`, 429 `rate_limited` (5 per address per hour), 503 `demo_busy` |
 | GET | `/api/v1/auth/oidc/start` | none | browser navigation: 302 to the provider (links the identity instead when signed in; linking a new identity needs a fresh session) |
 | GET | `/api/v1/auth/oidc/callback` | none | provider return: 303 to `/` + cookie, or to `/?error=…` |
+| POST | `/api/v1/auth/oidc/app-continue` | none | The confirmation page's form (`ticket`, `action` = `continue` or `cancel`) in the system browser, during [single sign-on in the apps](#single-sign-on-in-the-apps): 303 to `opentodo://sso?code=…&state=…`, or with `cancel` to `opentodo://sso?state=…`; 303 to `/?error=oidc_state_invalid` for an unknown, spent or expired ticket; 403 `bad_origin` from another site |
+| POST | `/api/v1/auth/oidc/app-session` | none | `{code, code_verifier}` from the OpenTodo app's web view, after [single sign-on in the system browser](#single-sign-on-in-the-apps): 303 to `/` + cookie, or the link answers of the callback when the web view is signed in; 400 `oidc_state_invalid` for an unknown, spent, expired or mismatched code; 403 `bad_origin` from another site |
 | GET | `/api/v1/invitations/{token}` | none | preview `{inviterName, email, expiresAt}` or 404 `invitation_invalid`, see [Invitations](#invitations) |
 | GET | `/api/v1/project-invites/{token}` | none | preview `{inviterName, projectName, role, email, expiresAt, canCreateAccount, alreadyMember?}` or 404 `invitation_invalid`, see [Project invite links](#project-invite-links) |
 | POST | `/api/v1/auth/password-reset` | none | `{email}` → always 202 `{ok: true}`; mails a reset link to an active account's address, see [Outgoing email](#outgoing-email); 404 `smtp_disabled` without outgoing email, 409 `base_url_required` without `OPENTODO_BASE_URL` |
@@ -504,17 +506,27 @@ The callback answers `400 oidc_state_invalid` (missing, forged, expired or alrea
 
 **Sign-out.** `POST /auth/logout` always deletes the local session. When `providerLogout` is on and the session started through the provider, it answers `200 {"redirect":"https://sso…/end-session?client_id=…&id_token_hint=…&post_logout_redirect_uri=https://todo.example.com/"}` instead of 204, and the web app follows it after clearing local data.
 
+#### Single sign-on in the apps
+
+Providers such as Google refuse sign-in inside an app's web view, so the Android and iPhone apps run the provider step in the system browser (an `ASWebAuthenticationSession` on iPhone, a Custom Tab on Android) and bring the result back to their web view, where the session belongs:
+
+1. When `GET /api/v1/health` answers `"app_sso": true` (otherwise the app keeps the provider's pages in its web view, as with older servers), the app makes a PKCE pair and a state of its own and opens `GET /api/v1/auth/oidc/start?app_challenge=<S256 challenge>&app_state=<state>` in the system browser (400 `invalid_request` when either is malformed). An app flow always signs in: a session that browser already has is never linked.
+2. The callback verifies the identity as usual but signs nothing in. It answers with a page in the system browser that names the account ("Continue to the OpenTodo app as …?", in the browser's language where there is one, else English) with Continue and Cancel. The page holds no code and runs no script; its form posts a single-use ticket to `POST /api/v1/auth/oidc/app-continue`. Continue answers `303` to `opentodo://sso?code=<code>&state=<app_state>`, where the code is single-use, valid for two minutes and kept in memory only (a restart aborts a sign-in in flight); Cancel answers `303` to `opentodo://sso?state=<app_state>`, which the app takes as nothing happened. When the provider refused, the callback answers `303` to `opentodo://sso?error=<code>&state=<app_state>` without a page.
+3. The app checks the state and, from a page of the server in its web view, sends `POST /api/v1/auth/oidc/app-session` with `{"code", "code_verifier"}`. Without a session there the request signs in exactly as the callback of a sign-in in that web view would (`303` to `/` + cookie, or `/?error=…`); with one, it links the identity as the callback of a link would. A wrong verifier spends the code.
+
+The same address rate limit applies, and the request must come from the server's own pages (`403 bad_origin` otherwise), so another site cannot redeem its own code in someone's web view.
+
 | Code | Status | When |
 | --- | --- | --- |
 | `oidc_disabled` | 404 | `auth/oidc/start` or `callback` while no provider is configured |
-| `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state |
+| `oidc_state_invalid` | 400 | callback with a missing, forged, expired or reused state; `auth/oidc/app-session` with an unknown, spent, expired or mismatched code (`auth/oidc/app-continue` with an unknown, spent or expired ticket redirects to `/?error=oidc_state_invalid`) |
 | `identity_taken` | 409 | linking an identity that is linked to another account |
 | `reauth_required` | 403 | linking a new identity from a session that has not signed in or re-authenticated in the last ten minutes |
 | `last_credential` | 409 | unlinking the account's last way to sign in |
 | `sso_required` | 403 | password or passkey sign-in, or password registration, by a non-owner in SSO-only mode |
 | `invalid_input` | 400 | issuer not https, discovery failed or names another issuer, client id missing, scopes without `openid`, changing an environment-managed field |
 | `forbidden` | 403 | `settings/oidc` by a non-owner |
-| `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start` and `callback` together |
+| `rate_limited` | 429 | more than 20 requests per minute per address to `auth/oidc/start`, `callback`, `app-continue` and `app-session` together |
 
 ### Outgoing email
 
@@ -2708,7 +2720,7 @@ curl -sSN "$OT/api/v1/sync/events?device=my-script" -H "Authorization: Bearer $T
 - Request bodies are limited to 4 MB, except import uploads (`OPENTODO_IMPORT_MAX_MB`, default 20 MB); some routes set a smaller limit. A larger body is refused with 413 `too_large`.
 - A JSON body is exactly one JSON value: anything after it but white space is refused with 400 `bad_request`. A field the route does not define is refused with 400 `bad_request` naming it (`invalid JSON body: unknown field "x"`), except on `POST /api/v1/sync` (ops may carry properties a newer client knows), the push subscription (the browser's `PushSubscription.toJSON()`) and the passkey `credential` (the browser's `PublicKeyCredential.toJSON()`). The entity routes (`/tasks`, `/projects`, …) check their fields themselves and answer 400 `invalid_input` for an unknown one. Error messages describe the problem in plain words, never the server's internal types.
 - Password checks are limited to twice the server's CPU count at a time (at least 2). A sign-in, registration or password change that waits more than a second for one is answered 503 `busy` with `Retry-After`.
-- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start` and `auth/oidc/callback` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour, adding people to projects and workspaces by email 30 per hour.
+- Rate limits (per IP): `auth/login`, `auth/register`, `auth/passkey`, the invitation preview, the project invite link preview and accept routes, the password-reset routes, `auth/password-reset` and `auth/verify` share one window of 10 per minute; `auth/passkey/options`, `auth/mfa` and `auth/reauth` each have their own window of 10 per minute; `auth/oidc/start`, `auth/oidc/callback`, `auth/oidc/app-continue` and `auth/oidc/app-session` share a window of 20 per minute; failed `/mcp` authentications count toward the login window. Per account: invitation creation 20 per hour, project invite link creation 20 per hour, mutating `/users` requests 60 per hour, `/me/password` 10 per hour, new comments 60 per minute, email-inbox changes 30 per hour, adding people to projects and workspaces by email 30 per hour.
 
 ### Error codes
 

@@ -2054,6 +2054,7 @@
       "listed"
     ],
     "oidc_state_invalid": [
+      "400",
       "listed"
     ],
     "other_workspace": [
@@ -4818,6 +4819,7 @@
       "policy": "public",
       "response": {
         "app_sign_in": "boolean",
+        "app_sso": "boolean",
         "status": "string",
         "version": "string"
       },
@@ -8329,6 +8331,16 @@
       "statuses": [
         "200"
       ]
+    },
+    "POST /api/v1/auth/oidc/app-continue": {
+      "policy": "public"
+    },
+    "POST /api/v1/auth/oidc/app-session": {
+      "policy": "public",
+      "request": {
+        "code": "string",
+        "code_verifier": "string"
+      }
     },
     "POST /api/v1/auth/passkey": {
       "policy": "public",

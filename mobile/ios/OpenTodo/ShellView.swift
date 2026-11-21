@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 import UIKit
 import WebKit
@@ -42,6 +43,10 @@ final class ShellController: NSObject, ObservableObject {
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
+    /// Single sign-on running in the system browser (app-sso-system-browser).
+    private var authSession: ASWebAuthenticationSession?
+    /// The next navigation to the start route stays in the web view: the server is older.
+    private var webViewStart = false
 
     init(origin: URL) {
         self.origin = origin
@@ -285,6 +290,65 @@ extension ShellController {
     }
 }
 
+extension ShellController: ASWebAuthenticationPresentationContextProviding {
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        webView.window ?? ASPresentationAnchor()
+    }
+
+    /// OpenTodo's own single sign-on: in the system browser when the server announces it
+    /// (`app_sso`), otherwise in the web view as before.
+    func beginSystemSignIn(_ start: URL) {
+        guard authSession == nil else { return }
+        var request = URLRequest(url: origin.appendingPathComponent("api/v1/health"), timeoutInterval: 10)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        URLSession.shared.dataTask(with: request) { data, response, _ in
+            let supported = (response as? HTTPURLResponse)?.statusCode == 200 && data.map(SystemSignIn.supported(healthBody:)) == true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                if supported {
+                    self.presentSystemSignIn()
+                } else {
+                    self.webViewStart = true
+                    self.webView.load(URLRequest(url: start))
+                }
+            }
+        }.resume()
+    }
+
+    private func presentSystemSignIn() {
+        let pending = SystemSignIn.pending()
+        let session = ASWebAuthenticationSession(url: SystemSignIn.startURL(server: origin, pending),
+                                                 callbackURLScheme: SystemSignIn.callbackScheme) { [weak self] url, _ in
+            DispatchQueue.main.async { self?.finishSystemSignIn(url, pending) }
+        }
+        session.presentationContextProvider = self
+        authSession = session
+        if !session.start() { authSession = nil }
+    }
+
+    /// The sheet closed. A code is redeemed by the page of the server showing, so the session
+    /// cookie lands in the web view; an error code shows on the sign-in screen; a closed
+    /// sheet leaves the screen as it was.
+    private func finishSystemSignIn(_ url: URL?, _ pending: SystemSignIn.Pending) {
+        authSession = nil
+        guard let url else { return }
+        switch SystemSignIn.outcome(of: url, state: pending.state) {
+        case .code(let code):
+            // The code and its verifier go only to a page of the server. Anywhere else (a login
+            // wall, an error page) the code is dropped and the sign-in screen says it failed.
+            guard let page = webView.url, Origin.same(page, origin) else {
+                webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: "oidc_failed")))
+                return
+            }
+            webView.evaluateJavaScript(SystemSignIn.redeemScript(code: code, verifier: pending.verifier))
+        case .error(let code):
+            webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: code)))
+        case .invalid:
+            break
+        }
+    }
+}
+
 extension ShellController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -298,6 +362,15 @@ extension ShellController: WKNavigationDelegate {
             if scheme == "blob" || scheme == "data" { return decisionHandler(.cancel) }
         }
         let mainFrame = action.targetFrame.map { $0.isMainFrame }
+        if mainFrame == true, SystemSignIn.isStart(url, server: origin) {
+            if webViewStart {
+                webViewStart = false
+            } else {
+                decisionHandler(.cancel)
+                beginSystemSignIn(url)
+                return
+            }
+        }
         switch Self.route(url, mainFrame: mainFrame, type: action.navigationType, provisional: provisional && mainFrame == true,
                           onSignInPage: foreignHost != nil, flow: flow, server: origin) {
         case .allow:

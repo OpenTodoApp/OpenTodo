@@ -9,6 +9,7 @@ import (
 
 	"github.com/OpenTodoApp/opentodo/internal/audit"
 	"github.com/OpenTodoApp/opentodo/internal/auth"
+	"github.com/OpenTodoApp/opentodo/internal/mcpoauth"
 	"github.com/OpenTodoApp/opentodo/internal/oidc"
 	"github.com/OpenTodoApp/opentodo/internal/textutil"
 )
@@ -25,9 +26,23 @@ const oidcStateCookie = "ot_oidc"
 
 const oidcCallbackPath = "/api/v1/auth/oidc/callback"
 
+// App flow (OpenSpec change app-sso-system-browser): the OpenTodo app opens
+// the start route in the system's authentication sheet with its own PKCE
+// challenge, because identity providers such as Google refuse sign-in inside
+// an app's web view. The callback asks the person to confirm (appSSOContinuePath),
+// then sends a single-use code to appSSORedirect,
+// and the app redeems it with its verifier from its web view at
+// appSSOSessionPath, where the session cookie belongs.
+const (
+	appSSORedirect    = "opentodo://sso"
+	appSSOSessionPath = "/api/v1/auth/oidc/app-session"
+)
+
 func (s *Server) registerOIDCRoutes(mux *routes) {
 	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").DemoDenied(), s.handleOIDCStart)
 	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").DemoDenied(), s.handleOIDCCallback)
+	mux.handle("POST "+appSSOContinuePath, public("the person confirms an app sign-in in the system browser before there is a session").DemoDenied(), s.handleOIDCAppContinue)
+	mux.handle("POST "+appSSOSessionPath, public("the app redeems its single sign-on code before there is a session").DemoDenied(), s.handleOIDCAppSession)
 	mux.handle("GET /api/v1/settings/oidc", ownerOnly("manage single sign-on"), s.handleGetOIDCSettings)
 	mux.handle("PUT /api/v1/settings/oidc", ownerOnly("manage single sign-on").Sensitive().DemoDenied(), s.handlePutOIDCSettings)
 	mux.handle("POST /api/v1/settings/oidc/test", ownerOnly("manage single sign-on").DemoDenied(), s.handleTestOIDC)
@@ -110,12 +125,22 @@ func (s *Server) handleOIDCStart(w http.ResponseWriter, r *http.Request) {
 		s.oidcFail(w, r, "/", "oidc_failed")
 		return
 	}
+	app, msg := parseAppSSO(r.URL.Query())
+	if msg != "" {
+		writeError(w, http.StatusBadRequest, "invalid_request", msg)
+		return
+	}
 	// With a session the flow links an identity to that account (design D4).
+	// An app flow never does: the sheet's browser session is not the app's, so
+	// the app's web view decides when it redeems the code.
 	mode, userID := oidc.ModeLogin, ""
-	if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil {
+	if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil && app == nil {
 		mode, userID = oidc.ModeLink, sess.User.ID
 	}
 	f := s.oidc.States().New(mode, userID, c.Issuer)
+	if app != nil {
+		f.AppChallenge, f.AppState = app.challenge, app.state
+	}
 	s.setStateCookie(w, r, s.oidc.States().Encode(f), int(oidc.FlowTTL.Seconds()))
 	w.Header().Set("Cache-Control", "no-store")
 	http.Redirect(w, r, oidc.AuthCodeURL(m, c.ClientID, s.oidcRedirectURI(r), c.Scopes, f.State, f.Nonce, f.Verifier), http.StatusFound)
@@ -147,10 +172,17 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	if f.Mode == oidc.ModeLink {
 		page = "/settings/account/security"
 	}
+	fail := func(code string) {
+		if f.AppChallenge != "" {
+			toApp(w, r, f, url.Values{"error": {code}})
+			return
+		}
+		s.oidcFail(w, r, page, code)
+	}
 	if e := q.Get("error"); e != "" || q.Get("code") == "" {
 		s.log.Info("oidc provider refused sign-in", "error", truncateLog(e))
 		s.audit.Record(ctx, audit.LoginFailed("", "", "oidc_provider_error"))
-		s.oidcFail(w, r, page, "oidc_failed")
+		fail("oidc_failed")
 		return
 	}
 	prov := s.oidc.Provider(c.Issuer)
@@ -166,18 +198,40 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.log.Warn("oidc sign-in failed", "err", err)
 		s.audit.Record(ctx, audit.LoginFailed("", "", "oidc_token_invalid"))
-		s.oidcFail(w, r, page, "oidc_failed")
+		fail("oidc_failed")
 		return
 	}
+	if f.AppChallenge != "" {
+		// Held until the person confirms on the page that names the account (design D6).
+		ticket := s.oidc.Handoffs().Hold(oidc.Handoff{Claims: *claims, IDToken: raw, Issuer: f.Issuer, Challenge: f.AppChallenge, AppState: f.AppState})
+		if ticket == "" {
+			fail("rate_limited")
+			return
+		}
+		s.showAppContinue(w, r, ticket, claims)
+		return
+	}
+	if f.Mode == oidc.ModeLink {
+		s.finishOIDCLink(w, r, c, f.UserID, identityOf(claims), claims.Picture)
+		return
+	}
+	s.finishOIDCLogin(w, r, c, identityOf(claims), raw, claims.Picture)
+}
+
+// identityOf is the account-side view of verified claims.
+func identityOf(claims *oidc.Claims) auth.ExternalIdentity {
 	id := auth.ExternalIdentity{Issuer: claims.Issuer, Subject: claims.Subject, Email: claims.Email,
 		EmailVerified: bool(claims.EmailVerified), Name: claims.Name}
 	if id.Name == "" {
 		id.Name = claims.PreferredUsername
 	}
-	if f.Mode == oidc.ModeLink {
-		s.finishOIDCLink(w, r, c, f, id, claims.Picture)
-		return
-	}
+	return id
+}
+
+// finishOIDCLogin signs in the account of a verified identity, provisioning or
+// linking it by email when the rules allow (design D3).
+func (s *Server) finishOIDCLogin(w http.ResponseWriter, r *http.Request, c oidc.Config, id auth.ExternalIdentity, raw, picture string) {
+	ctx := r.Context()
 	u, _, linked, err := s.auth.MatchOrProvision(ctx, id, c.AllowProvision, c.Name())
 	switch {
 	case errors.Is(err, auth.ErrLinkRequiresSession):
@@ -231,16 +285,85 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		s.log.Warn("store identity-token hint", "err", err)
 	}
 	s.audit.Record(ctx, audit.LoginSucceeded(u.ID, u.Email, "oidc"))
-	s.syncProviderPicture(ctx, u, c, claims.Picture)
+	s.syncProviderPicture(ctx, u, c, picture)
 	redirectTo(w, r, "/", nil)
 }
 
-// finishOIDCLink links the identity to the account that started the flow. The
-// same account must still be signed in on this browser.
-func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.Config, f *oidc.FlowState, id auth.ExternalIdentity, picture string) {
+// appSSORequest is the app's part of an app flow.
+type appSSORequest struct{ challenge, state string }
+
+// parseAppSSO reads the app's challenge and state from the start route's
+// query: nil when there are none, an error message when they are malformed.
+func parseAppSSO(q url.Values) (*appSSORequest, string) {
+	req := &appSSORequest{challenge: q.Get("app_challenge"), state: q.Get("app_state")}
+	switch {
+	case req.challenge == "" && req.state == "":
+		return nil, ""
+	case !mcpoauth.ValidChallenge(req.challenge):
+		return nil, "app_challenge must be an S256 code challenge"
+	case req.state == "" || len(req.state) > mcpoauth.MaxState:
+		return nil, "app_state is required, at most 512 bytes"
+	}
+	return req, ""
+}
+
+// toApp ends an app flow in the sheet: it sends the browser to the app with
+// the app's state and a code or an error code.
+func toApp(w http.ResponseWriter, r *http.Request, f *oidc.FlowState, q url.Values) {
+	q.Set("state", f.AppState)
+	redirectTo(w, r, appSSORedirect, q)
+}
+
+// handleOIDCAppSession redeems an app flow's code from the app's web view. It
+// finishes like the callback of a flow run in that web view: with a session
+// there it links the identity to that account, without one it signs in.
+func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
+	if !s.oidcLimiter.allow(clientIP(r)) {
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
+		return
+	}
+	// A browser page of another site may not redeem a code: holding its own
+	// code and verifier, it could sign the web view in to the wrong account or
+	// link a foreign identity to a signed-in one. This refuses what a browser
+	// declares cross-site (Origin, Sec-Fetch-Site); a client that is not a
+	// browser sends neither, and is let through like any API client. Such a
+	// client holding a code and its verifier gets a session for itself, which
+	// is the accepted risk of a custom URL scheme (design D6).
+	if !s.cookieWriteAllowed(r) {
+		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
+		return
+	}
+	c, ok := s.oidcConfig(w, r)
+	if !ok {
+		return
+	}
+	var in struct {
+		Code     string `json:"code"`
+		Verifier string `json:"code_verifier"`
+	}
+	if err := readJSON(r, &in); err != nil {
+		badBody(w, err)
+		return
+	}
+	h, ok := s.oidc.Handoffs().Take(in.Code, func(challenge string) bool { return mcpoauth.VerifyS256(challenge, in.Verifier) })
+	if !ok || h.Issuer != c.Issuer {
+		s.audit.Record(r.Context(), audit.LoginFailed("", "", "oidc_state_invalid"))
+		writeError(w, http.StatusBadRequest, "oidc_state_invalid", oidc.ErrStateInvalid.Error())
+		return
+	}
+	if _, sess, _, err := s.authenticateSession(r); err == nil && sess != nil {
+		s.finishOIDCLink(w, r, c, sess.User.ID, identityOf(&h.Claims), h.Claims.Picture)
+		return
+	}
+	s.finishOIDCLogin(w, r, c, identityOf(&h.Claims), h.IDToken, h.Claims.Picture)
+}
+
+// finishOIDCLink links the identity to the account that started the flow
+// (userID). The same account must still be signed in on this browser.
+func (s *Server) finishOIDCLink(w http.ResponseWriter, r *http.Request, c oidc.Config, userID string, id auth.ExternalIdentity, picture string) {
 	ctx := r.Context()
 	_, sess, _, err := s.authenticateSession(r)
-	if err != nil || sess == nil || sess.User.ID != f.UserID {
+	if err != nil || sess == nil || sess.User.ID != userID {
 		s.oidcError(w, r, http.StatusBadRequest, "oidc_state_invalid", "sign in again before linking an account", "/settings/account/security")
 		return
 	}

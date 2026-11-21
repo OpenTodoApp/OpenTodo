@@ -68,6 +68,9 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
     private var mainFrameFailed = false
     private var pendingShare: Intent? = null
     private var pendingFilesScript: String? = null
+    /** Single sign-on running in the browser (app-sso-system-browser), and its redeem script for the next server page. */
+    private var ssoPending: SystemSignIn.Pending? = null
+    private var pendingRedeemScript: String? = null
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var permissionDone: ((Boolean) -> Unit)? = null
     private val io = Executors.newSingleThreadExecutor()
@@ -118,6 +121,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // The browser may outlive this process: the sign-in it runs still comes back to it.
+        savedInstanceState?.getStringArray(STATE_SSO)?.let { ssoPending = SystemSignIn.Pending(it[0], it[1], it[2]) }
         setContentView(R.layout.activity_main)
         web = findViewById(R.id.web)
         errorView = findViewById(R.id.error)
@@ -166,6 +171,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         } else {
             start()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        ssoPending?.let { outState.putStringArray(STATE_SSO, arrayOf(it.verifier, it.challenge, it.state)) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -273,11 +283,54 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         when {
             intent?.action == ACTION_CHANGE_SERVER -> { if (web.url == null) load("$base/"); confirmChangeServer() }
             isShare(intent) -> share(intent!!)
+            intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == SystemSignIn.CALLBACK_SCHEME ->
+                finishSystemSignIn(intent.data.toString(), base)
             intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "opentodo-open" -> {
                 val path = intent.data?.schemeSpecificPart.orEmpty()
                 load(base + if (path.startsWith("/") && !path.startsWith("//")) path else "/")
             }
             web.url == null -> load("$base/")
+        }
+    }
+
+    /** OpenTodo's own single sign-on: in a Custom Tab when the server announces it, otherwise in the web view as before. */
+    private fun beginSystemSignIn(start: String, base: String) {
+        io.execute {
+            val supported = SystemSignIn.askServer(base)
+            runOnUiThread {
+                if (!supported) { load(start); return@runOnUiThread }
+                val p = SystemSignIn.pending()
+                // A Custom Tab where the browser has them, without the AndroidX browser library:
+                // the session extra is all the protocol asks for; other browsers open a page.
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(SystemSignIn.startUrl(base, p)))
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .putExtras(Bundle().apply { putBinder("android.support.customtabs.extra.SESSION", null) })
+                try { startActivity(intent); ssoPending = p } catch (e: ActivityNotFoundException) { load(start) }
+            }
+        }
+    }
+
+    /**
+     * The browser came back. A code is redeemed by a page of the server, so the session cookie
+     * lands in the web view; an error code shows on the sign-in screen; anything else (another
+     * app's link, a sign-in this app did not start) changes nothing.
+     */
+    private fun finishSystemSignIn(callback: String, base: String) {
+        val p = ssoPending
+        val outcome = if (p == null) SystemSignIn.Outcome.Invalid else SystemSignIn.outcome(callback, p.state)
+        // Only the answer to this sign-in ends it: another app opening opentodo://sso with any
+        // other state leaves the pending sign-in as it was.
+        if (outcome != SystemSignIn.Outcome.Invalid) ssoPending = null
+        when (outcome) {
+            is SystemSignIn.Outcome.Code -> {
+                val script = SystemSignIn.redeemScript(outcome.code, p!!.verifier)
+                if (SignInFlow.originOf(web.url ?: "") == base) web.evaluateJavascript(script, null)
+                else { pendingRedeemScript = script; load("$base/") }
+            }
+            is SystemSignIn.Outcome.Error -> load(SystemSignIn.errorUrl(base, outcome.code))
+            // Cancel on the confirmation page: the sign-in is over and the screen stays as it was.
+            SystemSignIn.Outcome.Cancelled -> if (web.url == null) load("$base/")
+            SystemSignIn.Outcome.Invalid -> if (web.url == null) load("$base/")
         }
     }
 
@@ -343,6 +396,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             val url = request.url
             // The main frame stays on the server, and on another origin only inside a sign-in
             // flow (a login wall, single sign-on: SignInFlow); everything else opens outside.
+            val base = origin
+            if (request.isForMainFrame && base != null && SystemSignIn.isStart(url.toString(), base)) {
+                beginSystemSignIn(url.toString(), base)
+                return true
+            }
             val f = flow
             val stays = if (request.isForMainFrame && f != null) f.decide(url.toString(), request.isRedirect, request.hasGesture()) == SignInFlow.Decision.STAY
             else Bridge.originOf(url) == origin
@@ -395,6 +453,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             CookieManager.getInstance().flush()
             if (cameFromSignIn) { cameFromSignIn = false; view.clearHistory() }
             if (!mainFrameFailed && !serveOffline) scheduleShellRefresh()
+            // The code and its verifier go only to a page of the server that loaded: a login
+            // wall on another origin returned above, and a failed load drops them.
+            pendingRedeemScript?.let {
+                pendingRedeemScript = null
+                if (!mainFrameFailed && SignInFlow.originOf(url) == origin) view.evaluateJavascript(it, null)
+            }
             val script = pendingFilesScript ?: return
             if (Uri.parse(url).path == "/share") {
                 pendingFilesScript = null
@@ -708,5 +772,6 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
 
     companion object {
         const val ACTION_CHANGE_SERVER = "app.opentodo.CHANGE_SERVER"
+        private const val STATE_SSO = "sso_pending"
     }
 }
