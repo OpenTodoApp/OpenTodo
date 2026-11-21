@@ -15,8 +15,11 @@
 //     navigation can be text-selected, or a field, editable area or comment cannot
 //     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
 //     (touch-pressed-states, GitHub issue 1349),
-//   - pressing a task row's completion circle shows a pressed look before 60 ms, or not
-//     by 100 ms, or the row shows one too (press-feedback-delay),
+//   - pressing a task row's completion circle shows no pressed colour by 100 ms, the
+//     engine does not hold that colour back 60 ms, or the row is pressed with it
+//     (press-feedback-delay),
+//   - on the touch screen a hover look appears under a resting pointer, or a tap on a
+//     field or a switch leaves a focus ring while Tab after it draws none (touch-input-mode),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
@@ -213,6 +216,10 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     run.step = 'press feedback'
     for (const m of await pressFeedback(page)) await fail(page, 'inbox', null, `press: ${m}`)
+    run.step = 'touch input'
+    for (const m of await touchInput(page, base)) await fail(page, 'settings', null, `touch input: ${m}`)
+    await page.goto(base + '/inbox')
+    await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
     for (const s of screens(ids, base)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
@@ -384,6 +391,63 @@ async function pressOnce(p, n) {
   if (held.circle !== held.pressed) out.push(`the circle shows no pressed colour 100 ms in (${held.circle}, pressed is ${held.pressed})`)
   else if (held.wait === null || held.wait < 60) out.push(`the pressed circle's colour does not wait 60 ms (its transition delay is ${held.wait ?? 'none'})`)
   if (early.rowPressed || held.rowPressed) out.push('the row counts as pressed while its circle is')
+  return out
+}
+
+/**
+ * Hover and focus follow the input (touch-input-mode): a pointer resting on a task row
+ * gives it no hover look, a tapped field and a tapped switch draw no focus ring, and Tab
+ * after them draws one. The switch is tapped twice, so the setting is as it was.
+ */
+async function touchInput(p, base) {
+  const out = []
+  // The third row, away from the two the press check uses, read once its colour has
+  // settled; it fails only on the hover colour itself (--ot-hover), drawn on a canvas so
+  // two spellings of one colour compare equal.
+  const row = p.locator('li[data-task-id]').nth(2)
+  const bg = () => row.evaluate((el) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (c) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const d = document.createElement('div'); d.style.backgroundColor = 'var(--ot-hover)'; document.body.append(d)
+    const hover = rgba(getComputedStyle(d).backgroundColor); d.remove()
+    return { now: rgba(getComputedStyle(el).backgroundColor), hover }
+  })
+  await row.scrollIntoViewIfNeeded()
+  let rest = await bg()
+  for (let i = 0; i < 10; i++) {
+    await p.waitForTimeout(150)
+    const next = await bg()
+    if (next.now === rest.now) break
+    rest = next
+  }
+  const box = await row.boundingBox()
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.waitForTimeout(300)
+  const hovered = await bg()
+  if (hovered.now === hovered.hover && rest.now !== rest.hover) out.push('a resting pointer gives a task row its hover look')
+  await p.mouse.move(0, 0)
+  // The ring of the focused element: an outline or a box-shadow drawn by the focus.
+  const ring = () => p.evaluate(() => {
+    const el = document.activeElement
+    if (!el || el === document.body) return 'nothing focused'
+    const cs = getComputedStyle(el)
+    return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 ? `outline on ${el.tagName.toLowerCase()}` : cs.boxShadow !== 'none' && el.matches('.ui-input') ? `ring on ${el.tagName.toLowerCase()}` : ''
+  })
+  for (const [name, path, selector, twice] of [['field', '/settings/general/focus', 'input.ui-input:visible', false], ['switch', '/settings/general/focus', '[role="switch"]:visible', true]]) {
+    await p.goto(base + path)
+    const target = p.locator(selector).first()
+    await target.waitFor({ timeout: 10000 }).catch(() => {})
+    if (!(await target.count())) { out.push(`no ${name} on ${path} to tap`); continue }
+    await target.tap()
+    await p.waitForTimeout(100)
+    const after = await ring()
+    if (after) out.push(`a tapped ${name} shows a focus ring (${after})`)
+    if (twice) await target.tap()
+    await p.keyboard.press('Tab')
+    await p.waitForTimeout(100)
+    const tabbed = await ring()
+    if (!tabbed.startsWith('outline') && !tabbed.startsWith('ring')) out.push(`Tab after a tapped ${name} draws no focus ring (${tabbed || 'none'})`)
+  }
   return out
 }
 

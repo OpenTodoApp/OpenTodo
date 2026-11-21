@@ -39,6 +39,11 @@
 /* `pins`: from 768 px, except on a phone held in landscape (coarse pointer, under 500 px
    tall), where a pinned row would cover the top of the list (stickyQuickAdd.ts). */
 @custom-variant pins (@media (width >= 48rem) and (not ((pointer: coarse) and (height < 500px))));
+/* Focus rings follow the input in use (touch-input-mode D2, lib/inputMode.ts): a ring for
+   a keyboard, a mouse or a trackpad, none after a tap. `focus-ring:` is the same for a
+   field's `:focus` ring; its border still shows the focus. */
+@custom-variant focus-visible (&:where(:root:not([data-input="touch"]) *):focus-visible);
+@custom-variant focus-ring (&:where(:root:not([data-input="touch"]) *):focus);
 
 @theme inline {
   /* A theme may set --ot-font (theme-engine D1: a system, serif, monospace or installed
@@ -806,7 +811,7 @@ body {
 /* Shared Input (src/ui/Field.tsx): 40 px tall, so it lines up with a medium button. */
 .ui-input {
   @apply w-full min-w-0 rounded-control border border-input bg-surface px-3 py-2 text-body text-default placeholder:text-faint
-    focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30;
+    focus:border-focus focus:outline-none focus-ring:ring-2 focus-ring:ring-focus/30;
 }
 /* The three surfaces (ux-overhaul, design-system "Three surfaces"): a row, a card
    and an overlay. Dark pairs a border with the elevation, which does not read on a
@@ -934,7 +939,7 @@ select.ui-input:not([multiple]) {
    through; one the reader cannot open is muted text with no hover. */
 .note-ref { @apply inline-flex max-w-full items-baseline gap-0.5 rounded-chip px-0.5 text-accent no-underline transition-colors duration-(--duration-ui) ease-calm; }
 .note-ref svg { @apply shrink-0 self-center; }
-a.note-ref:hover { @apply bg-accent-soft underline; }
+@media (hover: hover) { a.note-ref:hover { @apply bg-accent-soft underline; } }
 a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .note-ref[data-ref-state="done"] { @apply text-muted line-through; }
 .note-ref[data-ref-state="muted"] { @apply cursor-default text-muted; }
@@ -973,7 +978,8 @@ a.note-ref:focus-visible { @apply outline-2 outline-focus; }
 .connections-node__label { @apply min-w-0 truncate; }
 .connections-node--done .connections-node__label { @apply text-muted line-through; }
 .connections-node__tip { @apply pointer-events-none absolute top-full left-1/2 mt-1 hidden max-w-60 -translate-x-1/2 truncate rounded-chip border border-default bg-surface px-1.5 py-0.5 text-meta font-normal text-strong; }
-.connections-node:hover .connections-node__tip, .connections-node:focus-visible .connections-node__tip { @apply block; }
+.connections-node:focus-visible .connections-node__tip { @apply block; }
+@media (hover: hover) { .connections-node:hover .connections-node__tip { @apply block; } }
 .connections-graph__more { @apply pointer-events-none absolute top-0 left-0 inline-flex items-center justify-center text-meta text-faint tabular-nums; }
 @media (forced-colors: active) {
   .connections-graph__edge { stroke: CanvasText; }
@@ -1064,7 +1070,7 @@ body[data-span-dragging] [data-span-piece] { pointer-events: none; }
   border-inline-start: 3px dashed var(--hue-solid);
   color: var(--ot-muted);
 }
-.ui-block--projected:hover { background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface)); }
+@media (hover: hover) { .ui-block--projected:hover { background: color-mix(in oklab, var(--hue-soft) 70%, var(--ot-surface)); } }
 html:root[data-contrast="high"] .ui-block--projected:not(:focus-visible) { background: var(--ot-surface); outline: 1px dashed var(--hue-solid); outline-offset: -1px; }
 .ui-block--late {
   background: var(--ot-danger-soft);
@@ -1200,7 +1206,7 @@ button.ui-column-add { @apply flex-row items-start justify-start px-3 py-2.5 hov
    lighter hover surface; hovering the selected row adds nothing. */
 .row-selected { background-color: var(--ot-selected-row); }
 .row-selected::before { content: ''; position: absolute; inset-block: 0.375rem; inset-inline-start: 0; width: 2px; border-radius: 9999px; background-color: var(--text-color-accent); }
-.row-hover:hover { background-color: var(--ot-hover); }
+@media (hover: hover) { .row-hover:hover { background-color: var(--ot-hover); } }
 /* The "Add a subtask" line under a parent's last visible subtask (quick-subtask-add,
    GitHub issue 1191): out of the list and the tab order until the parent is the
    selected row; it stays while an input inside holds focus. */
@@ -1424,8 +1430,10 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   /* Reserve the slot while the code that fits the labels loads. */
   [data-row-label-fallback] { visibility: hidden; }
   /* The trailing row actions can overlap the slot when the later slots are empty. */
-  [data-task-id]:has([data-row-cell="labels"]:hover [data-tip]) > [data-row-actions]:not(:focus-within) {
-    opacity: 0; pointer-events: none;
+  @media (hover: hover) {
+    [data-task-id]:has([data-row-cell="labels"]:hover [data-tip]) > [data-row-actions]:not(:focus-within) {
+      opacity: 0; pointer-events: none;
+    }
   }
   /* A value that leads with its icon takes its baseline from its text, not from the icon. */
   [data-row-cell] :is([data-date], [data-estimate]) { align-items: baseline; }
@@ -1558,7 +1566,8 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
   --fade-bottom: 0px;
   --fade: linear-gradient(to bottom, transparent, black var(--fade-top), black calc(100% - var(--fade-bottom)), transparent);
 }
-.ui-scroller:hover, .ui-scroller:focus-within { scrollbar-color: var(--ot-border-input) transparent; }
+.ui-scroller:focus-within { scrollbar-color: var(--ot-border-input) transparent; }
+@media (hover: hover) { .ui-scroller:hover { scrollbar-color: var(--ot-border-input) transparent; } }
 /* A tab row's baseline (tab-row-scrollbar D1): an inset box-shadow on the bar around the
    row, not a border, so the selected tab's underline covers it without overflowing the
    row; the row inside scrolls sideways only and never shows a vertical scrollbar (GitHub
@@ -1568,7 +1577,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 @media (forced-colors: active) { .ui-tab-row { border-bottom: 1px solid CanvasText; } }
 .ui-scroller::-webkit-scrollbar { width: 6px; }
 .ui-scroller::-webkit-scrollbar-thumb { border-radius: 3px; background: var(--ot-border); }
-.ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); }
+@media (hover: hover) { .ui-scroller:hover::-webkit-scrollbar-thumb { background: var(--ot-border-input); } }
 .ui-scroller[data-fade-top] { --fade-top: 0.75rem; }
 .ui-scroller[data-fade-bottom] { --fade-bottom: 1rem; }
 /* Sideways (a tab row wider than the screen in a long translation): the tabs fade out at
@@ -1883,7 +1892,8 @@ html:root[data-contrast="high"] .quick-add-tint { background-color: transparent;
   content: ""; position: absolute; inset-block: 0; left: 50%; width: 2px; transform: translateX(-50%);
   background-color: transparent; transition: background-color var(--duration-ui, 120ms) var(--ease-calm, ease-out);
 }
-.panel-resize:hover::after, .panel-resize:focus-visible::after, .panel-resize:active::after { background-color: var(--color-accent); }
+.panel-resize:focus-visible::after, .panel-resize:active::after { background-color: var(--color-accent); }
+@media (hover: hover) { .panel-resize:hover::after { background-color: var(--color-accent); } }
 
 /* The frame (precision-shell D3): the whole content surface, from its left edge, so the
    docked panel narrows it from the right and nothing moves. */

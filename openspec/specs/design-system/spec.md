@@ -1370,6 +1370,17 @@ On a touch device the pressed look of a control SHALL appear only after the fing
 - **WHEN** a person presses the completion circle of a row and holds it for 100 ms
 - **THEN** the circle shows its pressed look and the row does not
 
+### Requirement: Hover and focus follow the input in use
+A hover look SHALL only apply on a device whose pointer can hover. A focus ring SHALL be drawn when focus comes from a keyboard, a mouse or a trackpad, or from assistive technology, and SHALL NOT be drawn when focus comes from a tap. A field focused by a tap SHALL still show that it is focused by its border and caret. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A tap on a switch
+- **WHEN** a person taps a switch on a phone
+- **THEN** the switch changes and no focus ring or hover look stays on it
+
+#### Scenario: Tab after taps
+- **WHEN** a person who has been tapping presses Tab on an iPad's hardware keyboard
+- **THEN** the focused control shows its focus ring
+
 ### Requirement: Haptics for switches, segments, failures and lifts
 With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
 

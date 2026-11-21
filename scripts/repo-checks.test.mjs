@@ -20,6 +20,7 @@ import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshne
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
 import { finishedProblems, gitLastTouched, openChanges, staleWarnings, taskCounts } from './openspec-hygiene.mjs'
+import { unguardedHover } from './css-hover.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (p) => readFileSync(path.join(root, p), 'utf8')
@@ -1120,4 +1121,12 @@ test('the OpenSpec hygiene check finds finished and stale changes', () => {
   assert.deepEqual(staleWarnings(changes, (n) => dates[n] ?? '', new Date('2026-11-17T12:00:00Z')), [
     'openspec/changes/old: 1/3 tasks, untouched since 2026-10-29 (19 days)',
   ])
+})
+
+test('every :hover in the web app\'s CSS needs a pointer that hovers (touch-input-mode)', () => {
+  const css = (dir) => readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? (e.name === 'node_modules' || e.name === 'generated' ? [] : css(`${dir}/${e.name}`)) : e.name.endsWith('.css') ? [`${dir}/${e.name}`] : [])
+  const found = css('web/src').flatMap((f) => unguardedHover(read(f)).map((h) => `${f}:${h.line} ${h.selector}`))
+  assert.deepEqual(found, [], 'wrap these in @media (hover: hover)')
+  assert.deepEqual(unguardedHover('a:hover { x: 1 }\n@media (hover: hover) { b:hover { y: 2 } }\nc { &:hover { z: 3 } }').map((h) => h.line), [1, 3])
 })
