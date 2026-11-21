@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -426,25 +427,8 @@ func (s *Server) handleTaskPageFile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var a opsync.Entity
-	if !rp.encrypted {
-		for _, x := range rp.tp.Attachments {
-			if idOf(x["id"]) == r.PathValue("fileId") && string(x["encrypted"]) != "true" && isNullish(x["url"]) {
-				a = x
-			}
-		}
-	}
-	if a == nil || isNullish(a["uploaded_at"]) || s.blobs == nil {
-		writeError(w, http.StatusNotFound, "not_found", "no such file on this page")
-		return
-	}
-	f, info, err := s.blobs.Open(storedFile(a))
-	if errors.Is(err, blobs.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "the file is not on this server")
-		return
-	}
-	if err != nil {
-		s.internal(w, err)
+	a, f, info, ok := s.openPageFile(w, r, rp.tp.Attachments, rp.encrypted)
+	if !ok {
 		return
 	}
 	defer f.Close()
@@ -542,4 +526,32 @@ func (s *Server) handleTaskPageMapSprite(w http.ResponseWriter, r *http.Request)
 		ct = "image/png"
 	}
 	pageMapBody(w, body, ct)
+}
+
+// openPageFile opens the file a public page names in its fileId path value: an uploaded,
+// unencrypted attachment stored on this server, of a page whose item is not encrypted.
+// It answers 404 otherwise; the caller closes the file.
+func (s *Server) openPageFile(w http.ResponseWriter, r *http.Request, attachments []opsync.Entity, encrypted bool) (opsync.Entity, *os.File, os.FileInfo, bool) {
+	var a opsync.Entity
+	if !encrypted {
+		for _, x := range attachments {
+			if idOf(x["id"]) == r.PathValue("fileId") && string(x["encrypted"]) != "true" && isNullish(x["url"]) {
+				a = x
+			}
+		}
+	}
+	if a == nil || isNullish(a["uploaded_at"]) || s.blobs == nil {
+		writeError(w, http.StatusNotFound, "not_found", "no such file on this page")
+		return nil, nil, nil, false
+	}
+	f, info, err := s.blobs.Open(storedFile(a))
+	if errors.Is(err, blobs.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "not_found", "the file is not on this server")
+		return nil, nil, nil, false
+	}
+	if err != nil {
+		s.internal(w, err)
+		return nil, nil, nil, false
+	}
+	return a, f, info, true
 }
