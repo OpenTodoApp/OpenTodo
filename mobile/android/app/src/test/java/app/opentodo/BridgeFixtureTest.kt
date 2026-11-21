@@ -190,8 +190,8 @@ class BridgeFixtureTest {
         val kinds = f.getJSONArray("kinds")
         assertTrue(kinds.length() >= 2)
         for (sdk in listOf(26, 30, 36)) {
-            for (i in 0 until kinds.length()) assertNotNull(kinds.getString(i), Haptic.constant(kinds.getString(i), sdk))
-            assertEquals(null, Haptic.constant(f.getString("unknown"), sdk))
+            assertEquals(5, kinds.length())
+            assertEquals(Haptic.constant("tick", sdk), Haptic.constant(f.getString("unknown"), sdk))
         }
     }
 

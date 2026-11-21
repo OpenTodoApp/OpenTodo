@@ -6,6 +6,7 @@
 // the room evenly and cut the longer label even with room to spare); they truncate
 // only when the row itself has no more room.
 import { useRef, type KeyboardEvent } from 'react'
+import { selectionHaptic, useTouchPress } from './touchPress'
 
 export interface SegmentOption<T extends string> {
   id: T
@@ -32,6 +33,7 @@ export interface SegmentedControlProps<T extends string> {
 }
 
 export function SegmentedControl<T extends string>({ options, value, onChange, label, disabled = false, wrap = false, fill = false, className = '', ...hooks }: SegmentedControlProps<T>) {
+  const press = useTouchPress()
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   // With no option chosen (a value outside the options), the first one takes Tab.
   const none = !options.some((o) => o.id === value)
@@ -52,7 +54,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, l
         const on = o.id === value
         return (
           <button key={o.id} ref={(el) => { refs.current[o.id] = el }} type="button" role="radio" aria-checked={on} tabIndex={on || (none && i === 0) ? 0 : -1} disabled={disabled}
-            data-segment={o.id} onClick={() => { if (!on) onChange(o.id) }}
+            data-segment={o.id} onPointerDown={press.down} onClick={() => { const touch = press.byTouch(); if (on) return; if (touch) selectionHaptic(); onChange(o.id) }}
             className={`touch-target min-h-6 min-w-0 ${wrap ? 'whitespace-normal leading-tight text-balance' : 'truncate'} rounded-chip ${fill ? 'px-2' : 'px-2.5'} py-0.5 text-meta font-medium outline-none transition duration-(--duration-ui)
               focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed
               ${on ? 'bg-surface text-strong shadow-1 forced-colors:border forced-colors:border-[Highlight]' : 'text-muted pointer-fine:hover:text-default'}`}>

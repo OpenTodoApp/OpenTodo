@@ -1397,6 +1397,13 @@ With a fine or hovering pointer, or once a hardware key was pressed, every overl
 - **WHEN** the user closes the When sheet on that phone
 - **THEN** focus returns to the part that opened it
 
+### Requirement: Scroll to the top on request from the shell
+When the shell sends the scroll-to-top event, the page SHALL scroll its frontmost scroller to the top: an open sheet or panel when there is one, otherwise the page's main scroller, smoothly unless reduced motion is on. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: An open task panel
+- **WHEN** the scroll-to-top event arrives while a task's panel is open over the list
+- **THEN** the panel scrolls to its top and the list keeps its place
+
 ### Requirement: Page changes move with a direction
 When a person opens a deeper page, the new page SHALL slide in from the end edge; going back SHALL slide it out the same way; switching between top-level destinations SHALL cross-fade. The sidebar, bottom bar and header chrome SHALL stay in place. With reduced motion, the no-motion display setting, a focused text field or a hidden tab, the page SHALL change at once. Navigation SHALL never wait for an animation to finish before it accepts the next input. It changes no data, so offline behaviour and convergence are unaffected.
 

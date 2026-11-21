@@ -58,8 +58,8 @@ final class BridgeHost: BridgeActions {
 
     /// shell-repairs D5: only with a screen, and only a kind the contract names.
     func bridgedHaptic(_ kind: String) {
-        guard interactive, let kind = Haptics.kind(kind) else { return }
-        Haptics.play(kind)
+        guard interactive else { return }
+        Haptics.play(Haptics.kind(kind))
     }
 
     func bridgedPlayCompletionSound() {

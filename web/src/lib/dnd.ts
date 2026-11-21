@@ -1,4 +1,5 @@
 import { t } from './i18n'
+import { playHaptic } from './haptics'
 // Pointer-based drag and drop (OpenSpec `board-view`, design D6): native pointer
 // events, no library, works with mouse, pen and touch. A mouse or pen drag starts
 // after a few pixels of movement; touch arms after a short long-press so a plain
@@ -201,6 +202,8 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
     if (lifted) return
     lifted = true
     hold.stop()
+    // haptic-kinds D2: the lift ticks on touch, once (a hold that selected ticked already).
+    if (e.pointerType !== 'mouse' && !heldSelected) playHaptic('tick')
     ghost = makeGhost(opts.label)
     document.body.style.userSelect = 'none'
     opts.onStart?.()
