@@ -4,7 +4,6 @@
 // and "read" is applied locally first and confirmed with the server when online.
 import { api } from './api'
 import { db } from './db'
-import type { AppNotification } from './types'
 
 /**
  * Send pending reads, then replace the cache with the server's list. A local read
@@ -82,13 +81,3 @@ export async function answerInvitation(invitationId: string, accept: boolean, no
   await read()
 }
 
-/** Unread notifications, newest first. */
-export async function unreadNotifications(): Promise<AppNotification[]> {
-  const list = await db.notifications.orderBy('createdAt').reverse().toArray()
-  return list.filter((n) => n.readAt === null)
-}
-
-/** Number of unread notifications in the cache. */
-export async function unreadCount(): Promise<number> {
-  return db.notifications.filter((n) => n.readAt === null).count()
-}

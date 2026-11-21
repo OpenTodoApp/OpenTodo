@@ -143,11 +143,6 @@ export function setUpcomingStartsWithToday(on: boolean): Promise<void> {
   return mutate('user_prefs', USER_PREFS_ID, { upcoming_today: on ? 'on' : 'off' })
 }
 
-/** Upcoming's later days (OpenSpec change sidebar-brand-and-row-grid, D8): summarised unless the account chose "full"; an unknown value reads as summarised. */
-export function upcomingLaterInFull(row: Partial<UserPrefs> | null | undefined): boolean {
-  return row?.upcoming_later === 'full'
-}
-
 /** How a task opens from a list (OpenSpec change task-side-panel, D1): its page, or a side panel beside the list. */
 export type TaskOpenPref = 'page' | 'panel'
 

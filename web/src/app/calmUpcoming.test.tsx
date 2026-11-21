@@ -11,7 +11,6 @@ import { setDateTime } from '../lib/dates'
 import { listDisplayOf } from '../lib/listDisplay'
 import { applyOps, createTask, resetDeviceId } from '../lib/ops'
 import type { Op } from '../lib/types'
-import { upcomingLaterInFull } from '../lib/userPrefs'
 import { click, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/test-utils'
 import { resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
@@ -131,7 +130,7 @@ describe('upcoming_later on two devices', () => {
     openDatabase(`upcoming-later-${name}-${Date.now()}`)
     for (const b of batches) await applyOps(b)
     const row = await db.userPrefs.get('me')
-    return { full: upcomingLaterInFull(row), display: listDisplayOf('upcoming', row).laterInFull }
+    return { display: listDisplayOf('upcoming', row).laterInFull }
   }
 
   it('the laptop\'s In full and the phone\'s later Summarised converge by last-writer-wins in either order', async () => {
@@ -139,15 +138,14 @@ describe('upcoming_later on two devices', () => {
     const phone = [op('phone', 20, 'summary')]
     const a = await stateOn('a', [laptop, phone])
     const b = await stateOn('b', [phone, laptop])
-    expect(a).toEqual({ full: false, display: false })
+    expect(a).toEqual({ display: false })
     expect(b).toEqual(a)
     const c = await stateOn('c', [[op('phone', 5, 'summary')], [op('laptop', 30, 'full')]])
-    expect(c).toEqual({ full: true, display: true })
+    expect(c).toEqual({ display: true })
   })
 
   it('an empty or unknown value reads as Summarised', () => {
     for (const v of ['', 'weekly', undefined]) {
-      expect(upcomingLaterInFull({ upcoming_later: v } as never)).toBe(false)
       expect(listDisplayOf('upcoming', { upcoming_later: v }).laterInFull).toBe(false)
     }
     expect(listDisplayOf('today', { upcoming_later: 'full' }).laterInFull).toBeUndefined()

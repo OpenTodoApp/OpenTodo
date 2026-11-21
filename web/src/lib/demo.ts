@@ -73,10 +73,6 @@ export const DEMO_LIMIT_NOTICE = msg('This demo sandbox reached its limit of cha
 
 export { getDemo, setDemo, useDemo } from './demoState'
 
-/** True for an API error the demo instance answers for a refused feature. */
-export function isDemoRestricted(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'demo_restricted'
-}
 
 /**
  * Creates a sandbox and signs this browser into it. The creation token is

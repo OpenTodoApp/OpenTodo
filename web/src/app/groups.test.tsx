@@ -10,7 +10,7 @@ import { completeTask, createProject, createTask, resetDeviceId } from '../lib/o
 import { createLabel } from '../lib/labels'
 import { createSection } from '../lib/sections'
 import { click, render, mockFetch, noPublicLinks, spokenText, textWithoutBriefing, visibleText, waitFor } from '../ui/test-utils'
-import { isGroupCollapsed, resetCollapsedGroups } from './collapsedGroups'
+import { resetCollapsedGroups } from './collapsedGroups'
 import { TaskListView } from './TaskListView'
 
 // The project header asks the server for its public links.
@@ -50,7 +50,6 @@ describe('generated groups', () => {
     expect(textWithoutBriefing(r.container)).not.toContain('Dentist')
     expect(r.container.textContent).toContain('Taxes')
     expect(headers(r.container)[0].getAttribute('data-collapsed')).toBe('true')
-    expect(isGroupCollapsed('upcoming', '2026-10-15')).toBe(true)
     expect(JSON.parse(localStorage.getItem('ot.groups.collapsed')!)).toEqual(['upcoming:2026-10-15'])
     await r.unmount()
 

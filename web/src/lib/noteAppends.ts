@@ -68,9 +68,3 @@ export function foldAppends(rt: RichText, row: AppendRow, doc?: string, limit = 
   return { ...patch, notes_doc: value, description: rt.projectDoc(value) }
 }
 
-/** Whether a row holds a pending append this device cannot fold because the note is full. */
-export function noteIsFull(rt: RichText, row: AppendRow, limit = MAX_DOC_CHARS): boolean {
-  const value = row.notes_doc ?? ''
-  if (!rt.isReadable(value)) return false
-  return pendingAppends(row).some((a) => rt.foldAppend(value, a.id, a.text, limit) === null)
-}

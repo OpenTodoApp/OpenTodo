@@ -15,10 +15,6 @@ export function groupKey(view: string, key: string): string {
   return `${view}:${key}`
 }
 
-export function isGroupCollapsed(view: string, key: string): boolean {
-  return collapsed.get().has(groupKey(view, key))
-}
-
 export function setGroupCollapsed(view: string, key: string, on: boolean): void {
   const next = new Set(collapsed.get())
   if (on) next.add(groupKey(view, key))

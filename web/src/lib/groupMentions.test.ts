@@ -1,6 +1,6 @@
 // Group mentions on the device (OpenSpec change group-mentions, design D4).
 import { describe, expect, it } from 'vitest'
-import { GROUP_MENTION_PREFIX, isGroupMention, mentionCandidates, mentionTargets, mentionToken } from './comments'
+import { GROUP_MENTION_PREFIX, mentionCandidates, mentionTargets, mentionToken } from './comments'
 import type { Membership, WorkspaceGroup } from './types'
 
 const memberships = new Map<string, Membership>([
@@ -31,9 +31,7 @@ describe('mentionTargets', () => {
     expect(mentionTargets('garden', memberships, groups, ws, 'me')).toEqual([])
   })
 
-  it('tells group ids apart and gives a group a token like a person', () => {
-    expect(isGroupMention('group:g1')).toBe(true)
-    expect(isGroupMention('anna')).toBe(false)
+  it('gives a group a token like a person', () => {
     expect(mentionToken({ name: 'Side projects', email: '' })).toBe('Sideprojects')
   })
 })

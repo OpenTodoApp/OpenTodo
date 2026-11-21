@@ -1,11 +1,21 @@
 // OpenSpec change bulk-edit, tasks 3.2, 3.4 and 4.1.
 import { beforeEach, describe, expect, it } from 'vitest'
-import { applyBulk, planMoveFor } from './bulk'
+import { applyBulk, planMove, readTicked, toProposed, type MoveTarget } from './bulk'
+import { currentUserId, membershipMap } from './sharing'
+import { keepWorkspaceFor } from './workspaces'
+import type { ProposedChange } from './assistantTypes'
 import { db, useDatabase } from './db'
 import { occurrenceId } from './ids'
 import { applyOps, createProject, createSubtask, createTask, getDeviceId, resetDeviceId, updateTask } from './ops'
 import type { Op } from './types'
 import { applyBatch, undoBatch } from './undo'
+
+/** The proposed changes of moving `ids` to `target`, as the bulk menu plans them. */
+async function planMoveFor(ids: readonly string[], target: MoveTarget): Promise<ProposedChange[]> {
+  const { tasks, all } = await readTicked(ids)
+  const memberships = await membershipMap()
+  return toProposed(planMove(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor()), memberships)
+}
 
 let n = 0
 beforeEach(() => {

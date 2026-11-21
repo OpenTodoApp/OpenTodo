@@ -113,11 +113,6 @@ export function shareRequestVerdict(headers: Headers): ShareRequestVerdict {
   return site === null ? 'unverified' : 'store'
 }
 
-/** Whether the service worker may store a POST /share (shareRequestVerdict is `store`). */
-export function shareRequestAllowed(headers: Headers): boolean {
-  return shareRequestVerdict(headers) === 'store'
-}
-
 /** The stored size of an entry: its files and its text fields. */
 export function entrySize(entry: InboxEntry): number {
   return entry.files.reduce((n, f) => n + f.blob.size, 0) + entry.title.length + entry.text.length + entry.url.length
