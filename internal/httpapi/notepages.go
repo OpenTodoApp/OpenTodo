@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/OpenTodoApp/opentodo/internal/auth"
-	"github.com/OpenTodoApp/opentodo/internal/blobs"
 	"github.com/OpenTodoApp/opentodo/internal/notelinks"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 )
@@ -202,40 +201,7 @@ func (s *Server) handleNotePageSnapshot(w http.ResponseWriter, r *http.Request) 
 		s.internal(w, err)
 		return
 	}
-	var in struct {
-		Ciphertext string `json:"ciphertext"`
-		Version    int64  `json:"version"`
-		WrappedKey string `json:"wrappedKey"`
-	}
-	if err := readJSON(r, &in); err != nil {
-		badBody(w, err)
-		return
-	}
-	switch {
-	case in.Ciphertext == "" || len(in.Ciphertext) > auth.MaxTaskPageSnapshot:
-		writeError(w, http.StatusBadRequest, "invalid_input", "ciphertext: required, at most 256 KB")
-		return
-	case in.Version < 1:
-		writeError(w, http.StatusBadRequest, "invalid_input", "version: a positive number")
-		return
-	case len(in.WrappedKey) > 1024 || (in.WrappedKey == "" && p.WrappedKey == nil):
-		writeError(w, http.StatusBadRequest, "invalid_input", "wrappedKey: required for the first snapshot, at most 1 KB")
-		return
-	}
-	encrypted, err := s.notePageEncrypted(r.Context(), p.UserID, np)
-	if err != nil {
-		s.internal(w, err)
-		return
-	}
-	if !encrypted {
-		writeError(w, http.StatusConflict, "page_not_encrypted", "this note is served live; send no snapshot")
-		return
-	}
-	if err := s.auth.PutTaskPageSnapshot(r.Context(), p.ID, []byte(in.Ciphertext), in.Version, in.WrappedKey); err != nil {
-		s.internal(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	s.putPageSnapshot(w, r, p, "note", func() (bool, error) { return s.notePageEncrypted(r.Context(), p.UserID, np) })
 }
 
 // resolvedNotePage is a usable note page with the note as its publisher sees it.
@@ -330,25 +296,8 @@ func (s *Server) serveNotePageFile(w http.ResponseWriter, r *http.Request, p *au
 	if !ok {
 		return
 	}
-	var a opsync.Entity
-	if !rn.encrypted {
-		for _, x := range rn.np.Attachments {
-			if idOf(x["id"]) == r.PathValue("fileId") && string(x["encrypted"]) != "true" && isNullish(x["url"]) {
-				a = x
-			}
-		}
-	}
-	if a == nil || isNullish(a["uploaded_at"]) || s.blobs == nil {
-		writeError(w, http.StatusNotFound, "not_found", "no such file on this page")
-		return
-	}
-	f, info, err := s.blobs.Open(storedFile(a))
-	if errors.Is(err, blobs.ErrNotFound) {
-		writeError(w, http.StatusNotFound, "not_found", "the file is not on this server")
-		return
-	}
-	if err != nil {
-		s.internal(w, err)
+	a, f, info, ok := s.openPageFile(w, r, rn.np.Attachments, rn.encrypted)
+	if !ok {
 		return
 	}
 	defer f.Close()

@@ -1,1 +1,0 @@
-- **Dragging a task within Today or Upcoming no longer looks like it reorders and then does nothing.** Those lists keep their date order, so a drop among their rows, or on a task's own day in Upcoming, now says so; dropping on a sidebar project, label, Inbox or Today, or on another day in Upcoming, works as before (#1507).

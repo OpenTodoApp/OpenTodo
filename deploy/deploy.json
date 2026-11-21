@@ -8,7 +8,7 @@
   "docs": "https://open-todo.app/docs/self-hosting/",
   "image": "ghcr.io/opentodoapp/opentodo",
   "legacy": {
-    "$comment": "The image name before the repository moved to the OpenTodoApp organization. Releases up to lastRelease exist only there (digest-pinned templates keep naming it until re-pinned); CI also publishes every image to it through the publishedThrough releases (scripts/legacy-image.sh). See docs/self-hosting/docker.md.",
+    "$comment": "The image name before the repository moved to the OpenTodoApp organization. Releases up to lastRelease exist only there (digest-pinned templates keep naming it until re-pinned); CI also published every image to it through the publishedThrough releases; it no longer does. See docs/self-hosting/docker.md.",
     "image": "ghcr.io/pixari/opentodo",
     "lastRelease": "0.14.2",
     "publishedThrough": "0.16"

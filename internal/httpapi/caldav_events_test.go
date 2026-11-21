@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -65,5 +66,45 @@ func TestCalDAVEventMode(t *testing.T) {
 	got = e.task(call)
 	if got["deleted_at"] != nil || got["due"] != nil {
 		t.Fatalf("after delete = %v", got)
+	}
+}
+
+// An event calendar's incremental sync-collection (GitHub issue 1717): a task
+// that changed since the token but is not an event (undated, completed, or its
+// date cleared) is never encoded as one, which panicked on the empty date and
+// failed the whole calendar; one that left the calendar that way is removed.
+func TestCalDAVEventSyncSkipsNonEvents(t *testing.T) {
+	e, todos := davSetup(t)
+	resp, out := e.do("POST", "/api/v1/app-passwords", map[string]any{"name": "Calendar", "events": true})
+	e.mustStatus(resp, 201, out)
+	ev := &davClient{e: e, email: todos.email, secret: out["secret"].(string), uid: todos.uid}
+	mk := func(body map[string]any) string {
+		resp, out := e.do("POST", "/api/v1/tasks", body)
+		e.mustStatus(resp, 201, out)
+		return out["id"].(string)
+	}
+	keep := mk(map[string]any{"title": "Dentist", "due": map[string]string{"date": "2026-11-24"}})
+	done := mk(map[string]any{"title": "Pay rent", "due": map[string]string{"date": "2026-11-25"}})
+	cleared := mk(map[string]any{"title": "Call mum", "due": map[string]string{"date": "2026-11-26"}})
+	_, body := ev.must("REPORT", ev.cal("inbox"), fmt.Sprintf(syncReport, ""), 207, "Depth", "1")
+	if strings.Count(body, "<d:getetag>") != 3 {
+		t.Fatalf("initial sync:\n%s", body)
+	}
+	tok := tokenRe.FindStringSubmatch(body)[1]
+
+	undated := mk(map[string]any{"title": "Someday"})
+	for id, patch := range map[string]map[string]any{keep: {"title": "Dentist at 9"}, done: {"completed_at": 1_763_700_000_000}, cleared: {"due": nil}} {
+		resp, out := e.do("PATCH", "/api/v1/tasks/"+id, patch)
+		e.mustStatus(resp, 200, out)
+	}
+
+	_, body = ev.must("REPORT", ev.cal("inbox"), fmt.Sprintf(syncReport, tok), 207, "Depth", "1")
+	for _, want := range []string{"/" + keep + ".ics</d:href><d:propstat>", "/" + done + ".ics</d:href><d:status>HTTP/1.1 404", "/" + cleared + ".ics</d:href><d:status>HTTP/1.1 404"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("sync lacks %q:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, undated) {
+		t.Fatalf("an undated task is not an event:\n%s", body)
 	}
 }

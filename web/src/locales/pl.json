@@ -2241,6 +2241,8 @@
   "Habits is in the sidebar under More.": "Nawyki znajdziesz na pasku bocznym w sekcji Więcej.",
   "Habits is off": "Nawyki są wyłączone",
   "Habits is on.": "Nawyki są włączone.",
+  "Task completion sound": "Task completion sound",
+  "Play a short sound when you complete a task.": "Play a short sound when you complete a task.",
   "Haptic feedback": "Wibracje",
   "Has a date": "Ma datę",
   "Has a day: Today and Upcoming.": "Ma dzień: Dziś i Nadchodzące.",
@@ -5298,7 +5300,6 @@
   "The file is not valid JSON.": "Plik nie jest prawidłowym JSON-em.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "Plik zostanie raz zmniejszony w spokojnym momencie; stare wersje są już usuwane.",
   "The file matches no supported format.": "Plik nie pasuje do żadnego obsługiwanego formatu.",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "Język filtrów zapisanych widoków, np. ##Work & p1 albo @errand.",
   "The first": "Pierwszy",
   "The first N…": "Pierwsze N…",
   "The first, the last, all, or the ones that match": "Pierwszy, ostatni, wszystkie albo pasujące",
@@ -7857,5 +7858,11 @@
   "Set away": "Ustaw nieobecność",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Pomija {occurrences, plural, one {# wystąpienie} few {# wystąpienia} many {# wystąpień} other {# wystąpienia}} z {series, plural, one {# zadania cyklicznego} few {# zadań cyklicznych} many {# zadań cyklicznych} other {# zadania cyklicznego}}",
   "The last day comes before the first": "Ostatni dzień jest przed pierwszym",
-  "Or sponsor on GitHub": "Albo wesprzyj na GitHubie"
+  "Or sponsor on GitHub": "Albo wesprzyj na GitHubie",
+  "Select projects": "Zaznacz projekty",
+  "Archive {projects}?": "Zarchiwizować {projects}?",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Znikną z paska bocznego razem ze swoimi podprojektami. Możesz je przywrócić z archiwum w Ustawienia → Dane.",
+  "Archived {projects}": "Zarchiwizowano: {projects}",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "Język filtrów zapisanych widoków, np. search: milk & p1 albo @errand.",
+  "Filter {name}": "Filtruj „{name}”"
 }

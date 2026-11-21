@@ -1,1 +1,0 @@
-- **A linked note's snippet quotes the right words again.** When a note's text used Windows line endings, the linked references cut the line at the wrong place, so the quoted text around the link was shifted or empty.

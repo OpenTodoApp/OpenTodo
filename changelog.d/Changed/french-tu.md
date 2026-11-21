@@ -1,1 +1,0 @@
-- **French speaks to you as "tu".** The French interface uses the informal address throughout, "créneau" replaces "lot" for a slot, and apostrophes are typographic everywhere (#1526).

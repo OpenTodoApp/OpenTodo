@@ -1,1 +1,0 @@
-- **Calendar feeds: one limit for a calendar's own properties.** A calendar's top-level properties now count toward one limit of 1 MB and 5,000 lines for the whole calendar, like one event, and the fetches started from the app (subscribe, change address, Refresh now) share the limit of two fetches at once with the background ones.

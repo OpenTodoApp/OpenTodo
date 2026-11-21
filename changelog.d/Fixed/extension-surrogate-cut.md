@@ -1,1 +1,0 @@
-- **A long title or selection that ends in an emoji no longer shows a broken character.** The extension cut the page title and selection at a fixed length and could split the last character in half; it now cuts between characters, as the app does.

@@ -931,12 +931,20 @@ func (d *davRequest) syncCollection(v *davView, body *caldav.Node, names []calda
 		if !candidates[id] && !carriesLabel(v.byID[id], delta.Fields["label"]) {
 			continue
 		}
-		if t, live := v.byID[id]; live && v.calendarOf(t) == cal {
+		t, live := v.byID[id]
+		here := live && v.calendarOf(t) == cal
+		// An event calendar holds only the open dated tasks (index): a task here that
+		// is undated or completed is not encoded as an event (GitHub issue 1717).
+		if here && (!v.events || servedAsEvent(t)) {
 			respond(m, resourceHref(uid, cal, v.resourceName(id)), d.resourceProps(v, t), names, all)
 			continue
 		}
 		f := delta.Fields["task"][id]
-		if delta.Purged["task"][id] || f["deleted_at"] || f["project_id"] || f["workspace_id"] || f["parent_id"] {
+		// Removed: gone, moved, or (an event calendar) completed or undated since the
+		// token. A task that was never an event is reported only when it lost its date
+		// or was completed; one that was created undated is not mentioned.
+		left := here && (f["due"] || f["completed_at"])
+		if delta.Purged["task"][id] || f["deleted_at"] || f["project_id"] || f["workspace_id"] || f["parent_id"] || left {
 			name := id + ".ics"
 			if n, err := d.storedName(id); err == nil && n != "" {
 				name = n

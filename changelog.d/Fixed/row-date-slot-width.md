@@ -1,1 +1,0 @@
-- **Longer dates (eg. ISO) fit in one-line rows.** A date such as "May 25, 2027" or "2027-06-07" was cut off at the right edge of the row. The date column is a little wider, and a date that still does not fit ends in an ellipsis.

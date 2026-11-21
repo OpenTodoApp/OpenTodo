@@ -1,1 +1,0 @@
-- **A ZIP export no longer finishes without a profile picture it could not read.** If the picture existed but could not be read or written into the archive, the export carried on and finished without it; it now stops with a broken download, as it does when an attachment file fails, so a saved export is always complete.

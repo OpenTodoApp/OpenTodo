@@ -111,16 +111,6 @@ export function proposedOrigin(p: SharePayload): Origin | null {
   return p.url ? originFromUrl(p.url, p.title || undefined) : null
 }
 
-/** The `/share` URL on `origin` for a page; used by the bookmarklet and mirrored by the extension. */
-export function shareUrl(origin: string, page: { url?: string; title?: string; text?: string }): string {
-  const q = new URLSearchParams()
-  if (page.title) q.set('title', page.title)
-  if (page.text) q.set('text', page.text)
-  if (page.url) q.set('url', page.url)
-  const s = q.toString()
-  return `${origin.replace(/\/+$/, '')}/share${s ? `?${s}` : ''}`
-}
-
 /**
  * The bookmarklet for `origin`: reads the visited page's URL, title and selection
  * and opens `/share` in a small popup. It carries no token or credential; the

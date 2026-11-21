@@ -19,6 +19,7 @@ import { compileView } from './views'
 import { t } from './i18n'
 import { uuid } from './ids'
 import { labelKey } from './labels'
+import { descendants } from './tree'
 import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type DoOnChoice } from './dayParts'
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
@@ -41,7 +42,7 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
 }
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
-export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult> {
+export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult & { completed?: boolean }> {
   // A plain task needs only its subtree; a series plans its roll over every task
   // (its occurrence records). Reading all 10,000 tasks of a large account for every
   // tick queued the next writes behind it (list-rendering-at-scale).
@@ -52,7 +53,8 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
-  return apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
 
 /** Move one task and its subtasks to the Trash. */
@@ -177,6 +179,27 @@ export async function reviewEveryUndoable(projectId: string, every: string, labe
   await getDeviceId()
   const entry = await applyBatch([{ entity: 'project_prefs', entityId: projectId, patch: { review_every: every }, base: { review_every: '' } }], { source: 'action', label })
   return { entry, label }
+}
+
+/**
+ * Archive several projects at once (archive-several-projects, GitHub issue 1661): each
+ * project and its live sub-projects, as archiving one does, in one batch with one Undo.
+ * A project already archived, or listed twice through its parent, is written once.
+ */
+export async function archiveProjectsUndoable(ids: readonly string[]): Promise<UndoableResult> {
+  const all = (await db.projects.toArray()).filter((p) => !p.deleted_at)
+  const seen = new Set<string>()
+  const changes: Change[] = []
+  for (const id of ids) {
+    for (const pid of [id, ...descendants(id, all)]) {
+      const p = all.find((x) => x.id === pid)
+      if (!p || p.archived || seen.has(pid)) continue
+      seen.add(pid)
+      changes.push({ entity: 'project', entityId: pid, patch: { archived: true } })
+    }
+  }
+  if (changes.length === 0) return { entry: null, label: '' }
+  return apply(changes, t('Archived {projects}', { projects: t('{n, plural, one {# project} other {# projects}}', { n: ids.length }) }))
 }
 
 /** Put a project in maintenance or end it (project-review-cadence): one shared op, with Undo. */

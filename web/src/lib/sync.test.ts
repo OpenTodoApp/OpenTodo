@@ -34,10 +34,15 @@ import { applyOps, createTask, mutate, resetDeviceId } from './ops'
 import { followSharedDueChanges } from './reminders'
 import { compareByPosition } from './ordering'
 import { ApiError } from './api'
-import { markTaskNotificationsRead, unreadCount, unreadNotifications } from './notifications'
+import { markTaskNotificationsRead } from './notifications'
+
 import { describeRejected } from './sharing'
 import { dismissRejected, startSync, stopSync, stopSyncAndWait, syncNow, syncSnapshot } from './sync'
 import { NetworkError, RequestTimeoutError } from './http'
+
+// The unread notifications in the cache, newest first, and their number.
+const unreadNotifications = async () => (await db.notifications.orderBy('createdAt').reverse().toArray()).filter((n) => n.readAt === null)
+const unreadCount = () => db.notifications.filter((n) => n.readAt === null).count()
 
 /** Minimal stand-in for the browser's EventSource with manual event injection. */
 class FakeEventSource {

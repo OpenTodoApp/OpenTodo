@@ -8,7 +8,7 @@ import { navigate } from './router'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { formatInstant } from '../lib/dates'
 import { t } from '../lib/i18n'
-import { InstanceMark, InstanceWordmark } from './InstanceBrand'
+import { InviteCard as Card, LinkStateCard } from './LinkCard'
 import { roleName } from '../lib/roleNames'
 import { readString, removeItem, writeString } from '../lib/deviceStorage'
 
@@ -148,37 +148,14 @@ export function ProjectInviteView({ state, user, join, step, form, onRetry, onJo
   onLogout: () => void
 }) {
   useDateTimeFormat()
-  switch (state.kind) {
-    case 'loading':
-      return <CheckingCard />
-    case 'offline':
-      return (
-        <Card title={t('You seem to be offline')}>
-          <p className="text-body text-muted">{t('Joining a project needs a connection to the server. The page will retry when the network returns.')}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry now')}</button>
-        </Card>
-      )
-    case 'invalid':
-      return (
-        <Card title={t('This invite link is no longer valid')}>
-          <p className="text-body text-muted">{t('It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.')}</p>
-          <a className="ui-btn ui-btn--secondary ui-btn--md" href="/">{user ? t('Back to my tasks') : t('Go to sign-in')}</a>
-        </Card>
-      )
-    case 'rate-limited':
-      return (
-        <Card title={t('Too many attempts')}>
-          <p className="text-body text-muted">{t('Wait a minute, then try again.')}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
-        </Card>
-      )
-    case 'error':
-      return (
-        <Card title={t('Something went wrong')}>
-          <p className="text-body text-danger">{state.message}</p>
-          <button className="ui-btn ui-btn--primary ui-btn--md" onClick={onRetry}>{t('Retry')}</button>
-        </Card>
-      )
+  // Loading shows its card only after a moment (CheckingCard), the other states at once.
+  if (state.kind === 'loading') return <CheckingCard />
+  if (state.kind !== 'ready') {
+    return <LinkStateCard state={state} onRetry={onRetry} frame={Card} checking={t('Checking your invite link…')}
+      offline={t('Joining a project needs a connection to the server. The page will retry when the network returns.')}
+      invalidTitle={t('This invite link is no longer valid')}
+      invalid={t('It may have expired, been revoked or already been used, or the project is gone. Ask the person who invited you for a new link.')}
+      back={user ? t('Back to my tasks') : t('Go to sign-in')} />
   }
   const p = state.preview
   if (!user && step !== 'choose' && form) return <>{form}</>
@@ -257,19 +234,4 @@ function CheckingCard() {
   }, [])
   if (!shown) return <div className="min-h-full bg-canvas" aria-busy="true" />
   return <Card title={t('Checking your invite link…')}><p className="text-body text-muted">{t('One moment.')}</p></Card>
-}
-
-function Card({ title, children }: { title: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex min-h-full items-center justify-center bg-canvas p-4 sm:p-6">
-      <main className="w-full max-w-sm space-y-3 rounded-card border border-default bg-surface p-5 shadow-1 sm:p-6">
-        <div className="flex items-center gap-3">
-          <InstanceMark size={32} />
-          <p className="text-h3 font-semibold"><InstanceWordmark /></p>
-        </div>
-        <h1 className="font-medium">{title}</h1>
-        {children}
-      </main>
-    </div>
-  )
 }

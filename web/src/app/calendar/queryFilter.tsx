@@ -42,11 +42,13 @@ export interface QueryFilter {
   setQuery: (query: string) => void
 }
 
-/** The filter stored under `key`, compiled against the live labels and projects; `tasks` answer `blocked` and friends. */
 /** While the stored query is not read yet the view shows no task, rather than every task for a moment. */
 const NONE = () => false
 
+/** The filter stored under `key`, compiled against the live labels and projects; `tasks` answer `blocked` and friends. */
 export function useQueryFilter(key: string, tasks: readonly Task[]): QueryFilter {
+  // A page that mounts again (a project after its task page) starts from the query last read,
+  // so its rows and the keyboard's selection are there at once (project-query-filter D1).
   const stored = useMetaRead<unknown>(key, '')
   const loading = stored === undefined
   const query = typeof stored === 'string' ? stored : ''

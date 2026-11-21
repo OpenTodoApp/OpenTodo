@@ -1,1 +1,0 @@
-- **Todoist import reads Chinese dates.** Dates such as `明天`, `周五` and `11月21日 下午3点`, and recurring phrases such as `每天`, `每周五`, `每周一和周三`, `每月1日`, `每3个月` and `每个工作日`, in Simplified or Traditional characters, now keep their date or rule instead of importing the task without a due date (#1457).

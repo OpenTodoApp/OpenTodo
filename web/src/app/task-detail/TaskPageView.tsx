@@ -28,6 +28,7 @@ import { useFollowing, useOccurrenceView } from './occurrenceView'
 import { TaskNotes } from './TaskNotes'
 import { TaskPageDialog } from './TaskPageDialog'
 import { TaskPath } from './TaskPath'
+import { useFooterKeepsScroll } from './pinnedFooterScroll'
 import { useTaskDetail } from './useTaskDetail'
 
 export interface TaskPageNav {
@@ -67,6 +68,7 @@ export function TaskPageView({ taskId, userId, readOnly: viewer, projects, label
   const [rootRef, narrow] = useNarrow(root)
   // The pinned bottom of the content column: the comment composer renders here while Comments is shown.
   const [footer, setFooter] = useState<HTMLDivElement | null>(null)
+  useFooterKeepsScroll(footer)
   // The header's height, so the conversation's tab bar and the facts pin just under it.
   useLayoutEffect(() => {
     const el = root.current

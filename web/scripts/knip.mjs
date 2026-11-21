@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
-export const MAX_UNUSED_EXPORTS = 122
+export const MAX_UNUSED_EXPORTS = 100
 
 // Every finding of a knip JSON report, as `kind: file: name` lines.
 export function findings(report) {

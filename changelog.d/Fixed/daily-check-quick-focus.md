@@ -1,1 +1,0 @@
-- **Quick presses of `f` in the Daily check keep every pick.** Pressing `j` `f` several times quickly could leave only the last task in today's focus, and could put a fourth task in instead of refusing it, because each press read the focus before the previous pick had been saved. Each press now reads the focus as it is saved, one after the other.

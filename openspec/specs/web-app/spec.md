@@ -824,7 +824,7 @@ The installed app's icons SHALL be the colour variant of the brand mark: the SVG
 - **THEN** the shell and its icons load from the precache and the browser shows the brand mark in the title bar
 
 ### Requirement: Overlay motion
-Each overlay kind SHALL enter and leave with a fixed motion: a dialog from 640 px up fades and scales up slightly within the emphasis duration and leaves in about three quarters of it; a phone sheet slides up within the emphasis duration and slides down in about three quarters of it; the task panel slides in from its edge within the emphasis duration when opened from closed and slides out in about three quarters of it, and switching the task it shows SHALL NOT replay the slide; a toast slides up within the emphasis duration and fades out; menus, popovers, tooltips and the command palette fade in within the interface duration and close at once. Entrances SHALL use the spring ease-out; an overlay SHALL accept input from its first frame; focus SHALL move as "Consistent overlay behaviour" requires regardless of motion. Under reduced motion every overlay fades only; under no motion it appears and disappears at once.
+Each overlay kind SHALL enter and leave with a fixed motion: a dialog from 640 px up fades and scales up slightly within the emphasis duration and leaves in about three quarters of it; a phone sheet slides up within the emphasis duration and slides down in about three quarters of it; the task panel slides in from its edge within the emphasis duration when opened from closed and slides out in about three quarters of it, and switching the task it shows SHALL NOT replay the slide; a toast slides up within the emphasis duration and fades out; menus, popovers, tooltips and the command palette fade in within the interface duration and close at once. A bottom sheet closed by a drag, a menu's sheet included, SHALL leave from where the finger left it, sliding down and fading in about three quarters of the emphasis duration, and SHALL NOT jump back to its place first. Entrances SHALL use the spring ease-out; an overlay SHALL accept input from its first frame; focus SHALL move as "Consistent overlay behaviour" requires regardless of motion. Under reduced motion every overlay fades only; under no motion it appears and disappears at once.
 
 #### Scenario: Dialog on a desktop
 - **WHEN** the user opens the share dialog at 1280 px
@@ -841,6 +841,10 @@ Each overlay kind SHALL enter and leave with a fixed motion: a dialog from 640 p
 #### Scenario: Reduced motion
 - **WHEN** reduced motion is requested and the user opens a phone sheet
 - **THEN** the sheet fades in with no slide and closes with a fade
+
+#### Scenario: A sheet dragged away
+- **WHEN** the user drags a menu's sheet 140 px down on a phone and lets go
+- **THEN** the sheet slides on down and fades from where it was released
 
 ### Requirement: Interface audit tour
 The repository SHALL provide one command that opens every entry of the screen inventory on the built web app with a seeded account at 360, 768 and 1280 px wide, in light and dark, in English and German, saves a screenshot of each, measures the interface budget (rows of chrome above a list's first item, task properties visible by default, primary sidebar destinations, vertical scroll regions), WCAG 2.2 AA violations, each audited interface rule (OpenSpec `design-system` "Audited interface rules"), the time from navigation to the first task row rendered from the local copy while the server is unreachable, and story coverage of the core screens, and writes a JSON report and an HTML contact sheet. The tour SHALL change nothing in the app or the repository, SHALL run in CI as a non-blocking job that uploads the report at least nightly on the default branch and on demand on any branch, without delaying the checks of a pull request or the image publishing of a push, and SHALL have a strict mode that fails on budget, overflow, story-coverage and reduced-motion violations once the maintainer turns it on. Under reduced motion the tour SHALL watch every overlay of the inventory as it opens, at 1280 px with a mouse and at 360 px as a touch device, completing a task in Today, and dragging a card to the next board column, a task to the next day of the Plan and a block down an hour in the Week, from before the action until it settles, so a movement that ends before a snapshot is still reported. Each violation SHALL name the screen, the width, the theme, the language, the rule and the element.
@@ -1282,3 +1286,113 @@ Before the app's code runs, the page SHALL check for the CSS the interface needs
 #### Scenario: A current browser
 - **WHEN** a browser with the needed CSS opens the app
 - **THEN** no note is shown and the app starts as before
+
+### Requirement: Task page controls on touch do not overlap
+On a coarse pointer the controls at the top of a task's page (Back and the menu in the phone bar, the completion circle, the title) and its conversation tabs (Comments, Activity, History, Time) SHALL each take taps in an area of at least 44 by 44 CSS pixels, and no two of these areas SHALL overlap by more than 4 CSS pixels on both axes. A tap SHALL act on the control whose area it is in. The completion circle's area SHALL begin where the page begins under the bar, at the top of the title's first line, and reach down beside the title; the circle itself SHALL stay centred on the title's first line, and neither it nor the title SHALL move. The comment field pinned to the bottom of the page MAY lie under the tab row while its own place is further down the page; scrolling to the end of the page SHALL bring it to its place under the conversation, with the tabs clear of it. With a fine pointer nothing SHALL change. This is presentation only: completing, going back and switching tabs write what they wrote before, so it is the same offline.
+
+#### Scenario: Circle under the bar
+- **WHEN** a task's page is shown at 360 px on a touch screen, scrolled to its top, and the user taps the bottom edge of Back, then the top edge of the completion circle's area
+- **THEN** the first tap returns to the list and completes nothing, and the second completes the task and the page stays
+
+#### Scenario: Circle on the first line
+- **WHEN** a task whose title takes two lines is shown at 360 px on a touch screen
+- **THEN** the circle is centred on the title's first line, and its area is 44 px tall from the top of that line
+
+#### Scenario: Tabs near the bottom
+- **WHEN** a task with no comments is shown at 360 px on a touch screen and the tabs sit just above the pinned comment field
+- **THEN** a tap on each of Comments, Activity, History and Time selects that tab, and after scrolling to the end of the page the comment field is below the tabs with none of it under them
+
+#### Scenario: A mouse is unchanged
+- **WHEN** the same page is shown at 1280 px with a mouse
+- **THEN** the completion control is 24 px, centred on the title's first line, as before
+
+### Requirement: A bottom sheet is dragged away
+Every bottom sheet (a menu, popover or picker below 640 px, and a dialog shown as a bottom sheet) SHALL follow a finger that moves down from its handle or its header, and from its body while no content between the finger and the sheet is scrolled away from its top; a drag that starts on scrolled content, in a text field or on an element with a drag of its own SHALL scroll or act as it does without the sheet, and a drag that starts sideways or upward SHALL NOT move the sheet. The sheet SHALL never move above its resting place. Released more than 80 px below where the drag began, or released in a downward flick, the sheet SHALL close; released earlier it SHALL return to its place with the spring ease within the emphasis duration. A dialog shown as a bottom sheet SHALL show the same drag handle as a menu sheet. A dialog that does not close on a tap outside SHALL NOT close on a drag, SHALL NOT move and SHALL show no handle, so one rule decides both. Under reduced motion and under no motion the sheet SHALL NOT move with the finger: it closes when released past the same distance or flick and otherwise stays. Closing by a drag SHALL be the same close as the close control: focus returns to the trigger, the page behind stays where it was and, on a touch device, the overlay's history entry is removed, so a later Back navigates. The close control, Escape, a tap outside and Back SHALL keep working, and a dialog that fills the phone's screen SHALL NOT be dragged. The gesture is device interface state: it writes no data, works offline and syncs nothing.
+
+#### Scenario: The bulk actions sheet follows the finger
+- **WHEN** a user on a 360 px phone opens the bulk actions and drags its handle 140 px down
+- **THEN** the sheet moves down with the finger, and on release it closes and focus is back on the button that opened it
+
+#### Scenario: A short drag springs back
+- **WHEN** the user drags a sheet's header 40 px down slowly and lifts the finger
+- **THEN** the sheet returns to its place and stays open
+
+#### Scenario: A flick closes
+- **WHEN** the user flicks a sheet's handle 60 px down
+- **THEN** the sheet closes
+
+#### Scenario: Scrolled content scrolls
+- **WHEN** the notifications sheet is scrolled down and the user drags down on its list
+- **THEN** the list scrolls back toward its top and the sheet does not move; a drag on its header still moves the sheet
+
+#### Scenario: A dialog sheet
+- **WHEN** the start guide is open on a phone and the user drags its header past 80 px and lets go
+- **THEN** it closes exactly as its close button closes it
+
+#### Scenario: A sheet that ignores a tap outside
+- **WHEN** a dialog that ignores a tap outside is shown as a bottom sheet and the user drags its header 200 px down
+- **THEN** it has no handle, does not move and stays open
+
+#### Scenario: Reduced motion
+- **WHEN** reduced motion is requested and the user drags a sheet's handle 120 px down and lets go
+- **THEN** the sheet does not move during the drag and closes on release; after a 40 px drag it stays
+
+#### Scenario: Back after a drag
+- **WHEN** the user drags a sheet away on an Android phone and then presses Back
+- **THEN** Back navigates to the previous page and does not reopen the sheet
+
+#### Scenario: A full-screen dialog
+- **WHEN** a dialog fills the phone's screen and the user drags its title bar down
+- **THEN** it does not move and stays open
+
+### Requirement: A sheet keeps the on-screen keyboard down until a field is asked for
+On a device without a keyboard, an overlay (a sheet, a popover, a dialog) SHALL NOT focus a text field as it opens unless typing is what the overlay is for. A device counts as without a keyboard by the definition of "Keyboard hints only where a key can be pressed": it has no fine pointer and no pointer that hovers, and the page has received no hardware key press. On such a device:
+
+- a picker whose content is a list or a calendar (the When sheet, the label, assignee, project, section, parent task, time zone and icon pickers, the keyboard cheat sheet) SHALL open with its choices visible and its search or date field unfocused;
+- a dialog whose first control is a text field that did not ask for focus SHALL open with that field unfocused;
+- an overlay for typing (quick add, the command bar, a comment, a rename or a name prompt, a confirmation or sign-in field) SHALL focus its field as it opens;
+- focus SHALL still move into the overlay (to a control that is not a text field, or to the overlay itself, which carries its role and name), so assistive technology announces it and Escape and Back close it; from the overlay itself the next Tab stop SHALL be the field that would have been focused;
+- a tap on the field SHALL focus it, and switching a segment inside the When sheet SHALL NOT focus the new segment's date field;
+- a picker that replaces a menu's items inside an open sheet SHALL leave focus inside the sheet.
+
+With a fine or hovering pointer, or once a hardware key was pressed, every overlay SHALL focus what it focused before this requirement. Focus SHALL return to the trigger on close in every case. This is presentation only: it reads and writes no data, needs no network and behaves the same offline; nothing syncs.
+
+#### Scenario: The When sheet on a phone
+- **WHEN** the user taps a task's Do on part on a phone with nothing attached
+- **THEN** the When sheet opens with the calendar in view, the date field is not focused, no on-screen keyboard appears, and focus is inside the sheet
+
+#### Scenario: The label picker on a phone
+- **WHEN** the user opens a task's Labels on a phone with nothing attached
+- **THEN** the labels are listed, the field "Type to find or create a label…" is not focused, and focus is on the sheet
+
+#### Scenario: Asking for the field
+- **WHEN** the user taps the label picker's field on that phone
+- **THEN** the field is focused and the on-screen keyboard comes up, with the sheet above it
+
+#### Scenario: Tab from the sheet
+- **WHEN** the label picker opened with focus on the sheet and the user presses Tab on a keyboard just attached
+- **THEN** focus moves to the picker's field, not to the Close button
+
+#### Scenario: A sheet for typing
+- **WHEN** the user taps the add button on a phone with nothing attached
+- **THEN** quick add opens with its field focused and the on-screen keyboard up
+
+#### Scenario: A rename prompt
+- **WHEN** the user chooses Rename in a project's menu on a phone with nothing attached
+- **THEN** the prompt opens with the name field focused
+
+#### Scenario: A computer
+- **WHEN** the user opens the When popover or the label picker on a computer
+- **THEN** the date field or the picker's field is focused, as before
+
+#### Scenario: A tablet with a keyboard and no pointer
+- **WHEN** the user of a tablet with a keyboard case presses `j` in a list and then opens the label picker
+- **THEN** the picker's field is focused
+
+#### Scenario: A picker inside a menu
+- **WHEN** the user opens a project's menu on a phone with nothing attached and chooses the step that picks an icon
+- **THEN** the icon grid is shown, its search field is not focused, and focus is inside the sheet
+
+#### Scenario: Closing
+- **WHEN** the user closes the When sheet on that phone
+- **THEN** focus returns to the part that opened it

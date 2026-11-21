@@ -68,11 +68,19 @@ The page SHALL have a search field that finds notes whose title or text contains
 - **THEN** the note is found and the snippet shows "oat milk" without asterisks
 
 ### Requirement: Notes page on phones and from the keyboard
-On a phone the page SHALL show the search field with its chips at the top, the token suggestions in the same list under the field, rows at least 48 px tall and one line each (the kind icon, the title, where the note lives and the time; the labels left to the note), and the note editor with the touch formatting row. On a computer, `g e` SHALL open Notes, and on the page `q` SHALL create a note, `/` SHALL focus the search field, and `j`, `k` and Enter SHALL move and open as in lists; every control SHALL be reachable with Tab, every chip's remove button included. All page text SHALL be translated in the app languages.
+On a phone the page SHALL show the search field with its chips at the top, the token suggestions in the same list under the field, and the note editor with the touch formatting row. A phone's row SHALL be at least 48 px tall: the kind icon and the title, on one line when it fits and on two when it is longer, ending with an ellipsis after two (every line with Show full task titles on), and under the title one line with the time of the last change and where the note lives; the labels are left to the note. While the search field holds text the snippet SHALL have its own line between the title and that line. The kind icon and the row's menu SHALL stay beside the title's first line, the menu a touch target of at least 44 × 44 px. The row reads the device's copy and writes nothing, so it is the same offline. On a computer, `g e` SHALL open Notes, and on the page `q` SHALL create a note, `/` SHALL focus the search field, and `j`, `k` and Enter SHALL move and open as in lists; every control SHALL be reachable with Tab, every chip's remove button included. All page text SHALL be translated in the app languages.
 
 #### Scenario: Phone filters
 - **WHEN** the user on a 390 px phone opens Notes, types `in:ren` and taps "Renovation" in the suggestions
-- **THEN** a chip "in: Renovation" is in the field, the list shows only notes in Renovation, and every row is one line at least 48 px tall
+- **THEN** a chip "in: Renovation" is in the field, the list shows only notes in Renovation, and every row is at least 48 px tall with its title above its time and place
+
+#### Scenario: A long title on a phone
+- **WHEN** the Notes list on a 360 px phone holds the note of the task "Paint the fence along the garden path before the neighbours come over", which has no project
+- **THEN** the row shows the whole title on two lines beside the task icon, and "Inbox" with the time of the last change on one line under it
+
+#### Scenario: A short title on a phone
+- **WHEN** the list holds a standalone note "Ideas" on a 360 px phone
+- **THEN** its row is the title on one line with the time under it, and its menu button beside the title is 44 × 44 px
 
 #### Scenario: Keyboard only
 - **WHEN** the user presses `g e`, then `/`, types `ferry`, presses Escape, `j` and Enter
@@ -365,3 +373,18 @@ After a bulk action on notes a toast SHALL name it with an Undo control, for ten
 #### Scenario: Changed since
 - **WHEN** the user labelled five notes, another device then removed the label from one of them, and the user activates Undo after sync
 - **THEN** the label is removed from the other four and the toast names the note that was skipped
+
+### Requirement: Files show in the notes list
+A row of the notes list SHALL show, after the note's title, a paperclip and the number of the note's live files when it has any: a standalone note's own files, and for a task's note the task's files, its comments' files included. A row without files, and a project note, SHALL show none. The paperclip SHALL be named with the number of files ("2 attachments") for assistive technology, and the number SHALL follow a file added or removed on any device without a reload.
+
+#### Scenario: A note with files
+- **WHEN** the standalone note "Recipe" holds two files and the note "Ideas" none
+- **THEN** the row "Recipe" shows a paperclip and 2, named "2 attachments", and the row "Ideas" shows no paperclip
+
+#### Scenario: A task's note
+- **WHEN** the task "Plan the trip" has notes and one attached file
+- **THEN** its row in the notes list shows a paperclip and 1
+
+#### Scenario: A file added
+- **WHEN** a third file is added to "Recipe"
+- **THEN** its row shows 3 without a reload

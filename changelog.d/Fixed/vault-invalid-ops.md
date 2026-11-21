@@ -1,1 +1,0 @@
-- **`ot vault` and the Obsidian plugin no longer stop on a change the server cannot accept.** That change is refused on its own and reported, and the rest of the sync goes through, as in the web app.

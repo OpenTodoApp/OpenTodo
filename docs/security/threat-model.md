@@ -498,7 +498,7 @@ Each item of the [review scope](review-scope.md) has a section here: where the c
 
 ### App sign-in
 
-- **Code:** `internal/mcpoauth/app.go`, `internal/httpapi/app_sign_in.go`, `internal/auth/appsessions.go`, `web/src/app/AppSignIn.tsx` (OpenSpec `native-app-foundation`, design D5).
+- **Code:** `internal/mcpoauth/app.go`, `internal/httpapi/app_sign_in.go`, `internal/auth/appsessions.go`, `web/src/app/AppSignIn.tsx` (OpenSpec `app-sign-in`).
 - **How it works:** the OpenTodo app opens `/app/sign-in` in the system's authentication sheet. The server's own sign-in runs in it, then a confirmation; Confirm is a same-origin POST from a session, never a token, so a link alone grants nothing. The server then redirects to `opentodo://signed-in` with a code, and the app exchanges the code and its PKCE verifier at `POST /api/v1/app/token`.
 - **Controls:**
   - **PKCE (S256 only).** The code is bound to the challenge and the `state`, single-use, and valid for 60 seconds. The first exchange attempt uses it up, right or wrong, so a code tried without the verifier is gone for everyone.

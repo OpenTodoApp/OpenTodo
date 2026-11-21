@@ -29,10 +29,10 @@ The official public keys are in `internal/websign/release-keys.json`: a release 
 
 | Key | Fingerprint |
 | --- | --- |
-| Release | not created yet |
-| Recovery | not created yet |
+| Release | `d463e1ee47f9f29bd7a8f052de415ff3c4f042c6a334b6d624f2f72af2c8e043` |
+| Recovery | `ed22d7780eefdc4f054f419d58cbdeb95a8557eb25bd9636d258a00730244967` |
 
-Until the keys exist, official images are unsigned and read **Self-built**.
+Created on 2026-11-21. Releases before 1.6.0 are unsigned and read **Self-built**.
 
 A key's fingerprint is the SHA-256 of its SubjectPublicKeyInfo. About shows the first 16 characters in four groups (`3F2A 9C41 7B0D E615`). **Verify key** opens `https://open-todo.app/security/verify#<full fingerprint>`, a static page that compares the fragment with the published keys. A fragment is never sent to a server, and it is a link the person opens, not a request the app makes.
 

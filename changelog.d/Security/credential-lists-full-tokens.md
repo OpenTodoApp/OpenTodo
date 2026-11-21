@@ -1,1 +1,0 @@
-- Listing the account's API tokens (`GET /api/v1/tokens`) and connected apps (`GET /api/v1/me/oauth-grants`) now needs a full or admin token, as the agent-access settings already did; read and agent tokens get `403 insufficient_scope`.

@@ -1,5 +1,5 @@
 // The signed-in OpenTodo apps, listed with the sessions in Settings → Account
-// (OpenSpec change native-app-foundation, account-access "App sessions
+// (OpenSpec change app-sign-in, account-access "App sessions
 // alongside other sessions"). Signing one out refuses the app's next request.
 import { useEffect, useState } from 'react'
 import { Icon, ListRow, Menu, MenuItem } from '../ui'

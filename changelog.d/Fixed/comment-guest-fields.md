@@ -1,1 +1,0 @@
-- **Task pages: only the page's own replies read as a guest's.** A comment's guest name and page are written by the server or by the publisher's device importing a reply, and stay as stored.

@@ -1,6 +1,5 @@
 // The grammar of links to other apps (OpenSpec change app-links, design D2),
-// with no dependency so lib/markdown.ts and lib/taskOrigin.ts (shared with the
-// native app) can use it: internal/origin/applink.go's rules, pinned by the
+// with no dependency so lib/markdown.ts and lib/taskOrigin.ts can use it: internal/origin/applink.go's rules, pinned by the
 // shared vectors internal/origin/testdata/app_links.vectors.json.
 import type { UserPrefs } from './types'
 

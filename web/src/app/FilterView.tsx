@@ -15,7 +15,7 @@ import { useFieldDefs } from './useFields'
 import { resolveLabels } from '../lib/labels'
 import { hasTimeColumn } from '../lib/rowTime'
 import { listSlotsOff } from '../lib/rowSlots'
-import { setTaskCompleted } from '../lib/ops'
+import { setTaskCompletedWithFeedback } from './completionSound'
 import { breadcrumbOf, progressMap } from '../lib/subtasks'
 import { habitStatsMap } from '../lib/habits'
 import { compareTasks, createView, groupTasks } from '../lib/views'
@@ -340,7 +340,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             waitsFor={flow.waitsFor(tk.id)}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
-            onToggle={() => act(setTaskCompleted(tk.id, !tk.completed_at))}
+            onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
             onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}

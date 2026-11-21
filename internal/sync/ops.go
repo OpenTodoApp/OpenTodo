@@ -783,6 +783,8 @@ var Schema = map[string]map[string]Field{
 		// design D6): "on" or "off"; clients read an empty or unknown value as
 		// "on" and keep the stored value, so the field stays additive.
 		"haptics": {Kind: kString, Default: `""`},
+		// The optional completion sound is enabled only by an explicit "on".
+		"completion_sound": {Kind: kString, Default: `""`},
 		// The day pages' briefing (OpenSpec change briefing-links, design D4):
 		// "hidden" hides it on Today and Upcoming; clients read an empty or
 		// unknown value as shown.

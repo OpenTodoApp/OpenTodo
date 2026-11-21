@@ -201,6 +201,7 @@ export const SETTINGS_COPY = {
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
+      completionSound: { label: msg('Task completion sound'), description: msg('Play a short sound when you complete a task.') },
       zoom: { label: msg('Allow pinch zoom'), description: msg('Pinch to zoom the app on this device. Turn it off for a more app-like feel.') },
     },
   },

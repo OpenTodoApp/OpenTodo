@@ -1,1 +1,0 @@
-- **A due fixed to another time zone is edited in that zone's time.** In the task panel its date and time read as they are there (20:00 for a call at 20:00 in Mexico City), a time you type means that zone's clock, and your own time shows beside it as a hint. Before, the field showed your time next to the other zone's name, so typing the time again moved the task (#1581).

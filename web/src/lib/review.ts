@@ -119,11 +119,6 @@ export function walkCandidates(input: ReviewInput, rules = new MethodRules(input
   }).sort((a, b) => a.reviewedAt - b.reviewedAt || a.project.position - b.project.position || a.project.name.localeCompare(b.project.name))
 }
 
-/** The walk's projects (weekly-review "Project walk"): the working projects due for review for this user. */
-export function walkProjects(input: ReviewInput, rules = new MethodRules(input)): WalkProject[] {
-  return walkCandidates(input, rules).filter((w) => w.due)
-}
-
 /** Reviewed in the walk: stamped and not due again yet under its interval. */
 export const freshlyReviewed = (w: Pick<WalkProject, 'reviewedAt' | 'due'>): boolean => w.reviewedAt > 0 && !w.due
 

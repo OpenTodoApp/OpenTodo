@@ -7,17 +7,20 @@ import type { DoOnChoice } from '../lib/dayParts'
 import type { Task } from '../lib/types'
 import { showUndoToast } from './bulk/toastStore'
 import { markCompleted, withListTransition, success } from './motion'
+import { prepareCompletionSound } from './completionSound'
 
 /**
  * Completes or reopens a task. A completion is written at once; just before, the list
  * learns that the row departs (motion-v2 D2) and the device ticks (D6).
  */
 export async function completeWithUndo(id: string, completed: boolean): Promise<void> {
+  const cue = prepareCompletionSound(completed)
   if (completed) {
     markCompleted(id)
     success()
   }
   const r = await completeUndoable(id, completed)
+  if (r.completed) cue?.()
   if (r.entry) showUndoToast(r.label, r.entry.id)
 }
 

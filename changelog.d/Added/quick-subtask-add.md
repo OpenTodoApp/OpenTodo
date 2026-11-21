@@ -1,1 +1,0 @@
-- **Add a subtask from the end of its list.** Where a list shows a task's subtasks indented — a project or the Inbox, and Today or Upcoming with subtasks nested — a muted **Add a subtask** line sits under the last one; click it and type, and it stays open for the next.

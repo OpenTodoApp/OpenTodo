@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
 import { createProject, createTask, resetDeviceId } from './ops'
-import { positionAtEnd, positionBetween, positionForStep } from './ordering'
+import { planStep, positionAtEnd, positionBetween, type Positioned } from './ordering'
 import {
   createSection, effectiveSection, groupBySection, loadCollapsedSections, loadViewMode, saveViewMode, setSectionCollapsed,
 } from './sections'
 import { storeMemberships } from './sharing'
 import { removeLocally } from './trash'
 import type { Section, Task } from './types'
+
+/** The new position of `id` one step up or down, when one write does it. */
+function positionForStep<T extends Positioned>(siblings: T[], id: string, delta: -1 | 1): number | null {
+  const plan = planStep(siblings, id, delta)
+  return plan && plan.length === 1 ? plan[0].position : null
+}
 
 let n = 0
 beforeEach(() => {

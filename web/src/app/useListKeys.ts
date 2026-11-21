@@ -2,7 +2,8 @@
 // handlers for j / k, Enter, c, 1–4, Shift+L, Delete, e, d, n, Shift+N, Shift+E, → / ←
 // and Esc (the shortcut registry names them; the shell's dispatcher resolves the keys).
 import { useEffect, useRef } from 'react'
-import { parkTask, setTaskCompleted, unparkTask, updateTask } from '../lib/ops'
+import { parkTask, unparkTask, updateTask } from '../lib/ops'
+import { setTaskCompletedWithFeedback } from './completionSound'
 import type { Priority, Task } from '../lib/types'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus } from './signals'
 import { isActivationTarget, isTypingTarget, type ShortcutHandler, useShortcutScope } from './shortcuts'
@@ -71,7 +72,7 @@ export function useListKeys(opts: ListKeys): void {
       return r && moveBy ? moveBy(r, step) : Promise.resolve(false)
     },
     focusQuickAdd: () => false,
-    toggleComplete: (id, completed) => setTaskCompleted(id, completed),
+    toggleComplete: (id, completed) => setTaskCompletedWithFeedback(id, completed),
     openLabels: (id) => ref.current.setPickerFor(id),
   }), [])
   // The `list` scope (keyboard-shortcuts): the dispatcher resolves the key, these
@@ -133,7 +134,7 @@ export function useListKeys(opts: ListKeys): void {
     'list.complete': () => {
       if (b?.ticked.length) { act(runBulk(b.ticked, { kind: 'complete' })); return }
       if (!row) return false
-      act(setTaskCompleted(row.id, !row.completed_at))
+      act(setTaskCompletedWithFeedback(row.id, !row.completed_at))
     },
     'list.priority': (_event, _shortcut, chord) => {
       const priority = Number(chord.key) as Priority

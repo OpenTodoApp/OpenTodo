@@ -229,3 +229,64 @@ The answer SHALL show each source as one line, closed by default, reading "Looke
 #### Scenario: Older client
 - **WHEN** a client that does not know the source event receives one
 - **THEN** it skips the event and the rest of the answer reads as before
+
+### Requirement: Answers are words first
+In a chat turn, on the server and on the device, the text a round writes after tool calls SHALL start a new paragraph when the text before it did not end one. A `show_tasks` call that names one live task SHALL show nothing and SHALL answer with that task's id and a message to name it as a link; a routine's AI step SHALL keep showing it. A `suggest_followups` call before the answer has any text SHALL show the follow-ups and SHALL answer that the answer still needs words. The instructions SHALL say that blocks and follow-ups never replace the answer, that the answer says so when nothing is found, and that text written before a tool call is not repeated after it. Nothing is stored, so there is no offline or convergence behaviour.
+
+#### Scenario: One task today
+- **WHEN** the model writes "Today you only have one task:" and calls `show_tasks` with that task
+- **THEN** no block is shown, the result names the task's id, and the model's next text follows on a new paragraph
+
+#### Scenario: Follow-ups alone
+- **WHEN** the model calls `suggest_followups` before writing any text
+- **THEN** the follow-ups are shown and the result asks for the answer in words
+
+### Requirement: Follow-up suggestions
+The in-app assistant SHALL be offered `suggest_followups` with 1 to 3 suggestions of at most 60 characters, at most once per answer and not in an answer that asked a choice. They SHALL show as buttons under the latest answer only; activating one SHALL send its text as the next message, through the same path and limits as typing. Offline they are disabled. They do not count toward the block limit.
+
+#### Scenario: Tap a suggestion
+- **WHEN** an answer listed three overdue tasks and suggested "Move them to Friday"
+- **THEN** activating the suggestion sends "Move them to Friday" as the next message
+
+#### Scenario: Older suggestions
+- **WHEN** a later message exists
+- **THEN** the earlier answer shows no active suggestions
+
+### Requirement: Project view blocks
+The in-app assistant SHALL be offered `show_board` (a project, optionally one column), `show_timeline` (a project), `show_activity` (a project or task, at most 20 events), `show_stats` (a date range), `show_task` (a task) and `show_habit` (a habit task), each checked like the other display tools and rendered read-only with the app's own view from local rows, live and offline.
+
+#### Scenario: Board column
+- **WHEN** the model shows the "In progress" column of Website launch
+- **THEN** the block shows that column's cards as on the board, and activating a card opens its task
+
+#### Scenario: Habit streak
+- **WHEN** the model shows the habit "Run" with a 5-day streak
+- **THEN** the block shows the habit grid and "5 days"
+
+### Requirement: Display tools offered by relevance
+When a turn's display tools would exceed the provider's strict-tool limit, the assistant SHALL offer the six original display tools plus those a skill lists or the turn's view suggests (a project view suggests board and timeline; Today suggests stats). Every offered set SHALL be the same on the server and the device.
+
+#### Scenario: Project view
+- **WHEN** the user asks from a project's board view
+- **THEN** the turn offers `show_board` and `show_timeline` with the original display tools
+
+### Requirement: Time block
+A `show_time` block (a date range of at most 31 days, grouped by `project` or `day`) SHALL show the user's tracked time in that range as bars with each group's total and the overall total, read from this device's time entries. Activating a group SHALL open it in Statistics. It works offline from local entries and changes nothing.
+
+#### Scenario: A week by project
+- **WHEN** the model shows this week's time grouped by project, and the user tracked 6 h on Website and 2 h on Home
+- **THEN** the block shows two bars, 6 h and 2 h, and a total of 8 h
+
+### Requirement: Free time block
+A `show_free_time` block (a day or a week, and a minimum length) SHALL show the free slots of each day within the working day, between calendar events, frames and timed tasks, as the calendar counts them. It is read-only; placing a task in a slot is a proposal.
+
+#### Scenario: Two free hours
+- **WHEN** the model shows Thursday's free time of at least 120 minutes, and Thursday has meetings 9 to 11 and 13 to 15 in an 8 to 18 working day
+- **THEN** the block shows 15:00 to 18:00 as free and nothing shorter than two hours
+
+### Requirement: Deadlines block
+A `show_deadlines` block (a date range) SHALL show the open tasks with a deadline in that range in date order, each with its countdown as the app writes it, as rows that open the task.
+
+#### Scenario: Before Friday
+- **WHEN** the model shows deadlines until Friday and two open tasks have deadlines Wednesday and Friday
+- **THEN** the block lists both in date order with their countdowns

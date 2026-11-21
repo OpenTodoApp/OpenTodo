@@ -3681,6 +3681,7 @@
   "Planned estimates against a {minutes} day": "相对于每日 {minutes} 的已规划预估时长",
   "Planned estimates against a {minutes} day.": "相对于每日 {minutes} 的已规划预估时长。",
   "Plans from {source}": "来自 {source} 的规划",
+  "Play a short sound when you complete a task.": "Play a short sound when you complete a task.",
   "Please enter a name": "请输入名称",
   "Please wait…": "请稍候…",
   "Policy for this server": "此服务器的策略",
@@ -4781,6 +4782,7 @@
   "Task": "任务",
   "Task actions": "任务操作",
   "Task completed": "任务已完成",
+  "Task completion sound": "Task completion sound",
   "Task conversation": "任务对话",
   "Task created": "任务已创建",
   "Task deleted": "任务已删除",
@@ -4960,7 +4962,6 @@
   "The file is not valid JSON.": "该文件不是有效的 JSON。",
   "The file is shrunk once, at a quiet moment; old versions already go.": "文件会在空闲时压缩一次；旧版本已被清理。",
   "The file matches no supported format.": "该文件不匹配任何受支持的格式。",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "已保存视图的筛选语法，例如 ##Work & p1 或 @errand。",
   "The first": "前",
   "The first N…": "前 N 项…",
   "The first, the last, all, or the ones that match": "前几项、后几项、全部或匹配的项",
@@ -7857,5 +7858,11 @@
   "Set away": "设置外出",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "跳过 {series, plural, other {# 个重复任务}}的 {occurrences, plural, other {# 次}}",
   "The last day comes before the first": "最后一天早于第一天",
-  "Or sponsor on GitHub": "或在 GitHub 上赞助"
+  "Or sponsor on GitHub": "或在 GitHub 上赞助",
+  "Select projects": "选择项目",
+  "Archive {projects}?": "归档{projects}？",
+  "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
+  "Archived {projects}": "已归档{projects}",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
+  "Filter {name}": "筛选“{name}”"
 }

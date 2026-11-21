@@ -200,9 +200,6 @@ export interface MentionTarget extends Pick<ProjectMember, 'userId' | 'name' | '
 /** The prefix of a group in a mention list (the server's sync.GroupMentionPrefix). */
 export const GROUP_MENTION_PREFIX = 'group:'
 
-/** Whether a mention id names a group. */
-export const isGroupMention = (id: string): boolean => id.startsWith(GROUP_MENTION_PREFIX)
-
 /** People whose name or email starts with (or contains) the query, best matches first, then groups (group-mentions D4). */
 export function mentionCandidates<T extends MentionTarget>(targets: readonly T[], query: string, me?: string | null): T[] {
   const q = query.toLowerCase()

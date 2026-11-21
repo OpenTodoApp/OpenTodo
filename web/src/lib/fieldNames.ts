@@ -13,11 +13,6 @@ export function rememberFieldNames(defs: readonly { id: string; name: string }[]
   for (const d of defs) knownNames.set(d.id, d.name)
 }
 
-/** The name of a definition this device has seen, if any. */
-export function fieldNameOf(id: string): string | undefined {
-  return knownNames.get(id)
-}
-
 /** The label of a `fields.<id>` op field ("Cost", else the id), or null for any other field. */
 export function fieldValueLabel(field: string): string | null {
   if (!field.startsWith(PREFIX) || field.length === PREFIX.length) return null

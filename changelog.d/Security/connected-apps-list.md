@@ -1,1 +1,0 @@
-- **See and disconnect the AI apps connected to your account.** Gemini, ChatGPT, Claude and other apps you connected by signing in are listed in Settings → Account → Security → Session, next to your signed-in OpenTodo apps, with their access and last use; **Disconnect** ends an app's access at once. Deleting an app's `MCP:` token under API tokens now disconnects it too.

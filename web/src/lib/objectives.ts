@@ -10,7 +10,7 @@ import { db } from './db'
 import { logicalDay } from './dates'
 import { t } from './i18n'
 import { uuid } from './ids'
-import { currentPeriods, nextOf, parseSector, formatPeriod } from './sectors'
+import { currentPeriods, parseSector, formatPeriod } from './sectors'
 import type { Objective } from './types'
 import { applyBatch } from './undo'
 import type { AssistantUndo } from './db'
@@ -35,12 +35,6 @@ export function previousPeriod(period: string): string | null {
   if (p.kind === 'quarter') return formatPeriod(p.n > 1 ? { ...p, n: p.n - 1 } : { ...p, year: p.year - 1, n: 4 })
   // Weeks: the last ISO week of the year before holds 28 December.
   return p.n > 1 ? formatPeriod({ ...p, n: p.n - 1 }) : currentPeriods(`${p.year - 1}-12-28`, 1)['this-week']
-}
-
-/** The following period ("2026-Q4" → "2027-Q1"). */
-export function followingPeriod(period: string): string | null {
-  const p = parseSector(period)
-  return p && p.kind !== 'month' ? formatPeriod(nextOf(p)) : null
 }
 
 /** This quarter, this week and next week on the viewer's date and first day of the week. */

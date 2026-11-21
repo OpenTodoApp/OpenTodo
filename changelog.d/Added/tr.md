@@ -1,1 +1,0 @@
-- **Turkish interface language (Türkçe).** OpenTodo’s web app, push notifications, browser extension, mobile shells, Obsidian plugin, emails, notification channels, Quick Add and voice dictation now support Turkish.

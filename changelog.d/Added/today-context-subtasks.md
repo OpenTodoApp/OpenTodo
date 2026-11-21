@@ -1,1 +1,0 @@
-- **Today** shows undated and later subtasks under their parent with Nest subtasks on. In project groups, move them under another task or make them top-level and schedule them for today.

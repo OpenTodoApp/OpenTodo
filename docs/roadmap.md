@@ -75,26 +75,26 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 | `obsidian-origin` | An `obsidian` origin that links a task back to its note | Shipped in 0.19 |
 | `view-project-drops` | In views grouped by project, drop a task into another project's group to move it, or onto a task to nest it | Shipped in 1.5 |
 | `today-project-drops` | Move, place and nest tasks in Today's project groups | Shipped in 1.5 |
-| `today-context-subtasks` | Show undated and later subtasks as context in Today, with explicit moves in project groups | Shipped |
+| `today-context-subtasks` | Show undated and later subtasks as context in Today, with explicit moves in project groups | Shipped in 1.6 |
 | `board-completed-column` | Show completed tasks on a project board: a Completed column at the end; drop a card there to complete it | Shipped in 1.5 |
 | `completed-view-review` | Completed for reviews: narrow to projects, group by project, search, and done rows without a strikethrough | Shipped in 1.5 |
 | `click-selects-title` | One click rule in every list: a first click selects the row (and shows it beside the list), a second click edits its title, `a` adds a subtask after a click; "Click a task to" goes | Planned |
-| `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped |
-| `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped |
-| `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | In progress (7 of 8) |
-| `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped |
-| `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped |
-| `spans-stay-in-sections` | A multi-day task stays in its section with its dates instead of folding into Later before its first day | Shipped |
-| `notes-page-own-notes` | The Notes page lists your notes and project notes; task descriptions are one `kind:task` chip away | Shipped |
-| `calsync-repeat-marker` | Repeating tasks show 🔁 before their title in a synced calendar; the marker never comes back as a rename | Shipped |
-| `cli-subtasks` | Subtasks in `ot`: `--parent` on `add`, `edit` and `list`, `--subtasks` cascades on `done`, `rm` and `edit`, and the tree in `list` and `task show` | Shipped |
-| `repeat-field-language` | A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | Shipped |
-| `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped |
-| `theme-title-weight` | A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | Shipped |
-| `subtask-panel-order` | Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | Shipped |
-| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Shipped |
-| `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | In progress (23 of 24) |
-| `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | In progress (14 of 15) |
+| `away-periods` | Away: mark a period, also after the fact, that skips the repeating occurrences in it in one Undo, keeps streaks and pauses reminders | Shipped in 1.6 |
+| `workspace-activity` | A workspace Activity page for retrospectives: every project, a date range, several kinds at once, tracked time, filters remembered on the device | Shipped in 1.6 |
+| `caldav-push` | Push to calendar apps: a change on any device wakes a subscribed CalDAV client (WebDAV-Push), off until the owner turns it on | Shipped in 1.6 |
+| `drag-ticked-together` | Drag several ticked tasks within a list to reorder or nest them in one move, with one Undo | Shipped in 1.6 |
+| `quarter-view-and-plan-spans` | A Quarter view in the Calendar (three months at a glance, `g q`), and 3-day and custom Plan spans | Shipped in 1.6 |
+| `spans-stay-in-sections` | A multi-day task stays in its section with its dates instead of folding into Later before its first day | Shipped in 1.6 |
+| `notes-page-own-notes` | The Notes page lists your notes and project notes; task descriptions are one `kind:task` chip away | Shipped in 1.6 |
+| `calsync-repeat-marker` | Repeating tasks show 🔁 before their title in a synced calendar; the marker never comes back as a rename | Shipped in 1.6 |
+| `cli-subtasks` | Subtasks in `ot`: `--parent` on `add`, `edit` and `list`, `--subtasks` cascades on `done`, `rm` and `edit`, and the tree in `list` and `task show` | Shipped in 1.6 |
+| `repeat-field-language` | A task's Repeat field reads repeat phrases in the languages quick add reads, and stores the English rule | Shipped in 1.6 |
+| `repeat-rule-words` | A repeat rule is shown in the interface language wherever the app shows one; the Repeat field still takes English | Shipped in 1.6 |
+| `theme-title-weight` | A theme can set how heavy task titles are (`titleWeight`), with the control in the theme editor | Shipped in 1.6 |
+| `subtask-panel-order` | Reorder a task's subtasks from the task panel and the task page: drag the handle, Alt+arrows on it, or Move up and Move down | Shipped in 1.6 |
+| `app-links` | Opt-in links to other apps (`zotero:`, `mid:`, `onenote:`…) in notes and origins, checked on the viewer's device | Shipped in 1.6 |
+| `obsidian-plugin` | An Obsidian community plugin, mobile included (built and released; waiting for the directory listing) | Shipped in 1.6 |
+| `obsidian-vault-sync` | Vault sync from inside Obsidian (built; waiting for the manual runs on devices) | Shipped in 1.6 |
 | `voice-ramble` | Speak a brain dump or drop a photo of notes; review the proposed tasks | Shipped in 0.20 |
 | `outlook-calendar-sync` | Microsoft 365 and Outlook in calendar sync | Shipped in 0.20 |
 | `play-production` | Google Play production, F-Droid and reproducible builds: reproducible builds, the F-Droid metadata and the Play upload are in; the store listings wait for the owner's Play Console and F-Droid steps | In progress (13 of 18) |
@@ -176,18 +176,18 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | In progress (4 of 5) |
+| `assistant-eval` | Recorded scenarios against a real provider, which check the tool calls a model makes (blocks used, nothing written, no map claims), run by hand with `make assistant-eval` | Shipped in 1.6 |
 | `assistant-usage-cache` | Input read from the provider's cache counts at a tenth toward the monthly cap, and each answer names it | Shipped in 1.4 |
 | `assistant-device-reads` | The on-device assistant (encrypted accounts) reads time entries, frames, slots and notes like the server's | Shipped in 1.4 |
-| `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | In progress (4 of 5) |
-| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | In progress (3 of 4) |
-| `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | In progress (2 of 3) |
+| `assistant-time-blocks` | Time, free time and deadlines blocks; `find_free_time` as a read tool for the assistant and MCP | Shipped in 1.6 |
+| `assistant-project-blocks` | Board, timeline, activity, stats, task and habit blocks, offered by relevance | Shipped in 1.6 |
+| `assistant-followups` | Up to three follow-up suggestions under an answer, sent with one tap | Shipped in 1.6 |
 | `assistant-proposal-editing` | Edit proposals in every shape, drag them in the calendar, proposals that grow over turns, before and after | Shipped in 1.4 |
 | `assistant-memory` | The assistant remembers facts you confirm: synced and encrypted like settings, managed in Settings, never sent to MCP or routines | Shipped in 1.4 |
-| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | In progress (2 of 3) |
+| `assistant-in-context` | Rewrite this, Find a slot, What's next? and Brief me, started from a task, a project or Today | Shipped in 1.6 |
 | `assistant-routine-blocks` | Routines' AI steps show the day's agenda, deadlines and tasks as blocks in the routine inbox | Shipped in 1.4 |
 | `assistant-lean-tools` | Write tools only once the model asks for them, so questions send far fewer tokens | Shipped in 1.4 |
-| `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | In progress (5 of 6) |
+| `assistant-eval-gaps` | What the first real eval run found: sections in project reads, labels found by their plural, one task as a link, answers always in words | Shipped in 1.6 |
 | `mcp-blocks` | Blocks for external agents that support MCP Apps, rendered by the host from self-contained HTML; a spike first | Shipped in 1.4 |
 | `assistant-tool-sources` | Each read in an answer shows what it returned ("Looked at 3 tasks"), so invented rows cannot pass as data | Shipped in 1.5 |
 
@@ -217,39 +217,31 @@ Why each milestone exists, and the order inside it, is in [ROADMAP.md](../ROADMA
 
 | Change | What | Status |
 | --- | --- | --- |
-| `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | In progress (15 of 18) |
-| `shell-reminders-on` | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | In progress (10 of 13) |
-| `touch-keyboard-hints` | No keyboard shortcuts or key hints on a device without a keyboard | In progress (9 of 11) |
-| `shell-touch` | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | In progress (10 of 14) |
-| `phone-row-titles` | A task's title on up to two lines on a phone | In progress (7 of 9) |
-| `phone-header-room` | Help in the bar's menu on a phone, so the title has room | In progress (7 of 9) |
-| `sheet-drag-dismiss` | Bottom sheets follow the finger and close on a drag | In progress (11 of 13) |
-| `pull-to-sync` | Pull down to sync, never a reload | In progress (7 of 9) |
-| `shell-first-paint` | The apps open on their colour and icon, and the loading frame already has the phone's bars | In progress (10 of 15) |
-| `touch-pressed-states` | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | In progress (9 of 11) |
-| `phone-bar-overflow` | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | In progress (7 of 9) |
-| `phone-titles-everywhere` | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | In progress (10 of 12) |
-| `phone-row-controls` | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | In progress (11 of 13) |
-| `touch-sheet-focus` | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | In progress (9 of 11) |
-| `phone-calendar-chrome` | The calendar on a phone: one row under the bar, the views in a menu | In progress (10 of 13) |
-| `touch-no-tooltips` | No tooltip after a tap; hover and keyboard focus as before | In progress (6 of 7) |
-| `phone-fab-clearance` | No floating add button on a Weekly review step, whose own action it covered | In progress (6 of 8) |
-| `phone-icon-picker` | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | In progress (11 of 14) |
-| `phone-task-page-targets` | A task page's completion circle takes its whole 44 px, clear of Back | In progress (7 of 9) |
-| `phone-stats-period` | The Statistics period as one menu button on a phone; a public list's name on two lines | In progress (11 of 14) |
-| `phone-timeline-rows` | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | In progress (9 of 12) |
-| `tablet-header-room` | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | In progress (12 of 14) |
-| `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | In progress (13 of 16) |
-| `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | In progress (11 of 14) |
-| `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | In progress (8 of 10) |
-| `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | In progress (10 of 14) |
-
-## Native app
-
-| Change | What | Status |
-| --- | --- | --- |
-| `native-app-foundation` | The app's place in the repo, a platform port for the shared code, local storage chosen by measurement, sign-in through the system browser, sync, lean CI lanes and an "OpenTodo Preview" in TestFlight next to the current app | In progress (15 of 21) |
-| `native-app-everyday` | Five tabs, native lists with swipe and long-press, capture with the keyboard up at once, task detail, native pickers, Browse, Search, passphrase unlock, Android conventions | Planned |
-| `native-app-handover` | Widget, share, reminders with actions, background refresh, biometric unlock, iPad split view, Google Play and F-Droid; then a go/no-go gate and the switch from the shells | Planned |
+| `shell-repairs` | Saving files from both apps, Back on Android, haptics through the bridge, Face ID on iPhone, Done on the iPhone notification, status bar icons that follow the theme | Shipped in 1.6 |
+| `shell-reminders-on` | Reminders on by default in the apps with the task's name, the permission asked with the first reminder, exact alarms asked for with an explanation, background runs that end when they are done | Shipped in 1.6 |
+| `touch-keyboard-hints` | No keyboard shortcuts or key hints on a device without a keyboard | Shipped in 1.6 |
+| `shell-touch` | No tap flash, callouts or page bounce, chrome that cannot be selected, every control answers a tap | Shipped in 1.6 |
+| `phone-row-titles` | A task's title on up to two lines on a phone | Shipped in 1.6 |
+| `phone-header-room` | Help in the bar's menu on a phone, so the title has room | Shipped in 1.6 |
+| `sheet-drag-dismiss` | Bottom sheets follow the finger and close on a drag | Shipped in 1.6 |
+| `pull-to-sync` | Pull down to sync, never a reload | Shipped in 1.5 |
+| `shell-first-paint` | The apps open on their colour and icon, and the loading frame already has the phone's bars | Shipped in 1.6 |
+| `touch-pressed-states` | A pressed colour of their own for the tab bar, menus, drawer rows and row controls on touch; tabs at their full height | Shipped in 1.6 |
+| `phone-bar-overflow` | Filter in the page's menu on a phone, an active filter as a small chip, so a project's name has room | Shipped in 1.6 |
+| `phone-titles-everywhere` | Two lines for a title on a phone in Notes, the calendar agendas, Close the day and the command bar | Shipped in 1.6 |
+| `phone-row-controls` | No Show details arrow on a phone's rows, no touch target on another's, a short add hint | Shipped in 1.6 |
+| `touch-sheet-focus` | A picker opened by touch keeps the on-screen keyboard down until its field is tapped | Shipped in 1.6 |
+| `phone-calendar-chrome` | The calendar on a phone: one row under the bar, the views in a menu | Shipped in 1.6 |
+| `touch-no-tooltips` | No tooltip after a tap; hover and keyboard focus as before | Shipped in 1.6 |
+| `phone-fab-clearance` | No floating add button on a Weekly review step, whose own action it covered | Shipped in 1.5 |
+| `phone-icon-picker` | Icons and colours as 44 px targets on touch; the picker inside the sheet's padding | Shipped in 1.6 |
+| `phone-task-page-targets` | A task page's completion circle takes its whole 44 px, clear of Back | Shipped in 1.6 |
+| `phone-stats-period` | The Statistics period as one menu button on a phone; a public list's name on two lines | Shipped in 1.6 |
+| `phone-timeline-rows` | A timeline on a phone: the name on its own line above its bar, 44 px rows, a tap opens the task | Shipped in 1.6 |
+| `tablet-header-room` | A page header follows its own width: one row beside a tablet's sidebar, nothing cut short | Shipped in 1.6 |
+| `touch-sidebar-names` | On touch a sidebar row's name has the room; its menu opens on a hold | Shipped in 1.6 |
+| `reminder-card-compact` | The in-app reminder as one compact card on touch: Snooze and Dismiss on one row | Shipped in 1.6 |
+| `phone-fab-scroll-room` | The calendar's Day and Week reach the tab bar; no empty room under pages without the add button | Shipped in 1.6 |
+| `shell-push` | Reminders by push to the Android app through UnifiedPush, with no Google service and no new server feature; the iPhone stays on its background refresh | Shipped in 1.5 |
 
 <!-- roadmap:end -->
