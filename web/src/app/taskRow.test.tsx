@@ -694,7 +694,7 @@ describe('the touch grip', () => {
     const mark = fold.querySelector<HTMLElement>('[data-fold-mark]')!
     expect(mark.className).toContain('pointer-coarse:group-active/fold:bg-selected')
     expect(mark.className).toContain('pointer-events-none')
-    expect(fold.className).toContain('pointer-coarse:active:opacity-100')
+    expect(fold.className).toContain('pointer-coarse:active:animate-none')
     expect(r.container.querySelector('button[aria-label="Complete Task"]')!.className).toContain('pointer-coarse:-m-3')
     // The grip's target ends inside the row, 4 px from its edge.
     expect(r.container.querySelector('[data-row-grip]')!.className).toMatch(/\bme-1\b/)

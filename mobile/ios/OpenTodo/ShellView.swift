@@ -42,6 +42,8 @@ final class ShellController: NSObject, ObservableObject {
     private(set) var revealed = false
     /// The bars the web app asked for last; their icons come with the web view.
     private var bars: SystemBars?
+    /// Takes the status bar tap for the page (status-bar-scroll-top).
+    let scrollTopDecoy = ScrollTopDecoy()
 
     init(origin: URL) {
         self.origin = origin
@@ -78,6 +80,11 @@ final class ShellController: NSObject, ObservableObject {
         // The default adjustment would also inset the scroll view, shrinking 100dvh by the top and
         // bottom insets and leaving the bar colour as a band under the tab bar.
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        // A tap on the status bar goes to the page (status-bar-scroll-top D1): the web view's
+        // scroll view gives it up, and the decoy takes it and tells the page.
+        webView.scrollView.scrollsToTop = false
+        scrollTopDecoy.onTap = { [weak self] in self?.webView.evaluateJavaScript(ScrollTop.script) }
+        webView.addSubview(scrollTopDecoy)
         // Pull to refresh: the gesture every iOS person tries when a page looks stale. A web app
         // with its own pull to sync takes it over (pull-to-sync D4); an older one keeps this reload.
         refresher.addTarget(self, action: #selector(pulledToRefresh), for: .valueChanged)
@@ -464,6 +471,34 @@ struct SiteBar: View {
         .padding(.trailing, 4)
         .background(.bar)
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// The one scroll view iOS hands a status bar tap to (status-bar-scroll-top D1): 1 × 1
+/// point, taller in content than its frame and scrolled off its top, so it always counts as
+/// scrollable; its delegate tells the page and declines, so it never moves. It takes no
+/// touches and is not on the accessibility tree.
+final class ScrollTopDecoy: UIScrollView, UIScrollViewDelegate {
+    var onTap: () -> Void = {}
+
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        contentSize = CGSize(width: 1, height: 3)
+        contentOffset = CGPoint(x: 0, y: 1)
+        scrollsToTop = true
+        isUserInteractionEnabled = false
+        showsVerticalScrollIndicator = false
+        backgroundColor = .clear
+        isAccessibilityElement = false
+        accessibilityElementsHidden = true
+        delegate = self
+    }
+
+    required init?(coder: NSCoder) { nil }
+
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        onTap()
+        return false
     }
 }
 

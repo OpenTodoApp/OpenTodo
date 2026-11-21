@@ -8,7 +8,7 @@ import {
   chromeRows, credentialFields, focusWalk, horizontalOverflow, installHelpers, layoutShift, LAYOUT_SHIFT_INIT, motionSeen, movingAnimations,
   overlaps, primaryDestinations, reflow, rowMetaItems, targetSize, targetSizeWcag, TEXT_SPACING_CSS, textSpacingClip, truncation, watchMotion,
 } from './audit-measures.mjs'
-import { addButtonRoom, smallFields, smallTargets } from './measure.mjs'
+import { addButtonRoom, missingMainScroller, smallFields, smallTargets } from './measure.mjs'
 
 const pw = await import('playwright').catch(async () => {
   const { createRequire } = await import('node:module')
@@ -426,4 +426,13 @@ test('room under the add button: the end of the page and of a scroller inside it
   assert.match((await page.evaluate(addButtonRoom))[0], /keeps 76 px at its end for an add button it does not show/)
   await fixture(shell(rows))
   assert.deepEqual(await page.evaluate(addButtonRoom), [])
+})
+
+test('main scroller (status-bar-scroll-top 2.2): a signed-in screen without one fails, a marked one and a public page pass', { skip }, async () => {
+  await fixture('<main data-app-frame><div id="content" data-main-scroller style="overflow-y:auto;height:200px"><p>Inbox</p></div></main>')
+  assert.deepEqual(await page.evaluate(missingMainScroller), [])
+  await fixture('<main data-app-frame><div id="content" style="overflow-y:auto;height:200px"><p>Inbox</p></div></main>')
+  assert.match((await page.evaluate(missingMainScroller))[0], /no \[data-main-scroller\]/)
+  await fixture('<main data-screen="public/list"><p>A shared list</p></main>')
+  assert.deepEqual(await page.evaluate(missingMainScroller), [])
 })

@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { shellGeofences } from './geofences'
-import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellGeofencePayload, type ShellHaptic } from './shell'
+import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shellHaptic, shellVisible, takeOverPull, type OpenTodoShell, type ShellCapability, type ShellGeofencePayload, type ShellHaptic } from './shell'
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
@@ -20,6 +20,7 @@ import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.json'
 import { openAppLink, setAppLinkSchemes, trustScheme } from './appLinks'
 import type { Place, Reminder, Task } from './types'
+import { SCROLL_TOP_EVENT } from '../ui/scrollTop'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
 const dir = path.resolve(process.cwd(), '../mobile/android/app/src/test/resources/bridge')
@@ -386,13 +387,23 @@ function pushBridge() {
 
 const text = (v: unknown) => JSON.stringify(v, null, 2) + '\n'
 
+/** status-bar-scroll-top D2: the capability, the event the page listens for and the script the iOS shell runs. */
+function scrollTop() {
+  return {
+    description: 'A tap on the status bar (status-bar-scroll-top): a shell that lists the capability runs the script, and the page scrolls its frontmost scroller to the top.',
+    capability: 'scroll-top' satisfies ShellCapability,
+    event: SCROLL_TOP_EVENT,
+    script: `window.dispatchEvent(new CustomEvent('${SCROLL_TOP_EVENT}'))`,
+  }
+}
+
 afterEach(() => {
   delete window.opentodoShell
 })
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()), 'scroll-top.json': text(scrollTop()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

@@ -65,6 +65,15 @@ enum Haptics {
     }
 }
 
+/// A tap on the status bar reaches the page (status-bar-scroll-top D1, D2, capability
+/// `scroll-top`): the page scrolls an inner element, so the web view's own scroll view has
+/// nothing to scroll to the top. The shell runs `script` instead, and the page scrolls its
+/// frontmost scroller. Pinned by the shared bridge fixture scroll-top.json.
+enum ScrollTop {
+    static let capability = "scroll-top"
+    static let script = "window.dispatchEvent(new CustomEvent('opentodo:scroll-top'))"
+}
+
 /// Who answers a pull down (pull-to-sync D4, capability `pull-refresh`): the shell's own
 /// refresh control, which reloads the page, until the page showing says it handles the
 /// pull itself (the web app's pull to sync). A newer web app says so on every load; an
@@ -135,7 +144,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, "completion-sound"] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, "completion-sound", ScrollTop.capability] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
