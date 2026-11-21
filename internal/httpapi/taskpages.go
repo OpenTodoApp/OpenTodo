@@ -254,6 +254,13 @@ func (s *Server) handleTaskPageSnapshot(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
+	s.putPageSnapshot(w, r, p, "task", func() (bool, error) { return s.pageEncrypted(r.Context(), p.UserID, tp) })
+}
+
+// putPageSnapshot stores the encrypted snapshot the publisher's device sends for page p
+// of a task or a note (kind): the ciphertext, its version and, the first time, the wrapped
+// key. A page whose item is not encrypted (encrypted says) is served live and takes none.
+func (s *Server) putPageSnapshot(w http.ResponseWriter, r *http.Request, p *auth.TaskPage, kind string, encrypted func() (bool, error)) {
 	var in struct {
 		Ciphertext string `json:"ciphertext"`
 		Version    int64  `json:"version"`
@@ -274,13 +281,13 @@ func (s *Server) handleTaskPageSnapshot(w http.ResponseWriter, r *http.Request) 
 		writeError(w, http.StatusBadRequest, "invalid_input", "wrappedKey: required for the first snapshot, at most 1 KB")
 		return
 	}
-	encrypted, err := s.pageEncrypted(r.Context(), p.UserID, tp)
+	enc, err := encrypted()
 	if err != nil {
 		s.internal(w, err)
 		return
 	}
-	if !encrypted {
-		writeError(w, http.StatusConflict, "page_not_encrypted", "this task is served live; send no snapshot")
+	if !enc {
+		writeError(w, http.StatusConflict, "page_not_encrypted", "this "+kind+" is served live; send no snapshot")
 		return
 	}
 	if err := s.auth.PutTaskPageSnapshot(r.Context(), p.ID, []byte(in.Ciphertext), in.Version, in.WrappedKey); err != nil {
