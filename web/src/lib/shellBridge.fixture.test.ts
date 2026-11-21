@@ -14,7 +14,7 @@ import { backgroundDone, forgetShellData, openAlarmSettings, setSystemBars, shel
 import { fileChunks } from './saveFile'
 import { shellUrlAction } from './shellActions'
 import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUnsubscribe } from './shellPush'
-import { shellReminders, shellWidget } from './shellPublish'
+import { shellCompleted, shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
 import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.json'
@@ -124,11 +124,21 @@ function captureSignOut(): { reminders: string; widget: string } {
   return { reminders: calls.reminders ?? '', widget: calls.widget ?? '' }
 }
 
+// Completed on three of the last 7 days (two today), one before the week, one open and one trashed.
+const DAY = 24 * HOUR
+const doneTasks: Task[] = [
+  { id: 'd1', completed_at: NOW - HOUR }, { id: 'd2', completed_at: NOW - 2 * HOUR }, { id: 'd3', completed_at: NOW - 2 * DAY },
+  { id: 'd4', completed_at: NOW - 6 * DAY }, { id: 'd5', completed_at: NOW - 9 * DAY }, { id: 'd6', completed_at: null },
+  { id: 'd7', completed_at: NOW - HOUR, deleted_at: NOW },
+].map((x) => ({ title: x.id, project_id: null, due: null, priority: 4, deleted_at: null, created_at: NOW - 30 * DAY, series_id: null, ...x }) as unknown as Task)
+
 function fixtures(): Record<string, Fixture> {
   const titled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: false })
   const untitled = shellReminders(reminders, tasks, NOW, { titles: true, encrypted: true })
   const widget = shellWidget(tasks, TODAY, NOW, false)
   const locked = shellWidget(tasks, TODAY, NOW, true)
+  const completedWidget = { ...widget, completed: shellCompleted(doneTasks, [], [], null, TODAY, false) }
+  const completedLocked = { ...locked, completed: shellCompleted(doneTasks, [], [], null, TODAY, true) }
   const signOut = captureSignOut()
   const signedOutWidget = { ...JSON.parse(signOut.widget), updatedAt: NOW }
   const geo = shellGeofences(locationReminders, placeTasks, places, { titles: true, encrypted: false })
@@ -152,6 +162,16 @@ function fixtures(): Record<string, Fixture> {
       method: 'scheduleGeofences', payload: captureGeofencesSignOut(), now: NOW, expect: { ask: false, regions: [] },
     },
     'geofences-two-cities.json': twoCities(),
+    'widget-completed.json': {
+      description: 'The Completed widget (completed-widget D1): today\'s completions and the last 7 days, oldest first, counted as Statistics counts them. The shell draws a bar per day, scaled to the highest day.',
+      method: 'publishWidget', payload: JSON.stringify(completedWidget), now: NOW,
+      expect: { updatedAt: NOW, locked: false, today: completedWidget.completed.today, days: completedWidget.completed.days },
+    },
+    'widget-completed-locked.json': {
+      description: 'A locked encrypted account: today\'s count only, no days, so the shell shows the number without bars.',
+      method: 'publishWidget', payload: JSON.stringify(completedLocked), now: NOW,
+      expect: { updatedAt: NOW, locked: true, today: completedLocked.completed.today, days: [] },
+    },
     'reminders.json': {
       description: 'The next reminders with titles (titles on, account readable), earliest first.',
       method: 'scheduleReminders', payload: JSON.stringify(titled), now: NOW,
