@@ -101,7 +101,7 @@ async function context(theme, opts = {}) {
   const c = await browser.newContext({ viewport: DESKTOP, deviceScaleFactor: 1.25, colorScheme: theme, timezoneId: 'UTC', locale: 'en-GB', ...opts })
   await c.addInitScript((css) => { addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = css; document.head.append(s) }) }, HIDE)
   // A click on a title edits it in place (inline-task-editing); the scenes open the panel.
-  await c.addInitScript(() => { try { localStorage.setItem('opentodo.rowClick', 'open'); localStorage.setItem('opentodo.swipe-cue', '1') } catch { /* no storage */ } })
+  await c.addInitScript(() => { try { localStorage.setItem('opentodo.swipe-cue', '1') } catch { /* no storage */ } })
   return c
 }
 const settle = (p, ms = 600) => p.waitForTimeout(ms)
@@ -142,7 +142,7 @@ async function toggleTodayEvents(p) {
   await p.locator('[data-page-header] button[aria-label="More actions"]').first().click()
   await p.locator('[data-today-events-toggle]').click(); await settle(p, 300)
 }
-async function openTask(p, title) { await row(p, title).click(); await detail(p).waitFor(); await settle(p, 500) }
+async function openTask(p, title) { await row(p, title).press('Enter'); await detail(p).waitFor(); await settle(p, 500) }
 /** Clip around one element, with padding, clamped to the viewport. */
 async function clipOf(p, locator, pad = 12, extra = {}) {
   const b = await locator.boundingBox()

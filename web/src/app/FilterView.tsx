@@ -341,7 +341,7 @@ export function FilterView({ initialQuery = '' }: { initialQuery?: string } = {}
             habit={habits.get(tk.id)}
             breadcrumb={tk.parent_id ? breadcrumbOf(tk, taskMap) : null}
             onToggle={() => act(setTaskCompletedWithFeedback(tk.id, !tk.completed_at))}
-            onOpen={(e) => { setSelected(key); openFromRow(tk.id, e) }} onOpenPage={() => openTaskPage(tk.id)}
+            selectOnClick onOpen={(e, intent) => { setSelected(key); openFromRow(tk.id, e, intent) }} onOpenPage={() => openTaskPage(tk.id)}
             expanded={expanded === key}
             onExpand={() => { setSelected(key); setExpanded((cur) => (cur === key ? null : key)) }} score={urgency && shape !== 'card' ? <UrgencyChip of={urgency} task={tk} /> : undefined}
             {...bulk.rowProps(tk)}

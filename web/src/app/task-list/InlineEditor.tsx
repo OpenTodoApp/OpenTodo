@@ -12,7 +12,7 @@ import type { EditPlan } from '../../lib/nlp/edit'
 import { updateTask } from '../../lib/ops'
 import { priorityShort } from '../../lib/priority'
 import type { Label, Priority, Project, Task } from '../../lib/types'
-import { Icon, IconButton, type IconName, Menu, MenuItem } from '../../ui'
+import { Button, Icon, IconButton, type IconName, Menu, MenuItem } from '../../ui'
 import { act } from '../actionError'
 import { LabelChip, LabelPicker } from '../LabelPicker'
 import { ProjectPickerField } from '../ProjectPickerField'
@@ -31,6 +31,7 @@ export interface InlineEditorProps {
   task: Task
   /** Where the caret starts in the title (the click's place). */
   caret?: number
+  compact?: boolean
   projects: Project[]
   labelMap: Map<string, Label>
   /** The editor is done; `details` asks for the panel. */
@@ -43,11 +44,12 @@ export interface InlineEditorProps {
 const insideEditor = (root: HTMLElement | null, node: Node | null) =>
   !!node && (!!root?.contains(node) || !!(node instanceof Element && node.closest('[data-overlay], [data-overlay-root]')))
 
-export function InlineEditor({ task, caret, projects, labelMap, onDone, onFollow }: InlineEditorProps) {
+export function InlineEditor({ task, caret, compact = false, projects, labelMap, onDone, onFollow }: InlineEditorProps) {
   const root = useRef<HTMLDivElement>(null)
   const [draft, setDraft] = useState(task.title)
   const details = useRef(false)
   const cancelled = useRef(false)
+  const finished = useRef(false)
   const labels = useMemo(() => [...labelMap.values()], [labelMap])
   const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? t('the project')
 
@@ -55,7 +57,15 @@ export function InlineEditor({ task, caret, projects, labelMap, onDone, onFollow
     if (cancelled.current) return
     act(commitTitleEdit(task, plan, labels, projectName).then((id) => { if (id !== task.id) onFollow?.(id) }))
   }
-  const finish = () => onDone(details.current)
+  const finish = () => {
+    if (finished.current) return
+    finished.current = true
+    onDone(details.current)
+  }
+  const cancel = () => {
+    cancelled.current = true
+    finish()
+  }
 
   const onKeyDownFirst = (e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.shiftKey) {
@@ -81,13 +91,19 @@ export function InlineEditor({ task, caret, projects, labelMap, onDone, onFollow
   }
 
   return (
-    <div ref={root} className="min-w-0 flex-1" onBlur={onBlur} data-inline-editor={task.id}
-      aria-description={t('Editing. Enter saves, Escape cancels, Shift+Enter opens the details.')}>
+    <div ref={root} className="min-w-0 flex-1" onBlur={onBlur} data-inline-editor={task.id} data-inline-compact={compact || undefined}
+      aria-description={compact ? undefined : t('Editing. Enter saves, Escape cancels, Shift+Enter opens the details.')}>
       <TitleField title={task.title} value={draft} onChange={setDraft} onCommit={commit}
-        onCancel={() => { cancelled.current = true; setDraft(task.title); onDone(false) }}
+        onCancel={cancel}
         projects={projects} labels={labels} autoFocus initialCaret={caret} onKeyDownFirst={onKeyDownFirst}
-        className="ui-input w-full py-1 text-body" ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-inline-title': true }} />
-      <EditBar task={task} projects={projects} labelMap={labelMap} onDetails={() => { details.current = true; finish() }} />
+        className={`ui-input w-full py-1 text-body ${compact ? 'min-h-11' : ''}`} ariaLabel={t('Title')} placeholder={t('Untitled')} dataAttrs={{ 'data-inline-title': true }}
+        actions={compact ? (save) => (
+          <div className="mt-1 flex flex-wrap gap-1">
+            <Button type="button" size="sm" className="min-h-11" aria-label={t('Save')} onPointerDown={(e) => e.preventDefault()} onClick={() => { save(); finish() }}>{t('Save')}</Button>
+            <Button type="button" size="sm" variant="ghost" className="min-h-11" aria-label={t('Cancel')} onPointerDown={(e) => e.preventDefault()} onClick={cancel}>{t('Cancel')}</Button>
+          </div>
+        ) : undefined} />
+      {!compact && <EditBar task={task} projects={projects} labelMap={labelMap} onDetails={() => { details.current = true; finish() }} />}
     </div>
   )
 }

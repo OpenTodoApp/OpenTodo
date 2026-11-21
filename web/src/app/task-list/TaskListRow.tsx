@@ -7,6 +7,7 @@ import { Icon } from '../../ui'
 import { act } from '../actionError'
 import { isGhost, useDeparture } from '../motion'
 import { MAX_INDENT, TaskRow, type RowMotion, type TaskRowProps } from '../TaskRow'
+import type { RowClickIntent } from '../rowClick'
 import { UrgencyChip, UrgencyContext } from '../useUrgency'
 import { LineField } from '../LineField'
 
@@ -14,10 +15,11 @@ import { LineField } from '../LineField'
 export interface RowActions {
   toggle: (task: Task) => void
   toggleCollapse: (id: string) => void
-  /** Opens the task: inline (a click, inline-task-editing) or in the panel. */
-  open: (id: string, e?: React.MouseEvent) => void
+  /** Selects, edits, or opens the task according to the row's activation. */
+  open: (id: string, e?: React.MouseEvent, intent?: RowClickIntent) => void
   /** A double-click: the task's page (row-click-modes D2). */
   openPage: (id: string) => void
+  editTitle: (id: string) => void
   tick: (id: string, range: boolean) => void
   drag: (e: React.PointerEvent, task: Task) => void
   /** A press on the row's touch grip: hold selects, hold then move drags (bulk-actions on touch). */
@@ -34,7 +36,7 @@ export interface RowActions {
   contextAt: (task: Task, x: number, y: number, row: HTMLElement) => void
 }
 
-type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
+type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'onOpen' | 'onOpenPage' | 'onEditTitle' | 'onTick' | 'onToggleCollapse' | 'onPointerDown' | 'onGripDown' | 'onGripClick' | 'dropKey' | 'actions' | 'onMore' | 'onExpand'> & {
   labelMap: Map<string, Label>
   /** The row can be picked up (to a sidebar project or label, ux-feedback-2 D4). */
   draggable: boolean
@@ -44,6 +46,7 @@ type TaskListRowProps = Omit<TaskRowProps, 'motion' | 'labels' | 'onToggle' | 'o
   collapsible: boolean
   /** The row can show its details under it (row-expand): list rows, not cards or departing rows. */
   expandable: boolean
+  swipeEditTitle?: boolean
   handlers: RowActions
 }
 
@@ -64,7 +67,7 @@ export function rowMotion(task: Task, departure: ReturnType<typeof useDeparture>
  * rows whose `selected` changed. The row follows its own task's completion sequence,
  * so a click on its checkbox draws this row only (list-rendering-at-scale D7).
  */
-export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, handlers: actions, ...rest }: TaskListRowProps) {
+export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable, reorderable, collapsible, expandable, swipeEditTitle, handlers: actions, ...rest }: TaskListRowProps) {
   const labels = useMemo(() => resolveLabels(task.labels, labelMap), [task.labels, labelMap])
   const departure = useDeparture(task.id)
   // Under the urgency order a top-level row shows its score (urgency-sort D4).
@@ -88,8 +91,10 @@ export const TaskListRow = memo(function TaskListRow({ task, labelMap, draggable
       dropKey={reorderable ? `task:${task.id}` : undefined}
       onToggle={() => actions.toggle(task)}
       onToggleCollapse={collapsible ? () => actions.toggleCollapse(task.id) : undefined}
-      onOpen={(e) => actions.open(task.id, e)}
+      selectOnClick
+      onOpen={(e, intent) => actions.open(task.id, e, intent)}
       onOpenPage={() => actions.openPage(task.id)}
+      onEditTitle={swipeEditTitle ? () => actions.editTitle(task.id) : undefined}
       onTick={rest.contextual ? undefined : (range) => actions.tick(task.id, range)}
       onMore={(from) => actions.more(task.id, from)}
       onExpand={expandable ? () => actions.expand(task.id) : undefined}
