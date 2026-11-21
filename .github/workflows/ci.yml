@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
+    inputs:
+      base:
+        description: Run the pull request tier against this branch, for example main (empty runs every job)
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -79,6 +84,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
           DRAFT: ${{ github.event.pull_request.draft }}
           QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
+          DISPATCH_BASE: ${{ inputs.base }}
         run: |
           # The merge queue runs the pull request tier for what the queued change adds.
           if [ "$EVENT" = "merge_group" ]; then
@@ -94,6 +100,17 @@ jobs:
             && ! printf '%s' "$BEFORE" | grep -Eq '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             echo "full=false" >> "$GITHUB_OUTPUT"
             git diff --name-only "$BEFORE" HEAD > changed.txt
+            cat changed.txt
+            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # A run by hand with a base: the pull request tier against it. The UI baselines fold
+          # starts one for its pull request, which the workflow's token opened without a run.
+          if [ "$EVENT" = "workflow_dispatch" ] && [ -n "$DISPATCH_BASE" ]; then
+            printf '%s' "$DISPATCH_BASE" | grep -Eq '^[A-Za-z0-9._/-]+$' || { echo "::error::base must be a branch name"; exit 1; }
+            git fetch -q origin "$DISPATCH_BASE"
+            echo "full=false" >> "$GITHUB_OUTPUT"
+            git diff --name-only FETCH_HEAD...HEAD > changed.txt
             cat changed.txt
             ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
             exit 0
@@ -1195,23 +1212,6 @@ jobs:
         run: |
           image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
           cosign sign --yes "${image}@${DIGEST}"
-      # After the move to OpenTodoApp (deploy/deploy.json `legacy`): the same image, with the same
-      # tags and its own signature, also as ghcr.io/pixari/opentodo, which existing installs pull,
-      # through the 0.16 releases. Uses the secret GHCR_LEGACY_TOKEN when it is set; a refused push
-      # is a warning and never fails the release (docs/self-hosting/docker.md#the-move-to-opentodoapp).
-      - name: Also publish under the legacy name
-        env:
-          GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
-          IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          scripts/legacy-image.sh check || exit 0
-          scripts/legacy-image.sh login
-          image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
-          # The metadata step lists full references, one per line; keep their tags.
-          mapfile -t tags < <(printf '%s\n' "$TAGS" | sed -n 's/^.*://p')
-          scripts/legacy-image.sh image "${image}@${DIGEST}" "${tags[@]}" --sign
 
   # One job publishes the GitHub release for a v* tag, after everything it ships
   # has built and every gate passed: server and `ot` binaries for every platform,

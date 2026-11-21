@@ -632,19 +632,23 @@ The repository SHALL include a Home Assistant add-on repository in `deploy/homea
 - **THEN** `make check` fails and names the problem
 
 ### Requirement: Legacy image name after the move
-After the repository moved from the user `pixari` to the organization `OpenTodoApp`, CI SHALL keep publishing every image it publishes (its tags and a cosign signature of its digest) also as `ghcr.io/pixari/opentodo`, every Helm chart also under `oci://ghcr.io/pixari/charts`, and the manual `stable` promotion also for the legacy name, for every release up to and including the 0.16 releases and for builds of the main branch until a later release exists. The legacy push SHALL use the repository secret `GHCR_LEGACY_TOKEN` when it is set and the workflow's own token otherwise, and SHALL NOT fail the workflow when the registry refuses it: it SHALL print a warning naming the secret instead. Self-hosting documentation SHALL state the new name and the last release the legacy name receives. The move changes no data, route or configuration, so offline behaviour and convergence are unaffected.
+After the repository moved from the user `pixari` to the organization `OpenTodoApp`, CI published every image it published (its tags and a cosign signature of its digest) also as `ghcr.io/pixari/opentodo`, every Helm chart also under `oci://ghcr.io/pixari/charts`, and the manual `stable` promotion also for the legacy name, for every release up to and including 0.16.0. That window is over: CI SHALL publish images, charts and the `stable` promotion only under `ghcr.io/opentodoapp/opentodo` and `oci://ghcr.io/opentodoapp/charts`, and no release step SHALL need a credential for the legacy names. The manual `stable` promotion SHALL still copy a release published only under the legacy name (0.14.2 and earlier) to the new name first, digest and signatures unchanged. Self-hosting documentation SHALL state the new name and the last release the legacy name received. The move changes no data, route or configuration, so offline behaviour and convergence are unaffected.
 
 #### Scenario: A release in the transition window
-- **WHEN** the tag `v0.15.0` is released
-- **THEN** `ghcr.io/opentodoapp/opentodo:0.15.0` and `ghcr.io/pixari/opentodo:0.15.0` name the same digest, both signed, and `stable` moves under both names
+- **WHEN** the tag `v0.15.0` was released
+- **THEN** `ghcr.io/opentodoapp/opentodo:0.15.0` and `ghcr.io/pixari/opentodo:0.15.0` name the same digest, both signed
 
 #### Scenario: After the window
-- **WHEN** the tag `v0.17.0` is released
-- **THEN** only `ghcr.io/opentodoapp/opentodo` gets it, and `ghcr.io/pixari/opentodo:stable` stays on the last 0.16 release
+- **WHEN** a release after 0.16.0 is tagged
+- **THEN** only `ghcr.io/opentodoapp/opentodo` gets it, and `ghcr.io/pixari/opentodo:stable` stays on the last release it received
 
 #### Scenario: The legacy push is refused
-- **WHEN** the registry refuses the push to `ghcr.io/pixari/opentodo` because neither token may write that package
-- **THEN** the release still succeeds and the run shows a warning that names `GHCR_LEGACY_TOKEN`
+- **WHEN** the packages under `ghcr.io/pixari` refuse every push, or the repository has no credential for them
+- **THEN** a release, the Helm publish and `Promote stable` run as before: none of them pushes to the legacy names or warns about them
+
+#### Scenario: Promoting a release from before the move
+- **WHEN** `Promote stable` runs for 0.14.2, which exists only under `ghcr.io/pixari/opentodo`
+- **THEN** it is first copied to `ghcr.io/opentodoapp/opentodo:0.14.2` with the same digest and its signatures, then `stable` points at it
 
 ### Requirement: Background jobs run when their work is due
 The process that runs the background jobs SHALL start each job when its work is due instead of on a fixed timer, and SHALL wake a job at once when the server queues work for it. Each job SHALL run at most once at a time and independently of the others, so a long backup never delays a delivery. A job that is still due right after it ran SHALL wait a retry pause before it runs again. A job SHALL be asked again for its next due time at least every 30 seconds, and within about 2 seconds after another server process on the same data directory wrote to the database. Upkeep without a deadline (database statistics, delivery log size limits, the rule run log, orphaned secrets) SHALL run at most hourly and only after something changed. No job SHALL start later than the fixed timers it replaces would have started it:

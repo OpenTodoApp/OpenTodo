@@ -5,7 +5,10 @@ name: UI baselines
 # grows with each copy of every PNG (OpenSpec ui-baselines-branch, docs/design-system.md).
 #
 # - Push to main with PNGs in web/src/ui/__screenshots__ (a merged pull request's new or
-#   changed baselines): fold them into the branch and remove them from main.
+#   changed baselines): fold them into the branch, then open (or update) the pull request
+#   that removes them from main. Main takes changes only through a pull request and the
+#   merge queue, so the fold never pushes to it. The pull request's branch has a fixed
+#   name: a second fold before it merges updates the same pull request.
 # - Run on main (Actions → UI baselines → Run workflow): regenerate every baseline inside
 #   the pinned Playwright image and replace the branch.
 # - Run on any other branch: regenerate inside the image and upload only the new or
@@ -35,6 +38,10 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      pull-requests: write
+      # A pull request the workflow's own token opens starts no pull_request run, so the
+      # fold starts CI on its branch by hand (the pull request tier, `base: main`).
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -49,13 +56,23 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           commit=$(node scripts/ui-check/baselines.mjs commit)
           git push --force origin "$commit:refs/heads/ui-baselines"
-      - name: Remove them from main
+      - name: Open the pull request that removes them from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: chore/move-ui-baselines
+          TITLE: Move UI baselines to the ui-baselines branch
         run: |
-          if ls web/src/ui/__screenshots__/*.png >/dev/null 2>&1; then
-            git rm -q web/src/ui/__screenshots__/*.png
-            git commit -q -m "Move UI baselines to the ui-baselines branch"
-            git push origin HEAD:main
+          ls web/src/ui/__screenshots__/*.png >/dev/null 2>&1 || exit 0
+          # From this push's commit: every PNG main has now, so a newer fold replaces the
+          # branch with a superset of what an older one removed.
+          git switch -q -c "$BRANCH"
+          git rm -q web/src/ui/__screenshots__/*.png
+          git commit -q -m "$TITLE"
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+          if [ -z "$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[].number')" ]; then
+            gh pr create --head "$BRANCH" --base main --title "$TITLE" --body "The baselines in web/src/ui/__screenshots__ are now on the ui-baselines branch (UI baselines workflow, run $GITHUB_RUN_ID). This removes them from main. Opened by the workflow; a later fold updates it."
           fi
+          gh workflow run ci.yml --ref "$BRANCH" -f base=main
 
   regenerate:
     name: Generate UI baselines
