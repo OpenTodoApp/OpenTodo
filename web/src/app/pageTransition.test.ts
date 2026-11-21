@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import css from '../index.css?raw'
 import { canTransitionPage, installPageTransitions, navDirection, routeDepth, showRouteChange } from './pageTransition'
 import { navigate, setRouteShow, type Route } from './router'
+import { installShortcutDispatcher } from './shortcuts/dispatch'
 
 const r = (x: Route) => x
 
@@ -104,8 +105,10 @@ describe('showing a route change', () => {
   })
 
   it('a change made from the keyboard happens at once; a tap brings the transitions back', () => {
+    const release = installShortcutDispatcher()
     installPageTransitions()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    release()
     expect(canTransitionPage()).toBe(false)
     const apply = vi.fn()
     showRouteChange(apply, '/task/t', '/inbox', true)
