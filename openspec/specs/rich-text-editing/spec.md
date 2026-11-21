@@ -442,3 +442,44 @@ In the rich-text editor, an `http(s)` address in a note's text, outside code and
 #### Scenario: Address in code
 - **WHEN** a note has `https://example.com` inside inline code or a code block
 - **THEN** it does not read as a link
+
+### Requirement: A checklist becomes a bullet list again
+Bullet list (the formatting row, the `/` menu and `Ctrl+Shift+8`) run with the caret or the selection in a checklist SHALL remove the checkbox of every item of that list, checked or not, and keep each item's text, its order and its nested lists. Outside a checklist it SHALL wrap the selection in a bullet list as before.
+
+#### Scenario: Back to bullets
+- **WHEN** a note holds the checklist "buy milk" (checked) and "bread", and the user taps Bullet list with the caret in "buy milk"
+- **THEN** the note reads `- buy milk` and `- bread`
+
+#### Scenario: A plain line
+- **WHEN** the caret is in the paragraph "eggs" and the user taps Bullet list
+- **THEN** the note reads `- eggs`
+
+### Requirement: Indent and Outdent without a keyboard
+The editor SHALL offer **Indent** and **Outdent** as commands in the formatting row's More menu and in the `/` menu, doing what Tab and Shift-Tab do in a list: Indent SHALL nest the line under the line above it, and Outdent SHALL move it one level out, out of the list from the top level. Indent SHALL be offered only on a list line with a line above it in the same list, and Outdent only on a list line.
+
+#### Scenario: Nest and bring back
+- **WHEN** the caret is in "paint", the second line of the bullet list "fence", "paint", and the user chooses Indent from More
+- **THEN** the note reads `- fence` with `- paint` nested under it, and choosing Outdent brings it back to `- fence` and `- paint`
+
+#### Scenario: Not offered where nothing would move
+- **WHEN** the caret is in the first line of a list, or in a paragraph outside a list
+- **THEN** Indent is not offered, and in the paragraph Outdent is not offered either
+
+### Requirement: Links open by touch
+On a touch screen, a tap on a link in the notes editor SHALL open the link instead of placing the caret: a web or mail address in a new tab (in the native apps, the system browser), and a link to a note, task or project in the app, as Ctrl or Cmd and a click does with a mouse. A tap SHALL be one finger that lifts within 500 ms and within 10 px of where it touched, on the same link. A finger that moves or stays down, two fingers, and mouse, pen and keyboard input SHALL keep the editor's other rules, and a tap on text that is not a link SHALL still start editing. Only addresses the editor renders as links SHALL open (http, https and mailto, and the app's `?note=`, `?task=` and `?project=` addresses).
+
+#### Scenario: Tap a web link
+- **WHEN** the user taps the link "the ferry" (https://example.com/ferry) in a task's notes on a phone
+- **THEN** the address opens in a new tab, or in the phone's browser in the apps, and the notes are not put into editing
+
+#### Scenario: Tap a link to a project
+- **WHEN** the user taps a link to the project "Lisbon" in a task's notes on a phone
+- **THEN** the project opens in the app
+
+#### Scenario: Scroll over a link
+- **WHEN** the user's finger lands on a link and moves 30 px before lifting
+- **THEN** nothing opens and the editor handles the touch as before
+
+#### Scenario: A mouse click
+- **WHEN** the user clicks a link in the notes with a mouse, without Ctrl or Cmd
+- **THEN** the caret is placed in the link and nothing opens

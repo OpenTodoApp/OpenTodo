@@ -6,7 +6,7 @@ Defines how a task reads in every list and board: one row anatomy, one metadata 
 ## Requirements
 
 ### Requirement: One row anatomy
-Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title with its marks beside it (the repeat mark and the counts: subtask progress, the notes marker, comments, attachments), the properties (see "Metadata language"), and a trailing group at the end of the row holding the origin. From 40 rem of row width the trailing group SHALL be one fixed width on every row of a list, with an origin or empty, so the right-hand column ends at the same place on every row whatever a row ends with; an origin longer than the group ends with an ellipsis, its whole text in its accessible name and the task's details. The layout SHALL follow the width of the row itself, not of the screen. The title SHALL use the width the row leaves it, wrap onto a second line when it is longer, and end with an ellipsis after two lines; on a very wide row it SHALL wrap at a readable measure of about 100 characters (48 rem). While the title is cut, a pointer resting on it SHALL show the whole title in a tooltip; the open control is named by the whole title at all times, and the task panel shows it in full. No room SHALL be kept at the row's end for controls that only appear on hover or focus. From 40 rem of row width a row SHALL be one line, or two while its title wraps: the title on the left and the properties in a right-hand column of fixed slots, in this order: the project when the list shows projects, the labels, the estimate, the date, and the assignee when the list holds shared tasks. Each slot SHALL hold one kind of fact only, and the date slot SHALL end the column, so the dates of a list form its right edge. Every row of a list SHALL use the same slot widths, so each property lines up down the list. A slot that is empty on a row SHALL keep its width, and a slot that no row of the list uses SHALL take no width, decided once for the whole list from its rows, not from the rows in view. The slot widths SHALL be the same in the Comfortable and Compact densities. As the row narrows the column SHALL drop slots, never the date: under 56 rem the estimate and the assignee, and under 48 rem the labels when the list shows projects; the task panel shows every property. Facts the column does not hold (the start, the deadline when the time column does not hold it, blocked, the habit streak, field values, a parent's name, the sample mark) SHALL take a second line only when there are any. Under 40 rem of row width the properties and those facts SHALL form one metadata line under the title, except on a screen narrower than 768 px: there the row SHALL be one line at least 44 px tall, with the title at 14.5 px on one line ending with an ellipsis and one cell at its end, which is the date, else the deadline, else the assignee's avatar, else the project marker alone; the project's and the assignee's names SHALL stay in the accessible text, and the other properties, the second line of facts and the counts SHALL be left to the task page. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The counts SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; they are not a control and SHALL NOT add a touch or tab target. When a One line or Detailed row displays a project, the marker SHALL be its configured icon in its project colour, matching the sidebar symbol, or the project colour dot when no icon is set or the icon is unavailable. The marker SHALL be decorative.
+Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, projects, labels, filters, saved filters, dashboards, Trash, Next, Waiting, the review screens, Close the day) SHALL render tasks with the same row: a fixed 24 px leading slot (collapse chevron only when the task has children, otherwise empty), the checkbox, the time column (see "Time column"), the title with its marks beside it (the repeat mark and the counts: subtask progress, the notes marker, comments, attachments), the properties (see "Metadata language"), and a trailing group at the end of the row holding the origin. From 40 rem of row width the trailing group SHALL be one fixed width on every row of a list, with an origin or empty, so the right-hand column ends at the same place on every row whatever a row ends with; an origin longer than the group ends with an ellipsis, its whole text in its accessible name and the task's details. The layout SHALL follow the width of the row itself, not of the screen. The title SHALL use the width the row leaves it, wrap onto a second line when it is longer, and end with an ellipsis after two lines; on a very wide row it SHALL wrap at a readable measure of about 100 characters (48 rem). While the title is cut, a pointer resting on it SHALL show the whole title in a tooltip; the open control is named by the whole title at all times, and the task panel shows it in full. No room SHALL be kept at the row's end for controls that only appear on hover or focus. From 40 rem of row width a row SHALL be one line, or two while its title wraps: the title on the left and the properties in a right-hand column of fixed slots, in this order: the project when the list shows projects, the labels, the estimate, the date, and the assignee when the list holds shared tasks. Each slot SHALL hold one kind of fact only, and the date slot SHALL end the column, so the dates of a list form its right edge. Every row of a list SHALL use the same slot widths, so each property lines up down the list. A slot that is empty on a row SHALL keep its width, and a slot that no row of the list uses SHALL take no width, decided once for the whole list from its rows, not from the rows in view. The slot widths SHALL be the same in the Comfortable and Compact densities. As the row narrows the column SHALL drop slots, never the date: under 56 rem the estimate and the assignee, and under 48 rem the labels when the list shows projects; the task panel shows every property. Facts the column does not hold (the start, the deadline when the time column does not hold it, blocked, the habit streak, field values, a parent's name, the sample mark) SHALL take a second line only when there are any. Under 40 rem of row width the properties and those facts SHALL form one metadata line under the title, except on a screen narrower than 768 px: there the row SHALL be its title at 14.5 px, on one line when it fits and on two when it is longer, ending with an ellipsis after two as on every other row, and one cell at its end, which is the date, else the deadline, else the assignee's avatar, else the project marker alone. That row SHALL be at least 44 px tall and grow by the title's second line only; its checkbox, time, marks, end cell, disclosure and grip SHALL stay on the title's first line at the same positions and sizes as on a one-line row; the project's and the assignee's names SHALL stay in the accessible text, and the other properties, the second line of facts and the counts SHALL be left to the task page. The checkbox SHALL sit at the same horizontal position in every flat view and at the same position plus indentation in tree views; within one list every title SHALL start at the same horizontal position. The counts SHALL be in the page and read by assistive technology at all times, at the faint text colour (still meeting text contrast) until the pointer is over the row or focus is inside it, then at the muted colour; they are not a control and SHALL NOT add a touch or tab target. When a One line or Detailed row displays a project, the marker SHALL be its configured icon in its project colour, matching the sidebar symbol, or the project colour dot when no icon is set or the icon is unavailable. The marker SHALL be decorative.
 
 #### Scenario: Same alignment across views
 - **WHEN** the user moves between Today, the Inbox and a project without sections
@@ -43,6 +43,18 @@ Every task list (Inbox, Today, Upcoming, Anytime, Someday, Assigned, Completed, 
 #### Scenario: One line on a phone
 - **WHEN** Today lists "Call the plumber about the boiler", assigned to Mia Lang in the project "Home renovation", on a 390×844 phone
 - **THEN** the row is one line 44 px tall, the title at 14.5 px is followed by Mia Lang's avatar at the row's end, the project and the counts are not on the row, and a screen reader still hears "Mia Lang"
+
+#### Scenario: Two lines on a phone
+- **WHEN** Today lists "Get three quotes for the kitchen" at 10:00 with priority 2 on a 360 px phone
+- **THEN** the title reads in full on two lines, the row is 64 px tall, and the time, the checkbox, the priority mark, Show details and the grip are where they are on a one-line row, each touch target still at least 44 × 44 px
+
+#### Scenario: A title longer than two lines on a phone
+- **WHEN** the Inbox lists "Paint the fence along the garden path before the neighbours come over" on a 360 px phone
+- **THEN** the row shows the title's first two lines ending with an ellipsis, its source line under them, and a screen reader hears the whole title as the row's name
+
+#### Scenario: A long list of two-line rows on a phone
+- **WHEN** the user presses End, or drags the scroll bar to its end, in a project of 2,000 tasks with long titles on a phone
+- **THEN** the list reaches its last task, and swiping a two-line row, dragging it by its grip and completing it work as on a one-line row
 
 #### Scenario: The date wins on a phone
 - **WHEN** a task due two days ago with a label, an estimate and a project is listed in Today's Earlier group on a 390 px phone
@@ -658,7 +670,7 @@ Every task list SHALL reserve, between the checkbox and the title, a column for 
 - **THEN** the first row's column shows the evening icon, named "Evening", the second shows "09:00", both titles start at the same position, and the first row's date line carries no "evening" word
 
 ### Requirement: Revealed row actions
-On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface over the row's end, at every row width: over the end of the property column of a one-line row, and over the end of the title's first line of a narrower row, which keeps no room for them: Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key, and the selection bar's Actions after a long press ticks the row (`bulk-actions` "One ticked task on touch"), and the row's disclosure button shows the details. Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
+On a fine pointer from 768 px wide, a row SHALL hold four actions at its right edge, shown while the pointer is over the row or focus is inside it as one small floating cluster on the popover surface over the row's end, at every row width: over the end of the property column of a one-line row, and over the end of the title's first line of a narrower row, which keeps no room for them: Show details, which shows the task's details under the row as → does (Hide details while they are shown, see "Expanded rows"); Schedule, which opens the same Do on popover as `s` anchored to the row; Priority, which opens the same priority choice as `1` to `4`; and More, which opens the row menu as `.` does. The actions SHALL be real buttons at all times, reachable by Tab from the row's open control and back with Shift+Tab, named with their key in their tooltips, with targets of at least 24 by 24 CSS pixels and 8 px apart (WCAG 2.2 2.5.8), and SHALL never be obscured by the sticky page header, the selection bar or a toast when focused (WCAG 2.2 2.4.11). `j` and `k` SHALL keep moving focus from open control to open control, skipping the actions. Revealing the actions SHALL NOT change the row's height, move the title or the properties, or hide the counts or the properties from assistive technology. On coarse pointers and below 768 px the actions SHALL NOT be rendered; the row menu stays reachable by `.`, the Menu key, and the selection bar's Actions after a long press ticks the row (`bulk-actions` "One ticked task on touch"); the details are shown by the row's disclosure button on a coarse pointer from 768 px, and by → at every width (see "Expanded rows"). Every action writes through the same path as its keyboard equivalent, so it works offline and converges per field. A viewer's row SHALL offer Show details only.
 
 #### Scenario: Reveal on hover
 - **WHEN** the pointer enters a row with two comments on a 1280 px screen
@@ -762,7 +774,7 @@ The web app, the Daily check, the Today display, the weekly review and the diges
 - **THEN** All projects reads "Overdue · 1 late" for it, while Today, the Daily check and the weekly review still call that task's group "Earlier"
 
 ### Requirement: Phone header actions
-Below 768 px a list SHALL show its actions in the shell's bar and its overflow menu, never as a row of controls between the bar and the quick add, so the rule "Nothing between the header and the list" holds at every width. The bar SHALL show at most two visible actions: Process the Inbox in the Inbox, the Ask action in Today when the assistant is available, and otherwise the duration filter where the view has one; Display mode, "Select tasks", the duration filter when the slots are taken, and the rest SHALL be in the overflow. The Inbox SHALL have no subtitle: its planned tasks without a project are the last group of its list (OpenSpec `web-app`, "Standard views"). An active filter SHALL show as one chip with a clear control in the bar, not above the list.
+Below 768 px a list SHALL show its actions in the shell's bar and its overflow menu, never as a row of controls between the bar and the quick add, so the rule "Nothing between the header and the list" holds at every width. The bar SHALL show at most two visible actions: Process the Inbox in the Inbox, the Ask action in Today when the assistant is available, and the page's display options; Display mode, "Select tasks", the duration filter, Upcoming's "Filter…" and the rest SHALL be in the overflow, so the bar has no Filter button and the title has that room. The duration filter's choices SHALL be a group of the menu named "Filter by duration", each a checkable item reached with the menu's keyboard model, with the active one checked; choosing one SHALL close the menu and return focus to its button. The Inbox SHALL have no subtitle: its planned tasks without a project are the last group of its list (OpenSpec `web-app`, "Standard views"). An active duration filter SHALL show as one chip in the bar, not above the list: the filter icon and a clear mark in the accent-soft tone, at most 48 px wide and at least 44 px high to the touch, named "Clear filter" and preceded by the filter's name for assistive technology; activating it SHALL clear the filter. From 768 px the header SHALL keep its Filter action and the chip with the filter's name. The filter is a per-device choice applied to local data, so this is presentation only: it writes nothing, behaves the same offline and needs no convergence.
 
 #### Scenario: Today on a phone
 - **WHEN** Today with ten tasks opens on a 390×844 phone
@@ -772,9 +784,29 @@ Below 768 px a list SHALL show its actions in the shell's bar and its overflow m
 - **WHEN** the Inbox with eight tasks and three planned tasks without a project opens on a phone
 - **THEN** the bar shows "Process 8" as a visible action, no subtitle, and no row of controls under it; the three planned tasks are the folded group at the end of the list
 
+#### Scenario: A project on a small phone
+- **WHEN** a project opens on a 360 px screen with no filter on
+- **THEN** the bar shows the menu button, the project's name, Display options and the project menu, and no Filter button
+
 #### Scenario: Filter chip in the bar
-- **WHEN** the user picks "Quick wins" from the filter in the bar of a project on a phone
-- **THEN** the list is filtered and one chip with a clear control appears in the bar, and the first task keeps its place under the quick add
+- **WHEN** the user opens the menu in the bar of a project on a phone and picks "Quick wins" under "Filter by duration"
+- **THEN** the list is filtered, focus is on the menu's button, one chip with the filter icon and a clear mark appears in the bar, and the first task keeps its place under the quick add
+
+#### Scenario: Filter by keyboard
+- **WHEN** the user focuses the project menu's button on a 360 px screen, presses Enter, types "quick" and presses Enter
+- **THEN** focus is on "Quick wins" after typing, and the list is filtered after Enter
+
+#### Scenario: Clear from the bar
+- **WHEN** "Quick wins" is on in a project on a phone and the user taps the chip in the bar
+- **THEN** the filter is cleared, the chip is gone and the menu shows no choice checked
+
+#### Scenario: Upcoming's query filter
+- **WHEN** the user opens the bar's menu on Upcoming on a phone and chooses "Filter…"
+- **THEN** the filter dialog opens, and closing it puts focus on the menu's button
+
+#### Scenario: Wider screens
+- **WHEN** a project is open on a 1280 px screen and "Quick wins" is on
+- **THEN** the header shows the Filter action and a "Quick wins" chip with a clear control, and the project menu has no "Filter by duration" group
 
 ### Requirement: Swipe actions on rows
 On a touch screen a task row SHALL offer two swipe actions: swiped right it completes the task (reopens it in Completed); swiped left it opens a Schedule sheet with Today, Tomorrow, Next week, Pick a day and Someday. A swipe SHALL take the row only after the finger has moved 12 px horizontally with less than 8 px of vertical movement, so a vertical scroll never moves a row. While the finger moves the row SHALL translate up to 120 px and show the action's edge as a soft tint with its icon and word; the action SHALL be named at 64 px, fire at 96 px or on a release faster than 0.5 px per ms past 64 px, and be cancelled, with the row returning within the ui duration, when the finger releases or returns under 32 px. A completed swipe SHALL run the completion feedback and SHALL offer the same Undo as a tap on the checkbox. Every swipe action SHALL also be the first items of the row's menu ("Complete", "Schedule…"), so no action needs a gesture. Rows SHALL NOT swipe while any row is ticked, when the user cannot edit the task, in the Trash, on board cards and calendar blocks, while the inline editor is open, or with a fine pointer. A long press without movement SHALL still start the drag. The first time a touch device shows a list with a swipeable row the first row SHALL peek 40 px to the right and back once (not under reduced motion) and a toast SHALL say what swiping does; the cue SHALL run once per device. Each action is the same local operation as its menu item, so it works offline and converges like any other edit.
@@ -824,7 +856,7 @@ On a touch screen a task row SHALL offer two swipe actions: swiped right it comp
 - **THEN** the toast is shown and no row moves
 
 ### Requirement: Expanded rows
-A task list row SHALL be able to show the task's details directly under it, inside the list, and hide them again, without opening the task page. This SHALL apply to the list layout of Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned, projects, labels, places, the Filter view and saved views; board cards, the timeline, calendar and Plan rows, the review screens, Close the day and dashboards SHALL NOT expand. With a row selected, → SHALL unfold its subtasks when they are folded and otherwise show its details; ← SHALL hide its details when shown, otherwise fold its subtasks, otherwise select its parent; Esc SHALL hide the details after closing any picker or panel and before clearing the selection; Enter SHALL still open the task page and Space SHALL still tick. On a fine pointer from 768 px the revealed actions SHALL offer Show details (Hide details while shown); on a coarse pointer or below 768 px every row SHALL end with a disclosure button with a target of at least 44 by 44 CSS pixels on touch, which a tap toggles and which SHALL NOT open the task, while a horizontal drag starting on it remains the row's swipe. The details SHALL be indented under the title, on the row's own surface with no border, and SHALL show, in this order: the notes rendered and clamped to about four lines with Show more and Show less when longer; the task's facts in the task panel's words, only those with a value (do date, evening, repeat, deadline, start, reminders, project, section, parent, origin, location, priority, estimate, labels, assignee, blocked by, blocks); the subtasks with their checkboxes, unless the list already shows them as rows under the task; the comment and attachment counts; and Open task. Ticking a subtask there SHALL be the only change made in place and SHALL write the same operation as on the task page, so it works offline and converges per field; viewers of a shared project SHALL see the checkboxes disabled. At most one row of a list SHALL be expanded: expanding another row SHALL hide the first, and moving the cursor SHALL NOT. The expanded row SHALL be kept only while the list is shown: leaving it or reloading SHALL hide it, and nothing SHALL be stored or synced. Ticking SHALL NOT change it; no row SHALL show details while a drag runs or while it is edited in place; a completed row that leaves takes its details with it. The row's open control and the disclosure SHALL expose `aria-expanded` and control the details, a group named after the task; → and ← SHALL leave focus on the row; Tab SHALL reach the details' controls after the row's own. The details SHALL fade in within the ui duration, and appear without motion under reduced motion. Only the expanded row SHALL load the details, and opening or closing them SHALL re-render only the rows that change.
+A task list row SHALL be able to show the task's details directly under it, inside the list, and hide them again, without opening the task page. This SHALL apply to the list layout of Inbox, Today, Upcoming, Anytime, Someday, Completed, Assigned, projects, labels, places, the Filter view and saved views; board cards, the timeline, calendar and Plan rows, the review screens, Close the day and dashboards SHALL NOT expand. With a row selected, → SHALL unfold its subtasks when they are folded and otherwise show its details; ← SHALL hide its details when shown, otherwise fold its subtasks, otherwise select its parent; Esc SHALL hide the details after closing any picker or panel and before clearing the selection; Enter SHALL still open the task page and Space SHALL still tick. On a fine pointer from 768 px the revealed actions SHALL offer Show details (Hide details while shown); on a coarse pointer from 768 px every row SHALL end with a disclosure button with a target of at least 44 by 44 CSS pixels, which a tap toggles and which SHALL NOT open the task, while a horizontal drag starting on it remains the row's swipe. Below 768 px a row SHALL have no disclosure button: a tap on the row opens the task, which shows everything the details would, and → and the "Expand the row" choice of "Click a task to" still expand it. A row whose details are shown SHALL end with the disclosure button as Hide details at every width, so details opened with the keyboard, by a click or before the window narrowed can always be closed with the pointer. The details SHALL be indented under the title, on the row's own surface with no border, and SHALL show, in this order: the notes rendered and clamped to about four lines with Show more and Show less when longer; the task's facts in the task panel's words, only those with a value (do date, evening, repeat, deadline, start, reminders, project, section, parent, origin, location, priority, estimate, labels, assignee, blocked by, blocks); the subtasks with their checkboxes, unless the list already shows them as rows under the task; the comment and attachment counts; and Open task. Ticking a subtask there SHALL be the only change made in place and SHALL write the same operation as on the task page, so it works offline and converges per field; viewers of a shared project SHALL see the checkboxes disabled. At most one row of a list SHALL be expanded: expanding another row SHALL hide the first, and moving the cursor SHALL NOT. The expanded row SHALL be kept only while the list is shown: leaving it or reloading SHALL hide it, and nothing SHALL be stored or synced. Ticking SHALL NOT change it; no row SHALL show details while a drag runs or while it is edited in place; a completed row that leaves takes its details with it. The row's open control and the disclosure SHALL expose `aria-expanded` and control the details, a group named after the task; → and ← SHALL leave focus on the row; Tab SHALL reach the details' controls after the row's own. The details SHALL fade in within the ui duration, and appear without motion under reduced motion. Only the expanded row SHALL load the details, and opening or closing them SHALL re-render only the rows that change.
 
 #### Scenario: Expand with the keyboard
 - **WHEN** Today lists "Pay rent" with notes and two labels, the user selects it with `j` and presses →
@@ -842,9 +874,17 @@ A task list row SHALL be able to show the task's details directly under it, insi
 - **WHEN** the details of the selected row are shown, no picker or panel is open, and the user presses Esc
 - **THEN** the details are hidden and the row stays selected; a second Esc clears the selection
 
-#### Scenario: Tap on a phone
-- **WHEN** a 360 px wide Inbox row is tapped on its disclosure button
+#### Scenario: Tap on a touch tablet
+- **WHEN** an Inbox row on an 820 px wide touch screen is tapped on its disclosure button
 - **THEN** the details open under it, the task page does not open, and a second tap hides them
+
+#### Scenario: Tap on a phone
+- **WHEN** the Inbox is shown at 360 px on a touch screen and a row is tapped
+- **THEN** the task opens; no row has a Show details button, and a row ends with its date or other end cell and its grip
+
+#### Scenario: An expanded row in a window that narrows
+- **WHEN** a row's details are shown at 900 px and the window is narrowed to 600 px
+- **THEN** the details stay, and the row ends with Hide details, which closes them
 
 #### Scenario: Swipe still works
 - **WHEN** on a touch screen the user drags a row 100 px to the right starting on its disclosure button
@@ -1077,3 +1117,99 @@ In a list that has no order of its own (Today unless grouped by Project, Upcomin
 #### Scenario: Drop on another day still moves it
 - **WHEN** the user drags the same task onto the 24 October group
 - **THEN** its date moves to 24 October with an Undo, as before
+
+### Requirement: Row controls on touch do not overlap
+On a coarse pointer the controls of a task row (the fold arrow of a task with subtasks, the checkbox, the open control that is the row's title and facts, the disclosure button where the row has one, and the grip) SHALL each take taps in an area of at least 44 by 44 CSS pixels, and no two of these areas, nor a row control's area and a control of the section header or the page header above the row, SHALL overlap by more than 4 CSS pixels on both axes. A tap SHALL act on the control whose area it is in. The fold arrow's area SHALL end where the checkbox's begins and reach back over the row's indent and the page's gutter; the grip's area SHALL lie inside the row, on the title's first line with the row's other controls. The checkbox and the start of the title SHALL NOT move, so the checkboxes of every list stay aligned; the fold arrow and the grip SHALL move by no more than 4 CSS pixels sideways, and the title SHALL lose no more than 4 CSS pixels of width to them. Where a row has both a disclosure button and a grip, the two SHALL stand far enough apart for their areas. A pressed control SHALL show its pressed colour as a 28 px circle around its glyph, wherever the glyph sits in its area. Nothing here changes what a control does or writes, so it is the same offline.
+
+#### Scenario: Fold arrow beside the checkbox
+- **WHEN** a project at 360 px on a touch screen shows a task with subtasks, and the user taps 8 px to the left of the fold arrow, then 8 px to the left of the checkbox's circle
+- **THEN** the first tap folds the subtasks and completes nothing, and the second completes the task and folds nothing
+
+#### Scenario: Grip under a section header
+- **WHEN** the first row of a project section at 360 px is shown under the section's header with its Add a task button
+- **THEN** the grip is level with the row's title, its area starts at the row's top edge, and a tap at the bottom of the Add a task button adds a task and selects nothing
+
+#### Scenario: Disclosure beside the grip
+- **WHEN** a row on an 820 px wide touch screen ends with its disclosure button and its grip, and the user taps the right-hand edge of the disclosure's area
+- **THEN** the details open and the row is not selected
+
+#### Scenario: Pressed fold arrow
+- **WHEN** a finger is on the fold arrow of a row
+- **THEN** a 28 px circle in the selected colour surrounds the arrow's glyph, the arrow is not dimmed and the row is not tinted
+
+### Requirement: Add field hint on a phone
+Below 768 px the hint in a list's add field and in a section's add line SHALL be the short "Add a task…", so it fits the field's one line at 360 px in every interface language; from 768 px the hint SHALL name where the task goes, as before ("Add a task to Home renovation…", "Add a task for today…"). The field's accessible name SHALL NOT change with the width, and where the task goes SHALL NOT change: it is the list or section the field belongs to.
+
+#### Scenario: Long project name on a phone
+- **WHEN** the project "Home renovation with a rather long project name" is shown at 360 px
+- **THEN** the add field reads "Add a task…" on one line and a task typed there is added to that project
+
+#### Scenario: Wide screen
+- **WHEN** the same project is shown at 1280 px
+- **THEN** the add field reads "Add a task to Home renovation with a rather long project name…"
+
+### Requirement: Titles on a phone outside the task row
+On a screen narrower than 768 px, the lists that name a task or a note with a row of their own SHALL show its title by the task row's rule: on one line when it fits, on two when it is longer, ending with an ellipsis after two; while the user's Show full task titles preference is on, on as many lines as it takes. These lists are: the Notes list; the focused day's list under the Month; the Week's day lists, with their repeating occurrences and the checklist of a block; the Plan's days; the task lists of Close the day (What got done, What moves, Tomorrow's first thing); and the names of the command bar's results. The rule reads the preference the device already holds, so it applies offline and follows the preference when it arrives by sync; it writes nothing.
+
+A row whose title fits on one line SHALL keep the height it had, at least 44 px where it is a touch target, and a longer title SHALL add the height of its extra lines only. What stands beside the title (the time, the estimate, the priority, a span's day, a checkbox, a radio mark, a row's menu) SHALL stay on the title's first line, at the same horizontal position and size as on a one-line row, and SHALL NOT overlap the title. A project's name beside a title in Close the day SHALL take at most a third of the line. The whole title SHALL stay the row's accessible name.
+
+A row whose height or shape is fixed by its place SHALL keep one line at every width: a block in the time grid of Day and Week and a row of the all-day lane above it, a row in a Month cell or in a Plan column, a deadline marker, a calendar event, the selected task's chip in the command bar, and a result in a list long enough to be drawn in a window of fixed rows. From 768 px every list named here SHALL be as it was: one line and an ellipsis, with or without the preference.
+
+#### Scenario: A long title in the Week on a phone
+- **WHEN** the Week on a 360 px phone lists "Send the signed contract back to the landlord with the inventory list attached" at 16:00 with an estimate of 20 minutes
+- **THEN** the title is on two lines ending with an ellipsis, "16:00" and "20m" are beside its first line, and the row above it with a short title is 44 px tall
+
+#### Scenario: The focused day under the Month
+- **WHEN** the user taps a day on the Month at 360 px whose tasks include one with a long title and priority 2
+- **THEN** that row shows the title on two lines with the time before and the priority after its first line, and the other rows are 44 px tall
+
+#### Scenario: Close the day with a long project name
+- **WHEN** What got done at 360 px lists "Compare the three kitchen quotes line by line" of the project "Home renovation with a rather long project name"
+- **THEN** the title reads on two lines beside the check mark, and the project's name is cut within a third of the line
+
+#### Scenario: A search result
+- **WHEN** the user types "venue" in the command bar on a 360 px phone and a task "Book the venue for the autumn team dinner before the deposit deadline passes" matches
+- **THEN** the result shows the title on two lines and "Inbox · Tomorrow 09:30" on one line under it, and a result with a short name is one line and 44 px tall
+
+#### Scenario: Show full task titles
+- **WHEN** the preference is on and the Plan on a 360 px phone lists a task whose title needs four lines
+- **THEN** the row shows all four lines with its time beside the first, and the same row in a Plan column at 1280 px is one line
+
+#### Scenario: The preference changed offline
+- **WHEN** the user turns Show full task titles on while offline with the Notes list open on a phone
+- **THEN** the titles show in full at once, and the user's other phone shows them in full after sync without a reload
+
+#### Scenario: A fixed row keeps one line
+- **WHEN** the Day's time grid on a 360 px phone holds a 30-minute task with a long title
+- **THEN** its block keeps its height and shows the title on one line
+
+#### Scenario: A wide screen
+- **WHEN** the same lists are opened at 768 px and at 1280 px
+- **THEN** every title is on one line ending with an ellipsis when it is cut, and no row's height or position differs from before this change
+
+### Requirement: A day page opens with its briefing
+Today and Upcoming SHALL draw nothing below the shell until everything their briefing is worded from has been read from the device: the tasks, the cached notifications, the review row and the account's preferences, including the one that hides the briefing. The briefing SHALL NOT be drawn from a part of them and completed later, and a hidden briefing SHALL NOT be drawn at all. The reads are local and asked for together, so the page SHALL NOT wait for the network and SHALL open the same way offline. With the seeded account on a device that has finished its first sync, the layout shift of Today from navigation to idle SHALL stay below 0.1 at 360, 390 and 768 px, on a cold load and on a navigation inside the app. A change that arrives later (a reply brought by a sync, a task completed on another device) updates the briefing as it updates the list; it converges like any other synced change and is not part of this requirement. This is presentation only: it writes nothing.
+
+#### Scenario: Replies are part of the first sentence
+- **WHEN** Today opens at 360 px on a device whose cache holds two unread replies and one late task
+- **THEN** the first thing drawn is the title, "Two things matter today." with the late task and "2 replies are waiting", and the list under it, and none of them moves afterwards
+
+#### Scenario: The notifications answer last
+- **WHEN** the tasks have been read and the notifications have not
+- **THEN** the page shows nothing below the shell, and the title, the briefing and the rows appear together when the notifications are read
+
+#### Scenario: Hidden briefing
+- **WHEN** Upcoming opens on an account that chose Hide briefing
+- **THEN** the rows are never shown with a briefing above them
+
+#### Scenario: Offline
+- **WHEN** Today opens with the server unreachable
+- **THEN** it is drawn from the device's rows as soon as they are read, with the replies the device last cached
+
+#### Scenario: A list without a briefing
+- **WHEN** the Inbox or a project opens
+- **THEN** it waits for nothing more than before
+
+#### Scenario: A reply arrives later
+- **WHEN** Today is open and a sync brings a new unread reply
+- **THEN** the briefing names it, as before
