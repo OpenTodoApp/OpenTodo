@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -132,36 +130,14 @@ func (csvProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	}
 	loc := opts.Location()
 	seen := map[string]int{} // content key → occurrences, for stable source ids
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				if len(out.Rows) > MaxRows {
-					return nil, ErrTooManyRows
-				}
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		line, _ := r.FieldPos(0)
-		get := func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}
-		if allBlank(rec) {
-			continue
-		}
+	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		out.Rows = append(out.Rows, csvRow(line, rec, get, unsupported, seen, loc))
 		if len(out.Rows) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	resolveCSVParents(out.Rows)
 	return out, nil
