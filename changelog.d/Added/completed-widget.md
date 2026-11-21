@@ -1,1 +1,0 @@
-- **A Completed widget for Android.** Beside Today, a home-screen widget shows how many tasks you completed today and a bar for each of the last 7 days, counted as in Statistics, which a tap opens. While an encrypted account is locked it shows only today's number (#1531, #1240).

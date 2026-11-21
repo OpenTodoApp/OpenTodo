@@ -1,1 +1,0 @@
-- **On iPhone, each task added with "Add task below" starts with a capital letter.** The line under the new task is now the same field moving down instead of a new one, so the keyboard capitalises again ([#1551](https://github.com/OpenTodoApp/OpenTodo/issues/1551)).

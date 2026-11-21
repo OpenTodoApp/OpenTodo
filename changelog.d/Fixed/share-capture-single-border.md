@@ -1,1 +1,0 @@
-- **The capture screen draws one border around the task field.** The field and the row of detected dates, projects and labels under it sat inside a second frame, an extra border wherever the capture screen opens, the browser extension's window included.

@@ -1,1 +1,0 @@
-- **A date picker in the phone's add sheet.** The date button opens the quick dates, the month and a few times; a tap writes the date into the line in words ("tomorrow 17:00", "Fri 28 Nov"), replacing the date the line already has, and Clear removes it.

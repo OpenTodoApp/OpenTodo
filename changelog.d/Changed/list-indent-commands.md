@@ -1,1 +1,0 @@
-- **Indent and Outdent in the editor's menus.** On a phone, where there is no Tab key, the formatting row's More menu and the `/` menu nest a list line under the one above and bring it back (#1477).

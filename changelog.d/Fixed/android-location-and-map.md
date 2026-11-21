@@ -1,1 +1,0 @@
-- **Android app: "Use my location" and "Open in maps" work.** The app asks Android for location the first time a task's location uses the current position, and gives it only to your server's pages; "Open in maps" opens the phone's maps app, or the point on openstreetmap.org when there is none (#1476).

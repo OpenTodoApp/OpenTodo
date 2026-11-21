@@ -1,1 +1,0 @@
-- **Completed Things projects arrive archived.** A project that was completed or canceled in Things 3 was imported as an active project. It now arrives as an [archived project](docs/archived-projects.md) with its tasks, and the preview says so (#1659).

@@ -1,1 +1,0 @@
-- `ot habits` uses your computer's time zone also when `TZ` is unset, so an evening log no longer lands on the next day (#1500).

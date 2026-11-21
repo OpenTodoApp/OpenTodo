@@ -1,1 +1,0 @@
-- **Todoist import reads Dutch recurring dates.** Phrases such as `elke vrijdag`, `iedere 3 maanden` and `elke 1e zondag in januari` now keep their rule instead of importing the task without a due date (#1426).

@@ -1,1 +1,0 @@
-- **GitHub Sponsors beside the coffee.** The welcome note and Settings → About now have a quiet "Or sponsor on GitHub" link under the Buy Me a Coffee button ([Feedback and support](docs/feedback-and-support.md#buy-me-a-coffee)).

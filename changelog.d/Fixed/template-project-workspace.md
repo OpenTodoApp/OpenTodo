@@ -1,1 +1,0 @@
-- **A project created from a template lands in the current workspace**, like an empty project, instead of the default one; a duplicated project or task stays beside its source (#1510).
