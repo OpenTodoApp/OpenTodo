@@ -1359,6 +1359,17 @@ With a mouse or trackpad as the main pointer, selection, callouts and the browse
 - **WHEN** a button on a screen of the layout check's touch emulation can be text-selected
 - **THEN** the check fails naming the screen and the button
 
+### Requirement: Pressed feedback waits for a tap
+On a touch device the pressed look of a control SHALL appear only after the finger has rested on it for 60 ms, SHALL NOT appear when the touch turns into a scroll within that time, and SHALL be shown only on the innermost interactive element under the finger, not on the rows or cards that contain it. Lifting the finger SHALL remove it at once. It changes no data, so offline behaviour and convergence are unaffected.
+
+#### Scenario: A scroll that starts on a row
+- **WHEN** a person puts a finger on a task row and starts scrolling within 60 ms
+- **THEN** the row never shows its pressed look
+
+#### Scenario: A button inside a row
+- **WHEN** a person presses the completion circle of a row and holds it for 100 ms
+- **THEN** the circle shows its pressed look and the row does not
+
 ### Requirement: Haptics for switches, segments, failures and lifts
 With haptics on, a switch flipped by touch and a segment chosen by touch SHALL play `selection`, a failure toast SHALL play `error`, and lifting a row to drag it SHALL play `tick`. Keyboard changes and changes made by the app itself SHALL NOT play anything. It changes no data, so offline behaviour and convergence are unaffected.
 

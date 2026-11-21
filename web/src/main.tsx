@@ -5,6 +5,7 @@ import { App } from './app/App'
 import { ErrorBoundary } from './app/ErrorBoundary'
 import { watchVisualViewport } from './ui'
 import { watchFocusClearance } from './lib/focusClearance'
+import { keepTouchActive } from './lib/touchActive'
 import { bootLanguage, t } from './lib/i18n'
 import { logUnhandledRejections, watchAppUpdates } from './lib/appUpdate'
 import { has, installShellLinks, shell } from './lib/shell'
@@ -13,6 +14,8 @@ import { has, installShellLinks, shell } from './lib/shell'
 watchVisualViewport()
 // A focused element never stays under a sticky or fixed bar (accessibility-aa, WCAG 2.2 2.4.11).
 watchFocusClearance()
+// A press shows on iOS too (press-feedback-delay).
+keepTouchActive()
 // On a touch device, shortcut hints show once a hardware keyboard is used (touch-keyboard-hints).
 void import('./lib/keyboardSeen').then((m) => m.watchHardwareKeyboard())
 

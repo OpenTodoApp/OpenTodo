@@ -6,7 +6,7 @@
 ## 2. The steps (each applied and archived on its own)
 
 Phase 1:
-- [ ] 2.1 `press-feedback-delay`
+- [x] 2.1 `press-feedback-delay`
 - [ ] 2.2 `touch-input-mode`
 - [ ] 2.3 `row-lift-overscroll`
 - [ ] 2.4 `haptic-kinds`
