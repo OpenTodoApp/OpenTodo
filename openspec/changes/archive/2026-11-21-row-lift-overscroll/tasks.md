@@ -9,5 +9,5 @@
 
 ## 3. Check
 
-- [ ] 3.1 `npm test`, `npm run build`, `make bundle-budget` in web/; `make android`
+- [x] 3.1 `npm test`, `npm run build`, `make bundle-budget` in web/; `make android`
 - [ ] 3.2 Device check rows: a held row rises and settles; no glow at a list's end
