@@ -7,6 +7,8 @@ on:
   pull_request:
     # ready_for_review: a draft runs the light jobs only; marking it ready runs the rest.
     types: [opened, synchronize, reopened, ready_for_review]
+  # The merge queue: the pull request tier on the pull request merged onto the queue's base.
+  merge_group:
   # The full matrix every night and on demand; pushes to main run the pull request tier.
   schedule:
     - cron: "41 2 * * *"
@@ -76,7 +78,16 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           BEFORE: ${{ github.event.before }}
           DRAFT: ${{ github.event.pull_request.draft }}
+          QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
         run: |
+          # The merge queue runs the pull request tier for what the queued change adds.
+          if [ "$EVENT" = "merge_group" ]; then
+            echo "full=false" >> "$GITHUB_OUTPUT"
+            git diff --name-only "$QUEUE_BASE" HEAD > changed.txt
+            cat changed.txt
+            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # A push to main runs the pull request tier for what it changed since the
           # commit before; a push that cannot be compared (a new branch) runs everything.
           if [ "$EVENT" = "push" ] && [ "${REF#refs/tags/}" = "$REF" ] && [ -n "$BEFORE" ] \
@@ -322,11 +333,12 @@ jobs:
     if: needs.changes.outputs.layout == 'true'
     strategy:
       fail-fast: false
-      # A pull request and a push to main run two legs (Chromium at every width in English, then the
-      # end-to-end checks; and the safe-area check); tags, the nightly and a run by hand run one leg per
+      # A pull request and a push to main run three legs side by side: Chromium at every width in
+      # English, split in two (SHARD: the light combinations, then the end-to-end checks; and the
+      # dark ones), and the safe-area check (about 6, 7 and 7 minutes). Tags, the nightly and a run by hand run one leg per
       # engine, width and the German and French catalogs, and the end-to-end checks beside them.
       matrix:
-        include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
+        include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"engine":"chromium","name":"Chromium, all widths, 1/2, end-to-end","widths":"360,390,768","shard":"1/2","e2e":true},{"engine":"chromium","name":"Chromium, all widths, 2/2","widths":"360,390,768","shard":"2/2"},{"engine":"chromium","name":"Safe area","safearea":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
     # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile): Chromium, WebKit and
     # their system packages are in it. The server is a static Go build made in the job.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
@@ -360,6 +372,7 @@ jobs:
           ENGINES: ${{ matrix.engine }}
           WIDTHS: ${{ matrix.widths }}
           OPENTODO_LANG: ${{ matrix.lang }}
+          SHARD: ${{ matrix.shard }}
         run: |
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
@@ -1094,6 +1107,21 @@ jobs:
           go run ./cmd/websign verify $require http://127.0.0.1:18095/
           docker rm -f websign-check
 
+  # The one required check of the main branch ruleset and its merge queue: it fails when
+  # any job of the tier failed or was cancelled; a job skipped by the path filter passes.
+  result:
+    name: CI result
+    if: ${{ always() }}
+    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, app-check, app-native, skill, checks, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
+
   # Publishes the multi-arch image (main and v* tags), only after every gate above
   # passed (OpenSpec ci-release-gates): `stable`, `latest` and the version tags never
   # move on a run whose layout, UI, docs, template or image checks failed. The image
@@ -1104,7 +1132,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result]
     permissions:
       contents: read
       packages: write
@@ -1195,7 +1223,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
