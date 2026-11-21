@@ -15,6 +15,9 @@
 //     navigation can be text-selected, or a field, editable area or comment cannot
 //     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
 //     (touch-pressed-states, GitHub issue 1349),
+//   - pressing a task row's completion circle shows no pressed colour by 100 ms, the
+//     engine does not hold that colour back 60 ms, or the row is pressed with it
+//     (press-feedback-delay),
 //   - on the touch screen a hover look appears under a resting pointer, or a tap on a
 //     field or a switch leaves a focus ring while Tab after it draws none (touch-input-mode),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
@@ -60,7 +63,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, missingMainScroller, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -211,6 +214,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    run.step = 'press feedback'
+    for (const m of await pressFeedback(page)) await fail(page, 'inbox', null, `press: ${m}`)
     run.step = 'touch input'
     for (const m of await touchInput(page, base)) await fail(page, 'settings', null, `touch input: ${m}`)
     await page.goto(base + '/inbox')
@@ -248,6 +253,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       const scrollers = await p.evaluate(verticalScrollers)
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
+      for (const m of await p.evaluate(missingMainScroller)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(cutLabels)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(crumbOverlap)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
@@ -325,6 +331,69 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
 
 
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
+/**
+ * Presses a row's completion circle (press-feedback-delay): the circle takes its pressed
+ * colour (`press-selected`) by 100 ms, the engine holds that colour back 60 ms (the pressed
+ * circle's computed transition delay for its background), and the row's body is not
+ * pressed with it, so the row takes no tint. Colours are compared as drawn on a canvas, so two spellings of one colour
+ * are equal; hover, which touch emulation may add on a press, is neither colour. The wait
+ * is read from the engine rather than timed across the round trip to it, which on a busy
+ * machine takes longer than the wait itself.
+ */
+async function pressFeedback(p) {
+  // A press the emulation never reports as :active (it happens now and then in Chromium's
+  // touch emulation) says nothing about the CSS: the next row is pressed instead, and a run
+  // where neither registers is logged, not failed.
+  for (let n = 0; n < 2; n++) {
+    const res = await pressOnce(p, n)
+    if (res) return res
+  }
+  log('  press feedback: no press registered as :active in two tries; not judged')
+  return []
+}
+
+/** One press on the n-th row's circle; null when the press did not register. */
+async function pressOnce(p, n) {
+  const row = p.locator('li[data-task-id]').nth(n)
+  const circle = row.locator('button[aria-label^="Complete "]').first()
+  const box = await circle.boundingBox()
+  if (!box) return ['no completion circle on the first rows']
+  const handles = [await circle.elementHandle(), await row.elementHandle()]
+  const look = () => p.evaluate(([c, r]) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (colour) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = colour; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const token = (name) => { const d = document.createElement('div'); d.style.backgroundColor = `var(${name})`; document.body.append(d); const v = getComputedStyle(d).backgroundColor; d.remove(); return rgba(v) }
+    const cs = getComputedStyle(c)
+    const props = cs.transitionProperty.split(',').map((x) => x.trim())
+    const delays = cs.transitionDelay.split(',').map((x) => parseFloat(x) * (x.trim().endsWith('ms') ? 1 : 1000))
+    const i = props.findIndex((x) => x === 'background-color' || x === 'all')
+    return {
+      active: c.matches(':active'),
+      circle: rgba(cs.backgroundColor), pressed: token('--ot-selected'),
+      // The row's tint follows a press of its body (the part that opens the task); a
+      // selected row has the same colour, so the press itself is what is read.
+      rowPressed: !!r.querySelector(':scope > [data-row-open]:active'),
+      wait: i < 0 ? null : delays[i % delays.length],
+    }
+  }, handles)
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.waitForTimeout(150)
+  await p.mouse.down()
+  const early = await look()
+  await p.waitForTimeout(100)
+  const held = await look()
+  // Released off the circle, so the press does not complete the task.
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 200)
+  await p.mouse.up()
+  await p.waitForTimeout(400)
+  if (!held.active) return null
+  const out = []
+  if (held.circle !== held.pressed) out.push(`the circle shows no pressed colour 100 ms in (${held.circle}, pressed is ${held.pressed})`)
+  else if (held.wait === null || held.wait < 60) out.push(`the pressed circle's colour does not wait 60 ms (its transition delay is ${held.wait ?? 'none'})`)
+  if (early.rowPressed || held.rowPressed) out.push('the row counts as pressed while its circle is')
+  return out
+}
+
 /**
  * Hover and focus follow the input (touch-input-mode): a pointer resting on a task row
  * gives it no hover look, a tapped field and a tapped switch draw no focus ring, and Tab

@@ -1,0 +1,1 @@
+- **A tap on a phone answers on the control you touched, after a moment.** The pressed look waits 60 ms, so a scroll that starts on a row no longer flashes it, and pressing a task's circle dims the circle alone, not the row around it.
