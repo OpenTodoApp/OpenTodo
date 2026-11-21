@@ -1195,23 +1195,6 @@ jobs:
         run: |
           image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
           cosign sign --yes "${image}@${DIGEST}"
-      # After the move to OpenTodoApp (deploy/deploy.json `legacy`): the same image, with the same
-      # tags and its own signature, also as ghcr.io/pixari/opentodo, which existing installs pull,
-      # through the 0.16 releases. Uses the secret GHCR_LEGACY_TOKEN when it is set; a refused push
-      # is a warning and never fails the release (docs/self-hosting/docker.md#the-move-to-opentodoapp).
-      - name: Also publish under the legacy name
-        env:
-          GHCR_LEGACY_TOKEN: ${{ secrets.GHCR_LEGACY_TOKEN }}
-          IMAGE: ghcr.io/${{ github.repository }}
-          DIGEST: ${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-        run: |
-          scripts/legacy-image.sh check || exit 0
-          scripts/legacy-image.sh login
-          image=$(printf '%s' "$IMAGE" | tr '[:upper:]' '[:lower:]')
-          # The metadata step lists full references, one per line; keep their tags.
-          mapfile -t tags < <(printf '%s\n' "$TAGS" | sed -n 's/^.*://p')
-          scripts/legacy-image.sh image "${image}@${DIGEST}" "${tags[@]}" --sign
 
   # One job publishes the GitHub release for a v* tag, after everything it ships
   # has built and every gate passed: server and `ot` binaries for every platform,
