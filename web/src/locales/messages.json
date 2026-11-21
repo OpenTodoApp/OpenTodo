@@ -6776,6 +6776,9 @@
   "Filter the calendar": [
     "web/src/app/calendar/useCalendarChrome.tsx"
   ],
+  "Filter {name}": [
+    "web/src/app/task-list/listExtras.tsx"
+  ],
   "Filter: {words}. Edit the filter": [
     "web/src/app/calendar/queryFilter.tsx"
   ],
@@ -18422,7 +18425,7 @@
   "The file matches no supported format.": [
     "web/src/lib/i18n/errors.ts"
   ],
-  "The filter language of saved views, for example ##Work & p1 or @errand.": [
+  "The filter language of saved views, for example search: milk & p1 or @errand.": [
     "web/src/app/calendar/QueryFilterDialog.tsx"
   ],
   "The first": [

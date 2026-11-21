@@ -4990,7 +4990,6 @@
   "The file is not valid JSON.": "Het bestand is geen geldige JSON.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "Het bestand wordt één keer verkleind, op een rustig moment; oude versies worden al verwijderd.",
   "The file matches no supported format.": "Het bestand komt niet overeen met een ondersteund formaat.",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "De filtertaal van opgeslagen weergaven, bijvoorbeeld ##Work & p1 of @errand.",
   "The first": "De eerste",
   "The first N…": "De eerste N…",
   "The first, the last, all, or the ones that match": "De eerste, de laatste, alles of degene die overeenkomen",
@@ -7861,5 +7860,7 @@
   "Select projects": "Projecten selecteren",
   "Archive {projects}?": "{projects} archiveren?",
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Ze verdwijnen met hun subprojecten uit de zijbalk. Je kunt ze terughalen uit het archief via Instellingen → Gegevens.",
-  "Archived {projects}": "{projects} gearchiveerd"
+  "Archived {projects}": "{projects} gearchiveerd",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "De filtertaal van opgeslagen weergaven, bijvoorbeeld search: milk & p1 of @errand.",
+  "Filter {name}": "“{name}” filteren"
 }

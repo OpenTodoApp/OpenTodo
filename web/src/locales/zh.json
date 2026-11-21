@@ -4960,7 +4960,6 @@
   "The file is not valid JSON.": "该文件不是有效的 JSON。",
   "The file is shrunk once, at a quiet moment; old versions already go.": "文件会在空闲时压缩一次；旧版本已被清理。",
   "The file matches no supported format.": "该文件不匹配任何受支持的格式。",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "已保存视图的筛选语法，例如 ##Work & p1 或 @errand。",
   "The first": "前",
   "The first N…": "前 N 项…",
   "The first, the last, all, or the ones that match": "前几项、后几项、全部或匹配的项",
@@ -7861,5 +7860,7 @@
   "Select projects": "选择项目",
   "Archive {projects}?": "归档{projects}？",
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
-  "Archived {projects}": "已归档{projects}"
+  "Archived {projects}": "已归档{projects}",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
+  "Filter {name}": "筛选“{name}”"
 }

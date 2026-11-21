@@ -4880,7 +4880,6 @@
   "The file is not valid JSON.": "Il file non è un JSON valido.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "Il file viene ridotto una volta, in un momento tranquillo; le vecchie versioni vengono già rimosse.",
   "The file matches no supported format.": "Il file non corrisponde a nessun formato supportato.",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "Il linguaggio dei filtri delle viste salvate, per esempio ##Work & p1 o @errand.",
   "The first": "La prima",
   "The first N…": "Le prime N…",
   "The first, the last, all, or the ones that match": "La prima, l’ultima, tutte o quelle che corrispondono",
@@ -7861,5 +7860,7 @@
   "Select projects": "Seleziona progetti",
   "Archive {projects}?": "Archiviare {projects}?",
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Lasciano la barra laterale con i loro sottoprogetti. Puoi estrarli dall’archivio da Impostazioni → Dati.",
-  "Archived {projects}": "Archiviato: {projects}"
+  "Archived {projects}": "Archiviato: {projects}",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "Il linguaggio dei filtri delle viste salvate, per esempio search: milk & p1 o @errand.",
+  "Filter {name}": "Filtra «{name}»"
 }

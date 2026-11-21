@@ -5303,7 +5303,6 @@
   "The file is not valid JSON.": "Dosya geçerli bir JSON değil.",
   "The file is shrunk once, at a quiet moment; old versions already go.": "Dosya sakin bir anda bir kez küçültülür; eski sürümler zaten silinir.",
   "The file matches no supported format.": "Dosya desteklenen hiçbir biçimle eşleşmiyor.",
-  "The filter language of saved views, for example ##Work & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin ##Work & p1 veya @errand.",
   "The first": "İlk",
   "The first N…": "İlk N…",
   "The first, the last, all, or the ones that match": "İlk, son, tümü veya eşleşenler",
@@ -7861,5 +7860,7 @@
   "Select projects": "Projeleri seç",
   "Archive {projects}?": "{projects} arşivlensin mi?",
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Alt projeleriyle birlikte kenar çubuğundan ayrılırlar. Ayarlar → Veri bölümünden arşivden çıkarabilirsiniz.",
-  "Archived {projects}": "{projects} arşivlendi"
+  "Archived {projects}": "{projects} arşivlendi",
+  "The filter language of saved views, for example search: milk & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin search: milk & p1 veya @errand.",
+  "Filter {name}": "“{name}” filtrele"
 }
