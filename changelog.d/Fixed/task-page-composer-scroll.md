@@ -1,1 +1,0 @@
-- **Comments stay put while you write one on a task's page.** Each key typed in the comment box scrolled the page to its end, so the thread jumped under you while you read it. The page now stays where you left it ([#1689](https://github.com/OpenTodoApp/OpenTodo/issues/1689)).

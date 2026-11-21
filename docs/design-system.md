@@ -303,7 +303,7 @@ A pull request carries only the baselines it adds or changes, in `web/src/ui/__s
 - With Docker: `make ui-baselines` regenerates inside the image and copies the new or changed baselines there; review and commit them.
 - Without Docker: run the **UI baselines** workflow on your branch (Actions → UI baselines → Run workflow) and commit the PNGs of its `ui-baselines` artifact there. Or take a failing "UI check (visual regression)" job's `ui-check-report-<shard>` artifact: its `*-actual.png` files, renamed without `-actual`, are the new baselines.
 
-After the pull request merges, the **UI baselines** workflow folds those PNGs into the branch and removes them from main. Running it on `main` regenerates every baseline and replaces the branch. Update baselines only for intended visual changes, in the same pull request as the change.
+After the pull request merges, the **UI baselines** workflow folds those PNGs into the branch and opens a pull request, "Move UI baselines to the ui-baselines branch", that removes them from main through the merge queue; a later fold updates the same pull request. Running it on `main` regenerates every baseline and replaces the branch. Update baselines only for intended visual changes, in the same pull request as the change.
 
 ## The interface audit
 
