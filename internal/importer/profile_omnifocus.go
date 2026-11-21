@@ -3,9 +3,7 @@ package importer
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/csv"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -97,32 +95,14 @@ func (omnifocusProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	}
 	out := &Parsed{Notes: []string{"OmniFocus's CSV has no repeat rules, folders or attachments; repeating actions arrive without their repeat"}}
 	var recs []ofRecord
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		if allBlank(rec) {
-			continue
-		}
-		line, _ := r.FieldPos(0)
-		recs = append(recs, ofRecord{line: line, get: func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}})
+	if err := r.eachRecord(col, &out.Rows, func(line int, _ []string, get func(string) string) error {
+		recs = append(recs, ofRecord{line: line, get: get})
 		if len(recs) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	of := &ofReader{loc: opts.Location(), out: out, kind: map[string]string{}, source: map[string]string{}}
 	of.sources(recs)
