@@ -1,1 +1,0 @@
-- **Archive several projects at once.** On the All projects page, tick projects with Ctrl or ⌘+click, Shift+click or Space (on a touch screen, **Select projects** in the ⋯ menu), then choose **Archive**: they leave with their sub-projects in one go, with one Undo ([#1661](https://github.com/OpenTodoApp/OpenTodo/issues/1661)).
