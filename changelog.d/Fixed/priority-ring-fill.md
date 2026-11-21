@@ -1,0 +1,1 @@
+- **Priority no longer rests on colour in the task circle.** The circle of a P1 task is now filled with its colour, a P2 task's less, so the two read apart for people who cannot tell red from orange, in light and dark. Thanks to @davereeck for the report ([#1674](https://github.com/OpenTodoApp/OpenTodo/issues/1674)).

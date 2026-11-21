@@ -53,6 +53,21 @@ describe('the priority mark', () => {
   })
 })
 
+describe('the circle (priority-ring-fill, issue #1674)', () => {
+  it('fills a P1 circle more than a P2 one, and leaves P3, P4 and a completed P1 empty of the priority', async () => {
+    const r = await render(<ul>
+      {([1, 2, 3, 4] as const).map((p) => <TaskRow key={p} task={task({ id: `p${p}`, title: `P${p}`, priority: p })} selected={false} showProject={false} onToggle={noop} onOpen={noop} layout="line" />)}
+      <TaskRow task={task({ id: 'done', title: 'Done', priority: 1, completed_at: 1 })} selected={false} showProject={false} onToggle={noop} onOpen={noop} layout="line" />
+    </ul>)
+    const circle = (id: string) => r.container.querySelector(`[data-task-id="${id}"] [data-check-mark]`)!.className
+    expect(circle('p1')).toContain('bg-p1/55')
+    expect(circle('p2')).toContain('bg-p2/25')
+    for (const id of ['p3', 'p4']) expect(circle(id)).not.toMatch(/bg-p\d/)
+    expect(circle('done')).not.toContain('bg-p1')
+    await r.unmount()
+  })
+})
+
 describe('a renamed level (priority-names)', () => {
   it('reads its name on a detailed row and "Must, priority 1" to a screen reader; an unnamed one stays P2', async () => {
     setPriorityNames(['Must', '', '', ''])
