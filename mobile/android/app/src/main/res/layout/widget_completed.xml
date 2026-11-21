@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/completed_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/widget_completed"
+            android:textColor="@color/widget_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/completed_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/widget_text"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/completed_updated"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/widget_muted"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/completed_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/widget_muted"
+        android:textSize="14sp" />
+
+    <LinearLayout
+        android:id="@+id/bars"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar0" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day0" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar1" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day1" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar2" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day2" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar3" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day3" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar4" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day4" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar5" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day5" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+        <LinearLayout style="@style/WidgetDay">
+            <ProgressBar android:id="@+id/bar6" style="@style/WidgetBar" />
+            <TextView android:id="@+id/day6" style="@style/WidgetDayLabel" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

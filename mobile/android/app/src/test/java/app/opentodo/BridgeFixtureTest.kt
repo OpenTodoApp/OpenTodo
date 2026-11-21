@@ -67,6 +67,30 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheWidget() = checkWidget("widget-signed-out.json")
 
+    /** completed-widget D1: the days and today's count the web app publishes, and counts only once locked. */
+    private fun checkCompleted(name: String) {
+        val f = fixture(name)
+        assertEquals(name, "publishWidget", f.getString("method"))
+        val want = f.getJSONObject("expect")
+        val days = want.getJSONArray("days")
+        val expected = CompletedModel(
+            updatedAt = want.getLong("updatedAt"),
+            locked = want.getBoolean("locked"),
+            today = want.getInt("today"),
+            days = (0 until days.length()).map { i -> days.getJSONObject(i).let { CompletedModel.Day(it.getString("day"), it.getInt("done")) } },
+        )
+        assertEquals(name, expected, CompletedModel.parse(f.getString("payload")))
+    }
+
+    @Test fun completedWidget() = checkCompleted("widget-completed.json")
+
+    @Test fun lockedCompletedWidget() = checkCompleted("widget-completed-locked.json")
+
+    /** A publication without completions (an older web app) leaves the Completed widget asking to open the app. */
+    @Test fun completedWidgetNeedsAPublication() {
+        assertEquals(null, CompletedModel.parse(fixture("widget.json").getString("payload")))
+    }
+
     /** app-links D6: the link the web app hands openAppLink opens with its list, and the shared vectors hold. */
     @Test fun appLinks() {
         val f = fixture("app-links.json")

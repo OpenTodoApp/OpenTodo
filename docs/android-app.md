@@ -157,7 +157,7 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Two home-screen widgets: **Today** shows your tasks for today with the time of the last update, and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts.
+Three home-screen widgets: **Today** shows your tasks for today with the time of the last update, **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts and the Completed widget only today's number.
 
 ## Status and navigation bars
 

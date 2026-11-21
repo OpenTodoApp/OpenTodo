@@ -61,6 +61,12 @@ export interface ShellWidgetData {
   count: number
   overdue: number
   tasks: { id: string; title?: string; time?: string; priority: number; overdue: boolean }[]
+  /**
+   * The Completed widget (completed-widget D1): how many tasks were completed today and,
+   * while the account is readable, on each of the last 7 days (oldest first), counted as
+   * Statistics counts them. Numbers and days only, never task content.
+   */
+  completed?: { today: number; days?: { day: string; done: number }[] }
 }
 
 /** The answer of `scheduleReminders`: whether the shell may show notifications. */
