@@ -8,6 +8,7 @@ import { flushSync } from 'react-dom'
 import { resettable } from '../lib/moduleState'
 import { noMotion, prefersReducedMotion } from './motion'
 import { parseRoute, setRouteShow, type Route } from './router'
+import { lastKeyAt } from './shortcuts/dispatch'
 
 export type NavDirection = 'forward' | 'back' | 'none'
 
@@ -41,21 +42,22 @@ function textFieldFocused(): boolean {
   return el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes((el as HTMLInputElement).type))
 }
 
-// The input that came last. A view transition applies its change only after the browser
-// has captured the old page, so keys typed straight after a shortcut (Escape, then j and c)
-// would reach the page being left: a change made from the keyboard happens at once.
-let keyboard = false
-const fromKeyboard = () => { keyboard = true }
-const fromPointer = () => { keyboard = false }
+// Whether a key came after the last tap or click. A view transition applies its change only
+// after the browser has captured the old page, so keys typed straight after a shortcut
+// (Escape, then j and c) would reach the page being left: a change made from the keyboard
+// happens at once. The keys are the shortcut dispatcher's (one keydown listener).
+let lastPointer = -Infinity
+const fromPointer = () => { lastPointer = performance.now() }
+const fromKeyboard = () => lastKeyAt() > lastPointer
 
 /** The gates list reflow uses (motion-v2 D4), and the last input not being a key. */
 export function canTransitionPage(): boolean {
   const start = (document as unknown as { startViewTransition?: StartViewTransition }).startViewTransition
-  return typeof start === 'function' && !keyboard && !prefersReducedMotion() && !noMotion() && !textFieldFocused() && document.visibilityState !== 'hidden'
+  return typeof start === 'function' && !fromKeyboard() && !prefersReducedMotion() && !noMotion() && !textFieldFocused() && document.visibilityState !== 'hidden'
 }
 
 let running: ViewTransition | null = null
-resettable('pageTransition', () => { running = null; keyboard = false })
+resettable('pageTransition', () => { running = null; lastPointer = -Infinity })
 
 /** Shows a route change: inside a view transition with its direction when the gates hold, at once otherwise. */
 export function showRouteChange(apply: () => void, from: string, to: string, popped: boolean): void {
@@ -79,7 +81,6 @@ export function showRouteChange(apply: () => void, from: string, to: string, pop
 
 /** Installs the animated route change (main.tsx, after the first paint). */
 export function installPageTransitions(): void {
-  window.addEventListener('keydown', fromKeyboard, { capture: true, passive: true })
   window.addEventListener('pointerdown', fromPointer, { capture: true, passive: true })
   setRouteShow(showRouteChange)
 }
