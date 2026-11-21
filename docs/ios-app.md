@@ -76,7 +76,7 @@ Whatever the app saves opens the system's save dialog, where you choose a place 
 
 ## Haptic feedback
 
-Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Turn it off in **Settings → Appearance → Haptic feedback**.
+Completing a task gives the phone's success tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a selection click, and a failure message the error tap. Turn it off in **Settings → Appearance → Haptic feedback**.
 
 **Task completion sound** beside it is off by default. When enabled, it plays a short cue after completing a task in the foreground. The iPhone stays quiet in Silent mode.
 

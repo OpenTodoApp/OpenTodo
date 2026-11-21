@@ -428,9 +428,9 @@ final class BridgeTests: XCTestCase {
         XCTAssertEqual(fixture["method"] as? String, "haptic")
         let kinds = try XCTUnwrap(fixture["kinds"] as? [String])
         XCTAssertEqual(Set(kinds), Set(Haptics.Kind.allCases.map(\.rawValue)))
-        for kind in kinds { XCTAssertNotNil(Haptics.kind(kind), kind) }
+        for kind in kinds { XCTAssertEqual(Haptics.kind(kind).rawValue, kind) }
         let unknown = try XCTUnwrap(fixture["unknown"] as? String)
-        XCTAssertNil(Haptics.kind(unknown), unknown)
+        XCTAssertEqual(Haptics.kind(unknown), .tick, unknown)
     }
 
     /// status-bar-scroll-top D1, D2: the capability and the script follow the shared bridge
@@ -495,7 +495,10 @@ final class BridgeTests: XCTestCase {
     func testHapticKinds() {
         XCTAssertEqual(Haptics.kind("tick"), .tick)
         XCTAssertEqual(Haptics.kind("success"), .success)
-        for other in ["", "warning", "Tick", "tick ", "error"] { XCTAssertNil(Haptics.kind(other), other) }
+        XCTAssertEqual(Haptics.kind("warning"), .warning)
+        XCTAssertEqual(Haptics.kind("error"), .error)
+        XCTAssertEqual(Haptics.kind("selection"), .selection)
+        for other in ["", "thud", "Tick", "tick "] { XCTAssertEqual(Haptics.kind(other), .tick, other) }
     }
 
     /// shell-repairs D7: the remembered bars decide the status bar icons, and nothing

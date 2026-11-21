@@ -323,8 +323,8 @@ export function openObsidian(url: string): boolean {
   return true
 }
 
-/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5). */
-export type ShellHaptic = 'tick' | 'success'
+/** The kinds of feedback a shell with `haptics` plays (shell-repairs D5, haptic-kinds D1). */
+export type ShellHaptic = 'tick' | 'success' | 'warning' | 'error' | 'selection'
 
 /** Plays `kind` through a shell that lists `haptics`. False in a browser or another shell. */
 export function shellHaptic(kind: ShellHaptic): boolean {
