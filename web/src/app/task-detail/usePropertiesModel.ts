@@ -9,7 +9,9 @@ import { resolveLabels } from '../../lib/labels'
 import { useMembershipMap, useProjectLiveSections, useProjectTasks, useReminderCount } from '../../lib/liveData'
 import { NO_TASKS, useLiveTasks } from '../../lib/liveTasks'
 import { setTaskParent } from '../../lib/ops'
-import { INBOX_KEY, parentSource, projectSource } from '../../lib/pickerSources'
+import { INBOX_KEY, parentSource } from '../../lib/pickerSources'
+import { useProjectsOfEveryWorkspace, useWorkspaceState } from '../../lib/localData'
+import { projectsByWorkspace } from './projectsByWorkspace'
 import { effectiveSection } from '../../lib/sections'
 import { isSoloScope, memberName } from '../../lib/sharing'
 import type { Task } from '../../lib/types'
@@ -39,7 +41,10 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   // Every live task: blockers may sit in any project of the same sharing scope.
   const allTasks = useLiveTasks() ?? NO_TASKS
 
-  const projectItems = useMemo(() => projectSource(projects, { current: projectId, memberships }), [projects, projectId, memberships])
+  // Every workspace's projects, grouped, the current workspace first (workspaces, #1662).
+  const workspaces = useWorkspaceState()
+  const everyProject = useProjectsOfEveryWorkspace()
+  const projectItems = useMemo(() => projectsByWorkspace(workspaces, everyProject, { current: projectId, memberships }), [workspaces, everyProject, projectId, memberships])
   const sectionMap = useMemo(() => new Map(sections.map((s) => [s.id, s])), [sections])
   const parentItems = useMemo(() => {
     const list = parent && !projectTasks.some((tk) => tk.id === parent.id) ? [...projectTasks, parent] : projectTasks
@@ -63,9 +68,12 @@ export function usePropertiesModel({ task, userId, projects, labelMap, parent, o
   }
 
   const currentProject = projectItems.find((i) => i.value === projectId)
-  const moveTo = async (id: string | null) => {
-    if (id === projectId) return
-    const newId = await moveWithUndo(task.id, id, id ? projects.find((p) => p.id === id)?.name ?? t('the project') : t('Inbox'))
+  /** `workspace`: another workspace's "No project" (its Inbox); a project's workspace follows the project. */
+  const moveTo = async (id: string | null, workspace?: string) => {
+    const elsewhere = id === null && workspace !== undefined && workspace !== workspaces.current
+    if (id === projectId && !elsewhere) return
+    const target = id ? everyProject.find((p) => p.id === id)?.name ?? t('the project') : elsewhere ? workspaces.list.find((w) => w.id === workspace)?.name ?? t('Inbox') : t('Inbox')
+    const newId = await moveWithUndo(task.id, id, target, elsewhere ? workspace : undefined)
     if (newId !== task.id) onOpen?.(newId)
   }
   const changeParent = async (value: string | null) => {
