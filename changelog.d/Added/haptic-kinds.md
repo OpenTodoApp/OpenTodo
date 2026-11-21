@@ -1,0 +1,1 @@
+- **Haptics for switches, segments and failures in the phone apps.** Flipping a switch or choosing a segment with a finger clicks, a failure message buzzes, and picking up a row to drag it taps, all with the phone's own feedback and the Haptic feedback setting.
