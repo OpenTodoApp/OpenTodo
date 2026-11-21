@@ -10,7 +10,7 @@ Moving between screens swaps them at once; `mobile/AUDIT.md` lists "No transitio
 
 - `navigate()` in `router.ts` runs the route change inside `document.startViewTransition` when supported and motion is allowed, with a direction: forward (deeper: a project, a task page, a note) slides the new page in from the end edge, back slides it out; a switch between top-level destinations cross-fades.
 - The sidebar, the bottom bar and the page header outside the page body keep their place (`view-transition-name` on them).
-- Reduced motion, `data-motion="none"`, a focused text field and a hidden tab skip it, as reflow does today.
+- Reduced motion, `data-motion="none"`, a focused text field and a hidden tab skip it, as reflow does today; so does a change made from the keyboard, since a view transition applies the change only after capturing the old page, and keys typed straight after would reach it.
 
 No new mandatory environment variable, no change to the op log, routes or data.
 

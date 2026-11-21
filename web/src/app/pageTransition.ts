@@ -35,7 +35,7 @@ export function navDirection(from: Route, to: Route, popped: boolean): NavDirect
   return b > a ? 'forward' : b < a ? 'back' : 'none'
 }
 
-interface ViewTransition { finished: Promise<void>; skipTransition(): void }
+interface ViewTransition { finished: Promise<void>; ready?: Promise<void>; updateCallbackDone?: Promise<void>; skipTransition(): void }
 type StartViewTransition = (update: () => void) => ViewTransition
 
 function textFieldFocused(): boolean {
@@ -44,14 +44,21 @@ function textFieldFocused(): boolean {
   return el.isContentEditable || el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox', 'radio', 'button'].includes((el as HTMLInputElement).type))
 }
 
-/** The gates list reflow uses (motion-v2 D4): support, motion allowed, no text field focused, a visible tab. */
+// The input that came last. A view transition applies its change only after the browser
+// has captured the old page, so keys typed straight after a shortcut (Escape, then j and c)
+// would reach the page being left: a change made from the keyboard happens at once.
+let keyboard = false
+const fromKeyboard = () => { keyboard = true }
+const fromPointer = () => { keyboard = false }
+
+/** The gates list reflow uses (motion-v2 D4), and the last input not being a key. */
 export function canTransitionPage(): boolean {
   const start = (document as unknown as { startViewTransition?: StartViewTransition }).startViewTransition
-  return typeof start === 'function' && !prefersReducedMotion() && !noMotion() && !textFieldFocused() && document.visibilityState !== 'hidden'
+  return typeof start === 'function' && !keyboard && !prefersReducedMotion() && !noMotion() && !textFieldFocused() && document.visibilityState !== 'hidden'
 }
 
 let running: ViewTransition | null = null
-resettable('pageTransition', () => { running = null })
+resettable('pageTransition', () => { running = null; keyboard = false })
 
 /** Shows a route change: inside a view transition with its direction when the gates hold, at once otherwise. */
 export function showRouteChange(apply: () => void, from: string, to: string, popped: boolean): void {
@@ -63,6 +70,9 @@ export function showRouteChange(apply: () => void, from: string, to: string, pop
   const start = (document as unknown as { startViewTransition: StartViewTransition }).startViewTransition.bind(document)
   const vt = start(() => flushSync(apply))
   running = vt
+  // A skipped transition rejects `ready` (AbortError); the page has already changed, so that is not an error.
+  void vt.ready?.catch(() => {})
+  void vt.updateCallbackDone?.catch(() => {})
   void vt.finished.catch(() => {}).finally(() => {
     if (running !== vt) return
     running = null
@@ -73,5 +83,7 @@ export function showRouteChange(apply: () => void, from: string, to: string, pop
 
 /** Installs the animated route change (main.tsx, after the first paint). */
 export function installPageTransitions(): void {
+  window.addEventListener('keydown', fromKeyboard, { capture: true, passive: true })
+  window.addEventListener('pointerdown', fromPointer, { capture: true, passive: true })
   setRouteShow(showRouteChange)
 }

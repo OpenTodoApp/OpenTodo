@@ -2,7 +2,7 @@
 // in this browser's localStorage, like the quick-add parsing settings: never an op,
 // never synced, so turning dictation on for a phone does not turn it on elsewhere.
 import { VOCABULARIES } from '../nlp/vocab'
-import { readJSON, writeJSON } from '../deviceStorage'
+import { createStoredValue, jsonCodec } from '../deviceStorage'
 
 export interface VoiceSettings {
   /** Off by default; switched on only after the privacy statement was confirmed. */
@@ -21,38 +21,23 @@ export type Recognizer = 'browser' | 'server'
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = { enabled: false, lang: null, recognizer: 'browser' }
 
-const KEY = 'opentodo.voice'
-const EVENT = 'opentodo:voice-settings'
+const stored = createStoredValue('opentodo.voice', jsonCodec<VoiceSettings>(DEFAULT_VOICE_SETTINGS, (raw) => {
+  if (raw === null || typeof raw !== 'object') return null
+  const v = raw as Partial<VoiceSettings>
+  return {
+    enabled: v.enabled === true,
+    lang: typeof v.lang === 'string' && v.lang in VOCABULARIES ? v.lang : null,
+    recognizer: v.recognizer === 'server' ? 'server' : 'browser',
+  }
+}), { crossTab: true })
 
-export function loadVoiceSettings(): VoiceSettings {
-  return readJSON<VoiceSettings>(KEY, { ...DEFAULT_VOICE_SETTINGS }, (raw) => {
-    if (raw === null || typeof raw !== 'object') return null
-    const v = raw as Partial<VoiceSettings>
-    return {
-      enabled: v.enabled === true,
-      lang: typeof v.lang === 'string' && v.lang in VOCABULARIES ? v.lang : null,
-      recognizer: v.recognizer === 'server' ? 'server' : 'browser',
-    }
-  })
-}
+export const loadVoiceSettings: () => VoiceSettings = stored.get
 
-export function saveVoiceSettings(s: VoiceSettings): void {
-  writeJSON(KEY, s) // per-device convenience only
-  if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENT))
-}
+/** Stores the settings on this device (a per-device convenience only). */
+export const saveVoiceSettings: (s: VoiceSettings) => void = stored.set
 
 /** Call `fn` whenever the settings change in this tab or another tab. */
-export function onVoiceSettingsChange(fn: () => void): () => void {
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY) fn()
-  }
-  window.addEventListener(EVENT, fn)
-  window.addEventListener('storage', onStorage)
-  return () => {
-    window.removeEventListener(EVENT, fn)
-    window.removeEventListener('storage', onStorage)
-  }
-}
+export const onVoiceSettingsChange: (fn: () => void) => () => void = stored.subscribe
 
 /** Region used when the browser's own languages name none for the chosen language. */
 const DEFAULT_REGION: Record<string, string> = { en: 'en-US', de: 'de-DE', fr: 'fr-FR', it: 'it-IT', es: 'es-ES', pt: 'pt-BR' }

@@ -58,7 +58,7 @@ const pw = await import('playwright').catch(async () => {
   return createRequire(execSync('npm root -g').toString().trim() + '/')('playwright')
 })
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
+import { MAX_SCROLLERS, addButtonCovers, addButtonRoom, axeProblems, calendarGridRoom, crowdedControls, crumbOverlap, cutLabels, missingMainScroller, overlayContentFit, pageOverflow, rowCheckReach, rowMisalignment, settled, smallFields, smallTargets, tabRowOverflow, tintDrift, touchFeel, verticalScrollers } from './ux-audit/measure.mjs'
 import { calendarEvents, seed as seedAccount } from './ux-audit/seed.mjs'
 import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens } from './ux-audit/layout-screens.mjs'
 
@@ -242,6 +242,7 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       const scrollers = await p.evaluate(verticalScrollers)
       if (scrollers.length > MAX_SCROLLERS) await fail(p, s.name, null, `${scrollers.length} vertical scroll regions (at most ${MAX_SCROLLERS}): ${scrollers.join(', ')}`)
       for (const m of await p.evaluate(tabRowOverflow)) await fail(p, s.name, null, m)
+      for (const m of await p.evaluate(missingMainScroller)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(cutLabels)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(crumbOverlap)) await fail(p, s.name, null, m)
       for (const m of await p.evaluate(smallTargets, [null, MIN_TARGET])) await fail(p, s.name, null, `touch target: ${m}`)
@@ -363,10 +364,11 @@ async function pageTransitions(p, base) {
     await p.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' })
     await openScreen(p, base + '/inbox')
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
-    // The transitions load after the first paint (page-transitions D3).
+    // The transitions load after the first paint (the page-transitions spec).
     await p.waitForTimeout(300)
     await record()
-    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    // A tap: a change made from the keyboard happens at once (the page-transitions spec).
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').click()
     await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
     const forward = await settledNavs()
     await p.evaluate(() => { window.__navs = [] })

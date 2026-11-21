@@ -5,9 +5,8 @@
 // sequence, the bounded list transition and the haptic tick.
 import { flushSync } from 'react-dom'
 import { useCallback, useSyncExternalStore } from 'react'
-import { readHapticsPref, watchHapticsPref } from '../lib/haptics'
+import { playHaptic } from '../lib/haptics'
 import { resettable } from '../lib/moduleState'
-import { has, shellHaptic, type ShellHaptic } from '../lib/shell'
 import { createSignal } from '../lib/store'
 
 /** A duration token in milliseconds, or the fallback when the stylesheet has none (tests). */
@@ -296,56 +295,21 @@ export async function withListTransition<T>(affected: number, update: () => Prom
   return result
 }
 
-// ---- haptics (motion-v2 D6) ----
+// ---- haptics (motion-v2 D6; the player is lib/haptics.ts) ----
 
-let hapticsOn: boolean | null = null
-let watching = false
-
-function watchHaptics(): void {
-  if (watching) return
-  watching = true
-  watchHapticsPref((on) => { hapticsOn = on })
-}
-
-const browserVibrates = () => typeof navigator !== 'undefined' && 'vibrate' in navigator && typeof navigator.vibrate === 'function'
-
-/** Whether this device can give feedback at all: a shell with `haptics`, or a browser that vibrates (the Appearance switch shows only then). */
-export function canVibrate(): boolean {
-  return has('haptics') || browserVibrates()
-}
-
-/** The shell's own feedback (shell-repairs D5), else the browser's 10 ms vibration. */
-function play(kind: ShellHaptic): void {
-  if (!shellHaptic(kind) && browserVibrates()) navigator.vibrate(10)
-}
-
-function haptic(kind: ShellHaptic): void {
-  if (!canVibrate()) return
-  watchHaptics()
-  if (hapticsOn === null) {
-    void readHapticsPref().then((on) => { hapticsOn = on; if (on) play(kind) }, () => {})
-    return
-  }
-  if (hapticsOn) play(kind)
-}
+export { canVibrate, resetHaptics } from '../lib/haptics'
 
 /** A short tick when a long press lifts a row or a drag snaps, unless haptics are off. */
 export function tick(): void {
-  haptic('tick')
+  playHaptic('tick')
 }
 
 /** The feedback of a completed task, unless haptics are off. */
 export function success(): void {
-  haptic('success')
+  playHaptic('success')
 }
 
 /** A light tap when the person adds a task (#1445): the same tick as a lifted row, a deliberate moment, not every tap. */
 export function created(): void {
-  haptic('tick')
+  playHaptic('tick')
 }
-
-/** Tests: forget the cached preference. */
-export function resetHaptics(): void {
-  hapticsOn = null
-}
-resettable('haptics', resetHaptics)
