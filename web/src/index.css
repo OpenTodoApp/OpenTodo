@@ -1218,8 +1218,8 @@ li[data-subtask-adds]:focus-within > [data-subtask-add-line] { display: block; }
    does not also dim. Not while one of its controls is pressed: they show their own.
    Zero specificity past the `li`, and before the hold's tint, so a hold still wins. */
 @media (pointer: coarse) {
-  li[data-task-id]:where(:has(> [data-row-open]:active)) { background-color: var(--color-selected-row); }
-  li[data-task-id] > [data-row-open]:active { opacity: 1; }
+  li[data-task-id]:where(:has(> [data-row-open]:not(:has(:is(button, [role="button"], a[href]):active)):active)) { background-color: var(--color-selected-row); transition: background-color 0s 60ms; }
+  li[data-task-id] > [data-row-open]:active { animation: none; }
 }
 li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--text-color-accent) 8%, transparent); }
 /* The bulk-selection box (bulk-actions): drawn by us, not by the platform, so it fills
@@ -1301,6 +1301,7 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
 }
 @keyframes row-rolled { from { background-color: var(--ot-accent-soft); } to { background-color: transparent; } }
 @keyframes row-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes press-dim { from, to { opacity: 0.6; } }
 .row-check-pop, [data-departing] [data-check-mark], [data-rolled] [data-check-mark] {
   animation: row-check-pop var(--duration-emphasis) var(--ease-spring) backwards;
 }
@@ -1640,10 +1641,11 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
    at once, whatever transition the control has, so it is the same under reduced motion.
    `press-inset` keeps the colour to the 28 px around the glyph of a 44 px target
    (a task row's checkbox, Show details and grip; the fold arrow's glyph is not its target's
-   centre, so its circle is the glyph's own, phone-row-controls). */
+   centre, so its circle is the glyph's own, phone-row-controls). The colour waits 60 ms,
+   so a touch that becomes a scroll never shows it (press-feedback-delay D1). */
 @utility press-* {
   @media (pointer: coarse) {
-    &:active:not(:disabled, [aria-disabled="true"]) { background-color: --value(--color-*); opacity: 1; transition-duration: 0s; }
+    &:active:not(:disabled, [aria-disabled="true"]) { background-color: --value(--color-*); opacity: 1; animation: none; transition: background-color 0s 60ms; }
   }
 }
 @utility press-inset {
@@ -1687,9 +1689,13 @@ li[data-task-id][data-touch-hold] { background-color: color-mix(in oklab, var(--
        once. It is the fallback: `.ui-btn` has its own pressed colour and keeps it, and
        tabs, the add button, menu items, drawer rows and a task row's controls name
        theirs with `press-*` (touch-pressed-states). Zero specificity: a component's own
-       `active:` still wins. No transition, so it is the same under reduced motion. */
-    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], summary, a[href]):where(:not(.ui-btn):not(:disabled):not([aria-disabled="true"])):active {
-      opacity: 0.6;
+       `active:` still wins. It waits 60 ms, so a touch that becomes a scroll never
+       shows it, and shows on the innermost control only: a row whose button is pressed
+       stays as it is (press-feedback-delay). An animation, not a transition, so a
+       control's own transition cannot cut the wait; `animation: none` turns it off. It
+       moves nothing, so it is the same under reduced motion. */
+    :where(button, [role="button"], [role="tab"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], summary, a[href]):where(:not(.ui-btn):not(:disabled):not([aria-disabled="true"]):not(:has(:is(button, [role="button"], a[href]):active))):active {
+      animation: press-dim 0s 60ms forwards;
     }
   }
 }

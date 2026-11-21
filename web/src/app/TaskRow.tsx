@@ -938,7 +938,7 @@ function FullRow({ task, contextual = false, project, labels = [], assignee, ass
               aria-label={collapsed ? t('Expand subtasks') : t('Collapse subtasks')}
               aria-expanded={!collapsed}
               onClick={onToggleCollapse} // its 44 px touch target ends where the checkbox's begins (phone-row-controls D2)
-              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:opacity-100"
+              className="group/fold flex h-5 w-4 items-center justify-center rounded-chip text-faint hover:bg-sunken hover:text-muted dark:hover:bg-raised pointer-fine:-mx-1 pointer-fine:-my-0.5 pointer-fine:h-6 pointer-fine:w-6 pointer-coarse:-my-3 pointer-coarse:-ml-8 pointer-coarse:mr-1 pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:justify-end pointer-coarse:active:animate-none"
             >
               <span data-fold-mark className="pointer-events-none flex items-center justify-center rounded-full pointer-coarse:-mr-2 pointer-coarse:size-7 pointer-coarse:shrink-0 pointer-coarse:group-active/fold:bg-selected"><Icon name="chevron-right" size="xs" className={`transition-transform duration-(--duration-ui) ${collapsed ? '' : 'rotate-90'}`} /></span>
             </button>

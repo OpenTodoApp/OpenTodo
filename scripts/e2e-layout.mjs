@@ -15,6 +15,8 @@
 //     navigation can be text-selected, or a field, editable area or comment cannot
 //     (shell-touch, GitHub issue 1338), or a tab of the tab bar is under 48 px tall
 //     (touch-pressed-states, GitHub issue 1349),
+//   - pressing a task row's completion circle shows a pressed look before 60 ms, or not
+//     by 100 ms, or the row shows one too (press-feedback-delay),
 //   - an option of a segmented control or a day's name in a Day or Week header is cut,
 //   - in Day and Week, the calendar's sticky header takes more than half of the calendar
 //     or the now line paints over it (GitHub issue 775),
@@ -209,6 +211,8 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
     page.on('pageerror', (e) => { if (!/access control checks|Load failed|The network connection was lost|cancelled/i.test(e.message)) pageErrors.push(e.message) })
     await page.goto(base + '/inbox')
     await page.locator('[data-task-id]').first().waitFor({ timeout: 30000 })
+    run.step = 'press feedback'
+    for (const m of await pressFeedback(page)) await fail(page, 'inbox', null, `press: ${m}`)
     for (const s of screens(ids, base)) {
       if (ONLY && !ONLY.has(s.name)) continue
       if (s.engines && !s.engines.includes(engine)) continue
@@ -319,6 +323,42 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
 
 
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
+/**
+ * Presses a row's completion circle and reads the circle and the row at once and 100 ms
+ * in (press-feedback-delay): nothing at once, then the circle's own look, never the row's.
+ */
+async function pressFeedback(p) {
+  const row = p.locator('li[data-task-id]').first()
+  const circle = row.locator('button[aria-label^="Complete "]').first()
+  const box = await circle.boundingBox()
+  if (!box) return ['no completion circle on the first row']
+  // Opacity and background, the colour drawn on a canvas so that two spellings of one
+  // colour (rgba and oklab transparent) compare equal.
+  const look = () => Promise.all([circle, row].map((l) => l.evaluate((el) => {
+    const cs = getComputedStyle(el)
+    const c = document.createElement('canvas').getContext('2d')
+    c.fillStyle = cs.backgroundColor
+    c.fillRect(0, 0, 1, 1)
+    return `${cs.opacity} ${c.getImageData(0, 0, 1, 1).data.join(',')}`
+  })))
+  // The pointer rests first, so hover is in the baseline and only the press is measured.
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.waitForTimeout(150)
+  const rest = await look()
+  await p.mouse.down()
+  const early = await look()
+  await p.waitForTimeout(100)
+  const held = await look()
+  // Released off the circle, so the press does not complete the task.
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 200)
+  await p.mouse.up()
+  const out = []
+  if (early[0] !== rest[0]) out.push(`the circle changed at once (${rest[0]} → ${early[0]})`)
+  if (held[0] === rest[0]) out.push(`the circle shows no pressed look 100 ms in (${held[0]})`)
+  if (early[1] !== rest[1] || held[1] !== rest[1]) out.push(`the row changed while its circle was pressed (${rest[1]} → ${held[1]})`)
+  return out
+}
+
 async function settledBox(p, overlay) {
   let prev = await overlay.boundingBox()
   for (let i = 0; i < 20; i++) {
