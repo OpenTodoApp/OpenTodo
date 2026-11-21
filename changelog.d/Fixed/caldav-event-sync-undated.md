@@ -1,0 +1,1 @@
+- **A calendar app syncing an event calendar no longer fails with a 502.** After a task in that calendar lost its date, was completed or was added without one, the next sync of that calendar crashed and the whole calendar stopped refreshing (macOS Calendar showed "The server responded with 502"). Such a task now leaves the calendar instead, and an undated one is not sent.
