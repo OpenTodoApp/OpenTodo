@@ -155,6 +155,7 @@ The release of **Away** and a lot of everyday polish. Going on holiday or ill fo
 - **`ot vault watch` never trashes tasks from a file caught mid-save.** When an editor's empty first step lasted through the whole sync, the watch could push every line of the file as removed; it now pushes nothing when the folder changed after the run started, and the next run reads the whole save.
 - **Priority no longer rests on colour in the task circle.** The circle of a P1 task is now filled with its colour, a P2 task's less, so the two read apart for people who cannot tell red from orange, in light and dark. Thanks to @davereeck for the report ([#1674](https://github.com/OpenTodoApp/OpenTodo/issues/1674)).
 - **Comments stay put while you write one on a task's page.** Each key typed in the comment box scrolled the page to its end, so the thread jumped under you while you read it. The page now stays where you left it ([#1689](https://github.com/OpenTodoApp/OpenTodo/issues/1689)).
+- **A calendar app syncing an event calendar no longer fails with a 502.** After a task in that calendar lost its date, was completed or was added without one, the next sync of that calendar crashed and the whole calendar stopped refreshing (macOS Calendar showed "The server responded with 502"). Such a task now leaves the calendar instead, and an undated one is not sent. Thanks to @mrJudahBella for the report and the trace ([#1717](https://github.com/OpenTodoApp/OpenTodo/issues/1717)).
 
 ## [1.5.0] - 2026-11-15
 

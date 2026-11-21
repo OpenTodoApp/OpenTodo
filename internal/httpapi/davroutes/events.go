@@ -24,9 +24,15 @@ func servedAsEvent(t opsync.Entity) bool {
 	return d != nil && d.Date != ""
 }
 
-// encodeEvent is encode for an event calendar.
+// encodeEvent is encode for an event calendar. A task that is not an event (no
+// due date) has no calendar data and no ETag: callers reach only members, and
+// one that slips through is never written as an event with an empty date
+// (GitHub issue 1717).
 func (v *davView) encodeEvent(t opsync.Entity) ([]byte, string) {
-	ft, _ := v.feedTask(t)
+	ft, ok := v.feedTask(t)
+	if !ok {
+		return nil, ""
+	}
 	ft.UID = v.uidOf(ft.ID)
 	body := calfeed.WriteEvent(ft, calfeed.FeedOptions{Now: v.now, BaseURL: v.baseURL})
 	sum := sha256.Sum256(body)

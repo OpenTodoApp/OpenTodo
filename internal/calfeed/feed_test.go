@@ -65,3 +65,15 @@ func TestWriteFeedZoneDefinition(t *testing.T) {
 		}
 	}
 }
+
+// A task without a usable date never panics the event writer (GitHub issue
+// 1717): the CalDAV event calendar once encoded an undated task and crashed on
+// d[:4] of an empty string.
+func TestWriteEventWithoutADateDoesNotPanic(t *testing.T) {
+	for _, date := range []string{"", "2026", "2026-11"} {
+		body := string(WriteEvent(FeedTask{ID: "t1", Title: "Someday", Date: date}, FeedOptions{Now: time.Unix(0, 0)}))
+		if !strings.Contains(body, "BEGIN:VEVENT") {
+			t.Fatalf("date %q: %s", date, body)
+		}
+	}
+}
