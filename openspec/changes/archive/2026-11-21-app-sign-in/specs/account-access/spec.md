@@ -37,11 +37,11 @@ Errors of `POST /api/v1/app/token`:
 - **THEN** the response is the same refusal a `full` token receives
 
 ### Requirement: App sessions alongside other sessions
-App grants SHALL be listed with the user's sessions, showing "OpenTodo app", the device name sent at sign-in and the time of last use. Revoking one, signing out in the app, signing out everywhere, a password change or deactivation SHALL end the grant, and its tokens SHALL be refused from the next request. Signing out in the app SHALL revoke its grant on the server when online, and on the next connection otherwise.
+App grants SHALL be listed with the user's sessions, showing "OpenTodo app", the device name sent at sign-in and the time of last use. Revoking one, a sign-out from the app (`POST /api/v1/app/sign-out`), signing out everywhere, a password change or deactivation SHALL end the grant, and its tokens SHALL be refused from the next request.
 
 #### Scenario: Revoke from the web
 - **WHEN** the user revokes "OpenTodo app · iPhone" in the sessions list
-- **THEN** the app's next request is refused with 401 and the app returns to its server screen, keeping no account data
+- **THEN** the app's next request is refused with 401
 
 #### Scenario: Sign out everywhere
 - **WHEN** the user chooses Sign out everywhere on the web

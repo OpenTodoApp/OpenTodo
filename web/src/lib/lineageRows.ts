@@ -19,8 +19,7 @@ export async function lineageRows(seriesId: string, scanned?: Task[]): Promise<T
  * The rows lineageRows reads, for several series at once: the series themselves, every
  * piece of a split series, and the occurrence records of all of those. Read by index
  * (`series_id`, `split_from.series`), never the whole tasks table: completing a
- * repeating task in a 10,000-task account read every task (performance-10k; the native
- * app's budget, native-app-foundation). Pass the result to lineageRows for each series.
+ * repeating task in a 10,000-task account read every task (performance-10k). Pass the result to lineageRows for each series.
  */
 export async function lineageScan(seriesIds: Iterable<string>): Promise<Task[]> {
   const ids = new Set(seriesIds)

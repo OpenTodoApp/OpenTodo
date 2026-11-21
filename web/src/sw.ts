@@ -109,7 +109,7 @@ self.addEventListener('message', (event) => {
 // (mcp-oauth): answered with the app shell, an authorize navigation showed the
 // app and the connection stopped without a code ever being issued. /mcp itself
 // is never a navigation, but a GET of it is the server's 405, not the app.
-// The OpenTodo app's sign-in (native-app-foundation D5) is the same kind of address:
+// The OpenTodo app's sign-in (app-sign-in) is the same kind of address:
 // answered with the app shell, the sign-in sheet showed the web app instead of the
 // confirmation, in every browser that had opened the web app before.
 const NAVIGATION_DENYLIST = [/^\/api\//, /^\/healthz/, /^\/t\//, /^\/oauth\//, /^\/app\/sign-in$/, /^\/\.well-known\//, /^\/mcp$/]

@@ -909,7 +909,7 @@ onTestTeardown(stopSyncAndWait)
 // holds the lock runs the loop (exchanges, timer, live channel); the others ask
 // it to sync over the channel and show the status it broadcasts. When the leader
 // closes, the lock passes to another tab. Without a shared lock (platform.leader:
-// no Web Locks or BroadcastChannel, or the native app) every instance syncs on its own.
+// no Web Locks or BroadcastChannel) every instance syncs on its own.
 
 const LOCK_NAME = 'opentodo-sync'
 const CHANNEL_NAME = 'opentodo-sync'

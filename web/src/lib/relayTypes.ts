@@ -1,6 +1,5 @@
 // The relay's wire types (OpenSpec changes mcp-device-relay and routines-ai-step).
-// Types only, so lib/api.ts, which the native app shares (native-app-foundation
-// D2), names them without lib/relay.ts.
+// Types only, so lib/api.ts names them without lib/relay.ts.
 
 export interface RelayDevice {
   deviceId: string

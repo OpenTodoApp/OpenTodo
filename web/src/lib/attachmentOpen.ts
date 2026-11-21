@@ -1,8 +1,7 @@
 // Opening an attachment (OpenSpec `attachments`, design D6, D7): in a new tab, or
 // as a download for a type the browser should not render. In a phone shell, which has
-// no tabs, every file is saved through the shell's save dialog (#1654). Web only: it opens
-// pages and object URLs, so the native app, which shares lib/attachments.ts
-// (native-app-foundation D2), does not import it.
+// no tabs, every file is saved through the shell's save dialog (#1654). Kept out of
+// lib/attachments.ts, which the sync path imports: it opens pages and object URLs.
 import { AttachmentError, contentUrl, fileKeyOf, isInlineType, linkHref } from './attachments'
 import { decryptFile } from './crypto'
 import { db } from './db'

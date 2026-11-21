@@ -57,7 +57,7 @@ type Token struct {
 // settings that hold secrets). It is stored like an agent token: a `read` row
 // plus a marker row in api_token_admin.
 //
-// An `app` token (OpenSpec change native-app-foundation, design D5) is an
+// An `app` token (OpenSpec change app-sign-in) is an
 // access token of the OpenTodo app, minted only by the app sign-in exchange. It
 // is accepted wherever a `full` token is and refused like one on the
 // credential and administration routes. It is stored as a `full` row plus a

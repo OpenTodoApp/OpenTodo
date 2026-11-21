@@ -57,8 +57,6 @@ jobs:
       obsidian: ${{ steps.filter.outputs.obsidian }}
       skill: ${{ steps.filter.outputs.skill }}
       ios: ${{ steps.filter.outputs.ios }}
-      app: ${{ steps.filter.outputs.app }}
-      app_native: ${{ steps.filter.outputs.app_native }}
       # Every job and every matrix leg: release tags, the nightly and a run by hand.
       full: ${{ steps.filter.outputs.full }}
     steps:
@@ -100,11 +98,7 @@ jobs:
           fi
           if [ "$EVENT" != "pull_request" ]; then
             echo "full=true" >> "$GITHUB_OUTPUT"
-            for k in code docs mobile ui layout a11y extension obsidian skill ios app; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
-            # The app's iOS and Android builds run for pull requests that change mobile/app/
-            # and every night (nightly.yml), never for a push to main or a release tag: no
-            # release ships the app before native-app-handover (native-app-foundation D9).
-            echo "app_native=false" >> "$GITHUB_OUTPUT"
+            for k in code docs mobile ui layout a11y extension obsidian skill ios; do echo "$k=true" >> "$GITHUB_OUTPUT"; done
             exit 0
           fi
           echo "full=false" >> "$GITHUB_OUTPUT"
@@ -113,7 +107,7 @@ jobs:
           if [ "$DRAFT" = "true" ]; then
             # A draft runs the checks, web, server and the small packages; the browser,
             # workbench, accessibility and phone jobs wait until it is marked ready.
-            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios|app|app_native)=true$/\1=false/' >> "$GITHUB_OUTPUT"
+            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
           else
             ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
           fi
@@ -231,10 +225,6 @@ jobs:
         working-directory: web
       - run: npm test
         working-directory: web
-      # Needs web's TypeScript, so it runs here and is skipped in Changed paths
-      # (native-app-foundation D2: the shared list holds the sync path's import graph).
-      - name: Shared-code import graph
-        run: node --test --test-name-pattern="import graph" scripts/repo-checks.test.mjs
 
   web-scale:
     # The scale tests (*.perf.test.tsx: lists of 2,000 rows, the 10,000-task account of
@@ -951,34 +941,6 @@ jobs:
           scripts/release/ios-testflight.sh xcode
           make ios-archive
 
-  # The native app (OpenSpec change native-app-foundation D9): type-check, lint, the Jest
-  # tests with the shared vectors and the shared module list (make app), on Linux, for
-  # mobile/app/, a module it shares, the op schema or the catalogs. Its own npm cache;
-  # it never installs web's dependencies, and no web job installs the app's.
-  app-check:
-    name: App (type-check, lint, tests)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: changes
-    if: needs.changes.outputs.app == 'true'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: mobile/app/package-lock.json
-      - run: make app
-
-  # The app's iOS (macOS) and Android builds (app-native.yml): only for a pull request
-  # that changes mobile/app/, never for a shared module alone, a push to main or a
-  # release tag (a web release never waits for an app build); nightly too.
-  app-native:
-    name: App builds
-    needs: changes
-    if: needs.changes.outputs.app_native == 'true'
-    uses: ./.github/workflows/app-native.yml
-
   # The agent skills (OpenSpec changes agent-ready-cli and claude-plugin): the CLI
   # skill that `ot skill` prints and the MCP skill, zipped as release assets.
   skill:
@@ -1112,7 +1074,7 @@ jobs:
   result:
     name: CI result
     if: ${{ always() }}
-    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, app-check, app-native, skill, checks, image]
+    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, skill, checks, image]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1132,7 +1094,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, skill, checks, image, result]
     permissions:
       contents: read
       packages: write
@@ -1223,7 +1185,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, skill, checks, image, result, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)

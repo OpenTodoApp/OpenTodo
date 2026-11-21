@@ -63,7 +63,7 @@ type Policy struct {
 	Demo bool
 	// SignIn: a browser page. A request without a session is sent to the
 	// sign-in page, which returns to the route afterwards, instead of being
-	// answered 401 (native-app-foundation D5).
+	// answered 401 (app-sign-in).
 	SignIn bool
 	// Reach: the route applies a token's workspace limit (OpenSpec change
 	// token-workspaces, D4): its reads and writes go through the sync service
