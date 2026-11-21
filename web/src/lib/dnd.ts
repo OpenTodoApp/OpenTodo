@@ -87,6 +87,8 @@ export interface Hold {
   stop: () => void
 }
 
+const PRESS_ATTR = 'data-touch-press'
+
 /**
  * The touch hold both row gestures share (task-row-context-menu, design D1): after
  * TOUCH_HOLD_MS still it arms (`onArmed`, once), and `stop()` ends it (`onEnd`, once).
@@ -95,8 +97,6 @@ export interface Hold {
  * move passes DRAG_THRESHOLD. While armed the page must not scroll under the finger.
  * A press that is not a touch never arms.
  */
-const PRESS_ATTR = 'data-touch-press'
-
 export function trackHold(e: HoldPress, opts: HoldOptions): Hold {
   if (e.pointerType !== 'touch') return { armed: () => false, stop: () => undefined }
   let armed = false
