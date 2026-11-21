@@ -141,6 +141,25 @@ func TestOIDCAppFlowAsksBeforeTheHandOff(t *testing.T) {
 	if resp, out := redeem(webView, code, p.verifier); resp.StatusCode != http.StatusSeeOther || !hasCookie(resp, sessionCookie) {
 		t.Fatalf("redeem after continue = %d %v", resp.StatusCode, out)
 	}
+
+	// An address the provider has not verified never names the account: its name does.
+	o.idp.SetUser(oidctest.User{Subject: "user-9", Email: "boss@example.com", Name: "Mallory"})
+	q := url.Values{"app_challenge": {newAppPKCE("app-state-name").challenge}, "app_state": {"app-state-name"}}
+	start := raw(sheet, o.srv.URL+"/api/v1/auth/oidc/start?"+q.Encode())
+	idpResp, err := o.idp.HTTPClient().Get(location(start))
+	if err != nil {
+		t.Fatal(err)
+	}
+	idpResp.Body.Close()
+	page, err := sheet.client.Get(idpResp.Header.Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(page.Body)
+	page.Body.Close()
+	if !strings.Contains(string(body), "as Mallory?") || strings.Contains(string(body), "boss@example.com") {
+		t.Fatalf("unverified email on the page:\n%s", body)
+	}
 }
 
 // redeem posts a code and verifier from webView without following redirects.

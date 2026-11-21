@@ -11,7 +11,7 @@ Rejected:
 
 ## D2. A single-use code bound to the app's PKCE challenge
 
-The callback of an app flow keeps the verified claims (and the raw ID token, the session's sign-out hint) under a 32-byte random code, valid for two minutes, taken once whatever the outcome, and bound to the S256 challenge the app sent to the start route (RFC 7636, as in RFC 8252 for native apps). Codes live in memory, like the consumed flow states: no table, no migration; a restart aborts a sign-in in flight and the person starts again. At most 1,000 wait at once (the start and callback routes are already rate limited per address), and at most three for one identity (issuer and subject). The callback cannot refuse an identity before the redeem, which may link it from a signed-in web view, so without that cap one account at the provider could fill the store and hold every app sign-in off for two minutes.
+The callback of an app flow keeps the verified claims (and the raw ID token, the session's sign-out hint) under a 32-byte random code, valid for two minutes, taken once whatever the outcome, and bound to the S256 challenge the app sent to the start route (RFC 7636, as in RFC 8252 for native apps). Codes live in memory, like the consumed flow states: no table, no migration; a restart aborts a sign-in in flight and the person starts again. At most 1,000 wait at once (the start and callback routes are already rate limited per address), and at most three for one identity (issuer and subject). The callback cannot refuse an identity before the redeem, which may link it from a signed-in web view, so without that cap one account at the provider could fill the store and hold every app sign-in off for two minutes. A fourth sign-in of the same identity replaces its oldest waiting code, preferring one not yet confirmed, rather than being refused: a sheet closed without Cancel leaves its code behind, and three of those must not lock the person out.
 
 `opentodo://sso` can be claimed by another app on Android, and any app or page can open it. A code intercepted that way is useless without the verifier, which never leaves the app; a code injected into the app fails the app's state check and, failing that, the verifier check, so a person can never be signed in to someone else's account or have someone else's identity linked.
 
@@ -37,7 +37,9 @@ Verified links (Android App Links, iOS universal links) would tie the return to 
 
 The page is rendered by the server, not the web app: it must work in the system browser before there is a session, with no script. Its policy is `default-src 'none'` (its one style by hash), `form-action 'self' opentodo:`, since the post's answer redirects to the app's scheme, and `frame-ancestors 'none'`. Its words follow the browser's language through the mail texts' choice (`mail.LangFrom`): English and German now, English for the rest, as mail does.
 
-We accept the risk that remains: it needs a malicious app installed on the phone, and that app gets only what the person confirms in the browser it opens.
+The page names the account (the provider's verified email, else the name it gives), but it cannot name the app that asked: the browser does not know which app opened it. A malicious app with its own "Sign in with …" button therefore still gets the tap, from a person who believes they are signing in to that app.
+
+We accept the risk that remains, and that limit with it: it needs a malicious app installed on the phone, and that app gets only what the person confirms in the browser it opens.
 
 ## Data model and size
 

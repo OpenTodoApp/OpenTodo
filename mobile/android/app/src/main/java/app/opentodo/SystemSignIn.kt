@@ -30,6 +30,8 @@ object SystemSignIn {
     sealed class Outcome {
         data class Code(val code: String) : Outcome()
         data class Error(val code: String) : Outcome()
+        /** This sign-in's state with neither a code nor an error: the person tapped Cancel. */
+        object Cancelled : Outcome()
         object Invalid : Outcome()
     }
 
@@ -55,8 +57,8 @@ object SystemSignIn {
     fun startUrl(server: String, p: Pending): String = "$server$START_PATH?app_challenge=${p.challenge}&app_state=${p.state}"
 
     /**
-     * Reads `opentodo://sso?state=…&code=…` (or `&error=…`); anything else, or another state,
-     * is invalid. Codes and error codes are plain tokens, so they go into the page's script and
+     * Reads `opentodo://sso?state=…&code=…` (or `&error=…`, or the state alone after Cancel);
+     * anything else, or another state, is invalid. Codes and error codes are plain tokens, so they go into the page's script and
      * address as they are.
      */
     fun outcome(url: String, state: String): Outcome {
@@ -66,6 +68,7 @@ object SystemSignIn {
         if (q["state"] != state) return Outcome.Invalid
         q["code"]?.let { if (isToken(it)) return Outcome.Code(it) }
         q["error"]?.let { if (isToken(it)) return Outcome.Error(it) }
+        if (!q.containsKey("code") && !q.containsKey("error")) return Outcome.Cancelled
         return Outcome.Invalid
     }
 

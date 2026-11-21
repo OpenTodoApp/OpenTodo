@@ -58,29 +58,37 @@ func TestHandoffsSingleUseAndExpiry(t *testing.T) {
 	}
 }
 
-// One identity cannot fill the store: its fourth waiting code is refused,
-// while other identities, and the same subject at another issuer, still get theirs.
+// One identity cannot fill the store: its fourth sign-in replaces its oldest
+// waiting one, preferring one still held, while other identities, and the same
+// subject at another issuer, keep theirs.
 func TestHandoffsPerSubject(t *testing.T) {
 	now := time.Unix(1_800_000_000, 0)
 	s := NewHandoffs(func() time.Time { return now })
 	one := Handoff{Issuer: "https://idp", Claims: Claims{Subject: "eve"}}
-	for i := 0; i < maxPerSubject; i++ {
-		if s.Hold(one) == "" {
-			t.Fatalf("code %d refused", i)
-		}
-	}
-	if s.Hold(one) != "" {
-		t.Fatal("a fourth waiting code for one identity is refused")
-	}
-	if s.Hold(Handoff{Issuer: "https://idp", Claims: Claims{Subject: "ada"}}) == "" {
-		t.Fatal("another identity still gets a code")
-	}
-	if s.Hold(Handoff{Issuer: "https://other", Claims: Claims{Subject: "eve"}}) == "" {
-		t.Fatal("the same subject at another issuer is another identity")
-	}
-	now = now.Add(HandoffTTL + time.Second)
+	other := s.Hold(Handoff{Issuer: "https://idp", Claims: Claims{Subject: "ada"}})
+	elsewhere := s.Hold(Handoff{Issuer: "https://other", Claims: Claims{Subject: "eve"}})
+	released := put(s, one) // confirmed, waiting for the app
+	now = now.Add(time.Second)
+	first := s.Hold(one)
+	now = now.Add(time.Second)
+	second := s.Hold(one)
+	now = now.Add(time.Second)
 	if s.Hold(one) == "" {
-		t.Fatal("expired codes free the identity again")
+		t.Fatal("a fourth sign-in of one identity is taken, not refused")
+	}
+	if _, _, ok := s.Release(first); ok {
+		t.Fatal("the oldest held code of that identity made room")
+	}
+	if _, _, ok := s.Release(second); !ok {
+		t.Fatal("a newer held code stays")
+	}
+	if _, ok := s.Take(released, func(string) bool { return true }); !ok {
+		t.Fatal("a confirmed code goes only when no held one is left to drop")
+	}
+	for _, ticket := range []string{other, elsewhere} {
+		if _, _, ok := s.Release(ticket); !ok {
+			t.Fatal("other identities keep their codes")
+		}
 	}
 }
 

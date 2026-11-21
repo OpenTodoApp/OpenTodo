@@ -328,6 +328,8 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
                 else { pendingRedeemScript = script; load("$base/") }
             }
             is SystemSignIn.Outcome.Error -> load(SystemSignIn.errorUrl(base, outcome.code))
+            // Cancel on the confirmation page: the sign-in is over and the screen stays as it was.
+            SystemSignIn.Outcome.Cancelled -> if (web.url == null) load("$base/")
             SystemSignIn.Outcome.Invalid -> if (web.url == null) load("$base/")
         }
     }

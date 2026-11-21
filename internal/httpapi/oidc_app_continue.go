@@ -61,9 +61,17 @@ func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket 
 	if !ok {
 		lang, text = "en", appContinueText["en"]
 	}
-	who := strings.TrimSpace(claims.Email)
+	// The provider's verified email, else the name it gives: an address it has
+	// not verified could be anyone's, so it never names the account.
+	who := ""
+	if bool(claims.EmailVerified) {
+		who = strings.TrimSpace(claims.Email)
+	}
 	if who == "" {
 		who = strings.TrimSpace(identityOf(claims).Name)
+	}
+	if who == "" {
+		who = claims.Subject
 	}
 	h := w.Header()
 	h.Set("Content-Type", "text/html; charset=utf-8")

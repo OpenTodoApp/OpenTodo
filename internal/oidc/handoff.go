@@ -31,7 +31,9 @@ const maxHandoffs = 1000
 // callback cannot refuse an identity the provider accepted before the app
 // redeems it (a signed-in web view may link it to its account), so without it
 // one account at the provider could fill the store and hold every app sign-in
-// off for HandoffTTL.
+// off for HandoffTTL. A new sign-in replaces that identity's oldest waiting
+// code rather than being refused: a sheet closed without Cancel leaves its code
+// behind, and three of those must not lock the person out.
 const maxPerSubject = 3
 
 // Handoff is a verified sign-in waiting for the app.
@@ -74,16 +76,8 @@ func (s *Handoffs) Hold(h Handoff) string {
 			delete(s.tickets, v.ticket)
 		}
 	}
+	s.makeRoomFor(h)
 	if len(s.codes) >= maxHandoffs {
-		return ""
-	}
-	same := 0
-	for _, v := range s.codes {
-		if v.Issuer == h.Issuer && v.Claims.Subject == h.Claims.Subject {
-			same++
-		}
-	}
-	if same >= maxPerSubject {
 		return ""
 	}
 	code := ids.Secret(32)
@@ -92,6 +86,29 @@ func (s *Handoffs) Hold(h Handoff) string {
 	s.codes[code] = h
 	s.tickets[h.ticket] = code
 	return h.ticket
+}
+
+// makeRoomFor drops the oldest waiting code of h's identity when it has
+// maxPerSubject already, preferring one still held (not yet confirmed).
+// Callers hold the lock.
+func (s *Handoffs) makeRoomFor(h Handoff) {
+	var oldest string
+	var oldestH Handoff
+	same := 0
+	for code, v := range s.codes {
+		if v.Issuer != h.Issuer || v.Claims.Subject != h.Claims.Subject {
+			continue
+		}
+		same++
+		held, oldestHeld := v.ticket != "", oldestH.ticket != ""
+		if oldest == "" || held && !oldestHeld || held == oldestHeld && v.expires.Before(oldestH.expires) {
+			oldest, oldestH = code, v
+		}
+	}
+	if same >= maxPerSubject {
+		delete(s.codes, oldest)
+		delete(s.tickets, oldestH.ticket)
+	}
 }
 
 // Release turns a held hand-off's ticket into its code, once: the app may
