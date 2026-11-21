@@ -401,13 +401,30 @@ async function pressOnce(p, n) {
  */
 async function touchInput(p, base) {
   const out = []
-  const row = p.locator('li[data-task-id]').first()
-  const bg = () => row.evaluate((el) => getComputedStyle(el).backgroundColor)
-  const rest = await bg()
+  // The third row, away from the two the press check uses, read once its colour has
+  // settled; it fails only on the hover colour itself (--ot-hover), drawn on a canvas so
+  // two spellings of one colour compare equal.
+  const row = p.locator('li[data-task-id]').nth(2)
+  const bg = () => row.evaluate((el) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (c) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const d = document.createElement('div'); d.style.backgroundColor = 'var(--ot-hover)'; document.body.append(d)
+    const hover = rgba(getComputedStyle(d).backgroundColor); d.remove()
+    return { now: rgba(getComputedStyle(el).backgroundColor), hover }
+  })
+  await row.scrollIntoViewIfNeeded()
+  let rest = await bg()
+  for (let i = 0; i < 10; i++) {
+    await p.waitForTimeout(150)
+    const next = await bg()
+    if (next.now === rest.now) break
+    rest = next
+  }
   const box = await row.boundingBox()
   await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  await p.waitForTimeout(150)
-  if (await bg() !== rest) out.push('a resting pointer gives a task row its hover look')
+  await p.waitForTimeout(300)
+  const hovered = await bg()
+  if (hovered.now === hovered.hover && rest.now !== rest.hover) out.push('a resting pointer gives a task row its hover look')
   await p.mouse.move(0, 0)
   // The ring of the focused element: an outline or a box-shadow drawn by the focus.
   const ring = () => p.evaluate(() => {
