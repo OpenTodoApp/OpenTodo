@@ -71,7 +71,7 @@
   { "id": "sidebar-project", "what": "A project in the sidebar: reorder among its siblings, or drop on another to nest it.", "alternatives": [
    { "file": "web/src/app/ProjectRowMenu.tsx", "item": "up" },
    { "file": "web/src/app/ProjectRowMenu.tsx", "item": "down" },
-   { "file": "web/src/app/ProjectHeader.tsx", "item": "move" }
+   { "file": "web/src/app/menus/projectMenu.tsx", "item": "move" }
   ] },
   { "id": "label", "what": "A label's handle in the sidebar and on Labels: reorder.", "alternatives": [
    { "file": "web/src/app/LabelsView.tsx", "item": "up" },

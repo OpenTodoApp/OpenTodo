@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TOUCH_HOLD_MS } from '../lib/dnd'
 import { render, waitFor } from '../ui/test-utils'
 import { Menu, MenuItem, SidebarItem } from '../ui'
-import { holdForRowMenu } from './rowMenuHold'
+import { contextForRowMenu, holdForRowMenu } from './rowMenuHold'
 
 afterEach(() => { vi.useRealTimers(); document.body.innerHTML = '' })
 
@@ -102,5 +102,44 @@ describe('the styles', () => {
   it('`ui-whole` is one line that wraps, on touch only', async () => {
     const css = (await import('../index.css?raw')).default.replace(/\s+/g, ' ')
     expect(css).toContain('@media (pointer: coarse) { .ui-whole { display: flex; flex-wrap: wrap; align-content: flex-start; height: 1lh; overflow: hidden; } .ui-whole::before { content: ""; height: 1lh; } .ui-whole > * { flex: none; white-space: nowrap; } }')
+  })
+})
+
+// sidebar-project-menu: a right-click on a row opens the menu its button opens.
+describe('a right-click on a sidebar row', () => {
+  function rightClickRows() {
+    return (
+      <div data-sidebar-scroll onContextMenu={contextForRowMenu}>
+        <div data-menu-row>
+          <SidebarItem label="Home renovation" onClick={() => {}} />
+          <input aria-label="Project name" defaultValue="Home renovation" />
+          <Menu kind="menu" label="Menu for project Home renovation" trigger="…">
+            <MenuItem label="Rename" onSelect={() => {}} />
+          </Menu>
+        </div>
+        <div data-plain><SidebarItem label="Inbox" onClick={() => {}} /></div>
+      </div>
+    )
+  }
+  const contextmenu = (target: EventTarget, pointerType = 'mouse') => {
+    const e = new PointerEvent('contextmenu', { bubbles: true, cancelable: true, pointerType })
+    act(() => { target.dispatchEvent(e) })
+    return e
+  }
+
+  it('opens the row\'s menu and keeps the browser\'s menu away', async () => {
+    const r = await render(rightClickRows())
+    const e = contextmenu(r.container.querySelector('[data-menu-row] [data-sidebar-item]')!)
+    expect(e.defaultPrevented).toBe(true)
+    await waitFor(menuOpen, 'the row menu')
+  })
+
+  it('leaves the browser\'s menu in a text field, on a row without a menu and to the touch hold', async () => {
+    const r = await render(rightClickRows())
+    expect(contextmenu(r.container.querySelector('input')!).defaultPrevented).toBe(false)
+    expect(contextmenu(r.container.querySelector('[data-plain] [data-sidebar-item]')!).defaultPrevented).toBe(false)
+    // Touch: suppressed, but the hold owns the gesture, so nothing opens.
+    expect(contextmenu(r.container.querySelector('[data-menu-row] [data-sidebar-item]')!, 'touch').defaultPrevented).toBe(true)
+    expect(menuOpen()).toBe(false)
   })
 })
