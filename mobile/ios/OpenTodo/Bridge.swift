@@ -92,6 +92,7 @@ protocol BridgeActions: AnyObject {
     func bridgedOpenAppLink(_ url: String)
     func bridgedSetSystemBars(_ json: String)
     func bridgedHaptic(_ kind: String)
+    func bridgedPlayCompletionSound()
     func bridgedBackgroundDone()
     func bridgedPullHandled()
 }
@@ -124,7 +125,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability, "completion-sound"] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
@@ -199,6 +200,9 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             reply(nil, nil)
         case "haptic":
             actions.bridgedHaptic(string(0))
+            reply(nil, nil)
+        case "playCompletionSound":
+            if args.isEmpty { actions.bridgedPlayCompletionSound() }
             reply(nil, nil)
         case "backgroundDone":
             actions.bridgedBackgroundDone()
@@ -305,6 +309,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             openAppLink: function (url, schemes) { call('openAppLink', [String(url), String(schemes)]) },
             setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
             haptic: function (kind) { call('haptic', [String(kind)]) },
+            playCompletionSound: function () { call('playCompletionSound', []).catch(function () {}) },
             backgroundDone: function () { call('backgroundDone', []) },
             pullHandled: function () { call('pullHandled') }
           });

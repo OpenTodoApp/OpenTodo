@@ -223,6 +223,11 @@ export function useUserPrefsRow(): UserPrefs | null | undefined {
   return prefsRow.use()
 }
 
+/** The loaded preference snapshot for actions that must start within a user gesture. */
+export function currentUserPrefsRow(): UserPrefs | null | undefined {
+  return prefsRow.read()
+}
+
 /** This user's review stamp per project (project_prefs.reviewed_at, open-loops-method D4); empty while loading. */
 export function useReviewedAt(): ReadonlyMap<string, number> {
   const rows = projectPrefRows.use()

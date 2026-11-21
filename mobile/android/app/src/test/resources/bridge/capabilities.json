@@ -9,6 +9,7 @@
     "microphone",
     "files",
     "haptics",
+    "completion-sound",
     "alarm-settings"
   ],
   "backgroundOnly": [
@@ -21,7 +22,8 @@
   ],
   "methods": {
     "openAlarmSettings": "alarm-settings",
-    "backgroundDone": "background"
+    "backgroundDone": "background",
+    "playCompletionSound": "completion-sound"
   },
   "expect": {
     "visible": {

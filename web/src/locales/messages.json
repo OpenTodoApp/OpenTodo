@@ -13711,6 +13711,9 @@
   "Plans from {source}": [
     "web/src/app/calendar/FrameBand.tsx"
   ],
+  "Play a short sound when you complete a task.": [
+    "web/src/lib/settingsCopy.ts"
+  ],
   "Please enter a name": [
     "web/src/app/NamePrompt.tsx",
     "web/src/app/NewWorkspaceDialog.tsx",
@@ -17795,6 +17798,10 @@
     "web/src/app/focus/FocusView.tsx",
     "web/src/lib/undoActions.ts",
     "web/src/lib/webhooks.ts"
+  ],
+  "Task completion sound": [
+    "web/src/app/AppearanceSection.tsx",
+    "web/src/lib/settingsCopy.ts"
   ],
   "Task conversation": [
     "web/src/app/task-detail/ConversationTabs.tsx"

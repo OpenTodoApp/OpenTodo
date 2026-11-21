@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 // The Appearance panel and the provider (OpenSpec change theming, tasks 3.3 and 4.1).
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
 import { applyOps, resetDeviceId } from '../lib/ops'
 import { setPromoted } from '../lib/appearance'
@@ -272,4 +272,25 @@ describe('Appearance → Haptic feedback (motion-v2 4.4)', () => {
     expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs' && o.field === 'haptics' && o.value === 'off')).toBe(true)
     await r.unmount()
   })
+})
+
+it('opts in to completion sound separately and keeps unknown synced values silent', async () => {
+  vi.stubGlobal('AudioContext', class {})
+  const r = await render(<AppearanceSection />)
+  try {
+    const sound = () => r.container.querySelector<HTMLButtonElement>('#appearance-completion-sound-switch')!
+    expect(sound()?.getAttribute('aria-checked')).toBe('false')
+    sound().focus()
+    expect(document.activeElement).toBe(sound())
+    await click(sound())
+    await waitFor(() => sound().getAttribute('aria-checked') === 'true', 'completion sound is on')
+    expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs' && o.field === 'completion_sound' && o.value === 'on')).toBe(true)
+    expect((await db.outbox.toArray()).some((o) => o.entity === 'user_prefs' && o.field === 'haptics')).toBe(false)
+    await applyOps([{ id: 'sound-from-other-device', entity: 'user_prefs', entityId: 'me', field: 'completion_sound', value: 'future', ts: Date.now() * 2, device: 'other' }])
+    await waitFor(() => sound().getAttribute('aria-checked') === 'false', 'unknown sound preference reads as off')
+    expect((await db.userPrefs.get('me'))?.completion_sound).toBe('future')
+  } finally {
+    await r.unmount()
+    vi.unstubAllGlobals()
+  }
 })

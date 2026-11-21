@@ -26,6 +26,8 @@ import { accentName } from '../lib/colourNames'
 import { act } from './actionError'
 import { cardCopy, rowCopy } from '../lib/settingsCopy'
 import { hapticsPrefOn, setHapticsPref } from '../lib/haptics'
+import { completionSoundOn, setCompletionSound } from '../lib/completionSoundPref'
+import { canPlayCompletionSound } from './completionSound'
 import { fullTitlesOn, setFullTitles } from '../lib/fullTitles'
 import { canVibrate } from './motion'
 import { canSetZoom, setAllowZoom, useAllowZoom } from '../lib/touchZoom'
@@ -64,6 +66,7 @@ export interface AppearanceViewProps {
   titles?: { on: boolean; onChange: (on: boolean) => void }
   /** The haptics switch, only on a device that can vibrate (appearance-preferences "Haptic feedback preference"). */
   haptics?: { on: boolean; onChange: (on: boolean) => void }
+  completionSound?: { on: boolean; onChange: (on: boolean) => void }
   /** The pinch-zoom switch, only on a touch device (design-system "Fields never zoom the screen on touch", #1386). */
   zoom?: { on: boolean; onChange: (on: boolean) => void }
   /** The theme of each side (theme-engine D14): the lists to show and writing a choice. */
@@ -120,7 +123,7 @@ function TilePreview() {
 
 const TILE = 'flex w-28 shrink-0 snap-start flex-col gap-2 rounded-card border bg-surface p-2 text-left outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus sm:w-auto'
 
-export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, zoom, themes }: AppearanceViewProps) {
+export function AppearanceView({ value, onMode, onAccent, custom, onDensity, rows, titles, haptics, completionSound, zoom, themes }: AppearanceViewProps) {
   const tileRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [picking, setPicking] = useState(false)
   const customRef = useRef<HTMLButtonElement | null>(null)
@@ -194,6 +197,10 @@ export function AppearanceView({ value, onMode, onAccent, custom, onDensity, row
       {haptics && (
         <SettingRow id="appearance-haptics" {...rowCopy('appearance', 'haptics')} htmlFor="appearance-haptics-switch"
           control={<Switch id="appearance-haptics-switch" checked={haptics.on} onChange={haptics.onChange} label={t('Haptic feedback')} hideLabel />} />
+      )}
+      {completionSound && (
+        <SettingRow id="appearance-completion-sound" {...rowCopy('appearance', 'completionSound')} htmlFor="appearance-completion-sound-switch"
+          control={<Switch id="appearance-completion-sound-switch" checked={completionSound.on} onChange={completionSound.onChange} label={t('Task completion sound')} hideLabel />} />
       )}
       {zoom && (
         <SettingRow id="appearance-zoom" {...rowCopy('appearance', 'zoom')} htmlFor="appearance-zoom-switch"
@@ -343,6 +350,7 @@ export function AppearanceSection({ author = '' }: { author?: string }) {
     rows={{ value: accountRowLayout(row), onChange: (r) => act(setAccountRowLayout(r)) }}
     titles={{ on: fullTitlesOn(row), onChange: (on) => act(setFullTitles(on)) }}
     haptics={canVibrate() ? { on: hapticsPrefOn(row), onChange: (on) => act(setHapticsPref(on)) } : undefined}
+    completionSound={canPlayCompletionSound() ? { on: completionSoundOn(row), onChange: (on) => act(setCompletionSound(on)) } : undefined}
     zoom={canSetZoom() ? { on: allowZoom, onChange: setAllowZoom } : undefined} />
 }
 

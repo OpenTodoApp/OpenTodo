@@ -1,0 +1,1 @@
+- **Optional task completion sound.** Turn it on in Settings → Appearance for a short two-note cue when you finish a task. The phone apps respect silent mode.
