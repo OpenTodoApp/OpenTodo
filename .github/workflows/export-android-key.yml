@@ -1,0 +1,61 @@
+name: Export the Android release key (one-off)
+
+# One-off, by hand (SEC-20): the Android release key exists only as four repository
+# secrets, which GitHub never shows again, and every APK users installed is signed with
+# it. This copies them, encrypted with age to the owner's public key written below, into
+# an artifact that expires after one day, so the owner can keep a copy and move them into
+# the protected `signing` environment. Nothing is printed. The recipient is fixed in this
+# file, not an input, so a run cannot encrypt to anyone else. This file is removed again
+# once the owner has the copy.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: export-android-key
+  cancel-in-progress: false
+
+jobs:
+  export:
+    name: Encrypt the release key for the owner
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # The owner's age public key (21 Nov 2026). Only the matching private key decrypts.
+      RECIPIENT: age1kvmqk4qupf7kyjn4ytwj5503grc63ccszh6476e2wf50vmnchpps5sf7et
+      AGE_URL: https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-amd64.tar.gz
+      AGE_SHA256: 7df45a6cc87d4da11cc03a539a7470c15b1041ab2b396af088fe9990f7c79d50
+    steps:
+      - name: Install age (pinned by checksum)
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/age.tgz" "$AGE_URL"
+          echo "$AGE_SHA256  $RUNNER_TEMP/age.tgz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/age.tgz" -C "$RUNNER_TEMP"
+      - name: Encrypt the four secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          umask 077
+          dir="$RUNNER_TEMP/android-release-key"
+          mkdir "$dir"
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::$name is not set as a repository secret"; exit 1; fi
+            printf '%s' "${!name}" > "$dir/$name"
+          done
+          base64 -d < "$dir/ANDROID_KEYSTORE_BASE64" > "$dir/release.keystore"
+          sha256sum "$dir/release.keystore" | cut -d' ' -f1 > "$dir/release.keystore.sha256"
+          echo "keystore sha256: $(cat "$dir/release.keystore.sha256")"
+          tar -C "$RUNNER_TEMP" -cf - android-release-key | "$RUNNER_TEMP/age/age" -r "$RECIPIENT" -o "$RUNNER_TEMP/android-release-key.tar.age"
+          rm -rf "$dir"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: android-release-key
+          path: ${{ runner.temp }}/android-release-key.tar.age
+          retention-days: 1
+          if-no-files-found: error

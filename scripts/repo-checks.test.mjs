@@ -688,6 +688,14 @@ test('only the signing jobs read the release keys, on release tags, in the signi
   for (const f of workflowFiles()) {
     for (const [id, block] of Object.entries(jobsOf(read(f)))) {
       if (/environment: signing|secrets\.(ANDROID_KEY|CLAUDE_PLUGIN_DEPLOY_KEY|OBSIDIAN_DEPLOY_KEY)/.test(block)) {
+        // The one-off export for the owner (SEC-20): by hand, on main, encrypted to the
+        // recipient fixed in the file. Removed once the owner holds the copy.
+        if (f.endsWith('export-android-key.yml') && id === 'export') {
+          assert.match(read(f), /^on:\n {2}workflow_dispatch:\n\n/m, `${f}: runs by hand only`)
+          assert.match(block, /^ {4}if: github\.ref == 'refs\/heads\/main'$/m, `${f}: runs on main only`)
+          assert.match(block, /^ {6}RECIPIENT: age1[0-9a-z]+$/m, `${f}: encrypts to a fixed age recipient`)
+          continue
+        }
         assert.ok(f.endsWith('ci.yml') && id in keys, `${f}: only ${Object.keys(keys).join(', ')} use the signing environment or a release key (${id})`)
       }
     }
