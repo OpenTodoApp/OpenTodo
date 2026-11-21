@@ -47,7 +47,8 @@ func TestPlanAwayScaleIsBounded(t *testing.T) {
 	if plan.Series != 100 || plan.Occurrences != 100*30 {
 		t.Fatalf("plan = %d series, %d occurrences", plan.Series, plan.Occurrences)
 	}
-	if took := time.Since(start); took > 10*time.Second {
+	// The race detector runs this about 20 times slower; the result above is still checked.
+	if took := time.Since(start); !raceDetector && took > 10*time.Second {
 		t.Fatalf("planning 100 daily series among 16k tasks took %v", took)
 	}
 }
@@ -59,7 +60,7 @@ func TestPlanAwayStopsAtTheLimit(t *testing.T) {
 	if !errors.Is(err, ErrAwayTooLarge) {
 		t.Fatalf("err = %v, want ErrAwayTooLarge", err)
 	}
-	if took := time.Since(start); took > time.Second {
+	if took := time.Since(start); !raceDetector && took > time.Second {
 		t.Fatalf("refusing took %v", took)
 	}
 }
