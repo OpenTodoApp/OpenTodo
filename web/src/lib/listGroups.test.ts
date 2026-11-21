@@ -711,7 +711,8 @@ describe('built-in view options (builtin-view-options)', () => {
       const earlier = task({ title: 'Earlier', project_id: home.id, parent_id: plan.id, due: { date: '2026-10-13' } })
       const parked = task({ title: 'Parked', project_id: home.id, parent_id: plan.id, start: 'someday' })
       const done = task({ title: 'Done', project_id: home.id, parent_id: plan.id, completed_at: 1 })
-      const all = [plan, todayChild, later, undated, leafChild, dueGrandchild, earlier, parked, done]
+      const graduated = task({ title: 'Graduated habit', project_id: home.id, parent_id: plan.id, habit_graduated_at: 1 })
+      const all = [plan, todayChild, later, undated, leafChild, dueGrandchild, earlier, parked, done, graduated]
       const options = { taskMap: new Map(all.map((t) => [t.id, t])), display: { ...nested, groupBy } }
       const listed = [earlier, plan, todayChild, dueGrandchild]
       const g = listGroups(today(listed, options))

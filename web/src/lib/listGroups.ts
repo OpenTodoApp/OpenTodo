@@ -490,7 +490,8 @@ function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => numb
 function todayContextChildren(p: GroupInput): Map<string, Task[]> {
   const children = new Map<string, Task[]>()
   for (const task of p.taskMap.values()) {
-    if (!task.parent_id || task.deleted_at || task.completed_at || isSomeday(task) || inToday(task, p.today)) continue
+    if (!task.parent_id || task.deleted_at || task.completed_at || task.habit_graduated_at != null) continue
+    if (isSomeday(task) || inToday(task, p.today)) continue
     if (task.project_id && p.projectMap.get(task.project_id)?.archived) continue
     if (assignedToSomeoneElse(task, p.todayContextFilter?.assignees) || p.todayContextFilter?.matches(task) === false) continue
     appendTo(children, task.parent_id, task)
