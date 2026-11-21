@@ -9894,6 +9894,10 @@
   "Make this the start view on this device": [
     "web/src/app/display/DisplayScreen.tsx"
   ],
+  "Make top-level for today": [
+    "web/src/app/task-list/ListGroups.tsx",
+    "web/src/app/task-list/todayGroupDrop.ts"
+  ],
   "Make your own theme, or import a theme file. A template lists every colour a theme file can set, with a note on each.": [
     "web/src/app/themes/YourThemes.tsx"
   ],
@@ -10260,6 +10264,7 @@
     "web/src/app/routines/wordPicker.tsx"
   ],
   "More actions": [
+    "web/src/app/TaskRow.tsx",
     "web/src/app/review/StatsView.tsx",
     "web/src/app/task-list/RowActionCluster.tsx",
     "web/src/ui/patterns/PageHeader.tsx"
@@ -10459,6 +10464,9 @@
   "Move to…": [
     "web/src/app/calendar/occurrenceMenu.tsx",
     "web/src/app/task-detail/OccurrenceScope.tsx"
+  ],
+  "Move under task…": [
+    "web/src/app/task-list/todayGroupDrop.ts"
   ],
   "Move up": [
     "web/src/app/AppearanceSection.tsx",
@@ -15670,7 +15678,8 @@
     "web/src/lib/settingsCopy.ts"
   ],
   "Scheduled for today": [
-    "web/src/lib/undoActions.ts"
+    "web/src/lib/undoActions.ts",
+    "web/src/lib/viewOrderMove.ts"
   ],
   "Scheduled for {date}.": [
     "web/src/lib/triage.ts"
@@ -17472,6 +17481,9 @@
   ],
   "Subtask of “{task}”": [
     "web/src/lib/assistant.ts"
+  ],
+  "Subtask shown for context": [
+    "web/src/app/TaskRow.tsx"
   ],
   "Subtasks": [
     "web/src/app/assistant/blocks/TaskBlock.tsx",
@@ -20990,6 +21002,7 @@
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/app/task-list/ListGroups.tsx",
     "web/src/app/task-list/WaitingSoon.tsx",
+    "web/src/app/task-list/todayGroupDrop.ts",
     "web/src/lib/dependencies.ts",
     "web/src/lib/dnd.ts",
     "web/src/lib/facets.ts",

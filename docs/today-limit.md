@@ -11,7 +11,7 @@ order: 24
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with its title, the date and the list of the day's tasks."></picture>
 
-A busy [Today](today-and-upcoming.md) can hold twenty tasks. A **Today limit** turns it into a closed list: a fixed number of slots, and the rest wait their turn. **Done today** shows what you actually finished, unplanned wins included.
+A **Today limit** gives [Today](today-and-upcoming.md) a fixed number of slots. **Done today** shows finished tasks and unplanned wins.
 
 ## Set a limit
 
@@ -31,6 +31,8 @@ Slots are filled first come, first served:
 A task captured on a full day waits instead of pushing out a planned one; a priority or a time never reshuffles the slots, nor do [Display options](arrange-built-in-views.md). The Waiting group keeps this order: its first task comes in when you finish one.
 
 [Blocked](tasks-and-projects.md#wait-for-another-task) tasks and the later steps of a [sequential project](project-flows.md) never take a slot; they stay where they were. Nor do habits.
+
+Contextual subtasks take no slot. **Make top-level for today** schedules one as a regular task that can wait.
 
 ## Tasks with a time today
 
