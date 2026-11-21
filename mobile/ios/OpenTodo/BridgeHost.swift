@@ -8,7 +8,7 @@ import AVFAudio
 @MainActor
 final class BridgeHost: BridgeActions {
     private let interactive: Bool
-    private var completionSound: AVAudioPlayer?
+    private static let completionSound = CompletionSoundPlayback()
     /// The background run's end (shell-reminders-on D4); the visible app has none.
     private let backgroundDone: (@MainActor () -> Void)?
 
@@ -64,18 +64,7 @@ final class BridgeHost: BridgeActions {
 
     func bridgedPlayCompletionSound() {
         guard interactive, UIApplication.shared.applicationState == .active else { return }
-        let session = AVAudioSession.sharedInstance()
-        // A recording or another audio mode owns the session. The cue can be skipped.
-        guard session.category == .ambient || session.category == .soloAmbient else { return }
-        do {
-            if session.category == .soloAmbient { try session.setCategory(.ambient) }
-            let player = try completionSound ?? AVAudioPlayer(data: Self.completionWave())
-            player.currentTime = 0
-            player.play()
-            completionSound = player
-        } catch {
-            // The task is complete even if the audio session cannot play a cue.
-        }
+        Self.completionSound.play()
     }
 
     nonisolated static func completionWave() -> Data {
@@ -142,5 +131,91 @@ final class BridgeHost: BridgeActions {
     func bridgedOpenAppLink(_ url: String) {
         guard interactive, AppLink.scheme(url) != nil, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)
+    }
+}
+
+/// The audio session is shared with WebKit. Keep the mixing category only while the cue is playing.
+@MainActor
+private final class CompletionSoundPlayback: NSObject, AVAudioPlayerDelegate {
+    private struct Settings: Equatable {
+        let category: AVAudioSession.Category
+        let mode: AVAudioSession.Mode
+        let policy: AVAudioSession.RouteSharingPolicy
+        let options: AVAudioSession.CategoryOptions
+
+        init(_ session: AVAudioSession) {
+            category = session.category
+            mode = session.mode
+            policy = session.routeSharingPolicy
+            options = session.categoryOptions
+        }
+    }
+
+    private let session = AVAudioSession.sharedInstance()
+    private lazy var wave = BridgeHost.completionWave()
+    private var player: AVAudioPlayer?
+    private var temporarySettings: (previous: Settings, applied: Settings)?
+
+    override init() {
+        super.init()
+        // This player lives for the life of the shared session. An interruption does not
+        // call the player's completion delegate.
+        _ = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification,
+                                                  object: session, queue: .main) { [weak self] note in
+            guard note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt == AVAudioSession.InterruptionType.began.rawValue else { return }
+            MainActor.assumeIsolated { self?.stop() }
+        }
+        _ = NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification,
+                                                  object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.stop() }
+        }
+    }
+
+    func play() {
+        let previous = Settings(session)
+        // A recording or another audio category owns the session. The cue can be skipped.
+        guard previous.category == .ambient || previous.category == .soloAmbient else { return }
+        do {
+            let next = try AVAudioPlayer(data: wave)
+            if previous.category == .soloAmbient {
+                try session.setCategory(.ambient)
+                temporarySettings = (previous, Settings(session))
+            }
+            // A new completion restarts the cue without ending the temporary audio session.
+            player?.delegate = nil
+            player?.stop()
+            next.delegate = self
+            player = next
+            if !next.play() { stop() }
+        } catch {
+            // The task is complete even if the audio session cannot play a cue.
+        }
+    }
+
+    private func stop() {
+        player?.delegate = nil
+        player?.stop()
+        player = nil
+        let settings = temporarySettings
+        temporarySettings = nil
+        // Leave changes another audio client made during playback in place.
+        guard let settings, Settings(session) == settings.applied else { return }
+        let previous = settings.previous
+        try? session.setCategory(previous.category, mode: previous.mode, policy: previous.policy, options: previous.options)
+    }
+
+    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        playbackEnded(player)
+    }
+
+    nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        playbackEnded(player)
+    }
+
+    private nonisolated func playbackEnded(_ completedPlayer: AVAudioPlayer) {
+        Task { @MainActor [weak self] in
+            guard let self, self.player === completedPlayer else { return }
+            self.stop()
+        }
     }
 }
