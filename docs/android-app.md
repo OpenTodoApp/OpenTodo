@@ -145,7 +145,7 @@ Back closes what is open (a dialog, a sheet, a task), then goes back through the
 
 ## Haptic feedback
 
-Completing a task gives a short tap, and adding a task or picking up a row a light one, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+Completing a task gives a short tap, and adding a task or picking up a row a light one. Flipping a switch or choosing a segment with your finger gives a click, and a failure message a firmer buzz. It uses the phone's own touch feedback and needs no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
 
 **Task completion sound** beside it is off by default. To hear a short cue after completing a task in the app, enable it while the phone is in Normal mode. Silent and Vibrate modes stay quiet.
 

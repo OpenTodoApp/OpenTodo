@@ -140,6 +140,13 @@ export function verticalScrollers() {
   return out
 }
 
+// status-bar-scroll-top 2.2: every screen of the signed-in app marks its main scroller,
+// so a tap on the iPhone's status bar has something to scroll to the top.
+export function missingMainScroller() {
+  if (!document.querySelector('[data-app-frame]')) return []
+  return document.querySelector('[data-main-scroller]') ? [] : ['no [data-main-scroller]: a tap on the status bar would not scroll this screen to the top']
+}
+
 // Touch targets inside `root` (default: the whole page) that are visible in the viewport.
 // Task rows whose checkbox circle and title's first line are not centred on the same
 // line (more than 3 px apart): on touch screens the title grows to the 44 px target and
