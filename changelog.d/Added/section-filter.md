@@ -1,0 +1,1 @@
+- **Filter by section.** `section: Review | section: Backlog` lists the tasks in sections of those names across every project, and `no section` lists the tasks in none. The filter builder has a Section condition.

@@ -348,6 +348,7 @@ In order. No op field changes; the server gains only app sign-in.
 | Filter query language (`@work & due <= tomorrow & p1`) | `filter-query-language` |
 | Saved views pinned to the sidebar, with display options (list or board, grouping, order, completed tasks, the properties rows show: `views-and-display`), custom dashboards (boards whose columns carry on-drop rules, with an Eisenhower matrix template: `rule-boards`) | `custom-views` |
 | Filter by completion date (`completed = last week`), period dates (this, last or next week or month) and a Completed logbook (closes #86) | `completed-date-filters` |
+| Filter by section (`section: Review`, `no section`) across every project, with a Section condition in the builder (closes [#1640](https://github.com/OpenTodoApp/OpenTodo/issues/1640)) | `section-filter` |
 | Trash with restore, auto-archive of completed projects, revision history from the op log | `trash-and-history` |
 | Drag-and-drop ordering | `manual-ordering` |
 | Custom fields per project: text, number, date, choice, link and checkbox values on tasks, in the panel, on cards, as columns and in filters; sub-projects inherit their parent's fields; lists and saved views can be ordered by a Number or Date field (closes [#404](https://github.com/OpenTodoApp/OpenTodo/issues/404)) | `custom-fields`, `inherited-custom-fields`, `custom-field-sort` |
