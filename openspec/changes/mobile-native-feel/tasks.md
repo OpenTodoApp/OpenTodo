@@ -7,7 +7,7 @@
 
 Phase 1:
 - [ ] 2.1 `press-feedback-delay`
-- [ ] 2.2 `touch-input-mode`
+- [x] 2.2 `touch-input-mode`
 - [ ] 2.3 `row-lift-overscroll`
 - [ ] 2.4 `haptic-kinds`
 - [ ] 2.5 `status-bar-scroll-top`

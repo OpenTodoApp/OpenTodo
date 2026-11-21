@@ -15,6 +15,8 @@ watchVisualViewport()
 watchFocusClearance()
 // On a touch device, shortcut hints show once a hardware keyboard is used (touch-keyboard-hints).
 void import('./lib/keyboardSeen').then((m) => m.watchHardwareKeyboard())
+// No focus ring after a tap: the root says which input moved focus last (touch-input-mode).
+void import('./lib/inputMode').then((m) => m.watchInputMode())
 
 // Open tabs recover after a server upgrade (client-sync-robustness): a missing
 // chunk reloads, a new service worker or database version asks to reload.
