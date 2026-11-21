@@ -82,7 +82,7 @@ Completing a task gives the phone's success tap, and adding a task or picking up
 
 ## Touch
 
-Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
+Tapping does not flash, holding a button or a tab does not select its label, and holding a link does not lift a preview of it. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top no longer drags or reloads the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**. Tap the status bar to scroll back to the top of a list, a note or the calendar, or of an open sheet or panel.
 
 ## Face ID unlock
 
