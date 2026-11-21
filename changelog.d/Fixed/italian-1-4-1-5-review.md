@@ -1,1 +1,0 @@
-- **Italian wording of the 1.4 and 1.5 texts reviewed by a native speaker.** Habits, daily notes, note actions, Close the day and the notes graph read more naturally in Italian; toasts about several notes no longer get the agreement wrong for a single note. ([#1111](https://github.com/OpenTodoApp/OpenTodo/issues/1111))

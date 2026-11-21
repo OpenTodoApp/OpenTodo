@@ -1,1 +1,0 @@
-- iOS/iPad app: holding a task row to drag it now works reliably. A long press on the row body no longer lets the system take the gesture for text selection, so dragging a task by the row (not only by its grip) picks it up as expected (#1346).

@@ -1,1 +1,0 @@
-- Android app: the setup screen now warns about an outdated Android System WebView below version 111 (was 100), matching the minimum the web app actually needs, so a WebView from 100 to 110 is caught before connecting instead of landing on the "browser too old" page (#1259).

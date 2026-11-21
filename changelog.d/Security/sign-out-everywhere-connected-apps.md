@@ -1,1 +1,0 @@
-- **Sign out everywhere also ends connected AI apps.** Choosing Sign out everywhere now disconnects the AI apps you connected over MCP (such as Gemini or ChatGPT connectors) along with every session, API token and app password; they must be connected again.

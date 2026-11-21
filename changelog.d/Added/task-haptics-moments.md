@@ -1,1 +1,0 @@
-- The apps give a light haptic tap when you add a task, alongside the taps for completing one and picking up a row to drag. It follows the existing **Settings → Appearance → Haptic feedback** switch (#1445).

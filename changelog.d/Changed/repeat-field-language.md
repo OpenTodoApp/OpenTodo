@@ -1,1 +1,0 @@
-- **A task's Repeat field reads your language.** Type "elke vrijdag", "jeden zweiten Dienstag im Monat" or "tous les 3 jours après achèvement" in the Repeat field, as in quick add; the English rules keep working in every language (repeat-field-language, #1427).

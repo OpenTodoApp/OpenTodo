@@ -1,1 +1,0 @@
-- **The template library is in French.** The ten project templates (moving house, trip planning, weekly review and the others) have French titles, descriptions and tasks, used when the interface is in French, also by a routine's "Create a project from a template" step (#1527).
