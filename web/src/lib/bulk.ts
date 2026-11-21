@@ -191,7 +191,7 @@ export interface BulkResult { undoId: string | null; label: string; count: numbe
  * Plan an action on the ticked tasks and apply it as one undoable batch. Works
  * offline: the changes go to the outbox with one timestamp and sync as ordinary ops.
  */
-export async function applyBulk(ids: readonly string[], action: BulkAction, opts: { now?: number; today?: string } = {}): Promise<BulkResult> {
+export async function applyBulk(ids: readonly string[], action: BulkAction, opts: { now?: number; today?: string } = {}): Promise<BulkResult & { completed?: boolean }> {
   const now = opts.now ?? Date.now()
   const today = opts.today ?? logicalToday()
   await getDeviceId()
@@ -211,7 +211,8 @@ export async function applyBulk(ids: readonly string[], action: BulkAction, opts
     case 'trash': changes = planTrash(tasks, all, now); label = bulkLabel(action, tasks.length); break
   }
   const entry = await applyBatch(await toProposed(changes), { source: 'bulk', label })
-  return { undoId: entry?.id ?? null, label, count: tasks.length }
+  const result = { undoId: entry?.id ?? null, label, count: tasks.length }
+  return action.kind === 'complete' && entry && !allCompleted(tasks) ? { ...result, completed: true } : result
 }
 
 /** The undo toast's words for a group action (page-rhythm D6): "4 tasks moved to today", "3 of 4 tasks rescheduled". */

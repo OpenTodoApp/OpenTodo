@@ -17,6 +17,7 @@ import { itemKeywords, projectSource, sectionSource, type PickerItem } from '../
 import { roleOf } from '../../lib/sharing'
 import { toggleTracking, useRunningEntry } from '../../lib/timeEntries'
 import { act } from '../actionError'
+import { prepareCompletionSound } from '../completionSound'
 import type { Label, Membership, Priority, Project, Section, Task } from '../../lib/types'
 import { DESKTOP_HEADER_QUERY, Icon, Dialog, useFinePointer, useMediaQuery } from '../../ui'
 import { Tooltip } from '../../ui'
@@ -67,8 +68,10 @@ const bulkConfirm = createStore<ConfirmSpec | null>('bulkConfirm', null)
 /** Apply a bulk action and offer its undo. */
 export async function runBulk(ids: readonly string[], action: BulkAction): Promise<void> {
   if (ids.length === 0) return
+  const cue = prepareCompletionSound(action.kind === 'complete')
   // The rows that stay slide into place; more than the cap update at once (motion-v2 D4).
   const r = await withListTransition(ids.length, () => applyBulk(ids, action))
+  if (r.completed) cue?.()
   // Trash keeps its offer longer and offers the way back: a new offer replaces the
   // previous one, so the shorter window must be enough to undo a big delete.
   if (action.kind === 'trash') showBulkToast(r.label, r.undoId, { ttl: TRASH_TOAST_MS, action: { label: t('Show Trash'), run: () => navigate({ view: 'trash' }) } })

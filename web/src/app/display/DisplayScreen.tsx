@@ -11,7 +11,7 @@ import { useAllLabels, useMemberships, useProjectsLoaded, useSectionRows, useUse
 import { completedOn, groupToday, nextDays, projectOpenList, todayAssigneeFilter, todayList, withoutArchived } from '../../lib/dayLists'
 import { describeDue, formatTime, localDueOf, logicalDay } from '../../lib/dates'
 import { blockedMap } from '../../lib/dependencies'
-import { setTaskCompleted } from '../../lib/ops'
+import { setTaskCompletedWithFeedback } from '../completionSound'
 import { groupBySection } from '../../lib/sections'
 import { canEditTask, memberName, useMe } from '../../lib/sharing'
 import { breadcrumbOf, buildTaskTree } from '../../lib/subtasks'
@@ -177,7 +177,7 @@ export function DisplayScreen({ route }: { route: DisplayRoute }) {
   // ---- keyboard and focus (design D5): one roving focus across groups and columns ----
   const rows = useMemo(() => (content ? [...content.groups, ...content.columns].flatMap((g) => g.rows) : []), [content])
   const toggle = useCallback((row: DisplayRowData) => {
-    if (row.editable) act(setTaskCompleted(row.id, !row.done))
+    if (row.editable) act(setTaskCompletedWithFeedback(row.id, !row.done))
   }, [])
   const exit = useCallback(() => navigate(normalRoute(target)), [target])
   const { focusKey: current, setFocusKey } = useDisplayKeys(rows, toggle, exit)

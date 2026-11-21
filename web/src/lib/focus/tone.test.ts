@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { playTone, primeTone, resetTone } from './tone'
+import { playCompletionTone, playTone, primeTone, resetTone } from './tone'
 
 // The generated tone (OpenSpec focus-mode, task 2.5): no file, two oscillators,
 // silent when audio is refused.
@@ -25,6 +26,33 @@ function stubAudio(resume: () => Promise<void> = async () => undefined, state = 
 afterEach(() => { vi.unstubAllGlobals(); resetTone() })
 
 describe('tone', () => {
+  it('synthesizes the same completion cue as the native shells', () => {
+    const fixture = JSON.parse(readFileSync(new URL(
+      '../../../../mobile/android/app/src/test/resources/bridge/completion-sound.json',
+      import.meta.url,
+    ), 'utf8')) as { sampleRate: number; frames: number; samples: [number, number][] }
+    const samples = new Float32Array(fixture.frames)
+    const start = vi.fn()
+    vi.stubGlobal('AudioContext', class {
+      state = 'running'
+      sampleRate = fixture.sampleRate
+      destination = {}
+      async resume() {}
+      createBuffer(channels: number, length: number, sampleRate: number) {
+        expect([channels, length, sampleRate]).toEqual([1, fixture.frames, fixture.sampleRate])
+        return { getChannelData: () => samples }
+      }
+      createBufferSource() { return { connect() {}, start } }
+    })
+    primeTone()
+    playCompletionTone()
+    expect(start).toHaveBeenCalledOnce()
+    const pcm = Int16Array.from(samples, value => Math.round(value * 32767))
+    for (const [frame, expected] of fixture.samples) {
+      expect(pcm[frame], `frame ${frame}`).toBe(expected)
+    }
+  })
+
   it('one call plays two sine notes, 660 Hz then 880 Hz', async () => {
     const osc = stubAudio()
     primeTone()

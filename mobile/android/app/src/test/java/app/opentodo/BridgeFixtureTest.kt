@@ -204,8 +204,28 @@ class BridgeFixtureTest {
         val methods = fixture("capabilities.json").getJSONObject("methods")
         assertEquals("alarm-settings", methods.getString("openAlarmSettings"))
         assertEquals("background", methods.getString("backgroundDone"))
+        assertEquals("completion-sound", methods.getString("playCompletionSound"))
         val script = Bridge.script("1.0.0", listOf("reminders", "widgets"))
         for (m in methods.keys()) assertTrue("$m in the page script", script.contains("$m: function () { send('$m', []) }"))
+    }
+
+    @Test fun completionSoundRespectsRingerMode() {
+        assertTrue(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_NORMAL))
+        assertFalse(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_SILENT))
+        assertFalse(CompletionSound.allowsSound(android.media.AudioManager.RINGER_MODE_VIBRATE))
+    }
+
+    @Test fun completionSoundMatchesWebSamples() {
+        val expected = fixture("completion-sound.json")
+        val clip = CompletionSound.samples()
+        assertEquals(expected.getInt("sampleRate"), CompletionSound.SAMPLE_RATE)
+        assertEquals(expected.getInt("frames"), clip.size)
+        val samples = expected.getJSONArray("samples")
+        for (i in 0 until samples.length()) {
+            val pair = samples.getJSONArray(i)
+            val frame = pair.getInt(0)
+            assertTrue("frame $frame", kotlin.math.abs(clip[frame].toInt() - pair.getInt(1)) <= 1)
+        }
     }
 
     /** shell-reminders-on D3: `alarm-settings` needs a screen and Android 12; nothing else changes with the API level. */

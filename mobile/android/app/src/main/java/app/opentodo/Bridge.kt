@@ -55,6 +55,7 @@ class Bridge(
         fun saveFile(json: String, done: (String) -> Unit) = done(FileSave.FAILED)
         /** shell-repairs D5: the platform's feedback for a `HapticFeedbackConstants` value (main thread). */
         fun haptic(constant: Int) {}
+        fun playCompletionSound() {}
         /**
          * shell-push D5: the link activity of the user's UnifiedPush distributor (main thread);
          * done gets whether it answered RESULT_OK and the app it named. The default starts nothing.
@@ -116,6 +117,7 @@ class Bridge(
             "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
             // An unknown kind is ignored, and so is every kind without a screen.
             "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT)?.let { c -> main.post { host.haptic(c) } }
+            "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }
             "backgroundDone" -> if (host == null) backgroundDone?.invoke()
@@ -174,7 +176,7 @@ class Bridge(
             if (!play) caps += "geofences"
             // shell-push D5: also a background run, which reads pushState to notice a new endpoint.
             caps += "push"
-            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics")
+            if (hasScreen) caps += listOf("share", "links", "obsidian-links", "app-links", "system-bars", "microphone", "files", "haptics", "completion-sound")
             if (alarmSettings(hasScreen, sdkInt)) caps += "alarm-settings"
             if (hasScreen && biometric) caps += "biometric"
             if (background && !hasScreen) caps += "background"
@@ -240,6 +242,7 @@ class Bridge(
                 requestMicrophone: function () { return call('requestMicrophone', []) },
                 saveFile: function (json) { return call('saveFile', [String(json)]) },
                 haptic: function (kind) { send('haptic', [String(kind)]) },
+                playCompletionSound: function () { send('playCompletionSound', []) },
                 openAlarmSettings: function () { send('openAlarmSettings', []) },
                 backgroundDone: function () { send('backgroundDone', []) },
                 pushSubscribe: function (key) { return call('pushSubscribe', [String(key)]) },

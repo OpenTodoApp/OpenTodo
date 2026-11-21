@@ -41,7 +41,8 @@ Three pages, **Theme and density**, **Sidebar** and **Task details**. These choi
 - **Density**: **Comfortable** (the default) or **Compact**, which makes task rows, group headers and the sidebar tighter. On a touch screen every target stays full size in both.
 - **Task rows**: [one line or detailed](row-layouts.md).
 - **Show full task titles**: long titles wrap instead of ending with **…**.
-- **Haptic feedback**: on a phone or tablet that can vibrate, a short tick when you complete a task or pick one up with the row's grip. On by default. Computers without vibration do not show the switch.
+- **Haptic feedback**: a short tick on completion or drag. On by default where supported.
+- **Task completion sound**: one short cue per completion action, off by default. Phone apps respect Silent mode.
 - **Open tasks** (Task details): **As a page** (the default) or **In a side panel** beside every list, from 1024 px wide. See [The task page](task-panel.md#open-tasks-beside-the-list).
 - **Sidebar**: numbers on every list or only on Inbox and Today, the order of the main destinations, and which **More** destinations sit next to them. See [Sidebar counts and order](sidebar-counts-and-order.md).
 

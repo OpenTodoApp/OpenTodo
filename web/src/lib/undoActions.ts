@@ -41,7 +41,7 @@ async function apply(changes: Change[], label: string): Promise<UndoableResult> 
 }
 
 /** Complete (subtree, or a series rolling forward) or reopen one task. */
-export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult> {
+export async function completeUndoable(id: string, completed: boolean, opts: { now?: number; today?: string } = {}): Promise<UndoableResult & { completed?: boolean }> {
   // A plain task needs only its subtree; a series plans its roll over every task
   // (its occurrence records). Reading all 10,000 tasks of a large account for every
   // tick queued the next writes behind it (list-rendering-at-scale).
@@ -52,7 +52,8 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const task = tasks[0]
   if (!task) return { entry: null, label: '' }
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
-  return apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
+  return { ...result, completed: completed && !task.completed_at && !!result.entry }
 }
 
 /** Move one task and its subtasks to the Trash. */
