@@ -37,6 +37,8 @@ if (has('push') && !has('background')) void import('./lib/shellPush').then((m) =
 // The page's icons and description follow the instance branding: the service
 // worker serves the signed page unchanged (signed-web-app D7).
 void import('./lib/pageBranding').then((m) => m.watchPageBranding())
+// page-transitions D3: forward and back slides, loaded after the first paint (a change before it swaps at once).
+requestAnimationFrame(() => setTimeout(() => void import('./app/pageTransition').then((m) => m.installPageTransitions()), 0))
 
 // The last language applied on this device (else the browser's) is loaded before
 // the first render, so there is no flash of English (app-localization D3).
