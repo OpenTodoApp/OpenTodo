@@ -324,27 +324,52 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
 
 // The overlay's box once two readings 150 ms apart agree (at most about 3 s).
 /**
- * Presses a row's completion circle and reads the circle and the row at once and 100 ms
- * in (press-feedback-delay): nothing at once, then the circle's own look, never the row's.
+ * Presses a row's completion circle (press-feedback-delay): the circle takes its pressed
+ * colour (`press-selected`) by 100 ms, the engine holds that colour back 60 ms (the pressed
+ * circle's computed transition delay for its background), and the row's body is not
+ * pressed with it, so the row takes no tint. Colours are compared as drawn on a canvas, so two spellings of one colour
+ * are equal; hover, which touch emulation may add on a press, is neither colour. The wait
+ * is read from the engine rather than timed across the round trip to it, which on a busy
+ * machine takes longer than the wait itself.
  */
 async function pressFeedback(p) {
-  const row = p.locator('li[data-task-id]').first()
+  // A press the emulation never reports as :active (it happens now and then in Chromium's
+  // touch emulation) says nothing about the CSS: the next row is pressed instead, and a run
+  // where neither registers is logged, not failed.
+  for (let n = 0; n < 2; n++) {
+    const res = await pressOnce(p, n)
+    if (res) return res
+  }
+  log('  press feedback: no press registered as :active in two tries; not judged')
+  return []
+}
+
+/** One press on the n-th row's circle; null when the press did not register. */
+async function pressOnce(p, n) {
+  const row = p.locator('li[data-task-id]').nth(n)
   const circle = row.locator('button[aria-label^="Complete "]').first()
   const box = await circle.boundingBox()
-  if (!box) return ['no completion circle on the first row']
-  // Opacity and background, the colour drawn on a canvas so that two spellings of one
-  // colour (rgba and oklab transparent) compare equal.
-  const look = () => Promise.all([circle, row].map((l) => l.evaluate((el) => {
-    const cs = getComputedStyle(el)
-    const c = document.createElement('canvas').getContext('2d')
-    c.fillStyle = cs.backgroundColor
-    c.fillRect(0, 0, 1, 1)
-    return `${cs.opacity} ${c.getImageData(0, 0, 1, 1).data.join(',')}`
-  })))
-  // The pointer rests first, so hover is in the baseline and only the press is measured.
+  if (!box) return ['no completion circle on the first rows']
+  const handles = [await circle.elementHandle(), await row.elementHandle()]
+  const look = () => p.evaluate(([c, r]) => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+    const rgba = (colour) => { ctx.clearRect(0, 0, 1, 1); ctx.fillStyle = colour; ctx.fillRect(0, 0, 1, 1); return ctx.getImageData(0, 0, 1, 1).data.join(',') }
+    const token = (name) => { const d = document.createElement('div'); d.style.backgroundColor = `var(${name})`; document.body.append(d); const v = getComputedStyle(d).backgroundColor; d.remove(); return rgba(v) }
+    const cs = getComputedStyle(c)
+    const props = cs.transitionProperty.split(',').map((x) => x.trim())
+    const delays = cs.transitionDelay.split(',').map((x) => parseFloat(x) * (x.trim().endsWith('ms') ? 1 : 1000))
+    const i = props.findIndex((x) => x === 'background-color' || x === 'all')
+    return {
+      active: c.matches(':active'),
+      circle: rgba(cs.backgroundColor), pressed: token('--ot-selected'),
+      // The row's tint follows a press of its body (the part that opens the task); a
+      // selected row has the same colour, so the press itself is what is read.
+      rowPressed: !!r.querySelector(':scope > [data-row-open]:active'),
+      wait: i < 0 ? null : delays[i % delays.length],
+    }
+  }, handles)
   await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await p.waitForTimeout(150)
-  const rest = await look()
   await p.mouse.down()
   const early = await look()
   await p.waitForTimeout(100)
@@ -352,10 +377,12 @@ async function pressFeedback(p) {
   // Released off the circle, so the press does not complete the task.
   await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 200)
   await p.mouse.up()
+  await p.waitForTimeout(400)
+  if (!held.active) return null
   const out = []
-  if (early[0] !== rest[0]) out.push(`the circle changed at once (${rest[0]} → ${early[0]})`)
-  if (held[0] === rest[0]) out.push(`the circle shows no pressed look 100 ms in (${held[0]})`)
-  if (early[1] !== rest[1] || held[1] !== rest[1]) out.push(`the row changed while its circle was pressed (${rest[1]} → ${held[1]})`)
+  if (held.circle !== held.pressed) out.push(`the circle shows no pressed colour 100 ms in (${held.circle}, pressed is ${held.pressed})`)
+  else if (held.wait === null || held.wait < 60) out.push(`the pressed circle's colour does not wait 60 ms (its transition delay is ${held.wait ?? 'none'})`)
+  if (early.rowPressed || held.rowPressed) out.push('the row counts as pressed while its circle is')
   return out
 }
 

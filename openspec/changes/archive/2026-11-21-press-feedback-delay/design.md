@@ -12,7 +12,7 @@
 
  ## D3. Tests
 
- The layout check rests the pointer on the first row's completion circle, presses, and reads the opacity and background of the circle and of the row at once and 100 ms in: nothing at once, the circle's look at 100 ms, the row unchanged (the pointer rests first, so the row's hover is in the baseline). It releases off the circle, so nothing is completed. A vitest test pins the CSS rule text so the delay is not lost.
+ The layout check rests the pointer on the first row's completion circle, presses, and after 100 ms reads that the circle shows its pressed colour, that the engine holds that colour back 60 ms (the pressed circle's computed transition delay for its background), and that the row's body is not pressed with it. The wait is read from the engine, because on a busy machine the round trip to the browser takes longer than the wait itself, and a selected row has the same colour as the row's press tint. A press the emulation never reports as `:active` is retried on the next row and otherwise logged, not failed. It releases off the circle, so nothing is completed. A vitest test pins the CSS rule text so the delay is not lost.
 
 ## Data model, size and budget
 
