@@ -14,6 +14,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/calfeed"
 	"github.com/OpenTodoApp/opentodo/internal/config"
 	"github.com/OpenTodoApp/opentodo/internal/e2ee"
+	"github.com/OpenTodoApp/opentodo/internal/poll"
 	"github.com/OpenTodoApp/opentodo/internal/settings"
 	opsync "github.com/OpenTodoApp/opentodo/internal/sync"
 	"github.com/OpenTodoApp/opentodo/internal/syncscope"
@@ -53,9 +54,7 @@ type Worker struct {
 	keys   *e2ee.Store
 	now    func() time.Time
 	tokens tokenCache
-	mu     sync.Mutex
-	sem    chan struct{}
-	locks  map[string]*sync.Mutex
+	gate   poll.Gate
 	// active caches whether any connection is synced: 0 unknown, 1 none, 2 some.
 	active atomic.Int32
 }
@@ -99,28 +98,6 @@ func (w *Worker) encrypted(ctx context.Context, userID string) (bool, error) {
 		return false, nil
 	}
 	return w.keys.Enabled(ctx, userID)
-}
-
-func (w *Worker) slots() chan struct{} {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.sem == nil {
-		w.sem = make(chan struct{}, InFlight)
-	}
-	return w.sem
-}
-
-// lock serialises cycles of one connection (Sync now waits for a scheduled one).
-func (w *Worker) lock(id string) *sync.Mutex {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.locks == nil {
-		w.locks = map[string]*sync.Mutex{}
-	}
-	if w.locks[id] == nil {
-		w.locks[id] = &sync.Mutex{}
-	}
-	return w.locks[id]
 }
 
 // Changed forgets whether connections exist (after a route changed one).
