@@ -12,7 +12,8 @@ import { lazy, Suspense } from 'react'
 const OccurrenceScope = lazy(() => import('./OccurrenceScope'))
 import type { TaskDetailModel } from './useTaskDetail'
 
-const RING: Record<number, string> = { 1: 'border-p1 bg-p1-soft', 2: 'border-p2 bg-p2-soft', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
+// P1 and P2 fill the circle as a row's does (rowTone PRIORITY_RING, priority-ring-fill).
+const RING: Record<number, string> = { 1: 'border-p1 bg-p1/55', 2: 'border-p2 bg-p2/25', 3: 'border-p3 bg-p3-soft', 4: 'border-p4 bg-p4-soft' }
 
 /**
  * The checkbox and the title; `page` sets the title at the page's size and wraps it freely.
