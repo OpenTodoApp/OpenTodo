@@ -99,6 +99,23 @@ export function patchSets(prev: TaskSets, changes: readonly TaskChange[], projec
 export const contextKey = (c: { state: WorkspaceState; projects: readonly Project[] }): string =>
   JSON.stringify([c.state.current, c.state.defaultId, c.state.list.map((w) => w.id), c.projects.map((p) => [p.id, p.deleted_at ?? null, p.workspace_id ?? null, p.parent_id ?? null])])
 
+/**
+ * Resolves in a new task of the event loop, so what follows runs apart from the task
+ * before it. A message, not a timer: timers wait 4 ms once nested, and a test's fake
+ * timers would hold the snapshot.
+ */
+function nextTask(): Promise<void> {
+  if (typeof MessageChannel !== 'function') return Promise.resolve()
+  return new Promise((resolve) => {
+    const channel = new MessageChannel()
+    channel.port1.onmessage = () => {
+      channel.port1.close()
+      resolve()
+    }
+    channel.port2.postMessage(null)
+  })
+}
+
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value)
@@ -143,8 +160,15 @@ export function taskSnapshot(): LiveSnapshot<TaskSets> {
       if (!running || from !== db) return
       // A full read is derived in full; a patch passes the rows it changed on.
       let changes: TaskChange[] | undefined = []
-      if (change === 'all' || !rows) { rows = (await from.tasks.toArray()) as Task[]; changes = undefined }
-      else if (change.length) ({ rows, changes } = patchRowsWith(rows, change, (await from.tasks.bulkGet(change)) as (Task | undefined)[]))
+      if (change === 'all' || !rows) {
+        const read = (await from.tasks.toArray()) as Task[]
+        // Decoding every row and the render it starts (useSyncExternalStore renders at
+        // once) were one main-thread task of 200 ms or more on a first sync to the Inbox.
+        // The rows are taken in the next task, so nothing publishes them before it.
+        await nextTask()
+        rows = read
+        changes = undefined
+      } else if (change.length) ({ rows, changes } = patchRowsWith(rows, change, (await from.tasks.bulkGet(change)) as (Task | undefined)[]))
       if (running && from === db) publish(changes)
     }).catch(failed)
   }
