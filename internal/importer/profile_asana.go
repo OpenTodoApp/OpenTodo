@@ -1,8 +1,6 @@
 package importer
 
 import (
-	"encoding/csv"
-	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -73,32 +71,14 @@ func (asanaProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	}
 	var recs []record
 	var errRows []Row
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				errRows = append(errRows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		if allBlank(rec) {
-			continue
-		}
-		line, _ := r.FieldPos(0)
-		recs = append(recs, record{line: line, get: func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}})
+	if err := r.eachRecord(col, &errRows, func(line int, _ []string, get func(string) string) error {
+		recs = append(recs, record{line: line, get: get})
 		if len(recs) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	out := &Parsed{}
 	loc := opts.Location()

@@ -1,8 +1,6 @@
 package importer
 
 import (
-	"encoding/csv"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -66,29 +64,7 @@ func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 	loc := opts.Location()
 	projects := map[string]bool{}
 	me := strings.ToLower(strings.TrimSpace(opts.importerEmail))
-	for {
-		rec, err := r.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				out.Rows = append(out.Rows, Row{Line: pe.StartLine, Kind: KindTask, Err: fmt.Sprintf("unreadable CSV record: %v", pe.Err)})
-				continue
-			}
-			return nil, csvFailure(err, "file")
-		}
-		if allBlank(rec) {
-			continue
-		}
-		line, _ := r.FieldPos(0)
-		get := func(c string) string {
-			if i, ok := col[c]; ok && i < len(rec) {
-				return strings.TrimSpace(rec[i])
-			}
-			return ""
-		}
+	if err := r.eachRecord(col, &out.Rows, func(line int, rec []string, get func(string) string) error {
 		projSource, projName := "", get("Project")
 		if projName != "" {
 			id := get("Project ID")
@@ -185,8 +161,11 @@ func (linearProfile) Read(rd io.Reader, opts Options) (*Parsed, error) {
 		}
 		out.Rows = append(out.Rows, row)
 		if len(out.Rows) > MaxRows {
-			return nil, ErrTooManyRows
+			return ErrTooManyRows
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return out, nil
 }
