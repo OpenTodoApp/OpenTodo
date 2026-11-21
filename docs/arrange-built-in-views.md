@@ -10,7 +10,7 @@ order: 22
 
 <picture><source srcset="images/today-dark.webp" media="(prefers-color-scheme: dark)"><img src="images/today-light.webp" alt="The Today view with an Earlier group above today's tasks."></picture>
 
-**Display options**, the sliders button in the header of Today, Upcoming and the Inbox (on a phone, in the bar at the bottom), change how the list is laid out. They never change which tasks it holds, its count or the sidebar's. It is the same panel as on [projects and labels](group-and-order.md).
+**Display options**, the sliders button in the header (in the bottom bar on phones), arrange the list without changing its membership or counts. [Projects and labels](group-and-order.md) use the same panel.
 
 ## What each view offers
 
@@ -26,18 +26,21 @@ With **Group by Project**, headers show configured icons, including in saved vie
 
 ## What stays in place
 
-- **Today:** the chosen grouping lays out only today's own tasks. **Earlier** stays first with **Move all to today** and **Reschedule…**; **Blocked**, **Waiting for a slot** and **Done today** stay at the end. The order applies inside Earlier, each group and Blocked. Waiting for a slot keeps the order its tasks come in, and Done today stays newest first. Under another grouping than Time of day, a row shows its [part of the day](day-parts.md).
-- **Today limit:** the same tasks hold the [slots](today-limit.md), whatever the grouping and order.
-- **Upcoming:** one group per day; dragging a task onto another day still moves it there. With [Start with Today](upcoming-with-today.md), the Today part follows Today's options and Upcoming's apply from Tomorrow on.
-- **Inbox:** grouping and order apply to top-level tasks; subtasks stay under them in their own order. Moving a task by drag or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> while another order is shown switches the Inbox back to **Manual order** first. **Process** keeps the manual order.
+- **Today:** grouping applies to today's own tasks. **Earlier** stays first with **Move all to today** and **Reschedule…**. **Blocked**, **Waiting for a slot** and **Done today** stay at the end. Grouping preserves [slots](today-limit.md) and shows the [part of the day](day-parts.md) on each row outside Time of day.
+- **Upcoming:** drag between days to reschedule. With [Start with Today](upcoming-with-today.md), Upcoming's options apply from Tomorrow on.
+- **Inbox:** grouping and order apply to top-level tasks. Drag or <kbd>Alt</kbd>+<kbd>↑</kbd> / <kbd>↓</kbd> switches to **Manual order**. **Process** keeps that order.
 
 ## Nest subtasks
 
-With **Nest subtasks** on, Today and Upcoming list a subtask under its parent when both are in the same group, indented, with the fold arrow; <kbd>←</kbd> and <kbd>→</kbd> fold and unfold it. A subtask whose parent is in another group or not in the view stays a row of its own with its parent's name.
+With **Nest subtasks** on, Today and Upcoming nest tasks with their parent in the same group. Use the fold arrow or <kbd>←</kbd> and <kbd>→</kbd>. A child whose parent is elsewhere shows its parent's name.
+
+Today's tree also shows open undated and future direct subtasks as context. These quieter rows keep their dates and stay outside counts, slots and bulk selection. You can open, edit or complete them individually.
 
 ## Move tasks between project groups
 
-In Today grouped by **Project**, drop between top-level rows to set the task's place in Today's **Manual order**. Drop on a group heading to change its project and keep the current sort. With **Nest subtasks** on, drop onto any eligible task or subtask to nest under it, or move sideways over a gap to choose the depth shown by the line. Project moves keep dates, including moves into the displayed Inbox group. Use the toast's **Undo** to restore the move and order.
+In Today grouped by **Project**, drop between top-level rows to place a task in **Manual order**, or on a group heading to move it and keep the sort. With **Nest subtasks** on, drop onto an editable task to nest, or move sideways over a gap to choose depth. Project moves keep dates.
+
+Drag a contextual subtask onto another Today task to change its parent and keep its date. Use **Make top-level for today** to schedule it as a main task in the chosen group. Both are in the **Actions** menu and offer **Undo**.
 
 ## Keys and Reset
 

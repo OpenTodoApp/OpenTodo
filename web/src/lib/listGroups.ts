@@ -21,6 +21,7 @@ import { compareManual } from './viewOrder'
 import type { ListDisplay } from './listDisplay'
 import type { DayPart } from './dayParts'
 import { linkedPlaceId } from './locations'
+import { spanOf } from './span'
 import { locateById, noteChanges, patchOrdered, patchSorted, type TaskChange } from './taskDelta'
 
 /** The list views TaskListView renders, as the router names them. */
@@ -31,6 +32,8 @@ export type ListScope =
 /** One rendered line: a task with its place in the (possibly flat) tree. */
 export interface ListRow {
   task: Task
+  /** A visible subtask outside Today membership. */
+  contextual?: true
   depth: number
   /** Effective tree parent in this view; null at the top level. */
   parent: string | null
@@ -63,7 +66,7 @@ export interface RowImplied {
 
 /** Sets what a group's heading implies on each of its rows (a new row object only when there is something to imply). */
 function withImplied(rows: ListRow[], implied: RowImplied | undefined): ListRow[] {
-  return implied ? rows.map((r) => ({ ...r, implied })) : rows
+  return implied ? rows.map((r) => ({ ...r, implied: r.contextual ? { project: implied.project } : implied })) : rows
 }
 
 export interface ListGroup {
@@ -350,7 +353,9 @@ export function splitLater(tasks: readonly Task[], today: string): { active: Tas
   }
   const active: Task[] = []
   const later: Task[] = []
-  for (const task of tasks) (inLater(rootOf(task.id), today) ? later : active).push(task)
+  // A task drawn as a span is placed in time, not hidden until then: it stays with its section (spans-stay-in-sections).
+  const deferred = (root: Task) => inLater(root, today) && !spanOf(root)
+  for (const task of tasks) (deferred(rootOf(task.id)) ? later : active).push(task)
   return { active, later }
 }
 
@@ -425,6 +430,7 @@ export interface GroupInput {
   doneToday?: readonly Task[]
   /** Upcoming starts with Today's own groups, then Tomorrow onwards (upcoming-start-with-today D2). */
   upcomingToday?: boolean
+  todayContextFilter?: { assignees: TodayAssigneeFilter | null; matches: (task: Task) => boolean }
 }
 
 /**
@@ -470,10 +476,43 @@ function dayOrder(p: GroupInput, d: ListDisplay | undefined): ((a: Task, b: Task
  * with Nest subtasks, a subtask under its parent when both are in the group, the order
  * sorting the top-level rows and subtasks keeping their manual order.
  */
-function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => number) | null, nest: boolean, row: (task: Task) => ListRow): ListRow[] {
+function dayRows(p: GroupInput, list: Task[], order: ((a: Task, b: Task) => number) | null, nest: boolean, row: (task: Task) => ListRow,
+  context?: ReadonlyMap<string, Task[]>): ListRow[] {
   if (!nest) return (order ? [...list].sort(order) : list).map(row)
-  const roots = buildTaskTree(list).roots.sort((a, b) => (order ?? compareDueThenPriority)(a.item, b.item))
-  return flattenTree(roots, (id) => p.collapsed.has(id)).map(nodeRow(p))
+  const { roots, nodes } = buildTaskTree(list)
+  const contextual = context?.size ? appendTodayContext(nodes, context) : null
+  roots.sort((a, b) => (order ?? compareDueThenPriority)(a.item, b.item))
+  const toRow = nodeRow(p)
+  return flattenTree(roots, (id) => p.collapsed.has(id)).map((node) =>
+    contextual?.has(node.id) ? { ...toRow(node), contextual: true } : toRow(node))
+}
+
+function todayContextChildren(p: GroupInput): Map<string, Task[]> {
+  const children = new Map<string, Task[]>()
+  for (const task of p.taskMap.values()) {
+    if (!task.parent_id || task.deleted_at || task.completed_at || task.habit_graduated_at != null) continue
+    if (isSomeday(task) || inToday(task, p.today)) continue
+    if (task.project_id && p.projectMap.get(task.project_id)?.archived) continue
+    if (assignedToSomeoneElse(task, p.todayContextFilter?.assignees) || p.todayContextFilter?.matches(task) === false) continue
+    appendTo(children, task.parent_id, task)
+  }
+  return children
+}
+
+/** Add leaves after building the regular tree so a contextual task cannot adopt a Today row. */
+function appendTodayContext(nodes: Map<string, TreeNode<Task>>, context: ReadonlyMap<string, Task[]>): Set<string> {
+  const added = new Set<string>()
+  for (const parent of nodes.values()) {
+    const children = context.get(parent.id)
+    if (!children?.length) continue
+    for (const task of children) {
+      if (nodes.has(task.id)) continue
+      parent.children.push({ item: task, id: task.id, parent: parent.id, depth: parent.depth + 1, children: [] })
+      added.add(task.id)
+    }
+    parent.children.sort((a, b) => compareByPosition(a.item, b.item))
+  }
+  return added
 }
 
 /**
@@ -653,6 +692,8 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
   const manual = d?.sortBy === 'position'
   const order = manual ? null : dayOrder(p, d)
   const rows = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row)
+  const context = !inUpcoming && d?.subtasks ? todayContextChildren(p) : undefined
+  const dayTree = (list: Task[]) => dayRows(p, list, order, !!d?.subtasks, row, context)
   const g: ListGroup[] = []
   // In Upcoming the part headings take no drops: a drop there would change the part and leave the date (D3).
   const drop = (part: DayPart | 'none') => (parts && !inUpcoming ? { dropPart: part } : {})
@@ -663,16 +704,16 @@ function todayGroups(p: GroupInput, row: (task: Task) => ListRow, inUpcoming = f
     // Another grouping lays out only the day's own tasks (D3); Earlier, Blocked, Waiting and Done keep their place.
     const own = new Set([...day, ...morning, ...afternoon, ...evening])
     const rank = manual && !inUpcoming ? compareManual(p.manualOrder ?? new Map(), compareDueThenPriority) : null
-    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row) : rows
+    const projectRows = rank && d ? (list: Task[]) => dayRows(p, list, d.sortDir === 'desc' ? (a, b) => rank(b, a) : rank, !!d.subtasks, row, context) : dayTree
     g.push(...chosenTodayGroups(p, listed.filter((x) => own.has(x)), groupBy, earlier.length > 0, inUpcoming, projectRows))
   } else {
     const others = earlier.length || morning.length || afternoon.length || evening.length
     // With day parts on an empty Today group is left out, unless the list would be empty without it.
     // In Upcoming the group is named, since Tomorrow follows, and left out when empty (D2).
-    if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(rows(day), { date: p.today }), ...drop('none') })
-    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(rows(morning), { date: p.today, part: 'morning' }), ...drop('morning') })
-    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(rows(afternoon), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
-    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(rows(evening), { date: p.today, evening: true }), ...drop('evening') })
+    if (inUpcoming ? day.length : !parts || day.length || !others) g.push({ key: 'today', heading: others || inUpcoming ? t('Today') : null, rows: withImplied(dayTree(day), { date: p.today }), ...drop('none') })
+    if (morning.length) g.push({ key: 'morning', heading: t('Morning'), rows: withImplied(dayTree(morning), { date: p.today, part: 'morning' }), ...drop('morning') })
+    if (afternoon.length) g.push({ key: 'afternoon', heading: t('Afternoon'), rows: withImplied(dayTree(afternoon), { date: p.today, part: 'afternoon' }), ...drop('afternoon') })
+    if (evening.length) g.push({ key: 'evening', heading: t('This Evening'), rows: withImplied(dayTree(evening), { date: p.today, evening: true }), ...drop('evening') })
   }
   if (waiting.length) {
     const folded = !p.collapsed.has(BLOCKED_OPEN_KEY)
@@ -745,7 +786,7 @@ const sameAdds = (a: ListRow['subtaskAdds'], b: ListRow['subtaskAdds']): boolean
 export const sameRow = (a: ListRow, b: ListRow): boolean =>
   a.task === b.task && a.depth === b.depth && a.parent === b.parent && a.hasChildren === b.hasChildren
   && a.collapsed === b.collapsed && a.breadcrumb === b.breadcrumb && sameImplied(a.implied, b.implied)
-  && sameAdds(a.subtaskAdds, b.subtaskAdds)
+  && a.contextual === b.contextual && sameAdds(a.subtaskAdds, b.subtaskAdds)
 
 const sameValue = (a: unknown, b: unknown): boolean =>
   Object.is(a, b) || (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => Object.is(v, b[i])))

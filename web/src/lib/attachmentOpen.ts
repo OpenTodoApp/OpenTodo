@@ -1,5 +1,6 @@
 // Opening an attachment (OpenSpec `attachments`, design D6, D7): in a new tab, or
-// as a download for a type the browser should not render. Web only: it opens
+// as a download for a type the browser should not render. In a phone shell, which has
+// no tabs, every file is saved through the shell's save dialog (#1654). Web only: it opens
 // pages and object URLs, so the native app, which shares lib/attachments.ts
 // (native-app-foundation D2), does not import it.
 import { AttachmentError, contentUrl, fileKeyOf, isInlineType, linkHref } from './attachments'
@@ -8,6 +9,7 @@ import { db } from './db'
 import { currentKey } from './e2ee'
 import { fetchWithTimeout, transferTimeoutMs } from './http'
 import { t } from './i18n'
+import { shell } from './shell'
 import type { Attachment } from './types'
 
 /**
@@ -39,12 +41,19 @@ export async function openAttachment(a: Attachment, opts: { download?: boolean }
     openBlob(new Blob([local.blob], { type: a.mime }), a, opts.download)
     return
   }
+  if (shell()) {
+    // A phone shell has no tabs (#1654): a new window is blocked or reaches the system
+    // browser without the session, so the file is saved through the shell instead.
+    const { saveFromServer } = await import('./saveFile')
+    saveFromServer(contentUrl(a.id, true), a.name)
+    return
+  }
   window.open(contentUrl(a.id, opts.download), '_blank', 'noopener')
 }
 
 /** Open bytes held on this device; types the browser should not render are downloaded. */
 function openBlob(blob: Blob, a: Attachment, download?: boolean) {
-  if (download || !isInlineType(a.mime)) {
+  if (download || !isInlineType(a.mime) || shell()) {
     void import('./saveFile').then((m) => m.saveFile(blob, a.name))
     return
   }

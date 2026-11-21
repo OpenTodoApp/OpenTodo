@@ -107,7 +107,7 @@ The settings:
 | `saved-view` A saved view of eight clauses, to the list | ms | 100 | 300 | — | — |
 | `complete-task` Completing a task in the 2,000-row list, from the click to the paint that shows the tick, as INP measures it (95th percentile) | ms | 100 | 200 | 150 | 150 |
 | `cursor-move` Moving the cursor with j or k, to the next frame (95th percentile) | ms | 50 | 150 | — | — |
-| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it | s | 30 | 75 | 90 | 90 |
+| `first-sync` First sync of a new device, sign-in to all 10,000 tasks on it, starting on the Inbox | s | 30 | 75 | 90 | 90 |
 | `first-sync-long-task` Longest main-thread task during that sync | ms | 200 | — | — | — |
 | `remote-edit` An edit on another device, painted here | ms | 1,000 | — | — | — |
 | `js-heap` JavaScript heap after the session | MB | 150 | 150 | — | — |
@@ -121,7 +121,7 @@ The settings:
 | `server-start` Start to healthy | ms | 2,000 | 8,000 |
 | `server-idle-rss` Memory when idle | MB | 60 | 240 |
 | `server-pull-rss` Peak memory during one device's first sync | MB | 150 | 600 |
-| `server-export-rss` Peak memory during the JSON export | MB | 200 | 800 |
+| `server-export-rss` Peak memory during the JSON export | MB | 110 | 440 |
 | `server-pull-page` A sync page of 1,000 operations (95th percentile) | ms | 80 | 320 |
 | `server-push` A push of 100 operations (95th percentile) | ms | 100 | 400 |
 | `server-list-project` `GET /api/v1/tasks?project_id=` of the 2,000-task project (95th percentile) | ms | 150 | 600 |

@@ -268,6 +268,15 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
   for (const l of liveLabels) labelsByName.set(nameKey(l.name), [...(labelsByName.get(nameKey(l.name)) ?? []), l.id])
   const projectsByName = new Map<string, string[]>()
   for (const p of liveProjects) projectsByName.set(nameKey(p.name), [...(projectsByName.get(nameKey(p.name)) ?? []), p.id])
+  // A task is in a section only while the section is live and in the task's own project (effectiveSection).
+  const sectionProject = new Map<string, string>()
+  const sectionsByName = new Map<string, string[]>()
+  for (const sec of ctx.sections ?? []) {
+    if (sec.deleted_at) continue
+    sectionProject.set(sec.id, sec.project_id)
+    sectionsByName.set(nameKey(sec.name), [...(sectionsByName.get(nameKey(sec.name)) ?? []), sec.id])
+  }
+  const inSection = (task: Task) => !!task.section_id && sectionProject.get(task.section_id) === task.project_id
   const fieldsByName = new Map<string, FieldDef[]>()
   for (const d of ctx.fields ?? []) {
     if (!d.deleted_at) fieldsByName.set(nameKey(d.name), [...(fieldsByName.get(nameKey(d.name)) ?? []), d])
@@ -342,6 +351,15 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
         const set = new Set(ids)
         if (n.descendants) for (const id of ids) for (const d of descendants(id, liveProjects as Project[])) set.add(d)
         return (task) => task.project_id !== null && set.has(task.project_id)
+      }
+      case 'section': {
+        const ids = sectionsByName.get(nameKey(n.name))
+        if (!ids) {
+          warn(t('No section named "{name}"', { name: n.name }))
+          return NEVER
+        }
+        const set = new Set(ids)
+        return (task) => inSection(task) && set.has(task.section_id!)
       }
       case 'priority': {
         const v = n.value
@@ -437,6 +455,7 @@ export function compile(ast: Node, given: FilterContext): CompiledFilter {
           case 'no date': return (task) => task.due === null
           case 'no time': return (task) => task.due !== null && !task.due.time
           case 'no project': return (task) => task.project_id === null
+          case 'no section': return (task) => !inSection(task)
           case 'no labels': return (task) => task.labels.length === 0
           case 'no deadline': return (task) => !task.deadline
           case 'no start': return (task) => !task.start

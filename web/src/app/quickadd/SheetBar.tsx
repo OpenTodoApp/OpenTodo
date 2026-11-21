@@ -14,7 +14,11 @@ import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
 
-const TOOLS: FieldKind[] = ['when', 'priority', 'label', 'estimate', 'project']
+// The tools that start a token the line understands. "When" (a date) has no token —
+// dates are typed in words ("tomorrow") — so its tool only inserted a space and opened
+// nothing (#1624); it is left out until the phone gets a date picker (a separate
+// proposal). Priority, label, estimate and project each start a token the field reads.
+const TOOLS: FieldKind[] = ['priority', 'label', 'estimate', 'project']
 const keepFocus = (e: React.MouseEvent) => e.preventDefault()
 
 function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly LabelRef[], line?: { due: Due | null; datedByPhrase: boolean }): string {
@@ -60,8 +64,10 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
             </span>
           )
         })}
+        {/* A tap target for the same action as the toolbar's Project and Label below, so hidden from
+            assistive technology and the tab order: a screen reader met each name twice. */}
         {placeholders.map((k) => (
-          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)}
+          <button key={k} type="button" data-sheet-placeholder={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-hidden="true" tabIndex={-1}
             className="inline-flex h-[1.875rem] shrink-0 items-center gap-1.5 rounded-full border border-dashed border-input px-2.5 text-body text-faint">
             <Icon name={FIELD_ICON[k]} size={14} />{FIELD_NAME[k]}
           </button>

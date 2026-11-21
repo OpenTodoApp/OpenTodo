@@ -23,6 +23,7 @@ import { TrashView } from './TrashView'
 import { FeedView } from './FeedView'
 import { ReminderToasts } from './ReminderToasts'
 import { WorkspaceHost } from './NewWorkspaceDialog'
+import { AppLinkConfirm } from './AppLinkConfirm'
 import { FramesHost } from './calendar/framesRequest'
 import { FocusPickerHost } from './focus/focusRequest'
 import { useConsentPending } from './OAuthConsentHost'
@@ -65,6 +66,7 @@ import { useDuplicateCollapse } from '../lib/duplicateCollapse'
 // Optional Vim layer (vim-keybindings): its own chunk, fetched only while the
 // per-device switch is on, so the default bundle carries just this boundary.
 const VimLayer = lazy(() => import('./vim/VimLayer'))
+const WorkspaceActivity = lazy(() => import('./WorkspaceActivity'))
 // Pull to sync (pull-to-sync): the gesture and its mark load only on a touch device, where a pull is possible; a mouse
 // or a trackpad never loads them, and a chunk that is gone just leaves the gesture out.
 type Scroller = { scroller: RefObject<HTMLElement | null> }
@@ -74,8 +76,9 @@ function PullHost({ scroller }: Scroller) {
 }
 // Plan, the calendar's least used mode, loads on first use (multi-day-tasks kept the first load in its budget).
 const PlanView = lazy(() => import('./PlanView').then((m) => ({ default: m.PlanView })))
-// Month and Year load on first use too (year-view): several months and the year's grids stay off the first load.
+// Month, Quarter and Year load on first use too (year-view, quarter-view-and-plan-spans): several months and the year's grids stay off the first load.
 const MonthView = lazy(() => import('./MonthView').then((m) => ({ default: m.MonthView })))
+const QuarterView = lazy(() => import('./QuarterView'))
 const YearView = lazy(() => import('./YearView'))
 const TriageView = lazy(() => import('./TriageView').then((m) => ({ default: m.TriageView })))
 // In-app Help (user-documentation): the view, the panel and the guide text are
@@ -286,7 +289,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
   useShortcutScope('global', {
     'go.inbox': go({ view: 'inbox' }), 'go.today': go({ view: 'today' }), 'go.upcoming': go({ view: 'upcoming' }), 'go.someday': go({ view: 'someday' }),
     'go.anytime': go({ view: 'anytime' }), 'go.completed': go({ view: 'completed' }), 'go.assigned': go({ view: 'assigned' }), 'go.labels': go({ view: 'labels' }), 'go.projects': go({ view: 'projects' }),
-    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.plan': go({ view: 'plan' }), 'go.year': go({ view: 'year' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
+    'go.views': go({ view: 'views' }), 'go.day': go({ view: 'day' }), 'go.week': go({ view: 'week' }), 'go.month': go({ view: 'month' }), 'go.quarter': go({ view: 'quarter' }), 'go.plan': go({ view: 'plan' }), 'go.year': go({ view: 'year' }), 'go.filter': go({ view: 'filter' }), 'go.settings': go({ view: 'settings' }),
     'go.trash': go({ view: 'trash' }), 'go.triage': go({ view: 'triage' }), 'go.feed': go({ view: 'feed' }), 'go.ask': go({ view: 'ask' }), 'go.import': go({ view: 'import' }), 'go.help': go({ view: 'help' }),
     // Weekly review and Statistics (stats-and-review).
     'go.review': go({ view: 'review' }), 'go.stats': go({ view: 'stats' }), 'go.next': go({ view: 'next' }), 'go.waiting': go({ view: 'waiting' }), 'go.daily': go({ view: 'review', step: 'daily' }), 'go.loop': go({ view: 'loop' }),
@@ -391,14 +394,14 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
             <Suspense fallback={null}><FocusView id={route.id} /></Suspense>
           ) : route.view === 'notes' ? <Suspense fallback={null}><NotesPage id={route.id} day={route.day} /></Suspense> : route.view === 'triage' ? (
             <Suspense fallback={null}><TriageView /></Suspense>
-          ) : route.view === 'feed' ? (
-            <FeedView />
+          ) : route.view === 'feed' ? <FeedView /> : route.view === 'workspace-activity' ? (
+            <Suspense fallback={SCREEN_LOADING}><WorkspaceActivity id={route.id} /></Suspense>
           ) : route.view === 'ask' ? (
             <AskScreen role={user.role} name={user.name} />
           ) : route.view === 'day' || route.view === 'week' ? (
             <Suspense fallback={SCREEN_LOADING}><CalendarView mode={route.view} date={route.date} /></Suspense>
-          ) : route.view === 'month' || route.view === 'plan' || route.view === 'year' ? (
-            <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
+          ) : route.view === 'month' || route.view === 'quarter' || route.view === 'plan' || route.view === 'year' ? (
+            <Suspense fallback={null}>{route.view === 'month' ? <MonthView date={route.date} /> : route.view === 'quarter' ? <QuarterView date={route.date} /> : route.view === 'plan' ? <PlanView date={route.date} /> : <YearView date={route.date} />}</Suspense>
           ) : (
             // App renders the invite, reset, capture and display screens itself; a stray /invite, /reset, /share or /display route inside the shell falls back to the Inbox.
             <TaskListView userId={user.id} userRole={user.role} route={route.view === 'invite' || route.view === 'project-invite' || route.view === 'workspace-invite' || route.view === 'reset' || route.view === 'confirm-email' || route.view === 'forgot' || route.view === 'verify' || route.view === 'public' || route.view === 'share' || route.view === 'display' ? { view: 'inbox' } : route} />
@@ -437,7 +440,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       <ActionToasts />
       <DailyCheckToast />
       <TemplateDialogHost />
-      <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} />
+      <ArchivePrompt /><WorkspaceHost route={route} panelTask={panelTaskId()} /><AppLinkConfirm />
       <FramesHost /><FocusPickerHost />
     </div>
   )

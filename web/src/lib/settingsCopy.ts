@@ -201,6 +201,7 @@ export const SETTINGS_COPY = {
       rows: { label: msg('Task rows'), description: msg('Detailed adds the parent task and a line of dates, priority and labels.') },
       titles: { label: msg('Show full task titles'), description: msg('Long titles wrap in lists, boards and Today instead of ending with an ellipsis.') },
       haptics: { label: msg('Haptic feedback'), description: msg('A short vibration when you complete a task or pick one up with a long press.') },
+      zoom: { label: msg('Allow pinch zoom'), description: msg('Pinch to zoom the app on this device. Turn it off for a more app-like feel.') },
     },
   },
   sidebar: {
@@ -545,6 +546,10 @@ export const SETTINGS_COPY = {
       },
       address: { label: msg('Server address') },
       user: { label: msg('User name'), description: msg('Sign in with an app password, never your account password.') },
+      push: {
+        label: msg('Push to calendar apps'),
+        description: msg('Apps such as DAVx⁵ sync right after a change, through their own push service.'),
+      },
     },
     notices: {
       offline: msg('CalDAV status is available when you are online.'),
@@ -604,6 +609,19 @@ export const SETTINGS_COPY = {
     learnMore: 'settings/priorities',
     notices: {
       tooLong: msg('At most {n} characters'),
+    },
+  },
+  // Settings → Integrations → Links to other apps (app-links): the person's schemes, synced user_prefs.
+  'app-links': {
+    title: msg('Links to other apps'),
+    icon: 'external-link',
+    description: msg('Links to these apps open after you confirm. Other links stay text.'),
+    learnMore: 'settings/app-links',
+    notices: {
+      denied: msg('This kind of link can never open'),
+      invalid: msg('Use the app’s scheme, like zotero'),
+      duplicate: msg('Already on the list'),
+      full: msg('At most {n} apps'),
     },
   },
   // Settings → General → Notes (daily-notes): one note per day, synced user_prefs.

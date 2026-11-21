@@ -15,6 +15,7 @@ import {
   type DateStyle, type InstantStyle, type ResolvedDateTime,
 } from '../lib/dates'
 import { useEncryption } from '../lib/e2ee'
+import { readAppLinkSchemes, setAppLinkSchemes } from '../lib/appLinks'
 import { useLanguageVersion } from '../lib/i18n'
 import { readPriorityNames, setPriorityNames } from '../lib/priority'
 import { rowTimeWidth } from '../lib/rowTime'
@@ -38,6 +39,9 @@ export function DateTimePrefsProvider({ children }: { children: ReactNode }) {
   // A locked device shows the default names until it is unlocked (priority-names D7).
   const enc = useEncryption()
   const names = readPriorityNames(row, enc.enabled && !enc.unlocked)
+  // The viewer's own list of app link schemes (app-links D1), for every renderer.
+  const appLinks = readAppLinkSchemes(row, enc.enabled && !enc.unlocked).join(' ')
+  useEffect(() => setAppLinkSchemes(appLinks ? appLinks.split(' ') : []), [appLinks])
   const key = `${prefs.date_format}|${prefs.time_format}|${prefs.week_start}|${lang}|${dayStart}|${names.join('\n')}`
   // The snapshot is updated during render, before any child formats a date.
   const value = useMemo<DateTimeContextValue>(() => {

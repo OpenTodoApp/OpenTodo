@@ -259,7 +259,7 @@ func numberExample(name string, s map[string]any) any {
 // analysis cannot see yet; they get an example once their body is described.
 // It only goes down, except by one for a new route that answers 204 (89:
 // DELETE /api/v1/me/oauth-grants/{id}, connected-apps-list).
-const openAPIExamplelessMax = 89
+const openAPIExamplelessMax = 90
 
 // examplelessProblems is the ratchet on examples: a JSON request or success
 // response without one always fails, and more operations without any

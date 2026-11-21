@@ -30,6 +30,8 @@ func (s *Server) registerCommentRoutes(mux *routes) {
 	mux.handle("GET /api/v1/projects/{id}/activity", signedIn, s.activityHandler("project"))
 	// Cross-project feed (OpenSpec change `activity-feed`).
 	mux.handle("GET /api/v1/activity", signedIn, s.handleFeed)
+	// One workspace's activity, every actor's (OpenSpec change workspace-activity).
+	mux.handle("GET /api/v1/workspaces/{id}/activity", signedIn, s.handleWorkspaceActivity)
 }
 
 func (s *Server) handleListComments(w http.ResponseWriter, r *http.Request) {

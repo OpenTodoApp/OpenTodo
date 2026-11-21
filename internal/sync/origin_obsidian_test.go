@@ -19,7 +19,8 @@ func TestObsidianOriginOps(t *testing.T) {
 	for i, v := range []string{
 		`{"kind":"obsidian","id":"x.md","url":"obsidian://new?vault=Notes&name=x"}`,
 		`{"kind":"obsidian","id":"Daily/2026-10-29.md","url":"obsidian://open?vault=Notes&file=Private%2Fdiary"}`,
-		`{"kind":"url","url":"obsidian://open?vault=Notes&file=a"}`,
+		// An Obsidian link is an app link only on a url origin (app-links D5).
+		`{"kind":"issue","provider":"github","id":"o/r#1","url":"obsidian://open?vault=Notes&file=a"}`,
 	} {
 		res, err := s.Apply(ctx, "u1", []Op{op("bad"+string(rune('a'+i)), "task", "t1", "origin", v, int64(200+i), "A")})
 		if err == nil && len(res.Rejected) == 0 {

@@ -412,6 +412,7 @@ function RowLine({ m, projectMark, projectColumn, slotsOff }: { m: MetaValues; p
 }
 
 export interface TaskRowProps {
+  contextual?: boolean
   task: Task
   project?: Project
   /** Already resolved: unknown and deleted label ids are not in this list. */
@@ -753,7 +754,16 @@ export const TaskRow = memo(function TaskRow(props: TaskRowProps | CompactRowPro
   return props.shape === 'compact' ? <CompactRow {...props} /> : <FullRow {...props} />
 })
 
-function FullRow({ task, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
+function RowTrailing({ score, origin, revealed, forceActions }: { score?: ReactNode; origin: ReactNode; revealed: boolean; forceActions: boolean }) {
+  // Revealed actions float at the row's end. The shared trailing slot keeps their position stable.
+  return (
+    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0 md:pointer-fine:group-has-[[data-urgency-chip]:focus-visible]:opacity-100!') : ''}`}>
+      {score}{origin && <span className="flex shrink-0">{origin}</span>}
+    </span>
+  )
+}
+
+function FullRow({ task, contextual = false, project, labels = [], assignee, assignedToMe = false, selected, showProject, depth = 0, progress, blockedBy = 0, waitsFor = null, habit = null, breadcrumb, hasChildren = false, collapsed = false, readOnly = false, onToggle, onOpen, onOpenPage, onToggleCollapse, shape = 'row', timeColumn = false, slotsOff, actions = true, onMore, forceActions = false, onPointerDown, onContextMenu, onRowMenu, onGripDown, onGripClick, dropKey, dropIndicator = null, dropDepth, dropNote, dragging = false, ticked = false, showCheckbox = false, selectMode = false, onTick, hideFieldBadges = false, treeItem = false, implied, omitLabel, tracked: trackedProp, inline, motion, swipe = false, forceSwipe, hidden = NO_HIDDEN, source = false, logbook = false, expanded = false, onExpand, layout, edge, notes = false, score }: TaskRowProps) {
   const card = shape === 'card'
   // The row's layout (row-layouts D1): the list's own choice, else the account's; a card keeps its shape.
   const accountLayout = useAccountRowLayout()
@@ -865,15 +875,9 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
   // The origin is a link, so it never sits inside the open button: on a card it ends the
   // card at the top right, as before rows-v2 (a link nested in a button is invalid).
   const trailing = card ? originChip && <span data-row-trailing="" className="ml-auto flex shrink-0 items-start">{originChip}</span>
-    : (originChip || score || !inline) && (
-    // The revealed actions float over the row's end at every width (task-list-width D2): the row keeps no room for them, so the title has the whole width and revealing them moves nothing.
-    // Every list row has the slot, empty or not: from 40 rem it is one fixed width (index.css), so the property column ends at the same place on every row (GitHub issue 945).
-    <span data-row-trailing="" className={`ml-auto mt-0.5 flex h-5 min-w-0 items-center justify-end gap-2 transition-opacity duration-(--duration-ui) ${revealed ? (forceActions ? 'md:pointer-fine:opacity-0' : 'md:pointer-fine:group-hover:opacity-0 md:pointer-fine:group-focus-within:opacity-0 md:pointer-fine:group-has-[[data-urgency-chip]:focus-visible]:opacity-100!') : ''}`}>
-      {score}{originChip && <span className="flex shrink-0">{originChip}</span>}
-    </span>
-  )
+    : (originChip || score || !inline) && <RowTrailing score={score} origin={originChip} revealed={revealed} forceActions={forceActions} />
 
-  const grip = !!(onGripDown && onGripClick && onTick) && !readOnly && !inline && !departing // the touch grip at the row's end (RowGrip)
+  const grip = !!(onGripDown && (contextual ? onMore : onGripClick && onTick)) && !readOnly && !inline && !departing
   const { clickRow, doubleClick } = useRowClicks(canExpand && onExpand, onOpenPage, selectMode)
   // The swipe takes the press first (rowSwipe), then the drag owner — or, with no drag, the row's own touch hold (task-row-context-menu).
   const handlePointerDown = (e: React.PointerEvent<HTMLLIElement>) => { if (swipe) swiping.onPointerDown(e); holdForRow(e, onPointerDown, onRowMenu) }
@@ -890,6 +894,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       aria-hidden={departing || undefined}
       inert={departing || undefined}
       data-depth={depth}
+      data-contextual={contextual || undefined}
       data-drop-target={dropKey}
       data-draggable={onPointerDown ? '' : undefined}
       data-swipeable={swipe && !card && !readOnly && !inline && !departing ? '' : undefined}
@@ -961,6 +966,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       </span>
       {column && <TimeCell time={due?.time ?? null} slot={slotInColumn} part={partInColumn} timeTone={dueDay ? ladderTone(dueDay, logicalToday()) : 'muted'} deadline={deadlineInColumn ? deadline : null} deadlineLabel={deadlineLabel} />}
       {inline ?? <button type="button" className="flex min-w-0 flex-1 flex-col text-left pointer-fine:-my-px pointer-fine:py-px" data-row-open
+        aria-description={contextual ? t('Subtask shown for context') : undefined}
         aria-expanded={canExpand ? showDetails : undefined} aria-controls={showDetails ? detailsId : undefined}
         onClick={(e) => {
           // Shift+click extends, Ctrl/⌘+click toggles the tick instead of opening (bulk-edit D3); in Select mode a tap does.
@@ -968,7 +974,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
           clickRow(e, () => onOpen(e))
         }}>
         <div className={card ? '' : 'flex min-w-0 items-baseline gap-2'} data-row-head>
-        <RowTitle title={task.title} tone={checked ? (logbook ? 'text-muted' : 'text-faint line-through') : blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
+        <RowTitle title={task.title} tone={checked ? (logbook ? 'text-muted' : 'text-faint line-through') : contextual || blockedBy > 0 || (waitsFor && !done) ? 'text-muted' : ''} waiting={!!waitsFor && !done}
           undecryptable={undecryptable} unencrypted={unencrypted} measure={!inline && !departing} />
         {!card && <RowMarks priority={detailed ? null : priority} m={m} counts={counts} />}
         </div>
@@ -989,7 +995,7 @@ function FullRow({ task, project, labels = [], assignee, assignedToMe = false, s
       )}
       {revealed && <RowActionCluster task={task} onMore={onMore} force={forceActions} editable={!readOnly}
         details={canExpand ? { expanded: showDetails, controls: detailsId, onToggle: onExpand! } : undefined} />}
-      {grip && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown!} onClick={onGripClick!} />}
+      {grip && <RowGrip name={name} ticked={ticked} showCheckbox={showCheckbox} onDown={onGripDown!} onClick={onGripClick!} onMore={contextual ? onMore : undefined} />}
       {showDetails && (
         // Indented under the title column: past the leading slot, the checkbox and the time column (row-expand D3).
         // The id lives here, so `aria-controls` names an element while the lazy details still load.
@@ -1027,23 +1033,23 @@ function RowTick({ name, ticked, showCheckbox, onTick }: { name: string; ticked:
  * (hidden before it renders): a fine pointer drags the row anywhere and ticks through
  * the same box as before.
  */
-function RowGrip({ name, ticked, showCheckbox, onDown, onClick }: { name: string; ticked: boolean; showCheckbox?: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void }) {
+function RowGrip({ name, ticked, showCheckbox, onDown, onClick, onMore }: { name: string; ticked: boolean; showCheckbox?: boolean; onDown: (e: React.PointerEvent<HTMLElement>) => void; onClick: () => void; onMore?: (from: HTMLElement) => void }) {
   // While Select mode shows the checkboxes the tick box is the row's one announced
   // control: the grip leaves the tree and the tab order, so TalkBack and VoiceOver do
   // not stop on two controls with the same name (bulk-actions on touch).
-  const quiet = !!(showCheckbox || ticked)
+  const quiet = !onMore && !!(showCheckbox || ticked)
   return (
     <span data-row-grip="" className="me-1 mt-0.5 hidden h-5 w-5 shrink-0 items-center justify-center self-start pointer-coarse:flex">
       <button
         type="button"
-        aria-label={t('Select {title}', { title: name })}
-        aria-pressed={ticked}
+        aria-label={onMore ? t('More actions') : t('Select {title}', { title: name })}
+        aria-pressed={onMore ? undefined : ticked}
         aria-hidden={quiet || undefined}
         tabIndex={quiet ? -1 : undefined}
         // A hold then a move drags the row: the row's own alternatives (accessibility-aa D3).
         data-drag-id="task-row"
         onPointerDown={(e) => { e.stopPropagation(); onDown(e) }}
-        onClick={onClick}
+        onClick={onMore ? (e) => onMore(e.currentTarget) : onClick}
         className="touch-target press-selected press-inset pointer-coarse:-m-3 flex select-none items-center justify-center rounded-chip pointer-coarse:rounded-full text-faint touch-none hover:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         <Icon name="grip-vertical" size="sm" />

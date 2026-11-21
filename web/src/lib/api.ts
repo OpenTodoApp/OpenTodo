@@ -366,6 +366,13 @@ export const api = {
     const s = q.toString()
     return request<ActivityPage>('GET', `/api/v1/activity${s ? `?${s}` : ''}`)
   },
+  // A workspace's activity (workspace-activity): every actor's events in its projects and Inbox the caller can read.
+  workspaceActivity: (id: string, opts: { cursor?: string; project?: string; actor?: string; kind?: string; from?: number; to?: number } = {}) => {
+    const q = new URLSearchParams()
+    for (const k of ['cursor', 'project', 'actor', 'kind', 'from', 'to'] as const) if (opts[k] !== undefined && opts[k] !== '') q.set(k, String(opts[k]))
+    const s = q.toString()
+    return request<ActivityPage>('GET', `/api/v1/workspaces/${encodeURIComponent(id)}/activity${s ? `?${s}` : ''}`)
+  },
   // Web push (OpenSpec change `reminders`). 404 when the operator turned push off.
   pushKey: (device?: string) =>
     request<{ publicKey: string; subscription?: PushSubscriptionStatus | null }>(
@@ -416,6 +423,8 @@ export const api = {
   deleteEncryptionKeys: () => request<void>('DELETE', '/api/v1/encryption/keys'),
   purgeEncryptionHistory: () => request<{ purged: number; notice: string }>('POST', '/api/v1/encryption/purge-history'),
   caldavSwitch: ownerSwitch<CaldavSetting>('caldav'),
+  // Push to calendar apps (OpenSpec change caldav-push); available is false without web push.
+  caldavPushSwitch: ownerSwitch<{ enabled: boolean; available: boolean }>('caldav/push'),
   listAppPasswords: () => request<{ appPasswords: AppPassword[] }>('GET', '/api/v1/app-passwords'),
   createAppPassword: (name: string, scope?: SyncScope, events = false) =>
     request<{ appPassword: AppPassword; secret: string }>('POST', '/api/v1/app-passwords', { name, ...(scope ? { scope } : {}), ...(events ? { events: true } : {}) }),

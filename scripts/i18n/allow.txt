@@ -31,3 +31,5 @@ web/src/ui/ColourField.tsx: #rrggbb
 web/src/app/CalendarSyncDialogs.tsx: common
 # New habit (habits-home): a sample repeat rule; rules are English in every language.
 web/src/app/habits/HabitForm.tsx: every weekday
+# Settings → Integrations → Links to other apps (app-links): a sample URL scheme.
+web/src/app/AppLinksSettings.tsx: zotero

@@ -130,6 +130,7 @@ describe('field name suggestions', () => {
     expect(fieldSuggestions('"', FIELDS).map((s) => s.name.toLowerCase())).toEqual(['client', 'cost', 'due', 'order date', 'paid', 'quote'])
     expect(fieldSuggestions('@"or', FIELDS)).toEqual([])
     expect(fieldSuggestions('#"or', FIELDS)).toEqual([])
+    expect(fieldSuggestions('section: "or', FIELDS)).toEqual([])
     expect(fieldSuggestions('"Order date" <= friday', FIELDS)).toEqual([])
   })
 })

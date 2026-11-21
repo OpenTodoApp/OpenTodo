@@ -143,3 +143,39 @@ func TestObsidianOriginInTools(t *testing.T) {
 		t.Fatalf("note not marked: %s", raw)
 	}
 }
+
+// TestAgentsNeverWriteAppLinkOrigins covers app-links D5: an assistant never
+// writes a link into another app as an origin, through origin_url or the origin
+// object, on create or update, and a refused call writes nothing.
+func TestAgentsNeverWriteAppLinkOrigins(t *testing.T) {
+	f := newFixture(t)
+	c := agent("u1")
+	out := f.mustCall(c, "create_tasks", map[string]any{"items": []any{map[string]any{"title": "Read the paper"}}})
+	raw, _ := json.Marshal(out)
+	var res struct {
+		Items []struct{ ID string } `json:"results"`
+	}
+	_ = json.Unmarshal(raw, &res)
+	id := res.Items[0].ID
+	var before int
+	_ = f.sync.DB().QueryRow(`SELECT COUNT(*) FROM ops`).Scan(&before)
+	link := "zotero://select/items/ABC"
+	for _, call := range []struct {
+		tool string
+		args map[string]any
+	}{
+		{"create_tasks", map[string]any{"items": []any{map[string]any{"title": "A", "origin_url": link}}}},
+		{"create_tasks", map[string]any{"items": []any{map[string]any{"title": "A", "origin": map[string]any{"kind": "url", "url": link}}}}},
+		{"update_tasks", map[string]any{"updates": []any{map[string]any{"id": id, "origin_url": link}}}},
+		{"update_tasks", map[string]any{"updates": []any{map[string]any{"id": id, "origin": map[string]any{"kind": "url", "url": link}}}}},
+	} {
+		if _, err := f.call(c, call.tool, call.args); !isArgErr(err) {
+			t.Fatalf("%s %v: %v", call.tool, call.args, err)
+		}
+	}
+	var after int
+	_ = f.sync.DB().QueryRow(`SELECT COUNT(*) FROM ops`).Scan(&after)
+	if after != before {
+		t.Fatal("a refused call wrote ops")
+	}
+}

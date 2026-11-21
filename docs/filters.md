@@ -35,6 +35,7 @@ term     := "@" name                       label
           | "energy:" ("deep" | "medium" | "low")        the energy a task asks for
           | "assigned:" name                               the assignee is you (`me`) or that member
           | "sector:" (sectorword | period)              the task's time sector
+          | "section:" name                              the task is in a section of that name
           | "workspace:" name                           the task's workspace
           | "tracked" ["occurrence"] ("<" | "<=" | "=" | ">=" | ">") duration   tracked time
           | field ("<" | "<=" | "=" | ">=" | ">") value   custom field
@@ -52,6 +53,7 @@ keyword  := "overdue" | "today" | "tomorrow" | "no date" | "no project"
           | "someday" | "deferred" | "evening" | "morning" | "afternoon" | "blocked" | "unblocked" | "available" | "habit"
           | "origin" | "no origin" | "tracked" | "tracked occurrence" | "energy" | "no energy" | "notes" | "no notes"
           | "sector" | "no sector" | "carried" | "assigned" | "unassigned"
+          | "no section"
 sectorword := ("this" | "next") ("week" | "month" | "quarter"), with a space or a hyphen
 period   := YYYY "-W" WW | YYYY "-" MM | YYYY "-Q" N              a week, a month or a quarter
 duration := INT ("m" | "min" | "mins" | "minutes")? | NUM "h" (INT ("m" | "min")?)?
@@ -101,6 +103,8 @@ text     := word | '"' chars '"'
 | `available` | tasks you can do now: not blocked, not waiting for an earlier step of a [sequential project or section](project-flows.md), not parked and not starting later. `!available` lists the other open tasks |
 | `habit` | recurring tasks tracked as a [habit](recurring-and-reminders.md#track-a-habit); save `habit` as a view to list every habit with its streak (a [graduated](habit-days.md#graduate-a-habit) habit is in no view) |
 | `no project` | Inbox tasks (no project) |
+| `section: name` | tasks in a [section](tasks-and-projects.md) of that name, in any project, ignoring case (`section: Review`, `section: "In review"`). Projects can each have a section of the same name; all of them match. Two sections are joined with the usual or, as in example 32. An unknown name matches nothing and this device says so. `section:` with no name is an error |
+| `no section` | tasks in no section: not in one, or in one that was deleted or belongs to another project. Combine it with a section by or to list the Backlog and the unsorted at once |
 | `no labels` | tasks with no label |
 | `subtask` | tasks that have a parent task |
 | `completed` | completed tasks; the record a skipped habit day leaves is not one |
@@ -132,7 +136,7 @@ text     := word | '"' chars '"'
 
 ### Custom fields
 
-A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, `notes`, `assigned`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
+A [custom field](custom-fields.md) is named like a project or label, ignoring case, in every project you see that defines a field of that name; quote names with spaces: `"Order date" <= friday`. The words the grammar already uses (`due`, `created`, `deadline`, `start`, `completed`, `no`, `origin`, `tracked`, `energy`, `notes`, `assigned`, `section`, the keywords and `p1` to `p4`) keep their meaning, so a field named "due" is reached only through its quoted name, `"due" <= tomorrow`. How a field compares depends on its type:
 
 | Type | Terms |
 | --- | --- |
@@ -201,6 +205,7 @@ A query that does not follow the grammar shows a message under the input, and th
 | `cost >` | `Expected a value after ">" at position 6` |
 | `tracked > soon` | `Expected a duration such as 30m or 1h30 after ">" at position 11` |
 | `workspace: & p1` | `Expected a workspace name after "workspace:" at position 1` |
+| `section: & p1` | `Expected a section name after "section:" at position 1` |
 | `energy: high` | `Energy must be deep, medium or low at position 1` |
 | `sector: 2026-W60` | `Unknown time sector "2026-W60" at position 1; use this week, next week, this month, next month, this quarter, next quarter or a period such as 2026-W44` |
 | `notes: & p1` | `Expected text after "notes:" at position 1` |
@@ -223,7 +228,7 @@ You can also type a query straight into the [search box](search.md) (<kbd>Ctrl</
 
 In the filter panel, above the query input, the **builder** shows the same query as conditions you can read: *Label is errand*, *Due on or before tomorrow*, *Priority is P1*, *No project*.
 
-- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, workspace (with more than one), tracked time (turn off **All occurrences** for a repeating task's current occurrence), energy, time sector or a custom field), then its value. Labels and projects are picked from a searchable list. Click a condition to change it.
+- **Conditions.** **+ Condition** opens a small dialog: choose what to filter on (label, project, priority, one of the five dates, a state such as *Due earlier* or *Waiting on another task*, text in the title or notes, origin, section, workspace (with more than one), tracked time (turn off **All occurrences** for a repeating task's current occurrence), energy, time sector or a custom field), then its value. Labels, projects and sections are picked from a searchable list. Click a condition to change it.
 - **Groups.** A group is a block headed **All of these** (every condition must match, `&`) or **Any of these** (one is enough, `|`). **+ Group** adds one inside, up to three levels deep. Change the heading to switch between the two.
 - **Not.** The **Not** switch in a condition's dialog, or the **Not** button on a group, matches the tasks it would otherwise leave out (`!`).
 - **Keyboard.** Tab reaches every control. Inside a group, the arrow keys move between conditions, and Delete or Backspace removes the focused one.
@@ -434,7 +439,13 @@ no notes & p1
 assigned: me | unassigned
 ```
 
-### 32. Repeating chores that ran over this time
+### 32. Everything in review or the backlog
+
+```filter
+section: Review | section: Backlog
+```
+
+### 33. Repeating chores that ran over this time
 
 ```filter
 tracked occurrence > 30m & no date

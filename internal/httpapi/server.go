@@ -170,6 +170,8 @@ type Server struct {
 	// caldavOn is the CalDAV toggle and davLimiter counts failed Basic
 	// authentications per client address (10/min; OpenSpec `caldav`).
 	caldavOn *settings.Switch
+	// caldavPushOn is push to calendar apps (caldav-push).
+	caldavPushOn *settings.Switch
 	// Calendar feeds (calendar-feeds): the switch, the fetch worker and limiters.
 	calFeedsOn      *settings.Switch
 	calWorker       *calfeed.Worker
@@ -285,8 +287,16 @@ func newServer(set *services.Set, web http.Handler) *Server {
 		mcpSettings: set.MCP, mcpOAuth: set.MCPOAuth, push: set.Push, channels: set.Channels, email: set.Email, calWorker: set.Calendar,
 		issueWorker: set.Issues, calsync: set.CalSync, mail: set.Mail, demo: set.Demo, rules: set.Rules,
 		ruleSwitch: set.RuleSwitch, oidc: set.OIDC, blobs: set.Blobs, maps: set.Maps, stt: set.STT, hosted: set.Hosted != nil,
-		caldavOn: set.CalDAV, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
+		caldavOn: set.CalDAV, caldavPushOn: set.CalDAVPush, calFeedsOn: set.CalendarFeeds, issuesOn: set.IssuesOn, calsyncOn: set.CalendarSync,
 		membersInviteOn: set.MembersInvite}
+	// An away period's today is the user's own, the same for reminders, digests
+	// and POST /api/v1/away (away-periods D4).
+	if set.Push != nil {
+		set.Push.SetUserZone(s.tzLocation)
+	}
+	if set.Digest != nil {
+		set.Digest.SetUserZone(s.reportedZone)
+	}
 	if set.Hosted != nil {
 		s.assistantSlots = set.Hosted.AssistantSlots
 	}
@@ -330,7 +340,11 @@ func (s *Server) wireServices() {
 	s.dav = davroutes.New(davroutes.Deps{Sync: s.sync, Auth: s.auth, Log: s.log, On: s.caldavOn, Now: s.now, ApplyAs: s.applyAs,
 		ClientIP: clientIP, PublicOrigin: s.publicOrigin, AuthBlocked: davLimiter.blocked, AuthFailed: davLimiter.allow,
 		TZLocation: s.tzLocation, ReminderOps: s.reminderOpsForTaskAs, RecurringCompletion: s.recurringCompletion,
-		EncryptionEnabled: s.encryptionEnabled})
+		EncryptionEnabled: s.encryptionEnabled, Push: s.davPushDeps()})
+	// The push job reads what changed as the endpoint serves it (caldav-push D5).
+	if s.set.DavPush != nil {
+		s.set.DavPush.Changes = s.dav.PushChanges
+	}
 	s.speech = &speech.Routes{STT: s.stt, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo, Allow: s.limit("speech", 30, time.Minute).allow}
 	s.mapRoutes = &maproutes.Routes{Maps: s.maps, Settings: s.settings, Audit: s.audit, Log: s.log, Demo: s.cfg.Demo,
 		Allow: s.limit("maps.search", maproutes.SearchesPerMinute, time.Minute).allow}

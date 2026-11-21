@@ -3,7 +3,7 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Sunucunuza bağlanın</string>
     <string name="setup_intro">Tarayıcıda açtığınız OpenTodo sunucunuzun adresini girin.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Sunucu adresi</string>
     <string name="setup_connect">Bağlan</string>
     <string name="setup_connect_anyway">Yine de bağlan</string>
     <string name="setup_try">%1$s adresini dene</string>

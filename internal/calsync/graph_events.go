@@ -183,7 +183,7 @@ func graphBody(t calfeed.FeedTask, opts calfeed.FeedOptions, mailbox string) map
 		content = strings.TrimSpace(content + "\n\n" + calfeed.TaskURL(opts.BaseURL, t.ID))
 	}
 	return map[string]any{
-		"subject":      calfeed.EventTitle(t, opts.Encrypted),
+		"subject":      calfeed.SyncTitle(t, opts.Encrypted),
 		"body":         map[string]string{"contentType": "text", "content": content},
 		"start":        start,
 		"end":          end,
