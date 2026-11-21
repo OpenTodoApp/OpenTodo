@@ -29,7 +29,8 @@ const oidcCallbackPath = "/api/v1/auth/oidc/callback"
 // App flow (OpenSpec change app-sso-system-browser): the OpenTodo app opens
 // the start route in the system's authentication sheet with its own PKCE
 // challenge, because identity providers such as Google refuse sign-in inside
-// an app's web view. The callback sends a single-use code to appSSORedirect,
+// an app's web view. The callback asks the person to confirm (appSSOContinuePath),
+// then sends a single-use code to appSSORedirect,
 // and the app redeems it with its verifier from its web view at
 // appSSOSessionPath, where the session cookie belongs.
 const (
@@ -40,6 +41,7 @@ const (
 func (s *Server) registerOIDCRoutes(mux *routes) {
 	mux.handle("GET /api/v1/auth/oidc/start", public("single sign-on starts before there is a session").DemoDenied(), s.handleOIDCStart)
 	mux.handle("GET "+oidcCallbackPath, public("the provider redirects the browser back here").DemoDenied(), s.handleOIDCCallback)
+	mux.handle("POST "+appSSOContinuePath, public("the person confirms an app sign-in in the system browser before there is a session").DemoDenied(), s.handleOIDCAppContinue)
 	mux.handle("POST "+appSSOSessionPath, public("the app redeems its single sign-on code before there is a session").DemoDenied(), s.handleOIDCAppSession)
 	mux.handle("GET /api/v1/settings/oidc", ownerOnly("manage single sign-on"), s.handleGetOIDCSettings)
 	mux.handle("PUT /api/v1/settings/oidc", ownerOnly("manage single sign-on").Sensitive().DemoDenied(), s.handlePutOIDCSettings)
@@ -200,12 +202,13 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if f.AppChallenge != "" {
-		code := s.oidc.Handoffs().Put(oidc.Handoff{Claims: *claims, IDToken: raw, Issuer: f.Issuer, Challenge: f.AppChallenge})
-		if code == "" {
+		// Held until the person confirms on the page that names the account (design D6).
+		ticket := s.oidc.Handoffs().Hold(oidc.Handoff{Claims: *claims, IDToken: raw, Issuer: f.Issuer, Challenge: f.AppChallenge, AppState: f.AppState})
+		if ticket == "" {
 			fail("rate_limited")
 			return
 		}
-		toApp(w, r, f, url.Values{"code": {code}})
+		s.showAppContinue(w, r, ticket, claims)
 		return
 	}
 	if f.Mode == oidc.ModeLink {

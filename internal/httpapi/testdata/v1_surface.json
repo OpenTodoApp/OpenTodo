@@ -8332,6 +8332,9 @@
         "200"
       ]
     },
+    "POST /api/v1/auth/oidc/app-continue": {
+      "policy": "public"
+    },
     "POST /api/v1/auth/oidc/app-session": {
       "policy": "public",
       "request": {

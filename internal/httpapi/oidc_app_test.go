@@ -5,8 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -22,9 +24,28 @@ func newAppPKCE(state string) appPKCE {
 	return appPKCE{verifier: v, challenge: base64.RawURLEncoding.EncodeToString(sum[:]), state: state}
 }
 
-// appAuthorize runs an app flow in sheet (the system's authentication sheet)
-// and returns the redirect to the app.
+// appAuthorize runs an app flow in sheet (the system's authentication sheet),
+// taps Continue on the confirmation page and returns the redirect to the app.
 func (o *oidcEnv) appAuthorize(sheet *env, p appPKCE) *url.URL {
+	o.t.Helper()
+	ticket := o.appConfirmation(sheet, p)
+	back := appChoose(sheet, ticket, "continue", sheet.srv.URL)
+	if back.StatusCode != http.StatusSeeOther || hasCookie(back, sessionCookie) {
+		o.t.Fatalf("continue = %d, session cookie %v", back.StatusCode, hasCookie(back, sessionCookie))
+	}
+	u := mustURL(location(back))
+	if u.Scheme != "opentodo" || u.Host != "sso" || u.Query().Get("state") != p.state {
+		o.t.Fatalf("continue redirects to %q", location(back))
+	}
+	return u
+}
+
+var ticketField = regexp.MustCompile(`name="ticket" value="([^"]+)"`)
+
+// appConfirmation runs an app flow in sheet up to the confirmation page, checks
+// the page (no session, no code, the account named, a strict policy) and
+// returns its ticket.
+func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 	o.t.Helper()
 	q := url.Values{"app_challenge": {p.challenge}, "app_state": {p.state}}
 	resp := raw(sheet, o.srv.URL+"/api/v1/auth/oidc/start?"+q.Encode())
@@ -36,15 +57,85 @@ func (o *oidcEnv) appAuthorize(sheet *env, p appPKCE) *url.URL {
 		o.t.Fatal(err)
 	}
 	idpResp.Body.Close()
-	back := raw(sheet, idpResp.Header.Get("Location"))
-	if back.StatusCode != http.StatusSeeOther || hasCookie(back, sessionCookie) {
-		o.t.Fatalf("app callback = %d, session cookie %v", back.StatusCode, hasCookie(back, sessionCookie))
+	cl := &http.Client{Jar: sheet.client.Jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	req, _ := http.NewRequest("GET", idpResp.Header.Get("Location"), nil)
+	req.Header.Set("X-Forwarded-For", sheet.ip)
+	req.Header.Set("Accept-Language", "de-CH, de;q=0.9, en;q=0.5")
+	page, err := cl.Do(req)
+	if err != nil {
+		o.t.Fatal(err)
 	}
+	defer page.Body.Close()
+	body, _ := io.ReadAll(page.Body)
+	if page.StatusCode != http.StatusOK || hasCookie(page, sessionCookie) || location(page) != "" {
+		o.t.Fatalf("app callback = %d, session cookie %v, location %q", page.StatusCode, hasCookie(page, sessionCookie), location(page))
+	}
+	csp := page.Header.Get("Content-Security-Policy")
+	for _, want := range []string{"default-src 'none'", "form-action 'self' opentodo:", "frame-ancestors 'none'"} {
+		if !strings.Contains(csp, want) {
+			o.t.Fatalf("page policy %q lacks %q", csp, want)
+		}
+	}
+	html := string(body)
+	if !regexp.MustCompile(`Als [a-z]+@example\.com in der OpenTodo-App weitermachen\?`).MatchString(html) || strings.Contains(html, "<script") || strings.Contains(html, "code=") {
+		o.t.Fatalf("confirmation page:\n%s", html)
+	}
+	m := ticketField.FindStringSubmatch(html)
+	if m == nil {
+		o.t.Fatalf("no ticket on the page:\n%s", html)
+	}
+	return m[1]
+}
+
+// appChoose posts the confirmation page's form from sheet with an Origin.
+func appChoose(sheet *env, ticket, action, origin string) *http.Response {
+	sheet.t.Helper()
+	form := url.Values{"ticket": {ticket}, "action": {action}}
+	req, _ := http.NewRequest("POST", sheet.srv.URL+appSSOContinuePath, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Forwarded-For", sheet.ip)
+	if origin != "" {
+		req.Header.Set("Origin", origin)
+	}
+	cl := &http.Client{Jar: sheet.client.Jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	resp, err := cl.Do(req)
+	if err != nil {
+		sheet.t.Fatal(err)
+	}
+	resp.Body.Close()
+	return resp
+}
+
+// The confirmation page holds the code back until a tap: another site cannot
+// post it, Cancel goes back to the app with nothing, and a ticket works once.
+func TestOIDCAppFlowAsksBeforeTheHandOff(t *testing.T) {
+	o := newOIDCEnv(t, false)
+	o.configure(map[string]any{"allowProvision": true})
+	sheet, webView := o.client("203.0.113.30"), o.client("203.0.113.31")
+
+	p := newAppPKCE("app-state-ask")
+	ticket := o.appConfirmation(sheet, p)
+	if resp := appChoose(sheet, ticket, "continue", "https://evil.example"); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("continue from another site = %d", resp.StatusCode)
+	}
+	back := appChoose(sheet, ticket, "cancel", sheet.srv.URL)
 	u := mustURL(location(back))
-	if u.Scheme != "opentodo" || u.Host != "sso" || u.Query().Get("state") != p.state {
-		o.t.Fatalf("app callback redirects to %q", location(back))
+	if back.StatusCode != http.StatusSeeOther || u.Scheme != "opentodo" || u.Query().Get("state") != p.state || u.Query().Get("code") != "" || u.Query().Get("error") != "" {
+		t.Fatalf("cancel = %d %q", back.StatusCode, location(back))
 	}
-	return u
+	if resp := appChoose(sheet, ticket, "continue", sheet.srv.URL); resp.StatusCode != http.StatusSeeOther || strings.HasPrefix(location(resp), "opentodo:") {
+		t.Fatalf("continue after cancel = %d %q", resp.StatusCode, location(resp))
+	}
+
+	p = newAppPKCE("app-state-twice")
+	ticket = o.appConfirmation(sheet, p)
+	code := mustURL(location(appChoose(sheet, ticket, "continue", sheet.srv.URL))).Query().Get("code")
+	if resp := appChoose(sheet, ticket, "continue", sheet.srv.URL); strings.HasPrefix(location(resp), "opentodo:") {
+		t.Fatalf("a ticket released a second code: %q", location(resp))
+	}
+	if resp, out := redeem(webView, code, p.verifier); resp.StatusCode != http.StatusSeeOther || !hasCookie(resp, sessionCookie) {
+		t.Fatalf("redeem after continue = %d %v", resp.StatusCode, out)
+	}
 }
 
 // redeem posts a code and verifier from webView without following redirects.

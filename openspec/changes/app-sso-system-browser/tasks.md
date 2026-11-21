@@ -6,6 +6,8 @@
 - [x] 1.4 `POST /api/v1/auth/oidc/app-session`: verifier, same-origin check, sign-in or link with the callback's rules. Verified by `TestOIDCAppFlowSignsInTheWebView`, `TestOIDCAppFlowRefusals`, `TestOIDCAppFlowLinksFromASignedInWebView`, `TestRouteMatrix`.
 - [x] 1.5 `app_sso` in the health answer; API reference, OpenAPI description and v1 surface. Verified by `TestHealth*`, `TestEveryRouteIsInTheAPIDoc`, `TestOpenAPIDescription`, `TestV1SurfaceIsAdditive`; `go test ./...`.
 
+- [x] 1.6 Confirmation page before the hand-off (design D6): the callback holds the hand-off and shows a page naming the account; `POST /api/v1/auth/oidc/app-continue` releases the code (Continue) or drops it (Cancel); at most three waiting per identity. Verified by `TestOIDCAppFlowAsksBeforeTheHandOff`, `TestHandoffsHeldUntilConfirmed`, `TestHandoffsPerSubject`, `TestRouteMatrix`.
+
 ## 2. iPhone
 
 - [x] 2.1 `SystemSignIn` rules (start route, PKCE, callback, redeem script, health flag). Verified by `SystemSignInTests` in `make ios`.

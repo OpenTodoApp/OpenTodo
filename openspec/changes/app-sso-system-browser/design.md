@@ -33,7 +33,11 @@ iPhone: `ASWebAuthenticationSession` with the `opentodo` callback scheme (alread
 
 A custom URL scheme gives no app identity. Another app on the phone can start its own flow with its own challenge, open the start route in a browser, catch `opentodo://sso` and redeem the code with its own verifier. The redeem route refuses what a browser declares cross-site, but a client that is not a browser sends no `Origin` and passes like any API client. The result is a session for that app, for whoever completes the provider step in the browser it opened. If the provider remembers the person, that step may need no input from them.
 
-Verified links (Android App Links, iOS universal links) would tie the return to our app, but they need a file on the server's domain naming the app, signed with our key. That can't work for arbitrary self-hosted domains. We accept the risk: it needs a malicious app installed on the phone, and that app gets only what the person consents to in the browser it opens. A confirmation step in the browser before the hand-off, naming the account, would make a sign-in the person did not start visible.
+Verified links (Android App Links, iOS universal links) would tie the return to our app, but they need a file on the server's domain naming the app, signed with our key. That can't work for arbitrary self-hosted domains. So the callback of an app flow does not hand the code over silently. It shows a page in the browser naming the account ("Continue to the OpenTodo app as …?") with Continue and Cancel. The page holds only a single-use ticket: the code exists for the app only once the person taps Continue, which posts the ticket back to the server. A silent completion is what the attack relies on. With the page, an app that starts its own flow still needs the person's tap, on a page that shows a sign-in they did not start.
+
+The page is rendered by the server, not the web app: it must work in the system browser before there is a session, with no script. Its policy is `default-src 'none'` (its one style by hash), `form-action 'self' opentodo:`, since the post's answer redirects to the app's scheme, and `frame-ancestors 'none'`. Its words follow the browser's language through the mail texts' choice (`mail.LangFrom`): English and German now, English for the rest, as mail does.
+
+We accept the risk that remains: it needs a malicious app installed on the phone, and that app gets only what the person confirms in the browser it opens.
 
 ## Data model and size
 
@@ -41,4 +45,4 @@ No op, table or setting. Two optional fields in the signed flow-state cookie (`a
 
 ## Interface
 
-No screen changes: the existing "Sign in with …" button and Settings → Linked accounts start it; errors show through the sign-in screen's existing `?error=` codes.
+No app screen changes: the existing "Sign in with …" button and Settings → Linked accounts start it; errors show through the sign-in screen's existing `?error=` codes. The browser shows one new page, the confirmation (D6).
