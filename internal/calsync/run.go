@@ -16,16 +16,11 @@ func (e *CycleError) Error() string { return "calendar sync failed: " + e.Reason
 // Cycle runs one sync of c now and records the outcome (also Sync now). A
 // failed cycle keeps what it already did; the error is a *CycleError.
 func (w *Worker) Cycle(ctx context.Context, c *Connection) (RunCounts, error) {
-	sem := w.slots()
-	select {
-	case sem <- struct{}{}:
-	case <-ctx.Done():
-		return RunCounts{}, ctx.Err()
+	release, err := w.gate.Enter(ctx, InFlight, c.ID)
+	if err != nil {
+		return RunCounts{}, err
 	}
-	defer func() { <-sem }()
-	l := w.lock(c.ID)
-	l.Lock()
-	defer l.Unlock()
+	defer release()
 	// Reload: a cycle that waited may find the connection changed or gone.
 	fresh, err := w.Store.ByID(ctx, c.ID)
 	if err != nil {
