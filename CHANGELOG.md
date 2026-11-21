@@ -55,6 +55,9 @@ The release of **Away** and a lot of everyday polish. Going on holiday or ill fo
 - **A theme can make task titles heavier.** In the theme editor, **Shape and type → Task title weight** offers Regular, Medium, Semibold and Bold for the titles in every list, on cards and in Today, so a title stands out from its date, project and labels. In a theme file it is `"titleWeight": 600`; older versions of OpenTodo keep the theme and show regular titles (theme-title-weight, #1469).
 - **Today** shows undated and later subtasks under their parent with Nest subtasks on. In project groups, move them under another task or make them top-level and schedule them for today.
 - In Today grouped by project, reorder tasks in a personal manual order, move them between project groups, or nest them with **Nest subtasks** on. ([#1211](https://github.com/OpenTodoApp/OpenTodo/issues/1211))
+- **Archive several projects at once.** On the All projects page, tick projects with Ctrl or ⌘+click, Shift+click or Space (on a touch screen, **Select projects** in the ⋯ menu), then choose **Archive**: they leave with their sub-projects in one go, with one Undo ([#1661](https://github.com/OpenTodoApp/OpenTodo/issues/1661)).
+- **Filter a project's board as you type.** **Filter…** in a project's Filter menu, in the list, board or timeline, narrows its tasks with the query of Upcoming's filter: `search: tile` for words in the title, the label checkboxes, `p1` for a priority. On a board every column stays, with only the cards that match. Each project keeps its own filter on this device, shown as one chip in the header ([#1636](https://github.com/OpenTodoApp/OpenTodo/issues/1636)).
+- **Optional task completion sound.** Turn it on in Settings → Appearance for a short two-note cue when you finish a task. The phone apps respect silent mode.
 
 ### Changed
 
@@ -150,6 +153,8 @@ The release of **Away** and a lot of everyday polish. Going on holiday or ill fo
 - **Links in notes open with a tap on a phone or tablet.** A tap on a link in a task's or note's text no longer puts the note into editing: a web address opens in a new tab (in the apps, the phone's browser) and a link to a note, task or project opens it (#1529).
 - **`ot vault` and the Obsidian plugin no longer stop on a change the server cannot accept.** That change is refused on its own and reported, and the rest of the sync goes through, as in the web app.
 - **`ot vault watch` never trashes tasks from a file caught mid-save.** When an editor's empty first step lasted through the whole sync, the watch could push every line of the file as removed; it now pushes nothing when the folder changed after the run started, and the next run reads the whole save.
+- **Priority no longer rests on colour in the task circle.** The circle of a P1 task is now filled with its colour, a P2 task's less, so the two read apart for people who cannot tell red from orange, in light and dark. Thanks to @davereeck for the report ([#1674](https://github.com/OpenTodoApp/OpenTodo/issues/1674)).
+- **Comments stay put while you write one on a task's page.** Each key typed in the comment box scrolled the page to its end, so the thread jumped under you while you read it. The page now stays where you left it ([#1689](https://github.com/OpenTodoApp/OpenTodo/issues/1689)).
 
 ## [1.5.0] - 2026-11-15
 
