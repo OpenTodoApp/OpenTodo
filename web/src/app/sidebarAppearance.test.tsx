@@ -52,7 +52,10 @@ describe('sidebar project appearance (#1127)', () => {
     await setFavourite('project', id, true)
     const { container } = await sidebar()
     await openMenu(container, group, 'Work')
-    expect([...document.querySelectorAll('[data-action]')].slice(0, 3).map((el) => el.getAttribute('data-action'))).toEqual(['rename', 'icon', 'colour'])
+    // The project header's menu (sidebar-project-menu): its colour choices on top, rename and icon among its items.
+    expect(blueSwatch()).toBeTruthy()
+    expect(item('rename')).toBeTruthy()
+    expect(item('icon')).toBeTruthy()
     await click(item('rename')!)
     const name = () => document.querySelector<HTMLInputElement>(group === 'Projects'
       ? '[data-sidebar-group="Projects"] [data-project-rename]'
@@ -76,7 +79,6 @@ describe('sidebar project appearance (#1127)', () => {
     await waitFor(async () => (await db.projects.get(id))?.icon === 'briefcase')
 
     await openMenu(container, group, 'Studio')
-    await click(item('colour')!)
     await waitFor(() => !!blueSwatch(), 'the colour choices')
     await click(blueSwatch()!)
     await waitFor(async () => (await db.projects.get(id))?.color === blue)
@@ -114,9 +116,42 @@ describe('sidebar project appearance (#1127)', () => {
       await openMenu(container, group, 'Shared')
       expect(Boolean(item('rename'))).toBe(role === 'admin')
       expect(Boolean(item('icon'))).toBe(role === 'admin')
-      expect(Boolean(item('colour'))).toBe(role === 'admin')
+      expect(Boolean(blueSwatch())).toBe(role === 'admin')
       await key(document, 'Escape')
     }
+  })
+})
+
+// #1663 (sidebar-project-menu): a right-click or the row's menu button opens the project header's whole menu.
+describe('the sidebar project menu is the header menu', () => {
+  it('offers the header menu items in Projects and Favourites, plus Move up and Move down, and a right-click opens it', async () => {
+    const id = await createProject({ name: 'Work' })
+    await setFavourite('project', id, true)
+    const { container } = await sidebar()
+    for (const group of ['Projects', 'Favourites']) {
+      await openMenu(container, group, 'Work')
+      const actions = new Set([...document.querySelectorAll('[data-action]')].map((el) => el.getAttribute('data-action')))
+      for (const a of ['pin', 'duplicate', 'save-template', 'fields', 'move', 'rename', 'icon', 'archive', 'delete', 'activity', 'history', 'routines', 'display', 'up', 'down']) {
+        expect(actions.has(a), `${group}: ${a}`).toBe(true)
+      }
+      await key(document, 'Escape')
+    }
+    // The right-click on the row opens the same menu (rowMenuHold).
+    const row = container.querySelector(`[data-sidebar-group="Projects"] [data-project-row="${id}"]`)!
+    await act(async () => { row.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })) })
+    await waitFor(() => !!item('archive') && !!item('activity'), 'the whole menu from a right-click')
+  })
+
+  it('archiving from the sidebar leaves the current page alone', async () => {
+    const id = await createProject({ name: 'Work' })
+    const { container } = await sidebar()
+    await openMenu(container, 'Projects', 'Work')
+    await click(item('archive')!)
+    const confirm = () => [...document.querySelectorAll('[role="dialog"] button')].find((b) => b.textContent?.trim() === 'Archive')
+    await waitFor(() => !!confirm(), 'the archive confirmation')
+    await click(confirm()!)
+    await waitFor(async () => (await db.projects.get(id))?.archived === true, 'archived')
+    expect(location.pathname).not.toBe('/inbox')
   })
 })
 

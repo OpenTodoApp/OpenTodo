@@ -266,6 +266,8 @@
     ],
     "user_prefs": [
       "add_position",
+      "app_link_schemes",
+      "away",
       "bento_order",
       "briefing",
       "daily_notes",
@@ -449,6 +451,7 @@
       "note"
     ],
     "user_prefs": [
+      "app_link_schemes",
       "priority_name_1",
       "priority_name_2",
       "priority_name_3",

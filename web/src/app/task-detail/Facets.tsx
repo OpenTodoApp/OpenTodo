@@ -14,6 +14,7 @@ import { moveTaskToSection } from '../../lib/sections'
 import { keysOf } from '../../lib/shortcuts'
 import { originOf } from '../../lib/taskOrigin'
 import { openOrigin, originLink } from '../../lib/originOpen'
+import { useAppLinkSchemes } from '../../lib/appLinks'
 import { copyText } from '../../lib/clipboard'
 import type { Label, Priority, Project, Task } from '../../lib/types'
 import { isZoned, zoneCity } from '../../lib/dates'
@@ -80,6 +81,7 @@ export function useFacetParts(props: PropertiesProps, m: PropertiesModel, reveal
   const { task, parent } = props
   const dt = useDateTimeFormat()
   const origin = originOf(task)
+  useAppLinkSchemes() // an app link origin opens for this viewer's list (app-links D5)
   const shownLocation = useShownLocation(task)
   const facets = facetsOf(task, {
     local: m.local,
@@ -198,10 +200,10 @@ export function PartEditor({ id, props, m, anchor, segment, onSegment, onClose }
         <div className="space-y-2">
           {childCount > 0 && <p className="text-meta text-muted">{t('{n, plural, one {Moving this task moves its subtask too.} other {Moving this task moves its subtasks too.}}', { n: childCount })}</p>}
           <ComboboxPanel<PickerItem> label={t('Project')} placeholder={t('Find or create a project…')} source={m.projectItems}
-            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords}
+            getKey={itemKey} getLabel={itemLabel} getPath={itemPath} getSecondary={itemMeta} getKeywords={itemKeywords} getGroup={(i) => i.group}
             pinned={m.projectPins} selected={[m.currentProject?.key ?? INBOX_KEY]} rankContext="task.project"
             renderLeading={(i) => (i.project ? <ProjectMark project={i.project} /> : <Icon name="inbox" className="text-faint" />)}
-            onPick={async (i) => { await m.moveTo(i.value); onClose() }}
+            onPick={async (i) => { await m.moveTo(i.value, i.workspace); onClose() }}
             onCreate={async (name) => { const pid = await createProject({ name: name.trim() }); await m.moveTo(pid); onClose() }}
             onClose={onClose} />
         </div>

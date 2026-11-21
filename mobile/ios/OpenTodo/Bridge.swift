@@ -88,6 +88,8 @@ protocol BridgeActions: AnyObject {
     func bridgedBiometricRead() async -> String?
     func bridgedBiometricForget()
     func bridgedOpenExternal(_ url: String)
+    /// app-links D6: a link into another app the page's list allows (checked by the bridge).
+    func bridgedOpenAppLink(_ url: String)
     func bridgedSetSystemBars(_ json: String)
     func bridgedHaptic(_ kind: String)
     func bridgedBackgroundDone()
@@ -122,7 +124,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
     /// listed without a screen: the run that can be told it is done.
     static func capabilities(biometric: Bool, share: Bool, haptics: Bool = true) -> [String] {
         var caps = ["reminders", "widgets"]
-        if share { caps += ["share", "links", "obsidian-links", "system-bars", PullRefresh.capability] }
+        if share { caps += ["share", "links", "obsidian-links", AppLink.capability, "system-bars", PullRefresh.capability] }
         if share && haptics { caps.append("haptics") }
         if !share { caps.append("background") }
         if biometric { caps.append("biometric") }
@@ -186,6 +188,11 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
         case "openExternal":
             let url = string(0)
             if Self.externalLink(url) { actions.bridgedOpenExternal(url) }
+            reply(nil, nil)
+        case "openAppLink":
+            // app-links D6: only a scheme on the viewer's list the page passes, never a denied one.
+            let url = string(0)
+            if AppLink.allows(AppLink.list(string(1)), url) { actions.bridgedOpenAppLink(url) }
             reply(nil, nil)
         case "setSystemBars":
             actions.bridgedSetSystemBars(string(0))
@@ -295,6 +302,7 @@ final class Bridge: NSObject, WKScriptMessageHandlerWithReply {
             biometricRead: function () { return call('biometricRead') },
             biometricForget: function () { call('biometricForget') },
             openExternal: function (url) { call('openExternal', [String(url)]) },
+            openAppLink: function (url, schemes) { call('openAppLink', [String(url), String(schemes)]) },
             setSystemBars: function (json) { call('setSystemBars', [String(json)]) },
             haptic: function (kind) { call('haptic', [String(kind)]) },
             backgroundDone: function () { call('backgroundDone', []) },

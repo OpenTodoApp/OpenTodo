@@ -24,6 +24,7 @@ const KIND_ICON: Record<ActivityKind, IconName> = {
   created: 'plus', completed: 'circle-check-big', reopened: 'undo-2', deleted: 'trash-2', restored: 'rotate-ccw', rescheduled: 'calendar-days',
   assigned: 'user-check', unassigned: 'user-check', moved: 'folder', dependencies: 'lock', archived: 'folder', unarchived: 'folder', edited: 'pencil',
   commented: 'message-circle', comment_edited: 'message-circle', comment_deleted: 'message-circle',
+  time_tracked: 'timer', time_changed: 'timer',
 }
 
 export interface ActivityViewProps {

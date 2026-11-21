@@ -5,7 +5,7 @@
 // is a drop target: dragging a card onto it, or Shift+← / Shift+→, applies the rule.
 import { blockedMap } from '../lib/dependencies'
 import { beginDrag } from '../lib/dnd'
-import { Badge, Button, EmptyState, Icon, IconButton, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
+import { Badge, Button, EmptyState, hueFor, Icon, IconButton, PageBody, PageHeader, ReadAs, Tooltip } from '../ui'
 import { groupKey, setGroupCollapsed, useCollapsedGroups } from './collapsedGroups'
 import { useId, useMemo, useRef, useState } from 'react'
 import { resolveLabels } from '../lib/labels'
@@ -250,7 +250,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
         <button type="button" aria-expanded={false} onClick={() => onFold?.(false)} data-panel-strip
           aria-label={t('{name}, {n, plural, one {# open task} other {# open tasks}}, folded', { name: view.name, n: count })}
           className="flex w-full items-center gap-2 rounded-card p-3 text-left outline-none hover:shadow-2 focus-visible:ring-2 focus-visible:ring-focus">
-          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
+          <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(view.color)} aria-hidden />
           <span className="truncate text-body font-semibold">{view.name}</span>{' '}
           <span className="text-body tabular-nums text-faint">{count}</span>
           <span className="flex-1" />
@@ -265,7 +265,7 @@ function Panel({ index, panel, selectedId, tasks, held, names, projectMap, label
       data-drop-target={ruled ? `panel:${view.id}` : undefined} data-has-rule={ruled ? '' : undefined}
       className={`${ring} data-drop-active:ring-2 data-drop-active:ring-accent`}>
       <div className="mb-2 flex items-center gap-2">
-        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: view.color }} aria-hidden />
+        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-hue-solid" data-hue={hueFor(view.color)} aria-hidden />
         <h2 className="truncate text-body font-semibold">{view.name}</h2>
         {summary.ok && <span className="text-body text-faint"><ReadAs label={t('{count} open tasks', { count: summary.count })}>{summary.count}</ReadAs></span>}
         {rule && (

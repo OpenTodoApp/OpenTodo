@@ -51,7 +51,7 @@ Two options:
 - **Session cookie** (the web app). Obtained from `auth/register` or `auth/login`. State-changing requests must come from the app's own origin.
 - **Bearer token** (scripts, CLI, AI assistants). Create one in **Settings → Integrations → API tokens** (**New token**, then a name and the access) or via `POST /tokens`, then send `Authorization: Bearer ot_…`.
 
-A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read but is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
+A token has a **scope**: `full` (the default), `read`, `agent` or `admin`; the OpenTodo app's tokens have the `app` scope, which acts as `full` (see [App sign-in](#app-sign-in)). A `read` token reads everything its account can read, except the lists of the account's API tokens and connected apps, and is refused with 403 `insufficient_scope` on every request that can change something: every method other than `GET`, `HEAD` and `OPTIONS`, and `/api/v1/sync` whatever the method. That includes creating another token, so a read token cannot escalate itself. Tokens created before scopes existed are `full`. Give read tokens to anything that only needs to look, such as an AI assistant connected to the [MCP endpoint](mcp.md).
 
 An `agent` token is for an AI assistant that may make changes. It is the only scope that may call the MCP write tools, and only while the owner's `writes_enabled` and the user's `allow_writes` are both on ([mcp.md](mcp.md#letting-an-assistant-make-changes)). On the REST API it may write only on the [agent content routes](#agent-tokens) (create and edit tasks, projects, sections, labels, comments, reminders and time entries, and log habits) under the same switches and limits; every other write is refused like a `read` token's, including `/api/v1/sync`, `/api/v1/tokens`, every settings route and `/api/v1/me/agent-access` (even `GET`). It is stored as a `read` scope plus a marker, so a server downgraded to a version without `agent` treats it as read-only.
 
@@ -168,7 +168,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/me/email-digest` | session or `full` token | any of `{enabled, weekday, hour, timeZone, language}` → the same shape; demo instances → 403 `demo_restricted` |
 | GET | `/api/v1/me/identities` | yes | `{identities:[…], provider}` |
 | DELETE | `/api/v1/me/identities/{id}` | credential | 204, or 409 `last_credential` |
-| GET | `/api/v1/tokens` | yes | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute |
+| GET | `/api/v1/tokens` | session or `full` token | `{tokens:[{id,name,scope,createdAt,lastUsedAt}]}`; `lastUsedAt` is updated at most once a minute; `read` and `agent` tokens → 403 `insufficient_scope` |
 | POST | `/api/v1/tokens` | credential, fresh | `{name, scope?}` (`full` default, `read`, `agent` or `admin`) → 201 `{token, secret}` (secret shown once); another scope → 400 `invalid_input`; `admin` only from a session (a token gets 403 `session_required`) |
 | DELETE | `/api/v1/tokens/{id}` | yes | 204; deleting a connected AI app's access token also disconnects the app (its refresh token stops working, recorded as `mcp_oauth.disconnected`) |
 | POST | `/api/v1/me/sign-out-everywhere` | cookie, fresh | → 204 and the session cookie cleared: ends every session of the account (this one too), forgets its remembered browsers and revokes its API tokens and app passwords; recorded as `sessions.revoked`; the other devices remove their local copy on their next `auth/status` (`revoked`); a token gets 403 `session_required` |
@@ -228,6 +228,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | PUT | `/api/v1/comments/{id}/reactions` | yes | `{reactions: [names]}` replaces your own reactions → 200 comment; 400 `invalid_input` naming an unknown name or a duplicate; 404 for an unreadable or deleted comment; `read` and `agent` tokens get 403 `insufficient_scope` |
 | GET | `/api/v1/tasks/{id}/activity`, `/api/v1/projects/{id}/activity` | yes | `{events, more, cursor?}` newest first, derived from the operation log; `?before=<cursor>&limit=<1-200>` (default 50) |
 | GET | `/api/v1/activity` | yes | the activity feed across every shared project you are a member of; `?cursor=&limit=&project=&actor=&kind=`; see [Activity feed](#activity-feed) |
+| GET | `/api/v1/workspaces/{id}/activity` | yes | every actor's events in the workspace's projects and Inbox that you can read; `?cursor=&limit=&from=&to=&project=&actor=&kind=`; see [Workspace activity](#workspace-activity) |
 | GET | `/api/v1/projects/{id}/members` | member | `{projectId, role, ownerId, members:[{userId,name,email,role}], pending?}`; `pending` (owners and admins only) lists the open [invitations](#membership-invitations) `[{id,email,role,invitedBy,createdAt,expiresAt}]`, see [Sharing](#sharing) |
 | POST | `/api/v1/projects/{id}/members` | owner, admin of the project | `{email, role}` → 201 membership (shares the project on first use) when the account already shares a project or workspace with you, otherwise **202 `{pending: true}`**, also for an address without an account: the person is invited and becomes a member when they accept (see [Membership invitations](#membership-invitations)); 400 `invalid_input` for anything but one address; recorded as `project.member_added` or `member_invitation.created`; adding by email is limited to 30 attempts per account per hour, together with workspace members (429 `rate_limited`) |
 | DELETE | `/api/v1/projects/{id}/member-invitations/{invitationId}` | owner, admin of the project | cancel an open invitation → 204; 404 `not_found` |
@@ -273,6 +274,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/complete` | yes (not `read`, not `agent`) | complete one occurrence alone, `{completed_at?}` → its record; see [One occurrence alone](#one-occurrence-alone) |
 | POST | `/api/v1/tasks/{id}/occurrences/{date}/skip` | yes (not `read`, not `agent`) | skip one occurrence → its record (the series for a plain series' current occurrence) |
 | PATCH | `/api/v1/tasks/{id}/occurrences/{date}` | yes (not `read`, not `agent`) | move or edit one occurrence alone, with task fields (`due`, `title`, `priority`, `labels`, `estimate_minutes`, `description`, …) → its record |
+| POST | `/api/v1/away` | yes (not `read`, not `agent`) | set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](#away) |
+| DELETE | `/api/v1/away` | yes (not `read`, not `agent`) | end the away period now; its skips stay → 204 |
 | POST | `/api/v1/tasks/{id}/split` | yes (not `read`, not `agent`) | change a recurring task from a later occurrence on, `{from, changes}` → the new series; see [This and following](#this-and-following) |
 | POST | `/api/v1/time-entries` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | `{taskId}` starts an entry (the running one ends at its start), or `{taskId, startedAt, endedAt, note?}` logs a closed one → 201 |
 | POST | `/api/v1/time-entries/stop` | yes (not `read`; `agent` through the [agent routes](#agent-tokens)) | stop your running entry → the entry; 404 when none runs |
@@ -318,7 +321,7 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | POST | `/api/v1/me/mcp-consent` | session only | `{query, allow}` → `{redirect}`: the registered address with `code` and `state` on allow, with `error=access_denied` otherwise |
 | POST | `/oauth/token` | client secret + PKCE | `authorization_code` (`code`, `redirect_uri`, `code_verifier`) or `refresh_token`; `client_secret_post` or Basic → `{access_token, token_type, expires_in, refresh_token, scope}`; the access token stops working after `expires_in` seconds (3600); a refresh returns a new refresh token and retires the one sent, and an already-used refresh token revokes the grant (`400 invalid_grant`, audited as `mcp_oauth.refresh_reused`); a client registered only for Google's connector addresses gets the same refresh token back |
 | POST | `/oauth/revoke` | client secret | RFC 7009: the client's own refresh token, or the access token one of its grants holds, revokes that grant; any other token is left alone and answered 200; 401 `invalid_client` without the client's credentials |
-| GET | `/api/v1/me/oauth-grants` | yes | `{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off |
+| GET | `/api/v1/me/oauth-grants` | session or `full` token | `{grants:[{id, clientId, clientName, scope, workspaces, createdAt, lastUsedAt}]}`: the AI apps you connected that are neither revoked nor expired, most recently used first; `scope` is `read` or `agent`, `workspaces` is empty for every workspace, `lastUsedAt` is null before first use; shown with the sessions in Settings → Account, also while MCP is off; `read` and `agent` tokens → 403 `insufficient_scope` |
 | DELETE | `/api/v1/me/oauth-grants/{id}` | yes | 204: disconnects that app; its refresh token gets `invalid_grant` and its access token 401; another person's, a revoked or an unknown id → 404 `not_found`; demo instances → 403 `demo_restricted`; recorded as `mcp_oauth.disconnected` |
 
 #### Administration (owner and admins)
@@ -351,6 +354,8 @@ Auth column: **none** = public; **yes** = any session or token (a `read` token o
 | DELETE | `/api/v1/settings/mcp/clients/{id}` | owner | delete the client, its grants and their access tokens → 204 |
 | GET | `/api/v1/settings/caldav` | yes | `{enabled, url, secure, encryption}` |
 | PUT | `/api/v1/settings/caldav` | owner | `{enabled}` → the same shape |
+| GET | `/api/v1/settings/caldav/push` | yes | `{enabled, available}` |
+| PUT | `/api/v1/settings/caldav/push` | owner | `{enabled}` → the same shape |
 | GET | `/api/v1/settings/webhooks` | owner | `{allowPrivate}` |
 | PUT | `/api/v1/settings/webhooks` | owner, credential | `{allowPrivate}` → `{allowPrivate}` |
 | GET | `/api/v1/audit` | owner | `{events:[…], cursor}` newest first; filters `name`, `actor`, `target`, `outcome`, `from`, `to`, `cursor`, `limit≤200`, see [Audit log](#audit-log) |
@@ -768,6 +773,15 @@ Errors: `400 invalid_input` for a malformed date, `from` after `to` or a range o
 curl -sS "$OT/api/v1/tasks/<id>/occurrences?from=2026-10-12&to=2026-10-18" -H "Authorization: Bearer $TOKEN"
 # {"series_id":"<id>","rule":"every weekday","capped":false,"occurrences":[{"date":"2026-10-12","time":"18:00","state":"current"},{"date":"2026-10-13","time":"18:00","state":"projected"}, ...]}
 ```
+
+### Away
+
+An away period ([away](away.md)) skips the occurrences of your repeating tasks from `from` to `to` (both included, at most 90 days, past or future) and, unless `pauseReminders` is `false`, holds reminders and the email digest while it lasts:
+
+- `POST /api/v1/away` with `{"from": "2026-11-24", "to": "2026-11-30"}` covers every repeating task of your own; `projects` and `labels` (ids) narrow it to those in the projects or with the labels. A task assigned to someone else is never covered, and one in a shared project only when its project is in `projects`. Each occurrence in the period is skipped as `…/occurrences/{date}/skip` skips it; a task that repeats after completion and is due in the period moves to the day after it. The answer is `{"away": "2026-11-24..2026-11-30 quiet", "skipped": 8}`, the stored period (`user_prefs.away`) and how many occurrences were skipped. Setting the same period again skips nothing more; a new period replaces the stored one. Today is yours: the day in your zone and with your start of day, as reminders read it. The changes are written in batches of at most 1,000 operations, the stored period in the last; when one fails, the earlier skips stay and the period is not stored, and sending it again finishes it. There is no Undo for a period set through the API.
+- `DELETE /api/v1/away` clears the period (`204`). The skips stay; they are ordinary records.
+
+The routes are ordinary task writes (`read` and `agent` tokens and tokens limited to workspaces are refused). Errors: `400 invalid_input` naming `from` or `to` for a malformed date, `from` after `to` or a period over 90 days; `400 too_large` when the period would make more than 20,000 changes, before anything is written (choose projects or labels, or a shorter period); `404 not_found` for a project or label you can't see; `401` without credentials; `403 demo_restricted` on a demo.
 
 ### One occurrence alone
 
@@ -1847,7 +1861,7 @@ Query parameters, all optional:
 - `limit` — 1–200, default 50.
 - `project` — a project id; a project you are not a member of yields no events.
 - `actor` — an account id.
-- `kind` — a feed category: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `other` (every other kind).
+- `kind` — one or more feed categories, comma-separated, an event matching any of them: `completed` (completed, reopened), `created`, `commented` (commented, comment_edited, comment_deleted), `assigned` (assigned, unassigned), `rescheduled`, `time` (time_tracked, time_changed), `other` (every other kind).
 
 ```sh
 curl -sS "$OT/api/v1/activity?kind=completed&limit=1" -H "Authorization: Bearer $TOKEN"
@@ -1862,6 +1876,28 @@ curl -sS "$OT/api/v1/activity?cursor=junk" -H "Authorization: Bearer $TOKEN"
 ```
 
 Without credentials the route answers `401 unauthorized`; an unknown `kind`, a malformed cursor or a `limit` outside 1–200 answers `400 invalid_input`. What a user has already seen is not stored by this route: it is the `project_prefs.feed_seen_at` field in the user's personal scope, written through sync like any other op (see [sync](sync.md#project-preferences-and-the-activity-feed)). REST clients may write it with `POST /api/v1/sync` but have no collection route for it.
+
+### Workspace activity
+
+`GET /api/v1/workspaces/{id}/activity` (OpenSpec `workspace-activity`) returns the events of every project of the workspace and of its Inbox, newest first, in the feed's shape and with its cursor, every actor's changes including your own. It reads only scopes you belong to: the shared projects of the workspace you are a member of, and your own projects and Inbox tasks in it. Another member's personal projects and shared projects you are not in never appear, whatever the filters. Inbox events have no `projectId`.
+
+Query parameters, all optional: `cursor`, `limit` and `actor` as in the feed; `kind` as in the feed, comma-separated; `project`, one or more project ids, comma-separated; `from` and `to`, Unix milliseconds, inclusive bounds on the event time.
+
+A time entry's events are `time_tracked` (an entry logged, or a running one stopped) and `time_changed` (an ended entry edited or deleted), on the entry's task, with `minutes`, the entry's length rounded to whole minutes. A running entry has no event until it stops, and the entry's note is never part of an event.
+
+```sh
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?kind=time&limit=1" -H "Authorization: Bearer $TOKEN"
+# 200 {"events":[
+#   {"id":"…","kind":"time_tracked","actor":"<bob>","actorName":"Bob","entity":"time_entry","entityId":"<entry>","taskId":"<task>",
+#    "taskTitle":"Fix the login page","projectId":"<project>","projectName":"Website","ts":1760090500000,"opIds":["…"],
+#    "changes":[{"field":"ended_at","from":null,"to":1760090500000}],"minutes":42}],
+#  "more":true,"cursor":"1760090500000:…"}
+
+curl -sS "$OT/api/v1/workspaces/<workspace>/activity?from=20&to=10" -H "Authorization: Bearer $TOKEN"
+# 400 {"error":{"code":"invalid_input","message":"from must not be after to"}}
+```
+
+Without credentials the route answers `401 unauthorized`; a workspace you do not belong to answers `404 not_found`, like an unknown one; an unknown `kind`, a malformed `from`, `to` or cursor, `from` after `to` or a `limit` outside 1–200 answers `400 invalid_input`.
 
 ### Import
 
@@ -2032,6 +2068,8 @@ The CalDAV endpoint itself (`/dav/`, `/.well-known/caldav`) speaks WebDAV/CalDAV
 | `DELETE` | `/api/v1/app-passwords/{id}` | owner of the app password | `204`; `404 not_found` for an unknown, foreign or already revoked id. |
 | `GET` | `/api/v1/settings/caldav` | any user | `{"enabled":false,"url":"https://todo.example.com/dav/","secure":true}`; `url` is what calendar apps are configured with, `secure` is false for plain http. |
 | `PUT` | `/api/v1/settings/caldav` | owner | `{"enabled":true}` → the same shape. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members. Recorded as `settings.changed` (`caldav.enabled`). |
+| `GET` | `/api/v1/settings/caldav/push` | any user | `{"enabled":false,"available":true}`: push to calendar apps (WebDAV-Push, OpenSpec `caldav-push`); `available` is false while web push is off (`OPENTODO_PUSH=off`), when nothing is advertised whatever `enabled` says. |
+| `PUT` | `/api/v1/settings/caldav/push` | owner | `{"enabled":true}` → `{"enabled":true,"available":true}`. `400 invalid_input` without a boolean `enabled`, `403 forbidden` for members, `409 set_by_environment` on a demo. Recorded as `settings.changed` (`caldav.push`). |
 
 App passwords are refused by every `/api/v1` route, and API tokens, passwords and session cookies are refused by `/dav/`. Creating and revoking one records `app_password.created` / `app_password.revoked` in the audit log.
 
@@ -2706,7 +2744,7 @@ Every error answers `{"error":{"code","message"}}`; some validation errors add `
 | `demo_restricted` | 403 | a feature a demo instance (`OPENTODO_DEMO=true`) refuses, before authentication: sign-up, invitations, user administration, password change and resets, tokens, app passwords, CalDAV, passkeys, two-factor, settings writes, backups, webhooks, email inbox, import, encryption, push, membership changes, project invite links (every method), `/mcp`, the assistant (`/api/v1/assistant/*`, `/api/v1/me/assistant*`), automation rules (`/api/v1/rules*`, `/api/v1/me/rules*`, `/api/v1/settings/automations`). See [demo instance](self-hosting/demo.md#what-is-switched-off) |
 | `not_found` | 404 | unknown id, including another account's items, webhooks and deliveries, and items you cannot read; `/api/v1/push/*` with `OPENTODO_PUSH=off` |
 | `conflict` | 409 | starting or undoing an import while another import of yours runs; `POST /backups/run` while a backup is running, or after a restore was confirmed; confirming a restore while a backup runs |
-| `too_large` | 413 | a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels |
+| `too_large` | 413, 400 | 413: a JSON request body over its limit (4 MB unless the route says otherwise); `/mcp` body over 1 MB; an assistant turn over 256 KB or 40 messages; import file over `OPENTODO_IMPORT_MAX_MB` or 50,000 rows, a CSV field over 1 MiB, a CSV record over 4 MiB or 1,000 fields, or JSON nested over 256 levels. 400: an [away period](#away) that would make more than 20,000 changes |
 | `rate_limited` | 429 | too many attempts in the window, see [Behaviour notes](#behaviour-notes) |
 | `demo_limit` | 429 | demo instance: the sandbox used its write budget (600 ops per hour, 5,000 ops and 2 MB of values in total), or the database is above its size limit, on `/sync` or a REST write; nothing of the batch is applied. Demo instances also cap values at 4 KB (32 KB for task notes) with `invalid_input` / `invalid_op` |
 | `internal` | 500 | unexpected server error (details only in the server log) |

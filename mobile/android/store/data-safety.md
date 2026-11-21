@@ -21,6 +21,7 @@ Answers for the Play Console "Data safety" form, kept next to the code so a chan
 | `RECEIVE_BOOT_COMPLETED` | arm the reminders again after a restart |
 | `USE_BIOMETRIC` | optional fingerprint or face unlock of an encrypted account |
 | `RECORD_AUDIO` | dictate a task; the app keeps no recording |
+| `MODIFY_AUDIO_SETTINGS` | needed by the web view to open the microphone for dictation; granted at install, changes no setting of its own |
 | `ACCESS_FINE_LOCATION` | optional location reminders: notice arriving at or leaving a task's place, on the device only |
 | `ACCESS_COARSE_LOCATION` | requested together with fine location, as Android 12 and later require |
 | `ACCESS_BACKGROUND_LOCATION` | location reminders fire while the app is closed ("Allow all the time"); asked only after the in-app disclosure, never otherwise |

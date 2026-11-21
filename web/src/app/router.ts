@@ -16,6 +16,8 @@ export type Route =
   | { view: 'day'; date?: string }
   | { view: 'week'; date?: string }
   | { view: 'month'; date?: string }
+  // The Calendar's Quarter mode (quarter-view-and-plan-spans): the calendar quarter of `date`, this quarter when absent.
+  | { view: 'quarter'; date?: string }
   // The Calendar's Plan mode (planner-view D1): the span starts on `date`, today when absent.
   | { view: 'plan'; date?: string }
   // The Calendar's Year mode (year-view D2): the year of `date`, this year when absent.
@@ -61,6 +63,8 @@ export type Route =
   | { view: 'share' }
   | { view: 'trash' }
   | { view: 'feed' }
+  // A workspace's activity (workspace-activity): /workspaces/<id>/activity.
+  | { view: 'workspace-activity'; id: string }
   | { view: 'ask' }
   | { view: 'help'; page?: string; q?: string }
   // A chrome-free display of one view (display-mode): /display[/today|/upcoming|/project/<id>|/view/<id>]?<options>.
@@ -96,14 +100,14 @@ const LOOP_MOVES: readonly string[] = ['catch', 'clarify', 'place', 'do', 'revie
  */
 export const VIEW_QUICK_ADD: Readonly<Record<Route['view'], boolean>> = {
   inbox: true, today: true, upcoming: true, someday: true, anytime: true,
-  day: true, week: true, month: true, plan: true, year: true,
+  day: true, week: true, month: true, quarter: true, plan: true, year: true,
   completed: true, assigned: true, project: true, task: true, label: true, labels: true,
   places: true, place: true, projects: true, filter: true, views: true, view: true,
   triage: true, review: true, next: true, waiting: true, loop: true, focus: false, notes: true,
   rules: false, settings: false, 'theme-editor': false, import: false, help: false,
   invite: false, 'project-invite': false, 'workspace-invite': false, reset: false,
   'confirm-email': false, forgot: false, verify: false, public: false, share: false,
-  trash: false, feed: false, ask: false, display: false, stats: false, habits: false,
+  trash: false, feed: false, 'workspace-activity': false, ask: false, display: false, stats: false, habits: false,
 }
 
 /**
@@ -171,12 +175,13 @@ export function parseRoute(pathname: string): Route {
     case 'day':
     case 'week':
     case 'month':
+    case 'quarter':
     case 'plan':
     case 'year':
       // An optional anchor date; anything that is not YYYY-MM-DD means "today".
       return parts[1] && /^\d{4}-\d{2}-\d{2}$/.test(parts[1]) ? { view: parts[0], date: parts[1] } : { view: parts[0] }
     case 'calendar':
-      // One Calendar destination (ux-overhaul): Day, Week, Month, Plan or Year as last used on this device.
+      // One Calendar destination (ux-overhaul): Day, Week, Month, Quarter, Plan or Year as last used on this device.
       return { view: readCalendarMode() }
     case 'settings':
       // /settings/import is the import screen; an unknown section shows the overview.
@@ -219,6 +224,8 @@ export function parseRoute(pathname: string): Route {
       return { view: 'share' }
     case 'trash':
       return { view: 'trash' }
+    case 'workspaces':
+      return parts[1] && parts[2] === 'activity' ? { view: 'workspace-activity', id: safeDecode(parts[1]) } : { view: 'inbox' }
     case 'updates':
     case 'activity':
       // "Updates" (ux-overhaul vocabulary); /activity is the old address.
@@ -362,6 +369,7 @@ export function routePath(r: Route): string {
     case 'day':
     case 'week':
     case 'month':
+    case 'quarter':
     case 'plan':
     case 'year':
       return r.date ? `/${r.view}/${r.date}` : `/${r.view}`
@@ -377,6 +385,8 @@ export function routePath(r: Route): string {
       return r.archived ? '/projects#archived' : '/projects'
     case 'feed':
       return '/updates'
+    case 'workspace-activity':
+      return `/workspaces/${encodeURIComponent(r.id)}/activity`
     case 'ask':
       return '/ask'
     case 'filter':

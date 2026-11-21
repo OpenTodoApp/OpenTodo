@@ -1,9 +1,11 @@
 // The link dialog of the notes editor (OpenSpec change ui-correctness): replaces
 // the browser's prompt. Only addresses a note can show as a link are accepted
-// (https, http and mailto, as the renderer's safeHref); an empty address removes
+// (https, http and mailto, as the renderer's safeHref, and links into other apps,
+// app-links D3, which open only for viewers who allowed them); an empty address removes
 // the link, Cancel leaves it as it was.
 import { type FormEvent, useState } from 'react'
 import { safeHref } from '../lib/markdown'
+import { isAppLink } from '../lib/appLinkGrammar'
 import { t } from '../lib/i18n'
 import { Button, Field, Input, Dialog } from '../ui'
 
@@ -19,7 +21,7 @@ export function LinkDialog({ current, onSubmit, onCancel }: {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const href = value.trim()
-    if (href !== '' && !safeHref(href)) {
+    if (href !== '' && !safeHref(href) && !isAppLink(href)) {
       setError(t('Enter an address that starts with https://, http:// or mailto:.'))
       return
     }

@@ -70,6 +70,7 @@ export function formatLeaf(n: Node): string {
     case 'energy': return `energy: ${n.value}`
     case 'sector': return `sector: ${/^\d/.test(n.value) ? n.value : n.value.replace('-', ' ')}`
     case 'workspace': return `workspace: ${quoteText(n.name)}`
+    case 'section': return `section: ${quoteText(n.name)}`
     // Field names are always quoted: a bare one could be a reserved word.
     case 'field': return `${quoteAlways(n.name)} ${n.op} ${formatFieldValue(n.value)}`
     case 'nofield': return `no ${quoteAlways(n.name)}`
@@ -105,6 +106,7 @@ export function stripPositions(n: Node): Node {
     case 'label': return { kind: 'label', name: n.name, pos: 0 }
     case 'project': return { kind: 'project', name: n.name, descendants: n.descendants, pos: 0 }
     case 'workspace': return { kind: 'workspace', name: n.name, pos: 0 }
+    case 'section': return { kind: 'section', name: n.name, pos: 0 }
     case 'field': return { ...n, pos: 0, opPos: 0 }
     case 'nofield': return { ...n, pos: 0 }
     default: return n
@@ -191,18 +193,6 @@ export function builderQuery(g: BGroup): string {
   return n ? formatQuery(n) : ''
 }
 
-/** Depth of a group within the root (the root is 1). */
-export function depthOf(root: BGroup, id: string): number {
-  const walk = (g: BGroup, d: number): number => {
-    if (g.id === id) return d
-    for (const it of g.items) if (it.type === 'group') {
-      const found = walk(it, d + 1)
-      if (found) return found
-    }
-    return 0
-  }
-  return walk(root, 1)
-}
 
 /** A copy of the tree with `fn` applied to the group with `id`. */
 export function updateGroup(root: BGroup, id: string, fn: (g: BGroup) => BGroup): BGroup {

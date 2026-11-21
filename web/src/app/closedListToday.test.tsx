@@ -4,13 +4,16 @@
 // its refusal and its offline write, the Done today group and its reopen, and the
 // overflow items a Simple-lists user does not see.
 import 'fake-indexeddb/auto'
+import { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from '../lib/db'
 import { setDateTime } from '../lib/dates'
 import { setMethodMode } from '../lib/method/mode'
-import { createTask, mutate, resetDeviceId, setTaskCompleted } from '../lib/ops'
+import { createProject, createTask, mutate, resetDeviceId, setTaskCompleted } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
+import { setListDisplay } from '../lib/listDisplay'
 import { USER_PREFS_ID } from '../lib/userPrefs'
+import { undoBatch } from '../lib/undo'
 import { click, mockFetch, noPublicLinks, render, visibleText, waitFor } from '../ui/test-utils'
 import { bulkToast } from './bulk/toastStore'
 import { slotItem } from './bulk/BulkActions'
@@ -60,6 +63,62 @@ async function openToday() {
 }
 
 describe('slots and Waiting for a slot (3.1, 3.2)', () => {
+  it('shows contextual dates under a slotted parent without adding slots or bulk selection', async () => {
+    const parent = await createTask({ title: 'Parent', due: { date: TODAY } })
+    vi.setSystemTime(new Date(Date.now() + 1))
+    await createTask({ title: 'Waiting task', due: { date: TODAY } })
+    const later = await createTask({ title: 'Later child', parent_id: parent, due: { date: '2026-11-03' } })
+    await createTask({ title: 'Undated child', parent_id: parent })
+    await setTodayLimit(1)
+    await setListDisplay({ kind: 'today' }, { subtasks: true })
+    await openToday()
+    await waitFor(() => !!row('Later child') && !!row('Undated child'))
+    const contextual = row('Later child')!
+    expect(contextual.getAttribute('data-contextual')).not.toBeNull()
+    expect(contextual.querySelector('[data-row-open]')?.getAttribute('aria-description')).toBe('Subtask shown for context')
+    expect(visibleText(contextual)).toContain('Tuesday')
+    expect(contextual.querySelector('[data-tick]')).toBeNull()
+    const parentOpen = row('Parent')!.querySelector('[data-row-open]')!
+    await act(async () => { parentOpen.dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true })) })
+    await waitFor(() => !!row('Parent')?.hasAttribute('data-ticked'))
+    await act(async () => { window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a', ctrlKey: true })) })
+    expect(contextual.hasAttribute('data-ticked')).toBe(false)
+    expect(contextual.querySelector('[data-tick]')).toBeNull()
+    expect(meta()).toContain('1 of 1')
+    await click(contextual.querySelector('[data-row-controls] button')!)
+    await waitFor(async () => !!(await db.tasks.get(later))?.completed_at)
+    expect(meta()).toContain('1 of 1')
+    expect(visibleText(group('waiting')!.querySelector('[data-group-count]')!)).toBe('1')
+  })
+
+  it('promotes from the Actions menu into a full Today and undoes the date and parent together', async () => {
+    const project = await createProject({ name: 'Work' })
+    const parent = await createTask({ title: 'Parent', due: { date: TODAY }, project_id: project })
+    vi.setSystemTime(new Date(Date.now() + 1))
+    const child = await createTask({ title: 'Unschedulable until promoted', parent_id: parent, project_id: project })
+    await setTodayLimit(1)
+    await setListDisplay({ kind: 'today' }, { subtasks: true, groupBy: 'project' })
+    await openToday()
+    await waitFor(() => !!row('Unschedulable until promoted'))
+    await act(async () => {
+      row('Unschedulable until promoted')!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))
+    })
+    const action = () => document.querySelector<HTMLElement>('[data-action="today-promote-context"]')
+    await waitFor(() => !!action(), 'promotion picker')
+    expect(document.querySelector('[data-action="today-reparent-context"]')).not.toBeNull()
+    await click(action()!)
+    const option = () => [...document.querySelectorAll<HTMLElement>('[data-picker-step] [role="option"]')].find((item) => item.textContent?.includes('Work'))
+    await waitFor(() => !!option(), 'eligible project')
+    await click(option()!)
+    await waitFor(() => !!group('waiting'))
+    expect(await db.tasks.get(child)).toMatchObject({ parent_id: null, project_id: project, due: { date: TODAY } })
+    expect(meta()).toContain('1 of 1')
+    expect(visibleText(group('waiting')!.querySelector('[data-group-count]')!)).toBe('1')
+    const entry = (await db.assistantUndo.toArray()).find((e) => e.inverse.some((c) => c.entityId === child))
+    await act(async () => { await undoBatch(entry!.id) })
+    await waitFor(() => !group('waiting') && !!row('Unschedulable until promoted'))
+    expect(await db.tasks.get(child)).toMatchObject({ parent_id: parent, due: null })
+  })
   it('Seven tasks, five slots: A to E listed, F and G folded in Waiting; a completion lets F in with no other write', async () => {
     const ids = await sevenTasks()
     await setTodayLimit(5)

@@ -1,6 +1,6 @@
 ---
 title: Quick add syntax
-summary: Every word quick add understands: dates, times, projects, labels, priorities, estimates, nine languages and voice capture.
+summary: "Every word quick add understands: dates, times, projects, labels, priorities, estimates, nine languages and voice capture."
 audience: user
 section: Reference
 specs: [natural-language-capture, voice-capture, manual-ordering, task-list-presentation]
@@ -21,7 +21,7 @@ Everything runs in your browser. The parser needs no network, sends nothing anyw
 
 ## Preview chips
 
-As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](#in-the-command-bar)'s Add mode, and gives the same task everywhere. The command bar lists what it understood as one row per field, with the token that sets each one; the phone's sheet shows plain chips, and buttons under them (date, priority, label, estimate, project) start a token for you.
+As you type, each thing OpenTodo recognises shows up as a chip under the input and is tinted in the line itself (underlined in high contrast), and the title preview (`→ Meeting with Sarah`) shows what will be saved. Nothing is hidden: if there is no chip, the text stays in the title. The same line works in the list, the phone's add sheet and the [command bar](#in-the-command-bar)'s Add mode, and gives the same task everywhere. The command bar lists what it understood as one row per field, with the token that sets each one; the phone's sheet shows plain chips, a date button that opens a small calendar, and buttons (priority, label, estimate, project) that start a token for you.
 
 | To… | Do this |
 | --- | --- |
@@ -41,7 +41,7 @@ To write the task's [notes](notes-and-subtasks.md#write-notes) while you add it,
 
 In the [command bar](search.md#four-modes)'s Add mode (<kbd>q</kbd> on screens without a quick add, or <kbd>+</kbd> in the box), what quick add understood is a row per field: **When**, **Project**, **Label**, **Priority** and **Estimate**, plus **Deadline**, **Repeats**, **Reminder** and **Time spent** when you type them. Each row shows its value, or how to set it (`#`, `@`, `p1`, `+30m`). Click a row, or move to it with <kbd>↓</kbd> and press <kbd>Tab</kbd>: a set field's words are selected so you can type over them, and an empty field gets its token at the end of the line. The `×` on a row keeps its words as text. <kbd>Enter</kbd> adds the task and keeps the box open for the next one; <kbd>Shift</kbd>+<kbd>Enter</kbd> adds it and opens it.
 
-On a phone, the add sheet shows plain chips for what it understood, and buttons under them (date, priority, label, estimate, project) that start a token for you, then a notes button that opens the notes field. The sheet stays open after you add a task, with the box empty and the keyboard up, so you can type the next one straight away; tap outside it or swipe it down when you are done.
+On a phone, the add sheet shows plain chips for what it understood, then a row of buttons. The date button opens the quick dates, the month and a few times: a tap writes the date into the line in words (`tomorrow 17:00`, `Fri 28 Nov`), replacing a date the line already has, and **Clear** takes it out again, so the line always shows what will be saved. The priority, label, estimate and project buttons start a token for you, and the notes button opens the notes field. The sheet stays open after you add a task, with the box empty and the keyboard up, so you can type the next one straight away; tap outside it or swipe it down when you are done.
 
 ## Tokens (any language)
 

@@ -1,6 +1,6 @@
 ---
 title: The Android app
-summary: The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock.
+summary: "The OpenTodo app for Android: connect it to your server, reminders without a push service, sharing, widgets and fingerprint unlock."
 audience: user
 section: Reference
 specs: []
@@ -145,11 +145,11 @@ Back closes what is open (a dialog, a sheet, a task), then goes back through the
 
 ## Haptic feedback
 
-Completing a task and picking up a row give a short tap, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
+Completing a task gives a short tap, and adding a task or picking up a row a light one, with the phone's own touch feedback and no extra permission. Turn it off in **Settings → Appearance → Haptic feedback**, or for the whole phone in Android's sound and vibration settings.
 
 ## Touch
 
-Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere.
+Tapping does not flash, and holding a button or a tab does not select its label. Text in tasks, notes and comments is selected and copied the usual way: hold a word. Pulling a list past its top does not drag the app. Pinch to zoom works everywhere, unless you turn it off for this device in **Settings → Appearance → Allow pinch zoom**.
 
 ## Sharing
 
@@ -157,7 +157,7 @@ The app appears in Android's share menu for links, text, photos and files, also 
 
 ## Widgets
 
-Two home-screen widgets: **Today** shows your tasks for today with the time of the last update, and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts.
+Three home-screen widgets: **Today** shows your tasks for today with the time of the last update, **Completed** shows how many tasks you completed today and a bar for each of the last 7 days (counted as in [Statistics](statistics.md), which a tap opens), and **Quick add** opens the app's quick add. The widgets show what the app last saw; open the app to refresh them. While an encrypted account is locked, the Today widget shows only counts and the Completed widget only today's number.
 
 ## Status and navigation bars
 

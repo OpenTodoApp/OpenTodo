@@ -48,10 +48,15 @@ func taskShow(a *App, ctx context.Context, g *globalFlags, args []string) error 
 	if err != nil {
 		return err
 	}
-	t, err := taskOf(ctx, c, strings.Join(pos, " "))
+	all, err := c.tasks(ctx)
 	if err != nil {
 		return err
 	}
+	t, err := resolveTask(all, strings.Join(pos, " "))
+	if err != nil {
+		return err
+	}
+	kids := liveChildren(all, t.ID)
 	var out struct {
 		Reminders []json.RawMessage `json:"reminders"`
 	}
@@ -67,7 +72,11 @@ func taskShow(a *App, ctx context.Context, g *globalFlags, args []string) error 
 		raws, rems = append(raws, raw), append(rems, r)
 	}
 	if g.json {
-		return a.printJSON(map[string]any{"task": t.Raw, "reminders": raws})
+		subs := make([]json.RawMessage, 0, len(kids))
+		for _, k := range kids {
+			subs = append(subs, k.Raw)
+		}
+		return a.printJSON(map[string]any{"task": t.Raw, "reminders": raws, "subtasks": subs})
 	}
 	place := ""
 	var loc taskLocation
@@ -93,6 +102,7 @@ func taskShow(a *App, ctx context.Context, g *globalFlags, args []string) error 
 	if place != "" {
 		fmt.Fprintf(a.Stdout, "Location:  %s\n", place)
 	}
+	a.printTree(all, t, kids)
 	if len(rems) == 0 {
 		return nil
 	}

@@ -1,0 +1,1 @@
+- **The whole project menu in the sidebar.** A project's **⋯** in the sidebar, or a right-click on it, now opens the same menu as the project's page (duplicate, templates, fields, move, archive, delete, activity and more), plus Move up and Move down (#1663).

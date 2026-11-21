@@ -1,6 +1,6 @@
 ---
 title: Outgoing email
-summary: Optional SMTP so the server can mail password resets, sign-up confirmations and invitations: Settings or environment, Docker secrets, providers, troubleshooting.
+summary: "Optional SMTP so the server can mail password resets, sign-up confirmations and invitations: Settings or environment, Docker secrets, providers, troubleshooting."
 audience: admin
 specs: [self-hosting]
 screens: []

@@ -1,6 +1,6 @@
 ---
 title: Note templates
-summary: Start a note from a saved skeleton, with the date filled in: your own templates, five built-in ones, and a routine step that starts one on a schedule.
+summary: "Start a note from a saved skeleton, with the date filled in: your own templates, five built-in ones, and a routine step that starts one on a schedule."
 audience: user
 section: Guides
 specs: [note-templates, template-library, notes-page, routines]

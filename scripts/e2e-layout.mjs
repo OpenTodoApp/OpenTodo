@@ -43,7 +43,9 @@
 // CHROMIUM_PATH / WEBKIT_PATH (optional executables), OPENTODO_LANG (an interface
 // language such as de: the synced preference is written before capturing, and
 // signed-out screens start in it too; OpenSpec change app-localization 11.1),
-// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates).
+// LAYOUT_DATE (default 2026-11-01: the browsers' clock and the seeded dates),
+// SHARD (i/n: only every n-th engine × width × theme combination, from the i-th, so
+// n jobs side by side check them all; CI's pull request legs).
 //
 // The browsers' clock is fixed at 09:00 UTC on LAYOUT_DATE and the account is seeded
 // around that day, so the check sees the same calendars whatever day it runs: which
@@ -71,6 +73,8 @@ const CONCURRENCY = Number(process.env.CONCURRENCY ?? 3)
 const SHOTS_ALL = process.env.SHOTS === 'all'
 const LANG = process.env.OPENTODO_LANG ?? ''
 const LAYOUT_DATE = process.env.LAYOUT_DATE ?? '2026-11-01'
+const [SHARD_AT, SHARD_OF] = (process.env.SHARD || '1/1').split('/').map(Number)
+if (!(SHARD_OF >= 1 && SHARD_AT >= 1 && SHARD_AT <= SHARD_OF)) throw new Error(`SHARD must be i/n with 1 <= i <= n, not ${process.env.SHARD}`)
 const NOW = new Date(`${LAYOUT_DATE}T09:00:00Z`).getTime()
 if (!/^\d{4}-\d{2}-\d{2}$/.test(LAYOUT_DATE) || Number.isNaN(NOW)) throw new Error(`LAYOUT_DATE ${LAYOUT_DATE}: expected YYYY-MM-DD`)
 // Screens wait on English headings and overlays are opened by English names: in another
@@ -437,8 +441,9 @@ const ids = { ...await seedAccount({ base, pw, lang: LANG, now: NOW }), date: LA
 const llmServer = ids.llm
 const combos = []
 for (const e of ENGINES) for (const w of WIDTHS) for (const t of THEMES) combos.push([e, w, t])
-log(`· checking ${combos.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')})`)
-const queue = [...combos]
+const mine = combos.filter((_, i) => i % SHARD_OF === SHARD_AT - 1)
+log(`· checking ${mine.length} combinations (${ENGINES.join(', ')} × ${WIDTHS.join('/')} px × ${THEMES.join('/')}${SHARD_OF > 1 ? `, shard ${SHARD_AT}/${SHARD_OF}` : ''})`)
+const queue = [...mine]
 await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
   while (queue.length) { const [e, w, t] = queue.shift(); await runCombo(e, w, t, ids) }
 }))

@@ -258,9 +258,9 @@ func numberExample(name string, s map[string]any) any {
 // of: 204 No content, redirects, files, event streams, or a body the static
 // analysis cannot see yet; they get an example once their body is described.
 // It only goes down, except by one for a new route that answers 204 or a
-// redirect (89: DELETE /api/v1/me/oauth-grants/{id}, connected-apps-list; 90:
+// redirect (DELETE /api/v1/me/oauth-grants/{id}, connected-apps-list; 91:
 // POST /api/v1/auth/oidc/app-session, app-sso-system-browser).
-const openAPIExamplelessMax = 90
+const openAPIExamplelessMax = 91
 
 // examplelessProblems is the ratchet on examples: a JSON request or success
 // response without one always fails, and more operations without any

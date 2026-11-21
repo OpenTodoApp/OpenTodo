@@ -6,6 +6,7 @@
 import { daysBetweenISO, describeDeadline, describeDue, formatDate, formatTime, logicalToday, type ResolvedDateTime } from './dates'
 import { formatMinutes } from './duration'
 import { t } from './i18n'
+import { ruleWords } from './recurrenceWords'
 import type { Due, Label, Task } from './types'
 import { isNoPriority, priorityShort } from './priority'
 import { dayPartOf, dayPartWord } from './dayParts'
@@ -118,7 +119,7 @@ export function facetsOf(task: Task, ctx: FacetContext): Facets {
   // The part of the day (day-parts): evening, morning or afternoon, in the evening's slot.
   const part = dayPartWord(dayPartOf(task))
   if (part) when.push({ id: 'evening', text: part, segment: 'due' })
-  if (task.recurrence) when.push({ id: 'repeat', text: task.recurrence, segment: 'repeat' })
+  if (task.recurrence) when.push({ id: 'repeat', text: ruleWords(task.recurrence, true), segment: 'repeat' })
   else if (revealed.has('repeat')) when.push({ id: 'repeat', text: t('Repeat'), segment: 'repeat', empty: true })
   if (task.deadline) {
     const tone = describeDeadline(task.deadline, today, ctx.local?.date ?? null)?.tone

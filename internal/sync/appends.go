@@ -117,7 +117,7 @@ func checkBodyVersion(ctx context.Context, q querier, acc *access) error {
 	if !ok {
 		return nil
 	}
-	infos, err := bodyInfos(ctx, q, acc.scopes(), c.entity, c.id)
+	infos, err := bodyInfos(ctx, q, acc.scopes(), c.entity, []string{c.id})
 	if err != nil {
 		return err
 	}
@@ -135,53 +135,83 @@ func checkBodyVersion(ctx context.Context, q querier, acc *access) error {
 // one kind (task, project or note) the user can see, by id; with id set, of
 // that entity only. One query, never the projections themselves.
 func (s *Service) BodyInfos(ctx context.Context, userID, entity, id string) (map[string]BodyInfo, error) {
+	var ids []string
+	if id != "" {
+		ids = []string{id}
+	}
+	return s.BodyInfosOf(ctx, userID, entity, ids)
+}
+
+// BodyInfosOf is BodyInfos for the given ids only (nil: every entity of the kind).
+// A listed project of 2,000 tasks read the body fields of all 10,000 of the
+// account before (#1656); these are read by key, a chunk of ids per query.
+func (s *Service) BodyInfosOf(ctx context.Context, userID, entity string, ids []string) (map[string]BodyInfo, error) {
 	acc, err := loadAccess(ctx, s.reader(), userID)
 	if err != nil {
 		return nil, err
 	}
-	return bodyInfos(ctx, s.reader(), acc.scopes(), entity, id)
+	return bodyInfos(ctx, s.reader(), acc.scopes(), entity, ids)
 }
 
-func bodyInfos(ctx context.Context, q querier, scopes []string, entity, id string) (map[string]BodyInfo, error) {
-	query := `SELECT entity_id, field, CASE WHEN field LIKE 'appends.%' THEN value ELSE '""' END, ts, device FROM scope_fields
-		WHERE entity = ? AND scope_id IN (` + placeholders(len(scopes)) + `)
-		AND (field IN ('description', 'notes_doc') OR field LIKE 'appends.%')`
-	args := append([]any{entity}, anys(scopes)...)
-	if id != "" {
-		query += ` AND entity_id = ?`
-		args = append(args, id)
-	}
-	rows, err := q.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("body info: %w", err)
-	}
-	defer rows.Close()
+// bodyInfoChunk is how many ids one query of bodyInfos names.
+const bodyInfoChunk = 500
+
+// bodyInfoByKeyMax is the most ids read by key; a longer list reads the whole kind
+// (10,000 ids by key took 2.5 times one pass).
+const bodyInfoByKeyMax = 2500
+
+func bodyInfos(ctx context.Context, q querier, scopes []string, entity string, ids []string) (map[string]BodyInfo, error) {
 	type best struct {
 		ts  int64
 		dev string
 	}
 	top := map[string]best{}
 	out := map[string]BodyInfo{}
-	for rows.Next() {
-		var eid, field, value, dev string
-		var ts int64
-		if err := rows.Scan(&eid, &field, &value, &ts, &dev); err != nil {
+	read := func(some []string) error {
+		query := `SELECT entity_id, field, CASE WHEN field LIKE 'appends.%' THEN value ELSE '""' END, ts, device FROM scope_fields
+		WHERE entity = ? AND scope_id IN (` + placeholders(len(scopes)) + `)
+		AND (field IN ('description', 'notes_doc') OR field LIKE 'appends.%')`
+		args := append([]any{entity}, anys(scopes)...)
+		if some != nil {
+			query += ` AND entity_id IN (` + placeholders(len(some)) + `)`
+			args = append(args, anys(some)...)
+		}
+		rows, err := q.QueryContext(ctx, query, args...)
+		if err != nil {
+			return fmt.Errorf("body info: %w", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var eid, field, value, dev string
+			var ts int64
+			if err := rows.Scan(&eid, &field, &value, &ts, &dev); err != nil {
+				return err
+			}
+			if b := top[eid]; Wins(ts, dev, b.ts, b.dev) {
+				top[eid] = best{ts, dev}
+			}
+			info := out[eid]
+			if aid, ok := AppendID(field); ok {
+				var text string
+				if json.Unmarshal([]byte(value), &text) == nil && text != "" {
+					info.Appends = append(info.Appends, PendingAppend{ID: aid, Text: text, ts: ts, dev: dev})
+				}
+			}
+			out[eid] = info
+		}
+		return rows.Err()
+	}
+	// Past a few thousand ids one pass over the kind is quicker than reading by key.
+	if ids == nil || len(ids) > bodyInfoByKeyMax {
+		if err := read(nil); err != nil {
 			return nil, err
 		}
-		if b := top[eid]; Wins(ts, dev, b.ts, b.dev) {
-			top[eid] = best{ts, dev}
-		}
-		info := out[eid]
-		if aid, ok := AppendID(field); ok {
-			var text string
-			if json.Unmarshal([]byte(value), &text) == nil && text != "" {
-				info.Appends = append(info.Appends, PendingAppend{ID: aid, Text: text, ts: ts, dev: dev})
-			}
-		}
-		out[eid] = info
+		ids = nil
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for start := 0; start < len(ids); start += bodyInfoChunk {
+		if err := read(ids[start:min(start+bodyInfoChunk, len(ids))]); err != nil {
+			return nil, err
+		}
 	}
 	for eid, info := range out {
 		info.Version = FormatBodyVersion(top[eid].ts, top[eid].dev)

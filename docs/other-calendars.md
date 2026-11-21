@@ -1,6 +1,6 @@
 ---
 title: Other calendars in Day and Week
-summary: Subscribe to a Google, Outlook, Apple, Fastmail or Nextcloud calendar so its events appear next to your tasks: the steps per app, refreshing, what you see, and the limits.
+summary: "Subscribe to a Google, Outlook, Apple, Fastmail or Nextcloud calendar so its events appear next to your tasks: the steps per app, refreshing, what you see, and the limits."
 audience: user
 section: Guides
 specs: [calendar-feeds]

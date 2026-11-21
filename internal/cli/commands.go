@@ -67,6 +67,7 @@ var (
 	limitFlag  = flagSpec{Name: "limit", Type: "int", Description: "print at most n tasks"}
 	taskFields = []flagSpec{
 		{Name: "project", Type: "string", Description: "project name or id (edit: none moves to the Inbox)"},
+		{Name: "parent", Type: "string", Description: "the parent task, an open task: id or unique id prefix; without --project the task takes the parent's project (edit: none moves to the top level)"},
 		{Name: "due", Type: "string", Description: "YYYY-MM-DD, today, tomorrow or a weekday (edit: none clears)"},
 		{Name: "time", Type: "string", Description: "due time HH:MM"},
 		{Name: "priority", Type: "int", Enum: []string{"1", "2", "3", "4"}, Description: "1 (highest) to 4 (lowest)"},
@@ -118,6 +119,7 @@ var cmdSpecs = []cmdSpec{
 		{Name: "completed", Type: "bool", Description: "completed tasks, most recent first"},
 		{Name: "all", Type: "bool", Description: "open and completed tasks"},
 		{Name: "project", Type: "string", Description: "tasks of one project (name or id)"},
+		{Name: "parent", Type: "string", Description: "only the direct subtasks of this task: id or unique id prefix (combines with the other flags)"},
 		{Name: "someday", Type: "bool", Description: "open tasks parked in Someday (combines with --project)"},
 		{Name: "anytime", Type: "bool", Description: "open tasks with no due date, deadline or start (combines with --project)"},
 		{Name: "blocked", Type: "bool", Description: "open tasks waiting for an open task (combines with --project)"},
@@ -137,10 +139,14 @@ var cmdSpecs = []cmdSpec{
 	{Name: "edit", Summary: "change a task (values equal to the current ones send nothing)", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: append([]flagSpec{{Name: "title", Type: "string", Description: "new title"}}, append(append([]flagSpec{}, taskFields...),
 			flagSpec{Name: "rotate", Type: "string", Description: "people who take turns on a recurring task in a shared project, in order: member names or emails, comma-separated; completing the task assigns the next of them"},
-			flagSpec{Name: "no-rotate", Type: "bool", Description: "stop taking turns (the assignee stays)"})...), Writes: true, DryRun: true, Output: ref("task")},
-	{Name: "done", Summary: "complete one or more tasks", Args: refsArg, Writes: true, DryRun: true, Output: oneOrMany("task_result")},
+			flagSpec{Name: "no-rotate", Type: "bool", Description: "stop taking turns (the assignee stays)"},
+			flagSpec{Name: "subtasks", Type: "bool", Description: "when the edit changes the project, move the task's subtasks at every depth too (one request each)"})...), Writes: true, DryRun: true, Output: ref("task")},
+	{Name: "done", Summary: "complete one or more tasks", Args: refsArg, Flags: []flagSpec{
+		{Name: "subtasks", Type: "bool", Description: "also complete each task's open subtasks at every depth, before the task (one request each)"},
+	}, Writes: true, DryRun: true, Output: oneOrMany("task_result")},
 	{Name: "reopen", Summary: "reopen one or more completed tasks", Args: refsArg, Writes: true, DryRun: true, Output: oneOrMany("task_result")},
-	{Name: "rm", Summary: "delete one or more tasks (soft delete)", Args: refsArg, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: oneOrMany("task_result")},
+	{Name: "rm", Summary: "delete one or more tasks (soft delete)", Args: refsArg, Flags: []flagSpec{yesFlag,
+		{Name: "subtasks", Type: "bool", Description: "also delete each task's subtasks at every depth, before the task (one request each)"}}, Writes: true, Destructive: true, DryRun: true, Output: oneOrMany("task_result")},
 	{Name: "project list", Aliases: []string{"project ls"}, Summary: "list projects", Flags: []flagSpec{{Name: "all", Type: "bool", Description: "include archived projects"}}, Output: arrayOf("project")},
 	{Name: "project add", Aliases: []string{"project create"}, Summary: "create a project and print its id", Args: []argSpec{{Name: "name", Required: true, Repeatable: true}},
 		Flags: []flagSpec{{Name: "color", Type: "string", Description: "colour as #rrggbb (default: derived from the name)"}, idemFlag}, Writes: true, DryRun: true, IdempotencyKey: true, Output: ref("project")},
@@ -191,7 +197,7 @@ var cmdSpecs = []cmdSpec{
 		Writes: true, DryRun: true, Output: ref("note_append")},
 	{Name: "notes rm", Aliases: []string{"notes delete"}, Summary: "move one or more standalone notes to the Trash", Args: refsArg, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: oneOrMany("note_result")},
 	{Name: "notes to-task", Summary: "turn a standalone note into a task (the note goes to the Trash) and print the task id", Args: []argSpec{{Name: "ref", Required: true}}, Writes: true, DryRun: true, Output: ref("task")},
-	{Name: "task show", Summary: "print a task's details and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only", Args: []argSpec{{Name: "ref", Required: true}},
+	{Name: "task show", Summary: "print a task's details, its parent and subtasks, and its reminders, location reminders included (When I arrive at Post office (150 m)); read-only", Args: []argSpec{{Name: "ref", Required: true}},
 		Output: ref("task_detail")},
 	{Name: "task note", Summary: "print a task's note as Markdown, or replace (--set, --file, --clear) or append to it (--append); one option per call", Args: []argSpec{{Name: "ref", Required: true}},
 		Flags: []flagSpec{
@@ -326,6 +332,14 @@ var cmdSpecs = []cmdSpec{
 	{Name: "frames rm", Aliases: []string{"frames delete"}, Summary: "delete a calendar frame", Args: []argSpec{{Name: "ref", Required: true}}, Flags: []flagSpec{yesFlag}, Writes: true, Destructive: true, DryRun: true, Output: ref("frame")},
 	{Name: "habits list", Aliases: []string{"habits ls"}, Summary: "list open habits with kept, strength and streak, as every device computes them", Output: arrayOf("habit")},
 	{Name: "habits show", Summary: "print one habit's numbers and its last 31 days with their states and notes", Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}}, Output: ref("habit_detail")},
+	{Name: "away", Summary: "set an away period: skip the occurrences of repeating tasks from one day to another and pause reminders and the digest; or end it with --end (its skips stay)",
+		Args: []argSpec{{Name: "from"}, {Name: "to"}},
+		Flags: []flagSpec{
+			{Name: "project", Type: "string_list", Description: "only repeating tasks in this project (repeatable)"},
+			{Name: "label", Type: "string_list", Description: "only repeating tasks with this label (repeatable)"},
+			{Name: "keep-reminders", Type: "bool", Description: "keep reminders and the digest during the period"},
+			{Name: "end", Type: "bool", Description: "end the away period now; its skips stay"},
+		}, Writes: true, DryRun: true, Output: ref("away")},
 	{Name: "habits log", Summary: "log a habit for today or an earlier day (done unless --tiny, --skip or --clear) and print its new kept and strength",
 		Args: []argSpec{{Name: "ref", Required: true, Repeatable: true}},
 		Flags: []flagSpec{

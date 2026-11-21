@@ -1,8 +1,9 @@
-// App icon badge (OpenSpec change `app-icon-badge`): the signed-in app keeps the badge
-// current, and Settings → Notifications has the per-device switch, shown only where
-// the browser can badge the installed app.
+// App icon badge (OpenSpec changes `app-icon-badge`, `badge-overdue`): the signed-in
+// app keeps the badge current, and Settings → Notifications has the per-device choice
+// of what it counts (Today, Earlier, Off), shown only where the browser can badge the
+// installed app.
 import { useMemo } from 'react'
-import { badgeSupported, setBadgeEnabled, useAppBadge, useBadgeEnabled } from '../lib/appBadge'
+import { BADGE_MODES, badgeSupported, setBadgeMode, useAppBadge, useBadgeMode, type BadgeMode } from '../lib/appBadge'
 import { todayAssigneeFilter } from '../lib/dayLists'
 import { useMemberships, useUserPrefsRow } from '../lib/localData'
 import { useMe } from '../lib/sharing'
@@ -10,7 +11,7 @@ import { t } from '../lib/i18n'
 import { useLiveTasks, useOpenTasks } from '../lib/liveTasks'
 import { useSettledValue } from '../lib/useSettledValue'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { Notice, SettingRow, SettingsSection, Switch } from '../ui'
+import { Notice, SegmentedControl, SettingRow, SettingsSection } from '../ui'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { useToday, useViewerZone } from './useViews'
 
@@ -30,20 +31,24 @@ export function AppBadgeSync(): null {
   return null
 }
 
-export function AppBadgeView({ on, permission, onChange }: { on: boolean; permission: NotificationPermission | 'unsupported'; onChange: (on: boolean) => void }) {
+const MODE_LABEL: Record<BadgeMode, () => string> = { today: () => t('Today'), overdue: () => t('Earlier'), off: () => t('Off') }
+
+export function AppBadgeView({ mode, permission, onChange }: { mode: BadgeMode; permission: NotificationPermission | 'unsupported'; onChange: (mode: BadgeMode) => void }) {
+  const row = rowCopy('app-badge', 'count')
   return (
     <SettingsSection {...cardCopy('app-badge')}>
-      <SettingRow {...rowCopy('app-badge', 'show')} id="app-badge" htmlFor="app-badge-switch"
-        control={<Switch id="app-badge-switch" checked={on} onChange={onChange} label={t('Show today\'s count')} hideLabel />} />
-      {on && permission !== 'granted' && <Notice>{noticeCopy('app-badge', 'permission')}</Notice>}
+      <SettingRow {...row} id="app-badge"
+        control={<SegmentedControl<BadgeMode> label={row.label} value={mode} onChange={onChange}
+          options={BADGE_MODES.map((m) => ({ id: m, label: MODE_LABEL[m]() }))} data-app-badge-mode />} />
+      {mode !== 'off' && permission !== 'granted' && <Notice>{noticeCopy('app-badge', 'permission')}</Notice>}
     </SettingsSection>
   )
 }
 
 /** Settings → Notifications → App icon badge; nothing where badges are not supported. */
 export function AppBadgeSection() {
-  const on = useBadgeEnabled()
+  const mode = useBadgeMode()
   if (!badgeSupported()) return null
   const permission = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
-  return <AppBadgeView on={on} permission={permission} onChange={setBadgeEnabled} />
+  return <AppBadgeView mode={mode} permission={permission} onChange={setBadgeMode} />
 }

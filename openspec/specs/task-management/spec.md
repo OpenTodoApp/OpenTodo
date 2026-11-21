@@ -243,7 +243,7 @@ A due fixed to a zone SHALL read its zone's city as a suffix of the Do on part (
 - **THEN** the panel shows no zone text at rest, and in the Do on segment the zone control is disabled and states that a time is needed to fix a zone
 
 ### Requirement: Fix a due to any zone
-Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
+Choosing a zone from the zone control SHALL keep the wall-clock date and time currently entered and set that zone, so the due means that clock time in the chosen zone; choosing a different zone for an already zoned due SHALL likewise keep its wall-clock time. Before confirming, the control SHALL preview how the due reads in the viewer's zone. While a due is fixed to a zone other than the viewer's, the Do on segment of the task panel SHALL show and edit the due's date and time in that zone (its stored wall-clock date and time), and the time line SHALL show the same moment in the viewer's zone as a hint ("03:00 your time", with the date when it differs); a typed date or time there SHALL mean that zone's clock. Lists, headings and the panel's summary SHALL keep showing the viewer's time ("Display in the viewer's zone"). For a floating due, or one fixed to the viewer's own zone, the fields SHALL read as before and show no hint. The change SHALL be one ordinary due edit, applied locally first, working offline and converging like any due edit.
 
 #### Scenario: Meeting in another city
 - **WHEN** a Berlin user with a floating due `15:00` on 2026-11-02 picks "America/New_York"
@@ -256,6 +256,14 @@ Choosing a zone from the zone control SHALL keep the wall-clock date and time cu
 #### Scenario: Recently used zone
 - **WHEN** the user picked "Asia/Tokyo" on a previous task and opens the zone control of another task
 - **THEN** "Tokyo" is listed right after the viewer's own zone
+
+#### Scenario: Edit the time in the task's zone
+- **WHEN** a Madrid user has a due `20:00 America/Mexico_City` on 2026-11-20 and opens the Do on segment
+- **THEN** the time field reads `20:00`, the date reads 2026-11-20 and the hint reads `03:00 (21 Nov) your time`; typing `21:00` stores `21:00 America/Mexico_City`
+
+#### Scenario: Zone first, time second
+- **WHEN** a Madrid user fixes a floating `09:00` due to "America/Mexico_City" and then types `20:00` in the time field
+- **THEN** the due becomes `20:00 America/Mexico_City`, and the row shows `03:00` the next day for the Madrid user
 
 ### Requirement: Who completed a task
 A task SHALL record in `completed_by` the account id of whoever completed it, or null when unknown. Every write that completes a task SHALL set it in the same batch as the completion time, and every reopen SHALL clear it. Server writes on a user's behalf SHALL set it to that user; public link ticks SHALL record null. It SHALL be an ordinary, unencrypted task field: written offline, synced, converged by last-writer-wins with the completion time, and exported.
@@ -312,7 +320,7 @@ A task SHALL have an optional `origin`: where it came from, as one value `{kind,
 - **THEN** that client shows the chip with the note's path and no link, and after sync every device still holds the same `obsidian` origin and the new title
 
 ### Requirement: Origin validation
-The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host, `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` (with `.md` appended when it has no extension) or, when the decoded `file` has a `#` with text on both sides, the part before the first `#` (with `.md` appended the same way): Obsidian's `open` action reads `Plan#Next steps` and `Plan#^abc123` as the note `Plan` at a heading or block, while a note whose own name has a `#` keeps the whole `file`; an `obsidian` origin SHALL carry no `provider`. Every other kind SHALL keep the `http(s)` rule, so an `obsidian:` URL on any other kind is refused. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
+The sync and API write paths SHALL accept an origin only when `kind` is from the closed list, `url` (when present) is an `http` or `https` URL with a host or, for `kind: "url"` alone, an app link (OpenSpec `app-links`: a scheme of the RFC 3986 grammar that is not denied and not `http`, `https` or `mailto`, a colon and a rest without whitespace or control characters, at most 2048 bytes), `provider` (when present) is 1 to 32 lower-case letters, digits or hyphens, and no other member is present. For `kind: "obsidian"` alone, `url` SHALL instead be an Obsidian note link of exactly the form `obsidian://open?vault=<vault>&file=<note>`: scheme `obsidian`, action `open`, no path, fragment or user information, exactly the two query members `vault` (1 to 255 characters) and `file` (1 to 1024 characters) once each, and `id` SHALL equal the decoded `file` (with `.md` appended when it has no extension) or, when the decoded `file` has a `#` with text on both sides, the part before the first `#` (with `.md` appended the same way): Obsidian's `open` action reads `Plan#Next steps` and `Plan#^abc123` as the note `Plan` at a heading or block, while a note whose own name has a `#` keeps the whole `file`; an `obsidian` origin SHALL carry no `provider`. Every kind but `url` and `obsidian` SHALL keep the `http(s)` rule, so an `obsidian:` URL on an `issue`, `email` or `import` origin is refused; on a `url` origin it is an app link, which opens only for a viewer whose own list allows it. Anything else SHALL be refused as invalid and change nothing. Go and TypeScript SHALL implement these rules against one shared set of vectors.
 
 #### Scenario: Provider shape
 - **WHEN** a client submits `origin: {kind: "issue", provider: "My Tracker", id: "1"}`
@@ -347,8 +355,12 @@ The sync and API write paths SHALL accept an origin only when `kind` is from the
 - **THEN** the write is rejected as invalid
 
 #### Scenario: Obsidian scheme on another kind
-- **WHEN** a client submits `origin: {kind: "url", url: "obsidian://open?vault=Notes&file=a"}`
+- **WHEN** a client submits `origin: {kind: "issue", provider: "github", id: "o/r#1", url: "obsidian://open?vault=Notes&file=a"}`
 - **THEN** the write is rejected as invalid
+
+#### Scenario: App link on a url origin
+- **WHEN** a client submits `origin: {kind: "url", url: "zotero://select/items/ABC"}`
+- **THEN** the write is accepted, every device receives it unchanged, and its chip reads "Zotero"
 
 #### Scenario: Link to a block or heading
 - **WHEN** a client submits `origin: {kind: "obsidian", id: "Projects/Plan.md", url: "obsidian://open?vault=Notes&file=Projects%2FPlan%23%5Eabc123"}`

@@ -42,7 +42,7 @@ describe('single-action undo', () => {
 
     await undoToast(offer.undoId!)
     expect((await db.tasks.get(id))!.completed_at).toBeNull()
-    expect(bulkToast()!.result).toBe('Undone.')
+    expect(bulkToast()!.result).toBe('Undone: Task completed.')
     // Both edits are in the outbox in order; the later one wins everywhere (LWW).
     const ops = (await opsFor(id, 'completed_at')).slice(-2) // after the creation's own null
     expect(ops[0].value).not.toBeNull()

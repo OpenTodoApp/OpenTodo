@@ -14,6 +14,7 @@ import { click, key, mockFetch, noPublicLinks, render, waitFor } from '../ui/tes
 import { FilterView } from './FilterView'
 import { SavedViewRoute } from './SavedViewView'
 import { TaskListView } from './TaskListView'
+import { undoEntry } from '../test/undoEntry'
 
 let n = 0
 beforeEach(() => {
@@ -47,7 +48,7 @@ describe('a label page in Manual order', () => {
     expect((await db.tasks.toArray()).map((x) => [x.id, x.position])).toEqual(positions)
     // Every row can be picked up and takes drops (a manually ordered list).
     expect(document.querySelector(`[data-drop-target="task:${pharmacy}"]`)).toBeTruthy()
-    const entry = (await db.assistantUndo.toArray()).find((e) => e.label === 'Order changed')!
+    const entry = await undoEntry((e) => e.label === 'Order changed')
     await undoBatch(entry.id)
     await waitFor(() => titles().join() === 'Pharmacy,Bakery,Post office', 'undone')
     await r.unmount()

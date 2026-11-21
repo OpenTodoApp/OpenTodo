@@ -7,10 +7,10 @@
 // slot, and `f` places a task by its estimate or opens the slot menu. By touch
 // (phone-touch-focus) an empty slot, and in Three tasks the Add to focus row, open
 // the focus picker; `f` and the picker follow one set of rules (lib/focusEdit).
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { bentoList, readBento, readBentoOrder, readFocusStyle, setBentoOrder, setFocusStyle } from '../../lib/bento'
 import { freeSlots, withRemoved } from '../../lib/bentoSlots'
-import { estimateAndPlace, placeFocus, pressFocus, type FocusContext, type FocusOutcome } from '../../lib/focusEdit'
+import { estimateAndPlace, placeFocus, pressFocus, readFocusContext, type FocusContext, type FocusOutcome } from '../../lib/focusEdit'
 import { todayList } from '../../lib/dayLists'
 import { formatInstant } from '../../lib/dates'
 import { t } from '../../lib/i18n'
@@ -91,10 +91,21 @@ export function DailyCheck() {
     if (outcome.kind === 'done' && outcome.undoId) showUndoToast(outcome.text, outcome.undoId)
     setMessage(outcome.kind === 'refused' ? { text: outcome.text, choose: outcome.choose } : { text: outcome.text })
   }
-  const toggle = async (task: Task) => {
-    const ctx = focusCtx()
-    if (ctx) settle(await pressFocus(ctx, task))
+  // A press decides on the focus as stored, not as last rendered, and after the press
+  // before it: quick presses (j f j f) each read the one before them, where the
+  // rendered focus could still be empty and every pick replaced the last.
+  const pressing = useRef<Promise<unknown>>(Promise.resolve())
+  const inTurn = (step: (ctx: FocusContext) => Promise<FocusOutcome>) => {
+    const run = pressing.current.then(async () => {
+      const base = focusCtx()
+      if (!base) return
+      const { review: stored, prefs: storedPrefs } = await readFocusContext([])
+      settle(await step({ ...base, review: stored, prefs: storedPrefs }))
+    })
+    pressing.current = run.catch(() => undefined)
+    return run
   }
+  const toggle = (task: Task) => inTurn((ctx) => pressFocus(ctx, task))
   useShortcutScope('view', {
     'review.focus': () => {
       const task = rows.find((r) => r.key === selected)?.task
@@ -189,8 +200,8 @@ export function DailyCheck() {
       )}
       {chooseFor && groups && (
         <SlotChooser task={chooseFor} free={freeSlots(withRemoved(groups.bento, chooseFor.id))} editable={editable(chooseFor)}
-          onPick={(slot) => { const task = chooseFor, ctx = focusCtx(); setChooseFor(null); if (ctx) act(placeFocus(ctx, task, slot).then(settle)) }}
-          onEstimate={(minutes) => { const task = chooseFor, ctx = focusCtx(); setChooseFor(null); if (ctx) act(estimateAndPlace(ctx, task, minutes).then(settle)) }}
+          onPick={(slot) => { const task = chooseFor; setChooseFor(null); act(inTurn((ctx) => placeFocus(ctx, task, slot))) }}
+          onEstimate={(minutes) => { const task = chooseFor; setChooseFor(null); act(inTurn((ctx) => estimateAndPlace(ctx, task, minutes))) }}
           onClose={() => setChooseFor(null)} />
       )}
       {pickerFor && (

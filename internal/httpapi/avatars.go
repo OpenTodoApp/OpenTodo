@@ -4,10 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"errors"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -204,16 +206,27 @@ func (s *Server) removeAvatar(userID string) {
 }
 
 // exportAvatar adds the account's picture to its export archive as profile/picture.jpg.
-func (s *Server) exportAvatar(zw *zip.Writer, userID string) {
+// exportAvatar adds the account's profile picture to the zip export. No picture is
+// no entry; a picture that exists but cannot be read or written is an error, so the
+// export is aborted rather than finished without it (client-data-safety).
+func (s *Server) exportAvatar(zw *zip.Writer, userID string) error {
 	path := s.avatarPath(userID)
 	if path == "" {
-		return
+		return nil
 	}
 	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
 	if err != nil {
-		return
+		return fmt.Errorf("read profile picture: %w", err)
 	}
-	if fw, err := zw.CreateHeader(&zip.FileHeader{Name: "profile/picture.jpg", Method: zip.Store}); err == nil {
-		_, _ = fw.Write(data)
+	fw, err := zw.CreateHeader(&zip.FileHeader{Name: "profile/picture.jpg", Method: zip.Store})
+	if err != nil {
+		return fmt.Errorf("profile picture entry: %w", err)
 	}
+	if _, err := fw.Write(data); err != nil {
+		return fmt.Errorf("write profile picture: %w", err)
+	}
+	return nil
 }

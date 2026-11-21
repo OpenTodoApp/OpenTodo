@@ -14,7 +14,7 @@ import type { MfaPolicy, MfaStatus, TrustedDevice, User } from '../lib/types'
 import { useDateTimeFormat } from './DateTimePrefsProvider'
 import { t, msg, translatedMap, currentLanguage } from '../lib/i18n'
 import { cardCopy, noticeCopy, rowCopy } from '../lib/settingsCopy'
-import { readJSON, writeString } from '../lib/deviceStorage'
+import { cacheMfa, readCachedMfa } from './mfaCache'
 import { relativeTime } from '../lib/dates'
 import { copyText } from '../lib/clipboard'
 
@@ -24,16 +24,6 @@ import { copyText } from '../lib/clipboard'
 // read-only while offline. The secret and recovery codes live in component
 // state only and are never stored.
 
-const STATUS_KEY = 'opentodo.mfa'
-
-export function readCachedMfa(): MfaStatus | null {
-  return readJSON<MfaStatus | null>(STATUS_KEY, null)
-}
-
-export function cacheMfa(st: MfaStatus | null) {
-  // Storage unavailable: the status is fetched again next time.
-  writeString(STATUS_KEY, st ? JSON.stringify(st) : null)
-}
 
 /** Splits a base32 secret into groups of four for typing into an app. */
 export function groupKey(secret: string): string {

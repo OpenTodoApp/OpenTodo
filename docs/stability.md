@@ -1,6 +1,6 @@
 ---
 title: Stability and compatibility
-summary: What every 1.x release keeps: the v1 API, the sync protocol and op schema, the export format, MCP tools and the ot CLI; deprecation, upgrades and versioning.
+summary: "What every 1.x release keeps: the v1 API, the sync protocol and op schema, the export format, MCP tools and the ot CLI; deprecation, upgrades and versioning."
 audience: developer
 section: Integrations
 specs: [api-stability]
@@ -51,6 +51,8 @@ These need a new major version (`/api/v2/`, export version 2, `ot` 2.x):
 - changing the status or error code of a documented condition;
 - narrowing the values a field accepts;
 - changing what a field means.
+
+A security fix may refuse read or agent tokens on a route that lists the account's credentials or connected apps.
 
 **Clients must ignore what they do not know**: unknown fields in a response, and unknown values of an open enumeration. The web app, the phone apps, `ot`, the browser extension and the Obsidian plugin already do.
 

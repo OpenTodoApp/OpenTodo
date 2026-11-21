@@ -4,12 +4,14 @@ import { AppearanceProvider } from './AppearanceProvider'
 import { DateTimePrefsProvider } from './DateTimePrefsProvider'
 import { LanguageProvider } from './LanguageProvider'
 import { useLanguageVersion, t } from '../lib/i18n'
+import { useTouchZoom } from '../lib/touchZoom'
 import { api, onEnrolmentRequired } from '../lib/api'
 import { consumeRestored, RESTORED_NOTICE } from '../lib/restore'
 import { requestPersistentStorage } from '../lib/db'
 import { adoptProfile, loadEncryptionState, useEncryption } from '../lib/e2ee'
 import { RecordMissingScreen, UnlockScreen } from './UnlockScreen'
-import { onSignOutElsewhere, startSync, stopSync, useSyncStatus } from '../lib/sync'
+import { setCurrentUserId } from '../lib/sharing'
+import { onSignOutElsewhere, setSyncAccount, startSync, stopSync, useSyncStatus } from '../lib/sync'
 import { startRelay } from '../lib/relay'
 import { RelayConfirm } from './RelayConfirm'
 import { AppBadgeSync } from './AppBadge'
@@ -19,15 +21,12 @@ import { InviteScreen } from './InviteScreen'
 import { ProjectInviteScreen, takePendingInvite } from './ProjectInviteScreen'
 import { WorkspaceInviteScreen } from './WorkspaceInviteScreen'
 import { ResetScreen } from './ResetScreen'
-import { ConfirmEmailScreen, ForgotScreen, VerifyScreen } from './EmailScreens'
 import { setOutgoingEmail } from '../lib/outgoingEmail'
-import { PublicListScreen } from './PublicListScreen'
-import { ACCOUNT_CHANGED_EVENT } from './UsersPanel'
+import { ACCOUNT_CHANGED_EVENT } from './accountChanged'
 import { ReauthHost } from './ReauthDialog'
 import { ENROLMENT_EVENT } from './SyncStatus'
-import { cacheMfa, EnrolmentGate } from './TwoFactorPanel'
+import { cacheMfa } from './mfaCache'
 import { navigate, useRoute } from './router'
-import { ShareCapture } from './ShareCapture'
 import { Shell } from './Shell'
 import { PhoneFrameSkeleton } from './phoneFrame'
 import { DEMO_LIMIT_NOTICE, expireSandboxIfGone, sandboxErrorMessage, setDemo, startSandbox, useDemo } from '../lib/demo'
@@ -39,12 +38,21 @@ import { UpdateBanner } from './UpdateBanner'
 import { DemoBanner } from './DemoBanner'
 import { useOauthAuthorizeReturn } from './oauthReturn'
 import { OAuthConsentHost } from './OAuthConsentHost'
-import { clearDeviceData, useSignOut, wipeRevokedDevice } from './signOut'
+import { clearDeviceData, clearIfDifferentAccount, useSignOut, wipeRevokedDevice } from './signOut'
 import { rememberWipeKey, REVOKED_NOTICE, wipeIfRevoked } from '../lib/revocation'
 
 export { DemoBanner }
 
 // Display mode (display-mode): its own chunk, fetched when a display route opens.
+// The enrolment gate (mfa-totp) is the two-factor panel's wizard: loaded for the restricted session that needs it.
+const EnrolmentGate = lazy(() => import('./TwoFactorPanel').then((m) => ({ default: m.EnrolmentGate })))
+// Whole-page screens most visits never show (a public link, the email links, a share
+// from another app): each loads when its route is opened, not with the first load.
+const PublicListScreen = lazy(() => import('./PublicListScreen').then((m) => ({ default: m.PublicListScreen })))
+const ForgotScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.ForgotScreen })))
+const VerifyScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.VerifyScreen })))
+const ConfirmEmailScreen = lazy(() => import('./EmailScreens').then((m) => ({ default: m.ConfirmEmailScreen })))
+const ShareCapture = lazy(() => import('./ShareCapture').then((m) => ({ default: m.ShareCapture })))
 const DisplayScreen = lazy(() => import('./display/DisplayScreen').then((m) => ({ default: m.DisplayScreen })))
 
 type Phase =
@@ -54,6 +62,36 @@ type Phase =
   | { kind: 'ready'; user: User }
   // The owner's policy requires a second factor this account lacks (OpenSpec `mfa-totp`).
   | { kind: 'restricted'; user: User }
+
+/**
+ * Before a signed-in account's data is stored, adopted or pulled: a device whose
+ * stored account differs from the one signing in clears its local copy (an
+ * expired or revoked session left it in place), and the session's account is
+ * remembered so the restore reseed refuses to run under a mismatch. Together they
+ * keep one account's data off another on a shared device (client-data-safety).
+ */
+async function prepareAccount(id: string): Promise<void> {
+  await clearIfDifferentAccount(id)
+  // Stamp the owner right after the clear, before any sync, so data pulled for
+  // this account is never left under a null marker (client-data-safety).
+  await setCurrentUserId(id)
+  setSyncAccount(id)
+}
+
+// Re-read the auth status whenever a window event fires — and, where a library
+// exposes its own subscription (onEnrolmentRequired), when that calls back —
+// removing both on unmount.
+function useRefreshOnEvent(event: string, refresh: () => void, subscribe?: (again: () => void) => () => void) {
+  useEffect(() => {
+    const again = () => void refresh()
+    window.addEventListener(event, again)
+    const off = subscribe?.(again)
+    return () => {
+      window.removeEventListener(event, again)
+      off?.()
+    }
+  }, [event, refresh, subscribe])
+}
 
 export function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' })
@@ -67,6 +105,7 @@ export function App() {
   const [demoExpired, setDemoExpired] = useState(false)
   // A language change re-renders the whole tree from here (app-localization D3).
   useLanguageVersion()
+  useTouchZoom() // keep the page viewport in step with this device's "Allow pinch zoom" setting (#1386)
 
   const refresh = useCallback(async () => {
     try {
@@ -77,6 +116,7 @@ export function App() {
       rememberServerVersion(status.version)
       setOutgoingEmail(status.outgoingEmail?.enabled)
       if (status.authenticated && status.user) {
+        await prepareAccount(status.user.id)
         localStorage.setItem('opentodo.user', JSON.stringify(status.user))
         cacheMfa(status.mfa ?? null)
         // The key a later revocation proof is checked with (revoked-device-wipe D3).
@@ -121,22 +161,10 @@ export function App() {
 
   // A request refused with mfa_enrolment_required (policy changed while signed
   // in), or a click on the sync status, re-reads the status and shows the gate.
-  useEffect(() => {
-    const again = () => void refresh()
-    window.addEventListener(ENROLMENT_EVENT, again)
-    const off = onEnrolmentRequired(again)
-    return () => {
-      window.removeEventListener(ENROLMENT_EVENT, again)
-      off()
-    }
-  }, [refresh])
+  useRefreshOnEvent(ENROLMENT_EVENT, refresh, onEnrolmentRequired)
 
   // Ownership moved (Settings → People → Users): re-read the profile so the role is current.
-  useEffect(() => {
-    const again = () => void refresh()
-    window.addEventListener(ACCOUNT_CHANGED_EVENT, again)
-    return () => window.removeEventListener(ACCOUNT_CHANGED_EVENT, again)
-  }, [refresh])
+  useRefreshOnEvent(ACCOUNT_CHANGED_EVENT, refresh)
 
   // The server refused this device's session: show the signed-out screen. Local
   // data is left alone, as on any expired session or password change, unless
@@ -188,7 +216,7 @@ export function App() {
   function screen() {
     // A public link (public-links) needs no account and never syncs: it renders
     // before the sign-in state is even known.
-    if (route.view === 'public') return <PublicListScreen token={route.token} />
+    if (route.view === 'public') return <Suspense fallback={null}><PublicListScreen token={route.token} /></Suspense>
     if (phase.kind === 'loading') {
       // Cold start (task-list-presentation "Skeleton loading"): rows in the row's shape until the local database answers.
       // On a phone that was signed in, with the bar and the tab bar in their places (shell-first-paint).
@@ -215,11 +243,11 @@ export function App() {
     if (route.view === 'forgot') {
       const user = phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null
       // Unknown while the server is unreachable: show the form, which says it needs a connection.
-      return <ForgotScreen enabled={phase.kind === 'anonymous' ? phase.status.outgoingEmail?.enabled === true : true} user={user} />
+      return <Suspense fallback={null}><ForgotScreen enabled={phase.kind === 'anonymous' ? phase.status.outgoingEmail?.enabled === true : true} user={user} /></Suspense>
     }
     if (route.view === 'verify') {
       return (
-        <VerifyScreen
+        <Suspense fallback={null}><VerifyScreen
           token={route.token}
           user={phase.kind === 'ready' || phase.kind === 'restricted' ? phase.user : null}
           onDone={() => {
@@ -227,15 +255,15 @@ export function App() {
             void refresh()
           }}
           onLogout={() => void logout()}
-        />
+        /></Suspense>
       )
     }
     // Signed out, the sign-in screen shows first and the link's screen after it.
     if (route.view === 'confirm-email' && phase.kind === 'ready') {
-      return <ConfirmEmailScreen token={route.token} onDone={() => void refresh()} />
+      return <Suspense fallback={null}><ConfirmEmailScreen token={route.token} onDone={() => void refresh()} /></Suspense>
     }
     if (phase.kind === 'restricted' && route.view !== 'invite') {
-      return <EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} />
+      return <Suspense fallback={null}><EnrolmentGate user={phase.user} onEnrolled={() => void refresh()} onLogout={() => void logout()} /></Suspense>
     }
     if (route.view === 'invite') {
       // The invite link works for anonymous visitors, offline visitors (it waits for
@@ -296,7 +324,7 @@ export function App() {
       return <UnlockScreen onLogout={() => void logout()} />
     }
     if (route.view === 'share') {
-      return <ShareCapture />
+      return <Suspense fallback={null}><ShareCapture /></Suspense>
     }
     if (route.view === 'display') {
       // Display mode (display-mode D3): the display replaces the shell; sync keeps

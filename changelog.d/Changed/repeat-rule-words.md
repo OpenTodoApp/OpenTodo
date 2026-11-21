@@ -1,0 +1,1 @@
+- **A repeat rule reads in your language.** A task's repeat is shown in the interface language wherever the app shows it: "Om de 3 dagen na voltooiing" in Dutch, not "every 3 days after completion". The Repeat field still takes the rule in English for now (repeat-rule-words, #1427).

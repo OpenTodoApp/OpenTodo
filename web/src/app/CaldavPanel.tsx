@@ -46,6 +46,9 @@ export interface CaldavViewProps {
   /** The "New app password" dialog is open. */
   creating?: boolean
   onToggle: (enabled: boolean) => void
+  /** Push to calendar apps (caldav-push): the owner's switch; null while unknown. */
+  push?: { enabled: boolean; available: boolean } | null
+  onPushToggle?: (enabled: boolean) => void
   onNameChange: (name: string) => void
   onScopeChange?: (scope: SyncScope) => void
   onEditLists?: (id: string | null) => void
@@ -111,6 +114,10 @@ export function CaldavView(p: CaldavViewProps) {
         <>
           <SettingRow {...rowCopy('caldav', 'address')} status={<CopyValue value={p.setting.url} label={t('server address')} />} />
           <SettingRow {...rowCopy('caldav', 'user')} status={<CopyValue value={p.email} label={t('user name')} />} />
+          {p.isOwner && p.push?.available && (
+            <SettingRow {...rowCopy('caldav', 'push')} scope="server"
+              control={<Switch checked={p.push.enabled} disabled={p.busy} onChange={(on) => p.onPushToggle?.(on)} label={rowCopy('caldav', 'push').label} hideLabel />} />
+          )}
           {!p.setting.secure && (
             <Notice tone="danger">
               {noticeCopy('caldav', 'plainHttp')}
@@ -196,6 +203,7 @@ const message = (err: unknown) => errorText(err, { capitalise: false, offline: t
 
 export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: string }) {
   const [setting, setSetting] = useState<CaldavSetting | null>(null)
+  const [push, setPush] = useState<{ enabled: boolean; available: boolean } | null>(null)
   const [passwords, setPasswords] = useState<AppPassword[] | null>(null)
   useSettingsPending(setting === null || passwords === null)
   const [newName, setNewName] = useState('')
@@ -212,10 +220,11 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
       const [s, list] = await Promise.all([api.caldavSwitch.get(), api.listAppPasswords()])
       setSetting(s)
       setPasswords(list.appPasswords)
+      if (isOwner) setPush(await api.caldavPushSwitch.get().catch(() => null))
     } catch (err) {
       setError(message(err))
     }
-  }, [setError])
+  }, [setError, isOwner])
   useEffect(() => {
     void load()
   }, [load])
@@ -234,6 +243,7 @@ export function CaldavPanel({ isOwner, email }: { isOwner: boolean; email: strin
         onNew={() => { setError(null); setSecret(null); setNewScope(allScope()); setNewEvents(false); setCreating(true) }}
         onCloseNew={() => { setCreating(false); setSecret(null); setNewName('') }}
         onToggle={(enabled) => void run(async () => setSetting(await api.caldavSwitch.put(enabled)))}
+        push={push} onPushToggle={(enabled) => void run(async () => setPush(await api.caldavPushSwitch.put(enabled)))}
         onCreate={() => void run(async () => {
           const res = await api.createAppPassword(newName.trim() || 'Calendar app', newScope.mode === 'all' ? undefined : newScope, newEvents)
           setSecret(res.secret)

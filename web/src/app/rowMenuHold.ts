@@ -4,8 +4,26 @@
 // One handler on the sidebar's scroller serves every row marked `data-menu-row`: the hold
 // arms with a tint, a release then presses the row's own menu button, a move ends it as a
 // scroll (or as the drag of a row that has one, which keeps its own hold in lib/dnd).
-import type { PointerEvent as ReactPointerEvent } from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { DRAG_THRESHOLD, swallowNextClick, trackHold } from '../lib/dnd'
+
+/**
+ * A right-click on a sidebar row opens the row's menu (sidebar-project-menu, the same
+ * menu its button opens) and keeps the browser's own away. A text field (the inline
+ * rename) and selected text keep the browser's menu; a right-click raised by touch is
+ * left to the hold above, so one press never both opens the row and its menu twice.
+ */
+export function contextForRowMenu(e: ReactMouseEvent<HTMLElement>): void {
+  const target = e.target as Element
+  if (target.closest('input, textarea, [contenteditable="true"]')) return
+  const selection = typeof window !== 'undefined' ? window.getSelection() : null
+  if (selection && !selection.isCollapsed && selection.toString().trim()) return
+  const menu = target.closest('[data-menu-row]')?.querySelector<HTMLElement>('button[aria-haspopup]')
+  if (!menu) return
+  e.preventDefault()
+  if ((e.nativeEvent as Partial<PointerEvent>).pointerType === 'touch') return
+  menu.click()
+}
 
 export function holdForRowMenu(e: ReactPointerEvent<HTMLElement>): void {
   if (e.pointerType !== 'touch') return

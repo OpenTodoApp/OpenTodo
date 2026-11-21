@@ -23,7 +23,7 @@ export function ProjectIconPicker({ icon, color, onPick, onClose }: {
   onClose: () => void
 }) {
   return <IconPicker value={icon} color={color} onClose={onClose}
-    noneMark={<span className="block size-2.5 rounded-full bg-faint" style={{ backgroundColor: color }} />} onPick={onPick} />
+    noneMark={<span data-hue={color ? hueFor(color) : undefined} className={`block size-2.5 rounded-full ${color ? 'bg-hue-solid' : 'bg-faint'}`} />} onPick={onPick} />
 }
 
 export function projectIconItem(project: Project): ActionItem {
@@ -65,11 +65,4 @@ export function ColourSwatches({ color, onPick, onDefault, menu = false }: {
 
 export function setProjectColour(project: Project, color: string) {
   act(updateProject(project.id, { color }))
-}
-
-export function projectColourItem(project: Project): ActionItem {
-  return { kind: 'step', id: 'colour', label: t('Colour'), icon: 'palette', step: {
-    title: t('Colour'),
-    render: (done) => <ColourSwatches color={project.color} onPick={(color) => { setProjectColour(project, color); done() }} />,
-  } }
 }

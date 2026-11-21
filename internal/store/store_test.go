@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"io/fs"
 	"strconv"
 	"strings"
@@ -166,4 +167,37 @@ func dataImportMigration(t *testing.T) (string, int) {
 	}
 	t.Fatal("no *_data_import.sql migration embedded")
 	return "", 0
+}
+
+// Every connection keeps SQLite's temporary storage in memory, so a large
+// statement never needs a writable system temp directory (the Home Assistant
+// app's sandbox refuses /var/tmp; accepting an invitation to a large project
+// failed with "unable to open database file").
+func TestTemporaryStorageInMemory(t *testing.T) {
+	dir := t.TempDir()
+	w, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	r, err := OpenReader(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	for name, db := range map[string]*sql.DB{"writer": w, "reader": r} {
+		var mode int
+		if err := db.QueryRow(`PRAGMA temp_store`).Scan(&mode); err != nil {
+			t.Fatal(err)
+		}
+		if mode != 2 {
+			t.Errorf("%s temp_store = %d, want 2 (memory)", name, mode)
+		}
+	}
+	// A sort far larger than the page cache completes without a temp file.
+	var n int
+	if err := r.QueryRow(`WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM c WHERE x < 200000)
+		SELECT count(*) FROM (SELECT x, randomblob(64) FROM c ORDER BY random())`).Scan(&n); err != nil || n != 200000 {
+		t.Fatalf("large sort = %d, %v", n, err)
+	}
 }

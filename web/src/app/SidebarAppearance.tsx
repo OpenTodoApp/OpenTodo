@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { CatalogueIcon, Icon, Popover, Tooltip } from '../ui'
+import { CatalogueIcon, hueFor, Icon, Popover, Tooltip } from '../ui'
 import { t } from '../lib/i18n'
 import { ColourSwatches, ProjectIconPicker } from './menus/projectAppearance'
 
@@ -20,12 +20,13 @@ export function SidebarAppearance({ color, onColor, icon, onIcon, onOpenChange }
     onColor(next)
     if (!onIcon) close()
   }
-  const mark = color ? <span className="block size-3 rounded-full" style={{ backgroundColor: color }} /> : <Icon name="palette" size="sm" />
+  const hue = color ? hueFor(color) : undefined
+  const mark = color ? <span className="block size-3 rounded-full bg-hue-solid" /> : <Icon name="palette" size="sm" />
   return (
     <>
       <Tooltip label={label} disabled={open}>
         <button ref={anchor} type="button" aria-label={label} aria-haspopup="dialog" aria-expanded={open}
-          className="ui-btn ui-btn--secondary ui-btn--sm touch-target shrink-0 px-2" style={{ color }}
+          data-hue={hue} className={`ui-btn ui-btn--secondary ui-btn--sm touch-target shrink-0 px-2${hue ? ' text-hue-solid' : ''}`}
           onMouseDown={(e) => e.preventDefault()} onClick={() => changeOpen(!open)}>
           <CatalogueIcon name={icon} fallback={mark} />
         </button>

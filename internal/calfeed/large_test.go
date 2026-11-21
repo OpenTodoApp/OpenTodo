@@ -155,3 +155,34 @@ func TestReadCalendarKeptLimit(t *testing.T) {
 		t.Fatalf("kept %d events, warnings %v", len(cal.Events), cal.Warnings)
 	}
 }
+
+// propertyFlood is a calendar of size bytes, under MaxFeedBytes, made of the
+// calendar's own properties with empty time zones between them.
+func propertyFlood(size int) string {
+	var b strings.Builder
+	b.WriteString("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n")
+	for b.Len() < size-64 {
+		b.WriteString("X-A:b\r\nBEGIN:VTIMEZONE\r\nEND:VTIMEZONE\r\n")
+	}
+	b.WriteString("END:VCALENDAR\r\n")
+	return b.String()
+}
+
+// The calendar's own properties have one limit for the whole calendar, so a
+// calendar under the download limit cannot hold memory with them: it is
+// refused early, after about MaxPartLines properties.
+func TestFetchRefusesTooManyCalendarProperties(t *testing.T) {
+	body := propertyFlood(MaxFeedBytes - 1<<20)
+	f := localFetcher()
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(body)) })
+	runtime.GC()
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	if _, err := f.Fetch(context.Background(), &Subscription{URL: srv.URL}); err == nil || err.Error() != "too_large" {
+		t.Fatalf("a calendar of %d MB of properties = %v, want too_large", len(body)>>20, err)
+	}
+	runtime.ReadMemStats(&after)
+	if grew := after.TotalAlloc - before.TotalAlloc; grew > 64<<20 {
+		t.Fatalf("refusing it allocated %d MB", grew>>20)
+	}
+}

@@ -57,7 +57,7 @@ describe('display routes in the app', { timeout: 30000 }, () => {
     await waitFor(() => !!r.container.querySelector('input[type="password"]'))
     expect(r.container.querySelector('[data-screen="display"]')).toBeNull()
     signedIn = true
-    const { ACCOUNT_CHANGED_EVENT } = await import('../UsersPanel')
+    const { ACCOUNT_CHANGED_EVENT } = await import('../accountChanged')
     await act(async () => { window.dispatchEvent(new Event(ACCOUNT_CHANGED_EVENT)) })
     await waitFor(() => !!r.container.querySelector('[data-screen="display"][data-display-target="upcoming"]'))
     expect(location.pathname).toBe('/display/upcoming')

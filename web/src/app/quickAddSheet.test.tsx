@@ -6,7 +6,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../lib/db'
-import { todayISO } from '../lib/dates'
+import { addDaysISO, quickChoices, todayISO } from '../lib/dates'
 import { resetDeviceId } from '../lib/ops'
 import type { User } from '../lib/types'
 import { act } from 'react'
@@ -140,6 +140,9 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     expect(document.querySelector('[data-sheet-chip="project"]')!.textContent).toContain('Home renovation')
     expect(document.querySelector('[data-sheet-placeholder="label"]')).toBeTruthy()
     expect(document.querySelector('[data-sheet-placeholder="project"]')).toBeNull()
+    // The placeholder repeats the toolbar's Label, so a screen reader does not meet it twice.
+    expect(document.querySelector('[data-sheet-placeholder="label"]')!.getAttribute('aria-hidden')).toBe('true')
+    expect(document.querySelector('[data-sheet-tool="label"]')!.getAttribute('aria-label')).toBe('Label')
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.project_id, t.due?.time])).toEqual([['Call Mia about the tiles', pid, '17:00']])
@@ -162,6 +165,53 @@ describe('chips and tools (palette-quick-add D7; natural-language-capture "Quick
     await click(document.querySelector('[data-sheet-send]')!)
     await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
     expect((await db.tasks.toArray()).map((t) => [t.title, t.description])).toEqual([['Read the article', 'https://example.com/article']])
+    await r.unmount()
+  })
+
+  // #1624 (phone-quickadd-date-picker): the date tool opens a picker that writes the date into the line.
+  it('the date tool opens a picker; a pick writes the date into the line as words, and send adds it', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Call the plumber')
+    const tool = () => document.querySelector<HTMLButtonElement>('[data-sheet-tool="when"]')!
+    expect(tool().getAttribute('aria-expanded')).toBe('false')
+    await click(tool())
+    await waitFor(() => !!document.querySelector('[data-line-date-picker]'), 'the picker')
+    expect(tool().getAttribute('aria-expanded')).toBe('true')
+    // Its taps keep the focus, and the keyboard, in the line.
+    const down = new MouseEvent('mousedown', { bubbles: true, cancelable: true })
+    document.querySelector('[data-choice="tomorrow"]')!.dispatchEvent(down)
+    expect(down.defaultPrevented).toBe(true)
+    await click(document.querySelector('[data-choice="tomorrow"]')!)
+    await waitFor(() => field()!.value === 'Call the plumber tomorrow', 'the date in the line')
+    await click(document.querySelector('[data-time="17:00"]')!)
+    await waitFor(() => field()!.value === 'Call the plumber tomorrow 17:00', 'the time in the line')
+    expect(document.querySelector('[data-sheet-chip="due"]')!.textContent).toContain('17:00')
+    await waitFor(() => document.activeElement === field(), 'the field focused')
+    await click(document.querySelector('[data-sheet-send]')!)
+    await waitFor(async () => (await db.tasks.count()) === 1, 'the task')
+    const tomorrow = quickChoices('due').find((c) => c.id === 'tomorrow')!.date
+    expect((await db.tasks.toArray()).map((t) => [t.title, t.due])).toEqual([['Call the plumber', { date: tomorrow, time: '17:00' }]])
+    // The line is empty for the next task, and the picker has closed with it.
+    await waitFor(() => !document.querySelector('[data-line-date-picker]'), 'the picker closed')
+    await r.unmount()
+  })
+
+  it('a pick replaces the line date rather than adding a second; Clear removes it', async () => {
+    const r = await openSheet()
+    await type(field()!, 'Call the plumber tomorrow')
+    await click(document.querySelector('[data-sheet-tool="when"]')!)
+    await waitFor(() => !!document.querySelector('[data-line-date-picker]'), 'the picker')
+    expect(document.querySelector('[data-choice="tomorrow"]')!.getAttribute('aria-checked')).toBe('true')
+    // A day from the month, three days on: the line's "tomorrow" is replaced by its words.
+    const later = addDaysISO(todayISO(), 3)
+    await click(document.querySelector(`[data-line-date-picker] [data-date="${later}"]`)!)
+    await waitFor(() => !field()!.value.includes('tomorrow'), 'tomorrow replaced')
+    expect(field()!.value.startsWith('Call the plumber ')).toBe(true)
+    await waitFor(() => document.querySelector('[data-sheet-chip="due"]') !== null, 'the date chip')
+    expect(document.querySelectorAll('[data-sheet-chip="due"]')).toHaveLength(1)
+    await click(document.querySelector('[data-line-date-clear]')!)
+    await waitFor(() => field()!.value === 'Call the plumber', 'the date removed')
+    expect(document.querySelector('[data-sheet-chip="due"]')).toBeNull()
     await r.unmount()
   })
 })

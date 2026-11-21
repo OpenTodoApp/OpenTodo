@@ -57,7 +57,7 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	s.registerNotePageRoutes(mux)
 
 	mux.handle("GET /api/v1/me", signedIn, s.handleMe)
-	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
+	mux.handle("GET /api/v1/tokens", signedIn.FullTokens(), s.handleListTokens)
 	mux.handle("POST /api/v1/tokens", signedIn.Sensitive().DemoDenied(), s.handleCreateToken)
 	mux.handle("DELETE /api/v1/tokens/{id}", signedIn.DemoDenied(), s.handleDeleteToken)
 	mux.handle("POST /api/v1/passkeys/register/options", signedIn.Sensitive().DemoDenied(), s.handlePasskeyRegisterOptions)
@@ -157,6 +157,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Occurrences of a recurring task for integrations (OpenSpec change series-occurrences).
 	s.registerOccurrenceRoutes(mux)
 	s.registerOccurrenceActionRoutes(mux)
+	s.registerAwayRoutes(mux)
 	s.registerSplitRoutes(mux)
 	// Habits for scripts, shortcuts and the CLI (OpenSpec change habits-assistant).
 	s.registerHabitRoutes(mux)

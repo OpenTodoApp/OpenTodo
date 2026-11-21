@@ -3,7 +3,7 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">Connect to your server</string>
     <string name="setup_intro">Enter the address of your OpenTodo server, the one you open in the browser.</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">Server address</string>
     <string name="setup_connect">Connect</string>
     <string name="setup_connect_anyway">Connect anyway</string>
     <string name="setup_try">Try %1$s</string>
@@ -42,6 +42,10 @@
     <string name="widget_empty">Nothing left for today.</string>
     <string name="widget_untitled">Task</string>
     <string name="widget_more">+ %1$d more</string>
+    <string name="widget_completed">Completed</string>
+    <string name="widget_completed_description">How many tasks you completed this week</string>
+    <string name="widget_completed_locked">Locked: today’s count only</string>
+    <string name="widget_completed_days">Completed per day: %1$s</string>
     <string name="setup_old_webview">This phone\'s Android System WebView is old (version %1$s). Update it from your app store so OpenTodo works fully.</string>
     <string name="site_bar_host">Signing in on %1$s</string>
     <string name="site_bar_close">Back to OpenTodo</string>

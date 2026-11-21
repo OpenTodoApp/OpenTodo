@@ -146,7 +146,7 @@ export function useListMotion(groups: ListGroup[], columns: BoardColumn[]) {
 }
 
 /** Rows that count: everything but the departing ones. */
-export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (isGhost(r.task) ? 0 : 1), 0)
+export const liveRows = (rows: Row[]): number => rows.reduce((n, r) => n + (r.contextual || isGhost(r.task) ? 0 : 1), 0)
 
 /** One task line (or a board card), inside the columns table when that layout is on (custom-fields). */
 export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
@@ -161,6 +161,7 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       <Fragment key={r.task.id}>
         <TaskListRow
           task={r.task}
+          contextual={r.contextual}
           depth={r.depth}
           breadcrumb={r.breadcrumb}
           hasChildren={r.hasChildren}
@@ -185,8 +186,8 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
           timeColumn={c.timeColumn}
           slotsOff={c.slotsOff}
           layout={c.rowLayout}
-          draggable={!ghost && !editing && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
-          reorderable={!ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
+          draggable={!ghost && !editing && (!r.contextual || !!c.ownOrder) && ((c.view === 'label' && c.ownOrder) || !c.isReadOnly(r.task))}
+          reorderable={!r.contextual && !ghost && c.manual && (c.view !== 'today' || (!!r.implied?.project && !c.isReadOnly(r.task)))}
           collapsible={tree}
           expandable={!c.board && !ghost}
           // No row shows its details while a drag runs, so drop zones are one-line rows (row-expand D4).
@@ -211,13 +212,6 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
             <SubtaskInput parent={r.task} depth={r.depth + 1} onClose={c.onCloseSubtask} />
           </li>
         )}
-        {c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board && (
-          <li>
-            <Suspense fallback={null}>
-              <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
-            </Suspense>
-          </li>
-        )}
         {/* The "Add a subtask" lines under a parent's last visible subtask (quick-subtask-add): hidden
             until the parent is the selected row (index.css); none for a
             departing row, and none while a drag runs, so drop zones stay one-line rows (row-expand D4). */}
@@ -233,7 +227,32 @@ export function rowRenderer(c: RowContext): (r: Row) => ReactNode {
       </Fragment>
     )
   }
-  return (r) => (c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r))
+  // The "Add task below" line is the row's sibling with one key of its own, not part of
+  // the row: as it moves under each task it adds, React moves the same field and its focus
+  // instead of drawing a new one (issue 1551: iOS kept lower case for a field focused from
+  // code after the Enter). The row list flattens it into place (flatRows).
+  const below = (r: Row) => (c.addingBelow?.at === r.task.id && c.onAddedBelow && !c.board
+    ? (
+      <li key={ADD_BELOW_KEY}>
+        <Suspense fallback={null}>
+          <SiblingInput anchor={c.addingBelow.anchor} after={c.addingBelow.after} depth={c.addingBelow.depth} onAdded={c.onAddedBelow} onClose={c.onCloseSubtask} />
+        </Suspense>
+      </li>
+    )
+    : null)
+  return (r) => {
+    const row = c.fieldColumns ? <FieldColumnsRow key={r.task.id} task={r.task} defs={c.projectFieldDefs} row={line(r)} /> : line(r)
+    const add = below(r)
+    return add ? [row, add] : row
+  }
+}
+
+/** The key of the "Add task below" line, the same under whichever row it is drawn. */
+const ADD_BELOW_KEY = 'add-below'
+
+/** A group's rows with a row's "Add task below" line taken out of its pair, so it is their sibling. */
+function flatRows(children: ReactNode[]): ReactNode[] {
+  return children.some(Array.isArray) ? children.flatMap((n) => (Array.isArray(n) ? n : [n])) : children
 }
 
 /**
@@ -360,6 +379,7 @@ export function useRowRenderer(c: RowContext): (r: Row) => ReactNode {
 export interface GroupedListProps {
   todayDropTarget?: (group: ListGroup) => boolean
   activeTodayDrop?: string | null
+  contextualDrag?: boolean
   groups: ListGroup[]
   view: ListRoute['view']
   project?: Project
@@ -435,8 +455,8 @@ export function GroupedList(p: GroupedListProps) {
   }
   /** The rows of a group: a list, or a row group of the columns table (custom-fields). */
   const rowList = (children: ReactNode[], extra?: Record<string, string>) => (p.fieldColumns
-    ? <div role="rowgroup" {...extra}>{children}</div>
-    : <RowList extra={extra}>{children}</RowList>)
+    ? <div role="rowgroup" {...extra}>{flatRows(children)}</div>
+    : <RowList extra={extra}>{flatRows(children)}</RowList>)
   // First and last among the real sections: "No section" is not always there (a project
   // whose every task has a section, as after an import), so its slot is not assumed (GitHub issue 359).
   const sectionKeys = p.groups.filter((g) => g.section).map((g) => g.key)
@@ -652,7 +672,7 @@ function SectionLater({ g, rowList, renderRow, onToggle }: { g: ListGroup; rowLi
 }
 
 /** A date, project, Later or Blocked group; collapsible per device. */
-function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
+function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, renderRow, earlierActions, projects, eventsFor, summarised, todayDropTarget, activeTodayDrop, contextualDrag }: GroupedListProps & { g: ListGroup; rowList: RowList }) {
   const events = view === 'upcoming' ? eventsFor?.(g.key) ?? null : null
   if (g.rows.length === 0 && g.folded === undefined && !g.projected?.length && !events) return null
   const project = g.project ? projects.find((pr) => pr.id === g.project) : undefined
@@ -684,6 +704,12 @@ function HeadedGroup({ g, rowList, view, collapsedGroups, toggleCollapsed, rende
           collapsed={collapsed} onToggle={toggle} detail={summary && collapsed ? <SummaryTitles rows={g.rows} /> : undefined}
           actions={earlier ? earlierActions?.(g.rows.filter((r) => !isGhost(r.task)).map((r) => r.task.id)) : undefined} actionsAlwaysVisible={earlier} />
       ))}
+      {contextualDrag && todayDropTarget?.(g) && (
+        <div data-promote-context="" data-drop-target={`today-context-promote:${g.key}`}
+          className="my-1 rounded-control border border-dashed border-strong px-3 py-2 text-meta text-muted data-drop-active:border-accent data-drop-active:bg-accent-soft">
+          {t('Make top-level for today')}
+        </div>
+      )}
       {g.hint && g.folded === false && <p className="mb-1 px-1 text-meta text-muted" data-group-hint>{g.hint}</p>}
       {g.folded && g.soon?.length ? <WaitingSoonList soon={g.soon} onOpenGroup={() => toggleCollapsed(g.openKey ?? BLOCKED_OPEN_KEY)} /> : null}
       {!(g.heading && g.folded === undefined && collapsed) && events}

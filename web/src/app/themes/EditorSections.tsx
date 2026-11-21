@@ -10,7 +10,7 @@ import { t } from '../../lib/i18n'
 import type { ContrastFailure } from '../../lib/theme/check'
 import type { ResolvedTheme } from '../../lib/theme/derive'
 import type { FontFamily, ThemeDocument } from '../../lib/theme/format'
-import { DEFAULT_RADIUS, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, type RadiusStep } from '../../lib/theme/tokens'
+import { DEFAULT_RADIUS, LIST_SIZES, LOCAL_FONT, RADIUS_STEPS, TITLE_WEIGHTS, type RadiusStep } from '../../lib/theme/tokens'
 import { Field, Input, LazyColourField as ColourField, SegmentedControl, Textarea } from '../../ui'
 import { failingText } from './ContrastPanel'
 import { SEEDS, STATUS_SEEDS, tokenName } from './tokenNames'
@@ -151,9 +151,22 @@ export function ShapeTypeSection({ doc, onChange }: { doc: ThemeDocument; onChan
             options={LIST_SIZES.map((n) => ({ id: String(n), label: `${n} px` }))}
             onChange={(v) => setType(doc.type?.family, Number(v) as 13 | 14 | 15)} />
         </Labelled>
+        <Labelled label={t('Task title weight')} className="@min-[30rem]/theme-controls:col-span-2">
+          <SegmentedControl label={t('Task title weight')} value={String(doc.titleWeight ?? 400)} fill data-theme-title-weight
+            options={TITLE_WEIGHTS.map((n) => ({ id: String(n), label: WEIGHT_LABEL[n]() }))}
+            onChange={(v) => {
+              const { titleWeight: _w, ...rest } = doc
+              void _w
+              onChange(v === '400' ? rest : { ...rest, titleWeight: Number(v) as 500 | 600 | 700 })
+            }} />
+        </Labelled>
       </div>
     </Section>
   )
+}
+
+const WEIGHT_LABEL: Record<(typeof TITLE_WEIGHTS)[number], () => string> = {
+  400: () => t('Regular', { context: 'weight' }), 500: () => t('Medium', { context: 'weight' }), 600: () => t('Semibold', { context: 'weight' }), 700: () => t('Bold', { context: 'weight' }),
 }
 
 const RADIUS_LABEL: Record<RadiusStep, () => string> = {

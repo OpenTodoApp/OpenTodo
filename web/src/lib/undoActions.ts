@@ -23,6 +23,7 @@ import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type Do
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
 import { planDayDrop } from './dayDrop'
+import { planTasksMove, type TaskTarget } from './move'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -65,12 +66,21 @@ export async function trashUndoable(id: string, now = Date.now()): Promise<Undoa
  * Move one task (with its subtree) to a project; across sharing scopes it becomes
  * a copy, whose id is returned so the panel can follow it.
  */
-export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now()): Promise<UndoableResult & { newId: string }> {
+export async function moveUndoable(id: string, projectId: string | null, targetName: string, now = Date.now(), toWorkspace?: string): Promise<UndoableResult & { newId: string }> {
   const { tasks, all } = await readTicked([id])
   const task = tasks[0]
+  // "No project" of another workspace (workspaces, "Move an Inbox task"): the task lands
+  // in that workspace's Inbox. A subtask follows its parent's workspace, so it leaves it.
+  const target = projectId === null && toWorkspace !== undefined ? workspaceIdFor(toWorkspace, (await readWorkspaceState()).list) : undefined
+  if (task && target !== undefined && task.project_id == null) {
+    if ((task.workspace_id ?? null) === target && !task.parent_id) return { entry: null, label: '', newId: id }
+    const patch = task.parent_id ? { workspace_id: target, parent_id: null } : { workspace_id: target }
+    return { ...(await apply([{ entity: 'task', entityId: id, patch }], t('Moved to {target}', { target: targetName }))), newId: id }
+  }
   if (!task || (task.project_id ?? null) === projectId) return { entry: null, label: '', newId: id }
   const memberships = await membershipMap()
-  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, await keepWorkspaceFor())
+  const keep = target !== undefined ? () => target : await keepWorkspaceFor()
+  const changes = planMove([task], all, { projectId }, memberships, await currentUserId(), now, keep)
   const copy = changes.find((c) => c.entity === 'task' && c.entityId !== id && c.patch.title !== undefined && !c.patch.deleted_at && c.patch.parent_id === (task.parent_id ?? null))
   const r = await apply(changes, t('Moved to {target}', { target: targetName }))
   return { ...r, newId: copy?.entityId ?? id }
@@ -129,6 +139,13 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     return /^\d{4}-\d{2}-\d{2}$/.test(date) ? dayDropUndoable(ids, date) : null
   }
   return null
+}
+
+/** Several ticked tasks dropped together among a list's rows (drag-ticked-together D3): one batch with Undo. */
+export async function moveTasksUndoable(ids: readonly string[], target: TaskTarget): Promise<UndoableResult | null> {
+  const changes = await planTasksMove(ids, target)
+  if (!changes) return null
+  return apply(changes, t('{n, plural, one {# task moved} other {# tasks moved}}', { n: ids.length }))
 }
 
 /** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */
@@ -353,7 +370,9 @@ export async function moveProjectToWorkspaceUndoable(projectId: string, target: 
   }
   const byId = new Map(labels.map((l) => [l.id, l]))
   const there = new Map(labels.filter((l) => !l.deleted_at && part.own(l.workspace_id) === part.own(target)).map((l) => [labelKey(l.name), l.id]))
-  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: { workspace_id: value } }]
+  // A sub-project follows its root's workspace (#1660): it leaves its parent, and
+  // becomes a top-level project of the target with its own sub-projects and tasks.
+  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: project.parent_id ? { workspace_id: value, parent_id: null } : { workspace_id: value } }]
   const now = Date.now()
   const mapLabel = (id: string): string => {
     const l = byId.get(id)

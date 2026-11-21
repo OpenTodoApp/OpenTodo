@@ -5,18 +5,23 @@
 // or as counts when the account is locked or the user signs out (the store empties).
 // Outside a shell nothing here runs.
 import { liveQuery, type Subscription } from 'dexie'
-import { localDueOf, logicalToday } from './dates'
+import { addDaysISO, localDueOf, logicalToday } from './dates'
 import { todayAssigneeFilter, todayList, type TodayAssigneeFilter } from './dayLists'
 import { db, getMeta, setMeta } from './db'
 import { encryptionSnapshot, onEncryptionChange } from './e2ee'
 import { publishGeofences } from './geofences'
 import { has, publishWidget, scheduleReminders, shell, shellVisible, type ShellPermission, type ShellReminder, type ShellWidgetData } from './shell'
-import { inQuietProject, type ProjectLink } from './reminderWatcher'
+import { heldAway, inQuietProject, type ProjectLink } from './reminderWatcher'
 import { currentUserId } from './sharing'
+import { compute, sharedIds } from './stats'
+import type { StatProject } from './statsCounted'
+import type { Membership } from './types'
 import type { Reminder, Task } from './types'
 
 /** The device's "notifications through the app" switch (Settings → Notifications in a shell). */
 export const META_SHELL_NOTIFICATIONS = 'shell:notifications'
+/** Set when the switch was turned off automatically on a refused permission, not by the user, so a later grant can turn it back on (recheckShellNotifications). */
+export const META_SHELL_NOTIF_AUTO_OFF = 'shell:notificationsAutoOff'
 /** Shared with web push: whether notifications carry task titles. */
 const META_INCLUDE = 'push:includeContent'
 /** Set once the device was told that exact alarms are refused (shell-reminders-on D3). */
@@ -32,13 +37,14 @@ const DEBOUNCE_MS = 500
  * The reminders the shell should schedule: live, not dismissed, firing in the next 7
  * days, on an open task outside any trashed or archived project (OpenSpec `reminders`).
  */
-export function shellReminders(reminders: readonly Reminder[], tasks: readonly Task[], now: number, opts: { titles: boolean; encrypted: boolean }, projects: readonly ProjectLink[] = []): ShellReminder[] {
+export function shellReminders(reminders: readonly Reminder[], tasks: readonly Task[], now: number, opts: { titles: boolean; encrypted: boolean; away?: string }, projects: readonly ProjectLink[] = []): ShellReminder[] {
   const byId = new Map(tasks.map((task) => [task.id, task]))
   const projectById = new Map(projects.map((p) => [p.id, p]))
   const out: ShellReminder[] = []
   for (const r of reminders) {
     if (r.deleted_at || r.fire_at == null || r.fire_at < now || r.fire_at > now + WEEK_MS) continue
     if (r.dismissed_at != null && r.dismissed_at >= r.fire_at) continue
+    if (heldAway(opts.away, r.fire_at)) continue
     const task = byId.get(r.task_id)
     if (!task || task.deleted_at || task.completed_at) continue
     if (inQuietProject(task.project_id, projectById)) continue
@@ -64,6 +70,17 @@ export function shellWidget(tasks: readonly Task[], today: string, now: number, 
     }
   })
   return { updatedAt: now, locked, count: list.length, overdue: rows.filter((r) => r.overdue).length, tasks: locked ? [] : rows }
+}
+
+/**
+ * The Completed widget's numbers (completed-widget D1): today's completions and, while
+ * the account is readable, the last 7 days', from the Statistics count itself, so the
+ * widget and the Stats screen never disagree. Locked: today's count only (D1).
+ */
+export function shellCompleted(tasks: readonly Task[], projects: readonly StatProject[], memberships: readonly Pick<Membership, 'projectId'>[], me: string | null, today: string, locked: boolean): NonNullable<ShellWidgetData['completed']> {
+  const stats = compute({ tasks, projects, shared: sharedIds(memberships), me, today }, { start: addDaysISO(today, -6), end: today })
+  const days = stats.perDay.map((d) => ({ day: d.date, done: d.count }))
+  return locked ? { today: days[days.length - 1].done } : { today: days[days.length - 1].done, days }
 }
 
 /**
@@ -94,10 +111,18 @@ export async function takeExactNotice(): Promise<boolean> {
   return true
 }
 
+/** Turns the device's notifications off because the permission was refused, not by the user; a later grant turns them back on (recheckShellNotifications). */
+async function autoOffShellNotifications(): Promise<void> {
+  await setMeta(META_SHELL_NOTIFICATIONS, false)
+  await setMeta(META_SHELL_NOTIF_AUTO_OFF, true)
+}
+
 /** Turns the shell's notifications on or off; returns the permission the shell reports (null without a shell). */
 export async function setShellNotifications(on: boolean): Promise<ShellPermission | null> {
   if (!has('reminders')) return null
   await setMeta(META_SHELL_NOTIFICATIONS, on)
+  // The user is choosing: clear the automatic-off mark so this stands until they change it.
+  await setMeta(META_SHELL_NOTIF_AUTO_OFF, false)
   if (!on) {
     // Push delivery goes with the device's notifications (shell-push D6).
     if (has('push')) await import('./shellPush').then((m) => m.disableShellPush()).catch(() => undefined)
@@ -105,8 +130,25 @@ export async function setShellNotifications(on: boolean): Promise<ShellPermissio
     return 'granted'
   }
   const permission = await publishReminders()
-  if (permission === 'denied') await setMeta(META_SHELL_NOTIFICATIONS, false)
+  if (permission === 'denied') await autoOffShellNotifications()
   return permission
+}
+
+/**
+ * On resume: if the switch was turned off automatically on a refused permission (not by
+ * the user) and the permission has since been granted in the system settings, turn it
+ * back on. The shell reports the current permission on every schedule, so re-publishing
+ * with the switch on settles it — a grant keeps it on and clears the mark, a refusal
+ * turns it off again and keeps the mark for next time. Without this, reminders stay
+ * in-app forever after the user allows notifications in the system settings.
+ */
+export async function recheckShellNotifications(): Promise<void> {
+  if (!has('reminders')) return
+  if (!(await getMeta<boolean>(META_SHELL_NOTIF_AUTO_OFF, false))) return
+  await setMeta(META_SHELL_NOTIFICATIONS, true)
+  const permission = await publishReminders()
+  if (permission === 'denied') await autoOffShellNotifications()
+  else if (permission != null) await setMeta(META_SHELL_NOTIF_AUTO_OFF, false)
 }
 
 /**
@@ -119,11 +161,11 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
   const enc = encryptionSnapshot()
   const on = await shellNotificationsEnabled()
   if (!on || (enc.enabled && !enc.unlocked)) return scheduleReminders([])
-  const [reminders, tasks, projects, titles] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), shellTitlesEnabled()])
-  const list = shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled }, projects)
+  const [reminders, tasks, projects, titles, prefs] = await Promise.all([db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), shellTitlesEnabled(), db.userPrefs.get('me')])
+  const list = shellReminders(reminders, tasks, now, { titles, encrypted: enc.enabled, away: prefs?.away }, projects)
   const permission = await scheduleReminders(list)
   if (!list.length || !shellVisible()) return permission
-  if (permission === 'denied') await setMeta(META_SHELL_NOTIFICATIONS, false)
+  if (permission === 'denied') await autoOffShellNotifications()
   else if (permission === 'exact-denied' && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(EXACT_ALARMS_EVENT))
   return permission
 }
@@ -131,9 +173,11 @@ export async function publishReminders(now = Date.now()): Promise<ShellPermissio
 /** Computes and hands over the widgets' Today list now. */
 async function publishToday(now = Date.now()): Promise<void> {
   const enc = encryptionSnapshot()
-  const [tasks, prefs, memberships, me] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId()])
+  const [tasks, prefs, memberships, me, projects] = await Promise.all([db.tasks.toArray(), db.userPrefs.get('me'), db.memberships.toArray(), currentUserId(), db.projects.toArray()])
   const hide = todayAssigneeFilter(prefs, memberships, me)
-  publishWidget(shellWidget(tasks, logicalToday(undefined, now), now, enc.enabled && !enc.unlocked, hide))
+  const today = logicalToday(undefined, now)
+  const locked = enc.enabled && !enc.unlocked
+  publishWidget({ ...shellWidget(tasks, today, now, locked, hide), completed: shellCompleted(tasks, projects, memberships, me, today, locked) })
 }
 
 let started = false
@@ -153,11 +197,16 @@ export function startShellPublishers(): () => void {
       if (has('geofences')) void publishGeofences().catch(() => undefined)
     }, DEBOUNCE_MS)
   }
-  // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin) or the meta table (the switches, the titles option).
-  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), db.places.toArray(), db.meta.toArray()])).subscribe({ next: run, error: () => undefined })
+  // Any change to tasks, reminders, projects (trashed or archived), places (a linked place's pin), the meta table (the switches, the titles option) or the preferences (an away period).
+  const sub: Subscription = liveQuery(() => Promise.all([db.tasks.count(), db.reminders.toArray(), db.tasks.toArray(), db.projects.toArray(), db.places.toArray(), db.meta.toArray(), db.userPrefs.get('me')])).subscribe({ next: run, error: () => undefined })
   const offEnc = onEncryptionChange(run)
   // The day rolls over at the logical day start even when nothing changes.
   const tick = setInterval(run, 15 * 60 * 1000)
-  return () => { sub.unsubscribe(); offEnc(); clearInterval(tick); if (timer) clearTimeout(timer); started = false }
+  // On resume (the app shown again): a notification permission granted in the system
+  // settings turns the device's notifications back on (shell-reminders recovery).
+  const onVisible = () => { if (document.visibilityState === 'visible') void recheckShellNotifications().catch(() => undefined) }
+  const canVisible = typeof document !== 'undefined' && has('reminders')
+  if (canVisible) document.addEventListener('visibilitychange', onVisible)
+  return () => { sub.unsubscribe(); offEnc(); clearInterval(tick); if (canVisible) document.removeEventListener('visibilitychange', onVisible); if (timer) clearTimeout(timer); started = false }
 }
 

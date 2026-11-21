@@ -3,7 +3,7 @@
     <string name="app_name">OpenTodo</string>
     <string name="setup_title">连接到你的服务器</string>
     <string name="setup_intro">输入你的 OpenTodo 服务器地址，也就是你在浏览器中打开的那个。</string>
-    <string name="setup_hint">todo.example.com</string>
+    <string name="setup_address_label">服务器地址</string>
     <string name="setup_connect">连接</string>
     <string name="setup_connect_anyway">仍然连接</string>
     <string name="setup_try">尝试 %1$s</string>
@@ -42,6 +42,10 @@
     <string name="widget_empty">今天没有剩余的事项。</string>
     <string name="widget_untitled">任务</string>
     <string name="widget_more">另外 %1$d 项</string>
+    <string name="widget_completed">已完成</string>
+    <string name="widget_completed_description">本周完成了多少任务</string>
+    <string name="widget_completed_locked">已锁定：仅显示今天的数量</string>
+    <string name="widget_completed_days">每天完成：%1$s</string>
     <string name="setup_old_webview">这台手机的 Android System WebView 版本较旧（版本 %1$s）。请从应用商店更新它，以便 OpenTodo 完整工作。</string>
     <string name="site_bar_host">正在 %1$s 上登录</string>
     <string name="site_bar_close">返回 OpenTodo</string>

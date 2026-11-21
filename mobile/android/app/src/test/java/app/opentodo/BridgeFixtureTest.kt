@@ -67,6 +67,56 @@ class BridgeFixtureTest {
 
     @Test fun signOutEmptiesTheWidget() = checkWidget("widget-signed-out.json")
 
+    /** completed-widget D1: the days and today's count the web app publishes, and counts only once locked. */
+    private fun checkCompleted(name: String) {
+        val f = fixture(name)
+        assertEquals(name, "publishWidget", f.getString("method"))
+        val want = f.getJSONObject("expect")
+        val days = want.getJSONArray("days")
+        val expected = CompletedModel(
+            updatedAt = want.getLong("updatedAt"),
+            locked = want.getBoolean("locked"),
+            today = want.getInt("today"),
+            days = (0 until days.length()).map { i -> days.getJSONObject(i).let { CompletedModel.Day(it.getString("day"), it.getInt("done")) } },
+        )
+        assertEquals(name, expected, CompletedModel.parse(f.getString("payload")))
+    }
+
+    @Test fun completedWidget() = checkCompleted("widget-completed.json")
+
+    @Test fun lockedCompletedWidget() = checkCompleted("widget-completed-locked.json")
+
+    /** A publication without completions (an older web app) leaves the Completed widget asking to open the app. */
+    @Test fun completedWidgetNeedsAPublication() {
+        assertEquals(null, CompletedModel.parse(fixture("widget.json").getString("payload")))
+    }
+
+    /** app-links D6: the link the web app hands openAppLink opens with its list, and the shared vectors hold. */
+    @Test fun appLinks() {
+        val f = fixture("app-links.json")
+        val handed = f.getJSONArray("handed")
+        assertEquals(1, handed.length())
+        val call = handed.getJSONObject(0)
+        assertTrue(AppLink.allows(AppLink.list(call.getString("schemes")), call.getString("url")))
+        val v = f.getJSONObject("vectors")
+        val links = v.getJSONArray("links")
+        for (i in 0 until links.length()) {
+            val c = links.getJSONObject(i)
+            assertEquals(c.getString("url"), if (c.isNull("scheme")) null else c.getString("scheme"), AppLink.scheme(c.getString("url")))
+        }
+        val entries = v.getJSONArray("entries")
+        for (i in 0 until entries.length()) {
+            val c = entries.getJSONObject(i)
+            assertEquals(c.getString("entry"), c.getBoolean("ok"), AppLink.validEntry(c.getString("entry")))
+        }
+        val allows = v.getJSONArray("allows")
+        for (i in 0 until allows.length()) {
+            val c = allows.getJSONObject(i)
+            val list = c.getJSONArray("list").let { a -> (0 until a.length()).map { a.getString(it) } }
+            assertEquals("$list ${c.getString("url")}", c.getBoolean("ok"), AppLink.allows(list, c.getString("url")))
+        }
+    }
+
     /** obsidian-origin: the note link the web app hands openExternal is accepted, and only the D2 shape is. */
     @Test fun obsidianNoteLinks() {
         val f = fixture("external-links.json")

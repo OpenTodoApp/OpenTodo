@@ -29,8 +29,8 @@ export async function deleteWithUndo(id: string): Promise<void> {
 }
 
 /** Returns the id to follow (a copy when the move crosses sharing scopes). */
-export async function moveWithUndo(id: string, projectId: string | null, targetName: string): Promise<string> {
-  const r = await withListTransition(1, () => moveUndoable(id, projectId, targetName))
+export async function moveWithUndo(id: string, projectId: string | null, targetName: string, toWorkspace?: string): Promise<string> {
+  const r = await withListTransition(1, () => moveUndoable(id, projectId, targetName, Date.now(), toWorkspace))
   if (r.entry) showUndoToast(r.label, r.entry.id)
   return r.newId
 }

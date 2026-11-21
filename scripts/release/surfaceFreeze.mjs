@@ -11,6 +11,17 @@ export const SURFACE_FILE = 'internal/httpapi/testdata/v1_surface.json'
 export const FREEZE_TAG = 'v1.0.0'
 const SEP = ' › '
 
+/**
+ * Changes to a tagged entry that a security fix made, one by one, each with the
+ * exact value before and after (docs/stability.md: a security fix may refuse read or
+ * agent tokens on a route that lists the account's credentials or connected apps).
+ * Any other change to a tagged entry, or this one to another value, is still refused.
+ */
+export const SECURITY_NARROWINGS = {
+  // credential-lists-full-tokens: listing the account's tokens needs a full token.
+  'routes › GET /api/v1/tokens › policy': { from: 'signed-in', to: 'signed-in.full-tokens' },
+}
+
 /** flattenSurface: nested surface JSON → path → value; a list is a set of paths with "" values (as in surface_test.go). */
 export function flattenSurface(v, prefix = '', out = {}) {
   const join = (k) => (prefix === '' ? k : prefix + SEP + k)
@@ -25,14 +36,14 @@ export function flattenSurface(v, prefix = '', out = {}) {
 }
 
 /** surfaceProblems: entries of the tagged snapshot that are missing or changed in the current one. */
-export function surfaceProblems(tagged, current, tag = FREEZE_TAG) {
+export function surfaceProblems(tagged, current, tag = FREEZE_TAG, allowed = SECURITY_NARROWINGS) {
   const was = flattenSurface(tagged)
   const now = flattenSurface(current)
   const problems = []
   for (const [p, v] of Object.entries(was)) {
     if (p === 'about') continue
     if (!(p in now)) problems.push(`${p}: present at ${tag}, missing now`)
-    else if (now[p] !== v) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
+    else if (now[p] !== v && !(allowed[p]?.from === v && allowed[p]?.to === now[p])) problems.push(`${p}: was ${JSON.stringify(v)} at ${tag}, now ${JSON.stringify(now[p])}`)
   }
   return problems.sort()
 }

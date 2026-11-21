@@ -1,0 +1,1 @@
+- Make keyboard shortcuts work on non-Latin layouts and the French AZERTY number row. A typed symbol keeps its shortcut when one is available.

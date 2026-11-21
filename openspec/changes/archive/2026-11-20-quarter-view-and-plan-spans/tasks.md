@@ -1,0 +1,35 @@
+# Tasks
+
+## 1. Quarter mode wiring
+
+- [x] 1.1 Add `'quarter'` to `CalendarMode`/`readEnum` in `web/src/lib/calendarMode.ts`, to the `Route` union, `VIEW_QUICK_ADD`, `parseRoute` and `routePath` in `web/src/app/router.ts` (`/quarter[/YYYY-MM-DD]`), and insert it between Month and Plan in `CalendarRange.tsx`'s `MODES`. Verify `npm test -- router.test naming.test calendarView.test` and `npm run typecheck`.
+- [x] 1.2 Add `quarter: 'calendar'` to `ROUTE_SCREENS` (`web/src/app/screens.ts`) and include `quarter` in the calendar-page checks in `panel.ts`, `ShortcutHelp.tsx` and `Sidebar.tsx`. Verify `npm test -- screens.test sidebar.test shortcutHelp.test` (a missing `ROUTE_SCREENS` entry fails `screens.test.ts`).
+- [x] 1.3 Lazily render `QuarterView` from `Shell.tsx` and `ProjectCalendar.tsx`; add `go.quarter` to `Shell.tsx`'s global handler table. Verify `npm run typecheck` and `npm test -- calendarView.test projectCalendar.test`.
+
+## 2. Quarter view and keyboard
+
+- [x] 2.1 Extract Year's `MonthCells`, step constants and `tipText` into `web/src/app/calendar/MonthDensityCells.tsx`, import it back into `YearView.tsx`, and add `quarterOf()` (first month, three month keys, `from`/`to`, `n`/`year`) in `web/src/lib/quarter.ts`. Verify `npm test -- yearView.test quarter.test` and `npm run typecheck`.
+- [x] 2.2 `web/src/app/QuarterView.tsx`: density counts and calendar events over the quarter's `[from, to]`, three month grids, day → Day, month name → Month, tooltip, phone fallback, `rememberCalendarMode('quarter')`, `data-calendar-page="quarter"`, `CalendarRangeSwitch mode="quarter"` and `[`/`]` stepping three months. Verify a new `quarterView.test.tsx`: quarter boundaries for a November anchor, three months drawn, a task's density mark, offline rendering.
+- [x] 2.4 Add `Screens/Quarter` and a Plan length dialog workbench story with visual baselines, point `scripts/ux-audit/screens.json` at the Quarter story, and check the 375 px range switch in `make ui-check`.
+- [x] 2.5 Share one pair of `(from, to)` density and event hooks between Year and Quarter beside `MonthCells`; verify `npm test -- yearView.test quarterView.test`.
+- [x] 2.3 Register `go.quarter` (`g q`), the `quarter.*` view entries, `VIEW_SCOPES.quarter`, the `SPOTLIGHT_GROUPS` entry and the palette command; update `SHORTCUT_SECTIONS`' calendar title. Verify `npm test -- shortcuts.test palette.test` (the conflict check and "every view entry names a view in VIEW_SCOPES").
+
+## 3. Plan spans
+
+- [x] 3.1 Widen `PlanSpan` to `number`, `PLAN_SPANS` to `[3, 7, 14, 21]` and add `MIN/MAX_PLAN_DAYS = 2/90` with `validPlanDays()` in `web/src/lib/calendar.ts` (re-exported by `web/src/lib/plan.ts`); widen `GridPrefs.planDays` and `normalizeGridPrefs()` in `web/src/lib/calendar.ts` to any integer in range, default 14. Verify `npm test -- plan.test calendar.test` with cases for 3, 10, 90, 91, 0, a string, a missing value and the old 21.
+- [x] 3.2 Add the `3 days` preset and a `Custom…` menu item to Plan's overflow menu; `Custom…` opens a labelled numeric dialog (2–90, Save/Cancel), refuses invalid input, and saves through `saveGridPrefs`. Mark the custom item checked with its current length when the span is not a preset. Verify a new `planView.test.tsx` case: choose `3 days`, choose `Custom…` with 10, reload and read `calendar.grid` back, and reject 91.
+
+## 4. Documentation and release
+
+- [x] 4.1 Refresh `web/src/locales/messages.json` with `node scripts/i18n/extract.mjs --write`, add the new messages (`Previous quarter`, the range error) to all six catalogs; verify `make i18n-check`.
+- [x] 4.2 Document Quarter in `docs/calendar-views.md` and `docs/months-and-year.md` (reusing the `calendar` screen id), then run `make docs` so `docs/keyboard.md` and `docs/roadmap.md` are current; verify `make docs-check`.
+- [x] 4.3 Add `changelog.d/Added/quarter-view-and-plan-spans.md`; verify `make docs-check`.
+- [x] 4.4 `cd web && npm test && npm run build`, `make openspec-validate`, `make bundle-budget`, `make check` with TZ=UTC; verify all pass.
+
+## 5. Second review on the pull request
+
+- [x] 5.1 On a phone (below 768 px, where the range switch is one menu since phone-calendar-chrome), Quarter is one of the menu's items; `calendarPhoneChrome.test.tsx` lists six.
+- [x] 5.2 Shorten `SHORTCUT_SECTIONS`' calendar title to `Calendar` so the cheat sheet heading no longer wraps, and drop the stale title from all six catalogs.
+- [x] 5.3 Measure the first load against main (entry +0.1 KB, first load +0.5 KB, both inside the budgets, so neither is raised) and update the Size sections of `design.md` and `proposal.md`.
+- [x] 5.4 Start the custom Plan span at 2 days (no "1 days" in six languages), align the spec, design, docs, changelog and tests, and assert the invalid-value message in the dialog test.
+- [x] 5.5 Use the `Button` primitive in the custom-span dialog and a container query for the Quarter grid; verify `make i18n-check`, `make docs-check`, `make openspec-validate` and the affected vitest files.

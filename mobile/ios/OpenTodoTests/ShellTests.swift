@@ -125,6 +125,23 @@ final class HealthCheckTests: XCTestCase {
     }
 }
 
+/// The offline start of the portable build (#1458): the first load falls back to the web
+/// view's cache once on an offline failure, so a cached app opens when the server is down.
+@MainActor
+final class OfflineStartTests: XCTestCase {
+    func testOfflineFirstLoadFallsBackToTheCacheOnce() {
+        // Offline, first try of this launch: fall back to the cache.
+        XCTAssertTrue(ShellController.shouldRetryFromCache(kind: .offline, triedCache: false, loaded: false))
+        // The cache was already tried, or the app is already showing: a real failure now.
+        XCTAssertFalse(ShellController.shouldRetryFromCache(kind: .offline, triedCache: true, loaded: false))
+        XCTAssertFalse(ShellController.shouldRetryFromCache(kind: .offline, triedCache: false, loaded: true))
+        // A certificate, a cancelled, a sign-in or any other failure never falls back.
+        for other: ShellController.Failure.Kind in [.untrusted, .cancelled, .signIn, .other] {
+            XCTAssertFalse(ShellController.shouldRetryFromCache(kind: other, triedCache: false, loaded: false))
+        }
+    }
+}
+
 /// The bridge on a real page (ios-bridge-portable): the shell loads a page from a small
 /// server in this process and the page reports what it sees. Only the page's own script
 /// reports, with a request to its server, so the answer does not depend on an API that

@@ -2,7 +2,7 @@
 // on the server for routines"): internal/filter/evaluate_test.go runs the same
 // file, so a routine's Find tasks lists what the device lists.
 import { describe, expect, it } from 'vitest'
-import type { FieldDef, Label, Project, Task } from '../types'
+import type { FieldDef, Label, Project, Section, Task } from '../types'
 import { runFilter } from './evaluate'
 import vectors from './evaluate.vectors.json'
 
@@ -27,6 +27,7 @@ describe('filter evaluation (shared vectors with internal/filter)', () => {
     weekStart: vectors.week_start,
     labels: vectors.labels as unknown as Label[],
     projects: vectors.projects as unknown as Project[],
+    sections: vectors.sections as unknown as Section[],
     fields: vectors.fields as unknown as FieldDef[],
     tasks,
     tracked: new Map(Object.entries(vectors.tracked)),

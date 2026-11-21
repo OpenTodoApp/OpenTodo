@@ -77,7 +77,8 @@ func TestReadTokenAllowedOnReads(t *testing.T) {
 	e.mustStatus(resp, 201, out)
 	secret := e.token("read")
 	c := e.bearerClient()
-	for _, p := range []string{"/api/v1/me", "/api/v1/tasks", "/api/v1/projects", "/api/v1/export", "/api/v1/tokens", "/api/v1/settings/mcp"} {
+	// The account's own credentials are listed for full tokens only (TestCredentialListsNeedAFullToken).
+	for _, p := range []string{"/api/v1/me", "/api/v1/tasks", "/api/v1/projects", "/api/v1/export", "/api/v1/settings/mcp"} {
 		resp, out := c.do("GET", p, nil, bearer(secret)...)
 		c.mustStatus(resp, 200, out)
 	}

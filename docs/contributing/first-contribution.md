@@ -13,7 +13,7 @@ About 30 minutes, from clone to pull request. The example fixes one sentence of 
 
 ## 1. Set up (10 minutes)
 
-You need Go 1.26 or newer, Node 22 or newer and GNU make. Docker is optional.
+You need Go 1.27 or newer, Node 22 or newer and GNU make. Docker is optional.
 
 ```sh
 git clone https://github.com/<you>/OpenTodo.git   # your fork
