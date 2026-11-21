@@ -77,6 +77,11 @@ func (o *oidcEnv) appConfirmation(sheet *env, p appPKCE) string {
 		}
 	}
 	html := string(body)
+	style := regexp.MustCompile(`<style>(.*?)</style>`).FindStringSubmatch(html)
+	sum := sha256.Sum256([]byte(style[1]))
+	if want := "style-src 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'"; !strings.Contains(csp, want) {
+		o.t.Fatalf("the page's style does not match its policy %q", csp)
+	}
 	if !regexp.MustCompile(`Als [a-z]+@example\.com in der OpenTodo-App weitermachen\?`).MatchString(html) || strings.Contains(html, "<script") || strings.Contains(html, "code=") {
 		o.t.Fatalf("confirmation page:\n%s", html)
 	}

@@ -43,9 +43,11 @@ var appContinueCSP = func() string {
 		"form-action 'self' opentodo:; frame-ancestors 'none'; base-uri 'none'"
 }()
 
+// The style is part of the template's own text, not data: html/template
+// trusts its source and escapes only what is executed into it.
 var appContinuePage = template.Must(template.New("continue").Parse(`<!doctype html>
 <html lang="{{.Lang}}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="referrer" content="no-referrer"><title>{{.Title}}</title><style>{{.Style}}</style></head>
+<meta name="referrer" content="no-referrer"><title>{{.Title}}</title><style>` + appContinueStyle + `</style></head>
 <body><main><h1>{{.Title}}</h1><p>{{.Lead}}</p>
 <form method="post" action="{{.Action}}"><input type="hidden" name="ticket" value="{{.Ticket}}">
 <button type="submit" name="action" value="cancel">{{.Cancel}}</button>
@@ -73,7 +75,6 @@ func (s *Server) showAppContinue(w http.ResponseWriter, r *http.Request, ticket 
 	err := appContinuePage.Execute(w, map[string]any{
 		"Lang": lang, "Title": text.Title, "Lead": strings.Replace(text.Lead, "%s", who, 1),
 		"Continue": text.Continue, "Cancel": text.Cancel, "Ticket": ticket, "Action": appSSOContinuePath,
-		"Style": template.CSS(appContinueStyle),
 	})
 	if err != nil {
 		s.log.Warn("app sign-in page", "err", err)
