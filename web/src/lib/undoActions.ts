@@ -361,7 +361,9 @@ export async function moveProjectToWorkspaceUndoable(projectId: string, target: 
   }
   const byId = new Map(labels.map((l) => [l.id, l]))
   const there = new Map(labels.filter((l) => !l.deleted_at && part.own(l.workspace_id) === part.own(target)).map((l) => [labelKey(l.name), l.id]))
-  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: { workspace_id: value } }]
+  // A sub-project follows its root's workspace (#1660): it leaves its parent, and
+  // becomes a top-level project of the target with its own sub-projects and tasks.
+  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: project.parent_id ? { workspace_id: value, parent_id: null } : { workspace_id: value } }]
   const now = Date.now()
   const mapLabel = (id: string): string => {
     const l = byId.get(id)
