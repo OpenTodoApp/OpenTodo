@@ -65,6 +65,18 @@ function throughAnchor(blob: Blob, name: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
+/**
+ * Save a file the user's server serves at `href` (same origin) as `name`, without holding
+ * it in memory: an anchor with `download`, which a browser downloads and a shell turns into
+ * its save dialog (iOS: WebKit's download; Android: the download listener).
+ */
+export function saveFromServer(href: string, name: string): void {
+  const a = document.createElement('a')
+  a.href = href
+  a.download = name
+  a.click()
+}
+
 /** Save `blob` as a file called `name`. Never throws; a failure dispatches `SAVE_FAILED_EVENT`. */
 export async function saveFile(blob: Blob, name: string): Promise<SaveResult> {
   let result: SaveResult = 'saved'

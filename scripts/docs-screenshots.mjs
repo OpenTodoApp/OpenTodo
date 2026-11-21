@@ -751,6 +751,16 @@ const shots = [
     if (!r.ok()) throw new Error(`PATCH habit → ${r.status()} ${await r.text()}`)
     await go(p, plainBase, `/habits/${read}`, () => p.locator('[data-habit-numbers]').waitFor()); await settle(p, 400)
   }, async after(p, { ctx }) { if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
+  // Away (away-periods): the dialog over the three daily habits, from Today's menu.
+  { name: 'away', server: P, async run(p, { ctx }) {
+    await habitsScene(ctx)
+    await go(p, plainBase, '/today', () => p.getByRole('combobox', { name: 'Add a task' }).waitFor())
+    await p.locator('[data-page-header] button[aria-label="More actions"]').click()
+    await p.locator('[data-away-item]').click()
+    const dialog = p.getByTestId('away')
+    await dialog.locator('[data-away-preview]', { hasText: /Skips/ }).waitFor(); await settle(p, 400)
+    return clipOf(p, dialog, 16)
+  }, async after(p, { ctx }) { await p.keyboard.press('Escape'); if (++habitShots % 2 === 0) await habitsScene(ctx, true) } },
   // Targets and amounts (habit-targets): Gym three times a week, Water eight glasses.
   { name: 'habit-targets', server: P, async run(p, { ctx }) {
     await targetsScene(ctx)
@@ -899,6 +909,11 @@ const shots = [
     return { x, y: 0, width: vp.width - x, height: Math.min(vp.height, b.y + b.height + 24) }
   }, async after(p) { await p.keyboard.press('Escape') } },
   { name: 'activity', server: D, card: true, async run(p) { await go(p, demoBase, '/activity', () => p.getByRole('heading', { level: 1, name: 'Updates' }).waitFor()) } },
+  { name: 'workspace-activity', server: D, async run(p) {
+    // Opened from the workspace menu (workspace-activity D1).
+    await go(p, demoBase, '/inbox'); await p.locator('[data-workspace-trigger]').click(); await p.locator('[data-workspace-activity]').click()
+    await p.getByRole('heading', { level: 1, name: /activity$/ }).waitFor(); await p.mouse.move(900, 400); await settle(p, 800)
+  } },
   { name: 'history', server: D, async run(p) {
     await go(p, demoBase, '/inbox'); await openProject(p, 'Home renovation'); await openTask(p, 'Pick paint colours')
     // History is a tab of the panel (task-detail-redesign); expand the newest version.

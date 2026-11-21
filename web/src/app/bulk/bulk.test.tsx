@@ -113,7 +113,8 @@ describe('actions (2.5, 3.3, 4.2)', () => {
     expect(document.querySelector('[data-bulk-toast]')!.textContent).toContain('3 tasks completed')
     expect(new Set((await db.outbox.toArray()).map((o) => o.ts)).size).toBe(1)
     await act(async () => { (document.querySelector('[data-bulk-toast] button') as HTMLButtonElement).click() })
-    await waitFor(() => document.querySelector('[data-bulk-toast]')!.textContent!.includes('Undone: 3 restored'))
+    // The feedback names the step it undid (undo-history "Descriptive feedback").
+    await waitFor(() => !!document.querySelector('[data-bulk-toast]')?.textContent?.includes('Undone: 3 tasks completed.'))
     for (const id of ids) expect((await db.tasks.get(id))!.completed_at).toBeNull()
   })
 

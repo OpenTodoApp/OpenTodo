@@ -9,7 +9,7 @@ import {
   MAX_DEPTH, builderQuery, formatQuery, newId, removeItem, replaceItem, toBuilder, updateGroup,
   type BCondition, type BGroup, type Leaf,
 } from '../../lib/filter/builder'
-import type { FieldDef, Label, Project } from '../../lib/types'
+import type { FieldDef, Label, Project, Section } from '../../lib/types'
 import { t } from '../../lib/i18n'
 import { conditionText } from './conditionText'
 import { ConditionEditor } from './ConditionEditor'
@@ -22,6 +22,8 @@ export interface FilterBuilderProps {
   count?: number | null
   labels: readonly Label[]
   projects: readonly Project[]
+  /** Sections of every project, for the Section condition (section-filter). */
+  sections: readonly Section[]
   fields: readonly FieldDef[]
   /** The cached workspaces, for the Workspace condition (group-mentions D6). */
   workspaces?: readonly { id: string; name: string }[]
@@ -52,7 +54,7 @@ function normalised(query: string): string | null {
 
 interface Editing { groupId: string; item: BCondition | null }
 
-export function FilterBuilder({ query, onChange, count, labels, projects, fields, workspaces, members }: FilterBuilderProps) {
+export function FilterBuilder({ query, onChange, count, labels, projects, sections, fields, workspaces, members }: FilterBuilderProps) {
   const [tree, setTree] = useState<BGroup>(() => {
     const d = derive(query)
     return d.kind === 'ok' ? d.tree : (toBuilder(null) as BGroup)
@@ -100,7 +102,7 @@ export function FilterBuilder({ query, onChange, count, labels, projects, fields
         </p>
       )}
       {editing && (
-        <ConditionEditor leaf={editing.item?.leaf ?? null} not={editing.item?.not ?? false} labels={labels} projects={projects} fields={fields} workspaces={workspaces} members={members}
+        <ConditionEditor leaf={editing.item?.leaf ?? null} not={editing.item?.not ?? false} labels={labels} projects={projects} sections={sections} fields={fields} workspaces={workspaces} members={members}
           onSave={save}
           onRemove={editing.item ? () => { commit(removeItem(tree, editing.item!.id)); setEditing(null) } : undefined}
           onClose={() => setEditing(null)} />

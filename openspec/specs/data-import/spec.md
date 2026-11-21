@@ -443,7 +443,7 @@ The server SHALL accept the `main.sqlite` file of a Things 3 database, alone or 
 - **THEN** the preview is refused with a 400 error, and nothing is written
 
 ### Requirement: Things structure
-A Things database SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description. Trashed items SHALL be skipped.
+A Things database SHALL map areas to parent projects, projects to projects, headings to sections, to-dos to tasks, checklist items to subtasks, tags to labels and notes to the description. A completed or canceled project SHALL become an archived project, with a warning. Trashed items SHALL be skipped.
 
 #### Scenario: Area with a project and headings
 - **WHEN** a Things area "Work" holds a project "Launch" with headings "Prepare" and "Ship"

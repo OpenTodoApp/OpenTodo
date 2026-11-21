@@ -5,9 +5,7 @@
 package sync
 
 import (
-	"encoding/base64"
 	"encoding/json"
-	"regexp"
 	"strings"
 )
 
@@ -85,49 +83,6 @@ func QuoteJSON(s string) string {
 
 // MaxFocusSession is the largest time_entry.focus_session (focus-session-readable D2).
 const MaxFocusSession = 99
-
-// docEnvelope matches the prefix of a kDoc value: a lower-case format name and a
-// version, e.g. "ydoc:v1:" (a Yjs update) or "enc:v1:" (e2ee ciphertext).
-var docEnvelope = regexp.MustCompile(`^[a-z][a-z0-9]{0,15}:v[0-9]{1,3}:`)
-
-// DocFields lists the kDoc fields as "entity.field". Readers that present
-// values to people (history, webhooks; internal/activity keeps its own copy)
-// leave these out: the field's plain-text projection (task.description for
-// task.notes_doc) carries the readable content.
-var DocFields = map[string]bool{
-	"task.notes_doc": true,
-	// A project's note (OpenSpec change project-notes): project.description is its projection.
-	"project.notes_doc": true,
-	// A standalone note (notes-overview): note.description is its projection.
-	"note.notes_doc": true,
-}
-
-// IsDocField reports whether entity.field holds an opaque document.
-func IsDocField(entity, field string) bool { return DocFields[entity+"."+field] }
-
-// ValidDoc reports whether s is an acceptable kDoc value (see kDoc).
-func ValidDoc(s string) bool {
-	if s == "" {
-		return true
-	}
-	if len(s) > MaxDocBytes {
-		return false
-	}
-	m := docEnvelope.FindStringIndex(s)
-	if m == nil {
-		return false
-	}
-	payload := strings.TrimRight(s[m[1]:], "=")
-	if payload == "" {
-		return false
-	}
-	enc := base64.RawStdEncoding
-	if strings.ContainsAny(payload, "-_") {
-		enc = base64.RawURLEncoding
-	}
-	_, err := enc.DecodeString(payload)
-	return err == nil
-}
 
 // MaxReminderOffset bounds reminder.offset_minutes: one year before or after the due time.
 const MaxReminderOffset = 525600
@@ -1022,6 +977,13 @@ var Schema = map[string]map[string]Field{
 		"daily_notes":         {Kind: kBool, Default: `false`},
 		"daily_notes_project": {Kind: kString, Default: `""`}, "daily_notes_template": {Kind: kString, Default: `""`},
 		"app_link_schemes": {Kind: kString, Default: `""`, Content: true}, // app-links D1: schemes that open in other apps, a JSON array, read only on the person's devices
+		// The away period (OpenSpec change away-periods, design D3): "" or
+		// "YYYY-MM-DD..YYYY-MM-DD", inclusive, followed by " quiet" when
+		// reminders and the digest are paused. One value, so two devices never
+		// mix one period's start with another's end. A malformed value reads as
+		// no period and is kept (ParseAway). Not content: the server holds
+		// reminders with it. Setting it is paired with the period's skips.
+		"away": {Kind: kString, Default: `""`},
 	},
 	// objective: one quarterly or weekly objective (OpenSpec change
 	// plan-objectives, design D1). Personal like place: it resolves to the

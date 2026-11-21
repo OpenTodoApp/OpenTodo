@@ -157,6 +157,7 @@ func (s *Server) registerFeatureRoutes(mux *routes) {
 	// Occurrences of a recurring task for integrations (OpenSpec change series-occurrences).
 	s.registerOccurrenceRoutes(mux)
 	s.registerOccurrenceActionRoutes(mux)
+	s.registerAwayRoutes(mux)
 	s.registerSplitRoutes(mux)
 	// Habits for scripts, shortcuts and the CLI (OpenSpec change habits-assistant).
 	s.registerHabitRoutes(mux)

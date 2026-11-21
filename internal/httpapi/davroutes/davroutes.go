@@ -49,6 +49,8 @@ type Deps struct {
 	RecurringCompletion func(ctx context.Context, uid, id string, body map[string]json.RawMessage, existing opsync.Entity, today string) (string, map[string]json.RawMessage, bool, error)
 	// EncryptionEnabled reports an account that encrypts its content (refused here).
 	EncryptionEnabled func(ctx context.Context, uid string) (bool, error)
+	// Push is push to calendar apps (caldav-push); the zero value is off.
+	Push PushDeps
 }
 
 // Server is the CalDAV endpoint.

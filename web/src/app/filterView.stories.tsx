@@ -56,6 +56,6 @@ const PROJECTS = [project({ id: 'p1', name: 'Work', color: '#3b82f6' }), project
 export const ConditionDialog: StoryObj = {
   render: () => (
     <ConditionEditor leaf={{ kind: 'date', field: 'due', op: '<=', date: { type: 'period', unit: 'week', offset: 0 } }} not
-      labels={LABELS} projects={PROJECTS} fields={[]} onSave={() => {}} onRemove={() => {}} onClose={() => {}} />
+      labels={LABELS} projects={PROJECTS} sections={[]} fields={[]} onSave={() => {}} onRemove={() => {}} onClose={() => {}} />
   ),
 }

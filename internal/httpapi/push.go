@@ -187,13 +187,22 @@ func (s *Server) recordTZOffset(ctx context.Context, uid string, offset *int) {
 }
 
 func (s *Server) tzLocation(ctx context.Context, uid string) *time.Location {
+	loc, _ := s.reportedZone(ctx, uid)
+	return loc
+}
+
+// reportedZone is tzLocation and whether a device ever reported the zone
+// (false: UTC, a guess).
+func (s *Server) reportedZone(ctx context.Context, uid string) (*time.Location, bool) {
 	offset := 0
+	found := false
 	if v, ok := s.tzOffsets.Load(uid); ok {
-		offset = v.(int)
-	} else if found, err := s.settings.Get(ctx, tzKey(uid), &offset); err == nil && found {
+		offset, found = v.(int), true
+	} else if ok, err := s.settings.Get(ctx, tzKey(uid), &offset); err == nil && ok {
 		s.tzOffsets.Store(uid, offset)
+		found = true
 	}
-	return time.FixedZone("", offset*60)
+	return time.FixedZone("", offset*60), found
 }
 
 // ---- relative reminders follow REST due changes ----

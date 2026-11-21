@@ -193,7 +193,7 @@ func recordExamples(t *testing.T) (map[string]recordedExample, map[string]any) {
 // see: the owner switches, habits, rules, a repeating task's occurrences.
 func recordMore(x *exampleRecorder, note string) {
 	x.t.Helper()
-	for _, name := range []string{"automations", "caldav", "calendar-feeds", "calendar-sync", "issues", "notification-channels", "project-invites"} {
+	for _, name := range []string{"automations", "caldav", "caldav/push", "calendar-feeds", "calendar-sync", "issues", "notification-channels", "project-invites"} {
 		path := "/api/v1/settings/" + name
 		got := x.call("GET "+path, path, nil, 200)
 		field := "enabled"
@@ -220,6 +220,9 @@ func recordMore(x *exampleRecorder, note string) {
 	x.call("POST /api/v1/tasks/{id}/occurrences/{date}/complete", occ+"2026-11-20/complete", nil, 200)
 	study := x.create(map[string]any{"title": "Study", "recurrence": "every weekday", "due": map[string]any{"date": "2026-11-23", "time": "18:00"}})
 	x.call("POST /api/v1/tasks/{id}/split", "/api/v1/tasks/"+study+"/split", map[string]any{"from": "2026-11-25", "changes": map[string]any{"title": "Study with Ada"}}, 200)
+	// An away period (away-periods): its skips and the stored period, then ended.
+	x.call("POST /api/v1/away", "/api/v1/away", map[string]any{"from": "2026-12-21", "to": "2026-12-27"}, 200)
+	x.call("DELETE /api/v1/away", "/api/v1/away", nil, 204)
 	// A connected AI app (connected-apps-list).
 	x.e.enableMCP(true)
 	x.e.connectOAuth(x.e.createOAuthClient("Gemini", "agent"))

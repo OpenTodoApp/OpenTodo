@@ -64,6 +64,21 @@
           "(type)": "ref:auth_status"
         }
       },
+      "away": {
+        "args": {
+          "from": "optional",
+          "to": "optional"
+        },
+        "flags": {
+          "end": "bool",
+          "keep-reminders": "bool",
+          "label": "string_list",
+          "project": "string_list"
+        },
+        "output": {
+          "(type)": "ref:away"
+        }
+      },
       "completion": {
         "args": {
           "shell": "required"
@@ -1055,6 +1070,11 @@
         "user.role": "string",
         "writes_allowed": "boolean",
         "writes_denied": "string"
+      },
+      "away": {
+        "(type)": "object",
+        "away": "string",
+        "skipped": "integer"
       },
       "comment": {
         "(type)": "object",
@@ -2181,6 +2201,7 @@
       "listed"
     ],
     "too_large": [
+      "400",
       "413",
       "listed"
     ],
@@ -2516,6 +2537,7 @@
       "user_prefs": {
         "add_position": "string",
         "app_link_schemes": "string",
+        "away": "string",
         "bento_order": "string",
         "briefing": "string",
         "daily_notes": "bool",
@@ -3656,6 +3678,7 @@
     "user_prefs": {
       "add_position": "string",
       "app_link_schemes": "string",
+      "away": "string",
       "bento_order": "string",
       "briefing": "string",
       "daily_notes": "bool",
@@ -3771,6 +3794,9 @@
       "statuses": [
         "204"
       ]
+    },
+    "DELETE /api/v1/away": {
+      "policy": "signed-in"
     },
     "DELETE /api/v1/backups/restore/safety-copies/{name}": {
       "policy": "owner-only.session-only.recent"
@@ -4226,6 +4252,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -5886,6 +5913,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -6407,6 +6435,9 @@
     "GET /api/v1/settings/caldav": {
       "policy": "signed-in"
     },
+    "GET /api/v1/settings/caldav/push": {
+      "policy": "signed-in"
+    },
     "GET /api/v1/settings/calendar-feeds": {
       "policy": "signed-in"
     },
@@ -6774,6 +6805,7 @@
         "events[].entityId": "string",
         "events[].id": "string",
         "events[].kind": "string",
+        "events[].minutes": "number|null",
         "events[].opIds": "array",
         "events[].projectId": "string",
         "events[].projectName": "string",
@@ -7183,6 +7215,35 @@
         "ownerId": "string",
         "pending": "any",
         "role": "string"
+      },
+      "statuses": [
+        "200"
+      ]
+    },
+    "GET /api/v1/workspaces/{id}/activity": {
+      "policy": "signed-in",
+      "response": {
+        "cursor": "string",
+        "events": "array",
+        "events[].actor": "string",
+        "events[].actorName": "string",
+        "events[].changes": "array",
+        "events[].changes[].field": "string",
+        "events[].changes[].from": "string",
+        "events[].changes[].to": "string",
+        "events[].device": "string",
+        "events[].entity": "string",
+        "events[].entityId": "string",
+        "events[].id": "string",
+        "events[].kind": "string",
+        "events[].minutes": "number|null",
+        "events[].opIds": "array",
+        "events[].projectId": "string",
+        "events[].projectName": "string",
+        "events[].taskId": "string",
+        "events[].taskTitle": "string",
+        "events[].ts": "number",
+        "more": "boolean"
       },
       "statuses": [
         "200"
@@ -8380,6 +8441,23 @@
       },
       "statuses": [
         "201"
+      ]
+    },
+    "POST /api/v1/away": {
+      "policy": "signed-in",
+      "request": {
+        "from": "string",
+        "labels": "array?",
+        "pauseReminders": "boolean|null?",
+        "projects": "array?",
+        "to": "string"
+      },
+      "response": {
+        "away": "string",
+        "skipped": "number"
+      },
+      "statuses": [
+        "200"
       ]
     },
     "POST /api/v1/backups/restore": {
@@ -11750,6 +11828,9 @@
       ]
     },
     "PUT /api/v1/settings/caldav": {
+      "policy": "owner-only"
+    },
+    "PUT /api/v1/settings/caldav/push": {
       "policy": "owner-only"
     },
     "PUT /api/v1/settings/calendar-feeds": {
