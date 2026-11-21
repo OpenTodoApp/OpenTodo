@@ -308,17 +308,17 @@ function saveFileCalls() {
   }
 }
 
-/** shell-repairs D5: the kinds `haptic` is called with, captured from the real call, and one a shell must ignore. */
+/** shell-repairs D5, haptic-kinds D1: the kinds `haptic` is called with, captured from the real call, and one a shell plays as `tick`. */
 function haptics() {
   const kinds: string[] = []
   window.opentodoShell = { bridge: 1, platform: 'android', app: '1.5.0', capabilities: ['haptics'], haptic: (kind) => void kinds.push(kind) }
-  for (const k of ['tick', 'success'] satisfies ShellHaptic[]) shellHaptic(k)
+  for (const k of ['tick', 'success', 'warning', 'error', 'selection'] satisfies ShellHaptic[]) shellHaptic(k)
   delete window.opentodoShell
   return {
-    description: 'Haptic feedback (shell-repairs D5): the kinds the web app hands haptic. A shell plays its own feedback for each and ignores a kind it does not know, without an error.',
+    description: 'Haptic feedback (shell-repairs D5, haptic-kinds D1): the kinds the web app hands haptic. A shell plays its own feedback for each and plays tick for a kind it does not know, without an error.',
     method: 'haptic' as const,
     kinds,
-    unknown: 'warning',
+    unknown: 'thud',
   }
 }
 

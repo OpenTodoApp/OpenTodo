@@ -115,8 +115,8 @@ class Bridge(
             "openAppLink" -> args.optString(0).takeIf { AppLink.allows(AppLink.list(args.optString(1, "[]")), it) }?.let { url -> main.post { host?.openAppLink(url) } }
             "requestMicrophone" -> if (host == null) answer(false) else host.requestMicrophone { answer(it) }
             "saveFile" -> if (host == null) answer(FileSave.FAILED) else host.saveFile(args.optString(0)) { answer(it) }
-            // An unknown kind is ignored, and so is every kind without a screen.
-            "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT)?.let { c -> main.post { host.haptic(c) } }
+            // An unknown kind plays tick (haptic-kinds D1); without a screen nothing plays.
+            "haptic" -> if (host != null) Haptic.constant(args.optString(0), Build.VERSION.SDK_INT).let { c -> main.post { host.haptic(c) } }
             "playCompletionSound" -> if (host != null && args.length() == 0) main.post { host.playCompletionSound() }
             // Without a screen there is no page to open, and the visible app has no run to end.
             "openAlarmSettings" -> if (host != null) main.post { host.openAlarmSettings() }

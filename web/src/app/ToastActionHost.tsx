@@ -10,6 +10,7 @@ import { Icon, ToastRegion, useToastClearance } from '../ui'
 import { ACTION_TOAST_MS, hideActionToast, showActionToast, useActionToast, useBulkToast, useToastTimer } from './bulk/toastStore'
 import { actionErrorMessage } from './actionError'
 import { onEntryFailure, type EntryFailure } from '../lib/focus/failures'
+import { playHaptic } from '../lib/haptics'
 import { useResetOnChange } from '../lib/useResetOnChange'
 import { t } from '../lib/i18n'
 
@@ -29,7 +30,7 @@ export function ToastActionHost() {
   const shown = toast && !offer ? toast : null
   const region = useRef<HTMLDivElement>(null)
   // The focus session reports a failed time entry; this is where it becomes a message.
-  useEffect(() => onEntryFailure((failure) => showActionToast(entryFailureMessage(failure))), [])
+  useEffect(() => onEntryFailure((failure) => { showActionToast(entryFailureMessage(failure)); playHaptic('error') }), [])
   /** Where focus was before it entered the toast, to give it back on dismiss. */
   const returnTo = useRef<HTMLElement | null>(null)
   // Removing the focused (or hovered) toast fires no blur (or pointerleave): the hold
