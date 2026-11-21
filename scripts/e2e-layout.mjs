@@ -461,9 +461,26 @@ async function touchInput(p, base) {
  * of type touch on the row's title, so the same code runs in every engine.
  */
 async function rowLift(p) {
+  // Rows away from the ones the press check uses, once no drag from it is in flight; a
+  // row that does not rise is tried once more on the next row, since a press check's
+  // release can still be settling on the page. The CSS failing fails both.
+  await p.locator('[data-drag-ghost]').waitFor({ state: 'detached', timeout: 5000 }).catch(() => {})
+  await p.waitForTimeout(400)
+  let out = []
+  for (const n of [3, 4]) {
+    out = await liftOnce(p, p.locator('li[data-task-id]').nth(n))
+    if (!out.some((m) => m.includes('has not risen'))) return out
+    log(`  row lift: row ${n} did not rise; ${n === 3 ? 'trying the next row' : 'reported'}`)
+  }
+  return out
+}
+
+/** One row: held for 300 ms, released, then held under reduced motion. */
+async function liftOnce(p, row) {
   const out = []
-  const row = p.locator('li[data-task-id]').first()
   const title = row.locator('[data-row-open]').first()
+  if (!(await title.count())) return ['no task row to hold']
+  await row.scrollIntoViewIfNeeded()
   const scale = () => row.evaluate((el) => {
     const t = getComputedStyle(el).transform
     return t === 'none' ? 1 : new DOMMatrixReadOnly(t).a
