@@ -363,7 +363,7 @@ The client SHALL show the offline state only when the browser reports no network
 - **THEN** the status shows an error with the message instead of offline
 
 ### Requirement: One tab syncs
-Of the tabs open in one browser, the client SHALL run the sync loop (exchanges, timer, live channel) in one tab only, chosen with a browser lock; the other tabs SHALL ask it to sync after their edits and on "Sync now", and SHALL show its status. When that tab closes or stops, another open tab SHALL take over. Without such a lock every tab SHALL sync on its own. All tabs share one local database and outbox, so their edits converge as those of one device.
+Of the tabs open in one browser, the client SHALL run the sync loop (exchanges, timer, live channel) in one tab only, chosen with a browser lock; the other tabs SHALL ask it to sync after their edits and on "Sync now", and SHALL show its status. When that tab closes or stops, another open tab SHALL take over. A tab waiting for the lock SHALL check about every 20 seconds that the tab holding it answers, and after two checks without an answer SHALL take the lock from it and run the sync loop itself; a tab that loses the lock this way SHALL stop its loop and wait for the lock again. Without such a lock every tab SHALL sync on its own. All tabs share one local database and outbox, so their edits converge as those of one device.
 
 #### Scenario: Two tabs
 - **WHEN** the app is open in two tabs and the user edits a task in the second one
@@ -372,6 +372,10 @@ Of the tabs open in one browser, the client SHALL run the sync loop (exchanges, 
 #### Scenario: The syncing tab closes
 - **WHEN** the tab that runs the sync loop is closed while another tab stays open
 - **THEN** the remaining tab starts syncing on its own
+
+#### Scenario: The syncing tab stops answering
+- **WHEN** another client of the browser holds the lock and never answers, and the user edits a task in an open tab
+- **THEN** within about a minute that tab takes the lock, sends the edit and pulls what other devices wrote
 
 ### Requirement: Sign-out reaches every tab
 A sign-out in one tab SHALL make the other open tabs reload, and the local data SHALL be cleared only while no tab is syncing, so no tab writes the previous account's data into the cleared database.
@@ -484,3 +488,33 @@ The client SHALL announce `invalid_ops`. It SHALL keep an operation the server r
 #### Scenario: Held while in the Trash
 - **WHEN** a held change of a task's title is waiting, the task is moved to the Trash and later restored
 - **THEN** the change is not offered while the task is in the Trash, the task keeps its edited title, and after the restore the change is offered again with the next retry
+
+### Requirement: Push-only exchange
+A device that only writes MAY send the optional feature `push_only` in a sync request. The server SHALL then apply the pushed operations exactly as in an ordinary exchange (validation, refusals, idempotence, waking other devices) and SHALL answer with the applied and duplicate counts, the refused operations with reasons, the head cursor of the caller's operations, the server time, `hasMore: false` and empty `ops`, `memberships` and `workspaces` lists. A server that does not know the feature SHALL ignore it and answer with an ordinary page, which a push-only device discards. The route keeps its policy: a signed-in session or a `full` token, `read` and `agent` tokens refused.
+
+#### Scenario: Push without pulling
+- **WHEN** a device with an empty cursor sends one task creation with `features: ["push_only"]` to an account holding 30,000 operations
+- **THEN** the task is applied, the answer carries no operations, its cursor is the account's head, and the user's other devices are woken
+
+#### Scenario: Duplicate push
+- **WHEN** the same push-only batch is sent twice
+- **THEN** the second answer counts the operations as duplicates and nothing changes
+
+#### Scenario: Refused operation
+- **WHEN** a push-only batch holds an operation on a project where the caller is a viewer
+- **THEN** the answer is 200 and lists that operation as refused with its reason, and the other operations are applied
+
+#### Scenario: Not signed in
+- **WHEN** a push-only request carries no session and no token, or a `read` token
+- **THEN** the answer is 401, or 403 `insufficient_scope` for the `read` token, and nothing is applied
+
+### Requirement: An exchange never stops the sync loop
+The client SHALL give up an exchange that has made no progress for 2 minutes, whatever step it waits on. A given-up exchange SHALL write nothing more. The status SHALL show an error, the edits SHALL stay queued, and the next exchange SHALL run with the usual backoff. Sign-out and passing the sync lock to another tab SHALL NOT wait on a given-up exchange.
+
+#### Scenario: A step of the exchange never finishes
+- **WHEN** the tab that runs the sync loop still answers the other tabs, but one step of its exchange never settles
+- **THEN** within about two minutes the status shows an error, and the next exchange sends the queued edits and pulls what other devices wrote
+
+#### Scenario: A slow first copy
+- **WHEN** a first sync pulls many pages over several minutes, each page answered within the request deadline
+- **THEN** the exchange is not given up

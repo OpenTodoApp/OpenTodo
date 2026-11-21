@@ -3,7 +3,7 @@ title: Obsidian plugin
 summary: Send lines from any Obsidian note to OpenTodo as tasks that link back to the note, and keep a folder of task files in two-way sync, on desktop and mobile, offline and encrypted.
 audience: user
 section: Reference
-specs: [offline-first-sync, markdown-vault]
+specs: [offline-first-sync, markdown-vault, obsidian-plugin]
 screens: []
 order: 52
 ---
