@@ -113,7 +113,8 @@ func (s *scrubber) tududiUsers(db *sql.DB) error {
 	return err
 }
 
-// scrubColumnWhere is scrubColumn limited to the rows matching where ("" for all).
+// scrubColumnWhere replaces the text in column of the rows matching where ("" for
+// all) with the placeholders of kind.
 func (s *scrubber) scrubColumnWhere(db *sql.DB, table, column, kind, where string) error {
 	cond := fmt.Sprintf(`"%s" IS NOT NULL AND "%s" != ''`, column, column)
 	if where != "" {
