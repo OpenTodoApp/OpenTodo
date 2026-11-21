@@ -317,8 +317,10 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
      */
     private fun finishSystemSignIn(callback: String, base: String) {
         val p = ssoPending
-        ssoPending = null
         val outcome = if (p == null) SystemSignIn.Outcome.Invalid else SystemSignIn.outcome(callback, p.state)
+        // Only the answer to this sign-in ends it: another app opening opentodo://sso with any
+        // other state leaves the pending sign-in as it was.
+        if (outcome != SystemSignIn.Outcome.Invalid) ssoPending = null
         when (outcome) {
             is SystemSignIn.Outcome.Code -> {
                 val script = SystemSignIn.redeemScript(outcome.code, p!!.verifier)
@@ -449,7 +451,12 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
             CookieManager.getInstance().flush()
             if (cameFromSignIn) { cameFromSignIn = false; view.clearHistory() }
             if (!mainFrameFailed && !serveOffline) scheduleShellRefresh()
-            pendingRedeemScript?.let { pendingRedeemScript = null; view.evaluateJavascript(it, null) }
+            // The code and its verifier go only to a page of the server that loaded: a login
+            // wall on another origin returned above, and a failed load drops them.
+            pendingRedeemScript?.let {
+                pendingRedeemScript = null
+                if (!mainFrameFailed && SignInFlow.originOf(url) == origin) view.evaluateJavascript(it, null)
+            }
             val script = pendingFilesScript ?: return
             if (Uri.parse(url).path == "/share") {
                 pendingFilesScript = null

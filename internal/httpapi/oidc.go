@@ -319,9 +319,13 @@ func (s *Server) handleOIDCAppSession(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusTooManyRequests, "rate_limited", "too many attempts, try again later")
 		return
 	}
-	// Only the server's own pages redeem a code: from another site, a page
-	// holding its own code and verifier could sign the web view in to the
-	// wrong account or link a foreign identity to a signed-in one.
+	// A browser page of another site may not redeem a code: holding its own
+	// code and verifier, it could sign the web view in to the wrong account or
+	// link a foreign identity to a signed-in one. This refuses what a browser
+	// declares cross-site (Origin, Sec-Fetch-Site); a client that is not a
+	// browser sends neither, and is let through like any API client. Such a
+	// client holding a code and its verifier gets a session for itself, which
+	// is the accepted risk of a custom URL scheme (design D6).
 	if !s.cookieWriteAllowed(r) {
 		writeError(w, http.StatusForbidden, "bad_origin", "cross-site request rejected")
 		return

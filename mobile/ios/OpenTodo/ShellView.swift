@@ -334,7 +334,12 @@ extension ShellController: ASWebAuthenticationPresentationContextProviding {
         guard let url else { return }
         switch SystemSignIn.outcome(of: url, state: pending.state) {
         case .code(let code):
-            guard let page = webView.url, Origin.same(page, origin) else { return }
+            // The code and its verifier go only to a page of the server. Anywhere else (a login
+            // wall, an error page) the code is dropped and the sign-in screen says it failed.
+            guard let page = webView.url, Origin.same(page, origin) else {
+                webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: "oidc_failed")))
+                return
+            }
             webView.evaluateJavaScript(SystemSignIn.redeemScript(code: code, verifier: pending.verifier))
         case .error(let code):
             webView.load(URLRequest(url: SystemSignIn.errorURL(server: origin, code: code)))

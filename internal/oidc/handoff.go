@@ -22,6 +22,13 @@ const HandoffTTL = 2 * time.Minute
 // are rate limited per address, so this only matters under a flood.
 const maxHandoffs = 1000
 
+// maxPerSubject bounds the codes one identity has waiting at once. The
+// callback cannot refuse an identity the provider accepted before the app
+// redeems it (a signed-in web view may link it to its account), so without it
+// one account at the provider could fill the store and hold every app sign-in
+// off for HandoffTTL.
+const maxPerSubject = 3
+
 // Handoff is a verified sign-in waiting for the app.
 type Handoff struct {
 	Claims    Claims // verified against the provider's keys, issuer, audience and nonce
@@ -58,6 +65,15 @@ func (s *Handoffs) Put(h Handoff) string {
 		}
 	}
 	if len(s.codes) >= maxHandoffs {
+		return ""
+	}
+	same := 0
+	for _, v := range s.codes {
+		if v.Issuer == h.Issuer && v.Claims.Subject == h.Claims.Subject {
+			same++
+		}
+	}
+	if same >= maxPerSubject {
 		return ""
 	}
 	code := ids.Secret(32)

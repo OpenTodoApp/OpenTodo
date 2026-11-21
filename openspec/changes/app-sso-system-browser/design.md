@@ -11,7 +11,7 @@ Rejected:
 
 ## D2. A single-use code bound to the app's PKCE challenge
 
-The callback of an app flow keeps the verified claims (and the raw ID token, the session's sign-out hint) under a 32-byte random code, valid for two minutes, taken once whatever the outcome, and bound to the S256 challenge the app sent to the start route (RFC 7636, as in RFC 8252 for native apps). Codes live in memory, like the consumed flow states: no table, no migration; a restart aborts a sign-in in flight and the person starts again. At most 1,000 wait at once (the start and callback routes are already rate limited per address).
+The callback of an app flow keeps the verified claims (and the raw ID token, the session's sign-out hint) under a 32-byte random code, valid for two minutes, taken once whatever the outcome, and bound to the S256 challenge the app sent to the start route (RFC 7636, as in RFC 8252 for native apps). Codes live in memory, like the consumed flow states: no table, no migration; a restart aborts a sign-in in flight and the person starts again. At most 1,000 wait at once (the start and callback routes are already rate limited per address), and at most three for one identity (issuer and subject). The callback cannot refuse an identity before the redeem, which may link it from a signed-in web view, so without that cap one account at the provider could fill the store and hold every app sign-in off for two minutes.
 
 `opentodo://sso` can be claimed by another app on Android, and any app or page can open it. A code intercepted that way is useless without the verifier, which never leaves the app; a code injected into the app fails the app's state check and, failing that, the verifier check, so a person can never be signed in to someone else's account or have someone else's identity linked.
 
@@ -29,9 +29,15 @@ The redeem is a same-origin `fetch` from a page of the server, run by the app in
 
 iPhone: `ASWebAuthenticationSession` with the `opentodo` callback scheme (already the app's URL scheme; the session catches the callback before the app's link handler), not ephemeral, so the browser's provider session is reused. Android: a `VIEW` intent with the Custom Tabs session extra (`android.support.customtabs.extra.SESSION`), which every browser with Custom Tabs honours, so no AndroidX browser library; a browser without them opens a page, which works the same. The return is an intent filter for `opentodo://sso` on the single-task main activity; the pending verifier survives the process being killed while the browser is in front (saved instance state).
 
+## D6. Accepted risk: another app running its own flow
+
+A custom URL scheme gives no app identity. Another app on the phone can start its own flow with its own challenge, open the start route in a browser, catch `opentodo://sso` and redeem the code with its own verifier. The redeem route refuses what a browser declares cross-site, but a client that is not a browser sends no `Origin` and passes like any API client. The result is a session for that app, for whoever completes the provider step in the browser it opened. If the provider remembers the person, that step may need no input from them.
+
+Verified links (Android App Links, iOS universal links) would tie the return to our app, but they need a file on the server's domain naming the app, signed with our key. That can't work for arbitrary self-hosted domains. We accept the risk: it needs a malicious app installed on the phone, and that app gets only what the person consents to in the browser it opens. A confirmation step in the browser before the hand-off, naming the account, would make a sign-in the person did not start visible.
+
 ## Data model and size
 
-No op, table or setting. Two optional fields in the signed flow-state cookie (`ac`, `as`). No new dependency on any platform; the Android APK and the iOS app grow by a few kilobytes of code. Server memory: at most 1,000 pending codes of about 2 KB each.
+No op, table or setting. Two optional fields in the signed flow-state cookie (`ac`, `as`). No new dependency on any platform; the Android APK and the iOS app grow by a few kilobytes of code. Server memory: at most 1,000 pending codes of about 2 KB each, three per identity.
 
 ## Interface
 
