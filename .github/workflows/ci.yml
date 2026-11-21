@@ -7,6 +7,8 @@ on:
   pull_request:
     # ready_for_review: a draft runs the light jobs only; marking it ready runs the rest.
     types: [opened, synchronize, reopened, ready_for_review]
+  # The merge queue: the pull request tier on the pull request merged onto the queue's base.
+  merge_group:
   # The full matrix every night and on demand; pushes to main run the pull request tier.
   schedule:
     - cron: "41 2 * * *"
@@ -76,7 +78,16 @@ jobs:
           BASE: ${{ github.event.pull_request.base.sha }}
           BEFORE: ${{ github.event.before }}
           DRAFT: ${{ github.event.pull_request.draft }}
+          QUEUE_BASE: ${{ github.event.merge_group.base_sha }}
         run: |
+          # The merge queue runs the pull request tier for what the queued change adds.
+          if [ "$EVENT" = "merge_group" ]; then
+            echo "full=false" >> "$GITHUB_OUTPUT"
+            git diff --name-only "$QUEUE_BASE" HEAD > changed.txt
+            cat changed.txt
+            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           # A push to main runs the pull request tier for what it changed since the
           # commit before; a push that cannot be compared (a new branch) runs everything.
           if [ "$EVENT" = "push" ] && [ "${REF#refs/tags/}" = "$REF" ] && [ -n "$BEFORE" ] \
@@ -1094,6 +1105,21 @@ jobs:
           go run ./cmd/websign verify $require http://127.0.0.1:18095/
           docker rm -f websign-check
 
+  # The one required check of the main branch ruleset and its merge queue: it fails when
+  # any job of the tier failed or was cancelled; a job skipped by the path filter passes.
+  result:
+    name: CI result
+    if: ${{ always() }}
+    needs: [changes, web-build, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, ios, app-check, app-native, skill, checks, image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
+
   # Publishes the multi-arch image (main and v* tags), only after every gate above
   # passed (OpenSpec ci-release-gates): `stable`, `latest` and the version tags never
   # move on a run whose layout, UI, docs, template or image checks failed. The image
@@ -1104,7 +1130,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && github.event_name == 'push' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result]
     permissions:
       contents: read
       packages: write
@@ -1195,7 +1221,7 @@ jobs:
     if: ${{ !cancelled() && !failure() && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, docker]
+    needs: [changes, web-build, web-sign, web, web-scale, server, layout, a11y-screens, docs-site, site-bundle, ui-storybook, ui-a11y, ui-visual, cli, extension, obsidian, android, android-sign, ios, app-check, app-native, skill, checks, image, result, docker]
     permissions:
       contents: write
       id-token: write # build provenance (Sigstore)
