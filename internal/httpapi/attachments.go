@@ -704,7 +704,10 @@ func (s *Server) writeExportZip(w http.ResponseWriter, r *http.Request, uid stri
 		panic(http.ErrAbortHandler)
 	}
 	// The account's profile picture (settings-refresh D10).
-	s.exportAvatar(zw, uid)
+	if err := s.exportAvatar(zw, uid); err != nil {
+		s.log.Error("export zip: profile picture", "err", err)
+		panic(http.ErrAbortHandler)
+	}
 	if s.blobs != nil {
 		for _, a := range attachments {
 			id := idOf(a["id"])

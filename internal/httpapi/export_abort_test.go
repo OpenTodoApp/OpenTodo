@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -89,4 +90,97 @@ func TestExportAbortsOnMidStreamFailure(t *testing.T) {
 			}
 		})
 	}
+}
+
+// dbDropWriter accepts every byte, but closes the database as the first bytes of
+// the export reach it: the pages read after that fail with a database error while
+// the response is already under way.
+type dbDropWriter struct {
+	failWriter
+	drop func()
+}
+
+func (d *dbDropWriter) Write(p []byte) (int, error) {
+	if d.drop != nil {
+		d.drop()
+		d.drop = nil
+	}
+	return d.buf.Write(p)
+}
+
+// TestExportAbortsOnDatabaseErrorMidStream: a database error on a later page
+// (not a failed write) aborts the connection too, for both formats, so the client
+// never keeps a file that looks complete but stops at the failed page.
+func TestExportAbortsOnDatabaseErrorMidStream(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		path string
+		zip  bool
+	}{
+		{"json", "/api/v1/export", false},
+		{"zip", "/api/v1/export?format=zip", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := newEnv(t, false)
+			e.register("a@example.com")
+			uid := e.ownerID()
+			secret := e.token("full")
+			e.seedTasks(uid, "", 0, 2000)
+			req := httptest.NewRequest("GET", tc.path, nil)
+			req.Header.Set("Authorization", "Bearer "+secret)
+			dw := &dbDropWriter{drop: func() { _ = e.db.Close() }}
+			func() {
+				defer func() {
+					if r := recover(); r != http.ErrAbortHandler {
+						t.Fatalf("want panic(http.ErrAbortHandler) on a database error mid-stream, got %v", r)
+					}
+				}()
+				e.handler.ServeHTTP(dw, req)
+				t.Fatal("the handler returned normally; a database error mid-stream must abort the connection")
+			}()
+			if dw.buf.Len() == 0 {
+				t.Fatal("nothing was sent before the database failed; the test did not reach the mid-stream path")
+			}
+			if tc.zip {
+				if _, err := zip.NewReader(bytes.NewReader(dw.buf.Bytes()), int64(dw.buf.Len())); err == nil {
+					t.Fatal("the partial transfer is a readable zip")
+				}
+			} else {
+				var doc any
+				if json.Unmarshal(dw.buf.Bytes(), &doc) == nil {
+					t.Fatal("the partial transfer is valid JSON")
+				}
+			}
+		})
+	}
+}
+
+// TestExportAvatarErrorAbortsZip: a profile picture that exists but cannot be read
+// aborts the zip export, as a failed attachment file does, instead of a finished
+// archive without it; no picture at all is simply no entry.
+func TestExportAvatarErrorAbortsZip(t *testing.T) {
+	e := newEnv(t, false)
+	e.register("a@example.com")
+	uid := e.ownerID()
+	secret := e.token("full")
+	p := e.server.avatarPath(uid)
+	if p == "" {
+		t.Skip("no avatar storage in this environment")
+	}
+	// A directory where the picture file belongs: it exists, but reading it fails.
+	if err := os.MkdirAll(p, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest("GET", "/api/v1/export?format=zip", nil)
+	req.Header.Set("Authorization", "Bearer "+secret)
+	rec := httptest.NewRecorder()
+	func() {
+		defer func() {
+			if r := recover(); r != http.ErrAbortHandler {
+				t.Fatalf("want panic(http.ErrAbortHandler) when the picture cannot be read, got %v", r)
+			}
+		}()
+		e.handler.ServeHTTP(rec, req)
+		t.Fatal("the zip export finished without the picture it could not read")
+	}()
 }
