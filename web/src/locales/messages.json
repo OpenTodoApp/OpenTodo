@@ -951,10 +951,10 @@
   "Activity": [
     "web/src/app/FeedView.tsx",
     "web/src/app/ProjectActivity.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/WorkspaceControl.tsx",
     "web/src/app/assistant/blocks/ActivityBlock.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/task-detail/ActivityTab.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx",
     "web/src/lib/assistantBlocks.ts"
@@ -2013,7 +2013,7 @@
   ],
   "Archive": [
     "web/src/app/ArchivePrompt.tsx",
-    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/menus/projectMenu.tsx",
     "web/src/app/review/ProjectWalk.tsx"
   ],
   "Archive <strong>{name}</strong>? {kbd}": [
@@ -2047,10 +2047,10 @@
     "web/src/lib/shortcuts.ts"
   ],
   "Archive with sub-projects": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Archive “{name}”?": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Archived": [
     "web/src/app/ProjectsView.tsx",
@@ -2258,7 +2258,6 @@
   ],
   "Assistant": [
     "web/src/app/AssistantsPanel.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sidebar.tsx",
     "web/src/app/SidebarFooter.tsx",
     "web/src/app/TaskListView.tsx",
@@ -2267,6 +2266,7 @@
     "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
     "web/src/app/assistant/AssistantRoot.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/settingsIndex.ts",
     "web/src/app/settingsSections.ts",
     "web/src/app/task-detail/TaskActionsMenu.tsx",
@@ -2314,6 +2314,9 @@
   ],
   "At most 4 photos go with one message.": [
     "web/src/lib/assistantImages.ts"
+  ],
+  "At most 90 days": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "At most one year before or after.": [
     "web/src/app/DefaultRemindersSettings.tsx"
@@ -2436,6 +2439,19 @@
   ],
   "Available now": [
     "web/src/app/filter/conditionText.ts"
+  ],
+  "Away": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
+  "Away set": [
+    "web/src/lib/awayActions.ts"
+  ],
+  "Away until {day}": [
+    "web/src/app/away/AwayMenu.tsx"
+  ],
+  "Away…": [
+    "web/src/app/away/AwayMenu.tsx",
+    "web/src/app/palette/registry.ts"
   ],
   "A–Z": [
     "web/src/app/notes/NotesPage.tsx"
@@ -3428,6 +3444,9 @@
   ],
   "Choose the calendar to write tasks into.": [
     "web/src/app/CalendarSyncPanel.tsx"
+  ],
+  "Choose the first and the last day": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "Choose the paint for the hallway": [
     "web/src/app/themes/previewData.ts"
@@ -4942,7 +4961,7 @@
     "web/src/app/TrashView.tsx"
   ],
   "Delete project": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Delete reminder": [
     "web/src/app/RemindersField.tsx"
@@ -5027,8 +5046,8 @@
     "web/src/app/themes/ThemeEditor.tsx"
   ],
   "Delete “{name}”?": [
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/locations/PlacesView.tsx",
+    "web/src/app/menus/projectMenu.tsx",
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Delete “{text}”": [
@@ -5304,8 +5323,8 @@
   ],
   "Display mode": [
     "web/src/app/PreferencesPanels.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/ViewsView.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/task-list/ListChrome.tsx",
     "web/src/lib/shortcuts.ts"
   ],
@@ -5598,7 +5617,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Duplicate…": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Duration": [
     "web/src/app/filter/ConditionEditor.tsx"
@@ -5969,6 +5988,9 @@
     "web/src/app/menus/reviewMenu.ts",
     "web/src/app/palette/registry.ts",
     "web/src/app/review/ProjectWalk.tsx"
+  ],
+  "End now": [
+    "web/src/app/away/AwayMenu.tsx"
   ],
   "End of month": [
     "web/src/lib/dates.ts"
@@ -6418,6 +6440,9 @@
   "Everyone with an account; you manage every account and choose admins.": [
     "web/src/lib/settingsCopy.ts"
   ],
+  "Everything": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
   "Everything goes into {workspace}": [
     "web/src/app/ImportScreen.tsx"
   ],
@@ -6676,7 +6701,7 @@
     "web/src/app/FilterView.tsx"
   ],
   "Fields…": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "File": [
     "web/src/app/ImportScreen.tsx",
@@ -6796,11 +6821,11 @@
     "web/src/app/calendar/PlanPanel.tsx"
   ],
   "Find a project…": [
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/ProjectPickerField.tsx",
     "web/src/app/ProjectsView.tsx",
     "web/src/app/bulk/BulkActions.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx",
+    "web/src/app/menus/projectMenu.tsx",
     "web/src/app/notes/NoteBulkActions.tsx",
     "web/src/app/routines/words.tsx"
   ],
@@ -6840,7 +6865,7 @@
     "web/src/app/SyncScopeField.tsx"
   ],
   "Find a workspace…": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Find an interval…": [
     "web/src/app/menus/reviewMenu.ts"
@@ -7179,6 +7204,7 @@
   "From": [
     "web/src/app/AuditPanel.tsx",
     "web/src/app/WorkspaceActivity.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/lib/rules/sentence.ts"
   ],
   "From Obsidian": [
@@ -7949,9 +7975,9 @@
   ],
   "History": [
     "web/src/app/HistoryPanel.tsx",
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/assistant/AssistantPage.tsx",
     "web/src/app/assistant/AssistantPanel.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/task-detail/ConversationTabs.tsx"
@@ -10409,7 +10435,7 @@
     "web/src/app/calendar/occurrenceMenu.tsx"
   ],
   "Move to": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Move to Trash": [
     "web/src/app/bulk/BulkActions.tsx",
@@ -10447,10 +10473,10 @@
     "web/src/app/bulk/BulkActions.tsx"
   ],
   "Move to workspace": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Move to workspace…": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Move to {name}": [
     "web/src/app/workspaceNav.ts"
@@ -11320,10 +11346,10 @@
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
   "No other project can hold this one": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "No other workspace": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "No paid plan: if it saves you a subscription, a coffee helps.": [
     "web/src/lib/settingsCopy.ts"
@@ -11742,6 +11768,9 @@
     "web/src/app/ScheduleSheet.tsx",
     "web/src/lib/facets.ts"
   ],
+  "Not sent {day}: you were away": [
+    "web/src/app/DigestCard.tsx"
+  ],
   "Not sent: the account uses end-to-end encryption": [
     "web/src/app/DigestCard.tsx"
   ],
@@ -12021,6 +12050,9 @@
     "web/src/app/MonthView.tsx",
     "web/src/app/calendar/PlanAgenda.tsx",
     "web/src/app/calendar/WeekAgenda.tsx"
+  ],
+  "Nothing repeats in these days": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "Nothing scheduled yet.": [
     "web/src/app/task-list/ListChrome.tsx"
@@ -13397,6 +13429,9 @@
   "Pause all routines": [
     "web/src/app/routines/RoutinesView.tsx"
   ],
+  "Pause reminders": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
   "Paused": [
     "web/src/app/focus/FocusParts.tsx",
     "web/src/app/routines/RoutinesView.tsx",
@@ -13934,6 +13969,7 @@
     "web/src/app/TriageView.tsx",
     "web/src/app/WorkspaceActivity.tsx",
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
+    "web/src/app/away/AwayDialog.tsx",
     "web/src/app/calendar/colorByControls.tsx",
     "web/src/app/completed/CompletedOptionsBody.tsx",
     "web/src/app/display/DisplayScreen.tsx",
@@ -14097,6 +14133,9 @@
     "web/src/lib/review.ts",
     "web/src/lib/rules/sentence.ts",
     "web/src/lib/settingsCopy.ts"
+  ],
+  "Projects and labels": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "Projects hold tasks; labels describe them. Create a project to group work in the sidebar.": [
     "web/src/app/ProjectsView.tsx"
@@ -14895,6 +14934,9 @@
   "Repeating occurrences": [
     "web/src/app/task-list/ProjectedGroupRows.tsx"
   ],
+  "Repeating tasks": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
   "Repeating tasks keep a date": [
     "web/src/app/task-detail/SectorChoice.tsx"
   ],
@@ -15326,8 +15368,8 @@
     "web/src/app/routines/RoutinesView.tsx"
   ],
   "Routines": [
-    "web/src/app/ProjectHeader.tsx",
     "web/src/app/Sidebar.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/routines/RoutineEditor.tsx",
     "web/src/app/routines/RoutinesView.tsx",
     "web/src/app/routines/Starters.tsx",
@@ -15545,7 +15587,7 @@
     "web/src/app/TemplateDialogs.tsx"
   ],
   "Save as template…": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "Save as view": [
     "web/src/app/FilterView.tsx",
@@ -15762,6 +15804,9 @@
   ],
   "Search projects": [
     "web/src/app/filter/ConditionEditor.tsx"
+  ],
+  "Search projects and labels": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "Search results": [
     "web/src/app/help/HelpView.tsx"
@@ -16116,6 +16161,9 @@
     "web/src/app/habits/HabitPage.tsx",
     "web/src/app/habits/HabitRow.tsx"
   ],
+  "Set away": [
+    "web/src/app/away/AwayDialog.tsx"
+  ],
   "Set by OPENTODO_GOOGLE_CLIENT_ID and OPENTODO_GOOGLE_CLIENT_SECRET on this server.": [
     "web/src/app/CalendarSyncDialogs.tsx"
   ],
@@ -16404,7 +16452,7 @@
   ],
   "Show connections": [
     "web/src/app/LinkedReferences.tsx",
-    "web/src/app/ProjectHeader.tsx",
+    "web/src/app/menus/useProjectMenu.tsx",
     "web/src/app/notes/NoteRow.tsx",
     "web/src/app/palette/registry.ts",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
@@ -16881,6 +16929,9 @@
   ],
   "Skipped: {title}.": [
     "web/src/app/TriageView.tsx"
+  ],
+  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "Slipped": [
     "web/src/app/review/MonthlyLook.tsx"
@@ -18439,6 +18490,9 @@
   ],
   "The last attempt hit the sending limit; it is retried": [
     "web/src/app/DigestCard.tsx"
+  ],
+  "The last day comes before the first": [
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "The last day must not be before the first day": [
     "web/src/lib/frames.ts"
@@ -20135,7 +20189,8 @@
   ],
   "To": [
     "web/src/app/AuditPanel.tsx",
-    "web/src/app/WorkspaceActivity.tsx"
+    "web/src/app/WorkspaceActivity.tsx",
+    "web/src/app/away/AwayDialog.tsx"
   ],
   "To answer, the assistant sends what you type and the task data it needs from this server to <strong>{provider}</strong>{model}, with your own API key. You chose it in Settings → Integrations → Assistant. Nothing is sent before you accept.": [
     "web/src/app/assistant/AssistantConsent.tsx"
@@ -21679,10 +21734,10 @@
     "web/src/app/review/ReviewView.tsx"
   ],
   "What’s next in “{name}”?": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/useProjectMenu.tsx"
   ],
   "What’s next?": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/useProjectMenu.tsx"
   ],
   "When": [
     "web/src/app/AuditPanel.tsx",
@@ -25746,19 +25801,19 @@
     "web/src/app/rules/RuleFields.tsx"
   ],
   "{n, plural, one {It is deleted for every member. A copy of its # open task goes to your Inbox.} other {It is deleted for every member. Copies of its # open tasks go to your Inbox.}}": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "{n, plural, one {It is removed from # task. The tasks themselves stay.} other {It is removed from # tasks. The tasks themselves stay.}}": [
     "web/src/app/LabelsView.tsx"
   ],
   "{n, plural, one {It moves to the Trash with # open task. You can restore it from the Trash.} other {It moves to the Trash with # open tasks. You can restore it from the Trash.}}": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "{n, plural, one {Its open task moves to “No section” in this project.} other {Its # open tasks move to “No section” in this project.}}": [
     "web/src/app/Sections.tsx"
   ],
   "{n, plural, one {Its sub-project moves up one level.} other {Its # sub-projects move up one level.}}": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "{n, plural, one {Kept for # day} other {Kept for # days}}": [
     "web/src/app/habits/HabitPage.tsx",
@@ -26380,10 +26435,10 @@
     "web/src/app/routines/Starters.tsx"
   ],
   "{tasks, plural, one {It leaves the sidebar with # open task.} other {It leaves the sidebar with # open tasks.}} You can unarchive it from Settings → Data.": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "{tasks, plural, one {It leaves the sidebar with # open task} other {It leaves the sidebar with # open tasks}} {subs, plural, one {and its sub-project} other {and its # sub-projects}}. You can unarchive it from Settings → Data.": [
-    "web/src/app/ProjectHeader.tsx"
+    "web/src/app/menus/projectMenu.tsx"
   ],
   "{task} already matches {column}": [
     "web/src/lib/undoActions.ts"
@@ -26568,57 +26623,5 @@
   ],
   "⤼ Skip": [
     "web/src/app/RecurrenceField.tsx"
-  ],
-  "At most 90 days": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Away": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Away set": [
-    "web/src/lib/awayActions.ts"
-  ],
-  "Away until {day}": [
-    "web/src/app/away/AwayMenu.tsx"
-  ],
-  "Away…": [
-    "web/src/app/away/AwayMenu.tsx",
-    "web/src/app/palette/registry.ts"
-  ],
-  "Choose the first and the last day": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "End now": [
-    "web/src/app/away/AwayMenu.tsx"
-  ],
-  "Everything": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Not sent {day}: you were away": [
-    "web/src/app/DigestCard.tsx"
-  ],
-  "Nothing repeats in these days": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Pause reminders": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Projects and labels": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Repeating tasks": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Search projects and labels": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Set away": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": [
-    "web/src/app/away/AwayDialog.tsx"
-  ],
-  "The last day comes before the first": [
-    "web/src/app/away/AwayDialog.tsx"
   ]
 }
