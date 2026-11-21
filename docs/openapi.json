@@ -1203,6 +1203,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -1260,6 +1261,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -3885,6 +3892,117 @@
           "Health and authentication"
         ],
         "x-opentodo-policy": "public"
+      }
+    },
+    "/api/v1/away": {
+      "delete": {
+        "description": "end the away period now; its skips stay → 204",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "deleteAway",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Delete away",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "post": {
+        "description": "set an away period, `{from, to, projects?, labels?, pauseReminders?}` → `{away, skipped}`; see [Away](https://open-todo.app/docs/api/#away)",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "postAway",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "from": "2026-12-21",
+                "to": "2026-12-27"
+              },
+              "schema": {
+                "properties": {
+                  "from": {
+                    "type": "string"
+                  },
+                  "labels": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "pauseReminders": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "projects": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "away": "2026-12-21..2026-12-27 quiet",
+                  "skipped": 13
+                },
+                "schema": {
+                  "properties": {
+                    "away": {
+                      "type": "string"
+                    },
+                    "skipped": {
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Away",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
       }
     },
     "/api/v1/backups": {
@@ -15654,9 +15772,9 @@
                     {
                       "clientId": "00000000-0000-4000-8000-000000000019",
                       "clientName": "Gemini",
-                      "createdAt": 1794906000154,
+                      "createdAt": 1794906000164,
                       "id": "00000000-0000-4000-8000-000000000020",
-                      "lastUsedAt": 1794906000157,
+                      "lastUsedAt": 1794906000167,
                       "scope": "agent",
                       "workspaces": []
                     }
@@ -21017,14 +21135,14 @@
                       "text": "- decided: green"
                     }
                   ],
-                  "body_version": "1794906000101:server:0a1b2c3d",
-                  "created_at": 1794906000100,
+                  "body_version": "1794906000103:server:0a1b2c3d",
+                  "created_at": 1794906000102,
                   "description": "- fence\n- beds",
                   "energy": null,
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000011",
                   "origin": null,
-                  "position": 1794906000100,
+                  "position": 1794906000102,
                   "priority": 4,
                   "rotation": [],
                   "sector": null,
@@ -24064,6 +24182,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -24121,6 +24240,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -32538,6 +32663,79 @@
         "x-opentodo-policy": "owner-only"
       }
     },
+    "/api/v1/settings/caldav/push": {
+      "get": {
+        "description": "`{enabled, available}`",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "getSettingsCaldavPush",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "available": true,
+                  "enabled": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get settings caldav push",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "signed-in"
+      },
+      "put": {
+        "description": "`{enabled}` → the same shape\n\nOnly the server's owner.",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#administration-owner-and-admins"
+        },
+        "operationId": "putSettingsCaldavPush",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "example": {
+                "enabled": false
+              }
+            }
+          },
+          "description": "The body's fields are not described yet; the example shows one."
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "enabled": false
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Update settings caldav push",
+        "tags": [
+          "Administration (owner and admins)"
+        ],
+        "x-opentodo-policy": "owner-only"
+      }
+    },
     "/api/v1/settings/calendar-feeds": {
       "get": {
         "description": "`{enabled}`; off by default, `OPENTODO_CALENDAR_FEEDS=true` presets it on first start; a change is recorded as `settings.changed`",
@@ -37115,6 +37313,7 @@
                       "entityId": "00000000-0000-4000-8000-000000000001",
                       "id": "00000000-0000-4000-8000-000000000001",
                       "kind": "example",
+                      "minutes": 1,
                       "opIds": [
                         "00000000-0000-4000-8000-000000000001"
                       ],
@@ -37172,6 +37371,12 @@
                           },
                           "kind": {
                             "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
                           },
                           "opIds": {
                             "items": {
@@ -37891,7 +38096,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000122,
+                  "created_at": 1794906000124,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-27"
@@ -37901,7 +38106,7 @@
                   "id": "00000000-0000-4000-8000-000000000013",
                   "occurrence_date": "2026-11-27",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -37961,9 +38166,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000132,
+                  "completed_at": 1794906000134,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000132,
+                  "created_at": 1794906000134,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-20"
@@ -37973,7 +38178,7 @@
                   "id": "00000000-0000-4000-8000-000000000016",
                   "occurrence_date": "2026-11-20",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -38033,9 +38238,9 @@
                 "example": {
                   "appends": [],
                   "body_version": "0",
-                  "completed_at": 1794906000127,
+                  "completed_at": 1794906000129,
                   "completed_by": "00000000-0000-4000-8000-000000000001",
-                  "created_at": 1794906000127,
+                  "created_at": 1794906000129,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-12-04"
@@ -38045,7 +38250,7 @@
                   "id": "00000000-0000-4000-8000-000000000015",
                   "occurrence_date": "2026-12-04",
                   "origin": null,
-                  "position": 1794906000118,
+                  "position": 1794906000120,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": null,
@@ -38698,7 +38903,7 @@
                   "appends": [],
                   "body_version": "0",
                   "completed_at": null,
-                  "created_at": 1794906000141,
+                  "created_at": 1794906000143,
                   "deleted_at": null,
                   "due": {
                     "date": "2026-11-25",
@@ -38708,7 +38913,7 @@
                   "fields": {},
                   "id": "00000000-0000-4000-8000-000000000017",
                   "origin": null,
-                  "position": 1794906000137,
+                  "position": 1794906000139,
                   "priority": 4,
                   "project_id": null,
                   "recurrence": "every weekday",
@@ -43099,6 +43304,160 @@
           "Workspaces"
         ],
         "x-opentodo-policy": "signed-in.full-tokens"
+      }
+    },
+    "/api/v1/workspaces/{id}/activity": {
+      "get": {
+        "description": "every actor's events in the workspace's projects and Inbox that you can read; `?cursor=\u0026limit=\u0026from=\u0026to=\u0026project=\u0026actor=\u0026kind=`; see [Workspace activity](https://open-todo.app/docs/api/#workspace-activity)",
+        "externalDocs": {
+          "url": "https://open-todo.app/docs/api/#tasks-projects-and-other-synced-data"
+        },
+        "operationId": "getWorkspacesByIdActivity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "cursor": "example",
+                  "events": [
+                    {
+                      "actor": "example",
+                      "actorName": "Ada",
+                      "changes": [
+                        {
+                          "field": "example",
+                          "from": "example",
+                          "to": "example"
+                        }
+                      ],
+                      "device": "example",
+                      "entity": "example",
+                      "entityId": "00000000-0000-4000-8000-000000000001",
+                      "id": "00000000-0000-4000-8000-000000000001",
+                      "kind": "example",
+                      "minutes": 1,
+                      "opIds": [
+                        "00000000-0000-4000-8000-000000000001"
+                      ],
+                      "projectId": "00000000-0000-4000-8000-000000000001",
+                      "projectName": "Ada",
+                      "taskId": "00000000-0000-4000-8000-000000000001",
+                      "taskTitle": "Buy paint for the fence",
+                      "ts": 1794906000000
+                    }
+                  ],
+                  "more": false
+                },
+                "schema": {
+                  "properties": {
+                    "cursor": {
+                      "type": "string"
+                    },
+                    "events": {
+                      "items": {
+                        "properties": {
+                          "actor": {
+                            "type": "string"
+                          },
+                          "actorName": {
+                            "type": "string"
+                          },
+                          "changes": {
+                            "items": {
+                              "properties": {
+                                "field": {
+                                  "type": "string"
+                                },
+                                "from": {
+                                  "type": "string"
+                                },
+                                "to": {
+                                  "type": "string"
+                                }
+                              },
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "device": {
+                            "type": "string"
+                          },
+                          "entity": {
+                            "type": "string"
+                          },
+                          "entityId": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "minutes": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "opIds": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "taskTitle": {
+                            "type": "string"
+                          },
+                          "ts": {
+                            "type": "number"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "more": {
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Get workspace activity",
+        "tags": [
+          "Tasks, projects and other synced data"
+        ],
+        "x-opentodo-policy": "signed-in"
       }
     },
     "/api/v1/workspaces/{id}/groups": {

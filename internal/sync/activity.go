@@ -15,10 +15,10 @@ import (
 // order, each with its Actor. Like History (trash-and-history D3) it reads the
 // op log directly and only from scopes the user can read; it never writes.
 //
-//   - task: the task's ops and the ops of its comments;
-//   - project: in a shared project every task, comment and project op of its
-//     scope; in a personal project the project's ops, the ops of the tasks that
-//     currently belong to it and of their comments.
+//   - task: the task's ops and the ops of its comments and time entries;
+//   - project: in a shared project every task, comment, time entry and project
+//     op of its scope; in a personal project the project's ops, the ops of the
+//     tasks that currently belong to it and of their comments and time entries.
 //
 // ErrNotFound when the user can see no such task or project.
 func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([]Op, error) {
@@ -38,7 +38,7 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 	}
 	const cols = `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq `
 	if entity == "project" && strings.HasPrefix(scope, "project:") {
-		return s.readOps(ctx, cols+`WHERE s.scope_id = ? AND o.entity IN ('task','project','comment') ORDER BY o.seq`, scope)
+		return s.readOps(ctx, cols+`WHERE s.scope_id = ? AND o.entity IN `+activityEntities+` ORDER BY o.seq`, scope)
 	}
 	targets := map[string][]string{}
 	if entity == "task" {
@@ -55,9 +55,14 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 			return nil, err
 		}
 		targets["comment"] = append(targets["comment"], cids...)
+		eids, err := childIDsWhere(ctx, s.db, scope, "time_entry", "task_id", tid, false)
+		if err != nil {
+			return nil, err
+		}
+		targets["time_entry"] = append(targets["time_entry"], eids...)
 	}
 	var out []Op
-	for _, ent := range []string{"project", "task", "comment"} {
+	for _, ent := range []string{"project", "task", "comment", "time_entry"} {
 		ids := targets[ent]
 		for len(ids) > 0 {
 			n := min(len(ids), 400)
@@ -75,9 +80,13 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 	return out, nil
 }
 
+// activityEntities are the entities activity is derived from (activity.Derive
+// ignores every other one), as an SQL list.
+const activityEntities = `('task','project','comment','time_entry')`
+
 // FeedReader reads the ops the activity feed is derived from (OpenSpec change
 // `activity-feed`, design D4; paging per `server-query-costs`): every task,
-// comment and project op of each shared project the user is a member of, one
+// comment, time entry and project op of each shared project the user is a member of, one
 // entity at a time, newest entity first. Personal data never appears.
 //
 // The events of an entity depend only on that entity's own ops (the activity
@@ -86,8 +95,8 @@ func (s *Service) ActivityOps(ctx context.Context, userID, entity, id string) ([
 // are ordered by their latest op at or before upTo; every event at or before
 // upTo starts at one of its entity's ops, so once the entities whose latest op
 // is at or after a bound are read, every event from bound to upTo is known.
-// Opaque document fields (activity.Opaque, e.g. task.notes_doc), which the rule
-// ignores, are never read.
+// Opaque document fields (activity.Opaque, e.g. task.notes_doc) and time entry
+// notes, which the rule ignores, are never read.
 type FeedReader struct {
 	s    *Service
 	ents []feedEntity // newest latest op first
@@ -95,13 +104,15 @@ type FeedReader struct {
 }
 
 type feedEntity struct {
-	project, entity, id string
-	latest              int64
+	// scope is where the entity's ops are read; project is the project its
+	// events belong to ("" for the Inbox).
+	scope, project, entity, id string
+	latest                     int64
 }
 
 // opaqueFilter is the SQL condition that leaves out the opaque fields.
 func opaqueFilter() (string, []any) {
-	keys := make([]string, 0, len(activity.Opaque))
+	keys := []string{"time_entry.note"}
 	for k := range activity.Opaque {
 		keys = append(keys, k)
 	}
@@ -130,27 +141,38 @@ func (s *Service) FeedReader(ctx context.Context, userID, projectID string, upTo
 		if projectID != "" && pid != projectID {
 			continue
 		}
-		rows, err := s.db.QueryContext(ctx, `SELECT o.entity, o.entity_id, MAX(o.ts) FROM ops o JOIN op_scopes s ON s.seq = o.seq
-			WHERE s.scope_id = ? AND o.entity IN ('task','project','comment') AND o.ts <= ?`+opaque+` GROUP BY o.entity, o.entity_id`,
-			append([]any{ProjectScope(pid), upTo}, opaqueArgs...)...)
+		ents, err := s.latestByEntity(ctx, ProjectScope(pid), math.MinInt64, upTo, opaque, opaqueArgs)
 		if err != nil {
 			return nil, err
 		}
-		for rows.Next() {
-			e := feedEntity{project: pid}
-			if err := rows.Scan(&e.entity, &e.id, &e.latest); err != nil {
-				rows.Close()
-				return nil, err
-			}
+		for _, e := range ents {
+			e.project = pid
 			r.ents = append(r.ents, e)
-		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
-			return nil, err
 		}
 	}
 	sort.SliceStable(r.ents, func(i, j int) bool { return r.ents[i].latest > r.ents[j].latest })
 	return r, nil
+}
+
+// latestByEntity lists the activity entities of a scope with their latest op at
+// or before upTo, leaving out those whose latest op is before from.
+func (s *Service) latestByEntity(ctx context.Context, scope string, from, upTo int64, opaque string, opaqueArgs []any) ([]feedEntity, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT o.entity, o.entity_id, MAX(o.ts) AS latest FROM ops o JOIN op_scopes s ON s.seq = o.seq
+		WHERE s.scope_id = ? AND o.entity IN `+activityEntities+` AND o.ts <= ?`+opaque+` GROUP BY o.entity, o.entity_id HAVING latest >= ?`,
+		append(append([]any{scope, upTo}, opaqueArgs...), from)...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []feedEntity
+	for rows.Next() {
+		e := feedEntity{scope: scope}
+		if err := rows.Scan(&e.entity, &e.id, &e.latest); err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
 }
 
 // Next reads the whole history (in seq order, opaque fields left out) of at
@@ -166,14 +188,16 @@ func (r *FeedReader) Next(ctx context.Context, n int) (ops map[string][]Op, boun
 	batch := r.ents[r.next:end]
 	r.next = end
 	ops = map[string][]Op{}
-	ids := map[[2]string][]string{} // (project, entity) -> ids
+	ids := map[[2]string][]string{}     // (scope, entity) -> ids
+	projectOf := map[[2]string]string{} // (entity, id) -> project
 	var keys [][2]string
 	for _, e := range batch {
-		k := [2]string{e.project, e.entity}
+		k := [2]string{e.scope, e.entity}
 		if _, ok := ids[k]; !ok {
 			keys = append(keys, k)
 		}
 		ids[k] = append(ids[k], e.id)
+		projectOf[[2]string{e.entity, e.id}] = e.project
 	}
 	opaque, opaqueArgs := opaqueFilter()
 	const cols = `SELECT o.seq,o.op_id,o.entity,o.entity_id,o.field,o.value,o.ts,o.device,o.user_id FROM ops o JOIN op_scopes s ON s.seq = o.seq `
@@ -184,11 +208,14 @@ func (r *FeedReader) Next(ctx context.Context, n int) (ops map[string][]Op, boun
 			chunk := list[:c]
 			list = list[c:]
 			got, err := r.s.readOps(ctx, cols+`WHERE s.scope_id = ? AND o.entity = ? AND o.entity_id IN (`+placeholders(c)+`)`+opaque,
-				append(append([]any{ProjectScope(k[0]), k[1]}, anys(chunk)...), opaqueArgs...)...)
+				append(append([]any{k[0], k[1]}, anys(chunk)...), opaqueArgs...)...)
 			if err != nil {
 				return nil, 0, false, err
 			}
-			ops[k[0]] = append(ops[k[0]], got...)
+			for _, op := range got {
+				pid := projectOf[[2]string{op.Entity, op.EntityID}]
+				ops[pid] = append(ops[pid], op)
+			}
 		}
 	}
 	for pid := range ops {

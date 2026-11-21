@@ -701,6 +701,11 @@ class MainActivity : AppCompatActivity(), Bridge.Host {
         }
     }
 
+    /** app-links D6: the bridge checked the scheme against the viewer's list; the system picks the app. */
+    override fun openAppLink(url: String) {
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)) } catch (e: ActivityNotFoundException) { /* no app for it */ }
+    }
+
     companion object {
         const val ACTION_CHANGE_SERVER = "app.opentodo.CHANGE_SERVER"
     }

@@ -152,7 +152,12 @@ function useCanvas(view: MutableRefObject<View>, hover: MutableRefObject<number 
     mo?.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-accent'] })
     const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null
     mq?.addEventListener?.('change', retheme)
-    return () => { ro?.disconnect(); mo?.disconnect(); mq?.removeEventListener?.('change', retheme) }
+    // Labels are drawn on the canvas, so a web font that arrives after the first frame changes
+    // their metrics (measureText) and glyphs; redraw once it loads, or the labels stay on the
+    // fallback font until the next interaction (which also makes the graph story settle late).
+    let liveFonts = true
+    if (typeof document !== 'undefined' && document.fonts?.status === 'loading') void document.fonts.ready.then(() => { if (liveFonts) retheme() })
+    return () => { liveFonts = false; ro?.disconnect(); mo?.disconnect(); mq?.removeEventListener?.('change', retheme) }
   }, [draw, invalidate, onResize])
   return { host, canvas, cam, size, draw, invalidate }
 }

@@ -17,6 +17,7 @@ type evalVectors struct {
 	TrackedOc map[string]int               `json:"tracked_occurrence"`
 	Me        string                       `json:"me"`
 	Members   []Member                     `json:"members"`
+	Sections  []map[string]any             `json:"sections"`
 	Tasks     []map[string]json.RawMessage `json:"tasks"`
 	Cases     []struct {
 		Query    string   `json:"query"`
@@ -66,7 +67,7 @@ func TestEvaluateVectors(t *testing.T) {
 	for _, m := range v.Tasks {
 		tasks = append(tasks, taskRow(m))
 	}
-	ctx := Context{Today: v.Today, WeekStart: v.WeekStart, Labels: rowsOf(v.Labels), Projects: rowsOf(v.Projects), Fields: rowsOf(v.Fields), Tasks: tasks, Tracked: v.Tracked, TrackedOccurrence: v.TrackedOc, Me: v.Me, Members: v.Members}
+	ctx := Context{Today: v.Today, WeekStart: v.WeekStart, Labels: rowsOf(v.Labels), Projects: rowsOf(v.Projects), Sections: rowsOf(v.Sections), Fields: rowsOf(v.Fields), Tasks: tasks, Tracked: v.Tracked, TrackedOccurrence: v.TrackedOc, Me: v.Me, Members: v.Members}
 	for _, c := range v.Cases {
 		pred, warnings, err := Evaluate(c.Query, ctx)
 		if err != nil {

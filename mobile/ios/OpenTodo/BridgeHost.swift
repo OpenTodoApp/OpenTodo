@@ -70,4 +70,9 @@ final class BridgeHost: BridgeActions {
         guard interactive, let target = URL(string: url) else { return }
         UIApplication.shared.open(target)
     }
+
+    func bridgedOpenAppLink(_ url: String) {
+        guard interactive, AppLink.scheme(url) != nil, let target = URL(string: url) else { return }
+        UIApplication.shared.open(target)
+    }
 }

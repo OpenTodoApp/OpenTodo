@@ -236,6 +236,10 @@ export function useListModel(route: ListRoute, userId?: string) {
   const display = useStableDisplay(displayOf(displayScope))
   // Upcoming's Today groups follow Today's own options (builtin-view-options D4).
   const todayDisplay = useStableDisplay(upcomingToday ? displayOf({ kind: 'today' }) : undefined)
+  const todayContextFilter = useMemo(() => {
+    const byDuration = duration && filterKey ? durationPredicate(duration) : null
+    return { assignees: assigneeFilter, matches: (task: Task) => (!todayHabits || !task.habit) && (!byDuration || byDuration(task)) }
+  }, [assigneeFilter, todayHabits, duration, filterKey])
   // Nest subtasks (D5): the rows are a tree, with the collapse toggle and Left and Right.
   const nested = (route.view === 'today' || route.view === 'upcoming') && !!(display?.subtasks || todayDisplay?.subtasks)
   // The header's display button and the switch to manual order; a project's board and timeline have their own layout.
@@ -273,14 +277,15 @@ export function useListModel(route: ListRoute, userId?: string) {
   const groups = useMemo<ListGroup[]>(() => (keptGroups.current = keepGroups(keptGroups.current, listGroups({
     view: route.view, tasks, laterTasks, projectId, timeline: layout.timeline, tree, today, resolved: dt.resolved, collapsed, blocked: held, taskMap,
     projects, projectMap, fields: sortFields, score, board, columns, buckets, sectionCount: liveSections.length, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday,
-    upcomingToday, todayDisplay,
+    upcomingToday, todayDisplay, todayContextFilter,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- zone: a zone change re-groups zoned dues (absolute-datetimes)
-  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay])
+  }))), [dt.resolved, tree, tasks, laterTasks, projectId, layout.timeline, route.view, today, zone, collapsed, held, taskMap, projects, projectMap, score, board, columns, buckets, liveSections, collapsedSections, logbook, display, labels, manualOrder, dayParts, closedList, doneToday, upcomingToday, todayDisplay, todayContextFilter])
   // Upcoming's projected occurrences (series-occurrences D4): off by default, per device; never rows.
   const projectedGroups = useUpcomingGroups(route.view === 'upcoming', groups, { allTasks, projects, today, zone, duration: filterKey ? duration : null, queryTest, resolved: dt.resolved })
   const rows = useMemo(() => groups.flatMap((g) => g.rows), [groups])
-  // The list's own rows: Today's Done today group is not part of Today's open list (today-closed-list D6).
-  const ownRows = useMemo(() => (doneToday?.length ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows) : rows), [doneToday, groups, rows])
+  // Context and Done today are visible without becoming members of the open list.
+  const ownRows = useMemo(() => route.view === 'today'
+    ? groups.filter((g) => g.key !== 'done').flatMap((g) => g.rows.filter((r) => !r.contextual)) : rows, [route.view, groups, rows])
   const siblingPos = useMemo(() => siblingPositions(groups), [groups])
   // The time column (rows-v2 D2): one fact of the whole list, from its visible rows; cards have none.
   // A task a calendar slot holds shows the slot's start there (calendar-slots D8).

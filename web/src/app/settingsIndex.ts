@@ -79,7 +79,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'about', label: msg('Community'), description: msg('Questions, ideas and other people who use OpenTodo, on Discord.'), anchor: 'about-community', keywords: 'discord community chat forum people' },
   { section: 'about', label: msg("What's new"), description: msg('What changed in each version, in English.'), anchor: 'about-whats-new', keywords: "news changelog what's new release notes version updates" },
   { section: 'about', label: msg('Follow on X'), description: msg('Releases and what is being built, on X.'), anchor: 'about-x', keywords: 'x twitter follow social' },
-  { section: 'about', label: msg('Buy me a coffee'), description: msg('Support OpenTodo'), anchor: 'about-support-heading', keywords: 'donate sponsor support coffee' },
+  { section: 'about', label: msg('Buy me a coffee'), description: msg('Support OpenTodo'), anchor: 'about-support-heading', keywords: 'donate sponsor sponsors github sponsors support coffee' },
   { section: 'about', label: msg('Welcome note'), description: msg('The thank-you shown the first time you opened this server.'), anchor: 'about-welcome', visible: owner, keywords: 'thanks welcome' },
   // Capture
   { section: 'capture', label: msg('Quick add'), description: msg('Natural-language parsing, its languages and the date order'), page: 'quick-add', anchor: 'quick-add-heading', keywords: 'natural language parsing' },
@@ -95,6 +95,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'integrations', label: msg('Webhooks'), description: msg('Send a message to another service when tasks change'), page: 'webhooks', anchor: 'webhooks-heading' },
   { section: 'integrations', label: msg('API tokens'), description: msg('Keys for scripts and the command-line client'), page: 'tokens', anchor: 'tokens-heading', keywords: 'api key cli' },
   { section: 'integrations', label: msg('Assistant'), description: msg('The in-app assistant: consent, provider, model and usage'), page: 'assistant', anchor: 'ai', keywords: 'ai llm anthropic openai gemini' },
+  { section: 'integrations', label: msg('Links to other apps'), description: msg('Open links to Zotero, mail or other apps from your notes'), page: 'app-links', anchor: 'app-links-heading', keywords: 'url scheme zotero obsidian onenote mid message deep link' },
   { section: 'integrations', label: msg('AI assistants (MCP)'), description: msg('Read-only access for an AI assistant, or a token that can make changes'), page: 'mcp', anchor: 'assistants-heading', keywords: 'mcp claude' },
   // Data
   { section: 'data', label: msg('Export'), description: msg('Download everything as JSON, or with files as a ZIP'), anchor: 'data-heading', keywords: 'backup download json zip' },

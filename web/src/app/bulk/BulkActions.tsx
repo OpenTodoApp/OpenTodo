@@ -207,6 +207,7 @@ export interface ListReorder {
   edges: (id: string) => Promise<{ first: boolean; last: boolean } | null>
   /** A tree list (a project, the Inbox): open an inline add line after the task or under it (add-below). */
   add?: { below: (id: string) => void; under: (id: string) => void }
+  contextActions?: (task: Task) => ActionItem[]
 }
 export const ListReorderContext = createContext<ListReorder | null>(null)
 
@@ -295,7 +296,7 @@ export function bulkMenuGroups(ids: readonly string[], d: Data, a: { review: (ti
       } },
     ] },
     { items: [
-      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges)] : []),
+      ...(n === 1 ? [...addItems(ids[0], a.reorder, d.edges), ...reorderItem(ids[0], a.reorder, d.edges), ...(a.reorder?.contextActions?.(d.tasks[0]) ?? [])] : []),
       { kind: 'picker', id: 'move', label: t('Move to project'), icon: 'folder-input', picker: {
         title: t('Move to project'), placeholder: t('Find a project…'), source: projectSource(d.projects, { memberships: d.memberships }),
         getKey: itemKey, getLabel: itemLabel, getPath: itemPath, getKeywords: itemKeywords, rankContext: 'project',

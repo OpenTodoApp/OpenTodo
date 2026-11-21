@@ -13,7 +13,7 @@ import { useWorkspaceFilter } from '../useWorkspaceFilter'
 import { useAgentExclusions } from '../../lib/agentAccess'
 import { useFieldDefs } from '../useFields'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type SetStateAction } from 'react'
-import { useLabels, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
+import { useLabels, useLiveSections, useProjects, useSectionPlace, useUserPrefsRow, useWorkspaceState, useMembershipMapOrLoading, useReviewEvery } from '../../lib/localData'
 import { dayPartsOn } from '../../lib/dayParts'
 import { timeSectorsOn } from '../../lib/sectorNames'
 import { isFavourite } from '../../lib/favourites'
@@ -38,6 +38,7 @@ import { filterEntries } from './filterEntries'
 import { makeTaskEntry } from './index'
 import { usePaletteEntities } from './usePaletteEntities'
 import { commandEntries, contextEntries, trailingEntries, type PaletteContext } from './registry'
+import { useUndoHistory } from '../../lib/undoHistory'
 import { t } from '../../lib/i18n'
 import { useAssistantStatus } from '../../lib/assistantStatus'
 import { addFromBar, addManyFromBar, lineToInput, logWinFromBar } from './addFromBar'
@@ -77,6 +78,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const tasks = useLiveTasks() ?? NO_TASKS
   const projects = useProjects()
   const labels = useLabels()
+  const sections = useLiveSections()
   const prefs = useUserPrefsRow()
   const views = useViews()
   const memberships = useMembershipMapOrLoading()
@@ -98,6 +100,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   const reviewEvery = useReviewEvery()
   const missedBlocks = useMissedBlocks().length
   const habitsOn = useHabitsEnabled()
+  const history = useUndoHistory()
   // Today's earlier tasks, once per data change: ctx follows the text typed, and this
   // read every task on each keystroke (list-rendering-at-scale D6).
   const hideOthers = useMemo(() => (memberships ? todayAssigneeFilter(prefs, [...memberships.values()], user?.id ?? null) : null), [prefs, memberships, user])
@@ -132,8 +135,9 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
       dailyNotes: prefs?.daily_notes === true,
       slot: task ? slotStateOf(task.id) : null,
       missedBlocks,
+      history,
     }
-  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier, habitsOn])
+  }, [route, user, today, list, task, query, vimEnabled, showShortcuts, projects, memberships, views, labels, tasks, startView, sectionInfo, prefs, agentExclusions, reviewEvery, workspaceState, missedBlocks, earlier, habitsOn, history])
 
   const taskEntry = useMemo(() => makeTaskEntry(projects, today), [projects, today])
   const entities = usePaletteEntities(user, today, projects, labels, views, tasks)
@@ -151,7 +155,7 @@ export default function CommandPalette({ user, onClose, showShortcuts, initialMo
   }, [ctx, scores, source])
   const fieldDefs = useFieldDefs()
   const wsFilter = useWorkspaceFilter()
-  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, fieldDefs, wsFilter, taskEntry])
+  const prefix = useMemo(() => filterEntries(query, tasks, { today, labels, projects, sections, fields: fieldDefs, ...wsFilter }, taskEntry), [query, tasks, today, labels, projects, sections, fieldDefs, wsFilter, taskEntry])
 
   const trailing = useMemo(() => trailingEntries(ctx), [ctx])
   // Notes (notes-overview D5): after the text matches, before the trailing commands.

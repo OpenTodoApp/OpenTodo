@@ -6,7 +6,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { ProposedChange } from './assistantTypes'
 import { addDaysISO, logicalToday, weekStartOf } from './dates'
-import { db } from './db'
+import { db, tableOf } from './db'
 import { memberSet } from './rotation'
 import { getDeviceId, planCompletePlain, planProjectChange, type Change } from './ops'
 import { planCompletion, seriesRule, skipsInstead } from './recurring'
@@ -145,8 +145,10 @@ export function planAssign(tasks: readonly Task[], userId: string | null): Chang
 export async function toProposed(changes: Change[], memberships?: Map<string, Membership>): Promise<ProposedChange[]> {
   const out: ProposedChange[] = []
   for (const c of changes) {
-    const row = c.entity === 'task' ? (await db.tasks.get(c.entityId)) as unknown as Record<string, unknown> | undefined : undefined
-    const project = (c.patch.project_id ?? row?.project_id ?? null) as string | null
+    // Every entity's row is read: a project or a label that exists was taken for a new one,
+    // and its Undo trashed it instead of putting its fields back (#1660).
+    const row = (await tableOf(c.entity).get(c.entityId)) as unknown as Record<string, unknown> | undefined
+    const project = (c.entity === 'task' ? (c.patch.project_id ?? row?.project_id ?? null) : null) as string | null
     const shared = !!memberships && !!project && memberships.has(project)
     const base = row ? Object.fromEntries(Object.keys(c.patch).map((f) => [f, row[f] ?? null])) : undefined
     out.push({ entity: c.entity, entityId: c.entityId, patch: c.patch, ...(base ? { base } : { create: true }), ...(shared ? { shared } : {}) })

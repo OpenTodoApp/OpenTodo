@@ -63,6 +63,10 @@ func TestStreamRefuses(t *testing.T) {
 		{"not UTF-8", cal("X-A:\xff\r\n"), wide, ErrInvalid},
 		{"incomplete", "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\n", wide, ErrInvalid},
 		{"not a calendar", "<html></html>", wide, ErrInvalid},
+		// The calendar's own properties have one budget for the whole stream: a
+		// child in between does not start them a new one.
+		{"calendar properties between children", cal(strings.Repeat("X-A:b\r\nBEGIN:VTIMEZONE\r\nEND:VTIMEZONE\r\n", 20)), StreamLimits{Bytes: 1 << 20, PartLines: 10, PartBytes: 1 << 20}, ErrTooLarge},
+		{"calendar property bytes between children", cal(strings.Repeat("X-A:"+strings.Repeat("b", 100)+"\r\nBEGIN:VTIMEZONE\r\nEND:VTIMEZONE\r\n", 20)), StreamLimits{Bytes: 1 << 20, PartLines: 1000, PartBytes: 1000}, ErrTooLarge},
 	}
 	for _, c := range cases {
 		if _, err := streamAll(t, c.in, c.lim); !errors.Is(err, c.want) {

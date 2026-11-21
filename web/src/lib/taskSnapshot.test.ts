@@ -2,7 +2,7 @@
 // after every kind of write it equals a full read, and rows a write did not touch
 // keep their objects.
 import 'fake-indexeddb/auto'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, useDatabase } from './db'
 import { changedTaskKeys, deriveSets, patchRows, patchSets, taskSnapshot, type TaskSets } from './taskSnapshot'
 import { changesBetween } from './taskDelta'
@@ -115,5 +115,31 @@ describe('the patched task snapshot', () => {
     expect(patchSets(prev, [{ id: 'a', before: rows[0], after: rows[0] }], projects, one)).toBe(prev)
     const two = { current: 'w1', defaultId: 'w1', list: [{ id: 'w1' }, { id: 'w2' }] } as unknown as WorkspaceState
     expect(patchSets(deriveSets(rows, projects, two), changes, projects, two)).toBeNull()
+  })
+})
+
+// A first sync to the Inbox ran the decoding of every task and the render it starts as
+// one main-thread task, over the 200 ms budget (first-sync-long-task): a full read is
+// published in a task of its own.
+describe('a full read', () => {
+  it('is published in a later task than the one that read it', async () => {
+    const posted: (() => void)[] = []
+    class HeldChannel {
+      port1 = { onmessage: null as null | (() => void), close: () => undefined }
+      port2 = { postMessage: () => { posted.push(() => this.port1.onmessage?.()) } }
+    }
+    vi.stubGlobal('MessageChannel', HeldChannel)
+    try {
+      await createTask({ title: 'A' })
+      const snap = taskSnapshot()
+      const stop = snap.subscribe(() => undefined)
+      await waitFor(() => posted.length === 1, 'the read')
+      expect(snap.read()).toBeUndefined()
+      posted.shift()!()
+      await waitFor(() => snap.read()?.here.length === 1, 'published')
+      stop()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

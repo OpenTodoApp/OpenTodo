@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { createSubtask, createTask } from '../lib/ops'
 import { setTodayLimit } from '../lib/closedListPrefs'
+import { setListDisplay } from '../lib/listDisplay'
 import { seedBase, seeded, seedProjectWithSections, seedToday, storyUser, TODAY, TOMORROW, withSeed } from './stories/fixtures'
 import { db } from '../lib/db'
 import { setTaskOpen } from '../lib/userPrefs'
@@ -28,6 +29,26 @@ function Column({ children }: { children: ReactNode }) {
 export const TodayGrouped: StoryObj = {
   ...withSeed(seedToday),
   render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+async function seedTodayContext(rowLayout: 'line' | 'detailed' = 'line') {
+  await seedBase()
+  const parent = await createTask({ title: 'Prepare the release', project_id: seeded.work, due: { date: TODAY } })
+  await createTask({ title: 'Check the build', project_id: seeded.work, parent_id: parent, due: { date: TODAY } })
+  await createTask({ title: 'Write the release notes', project_id: seeded.work, parent_id: parent })
+  await createTask({ title: 'Send the announcement', project_id: seeded.work, parent_id: parent, due: { date: TOMORROW } })
+  await createTask({ title: 'Plan the weekend', project_id: seeded.home, due: { date: TODAY } })
+  await setListDisplay({ kind: 'today' }, { subtasks: true, groupBy: 'project', rowLayout })
+}
+
+export const TodayContextualSubtasks: StoryObj = {
+  ...withSeed(() => seedTodayContext()),
+  render: () => <Column><TaskListView route={{ view: 'today' }} userId={storyUser.id} userRole={storyUser.role} /></Column>,
+}
+
+export const TodayContextualSubtasksDetailed: StoryObj = {
+  ...withSeed(() => seedTodayContext('detailed')),
+  render: TodayContextualSubtasks.render,
 }
 
 /** Earlier tasks planned for the last days of the week before today. */

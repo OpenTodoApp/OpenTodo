@@ -150,6 +150,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = translatedList<Sett
       page({ id: 'tokens', label: msg('API tokens'), icon: 'key', help: 'settings/tokens', demo: [msg('API tokens')] }),
       page({ id: 'assistant', label: msg('Assistant'), icon: 'sparkles', help: 'settings/assistant', anchors: ['ai'], demo: [msg('the assistant')] }),
       page({ id: 'mcp', label: msg('AI assistants (MCP)'), icon: 'bot', help: 'settings/assistants', demo: [msg('AI assistants (MCP)')] }),
+      page({ id: 'app-links', label: msg('Links to other apps'), icon: 'external-link', help: 'settings/app-links' }),
     ]),
   },
   { id: 'data', label: msg('Data'), group: 'data', icon: 'download', description: () => t('Export, import, sync status and archived projects') },

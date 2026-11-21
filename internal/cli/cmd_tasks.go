@@ -487,8 +487,8 @@ func (f *taskFlags) validateLocal(set map[string]bool) error {
 		}
 	}
 	if set["origin-url"] && !strings.EqualFold(f.originURL, "none") {
-		if _, err := origin.FromURL(f.originURL, ""); err != nil {
-			return usageErr("--origin-url must be an http or https URL, got %q", f.originURL)
+		if _, err := origin.FromLink(f.originURL, ""); err != nil {
+			return usageErr("--origin-url must be an http or https URL or an app link, got %q", f.originURL)
 		}
 	}
 	return nil
@@ -512,7 +512,7 @@ func (f *taskFlags) originValue() any {
 	if strings.EqualFold(f.originURL, "none") {
 		return nil
 	}
-	o, _ := origin.FromURL(f.originURL, "")
+	o, _ := origin.FromLink(f.originURL, "")
 	return o
 }
 

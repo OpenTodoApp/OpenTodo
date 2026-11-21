@@ -21,6 +21,7 @@ import (
 	"github.com/OpenTodoApp/opentodo/internal/channels"
 	"github.com/OpenTodoApp/opentodo/internal/compaction"
 	"github.com/OpenTodoApp/opentodo/internal/config"
+	"github.com/OpenTodoApp/opentodo/internal/davpush"
 	"github.com/OpenTodoApp/opentodo/internal/demo"
 	"github.com/OpenTodoApp/opentodo/internal/digest"
 	"github.com/OpenTodoApp/opentodo/internal/email"
@@ -112,8 +113,11 @@ type Set struct {
 	Push     *push.Service   // nil when web push is off
 	Email    *email.Service
 	Calendar *calfeed.Worker
-	Issues   *issues.Worker    // issue connections (issue-import)
-	CalSync  *calsync.Worker   // calendar sync (calendar-two-way)
+	Issues   *issues.Worker  // issue connections (issue-import)
+	CalSync  *calsync.Worker // calendar sync (calendar-two-way)
+	// DavPush pushes calendar apps on change (caldav-push); its Changes come
+	// from the CalDAV endpoint (httpapi), and it sends only with web push on.
+	DavPush  *davpush.Job
 	Mail     *mail.Service     // nil on a demo instance
 	Digest   *digest.Service   // weekly digests (stats-and-review); nil with Mail
 	Demo     *demo.Service     // nil unless OPENTODO_DEMO
@@ -132,6 +136,7 @@ type Set struct {
 	// The owner switches (settings.Switch).
 	RuleSwitch    *settings.Switch
 	CalDAV        *settings.Switch
+	CalDAVPush    *settings.Switch
 	CalendarFeeds *settings.Switch
 	IssuesOn      *settings.Switch
 	CalendarSync  *settings.Switch
@@ -188,6 +193,12 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 		s.CalSync.SetClock(o.Now)
 	}
 	wireObserver(s.Sync, s.Hooks, s.Rules, s.Signal, s.CalSync)
+	s.DavPush = &davpush.Job{Store: davpush.NewStore(db, cfg.DataDir, o.Now), Cursor: s.Sync.Cursor, Log: log}
+	if o.Hosted != nil {
+		// A host runs a tenant's jobs one after another in one pass: a short run
+		// keeps that pass moving; what is left is sent on the next one.
+		s.DavPush.RunLimit = davpush.HostRunBudget
+	}
 	if s.Backups, err = openBackups(ctx, cfg, o, db, s.Auth, log); err != nil {
 		return nil, err
 	}
@@ -196,6 +207,11 @@ func Build(ctx context.Context, cfg config.Config, db, reader *sql.DB, o Options
 	}
 	s.MCPOAuth = mcpoauth.New(db)
 	s.Push = openPush(cfg, o, db, s.Sync, log)
+	if s.Push != nil && s.Hooks != nil {
+		// One outbound policy for registering and sending (caldav-push): the
+		// webhook client, which honours "allow private targets" like CheckTarget.
+		s.DavPush.Send = s.Push.Through(s.Hooks.Client())
+	}
 	s.Channels = openChannels(ctx, cfg, o, db, s.Sync, s.Push, s.Hooks, log)
 	if s.Channels != nil {
 		s.ChannelsOn = s.Channels.Switch()

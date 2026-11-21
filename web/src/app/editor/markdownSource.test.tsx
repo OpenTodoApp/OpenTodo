@@ -49,6 +49,8 @@ describe('the Markdown source', () => {
     expect(document.activeElement).toBe(sourceEl())
     expect(container.querySelector('.notes-host')!.hasAttribute('hidden')).toBe(true)
     expect(container.querySelector('[data-notes-source-toggle]')!.getAttribute('aria-pressed')).toBe('true')
+    // Named for what it does (a button called "Markdown" said nothing).
+    expect(container.querySelector('[data-notes-source-toggle]')!.getAttribute('aria-label')).toBe('Show Markdown source')
     await key(sourceEl()!, 'M', ctrlShiftM)
     await waitFor(() => !sourceEl(), 'the rich text')
     expect(v.dom.querySelector('h1')!.textContent).toBe('Plan')

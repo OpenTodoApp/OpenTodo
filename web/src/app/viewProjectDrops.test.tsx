@@ -37,6 +37,37 @@ describe('Today grouped by Project', () => {
   const group = (key: string) => document.querySelector<HTMLElement>(`[data-drop-target="today-group:day:${key}"]`)
   const order = (key: string) => [...(group(key)?.querySelectorAll('[data-task-id]') ?? [])].map((el) => el.getAttribute('data-task-id'))
 
+  it('reparents contextual tasks without dating them and schedules only with the explicit target', async () => {
+    const f = await todayFixture()
+    await setListDisplay({ kind: 'today' }, { subtasks: true })
+    const child = await createTask({ title: 'Undated step', project_id: f.home, parent_id: f.a })
+    const future = await createTask({ title: 'Future step', project_id: f.home, parent_id: f.a, due: { date: addDaysISO(f.due.date, 3), time: '10:00', tz: 'UTC' } })
+    const view = await render(<TaskListView route={{ view: 'today' }} />)
+    try {
+      await waitFor(() => !!rowOf(child) && !!rowOf(future) && !!rowOf(f.y))
+      const undo = async (id: string) => {
+        const find = async () => (await db.assistantUndo.toArray()).find((e) => e.inverse.some((x) => x.entityId === id))
+        await waitFor(async () => !!(await find()), 'the move undo entry')
+        await act(async () => { await undoBatch((await find())!.id) })
+      }
+      expect(rowOf(child).hasAttribute('data-drop-target')).toBe(false)
+      await drag(child, group(f.work)!, 120)
+      expect(await db.tasks.get(child)).toMatchObject({ parent_id: f.a, project_id: f.home })
+      await drag(child, rowOf(f.y), 120)
+      await waitFor(async () => (await db.tasks.get(child))?.parent_id === f.y)
+      expect(await db.tasks.get(child)).toMatchObject({ project_id: f.work, due: null })
+      await undo(child)
+      await waitFor(() => order(f.home).includes(child))
+      const promotion = () => group(f.work)?.querySelector<HTMLElement>('[data-promote-context]')
+      await drag(future, group(f.work)!, 120, 0, promotion)
+      await waitFor(async () => (await db.tasks.get(future))?.parent_id === null)
+      expect(await db.tasks.get(future)).toMatchObject({ project_id: f.work, due: { date: f.due.date, time: '10:00', tz: 'UTC' } })
+      expect(await db.userPrefs.get('me')).toMatchObject({ today_sort_by: 'title' })
+      await undo(future)
+      expect(await db.tasks.get(future)).toMatchObject({ parent_id: f.a, project_id: f.home, due: { date: addDaysISO(f.due.date, 3), time: '10:00', tz: 'UTC' } })
+    } finally { await view.unmount() }
+  })
+
   it('honors the drop line, preserves visible title order, and undoes the move and sort', async () => {
     const f = await todayFixture()
     const r = await render(<TaskListView route={{ view: 'today' }} />)
@@ -156,13 +187,18 @@ const rowOf = (id: string) => document.querySelector<HTMLElement>(`[data-task-id
 const targetOf = (group: string, id: string) => document.querySelector<HTMLElement>(`[data-drop-target="vrow:${group}:${id}"]`)
 
 /** Press on a task's row, move to `y` (rows span 100–140 px) over another row, read the line, release. */
-async function drag(from: string, over: HTMLElement, y: number, dx = 0) {
+async function drag(from: string, over: HTMLElement, y: number, dx = 0, destination?: () => HTMLElement | null | undefined) {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({ top: 100, height: 40, bottom: 140, left: 0, right: 600, width: 600, x: 0, y: 100, toJSON: () => ({}) }))
   document.elementFromPoint = () => over
   await act(async () => {
     rowOf(from).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse', button: 0, clientX: 100, clientY: 20 }))
     window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 100 + dx, clientY: y }))
   })
+  if (destination) {
+    expect(destination()?.textContent).toContain('Make top-level for today')
+    document.elementFromPoint = () => destination() ?? null
+    await act(async () => { window.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, pointerType: 'mouse', clientX: 100 + dx, clientY: y })) })
+  }
   const line = document.querySelector<HTMLElement>('[data-drop-indicator]')
   const ring = document.querySelector('[data-drop-note]')
   const shown = { line: line?.dataset.dropIndicator ?? null, note: ring?.textContent ?? null, ...(line?.dataset.dropDepth !== undefined ? { depth: line.dataset.dropDepth } : {}) }
