@@ -11,6 +11,9 @@ import { parseRoute, setRouteShow, type Route } from './router'
 
 export type NavDirection = 'forward' | 'back' | 'none'
 
+/** Where a back swipe left the page (swipe-back-follows D1): the old page's slide starts there, so the hand-off has no jump. */
+export const NAV_FROM = '--nav-from'
+
 /** How deep a route sits below the destinations of the sidebar and the tab bar (0). */
 export function routeDepth(r: Route): number {
   switch (r.view) {
@@ -54,8 +57,8 @@ resettable('pageTransition', () => { running = null })
 export function showRouteChange(apply: () => void, from: string, to: string, popped: boolean): void {
   // The next navigation never waits: a transition still running jumps to its end.
   running?.skipTransition()
-  if (!canTransitionPage()) { apply(); return }
   const root = document.documentElement
+  if (!canTransitionPage()) { apply(); root.style.removeProperty(NAV_FROM); return }
   root.dataset.nav = navDirection(parseRoute(from), parseRoute(to), popped)
   const start = (document as unknown as { startViewTransition: StartViewTransition }).startViewTransition.bind(document)
   const vt = start(() => flushSync(apply))
@@ -64,6 +67,7 @@ export function showRouteChange(apply: () => void, from: string, to: string, pop
     if (running !== vt) return
     running = null
     delete root.dataset.nav
+    root.style.removeProperty(NAV_FROM)
   })
 }
 
