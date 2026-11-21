@@ -1,0 +1,1 @@
+- **Listing one project through the API no longer reads the notes of every task.** `GET /api/v1/tasks?project_id=` worked out each task's note version from the notes of every task in the account; it now reads only the listed tasks', which takes about half as long on a 10,000-task account (#1656).

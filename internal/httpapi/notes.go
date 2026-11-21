@@ -41,11 +41,15 @@ func (s *Server) annotateBody(ctx context.Context, entity string, list ...opsync
 	if entity != "task" && entity != "project" && entity != "note" {
 		return nil
 	}
-	id := ""
-	if len(list) == 1 && list[0] != nil {
-		id = idOf(list[0]["id"])
+	// Only the listed entities' body fields are read (#1656: a project's list read
+	// those of every task of the account).
+	ids := make([]string, 0, len(list))
+	for _, e := range list {
+		if e != nil {
+			ids = append(ids, idOf(e["id"]))
+		}
 	}
-	infos, err := s.sync.BodyInfos(ctx, userFrom(ctx).ID, entity, id)
+	infos, err := s.sync.BodyInfosOf(ctx, userFrom(ctx).ID, entity, ids)
 	if err != nil {
 		return err
 	}
