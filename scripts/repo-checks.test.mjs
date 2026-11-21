@@ -935,6 +935,18 @@ test('the v1 surface keeps every entry of the snapshot at v1.0.0', (t) => {
   assert.deepEqual(problems, [], 'the v1 surface only grows within 1.x (docs/stability.md)')
 })
 
+test('the surface freeze accepts a listed security narrowing exactly, and nothing else', () => {
+  const tagged = { routes: { 'GET /api/v1/tokens': { policy: 'signed-in' }, 'GET /api/v1/me': { policy: 'signed-in' } } }
+  const allowed = { 'routes › GET /api/v1/tokens › policy': { from: 'signed-in', to: 'signed-in.full-tokens' } }
+  const narrowed = { routes: { 'GET /api/v1/tokens': { policy: 'signed-in.full-tokens' }, 'GET /api/v1/me': { policy: 'signed-in' } } }
+  assert.deepEqual(surfaceProblems(tagged, narrowed, 'v1.0.0', allowed), [])
+  const other = { routes: { 'GET /api/v1/tokens': { policy: 'owner-only' }, 'GET /api/v1/me': { policy: 'signed-in.full-tokens' } } }
+  assert.deepEqual(surfaceProblems(tagged, other, 'v1.0.0', allowed), [
+    'routes › GET /api/v1/me › policy: was "signed-in" at v1.0.0, now "signed-in.full-tokens"',
+    'routes › GET /api/v1/tokens › policy: was "signed-in" at v1.0.0, now "owner-only"',
+  ])
+})
+
 test('the surface freeze names an entry deleted by hand after v1.0.0', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'surface-freeze-'))
   try {

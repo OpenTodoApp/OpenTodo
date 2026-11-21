@@ -180,10 +180,10 @@ func TestSecurityRoutePolicies(t *testing.T) {
 		"DELETE /api/v1/me/apps/{id}": "auth demo",
 		"POST /api/v1/app/sign-out":   "auth demo",
 		// Connected AI apps (connected-apps-list).
-		"GET /api/v1/me/oauth-grants":         "auth",
+		"GET /api/v1/me/oauth-grants":         "auth full-tokens",
 		"DELETE /api/v1/me/oauth-grants/{id}": "auth demo",
 		// API tokens and app passwords: minting needs a fresh session or an admin token.
-		"GET /api/v1/tokens":                  "auth",
+		"GET /api/v1/tokens":                  "auth full-tokens",
 		"POST /api/v1/tokens":                 "auth admin-token fresh demo",
 		"DELETE /api/v1/tokens/{id}":          "auth demo",
 		"POST /api/v1/app-passwords":          "auth admin-token fresh demo",

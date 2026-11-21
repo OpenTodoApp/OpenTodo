@@ -52,6 +52,8 @@ These need a new major version (`/api/v2/`, export version 2, `ot` 2.x):
 - narrowing the values a field accepts;
 - changing what a field means.
 
+A security fix may refuse read or agent tokens on a route that lists the account's credentials or connected apps.
+
 **Clients must ignore what they do not know**: unknown fields in a response, and unknown values of an open enumeration. The web app, the phone apps, `ot`, the browser extension and the Obsidian plugin already do.
 
 ## Deprecation

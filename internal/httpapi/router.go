@@ -57,7 +57,7 @@ func (s *Server) registerAccountRoutes(mux *routes) {
 	s.registerNotePageRoutes(mux)
 
 	mux.handle("GET /api/v1/me", signedIn, s.handleMe)
-	mux.handle("GET /api/v1/tokens", signedIn, s.handleListTokens)
+	mux.handle("GET /api/v1/tokens", signedIn.FullTokens(), s.handleListTokens)
 	mux.handle("POST /api/v1/tokens", signedIn.Sensitive().DemoDenied(), s.handleCreateToken)
 	mux.handle("DELETE /api/v1/tokens/{id}", signedIn.DemoDenied(), s.handleDeleteToken)
 	mux.handle("POST /api/v1/passkeys/register/options", signedIn.Sensitive().DemoDenied(), s.handlePasskeyRegisterOptions)

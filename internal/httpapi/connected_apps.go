@@ -22,7 +22,7 @@ import (
 const connectedAppsPath = "/api/v1/me/oauth-grants"
 
 func (s *Server) registerConnectedAppsRoutes(mux *routes) {
-	mux.handle("GET "+connectedAppsPath, signedIn, s.handleListConnectedApps)
+	mux.handle("GET "+connectedAppsPath, signedIn.FullTokens(), s.handleListConnectedApps)
 	mux.handle("DELETE "+connectedAppsPath+"/{id}", signedIn.DemoDenied(), s.handleDisconnectApp)
 }
 
