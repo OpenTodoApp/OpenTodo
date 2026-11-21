@@ -322,11 +322,12 @@ jobs:
     if: needs.changes.outputs.layout == 'true'
     strategy:
       fail-fast: false
-      # A pull request and a push to main run two legs (Chromium at every width in English, then the
-      # end-to-end checks; and the safe-area check); tags, the nightly and a run by hand run one leg per
+      # A pull request and a push to main run three legs side by side: Chromium at every width in
+      # English, split in two (SHARD: the light and the dark combinations), and the safe-area check
+      # followed by the end-to-end checks. Tags, the nightly and a run by hand run one leg per
       # engine, width and the German and French catalogs, and the end-to-end checks beside them.
       matrix:
-        include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"engine":"chromium","name":"Chromium, all widths, end-to-end","widths":"360,390,768","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
+        include: ${{ fromJSON(needs.changes.outputs.full != 'true' && '[{"engine":"chromium","name":"Chromium, all widths, 1/2","widths":"360,390,768","shard":"1/2"},{"engine":"chromium","name":"Chromium, all widths, 2/2","widths":"360,390,768","shard":"2/2"},{"engine":"chromium","name":"Safe area, end-to-end","safearea":true,"e2e":true}]' || '[{"engine":"chromium","name":"Chromium 360 px","widths":"360"},{"engine":"chromium","name":"Chromium 390 px","widths":"390"},{"engine":"chromium","name":"Chromium 768 px","widths":"768"},{"engine":"chromium","name":"End-to-end","e2e":true},{"engine":"chromium","name":"Safe area","safearea":true},{"engine":"webkit","name":"WebKit 360 px","widths":"360"},{"engine":"webkit","name":"WebKit 390 px","widths":"390"},{"engine":"webkit","name":"WebKit 768 px","widths":"768"},{"engine":"chromium","name":"Chromium 360 px German","widths":"360","lang":"de"},{"engine":"chromium","name":"Chromium 360 px French","widths":"360","lang":"fr"}]') }}
     # The pinned Playwright image (PLAYWRIGHT_IMAGE in the Makefile): Chromium, WebKit and
     # their system packages are in it. The server is a static Go build made in the job.
     container: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:f1e7e01021efd65dd1a2c56064be399f3e4de00fd021ac561325f2bfbb2b837a
@@ -360,6 +361,7 @@ jobs:
           ENGINES: ${{ matrix.engine }}
           WIDTHS: ${{ matrix.widths }}
           OPENTODO_LANG: ${{ matrix.lang }}
+          SHARD: ${{ matrix.shard }}
         run: |
           OPENTODO_DATA_DIR=$(mktemp -d) ./bin/opentodo &
           for i in $(seq 1 30); do curl -fsS localhost:8080/healthz >/dev/null && break; sleep 0.5; done
