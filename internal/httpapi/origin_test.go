@@ -91,7 +91,8 @@ func TestObsidianOriginOnTheAPI(t *testing.T) {
 	for _, bad := range []map[string]any{
 		{"kind": "obsidian", "id": "x.md", "url": "obsidian://new?vault=Notes&name=x"},
 		{"kind": "obsidian", "id": "Daily/2026-10-29.md", "url": "obsidian://open?vault=Notes&file=Private%2Fdiary"},
-		{"kind": "url", "url": "obsidian://open?vault=Notes&file=a"},
+		// An Obsidian link is an app link only on a url origin (app-links D5).
+		{"kind": "issue", "provider": "github", "id": "o/r#1", "url": "obsidian://open?vault=Notes&file=a"},
 	} {
 		resp, out = c.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"origin": bad}, bearer(secret)...)
 		if resp.StatusCode != 400 || errCode(out) != "invalid_input" || !strings.Contains(errMessage(out), "origin") {

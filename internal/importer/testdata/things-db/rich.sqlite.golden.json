@@ -55,7 +55,7 @@
       "title": "Completed project",
       "outcome": "create",
       "warnings": [
-        "completed project imported as an open project"
+        "finished project imported as an archived project"
       ]
     },
     {
@@ -184,7 +184,7 @@
     "label id-0023: name=\"Tag 1\" created_at=1791979200000",
     "project id-0001: name=\"Area 1\" archived=false created_at=1791979200000",
     "project id-0002: name=\"Project 1\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
-    "project id-0003: name=\"Completed project\" archived=false created_at=1791979200000 parent_id=\"id-0001\"",
+    "project id-0003: name=\"Completed project\" archived=true created_at=1791979200000 parent_id=\"id-0001\"",
     "section id-0004: name=\"Heading 1\" project_id=\"id-0002\" created_at=1791979200000",
     "task id-0005: title=\"Inbox to-do\" description=\"Plain notes\" priority=4 created_at=1791990530000 origin={\"kind\":\"import\",\"provider\":\"things\",\"id\":\"Uuid000000000000000020\"} labels=[]",
     "task id-0006: title=\"Area to-do\" description=\"\" priority=4 created_at=1791990530000 project_id=\"id-0001\" origin={\"kind\":\"import\",\"provider\":\"things\",\"id\":\"Uuid000000000000000021\"} labels=[]",

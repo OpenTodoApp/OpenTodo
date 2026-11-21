@@ -31,6 +31,7 @@
   "settings/access",
   "settings/account",
   "settings/activity",
+  "settings/app-links",
   "settings/appearance",
   "settings/assistant",
   "settings/assistants",
@@ -81,5 +82,6 @@
   "trash",
   "upcoming",
   "updates",
-  "waiting"
+  "waiting",
+  "workspace-activity"
 ]

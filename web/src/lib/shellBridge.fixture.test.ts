@@ -17,6 +17,8 @@ import { parsePushState, parsePushSubscription, pushState, pushSubscribe, pushUn
 import { shellReminders, shellWidget } from './shellPublish'
 import { openOrigin } from './originOpen'
 import vectors from '../../../internal/origin/testdata/origin_vectors.json'
+import appLinkVectors from '../../../internal/origin/testdata/app_links.vectors.json'
+import { openAppLink, setAppLinkSchemes, trustScheme } from './appLinks'
 import type { Place, Reminder, Task } from './types'
 
 // Vitest runs in web/ (happy-dom's URL cannot resolve file: addresses).
@@ -223,6 +225,30 @@ function externalLinks() {
 }
 
 /**
+ * app-links D6: what the web app hands openAppLink (the link and the viewer's list
+ * as JSON), captured from the real call, and the shared vectors the shells run
+ * (internal/origin/testdata/app_links.vectors.json).
+ */
+function appLinks() {
+  const handed: { url: string; schemes: string }[] = []
+  window.opentodoShell = {
+    bridge: 1, platform: 'android', app: '0.20.0', capabilities: ['links', 'app-links'],
+    openAppLink: (url, schemes) => void handed.push({ url, schemes }),
+  }
+  setAppLinkSchemes(['zotero', 'obsidian:open'])
+  trustScheme('zotero')
+  openAppLink('zotero://select/items/ABC')
+  setAppLinkSchemes([])
+  localStorage.clear()
+  delete window.opentodoShell
+  return {
+    description: 'Links to other apps (app-links): what the web app hands openAppLink, and the shared vectors. The shell hands a link to the system only when its scheme is on the passed list (allows) and not denied (links).',
+    handed,
+    vectors: appLinkVectors,
+  }
+}
+
+/**
  * theme-engine D8: the strings setSystemBars hands a shell that lists system-bars,
  * captured from the real call, with what the shell must read (the colour, and
  * whether its icons are light), and payloads it must ignore.
@@ -283,7 +309,7 @@ function haptics() {
  * has a screen" from `links`, so no background run may list anything of visibleOnly.
  */
 function capabilities() {
-  const visibleOnly = ['share', 'links', 'obsidian-links', 'system-bars', 'microphone', 'files', 'haptics', 'alarm-settings']
+  const visibleOnly = ['share', 'links', 'obsidian-links', 'app-links', 'system-bars', 'microphone', 'files', 'haptics', 'alarm-settings']
   const backgroundOnly = ['background']
   const both = ['reminders', 'widgets', 'push']
   const called: string[] = []
@@ -346,7 +372,7 @@ afterEach(() => {
 
 describe('Android bridge fixtures', () => {
   it('are current (mobile/android/app/src/test/resources/bridge)', () => {
-    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()) }
+    const want: Record<string, string> = { 'actions.json': text(actions()), 'external-links.json': text(externalLinks()), 'app-links.json': text(appLinks()), 'system-bars.json': text(systemBars()), 'save-file.json': text(saveFileCalls()), 'haptics.json': text(haptics()), 'capabilities.json': text(capabilities()), 'pull.json': text(pull()), 'push-bridge.json': text(pushBridge()) }
     for (const [name, f] of Object.entries(fixtures())) want[name] = text(f)
     if (update) {
       mkdirSync(dir, { recursive: true })

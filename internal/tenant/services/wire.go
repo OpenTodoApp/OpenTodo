@@ -21,7 +21,9 @@ import (
 
 // The keys of the owner switches httpapi serves (settings.Switch).
 const (
-	CalDAVKey        = "caldav.enabled"
+	CalDAVKey = "caldav.enabled"
+	// CalDAVPushKey is push to calendar apps (caldav-push).
+	CalDAVPushKey    = "caldav.push"
 	CalendarFeedsKey = "calendar_feeds.enabled"
 	IssuesKey        = "integrations.issues"
 	CalendarSyncKey  = "calendar_sync.enabled"
@@ -44,6 +46,7 @@ func (s *Set) openSwitches(ctx context.Context, db *sql.DB) {
 		return settings.NewSwitch(db, key, o)
 	}
 	s.CalDAV = open(CalDAVKey, false)
+	s.CalDAVPush = open(CalDAVPushKey, true)
 	s.CalendarFeeds = open(CalendarFeedsKey, true)
 	s.IssuesOn = open(IssuesKey, true)
 	s.CalendarSync = open(CalendarSyncKey, true)
@@ -51,12 +54,16 @@ func (s *Set) openSwitches(ctx context.Context, db *sql.DB) {
 	if _, err := s.CalDAV.Seed(ctx, s.Cfg.CalDAV); err != nil {
 		s.Log.Error("seed caldav setting", "err", err)
 	}
+	if _, err := s.CalDAVPush.Seed(ctx, s.Cfg.CalDAVPush); err != nil {
+		s.Log.Error("seed caldav push setting", "err", err)
+	}
 	if _, err := s.CalendarFeeds.Seed(ctx, s.Cfg.CalendarFeeds); err != nil {
 		s.Log.Error("seed calendar feeds setting", "err", err)
 	}
 	s.Calendar.Enabled = s.CalendarFeeds.On
 	s.Calendar.Notify = s.Sync.Notifier().NotifyCalendar
 	s.Issues.Enabled = s.IssuesOn.On
+	s.DavPush.Enabled = func(ctx context.Context) bool { return s.CalDAV.On(ctx) && s.CalDAVPush.On(ctx) }
 	s.CalSync.Enabled = s.CalendarSync.On
 	s.CalSync.Notify = s.Sync.Notifier().NotifyCalendar
 	if s.Cfg.BaseURL != nil {

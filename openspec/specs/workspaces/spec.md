@@ -230,11 +230,15 @@ The owner and admins of a created workspace SHALL create single-use links throug
 - **THEN** the response is 429 `rate_limited`
 
 ### Requirement: Moving projects and tasks between workspaces
-The owner of a project SHALL move it to another of their workspaces from the project's menu ("Move to workspace…"), which SHALL write one `workspace_id` operation on the project; its sections, fields and tasks follow without any operation, and labels on its tasks are re-matched by name to labels of the target workspace (a label with that name is reused, otherwise created there) as one batch with Undo. For a shared project only the owner may write `workspace_id`; the server SHALL refuse it from admins and editors. A task without a project SHALL be moved by choosing another workspace's "No project" or project in its project picker, which lists every workspace's projects grouped by workspace with the current workspace first. Moves work offline and converge like any operation.
+The owner of a project SHALL move it to another of their workspaces from the project's menu ("Move to workspace…"), which SHALL write one `workspace_id` operation on the project, and for a sub-project also `parent_id` null so it becomes a top-level project of the target (a sub-project follows its root's workspace); its sections, fields and tasks follow without any operation, and labels on its tasks are re-matched by name to labels of the target workspace (a label with that name is reused, otherwise created there) as one batch with Undo. For a shared project only the owner may write `workspace_id`; the server SHALL refuse it from admins and editors. A task without a project SHALL be moved by choosing another workspace's "No project" or project in its project picker, which lists every workspace's projects grouped by workspace with the current workspace first. Moves work offline and converge like any operation.
 
 #### Scenario: Move a project
 - **WHEN** the owner moves "Garden" with 12 tasks carrying "errand" from "Personal" to "Family", which has no "errand" label
 - **THEN** Garden and its 12 tasks appear in Family, an "errand" label exists in Family and the 12 tasks carry it, Personal's "errand" is unchanged, and Undo puts everything back
+
+#### Scenario: Move a sub-project
+- **WHEN** the owner moves "Acme", a sub-project of "Clients" in Personal, with its own sub-project "Launch", to "Work"
+- **THEN** Acme leaves Clients and becomes a top-level project of Work, Launch and their tasks go with it, Clients stays in Personal, and Undo puts Acme back under Clients
 
 #### Scenario: Admin cannot move a shared project
 - **WHEN** an admin of a shared project submits a `workspace_id` operation for it

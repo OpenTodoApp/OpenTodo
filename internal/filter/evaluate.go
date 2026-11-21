@@ -2,6 +2,7 @@ package filter
 
 import (
 	"encoding/json"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ const (
 	KindSearch    = "search"
 	KindNotes     = "notes"
 	KindAssigned  = "assigned"
+	KindSection   = "section"
 	KindOrigin    = "origin"
 	KindEnergy    = "energy"
 	KindSector    = "sector"
@@ -223,12 +225,15 @@ type compiler struct {
 	warnings []string
 	labels   map[string][]string
 	projects map[string][]string
-	children map[string][]string
-	parent   map[string]string
-	fields   map[string][]Row
-	blocked  map[string]bool
-	flow     flow.States
-	tomorrow string
+	// sections maps a live section's id to its project, and a name to its ids (section-filter).
+	sectionProject map[string]string
+	sections       map[string][]string
+	children       map[string][]string
+	parent         map[string]string
+	fields         map[string][]Row
+	blocked        map[string]bool
+	flow           flow.States
+	tomorrow       string
 }
 
 func (k *compiler) warn(msg string) {
@@ -246,7 +251,7 @@ func Compile(ast *Node, c Context) (Pred, []string, error) {
 	if c.Zone == nil {
 		c.Zone = time.UTC
 	}
-	k := &compiler{c: c, labels: map[string][]string{}, projects: map[string][]string{}, children: map[string][]string{}, parent: map[string]string{},
+	k := &compiler{c: c, labels: map[string][]string{}, projects: map[string][]string{}, sectionProject: map[string]string{}, sections: map[string][]string{}, children: map[string][]string{}, parent: map[string]string{},
 		fields: map[string][]Row{}, tomorrow: shiftISO(c.Today, 1)}
 	for _, l := range c.Labels {
 		if isNull(l["deleted_at"]) {
@@ -259,6 +264,13 @@ func Compile(ast *Node, c Context) (Pred, []string, error) {
 			k.projects[nameKey(str(p, "name"))] = append(k.projects[nameKey(str(p, "name"))], id)
 			k.parent[id] = str(p, "parent_id")
 			k.children[str(p, "parent_id")] = append(k.children[str(p, "parent_id")], id)
+		}
+	}
+	for _, s := range c.Sections {
+		if isNull(s["deleted_at"]) {
+			id := str(s, "id")
+			k.sectionProject[id] = str(s, "project_id")
+			k.sections[nameKey(str(s, "name"))] = append(k.sections[nameKey(str(s, "name"))], id)
 		}
 	}
 	for _, f := range c.Fields {
@@ -325,6 +337,13 @@ func (k *compiler) build(n *Node) (Pred, error) {
 			return never, nil
 		}
 		return func(t Row) bool { return anyIn(listOf(t["labels"]), ids) }, nil
+	case KindSection:
+		ids := k.sections[nameKey(n.Name)]
+		if ids == nil {
+			k.warn(`No section named "` + n.Name + `"`)
+			return never, nil
+		}
+		return func(t Row) bool { return k.inSection(t) && slices.Contains(ids, str(t, "section_id")) }, nil
 	case KindProject:
 		ids := k.projects[nameKey(n.Name)]
 		if ids == nil {
@@ -744,6 +763,13 @@ func (k *compiler) available(t Row) bool {
 	return k.flow.Available(str(t, "id"))
 }
 
+// inSection reports whether the task sits in a live section of its own project (effectiveSection on the client).
+func (k *compiler) inSection(t Row) bool {
+	id := str(t, "section_id")
+	p, ok := k.sectionProject[id]
+	return id != "" && ok && p == str(t, "project_id")
+}
+
 // assignedTo matches the viewer (`me`) or every member whose name or email equals name.
 func (k *compiler) assignedTo(name string) Pred {
 	if strings.EqualFold(name, "me") {
@@ -781,6 +807,8 @@ func (k *compiler) keyword(w string) Pred {
 		return func(t Row) bool { return isNull(t["due"]) }
 	case "no time":
 		return func(t Row) bool { d, timed := dueOf(t, c.Zone); return d != "" && !timed }
+	case "no section":
+		return func(t Row) bool { return !k.inSection(t) }
 	case "no project":
 		return func(t Row) bool { return str(t, "project_id") == "" }
 	case "no labels":

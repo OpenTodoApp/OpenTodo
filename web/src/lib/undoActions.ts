@@ -23,6 +23,7 @@ import { dayPartFields, dayPartName, dayPartOf, doOnPatch, type DayPart, type Do
 import { energyName, type Energy } from './energy'
 import { sectorPatch } from './sectorWrites'
 import { planDayDrop } from './dayDrop'
+import { planTasksMove, type TaskTarget } from './move'
 import { replanChanges, type ReplanProposal, type UnfitChoice } from './replan'
 import { keepWorkspaceFor, Partition, readWorkspaceState, workspaceIdFor } from './workspaces'
 
@@ -129,6 +130,13 @@ export async function dropUndoable(target: string, ids: readonly string[]): Prom
     return /^\d{4}-\d{2}-\d{2}$/.test(date) ? dayDropUndoable(ids, date) : null
   }
   return null
+}
+
+/** Several ticked tasks dropped together among a list's rows (drag-ticked-together D3): one batch with Undo. */
+export async function moveTasksUndoable(ids: readonly string[], target: TaskTarget): Promise<UndoableResult | null> {
+  const changes = await planTasksMove(ids, target)
+  if (!changes) return null
+  return apply(changes, t('{n, plural, one {# task moved} other {# tasks moved}}', { n: ids.length }))
 }
 
 /** Put tasks on a day as a drop on the calendar does (upcoming-drag): one batch with Undo; tasks already there write nothing. */
@@ -353,7 +361,9 @@ export async function moveProjectToWorkspaceUndoable(projectId: string, target: 
   }
   const byId = new Map(labels.map((l) => [l.id, l]))
   const there = new Map(labels.filter((l) => !l.deleted_at && part.own(l.workspace_id) === part.own(target)).map((l) => [labelKey(l.name), l.id]))
-  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: { workspace_id: value } }]
+  // A sub-project follows its root's workspace (#1660): it leaves its parent, and
+  // becomes a top-level project of the target with its own sub-projects and tasks.
+  const changes: Change[] = [{ entity: 'project', entityId: projectId, patch: project.parent_id ? { workspace_id: value, parent_id: null } : { workspace_id: value } }]
   const now = Date.now()
   const mapLabel = (id: string): string => {
     const l = byId.get(id)

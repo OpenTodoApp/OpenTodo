@@ -7,7 +7,7 @@
 // per-field last-writer-wins (design D3). No new fields, no new routes.
 import { db } from './db'
 import { mutateMany, type Change } from './ops'
-import { compareByPosition, planMove, planStep, type Placement, type PositionChange } from './ordering'
+import { compareByPosition, planMove, planMoveMany, planStep, type Placement, type PositionChange } from './ordering'
 import { buildProjectTree } from './projects'
 import { effectiveSection } from './sections'
 import { canEditProject, canEditTasks, membershipMap, roleOf } from './sharing'
@@ -100,6 +100,82 @@ export async function moveTask(id: string, target: TaskTarget): Promise<boolean>
   if (plan.length === 0 && Object.keys(patch).length === 0) return false
   await mutateMany(toChanges('task', plan, patch, id))
   return true
+}
+
+/**
+ * A placement whose anchor is one of the moved tasks names the nearest task that
+ * stays, the way the list showed them (drag-ticked-together D2): after a moved
+ * task is after the closest one before it, or the top.
+ */
+function anchorOutside(siblings: Task[], moved: ReadonlySet<string>, at: Placement): Placement {
+  if (typeof at !== 'object') return at
+  const sorted = [...siblings].sort(compareByPosition)
+  const after = 'after' in at
+  const id = after ? at.after : at.before
+  if (!moved.has(id)) return at
+  const i = sorted.findIndex((s) => s.id === id)
+  if (i < 0) return after ? 'top' : 'bottom'
+  if (after) {
+    for (let j = i - 1; j >= 0; j--) if (!moved.has(sorted[j].id)) return { after: sorted[j].id }
+    return 'top'
+  }
+  for (let j = i + 1; j < sorted.length; j++) if (!moved.has(sorted[j].id)) return { before: sorted[j].id }
+  return 'bottom'
+}
+
+/**
+ * Plan dropping several ticked tasks of one list at a place (OpenSpec change
+ * drag-ticked-together, D1–D3). `ids` are in the order the list shows them; they
+ * all become siblings under the target's parent, next to each other in that
+ * order, so a ticked subtask of a ticked task lands right after it, and every
+ * task keeps the subtasks that are not ticked. A target inside a moved subtree
+ * climbs out of it to just after its topmost moved ancestor. Null (nothing to
+ * write) for an unknown, completed or deleted task, tasks of several lists, a
+ * viewer, or a section of another project.
+ */
+export async function planTasksMove(ids: readonly string[], target: TaskTarget): Promise<Change[] | null> {
+  if (ids.length === 0) return null
+  const tasks = await db.tasks.bulkGet([...ids])
+  if (tasks.some((x) => !x || x.deleted_at || x.completed_at)) return null
+  const project = tasks[0]!.project_id ?? null
+  if (tasks.some((x) => (x!.project_id ?? null) !== project)) return null
+  if (!(await canReorderTasks(project))) return null
+  const ctx = await taskContext(project)
+  if (ids.some((id) => !ctx.tree.nodes.has(id))) return null
+  const moved = new Set(ids)
+  const inMoved = (id: string) => ids.some((m) => isDescendant(id, m, ctx.all))
+  let parent = target.parent_id
+  let at = target.at
+  let section: string | null | undefined = target.section_id
+  // Never under a moved task or what it carries: just after the topmost one instead.
+  while (parent !== null && inMoved(parent)) {
+    at = { after: parent }
+    section = undefined
+    parent = ctx.tree.nodes.get(parent)?.parent ?? null
+  }
+  if (parent !== null && !ctx.tree.nodes.has(parent)) return null
+  if (parent === null) {
+    const anchor = typeof at === 'object' ? ('after' in at ? at.after : at.before) : null
+    const beside = anchor ? ctx.all.find((x) => x.id === anchor) : undefined
+    const current = effectiveSection(beside ?? tasks[0]!, ctx.sections)
+    section = section === undefined ? current : section || null
+    if (section !== null) {
+      const sec = ctx.sections.get(section)
+      if (!sec || sec.deleted_at) return null
+    }
+  } else section = null
+  const siblings = taskSiblings(ctx, parent, section)
+  const plan = planMoveMany(siblings, ids, anchorOutside(siblings, moved, at))
+  if (plan === null) return null
+  const byId = new Map(tasks.map((x) => [x!.id, x!]))
+  return plan.map((c) => {
+    const task = byId.get(c.id)
+    if (!task) return { entity: 'task', entityId: c.id, patch: { position: c.position } }
+    const patch: Record<string, unknown> = { position: c.position }
+    if ((ctx.tree.nodes.get(c.id)?.parent ?? null) !== parent) patch.parent_id = parent
+    if (parent === null && effectiveSection(task, ctx.sections) !== section) patch.section_id = section
+    return { entity: 'task', entityId: c.id, patch }
+  })
 }
 
 /**

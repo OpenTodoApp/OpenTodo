@@ -19,7 +19,7 @@ type Touchy = Pick<TouchEvent, 'touches' | 'changedTouches' | 'target' | 'timeSt
 function linkAt(target: EventTarget | null): HTMLAnchorElement | null {
   const el = target as Element | null
   if (!el || typeof el.closest !== 'function') return null
-  return el.closest('a[href]')
+  return el.closest('a[href], a[data-app-href]')
 }
 
 /** Follows the touches of one element; `end` answers the link a tap landed on, or null. */

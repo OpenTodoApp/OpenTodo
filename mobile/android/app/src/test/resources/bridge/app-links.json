@@ -1,0 +1,425 @@
+{
+  "description": "Links to other apps (app-links): what the web app hands openAppLink, and the shared vectors. The shell hands a link to the system only when its scheme is on the passed list (allows) and not denied (links).",
+  "handed": [
+    {
+      "url": "zotero://select/items/ABC",
+      "schemes": "[\"zotero\",\"obsidian:open\"]"
+    }
+  ],
+  "vectors": {
+    "about": "App link vectors (OpenSpec change app-links, design D2). internal/origin/applink_test.go, web/src/lib/appLinks.test.ts and the Android and iOS shell tests run every case. links: scheme is the app link's lower-cased scheme, null when the URL is not an app link. entries: whether the entry may be on a person's list. allows: whether the list lets the URL open.",
+    "links": [
+      {
+        "url": "zotero://select/items/ABC",
+        "scheme": "zotero"
+      },
+      {
+        "url": "mid:1234@example.com",
+        "scheme": "mid"
+      },
+      {
+        "url": "message:%3Cabc@example.com%3E",
+        "scheme": "message"
+      },
+      {
+        "url": "onenote:https://d.docs.live.net/x/Notes.one#page",
+        "scheme": "onenote"
+      },
+      {
+        "url": "obsidian://open?vault=V&file=Note%23%5Eabc123",
+        "scheme": "obsidian"
+      },
+      {
+        "url": "Zotero://select/items/ABC",
+        "scheme": "zotero"
+      },
+      {
+        "url": "x-devonthink-item://8A3F",
+        "scheme": "x-devonthink-item"
+      },
+      {
+        "url": "javascript:alert(1)",
+        "scheme": null
+      },
+      {
+        "url": "JavaScript:alert(1)",
+        "scheme": null
+      },
+      {
+        "url": "data:text/html,hi",
+        "scheme": null
+      },
+      {
+        "url": "vbscript:x",
+        "scheme": null
+      },
+      {
+        "url": "file:///etc/passwd",
+        "scheme": null
+      },
+      {
+        "url": "blob:https://a/b",
+        "scheme": null
+      },
+      {
+        "url": "about:blank",
+        "scheme": null
+      },
+      {
+        "url": "filesystem:https://a/b",
+        "scheme": null
+      },
+      {
+        "url": "view-source:https://a",
+        "scheme": null
+      },
+      {
+        "url": "intent://scan/#Intent;scheme=zxing;end",
+        "scheme": null
+      },
+      {
+        "url": "opentodo://task/1",
+        "scheme": null
+      },
+      {
+        "url": "https://example.com",
+        "scheme": null
+      },
+      {
+        "url": "http://example.com",
+        "scheme": null
+      },
+      {
+        "url": "mailto:a@example.com",
+        "scheme": null
+      },
+      {
+        "url": "zotero:",
+        "scheme": null
+      },
+      {
+        "url": "zotero://select items",
+        "scheme": null
+      },
+      {
+        "url": "zotero://select\titems",
+        "scheme": null
+      },
+      {
+        "url": "1zotero://x",
+        "scheme": null
+      },
+      {
+        "url": "a-scheme-name-that-is-far-too-long-x://x",
+        "scheme": null
+      },
+      {
+        "url": "no colon here",
+        "scheme": null
+      },
+      {
+        "url": "",
+        "scheme": null
+      },
+      {
+        "url": "chrome:x/y",
+        "scheme": null
+      },
+      {
+        "url": "chrome-extension:x/y",
+        "scheme": null
+      },
+      {
+        "url": "moz-extension:x/y",
+        "scheme": null
+      },
+      {
+        "url": "resource:x/y",
+        "scheme": null
+      },
+      {
+        "url": "jar:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-appx:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-appx-web:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-msdt:x/y",
+        "scheme": null
+      },
+      {
+        "url": "search-ms:x/y",
+        "scheme": null
+      },
+      {
+        "url": "Search-MS:x/y",
+        "scheme": null
+      },
+      {
+        "url": "search:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-officecmd:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-cxh:x/y",
+        "scheme": null
+      },
+      {
+        "url": "ms-cxh-full:x/y",
+        "scheme": null
+      },
+      {
+        "url": "jnlp:x/y",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a\nb",
+        "scheme": null
+      },
+      {
+        "url": "zotero://ab",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a‮b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a​b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a　b",
+        "scheme": null
+      },
+      {
+        "url": "zotero://a﻿b",
+        "scheme": null
+      },
+      {
+        "url": "mid:a\u0000b",
+        "scheme": null
+      },
+      {
+        "url": "ms-word:ofe|u|https://a/b.docx",
+        "scheme": "ms-word"
+      },
+      {
+        "url": "zotero://select/items/Ünïcödé",
+        "scheme": "zotero"
+      },
+      {
+        "url": "ms-cxhx:y",
+        "scheme": null
+      }
+    ],
+    "entries": [
+      {
+        "entry": "zotero",
+        "ok": true
+      },
+      {
+        "entry": "mid",
+        "ok": true
+      },
+      {
+        "entry": "obsidian:open",
+        "ok": true
+      },
+      {
+        "entry": "x-devonthink-item",
+        "ok": true
+      },
+      {
+        "entry": "Zotero",
+        "ok": false
+      },
+      {
+        "entry": "javascript",
+        "ok": false
+      },
+      {
+        "entry": "intent",
+        "ok": false
+      },
+      {
+        "entry": "opentodo",
+        "ok": false
+      },
+      {
+        "entry": "https",
+        "ok": false
+      },
+      {
+        "entry": "mailto",
+        "ok": false
+      },
+      {
+        "entry": "zotero:",
+        "ok": false
+      },
+      {
+        "entry": "zotero:select:x",
+        "ok": false
+      },
+      {
+        "entry": "",
+        "ok": false
+      },
+      {
+        "entry": "a-scheme-name-that-is-far-too-long",
+        "ok": false
+      },
+      {
+        "entry": "chrome",
+        "ok": false
+      },
+      {
+        "entry": "chrome-extension",
+        "ok": false
+      },
+      {
+        "entry": "search-ms",
+        "ok": false
+      },
+      {
+        "entry": "search",
+        "ok": false
+      },
+      {
+        "entry": "ms-cxh",
+        "ok": false
+      },
+      {
+        "entry": "ms-cxh-full",
+        "ok": false
+      },
+      {
+        "entry": "ms-msdt",
+        "ok": false
+      },
+      {
+        "entry": "ms-officecmd",
+        "ok": false
+      },
+      {
+        "entry": "jnlp",
+        "ok": false
+      },
+      {
+        "entry": "jar",
+        "ok": false
+      },
+      {
+        "entry": "resource",
+        "ok": false
+      },
+      {
+        "entry": "moz-extension",
+        "ok": false
+      },
+      {
+        "entry": "ms-appx",
+        "ok": false
+      }
+    ],
+    "allows": [
+      {
+        "list": [
+          "zotero"
+        ],
+        "url": "zotero://select/items/ABC",
+        "ok": true
+      },
+      {
+        "list": [
+          "mid"
+        ],
+        "url": "zotero://select/items/ABC",
+        "ok": false
+      },
+      {
+        "list": [],
+        "url": "zotero://select/items/ABC",
+        "ok": false
+      },
+      {
+        "list": [
+          "obsidian:open"
+        ],
+        "url": "obsidian://open?vault=V&file=Note",
+        "ok": true
+      },
+      {
+        "list": [
+          "obsidian:open"
+        ],
+        "url": "obsidian://new?vault=V&name=x",
+        "ok": false
+      },
+      {
+        "list": [
+          "obsidian"
+        ],
+        "url": "obsidian://new?vault=V&name=x",
+        "ok": true
+      },
+      {
+        "list": [
+          "mid"
+        ],
+        "url": "mid:1234@example.com",
+        "ok": true
+      },
+      {
+        "list": [
+          "javascript"
+        ],
+        "url": "javascript:alert(1)",
+        "ok": false
+      },
+      {
+        "list": [
+          "intent"
+        ],
+        "url": "intent://scan/#Intent;end",
+        "ok": false
+      },
+      {
+        "list": [
+          "https"
+        ],
+        "url": "https://example.com",
+        "ok": false
+      },
+      {
+        "list": [
+          "zotero"
+        ],
+        "url": "Zotero://select/items/ABC",
+        "ok": true
+      }
+    ]
+  }
+}

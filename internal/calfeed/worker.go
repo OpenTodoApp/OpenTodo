@@ -5,11 +5,13 @@ import (
 	"errors"
 	"log/slog"
 	"net/url"
+	"sync"
 
 	"github.com/OpenTodoApp/opentodo/internal/poll"
 )
 
-// InFlight bounds the fetches of one pass (design D3).
+// InFlight bounds the fetches running at once (design D3): a background pass
+// and the inline fetches of the routes share it.
 const InFlight = 2
 
 // Worker fetches due subscriptions in the background, under the jobs leader.
@@ -21,7 +23,23 @@ type Worker struct {
 	// Notify wakes the user's devices when their events changed.
 	Notify func(userID string)
 	Log    *slog.Logger
+
+	slotsOnce sync.Once
+	slots     chan struct{}
 }
+
+// acquire waits for one of the InFlight slots, or for ctx to end.
+func (w *Worker) acquire(ctx context.Context) error {
+	w.slotsOnce.Do(func() { w.slots = make(chan struct{}, InFlight) })
+	select {
+	case w.slots <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (w *Worker) release() { <-w.slots }
 
 // RunOnce fetches the subscriptions due now, at most InFlight at a time, and
 // waits for them.
@@ -38,8 +56,14 @@ func (w *Worker) RunOnce(ctx context.Context) {
 }
 
 // Refresh fetches one subscription now and records the outcome (also used by
-// the routes for the inline fetch on create, URL change and Refresh now).
+// the routes for the inline fetch on create, URL change and Refresh now). It
+// waits for one of the InFlight slots first; a ctx that ends while it waits
+// returns its error and records nothing.
 func (w *Worker) Refresh(ctx context.Context, sub *Subscription) (*Result, error) {
+	if err := w.acquire(ctx); err != nil {
+		return nil, err
+	}
+	defer w.release()
 	res, err := w.Fetcher.Fetch(ctx, sub)
 	host := ""
 	if u, perr := url.Parse(sub.URL); perr == nil {

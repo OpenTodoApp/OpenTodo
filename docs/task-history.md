@@ -3,7 +3,7 @@ title: Task history
 summary: "Every change to a task is kept: see who changed what and from where, restore one value or a whole version, and follow the activity of a task."
 audience: user
 section: Guides
-specs: [trash-and-history, activity-log]
+specs: [trash-and-history, activity-log, undo-history]
 screens: []
 order: 131
 ---
@@ -26,6 +26,10 @@ History is loaded from your server, so it needs a connection. Offline, the tab s
 ## Bring back an earlier value
 
 Next to each change in a version is **Restore this value**. Select it to set the field back to that value. To put back everything a version changed at once, select **Restore this version**; a confirmation lists the fields first. Restoring is a change like any other: it syncs to all devices and shows up in the history itself as a new version, so you can always undo the undo. Each field is restored as its own change, so if someone edits the same field on another device at the same time, the later edit wins for that field.
+
+## Undo and redo
+
+Right after you act, press <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Z</kbd> to undo and <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> (or <kbd>Ctrl</kbd>+<kbd>Y</kbd>) to redo, and keep pressing to walk back and forward through your recent actions — not only the one the undo toast still shows. The command palette (the shortcut, or **Search** on a phone) lists **Undo** and **Redo** too, named for the step. These are your device's own recent actions, cleared when you sign out; a bulk change undoes as one step, and undoing something you just created moves it to the Trash.
 
 ## Activity on a task
 

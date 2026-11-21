@@ -31,6 +31,7 @@ import { visibleSections } from '../settingsSections'
 import { blockedByFocus, deadlineFocus, deferFocus, estimateFocus, locationFocus, logWinRequest, openReplan, placeInDay, sidebarFind } from '../signals'
 import { setVimEnabled } from '../vim/prefs'
 import { requestNewWorkspace } from '../NewWorkspaceDialog'
+import { requestAway } from '../away/AwayMenu'
 import { switchWorkspace, workspaceLabel } from '../workspaceNav'
 import { viewMenuGroups } from '../ViewsView'
 import type { Entry, Step } from './entries'
@@ -49,6 +50,8 @@ import { requestFrames } from '../calendar/framesRequest'
 import { newSlotNow } from '../calendar/slotActions'
 import { act, reportActionError } from '../actionError'
 import { showUndoToast } from '../bulk/toastStore'
+import { redoToast, undoToast } from '../bulk/UndoToast'
+import type { History } from '../../lib/undoHistory'
 import { assistantStatus, openAssistantWith } from '../../lib/assistantStatus'
 import { connectedNow } from '../../lib/noteLinks'
 import { openConnections } from '../signals'
@@ -93,6 +96,8 @@ export interface PaletteContext {
   slot?: SlotState
   /** Today's missed blocks (replan-the-day D4): "Re-plan the rest of the day" is offered while there are any. */
   missedBlocks?: number
+  /** The undo and redo this device can do (multi-step undo/redo, #1488): the Undo/Redo commands when each is possible. */
+  history?: History
 }
 
 interface Command {
@@ -410,7 +415,13 @@ export function commands(ctx: PaletteContext): Command[] {
       run: () => switchWorkspace(w.id, ctx.route, true),
     })),
     { id: 'workspace:new', label: t('New workspace'), icon: 'plus', keywords: 'workspace add create', run: () => requestNewWorkspace() },
+    // Away (away-periods D4): opens the dialog on Today, where its line and End now live.
+    { id: 'away:set', label: t('Away…'), icon: 'plane', keywords: 'away holiday vacation ill sick pause skip repeating habits reminders',
+      run: () => { if (ctx.route.view !== 'today') navigate({ view: 'today' }); requestAway() } },
     { id: 'app:sync', label: t('Sync now'), icon: 'rotate-ccw', run: () => syncNow() },
+    // Undo and Redo (multi-step undo/redo, #1488): offered when the device has history, named for the step.
+    ...(ctx.history?.undo ? [{ id: 'app:undo', label: ctx.history.undo.label ? t('Undo: {step}', { step: ctx.history.undo.label }) : t('Undo the last change'), icon: 'undo-2' as const, shortcut: keysOf('global.undo'), keywords: 'undo revert back mistake', run: () => undoToast(ctx.history!.undo!.id, { latest: true }) }] : []),
+    ...(ctx.history?.redo ? [{ id: 'app:redo', label: ctx.history.redo.label ? t('Redo: {step}', { step: ctx.history.redo.label }) : t('Redo the change undone last'), icon: 'redo-2' as const, shortcut: keysOf('global.redo'), keywords: 'redo again forward repeat', run: () => redoToast(ctx.history!.redo!.id, { latest: true }) }] : []),
     { id: 'app:shortcuts', label: t('Keyboard shortcuts'), icon: 'list', shortcut: keysOf('global.help'), run: () => ctx.showShortcuts() },
     { id: 'app:sidebar-find', label: t('Find in the sidebar'), icon: 'search', shortcut: keysOf('go.find'), keywords: t('project label view'), run: () => sidebarFind.request('open') },
     { id: 'app:vim', label: ctx.vimEnabled ? t('Turn off Vim keybindings') : t('Turn on Vim keybindings'), icon: 'settings', run: () => setVimEnabled(!ctx.vimEnabled) },

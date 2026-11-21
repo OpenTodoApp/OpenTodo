@@ -3,6 +3,7 @@
 import { type ComponentType, Fragment, type ReactNode, useMemo } from 'react'
 import { type Block, type Inline, LINK_REL, parseMarkdown } from '../lib/markdown'
 import { originFromUrl } from '../lib/taskOrigin'
+import { allowsAppLink, appLinkActivation, useAppLinkSchemes } from '../lib/appLinks'
 import { t } from '../lib/i18n'
 import { Icon, Tooltip } from '../ui'
 import { CodeBlock } from './CodeBlock'
@@ -29,6 +30,7 @@ interface Ctx {
   mentions: ReadonlyMap<string, string> | undefined
   mentionGroups: ReadonlySet<string> | undefined
   embeds: MarkdownEmbeds | undefined
+  appLinks: readonly string[]
 }
 
 /**
@@ -39,7 +41,9 @@ interface Ctx {
  */
 export function MarkdownView({ source, className = '', taskId = null, mentions, mentionGroups, embeds }: MarkdownProps & { embeds?: MarkdownEmbeds }) {
   const blocks = useMemo(() => parseMarkdown(source, 0, mentions?.size ? { mention: (token) => mentions.has(token) } : {}), [source, mentions])
-  const ctx: Ctx = { taskId, mentions, mentionGroups, embeds }
+  // The viewer's own list decides which links into other apps open (app-links D3).
+  const appLinks = useAppLinkSchemes()
+  const ctx: Ctx = { taskId, mentions, mentionGroups, embeds, appLinks }
   return <div className={`markdown user-text space-y-2 ${className}`}>{blocks.map((b, i) => renderBlock(b, i, ctx))}</div>
 }
 
@@ -118,6 +122,20 @@ function renderInline(n: Inline, i: number, ctx: Ctx): ReactNode {
     case 'ref':
       return ctx.embeds ? <ctx.embeds.RefLink key={i} kind={n.kind} id={n.id}>{inl(n.c)}</ctx.embeds.RefLink> : <Fragment key={i}>{inl(n.c)}</Fragment>
     case 'link': {
+      if (n.app) {
+        // A link into another app: text with the address in its tooltip unless
+        // this viewer allowed its scheme; then it opens after the confirmation.
+        if (!allowsAppLink(ctx.appLinks, n.href)) {
+          return <Tooltip key={i} label={n.href}><span data-app-link="text" tabIndex={0}>{inl(n.c)}</span></Tooltip>
+        }
+        return (
+          <Tooltip key={i} label={n.href}>
+            <a key={i} className="cursor-pointer text-accent underline" data-app-link="open" {...appLinkActivation(n.href)}>
+              {inl(n.c)}<Icon name="external-link" size="xs" className="ml-0.5 inline" />
+            </a>
+          </Tooltip>
+        )
+      }
       const origin = originFromUrl(n.href)
       if (origin?.kind === 'issue' && origin.id) {
         // A recognised issue address reads as its id; recognition makes no request.

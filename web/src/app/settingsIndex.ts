@@ -95,6 +95,7 @@ export const SETTINGS_INDEX: readonly SettingsEntry[] = translatedList<SettingsE
   { section: 'integrations', label: msg('Webhooks'), description: msg('Send a message to another service when tasks change'), page: 'webhooks', anchor: 'webhooks-heading' },
   { section: 'integrations', label: msg('API tokens'), description: msg('Keys for scripts and the command-line client'), page: 'tokens', anchor: 'tokens-heading', keywords: 'api key cli' },
   { section: 'integrations', label: msg('Assistant'), description: msg('The in-app assistant: consent, provider, model and usage'), page: 'assistant', anchor: 'ai', keywords: 'ai llm anthropic openai gemini' },
+  { section: 'integrations', label: msg('Links to other apps'), description: msg('Open links to Zotero, mail or other apps from your notes'), page: 'app-links', anchor: 'app-links-heading', keywords: 'url scheme zotero obsidian onenote mid message deep link' },
   { section: 'integrations', label: msg('AI assistants (MCP)'), description: msg('Read-only access for an AI assistant, or a token that can make changes'), page: 'mcp', anchor: 'assistants-heading', keywords: 'mcp claude' },
   // Data
   { section: 'data', label: msg('Export'), description: msg('Download everything as JSON, or with files as a ZIP'), anchor: 'data-heading', keywords: 'backup download json zip' },

@@ -242,5 +242,37 @@ describe('the partition on this device (task 5.1, 5.6, 5.7)', () => {
     expect(moved).not.toBe(errand)
     expect((await db.labels.get(moved))?.workspace_id).toBe('w-work')
     expect((await db.labels.get(moved))?.name).toBe('errand')
+    // Undo puts it back, not in the Trash (#1660: the move was recorded as a creation).
+    const { undoBatch } = await import('./undo')
+    await undoBatch(r.entry!.id)
+    expect(await db.projects.get(garden)).toMatchObject({ deleted_at: null })
+    expect((await db.projects.get(garden))?.workspace_id ?? null).toBeNull()
+    expect((await db.tasks.get(task))!.labels).toEqual([errand])
+  })
+
+  // #1660: a sub-project follows its root's workspace, so its own workspace_id alone
+  // left it where it was while the menu said it had moved.
+  it('moving a sub-project takes it out of its parent, with its own sub-projects and tasks', async () => {
+    await twoWorkspaces()
+    const { createProject, createTask } = await import('./ops')
+    const clients = await createProject({ name: 'Clients' })
+    const acme = await createProject({ name: 'Acme', parent_id: clients })
+    const launch = await createProject({ name: 'Launch', parent_id: acme })
+    const task = await createTask({ title: 'Brief', project_id: launch })
+    const { moveProjectToWorkspaceUndoable } = await import('./undoActions')
+    const r = await moveProjectToWorkspaceUndoable(acme, 'w-work', 'Work')
+    const where = async () => {
+      const [state, projects, tasks] = await Promise.all([import('./workspaces').then((m) => m.readWorkspaceState()), db.projects.toArray(), db.tasks.toArray()])
+      const part = new Partition(state.defaultId, state.list.map((w) => w.id), projects, tasks)
+      const of = (id: string) => workspaceOf('project', projects.find((p) => p.id === id)!, part)
+      return { clients: of(clients), acme: of(acme), launch: of(launch), task: workspaceOf('task', tasks.find((x) => x.id === task)!, part) }
+    }
+    expect(await where()).toEqual({ clients: 'w-p', acme: 'w-work', launch: 'w-work', task: 'w-work' })
+    expect(await db.projects.get(acme)).toMatchObject({ parent_id: null, workspace_id: 'w-work' })
+    expect((await db.projects.get(launch))?.parent_id).toBe(acme)
+    const { undoBatch } = await import('./undo')
+    await undoBatch(r.entry!.id)
+    expect(await db.projects.get(acme)).toMatchObject({ parent_id: clients })
+    expect((await where()).acme).toBe('w-p')
   })
 })
