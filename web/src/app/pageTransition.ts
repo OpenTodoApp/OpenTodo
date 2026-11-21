@@ -32,7 +32,7 @@ export function navDirection(from: Route, to: Route, popped: boolean): NavDirect
   return b > a ? 'forward' : b < a ? 'back' : 'none'
 }
 
-interface ViewTransition { finished: Promise<void>; skipTransition(): void }
+interface ViewTransition { finished: Promise<void>; ready?: Promise<void>; updateCallbackDone?: Promise<void>; skipTransition(): void }
 type StartViewTransition = (update: () => void) => ViewTransition
 
 function textFieldFocused(): boolean {
@@ -60,6 +60,9 @@ export function showRouteChange(apply: () => void, from: string, to: string, pop
   const start = (document as unknown as { startViewTransition: StartViewTransition }).startViewTransition.bind(document)
   const vt = start(() => flushSync(apply))
   running = vt
+  // A skipped transition rejects `ready` (AbortError); the page has already changed, so that is not an error.
+  void vt.ready?.catch(() => {})
+  void vt.updateCallbackDone?.catch(() => {})
   void vt.finished.catch(() => {}).finally(() => {
     if (running !== vt) return
     running = null

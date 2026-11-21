@@ -64,6 +64,26 @@ describe('showing a route change', () => {
     await vi.waitFor(() => expect(document.documentElement.dataset.nav).toBeUndefined())
   })
 
+  it('a skipped transition is not an unhandled rejection (its ready promise rejects)', async () => {
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    try {
+      ;(document as unknown as { startViewTransition: unknown }).startViewTransition = (update: () => void) => {
+        update()
+        let fail: (e: Error) => void = () => {}
+        const ready = new Promise<void>((_, no) => { fail = no })
+        return { ready, updateCallbackDone: Promise.resolve(), finished: new Promise<void>((done) => { finish = done }), skipTransition: () => { fail(new Error('AbortError: Transition was skipped')); finish() } }
+      }
+      showRouteChange(() => {}, '/inbox', '/task/t', false)
+      showRouteChange(() => {}, '/task/t', '/inbox', true)
+      finish()
+      await new Promise((r) => setTimeout(r, 0))
+      expect(unhandled).not.toHaveBeenCalled()
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
   it('the page changes at once with reduced motion, the no-motion display, a focused field or a hidden tab', () => {
     const apply = vi.fn()
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), addEventListener() {}, removeEventListener() {} }))
