@@ -1,0 +1,1 @@
+- **Edit when a task was completed.** A completed task shows its completion in the panel's Schedule facts; open it to change the day or the time it was done, and the Completed view, statistics and streaks follow the new day. Recurring tasks are unchanged: their completions live on occurrence records ([#1667](https://github.com/OpenTodoApp/OpenTodo/issues/1667)).

@@ -56,6 +56,34 @@ func TestRestCompletionStampsCompletedBy(t *testing.T) {
 	}
 }
 
+func TestRestPatchAcceptsPastCompletedAt(t *testing.T) {
+	// Editing when a completed task was completed (GitHub issue 1667): the
+	// server accepts a past completion on PATCH, keeps it exactly, and
+	// stamps the caller as the completer.
+	e := registeredEnv(t)
+	me := meID(t, e)
+	resp, out := e.do("POST", "/api/v1/tasks", map[string]any{"title": "Report"})
+	e.mustStatus(resp, 201, out)
+	id := out["id"].(string)
+
+	past := time.Now().AddDate(0, 0, -3).UnixMilli()
+	resp, out = e.do("PATCH", "/api/v1/tasks/"+id, map[string]any{"completed_at": past})
+	e.mustStatus(resp, 200, out)
+	if out["completed_at"] != float64(past) {
+		t.Fatalf("completed_at = %v, want %d", out["completed_at"], past)
+	}
+	if out["completed_by"] != me {
+		t.Fatalf("completed_by = %v, want %s", out["completed_by"], me)
+	}
+
+	// It reads back the same way.
+	resp, out = e.do("GET", "/api/v1/tasks/"+id, nil)
+	e.mustStatus(resp, 200, out)
+	if out["completed_at"] != float64(past) {
+		t.Fatalf("read back completed_at = %v, want %d", out["completed_at"], past)
+	}
+}
+
 func TestRestRecurringCompletionRecordCarriesCompletedBy(t *testing.T) {
 	e := registeredEnv(t)
 	me := meID(t, e)
