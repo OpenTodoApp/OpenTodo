@@ -4,7 +4,7 @@
 // the chrome still.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import css from '../index.css?raw'
-import { canTransitionPage, navDirection, routeDepth, showRouteChange } from './pageTransition'
+import { canTransitionPage, installPageTransitions, navDirection, routeDepth, showRouteChange } from './pageTransition'
 import { navigate, setRouteShow, type Route } from './router'
 
 const r = (x: Route) => x
@@ -101,6 +101,18 @@ describe('showing a route change', () => {
     expect(canTransitionPage()).toBe(true)
     expect(apply).toHaveBeenCalledTimes(1)
     expect(calls).toEqual([])
+  })
+
+  it('a change made from the keyboard happens at once; a tap brings the transitions back', () => {
+    installPageTransitions()
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    expect(canTransitionPage()).toBe(false)
+    const apply = vi.fn()
+    showRouteChange(apply, '/task/t', '/inbox', true)
+    expect(apply).toHaveBeenCalledTimes(1)
+    expect(calls).toEqual([])
+    window.dispatchEvent(new Event('pointerdown'))
+    expect(canTransitionPage()).toBe(true)
   })
 
   it('navigate hands the change to the installed show with both addresses', () => {

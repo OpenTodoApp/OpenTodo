@@ -359,10 +359,11 @@ async function pageTransitions(p, base) {
     await p.emulateMedia({ reducedMotion: reduced ? 'reduce' : 'no-preference' })
     await openScreen(p, base + '/inbox')
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
-    // The transitions load after the first paint (page-transitions D3).
+    // The transitions load after the first paint (the page-transitions spec).
     await p.waitForTimeout(300)
     await record()
-    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    // A tap: a change made from the keyboard happens at once (the page-transitions spec).
+    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').click()
     await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
     const forward = await settledNavs()
     await p.evaluate(() => { window.__navs = [] })
