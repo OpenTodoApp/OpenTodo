@@ -6,7 +6,7 @@
 // plugin (obsidian/) bundles this very file. e2ee.ts re-exports what the app uses;
 // e2ee.vectors.json pins it.
 import { OP_CONTENT_FIELDS } from '../generated/opSchema'
-import { encryptValue, isEnvelope } from './crypto'
+import { decryptValue, encryptValue, isEnvelope } from './crypto'
 import type { Entity } from './types'
 
 /**
@@ -74,3 +74,8 @@ export async function sealValue(key: CryptoKey, entity: Entity, entityId: string
   return text ? encryptValue(key, entity, entityId, field, text) : value
 }
 
+/** The device value of a wire value: decrypted when it is an envelope (throws DecryptError when it is not authentic). */
+export async function openValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+  if (!isEnvelope(value)) return value
+  return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value))
+}
