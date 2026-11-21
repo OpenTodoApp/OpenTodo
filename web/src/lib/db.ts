@@ -607,6 +607,17 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
   await db.meta.put({ key, value })
 }
 
+/**
+ * Whether this device holds any synced data or queued ops. With no recorded
+ * account (a `userId` marker), such data has no known owner and must not be
+ * handed to whoever signs in next (client-data-safety).
+ */
+export async function hasLocalData(): Promise<boolean> {
+  if ((await db.outbox.count()) > 0) return true
+  for (const t of entityTables()) if ((await t.count()) > 0) return true
+  return false
+}
+
 /** Wipe every local table; used on logout so the next account starts clean. */
 export async function clearLocalData(): Promise<void> {
   bumpLocalEpoch()

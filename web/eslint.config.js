@@ -81,7 +81,7 @@ export default [
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'requestPersistentStorage'],
+          regex: '(^|/)lib/db$', allowImportNames: ['clearLocalData', 'hasLocalData', 'requestPersistentStorage'],
           message: 'Screens read local data through src/lib (lib/localData.ts, lib/liveTasks.ts), not lib/db (web-layering).',
         }],
         // Every live read is a named hook in src/lib (wave 4, M5): shared snapshots
