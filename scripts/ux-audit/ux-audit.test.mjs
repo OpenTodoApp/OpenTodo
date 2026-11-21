@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs'
 import { inventory, inventoryProblems, layoutNames, routerViews } from './inventory.mjs'
 import { rank, score } from './report.mjs'
 import { coverage } from './stories.mjs'
+import { createTrace } from './pageTrace.mjs'
 
 test('the inventory agrees with the router, the layout check and itself', () => {
   assert.deepEqual(inventoryProblems(), [])
@@ -78,4 +79,18 @@ test('the rubric scores severity times frequency and ranks by score, then by cap
     { rule: 'M7', id: 'upcoming', count: 5 },
   ], { help: 'rare', inbox: 'daily', today: 'daily', upcoming: 'daily' })
   assert.deepEqual(ranked.map((r) => r.id), ['inbox', 'upcoming', 'today', 'help'])
+})
+
+test("a screen that did not open carries the page's last events, oldest dropped", () => {
+  let t = 1000
+  const trace = createTrace(3, () => t)
+  t = 1005; trace.push('navigated', 'http://x/inbox')
+  t = 1010; trace.push('console.error', 'Failed to fetch\n  dynamically imported module')
+  t = 1020; trace.push('navigated', 'http://x/inbox')
+  t = 1030; trace.push('request failed', 'http://x/views net::ERR_ABORTED')
+  assert.deepEqual(trace.lines(), [
+    '+10ms console.error Failed to fetch dynamically imported module',
+    '+20ms navigated http://x/inbox',
+    '+30ms request failed http://x/views net::ERR_ABORTED',
+  ])
 })
