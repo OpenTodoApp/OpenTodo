@@ -688,18 +688,6 @@ test('only the signing jobs read the release keys, on release tags, in the signi
   for (const f of workflowFiles()) {
     for (const [id, block] of Object.entries(jobsOf(read(f)))) {
       if (/environment: signing|secrets\.(ANDROID_KEY|CLAUDE_PLUGIN_DEPLOY_KEY|OBSIDIAN_DEPLOY_KEY)/.test(block)) {
-        // The one-off export for the owner (SEC-20): by hand, on main, encrypted to the
-        // recipient fixed in the file. Removed once the owner holds the copy.
-        if (f.replaceAll('\\', '/').endsWith('.github/workflows/export-android-key.yml') && id === 'export') {
-          const text = read(f)
-          assert.match(text, /^on:\n {2}workflow_dispatch:\n\npermissions:/m, `${f}: runs by hand only, with no other trigger`)
-          assert.match(block, /^ {4}if: github\.ref == 'refs\/heads\/main'$/m, `${f}: runs on main only`)
-          assert.equal((text.match(/age1[0-9a-z]{58}/g) ?? []).join(), 'age1kvmqk4qupf7kyjn4ytwj5503grc63ccszh6476e2wf50vmnchpps5sf7et', `${f}: encrypts to the owner's recipient only`)
-          assert.equal((text.match(/RECIPIENT:/g) ?? []).length, 1, `${f}: one recipient, set once`)
-          // Temporary: the backup is taken once, then the file goes (SEC-20).
-          assert.ok(Date.now() < Date.parse('2026-12-05'), `${f}: remove the one-off export workflow`)
-          continue
-        }
         assert.ok(f.endsWith('ci.yml') && id in keys, `${f}: only ${Object.keys(keys).join(', ')} use the signing environment or a release key (${id})`)
       }
     }
