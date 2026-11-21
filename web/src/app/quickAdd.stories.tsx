@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { type ReactNode, useEffect, useRef } from 'react'
 import { QuickAdd } from './QuickAdd'
+import { LineDatePicker } from './quickadd/LineDatePicker'
 import { ReadOnlyQuickAdd } from './task-list/ListChrome'
 import { PasteOfferPanel } from './quickadd/PasteOffer'
 import { HEX, label, withClock } from './stories/fixtures'
@@ -118,6 +119,15 @@ export const PhoneSheet: StoryObj = {
   render: () => (
     <div className="max-w-sm rounded-t-popover border-t border-strong bg-pop pt-3 shadow-3">
       <QuickAdd layout="sheet" placeholder="Add a task…" projects={projects} labels={labels} onAdd={noop} hideHint initialValue="Call the bank tomorrow 3pm #Home" />
+    </div>
+  ),
+}
+
+/** The sheet's date tool open (phone-quickadd-date-picker): tomorrow at 17:00 picked, on a fixed day. */
+export const PhoneSheetDatePicker: StoryObj = {
+  render: () => (
+    <div className="max-w-sm rounded-t-popover border-t border-strong bg-pop pt-3 shadow-3">
+      <LineDatePicker id="story-line-date" due={{ date: '2026-11-22', time: '17:00' }} onPick={() => {}} today="2026-11-21" />
     </div>
   ),
 }

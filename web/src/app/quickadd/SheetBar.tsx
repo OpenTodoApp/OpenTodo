@@ -13,11 +13,10 @@ import { chipText } from '../ParseChips'
 import { ProjectMark } from '../ProjectMark'
 import { FIELD_ICON, fieldOf, type FieldKind, type QuickAddProject } from './fields'
 import { FIELD_NAME } from './FieldRows'
+import { LineDatePicker, type LineDate } from './LineDatePicker'
 
-// The tools that start a token the line understands. "When" (a date) has no token —
-// dates are typed in words ("tomorrow") — so its tool only inserted a space and opened
-// nothing (#1624); it is left out until the phone gets a date picker (a separate
-// proposal). Priority, label, estimate and project each start a token the field reads.
+// The tools that start a token the line understands. A date has no token (dates are
+// words, "tomorrow"): its tool opens the date picker instead (phone-quickadd-date-picker).
 const TOOLS: FieldKind[] = ['priority', 'label', 'estimate', 'project']
 const keepFocus = (e: React.MouseEvent) => e.preventDefault()
 
@@ -28,7 +27,7 @@ function chipWords(chip: Chip, projects: readonly ProjectRef[], labels: readonly
   return text
 }
 
-export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes }: {
+export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, canSend, energy = false, notes, date }: {
   chips: readonly Chip[]
   projects: readonly QuickAddProject[]
   labels: readonly LabelRef[]
@@ -41,12 +40,15 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
   energy?: boolean
   /** The notes field under the line (quick-add-notes D2): the last tool opens it and moves the caret there. */
   notes?: { open: boolean; start: () => void }
+  /** The date tool (phone-quickadd-date-picker): opens the date picker above the chips. */
+  date?: LineDate
 }) {
   const tools: FieldKind[] = energy ? [...TOOLS, 'energy'] : TOOLS
   const set = new Set(chips.map((c) => fieldOf(c.kind)))
   const placeholders = (['project', 'label'] as const).filter((k) => !set.has(k))
   return (
     <div data-quick-add-sheet-bar>
+      {date?.open && <LineDatePicker id={date.id} due={date.due} onPick={date.pick} />}
       <div className="flex gap-1.5 overflow-x-auto px-3 pb-3 pt-1 [scrollbar-width:none]" role="group" aria-label={t('Understood')} data-scroll-x>
         {chips.map((c) => {
           const project = c.kind === 'project' ? projects.find((p) => p.id === c.value) : undefined
@@ -74,6 +76,12 @@ export function SheetBar({ chips, projects, labels, line, onDismiss, onStart, ca
         ))}
       </div>
       <div className="flex items-center gap-1 border-t border-default px-2.5 py-2" role="toolbar" aria-label={t('Add details')}>
+        {date && (
+          <button type="button" data-sheet-tool="when" onMouseDown={keepFocus} onClick={date.toggle} aria-label={FIELD_NAME.when} aria-expanded={date.open} aria-controls={date.id}
+            className={`inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control hover:bg-hover hover:text-default ${date.open ? 'bg-selected text-default' : 'text-muted'}`}>
+            <Icon name={FIELD_ICON.when} size={18} />
+          </button>
+        )}
         {tools.map((k) => (
           <button key={k} type="button" data-sheet-tool={k} onMouseDown={keepFocus} onClick={() => onStart(k)} aria-label={FIELD_NAME[k]}
             className="inline-flex h-[2.375rem] w-[2.375rem] items-center justify-center rounded-control text-muted hover:bg-hover hover:text-default">

@@ -22,6 +22,7 @@ import { t, preferredLanguages } from '../lib/i18n'
 import { chipRange, type FieldKind, fieldRows, type FieldRow, type QuickAddProject, startToken } from './quickadd/fields'
 import { FieldRows, QuickAddFooter } from './quickadd/FieldRows'
 import { SheetBar } from './quickadd/SheetBar'
+import { useLineDate } from './quickadd/LineDatePicker'
 import { usePasteOffer } from './quickadd/PasteOffer'
 import { NotesLine, useNotesField } from './quickadd/NotesLine'
 import { VoiceButton, VoiceNotice } from './quickadd/VoiceParts'
@@ -203,6 +204,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
   // Unmatched #tokens are explained once the caret has left them (natural-language-capture "Unmatched tokens are explained").
   const misses = (parsed?.unmatched ?? []).filter((m) => !suggest.open || caretOutside(inputRef.current, m.span))
 
+  const lineDate = useLineDate({ input: inputRef, value, chips, context, change }) // the sheet's date tool (phone-quickadd-date-picker)
   const voice = useDictation({
     inputRef, getText: () => valueRef.current, setText: change, settings, projects, labels, shortcut: voiceShortcut,
   })
@@ -386,7 +388,7 @@ export const QuickAdd = forwardRef<HTMLTextAreaElement, {
         <div id="quick-add-preview" role="status" aria-live="polite">
           {misses.length > 0 && <div className="flex flex-wrap gap-1.5 px-3 pb-2 text-meta"><ParseChips chips={[]} misses={misses} projects={projects} labels={labels} onDismiss={dismiss} onMiss={(m) => suggest.openAt(m.span.end)} /></div>}
           <SheetBar chips={chips} projects={projects} labels={labels} line={lineInfo} onDismiss={dismiss} onStart={edit} canSend={!!value.trim() && !emptyTitle} energy={energyOn && settings.enabled}
-            notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} />
+            notes={notesAllowed ? { open: notes !== null, start: notesField.open } : undefined} date={settings.enabled ? lineDate : undefined} />
         </div>
       )}
       {layout === 'line' && <div id="quick-add-preview" role="status" aria-live="polite" className="empty:hidden">

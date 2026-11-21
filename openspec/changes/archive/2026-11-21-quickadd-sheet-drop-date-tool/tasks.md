@@ -7,4 +7,4 @@
 
 ## 2. Follow-up (separate)
 
-- [ ] 2.1 Propose a phone quick-add date picker (after the freeze), which re-adds a date tool that opens it.
+- [x] 2.1 Propose a phone quick-add date picker (after the freeze), which re-adds a date tool that opens it. Done in `phone-quickadd-date-picker` (#1633).
