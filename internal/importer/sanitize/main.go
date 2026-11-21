@@ -464,7 +464,7 @@ func (s *scrubber) sqlite(in, out string) error {
 		{"TMSmartList", "title", "List"},
 	}
 	for _, c := range cols {
-		if err := s.scrubColumn(db, c.table, c.column, c.kind); err != nil {
+		if err := s.scrubColumnWhere(db, c.table, c.column, c.kind, ""); err != nil {
 			return fmt.Errorf("%s.%s: %w", c.table, c.column, err)
 		}
 	}
@@ -490,39 +490,4 @@ func vacuum(db *sql.DB) error {
 	}
 	_, err := db.Exec("VACUUM")
 	return err
-}
-
-func (s *scrubber) scrubColumn(db *sql.DB, table, column, kind string) error {
-	rows, err := db.Query(fmt.Sprintf(`SELECT rowid, "%s" FROM "%s" WHERE "%s" IS NOT NULL AND "%s" != ''`, column, table, column, column))
-	if err != nil {
-		if strings.Contains(err.Error(), "no such") {
-			return nil
-		}
-		return err
-	}
-	type upd struct {
-		id int64
-		v  string
-	}
-	var ups []upd
-	for rows.Next() {
-		var id int64
-		var v string
-		if err := rows.Scan(&id, &v); err != nil {
-			rows.Close()
-			return err
-		}
-		ups = append(ups, upd{id, s.text(kind, v)})
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-	for _, u := range ups {
-		if _, err := db.Exec(fmt.Sprintf(`UPDATE "%s" SET "%s" = ? WHERE rowid = ?`, table, column), u.v, u.id); err != nil {
-			return err
-		}
-	}
-	return nil
 }
