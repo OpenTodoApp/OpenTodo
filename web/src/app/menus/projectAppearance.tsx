@@ -66,10 +66,3 @@ export function ColourSwatches({ color, onPick, onDefault, menu = false }: {
 export function setProjectColour(project: Project, color: string) {
   act(updateProject(project.id, { color }))
 }
-
-export function projectColourItem(project: Project): ActionItem {
-  return { kind: 'step', id: 'colour', label: t('Colour'), icon: 'palette', step: {
-    title: t('Colour'),
-    render: (done) => <ColourSwatches color={project.color} onPick={(color) => { setProjectColour(project, color); done() }} />,
-  } }
-}
