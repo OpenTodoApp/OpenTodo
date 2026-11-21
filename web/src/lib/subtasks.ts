@@ -70,22 +70,6 @@ export function patchProgress(prev: Map<string, Progress>, changes: readonly Tas
 /** progressMap of a task snapshot, worked out from the rows each write changed. */
 export const liveProgress = perList<Map<string, Progress>>(progressMap, patchProgress)
 
-export type ParentState = 'nested' | 'missing' | 'deleted' | 'completed' | 'elsewhere' | 'none'
-
-/**
- * How `task` relates to its parent for display. Only `nested` renders the task
- * beneath its parent; every other state puts it at the top level of its project.
- */
-export function parentState(task: Task, byId: Map<string, Task>): ParentState {
-  if (!task.parent_id) return 'none'
-  const parent = byId.get(task.parent_id)
-  if (!parent) return 'missing'
-  if (parent.deleted_at) return 'deleted'
-  if (parent.completed_at && !task.completed_at) return 'completed'
-  if (parent.project_id !== task.project_id) return 'elsewhere'
-  return 'nested'
-}
-
 /** Title of the nearest known parent, for breadcrumbs; null when the parent is unknown locally. */
 export function breadcrumbOf(task: Task, byId: Map<string, Task>): string | null {
   const [parent] = ancestors(task.id, byId)

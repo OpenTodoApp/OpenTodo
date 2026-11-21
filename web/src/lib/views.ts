@@ -264,12 +264,6 @@ export async function deleteView(id: string): Promise<void> {
   await mutate('view', id, { deleted_at: Date.now() })
 }
 
-export async function setPinned(id: string, pinned: boolean): Promise<void> {
-  const view = await db.views.get(id)
-  if (!view || view.deleted_at || view.pinned === pinned) return
-  await mutate('view', id, { pinned })
-}
-
 /**
  * Move a view one step up (-1) or down (+1) among the saved views, as the sidebar's
  * Filters group and the overview list them (sidebar-favourites: every saved filter is

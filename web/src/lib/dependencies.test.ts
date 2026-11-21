@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db, useDatabase } from './db'
-import { blockedMap, blockerCandidates, brokenEdges, dependents, isBlocked, openBlockers, removeBlocker, addBlocker, setBlockedBy } from './dependencies'
+import { blockedMap, blockerCandidates, brokenEdges, dependents, isBlocked, openBlockers, setBlockedBy } from './dependencies'
 import { applyOps, createProject, createTask, resetDeviceId, updateTask } from './ops'
 import { membershipMap } from './sharing'
 import type { Op, Task } from './types'
@@ -74,16 +74,6 @@ describe('setBlockedBy', () => {
     await db.memberships.put({ projectId: p, role: 'owner', ownerId: 'me', members: [] })
     const shared = await createTask({ title: 'Team task', project_id: p })
     await expect(setBlockedBy(a, [shared])).rejects.toThrow('shared differently')
-  })
-
-  it('sequential adds and a remove never lose an entry', async () => {
-    const t = await createTask({ title: 'Trip' })
-    const [x, y, z] = await Promise.all(['X', 'Y', 'Z'].map((title) => createTask({ title })))
-    await addBlocker(t, x)
-    await addBlocker(t, y)
-    await removeBlocker(t, x)
-    await addBlocker(t, z)
-    expect((await db.tasks.get(t))!.blocked_by).toEqual([y, z])
   })
 })
 

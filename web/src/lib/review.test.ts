@@ -8,7 +8,7 @@ import { applyOps, createTask, mutate, resetDeviceId, updateTask } from './ops'
 import { compute, periodFor } from './stats'
 import { undoBatch } from './undo'
 import { closeLabel, closeTheDay, seedFocus, tomorrowsTasks, daySummary, planCarryOver, type CarryDecision, type CarryTask } from './closeDay'
-import { areasOf, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, yesterdaysNote, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkProjects, pausedCount, type ReviewInput } from './review'
+import { areasOf, carryOverOf, closeDay, closedDayOf, reopenDay, dailyDue, dayClosed, yesterdaysNote, finishDailyCheck, finishReview, firstUnfinished, focusTasks, markProjectReviewed, monthlyDue, reviewAgo, reviewDue, reviewSteps, toggleFocus, walkCandidates, pausedCount, type ReviewInput } from './review'
 import { reviewDate, reviewEveryOf, reviewIsDue } from './reviewCadence'
 import type { Membership, Project, Task } from './types'
 import { nextMillisecond } from '../test/clock'
@@ -161,7 +161,7 @@ describe('review steps', () => {
     expect((await db.prefs.get('garage'))?.reviewed_at).toBe(7000)
     const queued = (await db.outbox.toArray()).map(({ entity, entityId, field, value }) => ({ entity, entityId, field, value }))
     expect(queued).toEqual([{ entity: 'project_prefs', entityId: 'garage', field: 'reviewed_at', value: 7000 }])
-    expect(walkProjects(inputOf([], [project('garage')], [], [['garage', 7000]]))[0].reviewedAt).toBe(7000)
+    expect(walkCandidates(inputOf([], [project('garage')], [], [['garage', 7000]]))[0].reviewedAt).toBe(7000)
   })
 
   it('Look ahead lists the next seven days and is always done', () => {

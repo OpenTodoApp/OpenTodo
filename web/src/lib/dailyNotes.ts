@@ -6,7 +6,7 @@
 // and text, not the write's clock (richtext.ts foldBack), so two devices, or a
 // device and the routine step, that create the same day build the same body and
 // what each side types into it merges ("Two devices offline").
-import { addDaysISO, logicalToday } from './dates'
+import { addDaysISO } from './dates'
 import { db } from './db'
 import { DAILY_TITLE, dailyNoteId } from './dailyNoteId'
 import { builtinNoteTemplates, builtinText, fillContextNow, fillTemplate } from './noteTemplates'
@@ -19,16 +19,6 @@ import { workspaceFields } from './workspaces'
 export const BUILTIN_DAILY = 'daily'
 
 export { dailyNoteId } from './dailyNoteId'
-
-/** Whether Daily notes is on for the account (off by default). */
-export function dailyNotesOn(prefs: Partial<UserPrefs> | null | undefined): boolean {
-  return prefs?.daily_notes === true
-}
-
-/** Today for daily notes: the local date after the day start (D4). */
-export function dailyToday(now = Date.now()): string {
-  return logicalToday(undefined, now)
-}
 
 /** The day `n` days from `day`. */
 export const shiftDay = (day: string, n: number): string => addDaysISO(day, n)

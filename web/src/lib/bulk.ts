@@ -252,12 +252,6 @@ export interface ReviewPlan {
   resolve: (checkedTaskIds: readonly string[]) => Promise<ProposedChange[]>
 }
 
-export async function planMoveFor(ids: readonly string[], target: MoveTarget): Promise<ProposedChange[]> {
-  const { tasks, all } = await readTicked(ids)
-  const memberships = await membershipMap()
-  return toProposed(planMove(tasks, all, target, memberships, await currentUserId(), Date.now(), await keepWorkspaceFor()), memberships)
-}
-
 export async function reviewMove(ids: readonly string[], target: MoveTarget): Promise<ReviewPlan> {
   const { tasks, all } = await readTicked(ids)
   const memberships = await membershipMap()

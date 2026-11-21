@@ -221,12 +221,3 @@ export function planStep<T extends Positioned>(
   return plan && plan.length ? plan : null
 }
 
-/**
- * The single position that moves `id` one place up (-1) or down (+1), or null at
- * an edge or when the gap is exhausted (use planStep, which renumbers, instead).
- * Kept for board-view callers and tests.
- */
-export function positionForStep<T extends Positioned>(siblings: T[], id: string, delta: -1 | 1): number | null {
-  const plan = planStep(siblings, id, delta)
-  return plan && plan.length === 1 ? plan[0].position : null
-}

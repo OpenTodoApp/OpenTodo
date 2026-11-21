@@ -1,7 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { isEnvelope } from './crypto'
-import { contentToString, isContentField, openValue, sealValue } from './e2eeEnvelope'
+import { decryptValue, isEnvelope } from './crypto'
+import { contentFromString, contentToString, isContentField, sealValue } from './e2eeEnvelope'
+import type { Entity } from './types'
+
+/** The device value of a wire value, as sync opens it: decrypted when it is an envelope. */
+async function openValue(key: CryptoKey, entity: Entity, entityId: string, field: string, value: unknown): Promise<unknown> {
+  if (!isEnvelope(value)) return value
+  return contentFromString(entity, field, await decryptValue(key, entity, entityId, field, value))
+}
 
 const source = (f: string) => readFileSync(new URL(f, import.meta.url), 'utf8')
 const imports = (text: string) => [...text.matchAll(/^import\s.*?from\s+'([^']+)'/gms)].map((m) => m[1]).sort()

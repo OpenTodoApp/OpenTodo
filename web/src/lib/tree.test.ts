@@ -3,11 +3,21 @@ import { getMeta, setMeta, useDatabase } from './db'
 import { applyOps, createSubtask, createTask, resetDeviceId, setTaskCompleted } from './ops'
 import {
   buildProjectTree, descendantIds, expandAncestorsOf, getCollapsedProjects, isDescendant as isProjectDescendant,
-  openCountsByProject, setCollapsedProjects, subtreeOpenCounts, toggleCollapsedProject,
+  rollUpCounts, setCollapsedProjects, toggleCollapsedProject, type ProjectTree,
 } from './projects'
-import { breadcrumbOf, buildTaskTree, parentState, progressOf } from './subtasks'
+import { breadcrumbOf, buildTaskTree, progressOf } from './subtasks'
 import { ancestors, buildTree, descendants, effectiveParents, flattenTree, isDescendant } from './tree'
 import type { Op, Project, Task } from './types'
+
+/** Open tasks per project, rolled up as the sidebar does (rollUpCounts over each project's own open tasks). */
+function openCountsByProject(tasks: Iterable<Task>, tree: ProjectTree, collapsed: Set<string>): Map<string, number> {
+  const own = new Map<string, number>()
+  for (const t of tasks) {
+    if (t.deleted_at || t.completed_at || !t.project_id) continue
+    own.set(t.project_id, (own.get(t.project_id) ?? 0) + 1)
+  }
+  return rollUpCounts(own, tree, collapsed)
+}
 
 let n = 0
 beforeEach(() => {
@@ -148,19 +158,14 @@ describe('display state of inconsistent parents', () => {
     const byId = new Map(all.map((t) => [t.id, t]))
     const insurance = byId.get(ins)!
     expect(insurance.completed_at).toBeNull()
-    expect(parentState(insurance, byId)).toBe('completed')
     expect(breadcrumbOf(insurance, byId)).toBe('Plan trip')
     const open = all.filter((t) => !t.completed_at && !t.deleted_at && t.project_id === 'p')
     const flat = flattenTree(buildTaskTree(open).roots)
     expect(flat.map((x) => [x.id, x.depth])).toEqual([[ins, 0]])
   })
 
-  it('reports missing and deleted parents', () => {
+  it('a task whose parent is missing has no breadcrumb', () => {
     const child = task('c', 'p1')
-    expect(parentState(child, new Map([['c', child]]))).toBe('missing')
-    expect(parentState(child, new Map([['c', child], ['p1', task('p1', null, { deleted_at: 1 })]]))).toBe('deleted')
-    expect(parentState(child, new Map([['c', child], ['p1', task('p1', null)]]))).toBe('nested')
-    expect(parentState(child, new Map([['c', child], ['p1', task('p1', null, { project_id: 'q' })]]))).toBe('elsewhere')
     expect(breadcrumbOf(child, new Map([['c', child]]))).toBeNull()
   })
 })
@@ -246,7 +251,6 @@ describe('openCountsByProject', () => {
     expect(expanded.get('kitchen')).toBe(0)
     // Collapsing a middle level rolls up only that level.
     expect(openCountsByProject(tasks, tree, new Set(['garden'])).get('garden')).toBe(4)
-    expect(subtreeOpenCounts(tasks, tree).get('garden')).toBe(4)
   })
   it('ignores tasks of archived descendants', () => {
     const withArchived = [...projects, project('shed', 'garden', { archived: true })]

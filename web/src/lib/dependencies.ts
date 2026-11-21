@@ -248,14 +248,3 @@ export async function setBlockedBy(taskId: string, ids: string[]): Promise<void>
   })
 }
 
-/** Add one blocker. */
-export async function addBlocker(taskId: string, blockerId: string): Promise<void> {
-  const task = await db.tasks.get(taskId)
-  await setBlockedBy(taskId, [...blockersOf(task ?? {}), blockerId])
-}
-
-/** Remove one blocker. */
-export async function removeBlocker(taskId: string, blockerId: string): Promise<void> {
-  const task = await db.tasks.get(taskId)
-  await setBlockedBy(taskId, blockersOf(task ?? {}).filter((id) => id !== blockerId))
-}

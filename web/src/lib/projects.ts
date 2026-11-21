@@ -7,7 +7,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getMeta, setMeta } from './db'
 import { buildTree, descendants, isDescendant as isTreeDescendant, type Tree, type TreeNode } from './tree'
-import type { Project, Task } from './types'
+import type { Project } from './types'
 
 export type ProjectTree = Tree<Project>
 export type ProjectNode = TreeNode<Project>
@@ -39,15 +39,9 @@ export function isDescendant(candidate: string, ancestor: string, projects: Proj
 }
 
 /**
- * Open-task count per project as the sidebar shows it: a collapsed project counts
- * its whole visible subtree, an expanded one only its own tasks. One pass over the
- * tasks, then one bottom-up pass over the tree; linear in both.
+ * Each project's own open counts rolled up the tree as the sidebar shows them: a collapsed
+ * project counts its whole visible subtree, an expanded one only its own tasks.
  */
-export function openCountsByProject(tasks: Iterable<Task>, tree: ProjectTree, collapsed: Set<string>): Map<string, number> {
-  return rollUpCounts(ownOpenCounts(tasks), tree, collapsed)
-}
-
-/** Each project's own counts rolled up the tree as the sidebar shows them (openCountsByProject). */
 export function rollUpCounts(own: ReadonlyMap<string, number>, tree: ProjectTree, collapsed: ReadonlySet<string>): Map<string, number> {
   const out = new Map<string, number>()
   const total = (n: ProjectNode): number => {
@@ -65,20 +59,6 @@ export function siblingEdges(tree: ProjectTree, n: ProjectNode): { first: boolea
   const peers = n.parent ? tree.nodes.get(n.parent)?.children ?? [] : tree.roots
   const i = peers.findIndex((x) => x.id === n.id)
   return { first: i <= 0, last: i < 0 || i === peers.length - 1 }
-}
-
-/** Open-task total of each project's whole visible subtree (what a sub-project list shows). */
-export function subtreeOpenCounts(tasks: Iterable<Task>, tree: ProjectTree): Map<string, number> {
-  return openCountsByProject(tasks, tree, new Set(tree.nodes.keys()))
-}
-
-function ownOpenCounts(tasks: Iterable<Task>): Map<string, number> {
-  const own = new Map<string, number>()
-  for (const t of tasks) {
-    if (t.deleted_at || t.completed_at || !t.project_id) continue
-    own.set(t.project_id, (own.get(t.project_id) ?? 0) + 1)
-  }
-  return own
 }
 
 // ---- per-device collapse state (local `meta`, never synced) ----
