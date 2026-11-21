@@ -3,8 +3,7 @@
 // server's origin only. Everything here is optional: outside a shell `shell()` is
 // null and every caller keeps today's browser behaviour. A method the shell does not
 // list in `capabilities` is never called, so an older shell keeps working for the
-// capabilities both sides know. The bridge comes from the platform port
-// (native-app-foundation D3): the native app has no web view and no bridge.
+// capabilities both sides know. The bridge comes from the platform port.
 import { platform } from './platform'
 
 /** The bridge version this web app speaks. */

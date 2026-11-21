@@ -229,7 +229,7 @@ func TestRouteMatrix(t *testing.T) {
 		}
 		status, code := m.call(m.anon, r.method, r.path)
 		// A browser page that signs in first sends a browser without a
-		// session to the sign-in page instead (native-app-foundation D5).
+		// session to the sign-in page instead (app-sign-in).
 		if want := anonymousStatus(r.p); status != want {
 			t.Errorf("%s %s (%s) anonymously = %d %q, want %d", r.method, r.path, r.pattern, status, code, want)
 		}

@@ -19,8 +19,6 @@ import { checkSurfaceFreeze, surfaceProblems, SURFACE_FILE } from './release/sur
 import { MATRIX_APPS, matrixProblems, parseMatrix, staleRows, checkMatrixFreshness } from './release/switchMatrix.mjs'
 import { readFragments, unreleasedProblems } from './release/fragments.mjs'
 import { gateProblems, latestRelease, tableProblems, verificationProblems, VERIFICATION_TABLES } from './release/verificationTables.mjs'
-import { boundaryProblems, browserGlobals, SHARED_MODULES_FILE } from './shared-boundary.mjs'
-import { hasTypeScript, sharedGraph } from './shared-graph.mjs'
 import { finishedProblems, gitLastTouched, openChanges, staleWarnings, taskCounts } from './openspec-hygiene.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -95,19 +93,7 @@ const tiers = [
   [['docs/api.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false', extension: 'false', skill: 'false' }],
   [['openspec/changes/x/proposal.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
   [['changelog.d/Fixed/x.md'], { code: 'false', docs: 'true', ui: 'false', layout: 'false' }],
-  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true', app: 'true', app_native: 'false' }],
-  // The native app (native-app-foundation D9): a web-only change runs no app job, a
-  // shared module only the Linux checks, an app change those and the two builds.
-  [['web/src/app/today/TodayView.tsx'], { app: 'false', app_native: 'false' }],
-  [['web/src/app/today/TodayView.tsx', 'web/src/lib/sync.test.ts'], { app: 'false', app_native: 'false' }],
-  [['web/src/lib/sync.ts'], { app: 'true', app_native: 'false', ios: 'false', mobile: 'false' }],
-  [['web/src/generated/opSchema.ts'], { app: 'true', app_native: 'false' }],
-  [['web/src/locales/de.json'], { app: 'true', app_native: 'false' }],
-  [['mobile/app/src/App.tsx'], { code: 'false', docs: 'false', mobile: 'false', ios: 'false', app: 'true', app_native: 'true' }],
-  [['mobile/app/package-lock.json'], { app: 'true', app_native: 'true' }],
-  [['mobile/ios/OpenTodo/Bridge.swift'], { app: 'false', app_native: 'false' }],
-  [['mobile/README.md'], { app: 'false', app_native: 'false' }],
-  [['scripts/shared-graph.mjs'], { app: 'true', app_native: 'false' }],
+  [['.github/workflows/ci.yml'], { ui: 'true', layout: 'true', a11y: 'true', extension: 'true', obsidian: 'true', skill: 'true', mobile: 'true', ios: 'true' }],
   // The accessibility gate on real screens (accessibility-aa D1): the web app and the audit scripts only.
   [['web/src/app/Shell.tsx'], { a11y: 'true' }],
   [['scripts/ux-audit/tour.mjs'], { a11y: 'true', ui: 'false' }],
@@ -323,7 +309,7 @@ test('the full matrix runs on tags, nightly and by hand; main pushes and drafts 
   assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
   assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
   assert.match(jobs.changes, /DRAFT: \$\{\{ github\.event\.pull_request\.draft \}\}/)
-  assert.match(jobs.changes, /\(ui\|layout\|a11y\|mobile\|ios\|app\|app_native\)=true/, 'a draft turns the heavy jobs off')
+  assert.match(jobs.changes, /\(ui\|layout\|a11y\|mobile\|ios\)=true/, 'a draft turns the heavy jobs off')
   for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
   assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
 })
@@ -1031,108 +1017,8 @@ test('a renamed make target fails the contributor pages check, naming the page',
   ])
 })
 
-// ---- the native app's shared-code boundary (native-app-foundation D2, D3) ----
-
-test('the modules the app shares reach their host only through the platform port', () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  assert.ok(modules.includes('web/src/lib/sync.ts'))
-  assert.deepEqual(boundaryProblems(root), [])
-})
-
-// The graph needs web's TypeScript: the Changed paths job has no npm install and
-// skips these two; the Web job runs them after npm ci.
-const graphSkip = hasTypeScript() ? false : 'needs web/node_modules (npm ci in web/); the Web job runs it'
-
-test('the shared list holds the whole import graph of the sync path (node scripts/shared-graph.mjs)', { skip: graphSkip }, () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  const graph = sharedGraph()
-  assert.ok(graph.includes('web/src/lib/platform.ts') && graph.includes('web/src/lib/deviceStorage.ts'))
-  assert.deepEqual(graph.filter((m) => !modules.includes(m)), [], `add these modules to ${SHARED_MODULES_FILE}`)
-})
-
-test('the import graph follows static, dynamic and type-only imports, and leaves packages and assets out', { skip: graphSkip }, () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'graph-'))
-  try {
-    const lib = path.join(dir, 'web/src/lib')
-    mkdirSync(path.join(lib, 'sub'), { recursive: true })
-    writeFileSync(path.join(lib, 'a.ts'), "import React from 'react'\nimport { b } from './b'\nimport type { C } from './sub'\nimport data from './d.json'\nexport const lazy = () => import('./e')\n")
-    writeFileSync(path.join(lib, 'b.ts'), "export const b = 1 // import './not-code'\n")
-    writeFileSync(path.join(lib, 'sub/index.ts'), 'export type C = number\n')
-    writeFileSync(path.join(lib, 'd.json'), '{}')
-    writeFileSync(path.join(lib, 'e.tsx'), "import { b } from './b'\nexport default b\n")
-    writeFileSync(path.join(lib, 'unused.ts'), 'export {}\n')
-    assert.deepEqual(sharedGraph(['web/src/lib/a.ts'], dir), ['web/src/lib/a.ts', 'web/src/lib/b.ts', 'web/src/lib/e.tsx', 'web/src/lib/sub/index.ts'])
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('a browser global in a shared module fails the boundary check, naming the module, the global and the port', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'boundary-'))
-  try {
-    const rel = 'web/src/lib/sync.ts'
-    mkdirSync(path.join(dir, 'web/src/lib'), { recursive: true })
-    const src = read(rel)
-    writeFileSync(path.join(dir, rel), `${src}export const hidden = () => document.hidden\n`)
-    assert.deepEqual(boundaryProblems(dir, [rel, 'web/src/lib/gone.ts']), [
-      `${rel}:${src.split('\n').length} uses the browser global document; a module the app shares reaches its host through the platform port (web/src/lib/platform.ts)`,
-      `${SHARED_MODULES_FILE} lists web/src/lib/gone.ts, which does not exist`,
-    ])
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('every module in shared-modules.json runs the app checks on Linux, never an app build', () => {
-  const { modules } = JSON.parse(read(SHARED_MODULES_FILE))
-  for (const m of modules) assert.deepEqual(pick(changes([m]), ['app', 'app_native']), { app: 'true', app_native: 'false' }, m)
-})
-
-// Every package of mobile/app/package.json is pinned exactly and has its reason in
-// DEPENDENCIES.md (native-app-foundation D7), and every line there names a package.
-function appDependencyProblems(pkg, doc) {
-  const problems = []
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies }
-  const listed = new Set([...doc.matchAll(/^- `([^`]+)`: \S/gm)].map((m) => m[1]))
-  for (const [name, version] of Object.entries(deps)) {
-    if (!/^\d+\.\d+\.\d+$/.test(version)) problems.push(`mobile/app/package.json: ${name} ${version} is not pinned to an exact version`)
-    if (!listed.has(name)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} has no line with its reason`)
-  }
-  for (const name of listed) if (!(name in deps)) problems.push(`mobile/app/DEPENDENCIES.md: ${name} is not in package.json`)
-  return problems
-}
-
-test("the app's dependencies are pinned and each has its reason in DEPENDENCIES.md", () => {
-  assert.deepEqual(appDependencyProblems(JSON.parse(read('mobile/app/package.json')), read('mobile/app/DEPENDENCIES.md')), [])
-})
-
-test('a dependency without a reason, or a reason without a dependency, fails naming the package', () => {
-  const pkg = { dependencies: { expo: '58.0.19', 'left-pad': '^1.3.0' }, devDependencies: { jest: '30.5.2' } }
-  const doc = '- `expo`: the SDK.\n- `jest`: the tests.\n- `gone`: was removed.\n'
-  assert.deepEqual(appDependencyProblems(pkg, doc), [
-    'mobile/app/package.json: left-pad ^1.3.0 is not pinned to an exact version',
-    'mobile/app/DEPENDENCIES.md: left-pad has no line with its reason',
-    'mobile/app/DEPENDENCIES.md: gone is not in package.json',
-  ])
-})
-
-test("the app's native projects are generated, never committed (design D8)", () => {
-  const ignore = read('mobile/app/.gitignore')
-  for (const dir of ['/ios/', '/android/', '/node_modules/']) assert.match(ignore, new RegExp(`^${dir}$`, 'm'), `mobile/app/.gitignore ignores ${dir}`)
-})
-
-test('the boundary check ignores comments, strings and properties of the same name', () => {
-  const src = [
-    '// the window of the last sync, a document field',
-    "const s = 'window.open', t = `navigator`, u = \"localStorage\"",
-    '/* indexedDB */ const v = doc.document + x.window',
-    'if (typeof BroadcastChannel !== "undefined") {}',
-  ].join('\n')
-  assert.deepEqual(browserGlobals(src), [{ global: 'BroadcastChannel', line: 4 }])
-})
-
 // A job after the release (1.4.0): GitHub skips a job whose needs chain holds a skipped job unless
-// its condition is explicit, and the app builds are skipped on tags, so every job that needs the
+// its condition is explicit, so every job that needs the
 // release states !cancelled() && !failure() instead of relying on the implicit success().
 test('every job after the release runs even when a job before it was skipped', () => {
   const jobs = jobsOf(read('.github/workflows/ci.yml'))

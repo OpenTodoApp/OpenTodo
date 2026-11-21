@@ -1,11 +1,8 @@
-// The host the shared library runs in (OpenSpec change native-app-foundation, design
-// D3). Modules the native app shares (mobile/app/shared-modules.json) ask the host
-// for visibility, the network, the sync lock, the other tabs, device storage and
-// IndexedDB, the languages, the time zone and the native shell through `platform`,
-// never through browser globals; the repo check (scripts/shared-boundary.mjs)
-// refuses a global in a listed module. The web implementation is today's browser
-// code and is installed by default; the app installs its own at start-up, and a
-// test may install a fake (reset before each test).
+// The host the sync path runs in: visibility, the network, the sync lock, the other
+// tabs, device storage and IndexedDB, the languages, the time zone and the native
+// shell, asked through `platform` instead of browser globals. The web implementation
+// is the browser's and is installed by default; a test may install a fake (reset
+// before each test).
 import { resettable } from './moduleState'
 import type Dexie from 'dexie'
 import type { OpenTodoShell } from './shell'
@@ -54,7 +51,7 @@ export interface Platform {
   indexedDB(): IDBFactory | undefined
   /**
    * The local database for the schema db.ts declares on `declared`, when the host keeps
-   * its own (the app: the Dexie subset on SQLite, native-app-foundation D4). Absent on
+   * its own. Absent on
    * the web, where `declared` itself opens on IndexedDB.
    */
   database?<D extends Dexie>(declared: D): D
