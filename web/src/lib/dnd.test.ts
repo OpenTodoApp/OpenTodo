@@ -19,6 +19,26 @@ function spies() {
 }
 
 describe('touch: hold, swipe and drag', () => {
+  it('marks the pressed row from the touch until the hold ends: an early release, a lift, a scroll (row-lift-overscroll)', () => {
+    const row = document.createElement('li')
+    const s = spies()
+    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, press: row })
+    expect(row.hasAttribute('data-touch-press')).toBe(true)
+    vi.advanceTimersByTime(250)
+    up(50)
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    beginDrag(press, { label: 'Task', onStart: s.onStart, onDrop: s.onDrop, press: row })
+    vi.advanceTimersByTime(TOUCH_HOLD_MS + 10)
+    expect(row.hasAttribute('data-touch-press')).toBe(true)
+    move(80)
+    expect(s.onStart).toHaveBeenCalled()
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    up(80)
+    beginDrag({ ...press, pointerType: 'mouse' }, { label: 'Task', onDrop: s.onDrop, press: row })
+    expect(row.hasAttribute('data-touch-press')).toBe(false)
+    up(50)
+  })
+
   it('a hold arms the drag: a move after it lifts, a release without moving opens the row menu', () => {
     const s = spies()
     const onHoldRelease = vi.fn()
