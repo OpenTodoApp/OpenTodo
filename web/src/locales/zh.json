@@ -7856,5 +7856,6 @@
   "Search projects and labels": "搜索项目和标签",
   "Set away": "设置外出",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "跳过 {series, plural, other {# 个重复任务}}的 {occurrences, plural, other {# 次}}",
-  "The last day comes before the first": "最后一天早于第一天"
+  "The last day comes before the first": "最后一天早于第一天",
+  "Or sponsor on GitHub": "或在 GitHub 上赞助"
 }

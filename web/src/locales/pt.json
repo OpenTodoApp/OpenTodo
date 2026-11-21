@@ -7856,5 +7856,6 @@
   "Search projects and labels": "Procurar projetos e etiquetas",
   "Set away": "Definir ausência",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Salta {occurrences, plural, one {# ocorrência} other {# ocorrências}} de {series, plural, one {# tarefa repetida} other {# tarefas repetidas}}",
-  "The last day comes before the first": "O último dia é anterior ao primeiro"
+  "The last day comes before the first": "O último dia é anterior ao primeiro",
+  "Or sponsor on GitHub": "Ou patrocine no GitHub"
 }

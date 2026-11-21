@@ -7856,5 +7856,6 @@
   "Search projects and labels": "Projecten en labels zoeken",
   "Set away": "Afwezigheid instellen",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Slaat {occurrences, plural, one {# keer} other {# keer}} over van {series, plural, one {# herhalende taak} other {# herhalende taken}}",
-  "The last day comes before the first": "De laatste dag ligt vóór de eerste"
+  "The last day comes before the first": "De laatste dag ligt vóór de eerste",
+  "Or sponsor on GitHub": "Of sponsor op GitHub"
 }

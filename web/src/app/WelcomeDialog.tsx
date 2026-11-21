@@ -1,6 +1,6 @@
 // The owner's welcome note (OpenSpec change welcome-note): the first time the
 // owner opens a new server, a dialog thanks them for installing OpenTodo and
-// points to the issue tracker, the GitHub star and the Buy Me a Coffee page.
+// points to the issue tracker, the GitHub star, the Buy Me a Coffee page and GitHub Sponsors.
 // It shows once per account: closing it is an ordinary preference op
 // (`welcome`) that syncs to the owner's other devices. Members, the demo and
 // accounts older than a week or already holding tasks never see it.
@@ -18,6 +18,7 @@ import { act } from './actionError'
 export const ISSUES_URL = 'https://github.com/OpenTodoApp/OpenTodo/issues'
 export const REPO_URL = 'https://github.com/OpenTodoApp/OpenTodo'
 export const COFFEE_URL = 'https://buymeacoffee.com/pixari'
+export const SPONSORS_URL = 'https://github.com/sponsors/pixari'
 /** The OpenTodo Discord server (OpenSpec change discord-community): a plain link, nothing is loaded from Discord. */
 export const DISCORD_URL = 'https://discord.gg/mmSsuCRduD'
 // The project's account on X (x-account-link): releases and work in progress in short form.
@@ -75,6 +76,7 @@ export function WelcomeNote({ onClose }: { onClose: () => void }) {
           <LinkRow href={REPO_URL} icon="star" title={t('Star OpenTodo on GitHub')} detail={t('A star helps other people find it.')} />
         </div>
         <CoffeeButton />
+        <SponsorLink />
         <p className="text-meta text-muted">{t('This message will not appear again. You can open it from Settings → About.')}</p>
         <div className="flex justify-end">
           <Button variant="primary" onClick={onClose} data-welcome-close data-autofocus>{t('Start using OpenTodo')}</Button>
@@ -92,6 +94,17 @@ export function CoffeeButton({ className = '' }: { className?: string }) {
       <Icon name="coffee" />
       {t('Buy me a coffee')}
     </a>
+  )
+}
+
+/** GitHub Sponsors, quieter than the coffee button that comes first (sponsors-beside-coffee). */
+export function SponsorLink({ className = '' }: { className?: string }) {
+  return (
+    <p className={`text-center text-meta ${className}`}>
+      <a href={SPONSORS_URL} target="_blank" rel="noopener noreferrer" data-welcome-sponsors className="text-muted underline underline-offset-2 hover:text-default focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+        {t('Or sponsor on GitHub')}
+      </a>
+    </p>
   )
 }
 

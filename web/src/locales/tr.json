@@ -7856,5 +7856,6 @@
   "Search projects and labels": "Proje ve etiket ara",
   "Set away": "Uzakta olarak ayarla",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "{series, plural, one {# tekrarlanan görevin} other {# tekrarlanan görevin}} {occurrences, plural, one {# tekrarını} other {# tekrarını}} atlar",
-  "The last day comes before the first": "Son gün ilk günden önce"
+  "The last day comes before the first": "Son gün ilk günden önce",
+  "Or sponsor on GitHub": "Ya da GitHub’da sponsor ol"
 }

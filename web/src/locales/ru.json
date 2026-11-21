@@ -7856,5 +7856,6 @@
   "Search projects and labels": "Искать проекты и метки",
   "Set away": "Задать отсутствие",
   "Skips {occurrences, plural, one {# occurrence} other {# occurrences}} of {series, plural, one {# repeating task} other {# repeating tasks}}": "Пропускает {occurrences, plural, one {# повтор} few {# повтора} many {# повторов} other {# повтора}} у {series, plural, one {# повторяющейся задачи} few {# повторяющихся задач} many {# повторяющихся задач} other {# повторяющейся задачи}}",
-  "The last day comes before the first": "Последний день раньше первого"
+  "The last day comes before the first": "Последний день раньше первого",
+  "Or sponsor on GitHub": "Или поддержите на GitHub"
 }

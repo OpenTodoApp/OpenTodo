@@ -13039,6 +13039,9 @@
     "web/src/app/task-detail/Facets.tsx",
     "web/src/app/task-detail/TaskActionsMenu.tsx"
   ],
+  "Or sponsor on GitHub": [
+    "web/src/app/WelcomeDialog.tsx"
+  ],
   "Orange": [
     "web/src/lib/colourNames.ts"
   ],
