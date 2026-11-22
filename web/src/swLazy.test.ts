@@ -16,7 +16,7 @@ const save = vi.fn(async () => undefined)
 vi.mock('./lib/appTrust', async (real) => ({
   ...(await real<typeof import('./lib/appTrust')>()),
   loadTrust: async () => { if (stored === 'unreadable') throw new Error('unreadable'); return stored },
-  saveTrust: () => save(),
+  updateTrust: () => save(),
   trustsOwnKey: async () => false,
 }))
 vi.mock('./lib/appInstall', async (real) => ({

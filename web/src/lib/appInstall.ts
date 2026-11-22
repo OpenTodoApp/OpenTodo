@@ -19,8 +19,7 @@ export interface InstallEnv {
   languages?: () => readonly string[]
   now: () => number
   load: () => Promise<TrustRecord | null>
-  save: (r: TrustRecord) => Promise<void>
-  /** Changes the record as stored in one transaction (`updateTrust`): null from `change` leaves it. */
+  /** Changes the record as stored in one transaction (`updateTrust`): null from `change` leaves it. Every write goes through it. */
   update: (change: (stored: TrustRecord | null) => TrustRecord | null) => Promise<TrustRecord | null>
 }
 
@@ -199,12 +198,27 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const list = res.ok ? parseList(text) : null
   const record = await env.load()
   const now = env.now()
+  // Every write goes onto the record as stored, in one transaction, and only while it is
+  // still the one this check started from: another worker (an open tab's worker beside
+  // the one installing) may have installed or refused meanwhile, and its write stays.
+  const unchanged = (stored: TrustRecord | null) => (stored?.current?.payloadHash ?? null) === (record?.current?.payloadHash ?? null)
+    && !!stored?.refuse === !!record?.refuse && stored?.mode === record?.mode
+  /** Records a check on the stored record; answers whether it announces, false when nothing was written. */
+  const recordCheck = async (check: CheckResult, announceKey: string | null): Promise<boolean> => {
+    let announce = false
+    await env.update((stored) => {
+      if (!stored || !unchanged(stored)) return null
+      const next = { ...stored, lastCheck: check }
+      announce = announceKey !== null && announceOnce(next, announceKey)
+      return next
+    })
+    return announce
+  }
   if (!list) {
     // No readable list: a server older than signed-web-app answers 404 (self-built).
     if (!record) return { kind: 'unchanged' }
     const check: CheckResult = { at: now, version: record.current?.version ?? '', passed: false, cause: 'no-list', refused: record.refuse }
-    const announce = record.refuse && announceOnce(record, 'no-list:' + (await sha256Hex(new TextEncoder().encode(text))))
-    await env.save({ ...record, lastCheck: check })
+    const announce = await recordCheck(check, record.refuse ? 'no-list:' + (await sha256Hex(new TextEncoder().encode(text))) : null)
     return record.refuse ? { kind: 'refused', check, announce } : { kind: 'unchanged' }
   }
   const payloadHash = await sha256Hex(list.payload)
@@ -219,9 +233,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const version = list.manifest.version
   if (verdict.cause && refuse) {
     const check: CheckResult = { at: now, version, passed: false, cause: verdict.cause, refused: true }
-    const next = { ...record!, lastCheck: check }
-    const announce = announceOnce(next, listHash)
-    await env.save(next)
+    const announce = await recordCheck(check, listHash)
     return { kind: 'refused', check, announce }
   }
 
@@ -239,9 +251,7 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   if (cause && refuse) {
     await env.caches.delete(cacheName)
     check.refused = true
-    const next = { ...record!, lastCheck: check }
-    const announce = announceOnce(next, listHash)
-    await env.save(next)
+    const announce = await recordCheck(check, listHash)
     return { kind: 'refused', check, announce }
   }
 
@@ -266,8 +276,14 @@ export async function checkForUpdate(env: InstallEnv): Promise<CheckOutcome> {
   const verified = verdict.verified && moves ? { version, payloadHash } : record?.verified
   if (verified) next.verified = verified
   if (record?.current) next.previous = record.current
-  await env.save(next)
-  await pruneCaches(env, next)
+  // The announced lists stay the stored record's own (a refusal recorded meanwhile).
+  const written = await env.update((stored) => (unchanged(stored) ? { ...next, announced: stored?.announced ?? next.announced } : null))
+  if (!written) {
+    // Overtaken: the record another worker wrote stays, and this staged set goes.
+    await env.caches.delete(cacheName)
+    return { kind: 'unchanged' }
+  }
+  await pruneCaches(env, written)
   return { kind: 'installed', version, first, check }
 }
 

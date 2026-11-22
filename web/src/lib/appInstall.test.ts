@@ -111,7 +111,7 @@ function server() {
 
 function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery'], languages: string[] = []) {
   let record: TrustRecord | null = null
-  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord } = {
+  const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord; save: (r: TrustRecord) => Promise<void> } = {
     fetch: srv.fetch,
     caches: caches as unknown as CacheStorage & MemoryCaches,
     builtinKeys: builtin.map((n) => keys[n].spki),
@@ -347,6 +347,45 @@ describe('refusal (design D17)', () => {
     srv.list = null
     expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', check: { cause: 'no-list' } })
   })
+
+  // Two workers at once (an open tab's worker beside the one installing): each write goes
+  // onto the record as stored, and only while it is the one the check started from.
+  it('records a refusal on the record as stored, keeping what another worker wrote meanwhile', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await e.save({ ...held, announced: [...held.announced, 'meanwhile'] })
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, signers: [] })
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: true, check: { cause: 'unsigned' } })
+    expect(e.record().announced).toContain('meanwhile')
+    expect(e.record().lastCheck).toMatchObject({ cause: 'unsigned', refused: true })
+  })
+
+  it('an install another worker overtook writes nothing and drops its staged set', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    expect(other.current?.version).toBe('1.4.0')
+    e.load = async () => structuredClone(held)
+    await srv.serve({ ...v2, version: '1.5.0', files: { ...v2.files, 'index.html': '<div id=root>5</div>' } })
+    expect(await checkForUpdate(e)).toEqual({ kind: 'unchanged' })
+    expect(e.record()).toEqual(other)
+    expect((await e.caches.keys()).filter((n) => n.includes('1.5.0'))).toEqual([])
+  })
+
+  it('a check another worker\'s install overtook records nothing and announces nothing', async () => {
+    const { srv, e } = await refusing()
+    const held = e.record()
+    await srv.serve(v2)
+    await checkForUpdate(e)
+    const other = e.record()
+    e.load = async () => structuredClone(held)
+    srv.list = null
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'refused', announce: false, check: { cause: 'no-list' } })
+    expect(e.record()).toEqual(other)
+  })
 })
 
 describe('lazy files (design D7)', () => {
@@ -405,7 +444,6 @@ describe('lazy files (design D7)', () => {
   it('persist false never writes the record in use back (a stand-in for one that could not be read)', async () => {
     const { srv, e } = await installed(true)
     const saves: unknown[] = []
-    e.save = async (r) => void saves.push(r)
     const update = e.update
     e.update = async (change) => { const r = await update(change); if (r) saves.push(r); return r }
     srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
@@ -444,7 +482,7 @@ describe('lazy files (design D7)', () => {
     const { srv, e } = await installed(true)
     const open = e.caches.open.bind(e.caches)
     e.caches.open = async (name: string) => { const c = await open(name); return Object.assign(Object.create(Object.getPrototypeOf(c)), c, { put: async () => { throw new DOMException('full', 'QuotaExceededError') } }) }
-    e.save = async () => { throw new DOMException('full', 'QuotaExceededError') }
+    e.update = async () => { throw new DOMException('full', 'QuotaExceededError') }
     // An intact file is still served (it was checked), just not stored.
     expect(await text((await fetchLazy(e, e.record(), 'assets/MapView-1.js'))!.response)).toBe('map1')
     e.caches.open = open
