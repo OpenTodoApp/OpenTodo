@@ -39,4 +39,11 @@ describe('trustReader', () => {
     expect(await trustReader(load, memory(true)).read()).toEqual({ record: null, unreadable: true, refuse: true })
     expect(await trustReader(load, memory(false)).read()).toEqual({ record: null, unreadable: true, refuse: false })
   })
+
+  it('a remembered mode that cannot be read either is unknown, and unknown refuses', async () => {
+    const load = async () => { throw new Error('unreadable') }
+    const rejecting = { get: async () => { throw new Error('caches') }, set: async () => undefined }
+    expect(await trustReader(load, rejecting).read()).toEqual({ record: null, unreadable: true, refuse: true })
+    expect(await trustReader(load, { get: async () => null, set: async () => undefined }).read()).toMatchObject({ refuse: true })
+  })
 })

@@ -42,7 +42,8 @@ const env: InstallEnv = {
 const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
 const MODE_KEY = '/__refuse'
 const records = trustReader(env.load, {
-  get: async () => (await (await caches.open('opentodo-policy')).match(MODE_KEY).then((r) => r?.text()).catch(() => undefined)) === '1',
+  // true or false as remembered, false when nothing was; a failure to read rejects (unknown).
+  get: async () => { const r = await (await caches.open('opentodo-policy')).match(MODE_KEY); return r ? (await r.text()) === '1' : false },
   set: async (on) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
 })
 const trustState = (): Promise<TrustState> => records.read()
@@ -149,10 +150,17 @@ async function refreshPolicy(): Promise<void> {
 }
 
 async function navigation(event: FetchEvent): Promise<Response> {
-  const r = await trust()
-  const page = await cachedFile(env, r, 'index.html')
+  const t = await trustState()
+  let page = await cachedFile(env, t.record, 'index.html')
   event.waitUntil(Promise.all([refreshPolicy(), check()]))
-  if (!page) return (await closedWhileUnreadable()) ?? fetch(event.request)
+  if (!page) {
+    // Report-only keeps the network (D17). With refusal the page is served only
+    // checked against the record: fetched and checked now, or not at all.
+    if (!t.refuse) return fetch(event.request)
+    const lazy = t.record ? await fetchLazy(env, t.record, 'index.html', !t.unreadable).catch(() => null) : null
+    if (!lazy || lazy.check || !lazy.response.ok) return new Response('', { status: 404 })
+    page = lazy.response
+  }
   const stored = await (await caches.open(POLICY_CACHE)).match(POLICY_KEY).catch(() => undefined)
   const headers = new Headers(page.headers)
   headers.set('Content-Security-Policy', pagePolicy(stored ? await stored.text() : null))
@@ -161,11 +169,11 @@ async function navigation(event: FetchEvent): Promise<Response> {
 }
 
 async function appFile(event: FetchEvent, path: string): Promise<Response> {
-  const r = await trust()
+  const { record: r, unreadable } = await trustState()
   const hit = await cachedFile(env, r, path)
   if (hit) return hit
   if (r) {
-    const lazy = await fetchLazy(env, r, path)
+    const lazy = await fetchLazy(env, r, path, !unreadable)
     if (lazy) {
       if (lazy.check) {
         records.forget()

@@ -312,7 +312,7 @@ export function answerAfterFailure(record: TrustRecord | null, path: string): Re
  * downloaded answers 404: a listed file is only ever served checked, so the
  * caller never asks the network for it again on its own.
  */
-export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string): Promise<LazyResult | null> {
+export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string, persist = true): Promise<LazyResult | null> {
   const want = record.current?.files[path] ?? record.previous?.files[path]
   if (!want) return null
   const got = await download(env, path).catch(() => null)
@@ -324,7 +324,9 @@ export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: stri
     return { response: fileResponse(got.body, got.type) }
   }
   const check: CheckResult = { at: env.now(), version: record.current?.version ?? '', passed: false, cause: 'changed-file', path, refused: record.refuse }
-  await env.save({ ...record, lastCheck: check }).catch(() => undefined)
+  // `persist` false: the record in use stands in for one that could not be read, and
+  // writing it back could replace a newer one.
+  if (persist) await env.save({ ...record, lastCheck: check }).catch(() => undefined)
   if (record.refuse) return { response: new Response('', { status: 404 }), check }
   return { response: fileResponse(got.body, got.type), check }
 }

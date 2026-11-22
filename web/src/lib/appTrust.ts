@@ -143,13 +143,14 @@ export interface TrustState {
 }
 
 /**
- * The worker's reads of its record. "No record" (a first install) is cached like any
+ * The worker's reads of its record. `remembered.get` answers the refusal mode last
+ * remembered, false when none was, and null (or a rejection) when it cannot be read. "No record" (a first install) is cached like any
  * record; a failed read is not, so the next request reads again. While the store
  * cannot be read the worker keeps the last record it read, and the refusal mode is
  * also remembered outside the store (`remembered`), so a worker that never read its
  * record still fails closed for the app's files when the device had refusal on.
  */
-export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean>; set: (on: boolean) => Promise<void> }) {
+export function trustReader(load: () => Promise<TrustRecord | null>, remembered: { get: () => Promise<boolean | null>; set: (on: boolean) => Promise<void> }) {
   let pending: Promise<TrustState> | null = null
   let known: TrustRecord | null = null
   const read = async (): Promise<TrustState> => {
@@ -160,7 +161,9 @@ export function trustReader(load: () => Promise<TrustRecord | null>, remembered:
       return { record, unreadable: false, refuse: !!record?.refuse }
     } catch {
       pending = null
-      const refuse = known ? known.refuse : await remembered.get().catch(() => false)
+      // A remembered mode that cannot be read either is unknown, and unknown refuses:
+      // `get` answers false only when nothing was ever remembered.
+      const refuse = known ? known.refuse : (await remembered.get().catch(() => null)) !== false
       return { record: known, unreadable: true, refuse }
     }
   }
