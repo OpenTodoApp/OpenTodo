@@ -72,7 +72,8 @@ import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
 const ENGINES = (process.env.ENGINES ?? 'chromium,webkit').split(',').filter(Boolean)
-const HEIGHTS = { 320: 640, 360: 740, 390: 844, 768: 1024, 1280: 900 }
+// Tablets (tablet-layouts D4): iPad mini portrait, iPad landscape at 1024 and 1180 px.
+const HEIGHTS = { 320: 640, 360: 740, 390: 844, 744: 1133, 768: 1024, 1024: 768, 1180: 820, 1280: 900 }
 const WIDTHS = (process.env.WIDTHS ?? '360,390,768').split(',').map(Number)
 const THEMES = (process.env.THEMES ?? 'light,dark').split(',')
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
@@ -332,8 +333,9 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       if (s.anon) await p.close()
     }
-    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone).
-    if (engine === 'chromium' && width < 768 && !ONLY && !OTHER_LANG) {
+    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone;
+    // from 600 px a task opens as a sheet over the list, tablet-layouts D2).
+    if (engine === 'chromium' && width < 600 && !ONLY && !OTHER_LANG) {
       run.step = 'page transitions'
       for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
     }
@@ -442,7 +444,11 @@ async function swipeBack(p, base, width) {
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
     // The edge watcher loads after the first paint.
     await p.waitForTimeout(300)
-    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    const first = p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first()
+    // From 600 px a task opens as a sheet over the list (tablet-layouts D2): its page is
+    // reached by its address, after the Inbox, so Back still leads to the Inbox.
+    if (width >= 600) await p.goto(`${base}/task/${await first.getAttribute('data-task-id')}`)
+    else await first.locator('[data-row-open]').press('Enter')
     await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
   }
   try {

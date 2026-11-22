@@ -144,12 +144,12 @@ export function SettingsView({ user, onLogout, section, page: pageId, anchor }: 
   // and lead line; below 1024 px the header carries Back and each level is its own page.
   const crumb = twoColumn && (
     <span className="flex min-w-0 shrink items-center gap-1 text-h3 font-normal text-muted" data-settings-crumb>
-      <a href={routePath({ view: 'settings' })} className="shrink-0 rounded-control hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+      <a href={routePath({ view: 'settings' })} className="shrink-0 rounded-control pointer-coarse:-my-3 pointer-coarse:py-3 hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
         onClick={(e) => followLink(e, { view: 'settings', section: first.id })}>{t('Settings')}</a>
       <Icon name="chevron-right" size="xs" />
       {sub && (
         <>
-          <a href={routePath(toSection)} className="truncate rounded-control hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
+          <a href={routePath(toSection)} className="truncate rounded-control pointer-coarse:-my-3 pointer-coarse:py-3 hover:text-default focus-visible:outline-2 focus-visible:outline-focus"
             onClick={(e) => followLink(e, toSection)} data-settings-crumb-section>{shown.label}</a>
           <Icon name="chevron-right" size="xs" />
         </>

@@ -332,7 +332,7 @@ export function Shell({ user, onLogout }: { user: User; onLogout: () => void }) 
       {drawer.open && <DrawerOverlay panel={drawer.drawer} onClose={() => setSidebarOpen(false)} />}
       <aside {...drawer.aside} data-sidebar data-sidebar-width={sidebar.collapsed ? 'collapsed' : sidebar.width}
         style={{ '--sidebar-w': `${sidebar.collapsed ? SIDEBAR_COLLAPSED_REM : sidebar.width}rem` } as React.CSSProperties}
-        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-[45] flex w-80 max-w-[85vw] max-md:[&_[data-sidebar-item]]:min-h-12 transform max-md:border-r max-md:border-default bg-(--sidebar-bg) [--sidebar-bg:var(--color-surface)] md:[--sidebar-bg:var(--color-canvas)] md:pointer-fine:[--sidebar-bg:var(--color-sidebar)] max-md:pl-safe transition-transform md:static md:h-full md:min-h-0 md:w-(--sidebar-w) md:max-w-none md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="min-w-0 flex-1">
           <Sidebar route={route} user={user} onSearch={openPalette} onShortcuts={() => setShowHelp(true)} onFeedback={() => { setSidebarOpen(false); openFeedback() }} onSignOut={onLogout} onAssistant={showLauncher(assistant) ? openAssistant : undefined} collapsed={sidebar.collapsed} onToggleCollapse={toggleSidebar} />
