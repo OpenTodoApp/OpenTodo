@@ -2247,9 +2247,6 @@
   "Assigned to {name}, taking turns": [
     "web/src/app/AssigneePicker.tsx"
   ],
-  "Assigned to {name}.": [
-    "web/src/lib/triage.ts"
-  ],
   "Assignee": [
     "web/src/app/AssigneePicker.tsx",
     "web/src/app/filter/ConditionEditor.tsx",
@@ -3933,9 +3930,6 @@
   ],
   "Completed {instant}": [
     "web/src/app/task-detail/ActivityTab.tsx"
-  ],
-  "Completed.": [
-    "web/src/lib/triage.ts"
   ],
   "Completed: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -10605,9 +10599,6 @@
     "web/src/app/assistant/blocks/BeforeAfter.tsx",
     "web/src/lib/assistant.ts"
   ],
-  "Moved to the Trash.": [
-    "web/src/lib/triage.ts"
-  ],
   "Moved to the Trash: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -10619,9 +10610,6 @@
   ],
   "Moved to {part}": [
     "web/src/lib/undoActions.ts"
-  ],
-  "Moved to {project}.": [
-    "web/src/lib/triage.ts"
   ],
   "Moved to {project}: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -13308,9 +13296,6 @@
   "Park {title} in Someday": [
     "web/src/app/palette/registry.ts"
   ],
-  "Parked for someday.": [
-    "web/src/lib/triage.ts"
-  ],
   "Parked in Someday: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -15732,9 +15717,6 @@
     "web/src/lib/undoActions.ts",
     "web/src/lib/viewOrderMove.ts"
   ],
-  "Scheduled for {date}.": [
-    "web/src/lib/triage.ts"
-  ],
   "Scheduled for {date}: {title}.": [
     "web/src/app/TriageView.tsx"
   ],
@@ -16932,9 +16914,6 @@
   ],
   "Skipped {day}: the mail server could not be reached for six hours": [
     "web/src/app/DigestCard.tsx"
-  ],
-  "Skipped.": [
-    "web/src/lib/triage.ts"
   ],
   "Skipped: {title}.": [
     "web/src/app/TriageView.tsx"
@@ -19903,9 +19882,6 @@
   "This task no longer exists.": [
     "web/src/app/TaskPage.tsx",
     "web/src/lib/noteOps.ts"
-  ],
-  "This task was moved elsewhere.": [
-    "web/src/lib/triage.ts"
   ],
   "This test sends the inputs to {provider} and uses about {n} tokens. Nothing is written.": [
     "web/src/app/routines/RoutineEditor.tsx"

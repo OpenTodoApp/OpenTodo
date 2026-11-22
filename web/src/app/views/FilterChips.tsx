@@ -44,8 +44,9 @@ export function FilterChips({ query, onOpen }: { query: string; onOpen: (adding:
     <ul className="flex min-w-0 flex-wrap items-center gap-1.5" aria-label={t('Conditions')} data-filter-chips>
       {chips.map((c) => (
         <li key={c.id} className="min-w-0">
+          {/* At most its li: a button is as wide as its content, so the text would not truncate at 200% text. */}
           <button type="button" data-toolbar-chip onClick={() => onOpen(false)}
-            className="touch-target flex min-w-0 max-w-72 items-center gap-1.5 rounded-control border border-soft px-2 py-1 text-meta text-default hover:bg-sunken">
+            className="touch-target flex min-w-0 max-w-[min(18rem,100%)] items-center gap-1.5 rounded-control border border-soft px-2 py-1 text-meta text-default hover:bg-sunken">
             <Icon name={c.icon} className="shrink-0 text-faint" />
             {c.not && <span className="shrink-0 font-medium text-danger">{t('Not')}</span>}
             <span className="truncate">{c.text}</span>

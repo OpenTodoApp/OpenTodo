@@ -337,6 +337,25 @@ var vxCases = []vxDef{
 			r.write("Work.md", strings.Replace(work, "Write the report", "Write the annual report", 1))
 			r.sync(vxOpts{name: "downloaded with an edit"})
 		}},
+	{name: "half-saved", desc: "a file read empty in the middle of a save is held and its tasks kept, even after one of its lines moved; the next sync reads the save",
+		run: func(r *vxRec) {
+			home(r)
+			r.project("p-work", "Work", map[string]any{"position": 2000})
+			r.task("t-report", "Write the report", "p-work", nil)
+			r.sync(vxOpts{name: "init", init: true, device: "vault:vectors"})
+			saved := r.read("Home.md")
+			plumber := ""
+			for _, l := range strings.Split(saved, "\n") {
+				if strings.Contains(l, "Call the plumber") {
+					plumber = l
+				}
+			}
+			r.write("Work.md", r.read("Work.md")+plumber+"\n")
+			r.write("Home.md", "")
+			r.sync(vxOpts{name: "mid save"})
+			r.write("Home.md", strings.Replace(saved, plumber+"\n", "", 1)+"- [ ] Oil the hinge\n")
+			r.sync(vxOpts{name: "the save lands"})
+		}},
 	{name: "time-zone", desc: "completion dates and conflict times are the machine's local dates",
 		setup: func(c *vxCase) { c.Loc = "Pacific/Auckland" },
 		run: func(r *vxRec) {

@@ -8,6 +8,7 @@ import type { EditorView } from 'prosemirror-view'
 import { mentionCandidates, mentionToken, type MentionTarget } from '../lib/comments'
 import { insertMention } from '../lib/editorNotes'
 import { dismissSuggest, type Suggest, type SuggestBridge } from '../lib/editorSuggest'
+import { formattingAt, onViewUpdate } from '../lib/richtextEditor'
 import { t } from '../lib/i18n'
 import { Icon, IconButton, type IconName, Menu, MenuItem, Popover, useMediaQuery } from '../ui'
 import { editorCommands, filterCommands, tableCommands, type CommandEnv, type EditorCommand } from './editorCommands'
@@ -220,7 +221,12 @@ export function EditorToolbar({ id, view, env, visible, onMenu, coarse: forced, 
   // The control holding the row's one Tab stop: the last one focused.
   const [current, setCurrent] = useState(0)
   const row = useRef<HTMLDivElement>(null)
-  if (!view || !(always || (coarse && visible))) return null
+  // Re-read the pressed controls after every update of the editor (formatting-row-pressed).
+  const [, setTick] = useState(0)
+  const shown = !!view && (always || (coarse && visible))
+  useEffect(() => (view && shown ? onViewUpdate(view, () => setTick((n) => n + 1)) : undefined), [view, shown])
+  if (!view || !shown) return null
+  const pressed = formattingAt(view.state)
   const byId = (cmdId: string) => commands.find((c) => c.id === cmdId) as EditorCommand
   // Focus goes back to the editor first, so the command sees its selection and typing continues.
   const run = (cmdId: string) => {
@@ -261,7 +267,7 @@ export function EditorToolbar({ id, view, env, visible, onMenu, coarse: forced, 
       onMouseDown={(e) => e.preventDefault()} onKeyDown={onKeyDown}
       onFocus={(e) => { const i = items().indexOf(e.target as HTMLElement); if (i >= 0) setCurrent(i) }}>
       {ROW_COMMANDS.map((c, i) => (
-        <IconButton key={c.id} icon={c.icon} size="sm" label={c.label()} tabIndex={tab(i)} data-toolbar-item="" onClick={() => run(c.id)} />
+        <IconButton key={c.id} icon={c.icon} size="sm" label={c.label()} tabIndex={tab(i)} data-toolbar-item="" aria-pressed={pressed.has(c.id)} onClick={() => run(c.id)} />
       ))}
       <Menu label={t('More formatting')} kind="menu" align="end" onOpenChange={onMenu} trigger={<Icon name="ellipsis" size="sm" />} triggerClassName="ui-btn ui-btn--icon ui-btn--ghost ui-btn--sm"
         triggerProps={{ tabIndex: tab(ROW_COMMANDS.length), 'data-toolbar-item': '', 'data-toolbar-more': '' }}>

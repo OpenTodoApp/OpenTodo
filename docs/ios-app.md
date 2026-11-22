@@ -72,7 +72,7 @@ Pulling a page down from its top [syncs now](offline-and-sync.md#the-sync-status
 
 ## Saving files
 
-Whatever the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, an attachment. Cancel and nothing is saved.
+An image or a PDF attached to a task opens in the system's preview: the share button saves it to Photos or Files, or sends it. Everything else the app saves opens the system's save dialog, where you choose a place in Files: the recovery key and recovery codes, an export, a theme, any other attachment. Cancel and nothing is saved.
 
 ## Haptic feedback
 
