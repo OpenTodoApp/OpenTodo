@@ -285,24 +285,31 @@ async function connect(): Promise<void> {
   if (source || !leading || !wanted()) return
   const es = new EventSource(`${EVENTS_PATH}?device=${encodeURIComponent(device)}&key=${b64url(pub)}${caps ? `&caps=${caps}` : ''}`)
   source = es
-  let key: CryptoKey | null = null
+  // The stream key, once hello's exchange is done: the server sends requests
+  // right after hello, so they wait for it rather than being dropped.
+  let gotHello: (k: Promise<CryptoKey>) => void = () => undefined
+  const key = new Promise<CryptoKey>((resolve) => { gotHello = resolve })
+  key.catch(() => undefined) // a failed exchange closes the stream (fail below)
   es.addEventListener('hello', (ev) => {
     void (async () => {
       const hello = JSON.parse((ev as MessageEvent<string>).data) as { stream: string; key: string }
-      key = await streamKey(pair.privateKey, fromB64url(hello.key), hello.stream)
+      const derived = streamKey(pair.privateKey, fromB64url(hello.key), hello.stream)
+      gotHello(derived)
+      await derived
       attempts = 0
       publish({ connected: true })
     })().catch(() => fail(es))
   })
   es.addEventListener('request', (ev) => {
     void (async () => {
-      if (!key) return
       const { id, box } = JSON.parse((ev as MessageEvent<string>).data) as { id: string; box: string }
+      const k = await key
+      if (source !== es) return
       publish({ busy: true })
       try {
-        const req = JSON.parse(await open(key, box, id)) as RelayRequest
+        const req = JSON.parse(await open(k, box, id)) as RelayRequest
         const out = await answer(req)
-        await api.relayAnswer(id, await seal(key, JSON.stringify(out), id))
+        await api.relayAnswer(id, await seal(k, JSON.stringify(out), id))
       } finally {
         publish({ busy: false })
       }
@@ -310,9 +317,10 @@ async function connect(): Promise<void> {
   })
   es.addEventListener('routine', (ev) => {
     void (async () => {
-      if (!key) return
       const { id, box } = JSON.parse((ev as MessageEvent<string>).data) as { id: string; box: string }
-      const req = JSON.parse(await open(key, box, id)) as RoutineRunRequest
+      const k = await key
+      if (source !== es) return
+      const req = JSON.parse(await open(k, box, id)) as RoutineRunRequest
       if (req.op !== 'routine.run' || req.run !== id) return
       await runRoutineRequest(req)
     })().catch(() => undefined)

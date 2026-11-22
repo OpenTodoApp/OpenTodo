@@ -310,7 +310,7 @@ test('the full matrix runs on tags, nightly and by hand; pull requests run the f
   assert.match(ci, /types: \[opened, synchronize, reopened\]/, 'drafts and ready pull requests run the same tier, so marking one ready starts no run')
   const jobs = jobsOf(ci)
   assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
-  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
+  assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"/, 'a push to main is compared with the commit before and skips the heavy jobs the queue ran (ci-pr-fast-tier)')
   assert.match(jobs.changes, /git diff --name-only "\$QUEUE_BASE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt >> "\$GITHUB_OUTPUT"/, 'the merge queue runs the whole path tier')
   assert.match(jobs.changes, /git diff --name-only "\$BASE"\.\.\.HEAD > changed\.txt\n\s+cat changed\.txt\n(\s+#.*\n)*\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"\n\n/, 'every pull request turns the heavy jobs off, with no condition around it')
   assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
