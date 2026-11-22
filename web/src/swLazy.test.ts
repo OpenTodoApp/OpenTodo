@@ -4,6 +4,7 @@
 // serves bytes that do not match the list.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
+import { workerCaches } from './test/workerCaches'
 
 const reportOnly = {
   mode: 'signed', keys: [], refuse: false, announced: [],
@@ -28,15 +29,11 @@ const handlers: Record<string, (e: unknown) => void> = {}
 const network = vi.fn(async () => new Response('tampered', { headers: { 'Content-Type': 'text/javascript' } }))
 const g = globalThis as Record<string, unknown>
 const saved: Record<string, unknown> = {}
-let marker: string | null = null
+const shared = workerCaches()
 
 beforeAll(() => {
   for (const k of ['self', 'importScripts', '__APP_KEYS__', 'fetch', 'caches']) saved[k] = g[k]
-  g.caches = {
-    open: async (name: string) => name === 'opentodo-policy'
-      ? { match: async () => (marker === null ? undefined : new Response(marker)), put: async () => undefined }
-      : { match: async () => undefined, put: async () => undefined },
-  }
+  g.caches = shared.caches
   g.self = {
     caches: g.caches,
     location: { origin: 'https://todo.example.com' },
@@ -53,7 +50,7 @@ afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
 /** A new worker that read the report-only record once, then lost its store. */
 beforeEach(async () => {
   stored = reportOnly
-  marker = null
+  shared.reset()
   save.mockClear()
   vi.resetModules()
   await import('./sw')
@@ -62,6 +59,7 @@ beforeEach(async () => {
   let done: Promise<unknown> = Promise.resolve()
   handlers.message({ data: { type: 'opentodo-app', check: true }, source: null, waitUntil: (p: Promise<unknown>) => { done = p } })
   await done
+  shared.setMode(null) // what the first read remembered: each test sets its own
   network.mockClear()
 })
 
@@ -73,7 +71,7 @@ async function respond(path: string): Promise<Response> {
 
 describe('a listed file that does not match, while the record cannot be read', () => {
   it('with refusal remembered since: 404, though the stand-in is report-only', async () => {
-    marker = '1'
+    shared.setMode('1')
     expect((await respond('/assets/map-1.js')).status).toBe(404)
     expect(network).toHaveBeenCalledOnce() // the checked download, whose bytes are not served
     expect(save).not.toHaveBeenCalled()
@@ -84,7 +82,7 @@ describe('a listed file that does not match, while the record cannot be read', (
   })
 
   it('with report-only remembered: served and recorded, as report-only does (D17), without saving the stand-in', async () => {
-    marker = '0'
+    shared.setMode('0')
     expect(await (await respond('/assets/map-1.js')).text()).toBe('tampered')
     expect(network).toHaveBeenCalledOnce()
     expect(save).not.toHaveBeenCalled()

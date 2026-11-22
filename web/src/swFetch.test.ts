@@ -3,6 +3,7 @@
 // never asks the network; while reporting it keeps the network, as designed (D17).
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
+import { workerCaches } from './test/workerCaches'
 
 const record = (refuse: boolean): TrustRecord => ({
   mode: 'signed', keys: [], refuse, announced: [],
@@ -16,7 +17,7 @@ vi.mock('./lib/appTrust', async (real) => ({
   saveTrust: async () => undefined,
   trustsOwnKey: async () => false,
 }))
-let refuseRemembered: string | null = null
+const shared = workerCaches()
 vi.mock('./lib/appInstall', async (real) => ({
   ...(await real<typeof import('./lib/appInstall')>()),
   cachedFile: async () => null,
@@ -43,7 +44,7 @@ beforeAll(async () => {
   g.importScripts = () => undefined
   saved.caches = g.caches
   // The remembered refusal mode beside the page policy.
-  g.caches = { open: async () => ({ match: async () => (refuseRemembered === null ? undefined : new Response(refuseRemembered)), put: async (_k: string, r: Response) => { refuseRemembered = await r.text() } }) }
+  g.caches = shared.caches
   g.__APP_KEYS__ = []
   g.fetch = network
 })
@@ -51,7 +52,7 @@ afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
 // Each test starts a new worker, with nothing remembered.
 beforeEach(async () => {
   stored = null
-  refuseRemembered = null
+  shared.reset()
   network.mockClear()
   vi.resetModules()
   await import('./sw')
@@ -92,7 +93,7 @@ describe('the worker fetch handler after a failure', () => {
     stored = record(true)
     await reread()
     await answer('/assets/lang-de-1.js')
-    expect(refuseRemembered).toBe('1')
+    expect(shared.mode()).toBe('1')
     stored = 'unreadable'
     await reread()
     network.mockClear()

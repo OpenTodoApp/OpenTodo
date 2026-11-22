@@ -2,7 +2,8 @@
 // read is not, the last record read stands in while the store cannot be read, and the
 // remembered refusal mode decides for a worker that never read one.
 import { describe, expect, it, vi } from 'vitest'
-import { trustReader, type TrustRecord } from './appTrust'
+import { rememberedMode, trustReader, type TrustRecord } from './appTrust'
+import { workerCaches } from '../test/workerCaches'
 
 const rec = (refuse: boolean) => ({ mode: 'signed', keys: [], refuse, announced: [] }) as unknown as TrustRecord
 const memory = (on: boolean | null = false) => { let v = on; return { get: vi.fn(async () => v), set: vi.fn(async (x: boolean) => { v = x }) } }
@@ -93,5 +94,33 @@ describe('trustReader', () => {
     const fail = vi.fn(async () => { throw new Error('unreadable') })
     load.mockImplementation(fail)
     expect(await r.read()).toMatchObject({ unreadable: true, refuse: true, record: { refuse: true } })
+  })
+})
+
+describe('rememberedMode', () => {
+  it('only ever turns on, across workers sharing the caches', async () => {
+    const shared = workerCaches()
+    const a = rememberedMode(() => shared.caches.open('opentodo-policy'))
+    const b = rememberedMode(() => shared.caches.open('opentodo-policy'))
+    expect(await a.get()).toBeNull()
+    await a.set(false)
+    expect(await b.get()).toBe(false)
+    await b.set(true)
+    await a.set(false) // a late report-only write
+    expect(await a.get()).toBe(true)
+    expect(await b.get()).toBe(true)
+  })
+
+  it('only an explicit report-only value is report-only', async () => {
+    const shared = workerCaches()
+    const m = rememberedMode(() => shared.caches.open('opentodo-policy'))
+    for (const v of ['', '00', 'off', 'false']) {
+      shared.setMode(v)
+      expect(await m.get()).toBeNull()
+    }
+    shared.setMode('0')
+    expect(await m.get()).toBe(false)
+    shared.fail(true)
+    await expect(m.get()).rejects.toThrow()
   })
 })

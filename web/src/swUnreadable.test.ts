@@ -3,6 +3,7 @@
 // not at all, never from the network; a later read goes back to the store.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrustRecord } from './lib/appTrust'
+import { workerCaches } from './test/workerCaches'
 
 let stored: TrustRecord | null | 'unreadable' = 'unreadable'
 vi.mock('./lib/appTrust', async (real) => ({
@@ -24,7 +25,7 @@ const handlers: Record<string, (e: unknown) => void> = {}
 const network = vi.fn(async () => new Response('from the network'))
 const g = globalThis as Record<string, unknown>
 const saved: Record<string, unknown> = {}
-let marker: string | null = '1'
+const shared = workerCaches()
 
 beforeAll(async () => {
   for (const k of ['self', 'importScripts', '__APP_KEYS__', 'fetch', 'caches']) saved[k] = g[k]
@@ -37,13 +38,14 @@ beforeAll(async () => {
   g.importScripts = () => undefined
   g.__APP_KEYS__ = []
   g.fetch = network
-  g.caches = { open: async () => ({ match: async () => (marker === null ? undefined : new Response(marker)), put: async () => undefined }) }
+  g.caches = shared.caches
 })
 afterAll(() => { for (const [k, v] of Object.entries(saved)) g[k] = v })
 // Each test starts a new worker that has never read its record, with refusal remembered.
 beforeEach(async () => {
   stored = 'unreadable'
-  marker = '1'
+  shared.reset()
+  shared.setMode('1')
   network.mockClear(); lazy.mockClear()
   vi.resetModules()
   await import('./sw')

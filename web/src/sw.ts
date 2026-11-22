@@ -6,7 +6,7 @@
 // IndexedDB (attachments D9). While refusal is off (report-only, design D17),
 // every check runs and is recorded, and updates are installed anyway.
 import { answerAfterFailure, checkForUpdate, cachedFile, fetchLazy, pruneCaches, type CheckOutcome, type InstallEnv } from './lib/appInstall'
-import { loadTrust, saveTrust, trustReader, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
+import { loadTrust, rememberedMode, saveTrust, trustReader, trustsOwnKey, type TrustRecord, type TrustState } from './lib/appTrust'
 import { pagePolicy } from './lib/pagePolicy'
 import { entryFromForm, entrySize, putInboxEntry, SHARE_MAX_BYTES, shareRequestVerdict } from './lib/shareInbox'
 
@@ -46,12 +46,7 @@ const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number }
 // policy the server sent, refreshed in the background on every navigation.
 const POLICY_CACHE = 'opentodo-policy'
 const POLICY_KEY = '/__policy'
-const MODE_KEY = '/__refuse'
-const remembered = {
-  // true or false as remembered; null when nothing was, and a failure to read rejects: both unknown.
-  get: async () => { const r = await (await caches.open(POLICY_CACHE)).match(MODE_KEY); return r ? (await r.text()) === '1' : null },
-  set: async (on: boolean) => { await (await caches.open(POLICY_CACHE)).put(MODE_KEY, new Response(on ? '1' : '0')) },
-}
+const remembered = rememberedMode(() => caches.open(POLICY_CACHE))
 const records = trustReader(env.load, remembered)
 /** One read of the trust state: a request decides everything from the one it took. */
 const trustState = (): Promise<TrustState> => records.read()
