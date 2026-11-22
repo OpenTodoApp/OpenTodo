@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/OpenTodoApp/opentodo/internal/store/storetest"
@@ -79,6 +80,67 @@ func TestSendRoutineToSuitableDevice(t *testing.T) {
 	h.Close(sa)
 	if _, err := h.SendRoutine("u1", true, "", RoutineRun{RunID: "run3"}); !errors.Is(err, ErrNoDevice) {
 		t.Fatalf("no AI device: %v", err)
+	}
+}
+
+// A run that fired as the stream opened is queued on it once, though the
+// dispatch on open sends it again; a new stream of the same device gets it
+// again (the old one may have closed unread).
+func TestSendRoutineOncePerStream(t *testing.T) {
+	h := NewHub()
+	d := newFakeDevice(t)
+	roles := Roles{Routines: true, Caps: []string{CapRoutines}}
+	s1, _ := h.OpenWith("u1", "laptop", "s1", d.pub(), roles)
+	d.connect(t, s1)
+	for range 2 {
+		sent, err := h.SendRoutine("u1", false, "laptop", RoutineRun{RuleID: "r", RunID: "run1"})
+		if err != nil || sent.DeviceID != "laptop" || sent.SessionHash != "s1" {
+			t.Fatalf("sent %+v %v", sent, err)
+		}
+	}
+	openRoutine(t, d, <-s1.Events())
+	select {
+	case ev := <-s1.Events():
+		t.Fatalf("queued twice: %+v", ev)
+	default:
+	}
+	d2 := newFakeDevice(t)
+	s2, _ := h.OpenWith("u1", "laptop", "s1", d2.pub(), roles)
+	d2.connect(t, s2)
+	if _, err := h.SendRoutine("u1", false, "laptop", RoutineRun{RuleID: "r", RunID: "run1"}); err != nil {
+		t.Fatal(err)
+	}
+	if r := openRoutine(t, d2, <-s2.Events()); r.RunID != "run1" {
+		t.Fatalf("request %+v", r)
+	}
+}
+
+// A run refused by a full stream is not counted as queued there: once the
+// stream has room, the same run is queued.
+func TestSendRoutineRefusedIsNotQueued(t *testing.T) {
+	h := NewHub()
+	d := newFakeDevice(t)
+	s, _ := h.OpenWith("u1", "laptop", "s1", d.pub(), Roles{Routines: true, Caps: []string{CapRoutines}})
+	d.connect(t, s)
+	var refused string
+	for i := 0; refused == ""; i++ {
+		id := fmt.Sprintf("run%d", i)
+		if _, err := h.SendRoutine("u1", false, "", RoutineRun{RuleID: "r", RunID: id}); errors.Is(err, ErrNoDevice) {
+			refused = id
+		} else if err != nil {
+			t.Fatal(err)
+		}
+	}
+	<-s.Events()
+	if _, err := h.SendRoutine("u1", false, "", RoutineRun{RuleID: "r", RunID: refused}); err != nil {
+		t.Fatal(err)
+	}
+	var last Event
+	for len(s.Events()) > 0 {
+		last = <-s.Events()
+	}
+	if r := openRoutine(t, d, last); r.RunID != refused {
+		t.Fatalf("last queued %+v, want %s", r, refused)
 	}
 }
 
