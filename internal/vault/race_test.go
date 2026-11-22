@@ -176,7 +176,9 @@ func TestHalfSavedFileIsNotPushed(t *testing.T) {
 	mum := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
 	v := s.vault(t)
 	saved := v.read(t, "Home.md") + "- [ ] Buy seeds\n"
-	v.write(t, "Home.md", "") // the save's first step, as the sync reads it
+	// The save's first step as the sync reads it: a line short (an empty first
+	// step is held before the merge, TestEmptyFileMidSaveTrashesNothing).
+	v.write(t, "Home.md", strings.Replace(saved, lineOf(t, saved, "Call mum")+"\n", "", 1))
 	beforePush(t, func() { v.write(t, "Home.md", saved) })
 	rep := v.sync(t)
 	if !hasEvent(rep, "skipped", "Home.md") {
@@ -186,11 +188,6 @@ func TestHalfSavedFileIsNotPushed(t *testing.T) {
 		if s.get("tasks", id)["deleted_at"] != nil {
 			t.Fatalf("task %s was trashed from the half-saved file", id)
 		}
-	}
-	// The empty file is held before the merge now (TestEmptyFileMidSaveTrashesNothing),
-	// so nothing is pushed and the hook may not run: the save then lands after the sync.
-	if v.read(t, "Home.md") == "" {
-		v.write(t, "Home.md", saved)
 	}
 	if v.read(t, "Home.md") != saved {
 		t.Fatalf("the save was overwritten:\n%s", v.read(t, "Home.md"))
@@ -328,5 +325,81 @@ func TestEmptyFileMidSaveHoldsOnlyThatFile(t *testing.T) {
 	}
 	if text := v.read(t, "Home.md"); text != "" {
 		t.Fatalf("the half-saved file was written over:\n%s", text)
+	}
+}
+
+// TestEmptyFileMidSaveAfterPartialMove: one line was cut from Home.md into
+// Work.md, and the sync reads Home.md at its empty save step. The moved line
+// does not make the empty file real: its other tasks stay.
+func TestEmptyFileMidSaveAfterPartialMove(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	s.create("projects", map[string]any{"name": "Work"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	mum := s.create("tasks", map[string]any{"title": "Call mum", "project_id": home})
+	v := s.vault(t)
+	line := lineOf(t, v.read(t, "Home.md"), "Fix the lamp")
+	v.write(t, "Work.md", v.read(t, "Work.md")+line+"\n")
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Home.md") {
+		t.Errorf("report %+v", rep)
+	}
+	for _, id := range []string{lamp, mum} {
+		if s.get("tasks", id)["deleted_at"] != nil {
+			t.Fatalf("task %s was trashed", id)
+		}
+	}
+	if v.read(t, "Home.md") != "" {
+		t.Fatalf("the half-saved file was written over:\n%s", v.read(t, "Home.md"))
+	}
+}
+
+// TestEmptyFileMidSaveWithoutTasks: a project file holding only prose is read
+// at its empty save step: it is held too, and no second project is made.
+func TestEmptyFileMidSaveWithoutTasks(t *testing.T) {
+	s := newServer(t)
+	s.create("projects", map[string]any{"name": "Home"})
+	v := s.vault(t)
+	saved := v.read(t, "Home.md") + "\nIdeas for the garden.\n"
+	v.write(t, "Home.md", saved)
+	v.sync(t)
+	v.write(t, "Home.md", "")
+	rep := v.sync(t)
+	if !hasEvent(rep, "skipped", "Home.md") || rep.Written != 0 {
+		t.Errorf("report %+v", rep)
+	}
+	if got := len(s.list("projects")); got != 1 {
+		t.Fatalf("%d projects, want 1", got)
+	}
+	v.write(t, "Home.md", saved)
+	v.sync(t)
+	if got := len(s.list("projects")); got != 1 {
+		t.Fatalf("%d projects after the save, want 1", got)
+	}
+	if !strings.Contains(v.read(t, "Home.md"), "Ideas for the garden.") {
+		t.Fatalf("file:\n%s", v.read(t, "Home.md"))
+	}
+}
+
+// TestFileEmptiedOnPurpose: a file still empty at the next sync was emptied
+// on purpose: it is held once only, then its tasks go.
+func TestFileEmptiedOnPurpose(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	lamp := s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	v.write(t, "Home.md", "")
+	if rep := v.sync(t); !hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("first sync %+v", rep)
+	}
+	rep := v.sync(t)
+	if hasEvent(rep, "skipped", "Home.md") {
+		t.Fatalf("held again: %+v", rep)
+	}
+	for _, task := range s.list("tasks") {
+		if task["id"] == lamp && task["deleted_at"] == nil {
+			t.Fatalf("the task of the emptied file stays: %+v", rep)
+		}
 	}
 }

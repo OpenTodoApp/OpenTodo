@@ -440,40 +440,48 @@ func (e *engine) scan() error {
 }
 
 // halfSaved lists the vault files that look like an editor's first save step:
-// empty now, holding text when the last sync wrote them, with tasks printed
-// there of which none turns up in another file. A file emptied because its
-// lines moved elsewhere (the Inbox's last line into a project) is not one:
-// the moved lines carry their ids.
+// empty now, holding text when the last sync wrote them, and not emptied
+// because all their lines moved to other files (the Inbox's last line into a
+// project: the moved lines carry their ids). A file is held once: a file held
+// last sync has lost its hash, so if it is still empty it was emptied on
+// purpose and syncs as it is.
 func (e *engine) halfSaved() []string {
 	var out []string
 	empty := hashOf(nil)
 	for _, p := range sortedKeys(e.disk) {
 		fs, ok := e.st.Files[p]
-		if !ok || len(e.disk[p]) != 0 || fs.Hash == empty {
+		if !ok || len(e.disk[p]) != 0 || fs.Hash == empty || fs.Hash == "" {
 			continue
 		}
-		printed, moved := 0, false
-		for id, at := range e.st.Printed {
-			if at != p {
-				continue
-			}
-			printed++
-			mark := []byte(markID + " " + id)
-			for q, b := range e.disk {
-				if q != p && bytes.Contains(b, mark) {
-					moved = true
-					break
-				}
-			}
-			if moved {
-				break
-			}
-		}
-		if printed > 0 && !moved {
+		if !e.allMoved(p) {
 			out = append(out, p)
 		}
 	}
 	return out
+}
+
+// allMoved reports whether file p had tasks printed in it and every one of
+// them is now in another file.
+func (e *engine) allMoved(p string) bool {
+	printed := 0
+	for id, at := range e.st.Printed {
+		if at != p {
+			continue
+		}
+		printed++
+		mark := []byte(markID + " " + id)
+		found := false
+		for q, b := range e.disk {
+			if q != p && bytes.Contains(b, mark) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return printed > 0
 }
 
 // savedSinceRead lists the files the merge read as changed that no longer
