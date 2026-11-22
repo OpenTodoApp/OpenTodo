@@ -1,0 +1,1 @@
+- **The `kind:` suggestions come back after the picked kind is removed.** Choosing a kind and then removing its chip no longer hides the suggestions until you leave the Notes tab and return.
