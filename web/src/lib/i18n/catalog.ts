@@ -91,10 +91,13 @@ export function storeCataloguesOnceControlled(
   sw: Pick<ServiceWorkerContainer, 'addEventListener' | 'controller'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined,
   loaded: () => string[] = () => performance.getEntriesByType('resource').map((e) => e.name),
   get: (url: string) => Promise<unknown> = (url) => fetch(url),
+  origin: string = typeof location !== 'undefined' ? location.origin : '',
 ): void {
   if (!sw || sw.controller) return
+  // Only the app's own files: an entry from another origin is never asked for.
+  const ours = (u: string) => { try { const url = new URL(u); return url.origin === origin && CATALOGUE_FILE.test(url.pathname) } catch { return false } }
   sw.addEventListener('controllerchange', () => {
-    for (const url of new Set(loaded().filter((u) => CATALOGUE_FILE.test(new URL(u, 'http://x').pathname)))) void get(url).catch(() => undefined)
+    for (const url of new Set(loaded().filter(ours))) void get(url).catch(() => undefined)
   }, { once: true })
 }
 

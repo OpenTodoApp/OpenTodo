@@ -15,6 +15,8 @@ export interface InstallEnv {
   caches: CacheStorage
   /** The keys built into this worker: the official keys, or an own-key build's key. */
   builtinKeys: readonly string[]
+  /** The device's languages (the worker's navigator.languages), for a list that names no catalogue's language. */
+  languages?: () => readonly string[]
   now: () => number
   load: () => Promise<TrustRecord | null>
   save: (r: TrustRecord) => Promise<void>
@@ -98,9 +100,15 @@ interface StageResult { failure?: { cause: CheckCause; path: string } }
  * device has used (precache-device-language D3). The cache is the record, so
  * a first install holds none and a cleared cache forgets them.
  */
-async function heldLanguages(current: InstalledVersion | undefined, currentCache: Cache | null): Promise<Set<string>> {
+async function heldLanguages(current: InstalledVersion | undefined, currentCache: Cache | null, languages: readonly string[] = []): Promise<Set<string>> {
   const held = new Set<string>()
   if (!current || !currentCache) return held
+  // A list from before catalogues named their language installed every catalogue:
+  // the device's own languages stand in for the ones it used.
+  if (!Object.values(current.files).some((f) => f.lang)) {
+    for (const tag of languages) held.add(tag.toLowerCase().split('-')[0])
+    return held
+  }
   for (const [path, f] of Object.entries(current.files)) {
     if (f.lang && !held.has(f.lang) && (await currentCache.match(cacheKey(path)))) held.add(f.lang)
   }
@@ -117,7 +125,7 @@ async function heldLanguages(current: InstalledVersion | undefined, currentCache
 async function stage(env: InstallEnv, staging: Cache, files: Record<string, ManifestFile>, current: InstalledVersion | undefined, stopOnFailure: boolean): Promise<StageResult> {
   const result: StageResult = {}
   const currentCache = current ? await env.caches.open(current.cache) : null
-  const held = await heldLanguages(current, currentCache)
+  const held = await heldLanguages(current, currentCache, env.languages?.() ?? [])
   const queue = Object.keys(files).filter((p) => files[p].load === 'install' || (files[p].lang !== undefined && held.has(files[p].lang!))).sort()
   const fail = (cause: CheckCause, path: string) => {
     if (!result.failure || path < result.failure.path) result.failure = { cause, path }
@@ -290,13 +298,15 @@ export type LazyResult = { response: Response; check?: CheckResult }
  * A listed file that isn't stored yet (a lazy chunk such as the map): fetched,
  * checked against the current list and stored when it matches (D7). A mismatch
  * is recorded; with refusal on it fails the request, while reporting the
- * served file is used but never stored.
+ * served file is used but never stored. A listed file that could not be
+ * downloaded answers 404: a listed file is only ever served checked, so the
+ * caller never asks the network for it again on its own.
  */
 export async function fetchLazy(env: InstallEnv, record: TrustRecord, path: string): Promise<LazyResult | null> {
   const want = record.current?.files[path] ?? record.previous?.files[path]
   if (!want) return null
   const got = await download(env, path).catch(() => null)
-  if (!got) return null
+  if (!got) return { response: new Response('', { status: 404 }) }
   if (got.body.byteLength === want.size && (await sha256Hex(got.body)) === want.sha256) {
     const holder = record.current?.files[path]?.sha256 === want.sha256 ? record.current : record.previous
     if (holder) await (await env.caches.open(holder.cache)).put(cacheKey(path), fileResponse(got.body.slice(0), got.type))

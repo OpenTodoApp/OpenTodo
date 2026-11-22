@@ -29,6 +29,7 @@ const env: InstallEnv = {
   fetch: (path, init) => fetch(new URL(path, self.location.origin).href, init),
   caches: self.caches,
   builtinKeys: __APP_KEYS__,
+  languages: () => self.navigator.languages ?? [],
   now: () => Date.now(),
   load: () => loadTrust(self.indexedDB),
   save: (r) => saveTrust(r, self.indexedDB),

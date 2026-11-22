@@ -14,6 +14,7 @@ function worker(controller: unknown) {
 }
 
 const loaded = () => [
+  'https://cdn.example.net/assets/lang-fr-AAAAAAAA.js',
   'https://todo.example.com/assets/index-a1.js',
   'https://todo.example.com/assets/lang-de-DBpiZ4My.js',
   'https://todo.example.com/assets/lang-de-DBpiZ4My.js',
@@ -22,10 +23,10 @@ const loaded = () => [
 ]
 
 describe('storeCataloguesOnceControlled', () => {
-  it('asks once for each catalogue the page loaded when a worker takes control', () => {
+  it('asks once for each catalogue of the app\'s own origin the page loaded when a worker takes control', () => {
     const sw = worker(null)
     const got: string[] = []
-    storeCataloguesOnceControlled(sw, loaded, async (u) => void got.push(u))
+    storeCataloguesOnceControlled(sw, loaded, async (u) => void got.push(u), 'https://todo.example.com')
     expect(got).toEqual([])
     sw.fire()
     expect(got).toEqual(['https://todo.example.com/assets/lang-de-DBpiZ4My.js'])

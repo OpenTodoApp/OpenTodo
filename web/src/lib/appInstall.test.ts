@@ -109,12 +109,13 @@ function server() {
   return s
 }
 
-function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery']) {
+function env(srv: ReturnType<typeof server>, caches = new MemoryCaches(), builtin: Signer[] = ['release', 'recovery'], languages: string[] = []) {
   let record: TrustRecord | null = null
   const e: InstallEnv & { caches: MemoryCaches; record: () => TrustRecord } = {
     fetch: srv.fetch,
     caches: caches as unknown as CacheStorage & MemoryCaches,
     builtinKeys: builtin.map((n) => keys[n].spki),
+    languages: () => languages,
     now: () => 1_700_000_000_000,
     load: async () => (record ? structuredClone(record) : null),
     save: async (r: TrustRecord) => { record = structuredClone(r) },
@@ -382,6 +383,19 @@ describe('lazy files (design D7)', () => {
     const { e } = await installed()
     expect(await fetchLazy(e, e.record(), 'evil.js')).toBeNull()
   })
+
+  it('answers 404 for a listed file that could not be downloaded, and never serves a later changed one', async () => {
+    const { srv, e } = await installed(true)
+    srv.release!.served = { 'assets/MapView-1.js': null }
+    const failed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(failed?.response.status).toBe(404)
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+    srv.release!.served = { 'assets/MapView-1.js': 'tampered' }
+    const changed = await fetchLazy(e, e.record(), 'assets/MapView-1.js')
+    expect(changed?.response.status).toBe(404)
+    expect(await text(changed!.response)).toBe('')
+    expect(await cachedFile(e, e.record(), 'assets/MapView-1.js')).toBeNull()
+  })
 })
 
 describe('interface catalogues (precache-device-language D3)', () => {
@@ -415,6 +429,19 @@ describe('interface catalogues (precache-device-language D3)', () => {
     const r = e.record()
     expect(await text(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-de-2.js'))).toBe('de2')
     expect(await cachedFile(e, { ...r, previous: undefined }, 'assets/lang-fr-2.js')).toBeNull()
+  })
+
+  it('from a list that names no language, an update keeps the device language\'s catalogue', async () => {
+    const srv = server()
+    // The list before catalogues named their language: every catalogue installed.
+    await srv.serve({ ...v1, files: { ...v1.files, 'assets/de-1.js': 'de1', 'assets/fr-1.js': 'fr1' } })
+    const e = env(srv, new MemoryCaches(), ['release', 'recovery'], ['de-DE', 'en'])
+    await checkForUpdate(e)
+    srv.requests = []
+    await srv.serve(c2)
+    expect(await checkForUpdate(e)).toMatchObject({ kind: 'installed', version: '1.4.0' })
+    expect(srv.requests).toContain('/assets/lang-de-2.js')
+    expect(srv.requests).not.toContain('/assets/lang-fr-2.js')
   })
 
   it('refuses an update whose held catalogue was changed, with refusal on', async () => {
