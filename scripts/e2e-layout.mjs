@@ -612,7 +612,9 @@ async function rowLift(p) {
   }
   const lifted = await hold(300)
   if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale})`)
-  await p.waitForTimeout(400)
+  // Settled once its transitions end (a loaded runner can take longer than their 350 ms), at most 2 s.
+  await row.evaluate((el) => Promise.race([Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 2000))]))
+  await p.waitForTimeout(50)
   const settled = await scale()
   if (Math.abs(settled - 1) > 0.0005) out.push(`a row released early has not settled (scale ${settled})`)
   await p.emulateMedia({ reducedMotion: 'reduce' })
