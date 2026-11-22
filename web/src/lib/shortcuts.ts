@@ -708,9 +708,3 @@ export function chordKey(seq: Chord[]): string {
   return seq.map((c) => `${c.ctrl || ''}${c.alt ? '+alt' : ''}${!c.symbol && c.shift ? '+shift' : ''}+${c.key}`).join(' ')
 }
 
-/** Whether two sequences collide: the same keys, or one is the start of the other (`d` and `d d`). */
-export function sequencesClash(a: Chord[], b: Chord[]): boolean {
-  const n = Math.min(a.length, b.length)
-  for (let i = 0; i < n; i++) if (chordKey([a[i]]) !== chordKey([b[i]])) return false
-  return true
-}

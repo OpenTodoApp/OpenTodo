@@ -42,8 +42,8 @@ import { runGroupDue } from '../task-list/EarlierActions'
 import { hueName } from '../../lib/colourNames'
 import { t, msg, translatedList } from '../../lib/i18n'
 import { customPriorityName, isNoPriority } from '../../lib/priority'
-import { DAY_PARTS, dayPartFields, dayPartName, dayPartOf } from '../../lib/dayParts'
-import { dayPartUndoable, sectorUndoable } from '../../lib/undoActions'
+import { DAY_PARTS, dayPartName, dayPartOf } from '../../lib/dayParts'
+import { dayPartUndoable, eveningUndoable, sectorUndoable } from '../../lib/undoActions'
 import { sectorChoices } from '../../lib/sectorNames'
 import { runGiveBackSlot, runTakeSlot, type SlotState } from '../task-list/slotActions'
 import { requestFrames } from '../calendar/framesRequest'
@@ -260,7 +260,7 @@ export function commands(ctx: PaletteContext): Command[] {
         tk.start === 'someday'
           ? { id: 'task:unpark', label: t('Bring back {title} from Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => unparkTask(tk.id) }
           : { id: 'task:park', label: t('Park {title} in Someday', { title }), icon: 'archive', shortcut: keysOf('list.park'), run: () => parkTask(tk.id) },
-        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => updateTask(tk.id, dayPartFields(tk.evening ? null : 'evening')) },
+        { id: 'task:evening', label: tk.evening ? t('Remove {title} from This Evening', { title }) : t('Mark {title} for This Evening', { title }), icon: 'moon', shortcut: keysOf('list.evening'), run: () => eveningUndoable(tk.id, !tk.evening) },
         // Day parts (day-parts D4): the parts the task is not in, while the account uses them.
         ...(ctx.dayParts ? ([...DAY_PARTS, null] as const).filter((part) => dayPartOf(tk) !== part).map((part): Command => ({
           id: `task:part:${part ?? 'none'}`, label: part ? t('Move {title} to {part}', { title, part: dayPartName(part) }) : t('Move {title} to Any time', { title }),

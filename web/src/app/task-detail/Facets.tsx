@@ -37,10 +37,9 @@ import { usePropertiesModel, type PropertiesModel } from './usePropertiesModel'
 import type { Optional } from './usePropertyEditing'
 import { t } from '../../lib/i18n'
 import { act, reportActionError } from '../actionError'
-import { dayPartFields } from '../../lib/dayParts'
 import { energyLevelsOn, energyOf, setTaskEnergy } from '../../lib/energy'
 import { useUserPrefsRow } from '../../lib/localData'
-import { estimateUndoable } from '../../lib/undoActions'
+import { estimateUndoable, eveningUndoable } from '../../lib/undoActions'
 import { EnergyChoice } from './EnergyChoice'
 
 export const PRIORITIES: { p: Priority; cls: string }[] = [
@@ -293,7 +292,7 @@ function AddMenu({ task, userId, m }: { task: Task; userId?: string; m: Properti
     { title: t('When'), offers: [
       { id: 'deadline', label: t('Deadline'), icon: 'hourglass', shortcut: keysOf('list.deadline') },
       { id: 'when', label: t('Start'), icon: 'calendar-range', shortcut: keysOf('list.defer') },
-      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(updateTask(task.id, dayPartFields('evening'))) },
+      { id: 'evening', label: t('This Evening'), icon: 'moon', shortcut: keysOf('list.evening'), run: () => act(eveningUndoable(task.id, true)) },
       { id: 'reminders', label: t('Reminder'), icon: 'alarm-clock' },
       { id: 'repeat', label: t('Repeat'), icon: 'repeat' },
     ] },
