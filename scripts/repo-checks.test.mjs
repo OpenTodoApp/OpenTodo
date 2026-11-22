@@ -298,19 +298,22 @@ test('Playwright jobs run in the pinned image at one version', () => {
   }
 })
 
-// CI capacity: a push to main runs the pull request tier for what it changed; release
-// tags, the nightly schedule and a run by hand run every job and matrix leg; a draft
-// skips the browser, workbench, accessibility and phone jobs until it is marked ready.
-test('the full matrix runs on tags, nightly and by hand; main pushes and drafts run less', () => {
+// CI capacity (ci-pr-fast-tier): the merge queue and a push to main run the path tier for
+// what they change; release tags, the nightly schedule and a run by hand run every job and
+// matrix leg; a pull request skips the browser, workbench, accessibility and phone jobs,
+// which the merge queue runs before the change lands.
+test('the full matrix runs on tags, nightly and by hand; pull requests run the fast tier', () => {
   const ci = read('.github/workflows/ci.yml')
   assert.match(ci, /^ {2}schedule:\n {4}- cron: "[^"]+"$/m, 'a nightly full run')
   assert.match(ci, /^ {2}workflow_dispatch:$/m, 'a full run by hand')
-  assert.match(ci, /types: \[opened, synchronize, reopened, ready_for_review\]/, 'marking a draft ready runs the rest')
+  assert.match(ci, /^ {2}merge_group:$/m, 'the merge queue runs CI')
+  assert.match(ci, /types: \[opened, synchronize, reopened\]/, 'drafts and ready pull requests run the same tier, so marking one ready starts no run')
   const jobs = jobsOf(ci)
   assert.match(jobs.changes, /full: \$\{\{ steps\.filter\.outputs\.full \}\}/)
   assert.match(jobs.changes, /git diff --name-only "\$BEFORE" HEAD/, 'a push to main is compared with the commit before')
-  assert.match(jobs.changes, /DRAFT: \$\{\{ github\.event\.pull_request\.draft \}\}/)
-  assert.match(jobs.changes, /\(ui\|layout\|a11y\|mobile\|ios\)=true/, 'a draft turns the heavy jobs off')
+  assert.match(jobs.changes, /git diff --name-only "\$QUEUE_BASE" HEAD > changed\.txt\n\s+cat changed\.txt\n\s+\.\/scripts\/ci-changes\.sh < changed\.txt >> "\$GITHUB_OUTPUT"/, 'the merge queue runs the whole path tier')
+  assert.match(jobs.changes, /git diff --name-only "\$BASE"\.\.\.HEAD > changed\.txt\n\s+cat changed\.txt\n(\s+#.*\n)*\s+\.\/scripts\/ci-changes\.sh < changed\.txt \| sed -E 's\/\^\(ui\|layout\|a11y\|mobile\|ios\)=true\$\/\\1=false\/' >> "\$GITHUB_OUTPUT"\n\n/, 'every pull request turns the heavy jobs off, with no condition around it')
+  assert.doesNotMatch(jobs.changes, /DRAFT/, 'a draft is no longer a tier of its own')
   for (const id of ['layout', 'cli']) assert.match(jobs[id], /fromJSON\(needs\.changes\.outputs\.full != 'true' && /, `${id} runs its full matrix only when full`)
   assert.doesNotMatch(ci, /fromJSON\(github\.event_name == 'pull_request'/, 'no matrix keys off the event alone')
 })
