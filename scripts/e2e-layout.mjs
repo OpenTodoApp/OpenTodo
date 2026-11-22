@@ -636,9 +636,11 @@ async function touchInput(p, base) {
  */
 async function rowLift(p) {
   const out = []
-  const row = p.locator('li[data-task-id]').first()
-  const title = row.locator('[data-row-open]').first()
-  if (!(await title.count())) return ['no task row to hold']
+  // One row for the whole probe: a list that is still filling in can change which row is
+  // first between the press and the read, and a locator would then read another row.
+  const row = await p.locator('li[data-task-id]').first().elementHandle()
+  const title = row ? await row.$('[data-row-open]') : null
+  if (!row || !title) return ['no task row to hold']
   await row.scrollIntoViewIfNeeded()
   const scale = () => row.evaluate((el) => {
     const t = getComputedStyle(el).transform
@@ -652,12 +654,12 @@ async function rowLift(p) {
     const at = { pointerId: 41, pointerType: 'touch', isPrimary: true, bubbles: true, clientX: box.x + 8, clientY: box.y + box.height / 2 }
     await title.evaluate((el, at) => el.dispatchEvent(new PointerEvent('pointerdown', at)), at)
     await p.waitForTimeout(ms)
-    const held = { scale: await scale(), rising: await rising() }
+    const held = { scale: await scale(), rising: await rising(), state: await row.evaluate((el) => (!el.isConnected ? 'replaced' : el.hasAttribute('data-touch-press') ? 'pressed' : 'not pressed')) }
     await p.evaluate((at) => window.dispatchEvent(new PointerEvent('pointerup', at)), at)
     return held
   }
   const lifted = await hold(300)
-  if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale})`)
+  if (!(lifted.scale > 1.001) && !lifted.rising) out.push(`a row held for 300 ms has not risen (scale ${lifted.scale}, row ${lifted.state})`)
   // Settled once its transitions end (a loaded runner can take longer than their 350 ms), at most 2 s.
   await row.evaluate((el) => Promise.race([Promise.all(el.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 2000))]))
   await p.waitForTimeout(50)
