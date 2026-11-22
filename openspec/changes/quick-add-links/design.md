@@ -24,7 +24,9 @@ Alternative: always parse links. Rejected because it silently changes existing r
 
 The chip reads the host without `www.`, a port or a user, ASCII letters lowercased (the full URL is its accessible name and tooltip). Its colour is the neutral slate, since links have no attribute colour. On save, every link not dismissed and not quoted becomes, in order, a link attachment through the same path as **Attach → Add a link…**, which names it after its host and stores the URL as the browser normalises it. Its token leaves the title, and whitespace around it collapses like any token.
 
-At most 5 links per line become attachments; the sixth and later stay in the title with no chip. A line whose title would be empty keeps the URL as its title and shows no chip. A link equal to the task's origin URL (share capture) is not attached; it already shows as the origin.
+At most 5 links per line become attachments; the sixth and later stay in the title with no chip. A line whose title would be empty keeps the URL as its title and shows no chip. A link equal to the task's origin URL (share capture) is not attached; it already shows as the origin. Nor is a link the task already has (a title edit), or the same link twice. Links are created one millisecond apart, so the list, sorted by creation, shows them in the order typed.
+
+A line with a link is never matched to an item of a reusable list (`reusable-lists` D3): the reused item would lose the link, and before this change the URL in the title kept the line from matching anyway. Before the first sign-in on a device there is no author for an attachment, so quick add and title editing do not read links at all (`links` follows the signed-in account): a URL stays in the title where it was typed, with no chip.
 
 ### D3. One operation set
 
