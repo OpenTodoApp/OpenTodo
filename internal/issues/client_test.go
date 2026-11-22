@@ -73,7 +73,7 @@ func TestRedirectRefusedWithoutSecondRequest(t *testing.T) {
 		http.Redirect(w, r, target.URL+"/steal", http.StatusFound)
 	}))
 	_, err := p.List(context.Background(), Request{})
-	if ReasonOf(err) != ReasonRedirect || hits.Load() != 1 || other.Load() != 0 {
+	if reasonOf(err) != ReasonRedirect || hits.Load() != 1 || other.Load() != 0 {
 		t.Fatalf("err = %v, hits %d, redirect target %d", err, hits.Load(), other.Load())
 	}
 }
@@ -82,7 +82,7 @@ func TestBodyTooLarge(t *testing.T) {
 	p, _ := testProvider(t, GitLab, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("[" + strings.Repeat(" ", 3<<20) + "]"))
 	}))
-	if _, err := p.List(context.Background(), Request{}); ReasonOf(err) != ReasonTooLarge {
+	if _, err := p.List(context.Background(), Request{}); reasonOf(err) != ReasonTooLarge {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -95,7 +95,7 @@ func TestPrivateHostRefusedUnlessAllowed(t *testing.T) {
 	}))
 	defer srv.Close()
 	p, _ := NewProvider(NewHTTPClient(deny), GitHub, srv.URL, "t", "test")
-	if _, err := p.List(context.Background(), Request{}); ReasonOf(err) != ReasonPrivateTarget || hits.Load() != 0 {
+	if _, err := p.List(context.Background(), Request{}); reasonOf(err) != ReasonPrivateTarget || hits.Load() != 0 {
 		t.Fatalf("denied: err = %v, hits %d", err, hits.Load())
 	}
 	p, _ = NewProvider(NewHTTPClient(allow), GitHub, srv.URL, "t", "test")
@@ -189,11 +189,11 @@ func TestGitHubRepositoryScopeAndOutcomes(t *testing.T) {
 		t.Fatalf("304 = %+v %v", pg, err)
 	}
 	status = 401
-	if _, err := p.List(ctx, Request{}); ReasonOf(err) != ReasonUnauthorized {
+	if _, err := p.List(ctx, Request{}); reasonOf(err) != ReasonUnauthorized {
 		t.Fatalf("401 = %v", err)
 	}
 	status = 4030
-	if _, err := p.List(ctx, Request{}); ReasonOf(err) != ReasonUnauthorized {
+	if _, err := p.List(ctx, Request{}); reasonOf(err) != ReasonUnauthorized {
 		t.Fatalf("403 without a reset = %v", err)
 	}
 	status = 403
@@ -290,4 +290,18 @@ func TestGitHubAccountWithoutIssueAccess(t *testing.T) {
 	if err != nil || acc.Login != "octo" || acc.CanReadIssues || n.Load() != 2 {
 		t.Fatalf("account = %+v %v (%d requests)", acc, err, n.Load())
 	}
+}
+
+// reasonOf is the reason a provider error records (Worker.pollError's mapping
+// of the provider's own errors).
+func reasonOf(err error) string {
+	var pe *Error
+	var rl *RateLimitedError
+	switch {
+	case errors.As(err, &pe):
+		return pe.Reason
+	case errors.As(err, &rl):
+		return ReasonRateLimited
+	}
+	return ReasonConnection
 }
