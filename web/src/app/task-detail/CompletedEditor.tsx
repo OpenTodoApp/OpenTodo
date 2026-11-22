@@ -33,7 +33,7 @@ export function CompletedEditor({ task }: { task: Task }) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDay) || !/^\d{2}:\d{2}$/.test(nextTime)) return
     const ms = Math.min(at(nextDay, nextTime), Date.now())
     if (ms === task.completed_at) return
-    act(updateTask(task.id, { completed_at: ms }))
+    act(updateTask(task.id, { completed_at: ms, completed_by: task.completed_by }))
   }
   return (
     <div className="flex gap-2" data-completed-editor>
