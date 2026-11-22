@@ -7,7 +7,7 @@
     "predev": "npm run --silent help",
     "dev": "vite",
     "prebuild": "npm run --silent help",
-    "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && vite build && node scripts/app-manifest.mjs",
+    "build": "node -e \"require('node:fs').rmSync('../internal/web/dist/assets', { recursive: true, force: true })\" && tsc --noEmit && tsc --noEmit -p tsconfig.sw.json && vite build && node scripts/app-manifest.mjs && node scripts/compress-dist.mjs",
     "preview": "vite preview",
     "pretest": "npm run --silent help",
     "test": "vitest run",
