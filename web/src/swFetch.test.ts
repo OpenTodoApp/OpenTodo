@@ -14,7 +14,7 @@ let stored: TrustRecord | null | 'unreadable' = null
 vi.mock('./lib/appTrust', async (real) => ({
   ...(await real<typeof import('./lib/appTrust')>()),
   loadTrust: async () => { if (stored === 'unreadable') throw new Error('unreadable'); return stored },
-  saveTrust: async () => undefined,
+  updateTrust: async () => null,
   trustsOwnKey: async () => false,
 }))
 const shared = workerCaches()

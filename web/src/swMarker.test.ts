@@ -7,7 +7,7 @@ let stored: TrustRecord | null | 'unreadable' = 'unreadable'
 vi.mock('./lib/appTrust', async (real) => ({
   ...(await real<typeof import('./lib/appTrust')>()),
   loadTrust: async () => { if (stored === 'unreadable') throw new Error('unreadable'); return stored },
-  saveTrust: async () => undefined,
+  updateTrust: async () => null,
   trustsOwnKey: async () => false,
 }))
 const lazy = vi.fn(async () => ({ response: new Response('<p>checked</p>', { headers: { 'Content-Type': 'text/html' } }) }))
