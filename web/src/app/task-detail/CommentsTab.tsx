@@ -30,6 +30,9 @@ import { messageOf } from '../../lib/errorText'
 import { useAction } from '../../lib/useAction'
 import { useResetOnChange } from '../../lib/useResetOnChange'
 
+/** One empty list for comments without files, so their live query is not restarted on every render. */
+const NO_ATTACHMENTS: Attachment[] = []
+
 /** True on touch screens: comment actions are always shown there instead of on hover. */
 export function useCoarsePointer(): boolean {
   return useSyncExternalStore(
@@ -192,7 +195,7 @@ export const CommentsView = forwardRef<HTMLElement | null, CommentsViewProps>(fu
           ) : (
             <>
               {c.body && <Markdown source={c.body} taskId={taskId} mentions={mentionChips} mentionGroups={groupChips} className="user-text mt-0.5 max-w-prose text-body leading-relaxed text-default" />}
-              <CommentAttachments list={attachments?.get(c.id) ?? []} />
+              <CommentAttachments list={attachments?.get(c.id) ?? NO_ATTACHMENTS} />
               {onReact && <ReactionBar comment={c} me={me} name={name} onReact={onReact} coarse={coarse} />}
             </>
           )}
