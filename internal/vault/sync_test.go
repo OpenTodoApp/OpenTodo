@@ -884,3 +884,52 @@ func TestFrontMatterDeletedKeepsTheProject(t *testing.T) {
 		t.Fatalf("Home.md:\n%s", got)
 	}
 }
+
+// vault-file-keeps-project D2: an id claims its project before any path does,
+// whatever the order of the files: Home's front matter copied into Zed.md
+// makes Zed.md Home's file (renamed Zed), and Home.md, stripped, is new.
+func TestFrontMatterIDBeatsTheRecordedPath(t *testing.T) {
+	s := newServer(t)
+	home := s.create("projects", map[string]any{"name": "Home"})
+	s.create("tasks", map[string]any{"title": "Fix the lamp", "project_id": home})
+	v := s.vault(t)
+	text := v.read(t, "Home.md")
+	end := strings.Index(text[3:], "\n---\n")
+	v.write(t, "Zed.md", text[:3+end+5]+"- [ ] Oil the hinge\n")
+	v.write(t, "Home.md", strings.TrimLeft(text[3+end+5:], "\n"))
+	v.sync(t)
+	if p := s.get("projects", home); p["name"] != "Zed" {
+		t.Fatalf("the id's project %+v, want it named Zed", p)
+	}
+	if got := len(s.list("projects")); got != 2 {
+		t.Fatalf("%d projects, want 2", got)
+	}
+}
+
+// vault-file-keeps-project: a folder note and its child both lose their front
+// matter; both keep their projects and the child stays nested.
+func TestFrontMatterDeletedInAFolder(t *testing.T) {
+	s := newServer(t)
+	work := s.create("projects", map[string]any{"name": "Work"})
+	launch := s.create("projects", map[string]any{"name": "Launch", "parent_id": work})
+	s.create("tasks", map[string]any{"title": "Book the room", "project_id": launch})
+	v := s.vault(t)
+	for _, f := range []string{"Work/Work.md", "Work/Launch.md"} {
+		text := v.read(t, f)
+		end := strings.Index(text[3:], "\n---\n")
+		if end < 0 {
+			t.Fatalf("%s has no front matter:\n%s", f, text)
+		}
+		v.write(t, f, strings.TrimLeft(text[3+end+5:], "\n"))
+	}
+	v.sync(t)
+	if got := len(s.list("projects")); got != 2 {
+		t.Fatalf("%d projects, want 2", got)
+	}
+	if p := s.get("projects", launch); p["parent_id"] != work {
+		t.Fatalf("Launch %+v, want it under Work", p)
+	}
+	if text := v.read(t, "Work/Launch.md"); !strings.Contains(text, "opentodo-id: "+launch) {
+		t.Fatalf("Work/Launch.md:\n%s", text)
+	}
+}
