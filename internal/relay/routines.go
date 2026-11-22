@@ -77,47 +77,39 @@ func (h *Hub) CanRun(userID string, needAI bool) bool {
 // never blocks: a full stream counts as no device.
 func (h *Hub) SendRoutine(userID string, needAI bool, prefer string, run RoutineRun) (Sent, error) {
 	run.Op = OpRoutineRun
-	h.mu.Lock()
-	s := h.pickRoutines(userID, needAI, prefer)
-	queued := s != nil && s.runs[run.RunID]
-	if s != nil && !queued {
-		if s.runs == nil {
-			s.runs = map[string]bool{}
-		}
-		s.runs[run.RunID] = true
+	raw, err := json.Marshal(run)
+	if err != nil {
+		return Sent{}, err
 	}
-	h.mu.Unlock()
+	// Under the lock from the pick to the queue (the send never blocks): a run
+	// counts as queued on a stream only once it is in its channel.
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	s := h.pickRoutines(userID, needAI, prefer)
 	if s == nil {
 		return Sent{}, ErrNoDevice
 	}
+	sent := Sent{DeviceID: s.DeviceID, SessionHash: s.SessionHash}
 	// A run this stream already has (it fired as the stream opened, and the
 	// dispatch on open sends it again) is not queued a second time.
-	if queued {
-		return Sent{DeviceID: s.DeviceID, SessionHash: s.SessionHash}, nil
-	}
-	unqueue := func() {
-		h.mu.Lock()
-		delete(s.runs, run.RunID)
-		h.mu.Unlock()
-	}
-	raw, err := json.Marshal(run)
-	if err != nil {
-		unqueue()
-		return Sent{}, err
+	if s.runs[run.RunID] {
+		return sent, nil
 	}
 	// The run id is the additional data: a box cannot be replayed as another run.
 	box, err := s.key.seal(raw, run.RunID)
 	if err != nil {
-		unqueue()
 		return Sent{}, err
 	}
 	data, _ := json.Marshal(map[string]string{"id": run.RunID, "box": box})
 	select {
 	case s.events <- Event{Name: "routine", Data: string(data)}:
-		return Sent{DeviceID: s.DeviceID, SessionHash: s.SessionHash}, nil
+		if s.runs == nil {
+			s.runs = map[string]bool{}
+		}
+		s.runs[run.RunID] = true
+		return sent, nil
 	case <-s.done:
 	default:
 	}
-	unqueue()
 	return Sent{}, ErrNoDevice
 }
