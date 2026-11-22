@@ -1,0 +1,1 @@
+- **No keyboard bar in the iPhone app.** The previous, next and Done bar above the keyboard is gone, as in other iPhone apps; the keyboard's return key and a tap outside close it. The field you type in also stays above the keyboard, at the bottom of a sheet too, without moving the page behind it.
