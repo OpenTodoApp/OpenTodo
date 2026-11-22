@@ -103,11 +103,35 @@ describe('opening an attachment in a browser tab, inside the click (WebKit)', ()
     expect(tab.close).toHaveBeenCalled()
   })
 
-  it('opens no early tab for a download or a type the browser does not show', async () => {
+  it('saves a download, or a type the browser does not show, from the server within the click', () => {
     const opened = vi.spyOn(window, 'open').mockImplementation(() => null)
-    clickedAnchors()
+    const clicks = clickedAnchors()
     void openAttachment(file({ mime: 'application/zip', name: 'a.zip' }))
-    void openAttachment(file({ mime: 'image/png' }), { download: true })
+    void openAttachment(file({ mime: 'image/png', name: 'photo.png' }), { download: true })
+    // No await has run yet: both saves happened inside the click.
+    expect(clicks).toEqual([
+      { href: '/api/v1/attachments/a1/content?download=1', download: 'a.zip', target: '' },
+      { href: '/api/v1/attachments/a1/content?download=1', download: 'photo.png', target: '' },
+    ])
     expect(opened).not.toHaveBeenCalled()
+  })
+
+  it('offline, saves the copy this device holds', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    await db.attachmentBlobs.put({ id: 'a1', blob: new Blob(['zip'], { type: 'application/zip' }) } as never)
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:https://todo.example.com/z')
+    const clicks = clickedAnchors()
+    await openAttachment(file({ mime: 'application/zip', name: 'a.zip' }))
+    await vi.waitFor(() => expect(clicks).toHaveLength(1))
+    expect(clicks[0]).toEqual({ href: 'blob:https://todo.example.com/z', download: 'a.zip', target: '' })
+  })
+
+  it('a file not uploaded yet is saved from this device, after reading it', async () => {
+    await db.attachmentBlobs.put({ id: 'a1', blob: new Blob(['zip'], { type: 'application/zip' }) } as never)
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:https://todo.example.com/z')
+    const clicks = clickedAnchors()
+    await openAttachment(file({ mime: 'application/zip', name: 'a.zip', uploaded_at: 0 } as Partial<Attachment>))
+    await vi.waitFor(() => expect(clicks).toHaveLength(1))
+    expect(clicks[0].href).toBe('blob:https://todo.example.com/z')
   })
 })
