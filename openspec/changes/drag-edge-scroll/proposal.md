@@ -7,7 +7,7 @@ GitHub issue 1760: on an iPhone (the installed web app and the iOS app), holding
 - A held or lifted row keeps the page still under the finger on iOS too. The listener that stops the scroll is there before the touch starts, instead of being added by the press, which iOS WebKit ignores.
 - A lifted drag scrolls the main list or the sidebar while the pointer rests near its top or bottom edge, faster nearer the edge, for touch, mouse and pen alike, and the drop line follows.
 
-Out of scope: horizontal scrolling of board columns, the calendar and timeline drags, the lift itself (row-lift-overscroll). No ROADMAP item; this is a bug fix. No new environment variable, no op change.
+Every drag that goes through `lib/dnd` gets the edge scrolling, the calendar and timeline drags included, wherever their region is the main content. Out of scope: horizontal scrolling of board columns, and the lift itself (row-lift-overscroll). No ROADMAP item; this is a bug fix. No new environment variable, no op change.
 
 ## Capabilities
 

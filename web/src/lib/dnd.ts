@@ -219,6 +219,28 @@ export function edgeStep(y: number, top: number, bottom: number): number {
 const SCROLLERS = '[data-main-scroller], [data-sidebar-scroll]'
 
 /**
+ * The scroller a pointer at (x, y) is near the edge of, with its step: the innermost of
+ * the page's scrollers whose box holds the point and that can still move that way. By
+ * geometry, not the element under the pointer, so a bar floating over the list's bottom
+ * edge (the selection bar, the add button) does not hide the list from the drag.
+ */
+export function edgeScroller(x: number, y: number, doc: Document = document): { el: HTMLElement; step: number } | null {
+  const inside = [...doc.querySelectorAll<HTMLElement>(SCROLLERS)].filter((el) => {
+    const r = el.getBoundingClientRect()
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+  })
+  // Document order puts a nested scroller after the one around it: try the inner one first.
+  for (const el of inside.reverse()) {
+    const r = el.getBoundingClientRect()
+    const step = edgeStep(y, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight))
+    if (!step) continue
+    const room = step < 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight
+    if (room) return { el, step }
+  }
+  return null
+}
+
+/**
  * Start tracking a press from an element's onPointerDown. Only the primary button
  * of a mouse starts a drag; presses on buttons inside the element (the completion
  * circle) still work because nothing happens until the pointer moves or holds.
@@ -278,11 +300,9 @@ export function beginDrag(e: { pointerId: number; pointerType: string; button: n
   const scrollEdge = () => {
     frame = 0
     if (!lifted) return
-    const el = document.elementFromPoint?.(lastX, lastY)?.closest<HTMLElement>(SCROLLERS)
-    if (!el) return
-    const r = el.getBoundingClientRect()
-    const step = edgeStep(lastY, Math.max(r.top, 0), Math.min(r.bottom, window.innerHeight))
-    if (!step) return
+    const hit = edgeScroller(lastX, lastY)
+    if (!hit) return
+    const { el, step } = hit
     const before = el.scrollTop
     el.scrollTop = before + step
     if (el.scrollTop === before) return
