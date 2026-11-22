@@ -41,20 +41,23 @@ const env: InstallEnv = {
 // policy so a worker that cannot read its record still fails closed.
 const state: { running: Promise<CheckOutcome | null> | null; lastCheck: number } = { running: null, lastCheck: 0 }
 const MODE_KEY = '/__refuse'
-const records = trustReader(env.load, {
+const remembered = {
   // true or false as remembered, false when nothing was; a failure to read rejects (unknown).
   get: async () => { const r = await (await caches.open('opentodo-policy')).match(MODE_KEY); return r ? (await r.text()) === '1' : false },
-  set: async (on) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
-})
+  set: async (on: boolean) => { await (await caches.open('opentodo-policy')).put(MODE_KEY, new Response(on ? '1' : '0')) },
+}
+const records = trustReader(env.load, remembered)
+/** One read of the trust state: a request decides everything from the one it took. */
 const trustState = (): Promise<TrustState> => records.read()
 async function trust(): Promise<TrustRecord | null> {
   return (await records.read()).record
 }
-/** A 404 for an app file while the record cannot be read and refusal applies: nothing unchecked. */
-const closedWhileUnreadable = async (): Promise<Response | null> => {
-  const t = await trustState()
-  return t.unreadable && t.refuse && !t.record ? new Response('', { status: 404 }) : null
-}
+/**
+ * While the record cannot be read and refusal applies, an app file that was not
+ * answered checked gets a 404, whatever record stands in (it may be older than the
+ * set just installed): never the network.
+ */
+const closedFor = (t: TrustState): Response | null => (t.unreadable && t.refuse ? new Response('', { status: 404 }) : null)
 
 async function tell(message: Record<string, unknown>): Promise<void> {
   // An own-key build's refusal names that key instead of OpenTodo (design D11).
@@ -100,6 +103,8 @@ self.addEventListener('activate', (event) => {
     // Never while the record cannot be read: every set would look unnamed.
     const t = await trustState()
     if (!t.unreadable) await pruneCaches(env, t.record, true)
+    // The mode is remembered early, for a worker that later cannot read its record.
+    if (t.record) await remembered.set(t.record.refuse).catch(() => undefined)
   })())
 })
 
@@ -169,20 +174,25 @@ async function navigation(event: FetchEvent): Promise<Response> {
 }
 
 async function appFile(event: FetchEvent, path: string): Promise<Response> {
-  const { record: r, unreadable } = await trustState()
-  const hit = await cachedFile(env, r, path)
-  if (hit) return hit
-  if (r) {
-    const lazy = await fetchLazy(env, r, path, !unreadable)
-    if (lazy) {
-      if (lazy.check) {
-        records.forget()
-        await tell({ state: lazy.check.refused ? 'refused' : 'checked', check: lazy.check })
+  const t = await trustState()
+  try {
+    const hit = await cachedFile(env, t.record, path)
+    if (hit) return hit
+    if (t.record) {
+      const lazy = await fetchLazy(env, t.record, path, !t.unreadable)
+      if (lazy) {
+        if (lazy.check) {
+          records.forget()
+          await tell({ state: lazy.check.refused ? 'refused' : 'checked', check: lazy.check })
+        }
+        return lazy.response
       }
-      return lazy.response
     }
+    return closedFor(t) ?? fetch(event.request)
+  } catch {
+    // Decided from the same snapshot: no second read within one request.
+    return answerAfterFailure(t.record, path) ?? closedFor(t) ?? fetch(event.request)
   }
-  return (await closedWhileUnreadable()) ?? fetch(event.request)
 }
 
 self.addEventListener('fetch', (event) => {
@@ -208,7 +218,7 @@ self.addEventListener('fetch', (event) => {
   let rel: string
   try { rel = decodeURIComponent(path.slice(1)) } catch { return }
   if (!rel || rel === 'sw.js') return
-  event.respondWith(appFile(event, rel).catch(async () => answerAfterFailure(await trust().catch(() => null), rel) ?? (await closedWhileUnreadable().catch(() => null)) ?? fetch(request)))
+  event.respondWith(appFile(event, rel))
 })
 
 async function share(request: Request): Promise<Response> {
