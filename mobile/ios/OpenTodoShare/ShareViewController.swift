@@ -3,18 +3,29 @@ import UniformTypeIdentifiers
 
 /// The share extension (ios-shell design D5): text, links and files go into the App Group,
 /// then the app opens on the capture screen. A share extension cannot open its app
-/// directly, so this uses the responder chain's `openURL:` — the one technique here that
-/// a store review would question (the app is distributed as source, so nothing is).
+/// directly, so this finds the `UIApplication` in the responder chain and calls its
+/// `open(_:options:completionHandler:)` — the one technique here that a store review would
+/// question (the app is distributed as source, so nothing is).
 final class ShareViewController: UIViewController {
     private var title_: String?
     private var text: String?
     private var url: String?
     private var files: [ShareInbox.File] = []
     private var pending = 0
+    private var started = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
+    }
+
+    /// Collected once the view is on screen: the app is opened through the responder chain,
+    /// which reaches the application only from a view in a window (a share with no items
+    /// finishes at once).
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        guard !started else { return }
+        started = true
         collect()
     }
 
@@ -87,17 +98,26 @@ final class ShareViewController: UIViewController {
         }
     }
 
+    /// The extension API has no way to open the containing app, and iOS 18 ignores the
+    /// deprecated `openURL:`, so the application object's current method is called through
+    /// its implementation (`APPLICATION_EXTENSION_API_ONLY` marks it unavailable).
+    /// If no application object answers, the extension closes without opening the app.
+    /// `done` runs once: when the open answers, or after a second if it never does.
     private func open(_ url: URL, done: @escaping () -> Void) {
+        var finished = false
+        let once = { DispatchQueue.main.async { if !finished { finished = true; done() } } }
+        typealias Open = @convention(c) (AnyObject, Selector, NSURL, NSDictionary, (@convention(block) (Bool) -> Void)?) -> Void
+        let selector = NSSelectorFromString("openURL:options:completionHandler:")
         var responder: UIResponder? = self
-        let selector = sel_registerName("openURL:")
         while let current = responder {
-            if current.responds(to: selector) {
-                current.perform(selector, with: url)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: done)
+            if let app = current as? UIApplication, app.responds(to: selector) {
+                let call = unsafeBitCast(app.method(for: selector), to: Open.self)
+                call(app, selector, url as NSURL, NSDictionary(), { _ in once() })
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: once)
                 return
             }
             responder = current.next
         }
-        done()
+        once()
     }
 }
