@@ -7184,7 +7184,6 @@
   "unknown file format; update the app": "неизвестный формат файла; обновите приложение",
   "unknown passkey": "неизвестный ключ доступа",
   "unknown pattern \"{word}\"": "неизвестный шаблон «{word}»",
-  "unread changes": "непрочитанные изменения",
   "unread updates": "непрочитанные обновления",
   "unscheduled": "не запланировано",
   "unsupported key derivation {kdf}; update the app": "неподдерживаемый способ формирования ключа {kdf}; обновите приложение",
@@ -7864,5 +7863,6 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Они исчезнут с боковой панели вместе со своими подпроектами. Вернуть их из архива можно в Настройки → Данные.",
   "Archived {projects}": "В архиве: {projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Язык фильтров сохранённых представлений, например search: milk & p1 или @errand.",
-  "Filter {name}": "Фильтр «{name}»"
+  "Filter {name}": "Фильтр «{name}»",
+  "Unread changes": "Непрочитанные изменения"
 }

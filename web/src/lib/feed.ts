@@ -7,10 +7,13 @@
 //   scope, design D1), written by markSeen() through mutate() and never moved
 //   backwards; a project without one uses the device's baseline (the time of the
 //   first sync after the upgrade, or after joining the project);
-// - unread = events by someone else newer than the seen time (design D2).
+// - unread = events by someone else newer than the seen time (design D2), except
+//   ones that only rearranged the list (quiet-unread D1);
+// - opening a shared project's list marks it seen (quiet-unread D2).
 //
 // Views read these through Dexie live queries, so every sync that writes ops
 // (including one triggered by the server's wake-up channel) refreshes them.
+import { useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { api } from './api'
 import { decryptActivityPage } from './e2ee'
@@ -148,6 +151,23 @@ export interface UnreadCounts {
   total: number
 }
 
+/** Fields that only place a task or project in its list: order, nesting, section. */
+const ARRANGEMENT = new Set(['position', 'parent_id', 'section_id'])
+
+/**
+ * True for an event that only rearranged a list (quiet-unread D1): a drag or a
+ * nest changes no task anyone has to read about, so it is never unread. It stays
+ * in the feed and in the project's activity.
+ */
+export function isArrangement(e: Pick<ActivityEvent, 'entity' | 'changes'>): boolean {
+  return (e.entity === 'task' || e.entity === 'project') && e.changes.length > 0 && e.changes.every((c) => ARRANGEMENT.has(c.field))
+}
+
+/** True for an event that can be unread for `me`: someone else's, and not a rearrangement. */
+export function countsAsUnread(e: ActivityEvent, me: string | null): boolean {
+  return !!e.projectId && !(me && e.actor === me) && !isArrangement(e)
+}
+
 /**
  * Events by someone other than `me` newer than each project's seen time. A
  * project's count is bounded by the local retention (LOCAL_RETENTION events), so
@@ -157,7 +177,7 @@ export function countUnread(events: ActivityEvent[], seen: Map<string, number>, 
   const byProject = new Map<string, number>()
   let total = 0
   for (const e of events) {
-    if (!e.projectId || (me && e.actor === me)) continue
+    if (!e.projectId || !countsAsUnread(e, me)) continue
     const s = seen.get(e.projectId) ?? Number.POSITIVE_INFINITY
     if (e.ts <= s) continue
     byProject.set(e.projectId, (byProject.get(e.projectId) ?? 0) + 1)
@@ -222,6 +242,23 @@ export function markEventsSeen(events: ActivityEvent[]): void {
   const newest = new Map<string, number>()
   for (const e of events) if (e.projectId) newest.set(e.projectId, Math.max(newest.get(e.projectId) ?? 0, e.ts))
   for (const [id, ts] of newest) markSeen(id, ts)
+}
+
+/** The newest event's time of a shared project, 0 for a personal one or none. */
+async function newestSharedEvent(projectId: string): Promise<number> {
+  if (!(await db.memberships.get(projectId))) return 0
+  return (await projectActivity(projectId))[0]?.ts ?? 0
+}
+
+/**
+ * While a shared project's list is on screen, keep it seen up to its newest event
+ * (quiet-unread D2): what arrives while the person is looking at it is not unread.
+ */
+export function useMarkProjectSeen(projectId: string | null): void {
+  const newest = useLiveQuery(() => (projectId ? newestSharedEvent(projectId) : 0), [projectId], 0)
+  useEffect(() => {
+    if (projectId && newest > 0) markSeen(projectId, newest)
+  }, [projectId, newest])
 }
 
 const NO_UNREAD: UnreadCounts = { byProject: new Map(), total: 0 }

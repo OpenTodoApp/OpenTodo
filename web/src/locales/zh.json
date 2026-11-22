@@ -6716,7 +6716,6 @@
   "unknown file format; update the app": "未知文件格式；请更新应用",
   "unknown passkey": "未知通行密钥",
   "unknown pattern \"{word}\"": "未知模式 \"{word}\"",
-  "unread changes": "未读更改",
   "unread updates": "未读更新",
   "unscheduled": "未排期",
   "unsupported key derivation {kdf}; update the app": "不支持的密钥派生算法 {kdf}；请更新应用",
@@ -7864,5 +7863,6 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "它们将连同子项目一起从侧边栏移出。你可以在“设置 → 数据”中取消归档。",
   "Archived {projects}": "已归档{projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "已保存视图的筛选语法，例如 search: milk & p1 或 @errand。",
-  "Filter {name}": "筛选“{name}”"
+  "Filter {name}": "筛选“{name}”",
+  "Unread changes": "未读更改"
 }

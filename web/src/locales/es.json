@@ -6587,7 +6587,6 @@
   "unknown file format; update the app": "formato de archivo desconocido; actualiza la app",
   "unknown passkey": "llave de acceso desconocida",
   "unknown pattern \"{word}\"": "patrón desconocido «{word}»",
-  "unread changes": "cambios sin leer",
   "unread updates": "novedades sin leer",
   "unscheduled": "sin programar",
   "unsupported key derivation {kdf}; update the app": "derivación de clave {kdf} no compatible; actualiza la app",
@@ -7864,5 +7863,6 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Salen de la barra lateral con sus subproyectos. Puedes desarchivarlos desde Ajustes → Datos.",
   "Archived {projects}": "Archivado: {projects}",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "El lenguaje de filtros de las vistas guardadas, por ejemplo search: milk & p1 o @errand.",
-  "Filter {name}": "Filtrar «{name}»"
+  "Filter {name}": "Filtrar «{name}»",
+  "Unread changes": "Cambios sin leer"
 }

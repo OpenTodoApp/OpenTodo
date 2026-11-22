@@ -1,0 +1,1 @@
+- **A shared project shows a dot for unread changes, not a second number.** The count beside a project read like a task count. Reordering or nesting tasks no longer counts as an unread change, and a project's changes count as seen while its list is on screen. The total on **Updates** is unchanged.

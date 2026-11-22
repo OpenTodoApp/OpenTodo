@@ -7190,7 +7190,6 @@
   "unknown file format; update the app": "bilinmeyen dosya biçimi; uygulamayı güncelleyin",
   "unknown passkey": "bilinmeyen geçiş anahtarı",
   "unknown pattern \"{word}\"": "bilinmeyen desen \"{word}\"",
-  "unread changes": "okunmamış değişiklikler",
   "unread updates": "okunmamış güncellemeler",
   "unscheduled": "planlanmamış",
   "unsupported key derivation {kdf}; update the app": "desteklenmeyen anahtar türetme {kdf}; uygulamayı güncelleyin",
@@ -7864,5 +7863,6 @@
   "They leave the sidebar with their sub-projects. You can unarchive them from Settings → Data.": "Alt projeleriyle birlikte kenar çubuğundan ayrılırlar. Ayarlar → Veri bölümünden arşivden çıkarabilirsiniz.",
   "Archived {projects}": "{projects} arşivlendi",
   "The filter language of saved views, for example search: milk & p1 or @errand.": "Kayıtlı görünümlerin filtre dili, örneğin search: milk & p1 veya @errand.",
-  "Filter {name}": "“{name}” filtrele"
+  "Filter {name}": "“{name}” filtrele",
+  "Unread changes": "Okunmamış değişiklikler"
 }

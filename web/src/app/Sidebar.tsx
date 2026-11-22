@@ -546,7 +546,7 @@ export function Sidebar({ route, user, onSearch, onShortcuts, onFeedback, onAssi
                   leading={<ProjectMark project={p} />}
                   badge={<>
                     {sharedIds.has(n.id) && <span className="text-faint"><Icon name="users" size={14} /><span className="sr-only">{t('Shared project')}</span></span>}
-                    {unread.byProject.get(n.id) ? <UnreadBadge n={unread.byProject.get(n.id) as number} label={t('unread changes')} /> : null}
+                    {unread.byProject.get(n.id) ? <StatusDot label={t('Unread changes')} data-unread /> : null}
                   </>}
                   count={count} countMode={countsAll ? 'swap' : projectCountMode} countLabel={openTasksLabel(count)}
                   aria-description={count && isCollapsed && has ? t('Open tasks including sub-projects') : undefined}
