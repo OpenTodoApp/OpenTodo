@@ -26,7 +26,7 @@ export const SAMPLE_TITLES = [
   msg('Open me: I have a subtask'),
 ] as const
 export const SAMPLE_SUBTASK = msg('Subtasks tick off on their own row')
-export const SAMPLE_NOTE = msg('Click a task to open its panel. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.')
+export const SAMPLE_NOTE = msg('Double-click a task to open it. The + button adds tasks, projects and more. Made a mistake? Undo is in the toast and Ctrl+Z.')
 
 /**
  * Creates the three sample tasks (and the third's subtask) in the Inbox as ONE batch,

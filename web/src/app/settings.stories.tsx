@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { User } from '../lib/types'
 import { ProfileCard, SettingsView } from './SettingsView'
 import { withClock } from './stories/fixtures'
+import { PendingUntil } from './stories/pendingUntil'
 
 const member: User = { id: 'u-sam', email: 'sam@example.com', name: 'Sam Rivera', role: 'member', createdAt: 1 }
 const owner: User = { id: 'u-ada', email: 'ada@example.com', name: 'Ada Lovelace', role: 'owner', createdAt: 1 }
@@ -32,8 +33,13 @@ export const SectionPage: StoryObj = {
 }
 /** A section's overview (settings-subpages): one row per page; the states need the server, so none show here. */
 export const AppearancePage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" /> }
-/** A sub-page: the breadcrumb Settings › Appearance › Theme and density from 1024 px, Back to Appearance below. */
-export const SubPage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" page="theme" /> }
+/**
+ * A sub-page: the breadcrumb Settings › Appearance › Theme and density from 1024 px, Back to Appearance below.
+ * The theme lists load as their own chunks after the first paint: the capture waits for them.
+ */
+export const SubPage: StoryObj = {
+  render: () => <><SettingsView user={member} onLogout={() => {}} section="appearance" page="theme" /><PendingUntil selector="[data-your-themes]" /></>,
+}
 
 /** Appearance → Task details (task-side-panel D1): Open tasks, as a page or in a side panel. */
 export const TaskDetailsPage: StoryObj = { render: () => <SettingsView user={member} onLogout={() => {}} section="appearance" page="task-details" /> }

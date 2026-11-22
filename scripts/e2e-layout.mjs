@@ -72,7 +72,8 @@ import { ANY_LANG_OVERLAYS, OVERLAYS, chooseLayout, closes, openScreen, screens 
 const base = process.env.OPENTODO_URL ?? 'http://127.0.0.1:8080'
 const outDir = process.argv[2] ?? 'layout-report'
 const ENGINES = (process.env.ENGINES ?? 'chromium,webkit').split(',').filter(Boolean)
-const HEIGHTS = { 320: 640, 360: 740, 390: 844, 768: 1024, 1280: 900 }
+// Tablets (tablet-layouts D4): iPad mini portrait, iPad landscape at 1024 and 1180 px.
+const HEIGHTS = { 320: 640, 360: 740, 390: 844, 744: 1133, 768: 1024, 1024: 768, 1180: 820, 1280: 900 }
 const WIDTHS = (process.env.WIDTHS ?? '360,390,768').split(',').map(Number)
 const THEMES = (process.env.THEMES ?? 'light,dark').split(',')
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(',')) : null
@@ -332,10 +333,16 @@ async function runComboOnce(engine, width, theme, ids, failures, run) {
       }
       if (s.anon) await p.close()
     }
-    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone).
-    if (engine === 'chromium' && width < 768 && !ONLY && !OTHER_LANG) {
+    // page-transitions 2.2: Inbox → task page → Back slides with a direction (Chromium, a phone;
+    // from 600 px a task opens as a sheet over the list, tablet-layouts D2).
+    if (engine === 'chromium' && width < 600 && !ONLY && !OTHER_LANG) {
       run.step = 'page transitions'
       for (const m of await pageTransitions(page, base)) await fail(page, 'page-transitions', null, m)
+    }
+    // tablet-layouts 2.3: an open task and the list survive turning a tablet and split view (Chromium, 1024 px).
+    if (engine === 'chromium' && width === 1024 && !ONLY && !OTHER_LANG) {
+      run.step = 'tablet resize'
+      for (const m of await tabletResize(page, base)) await fail(page, 'tablet-resize', null, m)
     }
     // swipe-back-follows 2.1: a touch drag from the edge of a task's page (Chromium, 390 and 768 px).
     if (engine === 'chromium' && (width === 390 || width === 768) && !ONLY && !OTHER_LANG) {
@@ -418,6 +425,40 @@ async function pageTransitions(p, base) {
   return problems
 }
 
+// tablet-layouts D3: a task opened from the Inbox stays open while the window changes
+// size (an iPad turned, a split view, Stage Manager): docked from 900 px, a sheet over
+// the list below, the list still there and its scroll position kept. Returns the problems.
+async function tabletResize(p, base) {
+  const problems = []
+  const start = p.viewportSize()
+  try {
+    await openScreen(p, base + '/inbox')
+    const row = p.locator('[data-task-id]').filter({ hasText: 'Sand the boards' }).first()
+    await row.waitFor()
+    await row.locator('[data-row-open]').click()
+    const id = await row.getAttribute('data-task-id')
+    await p.locator(`[data-detail-for="${id}"]`).first().waitFor({ timeout: 10000 })
+    const scroll = await p.evaluate(() => document.getElementById('content')?.scrollTop ?? 0)
+    for (const [width, height] of [[1180, 820], [820, 1180], [678, 900], [1024, 768]]) {
+      await p.setViewportSize({ width, height })
+      await p.waitForTimeout(500)
+      const s = await p.evaluate((id) => ({
+        task: new URLSearchParams(location.search).get('task'), page: location.pathname,
+        detail: !!document.querySelector(`[data-detail-for="${id}"]`), list: !!document.querySelector('[data-list-page]'),
+        scroll: document.getElementById('content')?.scrollTop ?? 0,
+      }), id)
+      if (s.task !== id || !s.detail) problems.push(`at ${width} px the open task closed (${s.page}?task=${s.task})`)
+      if (!s.list) problems.push(`at ${width} px the list left the screen`)
+      if (Math.abs(s.scroll - scroll) > 1) problems.push(`at ${width} px the list scrolled from ${scroll} to ${s.scroll}`)
+    }
+  } catch (err) {
+    problems.push(`could not be checked: ${err.message.split('\n')[0]}`)
+  } finally {
+    await p.setViewportSize(start)
+  }
+  return problems
+}
+
 // swipe-back-follows D4: on a task's page opened from the Inbox, a slow touch drag from
 // the left edge to a fifth of the width springs back (the page moved with the finger, the
 // route stays); a drag past a third goes back to the Inbox. Touch events are dispatched
@@ -442,7 +483,11 @@ async function swipeBack(p, base, width) {
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor()
     // The edge watcher loads after the first paint.
     await p.waitForTimeout(300)
-    await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().locator('[data-row-open]').press('Enter')
+    const first = p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first()
+    // From 600 px a task opens as a sheet over the list (tablet-layouts D2): its page is
+    // reached by its address, after the Inbox, so Back still leads to the Inbox.
+    if (width >= 600) await p.goto(`${base}/task/${await first.getAttribute('data-task-id')}`)
+    else await first.locator('[data-row-open]').press('Enter')
     await p.locator('[data-task-page]').first().waitFor({ timeout: 10000 })
   }
   try {
@@ -455,7 +500,8 @@ async function swipeBack(p, base, width) {
     if (rest) problems.push(`the page did not spring back (transform "${rest}")`)
     await drag(Math.round(width / 2), true)
     await p.locator('[data-task-id]').filter({ hasText: 'Undated inbox task' }).first().waitFor({ timeout: 10000 })
-    if (!/\/inbox$/.test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
+    // From 600 px the page was opened by its address, with no trail in the app: Back leads home, the list.
+    if (!(width >= 600 ? /^\/(inbox)?$/ : /\/inbox$/).test(new URL(p.url()).pathname)) problems.push(`a drag past a third did not go back to the Inbox (${p.url()})`)
   } catch (e) {
     problems.push(`could not be checked: ${e.message.split('\n')[0]}`)
   }

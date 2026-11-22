@@ -208,7 +208,7 @@ export function useListShortcuts(c: ShortcutContext) {
       else setOpenId(selectedId)
     },
     'list.add-subtask': () => {
-      if (!row || !writable) return false
+      if (!row || !writable || c.board) return false
       c.toggleCollapsed(row.task.id, false)
       ui.setAddingBelow(null)
       ui.setAddingUnder(row.task.id)
