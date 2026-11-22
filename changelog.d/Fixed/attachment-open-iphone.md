@@ -1,0 +1,1 @@
+- **Opening an image attachment works on iPhone again.** In Safari and the Home Screen app, tapping an attached image or PDF did nothing: the tab opened only after the file was read, and Safari blocks a tab opened after the tap. The tab now opens with the tap and shows the file once it is ready.

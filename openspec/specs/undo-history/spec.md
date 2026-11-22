@@ -57,6 +57,21 @@ Undo SHALL skip a field that was changed again after the batch, detected by the 
 - **WHEN** the person creates a task and then undoes that action
 - **THEN** the task moves to the Trash and can be restored, with no field-level conflict check
 
+### Requirement: Setting a priority is a step
+Setting one task's priority (a list's or the task panel's priority keys, the row menus and the row edit bar, the task panel's priority, the command palette, Vim) SHALL record one step in the undo history, named like the bulk action for one task (for example "Priority 1 set on 1 task"), without showing an undo toast. Undoing it SHALL restore the previous priority and redoing it SHALL set it again. Setting the priority a task already has SHALL record nothing. A repeating task's priority SHALL be written as before, carried to its series and following the task panel's scope, and SHALL NOT record a step. The change SHALL be written locally first, offline too, as an ordinary op that converges through sync.
+
+#### Scenario: Undo a wrong key
+- **WHEN** a person selects "Pay rent" at priority 3 in a list, presses 1, then presses Ctrl/Cmd-Z with no field focused
+- **THEN** "Pay rent" is back at priority 3
+
+#### Scenario: Same priority again
+- **WHEN** a person sets priority 2 on a task that already has priority 2
+- **THEN** no step is added to the undo history
+
+#### Scenario: A repeating task
+- **WHEN** a person sets priority 1 on a task that repeats every week
+- **THEN** the series gets priority 1 as before and no step is added
+
 ### Requirement: This Evening is a step
 Marking one task for This Evening or taking it out (a list's This Evening key, the task panel's This Evening, the command palette) SHALL record one step in the undo history, named with the day-part words (for example "Moved to This Evening"), without showing an undo toast. Undoing it SHALL restore the task's previous part of the day and redoing it SHALL apply it again. A task already in that state SHALL record nothing. A repeating task SHALL be written as before, carried to its series and following the task panel's scope, and SHALL NOT record a step. The change SHALL be written locally first, offline too, as ordinary ops that converge through sync.
 

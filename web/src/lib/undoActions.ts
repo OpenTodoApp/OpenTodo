@@ -4,7 +4,7 @@
 // way bulk actions are (bulk-edit D5). The inverse is stored with the clocks each
 // field got; undo writes ordinary ops, locally first, so it works offline and
 // every device converges by last-writer-wins.
-import { planComplete, planLabels, planMove, planReopen, planTrash, readTicked, toProposed } from './bulk'
+import { bulkLabel, planComplete, planLabels, planMove, planPriority, planReopen, planTrash, readTicked, toProposed } from './bulk'
 import { db, type AssistantUndo } from './db'
 import { logicalToday } from './dates'
 import { seriesRule } from './recurring'
@@ -55,6 +55,24 @@ export async function completeUndoable(id: string, completed: boolean, opts: { n
   const changes = completed ? planComplete([task], all, opts.now ?? Date.now(), opts.today ?? logicalToday(), await membershipMap()) : planReopen([task])
   const result = await apply(changes, completed ? t('Task completed') : t('Task reopened'))
   return { ...result, completed: completed && !task.completed_at && !!result.entry }
+}
+
+/**
+ * Set one task's priority as one step of undo history (OpenSpec change undo-priority): the bulk
+ * action's plan and words for one task, no toast. A task already at that priority records nothing.
+ * A repeating task is written as before, through updateTask.
+ */
+export async function priorityUndoable(id: string, priority: Task['priority']): Promise<void> {
+  const task = await db.tasks.get(id)
+  // A series' edit carries to its occurrences and follows the panel's scope (This and following,
+  // Also past ones), which updateTask plans: a repeating task keeps that path, without a step.
+  if (!task || task.recurrence) {
+    await updateTask(id, { priority })
+    return
+  }
+  // The one row, not readTicked's whole table: a key press stays cheap on a large account.
+  const changes = planPriority([task], priority)
+  if (changes.length) await apply(changes, bulkLabel({ kind: 'priority', priority }, 1))
 }
 
 /** Move one task and its subtasks to the Trash. */

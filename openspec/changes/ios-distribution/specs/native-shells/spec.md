@@ -41,6 +41,25 @@ The repository SHALL hold, under `mobile/ios/store/`, the App Store listing text
 - **WHEN** an App Review reviewer follows the review notes
 - **THEN** they enter `demo.open-todo.app`, choose "Try the demo" and reach a populated Today list without creating an account
 
+### Requirement: App Store review for a final tag
+After Apple has processed the TestFlight build of a final tag, CI SHALL make the App Store version of its marketing version ready and submit it for review, with the project's App Store Connect key and nothing stored besides it: the version SHALL be created, or the one editable version moved to it; its release type SHALL be release after approval; every localization it has SHALL get the version's changelog section as plain text of at most 4,000 characters as What's New, except on the app's first version; the processed build SHALL be attached with export compliance answered as the build declares it; and the version SHALL be submitted for review. A release candidate SHALL never be submitted. Running it again SHALL create nothing twice and SHALL leave alone a version that is already submitted, in review, approved or released. A dry run SHALL read App Store Connect and only log what it would write. A run by hand SHALL be a dry run unless the owner chooses to submit.
+
+#### Scenario: A final release
+- **WHEN** `v1.6.0` is released and Apple has processed build 10600
+- **THEN** App Store version 1.6.0 exists with release type after approval, its localizations carry the 1.6.0 changelog section as What's New, build 10600 is attached, and the version is waiting for review
+
+#### Scenario: Run again
+- **WHEN** the workflow runs again for `v1.6.0` while 1.6.0 is waiting for review
+- **THEN** nothing is written to App Store Connect and the run says the version is already submitted
+
+#### Scenario: Release candidate
+- **WHEN** `v1.6.0-rc.1` is uploaded to TestFlight
+- **THEN** no App Store version is created or submitted
+
+#### Scenario: Dry run
+- **WHEN** the owner runs the workflow by hand for `v1.6.0` with the default choice
+- **THEN** it logs each write it would make and App Store Connect is unchanged
+
 ## MODIFIED Requirements
 
 ### Requirement: The iOS app is built and signed by whoever runs it

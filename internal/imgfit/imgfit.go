@@ -142,3 +142,12 @@ func Pad(img image.Image, size int, fraction float64, bg color.Color) *image.RGB
 	draw.Draw(out, image.Rect(off, off, off+inner, off+inner), fitted, image.Point{}, draw.Over)
 	return out
 }
+
+// Flatten draws img over bg, so a transparent logo gets a solid background
+// where a format or a client has none.
+func Flatten(img image.Image, bg color.Color) *image.RGBA {
+	out := image.NewRGBA(img.Bounds())
+	draw.Draw(out, out.Rect, image.NewUniform(bg), image.Point{}, draw.Src)
+	draw.Draw(out, out.Rect, img, img.Bounds().Min, draw.Over)
+	return out
+}

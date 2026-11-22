@@ -5,7 +5,7 @@
 // navigate and open tasks of a shared project, never change them: every handler
 // that writes checks `writable` (or the task's own read-only state) first.
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask, updateTask } from '../../lib/ops'
+import { detachOccurrence, setTaskParent, skipOccurrence, unparkTask } from '../../lib/ops'
 import type { ListColumn, ListRow } from '../../lib/listGroups'
 import { moveTaskBy, type Step } from '../../lib/move'
 import { duplicateTask } from '../../lib/templates'
@@ -24,7 +24,7 @@ import { isActivationTarget, isTypingTarget, useShortcutScope } from '../shortcu
 import { deleteWithUndo, parkWithUndo } from '../undoable'
 import type { ListRoute } from './useListModel'
 import { t } from '../../lib/i18n'
-import { eveningUndoable } from '../../lib/undoActions'
+import { eveningUndoable, priorityUndoable } from '../../lib/undoActions'
 import { announceOnBoard } from '../BoardView'
 import type { AddingBelow } from './belowLine'
 
@@ -229,7 +229,7 @@ export function useListShortcuts(c: ShortcutContext) {
       const priority = Number(chord.key) as Priority
       if (ticked.length) { act(runBulk(ticked, { kind: 'priority', priority })); return }
       if (!selectedId || (row && !writable)) return false
-      act(updateTask(selectedId, { priority }))
+      act(priorityUndoable(selectedId, priority))
     },
     'list.labels': () => {
       if (ticked.length) { ui.openActions('labels'); return }
