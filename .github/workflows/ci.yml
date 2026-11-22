@@ -11,7 +11,7 @@ on:
   # The merge queue: the whole path tier, the heavy jobs included, on the
   # pull request merged onto the queue's base. Its "CI result" is the gate to main.
   merge_group:
-  # The full matrix every night and on demand; pushes to main run the path tier.
+  # The full matrix every night and on demand; pushes to main run the path tier without the heavy jobs.
   schedule:
     - cron: "41 2 * * *"
   workflow_dispatch:
@@ -44,8 +44,8 @@ jobs:
   # jobs and one linux/amd64 binary; one Chromium layout and end-to-end job when `layout`
   # paths changed; the workbench checks when `ui` paths changed; Android, extension,
   # Obsidian plugin and skill only for their own paths; a docs-only change runs the checks
-  # and the docs website. The merge queue and a push to main run the whole path tier for
-  # what they change; a pull request, draft or not, runs it without the browser,
+  # and the docs website. The merge queue runs the whole path tier for what it changes;
+  # a pull request, draft or not, and a push to main run it without the browser,
   # workbench, accessibility and phone jobs, which the queue runs before anything lands.
   # Release tags, the nightly schedule and a run by hand run every job and every matrix
   # leg (`full`, every output true). The interface audit runs nightly (ux-audit.yml).
@@ -93,14 +93,17 @@ jobs:
             ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # A push to main runs the path tier for what it changed since the
-          # commit before; a push that cannot be compared (a new branch) runs everything.
+          # A push to main runs the path tier for what it changed since the commit before,
+          # without the browser, workbench, accessibility and phone jobs: the merge queue
+          # ran them on this same tree before it landed (ci-pr-fast-tier). The image,
+          # its publishing and "CI result" still run. A push that cannot be compared (a new
+          # branch) runs everything; the nightly runs every job on main.
           if [ "$EVENT" = "push" ] && [ "${REF#refs/tags/}" = "$REF" ] && [ -n "$BEFORE" ] \
             && ! printf '%s' "$BEFORE" | grep -Eq '^0+$' && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             echo "full=false" >> "$GITHUB_OUTPUT"
             git diff --name-only "$BEFORE" HEAD > changed.txt
             cat changed.txt
-            ./scripts/ci-changes.sh < changed.txt >> "$GITHUB_OUTPUT"
+            ./scripts/ci-changes.sh < changed.txt | sed -E 's/^(ui|layout|a11y|mobile|ios)=true$/\1=false/' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # A run by hand with a base: the path tier against it. The UI baselines fold
