@@ -296,7 +296,8 @@ export const OVERLAYS = {
     const trigger = p.locator('[data-add-button]').filter({ visible: true }).first()
     if (!(await trigger.count())) return null
     await trigger.click()
-    const overlay = p.locator('[data-overlay="sheet"]').filter({ has: p.locator('[data-quick-add-tints]') })
+    // A sheet below 640 px, a dialog from there (the add button shows below 768 px).
+    const overlay = p.locator('[data-overlay]').filter({ has: p.locator('[data-quick-add-tints]') }).last()
     await overlay.locator('textarea').first().fill('Call Ana tomorrow p1')
     await overlay.locator('[data-quick-add-tints] mark').first().waitFor()
     // No trigger: the add button leaves with the tab bar while the sheet is open.
